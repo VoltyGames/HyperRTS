@@ -204,6 +204,15 @@ material keywords). A `VATClipTable` asset imports the bake info file through **
 stays hand-editable. `VATAnimatedAuthoring` beside the renderer bakes its start clip into `VATClip` and widens the
 render bounds to cover every frame. It fails the bake when the material and table disagree.
 
+A bake whose bake info says `"layout": "rigid"` moves whole pieces instead of vertices (a sectioned building's
+walls and roofs breaking). It names a `rotations` texture beside `positions`, with `pieceCount` columns (the `width`),
+one row per frame (`rowsPerFrame` defaults to 1) and `restRow`, the frame every piece sits in at rest. A mesh vertex
+holds its piece's column in UV1's u. The material turns on `_VAT_RIGID` instead of `_VAT`, with the two textures:
+the vertex moves to the piece's position for the frame, turned by its rotation quaternion about where the rest row
+has it, and normals only turn. There is no fade between clips. `VATAnimatedAuthoring.SetUpRigidMaterial` sets a
+material up, and `VATSubmeshBakingSystem` gives the extra material entities of a multi-material renderer the same
+clip components.
+
 Game code plays clips with `VATClip.Play(range, now, ref fade)`, using `SystemAPI.Time.ElapsedTime` as `now`. Every
 switch freezes the pose that was showing into the `VATFade` component, and the shader blends from it to the new clip
 over the material's `_VATFadeTime` (0.2 s). Squad figures also have four optional blast falls, `DieBlastFront`,
@@ -340,12 +349,24 @@ rest cost no CPU. It reads the matrices through the material's DOTS instancing p
 shader with DOTS instancing, such as `LitTeam`. Changing effect detail starts the layer over at the new cap. Fogged
 pieces draw as flying ones do.
 
-A building with `SectionsAuthoring` ([combat](combat.md#sections)) gives each section an intact and a broken model
-(`SectionModel`). The broken ones are saved hidden at scale 0 so editor views show the standing building, and
-`SectionsBakingSystem` bakes them back at full size, hidden by `HideReason.Section`. `SectionViewSystem` shows each
-section to match the simulation's broken mask, which is the same on every client. A section seen to break bursts the
-building's effect and debris outward from it; a repaired one shows intact again. A building first seen, or changed
-out of sight (`ShownSections.Seen` cleared by the scenery writer), shows its state without effects.
+A building with `SectionsAuthoring` ([combat](combat.md#sections)) gives each section models (`SectionModel`): intact,
+up to 3 holed variants, rigid pieces, a stub and a heap, or just a broken model. Everything but the intact model is
+saved hidden at scale 0 so editor views show the standing building, and `SectionsBakingSystem` bakes them back at
+full size, hidden by `HideReason.Section`. `SectionViewSystem` shows each section in one of four states, per client
+and cosmetic, following the simulation's broken mask, which is the same on every client:
+
+- **Standing:** the intact model, or the holed variant whose hole is nearest the latest impact on it. Only impact cues
+  the local player sees count (`CueVisibility`), so fog hides holes as well.
+- **Breaking:** a break this client saw hides the intact model and plays the pieces' clip once beside the stub: blown
+  in when the last impact (within 2 s) came from outside the section's `Outward` side, blown out when from inside,
+  and a collapse when no impact is known, as when it falls from lost supports. The building's effect, debris and, for
+  a ground floor section, its dust wave play with it. When the clip ends the pieces hide and the heap shows.
+- **Broken:** the stub and heap, with no clip, for a break nobody saw or a building first seen
+  (`ShownSections.Seen` cleared by the scenery writer, which also resets the holes).
+- **Repair:** clearing the bit shows the intact model again and hides the rest.
+
+The clip rows come from the structure file (`SectionClips`, shared by every section), and per-section sight state
+is the `SectionLook` buffer.
 
 ### Shaders
 

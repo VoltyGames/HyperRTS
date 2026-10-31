@@ -1,6 +1,8 @@
 // HyperRTS/LitTeam vertex animation textures. With _VAT on, each pass's vertex function takes its pose from
 // _VATPositions and _VATNormals at the instance's _VATClip and the global _VATTime. UV1 holds each vertex's texel:
 // u = (column + 0.5) / width, v = row within the frame, so it survives Unity splitting vertices on import.
+// With _VAT_RIGID on, the mesh is rigid pieces instead: UV1's u names the piece's column, and the piece moves by its
+// position in _VATPositions and rotation (a quaternion) in _VATRotations at the frame's row, about where row 0 has it.
 // The wrappers then apply the construction reveal (LitTeamBuild.hlsl), bend track meshes over their wheels
 // (LitTeamTrack.hlsl) and sink the object into craters.
 // Include it after the pass file: it wraps whichever pass vertex function that file defined.
@@ -12,8 +14,12 @@
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamTrack.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
 
+#if defined(_VAT) || defined(_VAT_RIGID)
+#define LIT_TEAM_VAT
+#endif
+
 // Passes whose Attributes lack TEXCOORD1 take it as a separate input.
-#ifdef _VAT
+#ifdef LIT_TEAM_VAT
 #define VAT_INDEX_INPUT , float2 vatIndex : TEXCOORD1
 #else
 #define VAT_INDEX_INPUT
@@ -36,6 +42,7 @@ float3 VATFrameAt(float4 clip, float time)
 
 TEXTURE2D(_VATPositions);
 TEXTURE2D(_VATNormals);
+TEXTURE2D(_VATRotations);
 float _VATTime;
 
 uint2 VATTexel(float2 vatIndex, float frame)
@@ -51,8 +58,33 @@ float VATFadeWeight()
     return saturate((_VATTime - _VATFade.w) / max(_VATFadeTime, 0.0001));
 }
 
-float3 VATPosition(float2 vatIndex)
+// Rotates v by the unit quaternion q (x, y, z, w).
+float3 VATRotate(float4 q, float3 v)
 {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// Moves a rigid piece's vertex from where row 0 rests it to where the clip's frame has it; normals only turn.
+void ApplyRigidVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
+{
+    float3 frame = VATFrameAt(_VATClip, _VATTime);
+    uint column = floor(vatIndex.x * _VATPositions_TexelSize.z);
+    float3 rest = LOAD_TEXTURE2D_LOD(_VATPositions, uint2(column, 0), 0).xyz;
+    float3 position = lerp(LOAD_TEXTURE2D_LOD(_VATPositions, uint2(column, frame.x), 0).xyz,
+        LOAD_TEXTURE2D_LOD(_VATPositions, uint2(column, frame.y), 0).xyz, frame.z);
+    float4 rotation = normalize(lerp(LOAD_TEXTURE2D_LOD(_VATRotations, uint2(column, frame.x), 0),
+        LOAD_TEXTURE2D_LOD(_VATRotations, uint2(column, frame.y), 0), frame.z));
+    positionOS = position + VATRotate(rotation, positionOS - rest);
+    normalOS = VATRotate(rotation, normalOS);
+}
+
+float3 VATPosition(float2 vatIndex, float3 positionOS)
+{
+#ifdef _VAT_RIGID
+    float3 normal = float3(0.0, 1.0, 0.0);
+    ApplyRigidVAT(vatIndex, positionOS, normal);
+    return positionOS;
+#else
     float3 frame = VATFrameAt(_VATClip, _VATTime);
     float3 position = VAT_LOAD(_VATPositions, vatIndex, frame);
     float weight = VATFadeWeight();
@@ -62,10 +94,14 @@ float3 VATPosition(float2 vatIndex)
         position = lerp(VAT_LOAD(_VATPositions, vatIndex, old), position, weight);
     }
     return position;
+#endif
 }
 
 void ApplyVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
 {
+#ifdef _VAT_RIGID
+    ApplyRigidVAT(vatIndex, positionOS, normalOS);
+#else
     float3 frame = VATFrameAt(_VATClip, _VATTime);
     positionOS = VAT_LOAD(_VATPositions, vatIndex, frame);
     normalOS = VAT_LOAD(_VATNormals, vatIndex, frame);
@@ -77,6 +113,7 @@ void ApplyVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
         normalOS = lerp(VAT_LOAD(_VATNormals, vatIndex, old), normalOS, weight);
     }
     normalOS = normalize(normalOS);
+#endif
 }
 
 // Bends a track mesh over its wheels, then sinks the object into any crater under it.
@@ -90,7 +127,7 @@ float3 DeformObject(float3 positionOS)
 Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
 {
     LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef _VAT
+#ifdef LIT_TEAM_VAT
     ApplyVAT(input.staticLightmapUV, input.positionOS.xyz, input.normalOS);
 #endif
 #ifdef _BUILD
@@ -103,7 +140,7 @@ Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
 Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
     LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef _VAT
+#ifdef LIT_TEAM_VAT
     ApplyVAT(vatIndex, input.positionOS.xyz, input.normalOS);
 #endif
 #ifdef _BUILD
@@ -116,11 +153,11 @@ Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
     LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef _VAT
+#ifdef LIT_TEAM_VAT
 #if defined(REQUIRES_TANGENT_SPACE_VIEW_DIR_INTERPOLATOR)
     ApplyVAT(vatIndex, input.position.xyz, input.normalOS);
 #else
-    input.position.xyz = VATPosition(vatIndex);
+    input.position.xyz = VATPosition(vatIndex, input.position.xyz);
 #endif
 #endif
 #ifdef _BUILD
@@ -133,7 +170,7 @@ Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INP
 Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
     LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef _VAT
+#ifdef LIT_TEAM_VAT
     ApplyVAT(vatIndex, input.positionOS.xyz, input.normal);
 #endif
 #ifdef _BUILD
@@ -147,8 +184,8 @@ Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_
 Varyings LitTeamMotionVectorsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 {
     LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef _VAT
-    input.position.xyz = VATPosition(vatIndex);
+#ifdef LIT_TEAM_VAT
+    input.position.xyz = VATPosition(vatIndex, input.position.xyz);
 #endif
 #ifdef _BUILD
     input.position.xyz = BuildPosition(buildOrder, input.position.xyz);

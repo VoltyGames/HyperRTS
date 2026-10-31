@@ -128,6 +128,14 @@ correct: anchored when it reaches the ground, exterior when it is a wall, a full
 rest, and supports from the sections it touches below. `SectionsRule` checks the pairs, the materials and that
 everything reaches the ground.
 
+A building from the structure tool (see [tools](../../../docs/tech/tools.md#structure)) lists its sections with
+**Fill From Structure** instead: set `structure` to the `<Asset>.structure.json` and fill `materialNames`, the
+structure file's material names mapped to `SectionMaterial`s (no name matching). It finds each section's intact,
+holed (with the hole centres), pieces, stub and heap objects by the exact names the file lists, hides all but the
+intact one at scale 0, and takes the material, floor, anchored, exterior and supports from the file; shares are
+guessed as above. A section either has a broken model or pieces with a stub and a heap, and the structure file's
+three break clips are baked once per building. See [client](client.md#destruction) for how they show.
+
 - **Hits.** `DamageSystem` hands a hit on a sectioned building to `Sections.Route`. A direct hit lands in full on the
   first section the line from its origin to its point enters (else the nearest), and its splash on the others in
   reach. Splash from a hit elsewhere reaches every section within its radius with the usual falloff. Each section's

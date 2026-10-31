@@ -31,7 +31,7 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_TRANSFER_INSTANCE_ID(input, output);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-#ifdef _VAT
+#ifdef LIT_TEAM_VAT
     ApplyVAT(vatIndex, input.positionOS.xyz, input.normalOS);
 #endif
 #ifdef _BUILD

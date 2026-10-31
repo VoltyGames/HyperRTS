@@ -22,6 +22,20 @@ namespace HyperRTS.Presentation.Tests.Animation
             ""boundsMax"": [0.5, 1.9, 0.6]
         }";
 
+        private const string RigidJson = @"{
+            ""name"": ""House"",
+            ""layout"": ""rigid"",
+            ""positions"": ""Pos.exr"",
+            ""rotations"": ""Rot.exr"",
+            ""width"": 453,
+            ""pieceCount"": 453,
+            ""height"": 259,
+            ""restRow"": 0,
+            ""clips"": [ { ""name"": ""Wall_In"", ""startRow"": 1, ""frameCount"": 76, ""fps"": 30, ""loop"": false } ],
+            ""boundsMin"": [-1, -1, -1],
+            ""boundsMax"": [1, 1, 1]
+        }";
+
         private static readonly VATClipRange Walk = new() { StartRow = 10, FrameCount = 4, Fps = 2f, Loop = true };
         private static readonly VATClipRange Fall = new() { StartRow = 20, FrameCount = 4, Fps = 2f, Loop = false };
 
@@ -135,6 +149,32 @@ namespace HyperRTS.Presentation.Tests.Animation
             {
                 Object.DestroyImmediate(table);
             }
+        }
+
+        [Test]
+        public void Import_RigidBakeHasOneRowPerFrame()
+        {
+            var table = ScriptableObject.CreateInstance<VATClipTable>();
+            try
+            {
+                table.Import(RigidJson);
+                var info = VATBakeInfo.Parse(RigidJson, "House");
+
+                Assert.IsTrue(info.IsRigid);
+                Assert.AreEqual((453, 1), (table.width, table.rowsPerFrame));
+                Assert.AreEqual((1, 76), (table.Range("Wall_In").StartRow, table.Range("Wall_In").FrameCount));
+            }
+            finally
+            {
+                Object.DestroyImmediate(table);
+            }
+        }
+
+        [Test]
+        public void Import_RigidBakeNeedsRotations()
+        {
+            var json = RigidJson.Replace(@"""rotations"": ""Rot.exr"",", "");
+            Assert.Throws<InvalidDataException>(() => VATBakeInfo.Parse(json, "House"));
         }
     }
 }

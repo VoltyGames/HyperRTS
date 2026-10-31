@@ -5,6 +5,8 @@
 //   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
 //   _VAT        keyword: vertices come from _VATPositions and _VATNormals at _VATClip, texel in UV1 (LitTeamVAT.hlsl)
 //   _VATFade    per instance: the pose a clip switch fades out of; _VATFadeTime seconds blends it into the new clip
+//   _VAT_RIGID  keyword: rigid pieces, each moved by its position in _VATPositions and rotation in _VATRotations at
+//               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamVAT.hlsl); no fade
 //   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
 //   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
 //   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
@@ -25,6 +27,7 @@ Shader "HyperRTS/LitTeam"
         [Header(Vertex Animation)]
         [NoScaleOffset] _VATPositions("VAT Positions", 2D) = "black" {}
         [NoScaleOffset] _VATNormals("VAT Normals", 2D) = "black" {}
+        [NoScaleOffset] _VATRotations("VAT Rotations (rigid)", 2D) = "black" {}
         _VATClip("VAT Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
         _VATRowsPerFrame("VAT Rows Per Frame", Float) = 1
         _VATFade("VAT Fade (frame, next frame, blend, start time)", Vector) = (0, 0, 0, -100000)
@@ -102,9 +105,10 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex LitTeamForwardVertex
             #pragma fragment LitTeamPassFragment
-            #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _ _VAT _VAT_RIGID
             #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
+            #pragma target 3.5 _VAT_RIGID
 
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local_fragment _ALPHATEST_ON
@@ -140,9 +144,10 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex LitTeamShadowVertex
             #pragma fragment ShadowPassFragment
-            #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _ _VAT _VAT_RIGID
             #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
+            #pragma target 3.5 _VAT_RIGID
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile_instancing
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
@@ -168,9 +173,10 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex LitTeamDepthOnlyVertex
             #pragma fragment DepthOnlyFragment
-            #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _ _VAT _VAT_RIGID
             #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
+            #pragma target 3.5 _VAT_RIGID
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma multi_compile_instancing
@@ -193,9 +199,10 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex LitTeamDepthNormalsVertex
             #pragma fragment DepthNormalsFragment
-            #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _ _VAT _VAT_RIGID
             #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
+            #pragma target 3.5 _VAT_RIGID
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
@@ -233,9 +240,10 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex SilhouetteVertex
             #pragma fragment UnitMaskFragment
-            #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _ _VAT _VAT_RIGID
             #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
+            #pragma target 3.5 _VAT_RIGID
             #pragma multi_compile_instancing
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamSilhouettePass.hlsl"
@@ -266,9 +274,10 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex SilhouetteVertex
             #pragma fragment SilhouetteFragment
-            #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _ _VAT _VAT_RIGID
             #pragma shader_feature_local_vertex _BUILD
             #pragma target 3.5 _VAT
+            #pragma target 3.5 _VAT_RIGID
             #pragma multi_compile_instancing
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamSilhouettePass.hlsl"
@@ -312,7 +321,7 @@ Shader "HyperRTS/LitTeam"
             #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma shader_feature_local_vertex _VAT
+            #pragma shader_feature_local_vertex _ _VAT _VAT_RIGID
             #pragma shader_feature_local_vertex _BUILD
             #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/ObjectMotionVectors.hlsl"

@@ -14,9 +14,17 @@ namespace HyperRTS.Presentation.Animation
         public const string Folder = "VAT";
         public const string Extension = ".vat.json";
 
+        public const string RigidLayout = "rigid";
+
         public string name;
+
+        [Tooltip("Empty for per-vertex textures, or 'rigid' for pieces moved by a position and a rotation per frame.")]
+        public string layout;
         public string positions;
         public string normals;
+        public string rotations;
+        public int pieceCount;
+        public int restRow;
         public int width;
         public int height;
         public int rowsPerFrame;
@@ -34,9 +42,17 @@ namespace HyperRTS.Presentation.Animation
         public static VATBakeInfo Parse(string json, string source)
         {
             var bakeInfo = JsonUtility.FromJson<VATBakeInfo>(json);
+            // A rigid bake has one row per frame.
+            if (bakeInfo.IsRigid && bakeInfo.rowsPerFrame == 0)
+            {
+                bakeInfo.rowsPerFrame = 1;
+            }
+
             bakeInfo.Check(source);
             return bakeInfo;
         }
+
+        public bool IsRigid => layout == RigidLayout;
 
         public static Vector3 Corner(float[] values) => new(values[0], values[1], values[2]);
 
@@ -45,6 +61,11 @@ namespace HyperRTS.Presentation.Animation
             if (width < 1 || rowsPerFrame < 1)
             {
                 throw new InvalidDataException($"VAT bake info '{source}' needs 'width' and 'rowsPerFrame' of at least 1.");
+            }
+
+            if (IsRigid && (string.IsNullOrEmpty(rotations) || pieceCount < 1))
+            {
+                throw new InvalidDataException($"VAT bake info '{source}' is rigid and needs 'rotations' and a 'pieceCount' of at least 1.");
             }
 
             if (clips == null || clips.Length == 0)

@@ -17,16 +17,28 @@ namespace HyperRTS.Simulation.Combat
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Building")]
-    public class SectionsAuthoring : AuthoringBehaviour
+    public partial class SectionsAuthoring : AuthoringBehaviour
     {
         [Serializable]
-        public struct Entry
+        public partial struct Entry
         {
             [Tooltip("Shown while the section stands; its bounds are the section's box.")]
             public GameObject intact;
 
-            [Tooltip("Shown once it breaks: the holed wall or roof with its rubble. Never inside the intact model.")]
+            [Tooltip("Shown once it breaks when it has no pieces: the holed wall or roof with its rubble. Never inside the intact model.")]
             public GameObject broken;
+
+            [Tooltip("Holed variants of the intact model, at most 3; the one whose hole is nearest a seen impact shows. Start hidden at scale 0.")]
+            public Hole[] holes;
+
+            [Tooltip("The pieces that fall apart when it breaks, a VAT rigid mesh with a VAT Animated component. Starts hidden at scale 0.")]
+            public GameObject pieces;
+
+            [Tooltip("What stays standing once it broke. Starts hidden at scale 0.")]
+            public GameObject stub;
+
+            [Tooltip("What lies at its foot once the pieces settled. Starts hidden at scale 0.")]
+            public GameObject heap;
 
             [Tooltip("What it is made of, which scales each damage type.")]
             public SectionMaterial material;
@@ -49,13 +61,39 @@ namespace HyperRTS.Simulation.Combat
             public GameObject[] supports;
         }
 
+        [Serializable]
+        public struct Hole
+        {
+            public GameObject model;
+
+            [Tooltip("Where the hole is, in the building's space.")]
+            public Vector3 center;
+        }
+
+        [Serializable]
+        public struct MaterialName
+        {
+            [Tooltip("The material's name in the structure file.")]
+            public string name;
+            public SectionMaterial material;
+        }
+
+        [Tooltip("The building's <Asset>.structure.json from the structure tool. Fill From Structure lists the sections from it.")]
+        public TextAsset structure;
+
+        [Tooltip("Which section material each material name in the structure file means.")]
+        public MaterialName[] materialNames = Array.Empty<MaterialName>();
+
         [Tooltip("Heap left at the foot of a broken ground-floor outer wall: crushable scenery tanks flatten.")]
         public GameObject rubble;
 
         [Tooltip("Effect rig played at a section as it breaks, +Z pointing out of the building (debris, dust).")]
         public GameObject effect;
 
-        [Tooltip("The sections, at most 64. Fill From Parts in the context menu lists them from X_Intact and X_Broken children.")]
+        [Tooltip("Dust wave played at the foot of a ground floor section as it breaks.")]
+        public GameObject dustWave;
+
+        [Tooltip("The sections, at most 64. Fill From Structure lists them from the structure file, Fill From Parts from X_Intact and X_Broken children.")]
         public Entry[] sections = Array.Empty<Entry>();
 
         /// <summary>
@@ -81,6 +119,25 @@ namespace HyperRTS.Simulation.Combat
             sections = shape.Guess(found).ToArray();
         }
 
+        /// <summary>Lists the sections from the structure file; see <see cref="SectionStructure.Entries"/>.</summary>
+        [ContextMenu("Fill From Structure")]
+        public void FillFromStructure()
+        {
+            if (structure == null)
+            {
+                throw new InvalidOperationException($"HyperRTS: sections on '{name}' have no structure file to fill from.");
+            }
+
+            Record(this);
+            foreach (var child in GetComponentsInChildren<Transform>(true))
+            {
+                Record(child);
+            }
+
+            var file = SectionStructure.Parse(structure.text, structure.name);
+            sections = file.Entries(this).ToArray();
+        }
+
         /// <summary>What stops the sections baking; empty when they are fine.</summary>
         public List<string> Problems()
         {
@@ -92,7 +149,7 @@ namespace HyperRTS.Simulation.Combat
 
             for (var i = 0; i < sections.Length; i++)
             {
-                var problem = SectionProblem(sections[i], i);
+                var problem = sections[i].Problem(this, i);
                 if (problem != null)
                 {
                     problems.Add(problem);
@@ -116,38 +173,10 @@ namespace HyperRTS.Simulation.Combat
             return entry;
         }
 
-        private string SectionProblem(in Entry entry, int index)
-        {
-            if (entry.intact == null || entry.broken == null)
-            {
-                return $"Section {index} on '{name}' needs both an intact and a broken model.";
-            }
-
-            if (!entry.intact.transform.IsChildOf(transform) || !entry.broken.transform.IsChildOf(transform))
-            {
-                return $"Section {index} on '{name}' uses a model from outside the building.";
-            }
-
-            if (entry.broken.transform.IsChildOf(entry.intact.transform))
-            {
-                return $"Section '{entry.broken.name}' on '{name}' sits inside '{entry.intact.name}' and would hide with it.";
-            }
-
-            if (entry.material == null)
-            {
-                return $"Section '{entry.intact.name}' on '{name}' has no material.";
-            }
-
-            // Hidden in the prefab so editor views and map captures show the standing building.
-            return entry.broken.transform.localScale == Vector3.zero
-                ? null
-                : $"Section '{entry.broken.name}' on '{name}' should start hidden at scale 0.";
-        }
-
         private static void Record(UnityEngine.Object target)
         {
 #if UNITY_EDITOR
-            UnityEditor.Undo.RecordObject(target, "Fill From Parts");
+            UnityEditor.Undo.RecordObject(target, "Fill sections");
 #endif
         }
 
@@ -172,13 +201,11 @@ namespace HyperRTS.Simulation.Combat
                 var materials = new List<SectionMaterial>();
                 var sections = new SectionShape(authoring).Bake(authoring.sections, building.maxHealth, materials);
                 var models = new List<SectionModel>(sections.Count);
+                var looks = new List<SectionLook>(sections.Count);
                 foreach (var entry in authoring.sections)
                 {
-                    models.Add(new SectionModel
-                    {
-                        Intact = GetEntity(entry.intact, TransformUsageFlags.Dynamic),
-                        Broken = GetEntity(entry.broken, TransformUsageFlags.Dynamic),
-                    });
+                    models.Add(Model(entry));
+                    looks.Add(SectionLook.Untouched);
                 }
 
                 var rubble = authoring.rubble != null
@@ -187,8 +214,38 @@ namespace HyperRTS.Simulation.Combat
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 SectionsSetup.Add(ref writer, sections, Factors(materials), rubble);
                 writer.AddBuffer(models);
-                writer.Add(new ShownSections { Effect = authoring.effect });
+                writer.AddBuffer(looks);
+                writer.Add(new ShownSections { Effect = authoring.effect, DustWave = authoring.dustWave });
+                if (authoring.structure != null)
+                {
+                    DependsOn(authoring.structure);
+                    var file = SectionStructure.Parse(authoring.structure.text, authoring.structure.name);
+                    writer.Add(file.BreakClips(authoring.structure.name));
+                }
             }
+
+            private SectionModel Model(in Entry entry)
+            {
+                var holes = entry.holes ?? Array.Empty<Hole>();
+                return new SectionModel
+                {
+                    Intact = Find(entry.intact),
+                    Broken = Find(entry.broken),
+                    Pieces = Find(entry.pieces),
+                    Stub = Find(entry.stub),
+                    Heap = Find(entry.heap),
+                    FirstHole = Find(holes, 0),
+                    SecondHole = Find(holes, 1),
+                    ThirdHole = Find(holes, 2),
+                };
+            }
+
+            private SectionHole Find(Hole[] holes, int index) => index < holes.Length
+                ? new SectionHole { Model = Find(holes[index].model), Center = holes[index].center }
+                : default;
+
+            private Entity Find(GameObject model) =>
+                model != null ? GetEntity(model, TransformUsageFlags.Dynamic) : Entity.Null;
 
             private List<SectionFactor> Factors(List<SectionMaterial> materials)
             {

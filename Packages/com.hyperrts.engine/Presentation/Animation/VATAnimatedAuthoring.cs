@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// Plays vertex animation texture clips on this renderer: a HyperRTS/LitTeam material with _VAT on. Game code
+    /// Plays vertex animation texture clips on this renderer: a HyperRTS/LitTeam material with _VAT or _VAT_RIGID on. Game code
     /// switches clips through <see cref="VATClip.Play"/>, which fades from the old pose.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "VAT Animated")]
@@ -20,6 +20,8 @@ namespace HyperRTS.Presentation.Animation
     public class VATAnimatedAuthoring : AuthoringBehaviour
     {
         private const string Keyword = "_VAT";
+        private const string RigidKeyword = "_VAT_RIGID";
+        private static readonly int RotationsId = Shader.PropertyToID("_VATRotations");
         private static readonly int PositionsId = Shader.PropertyToID("_VATPositions");
         private static readonly int NormalsId = Shader.PropertyToID("_VATNormals");
         private static readonly int RowsPerFrameId = Shader.PropertyToID("_VATRowsPerFrame");
@@ -40,6 +42,15 @@ namespace HyperRTS.Presentation.Animation
             material.SetTexture(PositionsId, positions);
             material.SetTexture(NormalsId, normals);
             material.SetFloat(RowsPerFrameId, rowsPerFrame);
+        }
+
+        /// <summary>Turns a LitTeam material's rigid VAT on: pieces moved by the bake's positions and rotations.</summary>
+        public static void SetUpRigidMaterial(Material material, Texture positions, Texture rotations)
+        {
+            material.EnableKeyword(RigidKeyword);
+            material.SetTexture(PositionsId, positions);
+            material.SetTexture(RotationsId, rotations);
+            material.SetFloat(RowsPerFrameId, 1f);
         }
 
         public static void AddVAT<TWriter>(ref TWriter writer, in VATClipRange start, AABB bounds)
@@ -69,26 +80,35 @@ namespace HyperRTS.Presentation.Animation
                 return "is lightmapped, but VAT renderers use UV1 for the texel index";
             }
 
-            var materials = renderer.sharedMaterials;
-            if (materials.Length != 1)
+            foreach (var material in renderer.sharedMaterials)
             {
-                return $"needs one material, not {materials.Length}";
+                var problem = MaterialProblem(material);
+                if (problem != null)
+                {
+                    return problem;
+                }
             }
 
-            return MaterialProblem(materials[0]);
+            return null;
         }
 
         private string MaterialProblem(Material material)
         {
-            if (material == null || !material.IsKeywordEnabled(Keyword))
+            var rigid = material != null && material.IsKeywordEnabled(RigidKeyword);
+            if (material == null || !(rigid || material.IsKeywordEnabled(Keyword)))
             {
-                return $"needs a material with the {Keyword} keyword on";
+                return $"needs a material with the {Keyword} or {RigidKeyword} keyword on";
             }
 
             var positions = material.GetTexture(PositionsId);
             if (positions == null || positions.width != clips.width)
             {
                 return $"needs VAT positions {clips.width} texels wide, as '{clips.name}' says";
+            }
+
+            if (rigid && material.GetTexture(RotationsId) == null)
+            {
+                return "needs VAT rotations on its rigid material";
             }
 
             var rows = material.GetFloat(RowsPerFrameId);

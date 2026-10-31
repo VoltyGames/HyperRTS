@@ -8,8 +8,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Turns broken section models, authored at scale 0 so editor views show the standing building, into full-size
-    /// meshes hidden by <see cref="HideReason.Section"/>, which <see cref="SectionViewSystem"/> then flips.
+    /// Turns the holed, pieces, stub, heap and broken section models, authored at scale 0 so editor views show the
+    /// standing building, into full-size meshes hidden by <see cref="HideReason.Section"/>, which <see cref="SectionViewSystem"/> then flips.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     [UpdateAfter(typeof(HiddenByBakingSystem))]
@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Destruction
             }
         }
 
-        /// <summary>Sets every building's broken models back to full scale and returns them.</summary>
+        /// <summary>Sets every building's hidden section models back to full scale and returns them.</summary>
         private NativeHashSet<Entity> ScaleUpBrokenPieces(ref SystemState state)
         {
             var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
@@ -61,8 +61,11 @@ namespace HyperRTS.Presentation.Destruction
             {
                 foreach (var model in state.EntityManager.GetBuffer<SectionModel>(building, true))
                 {
-                    pieces.Add(model.Broken);
-                    transforms.GetRefRW(model.Broken).ValueRW.Scale = 1f;
+                    model.ForEachHidden(hidden =>
+                    {
+                        pieces.Add(hidden);
+                        transforms.GetRefRW(hidden).ValueRW.Scale = 1f;
+                    });
                 }
             }
 

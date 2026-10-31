@@ -1,7 +1,10 @@
 using HyperRTS.Core;
+using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Cues;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -11,23 +14,39 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Shows each <see cref="Section"/> standing or broken to match the building's broken mask, with the break
-    /// effect and debris for breaks this client saw happen.
+    /// Shows each <see cref="Section"/> standing (or holed where a seen impact landed), breaking as a clip of pieces,
+    /// or broken, to match the building's broken mask. Breaks this client saw play their clip, effect and debris; a loaded
+    /// or unseen building shows the end state.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     [UpdateBefore(typeof(EntitiesGraphicsSystem))]
     public partial class SectionViewSystem : SystemBase
     {
+        /// <summary>Metres around a section's box that still count as an impact on it.</summary>
+        private const float ImpactMargin = 0.5f;
+
+        /// <summary>Seconds an impact still decides how a section breaks.</summary>
+        private const float ImpactMemory = 2f;
+
+        private enum Phase
+        {
+            Standing,
+            Breaking,
+            Broken,
+        }
+
         private EffectPool _pool;
         private DebrisSystem _debris;
         private RenderSwitch _switch;
+        private CueVisibility _visibility;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _debris = World.GetOrCreateSystemManaged<DebrisSystem>();
             _switch = new RenderSwitch(ref CheckedStateRef);
+            _visibility = new CueVisibility(ref CheckedStateRef);
             RequireForUpdate<ShownSections>();
         }
 
@@ -35,62 +54,230 @@ namespace HyperRTS.Presentation.Destruction
         {
             CompleteDependency();
             _switch.Update(ref CheckedStateRef);
-            foreach (var (building, sections, models, shown, place, entity) in SystemAPI
+            var impacts = SeenImpacts();
+            var now = (float)SystemAPI.Time.ElapsedTime;
+            foreach (var (building, sections, models, looks, shown, place, entity) in SystemAPI
                          .Query<RefRO<Sections>, DynamicBuffer<Section>, DynamicBuffer<SectionModel>,
-                             RefRW<ShownSections>, RefRO<LocalToWorld>>().WithEntityAccess())
+                             DynamicBuffer<SectionLook>, RefRW<ShownSections>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
-                var now = building.ValueRO.Broken;
-                var changed = now ^ shown.ValueRO.Broken;
-                if (shown.ValueRO.Seen && changed == 0)
-                {
-                    continue;
-                }
+                var context = new Context(entity, sections, models, looks, place.ValueRO, now);
+                Refresh(context, building.ValueRO.Broken, impacts, ref shown.ValueRW);
+            }
+        }
 
-                // The first frame only sets the look; a loaded or unseen building doesn't replay its damage.
-                var quiet = !shown.ValueRO.Seen;
-                for (var i = 0; i < models.Length; i++)
+        private NativeList<float3> SeenImpacts()
+        {
+            var impacts = new NativeList<float3>(Allocator.Temp);
+            if (!SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
+            {
+                return impacts;
+            }
+
+            _visibility.Begin();
+            foreach (var cue in cues)
+            {
+                if (cue.Slot == CueSlot.Impact && _visibility.IsSeen(cue))
                 {
-                    var bit = 1ul << i;
-                    if (!quiet && (changed & bit) == 0)
+                    impacts.Add(cue.Position);
+                }
+            }
+
+            return impacts;
+        }
+
+        private void Refresh(Context at, ulong broken, NativeList<float3> impacts, ref ShownSections shown)
+        {
+            var quiet = !shown.Seen;
+            var all = at.Models.Length >= 64 ? ~0ul : (1ul << at.Models.Length) - 1ul;
+            var touched = quiet ? all : broken ^ shown.Broken;
+            touched |= quiet ? 0ul : Record(at, impacts, broken);
+            touched |= Finished(at, shown.Breaking);
+            if (touched != 0ul)
+            {
+                var parts = new NativeList<Entity>(Allocator.Temp);
+                _switch.Collect(at.Entity, parts);
+                for (var i = 0; i < at.Models.Length; i++)
+                {
+                    if ((touched & (1ul << i)) != 0ul)
+                    {
+                        Step(at, parts, i, broken, quiet, ref shown);
+                    }
+                }
+            }
+
+            shown.Broken = broken;
+            shown.Seen = true;
+        }
+
+        /// <summary>Points each standing section hit by a seen impact at its nearest hole; returns the ones that changed.</summary>
+        private static ulong Record(Context at, NativeList<float3> impacts, ulong broken)
+        {
+            var changed = 0ul;
+            if (impacts.Length == 0)
+            {
+                return changed;
+            }
+
+            var toBuilding = math.inverse(at.Place.Value);
+            foreach (var impact in impacts)
+            {
+                var local = math.transform(toBuilding, impact);
+                for (var i = 0; i < at.Models.Length; i++)
+                {
+                    if ((broken & (1ul << i)) != 0ul || at.Sections[i].Gap(local) > ImpactMargin)
                     {
                         continue;
                     }
 
-                    var broken = (now & bit) != 0;
-                    Show(entity, models[i], broken);
-                    if (broken && !quiet)
-                    {
-                        Play(entity, shown.ValueRO, sections[i], place.ValueRO);
-                    }
+                    var look = at.Looks[i];
+                    var hole = (byte)(at.Models[i].NearestHole(local) + 1);
+                    changed |= hole != look.Hole ? 1ul << i : 0ul;
+                    look.Hole = hole;
+                    look.Impact = local;
+                    look.ImpactTime = at.Now;
+                    at.Looks[i] = look;
                 }
-
-                shown.ValueRW.Broken = now;
-                shown.ValueRW.Seen = true;
             }
+
+            return changed;
         }
 
-        private void Show(Entity building, in SectionModel model, bool broken)
+        private static ulong Finished(Context at, ulong breaking)
         {
-            var pieces = new NativeList<Entity>(Allocator.Temp);
-            _switch.Collect(building, pieces);
-            _switch.SetBranch(pieces, model.Intact, HideReason.Section, broken);
-            _switch.SetBranch(pieces, model.Broken, HideReason.Section, !broken);
+            var done = 0ul;
+            for (var i = 0; i < at.Models.Length; i++)
+            {
+                var bit = 1ul << i;
+                if ((breaking & bit) != 0ul && at.Now >= at.Looks[i].BreakEnd)
+                {
+                    done |= bit;
+                }
+            }
+
+            return done;
         }
 
-        /// <summary>The building's break effect and debris, from the section that broke.</summary>
-        private void Play(Entity entity, in ShownSections shown, in Section section, in LocalToWorld place)
+        private void Step(Context at, NativeList<Entity> parts, int index, ulong broken, bool quiet, ref ShownSections shown)
         {
-            var position = math.transform(place.Value, section.Center);
+            var bit = 1ul << index;
+            var isBroken = (broken & bit) != 0ul;
+            var wasBroken = (shown.Broken & bit) != 0ul;
+            var look = at.Looks[index];
+            var phase = isBroken ? Phase.Broken : Phase.Standing;
+            if (quiet)
+            {
+                look = SectionLook.Untouched;
+            }
+            else if (isBroken && !wasBroken)
+            {
+                phase = Break(at, parts, index, ref look, shown);
+            }
+            else if (!isBroken && wasBroken)
+            {
+                look = SectionLook.Untouched;
+            }
+
+            shown.Breaking = phase == Phase.Breaking ? shown.Breaking | bit : shown.Breaking & ~bit;
+            at.Looks[index] = look;
+            Display(parts, at.Models[index], look, phase);
+        }
+
+        /// <summary>Starts a seen break: its effect and debris, and the pieces' clip when it has them.</summary>
+        private Phase Break(Context at, NativeList<Entity> parts, int index, ref SectionLook look, in ShownSections shown)
+        {
+            Play(at, shown, at.Sections[index]);
+            var model = at.Models[index];
+            if (!model.HasPieces || !SystemAPI.HasComponent<SectionClips>(at.Entity))
+            {
+                return Phase.Broken;
+            }
+
+            var clip = Pick(SystemAPI.GetComponent<SectionClips>(at.Entity), at.Sections[index], look, at.Now);
+            var range = new VATClipRange { StartRow = clip.StartRow, FrameCount = clip.FrameCount, Fps = clip.Fps };
+            var meshes = new NativeList<Entity>(Allocator.Temp);
+            _switch.Under(parts, model.Pieces, meshes);
+            foreach (var mesh in meshes)
+            {
+                EntityManager.SetComponentData(mesh, VATClip.Started(range, at.Now));
+                EntityManager.SetComponentData(mesh, VATFade.None);
+            }
+
+            look.BreakEnd = at.Now + clip.Seconds;
+            return Phase.Breaking;
+        }
+
+        /// <summary>Blown in by a hit from outside, out by one from inside, else falling apart on its own.</summary>
+        private static SectionClip Pick(in SectionClips clips, in Section section, in SectionLook look, float now)
+        {
+            if (now - look.ImpactTime > ImpactMemory)
+            {
+                return clips.Collapse;
+            }
+
+            var fromOutside = math.dot(look.Impact - section.Center, section.Outward) > 0f;
+            return fromOutside ? clips.BlownIn : clips.BlownOut;
+        }
+
+        private void Display(NativeList<Entity> parts, in SectionModel model, in SectionLook look, Phase phase)
+        {
+            var standing = phase == Phase.Standing;
+            Hide(parts, model.Intact, !standing || look.Hole != 0);
+            for (var i = 0; i < SectionModel.MostHoles; i++)
+            {
+                Hide(parts, model.Hole(i).Model, !standing || look.Hole != i + 1);
+            }
+
+            Hide(parts, model.Pieces, phase != Phase.Breaking);
+            Hide(parts, model.Stub, standing);
+            Hide(parts, model.Heap, phase != Phase.Broken);
+            Hide(parts, model.Broken, standing);
+        }
+
+        private void Hide(NativeList<Entity> parts, Entity model, bool hide) =>
+            _switch.SetBranch(parts, model, HideReason.Section, hide);
+
+        /// <summary>The building's break effect and debris from the section that broke, and a dust wave off the ground floor.</summary>
+        private void Play(Context at, in ShownSections shown, in Section section)
+        {
+            var position = math.transform(at.Place.Value, section.Center);
             var outward = section.Outward;
             if (shown.Effect.IsValid())
             {
                 var up = math.abs(outward.y) > 0.5f ? new float3(0f, 0f, 1f) : math.up();
-                _pool.Play(shown.Effect.Value, position, math.mul(place.Rotation, quaternion.LookRotation(outward, up)));
+                _pool.Play(shown.Effect.Value, position, math.mul(at.Place.Rotation, quaternion.LookRotation(outward, up)));
             }
 
-            if (SystemAPI.HasComponent<Debris>(entity))
+            if (shown.DustWave.IsValid() && section.Floor == 0)
             {
-                _debris.Throw(SystemAPI.GetComponent<Debris>(entity), position, math.rotate(place.Rotation, outward));
+                var foot = math.transform(at.Place.Value, section.Center - new float3(0f, section.HalfSize.y, 0f));
+                _pool.Play(shown.DustWave.Value, foot, at.Place.Rotation);
+            }
+
+            if (SystemAPI.HasComponent<Debris>(at.Entity))
+            {
+                _debris.Throw(SystemAPI.GetComponent<Debris>(at.Entity), position, math.rotate(at.Place.Rotation, outward));
+            }
+        }
+
+        // One building's data for the frame, so the steps take one argument.
+        private struct Context
+        {
+            public Entity Entity;
+            public DynamicBuffer<Section> Sections;
+            public DynamicBuffer<SectionModel> Models;
+            public DynamicBuffer<SectionLook> Looks;
+            public LocalToWorld Place;
+            public float Now;
+
+            public Context(Entity entity, DynamicBuffer<Section> sections, DynamicBuffer<SectionModel> models,
+                DynamicBuffer<SectionLook> looks, LocalToWorld place, float now)
+            {
+                Entity = entity;
+                Sections = sections;
+                Models = models;
+                Looks = looks;
+                Place = place;
+                Now = now;
             }
         }
     }

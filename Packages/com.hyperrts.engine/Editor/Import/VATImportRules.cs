@@ -20,14 +20,14 @@ namespace HyperRTS.Editor.Import
 
         // Texture names by bake info path, so a folder's textures parse each bake info file once until it changes.
         [AutoStaticsCleanup]
-        private static readonly Dictionary<string, (DateTime Written, string Positions, string Normals)> Named = new();
+        private static readonly Dictionary<string, (DateTime Written, string[] Textures)> Named = new();
 
         /// <summary>After a game's own import rules, so these settings win.</summary>
         public override int GetPostprocessOrder() => 1000;
 
         public static bool IsVATModel(string path) => File.Exists(VATBakeInfo.PathFor(path));
 
-        /// <summary>True for a texture a bake info file in the same VAT folder names as its positions or normals.</summary>
+        /// <summary>True for a texture a bake info file in the same VAT folder names as its positions, normals or rotations.</summary>
         public static bool IsVATTexture(string path)
         {
             var folder = Path.GetDirectoryName(path);
@@ -39,8 +39,7 @@ namespace HyperRTS.Editor.Import
             var file = Path.GetFileName(path);
             foreach (var json in Directory.GetFiles(folder, "*" + VATBakeInfo.Extension))
             {
-                var (positions, normals) = ReadTextures(json);
-                if (positions == file || normals == file)
+                if (Array.IndexOf(ReadTextures(json), file) >= 0)
                 {
                     return true;
                 }
@@ -49,17 +48,17 @@ namespace HyperRTS.Editor.Import
             return false;
         }
 
-        private static (string Positions, string Normals) ReadTextures(string json)
+        private static string[] ReadTextures(string json)
         {
             var written = File.GetLastWriteTimeUtc(json);
             if (!Named.TryGetValue(json, out var named) || named.Written != written)
             {
                 var bakeInfo = JsonUtility.FromJson<VATBakeInfo>(File.ReadAllText(json));
-                named = (written, bakeInfo.positions, bakeInfo.normals);
+                named = (written, new[] { bakeInfo.positions, bakeInfo.normals, bakeInfo.rotations });
                 Named[json] = named;
             }
 
-            return (named.Positions, named.Normals);
+            return named.Textures;
         }
 
         private void OnPreprocessModel()
