@@ -10,6 +10,9 @@ namespace HyperRTS.Presentation.Environment
     {
         public const string ShaderName = "Hidden/HyperRTS/Interaction Brush";
 
+        /// <summary>Steps an 8-bit channel fades through.</summary>
+        public const int Levels = 255;
+
         private static readonly int StampsId = Shader.PropertyToID("_InteractionStamps");
         private static readonly int OffsetId = Shader.PropertyToID("_InteractionStampOffset");
         private static readonly int FadeId = Shader.PropertyToID("_InteractionFade");
@@ -75,14 +78,14 @@ namespace HyperRTS.Presentation.Environment
             _commands.SetGlobalBuffer(StampsId, _buffer);
             var offset = 0;
             _commands.SetRenderTarget(surfaces.Trample);
-            Fade(new Vector4(0f, 0f, recoverySteps, 0f) / InteractionMath.Levels);
+            Fade(new Vector4(0f, 0f, recoverySteps, 0f) / Levels);
             DrawStamps(_trampleDirectionPass, offset, stamps.Trample.Count);
             DrawStamps(_trampleAmountPass, offset, stamps.Trample.Count);
             offset += stamps.Trample.Count;
 
             // Scars (BA) never fade: they last the match.
             _commands.SetRenderTarget(surfaces.Tracks);
-            Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / InteractionMath.Levels);
+            Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / Levels);
             DrawStamps(_tracksPass, offset, stamps.Tracks.Count);
             offset += stamps.Tracks.Count;
             DrawStamps(_scarsPass, offset, stamps.Scars.Count);
@@ -137,7 +140,7 @@ namespace HyperRTS.Presentation.Environment
             _commands.ClearRenderTarget(false, true, Color.clear);
             _commands.SetRenderTarget(surfaces.Remains);
             _commands.ClearRenderTarget(false, true, Color.clear);
-            _wakeFadedSteps = InteractionMath.Levels;
+            _wakeFadedSteps = Levels;
         }
 
         // Remains never fade, so a frame without any leaves their map alone.
@@ -155,15 +158,15 @@ namespace HyperRTS.Presentation.Environment
         // Calm water skips the wake map once a full fade has emptied it.
         private void DrawWakes(InteractionSurfaces surfaces, int wakeSteps, int offset, int count)
         {
-            if (count == 0 && _wakeFadedSteps >= InteractionMath.Levels)
+            if (count == 0 && _wakeFadedSteps >= Levels)
             {
                 return;
             }
 
             _commands.SetRenderTarget(surfaces.Wake);
-            Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / InteractionMath.Levels);
+            Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / Levels);
             DrawStamps(_wakePass, offset, count);
-            _wakeFadedSteps = count > 0 ? 0 : Mathf.Min(_wakeFadedSteps + wakeSteps, InteractionMath.Levels);
+            _wakeFadedSteps = count > 0 ? 0 : Mathf.Min(_wakeFadedSteps + wakeSteps, Levels);
         }
 
         private void Fade(Vector4 amount)

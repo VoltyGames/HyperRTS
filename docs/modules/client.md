@@ -330,6 +330,8 @@ without effects. It is presentation only: the simulation never reads it.
 Water vertex colours shape the flow: alpha thins fords, green streaks rapids foam, and red trails foam lines
 downstream of fords and bridges. Open water carries no streaks; banks get their own foam band.
 
+`WorldRect.hlsl` holds `RectUV` and `SampleHeightmap`, which the terrain height and the undented ground read.
+
 URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/` and are pulled in with
 `#include_with_pragmas`: `LightingKeywords` (main and additional lights, shadows, screen space effects, decals and
 cookies, for Road), `ForwardLightingKeywords` (that plus probes, fog and rendering layers, for the full Lit model),
@@ -443,7 +445,9 @@ sources (collapsing buildings, field fires) call `InteractionStamps.AddRemains` 
 amounts, after `InteractionStampSystem` has run. Units with a `NavAgent` riding water cells stamp foam
 behind them. A replay seeking back clears the maps, as it clears the decals.
 
-Shaders read the maps through `Trample.hlsl`. The terrain darkens ruts and flattened grass, bends its normal down
+Shaders read the maps through `Interaction.hlsl` (trample, tracks, craters and wake), which builds on
+`InteractionGlobals.hlsl`: the map globals, `InteractionMapsOn`, `InteractionUV`, `OnInteractionMaps` and the crater depth
+`HYPERRTS_MAX_CRATER_DEPTH`. The terrain darkens ruts and flattened grass, bends its normal down
 the crater's slope so the sun lights the bowl, darkens and dampens the bowl's soil, and blackens scorched ground. `TerrainRemains.hlsl` then lays the terrain
 material's tiled rubble, ash and wet mud textures (`_Remains*`) and an untextured dark, glossy fuel slick with a faint
 thin-film sheen over what the remains map covers, with a noisy fringe; ground without remains skips it after one

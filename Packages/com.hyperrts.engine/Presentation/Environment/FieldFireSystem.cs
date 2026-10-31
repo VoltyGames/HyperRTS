@@ -36,7 +36,6 @@ namespace HyperRTS.Presentation.Environment
         private readonly List<FieldFireCluster> _clusters = new();
         private CueVisibility _visibility;
         private EffectPool _pool;
-        private InteractionStampSystem _stampSystem;
         private BattleHazeSystem _hazeSystem;
         private FieldFireSettings _settings;
         private Terrain _terrain;
@@ -162,12 +161,12 @@ namespace HyperRTS.Presentation.Environment
         {
             var burntOut = _fires.BurntOut;
             BurntCells += burntOut.Count;
-            if (PresentationQuality.Current.Interactions == InteractionQuality.Off || burntOut.Count == 0)
+            if (!InteractionStampSystem.MapsOn || burntOut.Count == 0)
             {
                 return;
             }
 
-            var stamps = (_stampSystem ??= World.GetExistingSystemManaged<InteractionStampSystem>())?.Stamps;
+            var stamps = InteractionStampSystem.Find(World);
             if (stamps == null)
             {
                 return;

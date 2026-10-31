@@ -19,7 +19,6 @@ namespace HyperRTS.Presentation.Environment
         public const float SyncSeconds = 0.5f;
 
         private Shader _shader;
-        private InteractionStampSystem _stampSystem;
         private CraterTerrain _crater;
         private Texture _tracks;
         private float _syncedAt = float.NegativeInfinity;
@@ -30,7 +29,7 @@ namespace HyperRTS.Presentation.Environment
 
         protected override void OnUpdate()
         {
-            var stamps = (_stampSystem ??= World.GetExistingSystemManaged<InteractionStampSystem>())?.Stamps;
+            var stamps = InteractionStampSystem.Find(World);
             if (stamps == null || !Bind())
             {
                 Release();

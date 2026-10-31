@@ -38,7 +38,7 @@ namespace HyperRTS.Presentation.Environment
 
         protected override void OnUpdate()
         {
-            if (PresentationQuality.Current.Interactions == InteractionQuality.Off)
+            if (!InteractionStampSystem.MapsOn)
             {
                 _blasts.Clear();
                 Shader.SetGlobalFloat(CountId, 0f);

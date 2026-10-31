@@ -29,33 +29,21 @@ namespace HyperRTS.Presentation.Tests.Environment
         public void TearDown() => Object.DestroyImmediate(_mark);
 
         [TestCase(500f, 301f, 2500, 1505)]
-        [TestCase(4000f, 100f, InteractionMath.MaxTextureSize, 500)]
+        [TestCase(4000f, 100f, InteractionSurfaces.MaxTextureSize, 500)]
         public void TextureSize_CoversTheMapAtTheTexelSize_CappingHugeMaps(float x, float z, int width, int height) =>
-            Assert.AreEqual(new int2(width, height), InteractionMath.TextureSize(new float2(x, z), 0.2f));
+            Assert.AreEqual(new int2(width, height), InteractionSurfaces.TextureSize(new float2(x, z), 0.2f));
 
         [Test]
         public void Texels_LowIsTwiceAsCoarse()
         {
-            var tracks = InteractionMath.TracksTexel(InteractionQuality.Full);
-            var trample = InteractionMath.TrampleTexel(InteractionQuality.Full);
-            Assert.AreEqual(2f * tracks, InteractionMath.TracksTexel(InteractionQuality.Low), 1e-6f);
-            Assert.AreEqual(2f * trample, InteractionMath.TrampleTexel(InteractionQuality.Low), 1e-6f);
-            Assert.AreEqual(2f * InteractionMath.RemainsTexel(InteractionQuality.Full),
-                InteractionMath.RemainsTexel(InteractionQuality.Low), 1e-6f);
-            Assert.Less(tracks, trample, "ruts need finer texels than flattened grass");
-            Assert.Throws<ArgumentOutOfRangeException>(() => InteractionMath.TrampleTexel(InteractionQuality.Off));
-            Assert.Throws<ArgumentOutOfRangeException>(() => InteractionMath.RemainsTexel(InteractionQuality.Off),
+            var full = InteractionSurfaces.Texels(InteractionQuality.Full);
+            var low = InteractionSurfaces.Texels(InteractionQuality.Low);
+            Assert.AreEqual(2f * full.Tracks, low.Tracks, 1e-6f);
+            Assert.AreEqual(2f * full.Trample, low.Trample, 1e-6f);
+            Assert.AreEqual(2f * full.Remains, low.Remains, 1e-6f);
+            Assert.Less(full.Tracks, full.Trample, "ruts need finer texels than flattened grass");
+            Assert.Throws<ArgumentOutOfRangeException>(() => InteractionSurfaces.Texels(InteractionQuality.Off),
                 "nothing allocated at Off");
-        }
-
-        [Test]
-        public void WorldToUV_MapsTheRectCornersToZeroAndOne()
-        {
-            var rect = InteractionMath.Rect(new float2(-100f, 20f), new float2(400f, 200f));
-
-            MathAssert.Near(new float2(0f, 0f), InteractionMath.WorldToUV(rect, new float2(-100f, 20f)));
-            MathAssert.Near(new float2(1f, 1f), InteractionMath.WorldToUV(rect, new float2(300f, 220f)));
-            MathAssert.Near(new float2(0.25f, 0.5f), InteractionMath.WorldToUV(rect, new float2(0f, 120f)));
         }
 
         [Test]
@@ -65,24 +53,25 @@ namespace HyperRTS.Presentation.Tests.Environment
             var steps = 0;
             for (var frame = 0; frame < 60 * 60; frame++)
             {
-                steps += InteractionMath.FadeSteps(ref carry, 1f / 60f, InteractionMath.TrampleRecoverySeconds);
+                steps += InteractionMap.FadeSteps(ref carry, 1f / 60f, InteractionMap.TrampleRecoverySeconds);
             }
 
-            Assert.That(steps, Is.InRange(InteractionMath.Levels - 1, InteractionMath.Levels));
+            Assert.That(steps, Is.InRange(InteractionBrush.Levels - 1, InteractionBrush.Levels));
 
             carry = 0f;
-            Assert.AreEqual(0, InteractionMath.FadeSteps(ref carry, 0.5f, InteractionMath.TrackFadeSeconds));
-            Assert.AreEqual(1, InteractionMath.FadeSteps(ref carry, 0.5f, InteractionMath.TrackFadeSeconds));
+            Assert.AreEqual(0, InteractionMap.FadeSteps(ref carry, 0.5f, InteractionMap.TrackFadeSeconds));
+            Assert.AreEqual(1, InteractionMap.FadeSteps(ref carry, 0.5f, InteractionMap.TrackFadeSeconds));
             Assert.AreEqual(0f, carry, 0.07f);
         }
 
         [Test]
         public void AddVehicle_PutsARutUnderEachTrack_AndFlattensItsWholeWidth()
         {
-            var trample = new List<InteractionStamp>();
-            var tracks = new List<InteractionStamp>();
+            var stamps = new InteractionStamps();
 
-            InteractionMath.AddVehicle(Tank, new float2(10f, 20f), new float2(0f, 1f), 0f, trample, tracks);
+            stamps.AddVehicle(Tank, new float2(10f, 20f), new float2(0f, 1f), 0f);
+            var trample = stamps.Trample;
+            var tracks = stamps.Tracks;
 
             Assert.AreEqual(2, tracks.Count);
             Assert.AreEqual(8.6f, tracks[0].Center.x, 1e-5f);
@@ -98,19 +87,20 @@ namespace HyperRTS.Presentation.Tests.Environment
         [TestCase(-2f, 11f, TestName = "Reversing reaches forward")]
         public void AddVehicle_CoversTheDistanceDriven(float driven, float center)
         {
-            var tracks = new List<InteractionStamp>();
+            var stamps = new InteractionStamps();
 
-            InteractionMath.AddVehicle(Tank, new float2(0f, 10f), new float2(0f, 1f), driven,
-                new List<InteractionStamp>(), tracks);
+            stamps.AddVehicle(Tank, new float2(0f, 10f), new float2(0f, 1f), driven);
 
-            Assert.AreEqual(center, tracks[0].Center.y, 1e-5f);
-            Assert.AreEqual(1.3f, tracks[0].HalfSize.y, 1e-5f);
+            Assert.AreEqual(center, stamps.Tracks[0].Center.y, 1e-5f);
+            Assert.AreEqual(1.3f, stamps.Tracks[0].HalfSize.y, 1e-5f);
         }
 
         [Test]
         public void Footprint_FlattensForGoodWithoutSteering()
         {
-            var stamp = InteractionMath.Footprint(new float2(5f, 6f), new float2(12f, 8f));
+            var stamps = new InteractionStamps();
+            stamps.AddFootprint(new float2(5f, 6f), new float2(12f, 8f));
+            var stamp = stamps.Trample[0];
 
             Assert.AreEqual(new float2(6f, 4f), stamp.HalfSize);
             Assert.AreEqual(new float4(1f, 1f, 0f, 0f), stamp.Value);
@@ -119,10 +109,12 @@ namespace HyperRTS.Presentation.Tests.Environment
         [Test]
         public void Footsteps_CoverTheStrideBehindTheFeet_AndOnlyBendPlants()
         {
-            var stamp = InteractionMath.Footsteps(new float2(10f, 0f), new float2(1f, 0f), 0.4f);
+            var stamps = new InteractionStamps();
+            stamps.AddFootsteps(new float2(10f, 0f), new float2(1f, 0f), 0.4f);
+            var stamp = stamps.Trample[0];
 
             Assert.AreEqual(9.8f, stamp.Center.x, 1e-5f);
-            Assert.AreEqual(InteractionMath.FootWidth + 0.2f, stamp.HalfSize.y, 1e-5f);
+            Assert.AreEqual(0.3f + 0.2f, stamp.HalfSize.y, 1e-5f);
             Assert.Less(stamp.Value.x, 1f, "leans plants without flattening them");
         }
 
@@ -140,10 +132,10 @@ namespace HyperRTS.Presentation.Tests.Environment
             stamps.AddCrater(new float2(1f, 2f), _mark, 4f);
 
             var scar = stamps.Scars[0];
-            Assert.AreEqual(new float2(2f * InteractionMath.ScorchReach), scar.HalfSize);
-            Assert.AreEqual(0.8f / InteractionMath.MaxCraterDepth, scar.Value.x, 1e-5f);
+            Assert.AreEqual(new float2(2f * InteractionStamps.ScorchReach), scar.HalfSize);
+            Assert.AreEqual(0.8f / InteractionStamps.MaxCraterDepth, scar.Value.x, 1e-5f);
             Assert.AreEqual(0.6f, scar.Value.y, 1e-5f);
-            Assert.AreEqual(1f / InteractionMath.ScorchReach, scar.Value.z, 1e-5f, "bowl share of the stamp");
+            Assert.AreEqual(1f / InteractionStamps.ScorchReach, scar.Value.z, 1e-5f, "bowl share of the stamp");
             Assert.AreEqual(scar.HalfSize, stamps.Trample[0].HalfSize, "plants flattened over the whole scar");
             Assert.AreEqual(1f, stamps.Trample[0].Value.w, "round");
             Assert.IsEmpty(stamps.Tracks, "scars stay out of the fading channels' stamps");
@@ -171,7 +163,7 @@ namespace HyperRTS.Presentation.Tests.Environment
             stamps.AddCrater(new float2(1f, 2f), _mark, 4f);
 
             Assert.AreEqual(1, stamps.Remains.Count);
-            Assert.AreEqual(new float2(2f * InteractionMath.ScorchReach), stamps.Remains[0].HalfSize);
+            Assert.AreEqual(new float2(2f * InteractionStamps.ScorchReach), stamps.Remains[0].HalfSize);
             Assert.AreEqual(new float4(0.2f, 0.7f, 0f, 0f), stamps.Remains[0].Value);
             Assert.IsEmpty(stamps.Scars, "no bowl or scorch, so the soil is not churned");
             Assert.IsEmpty(stamps.Trample);
@@ -208,12 +200,12 @@ namespace HyperRTS.Presentation.Tests.Environment
             var stamps = new InteractionStamps();
 
             stamps.AddWake(new float2(10f, 0f), new float2(1f, 0f), 4f, 2f);
-            stamps.AddWake(float2.zero, new float2(0f, 1f), 2f * InteractionMath.FullWakeSpeed, 2f);
+            stamps.AddWake(float2.zero, new float2(0f, 1f), 2f * InteractionStamps.FullWakeSpeed, 2f);
 
             var wake = stamps.Wakes[0];
             Assert.Less(wake.Center.x, 10f, "centre behind the unit");
             Assert.AreEqual(10f + 2f, wake.Center.x + wake.HalfSize.y, 1e-4f, "front edge at the unit's bow");
-            Assert.AreEqual(4f / InteractionMath.FullWakeSpeed, wake.Value.x, 1e-5f);
+            Assert.AreEqual(4f / InteractionStamps.FullWakeSpeed, wake.Value.x, 1e-5f);
             Assert.AreEqual(1f, stamps.Wakes[1].Value.x, "full foam caps");
         }
 

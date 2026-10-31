@@ -2,7 +2,7 @@
 #ifndef HYPERRTS_BUILDING_FOOTPRINTS_INCLUDED
 #define HYPERRTS_BUILDING_FOOTPRINTS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/WorldRect.hlsl"
 
 Texture2D<float> _HyperRTSFootprints;
 float4 _HyperRTSFootprintRect; // x min, z min, 1 / width, 1 / depth; zero = no buildings

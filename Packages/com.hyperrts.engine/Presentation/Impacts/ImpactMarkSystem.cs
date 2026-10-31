@@ -31,7 +31,6 @@ namespace HyperRTS.Presentation.Impacts
         private TypeCatalog<ImpactMark[]> _catalog;
         private CueVisibility _visibility;
         private GameObject _root;
-        private InteractionStampSystem _stampSystem;
         private float _clock = float.NegativeInfinity;
         private Unity.Mathematics.Random _random = new(0x9E3779B9u);
 
@@ -86,9 +85,9 @@ namespace HyperRTS.Presentation.Impacts
         private float Clock() =>
             SystemAPI.TryGetSingleton(out ReplayPlayback replay) ? replay.Time : (float)SystemAPI.Time.ElapsedTime;
 
-        private InteractionStamps Scars() => PresentationQuality.Current.Interactions == InteractionQuality.Off
-            ? null
-            : (_stampSystem ??= World.GetExistingSystemManaged<InteractionStampSystem>())?.Stamps;
+        private InteractionStamps Scars() => InteractionStampSystem.MapsOn
+            ? InteractionStampSystem.Find(World)
+            : null;
 
         private void PlaceNew(float now, InteractionStamps scars)
         {

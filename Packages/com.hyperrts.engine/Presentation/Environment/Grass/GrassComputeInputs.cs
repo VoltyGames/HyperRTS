@@ -36,7 +36,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             compute.SetBuffer(Scatter, PlantsId, _plants);
             compute.SetTexture(Scatter, CoverageId, _coverage);
             var area = field.area;
-            compute.SetVector(CoverageAreaId, InteractionMath.Rect(new float2(area.xMin, area.yMin), new float2(area.width, area.height)));
+            compute.SetVector(CoverageAreaId, TerrainHeightInput.Rect(new float2(area.xMin, area.yMin), new float2(area.width, area.height)));
             compute.SetVector(ThinningId, GrassView.Thinning);
             compute.SetFloat(TileSizeId, GrassField.TileSize);
             _heights = new TerrainHeightInput(compute, Scatter, terrain);

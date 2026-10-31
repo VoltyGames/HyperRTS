@@ -60,7 +60,7 @@ Shader "Hidden/HyperRTS/Interaction Brush"
             float2 world = stamp.center + right * (corner.x * stamp.halfSize.x) + stamp.forward * (corner.y * stamp.halfSize.y);
 
             StampVaryings output;
-            output.positionCS = MapClip(RectUV(_HyperRTSInteractionRect, world));
+            output.positionCS = MapClip(InteractionUV(world));
             output.local = corner;
             output.value = stamp.value;
             output.forward = stamp.forward;

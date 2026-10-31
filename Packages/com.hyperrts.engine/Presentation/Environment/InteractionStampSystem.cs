@@ -30,7 +30,21 @@ namespace HyperRTS.Presentation.Environment
         private EntityQuery _buildings;
         private EntityQuery _remains;
 
+        /// <summary>A vehicle this far above the terrain (on a bridge or deck) leaves no marks on it.</summary>
+        public const float MaxGroundGap = 1f;
+
+        // Movement in one frame past this is a teleport, not a drive.
+        private const float MaxStep = 5f;
+        private const float MinWakeSpeed = 0.5f;
+
         public InteractionStamps Stamps { get; } = new();
+
+        /// <summary>Whether the interaction maps are drawn at the current quality.</summary>
+        public static bool MapsOn => PresentationQuality.Current.Interactions != InteractionQuality.Off;
+
+        /// <summary>The stamps of <paramref name="world"/>, or null while it has no stamp system.</summary>
+        public static InteractionStamps Find(World world) =>
+            world.GetExistingSystemManaged<InteractionStampSystem>()?.Stamps;
 
         protected override void OnCreate()
         {
@@ -47,7 +61,7 @@ namespace HyperRTS.Presentation.Environment
         protected override void OnUpdate()
         {
             Stamps.Clear();
-            if (PresentationQuality.Current.Interactions == InteractionQuality.Off)
+            if (!MapsOn)
             {
                 _grounded.Forget();
                 _afloat.Forget();
@@ -87,12 +101,12 @@ namespace HyperRTS.Presentation.Environment
                 var advance = math.dot(position.xz - last.xy, forward);
                 if (agents[i].Chassis.Wheelbase > 0f)
                 {
-                    InteractionMath.AddTrample(marks[i], position.xz, forward, advance, Stamps.Trample);
+                    Stamps.AddTrample(marks[i], position.xz, forward, advance);
                     AddAxleRuts(marks[i], agents[i].Chassis, position.xz, forward, last);
                 }
                 else
                 {
-                    InteractionMath.AddVehicle(marks[i], position.xz, forward, advance, Stamps.Trample, Stamps.Tracks);
+                    Stamps.AddVehicle(marks[i], position.xz, forward, advance);
                 }
             }
 
@@ -114,7 +128,7 @@ namespace HyperRTS.Presentation.Environment
                 _walking.Record(squad, position);
                 var step = _walking.TryGetLast(squad, out var last) ? position - last : float2.zero;
                 var stride = math.length(step);
-                if (stride < 1e-3f || stride > InteractionMath.MaxStep)
+                if (stride < 1e-3f || stride > MaxStep)
                 {
                     continue;
                 }
@@ -125,7 +139,7 @@ namespace HyperRTS.Presentation.Environment
                     if (walking)
                     {
                         var feet = SystemAPI.GetComponent<LocalToWorld>(figure.Figure).Position.xz;
-                        Stamps.Trample.Add(InteractionMath.Footsteps(feet, step / stride, stride));
+                        Stamps.AddFootsteps(feet, step / stride, stride);
                     }
                 }
             }
@@ -134,11 +148,11 @@ namespace HyperRTS.Presentation.Environment
         }
 
         private static bool OnGround(in TerrainHeight terrain, float3 position) =>
-            position.y - terrain.Height(position.xz) <= InteractionMath.MaxGroundGap;
+            position.y - terrain.Height(position.xz) <= MaxGroundGap;
 
         /// <summary>Last frame's position and forward; false when new in sight or teleported.</summary>
         private bool TryGetLast(Entity vehicle, float2 position, out float4 last) =>
-            _grounded.TryGetLast(vehicle, out last) && math.distance(position, last.xy) <= InteractionMath.MaxStep;
+            _grounded.TryGetLast(vehicle, out last) && math.distance(position, last.xy) <= MaxStep;
 
         // Each axle ruts its own path, so in a turn the rear ruts run inside the front ones.
         private void AddAxleRuts(in TrackMarks marks, in Chassis chassis, float2 position, float2 forward, float4 last)
@@ -146,13 +160,13 @@ namespace HyperRTS.Presentation.Environment
             var pose = chassis.Pose(position, forward);
             var lastPose = chassis.Pose(last.xy, last.zw);
             var rearStep = pose.Position - lastPose.Position;
-            InteractionMath.AddRuts(marks, pose.Position, forward, math.dot(rearStep, forward), Stamps.Tracks);
+            Stamps.AddRuts(marks, pose.Position, forward, math.dot(rearStep, forward));
 
             var front = chassis.FrontAxle(pose);
             var frontStep = front - chassis.FrontAxle(lastPose);
             var gear = math.dot(frontStep, forward) >= 0f ? 1f : -1f;
             var heading = math.lengthsq(frontStep) > 1e-6f ? math.normalize(frontStep) * gear : forward;
-            InteractionMath.AddRuts(marks, front, heading, math.dot(frontStep, heading), Stamps.Tracks);
+            Stamps.AddRuts(marks, front, heading, math.dot(frontStep, heading));
         }
 
         // Stamped every frame: max blending is idempotent and holds grass down.
@@ -162,7 +176,7 @@ namespace HyperRTS.Presentation.Environment
             using var transforms = _buildings.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < footprints.Length; i++)
             {
-                Stamps.Trample.Add(InteractionMath.Footprint(transforms[i].Position.xz, footprints[i].Size));
+                Stamps.AddFootprint(transforms[i].Position.xz, footprints[i].Size);
             }
         }
 
@@ -206,7 +220,7 @@ namespace HyperRTS.Presentation.Environment
                 var step = _afloat.TryGetLast(entity, out var last) ? position.xz - last : float2.zero;
                 var travelled = math.length(step);
                 var speed = travelled / deltaTime;
-                if (speed >= InteractionMath.MinWakeSpeed && travelled <= InteractionMath.MaxStep)
+                if (speed >= MinWakeSpeed && travelled <= MaxStep)
                 {
                     Stamps.AddWake(position.xz, step / travelled, speed, agent.ValueRO.Radius);
                 }
@@ -220,7 +234,7 @@ namespace HyperRTS.Presentation.Environment
         {
             var water = (grid.Surface(grid.WorldToCell(position)) & NavSurface.Water) != 0;
             return water && grid.Terrain.Height(position.xz) < grid.WaterLevel &&
-                   position.y <= grid.WaterLevel + InteractionMath.MaxGroundGap;
+                   position.y <= grid.WaterLevel + MaxGroundGap;
         }
 
         /// <summary>Last frame's positions (and a vehicle's forward), kept to measure how each unit moved.</summary>

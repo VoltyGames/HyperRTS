@@ -47,11 +47,14 @@ namespace HyperRTS.Presentation.Environment
         /// <summary>Whether a map rebuild replaced the heightmap bound to the kernel.</summary>
         public bool Stale => _heights != _terrain.terrainData.heightmapTexture;
 
+        /// <summary>The rect shaders read: (x min, z min, 1 / width, 1 / depth).</summary>
+        internal static float4 Rect(float2 min, float2 size) => new(min, 1f / size);
+
         internal static Vector4 Area(Terrain terrain)
         {
             var origin = terrain.GetPosition();
             var size = terrain.terrainData.size;
-            return InteractionMath.Rect(new float2(origin.x, origin.z), new float2(size.x, size.z));
+            return Rect(new float2(origin.x, origin.z), new float2(size.x, size.z));
         }
 
         internal static Vector4 Scale(Terrain terrain)

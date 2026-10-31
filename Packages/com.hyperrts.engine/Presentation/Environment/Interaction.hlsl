@@ -1,6 +1,6 @@
 // Include after URP's Core.hlsl.
-#ifndef HYPERRTS_TRAMPLE_INCLUDED
-#define HYPERRTS_TRAMPLE_INCLUDED
+#ifndef HYPERRTS_INTERACTION_INCLUDED
+#define HYPERRTS_INTERACTION_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/InteractionGlobals.hlsl"
@@ -24,16 +24,6 @@ struct TrackSample
     float crater; // metres
     float2 craterSlope;
 };
-
-bool InteractionMapsOn()
-{
-    return _HyperRTSInteractionRect.z > 0.0;
-}
-
-float2 InteractionUV(float2 positionXZ)
-{
-    return RectUV(_HyperRTSInteractionRect, positionXZ);
-}
 
 // Unguarded: the caller checks InteractionMapsOn.
 TrampleSample ReadTrample(float2 positionXZ)
@@ -66,7 +56,7 @@ TrackSample ReadTracks(float2 positionXZ)
     s.depth = tracks.r;
     s.churn = tracks.g;
     s.scorch = tracks.b;
-    s.crater = tracks.a * _HyperRTSMaxCraterDepth;
+    s.crater = tracks.a * HYPERRTS_MAX_CRATER_DEPTH;
     s.craterSlope = 0.0;
 
     // Gather order: x (u0, v1), y (u1, v1), z (u1, v0), w (u0, v0).
@@ -86,7 +76,7 @@ TrackSample ReadTracks(float2 positionXZ)
         float north = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv + float2(0.0, step.y), 0).a;
         float south = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv - float2(0.0, step.y), 0).a;
         float2 span = 2.0 * CRATER_TAP_TEXELS * max(_HyperRTSTracksTexel.zw, 1e-4);
-        s.craterSlope = float2(east - west, north - south) * _HyperRTSMaxCraterDepth / span;
+        s.craterSlope = float2(east - west, north - south) * HYPERRTS_MAX_CRATER_DEPTH / span;
     }
     return s;
 }

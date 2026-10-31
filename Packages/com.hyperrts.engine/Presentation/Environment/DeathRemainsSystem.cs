@@ -21,7 +21,6 @@ namespace HyperRTS.Presentation.Environment
     {
         private TypeCatalog<StrongBox<DeathRemains>> _catalog;
         private CueVisibility _visibility;
-        private InteractionStampSystem _stampSystem;
 
         protected override void OnCreate()
         {
@@ -37,18 +36,18 @@ namespace HyperRTS.Presentation.Environment
         {
             CompleteDependency();
             var cues = SystemAPI.GetSingletonBuffer<CueEvent>(true);
-            if (PresentationQuality.Current.Interactions == InteractionQuality.Off || cues.IsEmpty)
+            if (!InteractionStampSystem.MapsOn || cues.IsEmpty)
             {
                 return;
             }
 
-            var stamps = (_stampSystem ??= World.GetExistingSystemManaged<InteractionStampSystem>()).Stamps;
+            var stamps = InteractionStampSystem.Find(World);
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             _visibility.Begin();
             foreach (var cue in cues)
             {
-                var onGround = cue.Position.y - terrain.Height(cue.Position.xz) <= InteractionMath.MaxGroundGap;
+                var onGround = cue.Position.y - terrain.Height(cue.Position.xz) <= InteractionStampSystem.MaxGroundGap;
                 if (cue.Slot != CueSlot.Death || !onGround || !_visibility.IsSeen(cue))
                 {
                     continue;

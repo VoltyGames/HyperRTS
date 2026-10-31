@@ -4,7 +4,7 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wind.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Interaction.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
 
 TEXTURE2D(_BaseMap);

@@ -21,12 +21,6 @@ float3 WindRotate(float3 p, float3 pivot, float3 axis, float angle)
     return pivot + v * c + cross(axis, v) * s + axis * dot(axis, v) * (1.0 - c);
 }
 
-// UV in a packed world rect: xy min x and z, zw 1 / width and 1 / depth.
-float2 RectUV(float4 rect, float2 positionXZ)
-{
-    return (positionXZ - rect.xy) * rect.zw;
-}
-
 // Object +Z faces the plant's way, +X to its right, +Y up.
 float3 PlantToWorld(float3 v, float2 facing)
 {

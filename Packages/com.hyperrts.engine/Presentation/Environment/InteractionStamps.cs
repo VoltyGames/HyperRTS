@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Units;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment
@@ -7,6 +8,20 @@ namespace HyperRTS.Presentation.Environment
     /// <summary>One frame's stamps for the interaction maps.</summary>
     public sealed class InteractionStamps
     {
+        /// <summary>Scorch disc reach as a multiple of the bowl radius.</summary>
+        public const float ScorchReach = 1.25f;
+
+        /// <summary>Metres at full scale in a scar's depth channel; deeper craters clip. Matches HYPERRTS_MAX_CRATER_DEPTH in InteractionGlobals.hlsl.</summary>
+        public const float MaxCraterDepth = 2f;
+
+        public const float FullWakeSpeed = 8f;
+        public const float WakeReachSeconds = 0.5f;
+
+        // Half width in metres of the strip one soldier treads, and how far it bends plants and crops.
+        private const float FootWidth = 0.3f;
+        private const float FootFlatten = 0.4f;
+        private const float FootCropDamage = 0.15f;
+
         public readonly List<InteractionStamp> Trample = new();
         public readonly List<InteractionStamp> Tracks = new();
 
@@ -25,7 +40,7 @@ namespace HyperRTS.Presentation.Environment
             var radius = diameter * 0.5f;
             if (mark.LeavesRemains)
             {
-                AddRemains(center, radius * InteractionMath.ScorchReach, new float4(mark.rubble, mark.ash, mark.fuel, 0f));
+                AddRemains(center, radius * ScorchReach, new float4(mark.rubble, mark.ash, mark.fuel, 0f));
             }
 
             var scarred = mark.craterDepth > 0f || mark.scorch > 0f;
@@ -34,11 +49,11 @@ namespace HyperRTS.Presentation.Environment
                 return;
             }
 
-            var reach = mark.scorch > 0f ? radius * InteractionMath.ScorchReach : radius;
+            var reach = mark.scorch > 0f ? radius * ScorchReach : radius;
             var disc = new InteractionStamp { Center = center, Forward = new float2(0f, 1f), HalfSize = new float2(reach) };
             disc.Value = new float4(1f, 1f, 0f, 1f);
             Trample.Add(disc);
-            var depth = math.saturate(mark.craterDepth / InteractionMath.MaxCraterDepth);
+            var depth = math.saturate(mark.craterDepth / MaxCraterDepth);
             disc.Value = new float4(depth, math.saturate(mark.scorch), radius / reach, 1f);
             Scars.Add(disc);
         }
@@ -68,15 +83,53 @@ namespace HyperRTS.Presentation.Environment
 
         public void AddWake(float2 position, float2 direction, float speed, float radius)
         {
-            var halfLength = radius + speed * InteractionMath.WakeReachSeconds * 0.5f;
+            var halfLength = radius + speed * WakeReachSeconds * 0.5f;
             Wakes.Add(new InteractionStamp
             {
                 Center = position - direction * (halfLength - radius),
                 Forward = direction,
                 HalfSize = new float2(radius * 1.3f, halfLength),
-                Value = new float4(math.saturate(speed / InteractionMath.FullWakeSpeed), 0f, 0f, 0f),
+                Value = new float4(math.saturate(speed / FullWakeSpeed), 0f, 0f, 0f),
             });
         }
+
+        /// <summary>A vehicle's marks this frame, stretched back over <paramref name="advance"/> metres so fast vehicles leave no gaps.</summary>
+        public void AddVehicle(in TrackMarks marks, float2 position, float2 forward, float advance)
+        {
+            AddTrample(marks, position, forward, advance);
+            AddRuts(marks, position, forward, advance);
+        }
+
+        /// <summary>The grass flattened across the vehicle's whole width this frame.</summary>
+        public void AddTrample(in TrackMarks marks, float2 position, float2 forward, float advance)
+        {
+            var center = position - forward * (advance * 0.5f);
+            var span = (marks.Gauge + marks.Width) * 0.5f;
+            var halfLength = (marks.Width + math.abs(advance)) * 0.5f;
+            Trample.Add(Stamp(center, forward, new float2(span, math.max(halfLength, span)), new float4(1f, 1f, 1f, 0f)));
+        }
+
+        /// <summary>A rut under each side of one axle, or of the tracks, heading along <paramref name="forward"/>.</summary>
+        public void AddRuts(in TrackMarks marks, float2 axle, float2 forward, float advance)
+        {
+            var center = axle - forward * (advance * 0.5f);
+            var halfLength = (marks.Width + math.abs(advance)) * 0.5f;
+            var rut = new float4(marks.RutDepth, 0.5f + 0.5f * marks.RutDepth, 0f, 0f);
+            var halfSize = new float2(marks.Width * 0.5f, halfLength);
+            var right = new float2(forward.y, -forward.x);
+            var offset = right * (marks.Gauge * 0.5f);
+            Tracks.Add(Stamp(center - offset, forward, halfSize, rut));
+            Tracks.Add(Stamp(center + offset, forward, halfSize, rut));
+        }
+
+        /// <summary>A soldier's path this frame: a narrow strip that leans plants along the way, without flattening them.</summary>
+        public void AddFootsteps(float2 feet, float2 forward, float stride) =>
+            Trample.Add(Stamp(feet - forward * (stride * 0.5f), forward, new float2(FootWidth, FootWidth + stride * 0.5f),
+                new float4(FootFlatten, FootCropDamage, 1f, 0f)));
+
+        /// <summary>A building's footprint: plants under it stay flat and crops never come back.</summary>
+        public void AddFootprint(float2 center, float2 size) =>
+            Trample.Add(Stamp(center, new float2(0f, 1f), size * 0.5f, new float4(1f, 1f, 0f, 0f)));
 
         public void Clear()
         {
@@ -87,5 +140,8 @@ namespace HyperRTS.Presentation.Environment
             Wakes.Clear();
             Reset = false;
         }
+
+        private static InteractionStamp Stamp(float2 center, float2 forward, float2 halfSize, float4 value) =>
+            new() { Center = center, Forward = forward, HalfSize = halfSize, Value = value };
     }
 }

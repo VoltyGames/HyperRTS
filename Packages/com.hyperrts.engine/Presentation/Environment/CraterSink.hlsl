@@ -3,7 +3,6 @@
 #ifndef HYPERRTS_CRATER_SINK_INCLUDED
 #define HYPERRTS_CRATER_SINK_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/InteractionGlobals.hlsl"
 
 #define SINK_FULL_HEIGHT 0.5 // metres above the undented ground an object still sinks fully
@@ -17,13 +16,12 @@ float4 _HyperRTSUndentedScale;
 // Metres the drawn ground sank at positionXZ; none off the maps, where CraterTerrainSystem dents nothing.
 float CraterDepth(float2 positionXZ)
 {
-    float2 uv = RectUV(_HyperRTSInteractionRect, positionXZ);
-    bool onMaps = _HyperRTSInteractionRect.z > 0.0 && all(uv == saturate(uv));
+    float2 uv = InteractionUV(positionXZ);
     float depth = 0.0;
     UNITY_BRANCH
-    if (onMaps)
+    if (OnInteractionMaps(uv))
     {
-        depth = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).a * _HyperRTSMaxCraterDepth;
+        depth = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).a * HYPERRTS_MAX_CRATER_DEPTH;
     }
 
     return depth;
@@ -31,16 +29,13 @@ float CraterDepth(float2 positionXZ)
 
 float UndentedGroundHeight(float2 positionXZ)
 {
-    float texels = _HyperRTSUndentedScale.z;
     // Unpublished: flat ground at y = 0, as the simulation has without a terrain.
     float ground = 0.0;
     UNITY_BRANCH
-    if (texels >= 1.0)
+    if (_HyperRTSUndentedScale.z >= 1.0)
     {
-        float2 uv = (positionXZ - _HyperRTSUndentedArea.xy) * _HyperRTSUndentedArea.zw;
-        uv = uv * ((texels - 1.0) / texels) + 0.5 / texels;
-        float height = _HyperRTSUndentedHeights.SampleLevel(sampler_LinearClamp, uv, 0);
-        ground = _HyperRTSUndentedScale.x + height * _HyperRTSUndentedScale.y;
+        ground = SampleHeightmap(_HyperRTSUndentedHeights, sampler_LinearClamp, _HyperRTSUndentedArea,
+            _HyperRTSUndentedScale, positionXZ);
     }
 
     return ground;

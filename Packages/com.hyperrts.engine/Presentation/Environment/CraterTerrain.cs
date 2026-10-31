@@ -69,7 +69,6 @@ namespace HyperRTS.Presentation.Environment
             var on = tracks != null && rect.z > 0f;
             compute.SetTexture(kernel, InteractionSurfaces.TracksId, on ? tracks : Texture2D.blackTexture);
             compute.SetVector(InteractionSurfaces.RectId, on ? rect : Vector4.zero);
-            compute.SetFloat(InteractionSurfaces.MaxCraterDepthId, InteractionMath.MaxCraterDepth);
         }
 
         /// <summary>Dented on the GPU but not yet read back into the terrain's heights, collider and LOD.</summary>

@@ -1,4 +1,4 @@
-// Water.shader's foam, all from the ripple normal map. Include after the water's CBUFFER, _NormalMap and Trample.hlsl.
+// Water.shader's foam, all from the ripple normal map. Include after the water's CBUFFER, _NormalMap and Interaction.hlsl.
 #ifndef HYPERRTS_WATER_FOAM_INCLUDED
 #define HYPERRTS_WATER_FOAM_INCLUDED
 

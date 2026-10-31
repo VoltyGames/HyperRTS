@@ -67,7 +67,7 @@ namespace HyperRTS.Presentation.Tests.Environment
             stamps.AddCrater(new float2(50f, 120f), _mark, 6f);
             Draw(stamps, 0, 0);
 
-            Draw(new InteractionStamps(), InteractionMath.Levels, InteractionMath.Levels);
+            Draw(new InteractionStamps(), InteractionBrush.Levels, InteractionBrush.Levels);
 
             Assert.Greater(Sample(_surfaces.Tracks, Alpha)[0], 0.4f, "the crater bowl faded");
             Assert.Greater(Sample(_surfaces.Tracks, Blue)[0], 0.9f, "the scorch faded");
@@ -81,7 +81,7 @@ namespace HyperRTS.Presentation.Tests.Environment
             stamps.AddFootprintScar(new float2(47f, 117f), new float2(0f, 1f), new float2(10f), 1f);
             Draw(stamps, 0, 0);
 
-            Draw(new InteractionStamps(), InteractionMath.Levels, InteractionMath.Levels);
+            Draw(new InteractionStamps(), InteractionBrush.Levels, InteractionBrush.Levels);
 
             var scorch = Sample(_surfaces.Tracks, Blue);
             Assert.Greater(scorch[0], 0.9f, "the corner is not scorched");
@@ -96,7 +96,7 @@ namespace HyperRTS.Presentation.Tests.Environment
             stamps.AddRemains(new float2(50f, 120f), 4f, new float4(0.4f, 0f, 0f, 0.9f));
             Draw(stamps, 0, 0);
 
-            Draw(new InteractionStamps(), InteractionMath.Levels, InteractionMath.Levels, InteractionMath.Levels);
+            Draw(new InteractionStamps(), InteractionBrush.Levels, InteractionBrush.Levels, InteractionBrush.Levels);
 
             Assert.AreEqual(0.8f, Sample(_surfaces.Remains, Red)[0], 0.02f, "a weaker stamp lowered the rubble");
             Assert.AreEqual(0.9f, Sample(_surfaces.Remains, Alpha)[0], 0.02f, "the mud faded or did not build up");
@@ -123,11 +123,11 @@ namespace HyperRTS.Presentation.Tests.Environment
         public void Wake_FoamsBehindTheUnit_ThenFades()
         {
             var stamps = new InteractionStamps();
-            stamps.AddWake(new float2(50f, 121f), new float2(0f, 1f), InteractionMath.FullWakeSpeed, 3f);
+            stamps.AddWake(new float2(50f, 121f), new float2(0f, 1f), InteractionStamps.FullWakeSpeed, 3f);
             Draw(stamps, 0, 0);
             Assert.Greater(Sample(_surfaces.Wake, Red)[0], 0.4f, "no foam behind the unit");
 
-            Draw(new InteractionStamps(), 0, 0, InteractionMath.Levels);
+            Draw(new InteractionStamps(), 0, 0, InteractionBrush.Levels);
             Assert.Less(Sample(_surfaces.Wake, Red)[0], 0.01f, "the wake never faded");
         }
 

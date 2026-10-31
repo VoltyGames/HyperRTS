@@ -14,6 +14,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/VegetationMath.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/WorldRect.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
 #if defined(LOD_FADE_CROSSFADE)

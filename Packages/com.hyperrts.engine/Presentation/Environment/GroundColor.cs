@@ -46,7 +46,7 @@ namespace HyperRTS.Presentation.Environment
             }
 
             Shader.SetGlobalTexture(PictureId, picture);
-            Shader.SetGlobalVector(RectId, InteractionMath.Rect(area.min, area.size));
+            Shader.SetGlobalVector(RectId, TerrainHeightInput.Rect(area.min, area.size));
         }
 
         /// <summary>The outside-a-map state: shaders read a zero rect as "no ground picture" and skip blending.</summary>

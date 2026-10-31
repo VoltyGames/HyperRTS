@@ -4,7 +4,7 @@
 #define HYPERRTS_TERRAIN_REMAINS_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainLayers.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Interaction.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Wetness.hlsl"
 
 #define REMAINS_NOISE_SIZE 3.0 // metres

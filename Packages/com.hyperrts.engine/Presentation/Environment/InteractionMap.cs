@@ -17,6 +17,10 @@ namespace HyperRTS.Presentation.Environment
         [Tooltip("The " + InteractionBrush.ShaderName + " shader the maps are drawn with.")]
         private Shader brush;
 
+        public const float TrampleRecoverySeconds = 60f;
+        public const float TrackFadeSeconds = 240f;
+        public const float WakeFadeSeconds = 5f;
+
         private InteractionBrush _brush;
         private InteractionSurfaces _surfaces;
         private float _recoveryCarry;
@@ -35,9 +39,9 @@ namespace HyperRTS.Presentation.Environment
 
             Prepare(view.Map.Min, view.Map.Size);
             var deltaTime = Time.deltaTime;
-            var recovery = InteractionMath.FadeSteps(ref _recoveryCarry, deltaTime, InteractionMath.TrampleRecoverySeconds);
-            var fade = InteractionMath.FadeSteps(ref _fadeCarry, deltaTime, InteractionMath.TrackFadeSeconds);
-            var wake = InteractionMath.FadeSteps(ref _wakeCarry, deltaTime, InteractionMath.WakeFadeSeconds);
+            var recovery = FadeSteps(ref _recoveryCarry, deltaTime, TrampleRecoverySeconds);
+            var fade = FadeSteps(ref _fadeCarry, deltaTime, TrackFadeSeconds);
+            var wake = FadeSteps(ref _wakeCarry, deltaTime, WakeFadeSeconds);
             _brush.Draw(_surfaces, recovery, fade, wake, stamps);
         }
 
@@ -49,7 +53,7 @@ namespace HyperRTS.Presentation.Environment
         {
             stamps = null;
             view = null;
-            if (PresentationQuality.Current.Interactions == InteractionQuality.Off)
+            if (!InteractionStampSystem.MapsOn)
             {
                 return false;
             }
@@ -60,8 +64,17 @@ namespace HyperRTS.Presentation.Environment
                 return false;
             }
 
-            stamps = view.EntityManager.World.GetExistingSystemManaged<InteractionStampSystem>()?.Stamps;
+            stamps = InteractionStampSystem.Find(view.EntityManager.World);
             return stamps != null;
+        }
+
+        /// <summary>Whole fade steps due for a full fade over <paramref name="duration"/>. <paramref name="carry"/> keeps the remainder.</summary>
+        public static int FadeSteps(ref float carry, float deltaTime, float duration)
+        {
+            carry += deltaTime * InteractionBrush.Levels / duration;
+            var steps = (int)math.floor(carry);
+            carry -= steps;
+            return steps;
         }
 
         private void Prepare(float2 min, float2 size)

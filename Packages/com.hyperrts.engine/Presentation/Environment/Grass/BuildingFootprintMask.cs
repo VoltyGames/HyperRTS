@@ -58,7 +58,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             _texture.SetPixelData(_cells, 0);
             _texture.Apply(false);
             Shader.SetGlobalTexture(TextureId, _texture);
-            Shader.SetGlobalVector(RectId, InteractionMath.Rect(_map.Min, (float2)_size * _map.NavCellSize));
+            Shader.SetGlobalVector(RectId, TerrainHeightInput.Rect(_map.Min, (float2)_size * _map.NavCellSize));
             Version++;
         }
 
