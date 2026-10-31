@@ -79,6 +79,12 @@ void ApplyVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
     normalOS = normalize(normalOS);
 }
 
+// Bends a track mesh over its wheels, then sinks the object into any crater under it.
+float3 DeformObject(float3 positionOS)
+{
+    return SinkObjectIntoCrater(BendTrack(positionOS));
+}
+
 // The forward pass reads UV1 as URP's static lightmap UV, which VAT renderers never use.
 #if defined(UNIVERSAL_FORWARD_LIT_PASS_INCLUDED)
 Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
@@ -90,8 +96,7 @@ Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
-    input.positionOS.xyz = BendTrack(input.positionOS.xyz);
-    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
+    input.positionOS.xyz = DeformObject(input.positionOS.xyz);
     return LitPassVertex(input);
 }
 #elif defined(UNIVERSAL_SHADOW_CASTER_PASS_INCLUDED)
@@ -104,8 +109,7 @@ Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
-    input.positionOS.xyz = BendTrack(input.positionOS.xyz);
-    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
+    input.positionOS.xyz = DeformObject(input.positionOS.xyz);
     return ShadowPassVertex(input);
 }
 #elif defined(UNIVERSAL_DEPTH_ONLY_PASS_INCLUDED)
@@ -122,8 +126,7 @@ Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INP
 #ifdef _BUILD
     input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
 #endif
-    input.position.xyz = BendTrack(input.position.xyz);
-    input.position.xyz = SinkObjectIntoCrater(input.position.xyz);
+    input.position.xyz = DeformObject(input.position.xyz);
     return DepthOnlyVertex(input);
 }
 #elif defined(UNIVERSAL_FORWARD_LIT_DEPTH_NORMALS_PASS_INCLUDED)
@@ -136,8 +139,7 @@ Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normal);
 #endif
-    input.positionOS.xyz = BendTrack(input.positionOS.xyz);
-    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
+    input.positionOS.xyz = DeformObject(input.positionOS.xyz);
     return DepthNormalsVertex(input);
 }
 #elif defined(UNIVERSAL_OBJECT_MOTION_VECTORS_INCLUDED)
@@ -151,8 +153,7 @@ Varyings LitTeamMotionVectorsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER
 #ifdef _BUILD
     input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
 #endif
-    input.position.xyz = BendTrack(input.position.xyz);
-    input.position.xyz = SinkObjectIntoCrater(input.position.xyz);
+    input.position.xyz = DeformObject(input.position.xyz);
     return vert(input);
 }
 #endif
