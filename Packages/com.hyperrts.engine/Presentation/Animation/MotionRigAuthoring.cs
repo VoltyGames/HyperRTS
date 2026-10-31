@@ -179,17 +179,20 @@ namespace HyperRTS.Presentation.Animation
 
                 var root = authoring.transform;
                 var locomotion = GetComponent<LocomotionAuthoring>();
+                var rig = Rig(authoring);
                 var parts = new List<MotionRigPart>();
                 var slots = authoring.Slots().ToList();
                 foreach (var slot in slots)
                 {
                     DependsOn(slot.part);
                     var part = slot.Bake(root, GetEntity(slot.part, TransformUsageFlags.Dynamic));
+                    // An aircraft's wheels hang from the air, with no ground to meet.
+                    part.Travel = rig.Aircraft ? 0f : part.Travel;
                     parts.Add(slot is WheelSlot { steers: true } wheel ? wheel.Steering(part, root, locomotion.rearAxle) : part);
                 }
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AddRig(ref writer, Rig(authoring), parts);
+                AddRig(ref writer, rig, parts);
                 if (authoring.tracks.Count > 0)
                 {
                     BakeTracks(authoring, slots, ref writer);

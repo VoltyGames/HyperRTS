@@ -61,8 +61,7 @@ namespace HyperRTS.Presentation.Animation
         {
             foreach (var cue in cues)
             {
-                var reaches = math.distance(cue.Position, position) <= cue.Radius + BlastReach;
-                if (cue.Slot == CueSlot.Impact && cue.Radius > 0f && reaches)
+                if (CueRules.IsBlast(cue) && math.distance(cue.Position, position) <= cue.Radius + BlastReach)
                 {
                     Blasted = true;
                     BlastPosition = cue.Position;

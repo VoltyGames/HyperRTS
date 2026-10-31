@@ -87,6 +87,7 @@ namespace HyperRTS.Presentation.Animation
                 var running = Flights.HasComponent(entity) && !Docks.HasEnabled(entity);
                 Poses.TryGetBuffer(entity, out var poses);
                 var spin = 0f;
+                var bodyTilt = rig.BodyTilt();
                 for (var i = 0; i < parts.Length; i++)
                 {
                     var part = parts[i];
@@ -96,10 +97,9 @@ namespace HyperRTS.Presentation.Animation
                         rig.Suspension.Recoil(poses[part.Weapon].YawRadians);
                     }
 
-                    // An aircraft's wheels hang from the air, with no ground to meet.
-                    if (part.Travel > 0f && !rig.Aircraft)
+                    if (part.Travel > 0f)
                     {
-                        part.FollowGround(rig.GroundLift(Terrain, place.Position, forward, right, part.Contact), DeltaTime);
+                        part.FollowGround(MotionRig.GroundLift(Terrain, place.Position, forward, right, bodyTilt, part.Contact), DeltaTime);
                         transform.Position = part.LiftedPosition;
                     }
 

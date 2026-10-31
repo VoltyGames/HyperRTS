@@ -59,7 +59,10 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>Local rotation of the tilt root that shows <see cref="Tilt"/> and the sway in the unit's frame.</summary>
         public readonly quaternion TiltedRotation() =>
-            math.mul(math.mul(math.inverse(TiltFrame), math.mul(TiltRotation(Tilt + Suspension.Sway), TiltFrame)), TiltRest);
+            math.mul(math.mul(math.inverse(TiltFrame), math.mul(BodyTilt(), TiltFrame)), TiltRest);
+
+        /// <summary>The body's turn from <see cref="Tilt"/> and the sway, in the unit's frame.</summary>
+        public readonly quaternion BodyTilt() => TiltRotation(Tilt + Suspension.Sway);
 
         /// <summary>Eases <see cref="Tilt"/> toward <paramref name="target"/>.</summary>
         public void SmoothTilt(float2 target, float deltaTime) =>
@@ -78,11 +81,12 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>
         /// Metres the ground under a wheel's <paramref name="contact"/> (its rest point on the ground plane, in the
-        /// unit's frame) stands above where that point of the tilted, swaying body is.
+        /// unit's frame) stands above where that point of the body turned by <paramref name="bodyTilt"/> is.
         /// </summary>
-        public readonly float GroundLift(in TerrainHeight terrain, float3 position, float3 forward, float3 right, float3 contact)
+        public static float GroundLift(in TerrainHeight terrain, float3 position, float3 forward, float3 right,
+            quaternion bodyTilt, float3 contact)
         {
-            var body = math.rotate(TiltRotation(Tilt + Suspension.Sway), contact);
+            var body = math.rotate(bodyTilt, contact);
             var ground = position + right * body.x + forward * body.z;
             return terrain.Height(ground.xz) - (position.y + body.y);
         }
@@ -180,10 +184,10 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>Eases the shortest way toward the simulated <paramref name="yaw"/>, which already turns at the weapon's rate.</summary>
         public void Traverse(float yaw, float deltaTime) =>
-            Angle = HeadingByte.Wrap(Angle + HeadingByte.Wrap(yaw - Angle) * Follow(deltaTime));
+            Angle = HeadingByte.Wrap(Angle + HeadingByte.Wrap(yaw - Angle) * Ease(deltaTime, FollowTime));
 
         /// <summary>Eases toward the simulated <paramref name="pitch"/>, which already keeps the weapon's limits.</summary>
-        public void Elevate(float pitch, float deltaTime) => Angle += (pitch - Angle) * Follow(deltaTime);
+        public void Elevate(float pitch, float deltaTime) => Angle += (pitch - Angle) * Ease(deltaTime, FollowTime);
 
         /// <summary>Kicks back the full distance when the shot count changes, then eases back over <see cref="Time"/>. True on a shot.</summary>
         public bool Recoil(byte shots, float deltaTime)
@@ -201,13 +205,13 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>Eases the lift toward <paramref name="wanted"/> metres, held to the wheel's travel.</summary>
         public void FollowGround(float wanted, float deltaTime) =>
-            Lift += (math.clamp(wanted, -Travel, Travel) - Lift) * (1f - math.exp(-deltaTime / LiftTime));
+            Lift += (math.clamp(wanted, -Travel, Travel) - Lift) * Ease(deltaTime, LiftTime);
 
         public void Roll(float distance) => Angle = HeadingByte.Wrap(Angle + distance / Size);
 
         /// <summary>Eases a steering wheel toward the angle that rolls it round the rear axle's arc.</summary>
         public void Steer(float curvature, float deltaTime) =>
-            Amount += (math.atan(RearAxleDistance * curvature) - Amount) * Follow(deltaTime);
+            Amount += (math.atan(RearAxleDistance * curvature) - Amount) * Ease(deltaTime, FollowTime);
 
         /// <summary>Spins up toward full speed while running, down otherwise, and turns at that speed.</summary>
         public void Spin(bool running, float deltaTime)
@@ -217,7 +221,7 @@ namespace HyperRTS.Presentation.Animation
             Angle = HeadingByte.Wrap(Angle + Rate * Amount * deltaTime);
         }
 
-        private static float Follow(float deltaTime) => 1f - math.exp(-deltaTime / FollowTime);
+        private static float Ease(float deltaTime, float time) => 1f - math.exp(-deltaTime / time);
     }
 
     /// <summary>

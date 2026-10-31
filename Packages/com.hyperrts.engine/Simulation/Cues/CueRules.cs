@@ -19,6 +19,9 @@ namespace HyperRTS.Simulation.Cues
         public static bool IsGroundImpact(in CueEvent cue) =>
             cue.Slot == CueSlot.Impact && cue.Surface == ImpactSurface.Ground;
 
+        /// <summary>An impact with a splash radius, a blast that shakes and throws what is near it.</summary>
+        public static bool IsBlast(in CueEvent cue) => cue.Slot == CueSlot.Impact && cue.Radius > 0f;
+
         /// <summary>
         /// Owner-only cues reach their owner; everything else reaches whoever could see its source there, by the same
         /// fog and stealth rule as entities. Without a fog grid every non-voice cue does.

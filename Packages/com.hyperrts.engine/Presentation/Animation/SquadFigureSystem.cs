@@ -112,21 +112,25 @@ namespace HyperRTS.Presentation.Animation
                     return figure.Clips.Die;
                 }
 
-                return figure.Clips.Blasted(squad.BlastPosition, Places[figure.Figure].Value);
+                return BlastClip(figure, squad);
             }
+
+            private VATClipRange BlastClip(in SquadFigure figure, in SquadFigures squad) =>
+                figure.Clips.Blasted(squad.BlastPosition, Places[figure.Figure].Value);
 
             // A fall that began just before its blast's cue arrived changes to the blast fall.
             private void SwitchToBlast(in SquadFigure figure, in SquadFigures squad)
             {
-                var fell = figure.HideAt - squad.DieHold;
-                var plain = Clips[figure.Figure].Plays(figure.Clips.Die);
-                if (plain && squad.BlastTime == Now && squad.Killed(fell))
+                if (squad.BlastTime != Now || !squad.Killed(figure.HideAt - squad.DieHold))
                 {
-                    var clip = figure.Clips.Blasted(squad.BlastPosition, Places[figure.Figure].Value);
-                    if (!Clips[figure.Figure].Plays(clip))
-                    {
-                        Play(figure, clip);
-                    }
+                    return;
+                }
+
+                var vat = Clips[figure.Figure];
+                var clip = BlastClip(figure, squad);
+                if (vat.Plays(figure.Clips.Die) && !vat.Plays(clip))
+                {
+                    Play(figure, clip);
                 }
             }
 

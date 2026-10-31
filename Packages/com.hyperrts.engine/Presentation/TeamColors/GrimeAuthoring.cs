@@ -17,31 +17,31 @@ namespace HyperRTS.Presentation.TeamColors
     {
         [Tooltip("Dust gained per 100 m driven on dry Soil, Gravel and Sand, 0 to 1.")]
         [Min(0f)]
-        public float dustPer100m = 0.25f;
+        public float dustPer100m = Grime.Standard.DustPer100m;
 
         [Tooltip("Mud gained per 100 m driven on Mud, and on Soil and Grass while the ground is wet, 0 to 1.")]
         [Min(0f)]
-        public float mudPer100m = 0.4f;
+        public float mudPer100m = Grime.Standard.MudPer100m;
 
         [Tooltip("Seconds for a soaked hull to dry.")]
         [Min(1f)]
-        public float dryingSeconds = 60f;
+        public float dryingSeconds = Grime.Standard.DryingSeconds;
 
         [Tooltip("Dust lost per second in water.")]
         [Min(0f)]
-        public float dustWashPerSecond = 0.5f;
+        public float dustWashPerSecond = Grime.Standard.DustWashPerSecond;
 
         [Tooltip("Mud lost per second in water.")]
         [Min(0f)]
-        public float mudWashPerSecond = 0.1f;
+        public float mudWashPerSecond = Grime.Standard.MudWashPerSecond;
 
         [Tooltip("Metres above the ground where mud ends: about the road wheels and lower hull.")]
         [Min(0.1f)]
-        public float mudHeight = 0.7f;
+        public float mudHeight = Grime.Standard.MudHeight;
 
         [Tooltip("Metres above the ground where dust ends: about the top of the hull.")]
         [Min(0.1f)]
-        public float dustHeight = 1.6f;
+        public float dustHeight = Grime.Standard.DustHeight;
 
         public class Baker : Baker<GrimeAuthoring>
         {

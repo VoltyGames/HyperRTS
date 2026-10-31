@@ -119,7 +119,7 @@ namespace HyperRTS.Presentation.Environment.Weather
             _visibility.Begin();
             foreach (var cue in cues)
             {
-                if (cue.Slot == CueSlot.Impact && cue.Radius > 0f && _visibility.IsSeen(cue))
+                if (CueRules.IsBlast(cue) && _visibility.IsSeen(cue))
                 {
                     Haze.Add(cue.Position.xz, cue.Radius * ImpactReachPerRadius, cue.Radius * ImpactHazePerRadius);
                 }

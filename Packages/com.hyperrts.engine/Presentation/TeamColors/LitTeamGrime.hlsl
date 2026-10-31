@@ -38,7 +38,12 @@ void ApplyGrime(float3 positionWS, inout SurfaceData surface)
     float mudTop = _GrimeBand.y;
     float dustTop = _GrimeBand.z;
     float coarse = GrimeNoise(positionOS * 7.0);
-    float fine = GrimeNoise(positionOS * 29.0);
+    // Without mud or soot their noise alone stays below the threshold, so it is not sampled.
+    float fine = 0.0;
+    if (_Grime.y > 0.0)
+    {
+        fine = GrimeNoise(positionOS * 29.0);
+    }
     half3 albedo = surface.albedo;
     half smoothness = surface.smoothness;
     half metallic = surface.metallic;
@@ -60,7 +65,11 @@ void ApplyGrime(float3 positionWS, inout SurfaceData surface)
     albedo *= lerp(1.0, 0.6, wet);
     smoothness = saturate(smoothness + wet * 0.25);
 
-    half soot = saturate((_Grime.w * 1.1 + (GrimeNoise(positionOS * 3.0) - 0.5) * 0.8 - 0.42) * 3.0);
+    half soot = 0.0;
+    if (_Grime.w > 0.0)
+    {
+        soot = saturate((_Grime.w * 1.1 + (GrimeNoise(positionOS * 3.0) - 0.5) * 0.8 - 0.42) * 3.0);
+    }
     albedo *= lerp(1.0, 0.25, soot * 0.85);
     smoothness *= lerp(1.0, 0.4, soot);
 

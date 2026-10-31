@@ -57,6 +57,7 @@ namespace HyperRTS.Presentation.TeamColors
         /// <summary>The levels last written to the meshes.</summary>
         public float4 Painted;
 
+        /// <summary>A ground vehicle's usual rates and heights, the authoring defaults.</summary>
         public static Grime Standard => new()
         {
             DustPer100m = 0.25f,
