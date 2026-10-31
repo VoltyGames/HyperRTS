@@ -7,7 +7,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Validation
 {
     /// <summary>The project's authoring prefabs, gathered once for every <see cref="Rules.IPrefabRule"/>.</summary>
-    public sealed class PrefabSet
+    public sealed partial class PrefabSet
     {
         // Finding the authoring prefabs scans every prefab's dependencies, most of a validation pass.
         [AutoStaticsCleanup]

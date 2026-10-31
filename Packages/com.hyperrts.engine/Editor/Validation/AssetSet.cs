@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Validation
     /// The project's assets for every <see cref="Rules.IAssetRule"/>: each type and folder is loaded once, however
     /// many rules ask for it, and kept until the next import.
     /// </summary>
-    public sealed class AssetSet
+    public sealed partial class AssetSet
     {
         [AutoStaticsCleanup]
         private static AssetSet _project;

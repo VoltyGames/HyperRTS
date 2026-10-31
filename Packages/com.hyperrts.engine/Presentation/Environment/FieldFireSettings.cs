@@ -16,7 +16,7 @@ namespace HyperRTS.Presentation.Environment
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class FieldFireSettings : PresentationBehaviour
+    public sealed partial class FieldFireSettings : PresentationBehaviour
     {
         // Rows of the alphamap read at once, so a large terrain never copies all its weights in one go.
         private const int AlphamapRows = 64;

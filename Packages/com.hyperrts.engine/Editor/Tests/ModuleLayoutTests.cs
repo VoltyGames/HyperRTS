@@ -10,7 +10,10 @@ using UnityEditor.PackageManager;
 
 namespace HyperRTS.Editor.Tests
 {
-    /// <summary>Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring.</summary>
+    /// <summary>
+    /// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, and types
+    /// with statics cleanup are partial.
+    /// </summary>
     public class ModuleLayoutTests
     {
         // Simulation module tiers, lowest first: a module may use its own tier or lower ones, never a higher tier.
@@ -27,6 +30,8 @@ namespace HyperRTS.Editor.Tests
         };
 
         private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
+        private static readonly Regex PartialType = new(@"\bpartial (?:class|struct)\b");
+        private static readonly Regex StaticsCleanup = new(@"^\s*\[AutoStaticsCleanup\]", RegexOptions.Multiline);
         private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);
 
         // Namespace-level declarations sit at a 4-space indent; nested ones (Baker, entry classes) at 8.
@@ -139,6 +144,19 @@ namespace HyperRTS.Editor.Tests
             }
 
             Assert.IsEmpty(misplaced, "Runtime types belong in their own files:\n" + string.Join("\n", misplaced));
+        }
+
+        // Unity's statics cleanup generates the other half of the type in player builds only, so the Editor compiles
+        // a type without `partial` and the player build fails.
+        [Test]
+        public void TypesWithStaticsCleanupArePartial()
+        {
+            var whole = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
+                .Where(path => StaticsCleanup.IsMatch(File.ReadAllText(path)))
+                .Where(path => !PartialType.IsMatch(File.ReadAllText(path)))
+                .Select(path => RelativeTo(PackageRoot, path))
+                .ToList();
+            Assert.IsEmpty(whole, "Types with [AutoStaticsCleanup] members must be partial:\n" + string.Join("\n", whole));
         }
 
         /// <summary>
