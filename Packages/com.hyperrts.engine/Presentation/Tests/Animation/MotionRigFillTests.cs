@@ -224,6 +224,33 @@ namespace HyperRTS.Presentation.Tests.Animation
             CollectionAssert.IsEmpty(rig.Problems());
         }
 
+        [Test]
+        public void FillFromModel_PairsEachTrackWithItsSidesRoadWheels_AndOnlyRoadWheelsFollowTheGround()
+        {
+            var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));
+            var left = new[] { Wheel("Wheel_L01", hull, -1f, 2f), Wheel("Wheel_L02", hull, -1f, -2f) };
+            var right = Wheel("Wheel_R01", hull, 1f, 2f);
+            var sprocket = Pivot("Sprocket_L", hull, Vector3.one);
+            var track = Pivot("Track_L", hull, new Vector3(0.5f, 1f, 6f));
+            Pivot("Track_R", hull, new Vector3(0.5f, 1f, 6f));
+            var damagedHull = Pivot("Hull", Pivot("Damaged", _unit.transform), Vector3.one);
+            var other = Wheel("Wheel_L01", damagedHull, -1f, 0f);
+            var damagedTrack = Pivot("Track_L", damagedHull, new Vector3(0.5f, 1f, 6f));
+            var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+            rig.FillFromModel();
+
+            Assert.AreEqual(left, rig.tracks.Single(slot => slot.part == track).wheels.ToArray());
+            Assert.AreEqual(new[] { right }, rig.tracks.Single(slot => slot.part.name == "Track_R").wheels.ToArray());
+            Assert.AreEqual(new[] { other }, rig.tracks.Single(slot => slot.part == damagedTrack).wheels.ToArray(), "each model's track keeps to its own wheels");
+            Assert.IsFalse(rig.wheels.Single(slot => slot.part == sprocket).followsGround);
+            Assert.IsTrue(rig.wheels.Where(slot => slot.part != sprocket).All(slot => slot.followsGround));
+            Assert.IsTrue(track.GetChild(0).TryGetComponent<TrackMeshAuthoring>(out _), "the mesh gets what the shader needs");
+
+            rig.tracks[0].wheels.Clear();
+            Assert.That(rig.Problems(), Has.Some.Contain("has no wheels"));
+        }
+
         // A pivot with a cube mesh child of the given size, or an empty one.
         private static Transform Pivot(string name, Transform parent, Vector3 meshSize = default)
         {

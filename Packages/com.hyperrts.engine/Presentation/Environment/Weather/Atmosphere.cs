@@ -6,9 +6,9 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>
-    /// One weather's sky: skybox, ambient and reflection light, and ground wetness. Sits on the root of an atmosphere
-    /// prefab with its sun, wind and post volume, whose profile carries URP's Fog override. Unity's built-in fog stays
-    /// off, since URP's fog replaces it.
+    /// One weather's sky: skybox, ambient and reflection light, ground wetness, and the dust and mud colours vehicles
+    /// pick up. Sits on the root of an atmosphere prefab with its sun, wind and post volume, whose profile carries URP's
+    /// Fog override. Unity's built-in fog stays off, since URP's fog replaces it.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu(HyperRTSMenu.Environment + "Atmosphere")]
@@ -17,6 +17,9 @@ namespace HyperRTS.Presentation.Environment.Weather
     [DisallowMultipleComponent]
     public sealed class Atmosphere : PresentationBehaviour
     {
+        private static readonly int DustColorId = Shader.PropertyToID("_HyperRTSDustColor");
+        private static readonly int MudColorId = Shader.PropertyToID("_HyperRTSMudColor");
+
         [Tooltip("Sky material; also the source of ambient light.")]
         public Material skybox;
 
@@ -33,6 +36,12 @@ namespace HyperRTS.Presentation.Environment.Weather
         [Range(0f, 1f)]
         public float wetness;
 
+        [Tooltip("Dust on vehicles driving dry ground here, as a dry light soil.")]
+        public Color dustColor = new(0.45f, 0.4f, 0.33f);
+
+        [Tooltip("Mud on vehicles driving wet ground here, as dark wet earth.")]
+        public Color mudColor = new(0.1f, 0.075f, 0.05f);
+
         private void OnEnable()
         {
             if (!IsComplete())
@@ -48,6 +57,8 @@ namespace HyperRTS.Presentation.Environment.Weather
             RenderSettings.reflectionIntensity = reflectionIntensity;
             RenderSettings.fog = false;
             Wetness.Publish(wetness);
+            Shader.SetGlobalColor(DustColorId, dustColor);
+            Shader.SetGlobalColor(MudColorId, mudColor);
             DynamicGI.UpdateEnvironment();
         }
 

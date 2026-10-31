@@ -13,6 +13,11 @@ namespace HyperRTS.Presentation.Animation
     {
         private static readonly Regex WheelName = new(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$");
 
+        // Only road wheels meet the ground; sprockets and idlers hold the track's ends.
+        private static readonly Regex RoadWheelName = new(@"^Wheel_([LR])\d+$");
+
+        private static readonly Regex TrackName = new(@"^Track_([LR])$");
+
         // Propellers turn about the aircraft's nose axis.
         private static readonly Regex PropName = new(@"^Prop_\d\d$");
 
@@ -48,6 +53,7 @@ namespace HyperRTS.Presentation.Animation
             wheels = KeepTuned(wheels, parts.Where(part => WheelName.IsMatch(part.name)),
                 part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, transform) });
             FillSteering();
+            FillTracks(parts);
             var rotorParts = Named("Rotor_Main").Concat(Named("Rotor_Tail")).Concat(parts.Where(part => PropName.IsMatch(part.name)));
             rotors = KeepTuned(rotors, rotorParts, part => new RotorSlot
             {
@@ -75,6 +81,44 @@ namespace HyperRTS.Presentation.Animation
             {
                 wheel.steers = locomotion != null && locomotion.IsOnSteeringAxle(wheel.part);
             }
+        }
+
+        // Road wheels follow the ground, and each track pairs with its side's road wheels in the same model.
+        private void FillTracks(List<Transform> parts)
+        {
+            foreach (var wheel in wheels)
+            {
+                wheel.followsGround = RoadWheelName.IsMatch(wheel.part.name);
+            }
+
+            tracks = parts.Where(part => TrackName.IsMatch(part.name)).Select(part => new TrackSlot
+            {
+                part = part,
+                wheels = RoadWheels(part).ToList(),
+            }).ToList();
+            foreach (var mesh in tracks.SelectMany(track => track.Meshes()).Where(mesh => !mesh.TryGetComponent<TrackMeshAuthoring>(out _)))
+            {
+                mesh.gameObject.AddComponent<TrackMeshAuthoring>();
+            }
+        }
+
+        private IEnumerable<Transform> RoadWheels(Transform track)
+        {
+            var side = TrackName.Match(track.name).Groups[1].Value;
+            var model = ModelOf(track);
+            return wheels.Select(slot => slot.part)
+                .Where(wheel => RoadWheelName.Match(wheel.name).Groups[1].Value == side && ModelOf(wheel) == model);
+        }
+
+        // The model under the rig that holds a part, such as the intact or the damaged one.
+        private Transform ModelOf(Transform part)
+        {
+            while (part.parent != transform)
+            {
+                part = part.parent;
+            }
+
+            return part;
         }
 
         // Another damage stage's model tilts at the same path below its visual as the tilt root does below its own.

@@ -35,6 +35,16 @@ namespace HyperRTS.Simulation.Transport
         [Tooltip("Child transform passengers step out at, such as a door; none lets them out around the container.")]
         public Transform exit;
 
+        [Tooltip("Child transforms at windows and loopholes that passengers fire out of, their blue axis pointing outward; none fires from the centre.")]
+        public Transform[] firingPorts;
+
+        /// <summary>The port at <paramref name="port"/> in this container's local space.</summary>
+        private FiringPort LocalPort(Transform port) => new()
+        {
+            Position = transform.InverseTransformPoint(port.position),
+            Direction = transform.InverseTransformDirection(port.forward),
+        };
+
         public class Baker : Baker<ContainerAuthoring>
         {
             public override void Bake(ContainerAuthoring authoring)
@@ -49,6 +59,16 @@ namespace HyperRTS.Simulation.Transport
                     HasExit = authoring.exit != null,
                     Exit = EffectSetup.Socket(this, authoring.transform, authoring.exit),
                 });
+                if (authoring.firingPorts is { Length: > 0 })
+                {
+                    var ports = writer.AddBuffer<FiringPort>();
+                    foreach (var port in authoring.firingPorts)
+                    {
+                        DependsOn(port);
+                        ports.Add(authoring.LocalPort(port));
+                    }
+                }
+
                 if (authoring.neutralGarrison)
                 {
                     writer.Add<NeutralGarrison>();

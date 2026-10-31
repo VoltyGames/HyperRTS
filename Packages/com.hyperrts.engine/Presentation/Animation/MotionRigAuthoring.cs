@@ -35,6 +35,9 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Road wheels, sprockets and idlers that roll with the ground covered.")]
         public List<WheelSlot> wheels = new();
 
+        [Tooltip("Tracks whose lower run bends over the lift of their road wheels.")]
+        public List<TrackSlot> tracks = new();
+
         [Tooltip("Rotors that spin up in flight and down when docked.")]
         public List<RotorSlot> rotors = new();
 
@@ -90,6 +93,13 @@ namespace HyperRTS.Presentation.Animation
             }
         }
 
+        public static void AddTracks<TWriter>(ref TWriter writer, IReadOnlyList<MotionRigTrack> tracks, IReadOnlyList<TrackWheel> wheels)
+            where TWriter : struct, IEntityWriter
+        {
+            writer.AddBuffer(tracks);
+            writer.AddBuffer(wheels);
+        }
+
         /// <summary>Every slot with its part, turrets first so recoil reads the elevated barrel.</summary>
         public IEnumerable<PartSlot> Slots() =>
             turrets.Cast<PartSlot>().Concat(elevations).Concat(recoils).Concat(wheels).Concat(rotors);
@@ -100,6 +110,15 @@ namespace HyperRTS.Presentation.Animation
             foreach (var slot in Slots())
             {
                 var problem = slot.Problem(this);
+                if (problem != null)
+                {
+                    yield return problem;
+                }
+            }
+
+            foreach (var track in tracks)
+            {
+                var problem = track.Problem(this);
                 if (problem != null)
                 {
                     yield return problem;
@@ -161,7 +180,8 @@ namespace HyperRTS.Presentation.Animation
                 var root = authoring.transform;
                 var locomotion = GetComponent<LocomotionAuthoring>();
                 var parts = new List<MotionRigPart>();
-                foreach (var slot in authoring.Slots())
+                var slots = authoring.Slots().ToList();
+                foreach (var slot in slots)
                 {
                     DependsOn(slot.part);
                     var part = slot.Bake(root, GetEntity(slot.part, TransformUsageFlags.Dynamic));
@@ -170,6 +190,35 @@ namespace HyperRTS.Presentation.Animation
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 AddRig(ref writer, Rig(authoring), parts);
+                if (authoring.tracks.Count > 0)
+                {
+                    BakeTracks(authoring, slots, ref writer);
+                }
+            }
+
+            // Each track mesh shares its track's wheel entries, which run from the front.
+            private void BakeTracks(MotionRigAuthoring authoring, List<PartSlot> slots, ref BakerWriter writer)
+            {
+                var tracks = new List<MotionRigTrack>();
+                var wheels = new List<TrackWheel>();
+                foreach (var track in authoring.tracks)
+                {
+                    DependsOn(track.part);
+                    var first = wheels.Count;
+                    wheels.AddRange(track.Stations(authoring.transform).Select(placed => new TrackWheel
+                    {
+                        Part = slots.FindIndex(slot => slot.part == placed.Wheel),
+                        Station = placed.Station,
+                    }));
+                    tracks.AddRange(track.Meshes().Select(mesh => new MotionRigTrack
+                    {
+                        Mesh = GetEntity(mesh, TransformUsageFlags.Renderable),
+                        FirstWheel = first,
+                        WheelCount = wheels.Count - first,
+                    }));
+                }
+
+                AddTracks(ref writer, tracks, wheels);
             }
 
             private MotionRig Rig(MotionRigAuthoring authoring)

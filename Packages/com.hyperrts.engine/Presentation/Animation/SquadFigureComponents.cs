@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -16,11 +17,26 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Seconds figures keep firing after the primary weapon's last shot.</summary>
         public const float FireHold = 0.6f;
 
+        /// <summary>Seconds after a blast that a dropped figure still dies from it.</summary>
+        public const float BlastAfter = 0.5f;
+
+        /// <summary>Seconds before a blast that a figure's fall still counts as its victim, as health and cues land a frame apart.</summary>
+        public const float BlastBefore = 0.2f;
+
+        /// <summary>Metres past a blast's radius that still reach the squad's figures.</summary>
+        public const float BlastReach = 2f;
+
         /// <summary>Horizontal speed in m/s from which figures run instead of walk.</summary>
         public float RunSpeed;
 
         /// <summary>Seconds a dropped figure shows its die clip before it hides.</summary>
         public float DieHold;
+
+        /// <summary>True once a blast has hit near the squad; <see cref="BlastPosition"/> and <see cref="BlastTime"/> are the latest.</summary>
+        public bool Blasted;
+
+        public float3 BlastPosition;
+        public float BlastTime;
 
         public float3 LastPosition;
         public byte LastShots;
@@ -39,6 +55,25 @@ namespace HyperRTS.Presentation.Animation
 
             return math.clamp((int)math.ceil(figures * health.Fraction), 1, figures);
         }
+
+        /// <summary>Keeps the latest impact in this frame's <paramref name="cues"/> whose splash reaches the squad at <paramref name="position"/>.</summary>
+        public void Hear(DynamicBuffer<CueEvent> cues, float3 position, float now)
+        {
+            foreach (var cue in cues)
+            {
+                var reaches = math.distance(cue.Position, position) <= cue.Radius + BlastReach;
+                if (cue.Slot == CueSlot.Impact && cue.Radius > 0f && reaches)
+                {
+                    Blasted = true;
+                    BlastPosition = cue.Position;
+                    BlastTime = now;
+                }
+            }
+        }
+
+        /// <summary>True when a figure that began to fall at <paramref name="fallTime"/> died of the latest blast.</summary>
+        public readonly bool Killed(float fallTime) =>
+            Blasted && fallTime >= BlastTime - BlastBefore && fallTime <= BlastTime + BlastAfter;
 
         /// <summary>Records this frame's position and primary weapon shot count; returns what living figures show.</summary>
         public FigureState Observe(float3 position, byte shots, float now, float deltaTime)
@@ -88,6 +123,12 @@ namespace HyperRTS.Presentation.Animation
         public VATClipRange Fire;
         public VATClipRange Die;
 
+        /// <summary>Optional falls named by where the blast came from relative to the figure's facing; frame count 0 is unset.</summary>
+        public VATClipRange DieBlastFront;
+        public VATClipRange DieBlastBack;
+        public VATClipRange DieBlastLeft;
+        public VATClipRange DieBlastRight;
+
         public readonly VATClipRange Clip(FigureState state) => state switch
         {
             FigureState.Walk => Walk,
@@ -96,6 +137,24 @@ namespace HyperRTS.Presentation.Animation
             FigureState.Die => Die,
             _ => Idle,
         };
+
+        /// <summary>The fall for a blast at <paramref name="blast"/> seen from a figure at <paramref name="figureToWorld"/>; Die when that side has none.</summary>
+        public readonly VATClipRange Blasted(float3 blast, in float4x4 figureToWorld)
+        {
+            var local = math.transform(math.inverse(figureToWorld), blast);
+            var clip = BlastSide(local);
+            return clip.FrameCount > 0 ? clip : Die;
+        }
+
+        private readonly VATClipRange BlastSide(float3 local)
+        {
+            if (math.abs(local.z) >= math.abs(local.x))
+            {
+                return local.z >= 0f ? DieBlastFront : DieBlastBack;
+            }
+
+            return local.x >= 0f ? DieBlastRight : DieBlastLeft;
+        }
     }
 
     /// <summary>What a squad figure shows. Unset is a baked figure the system has not placed yet.</summary>

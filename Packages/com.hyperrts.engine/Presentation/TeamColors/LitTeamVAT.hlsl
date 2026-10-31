@@ -1,13 +1,15 @@
 // HyperRTS/LitTeam vertex animation textures. With _VAT on, each pass's vertex function takes its pose from
 // _VATPositions and _VATNormals at the instance's _VATClip and the global _VATTime. UV1 holds each vertex's texel:
 // u = (column + 0.5) / width, v = row within the frame, so it survives Unity splitting vertices on import.
-// The wrappers then apply the construction reveal (LitTeamBuild.hlsl) and sink the object into craters.
+// The wrappers then apply the construction reveal (LitTeamBuild.hlsl), bend track meshes over their wheels
+// (LitTeamTrack.hlsl) and sink the object into craters.
 // Include it after the pass file: it wraps whichever pass vertex function that file defined.
 #ifndef HYPERRTS_LIT_TEAM_VAT_INCLUDED
 #define HYPERRTS_LIT_TEAM_VAT_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamBuild.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamTrack.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
 
 // Passes whose Attributes lack TEXCOORD1 take it as a separate input.
@@ -18,11 +20,7 @@
 #endif
 
 // Instanced properties are only readable once the DOTS property cache is set up.
-#if defined(_VAT) || defined(_BUILD)
 #define LIT_TEAM_SETUP_INSTANCE(input) UNITY_SETUP_INSTANCE_ID(input)
-#else
-#define LIT_TEAM_SETUP_INSTANCE(input)
-#endif
 
 // Mirrors VATClip.FrameAt on the C# side: x frame, y next frame, z blend.
 float3 VATFrameAt(float4 clip, float time)
@@ -47,17 +45,38 @@ uint2 VATTexel(float2 vatIndex, float frame)
 
 #define VAT_LOAD(texture, vatIndex, frame)     lerp(LOAD_TEXTURE2D_LOD(texture, VATTexel(vatIndex, frame.x), 0).xyz,          LOAD_TEXTURE2D_LOD(texture, VATTexel(vatIndex, frame.y), 0).xyz, frame.z)
 
+// 0 while the pose frozen at the last clip switch shows, 1 once the current clip has taken over.
+float VATFadeWeight()
+{
+    return saturate((_VATTime - _VATFade.w) / max(_VATFadeTime, 0.0001));
+}
+
 float3 VATPosition(float2 vatIndex)
 {
     float3 frame = VATFrameAt(_VATClip, _VATTime);
-    return VAT_LOAD(_VATPositions, vatIndex, frame);
+    float3 position = VAT_LOAD(_VATPositions, vatIndex, frame);
+    float weight = VATFadeWeight();
+    if (weight < 1.0)
+    {
+        float3 old = _VATFade.xyz;
+        position = lerp(VAT_LOAD(_VATPositions, vatIndex, old), position, weight);
+    }
+    return position;
 }
 
 void ApplyVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
 {
     float3 frame = VATFrameAt(_VATClip, _VATTime);
     positionOS = VAT_LOAD(_VATPositions, vatIndex, frame);
-    normalOS = normalize(VAT_LOAD(_VATNormals, vatIndex, frame));
+    normalOS = VAT_LOAD(_VATNormals, vatIndex, frame);
+    float weight = VATFadeWeight();
+    if (weight < 1.0)
+    {
+        float3 old = _VATFade.xyz;
+        positionOS = lerp(VAT_LOAD(_VATPositions, vatIndex, old), positionOS, weight);
+        normalOS = lerp(VAT_LOAD(_VATNormals, vatIndex, old), normalOS, weight);
+    }
+    normalOS = normalize(normalOS);
 }
 
 // The forward pass reads UV1 as URP's static lightmap UV, which VAT renderers never use.
@@ -71,6 +90,7 @@ Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
+    input.positionOS.xyz = BendTrack(input.positionOS.xyz);
     input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
     return LitPassVertex(input);
 }
@@ -84,6 +104,7 @@ Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
 #endif
+    input.positionOS.xyz = BendTrack(input.positionOS.xyz);
     input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
     return ShadowPassVertex(input);
 }
@@ -101,6 +122,7 @@ Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INP
 #ifdef _BUILD
     input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
 #endif
+    input.position.xyz = BendTrack(input.position.xyz);
     input.position.xyz = SinkObjectIntoCrater(input.position.xyz);
     return DepthOnlyVertex(input);
 }
@@ -114,6 +136,7 @@ Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_
 #ifdef _BUILD
     ApplyBuild(buildOrder, input.positionOS.xyz, input.normal);
 #endif
+    input.positionOS.xyz = BendTrack(input.positionOS.xyz);
     input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
     return DepthNormalsVertex(input);
 }
@@ -128,6 +151,7 @@ Varyings LitTeamMotionVectorsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER
 #ifdef _BUILD
     input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
 #endif
+    input.position.xyz = BendTrack(input.position.xyz);
     input.position.xyz = SinkObjectIntoCrater(input.position.xyz);
     return vert(input);
 }

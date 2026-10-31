@@ -59,6 +59,8 @@ namespace HyperRTS.Presentation.Animation
 
         public AABB Bounds => new MinMaxAABB { Min = boundsMin, Max = boundsMax };
 
+        public bool Has(string clipName) => clips.Exists(clip => clip.name == clipName);
+
         public VATClipRange Range(string clipName)
         {
             foreach (var clip in clips)

@@ -68,11 +68,36 @@ namespace HyperRTS.Presentation.Tests.Animation
         public void Play_WritesOnlyWhenTheClipChanges()
         {
             var clip = VATClip.Started(Walk, 1f);
+            var fade = VATFade.None;
 
-            Assert.IsFalse(clip.Play(Walk, 3f));
+            Assert.IsFalse(clip.Play(Walk, 3f, ref fade));
             Assert.AreEqual(1f, clip.Value.w);
-            Assert.IsTrue(clip.Play(Fall, 3f));
+            Assert.IsTrue(clip.Play(Fall, 3f, ref fade));
             Assert.AreEqual(new float4(20f, 4f, -2f, 3f), clip.Value);
+        }
+
+        [Test]
+        public void Switch_FreezesTheShownPoseWithTheSwitchTime()
+        {
+            var clip = VATClip.Started(Walk, 5f);
+            var fade = VATFade.None;
+
+            clip.Play(Fall, 5.75f, ref fade);
+
+            Assert.AreEqual(new float4(11f, 12f, 0.5f, 5.75f), fade.Value);
+        }
+
+        [Test]
+        public void FadeWeight_RunsFromZeroToOneOverTheFadeTime()
+        {
+            var clip = VATClip.Started(Walk, 0f);
+            var fade = VATFade.None;
+            clip.Play(Fall, 2f, ref fade);
+
+            Assert.AreEqual(0f, fade.Weight(2f, VATFade.Seconds));
+            Assert.AreEqual(0.5f, fade.Weight(2f + VATFade.Seconds / 2f, VATFade.Seconds), 1e-5f);
+            Assert.AreEqual(1f, fade.Weight(2f + VATFade.Seconds * 2f, VATFade.Seconds));
+            Assert.AreEqual(1f, VATFade.None.Weight(0f, VATFade.Seconds));
         }
 
         [Test]

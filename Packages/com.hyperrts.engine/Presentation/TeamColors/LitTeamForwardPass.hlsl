@@ -4,6 +4,7 @@
 #define HYPERRTS_LIT_TEAM_FORWARD_PASS_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamGrime.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
 
 void LitTeamPassFragment(
@@ -23,6 +24,7 @@ void LitTeamPassFragment(
     SurfaceData surfaceData;
     InitializeStandardLitSurfaceData(input.uv, surfaceData);
     surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, uv0, input.positionWS);
+    ApplyGrime(input.positionWS, surfaceData);
 
     LODFadeCrossFade(input.positionCS);
 

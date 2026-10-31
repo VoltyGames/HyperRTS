@@ -15,6 +15,13 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Turns with the steering; Fill from model sets it on the Locomotion's steering axles.")]
         public bool steers;
 
+        [Tooltip("Rises and sinks with the ground under it; Fill from model sets it on road wheels, not on sprockets or idlers.")]
+        public bool followsGround;
+
+        [Tooltip("Metres a ground-following wheel may rise or sink from its rest.")]
+        [Min(0f)]
+        public float travel = 0.12f;
+
         /// <summary>Half the wheel's height or length in the rig's frame, whichever is larger.</summary>
         public static float MeshRadius(Transform wheel, Transform rig)
         {
@@ -27,6 +34,14 @@ namespace HyperRTS.Presentation.Animation
             var baked = AtRest(entity, MotionPartKind.Wheel);
             baked.Axis = part.InverseTransformDirection(rig.right).normalized;
             baked.Size = radius;
+            if (followsGround)
+            {
+                var footprint = rig.InverseTransformPoint(part.position);
+                baked.Contact = new Vector3(footprint.x, 0f, footprint.z);
+                baked.LiftAxis = part.parent.InverseTransformDirection(rig.up).normalized;
+                baked.Travel = travel;
+            }
+
             return baked;
         }
 

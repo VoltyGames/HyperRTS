@@ -20,6 +20,8 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Ammo> _ammo;
         [ReadOnly] private ComponentLookup<Deployable> _deployables;
         [ReadOnly] private BufferLookup<WeaponMuzzle> _muzzles;
+        [ReadOnly] private ComponentLookup<Inside> _inside;
+        [ReadOnly] private BufferLookup<FiringPort> _ports;
         private BufferLookup<WeaponPose> _poses;
         private DamageWriter _damage;
         private CueWriter _cues;
@@ -33,6 +35,8 @@ namespace HyperRTS.Simulation.Combat
             _ammo = state.GetComponentLookup<Ammo>();
             _deployables = state.GetComponentLookup<Deployable>(true);
             _muzzles = state.GetBufferLookup<WeaponMuzzle>(true);
+            _inside = state.GetComponentLookup<Inside>(true);
+            _ports = state.GetBufferLookup<FiringPort>(true);
             _poses = state.GetBufferLookup<WeaponPose>();
             _damage = new DamageWriter(ref state);
             _cues = new CueWriter(ref state);
@@ -47,6 +51,8 @@ namespace HyperRTS.Simulation.Combat
             _ammo.Update(ref state);
             _deployables.Update(ref state);
             _muzzles.Update(ref state);
+            _inside.Update(ref state);
+            _ports.Update(ref state);
             _poses.Update(ref state);
             _damage.Update(ref state, damageQueue);
             _cues.Update(ref state, cueQueue);
@@ -136,10 +142,20 @@ namespace HyperRTS.Simulation.Combat
             poses[pose] = fired;
             var place = _transforms[shooter];
             var targetPosition = _transforms[target].Position;
-            PlayFire(shooter, weapon, fired, pose, place, targetPosition, faction);
+            var shot = weapon;
+            if (TryFindPort(shooter, targetPosition, out var port))
+            {
+                place = port;
+                shot.HasMuzzle = true;
+                shot.Muzzle = float3.zero;
+                fired.YawAngle = 0f;
+                fired.PitchAngle = 0f;
+            }
+
+            PlayFire(shooter, shot, fired, pose, place, targetPosition, faction);
             if (weapon.ProjectilePrefab == Entity.Null)
             {
-                var origin = weapon.HitOrigin(place, fired);
+                var origin = shot.HitOrigin(place, fired);
                 var hit = CombatMath.Hit(weapon, shooter, faction, origin, target, targetPosition);
                 _damage.Add(hit);
                 var along = math.normalizesafe(targetPosition - origin, place.Forward());
@@ -147,8 +163,26 @@ namespace HyperRTS.Simulation.Combat
             }
             else
             {
-                Launch(shooter, weapon, fired, place, target, targetPosition, faction);
+                Launch(shooter, shot, fired, place, target, targetPosition, faction);
             }
+        }
+
+        /// <summary>A garrisoned passenger shoots from the port of its container that faces the target best.</summary>
+        private bool TryFindPort(Entity shooter, float3 targetPosition, out LocalTransform port)
+        {
+            port = default;
+            if (!_inside.HasEnabled(shooter))
+            {
+                return false;
+            }
+
+            var container = _inside[shooter].Container;
+            if (!_ports.TryGetBuffer(container, out var ports) || !_transforms.TryGetComponent(container, out var place))
+            {
+                return false;
+            }
+
+            return FiringPort.TryChoose(ports, place, targetPosition, out port);
         }
 
         /// <summary>The fire cue faces the target level, the way the shooter turned, from the muzzle as the pose turned it.</summary>

@@ -1,3 +1,4 @@
+using System.Linq;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;
@@ -223,20 +224,23 @@ namespace HyperRTS.Presentation.Tests.Animation
             RecoilRate = math.radians(12f),
         };
 
-        private Entity Rig(MotionRigPart part)
+        private Entity Rig(MotionRigPart part, params MotionRigPart[] more)
         {
-            var child = _em.CreateEntity();
-            _em.AddComponentData(child, LocalTransform.FromPositionRotation(part.RestPosition, quaternion.identity));
-            part.Part = child;
-            part.RestRotation = quaternion.identity;
+            var parts = new[] { part }.Concat(more).ToArray();
+            for (var i = 0; i < parts.Length; i++)
+            {
+                parts[i].Part = _em.CreateEntity();
+                _em.AddComponentData(parts[i].Part, LocalTransform.FromPositionRotation(parts[i].RestPosition, quaternion.identity));
+                parts[i].RestRotation = quaternion.identity;
+            }
 
             _unit = _em.CreateEntity();
             _em.AddComponentData(_unit, LocalTransform.FromPosition(_position));
             _em.AddBuffer<WeaponPose>(_unit).Add(default);
             var writer = new EntityManagerWriter(_em, _unit);
             MotionRigAuthoring.AddRig(ref writer, new MotionRig { TiltFrame = quaternion.identity, TiltRest = quaternion.identity },
-                new[] { part });
-            return child;
+                parts);
+            return parts[0].Part;
         }
 
         // Rises along +z, so a unit facing +z climbs it.

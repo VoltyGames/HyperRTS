@@ -4,10 +4,15 @@
 //   _TeamMask   R where team colour goes, on UV0
 //   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
 //   _VAT        keyword: vertices come from _VATPositions and _VATNormals at _VATClip, texel in UV1 (LitTeamVAT.hlsl)
+//   _VATFade    per instance: the pose a clip switch fades out of; _VATFadeTime seconds blends it into the new clip
 //   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
 //   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
+//   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
+//               _TrackLift0 and _TrackLift1, the lift in metres at 8 stations front to back, it bends the lower run (LitTeamTrack.hlsl)
+//   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
+//               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
 // TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
-// BuildingLightsSystem writes _LightsOn, game code writes VATClip.
+// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, game code writes VATClip.
 Shader "HyperRTS/LitTeam"
 {
     Properties
@@ -22,6 +27,17 @@ Shader "HyperRTS/LitTeam"
         [NoScaleOffset] _VATNormals("VAT Normals", 2D) = "black" {}
         _VATClip("VAT Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
         _VATRowsPerFrame("VAT Rows Per Frame", Float) = 1
+        _VATFade("VAT Fade (frame, next frame, blend, start time)", Vector) = (0, 0, 0, -100000)
+        _VATFadeTime("VAT Fade Time (s)", Float) = 0.2
+
+        [Header(Grime)]
+        _Grime("Grime (dust, mud, wet, soot)", Vector) = (0, 0, 0, 0)
+        _GrimeBand("Grime Band (ground y in object space, mud top, dust top above it, m)", Vector) = (0, 0.7, 1.6, 0)
+
+        [Header(Track)]
+        _TrackLift0("Track Lift (stations 0 to 3, m)", Vector) = (0, 0, 0, 0)
+        _TrackLift1("Track Lift (stations 4 to 7, m)", Vector) = (0, 0, 0, 0)
+        _TrackSpan("Track Span (front z, back z, axle y, wheel radius)", Vector) = (0, 0, 0, 0)
 
         [Header(Construction)]
         [Toggle(_BUILD)] _Build("Build Piece By Piece (UV3)", Float) = 0

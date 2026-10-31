@@ -12,10 +12,10 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// Poses each <see cref="MotionRig"/>'s children from the interpolated unit: turrets and barrels follow the
-    /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered and steering
-    /// wheels turn with the turn per metre, rotors spin up with flight into the unit's <see cref="RotorSpin"/>, and the
-    /// body tilts with the ground or leans with acceleration. Ground vehicles also sway on their
-    /// <see cref="Suspension"/>.
+    /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered, road wheels
+    /// rise and fall with it and bend their tracks, steering wheels turn with the turn per metre, rotors spin up with
+    /// flight into the unit's <see cref="RotorSpin"/>, and the body tilts with the ground or leans with acceleration.
+    /// Ground vehicles also sway on their <see cref="Suspension"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]
@@ -44,6 +44,10 @@ namespace HyperRTS.Presentation.Animation
                 Docks = SystemAPI.GetComponentLookup<Docked>(true),
                 Spins = SystemAPI.GetComponentLookup<RotorSpin>(),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(),
+                Tracks = SystemAPI.GetBufferLookup<MotionRigTrack>(),
+                TrackWheels = SystemAPI.GetBufferLookup<TrackWheel>(),
+                FrontLifts = SystemAPI.GetComponentLookup<TrackLift0>(),
+                BackLifts = SystemAPI.GetComponentLookup<TrackLift1>(),
             }.Schedule(state.Dependency);
         }
 
@@ -58,6 +62,10 @@ namespace HyperRTS.Presentation.Animation
             [ReadOnly] public ComponentLookup<Docked> Docks;
             public ComponentLookup<RotorSpin> Spins;
             public ComponentLookup<LocalTransform> Transforms;
+            public BufferLookup<MotionRigTrack> Tracks;
+            public BufferLookup<TrackWheel> TrackWheels;
+            public ComponentLookup<TrackLift0> FrontLifts;
+            public ComponentLookup<TrackLift1> BackLifts;
 
             // Roots are top-level, so LocalTransform is this frame's pose; read by lookup, since a parameter would alias it.
             private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts)
@@ -88,6 +96,13 @@ namespace HyperRTS.Presentation.Animation
                         rig.Suspension.Recoil(poses[part.Weapon].YawRadians);
                     }
 
+                    // An aircraft's wheels hang from the air, with no ground to meet.
+                    if (part.Travel > 0f && !rig.Aircraft)
+                    {
+                        part.FollowGround(rig.GroundLift(Terrain, place.Position, forward, right, part.Contact), DeltaTime);
+                        transform.Position = part.LiftedPosition;
+                    }
+
                     parts[i] = part;
                     Transforms[part.Part] = transform;
                     spin = part.Kind == MotionPartKind.Rotor ? math.max(spin, part.Amount) : spin;
@@ -96,6 +111,35 @@ namespace HyperRTS.Presentation.Animation
                 if (Spins.HasComponent(entity))
                 {
                     Spins[entity] = new RotorSpin { Amount = spin };
+                }
+
+                if (Tracks.TryGetBuffer(entity, out var tracks))
+                {
+                    BendTracks(tracks, TrackWheels[entity], parts);
+                }
+            }
+
+            private void BendTracks(DynamicBuffer<MotionRigTrack> tracks, DynamicBuffer<TrackWheel> wheels,
+                DynamicBuffer<MotionRigPart> parts)
+            {
+                for (var i = 0; i < wheels.Length; i++)
+                {
+                    var wheel = wheels[i];
+                    wheel.Lift = parts[wheel.Part].Lift;
+                    wheels[i] = wheel;
+                }
+
+                for (var i = 0; i < tracks.Length; i++)
+                {
+                    var track = tracks[i];
+                    var own = wheels.AsNativeArray().GetSubArray(track.FirstWheel, track.WheelCount);
+                    if (track.Settle(own))
+                    {
+                        FrontLifts[track.Mesh] = new TrackLift0 { Value = track.Lift0 };
+                        BackLifts[track.Mesh] = new TrackLift1 { Value = track.Lift1 };
+                    }
+
+                    tracks[i] = track;
                 }
             }
 

@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
@@ -7,6 +8,7 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests.Economy
 {
@@ -142,6 +144,69 @@ namespace HyperRTS.Simulation.Tests.Economy
             Assert.Less(_world.Get<Health>(enemy).Current, 100f, "fires from the bunker's edge");
             Assert.AreEqual(100f, _world.Get<Health>(rifle).Current, "passengers can't be shot");
             Assert.AreEqual(Stance.HoldPosition, _world.Get<CombatStance>(rifle).Value);
+        }
+
+        /// <summary>A garrisoned rifle with a voiced projectile weapon and an enemy east of the bunker; ports on both walls if asked.</summary>
+        private Entity GarrisonFiringEast(bool ports)
+        {
+            var bunker = Bunker(float3.zero, fire: true);
+            if (ports)
+            {
+                var buffer = _world.EntityManager.AddBuffer<FiringPort>(bunker);
+                buffer.Add(new FiringPort { Position = new float3(-2f, 0f, 0f), Direction = new float3(-1f, 0f, 0f) });
+                buffer.Add(new FiringPort { Position = new float3(2f, 0f, 0f), Direction = new float3(1f, 0f, 0f) });
+            }
+
+            var rifle = Passenger(new float3(0f, 0f, 6f));
+            _world.AddWeapon(rifle, range: 3f, damage: 10f, projectile: _world.ProjectilePrefab());
+            var writer = new EntityManagerWriter(_world.EntityManager, rifle);
+            var sound = _world.Own(ScriptableObject.CreateInstance<SoundCue>());
+            EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(ref writer), CueSlot.Fire, sound);
+            _world.Enter(rifle, bunker);
+            _world.Run(2f);
+            _world.SpawnUnit(2, new float3(4.5f, 0f, 0f), speed: 0f);
+            return rifle;
+        }
+
+        /// <summary>Where the first projectile starts; <paramref name="fireCue"/> is the Fire cue of the same frame.</summary>
+        private float3 FirstShotStart(out CueEvent fireCue)
+        {
+            fireCue = default;
+            using var query = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
+            for (var t = 0f; t < 2f; t += TestWorld.FrameTime)
+            {
+                _world.Tick();
+                if (query.CalculateEntityCount() > 0)
+                {
+                    var cues = _world.Queued(CueSlot.Fire);
+                    Assert.IsNotEmpty(cues);
+                    fireCue = cues[0];
+                    return _world.Get<Projectile>(query.GetSingletonEntity()).Start;
+                }
+            }
+
+            Assert.Fail("nothing fired");
+            return default;
+        }
+
+        [Test]
+        public void Garrison_FiresFromThePortFacingItsTarget()
+        {
+            GarrisonFiringEast(ports: true);
+
+            var start = FirstShotStart(out var cue);
+
+            Assert.AreEqual(2f, start.x, 0.01f, "the shot leaves the east window");
+            Assert.AreEqual(2f, cue.Position.x, 0.01f);
+            Assert.Greater(cue.Direction.x, 0.9f, "faces the target");
+        }
+
+        [Test]
+        public void Garrison_WithoutPorts_FiresFromItsCentre()
+        {
+            GarrisonFiringEast(ports: false);
+
+            Assert.AreEqual(0f, FirstShotStart(out _).x, 0.01f);
         }
 
         [Test]

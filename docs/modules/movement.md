@@ -308,5 +308,10 @@ largest passenger and whether passengers fire out or survive its death. Passenge
 a bunker's back door, or around it when it has none. They get out or die in the frame the container dies, and dying
 passengers credit its killer.
 
+A container may list `firingPorts`, child transforms at windows and loopholes with the blue axis pointing out. A
+passenger that fires from inside shoots from the port facing its target best (nearest on a tie): the Fire cue, the
+projectile start and the hit origin for directional armor all sit there. Without ports it fires from the centre. The
+`ContainerRule` warns about ports that are empty or outside the container.
+
 A passenger is hidden and takes no orders. A neutral garrison building belongs to whoever is inside and turns
 neutral when empty.

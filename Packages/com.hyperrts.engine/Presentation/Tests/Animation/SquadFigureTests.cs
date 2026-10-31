@@ -3,6 +3,7 @@ using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Core;
 using Unity.Entities;
@@ -26,6 +27,7 @@ namespace HyperRTS.Presentation.Tests.Animation
         private EntityManager _em;
         private SystemHandle _system;
         private Entity _squad;
+        private Entity _cues;
         private Entity[] _figures;
         private double _time;
 
@@ -36,6 +38,8 @@ namespace HyperRTS.Presentation.Tests.Animation
             _em = _kit.EntityManager;
             _system = _kit.World.CreateSystem<SquadFigureSystem>();
             _squad = Squad(4);
+            _cues = _em.CreateEntity(typeof(CueQueue));
+            _em.AddBuffer<CueEvent>(_cues);
             _time = 0d;
         }
 
@@ -68,6 +72,79 @@ namespace HyperRTS.Presentation.Tests.Animation
             Assert.IsFalse(Drawn(3));
             Assert.AreEqual(FigureState.Idle, State(2));
             Assert.IsTrue(Drawn(2));
+        }
+
+        [Test]
+        public void BlastDeath_PicksTheClipForWhereTheBlastCameFrom()
+        {
+            var clips = BlastClips();
+            var facing = float4x4.identity;
+
+            Assert.AreEqual(clips.DieBlastFront, clips.Blasted(new float3(0f, 0f, 5f), facing));
+            Assert.AreEqual(clips.DieBlastBack, clips.Blasted(new float3(0f, 0f, -5f), facing));
+            Assert.AreEqual(clips.DieBlastRight, clips.Blasted(new float3(5f, 0f, 1f), facing));
+            Assert.AreEqual(clips.DieBlastLeft, clips.Blasted(new float3(-5f, 0f, 1f), facing));
+
+            var turned = float4x4.RotateY(math.PI);
+            Assert.AreEqual(clips.DieBlastBack, clips.Blasted(new float3(0f, 0f, 5f), turned));
+        }
+
+        [Test]
+        public void FigureWithoutBlastClips_PlaysDie()
+        {
+            Update();
+            Blast(new float3(0f, 0f, 3f));
+            SetHealth(0.7f);
+            Update();
+
+            Assert.IsTrue(Clip(3).Plays(Range(40, false)));
+        }
+
+        [Test]
+        public void DroppedFigure_FallsFromABlastNearTheSquad()
+        {
+            SetBlastClips();
+            Update();
+            Blast(new float3(0f, 0f, 3f));
+            SetHealth(0.7f);
+            Update();
+
+            Assert.IsTrue(Clip(3).Plays(Range(50, false)));
+        }
+
+        [Test]
+        public void FigureThatFellJustBeforeTheBlastCue_SwitchesToTheBlastFall()
+        {
+            SetBlastClips();
+            Update();
+            SetHealth(0.7f);
+            Update();
+            Assert.IsTrue(Clip(3).Plays(Range(40, false)));
+
+            Blast(new float3(0f, 0f, -3f));
+            Update();
+
+            Assert.IsTrue(Clip(3).Plays(Range(60, false)));
+        }
+
+        [Test]
+        public void BlastTooOldOrTooFar_PlaysDie()
+        {
+            SetBlastClips();
+            Update();
+            Blast(new float3(0f, 0f, 30f));
+            SetHealth(0.7f);
+            Update();
+            Assert.IsTrue(Clip(3).Plays(Range(40, false)));
+
+            SetHealth(1f);
+            Update();
+            Blast(new float3(0f, 0f, 3f));
+            Advance(SquadFigures.BlastAfter + 0.2f);
+            SetHealth(0.2f);
+            Update();
+
+            Assert.IsTrue(Clip(2).Plays(Range(40, false)));
         }
 
         [Test]
@@ -197,6 +274,8 @@ namespace HyperRTS.Presentation.Tests.Animation
             {
                 _figures[i] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
                 _em.AddComponentData(_figures[i], VATClip.Started(Range(0, true), 0f));
+                _em.AddComponentData(_figures[i], VATFade.None);
+                _em.AddComponentData(_figures[i], new LocalToWorld { Value = float4x4.identity });
                 figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0) };
             }
 
@@ -226,6 +305,15 @@ namespace HyperRTS.Presentation.Tests.Animation
             Die = Range(offset + 40, false),
         };
 
+        private static FigureClips BlastClips() => new()
+        {
+            Die = Range(40, false),
+            DieBlastFront = Range(50, false),
+            DieBlastBack = Range(60, false),
+            DieBlastLeft = Range(70, false),
+            DieBlastRight = Range(80, false),
+        };
+
         private static VATClipRange Range(int startRow, bool loop) =>
             new() { StartRow = startRow, FrameCount = 10, Fps = 10f, Loop = loop };
 
@@ -234,6 +322,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             _time += Step;
             _kit.World.SetTime(new TimeData(_time, Step));
             _system.Update(_kit.World.Unmanaged);
+            _em.GetBuffer<CueEvent>(_cues).Clear();
         }
 
         // One update past the seconds, so rounding can't leave the clock just short.
@@ -253,6 +342,20 @@ namespace HyperRTS.Presentation.Tests.Animation
             _em.SetComponentData(_squad, new LocalToWorld { Value = float4x4.Translate(position) });
             Update();
         }
+
+        private void SetBlastClips()
+        {
+            var figures = _em.GetBuffer<SquadFigure>(_squad);
+            for (var i = 0; i < figures.Length; i++)
+            {
+                figures.ElementAt(i).Clips = BlastClips();
+            }
+        }
+
+        private void Blast(float3 position) => _em.GetBuffer<CueEvent>(_cues).Add(new CueEvent
+        {
+            Slot = CueSlot.Impact, Position = position, Radius = 4f,
+        });
 
         private void SetHealth(float fraction) =>
             _em.SetComponentData(_squad, new Health { Current = 100f * fraction, Max = 100f });

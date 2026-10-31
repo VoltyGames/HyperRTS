@@ -164,6 +164,13 @@ texture's red channel allows, on UV0, and inside the `TeamStripAuthoring` height
 `FactionPalette` holds this client's colours. `TeamColorOverride` swaps them, for example for colour-blind players
 or own, ally and enemy colours. The validator flags units and buildings without a team colour material.
 
+Ground vehicles with `GrimeAuthoring` collect grime. `GrimeSystem` advances each unit's `Grime` from the distance it drove, the
+`GroundMaterials` cell under it, `Wetness.Level` and its health: dust on dry Soil, Gravel and Sand, mud on Mud and on wet Soil
+and Grass, wet in Water (drying over a minute, washing dust and some mud off), soot from damage and never falling. It
+writes `_Grime` and `_GrimeBand` to every mesh under the unit, and only once a level has moved by 0.02. LitTeam's
+forward pass (`LitTeamGrime.hlsl`) lays dust and mud low on the hull by noise, up to the band heights, in the
+`_HyperRTSDustColor` and `_HyperRTSMudColor` the weather `Atmosphere` publishes. Units only, never structures.
+
 LitTeam carries only what materials use: opaque or alpha tested, metallic workflow, normal, metallic gloss, occlusion
 and emission maps, no detail maps, parallax or transparency. Its keywords are `_NORMALMAP`, `_METALLICSPECGLOSSMAP`,
 `_OCCLUSIONMAP`, `_EMISSION`, `_ALPHATEST_ON`, `_BUILD` and `_VAT`. Its inspector, `LitTeamGUI`, shows the
@@ -197,7 +204,12 @@ material keywords). A `VATClipTable` asset imports the bake info file through **
 stays hand-editable. `VATAnimatedAuthoring` beside the renderer bakes its start clip into `VATClip` and widens the
 render bounds to cover every frame. It fails the bake when the material and table disagree.
 
-Game code plays clips with `VATClip.Play(range, now)`, using `SystemAPI.Time.ElapsedTime` as `now`.
+Game code plays clips with `VATClip.Play(range, now, ref fade)`, using `SystemAPI.Time.ElapsedTime` as `now`. Every
+switch freezes the pose that was showing into the `VATFade` component, and the shader blends from it to the new clip
+over the material's `_VATFadeTime` (0.2 s). Squad figures also have four optional blast falls, `DieBlastFront`,
+`Back`, `Left` and `Right`, named by where the blast came from relative to the figure's facing. A figure that drops
+within 0.5 s after a nearby impact cue with a splash radius, or fell up to 0.2 s before one, plays the fall for its
+side; a table without them falls with Die.
 `VATClockSystem` feeds the same clock to the shader, so pausing and replay speed apply to the animation.
 
 ### Build reveal
@@ -239,6 +251,15 @@ other stage's matching body becomes the `tiltFollower`, which tilts and sways wi
 tilts, so it gets no tilt root.
 `MotionRigRule` checks every slot names a child of the rig and a weapon the unit has. Traverse and elevation rates and limits are weapon data, so the
 rig only smooths the simulated pose.
+
+Road wheels (`Wheel_` parts, marked `followsGround`; sprockets and idlers are not) follow the ground: each frame a
+wheel's lift is the `TerrainHeight` under its footprint minus where that point of the tilted, swaying body is, held to
+the wheel's `travel` (0.12 m) and eased over 0.06 s, along its parent's up. Tracks (`Track_L` paired with the `Wheel_L`
+road wheels of the same model) bend with them: each track mesh carries a `TrackMeshAuthoring`, which bakes its
+`_TrackSpan` in the mesh's object space, and the rig interpolates its wheels' lifts into 8 stations along the track,
+written to `_TrackLift0` and `_TrackLift1` only when one moves by more than 5 mm. `LitTeamTrack.hlsl` lifts the lower
+run by the stations around each vertex's z, fading from the axle height to the wheel tops so the return run stays put.
+The track meshes must sit unrotated and unscaled against the rig.
 
 The baker stores a `MotionRig` and a `MotionRigPart` buffer on the root. `MotionRigSystem` runs in
 `PoseSystemGroup` on the interpolated unit and writes only child `LocalTransform`s, never the ghost root.

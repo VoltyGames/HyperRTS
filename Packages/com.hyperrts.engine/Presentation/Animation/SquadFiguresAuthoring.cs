@@ -39,6 +39,18 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Clip a figure plays once when health drops it.")]
         public string dieClip = "Die";
 
+        [Tooltip("Clip played once instead of Die when a blast ahead of the figure drops it. Empty for none.")]
+        public string dieBlastFrontClip;
+
+        [Tooltip("Clip played instead of Die when a blast behind the figure drops it. Empty for none.")]
+        public string dieBlastBackClip;
+
+        [Tooltip("Clip played instead of Die when a blast on the figure's left drops it. Empty for none.")]
+        public string dieBlastLeftClip;
+
+        [Tooltip("Clip played instead of Die when a blast on the figure's right drops it. Empty for none.")]
+        public string dieBlastRightClip;
+
         [Tooltip("Horizontal speed in m/s from which figures run instead of walk.")]
         [Min(0.3f)]
         public float runSpeed = 3f;
@@ -62,7 +74,7 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>
         /// Each figure's clips from its own table by this squad's clip names; fails when a figure, its table or one
-        /// of the five clips is missing.
+        /// of the five clips or a named blast clip is missing.
         /// </summary>
         public FigureClips[] Clips()
         {
@@ -95,7 +107,26 @@ namespace HyperRTS.Presentation.Animation
             Run = table.Range(runClip),
             Fire = table.Range(fireClip),
             Die = table.Range(dieClip),
+            DieBlastFront = Optional(table, dieBlastFrontClip),
+            DieBlastBack = Optional(table, dieBlastBackClip),
+            DieBlastLeft = Optional(table, dieBlastLeftClip),
+            DieBlastRight = Optional(table, dieBlastRightClip),
         };
+
+        private static VATClipRange Optional(VATClipTable table, string clipName) =>
+            string.IsNullOrEmpty(clipName) ? default : table.Range(clipName);
+
+        /// <summary>The blast clip names that are set.</summary>
+        public IEnumerable<string> BlastClipNames()
+        {
+            foreach (var clipName in new[] { dieBlastFrontClip, dieBlastBackClip, dieBlastLeftClip, dieBlastRightClip })
+            {
+                if (!string.IsNullOrEmpty(clipName))
+                {
+                    yield return clipName;
+                }
+            }
+        }
 
         public class Baker : Baker<SquadFiguresAuthoring>
         {

@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
     /// Plays vertex animation texture clips on this renderer: a HyperRTS/LitTeam material with _VAT on. Game code
-    /// switches clips through <see cref="VATClip.Play"/>.
+    /// switches clips through <see cref="VATClip.Play"/>, which fades from the old pose.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "VAT Animated")]
     [Icon(HyperRTSIcons.Animation)]
@@ -46,6 +46,7 @@ namespace HyperRTS.Presentation.Animation
             where TWriter : struct, IEntityWriter
         {
             writer.Add(VATClip.Started(start, 0f));
+            writer.Add(VATFade.None);
             writer.Add(new VATBounds { Value = bounds });
         }
 

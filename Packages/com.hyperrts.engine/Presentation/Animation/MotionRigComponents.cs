@@ -77,6 +77,17 @@ namespace HyperRTS.Presentation.Animation
         }
 
         /// <summary>
+        /// Metres the ground under a wheel's <paramref name="contact"/> (its rest point on the ground plane, in the
+        /// unit's frame) stands above where that point of the tilted, swaying body is.
+        /// </summary>
+        public readonly float GroundLift(in TerrainHeight terrain, float3 position, float3 forward, float3 right, float3 contact)
+        {
+            var body = math.rotate(TiltRotation(Tilt + Suspension.Sway), contact);
+            var ground = position + right * body.x + forward * body.z;
+            return terrain.Height(ground.xz) - (position.y + body.y);
+        }
+
+        /// <summary>
         /// Measures <see cref="Curvature"/> from the turn since last frame over the metres rolled. Standing keeps it, as
         /// steered wheels stay turned.
         /// </summary>
@@ -109,6 +120,9 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Seconds for a turret or barrel to close most of the gap to the replicated pose.</summary>
         public const float FollowTime = 0.08f;
 
+        /// <summary>Seconds for a wheel to close most of the gap to the ground.</summary>
+        public const float LiftTime = 0.06f;
+
         public Entity Part;
         public MotionPartKind Kind;
 
@@ -135,6 +149,18 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>Recoil return or rotor spin-up seconds.</summary>
         public float Time;
+
+        /// <summary>Metres a wheel may rise or sink from its rest to meet the ground; 0 for parts that stay put.</summary>
+        public float Travel;
+
+        /// <summary>Where a ground-following wheel rests on the ground plane, in the unit's frame.</summary>
+        public float3 Contact;
+
+        /// <summary>The parent's local up, which a ground-following wheel lifts along.</summary>
+        public float3 LiftAxis;
+
+        /// <summary>Metres a ground-following wheel is lifted from its rest.</summary>
+        public float Lift;
 
         public quaternion RestRotation;
         public float3 RestPosition;
@@ -170,6 +196,12 @@ namespace HyperRTS.Presentation.Animation
         }
 
         public readonly float3 RecoilPosition(quaternion rotation) => RestPosition + math.rotate(rotation, Axis) * Amount;
+
+        public readonly float3 LiftedPosition => RestPosition + LiftAxis * Lift;
+
+        /// <summary>Eases the lift toward <paramref name="wanted"/> metres, held to the wheel's travel.</summary>
+        public void FollowGround(float wanted, float deltaTime) =>
+            Lift += (math.clamp(wanted, -Travel, Travel) - Lift) * (1f - math.exp(-deltaTime / LiftTime));
 
         public void Roll(float distance) => Angle = HeadingByte.Wrap(Angle + distance / Size);
 
