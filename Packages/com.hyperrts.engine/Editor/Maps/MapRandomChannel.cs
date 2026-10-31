@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps
     {
         ResourceYaw = 1,
         PropYaw = 2,
-        LineYaw = 3,
+        RowYaw = 3,
         Scatters = 4,
         TreeRows = 11,
         RavineTrees = 24,

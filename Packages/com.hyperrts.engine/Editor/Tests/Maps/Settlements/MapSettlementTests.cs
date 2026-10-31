@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning.Settlements;
 using NUnit.Framework;
@@ -202,7 +202,7 @@ namespace HyperRTS.Editor.Tests.Maps.Settlements
         {
             var issues = MapSettlementFixture.CheckAssets(edit);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Village") && e.Contains(named)), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Village") && e.Message.Contains(named)), issues.ToString());
         }
 
         [Test]
@@ -259,7 +259,7 @@ namespace HyperRTS.Editor.Tests.Maps.Settlements
 
         private static string Pattern(bool[] kept) => new(kept.Select(k => k ? '#' : '.').ToArray());
 
-        private bool Warned(string text) => _fixture.Context.Issues.Warnings.Any(w => w.Contains(text));
+        private bool Warned(string text) => _fixture.Context.Issues.Warnings.Any(w => w.Message.Contains(text));
 
         private static bool IsRotatedCopy(MapPlacement placement, MapPlacement other)
         {

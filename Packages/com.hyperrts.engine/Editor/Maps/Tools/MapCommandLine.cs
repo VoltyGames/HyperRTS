@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Editor.Maps.Build;
+using HyperRTS.Editor.Maps.Report;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ namespace HyperRTS.Editor.Maps.Tools
 
         public static void Preview() => Run(MapPreview.Run);
 
-        private static void Run(Func<string, Report.MapReport> tool)
+        private static void Run(Func<string, MapReport> tool)
         {
             var args = System.Environment.GetCommandLineArgs();
             var index = Array.IndexOf(args, "-map");

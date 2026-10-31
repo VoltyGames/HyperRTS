@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using UnityEditor;
 using UnityEngine;
 

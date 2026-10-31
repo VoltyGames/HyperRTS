@@ -1,5 +1,3 @@
-using HyperRTS.Editor.Maps.Symmetry;
-
 namespace HyperRTS.Editor.Maps.Layout
 {
     /// <summary>One placed copy of an authored feature: the authored data, the copy in map space and how it got there.</summary>

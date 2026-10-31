@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 

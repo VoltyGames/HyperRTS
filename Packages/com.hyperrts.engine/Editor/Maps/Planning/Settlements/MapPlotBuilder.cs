@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 

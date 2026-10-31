@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Maps.Designer
             Polyline(nameof(MapSpec.rivers), "Rivers", new Color(0.25f, 0.5f, 0.95f), nameof(MapRiverSpec.points)),
             Polyline(nameof(MapSpec.ravines), "Ravines", new Color(0.6f, 0.4f, 0.25f), nameof(MapRavineSpec.points)),
             Polyline(nameof(MapSpec.belts), "Belts", new Color(0.35f, 0.7f, 0.3f), nameof(MapBeltSpec.points)),
-            Polyline(nameof(MapSpec.lines), "Lines", new Color(0.8f, 0.5f, 0.9f), nameof(MapLineSpec.points)),
+            Polyline(nameof(MapSpec.rows), "Rows", new Color(0.8f, 0.5f, 0.9f), nameof(MapRowSpec.points)),
             Polyline(nameof(MapSpec.roads), "Roads", new Color(0.92f, 0.9f, 0.85f), nameof(MapRoadSpec.points)),
             Point(nameof(MapSpec.props), "Props", new Color(0.85f, 0.8f, 0.7f), nameof(MapPropSpec.pos)),
             Point(nameof(MapSpec.resources), "Resources", new Color(1f, 0.85f, 0.2f), nameof(MapResourceSpec.pos)),

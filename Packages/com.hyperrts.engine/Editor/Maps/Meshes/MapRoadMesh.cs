@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Heights;
 using UnityEngine;
 using UnityEngine.Rendering;
 

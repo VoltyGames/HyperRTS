@@ -1,6 +1,6 @@
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Symmetry;
 
 namespace HyperRTS.Editor.Maps.Refine
 {

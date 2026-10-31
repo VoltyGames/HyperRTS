@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Placement;
@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>Ground decals: each surface's per-hectare mix, laid in the authored sector and copied (wet-only ones
     /// apart), then one under each prop that names one.</summary>
-    public sealed class MapDecalPlanner : MapLandStep
+    public sealed class MapDecalPlanner : MapLandPass
     {
         private const int Attempts = 10;
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using UnityEditor;
 using UnityEngine;
 

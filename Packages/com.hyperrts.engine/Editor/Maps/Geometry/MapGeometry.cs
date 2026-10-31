@@ -49,10 +49,10 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         /// <summary>
         /// The point <paramref name="distance"/> metres along a polyline and the line's direction there. Loops that ask
-        /// for many points on one line should build a <see cref="MapPathWalker"/> once instead.
+        /// for many points on one line should build a <see cref="MapLineWalker"/> once instead.
         /// </summary>
         public static Vector2 PointAlong(IReadOnlyList<Vector2> line, float distance, out Vector2 direction) =>
-            new MapPathWalker(line).PointAt(distance, out direction);
+            new MapLineWalker(line).PointAt(distance, out direction);
 
         public static bool Contains(IReadOnlyList<Vector2> polygon, Vector2 point)
         {

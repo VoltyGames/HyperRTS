@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland
@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
     /// turn, and pieces too small or too narrow to farm become the kit's leftover ground. Everything is decided in the authored sector, so every copy of a field
     /// grows the same crop.
     /// </summary>
-    public sealed class MapFarmlandPlanner : MapLandStep
+    public sealed class MapFarmlandPlanner : MapLandPass
     {
         private const float SampleStep = 1f;
         private const float MinRun = 15f;

@@ -1,5 +1,4 @@
-using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;

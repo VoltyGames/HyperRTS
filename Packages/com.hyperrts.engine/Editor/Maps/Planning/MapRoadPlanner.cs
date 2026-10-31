@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using UnityEngine;
@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// The land of every road: the carriageway, then the grass and weed verge either side. Passes that lay tracks
     /// (field ends, access to a pad) lay them through <see cref="LayTrack"/>.
     /// </summary>
-    public sealed class MapRoadPlanner : MapLandStep
+    public sealed class MapRoadPlanner : MapLandPass
     {
         /// <summary>Track ends this close (metres) are the same end: on a symmetry axis a copy lands on the track itself.</summary>
         private const float SameEnd = 0.5f;

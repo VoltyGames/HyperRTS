@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Spec;
 
 namespace HyperRTS.Editor.Maps.Geometry

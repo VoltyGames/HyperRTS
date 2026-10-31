@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Build;
-using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Tools;
 using HyperRTS.Editor.Maps.Views;

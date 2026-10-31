@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using UnityEngine;

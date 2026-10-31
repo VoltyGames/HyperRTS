@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Designer;
-using HyperRTS.Editor.Maps.Generation;
-using HyperRTS.Editor.Maps.Json;
 using HyperRTS.Editor.Maps.Spec;
 using NUnit.Framework;
 using UnityEngine;
@@ -103,9 +103,9 @@ namespace HyperRTS.Editor.Tests.Maps
         [Test]
         public void FormatIsStable()
         {
-            var once = MapJsonFormat.Format("{\"a\":[1.0,2.5],\"b\":{\"x\":1,\"z\":2},\"c\":[{\"d\":\"e\\\"f\"}]}");
+            var once = JsonFormat.Format("{\"a\":[1.0,2.5],\"b\":{\"x\":1,\"z\":2},\"c\":[{\"d\":\"e\\\"f\"}]}");
 
-            Assert.AreEqual(once, MapJsonFormat.Format(once));
+            Assert.AreEqual(once, JsonFormat.Format(once));
             StringAssert.Contains("\"a\": [1, 2.5]", once);
             StringAssert.Contains("\"d\": \"e\\\"f\"", once);
         }
@@ -113,7 +113,7 @@ namespace HyperRTS.Editor.Tests.Maps
         [Test]
         public void MalformedJsonFailsLoudly()
         {
-            Assert.Throws<System.FormatException>(() => MapJsonFormat.Format("{\"a\": [1, 2}"));
+            Assert.Throws<System.FormatException>(() => JsonFormat.Format("{\"a\": [1, 2}"));
         }
 
         [Test]

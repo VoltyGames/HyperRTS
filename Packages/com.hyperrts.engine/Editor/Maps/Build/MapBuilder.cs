@@ -1,6 +1,5 @@
 using System.IO;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Hints;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Nav;
@@ -64,7 +63,7 @@ namespace HyperRTS.Editor.Maps.Build
             MapHintWriter.Write(scene, generation, nav, issues);
             var report = MapReport.Create(generation.Project.Spec, issues, measurer.Metrics);
             report.land = MapLandFigures.Measure(generation);
-            report.Write(MapOverviewImage.Draw(generation, nav, measurer.Paths));
+            report.Write(MapReportImage.Draw(generation, nav, measurer.Paths));
             return report;
         }
 

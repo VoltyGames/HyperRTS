@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Ground;
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
+using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning
@@ -11,6 +12,7 @@ namespace HyperRTS.Editor.Maps.Planning
     public sealed class MapTreePlanting
     {
         private const int ScatterAttempts = 6;
+        private const float EntityFootprint = 1.5f;
         private readonly MapSymmetry _symmetry;
         private readonly MapClimate _climate;
         private readonly MapTreeSpacing _spacing;
@@ -40,6 +42,38 @@ namespace HyperRTS.Editor.Maps.Planning
                 _spacing.Add(placed);
                 Planted.Add(new MapTree(tree, placed, scale, copy.ApplyYaw(yaw), variant));
             }
+        }
+
+        /// <summary>
+        /// Makes every planted tree inside <paramref name="playArea"/> whose species has entity versions a placement,
+        /// and returns the rest for the terrain: the backdrop and species without one.
+        /// </summary>
+        public List<MapTree> PlaceEntities(MapPlacements placements, Rect playArea)
+        {
+            var terrain = new List<MapTree>();
+            var entries = new Dictionary<(int, int), MapProp>();
+            foreach (var tree in Planted)
+            {
+                var species = _climate.trees[tree.Species];
+                if (!species.HasEntities || !playArea.Contains(tree.Position))
+                {
+                    terrain.Add(tree);
+                    continue;
+                }
+
+                if (!entries.TryGetValue((tree.Species, tree.Variant), out var entry))
+                {
+                    entries[(tree.Species, tree.Variant)] = entry = new MapProp
+                    {
+                        key = species.key, prefab = species.destructibles[tree.Variant], size = Vector2.one * EntityFootprint,
+                    };
+                }
+
+                // Trees were spaced when planted, so they skip the clearance check.
+                placements.All.Add(new MapPlacement(entry, tree.Position, tree.Yaw, 1f) { Scale = tree.Scale });
+            }
+
+            return terrain;
         }
 
         public float Scale(int tree, System.Random random)

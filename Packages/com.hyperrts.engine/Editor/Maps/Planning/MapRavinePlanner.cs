@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Spec;
@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Ravines (balkas): the steep cut and the grassy rim slope round it, and woods in groves on the floor and lower
     /// walls, as much of it as the spec's <c>wooded</c> share says — never filled to the brim.
     /// </summary>
-    public sealed class MapRavinePlanner : MapLandStep
+    public sealed class MapRavinePlanner : MapLandPass
     {
         private const float WoodedReach = 0.75f;
         private const float GroveSize = 28f;

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Symmetry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Layout
@@ -60,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Layout
         public List<MapCopy<MapBeltSpec>> Belts { get; set; } = new();
         public List<MapCopy<MapFarmlandSpec>> Farmland { get; set; } = new();
         public List<MapCopy<MapAreaSpec>> Areas { get; set; } = new();
-        public List<MapCopy<MapLineSpec>> Lines { get; set; } = new();
+        public List<MapCopy<MapRowSpec>> Rows { get; set; } = new();
         public List<MapCopy<MapScatterSpec>> Scatters { get; set; } = new();
     }
 }

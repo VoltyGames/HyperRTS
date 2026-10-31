@@ -3,7 +3,6 @@ using System.Linq;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Symmetry;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -67,7 +66,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var layout = MapExpander.Expand(spec, issues);
 
-            Assert.AreEqual(1, issues.Errors.Count(e => e.Contains("shared but not symmetric")), "only the off-centre one");
+            Assert.AreEqual(1, issues.Errors.Count(e => e.Message.Contains("shared but not symmetric")), "only the off-centre one");
             Assert.AreEqual(2, layout.Props.Count, "each shared prop is placed once");
         }
 
@@ -98,9 +97,9 @@ namespace HyperRTS.Editor.Tests.Maps
 
             MapExpander.Expand(spec, issues);
 
-            var index = issues.Errors.ToList().FindIndex(e => e.Contains("outside the authored sector"));
-            Assert.GreaterOrEqual(index, 0, issues.ToString());
-            Assert.AreEqual(new MapIssueFeature(nameof(MapSpec.props), 0), issues.ErrorFeatures[index]);
+            var error = issues.Errors.FirstOrDefault(e => e.Message.Contains("outside the authored sector"));
+            Assert.IsNotNull(error.Message, issues.ToString());
+            Assert.AreEqual(new MapIssueFeature(nameof(MapSpec.props), 0), error.Feature);
         }
 
         [TestCase(MapSymmetry.Rotate180, 42f, -17f)]

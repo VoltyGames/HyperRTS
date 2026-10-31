@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Land;
 
 namespace HyperRTS.Editor.Maps.Report

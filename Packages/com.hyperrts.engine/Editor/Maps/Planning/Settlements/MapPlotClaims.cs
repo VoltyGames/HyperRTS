@@ -1,7 +1,7 @@
 using System;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {

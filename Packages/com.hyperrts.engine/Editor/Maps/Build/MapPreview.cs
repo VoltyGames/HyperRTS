@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using HyperRTS.Editor.Maps.Generation;
 using HyperRTS.Editor.Maps.Report;
 using UnityEngine;
 
@@ -58,7 +57,7 @@ namespace HyperRTS.Editor.Maps.Build
             if (generation != null)
             {
                 report.land = MapLandFigures.Measure(generation);
-                image = MapOverviewImage.DrawLand(generation);
+                image = MapReportImage.DrawLand(generation);
             }
 
             return new MapPreviewResult(report, image);

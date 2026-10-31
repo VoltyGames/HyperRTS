@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Checks;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Presentation.Environment.RowCrops;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
@@ -183,7 +184,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         {
             var issues = new MapIssues();
             MapAssetCheck.Check(climate, MapFixture.Item<MapPalette>("Palette"), issues);
-            return issues.Errors.Where(e => e.Contains("impactClass")).ToArray();
+            return issues.Errors.Select(e => e.Message).Where(e => e.Contains("impactClass")).ToArray();
         }
 
         private static void Claim(MapLand land, MapLandRegion region, Func<Vector2, bool> inside) =>

@@ -1,8 +1,9 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Palette;
 
 namespace HyperRTS.Editor.Maps.Tools
 {
@@ -72,13 +73,13 @@ namespace HyperRTS.Editor.Maps.Tools
                 text.AppendLine($"| `{surface.key}` | {surface.layer} | {plants} | {surface.rowCrop} | {trees} |");
             }
 
-            text.AppendLine().AppendLine($"Trees (`lines[].kind` plants a row): {string.Join(", ", climate.trees.Select(t => $"`{t.key}`"))}.");
+            text.AppendLine().AppendLine($"Trees (`rows[].kind` plants a row): {string.Join(", ", climate.trees.Select(t => $"`{t.key}`"))}.");
         }
 
         private static void Palette(StringBuilder text, MapPalette palette)
         {
             text.AppendLine().AppendLine("## Palette").AppendLine();
-            text.AppendLine("| Entry (`props`, `resources`, `lines`, `scatters`, bridges) | Footprint | Kind | Pad | Access |").AppendLine("| --- | --- | --- | --- | --- |");
+            text.AppendLine("| Entry (`props`, `resources`, `rows`, `scatters`, bridges) | Footprint | Kind | Pad | Access |").AppendLine("| --- | --- | --- | --- | --- |");
             foreach (var entry in palette.entries.Where(e => e.prefab != null))
             {
                 text.AppendLine($"| `{entry.key}` | {entry.size.x} × {entry.size.y} m | {Kind(entry)} | {entry.pad} | {entry.access} |");

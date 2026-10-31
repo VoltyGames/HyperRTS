@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// concrete, trampled dirt) under the props whose entry asks for one: a rectangle or oval turned with the prop,
     /// its edge wandering by the entry's pad wander.
     /// </summary>
-    public sealed class MapBasePlanner : MapLandStep
+    public sealed class MapBasePlanner : MapLandPass
     {
         /// <summary>How far a base's edge wanders in and out, as a share of its radius.</summary>
         private const float BaseWander = 0.18f;

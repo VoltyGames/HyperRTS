@@ -1,5 +1,6 @@
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Maps.Views;
 using NUnit.Framework;
 using UnityEngine;
 

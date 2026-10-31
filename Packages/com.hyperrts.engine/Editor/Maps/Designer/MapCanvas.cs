@@ -1,6 +1,6 @@
 ﻿using System;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Presentation.HUD;
 using UnityEngine;
 using UnityEngine.UIElements;

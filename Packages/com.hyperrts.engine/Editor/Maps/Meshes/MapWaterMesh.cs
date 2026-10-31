@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         {
             var length = MapGeometry.Length(line);
             var count = Mathf.Max(2, Mathf.CeilToInt(length / Step) + 1);
-            var walker = new MapPathWalker(line);
+            var walker = new MapLineWalker(line);
             var first = _vertices.Count;
             for (var i = 0; i < count; i++)
             {

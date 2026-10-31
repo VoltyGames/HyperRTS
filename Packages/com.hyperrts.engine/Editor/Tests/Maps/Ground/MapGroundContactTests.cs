@@ -1,8 +1,10 @@
 using System.Linq;
 using HyperRTS.Editor.Maps;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Scenes;
@@ -63,9 +65,9 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             var clearance = new MapClearance(layout, MapFixture.Shapes(layout, climate), 15f);
             clearance.Reserve(new Vector2(10f, 10f), 2f);
 
-            Assert.AreEqual(0f, MapPlantPainter.GrassNearProps(clearance, new Vector2(11.9f, 10f)));
-            Assert.AreEqual(1f, MapPlantPainter.GrassNearProps(clearance, new Vector2(10f, 12f + MapPlantPainter.PropGrassFalloff + 0.01f)));
-            var halfway = MapPlantPainter.GrassNearProps(clearance, new Vector2(12f + MapPlantPainter.PropGrassFalloff * 0.5f, 10f));
+            Assert.AreEqual(0f, MapGrassPainter.GrassNearProps(clearance, new Vector2(11.9f, 10f)));
+            Assert.AreEqual(1f, MapGrassPainter.GrassNearProps(clearance, new Vector2(10f, 12f + MapGrassPainter.PropGrassFalloff + 0.01f)));
+            var halfway = MapGrassPainter.GrassNearProps(clearance, new Vector2(12f + MapGrassPainter.PropGrassFalloff * 0.5f, 10f));
             Assert.AreEqual(0.5f, halfway, 0.01f);
         }
 
@@ -119,7 +121,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
         {
             var climate = MapFixture.Climate();
             var rough = MapFixture.Surface("Rough", "Meadow");
-            rough.props.Add(new MapPropDensity { kind = "Stone", perHectare = 60f });
+            rough.props.Add(new MapPropDensity { prop = "Stone", perHectare = 60f });
             climate.surfaces.Add(rough);
             var (prefab, model) = (new GameObject("Stone"), new GameObject("StoneModel"));
             var issues = new MapIssues();

@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;
 using UnityEngine.UIElements;
 

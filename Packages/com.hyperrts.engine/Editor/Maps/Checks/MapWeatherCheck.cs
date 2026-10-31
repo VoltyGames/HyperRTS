@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 
 namespace HyperRTS.Editor.Maps.Checks
 {

@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Ground;
-using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Symmetry;
 using NUnit.Framework;
 using UnityEngine;
 

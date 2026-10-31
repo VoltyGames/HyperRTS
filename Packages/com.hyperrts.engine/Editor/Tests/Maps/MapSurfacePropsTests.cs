@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Report;
 using NUnit.Framework;

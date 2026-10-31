@@ -1,7 +1,7 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Layout;
 using UnityEditor;
 using UnityEngine;
 

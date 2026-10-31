@@ -4,8 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Land
 {
     /// <summary>
-    /// Distances on a grid to the nearest seed cell (a two-pass eight-neighbour chamfer, within about 8% of
-    /// Euclidean), for margins round fields and edge bands.
+    /// Distances on a grid to the nearest seed cell, spread from cell to neighbouring cell in two passes (within
+    /// about 8% of the straight-line distance), for margins round fields and edge bands.
     /// </summary>
     public static class MapLandDistance
     {
@@ -24,8 +24,7 @@ namespace HyperRTS.Editor.Maps.Land
                 }
             }
 
-            Forward(distance, width, height);
-            Backward(distance, width, height);
+            Spread(width, height, (cell, from, step) => distance[cell] = Mathf.Min(distance[cell], distance[from] + step));
             return distance;
         }
 
@@ -54,32 +53,34 @@ namespace HyperRTS.Editor.Maps.Land
             return z < height - 1 && region(x, z + 1) != own;
         }
 
-        private static void Forward(float[] d, int width, int height)
+        /// <summary>
+        /// Spreads distances over a row-major grid, from the south-west corner and back from the north-east:
+        /// <paramref name="carry"/> gets each cell, a neighbour this pass has already reached and the step between
+        /// them (1 straight, 1.4142 diagonal), to carry that neighbour's distance over.
+        /// </summary>
+        public static void Spread(int width, int height, Action<int, int, float> carry)
         {
             for (var z = 0; z < height; z++)
             {
                 for (var x = 0; x < width; x++)
                 {
                     var i = z * width + x;
-                    if (x > 0) d[i] = Mathf.Min(d[i], d[i - 1] + Straight);
-                    if (z > 0) d[i] = Mathf.Min(d[i], d[i - width] + Straight);
-                    if (x > 0 && z > 0) d[i] = Mathf.Min(d[i], d[i - width - 1] + Diagonal);
-                    if (x < width - 1 && z > 0) d[i] = Mathf.Min(d[i], d[i - width + 1] + Diagonal);
+                    if (x > 0) carry(i, i - 1, Straight);
+                    if (z > 0) carry(i, i - width, Straight);
+                    if (x > 0 && z > 0) carry(i, i - width - 1, Diagonal);
+                    if (x < width - 1 && z > 0) carry(i, i - width + 1, Diagonal);
                 }
             }
-        }
 
-        private static void Backward(float[] d, int width, int height)
-        {
             for (var z = height - 1; z >= 0; z--)
             {
                 for (var x = width - 1; x >= 0; x--)
                 {
                     var i = z * width + x;
-                    if (x < width - 1) d[i] = Mathf.Min(d[i], d[i + 1] + Straight);
-                    if (z < height - 1) d[i] = Mathf.Min(d[i], d[i + width] + Straight);
-                    if (x < width - 1 && z < height - 1) d[i] = Mathf.Min(d[i], d[i + width + 1] + Diagonal);
-                    if (x > 0 && z < height - 1) d[i] = Mathf.Min(d[i], d[i + width - 1] + Diagonal);
+                    if (x < width - 1) carry(i, i + 1, Straight);
+                    if (z < height - 1) carry(i, i + width, Straight);
+                    if (x < width - 1 && z < height - 1) carry(i, i + width + 1, Diagonal);
+                    if (x > 0 && z < height - 1) carry(i, i + width - 1, Diagonal);
                 }
             }
         }

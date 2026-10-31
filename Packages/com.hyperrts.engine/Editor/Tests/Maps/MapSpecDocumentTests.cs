@@ -1,8 +1,8 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Designer;
-using HyperRTS.Editor.Maps.Json;
 using HyperRTS.Editor.Maps.Spec;
 using NUnit.Framework;
 using UnityEditor;
@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.Tests.Maps
             _auto = MapLivePreview.Auto;
             MapLivePreview.Auto = false;
             Directory.CreateDirectory(Folder);
-            File.WriteAllText(SpecPath, MapJsonFormat.Format(Original));
+            File.WriteAllText(SpecPath, JsonFormat.Format(Original));
             AssetDatabase.ImportAsset(SpecPath);
             _document = MapSpecDocument.Open(SpecPath);
         }
@@ -130,7 +130,7 @@ namespace HyperRTS.Editor.Tests.Maps
             var changes = 0;
             _document.Changed += () => changes++;
 
-            File.WriteAllText(SpecPath, MapJsonFormat.Format(Original.Replace("Dirt", "Paved")));
+            File.WriteAllText(SpecPath, JsonFormat.Format(Original.Replace("Dirt", "Paved")));
             _document.Reload();
 
             Assert.AreEqual("Paved", _document.Spec.roads[0].kind);
@@ -145,7 +145,7 @@ namespace HyperRTS.Editor.Tests.Maps
             var shown = Shown();
             Assert.IsNotNull(shown, "The window holds no document for the spec.");
 
-            File.WriteAllText(SpecPath, MapJsonFormat.Format(Original.Replace("Dirt", "Paved")));
+            File.WriteAllText(SpecPath, JsonFormat.Format(Original.Replace("Dirt", "Paved")));
             AssetDatabase.ImportAsset(SpecPath);
             for (var frame = 0; frame < 10 && shown.Spec.roads[0].kind != "Paved"; frame++)
             {
@@ -163,6 +163,6 @@ namespace HyperRTS.Editor.Tests.Maps
 
         private static string Saved() => File.ReadAllText(SpecPath);
 
-        private static string Formatted(string json) => MapJsonFormat.Format(json);
+        private static string Formatted(string json) => JsonFormat.Format(json);
     }
 }

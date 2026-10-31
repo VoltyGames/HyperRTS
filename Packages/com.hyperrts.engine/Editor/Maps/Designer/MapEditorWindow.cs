@@ -1,6 +1,6 @@
 using System.IO;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEditor.Callbacks;

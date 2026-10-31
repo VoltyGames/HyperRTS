@@ -1,5 +1,6 @@
 using HyperRTS.Editor.Maps.Planning.Farmland;
 using HyperRTS.Editor.Maps.Planning.Settlements;
+using HyperRTS.Editor.Maps.Planning.War;
 
 namespace HyperRTS.Editor.Maps.Planning
 {
@@ -13,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Planning
     {
         public static void Plan(MapPlanContext context)
         {
-            MapLandStep[] passes =
+            MapLandPass[] passes =
             {
                 new MapWaterPlanner(context),
                 new MapRoadPlanner(context),

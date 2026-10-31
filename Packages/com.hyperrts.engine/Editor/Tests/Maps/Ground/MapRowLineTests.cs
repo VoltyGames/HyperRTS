@@ -1,6 +1,7 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Presentation.Environment.RowCrops;
 using NUnit.Framework;

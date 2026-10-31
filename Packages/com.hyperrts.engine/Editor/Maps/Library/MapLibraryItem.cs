@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
 using UnityEngine;
 using Object = UnityEngine.Object;
 

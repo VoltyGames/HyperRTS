@@ -160,7 +160,7 @@ at once, and **Build graph**. Any other text asset keeps Unity's inspector.
 
 To edit a JSON file in an inspector or window, derive from `JsonDocument`: a hidden ScriptableObject that holds the
 parsed value for Undo and property fields. Override `Read`, `Write`, `WriteOver` (the edit written over the file's
-text, changing only what differs, as `MapJsonChanges` does) and `Canonical`. Edit through `Serialized` and `Apply`,
+text, changing only what differs, as `JsonChanges` does) and `Canonical`. Edit through `Serialized` and `Apply`,
 or `Record` for code; each finished edit saves, an undo saves the file back, and an outside write reloads it.
 `MapSpecDocument` and `EffectRecipeDocument` are the two.
 

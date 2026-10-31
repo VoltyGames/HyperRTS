@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Maps.Views;
 
 namespace HyperRTS.Editor.Maps.Report
 {
@@ -19,7 +20,7 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Most cells a base-to-base path search expanded.</summary>
         public int maxExpansions;
 
-        /// <summary>Renewable fields (clusters of regrowing stacks, see <see cref="MapFieldClusters"/>) per player.</summary>
+        /// <summary>Renewable fields (clusters of regrowing stacks, see <see cref="MapResourceFields"/>) per player.</summary>
         public float renewableFieldsPerPlayer;
 
         public int trees;

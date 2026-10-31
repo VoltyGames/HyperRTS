@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// River banks and the floodplain meadows along them inside the valley, claimed once roads have taken their
     /// crossings.
     /// </summary>
-    public sealed class MapBankPlanner : MapLandStep
+    public sealed class MapBankPlanner : MapLandPass
     {
         public MapBankPlanner(MapPlanContext context) : base(context)
         {

@@ -1,10 +1,11 @@
 using System.Linq;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Checks;
-using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Simulation.Combat;
 using NUnit.Framework;
@@ -25,20 +26,20 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var issues = CheckSpec(spec);
 
-            var index = issues.Errors.ToList().FindIndex(e => e.Contains("Road 2") && e.Contains("Cobbles"));
-            Assert.GreaterOrEqual(index, 0, issues.ToString());
-            Assert.AreEqual(new MapIssueFeature(nameof(MapSpec.roads), 1), issues.ErrorFeatures[index]);
+            var error = issues.Errors.FirstOrDefault(e => e.Message.Contains("Road 2") && e.Message.Contains("Cobbles"));
+            Assert.IsNotNull(error.Message, issues.ToString());
+            Assert.AreEqual(new MapIssueFeature(nameof(MapSpec.roads), 1), error.Feature);
         }
 
         [Test]
         public void ALineOfNeitherTreeNorProp_IsAnErrorNamingIt()
         {
             var spec = MapFixture.Spec();
-            spec.lines.Add(new MapLineSpec { kind = "Hedge" });
+            spec.rows.Add(new MapRowSpec { kind = "Hedge" });
 
             var issues = CheckSpec(spec);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Line 1") && e.Contains("Hedge")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Row 1") && e.Message.Contains("Hedge")), issues.ToString());
         }
 
         [Test]
@@ -49,7 +50,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var issues = CheckSpec(spec, "Oil");
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Resource 1") && e.Contains("amount")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Resource 1") && e.Message.Contains("amount")), issues.ToString());
         }
 
         [Test]
@@ -73,7 +74,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var issues = CheckAssets(MapFixture.Climate(), palette);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains(named)), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Shed") && e.Message.Contains(named)), issues.ToString());
         }
 
         [TestCase("", "'weather' key is missing")]
@@ -85,7 +86,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var issues = CheckSpec(spec);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains(error)), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains(error)), issues.ToString());
         }
 
         [Test]
@@ -96,8 +97,8 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var issues = CheckAssets(climate, MapFixture.Item<MapPalette>("Palette"));
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("weather 'Clear' is listed twice")), issues.ToString());
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("weather 'Clear' has no atmosphere")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("weather 'Clear' is listed twice")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("weather 'Clear' has no atmosphere")), issues.ToString());
         }
 
         [Test]
@@ -110,7 +111,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance", "groundTint regionLight" })
             {
-                Assert.IsTrue(issues.Errors.Any(e => e.Contains(field)), $"{field}: {issues}");
+                Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains(field)), $"{field}: {issues}");
             }
         }
 
@@ -125,20 +126,20 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var issues = CheckAssets(climate, MapFixture.Item<MapPalette>("Palette"));
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Grove") && e.Contains("maxEdgeDistance")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Grove") && e.Message.Contains("maxEdgeDistance")), issues.ToString());
         }
 
         [Test]
         public void ABesideRoadPropOnASurface_IsAnErrorNamingIt()
         {
             var climate = MapFixture.Climate();
-            climate.surfaces.Single(s => s.key == "Meadow").props.Add(new MapPropDensity { kind = "Milestone" });
+            climate.surfaces.Single(s => s.key == "Meadow").props.Add(new MapPropDensity { prop = "Milestone" });
             var palette = MapFixture.Item<MapPalette>("Palette");
             palette.entries.Add(MapFixture.Item<MapProp>("Milestone", i => { i.besideRoad = true; }));
 
             var issues = CheckAssets(climate, palette);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Milestone") && e.Contains("besideRoad")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Milestone") && e.Message.Contains("besideRoad")), issues.ToString());
         }
 
         [Test]
@@ -154,7 +155,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             MapSpecCheck.Check(spec, MapFixture.Climate(), palette, rules, issues);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Prop 1") && e.Contains("besideRoad")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Prop 1") && e.Message.Contains("besideRoad")), issues.ToString());
         }
 
         [Test]
@@ -169,9 +170,9 @@ namespace HyperRTS.Editor.Tests.Maps
 
             var issues = CheckAssets(MapFixture.Climate(), palette);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("side 0") && e.Contains("1 to 255")), issues.ToString());
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("side 2 is listed twice")), issues.ToString());
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("'Bunker' is not in the palette")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("side 0") && e.Message.Contains("1 to 255")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("side 2 is listed twice")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("'Bunker' is not in the palette")), issues.ToString());
         }
 
         [Test]
@@ -189,7 +190,7 @@ namespace HyperRTS.Editor.Tests.Maps
             Object.DestroyImmediate(fence);
 
             Assert.AreEqual(1, issues.Errors.Count(), issues.ToString());
-            Assert.IsTrue(issues.Errors.Single().Contains("'Stone'"), issues.ToString());
+            Assert.IsTrue(issues.Errors.Single().Message.Contains("'Stone'"), issues.ToString());
         }
 
         [Test]
@@ -216,7 +217,7 @@ namespace HyperRTS.Editor.Tests.Maps
         {
             var stacks = Enumerable.Range(0, xz.Length / 2).Select(i => new Vector2(xz[i * 2], xz[i * 2 + 1])).ToList();
 
-            Assert.AreEqual(expected, MapFieldClusters.Count(stacks));
+            Assert.AreEqual(expected, MapResourceFields.Count(stacks));
         }
 
         private static MapIssues CheckAssets(MapClimate climate, MapPalette palette)

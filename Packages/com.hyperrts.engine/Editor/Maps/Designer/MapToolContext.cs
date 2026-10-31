@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Editor.Maps.Symmetry;
+using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Designer

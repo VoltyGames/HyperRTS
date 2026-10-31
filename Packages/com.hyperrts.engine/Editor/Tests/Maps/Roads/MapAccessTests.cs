@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Planning.Farmland;
@@ -109,7 +109,7 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
             new MapAccessPlanner(context).Plan();
 
             Assert.IsFalse(context.Shapes.Roads.Any(r => r.Generated));
-            Assert.IsTrue(issues.Warnings.Any(w => w.Contains("Shed")), issues.ToString());
+            Assert.IsTrue(issues.Warnings.Any(w => w.Message.Contains("Shed")), issues.ToString());
         }
 
         [Test]

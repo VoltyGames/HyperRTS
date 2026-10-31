@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;

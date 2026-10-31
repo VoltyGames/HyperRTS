@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.IO;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Input.Cameras;
 using UnityEditor.SceneManagement;
 using UnityEngine;

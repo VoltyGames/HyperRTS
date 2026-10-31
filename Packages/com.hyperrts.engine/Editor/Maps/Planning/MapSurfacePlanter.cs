@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;
 
@@ -13,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// lands that plant their own trees are skipped. Spots are chosen in the authored sector and copied. Props falling
     /// in the backdrop become scenery when they have a scenery model.
     /// </summary>
-    public sealed class MapSurfacePlanter : MapLandStep
+    public sealed class MapSurfacePlanter : MapLandPass
     {
         private const int PropAttempts = 30;
         private const float RowSpacing = 16f;
@@ -79,7 +80,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private void PlaceProps(MapLandRegion region, MapPropDensity props, List<int> cells, float hectares,
             System.Random random)
         {
-            var entry = Context.Palette.Entry(props.kind);
+            var entry = Context.Palette.Entry(props.prop);
             var wanted = random.Count(props.perHectare * hectares);
             if (props.alongRows)
             {

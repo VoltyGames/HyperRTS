@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
+using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 using UnityEngine;
@@ -198,7 +199,7 @@ namespace HyperRTS.Editor.Maps.Report
         private void CheckRenewableFields(List<MapPlacement> placements)
         {
             var stacks = placements.Where(p => p.Entry.IsRenewable).Select(p => p.Position).ToList();
-            var fields = MapFieldClusters.Count(stacks);
+            var fields = MapResourceFields.Count(stacks);
             var players = _layout.Spawns.Count;
             Metrics.renewableFieldsPerPlayer = (float)fields / players;
             var mode = _rules.Mode(_layout.Spec.mode);

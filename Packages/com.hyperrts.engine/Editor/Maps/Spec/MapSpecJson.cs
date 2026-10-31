@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Json;
+using HyperRTS.Editor.Common;
 using Newtonsoft.Json.Linq;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Spec
 {
-    /// <summary>Reads and writes <c>&lt;Map&gt;.map.json</c>, laid out by <see cref="MapJsonFormat"/>.</summary>
+    /// <summary>Reads and writes <c>&lt;Map&gt;.map.json</c>, laid out by <see cref="JsonFormat"/>.</summary>
     public static class MapSpecJson
     {
         // A new entry of each feature list as its class starts, which a save leaves out of an added entry.
@@ -18,21 +18,21 @@ namespace HyperRTS.Editor.Maps.Spec
         public static MapSpec Read(string json)
         {
             var spec = new MapSpec();
-            MapJsonFormat.ReadInto(json, spec, "map spec", "map spec");
+            JsonFormat.ReadInto(json, spec, "map spec", "map spec");
             return spec;
         }
 
-        public static string Write(MapSpec spec) => MapJsonFormat.Format(JsonUtility.ToJson(spec, false));
+        public static string Write(MapSpec spec) => JsonFormat.Format(JsonUtility.ToJson(spec, false));
 
         /// <summary>
         /// Writes <paramref name="spec"/> over the spec in <paramref name="fileJson"/> by changing only what differs (see
-        /// <see cref="MapJsonChanges"/>), so a saved edit diffs like a hand edit.
+        /// <see cref="JsonChanges"/>), so a saved edit diffs like a hand edit.
         /// </summary>
         public static string WriteOver(string fileJson, MapSpec spec)
         {
-            var before = MapJsonFormat.Parse(Write(Read(fileJson)));
-            var after = MapJsonFormat.Parse(Write(spec));
-            return MapJsonFormat.Write(MapJsonChanges.Apply(MapJsonFormat.Parse(fileJson), before, after, EntryDefaults.Value));
+            var before = JsonFormat.Parse(Write(Read(fileJson)));
+            var after = JsonFormat.Parse(Write(spec));
+            return JsonFormat.Write(JsonChanges.Apply(JsonFormat.Parse(fileJson), before, after, EntryDefaults.Value));
         }
 
         private static IReadOnlyDictionary<string, JToken> FindEntryDefaults()
@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Spec
                 if (entry != null && entry.IsClass && entry != typeof(string))
                 {
                     // Through the same layout as a written spec, so 20.0 compares equal to the file's 20.
-                    defaults[field.Name] = MapJsonFormat.Parse(MapJsonFormat.Format(JsonUtility.ToJson(Activator.CreateInstance(entry))));
+                    defaults[field.Name] = JsonFormat.Parse(JsonFormat.Format(JsonUtility.ToJson(Activator.CreateInstance(entry))));
                 }
             }
 

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using UnityEngine;
@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// the edges, and breaks where tracks cut through. Plans the spec's belts; farmland lays its field-end belts
     /// through <see cref="PlanLine"/>.
     /// </summary>
-    public sealed class MapBeltPlanner : MapLandStep
+    public sealed class MapBeltPlanner : MapLandPass
     {
         private const float Jitter = 0.25f;
         private const float MinSpacing = 2f;
@@ -62,7 +62,7 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var random = Context.Random(MapRandomChannel.BeltTrees, seed);
             var length = MapGeometry.Length(line);
-            var path = new MapPathWalker(line);
+            var path = new MapLineWalker(line);
             var rowGap = kit.rows > 1 ? (kit.width - 2f) / kit.rows : 0f;
             for (var row = 0; row < kit.rows; row++)
             {
@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Maps.Planning
             }
         }
 
-        private void PlantAt(MapBeltKit kit, MapPathWalker path, float along, float offset, System.Random random)
+        private void PlantAt(MapBeltKit kit, MapLineWalker path, float along, float offset, System.Random random)
         {
             var point = path.PointAt(along, out var direction);
             var shrub = !string.IsNullOrEmpty(kit.shrub) && random.NextDouble() < kit.shrubShare;

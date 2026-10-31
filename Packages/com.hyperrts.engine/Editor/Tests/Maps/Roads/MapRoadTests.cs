@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Checks;
-using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Refine;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Symmetry;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -127,9 +127,9 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
 
             var issues = Check(spec);
 
-            var deadEnds = issues.Warnings.Select((w, i) => (w, i)).Where(p => p.w.Contains("dead-ends")).ToList();
+            var deadEnds = issues.Warnings.Where(w => w.Message.Contains("dead-ends")).ToList();
             Assert.AreEqual(2, deadEnds.Count, "two ends, copies reported once");
-            Assert.AreEqual(new MapIssueFeature(nameof(MapSpec.roads), 0), issues.WarningFeatures[deadEnds[0].i]);
+            Assert.AreEqual(new MapIssueFeature(nameof(MapSpec.roads), 0), deadEnds[0].Feature);
         }
 
         [Test]
@@ -153,8 +153,8 @@ namespace HyperRTS.Editor.Tests.Maps.Roads
             var refined = SpecWith(MapFixture.Road("Asphalt", corner));
             MapRoadRefiner.Refine(refined, MapFixture.Climate(), MapSymmetry.Parse(refined.symmetry));
 
-            Assert.IsTrue(Check(sharp).Warnings.Any(w => w.Contains("bends")));
-            Assert.IsFalse(Check(refined).Warnings.Any(w => w.Contains("bends")));
+            Assert.IsTrue(Check(sharp).Warnings.Any(w => w.Message.Contains("bends")));
+            Assert.IsFalse(Check(refined).Warnings.Any(w => w.Message.Contains("bends")));
         }
 
         [TestCase(1f, true, TestName = "APaddedPropOnARoad_IsAnErrorNamingIt")]

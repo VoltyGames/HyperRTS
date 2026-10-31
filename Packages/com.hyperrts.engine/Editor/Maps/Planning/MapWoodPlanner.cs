@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Spec woods: forest floor under the canopy, a shrubby band round the edge and in glades, canopy trees inside
     /// and shrubs with young trees at the edge, so a wood fades into the open instead of stopping at a wall.
     /// </summary>
-    public sealed class MapWoodPlanner : MapLandStep
+    public sealed class MapWoodPlanner : MapLandPass
     {
         private const float EdgeWander = 2.5f;
         private const float ClearingWavelength = 35f;

@@ -1,4 +1,5 @@
-using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Heights;
+using HyperRTS.Editor.Maps.Layout;
 using NUnit.Framework;
 using UnityEngine;
 

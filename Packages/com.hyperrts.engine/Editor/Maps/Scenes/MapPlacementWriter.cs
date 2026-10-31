@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;

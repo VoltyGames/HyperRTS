@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
 
 namespace HyperRTS.Editor.Maps.Spec
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public List<MapBeltSpec> belts = new();
         public List<MapFarmlandSpec> farmland = new();
         public List<MapAreaSpec> areas = new();
-        public List<MapLineSpec> lines = new();
+        public List<MapRowSpec> rows = new();
         public List<MapScatterSpec> scatters = new();
 
         public MapWarAge WarAge => Enum.Parse<MapWarAge>(warAge);

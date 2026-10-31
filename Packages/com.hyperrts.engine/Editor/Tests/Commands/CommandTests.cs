@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using HyperRTS.Editor.Commands;
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using NUnit.Framework;

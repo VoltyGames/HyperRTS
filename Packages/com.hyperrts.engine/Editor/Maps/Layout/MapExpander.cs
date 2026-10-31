@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Symmetry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Layout
@@ -51,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Layout
             layout.Farmland = expander.Lines(spec.farmland, nameof(MapSpec.farmland), "farmland", f => f.shared,
                 f => f.points, true);
             layout.Areas = expander.Lines(spec.areas, nameof(MapSpec.areas), "area", a => a.shared, a => a.points);
-            layout.Lines = expander.Lines(spec.lines, nameof(MapSpec.lines), "line", l => l.shared, l => l.points);
+            layout.Rows = expander.Lines(spec.rows, nameof(MapSpec.rows), "row", r => r.shared, r => r.points);
             layout.Scatters = expander.Lines(spec.scatters, nameof(MapSpec.scatters), "scatter", s => s.shared,
                 s => s.points);
             ContinueRivers(layout.Rivers);

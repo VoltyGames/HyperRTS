@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Palette;
+using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
@@ -41,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Checks
                 NotBesideRoad(prop.kind, name);
             });
             Each(_spec.scatters, nameof(MapSpec.scatters), "Scatter", (scatter, name) => Entry(scatter.kind, name));
-            Each(_spec.lines, nameof(MapSpec.lines), "Line", Line);
+            Each(_spec.rows, nameof(MapSpec.rows), "Row", Row);
             Each(_spec.roads, nameof(MapSpec.roads), "Road", Road);
             Each(_spec.rivers, nameof(MapSpec.rivers), "River", (river, name) =>
                 river.crossings.ForEach(crossing => Crossing(river, crossing, name)));
@@ -91,11 +94,11 @@ namespace HyperRTS.Editor.Maps.Checks
             InClimate(Climate.weathers, _spec.weather, "weather", "The map spec's 'weather' key");
         }
 
-        /// <summary>A line plants a climate tree or places a palette prop.</summary>
-        private void Line(MapLineSpec line, string name)
+        /// <summary>A row plants a climate tree or places a palette prop.</summary>
+        private void Row(MapRowSpec row, string name)
         {
-            var known = Climate.HasTree(line.kind) || MapKeys.Contains(Palette.entries, line.kind);
-            Require(known, $"{name}: '{line.kind}' is neither a climate tree nor in the palette.");
+            var known = Climate.HasTree(row.kind) || MapKeys.Contains(Palette.entries, row.kind);
+            Require(known, $"{name}: '{row.kind}' is neither a climate tree nor in the palette.");
         }
 
         private void Road(MapRoadSpec road, string name)

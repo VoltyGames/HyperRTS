@@ -3,14 +3,11 @@ using HyperRTS.Editor.Maps.Land;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// For every land cell, the distance to the nearest cell of another region and which region that is (a two-pass
-    /// eight-neighbour chamfer that carries the label along), so a border knows both of its sides.
+    /// For every land cell, the distance to the nearest cell of another region and which region that is (spread
+    /// as <see cref="MapLandDistance"/> spreads distances, carrying the region along), so a border knows both of its sides.
     /// </summary>
     public sealed class MapEdgeNeighbours
     {
-        private const float Straight = 1f;
-        private const float Diagonal = 1.4142f;
-
         private readonly int _width;
         private readonly int _height;
         private readonly int[] _own;
@@ -30,8 +27,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 }
             }
 
-            Forward();
-            Backward();
+            MapLandDistance.Spread(_width, _height, Carry);
         }
 
         /// <summary>Cells to the nearest cell of another region; 0 where a cell touches one.</summary>
@@ -64,38 +60,8 @@ namespace HyperRTS.Editor.Maps.Ground
 
         private static readonly (int, int)[] Sides = { (-1, 0), (1, 0), (0, -1), (0, 1) };
 
-        private void Forward()
-        {
-            for (var z = 0; z < _height; z++)
-            {
-                for (var x = 0; x < _width; x++)
-                {
-                    var i = z * _width + x;
-                    if (x > 0) Relax(i, i - 1, Straight);
-                    if (z > 0) Relax(i, i - _width, Straight);
-                    if (x > 0 && z > 0) Relax(i, i - _width - 1, Diagonal);
-                    if (x < _width - 1 && z > 0) Relax(i, i - _width + 1, Diagonal);
-                }
-            }
-        }
-
-        private void Backward()
-        {
-            for (var z = _height - 1; z >= 0; z--)
-            {
-                for (var x = _width - 1; x >= 0; x--)
-                {
-                    var i = z * _width + x;
-                    if (x < _width - 1) Relax(i, i + 1, Straight);
-                    if (z < _height - 1) Relax(i, i + _width, Straight);
-                    if (x < _width - 1 && z < _height - 1) Relax(i, i + _width + 1, Diagonal);
-                    if (x > 0 && z < _height - 1) Relax(i, i + _width - 1, Diagonal);
-                }
-            }
-        }
-
         /// <summary>A neighbour's distance carries over only if its other region is not this cell's own.</summary>
-        private void Relax(int cell, int from, float step)
+        private void Carry(int cell, int from, float step)
         {
             var candidate = Distance[from] + step;
             if (candidate >= Distance[cell] || Other[from] == _own[cell])

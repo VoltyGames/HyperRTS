@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
@@ -46,7 +47,7 @@ namespace HyperRTS.Editor.Maps.Placement
             placer.PlaceResources();
             placer.PlaceProps();
             placer.PlaceBridges();
-            placer.PlaceLines();
+            placer.PlaceRows();
             placer.PlaceScatters();
             return placer._placements;
         }
@@ -116,22 +117,22 @@ namespace HyperRTS.Editor.Maps.Placement
         }
 
         /// <summary>Prop rows; rows of trees are the land planners'.</summary>
-        private void PlaceLines()
+        private void PlaceRows()
         {
-            foreach (var line in _layout.Lines.Where(l => l.Copy == 0 && !_climate.HasTree(l.Authored.kind)))
+            foreach (var row in _layout.Rows.Where(l => l.Copy == 0 && !_climate.HasTree(l.Authored.kind)))
             {
-                var entry = _palette.Entry(line.Authored.kind);
-                var points = MapGeometry.ToVectors(line.Authored.points);
+                var entry = _palette.Entry(row.Authored.kind);
+                var points = MapGeometry.ToVectors(row.Authored.points);
                 var length = MapGeometry.Length(points);
-                var path = new MapPathWalker(points);
-                var step = Mathf.Max(1f, line.Authored.spacing);
+                var path = new MapLineWalker(points);
+                var step = Mathf.Max(1f, row.Authored.spacing);
                 for (var along = step * 0.5f; along < length; along += step)
                 {
                     var position = path.PointAt(along, out var direction);
                     if (Clearance.IsDry(position, entry.Radius))
                     {
-                        var yaw = MapGeometry.Yaw(direction) + Jitter(entry, MapRandomChannel.LineYaw, line.Index * 1000 + (int)along);
-                        _placements.AddCopies(_layout.Lines, line.Index, entry, position, yaw, 1f, 1f);
+                        var yaw = MapGeometry.Yaw(direction) + Jitter(entry, MapRandomChannel.RowYaw, row.Index * 1000 + (int)along);
+                        _placements.AddCopies(_layout.Rows, row.Index, entry, position, yaw, 1f, 1f);
                     }
                 }
             }

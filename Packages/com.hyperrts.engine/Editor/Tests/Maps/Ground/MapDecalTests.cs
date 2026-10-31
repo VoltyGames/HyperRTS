@@ -1,12 +1,13 @@
 using System.Linq;
 using HyperRTS.Editor.Maps;
 using HyperRTS.Editor.Maps.Checks;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Editor.Maps.Symmetry;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -87,8 +88,8 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
 
             MapAssetCheck.Check(climate, palette, issues);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Muddy") && e.Contains("Tar")), issues.ToString());
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("Oil")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Muddy") && e.Message.Contains("Tar")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Shed") && e.Message.Contains("Oil")), issues.ToString());
         }
 
         [Test]
@@ -100,7 +101,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
 
             MapAssetCheck.Check(Climate(10f), palette, issues);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Shed") && e.Contains("groundDecalSize")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Shed") && e.Message.Contains("groundDecalSize")), issues.ToString());
         }
 
         [Test]
@@ -142,7 +143,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
 
             MapAssetCheck.Check(climate, MapFixture.Item<MapPalette>("Palette"), issues);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Contains("Ruts") && e.Contains("alongRoad")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Ruts") && e.Message.Contains("alongRoad")), issues.ToString());
         }
 
         /// <summary>The shared climate plus a Muddy surface laying dry, randomly turned Litter and wet Puddle decals.</summary>

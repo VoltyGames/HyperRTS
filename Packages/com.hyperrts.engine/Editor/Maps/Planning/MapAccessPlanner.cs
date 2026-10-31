@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Spec;
@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Planning
     /// Runs a straight access track from each prop's pad to the nearest road it can reach without crossing water or a
     /// ravine; nearby props share one track (<see cref="MapAccessGroups"/>).
     /// </summary>
-    public sealed class MapAccessPlanner : MapLandStep
+    public sealed class MapAccessPlanner : MapLandPass
     {
         /// <summary>The track starts this far inside the pad's edge, so it grows out of the pad.</summary>
         private const float PadOverlap = 2f;

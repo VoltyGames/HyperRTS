@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Palette;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements

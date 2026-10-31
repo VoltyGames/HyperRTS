@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Maps.Geometry
             var length = MapGeometry.Length(line);
             var count = Mathf.Max(1, Mathf.RoundToInt(length / step));
             var points = new List<Vector2>(count + 1);
-            var path = new MapPathWalker(line);
+            var path = new MapLineWalker(line);
             for (var i = 0; i <= count; i++)
             {
                 points.Add(path.PointAt(length * i / count, out _));

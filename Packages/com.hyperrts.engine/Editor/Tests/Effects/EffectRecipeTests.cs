@@ -1,7 +1,7 @@
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Effects;
-using HyperRTS.Editor.Maps.Json;
 using HyperRTS.Editor.Validation;
 using NUnit.Framework;
 using UnityEditor;
@@ -28,17 +28,17 @@ namespace HyperRTS.Editor.Tests.Effects
         [Test]
         public void AChangedFieldIsTheOnlyChange()
         {
-            var file = MapJsonFormat.Format(Text);
+            var file = JsonFormat.Format(Text);
             var recipe = EffectGraphSpec.Parse(file, "test");
             recipe.layers[0].capacity = 16;
 
-            Assert.AreEqual(MapJsonFormat.Format(Text.Replace("\"capacity\": 8", "\"capacity\": 16")), recipe.WriteOver(file, "test"));
+            Assert.AreEqual(JsonFormat.Format(Text.Replace("\"capacity\": 8", "\"capacity\": 16")), recipe.WriteOver(file, "test"));
         }
 
         [Test]
         public void AnAddedLayerLeavesOutItsDefaults()
         {
-            var file = MapJsonFormat.Format(Text);
+            var file = JsonFormat.Format(Text);
             var recipe = EffectGraphSpec.Parse(file, "test");
             recipe.layers.Add(new EffectLayer { name = "Glow", kind = "glow" });
 
@@ -64,7 +64,7 @@ namespace HyperRTS.Editor.Tests.Effects
         public void AMissingTextureIsReportedByLayerAndField()
         {
             Directory.CreateDirectory(Folder);
-            File.WriteAllText(Recipe, MapJsonFormat.Format(Text.Replace(Texture, "Assets/Nowhere/T_Gone.png")));
+            File.WriteAllText(Recipe, JsonFormat.Format(Text.Replace(Texture, "Assets/Nowhere/T_Gone.png")));
             AssetDatabase.ImportAsset(Recipe);
             var issues = new ValidationIssues();
 
@@ -79,7 +79,7 @@ namespace HyperRTS.Editor.Tests.Effects
         public void ADocumentEditSavesTheRecipe()
         {
             Directory.CreateDirectory(Folder);
-            File.WriteAllText(Recipe, MapJsonFormat.Format(Text));
+            File.WriteAllText(Recipe, JsonFormat.Format(Text));
             AssetDatabase.ImportAsset(Recipe);
             var document = EffectRecipeDocument.Open(Recipe);
             try
@@ -87,7 +87,7 @@ namespace HyperRTS.Editor.Tests.Effects
                 document.Serialized.FindProperty(EffectRecipeDocument.RecipeField + ".layers.Array.data[0].capacity").intValue = 24;
                 document.Apply("Capacity");
 
-                Assert.AreEqual(MapJsonFormat.Format(Text.Replace("\"capacity\": 8", "\"capacity\": 24")), File.ReadAllText(Recipe));
+                Assert.AreEqual(JsonFormat.Format(Text.Replace("\"capacity\": 8", "\"capacity\": 24")), File.ReadAllText(Recipe));
             }
             finally
             {

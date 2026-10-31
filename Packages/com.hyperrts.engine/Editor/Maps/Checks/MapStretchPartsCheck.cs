@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Simulation.Combat;
 using UnityEngine;
 

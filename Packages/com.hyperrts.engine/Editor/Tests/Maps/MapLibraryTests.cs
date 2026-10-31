@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Palette;
+using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Editor.Validation;
 using NUnit.Framework;
 using UnityEngine;

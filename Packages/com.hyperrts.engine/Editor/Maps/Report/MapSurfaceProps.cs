@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Placement;
+using HyperRTS.Editor.Maps.Rules;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Report
@@ -42,6 +43,21 @@ namespace HyperRTS.Editor.Maps.Report
 
             return cells.Select(c => Density(c.Key, c.Value, props.TryGetValue(c.Key, out var n) ? n : 0))
                 .OrderByDescending(d => d.perHectare).ToList();
+        }
+
+        /// <summary>Warns about each surface of <paramref name="area"/> dressed more thinly than its target.</summary>
+        public static void WarnBare(MapLand land, IEnumerable<MapPlacement> placements, Rect area,
+            IEnumerable<MapPropTarget> targets, MapIssues issues)
+        {
+            var measured = Measure(land, placements, area);
+            foreach (var target in targets)
+            {
+                var found = measured.Find(m => m.surface == target.surface);
+                if (found != null && found.perHectare < target.perHectare)
+                {
+                    issues.Warn($"{target.surface} carries {found.perHectare:0.0} props per hectare; the rules want {target.perHectare:0.0}.");
+                }
+            }
         }
 
         private static MapSurfaceProps Density(string surface, int cells, int props)

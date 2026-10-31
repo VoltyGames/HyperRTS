@@ -70,7 +70,7 @@ report.
 - **Team modes need a two-copy symmetry**: `rotate-180`, `mirror-x` or `mirror-z`. `ffa` needs `rotate-3` to
   `rotate-8`, one sector per player.
 
-Specs are saved in one fixed layout, `MapJsonFormat`, so files diff cleanly. A field the spec doesn't read, at any
+Specs are saved in one fixed layout, `JsonFormat`, so files diff cleanly. A field the spec doesn't read, at any
 depth, fails the load with its path, such as `hills[1].raduis`.
 
 ## Spec format
@@ -135,7 +135,7 @@ All arrays are optional and authored for the sector only. Land is claimed in the
 | `belts` | `points` (line), `kind` | Rows of trees and shrubs with gaps |
 | `farmland` | `points` (polygon), `kind`, `angle` | Fields on a grid along `angle`, which is the way the rows run. Empty `points` takes all free land |
 | `areas` | `points` (polygon), `kind` | One surface painted by hand |
-| `lines` | `points`, `kind`, `spacing` | A row every `spacing` metres of a climate tree or a palette prop |
+| `rows` | `points`, `kind`, `spacing` | A row every `spacing` metres of a climate tree or a palette prop |
 | `scatters` | `points` (polygon), `kind`, `count` | Palette props at random in the polygon. `besideRoad` entries move onto the nearest road's verge and face along it, so the polygon must reach a road |
 
 Every feature except spawns and settlements also takes `shared`. A river crossing has `along` (0 to 1 down the
@@ -143,14 +143,14 @@ authored river), `kind` (`bridge` or `ford`), `width` and `prop`: a bridge's pre
 bed sits just under the water. Fords thin the water and streak it with foam; the climate's `fordShallowsWidth` and
 `fordRapidsLength` set how far, and `crossingFoamLength` how far foam lines trail below fords and bridges.
 
-Surfaces grow their own lone trees and props by rule, so use `scatters` and `lines` only for what no rule makes.
+Surfaces grow their own lone trees and props by rule, so use `scatters` and `rows` only for what no rule makes.
 
 ## How a map is built
 
 ### Land use
 
 The land is a 1 m grid. Each cell is claimed once, by one region with a land kind, a surface and a row angle.
-`MapLandPlanner` runs the land steps in priority order, and each takes only what earlier ones left:
+`MapLandPlanner` runs the land passes in priority order, and each takes only what earlier ones left:
 
 1. Water, roads, river banks and floodplain.
 2. Bases, prop pads and access tracks.
@@ -346,9 +346,9 @@ that names no item and a link to an asset that no longer exists, on the Validate
 
 ### Adding an item type
 
-1. Add a class in `Data/` that derives from `MapLibraryItem`, with `[MapLibraryItem("<type>")]` and a
-   `[CreateAssetMenu]` under `HyperRTSMenu.MapLibrary`, and add it to `MapLibrary`'s type list. Override `Load` to
-   fill fields it derives from its data.
+1. Add a class in `Climate/`, `Palette/` or `Rules/` that derives from `MapLibraryItem`, with
+   `[MapLibraryItem("<type>")]` and a `[CreateAssetMenu]` under `HyperRTSMenu.MapLibrary`, and add it to
+   `MapLibrary`'s type list. Override `Load` to fill fields it derives from its data.
 2. Hook it into builds through `MapClimateAssembly` or `MapLibrary.Palette`.
 3. Check its keys in `MapAssetCheck` and list them in `MapKeyReference`.
 
@@ -376,12 +376,12 @@ Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a cr
 
 ## Adding a kind of land use
 
-1. Add a kit in `Data/`, like `MapFarmlandKit`, held by `MapClimate`. Give it a library type, check its keys in
+1. Add a kit in `Climate/`, like `MapFarmlandKit`, held by `MapClimate`. Give it a library type, check its keys in
    `MapAssetCheck` and list them in `MapKeyReference`.
 2. Add a `MapLandKind` if none fits, and the surfaces it paints.
-3. Add a `MapLandStep` in `Planning/` that claims land through `MapPlanContext`. Decide in the authored sector and
+3. Add a `MapLandPass` in `Planning/` that claims land through `MapPlanContext`. Decide in the authored sector and
    place in every copy.
-4. Slot the step into `MapLandPlanner.Plan` at its priority.
+4. Slot the pass into `MapLandPlanner.Plan` at its priority.
 5. Add a spec class in `Spec/`, an array on `MapSpec`, key checks in `MapSpecCheck`, and a `MapFeatureKind` in
    `MapFeatureKinds` so the Map Editor shows it.
 6. Write EditMode tests: the planner's output on a small layout, and a bad key failing loudly.

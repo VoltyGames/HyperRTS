@@ -1,8 +1,8 @@
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Symmetry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground

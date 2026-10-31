@@ -1,5 +1,7 @@
 using System.Linq;
-using HyperRTS.Editor.Maps.Data;
+using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
@@ -156,7 +158,7 @@ namespace HyperRTS.Editor.Maps.Checks
             InClimate(Climate.layers, surface.layer, "layer", name);
             surface.trees.ForEach(tree => Tree(tree.tree, name));
             surface.plants.ForEach(coverage => InClimate(Climate.plants, coverage.plant, "plant", name));
-            surface.props.ForEach(prop => EntryNotBesideRoad(prop.kind, name));
+            surface.props.ForEach(prop => EntryNotBesideRoad(prop.prop, name));
             surface.decals.ForEach(decal => Decal(decal.decal, name));
             SurfaceEdge(surface, name);
             surface.mixes.ForEach(mix => SurfaceMix(mix, name));

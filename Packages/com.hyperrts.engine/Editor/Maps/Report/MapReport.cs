@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
@@ -44,10 +45,10 @@ namespace HyperRTS.Editor.Maps.Report
             map = spec.name,
             status = spec.status,
             built = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-            errors = new List<string>(issues.Errors),
-            warnings = new List<string>(issues.Warnings),
-            errorFeatures = new List<MapIssueFeature>(issues.ErrorFeatures),
-            warningFeatures = new List<MapIssueFeature>(issues.WarningFeatures),
+            errors = issues.Errors.Select(e => e.Message).ToList(),
+            warnings = issues.Warnings.Select(w => w.Message).ToList(),
+            errorFeatures = issues.Errors.Select(e => e.Feature).ToList(),
+            warningFeatures = issues.Warnings.Select(w => w.Feature).ToList(),
             metrics = metrics,
         };
 

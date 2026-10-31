@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Maps.Generation;
+using HyperRTS.Editor.Maps.Build;
 using UnityEditor;
 using UnityEngine;
 

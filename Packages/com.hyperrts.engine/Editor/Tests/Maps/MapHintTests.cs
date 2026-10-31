@@ -211,7 +211,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             Assert.IsFalse(Fill(Duel()));
 
-            Assert.IsTrue(_issues.Errors.Any(e => e.Contains("slot 1")), _issues.ToString());
+            Assert.IsTrue(_issues.Errors.Any(e => e.Message.Contains("slot 1")), _issues.ToString());
             Assert.IsEmpty(_hints.lanes);
         }
 
@@ -222,7 +222,7 @@ namespace HyperRTS.Editor.Tests.Maps
 
             Fill(Duel(), new List<(Vector2, int)>());
 
-            Assert.IsTrue(_issues.Errors.Any(e => e.Contains("slot 1") && e.Contains("resource")), _issues.ToString());
+            Assert.IsTrue(_issues.Errors.Any(e => e.Message.Contains("slot 1") && e.Message.Contains("resource")), _issues.ToString());
         }
 
         [Test]

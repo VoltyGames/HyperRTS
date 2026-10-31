@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using HyperRTS.Editor.Maps.Json;
+using HyperRTS.Editor.Common;
 using Newtonsoft.Json.Linq;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Effects
         // A layer as its class starts, which a save leaves out of an added layer.
         [NoAutoStaticsCleanup]
         private static readonly Lazy<IReadOnlyDictionary<string, JToken>> LayerDefaults = new(() =>
-            new Dictionary<string, JToken> { [nameof(layers)] = MapJsonFormat.Parse(MapJsonFormat.Format(JsonUtility.ToJson(new EffectLayer()))) });
+            new Dictionary<string, JToken> { [nameof(layers)] = JsonFormat.Parse(JsonFormat.Format(JsonUtility.ToJson(new EffectLayer()))) });
 
         public List<EffectLayer> layers = new();
 
@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Effects
         public static EffectGraphSpec Parse(string json, string source)
         {
             var spec = new EffectGraphSpec();
-            MapJsonFormat.ReadInto(json, spec, "effect graph", source);
+            JsonFormat.ReadInto(json, spec, "effect graph", source);
             if (spec.layers.Count == 0)
             {
                 throw new InvalidOperationException($"HyperRTS: {source} has no layers.");
@@ -37,18 +37,18 @@ namespace HyperRTS.Editor.Effects
             return spec;
         }
 
-        /// <summary>The spec in <see cref="MapJsonFormat"/>'s layout, with every field written.</summary>
-        public string Write() => MapJsonFormat.Format(JsonUtility.ToJson(this));
+        /// <summary>The spec in <see cref="JsonFormat"/>'s layout, with every field written.</summary>
+        public string Write() => JsonFormat.Format(JsonUtility.ToJson(this));
 
         /// <summary>
         /// <paramref name="fileJson"/> with this spec written over it, changing only what differs (see
-        /// <see cref="MapJsonChanges"/>), so a saved edit diffs like a hand edit.
+        /// <see cref="JsonChanges"/>), so a saved edit diffs like a hand edit.
         /// </summary>
         public string WriteOver(string fileJson, string source)
         {
-            var before = MapJsonFormat.Parse(Parse(fileJson, source).Write());
-            var after = MapJsonFormat.Parse(Write());
-            return MapJsonFormat.Write(MapJsonChanges.Apply(MapJsonFormat.Parse(fileJson), before, after, LayerDefaults.Value));
+            var before = JsonFormat.Parse(Parse(fileJson, source).Write());
+            var after = JsonFormat.Parse(Write());
+            return JsonFormat.Write(JsonChanges.Apply(JsonFormat.Parse(fileJson), before, after, LayerDefaults.Value));
         }
 
         public static bool IsRecipe(string path) => path.EndsWith(Extension, StringComparison.Ordinal);
