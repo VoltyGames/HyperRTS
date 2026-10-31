@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Animation
 {
@@ -40,7 +39,6 @@ namespace HyperRTS.Presentation.Animation
         }
 
         [Tooltip("The bake's VAT/<Model>.vat.json, read by Import Bake Info in the context menu.")]
-        [FormerlySerializedAs("sidecar")]
         public TextAsset bakeInfo;
 
         [Tooltip("Texture width: the column count the model's UV1 indexes.")]

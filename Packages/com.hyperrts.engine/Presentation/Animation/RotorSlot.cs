@@ -2,7 +2,6 @@ using System;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Animation
 {
@@ -19,7 +18,6 @@ namespace HyperRTS.Presentation.Animation
 
         [Tooltip("Seconds from standing to full speed.")]
         [Min(0.01f)]
-        [FormerlySerializedAs("spoolTime")]
         public float spinUpTime = 4f;
 
         public override MotionRigPart Bake(Transform rig, Entity entity)

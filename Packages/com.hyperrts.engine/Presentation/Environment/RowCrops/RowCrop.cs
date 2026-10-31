@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
@@ -57,11 +56,9 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public float wanderLength = 6f;
 
         [Tooltip("Scale multiplier range over the field's taller and shorter stretches, on top of each plant's scale.")]
-        [FormerlySerializedAs("patchScale")]
         public Vector2 growthVariation = new(0.9f, 1.1f);
 
         [Tooltip("Metres across a stretch of taller or shorter plants.")]
-        [FormerlySerializedAs("patchSize")]
         public float growthVariationSize = 12f;
 
         [Tooltip("Bare margin in metres round field edges, roads and placed objects.")]

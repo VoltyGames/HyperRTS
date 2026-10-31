@@ -1,7 +1,6 @@
 using System;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace HyperRTS.Presentation.Animation
 {
@@ -10,7 +9,6 @@ namespace HyperRTS.Presentation.Animation
     public abstract class WeaponPartSlot : PartSlot
     {
         [Tooltip("Weapon it follows: 0 is the primary weapon, 1 and up the extra weapons in order, then the interceptor.")]
-        [FormerlySerializedAs("pose")]
         [Min(0)]
         public int weapon;
 
