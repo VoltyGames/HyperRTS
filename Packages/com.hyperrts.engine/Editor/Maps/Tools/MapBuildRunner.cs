@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Tools
     /// Builds maps for the Tools window and the commands: saves or keeps the open scenes first and puts the scenes
     /// back afterwards.
     /// </summary>
-    public static class MapBuildCommands
+    public static class MapBuildRunner
     {
         /// <summary>
         /// Builds one spec. With <paramref name="ask"/> the user may save or cancel; without it, unsaved scenes

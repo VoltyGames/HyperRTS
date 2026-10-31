@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Builds the spec's map from its file (asking to save open scenes first) and shows the build's report.</summary>
         public void Build()
         {
-            var report = MapBuildCommands.Build(_document.Path);
+            var report = MapBuildRunner.Build(_document.Path);
             if (report != null)
             {
                 _panel.ShowBuild(report);

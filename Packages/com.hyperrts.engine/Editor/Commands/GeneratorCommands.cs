@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Commands
     /// <summary>The Generate page as a pipeline command.</summary>
     public static class GeneratorCommands
     {
-        [CliCommand("generate", "Run one generator by name, or every generator in order (run detached), or list them; returns each generator with what it reads and writes and its last run.", Tags = new[] { "hyperrts/generate" })]
+        [CliCommand("generate", "Run one generator by name, or every generator in order, or list them; returns each generator with what it reads and writes and its last run.", Tags = new[] { "hyperrts/generate" })]
         public static List<GeneratorEntry> Generate(
             [CliArg("name", "A generator's name as the Generate page lists it; empty runs them all")] string name = "",
             [CliArg("list", "List the generators without running any")] bool list = false)

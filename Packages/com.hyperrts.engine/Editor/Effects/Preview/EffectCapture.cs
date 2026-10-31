@@ -150,7 +150,7 @@ namespace HyperRTS.Editor.Effects.Preview
                 if (Time.frameCount == start)
                 {
                     source.SetException(new TimeoutException(
-                        $"HyperRTS: the Editor ran no frame in {FrameSeconds:0} s, as when it is in the background; bring it forward (hardpower dev editor wake) and capture again."));
+                        $"HyperRTS: the Editor ran no frame in {FrameSeconds:0} s, as when it is in the background; bring it forward and capture again."));
                 }
                 else
                 {

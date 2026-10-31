@@ -44,21 +44,19 @@ command both call that method. Long commands run as detached jobs (`unity comman
 | Command | Calls | Returns |
 | --- | --- | --- |
 | `map_preview <map>` | `MapPreview.Run` | Issues, land shares, counts, the preview report and image paths |
-| `map_build <map>` | `MapBuildCommands.Build` | Rush times, paths and issues, the report, image and views paths |
-| `map_build_all` | `MapBuildCommands.BuildAll` | One summary per map |
-| `map_views <map>` | `MapViewCapture.Capture` | The view image paths |
-| `map_keys` | `MapKeyReference.Text` | Every key a spec may name, as Markdown |
+| `map_build [map]` | `MapBuildRunner.Build` or `BuildAll` | One summary per map built: rush times, paths and issues, the report, image and views paths |
+| `map_capture <map>` | `MapViewCapture.Capture` | The view image paths |
 | `effect_build [spec]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
 | `effect_capture <rig> [times] [distance]` | `EffectCapture.Capture` | The PNG paths, one for each time |
 | `generate [name] [--list true]` | `GeneratorRunner.Run` or `RunAll` | Each generator run (or, with `list`, every one) with its sources, outputs and last run |
 | `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's rule, severity, message, asset path and fix label |
 
-`<map>` is a map name or its spec path, and `[spec]` a graph name or its `.effect.json` path; an unknown one fails,
+`<map>` is a map name or its spec path (`map_build` with none builds every map), and `[spec]` a graph name or its `.effect.json` path; an unknown one fails,
 naming it. `effect_capture` renders a rig in `Logs/EffectCaptures/<Rig>/` at seconds after its burst (default
 `0.1,0.3,0.6,1.2,2.5`), from 24 m unless `distance` says otherwise; graphs only run on the Editor's frames, which
 stop while it is in the background, so it fails after 45 s without one. The commands carry the tags `hyperrts/maps`,
 `hyperrts/effects`, `hyperrts/generate` and `hyperrts/validate`, so `unity command --tag hyperrts` lists them with
-their arguments. `map_build` and `map_build_all` fail while an open scene has unsaved changes, since a build opens its
+their arguments. `map_build` fails while an open scene has unsaved changes, since a build opens its
 own scene and a command can't answer the save dialog.
 
 To add a command, write a static method in an `Editor/Commands/` class of any editor assembly that references

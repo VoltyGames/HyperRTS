@@ -101,13 +101,13 @@ namespace HyperRTS.Editor.Maps.Tools
 
         private void BuildOne(string specPath)
         {
-            MapBuildCommands.Build(specPath);
+            MapBuildRunner.Build(specPath);
             ShowSpecs();
         }
 
         private void BuildAll()
         {
-            MapBuildCommands.BuildAll();
+            MapBuildRunner.BuildAll();
             ShowSpecs();
         }
     }
