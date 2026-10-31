@@ -30,8 +30,9 @@ light, ground, the `RTSWorld` rig and a SubScene holding the `Match`. See [scene
 
 To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order`, return the content from
 `Build()` and drop callbacks in `Release()`. Engine pages clone their `<Page>.uxml` layout there with
-`EditorAssets.Layout(typeof(Page)).Instantiate()` and wire its elements by name with `Require<T>(name)`. An optional `Badge` shows short text such as the Validate page's `3E 12W` (errors and warnings).
-`ToolsWindow.Show<TPage>()` opens the window on a page.
+`EditorAssets.Layout(typeof(Page)).Instantiate()` and wire its elements by name with `Require<T>(name)`. An optional
+`Badge` shows short text such as the Validate page's `3E 12W` (errors and warnings). `ToolsWindow.Show<TPage>()` opens
+the window on a page.
 
 ## Commands
 
@@ -55,10 +56,10 @@ command both call that method. Long commands run as detached jobs (`unity comman
 `<map>` is a map name or its spec path, and `[spec]` a graph name or its `.effect.json` path; an unknown one fails,
 naming it. `effect_capture` renders a rig in `Logs/EffectCaptures/<Rig>/` at seconds after its burst (default
 `0.1,0.3,0.6,1.2,2.5`), from 24 m unless `distance` says otherwise; graphs only run on the Editor's frames, which
-stop while it is in the background, so it fails after 45 s without one. The commands carry the tags `hyperrts/maps`, `hyperrts/effects`, `hyperrts/generate` and
-`hyperrts/validate`, so `unity command --tag hyperrts` lists them with their arguments. `map_build` and
-`map_build_all` fail while an open scene has unsaved changes, since a build opens its own scene and a command can't
-answer the save dialog.
+stop while it is in the background, so it fails after 45 s without one. The commands carry the tags `hyperrts/maps`,
+`hyperrts/effects`, `hyperrts/generate` and `hyperrts/validate`, so `unity command --tag hyperrts` lists them with
+their arguments. `map_build` and `map_build_all` fail while an open scene has unsaved changes, since a build opens its
+own scene and a command can't answer the save dialog.
 
 To add a command, write a static method in an `Editor/Commands/` class of any editor assembly that references
 `Unity.Pipeline.Attributes`, tag it `[CliCommand("name", "what it does", Tags = new[] { "<area>" })]` and its
@@ -82,6 +83,17 @@ change generated output, change the generator and run it again.
 The engine has four: **Component icons**, **Environment textures** (the cloud shadow cookie, road edge noise,
 terrain noise and water ripple normals), **Terrain micro detail** and **Effect graphs**. The first three write into
 the package, so they only show when it is embedded or local.
+
+## Effect graphs
+
+An effect's VFX graph is generated from its `<Graph>.effect.json` recipe. Build one from **Assets ▸ HyperRTS ▸ Build
+Effect Graph** on the selected recipe, every graph from **Build All Effect Graphs**, the **Effect graphs**
+[generator](#generators), the recipe inspector's **Build graph** or the `effect_build` [command](#commands). A build
+is in place: the graph keeps its GUID, so prefabs keep their reference. The `EffectRecipeRule` [rule](#validation)
+reports a recipe that doesn't read, an asset path that loads nothing of the type its field needs (naming the layer and
+field), and a graph that is missing or older than its recipe, on the Validate page as soon as the asset moves. Paths
+stay paths: nothing rewrites them when an asset moves. The recipe format and the builder are in
+[client](modules/client.md#effects).
 
 ## Creation menus
 

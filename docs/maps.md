@@ -59,10 +59,10 @@ report.
 
 ### Authoring rules
 
-- **You author one sector.** The symmetry copies it into the others. A point outside the sector would overlap its
-  own copies, so the editor rings it as a warning.
-- **Shared features sit on the axis.** A feature with `"shared": true` is placed once, not copied. Put it on the
-  mirror axis, or at the centre for a rotation.
+- **You author one sector** ([symmetry](#symmetry)). A point outside the sector would overlap its own copies, so the
+  editor rings it as a warning.
+- **Shared features sit on the axis.** Put a `"shared": true` feature on the mirror axis, or at the centre for a
+  rotation.
 - **Array order drives the randomness.** Each feature's random stream is seeded by the map seed and its index in
   its list. Deleting or reordering a feature reshuffles the detail of later features of its kind; the editor
   warns when a deletion does.
@@ -82,39 +82,68 @@ the map centre, X points east, Z points north, and angles run clockwise from nor
 | --- | --- |
 | `name` | The map name. The file must be named `<name>.map.json` |
 | `displayName` | The name the game shows |
-| `mode` | `1v1` to `4v4`, or `ffa` |
-| `mapType`, `status`, `notes` | `land`; work state; dated notes |
+| `mode` | `1v1` to `4v4`, or `ffa`. The spawns times the symmetry's copies must fit |
+| `mapType`, `status`, `notes` | `land` (`coastal` and `island` are named but not built); a free work-state label; dated notes |
 | `climate` | A library climate key |
 | `weather` | Required. One of the climate's weathers. The scene is built and lit with it |
+| `warAge` | `None` (default), `Skirmished`, `Contested` or `Frontline`: how scarred the land is before the battle. See [war scars](#land-use) |
 | `size` | Playable width (X) and depth (Z) |
-| `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, or `rotate-3` to `rotate-8` |
+| `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, or `rotate-3` to `rotate-8`. See [symmetry](#symmetry) |
 | `seed` | Seeds every random stream and noise field |
-| `terrain` | `height`, `relief`, `reliefScale`, `waterLevel`, `maxHeight`, `resolution`, `backdropWidth` |
+| `terrain` | `height` (open ground, m), `relief` (swell amplitude, m; 2 to 4 for rolling farmland), `reliefScale` (swell wavelength, m; 150 to 300), `waterLevel` (below `height`), `maxHeight`, `resolution` (2^n + 1: 513 up to 300 m of terrain, 1025 up to 600 m, 2049 above), `backdropWidth` (100 to 120) |
 
-Base `height` is lowered to world y = 0. The backdrop is unplayable land past the playable edge. Slots interleave
-across the copies, so slots 1 and 2 always face each other.
+Base `height` is lowered to world y = 0, and open ground ends up there. The backdrop is unplayable land past the
+playable edge. Gameplay points (spawns, resources, props, hills, settlements) stay inside half the `size` either way;
+lines and polygons may reach into the backdrop.
+
+### Symmetry
+
+You author **one sector**; the builder copies it.
+
+| `symmetry` | Author | Copies |
+| --- | --- | --- |
+| `rotate-180` | The half with z at or below 0 | Rotated 180 degrees about the centre |
+| `mirror-x` | The half with x at or below 0 | Mirrored across x = 0 |
+| `mirror-z` | The half with z at or below 0 | Mirrored across z = 0 |
+| `rotate-N` (3 to 8) | The wedge from +X counter-clockwise by 360 / N degrees | N - 1 rotations |
+
+- `"shared": true` places a feature once; it must map onto itself (on the centre or the axis).
+- Everything else stays inside the sector. A road or river crossing the axis is authored as a piece that ends on it,
+  and its copy continues it. A river meeting its copy at the centre keeps flowing one way.
+- Random choices (crops, trees, plots) are made in the sector and copied, so copies match exactly. Farmland fields
+  never straddle the sector edge: the seam becomes a field edge, and with `angle` 0 or 90 on `rotate-180` and mirror
+  maps it falls on a grid line.
+- Slots interleave: sector spawn i, copy k is slot `i * copies + k + 1`, so slots 1 and 2 face each other. List sector
+  spawns best first. Team maps: copy k is team k + 1. FFA: one team per slot.
+
+### Features
+
+All arrays are optional and authored for the sector only. Land is claimed in the order of
+[land use](#land-use).
 
 | Feature | Fields | Builds |
 | --- | --- | --- |
-| `spawns` | `pos`, `yaw` | A slot's start position, levelled and kept clear |
-| `resources` | `pos`, `kind`, `amount` | A resource node from the palette |
+| `spawns` | `pos`, `yaw` | A slot's start position: the base radius is levelled, kept clear and painted as base ground |
+| `resources` | `pos`, `kind`, `amount` (required, above 0) | A resource node from the palette holding `amount`. A renewable kind regrows once tapped |
 | `props` | `pos`, `yaw`, `kind` | A palette prefab, with its ground pad and access track |
-| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings` | A river with banks, floodplain and reeds |
-| `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded` | A steep cut with side gullies |
-| `hills` | `pos`, `radius`, `height`, `flatTop` | A smooth rise |
-| `roads` | `points`, `kind` | A road of a library road class |
+| `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings` | A smoothed, meandering channel (held straight at its ends and crossings) whose width swells and narrows, with banks, floodplain meadow, reeds in the shallows and a flowing water mesh |
+| `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded` | A steep cut with side gullies: walls that block vehicles, a gentle grassy rim and woods in patches on `wooded` of the floor |
+| `hills` | `pos`, `radius`, `height`, `flatTop` | A smooth rise. Keep its slopes under the rules' max slope |
+| `roads` | `points`, `kind` | A road of a library road class, rounded into curves, joined to the roads it meets and levelled if the class says so |
 | `settlements` | `center`, `radius`, `kind`, `count` | Up to `count` plots along the roads within `radius` |
-| `woods` | `points`, `kind` | Canopy, glades, shrubby edge, floor |
-| `belts` | `points`, `kind` | Rows of trees and shrubs with gaps |
-| `farmland` | `points`, `kind`, `angle` | Fields on a grid along `angle`. Empty `points` takes all free land |
-| `areas` | `points`, `kind` | One surface painted by hand |
-| `lines` | `points`, `kind`, `spacing` | A row of trees or props |
-| `scatters` | `points`, `kind`, `count` | Props at random in a polygon |
+| `woods` | `points` (polygon), `kind` | Canopy, glades, shrubby edge, floor |
+| `belts` | `points` (line), `kind` | Rows of trees and shrubs with gaps |
+| `farmland` | `points` (polygon), `kind`, `angle` | Fields on a grid along `angle`, which is the way the rows run. Empty `points` takes all free land |
+| `areas` | `points` (polygon), `kind` | One surface painted by hand |
+| `lines` | `points`, `kind`, `spacing` | A row every `spacing` metres of a climate tree or a palette prop |
+| `scatters` | `points` (polygon), `kind`, `count` | Palette props at random in the polygon. `besideRoad` entries move onto the nearest road's verge and face along it, so the polygon must reach a road |
 
-Every feature except spawns and settlements also takes `shared`. A river crossing has `along` (0 to 1 down the river), `kind`
-(`bridge` or `ford`), `width` and `prop`. Fords thin the water and streak it with foam; the climate's
-`fordShallowsWidth` and `fordRapidsLength` set how far, and `crossingFoamLength` how far foam lines trail below
-fords and bridges.
+Every feature except spawns and settlements also takes `shared`. A river crossing has `along` (0 to 1 down the
+authored river), `kind` (`bridge` or `ford`), `width` and `prop`: a bridge's prefab carries the walkable deck, a ford's
+bed sits just under the water. Fords thin the water and streak it with foam; the climate's `fordShallowsWidth` and
+`fordRapidsLength` set how far, and `crossingFoamLength` how far foam lines trail below fords and bridges.
+
+Surfaces grow their own lone trees and props by rule, so use `scatters` and `lines` only for what no rule makes.
 
 ## How a map is built
 
@@ -180,6 +209,8 @@ symmetry, so mirrored borders wander alike.
 | Ground materials | A `GroundMaterialMap` asset (`<Map>_GroundMaterials.asset`) holding one `SurfaceMaterial` byte per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |
 | Ground decals | A URP `DecalProjector` per decal, fading out on steep faces |
+| Road ribbons | A mesh just above the ground, drawn by `HyperRTS/Road`, with faded free ends |
+| Weather | A `WeatherSet` holding every climate weather, with the spec's weather active |
 
 **Grass** is drawn by `GrassRenderer`, not terrain details. For each camera `Grass.compute` scatters every visible
 tile's plants on a world-anchored lattice, one cell per plant at full coverage, so plants never swim as the camera
@@ -190,8 +221,6 @@ grass shadow distance, cast shadows. Draws are `Graphics.RenderMeshIndirect`, on
 of the plant's material on `Hidden/HyperRTS/FoliageGrass`, the Foliage passes with an instanced path, so wind and
 trampling work as on any Foliage plant. A camera rescatters only when it moves half a metre or the quality changes.
 Grass and row crops share one scatter host, described under [row crops](modules/client.md#row-crops).
-| Road ribbons | A mesh just above the ground, drawn by `HyperRTS/Road`, with faded free ends |
-| Weather | A `WeatherSet` holding every climate weather, with the spec's weather active |
 
 **Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by texel height, gathered from the surfaces' own
 layers, mixes and tramlines. A layer's `plants` thins scattered plants where it is painted. The climate's `heightBlendDepth`

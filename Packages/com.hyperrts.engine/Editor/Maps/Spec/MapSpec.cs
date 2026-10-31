@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Spec
 {
     /// <summary>
     /// A map as authored: one symmetry sector of features that <see cref="MapSymmetry"/> copies to fill the map.
-    /// Read from <c>&lt;Map&gt;.map.json</c> with JsonUtility; the map skill's reference describes the format.
+    /// Read from <c>&lt;Map&gt;.map.json</c> with JsonUtility; the format is in docs/maps.md, under Spec format.
     /// </summary>
     [Serializable]
     public sealed class MapSpec

@@ -94,8 +94,8 @@ A game shell drives a match through these calls:
 
 ## Editor
 
-- Validation rules are `AuthoringRule<T>`, `ISceneRule` or `IPrefabRule` classes. They show up in the inspector,
-  **HyperRTS ▸ Tools ▸ Validate** and the CI test.
+- Validation rules show up in the inspector, **HyperRTS ▸ Tools ▸ Validate** and the CI test. See
+  [validation](editor.md#validation) for the kinds.
 - Debug layers subclass `DebugLayer` or `CellDebugLayer`.
 - `RTSSceneBuilder.Build` creates a scene from code.
 
