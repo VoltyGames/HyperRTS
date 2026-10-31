@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using UnityEngine;
 
@@ -53,6 +54,9 @@ namespace HyperRTS.Simulation.Combat
             [Tooltip("An outer wall, which shelters a garrison and leaves rubble when it breaks on the ground floor.")]
             public bool exterior;
 
+            [Tooltip("Carries the walkable deck of this object's Nav Area (a bridge span): that stretch closes while it is broken.")]
+            public bool deck;
+
             [Tooltip("Share of the building's health, against the others' shares.")]
             [Min(0.01f)]
             public float share;
@@ -92,6 +96,13 @@ namespace HyperRTS.Simulation.Combat
 
         [Tooltip("Dust wave played at the foot of a ground floor section as it breaks.")]
         public GameObject dustWave;
+
+        [Tooltip("Builders rebuild it for free, a section at a time, and it stays as a wreck instead of dying, like a bridge.")]
+        public bool repairable;
+
+        [Tooltip("Seconds a builder of rate 1 takes to rebuild one section.")]
+        [Min(0.1f)]
+        public float repairSeconds = 10f;
 
         [Tooltip("The sections, at most 64. Fill From Structure lists them from the structure file, Fill From Parts from X_Intact and X_Broken children.")]
         public Entry[] sections = Array.Empty<Entry>();
@@ -145,6 +156,11 @@ namespace HyperRTS.Simulation.Combat
             if (sections.Length is 0 or > 64)
             {
                 problems.Add($"Sections on '{name}' list {sections.Length}; a building needs 1 to 64.");
+            }
+
+            if (Array.Exists(sections, section => section.deck) && !TryGetComponent<NavAreaAuthoring>(out _))
+            {
+                problems.Add($"Sections on '{name}' have a deck section but the object has no Nav Area.");
             }
 
             for (var i = 0; i < sections.Length; i++)
@@ -213,6 +229,11 @@ namespace HyperRTS.Simulation.Combat
                     : Entity.Null;
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 SectionsSetup.Add(ref writer, sections, Factors(materials), rubble);
+                if (authoring.repairable)
+                {
+                    SectionsSetup.AddRepairable(ref writer, authoring.repairSeconds);
+                }
+
                 writer.AddBuffer(models);
                 writer.AddBuffer(looks);
                 writer.Add(new ShownSections { Effect = authoring.effect, DustWave = authoring.dustWave });

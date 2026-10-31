@@ -70,6 +70,7 @@ namespace HyperRTS.Simulation.Combat
                     Supports = SupportBits(entries, entry.supports),
                     Anchored = entry.anchored,
                     Exterior = entry.exterior,
+                    Deck = entry.deck,
                     Outward = Outward(box.center, middle),
                 });
             }

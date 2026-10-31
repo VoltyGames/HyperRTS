@@ -28,6 +28,8 @@ namespace HyperRTS.Simulation.Buildings
         private TargetReach _reach;
         private ComponentLookup<Faction> _factionLookup;
         private ComponentLookup<ConstructionProgress> _siteLookup;
+        private ComponentLookup<Repairable> _repairableLookup;
+        private BufferLookup<Section> _sectionLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -39,6 +41,8 @@ namespace HyperRTS.Simulation.Buildings
             state.RequireForUpdate<MapSettings>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _siteLookup = state.GetComponentLookup<ConstructionProgress>(true);
+            _repairableLookup = state.GetComponentLookup<Repairable>(true);
+            _sectionLookup = state.GetBufferLookup<Section>(true);
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<DamageQueue>();
         }
@@ -52,6 +56,8 @@ namespace HyperRTS.Simulation.Buildings
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
             _factionLookup.Update(ref state);
             _siteLookup.Update(ref state);
+            _repairableLookup.Update(ref state);
+            _sectionLookup.Update(ref state);
 
             new RepairJob
             {
@@ -63,6 +69,8 @@ namespace HyperRTS.Simulation.Buildings
                 Reach = _reach,
                 FactionLookup = _factionLookup,
                 SiteLookup = _siteLookup,
+                RepairableLookup = _repairableLookup,
+                SectionLookup = _sectionLookup,
             }.Schedule();
         }
 
@@ -80,6 +88,8 @@ namespace HyperRTS.Simulation.Buildings
             public TargetReach Reach;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<ConstructionProgress> SiteLookup;
+            [ReadOnly] public ComponentLookup<Repairable> RepairableLookup;
+            [ReadOnly] public BufferLookup<Section> SectionLookup;
 
             private void Execute(Entity entity, in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
@@ -104,8 +114,7 @@ namespace HyperRTS.Simulation.Buildings
                     return;
                 }
 
-                var buildTime = Producible.GetBuildTime(ProducibleLookup, target, MinRepairTime);
-                var perSecond = builder.Rate * HealthLookup[target].Max / buildTime;
+                var perSecond = PerSecond(target, builder);
                 Damage.Add(new DamageEvent
                 {
                     Target = target,
@@ -116,6 +125,18 @@ namespace HyperRTS.Simulation.Buildings
                 });
             }
 
+            /// <summary>A repairable building takes a fixed time per section; any other as long as it took to build.</summary>
+            private float PerSecond(Entity target, in Builder builder)
+            {
+                if (RepairableLookup.TryGetComponent(target, out var repairable))
+                {
+                    return repairable.PerSecond(builder.Rate, SectionLookup[target]);
+                }
+
+                var buildTime = Producible.GetBuildTime(ProducibleLookup, target, MinRepairTime);
+                return builder.Rate * HealthLookup[target].Max / buildTime;
+            }
+
             private bool CanRepair(Entity target, byte faction)
             {
                 if (!Reach.Exists(target))
@@ -123,7 +144,8 @@ namespace HyperRTS.Simulation.Buildings
                     return false;
                 }
 
-                return BuildingRules.NeedsRepair(HealthLookup, SiteLookup, FactionLookup, Relations, target, faction);
+                return BuildingRules.NeedsRepair(HealthLookup, SiteLookup, FactionLookup, RepairableLookup,
+                    Relations, target, faction);
             }
         }
     }

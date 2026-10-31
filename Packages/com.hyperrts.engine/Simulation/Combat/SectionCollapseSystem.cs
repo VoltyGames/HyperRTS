@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -20,6 +21,7 @@ namespace HyperRTS.Simulation.Combat
         private BufferLookup<Section> _sections;
         private ComponentLookup<Health> _health;
         private ComponentLookup<IntactFloors> _floors;
+        private ComponentLookup<Repairable> _repairables;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -28,6 +30,7 @@ namespace HyperRTS.Simulation.Combat
             _sections = state.GetBufferLookup<Section>();
             _health = state.GetComponentLookup<Health>();
             _floors = state.GetComponentLookup<IntactFloors>();
+            _repairables = state.GetComponentLookup<Repairable>(true);
             state.RequireForUpdate<Sections>();
         }
 
@@ -38,6 +41,7 @@ namespace HyperRTS.Simulation.Combat
             _sections.Update(ref state);
             _health.Update(ref state);
             _floors.Update(ref state);
+            _repairables.Update(ref state);
             new CollapseJob
             {
                 Now = SystemAPI.Time.ElapsedTime,
@@ -45,6 +49,7 @@ namespace HyperRTS.Simulation.Combat
                 Sections = _sections,
                 Health = _health,
                 Floors = _floors,
+                Repairables = _repairables,
             }.Schedule();
         }
 
@@ -58,6 +63,7 @@ namespace HyperRTS.Simulation.Combat
             public BufferLookup<Section> Sections;
             public ComponentLookup<Health> Health;
             public ComponentLookup<IntactFloors> Floors;
+            [ReadOnly] public ComponentLookup<Repairable> Repairables;
 
             private void Execute(Entity entity)
             {
@@ -91,7 +97,7 @@ namespace HyperRTS.Simulation.Combat
             {
                 building.Checked = building.Broken;
                 var all = sections.Length == 64 ? ~0ul : (1ul << sections.Length) - 1;
-                building.Falling = all & ~building.Broken & ~building.Supported(sections);
+                building.Falling = all & ~building.Broken & ~Combat.Sections.Supported(sections);
                 if (building.Falling == 0)
                 {
                     building.NextFall = 0;
@@ -112,6 +118,11 @@ namespace HyperRTS.Simulation.Combat
                     {
                         health.Current = math.max(0f, health.Current - building.Damage(sections, i, float.MaxValue));
                     }
+                }
+
+                if (Repairables.HasComponent(entity))
+                {
+                    health.Current = Repairable.Health(sections);
                 }
 
                 Health[entity] = health;

@@ -111,6 +111,7 @@ interceptor does nothing.
 | `DamageStagesAuthoring` | Models swapped by health fraction |
 | `SectionsAuthoring` | A building made of sections that break on their own (below) |
 | `SectionMaterial` | What a section is made of, and a damage multiplier per `DamageType` |
+| `Repairable` | Set on `SectionsAuthoring`: builders rebuild the sections for free, and the building never dies (below) |
 | `ToppleAuthoring` | Scenery that falls away from the hit that killed it |
 | `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
 | `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` footprint block it until they go, and while they are buried leave a square scorched and churned scar on the interaction maps |
@@ -152,8 +153,16 @@ three break clips are baked once per building. See [client](client.md#destructio
   standing sections on the ground. `SectionSettleSystem` follows the broken mask in every world, opening the parts of
   broken sections and leaving `SectionRubble` (the authoring's `rubble` prefab, crushable scenery) at the foot of each
   broken outer wall, with a scenery id from its spot, so tanks flatten it and every world agrees on it.
-- **Repair.** A heal rebuilds the latest broken section first. It comes back once full, then the next, and standing
-  sections are mended last.
+- **Repair.** A heal rebuilds the latest broken section that can stand first (an anchored one, or one with a
+  standing support). It comes back once full, then the next, and standing sections are mended last.
+- **Repairable.** Ticking `repairable` on `SectionsAuthoring` (a bridge) lets any faction's builders repair a
+  neutral building through `RepairSystem`, which needs neither a faction nor a finished site (see
+  `BuildingRules.NeedsRepair`). A builder restores `rate × section health / repairSeconds` a second (10 s by default)
+  to the section the heal reaches next. The building's health follows its sections and never drops below 1, so with
+  every section broken it stays as a wreck instead of dying.
+- **Decks.** A section with `deck` carries a `NavAreaPart` of the building's `NavArea`: it stamps its deck while the
+  section stands and opens the cells to what lies below (water, for ships) while it is broken. A building with a
+  deck closes no `NavObstaclePart`, since its piers stand under the roadway.
 - **Clients.** Only `Sections.Broken` reaches them, as a ghost field on a ghost building and in the scenery change of
   non-ghost scenery (see [networking](../networking.md)). `SectionViewSystem` shows each section's intact or broken
   model from it ([client](client.md#destruction)).

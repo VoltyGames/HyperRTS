@@ -123,6 +123,7 @@ namespace HyperRTS.Simulation.Combat
             var entry = new SectionsAuthoring.Entry
             {
                 intact = intact,
+                deck = Array.Find(owner.sections, item => item.intact == intact).deck,
                 material = FindMaterial(owner, part.material),
                 pieces = Hidden(owner, part.meshes.pieces),
                 stub = Hidden(owner, part.meshes.stub),

@@ -50,13 +50,28 @@ namespace HyperRTS.Simulation.Navigation
         {
             public NavGrid Grid;
             public bool Decks;
+            [ReadOnly] public BufferLookup<NavAreaPart> Parts;
 
-            private void Execute(in NavArea area, in LocalTransform transform)
+            private void Execute(Entity entity, in NavArea area, in LocalTransform transform)
             {
-                if ((area.Kind == NavAreaKind.Deck) == Decks)
+                if ((area.Kind == NavAreaKind.Deck) != Decks)
                 {
-                    var box = new NavBox(transform.Position, transform.Rotation, area.Size);
-                    Grid.StampArea(box, area.Kind, transform.Position.y);
+                    return;
+                }
+
+                if (!Parts.TryGetBuffer(entity, out var parts))
+                {
+                    Grid.StampArea(new NavBox(transform.Position, transform.Rotation, area.Size), area.Kind,
+                        transform.Position.y);
+                    return;
+                }
+
+                foreach (var part in parts)
+                {
+                    if (part.Open)
+                    {
+                        Grid.StampArea(part.Box(transform), area.Kind, transform.Position.y);
+                    }
                 }
             }
         }

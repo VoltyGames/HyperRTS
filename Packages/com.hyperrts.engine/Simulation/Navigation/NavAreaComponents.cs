@@ -25,6 +25,21 @@ namespace HyperRTS.Simulation.Navigation
         Deck = 2,
     }
 
+    /// <summary>
+    /// A piece of a <see cref="NavArea"/>, such as one span of a bridge deck, in its space. An area with parts stamps
+    /// only the open ones, so a broken span returns its cells to what lay below.
+    /// </summary>
+    [InternalBufferCapacity(0)]
+    public struct NavAreaPart : IBufferElementData
+    {
+        public float2 Center;
+        public float2 Size;
+        public bool Open;
+
+        public readonly NavBox Box(in LocalTransform transform) =>
+            new(transform.TransformPoint(new float3(Center.x, 0f, Center.y)), transform.Rotation, Size);
+    }
+
     /// <summary>XZ box, turned with its entity, that pathing and building placement treat as solid.</summary>
     public struct NavObstacle : IComponentData
     {

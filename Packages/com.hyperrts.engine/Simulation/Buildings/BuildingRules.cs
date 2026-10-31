@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Transport;
 using Unity.Entities;
@@ -33,24 +34,27 @@ namespace HyperRTS.Simulation.Buildings
             return factions.TryGetComponent(site, out var owner) && relations.IsAllied(faction, owner.Value);
         }
 
-        /// <summary>A damaged, finished, living building allied with <paramref name="faction"/>.</summary>
+        /// <summary>
+        /// A damaged, living building to repair: a finished one allied with <paramref name="faction"/>, or a
+        /// <see cref="Repairable"/> one, which belongs to nobody and anyone's builders mend.
+        /// </summary>
         public static bool NeedsRepair(in ComponentLookup<Health> health, in ComponentLookup<ConstructionProgress> sites,
-            in ComponentLookup<Faction> factions, in FactionRelations relations, Entity target, byte faction)
+            in ComponentLookup<Faction> factions, in ComponentLookup<Repairable> repairables,
+            in FactionRelations relations, Entity target, byte faction)
         {
+            if (!Health.IsAlive(health, target) || health[target].Current >= health[target].Max)
+            {
+                return false;
+            }
+
+            if (repairables.HasComponent(target))
+            {
+                return true;
+            }
+
             // Sites are built, not repaired.
             var finished = sites.HasComponent(target) && !sites.IsComponentEnabled(target);
-            if (!finished || !Health.IsAlive(health, target))
-            {
-                return false;
-            }
-
-            var current = health[target];
-            if (current.Current >= current.Max)
-            {
-                return false;
-            }
-
-            return factions.TryGetComponent(target, out var owner) && relations.IsAllied(faction, owner.Value);
+            return finished && factions.TryGetComponent(target, out var owner) && relations.IsAllied(faction, owner.Value);
         }
     }
 }

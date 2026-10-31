@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Navigation
         private EntityQuery _scenery;
         private EntityQuery _blockers;
         private EntityQuery _parts;
+        private EntityQuery _areaParts;
         private NativeArray<byte> _base;
         private NativeArray<byte> _previousScenery;
         private MapSettings _builtMap;
@@ -45,6 +46,8 @@ namespace HyperRTS.Simulation.Navigation
             _blockers = SystemAPI.QueryBuilder().WithAll<Blocker, LocalTransform>().Build();
             _parts = SystemAPI.QueryBuilder().WithAll<NavObstaclePart, NavObstacle>().Build();
             _parts.SetChangedVersionFilter(ComponentType.ReadOnly<NavObstaclePart>());
+            _areaParts = SystemAPI.QueryBuilder().WithAll<NavAreaPart, NavArea>().Build();
+            _areaParts.SetChangedVersionFilter(ComponentType.ReadOnly<NavAreaPart>());
             state.RequireForUpdate<MapSettings>();
         }
 
@@ -114,8 +117,9 @@ namespace HyperRTS.Simulation.Navigation
 
             var dependency = new ResetJob { Base = _base, Cells = grid.Cells, Previous = grid.Changes.Previous }
                 .Schedule(state.Dependency);
-            dependency = new AreaJob { Grid = grid, Decks = false }.Schedule(_areas, dependency);
-            dependency = new AreaJob { Grid = grid, Decks = true }.Schedule(_areas, dependency);
+            var areaParts = SystemAPI.GetBufferLookup<NavAreaPart>(true);
+            dependency = new AreaJob { Grid = grid, Decks = false, Parts = areaParts }.Schedule(_areas, dependency);
+            dependency = new AreaJob { Grid = grid, Decks = true, Parts = areaParts }.Schedule(_areas, dependency);
             dependency = new ObstacleJob { Grid = grid, Parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true) }
                 .Schedule(_obstacles, dependency);
             dependency = new BlockerJob { Grid = grid }.Schedule(_blockers, dependency);
@@ -123,14 +127,14 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         // Footprints only differ after an add, removal or archetype change, a blocker turning off as it is buried, or
-        // a part opening or closing.
+        // a part opening or closing, on an obstacle or an area.
         private bool FootprintsMayDiffer(ref SystemState state)
         {
             var count = _blockers.CalculateEntityCount();
             var toggled = count != _builtBlockerCount;
             _builtBlockerCount = count;
             return OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion) |
-                   OrderChanged<Blocker>(ref state, ref _builtBlockerVersion) | toggled | !_parts.IsEmpty;
+                   OrderChanged<Blocker>(ref state, ref _builtBlockerVersion) | toggled | !_parts.IsEmpty | !_areaParts.IsEmpty;
         }
 
         /// <summary>Whether the scenery's count, places or ratings differ from the last fill.</summary>
@@ -183,6 +187,20 @@ namespace HyperRTS.Simulation.Navigation
                     {
                         signature += part.Closed ? math.hash(new float4(part.Center, part.Size)) : 0u;
                     }
+                }
+            }
+
+            var areaParts = SystemAPI.GetBufferLookup<NavAreaPart>(true);
+            foreach (var entity in _areas.ToEntityArray(Allocator.Temp))
+            {
+                if (!areaParts.TryGetBuffer(entity, out var pieces))
+                {
+                    continue;
+                }
+
+                foreach (var part in pieces)
+                {
+                    signature += part.Open ? math.hash(new float4(part.Center, part.Size)) : 0u;
                 }
             }
 

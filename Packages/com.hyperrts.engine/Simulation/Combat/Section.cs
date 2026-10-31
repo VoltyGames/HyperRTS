@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -29,6 +30,9 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>An outer wall, which shelters a garrison.</summary>
         public bool Exterior;
+
+        /// <summary>Carries the walkable deck of the building's <see cref="NavArea"/>, which closes while it is broken.</summary>
+        public bool Deck;
 
         /// <summary>Horizontal, or up for a roof over the centre; the way debris flies.</summary>
         public float3 Outward;

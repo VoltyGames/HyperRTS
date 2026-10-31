@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Follows a building's broken mask in every world, whether its own damage broke the sections or the server's
-    /// changes did: sections on the ground open and close their <see cref="NavObstaclePart"/>s (one per section, in
-    /// order), and newly broken outer walls leave <see cref="SectionRubble"/>.
+    /// changes did: sections on the ground open and close their <see cref="NavObstaclePart"/>s and deck sections their
+    /// <see cref="NavAreaPart"/>s (one per section, in order), and newly broken outer walls leave <see cref="SectionRubble"/>.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -18,12 +18,14 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<Sections> _buildings;
         private BufferLookup<NavObstaclePart> _parts;
+        private BufferLookup<NavAreaPart> _decks;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _buildings = state.GetComponentLookup<Sections>();
             _parts = state.GetBufferLookup<NavObstaclePart>();
+            _decks = state.GetBufferLookup<NavAreaPart>();
             state.RequireForUpdate<Sections>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -33,12 +35,14 @@ namespace HyperRTS.Simulation.Combat
         {
             _buildings.Update(ref state);
             _parts.Update(ref state);
+            _decks.Update(ref state);
             new SettleJob
             {
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Buildings = _buildings,
                 Parts = _parts,
+                Decks = _decks,
             }.Schedule();
         }
 
@@ -50,6 +54,7 @@ namespace HyperRTS.Simulation.Combat
             public EntityCommandBuffer Ecb;
             public ComponentLookup<Sections> Buildings;
             public BufferLookup<NavObstaclePart> Parts;
+            public BufferLookup<NavAreaPart> Decks;
 
             private void Execute(Entity entity, in DynamicBuffer<Section> sections, in LocalTransform transform)
             {
@@ -75,6 +80,16 @@ namespace HyperRTS.Simulation.Combat
                         var part = parts[i];
                         part.Closed = building.Blocks(sections, i);
                         parts[i] = part;
+                    }
+                }
+
+                if (Decks.TryGetBuffer(entity, out var decks))
+                {
+                    for (var i = 0; i < decks.Length; i++)
+                    {
+                        var deck = decks[i];
+                        deck.Open = sections[i].Deck && (building.Broken & (1ul << i)) == 0;
+                        decks[i] = deck;
                     }
                 }
 

@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Combat
     /// ground fall, and the building's health is the sum of its sections'. Masks hold one bit per section. Only
     /// <see cref="Broken"/> reaches clients, as a ghost field on a ghost and through scenery changes on scenery.
     /// </summary>
-    public struct Sections : IComponentData
+    public partial struct Sections : IComponentData
     {
         /// <summary>Seconds between one support level falling and the next.</summary>
         public const float FallDelay = 0.3f;
@@ -91,46 +91,8 @@ namespace HyperRTS.Simulation.Combat
             return dealt;
         }
 
-        /// <summary>
-        /// Rebuilds the latest broken section first, each coming back once full, then mends the standing ones.
-        /// Returns the health restored.
-        /// </summary>
-        public float Repair(DynamicBuffer<Section> sections, float amount)
-        {
-            var restored = 0f;
-            while (amount > 0f)
-            {
-                var index = Latest(sections);
-                if (index < 0)
-                {
-                    index = Damaged(sections);
-                }
-
-                if (index < 0)
-                {
-                    break;
-                }
-
-                var section = sections[index];
-                var added = math.min(section.MaxHealth - section.Health, amount);
-                section.Health += added;
-                amount -= added;
-                restored += added;
-                if (section.IsBroken && section.Health >= section.MaxHealth)
-                {
-                    section.BreakOrder = 0;
-                    Broken &= ~(1ul << index);
-                    Fell &= ~(1ul << index);
-                }
-
-                sections[index] = section;
-            }
-
-            return restored;
-        }
-
         /// <summary>Standing sections that reach an anchor through standing supports.</summary>
-        public readonly ulong Supported(DynamicBuffer<Section> sections)
+        public static ulong Supported(DynamicBuffer<Section> sections)
         {
             var supported = 0ul;
             var grew = true;
@@ -172,9 +134,32 @@ namespace HyperRTS.Simulation.Combat
             return due != 0 ? due : Falling;
         }
 
-        /// <summary>Whether section <paramref name="index"/> closes its nav part: on the ground and not broken.</summary>
-        public readonly bool Blocks(DynamicBuffer<Section> sections, int index) =>
-            sections[index].Anchored && (Broken & (1ul << index)) == 0;
+        /// <summary>
+        /// Whether section <paramref name="index"/> closes its nav part: on the ground and not broken. A building with
+        /// a deck closes none, since its piers stand under the roadway.
+        /// </summary>
+        public readonly bool Blocks(DynamicBuffer<Section> sections, int index)
+        {
+            if (sections[index].Anchored && (Broken & (1ul << index)) == 0)
+            {
+                return !HasDeck(sections);
+            }
+
+            return false;
+        }
+
+        private static bool HasDeck(DynamicBuffer<Section> sections)
+        {
+            foreach (var section in sections)
+            {
+                if (section.Deck)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>Floors, a bit each, that lost a section to a fall.</summary>
         public readonly byte FallenFloors(DynamicBuffer<Section> sections)
@@ -239,33 +224,6 @@ namespace HyperRTS.Simulation.Combat
             }
 
             return nearest;
-        }
-
-        private static int Latest(DynamicBuffer<Section> sections)
-        {
-            var latest = -1;
-            for (var i = 0; i < sections.Length; i++)
-            {
-                if (sections[i].IsBroken && (latest < 0 || sections[i].BreakOrder > sections[latest].BreakOrder))
-                {
-                    latest = i;
-                }
-            }
-
-            return latest;
-        }
-
-        private static int Damaged(DynamicBuffer<Section> sections)
-        {
-            for (var i = 0; i < sections.Length; i++)
-            {
-                if (sections[i].Health < sections[i].MaxHealth)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
         }
     }
 }

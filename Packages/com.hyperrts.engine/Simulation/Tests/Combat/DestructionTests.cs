@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
@@ -60,6 +61,30 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.IsFalse(_world.EntityManager.Exists(underNose), "the hull's front corner reaches past a centre circle");
             Assert.IsFalse(_world.EntityManager.Exists(underTail), "so does its rear corner");
             Assert.IsTrue(_world.EntityManager.Exists(beside), "scenery clear of the tracks stands");
+        }
+
+        [Test]
+        public void TankCrossingAFenceLine_LeavesAGapOneSegmentWide_AndTheRestStillBlocks()
+        {
+            const float segment = 2.5f;
+            var fence = new List<Entity>();
+            for (var i = -3; i <= 3; i++)
+            {
+                fence.Add(SpawnScenery(new float3(i * segment, 0f, 0f), 1, block: new float2(segment, 0.3f)));
+            }
+
+            var tank = _world.SpawnUnit(1, float3.zero, radius: 0.9f);
+            _world.EntityManager.AddComponentData(tank, new Crusher { Size = 3 });
+            _world.Run(0.5f);
+
+            for (var i = 0; i < fence.Count; i++)
+            {
+                Assert.AreEqual(i == 3, !_world.EntityManager.Exists(fence[i]), $"segment {i}");
+            }
+
+            var grid = _world.Grid();
+            Assert.IsTrue(grid.IsWalkable(new float3(0f, 0f, 0f)), "the gap is open");
+            Assert.IsFalse(grid.IsWalkable(new float3(segment * 2f, 0f, 0f)), "the next segment still blocks");
         }
 
         [Test]
