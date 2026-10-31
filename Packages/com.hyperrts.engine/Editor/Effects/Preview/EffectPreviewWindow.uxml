@@ -1,0 +1,22 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../../Common/HyperRTSEditor.uss" />
+  <Style src="EffectPreview.uss" />
+  <ui:VisualElement class="hrts-effect-preview">
+    <ui:VisualElement class="hrts-row">
+      <uie:ObjectField name="rig" label="Rig" allow-scene-objects="false" class="hrts-row__grow" />
+      <ui:Toggle name="follow" text="Follow selection" value="true" />
+    </ui:VisualElement>
+    <ui:Label name="hint" class="hrts-note" text="Pick an effect rig prefab, or select one in the Project window." />
+    <ui:VisualElement name="controls" class="hrts-section hrts-hidden">
+      <ui:VisualElement class="hrts-buttons">
+        <ui:Button name="replay" text="Replay" />
+        <ui:Toggle name="pause" text="Pause" class="hrts-effect-preview__toggle" />
+        <ui:Toggle name="loop" text="Loop" value="true" class="hrts-effect-preview__toggle" />
+      </ui:VisualElement>
+      <ui:Slider name="interval" label="Loop every (s)" low-value="0.5" high-value="10" value="4" show-input-field="true" />
+      <ui:Slider name="scale" label="Scale" low-value="0.25" high-value="4" value="1" show-input-field="true" />
+      <ui:Slider name="wind-strength" label="Wind strength" low-value="0" high-value="5" value="0" show-input-field="true" />
+      <ui:Slider name="wind-direction" label="Wind heading" low-value="0" high-value="360" value="0" show-input-field="true" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

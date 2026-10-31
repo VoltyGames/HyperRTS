@@ -10,6 +10,7 @@ follows the [UI rule](../CLAUDE.md#conventions).
 | --- | --- |
 | **HyperRTS ▸ Tools** | Opens the Tools window |
 | **HyperRTS ▸ Map Editor** | Opens the [Map Editor](maps.md#map-editor). Double-clicking a `.map.json` opens it too |
+| **HyperRTS ▸ Effect Preview** | Opens the [Effect Preview](#effect-preview) |
 | **HyperRTS ▸ Documentation** | Opens these docs in the browser |
 
 ## Tools window
@@ -47,11 +48,14 @@ command both call that method. Long commands run as detached jobs (`unity comman
 | `map_views <map>` | `MapViewCapture.Capture` | The view image paths |
 | `map_keys` | `MapKeyReference.Text` | Every key a spec may name, as Markdown |
 | `effect_build [spec]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
+| `effect_capture <rig> [times] [distance]` | `EffectCapture.Capture` | The PNG paths, one for each time |
 | `generate [name] [--list true]` | `GeneratorRunner.Run` or `RunAll` | Each generator run (or, with `list`, every one) with its sources, outputs and last run |
 | `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's rule, severity, message, asset path and fix label |
 
 `<map>` is a map name or its spec path, and `[spec]` a graph name or its `.effect.json` path; an unknown one fails,
-naming it. The commands carry the tags `hyperrts/maps`, `hyperrts/effects`, `hyperrts/generate` and
+naming it. `effect_capture` renders a rig in `Logs/EffectCaptures/<Rig>/` at seconds after its burst (default
+`0.1,0.3,0.6,1.2,2.5`), from 24 m unless `distance` says otherwise; graphs only run on the Editor's frames, which
+stop while it is in the background, so it fails after 45 s without one. The commands carry the tags `hyperrts/maps`, `hyperrts/effects`, `hyperrts/generate` and
 `hyperrts/validate`, so `unity command --tag hyperrts` lists them with their arguments. `map_build` and
 `map_build_all` fail while an open scene has unsaved changes, since a build opens its own scene and a command can't
 answer the save dialog.
@@ -139,6 +143,25 @@ layout they are cloned into. The shared sheet holds the layout classes and the c
 `<Type><part>.uxml` in the engine package, caches it and throws when it is missing. Rows built from data clone a row
 template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
 `HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
+
+A selected `.effect.json` opens in `EffectRecipeInspector`: its layers as property fields, curves for the
+`[LifeCurve]` key lists, HDR pickers for colours and object pickers for the `[EffectAsset]` paths, each change saved
+at once, and **Build graph**. Any other text asset keeps Unity's inspector.
+
+To edit a JSON file in an inspector or window, derive from `JsonDocument`: a hidden ScriptableObject that holds the
+parsed value for Undo and property fields. Override `Read`, `Write`, `WriteOver` (the edit written over the file's
+text, changing only what differs, as `MapJsonChanges` does) and `Canonical`. Edit through `Serialized` and `Apply`,
+or `Record` for code; each finished edit saves, an undo saves the file back, and an outside write reloads it.
+`MapSpecDocument` and `EffectRecipeDocument` are the two.
+
+## Effect preview
+
+**HyperRTS ▸ Effect Preview** plays an effect rig at the Scene view pivot, the way the pool plays it, on a loop. It
+follows the rig selected in the Project window, with replay, loop interval, pause, scale and wind controls, and
+holds the fog of war clear while open; closing it puts the wind and fog globals back. Saving a recipe of the rig, by
+hand or in its inspector, rebuilds that graph and plays again. `EffectPreviewPlayer` plays the rig and
+`EffectCapture` renders it for the `effect_capture` command, above the open scene, so its light and fog still tint
+the picture.
 
 ## Validation
 

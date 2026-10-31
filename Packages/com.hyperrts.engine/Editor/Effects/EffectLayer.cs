@@ -48,26 +48,26 @@ namespace HyperRTS.Editor.Effects
         public EffectNoise noise;
         public FloatRange orbit;
 
-        public List<CurveKey> sizeOverLife = new();
+        [LifeCurve] public List<CurveKey> sizeOverLife = new();
         public List<ColorKey> colorOverLife = new();
-        public List<CurveKey> alphaOverLife = new();
+        [LifeCurve] public List<CurveKey> alphaOverLife = new();
 
-        public string texture;
+        [EffectAsset(typeof(Texture2D))] public string texture;
         public float softness;
         public bool upright;
         public float pivot;
         public Flipbook flipbook;
 
-        public string negativeTexture;
-        public string motionTexture;
+        [EffectAsset(typeof(Texture2D))] public string negativeTexture;
+        [EffectAsset(typeof(Texture2D))] public string motionTexture;
         public float opacity;
         public float ambient;
-        public string emissionRamp;
-        public Color emissionColor;
-        public List<CurveKey> heatOverLife = new();
-        public List<CurveKey> minHeatOverLife = new();
+        [EffectAsset(typeof(Texture2D))] public string emissionRamp;
+        [ColorUsage(true, true)] public Color emissionColor;
+        [LifeCurve] public List<CurveKey> heatOverLife = new();
+        [LifeCurve] public List<CurveKey> minHeatOverLife = new();
 
-        public string mesh;
+        [EffectAsset(typeof(GameObject))] public string mesh;
         public List<string> meshNames = new();
         public float metallic;
         public float smoothness;

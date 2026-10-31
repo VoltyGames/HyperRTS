@@ -8,6 +8,6 @@ namespace HyperRTS.Editor.Effects
     public struct ColorKey
     {
         public float time;
-        public Color color;
+        [ColorUsage(true, true)] public Color color;
     }
 }

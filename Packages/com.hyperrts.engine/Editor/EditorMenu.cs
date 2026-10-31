@@ -11,6 +11,9 @@ namespace HyperRTS.Editor
         public const string MapEditor = Root + "Map Editor";
         public const int MapEditorPriority = 1;
 
+        public const string EffectPreview = Root + "Effect Preview";
+        public const int EffectPreviewPriority = 2;
+
         public const string Documentation = Root + "Documentation/";
         public const int DocumentationPriority = 100;
     }

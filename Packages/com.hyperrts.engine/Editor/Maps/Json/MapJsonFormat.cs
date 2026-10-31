@@ -10,7 +10,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Json
 {
     /// <summary>
-    /// The one layout map specs and effect recipes are written in: indented by two spaces, point objects and short
+    /// The one layout map specs and effect recipes are written in: indented by two spaces, points, colours and short
     /// scalar arrays on one line, floats in their shortest form, so saves diff cleanly. Parses with Newtonsoft,
     /// keeping member order and strings as strings (no date guessing).
     /// </summary>
@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Json
     {
         private const string Indent = "  ";
         private const int MaxInlineArray = 100;
-        private const int MaxInlinePoint = 3;
+        private const int MaxInlinePoint = 4;
 
         /// <summary>Parses one JSON value; malformed or trailing text throws a <see cref="FormatException"/>.</summary>
         public static JToken Parse(string json)

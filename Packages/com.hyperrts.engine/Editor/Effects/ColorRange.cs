@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Effects
     [Serializable]
     public struct ColorRange
     {
-        public Color min;
-        public Color max;
+        [ColorUsage(true, true)] public Color min;
+        [ColorUsage(true, true)] public Color max;
     }
 }

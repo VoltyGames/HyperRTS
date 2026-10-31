@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Generation;
@@ -170,18 +169,6 @@ namespace HyperRTS.Editor.Maps.Designer
         private void OnGhostsToggled(bool on)
         {
             _canvas.ShowGhosts = on;
-        }
-
-        /// <summary>Reloads the shown spec when it is among <paramref name="imported"/>.</summary>
-        public void OnImported(string[] imported)
-        {
-            if (_document == null || Array.IndexOf(imported, _document.Path) < 0)
-            {
-                return;
-            }
-
-            // After the import, since the reload starts a live preview that loads library assets.
-            EditorApplication.delayCall += () => _document?.Reload();
         }
     }
 }

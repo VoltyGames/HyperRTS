@@ -600,7 +600,9 @@ into VFX Graph's internal editor model sits in `GraphModel`, so an Editor upgrad
 stamps the graph importer's `userData` with a hash of the JSON, line endings ignored; `EffectGraphBuilder.Problem`
 names a graph that is missing or stale, and `EffectGraphBuilder.ShaderErrors` compiles a built graph's compute
 shaders and each output pass's default variant, so tests catch a shader error before the graph first draws. Build from **Assets ▸ HyperRTS ▸ Build Effect Graph** or **Build All Effect
-Graphs**, or the **Effect graphs** generator.
+Graphs**, or the **Effect graphs** generator. Recipes are written in `MapJsonFormat`'s layout, and `EffectRecipeRule` reports one that
+doesn't read, an asset path that loads nothing, or a stale graph. See [editor](../editor.md#effect-preview) for the
+recipe inspector, the preview and the capture.
 
 `EffectPool` keeps one instance per prefab and replays it for every event, never instantiating per shot. It reads
 the camera position once a frame, in `EffectPoolSystem`, for every range check. Effects play for cues the client

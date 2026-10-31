@@ -1,0 +1,11 @@
+/* The Effect Preview window. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-effect-preview {
+    flex-grow: 1;
+    padding: 4px;
+}
+
+.hrts-effect-preview__toggle {
+    flex-grow: 0;
+    margin-left: 8px;
+}
