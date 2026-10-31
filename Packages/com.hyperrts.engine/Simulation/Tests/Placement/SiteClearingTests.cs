@@ -128,12 +128,12 @@ namespace HyperRTS.Simulation.Tests.Placement
         {
             var change = new SceneryChange { Id = 7, State = SceneryChange.Destroyed, Fall = 3, Cleared = true };
 
-            var back = SceneryChange.FromCode(change.Id, change.Code, change.Fall);
+            var back = SceneryChange.FromCode(change.Id, change.Code, 0, change.Fall);
 
             Assert.IsTrue(back.Cleared);
             Assert.AreEqual(SceneryChange.Destroyed, back.State);
             Assert.AreEqual(3, back.Fall);
-            Assert.IsFalse(SceneryChange.FromCode(7, new SceneryChange { State = 120 }.Code, 0).Cleared);
+            Assert.IsFalse(SceneryChange.FromCode(7, new SceneryChange { State = 120 }.Code, 0, 0).Cleared);
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace HyperRTS.Simulation.Tests.Placement
             using var tracker = new SceneryTracker(Allocator.Temp);
             var sightings = new NativeList<ScenerySighting>(Allocator.Temp);
             tracker.Register(9, float3.zero);
-            tracker.Set(9, SceneryChange.Destroyed, 0, 0b10, 1);
+            tracker.Set(9, SceneryChange.Destroyed, 0, 0, 0b10, 1);
             tracker.Reveal(default(FogOfWar), false, 1, sightings);
             sightings.Clear();
 

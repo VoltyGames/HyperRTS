@@ -166,8 +166,8 @@ namespace HyperRTS.Editor.Tests.Validation
         // An empty required rig, or a scene object where a prefab asset belongs, is what each effect rule catches.
         private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> EffectRows()
         {
-            yield return Row<BreakablePartsRule>("has no effect rig",
-                f => f.Add<BreakablePartsAuthoring>(new GameObject("Parts")));
+            yield return Row<SectionsRule>("has no effect rig",
+                f => f.Add<SectionsAuthoring>(new GameObject("Sections")));
             yield return Row<DamageStageEffectRule>("is not a prefab asset", f =>
             {
                 var damage = f.Add<DamageStagesAuthoring>(new GameObject("Damage"));

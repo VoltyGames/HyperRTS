@@ -340,14 +340,12 @@ rest cost no CPU. It reads the matrices through the material's DOTS instancing p
 shader with DOTS instancing, such as `LitTeam`. Changing effect detail starts the layer over at the new cap. Fogged
 pieces draw as flying ones do.
 
-A building with `BreakablePartsAuthoring` lists its parts, each an intact and a broken model. **Find Parts By Name**
-in its context menu fills the list from `<Part>_Intact` children and their `<Part>_Broken` siblings, which it saves
-hidden at scale 0 so editor views show the standing building. `BreakablePartsBakingSystem` bakes them back at full
-size, hidden. Health picks
-how many break: round(parts x `breakShare` x (1 - health fraction)). The next to break is the intact part nearest the
-latest impact on the building, else the first in bake order, and it bursts the part effect outward from the centre.
-Repair restores the latest broken part first. A building first seen, or changed out of sight, shows its breakage
-without effects. It is presentation only: the simulation never reads it.
+A building with `SectionsAuthoring` ([combat](combat.md#sections)) gives each section an intact and a broken model
+(`SectionModel`). The broken ones are saved hidden at scale 0 so editor views show the standing building, and
+`SectionsBakingSystem` bakes them back at full size, hidden by `HideReason.Section`. `SectionViewSystem` shows each
+section to match the simulation's broken mask, which is the same on every client. A section seen to break bursts the
+building's effect and debris outward from it; a repaired one shows intact again. A building first seen, or changed
+out of sight (`ShownSections.Seen` cleared by the scenery writer), shows its state without effects.
 
 ### Shaders
 

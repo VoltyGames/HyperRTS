@@ -18,6 +18,9 @@ namespace HyperRTS.Network.Scenery
         /// <summary>Last <see cref="SceneryChange.Code"/> each team saw, at <c>slot * Teams + team</c>.</summary>
         private NativeList<ushort> _known;
 
+        /// <summary>Last broken mask each team saw, at the same index as <see cref="_known"/>.</summary>
+        private NativeList<ulong> _knownBroken;
+
         /// <summary>Slots some team hasn't caught up with.</summary>
         private NativeList<int> _stale;
 
@@ -26,6 +29,7 @@ namespace HyperRTS.Network.Scenery
             _slots = new NativeHashMap<ulong, int>(1024, allocator);
             _records = new NativeList<SceneryRecord>(1024, allocator);
             _known = new NativeList<ushort>(1024 * Teams, allocator);
+            _knownBroken = new NativeList<ulong>(1024 * Teams, allocator);
             _stale = new NativeList<int>(64, allocator);
         }
 
@@ -36,6 +40,7 @@ namespace HyperRTS.Network.Scenery
             _slots.Dispose();
             _records.Dispose();
             _known.Dispose();
+            _knownBroken.Dispose();
             _stale.Dispose();
         }
 
@@ -51,21 +56,24 @@ namespace HyperRTS.Network.Scenery
             for (var team = 0; team < Teams; team++)
             {
                 _known.Add(SceneryChange.IntactCode);
+                _knownBroken.Add(0);
             }
 
             return true;
         }
 
         /// <summary>Records a state change. Teams in <paramref name="teams"/> that saw another state get a sighting.</summary>
-        public bool Set(ulong id, byte state, byte fall, ushort teams, uint frame)
+        public bool Set(ulong id, byte state, ulong broken, byte fall, ushort teams, uint frame)
         {
-            if (!_slots.TryGetValue(id, out var slot) || _records[slot].State == state)
+            if (!_slots.TryGetValue(id, out var slot) ||
+                (_records[slot].State == state && _records[slot].Broken == broken))
             {
                 return false;
             }
 
             var record = _records[slot];
             record.State = state;
+            record.Broken = broken;
             record.Fall = fall;
             Mark(slot, record, teams, frame);
             return true;
@@ -102,6 +110,7 @@ namespace HyperRTS.Network.Scenery
                     }
 
                     _known[slot * Teams + team] = record.Change.Code;
+                    _knownBroken[slot * Teams + team] = record.Broken;
                     record.Stale &= (ushort)~(1 << team);
                     sightings.Add(new ScenerySighting { Team = (byte)team, Witnessed = record.Changed == frame, Change = record.Change });
                 }
@@ -122,10 +131,11 @@ namespace HyperRTS.Network.Scenery
             for (var slot = 0; slot < _records.Length; slot++)
             {
                 var known = _known[slot * Teams + team];
-                if (known != SceneryChange.IntactCode)
+                var broken = _knownBroken[slot * Teams + team];
+                if (known != SceneryChange.IntactCode || broken != 0)
                 {
                     var record = _records[slot];
-                    changes.Add(SceneryChange.FromCode(record.Id, known, record.Fall));
+                    changes.Add(SceneryChange.FromCode(record.Id, known, broken, record.Fall));
                 }
             }
         }
@@ -133,7 +143,7 @@ namespace HyperRTS.Network.Scenery
         private void Mark(int slot, SceneryRecord record, ushort teams, uint frame)
         {
             record.Changed = frame;
-            record.Stale = StaleTeams(slot, record.Change.Code, teams);
+            record.Stale = StaleTeams(slot, record.Change.Code, record.Broken, teams);
             if (record.Stale != 0 && !record.Listed)
             {
                 record.Listed = true;
@@ -143,13 +153,14 @@ namespace HyperRTS.Network.Scenery
             _records[slot] = record;
         }
 
-        private readonly ushort StaleTeams(int slot, ushort code, ushort teams)
+        private readonly ushort StaleTeams(int slot, ushort code, ulong broken, ushort teams)
         {
             var stale = 0;
             for (var team = 0; team < Teams; team++)
             {
                 var bit = 1 << team;
-                if ((teams & bit) != 0 && _known[slot * Teams + team] != code)
+                var index = slot * Teams + team;
+                if ((teams & bit) != 0 && (_known[index] != code || _knownBroken[index] != broken))
                 {
                     stale |= bit;
                 }

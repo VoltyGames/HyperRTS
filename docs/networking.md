@@ -168,7 +168,10 @@ through a new allocation and `StartRelayClient`.
 - **Scenery.** Trees, fences, bridges and wrecks are not ghosts. The server sends each change as a scenery id and a
   state byte, and every client spawns the remains itself. A fall the client saw tips over. One found later
   shows already lying down. Remains carry their scenery's id, so a change with `Cleared` set removes the piece, or
-  its remains once destroyed, with nothing left behind, as a building site does.
+  its remains once destroyed, with nothing left behind, as a building site does. A sectioned piece also sends its
+  broken mask (`Sections.Broken`), 19 bytes a change and 64 changes an RPC, and a team hears of a new mask, like a
+  new state, only once it sees the spot. Rubble from broken walls is scenery each world places itself, with an id
+  from its spot. A sectioned building that is a ghost sends the mask as a ghost field instead.
 - **Late sight.** A ghost first seen more than a second after it spawned skips its spawn effect, so only witnessed
   collapses throw dust.
 - **Fields.** Components the client reads carry `[GhostField]`, and enableable ones `[GhostEnabledBit]`. Static data

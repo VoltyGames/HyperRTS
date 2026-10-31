@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Navigation
         private EntityQuery _areas;
         private EntityQuery _scenery;
         private EntityQuery _blockers;
+        private EntityQuery _parts;
         private NativeArray<byte> _base;
         private NativeArray<byte> _previousScenery;
         private MapSettings _builtMap;
@@ -42,6 +43,8 @@ namespace HyperRTS.Simulation.Navigation
             _scenery = SystemAPI.QueryBuilder().WithAll<Destructible, LocalTransform>()
                 .WithNone<NavObstacle, NavAgent>().Build();
             _blockers = SystemAPI.QueryBuilder().WithAll<Blocker, LocalTransform>().Build();
+            _parts = SystemAPI.QueryBuilder().WithAll<NavObstaclePart, NavObstacle>().Build();
+            _parts.SetChangedVersionFilter(ComponentType.ReadOnly<NavObstaclePart>());
             state.RequireForUpdate<MapSettings>();
         }
 
@@ -113,19 +116,21 @@ namespace HyperRTS.Simulation.Navigation
                 .Schedule(state.Dependency);
             dependency = new AreaJob { Grid = grid, Decks = false }.Schedule(_areas, dependency);
             dependency = new AreaJob { Grid = grid, Decks = true }.Schedule(_areas, dependency);
-            dependency = new ObstacleJob { Grid = grid }.Schedule(_obstacles, dependency);
+            dependency = new ObstacleJob { Grid = grid, Parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true) }
+                .Schedule(_obstacles, dependency);
             dependency = new BlockerJob { Grid = grid }.Schedule(_blockers, dependency);
             state.Dependency = new ChangeJob { Grid = grid }.Schedule(dependency);
         }
 
-        // Footprints only differ after an add, removal or archetype change, or a blocker turning off as it is buried.
+        // Footprints only differ after an add, removal or archetype change, a blocker turning off as it is buried, or
+        // a part opening or closing.
         private bool FootprintsMayDiffer(ref SystemState state)
         {
             var count = _blockers.CalculateEntityCount();
             var toggled = count != _builtBlockerCount;
             _builtBlockerCount = count;
             return OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion) |
-                   OrderChanged<Blocker>(ref state, ref _builtBlockerVersion) | toggled;
+                   OrderChanged<Blocker>(ref state, ref _builtBlockerVersion) | toggled | !_parts.IsEmpty;
         }
 
         /// <summary>Whether the scenery's count, places or ratings differ from the last fill.</summary>
@@ -167,9 +172,18 @@ namespace HyperRTS.Simulation.Navigation
         {
             // An order-independent sum, since an archetype move reorders the chunks.
             var signature = (ulong)_obstacles.CalculateEntityCount() + ((ulong)_builtBlockerCount << 32);
-            foreach (var (obstacle, transform) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalTransform>>())
+            var parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true);
+            foreach (var (obstacle, transform, entity) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalTransform>>()
+                         .WithEntityAccess())
             {
                 signature += obstacle.ValueRO.Hash(transform.ValueRO);
+                if (parts.TryGetBuffer(entity, out var pieces))
+                {
+                    foreach (var part in pieces)
+                    {
+                        signature += part.Closed ? math.hash(new float4(part.Center, part.Size)) : 0u;
+                    }
+                }
             }
 
             foreach (var (blocker, transform) in SystemAPI.Query<RefRO<Blocker>, RefRO<LocalTransform>>())

@@ -8,12 +8,12 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Turns broken pieces, authored at scale 0 so editor views show the standing building, into full-size meshes
-    /// hidden by <see cref="HideReason.Part"/>, which <see cref="BreakablePartsSystem"/> then flips.
+    /// Turns broken section models, authored at scale 0 so editor views show the standing building, into full-size
+    /// meshes hidden by <see cref="HideReason.Section"/>, which <see cref="SectionViewSystem"/> then flips.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     [UpdateAfter(typeof(HiddenByBakingSystem))]
-    public partial struct BreakablePartsBakingSystem : ISystem
+    public partial struct SectionsBakingSystem : ISystem
     {
         private EntityQuery _buildings;
         private EntityQuery _meshes;
@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             const EntityQueryOptions options = EntityQueryOptions.IncludePrefab | EntityQueryOptions.IncludeDisabledEntities |
                                                EntityQueryOptions.IgnoreComponentEnabledState;
-            _buildings = new EntityQueryBuilder(Allocator.Temp).WithAll<BreakablePart>().WithOptions(options).Build(ref state);
+            _buildings = new EntityQueryBuilder(Allocator.Temp).WithAll<SectionModel>().WithOptions(options).Build(ref state);
             _meshes = new EntityQueryBuilder(Allocator.Temp).WithAll<MaterialMeshInfo, HiddenBy>().WithOptions(options)
                 .Build(ref state);
         }
@@ -44,14 +44,14 @@ namespace HyperRTS.Presentation.Destruction
                 if (IsUnder(mesh, broken, parents))
                 {
                     var hidden = em.GetComponentData<HiddenBy>(mesh);
-                    hidden.Set(HideReason.Part, true);
+                    hidden.Set(HideReason.Section, true);
                     em.SetComponentData(mesh, hidden);
                     em.SetComponentEnabled<MaterialMeshInfo>(mesh, false);
                 }
             }
         }
 
-        /// <summary>Sets every building's broken pieces back to full scale and returns them.</summary>
+        /// <summary>Sets every building's broken models back to full scale and returns them.</summary>
         private NativeHashSet<Entity> ScaleUpBrokenPieces(ref SystemState state)
         {
             var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
@@ -59,10 +59,10 @@ namespace HyperRTS.Presentation.Destruction
             using var buildings = _buildings.ToEntityArray(Allocator.Temp);
             foreach (var building in buildings)
             {
-                foreach (var part in state.EntityManager.GetBuffer<BreakablePart>(building, true))
+                foreach (var model in state.EntityManager.GetBuffer<SectionModel>(building, true))
                 {
-                    pieces.Add(part.Broken);
-                    transforms.GetRefRW(part.Broken).ValueRW.Scale = 1f;
+                    pieces.Add(model.Broken);
+                    transforms.GetRefRW(model.Broken).ValueRW.Scale = 1f;
                 }
             }
 

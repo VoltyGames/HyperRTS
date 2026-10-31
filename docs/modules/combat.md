@@ -109,12 +109,46 @@ interceptor does nothing.
 | `DestructibleAuthoring` | Scenery with health and remains. Only explicit attack orders target it |
 | `Crusher` | A vehicle that flattens destructible scenery it drives over |
 | `DamageStagesAuthoring` | Models swapped by health fraction |
-| `BreakablePartsAuthoring` | Wall and roof sections that break one at a time as health drops |
+| `SectionsAuthoring` | A building made of sections that break on their own (below) |
+| `SectionMaterial` | What a section is made of, and a damage multiplier per `DamageType` |
 | `ToppleAuthoring` | Scenery that falls away from the hit that killed it |
 | `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
 | `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` footprint block it until they go, and while they are buried leave a square scorched and churned scar on the interaction maps |
 | `DropRemains` | Remains that fall from where the entity died onto the nav grid surface: ground, water or deck. Aircraft get it with `Flight` |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
+
+#### Sections
+
+`SectionsAuthoring` splits a building into up to 64 `Section`s: wall panels, roof panels and floors, each a box in the
+building's space with a share of its health, a `SectionMaterial`, a floor, the sections it rests on, and whether it is
+anchored (stands on the ground) and exterior (an outer wall). The building's health is the sum of its sections', so
+the HUD, the AI, capture and repair read it as before. **Fill From Parts** in the context menu lists the sections from
+`<Name>_Intact` children and their `<Name>_Broken` siblings, saved hidden at scale 0, and guesses the rest for you to
+correct: anchored when it reaches the ground, exterior when it is a wall, a full share for a wall and half for the
+rest, and supports from the sections it touches below. `SectionsRule` checks the pairs, the materials and that
+everything reaches the ground.
+
+- **Hits.** `DamageSystem` hands a hit on a sectioned building to `Sections.Route`. A direct hit lands in full on the
+  first section the line from its origin to its point enters (else the nearest), and its splash on the others in
+  reach. Splash from a hit elsewhere reaches every section within its radius with the usual falloff. Each section's
+  material multiplies the damage after the building's own armor. A section at 0 health breaks and takes the next
+  break order.
+- **Collapse.** `SectionCollapseSystem` floods the supports up from the anchored sections after each break. Whatever
+  no longer reaches the ground falls one support level every 0.3 s (`Sections.FallDelay`): first the sections whose
+  supports are all down, or all of them at once when they only hold each other up.
+- **Floors.** A section that falls marks its floor fallen in `IntactFloors`. A container gives each floor an even
+  share of its slots, filled ground floor first; `FallenFloorSystem` hits the passengers of a fallen floor for 60 % of
+  their maximum health, lets them out and closes its slots until it is rebuilt.
+- **Garrisons.** A `Shelter` takes its protection from the standing share of its exterior sections' health.
+- **Paths and rubble.** Every section has a `NavObstaclePart`, and an obstacle with parts stamps only the closed ones:
+  standing sections on the ground. `SectionSettleSystem` follows the broken mask in every world, opening the parts of
+  broken sections and leaving `SectionRubble` (the authoring's `rubble` prefab, crushable scenery) at the foot of each
+  broken outer wall, with a scenery id from its spot, so tanks flatten it and every world agrees on it.
+- **Repair.** A heal rebuilds the latest broken section first. It comes back once full, then the next, and standing
+  sections are mended last.
+- **Clients.** Only `Sections.Broken` reaches them, as a ghost field on a ghost building and in the scenery change of
+  non-ghost scenery (see [networking](../networking.md)). `SectionViewSystem` shows each section's intact or broken
+  model from it ([client](client.md#destruction)).
 
 ## Stats
 

@@ -55,14 +55,14 @@ namespace HyperRTS.Presentation.Tests.Rendering
             var shard = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy), typeof(Prefab));
             _em.AddComponentData(shard, new Parent { Value = broken });
             var building = _em.CreateEntity(typeof(Prefab));
-            _em.AddBuffer<BreakablePart>(building).Add(new BreakablePart { Intact = intact, Broken = broken });
+            _em.AddBuffer<SectionModel>(building).Add(new SectionModel { Intact = intact, Broken = broken });
 
-            Update<BreakablePartsBakingSystem>();
+            Update<SectionsBakingSystem>();
 
             Assert.AreEqual(1f, _em.GetComponentData<LocalTransform>(broken).Scale);
             Assert.IsFalse(_em.IsComponentEnabled<MaterialMeshInfo>(broken));
             Assert.IsFalse(_em.IsComponentEnabled<MaterialMeshInfo>(shard));
-            Assert.IsTrue(_em.GetComponentData<HiddenBy>(shard).Has(HideReason.Part));
+            Assert.IsTrue(_em.GetComponentData<HiddenBy>(shard).Has(HideReason.Section));
             Assert.IsTrue(_em.IsComponentEnabled<MaterialMeshInfo>(intact));
         }
 

@@ -10,7 +10,9 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<Health> _health;
         private ComponentLookup<ShownDamageStage> _shownStages;
-        private ComponentLookup<ShownBreakage> _shownBreakage;
+        private ComponentLookup<ShownSections> _shownSections;
+        private ComponentLookup<Sections> _buildings;
+        private BufferLookup<Section> _sections;
         private ComponentLookup<SpawnOnDeath> _remains;
         private ComponentLookup<SpawnEffect> _effects;
         private ComponentLookup<LocalTransform> _transforms;
@@ -23,7 +25,9 @@ namespace HyperRTS.Simulation.Combat
         {
             _health = state.GetComponentLookup<Health>();
             _shownStages = state.GetComponentLookup<ShownDamageStage>();
-            _shownBreakage = state.GetComponentLookup<ShownBreakage>();
+            _shownSections = state.GetComponentLookup<ShownSections>();
+            _buildings = state.GetComponentLookup<Sections>();
+            _sections = state.GetBufferLookup<Section>();
             _remains = state.GetComponentLookup<SpawnOnDeath>(true);
             _effects = state.GetComponentLookup<SpawnEffect>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
@@ -37,7 +41,9 @@ namespace HyperRTS.Simulation.Combat
         {
             _health.Update(ref state);
             _shownStages.Update(ref state);
-            _shownBreakage.Update(ref state);
+            _shownSections.Update(ref state);
+            _buildings.Update(ref state);
+            _sections.Update(ref state);
             _remains.Update(ref state);
             _effects.Update(ref state);
             _transforms.Update(ref state);
@@ -59,18 +65,46 @@ namespace HyperRTS.Simulation.Combat
             health.Current = health.Max * fraction;
             _health[scenery] = health;
 
-            // Like a freshly loaded wreck, the stage model and broken parts change without their effects.
+            // Like a freshly loaded wreck, the stage model and broken sections change without their effects.
             if (!witnessed && _shownStages.HasComponent(scenery))
             {
                 _shownStages[scenery] = new ShownDamageStage { Index = -1 };
             }
 
-            if (!witnessed && _shownBreakage.HasComponent(scenery))
+            if (!witnessed && _shownSections.HasComponent(scenery))
             {
-                var breakage = _shownBreakage[scenery];
-                breakage.Seen = false;
-                _shownBreakage[scenery] = breakage;
+                var shown = _shownSections[scenery];
+                shown.Seen = false;
+                _shownSections[scenery] = shown;
             }
+        }
+
+        /// <summary>
+        /// Breaks and rebuilds a sectioned building's sections to match <paramref name="broken"/>; the settling that
+        /// follows opens paths and drops rubble as the server's did.
+        /// </summary>
+        public void SetBroken(Entity scenery, ulong broken)
+        {
+            if (!_buildings.TryGetComponent(scenery, out var building) || building.Broken == broken)
+            {
+                return;
+            }
+
+            var sections = _sections[scenery];
+            for (var i = 0; i < sections.Length; i++)
+            {
+                var section = sections[i];
+                var now = (broken & (1ul << i)) != 0;
+                if (now != section.IsBroken)
+                {
+                    section.Health = now ? 0f : section.MaxHealth;
+                    section.BreakOrder = now ? ++building.Breaks : 0;
+                    sections[i] = section;
+                }
+            }
+
+            building.Broken = broken;
+            _buildings[scenery] = building;
         }
 
         /// <summary>A <see cref="Topple"/> piece's remains lie toward <paramref name="fall"/>.</summary>

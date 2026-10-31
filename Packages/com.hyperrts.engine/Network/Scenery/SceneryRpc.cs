@@ -6,8 +6,8 @@ namespace HyperRTS.Network.Scenery
     /// <summary>Scenery changes the client's team has seen. Only witnessed ones play their effects.</summary>
     public struct SceneryRpc : IRpcCommand
     {
-        /// <summary>Sized to fit a packet at 11 bytes per change.</summary>
-        public const int Capacity = 100;
+        /// <summary>Sized to fit a packet at 19 bytes per change.</summary>
+        public const int Capacity = 64;
 
         public bool Witnessed;
 

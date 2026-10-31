@@ -27,6 +27,9 @@ namespace HyperRTS.Simulation.Combat
         private BufferLookup<EntityDamaged> _damaged;
         private ComponentLookup<Shelter> _shelters;
         private BufferLookup<ShelterHit> _shelterHits;
+        private ComponentLookup<Sections> _buildings;
+        private BufferLookup<Section> _sections;
+        private BufferLookup<SectionFactor> _sectionFactors;
 
         public void OnCreate(ref SystemState state)
         {
@@ -43,6 +46,9 @@ namespace HyperRTS.Simulation.Combat
             _damaged = state.GetBufferLookup<EntityDamaged>();
             _shelters = state.GetComponentLookup<Shelter>(true);
             _shelterHits = state.GetBufferLookup<ShelterHit>();
+            _buildings = state.GetComponentLookup<Sections>();
+            _sections = state.GetBufferLookup<Section>();
+            _sectionFactors = state.GetBufferLookup<SectionFactor>(true);
 
             var queue = state.EntityManager.CreateEntity(typeof(DamageQueue), typeof(DamageEvent));
             state.EntityManager.SetName(queue, "DamageQueue");
@@ -67,6 +73,9 @@ namespace HyperRTS.Simulation.Combat
             _damaged.Update(ref state);
             _shelters.Update(ref state);
             _shelterHits.Update(ref state);
+            _buildings.Update(ref state);
+            _sections.Update(ref state);
+            _sectionFactors.Update(ref state);
 
             new ResolveJob
             {
@@ -85,6 +94,9 @@ namespace HyperRTS.Simulation.Combat
                 Damaged = _damaged,
                 Shelters = _shelters,
                 ShelterHits = _shelterHits,
+                Buildings = _buildings,
+                BuildingSections = _sections,
+                SectionFactors = _sectionFactors,
                 Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
@@ -108,6 +120,9 @@ namespace HyperRTS.Simulation.Combat
             public BufferLookup<EntityDamaged> Damaged;
             [ReadOnly] public ComponentLookup<Shelter> Shelters;
             public BufferLookup<ShelterHit> ShelterHits;
+            public ComponentLookup<Sections> Buildings;
+            public BufferLookup<Section> BuildingSections;
+            [ReadOnly] public BufferLookup<SectionFactor> SectionFactors;
             public Entity Events;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
@@ -174,14 +189,15 @@ namespace HyperRTS.Simulation.Combat
 
                 if (amount < 0f)
                 {
-                    health.Current = math.min(health.Max, health.Current - amount);
+                    health.Current = math.min(health.Max, health.Current + Repair(target, -amount));
                     Health[target] = health;
                     return;
                 }
 
                 PassToPassengers(target, amount, health, hit, from);
-                amount *= CombatMath.ArmorMultiplier(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
-                          StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
+                var scale = CombatMath.ArmorMultiplier(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
+                            StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
+                amount = BuildingSections.HasBuffer(target) ? Route(target, hit, from, scale) : amount * scale;
                 health.Current = math.max(0f, health.Current - amount);
                 Health[target] = health;
                 Report(target, amount, damaged);
@@ -208,12 +224,42 @@ namespace HyperRTS.Simulation.Combat
                 var passing = hit;
                 passing.Target = Entity.Null;
                 passing.Origin = from;
-                passing.Amount = shelter.Passing(hit, amount, health.Current / math.max(health.Max, 1e-4f));
+                var intact = BuildingSections.TryGetBuffer(target, out var sections)
+                    ? Sections.Intact(sections)
+                    : health.Current / math.max(health.Max, 1e-4f);
+                passing.Amount = shelter.Passing(hit, amount, intact);
                 passing.Radius = 0f;
                 if (passing.Amount > 0f)
                 {
                     ShelterHits[target].Add(new ShelterHit { Hit = passing });
                 }
+            }
+
+            /// <summary>The hit on a sectioned building's sections, in its space; returns the damage dealt.</summary>
+            private float Route(Entity target, in DamageEvent hit, float3 from, float scale)
+            {
+                var transform = Transforms[target];
+                var building = Buildings[target];
+                var dealt = building.Route(BuildingSections[target], SectionFactors[target], hit,
+                    transform.InverseTransformPoint(hit.Origin), transform.InverseTransformPoint(hit.Position), scale,
+                    target == hit.Target);
+                building.Side = ToppleMath.Quantize(from, transform.Position);
+                Buildings[target] = building;
+                return dealt;
+            }
+
+            /// <summary>Health restored by a heal of <paramref name="amount"/>, rebuilding broken sections first.</summary>
+            private float Repair(Entity target, float amount)
+            {
+                if (!BuildingSections.TryGetBuffer(target, out var sections))
+                {
+                    return amount;
+                }
+
+                var building = Buildings[target];
+                var restored = building.Repair(sections, amount);
+                Buildings[target] = building;
+                return restored;
             }
 
             /// <summary>Armor that soaks the whole hit raises no event.</summary>

@@ -51,4 +51,19 @@ namespace HyperRTS.Simulation.Navigation
             return boxes;
         }
     }
+
+    /// <summary>
+    /// A piece of a <see cref="NavObstacle"/>, such as one wall of a building, in its space. An obstacle with parts
+    /// stamps only the closed ones, so a broken wall opens its cells; placement still uses the whole box.
+    /// </summary>
+    [InternalBufferCapacity(0)]
+    public struct NavObstaclePart : IBufferElementData
+    {
+        public float2 Center;
+        public float2 Size;
+        public bool Closed;
+
+        public readonly NavBox Box(in LocalTransform transform) =>
+            new(transform.TransformPoint(new float3(Center.x, 0f, Center.y)), transform.Rotation, Size);
+    }
 }

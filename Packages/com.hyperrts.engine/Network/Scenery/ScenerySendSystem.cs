@@ -87,6 +87,7 @@ namespace HyperRTS.Network.Scenery
         private void Track(ref SystemState state, ushort teams)
         {
             var fallen = SystemAPI.GetComponentLookup<ToppleHeading>(true);
+            var buildings = SystemAPI.GetComponentLookup<Sections>(true);
             foreach (var (health, id, entity) in SystemAPI.Query<RefRO<Health>, RefRO<SceneryId>>()
                          .WithAll<LocalTransform>().WithNone<GhostInstance>().WithChangeFilter<Health>().WithEntityAccess())
             {
@@ -94,7 +95,9 @@ namespace HyperRTS.Network.Scenery
 
                 // Scenery that doesn't topple sends heading 0, which clients ignore.
                 fallen.TryGetComponent(entity, out var fell);
-                if (_tracker.Set(id.ValueRO.Value, now, fell.Heading, teams, _frame) && now == SceneryChange.Destroyed)
+                buildings.TryGetComponent(entity, out var building);
+                if (_tracker.Set(id.ValueRO.Value, now, building.Broken, fell.Heading, teams, _frame) &&
+                    now == SceneryChange.Destroyed)
                 {
                     _expected--;
                 }

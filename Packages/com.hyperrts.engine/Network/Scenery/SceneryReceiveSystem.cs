@@ -127,6 +127,7 @@ namespace HyperRTS.Network.Scenery
             if (change.State != SceneryChange.Destroyed)
             {
                 _writer.SetHealth(piece, change.Fraction, witnessed);
+                _writer.SetBroken(piece, change.Broken);
                 return;
             }
 

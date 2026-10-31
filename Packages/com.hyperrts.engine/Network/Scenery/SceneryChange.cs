@@ -26,13 +26,16 @@ namespace HyperRTS.Network.Scenery
         /// <summary>Removed with nothing left, as a building site does: the piece if it stands, else its remains.</summary>
         public bool Cleared;
 
+        /// <summary>A sectioned building's broken sections (<see cref="Sections.Broken"/>), 0 for other scenery.</summary>
+        public ulong Broken;
+
         public readonly float Fraction => State / (float)Intact;
 
         /// <summary>State and <see cref="Cleared"/> as one number, the way the tracker compares what teams know.</summary>
         public readonly ushort Code => (ushort)(State | (Cleared ? ClearedBit : 0));
 
-        public static SceneryChange FromCode(ulong id, ushort code, byte fall) =>
-            new() { Id = id, State = (byte)code, Fall = fall, Cleared = code >= ClearedBit };
+        public static SceneryChange FromCode(ulong id, ushort code, ulong broken, byte fall) =>
+            new() { Id = id, State = (byte)code, Fall = fall, Cleared = code >= ClearedBit, Broken = broken };
 
         /// <summary>Rounded up so a sliver of health doesn't read as destroyed.</summary>
         public static byte Encode(in Health health)

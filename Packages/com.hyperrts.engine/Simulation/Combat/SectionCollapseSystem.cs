@@ -1,0 +1,124 @@
+using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
+using Unity.Burst;
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace HyperRTS.Simulation.Combat
+{
+    /// <summary>
+    /// After a section breaks, floods the supports up from the anchored sections and drops what no longer reaches
+    /// the ground, one support level every <see cref="Sections.FallDelay"/>. A fall breaks the section, takes its
+    /// health off the building's and marks its floor fallen in <see cref="IntactFloors"/>.
+    /// </summary>
+    [BurstCompile]
+    [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
+    [UpdateAfter(typeof(DamageSystem))]
+    public partial struct SectionCollapseSystem : ISystem
+    {
+        private ComponentLookup<Sections> _buildings;
+        private BufferLookup<Section> _sections;
+        private ComponentLookup<Health> _health;
+        private ComponentLookup<IntactFloors> _floors;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            _buildings = state.GetComponentLookup<Sections>();
+            _sections = state.GetBufferLookup<Section>();
+            _health = state.GetComponentLookup<Health>();
+            _floors = state.GetComponentLookup<IntactFloors>();
+            state.RequireForUpdate<Sections>();
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            _buildings.Update(ref state);
+            _sections.Update(ref state);
+            _health.Update(ref state);
+            _floors.Update(ref state);
+            new CollapseJob
+            {
+                Now = SystemAPI.Time.ElapsedTime,
+                Buildings = _buildings,
+                Sections = _sections,
+                Health = _health,
+                Floors = _floors,
+            }.Schedule();
+        }
+
+        /// <summary>Writes through lookups only on a change, so standing buildings keep their change versions.</summary>
+        [BurstCompile]
+        [WithAll(typeof(Sections))]
+        private partial struct CollapseJob : IJobEntity
+        {
+            public double Now;
+            public ComponentLookup<Sections> Buildings;
+            public BufferLookup<Section> Sections;
+            public ComponentLookup<Health> Health;
+            public ComponentLookup<IntactFloors> Floors;
+
+            private void Execute(Entity entity)
+            {
+                var building = Buildings[entity];
+                var due = building.Falling != 0 && Now >= building.NextFall;
+                if ((building.Broken == building.Checked && !due) || !Common.Health.IsAlive(Health, entity))
+                {
+                    return;
+                }
+
+                var sections = Sections[entity];
+                if (building.Broken != building.Checked)
+                {
+                    Check(ref building, sections);
+                }
+                else
+                {
+                    Fall(entity, ref building, sections);
+                }
+
+                Buildings[entity] = building;
+                if (Floors.TryGetComponent(entity, out var floors))
+                {
+                    floors.Fallen = building.FallenFloors(sections);
+                    Floors[entity] = floors;
+                }
+            }
+
+            /// <summary>Marks what lost its way to the ground; the first level falls a delay later.</summary>
+            private void Check(ref Sections building, DynamicBuffer<Section> sections)
+            {
+                building.Checked = building.Broken;
+                var all = sections.Length == 64 ? ~0ul : (1ul << sections.Length) - 1;
+                building.Falling = all & ~building.Broken & ~building.Supported(sections);
+                if (building.Falling == 0)
+                {
+                    building.NextFall = 0;
+                }
+                else if (building.NextFall == 0)
+                {
+                    building.NextFall = Now + Combat.Sections.FallDelay;
+                }
+            }
+
+            private void Fall(Entity entity, ref Sections building, DynamicBuffer<Section> sections)
+            {
+                var due = building.DueToFall(sections);
+                var health = Health[entity];
+                for (var i = 0; i < sections.Length; i++)
+                {
+                    if ((due & (1ul << i)) != 0)
+                    {
+                        health.Current = math.max(0f, health.Current - building.Damage(sections, i, float.MaxValue));
+                    }
+                }
+
+                Health[entity] = health;
+                building.Fell |= due;
+                building.Checked = building.Broken;
+                building.NextFall = building.Falling != 0 ? Now + Combat.Sections.FallDelay : 0;
+            }
+        }
+    }
+}

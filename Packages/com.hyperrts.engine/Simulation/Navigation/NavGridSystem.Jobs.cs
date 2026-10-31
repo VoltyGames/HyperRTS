@@ -66,11 +66,23 @@ namespace HyperRTS.Simulation.Navigation
         private partial struct ObstacleJob : IJobEntity
         {
             public NavGrid Grid;
+            [ReadOnly] public BufferLookup<NavObstaclePart> Parts;
 
-            private void Execute(in NavObstacle obstacle, in LocalTransform transform)
+            private void Execute(Entity entity, in NavObstacle obstacle, in LocalTransform transform)
             {
-                var box = new NavBox(transform.Position, transform.Rotation, obstacle.Size);
-                Grid.StampArea(box, NavAreaKind.Blocked, 0f);
+                if (!Parts.TryGetBuffer(entity, out var parts))
+                {
+                    Grid.StampArea(new NavBox(transform.Position, transform.Rotation, obstacle.Size), NavAreaKind.Blocked, 0f);
+                    return;
+                }
+
+                foreach (var part in parts)
+                {
+                    if (part.Closed)
+                    {
+                        Grid.StampArea(part.Box(transform), NavAreaKind.Blocked, 0f);
+                    }
+                }
             }
         }
 

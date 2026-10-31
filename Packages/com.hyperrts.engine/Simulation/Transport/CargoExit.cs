@@ -55,6 +55,11 @@ namespace HyperRTS.Simulation.Transport
         /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
         public bool IsAlive(Entity container) => Health.IsAlive(_health, container);
 
+        public float MaxHealth(Entity unit) => _health.TryGetComponent(unit, out var health) ? health.Max : 0f;
+
+        public LastAttacker Attacker(Entity container) =>
+            _attackers.TryGetComponent(container, out var attacker) ? attacker : default;
+
         /// <summary>Lets out passenger <paramref name="slot"/> (or all for -1).</summary>
         public void Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, in NavGrid grid)
         {
@@ -77,7 +82,7 @@ namespace HyperRTS.Simulation.Transport
         /// <summary>Kills every passenger, crediting whoever destroyed the container.</summary>
         public void KillAll(Entity container, DynamicBuffer<Cargo> cargo)
         {
-            var killer = _attackers.TryGetComponent(container, out var attacker) ? attacker : default;
+            var killer = Attacker(container);
             foreach (var item in cargo)
             {
                 if (_health.HasComponent(item.Unit))
