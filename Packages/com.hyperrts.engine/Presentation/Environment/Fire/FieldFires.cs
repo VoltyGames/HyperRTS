@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Mathematics;
 using UnityEngine;
@@ -186,9 +187,6 @@ namespace HyperRTS.Presentation.Environment.Fire
             }
         }
 
-        /// <summary>A 32-bit hash as a number from 0 up to but not including 1.</summary>
-        public static float HashFraction(uint hash) => (hash >> 8) * (1f / (1 << 24));
-
         /// <summary>Puts every fire out and makes burnt ground dry again: a replay sought back past the fires.</summary>
         public void Clear()
         {
@@ -308,7 +306,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         }
 
         private static float Fraction(uint seed, int cell, uint salt) =>
-            HashFraction(math.hash(new uint3(seed, (uint)cell, salt)));
+            Hashes.Fraction(math.hash(new uint3(seed, (uint)cell, salt)));
 
         private struct Flame
         {

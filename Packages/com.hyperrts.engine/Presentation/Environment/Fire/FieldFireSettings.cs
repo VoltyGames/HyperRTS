@@ -69,7 +69,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         {
             var blast = impact.Slot == CueSlot.Impact && impact.Radius >= smallestBlast;
             var dryGround = impact.Surface == ImpactSurface.Ground && wetness < wetnessLimit;
-            return blast && dryGround && FieldFires.HashFraction(seed) < igniteChance;
+            return blast && dryGround && Hashes.Fraction(seed) < igniteChance;
         }
 
         // Retried every frame: the world may not exist yet, or may be a new one.

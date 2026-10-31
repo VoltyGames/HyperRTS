@@ -40,10 +40,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         private protected override float DrawDistance => PresentationQuality.Current.GrassDistance;
 
-        /// <summary>Plants and draws the camera's last scatter holds, read back from the GPU for profiling.</summary>
-        public (int Instances, int Draws) Drawn(Camera camera) =>
-            Cameras.TryGet(camera, out var state) ? state.Batch.Drawn() : (0, 0);
-
         private protected override void BuildInputs()
         {
             _kernels = new GrassComputeInputs(compute, field, terrain);

@@ -1,6 +1,6 @@
-using HyperRTS.Presentation.Common;
 using System;
 using HyperRTS.Core;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
@@ -95,7 +95,7 @@ namespace HyperRTS.Presentation.Effects.Rig
         public Quaternion LoopRotation(Quaternion rotation, uint key) =>
             randomSpin ? rotation * Yaw(Fraction(key, 2u)) : rotation;
 
-        private static float Fraction(uint key, uint salt) => (math.hash(new uint2(key, salt)) >> 8) / 16777216f;
+        private static float Fraction(uint key, uint salt) => Hashes.Fraction(math.hash(new uint2(key, salt)));
 
         /// <summary>Sends every graph its Burst event at the pose, thinned by density, and flashes the lights.</summary>
         public void Burst(Vector3 position, Quaternion rotation, float burstScale, float density)

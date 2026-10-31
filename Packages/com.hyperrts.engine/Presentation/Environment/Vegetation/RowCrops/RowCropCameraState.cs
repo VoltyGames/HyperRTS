@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
     /// <summary>One camera's crop batches and the view they were last grown for, so a still camera only redraws.</summary>
     public sealed class RowCropCameraState : IDisposable
     {
-        private readonly ScatterView _view = new(readsTrample: true);
+        private readonly ScatterView _view = new();
 
         internal RowCropCameraState(RowCropFields fields, RowCropCompute kernels)
         {
@@ -21,9 +22,9 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         /// <summary>One batch per crop, in the field asset's crop order.</summary>
         internal List<RowCropBatch> Batches { get; } = new();
 
-        /// <summary>Whether the batches already hold this view.</summary>
+        /// <summary>Whether the batches already hold this view. Crops bend under the trample map, which changes every frame it is published.</summary>
         internal bool Holds(Vector3 position, ScatterSettings settings, List<int> tiles) =>
-            _view.Holds(position, settings, tiles);
+            !InteractionSurfaces.Published && _view.Holds(position, settings, tiles);
 
         /// <summary>Records the view the batches were just grown for.</summary>
         internal void Remember(Vector3 position, ScatterSettings settings, List<int> tiles) =>

@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
@@ -32,7 +33,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         public static Vector2 Position(RowCropField field, int row, int plant, RowCrop crop)
         {
             var hash = ScatterHash.Hash(field.seed, row, plant);
-            var jitter = ScatterHash.Unit(ScatterHash.Channel(hash, RowCropSpots.AlongChannel)) * 2f - 1f;
+            var jitter = Hashes.Fraction(ScatterHash.Channel(hash, RowCropSpots.AlongChannel)) * 2f - 1f;
             var along = jitter * crop.jitter * crop.plantSpacing;
             return Spot(field, row, plant, crop.rowSpacing, crop.plantSpacing) + field.across * Stray(field, row, plant, crop)
                 + field.along * along;
@@ -59,7 +60,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         /// <summary>Which of <paramref name="count"/> models a plant draws.</summary>
         public static int Variant(int seed, int row, int plant, int count)
         {
-            var pick = (int)(ScatterHash.Unit(ScatterHash.Channel(ScatterHash.Hash(seed, row, plant), VariantChannel)) * count);
+            var pick = (int)(Hashes.Fraction(ScatterHash.Channel(ScatterHash.Hash(seed, row, plant), VariantChannel)) * count);
             return Mathf.Min(pick, count - 1);
         }
 
@@ -68,8 +69,8 @@ namespace HyperRTS.Presentation.Tests.Environment
         {
             var hash = ScatterHash.Hash(field.seed, row, plant);
             var tilt = Mathf.Lerp(crop.lean, crop.edgeLean, edge) * Mathf.Deg2Rad *
-                       ScatterHash.Unit(ScatterHash.Channel(hash, LeanChannel));
-            var heading = ScatterHash.Unit(ScatterHash.Channel(hash, LeanTurnChannel)) * 2f * Mathf.PI;
+                       Hashes.Fraction(ScatterHash.Channel(hash, LeanChannel));
+            var heading = Hashes.Fraction(ScatterHash.Channel(hash, LeanTurnChannel)) * 2f * Mathf.PI;
             return (field.across * Mathf.Cos(heading) + field.along * Mathf.Sin(heading)) * Mathf.Sin(tilt);
         }
 
@@ -77,7 +78,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         private static float Stray(RowCropField field, int row, int plant, RowCrop crop)
         {
             var hash = ScatterHash.Hash(field.seed, row, plant);
-            var jitter = ScatterHash.Unit(ScatterHash.Channel(hash, RowCropSpots.AcrossChannel)) * 2f - 1f;
+            var jitter = Hashes.Fraction(ScatterHash.Channel(hash, RowCropSpots.AcrossChannel)) * 2f - 1f;
             return jitter * crop.jitter * crop.rowSpacing + Wander(field, row, plant, crop);
         }
 

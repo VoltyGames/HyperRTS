@@ -540,7 +540,7 @@ default) keeps screen-space AO from darkening it again: GTAO reads a dense field
 turns shaded wheat into a flat dark patch. Foliage has the same property at 1.
 
 A camera regrows the plants of its visible tiles when it moves, the quality changes or new ash falls, and every frame
-while a trample map is published (`ScatterView`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants
+while a trample map is published (`RowCropCameraState`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants
 shrink away over the last 15 % of the draw distance. It also runs in edit mode.
 
 #### Scatter host

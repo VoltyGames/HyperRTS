@@ -44,9 +44,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         protected ScatterSlots Slots { get; }
 
-        /// <summary>Instances the last run drew and the slots that drew any, read back from the GPU for profiling.</summary>
-        public (int Instances, int Draws) Drawn() => _draws.Drawn();
-
         /// <summary>Forgets the last view's tiles.</summary>
         public void Begin()
         {

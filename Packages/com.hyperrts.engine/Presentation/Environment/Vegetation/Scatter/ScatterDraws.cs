@@ -31,21 +31,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             _args.SetData(Commands(count));
         }
 
-        /// <summary>Plants the last run drew and the slots that drew any, read back from the GPU for profiling.</summary>
-        public (int Instances, int Draws) Drawn()
-        {
-            var commands = new GraphicsBuffer.IndirectDrawIndexedArgs[_meshes.Length];
-            _args.GetData(commands);
-            var (instances, draws) = (0, 0);
-            foreach (var command in commands)
-            {
-                instances += (int)command.instanceCount;
-                draws += command.instanceCount > 0 ? 1 : 0;
-            }
-
-            return (instances, draws);
-        }
-
         /// <summary>Uploads the queued jobs, growing the buffer when there are more, and binds them and the counters to the grow kernel.</summary>
         public void BindGrow(List<ScatterJob> jobs, ComputeShader compute, int kernel)
         {

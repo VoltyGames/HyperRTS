@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -14,9 +15,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         /// <summary>An independent random value per channel from one plant hash.</summary>
         public static uint Channel(uint hash, uint channel) => Pcg(unchecked(hash + channel * 0x9E3779B9u));
 
-        /// <summary>A hash as a value from 0 up to (not including) 1.</summary>
-        public static float Unit(uint value) => (value >> 8) * (1f / 16777216f);
-
         /// <summary>Smooth value noise from 0 to 1 on an integer grid.</summary>
         public static float Noise(int seed, uint salt, Vector2 point)
         {
@@ -24,8 +22,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             var (x, z) = (Mathf.FloorToInt(point.x), Mathf.FloorToInt(point.y));
             var (fx, fz) = (point.x - x, point.y - z);
             var (ux, uz) = (fx * fx * (3f - 2f * fx), fz * fz * (3f - 2f * fz));
-            var low = Mathf.Lerp(Unit(Hash(salted, x, z)), Unit(Hash(salted, x + 1, z)), ux);
-            var high = Mathf.Lerp(Unit(Hash(salted, x, z + 1)), Unit(Hash(salted, x + 1, z + 1)), ux);
+            var low = Mathf.Lerp(Hashes.Fraction(Hash(salted, x, z)), Hashes.Fraction(Hash(salted, x + 1, z)), ux);
+            var high = Mathf.Lerp(Hashes.Fraction(Hash(salted, x, z + 1)), Hashes.Fraction(Hash(salted, x + 1, z + 1)), ux);
             return Mathf.Lerp(low, high, uz);
         }
 

@@ -5,6 +5,7 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
@@ -57,8 +58,8 @@ namespace HyperRTS.Editor.Maps.Ground
             var along = MapGeometry.Forward(region.RowAngle);
             var across = MapGeometry.Right(along);
             var hash = ScatterHash.Hash(region.Seed, int.MinValue, int.MaxValue);
-            var phaseAcross = ScatterHash.Unit(ScatterHash.Channel(hash, RowCropSpots.AcrossChannel));
-            var phaseAlong = ScatterHash.Unit(ScatterHash.Channel(hash, RowCropSpots.AlongChannel));
+            var phaseAcross = Hashes.Fraction(ScatterHash.Channel(hash, RowCropSpots.AcrossChannel));
+            var phaseAlong = Hashes.Fraction(ScatterHash.Channel(hash, RowCropSpots.AlongChannel));
             var origin = across * (phaseAcross * crop.rowSpacing) + along * (phaseAlong * crop.plantSpacing);
             return new RowCropField
             {

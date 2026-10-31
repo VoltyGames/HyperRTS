@@ -8,8 +8,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
     /// <summary>One camera's grass batch and the view it was last scattered for, so a still camera only redraws.</summary>
     public sealed class GrassCameraState : IDisposable
     {
-        // Grass reads the ash but not the trample map.
-        private readonly ScatterView _view = new(readsTrample: false);
+        private readonly ScatterView _view = new();
 
         internal GrassCameraState(GrassField field, GrassComputeInputs kernels, Material[] materials) =>
             Batch = new GrassBatch(field, kernels, materials);
