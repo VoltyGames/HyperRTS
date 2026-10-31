@@ -183,7 +183,6 @@ namespace HyperRTS.Presentation.Environment
                 _chances[n] = SpreadPerSecond * StepSeconds * share / math.length(offset);
             }
 
-            _lit.Clear();
             for (var i = _flames.Count - 1; i >= 0; i--)
             {
                 var flame = _flames[i];
@@ -203,6 +202,7 @@ namespace HyperRTS.Presentation.Environment
             }
 
             _flames.AddRange(_lit);
+            _lit.Clear();
         }
 
         // Lights some dry neighbours; false once none is left within reach, as cells never turn dry again.

@@ -174,6 +174,20 @@ namespace HyperRTS.Presentation.Tests.Environment
             }
         }
 
+        [Test]
+        public void Ignition_BetweenStepsFillsUpToTheCap()
+        {
+            var fires = Field(new int2(100, 100), _ => true);
+            fires.TryIgnite(new float2(50.5f, 50.5f), Seed);
+            Run(fires, 10f, float2.zero);
+
+            ForEach(fires, (cell, _) => fires.TryIgnite(fires.Centre(cell), Seed));
+
+            var burning = 0;
+            ForEach(fires, (_, state) => burning += state == FieldCell.Burning ? 1 : 0);
+            Assert.AreEqual(FieldFires.MaxBurning, burning, "the last step's spread counts once");
+        }
+
         private static FieldFires Field(int2 size, System.Func<int2, bool> dry) => Field(size, dry, Unbounded);
 
         private static FieldFires Field(int2 size, System.Func<int2, bool> dry, float2 reach)
