@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Build
     {
         public static MapReport Build(string specPath)
         {
-            var project = MapProject.Open(specPath);
+            using var project = MapProject.Open(specPath);
             var issues = new MapIssues();
             var generation = MapGeneration.Run(project, issues);
             if (generation == null)

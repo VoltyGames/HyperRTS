@@ -91,7 +91,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _started = EditorApplication.timeSinceStartup;
             try
             {
-                var project = MapProject.FromSpec(_document.Spec, _document.Path);
+                using var project = MapProject.FromSpec(_document.Spec, _document.Path);
                 var result = await MapPreview.RunAsync(project);
                 Deliver(result);
             }

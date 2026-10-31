@@ -27,7 +27,10 @@ namespace HyperRTS.Editor.Maps.Library
                 return;
             }
 
-            Check(library, issues);
+            using (library)
+            {
+                Check(library, issues);
+            }
         }
 
         /// <summary>Checks every item of <paramref name="library"/>, which tests make from items in memory.</summary>

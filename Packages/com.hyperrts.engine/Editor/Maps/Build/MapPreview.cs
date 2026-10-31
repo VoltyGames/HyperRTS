@@ -15,7 +15,12 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>Previews the spec on disk and writes the preview report and image.</summary>
         public static MapReport Run(string specPath)
         {
-            var result = Run(MapProject.Open(specPath));
+            MapPreviewResult result;
+            using (var project = MapProject.Open(specPath))
+            {
+                result = Run(project);
+            }
+
             var report = result.Report;
             report.WritePreview(result.Image);
             Debug.Log($"HyperRTS: map '{report.map}' previewed with {report.errors.Count} errors and {report.warnings.Count} warnings. Report: {MapReport.JsonPath(report.map + MapReport.PreviewSuffix)}");

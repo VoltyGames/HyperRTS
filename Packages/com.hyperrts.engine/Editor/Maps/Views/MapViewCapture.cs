@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Views
     {
         public static List<string> Capture(string specPath)
         {
-            var project = MapProject.Open(specPath);
+            using var project = MapProject.Open(specPath);
             if (EditorSceneManager.GetActiveScene().path != project.Paths.Scene)
             {
                 EditorSceneManager.OpenScene(project.Paths.Scene, OpenSceneMode.Single);

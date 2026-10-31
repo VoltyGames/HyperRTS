@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using HyperRTS.Editor.Maps.Data;
 using HyperRTS.Editor.Maps.Library;
@@ -6,16 +7,22 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Generation
 {
-    /// <summary>A spec and what it builds with from the game's map library: the palette, the rules and the climate it names.</summary>
-    public sealed class MapProject
+    /// <summary>
+    /// A spec and what it builds with from the game's map library: the palette, the rules and the climate it names.
+    /// Disposing it destroys those library copies.
+    /// </summary>
+    public sealed class MapProject : IDisposable
     {
-        private MapProject(MapSpec spec, MapPaths paths, MapPalette palette, MapRules rules, MapClimate climate)
+        private readonly MapLibrary _library;
+
+        private MapProject(MapSpec spec, string specPath, MapLibrary library)
         {
             Spec = spec;
-            Paths = paths;
-            Palette = palette;
-            Rules = rules;
-            Climate = climate;
+            Paths = new MapPaths(specPath, spec.name);
+            _library = library;
+            Palette = library.Palette();
+            Rules = library.Rules();
+            Climate = library.Climate(spec.climate, specPath);
         }
 
         public MapSpec Spec { get; }
@@ -41,9 +48,18 @@ namespace HyperRTS.Editor.Maps.Generation
 
         private static MapProject Create(MapSpec spec, string specPath)
         {
-            var paths = new MapPaths(specPath, spec.name);
             var library = MapLibrary.Load();
-            return new MapProject(spec, paths, library.Palette(), library.Rules(), library.Climate(spec.climate, specPath));
+            try
+            {
+                return new MapProject(spec, specPath, library);
+            }
+            catch
+            {
+                library.Dispose();
+                throw;
+            }
         }
+
+        public void Dispose() => _library.Dispose();
     }
 }

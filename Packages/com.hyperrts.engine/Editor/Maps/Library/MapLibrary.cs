@@ -11,9 +11,10 @@ namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// The map library: one <c>&lt;Key&gt;.&lt;type&gt;.asset</c> per item anywhere in the project. Each item loads on
-    /// first use as a copy owned by this library, so a build may fill in its derived fields.
+    /// first use as a copy owned by this library, so a build may fill in its derived fields; disposing the library
+    /// destroys the copies.
     /// </summary>
-    public sealed class MapLibrary
+    public sealed class MapLibrary : IDisposable
     {
         /// <summary>Item types in listing order.</summary>
         [NoAutoStaticsCleanup]
@@ -150,6 +151,16 @@ namespace HyperRTS.Editor.Maps.Library
         /// <summary>The item itself rather than a copy: the asset, or the item made in memory. Edit it only to change the library.</summary>
         public MapLibraryItem Original(Type type, string key) =>
             _entries[type].TryGetValue(key, out var entry) ? Original(entry) : throw Missing(type, key, null);
+
+        /// <summary>Destroys the copies handed out, which nothing else frees until Unity next unloads assets.</summary>
+        public void Dispose()
+        {
+            foreach (var entry in _entries.Values.SelectMany(entries => entries.Values).Where(entry => entry.Copy != null))
+            {
+                Object.DestroyImmediate(entry.Copy);
+                entry.Copy = null;
+            }
+        }
 
         private static MapLibraryItem Original(Entry entry) => entry.Item ?? AssetDatabase.LoadAssetAtPath<MapLibraryItem>(entry.Path);
 
