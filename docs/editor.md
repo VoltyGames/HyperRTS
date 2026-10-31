@@ -140,14 +140,17 @@ template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `
 | `AuthoringRule<T>` | One authoring component | A Producer with no options |
 | `ISceneRule` | The open scenes | No Match, or a missing Netcode bootstrap |
 | `IPrefabRule` | All prefabs | Two prefabs sharing a display name |
+| `IAssetRule` | Any assets | A sound cue with no clips |
 
 Rules are found in every editor assembly, so a game adds its own the same way. Write one `AuthoringRule<T>` per
 authoring type. A rule about components marked by an attribute derives from `AuthoringRule<Component>` and
-overrides `AppliesTo`.
+overrides `AppliesTo`. An asset rule asks its `AssetSet` for `All<T>(folders)`, which loads each type and folder
+once however many rules ask for it; tests build a set from assets made in memory with `AssetSet.From`.
 
 The same rules run in the inspector, on the **Validate** page, in the console on entering Play mode, from the
-`validate` [command](#commands), and in the `ValidationTests.ProjectHasNoValidationErrors` test. A quick fix is one undo step. Closed SubScenes are not
-checked.
+`validate` [command](#commands), and in the `ValidationTests.ProjectHasNoValidationErrors` test. Prefab and asset
+rules run only in the full pass, after the component rules. The prefab and asset sets are kept between passes until
+the next import, delete or move. A quick fix is one undo step. Closed SubScenes are not checked.
 
 ## Scenes from code
 

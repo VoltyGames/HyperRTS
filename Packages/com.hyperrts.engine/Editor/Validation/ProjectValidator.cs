@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Validation
 {
     /// <summary>
-    /// Runs the discovered rules: component rules for one component (inspectors), and component, scene and prefab
-    /// rules over the project's prefabs and the open scenes (the validator window, entering Play mode).
+    /// Runs the discovered rules: component rules for one component (inspectors), and component, prefab, asset and
+    /// scene rules over the project's prefabs and assets and the open scenes (the validator window, entering Play mode).
     /// </summary>
     public static class ProjectValidator
     {
@@ -18,6 +18,8 @@ namespace HyperRTS.Editor.Validation
         private static readonly ISceneRule[] SceneRules = TypeDiscovery.Instances<ISceneRule>();
         [NoAutoStaticsCleanup]
         private static readonly IPrefabRule[] PrefabRules = TypeDiscovery.Instances<IPrefabRule>();
+        [NoAutoStaticsCleanup]
+        private static readonly IAssetRule[] AssetRules = TypeDiscovery.Instances<IAssetRule>();
 
         /// <summary>Every component rule that applies to one component.</summary>
         public static List<ValidationIssue> Check(Component component)
@@ -46,6 +48,12 @@ namespace HyperRTS.Editor.Validation
             foreach (var rule in PrefabRules)
             {
                 rule.Check(prefabs, issues);
+            }
+
+            var assets = AssetSet.InProject();
+            foreach (var rule in AssetRules)
+            {
+                rule.Check(assets, issues);
             }
 
             issues.AddRange(OpenScenes());
