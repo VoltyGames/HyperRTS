@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Combat
         private BufferLookup<DamageTakenModifier> _typedModifiers;
         private ComponentLookup<Destructible> _destructibles;
         private ComponentLookup<ToppleHeading> _toppleHeadings;
+        private ComponentLookup<LethalHit> _lethalHits;
         private ComponentLookup<Faction> _factions;
         private BufferLookup<EntityDamaged> _damaged;
         private ComponentLookup<Shelter> _shelters;
@@ -43,6 +44,7 @@ namespace HyperRTS.Simulation.Combat
             _typedModifiers = state.GetBufferLookup<DamageTakenModifier>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _toppleHeadings = state.GetComponentLookup<ToppleHeading>();
+            _lethalHits = state.GetComponentLookup<LethalHit>();
             _factions = state.GetComponentLookup<Faction>(true);
             _damaged = state.GetBufferLookup<EntityDamaged>();
             _shelters = state.GetComponentLookup<Shelter>(true);
@@ -71,6 +73,7 @@ namespace HyperRTS.Simulation.Combat
             _typedModifiers.Update(ref state);
             _destructibles.Update(ref state);
             _toppleHeadings.Update(ref state);
+            _lethalHits.Update(ref state);
             _factions.Update(ref state);
             _damaged.Update(ref state);
             _shelters.Update(ref state);
@@ -93,6 +96,7 @@ namespace HyperRTS.Simulation.Combat
                 TypedModifiers = _typedModifiers,
                 Destructibles = _destructibles,
                 FallSources = _toppleHeadings,
+                LethalHits = _lethalHits,
                 Factions = _factions,
                 Damaged = _damaged,
                 Shelters = _shelters,
@@ -120,6 +124,7 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public BufferLookup<DamageTakenModifier> TypedModifiers;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             public ComponentLookup<ToppleHeading> FallSources;
+            public ComponentLookup<LethalHit> LethalHits;
             [ReadOnly] public ComponentLookup<Faction> Factions;
             public BufferLookup<EntityDamaged> Damaged;
             [ReadOnly] public ComponentLookup<Shelter> Shelters;
@@ -203,9 +208,16 @@ namespace HyperRTS.Simulation.Combat
                 var scale = CombatMath.ArmorMultiplier(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
                             StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
                 amount = BuildingSections.HasBuffer(target) ? Route(target, hit, from, scale) : amount * scale;
+                var overkill = amount - health.Current;
                 health.Current = Resolved(target, math.max(0f, health.Current - amount));
                 Health[target] = health;
                 Report(target, amount, damaged);
+                if (health.Current <= 0f && LethalHits.HasComponent(target))
+                {
+                    var heading = ToppleMath.Quantize(from, Transforms[target].Position);
+                    LethalHits[target] = new LethalHit { Type = hit.Type, Overkill = overkill, Heading = heading };
+                }
+
                 if (health.Current <= 0f && FallSources.HasComponent(target))
                 {
                     var fall = ToppleMath.Quantize(from, Transforms[target].Position);

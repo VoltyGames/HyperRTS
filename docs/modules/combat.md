@@ -117,6 +117,19 @@ interceptor does nothing.
 | `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` footprint block it until they go, and while they are buried leave a square scorched and churned scar on the interaction maps |
 | `DropRemains` | Remains that fall from where the entity died onto the nav grid surface: ground, water or deck. Aircraft get it with `Flight` |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
+| `TurretTossAuthoring` | A unit that throws its turret when it dies to a catastrophic hit (below) |
+| `TossedTurretAuthoring` | On the thrown turret's remains: the throw clients fly |
+
+#### Turret toss
+
+A unit with `TurretTossAuthoring` records its lethal hit (`LethalHit`: damage type, overkill and the heading away from
+the shooter). A hit is catastrophic when its type is in `damageTypes`, or when it overshoots the unit's health by
+`overkill` times its maximum. `DeathSystem` then leaves `hull` (the wreck without a turret) in place of the usual death
+spawn, and spawns `turret` as remains at a seeded point `distance` metres off, within `arc` degrees across the heading
+away from the hit. The seed is the death position and heading, so server and tests agree. The turret remains block
+their cell like any remains with a `Blocker`, and `FallingRemains` settles them on the ground. `TossedTurret` is a
+ghost field set on spawn; `TurretTossSystem` flies the remains' models from the hull on an arc of `height` over
+`duration` seconds with spin, and skips a toss the local player cannot see. Remains without `Decay` stay for the match.
 
 #### Sections
 

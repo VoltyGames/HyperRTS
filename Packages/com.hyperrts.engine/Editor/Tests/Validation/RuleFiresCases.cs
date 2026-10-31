@@ -139,6 +139,7 @@ namespace HyperRTS.Editor.Tests.Validation
                 scenery.remains = f.Track(EntityTemplates.Unit("Rubble"));
                 return scenery;
             });
+            yield return Row<TurretTossRule>("hull and a turret", f => f.Add<TurretTossAuthoring>(new GameObject("Tank")));
             yield return Row<TeamColorRule>("owner's colour", f =>
             {
                 var unit = f.Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();

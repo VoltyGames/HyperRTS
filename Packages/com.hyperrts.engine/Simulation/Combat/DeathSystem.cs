@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
@@ -21,6 +22,9 @@ namespace HyperRTS.Simulation.Combat
         private RemainsLookups _remains;
         private ComponentLookup<ToppleHeading> _toppleHeadings;
         private ComponentLookup<DropRemains> _drops;
+        private ComponentLookup<TurretToss> _tosses;
+        private ComponentLookup<LethalHit> _lethalHits;
+        private BufferLookup<TossType> _tossTypes;
         private ComponentLookup<SceneryId> _ids;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
@@ -32,6 +36,9 @@ namespace HyperRTS.Simulation.Combat
             _remains = RemainsLookups.Create(ref state);
             _toppleHeadings = state.GetComponentLookup<ToppleHeading>(true);
             _drops = state.GetComponentLookup<DropRemains>(true);
+            _tosses = state.GetComponentLookup<TurretToss>(true);
+            _lethalHits = state.GetComponentLookup<LethalHit>(true);
+            _tossTypes = state.GetBufferLookup<TossType>(true);
             _ids = state.GetComponentLookup<SceneryId>(true);
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
@@ -45,6 +52,9 @@ namespace HyperRTS.Simulation.Combat
             _remains.Update(ref state);
             _toppleHeadings.Update(ref state);
             _drops.Update(ref state);
+            _tosses.Update(ref state);
+            _lethalHits.Update(ref state);
+            _tossTypes.Update(ref state);
             _ids.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
@@ -54,7 +64,8 @@ namespace HyperRTS.Simulation.Combat
             state.Dependency = new DeathJob
             {
                 Ecb = ecb, SpawnLookup = _spawnLookup, RemainsLookups = _remains,
-                FallSources = _toppleHeadings, Drops = _drops, Ids = _ids, Groups = _groups, Children = _children,
+                FallSources = _toppleHeadings, Drops = _drops,
+                Tosses = _tosses, LethalHits = _lethalHits, TossTypes = _tossTypes, Ids = _ids, Groups = _groups, Children = _children,
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new ClearJob { Ecb = ecb, Groups = _groups, Children = _children }
                 .ScheduleParallel(state.Dependency);
@@ -71,6 +82,9 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public RemainsLookups RemainsLookups;
             [ReadOnly] public ComponentLookup<ToppleHeading> FallSources;
             [ReadOnly] public ComponentLookup<DropRemains> Drops;
+            [ReadOnly] public ComponentLookup<TurretToss> Tosses;
+            [ReadOnly] public ComponentLookup<LethalHit> LethalHits;
+            [ReadOnly] public BufferLookup<TossType> TossTypes;
             [ReadOnly] public ComponentLookup<SceneryId> Ids;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
@@ -89,8 +103,26 @@ namespace HyperRTS.Simulation.Combat
                 Ecb.DestroyEntity(sortKey, parts.AsArray());
                 if (SpawnLookup.TryGetComponent(entity, out var spawn))
                 {
-                    SpawnRemains(sortKey, entity, spawn.Prefab, transform);
+                    var thrown = Tosses.TryGetComponent(entity, out var toss) && Catastrophic(entity, toss, health);
+                    SpawnRemains(sortKey, entity, thrown ? toss.Hull : spawn.Prefab, transform);
+                    if (thrown)
+                    {
+                        ThrowTurret(sortKey, toss, LethalHits[entity], transform);
+                    }
                 }
+            }
+
+            private bool Catastrophic(Entity entity, in TurretToss toss, in Health health) =>
+                toss.IsCatastrophic(LethalHits[entity], TossTypes[entity], health.Max);
+
+            /// <summary>The turret lands as small remains at a seeded point, blocking its cell; presentation flies it there.</summary>
+            private void ThrowTurret(int sortKey, in TurretToss toss, in LethalHit hit, in LocalTransform hull)
+            {
+                var tossed = toss.Throw(hull.Position, hit.Heading, out var landing);
+                var turret = Ecb.Instantiate(sortKey, toss.Turret);
+                Ecb.Place(sortKey, turret, hull.WithPosition(landing), float4x4.identity);
+                Ecb.SetComponent(sortKey, turret, tossed);
+                Ecb.AddComponent<FallingRemains>(sortKey, turret);
             }
 
             /// <summary>
