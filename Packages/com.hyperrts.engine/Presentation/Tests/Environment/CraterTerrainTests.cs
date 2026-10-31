@@ -1,4 +1,5 @@
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Ground;
+using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;

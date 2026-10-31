@@ -4,9 +4,10 @@ using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Texturing;
-using HyperRTS.Presentation.Environment;
-using HyperRTS.Presentation.Environment.Grass;
-using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Environment.Ground;
+using HyperRTS.Presentation.Environment.Vegetation.Grass;
+using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
+using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
@@ -20,12 +21,12 @@ namespace HyperRTS.Editor.Maps.Scenes
     public static class MapEnvironmentWriter
     {
         private const string RowCropsCompute =
-            "Packages/com.hyperrts.engine/Presentation/Environment/RowCrops/RowCrops.compute";
+            "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCrops.compute";
 
-        private const string GrassCompute = "Packages/com.hyperrts.engine/Presentation/Environment/Grass/Grass.compute";
+        private const string GrassCompute = "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/Grass.compute";
 
         private const string GrassShader =
-            "Packages/com.hyperrts.engine/Presentation/Environment/Grass/FoliageGrass.shader";
+            "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/FoliageGrass.shader";
 
         /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Presentation.Environment;
-using HyperRTS.Presentation.Environment.Grass;
+using HyperRTS.Presentation.Environment.Vegetation.Grass;
+using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;

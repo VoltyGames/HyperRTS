@@ -1,6 +1,6 @@
 using System;
-using HyperRTS.Presentation.Environment;
 using NUnit.Framework;
+using HyperRTS.Presentation.Environment.Weather;
 using UnityEngine;
 using Object = UnityEngine.Object;
 

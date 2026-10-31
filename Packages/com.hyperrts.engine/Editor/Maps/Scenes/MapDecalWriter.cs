@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Placement;
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Impacts;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;

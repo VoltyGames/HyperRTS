@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Climate;
-using HyperRTS.Presentation.Environment.Grass;
+using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using UnityEditor;
 using UnityEngine;
 

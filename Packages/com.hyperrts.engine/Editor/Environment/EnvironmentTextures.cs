@@ -14,10 +14,10 @@ namespace HyperRTS.Editor.Environment
     public sealed class EnvironmentTextures : Generator
     {
         private const string Folder = "Packages/com.hyperrts.engine/Presentation/Environment/";
-        public const string CloudCookiePath = Folder + "CloudCookie.png";
+        public const string CloudCookiePath = Folder + "Weather/CloudCookie.png";
         public const string EdgeNoisePath = Folder + "EdgeNoise.png";
-        public const string TerrainNoisePath = Folder + "TerrainNoise.png";
-        public const string WaterRipplesPath = Folder + "WaterRipples.png";
+        public const string TerrainNoisePath = Folder + "Ground/TerrainNoise.png";
+        public const string WaterRipplesPath = Folder + "Water/WaterRipples.png";
 
         private const int CloudSize = 512;
         private const int CloudPeriod = 2;

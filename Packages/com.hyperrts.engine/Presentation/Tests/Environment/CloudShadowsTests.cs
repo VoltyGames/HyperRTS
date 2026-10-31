@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Effects;
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Tests.Effects;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;

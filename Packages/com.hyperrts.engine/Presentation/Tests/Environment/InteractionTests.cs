@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Tests;

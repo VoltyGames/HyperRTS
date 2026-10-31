@@ -3,7 +3,7 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Tests.Environment;
 using NUnit.Framework;
 using UnityEngine;

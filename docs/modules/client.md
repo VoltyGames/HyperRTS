@@ -42,6 +42,11 @@ Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()
 Rendering, HUD, effects and audio. `MatchView` is a once-per-frame read model for MonoBehaviours: local player,
 relations and colours.
 
+`Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Interaction`,
+`Fire`, `Weather` (atmosphere, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`, `RowCrops`,
+`Scatter`, `Shading`) and `Ambient`. `GridArea` and `EdgeNoise.png`, which several of them share, stay at the top.
+`Quality/` holds the knobs the game sets from its graphics options.
+
 ### HUD
 
 `HUD.prefab` holds a UI Toolkit HUD. Its `HUDPanelLayouts` asset gathers the HUD tree (`HUD.uxml`), each panel's

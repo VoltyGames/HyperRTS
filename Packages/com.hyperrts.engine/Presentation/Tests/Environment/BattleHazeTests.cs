@@ -1,5 +1,5 @@
-using HyperRTS.Presentation.Environment;
 using NUnit.Framework;
+using HyperRTS.Presentation.Environment.Weather;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Tests.Environment

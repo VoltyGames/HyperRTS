@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Presentation.Environment;
-using HyperRTS.Presentation.Environment.Grass;
+using HyperRTS.Presentation.Environment.Vegetation.Grass;
+using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground

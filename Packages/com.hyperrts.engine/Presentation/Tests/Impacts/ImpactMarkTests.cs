@@ -1,5 +1,5 @@
 using System.Linq;
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;

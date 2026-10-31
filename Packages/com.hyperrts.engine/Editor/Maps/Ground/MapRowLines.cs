@@ -1,7 +1,7 @@
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground

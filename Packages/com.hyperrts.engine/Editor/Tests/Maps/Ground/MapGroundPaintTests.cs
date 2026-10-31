@@ -9,7 +9,7 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Tests.Environment;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;

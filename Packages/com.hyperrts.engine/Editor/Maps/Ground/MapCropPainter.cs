@@ -5,8 +5,8 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Presentation.Environment;
-using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground

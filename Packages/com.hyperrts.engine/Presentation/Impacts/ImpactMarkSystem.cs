@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;

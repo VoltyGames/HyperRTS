@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;

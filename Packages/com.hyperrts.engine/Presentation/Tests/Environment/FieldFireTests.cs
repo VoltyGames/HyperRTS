@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Fire;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;

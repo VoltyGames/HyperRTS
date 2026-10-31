@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground

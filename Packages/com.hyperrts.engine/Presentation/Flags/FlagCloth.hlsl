@@ -3,7 +3,7 @@
 #define HYPERRTS_FLAG_CLOTH_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/WindGlobals.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/WindGlobals.hlsl"
 
 TEXTURE2D_ARRAY(_FlagArray);
 SAMPLER(sampler_FlagArray);

@@ -45,7 +45,7 @@ Shader "HyperRTS/Ground Marker"
                 float _MinLinePixels;
             CBUFFER_END
 
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/TerrainHeight.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHeight.hlsl"
 
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(float4, _Tint)

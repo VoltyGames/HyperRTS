@@ -1,5 +1,5 @@
 using HyperRTS.Editor.Common;
-using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using UnityEditor;
 using UnityEngine;
 

@@ -1,0 +1,239 @@
+// Vegetation wind from the scene's Wind globals. Include after URP's Core.hlsl.
+// Tree wind data (object space, m): branch pivot TEXCOORD2.xy + TEXCOORD3.x, card pivot TEXCOORD3.y + TEXCOORD4.xy;
+// COLOR g flex, b stiffness, a flutter.
+#ifndef HYPERRTS_WIND_INCLUDED
+#define HYPERRTS_WIND_INCLUDED
+
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/WindGlobals.hlsl"
+
+#define WIND_TAU 6.2831853
+#define GUST_MAX_BEND 1.1
+
+struct WindFrame
+{
+    float time;
+    float2 gustOffset;
+};
+
+struct TreeWindVertex
+{
+    float3 positionOS;
+    float3 branchPivot;
+    float3 cardPivot;
+    float flex;
+    float stiffness;
+    float flutter;
+};
+
+// Per-material tuning; bark and leaves of one tree must share it.
+struct TreeWindSettings
+{
+    float trunkSway;   // tip travel per metre of height at full push
+    float speed;       // sway frequency
+    float branchSway;  // radians at the tip of a branch at full push
+    float cardFlutter; // radians a leaf card turns
+    float height;      // object-space metres from the origin to the top
+    float scale;       // 0 = no wind (fallen trees)
+};
+
+WindFrame WindThisFrame()
+{
+    WindFrame frame;
+    frame.time = _TimeParameters.x;
+    frame.gustOffset = _HyperRTSWindGustOffset.xy;
+    return frame;
+}
+
+WindFrame WindLastFrame()
+{
+    WindFrame frame;
+    frame.time = _LastTimeParameters.x;
+    frame.gustOffset = _HyperRTSWindGustOffset.zw;
+    return frame;
+}
+
+TreeWindSettings TreeWind(float trunkSway, float speed, float branchSway, float cardFlutter, float height, float scale)
+{
+    TreeWindSettings s;
+    s.trunkSway = trunkSway;
+    s.speed = speed;
+    s.branchSway = branchSway;
+    s.cardFlutter = cardFlutter;
+    s.height = height;
+    s.scale = scale;
+    return s;
+}
+
+TreeWindVertex TreeWindData(float3 positionOS, float2 uv2, float2 uv3, float2 uv4, half4 color)
+{
+    TreeWindVertex v;
+    v.positionOS = positionOS;
+    v.branchPivot = float3(uv2.xy, uv3.x);
+    v.cardPivot = float3(uv3.y, uv4.xy);
+    v.flex = color.g;
+    v.stiffness = color.b;
+    v.flutter = color.a;
+    return v;
+}
+
+// Steady strength at a world point, scaled by the passing gust.
+float WindPush(float2 positionXZ, WindFrame frame)
+{
+    float2 uv = positionXZ * _HyperRTSWindGust.z - frame.gustOffset;
+    float gust = SAMPLE_TEXTURE2D_LOD(_HyperRTSWindGustMap, sampler_HyperRTSWindGustMap, uv, 0).r;
+    return _HyperRTSWindStrength * (1.0 + _HyperRTSWindGust.x * (gust * 2.0 - 1.0));
+}
+
+// Push away from nearby downwash and blasts, rippling outward, in units of the wind's strength.
+float2 LocalGust(float2 positionXZ, float time)
+{
+    float2 push = 0.0;
+    int count = (int)_HyperRTSGustCount;
+    for (int i = 0; i < count; i++)
+    {
+        float4 gust = _HyperRTSGusts[i];
+        float2 away = positionXZ - gust.xy;
+        float distance = length(away);
+        float ripple = 0.8 + 0.2 * sin(time * 11.0 - distance * 1.3);
+        push += away / max(distance, 0.05) * (gust.w * ripple * saturate(1.0 - distance / gust.z));
+    }
+    return push;
+}
+
+// Leans a plant about its root, keeping its length.
+float3 GustBend(float3 world, float3 origin, float scale, float time)
+{
+    float2 push = LocalGust(origin.xz, time) * scale;
+    float amount = length(push);
+    if (amount < 1e-3)
+    {
+        return world;
+    }
+
+    float2 d = push / amount;
+    return WindRotate(world, origin, float3(d.y, 0.0, -d.x), min(amount, 1.0) * GUST_MAX_BEND);
+}
+
+// A tree's trunk leans from a gust as from wind of the same strength.
+float3 TrunkGust(float3 p, TreeWindSettings s, float3 origin, WindFrame frame)
+{
+    float2 push = LocalGust(origin.xz, frame.time) * s.scale;
+    float amount = min(length(push), 1.5);
+    if (amount < 1e-3)
+    {
+        return p;
+    }
+
+    float3 away = WindSafeNormalize(TransformWorldToObjectDir(float3(push.x, 0.0, push.y), false));
+    float along = max(p.y, 0.0) / max(s.height, 0.01);
+    float3 bent = p + away * (amount * s.trunkSway * s.height * along * along);
+    return WindSafeNormalize(bent) * length(p);
+}
+
+// Back-and-forth on top of the push, half the turbulence, so the rolling gusts do most of the bending.
+float WindSwing(float time, float phase)
+{
+    float wave = sin(time + phase) * 0.6 + sin(time * 2.3 + phase + 1.7) * 0.4;
+    return wave * 0.5 * _HyperRTSWindGust.y * _HyperRTSWindStrength;
+}
+
+float3 CardFlutter(float3 p, TreeWindVertex v, TreeWindSettings s, float push, WindFrame frame, float3 origin)
+{
+    float3 seed = v.cardPivot + origin;
+    float3 axis = WindSafeNormalize(float3(WindHash(seed) - 0.5, 0.3, WindHash(seed.zxy) - 0.5));
+    float frequency = s.speed * lerp(6.0, 10.0, v.stiffness);
+    float wave = sin(frame.time * frequency + WindHash(seed.yzx) * WIND_TAU);
+    float angle = v.flutter * s.cardFlutter * saturate(push * 2.0) * wave;
+    return WindRotate(p, v.cardPivot, axis, angle);
+}
+
+float3 BranchSway(float3 p, TreeWindVertex v, TreeWindSettings s, float3 downwind, WindFrame frame)
+{
+    float3 pivotWS = TransformObjectToWorld(v.branchPivot);
+    float push = WindPush(pivotWS.xz, frame) * s.scale;
+    float frequency = s.speed * lerp(1.0, 3.0, v.stiffness);
+    float swing = WindSwing(frame.time * frequency, WindHash(pivotWS) * WIND_TAU) * s.scale;
+    float amplitude = s.branchSway * lerp(1.0, 0.5, v.stiffness);
+    float3 axis = WindSafeNormalize(cross(float3(0.0, 1.0, 0.0), downwind));
+    return WindRotate(p, v.branchPivot, axis, v.flex * amplitude * (push + swing));
+}
+
+// Pulls each point back to its distance from the root so the trunk keeps its length.
+float3 TrunkBend(float3 p, TreeWindSettings s, float3 downwind, float push, WindFrame frame, float3 origin)
+{
+    float swing = WindSwing(frame.time * s.speed * 0.6, WindHash(origin) * WIND_TAU) * s.scale;
+    float along = max(p.y, 0.0) / max(s.height, 0.01);
+    float3 bent = p + downwind * ((push + swing) * s.trunkSway * s.height * along * along);
+    float reach = length(p);
+    return WindSafeNormalize(bent) * reach;
+}
+
+// Card flutter, branch sway, then trunk bend.
+float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
+{
+    float3 p = v.positionOS;
+    float3 origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
+    UNITY_BRANCH
+    if (_HyperRTSWindDetail >= 0.5)
+    {
+        float3 downwindWS = float3(_HyperRTSWindDirection.x, 0.0, _HyperRTSWindDirection.z);
+        float3 downwind = WindSafeNormalize(TransformWorldToObjectDir(downwindWS, false));
+        float push = WindPush(origin.xz, frame) * s.scale;
+        UNITY_BRANCH
+        if (_HyperRTSWindDetail >= 3.0)
+        {
+            p = CardFlutter(p, v, s, push, frame, origin);
+        }
+        UNITY_BRANCH
+        if (_HyperRTSWindDetail >= 2.0)
+        {
+            p = BranchSway(p, v, s, downwind, frame);
+        }
+        p = TrunkBend(p, s, downwind, push, frame, origin);
+    }
+    // Downwash and blasts bend even vegetation the climate keeps still.
+    return TrunkGust(p, s, origin, frame);
+}
+
+// Metres a plant without wind data leans downwind per metre of height.
+float PlantWindLean(float3 origin, float sway, float speed, float scale, WindFrame frame)
+{
+    float push = WindPush(origin.xz, frame);
+    float swing = WindSwing(frame.time * speed, WindHash(origin) * WIND_TAU);
+    return (push + swing) * sway * scale;
+}
+
+// Tilts a plant's normal with its lean, so a gust's sheen rolls across a field.
+half3 PlantWindNormal(half3 normal, float3 origin, float sway, float speed, float scale, WindFrame frame)
+{
+    if (_HyperRTSWindDetail < 0.5)
+    {
+        return normal;
+    }
+
+    float lean = PlantWindLean(origin, sway, speed, scale, frame);
+    return normalize(normal + (half3)float3(_HyperRTSWindDirection.x, 0.0, _HyperRTSWindDirection.z) * lean);
+}
+
+// Plants without wind data sway about their origin with height.
+float3 PlantWindPosition(float3 world, float3 origin, float sway, float speed, float flutter, float scale, WindFrame frame)
+{
+    float3 moved = world;
+    UNITY_BRANCH
+    if (_HyperRTSWindDetail >= 0.5)
+    {
+        float height = max(0.0, world.y - origin.y);
+        float push = WindPush(origin.xz, frame) * scale;
+        moved.xz += _HyperRTSWindDirection.xz * (PlantWindLean(origin, sway, speed, scale, frame) * height);
+        UNITY_BRANCH
+        if (_HyperRTSWindDetail >= 3.0)
+        {
+            float wave = sin(frame.time * 7.0 + dot(world, float3(1.9, 2.3, 1.7)));
+            moved += float3(wave, wave * 0.5, -wave) * (flutter * saturate(height * 0.5) * saturate(push * 2.0));
+        }
+    }
+    return GustBend(moved, origin, scale, frame.time);
+}
+
+#endif

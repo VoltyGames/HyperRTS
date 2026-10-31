@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Environment
     /// </summary>
     public sealed class TerrainMicroTexture : Generator
     {
-        public const string Path = "Packages/com.hyperrts.engine/Presentation/Environment/TerrainMicro.png";
+        public const string Path = "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.png";
         public const int Size = 256;
 
         private const uint Seed = 20261021u;

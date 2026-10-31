@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Presentation.Environment;
+using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 using Object = UnityEngine.Object;

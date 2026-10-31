@@ -8,7 +8,7 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/TeamColors/LitTeamBuild.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/CraterSink.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
 
 // Passes whose Attributes lack TEXCOORD1 take it as a separate input.
 #ifdef _VAT
