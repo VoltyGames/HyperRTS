@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>One crop's GPU side for one camera: visible tiles, the (variant, band) buffers RowCrops.compute fills, and the indirect draws.</summary>
-    internal sealed class RowCropBatch : ScatterBatch<RowCropJob>
+    internal sealed class RowCropBatch : ScatterBatch
     {
         private const int MinCapacity = 1024;
 
@@ -29,39 +29,42 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private readonly int _variants;
         private readonly GraphicsBuffer[] _instances;
         private readonly uint[] _capacities;
-        private readonly int[] _needed = new int[RowCropView.Lods];
-        private readonly Bounds[] _bands = new Bounds[RowCropView.Lods];
+        private readonly int[] _needed = new int[RowCropBands.Lods];
+        private readonly Bounds[] _bands = new Bounds[RowCropBands.Lods];
         private readonly GraphicsBuffer _capacityBuffer;
         private readonly int _plantBound;
+        private readonly float _height;
         private bool _resized;
 
         public RowCropBatch(RowCrop crop, RowCropCompute kernels)
-            : base(kernels.Compute, kernels.Plant, kernels.Count, SlotMeshes(crop), RowCropJob.Stride)
+            : base(kernels.Compute, kernels.Plant, kernels.Count, SlotMeshes(crop))
         {
             _crop = crop;
             _variants = crop.variants.Count;
             _instances = new GraphicsBuffer[Meshes.Length];
             _capacities = new uint[Meshes.Length];
-            _plantBound = RowCropSpots.PlantBound(RowCropFields.TileSize, crop.rowSpacing, crop.plantSpacing);
+            _plantBound = RowCropSpots.PlantBound(ScatterTiles.Size, crop.rowSpacing, crop.plantSpacing);
+            _height = crop.height;
             _capacityBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Meshes.Length, sizeof(uint));
             for (var slot = 0; slot < Meshes.Length; slot++)
             {
                 Resize(slot, MinCapacity);
+                Blocks[slot].SetFloat(CanopyHeightId, _height);
             }
         }
 
-        /// <summary>Whether the batch no longer draws <paramref name="crop"/> as it is: another crop, or its models changed.</summary>
+        /// <summary>Whether the batch no longer draws <paramref name="crop"/> as it is: another crop, its height or its models changed.</summary>
         public bool Stale(RowCrop crop)
         {
-            if (crop == null || crop != _crop || crop.variants.Count != _variants)
+            if (crop == null || crop != _crop || crop.variants.Count != _variants || crop.height != _height)
             {
                 return true;
             }
 
             for (var slot = 0; slot < Meshes.Length; slot++)
             {
-                var variant = crop.variants[slot / RowCropView.Lods];
-                var mesh = variant?.Mesh(slot % RowCropView.Lods);
+                var variant = crop.variants[slot / RowCropBands.Lods];
+                var mesh = variant?.Mesh(slot % RowCropBands.Lods);
                 if (mesh == null || mesh != Meshes[slot])
                 {
                     return true;
@@ -74,12 +77,12 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         protected override void ForgetView() => Array.Clear(_needed, 0, _needed.Length);
 
         /// <summary>Queues a visible tile of one of the crop's fields, <paramref name="near"/> to <paramref name="far"/> metres away.</summary>
-        public void Add(RowCropJob job, Bounds bounds, float drawDistance, float near, float far)
+        public void Add(ScatterJob job, Bounds bounds, float drawDistance, float near, float far)
         {
-            Queue(job, job.Spots);
-            for (var lod = 0; lod < RowCropView.Lods; lod++)
+            Queue(job);
+            for (var lod = 0; lod < RowCropBands.Lods; lod++)
             {
-                if (!RowCropView.InBand(lod, _crop, drawDistance, near, far))
+                if (!RowCropBands.InBand(lod, _crop, drawDistance, near, far))
                 {
                     continue;
                 }
@@ -111,15 +114,14 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             Compute.SetInt(SlotsId, Meshes.Length);
         }
 
-        protected override bool HasRoom(int slot) => _needed[slot % RowCropView.Lods] != 0;
+        protected override bool HasRoom(int slot) => _needed[slot % RowCropBands.Lods] != 0;
 
         protected override RenderParams Parameters(int slot)
         {
-            var card = slot % RowCropView.Lods == RowCropView.Card;
-            Blocks[slot].SetFloat(CanopyHeightId, _crop.height);
+            var card = slot % RowCropBands.Lods == RowCropBands.Card;
             return new RenderParams(card ? _crop.cardMaterial : _crop.material)
             {
-                worldBounds = _bands[slot % RowCropView.Lods],
+                worldBounds = _bands[slot % RowCropBands.Lods],
                 shadowCastingMode = card && !_crop.cardShadows ? ShadowCastingMode.Off : ShadowCastingMode.On,
             };
         }
@@ -151,7 +153,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         {
             for (var slot = 0; slot < Meshes.Length; slot++)
             {
-                var share = Mathf.CeilToInt(_needed[slot % RowCropView.Lods] * VariantSlack / _variants);
+                var share = Mathf.CeilToInt(_needed[slot % RowCropBands.Lods] * VariantSlack / _variants);
                 if (share > _instances[slot].count)
                 {
                     Resize(slot, Mathf.Max(MinCapacity, share + share / 4));
@@ -167,8 +169,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         private void Dispatch(ComputeShader compute, int variant)
         {
-            var first = variant * RowCropView.Lods;
-            for (var lod = 0; lod < RowCropView.Lods; lod++)
+            var first = variant * RowCropBands.Lods;
+            for (var lod = 0; lod < RowCropBands.Lods; lod++)
             {
                 compute.SetBuffer(GrowKernel, OutputIds[lod], _instances[first + lod]);
             }
@@ -189,10 +191,10 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         // Slot = variant * Lods + lod, the order of the buffers, counters and draw commands.
         private static Mesh[] SlotMeshes(RowCrop crop)
         {
-            var meshes = new Mesh[crop.variants.Count * RowCropView.Lods];
+            var meshes = new Mesh[crop.variants.Count * RowCropBands.Lods];
             for (var slot = 0; slot < meshes.Length; slot++)
             {
-                meshes[slot] = crop.variants[slot / RowCropView.Lods].Mesh(slot % RowCropView.Lods);
+                meshes[slot] = crop.variants[slot / RowCropBands.Lods].Mesh(slot % RowCropBands.Lods);
             }
 
             return meshes;

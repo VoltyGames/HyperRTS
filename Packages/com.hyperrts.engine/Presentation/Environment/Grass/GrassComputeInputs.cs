@@ -10,16 +10,12 @@ namespace HyperRTS.Presentation.Environment.Grass
         private static readonly int PlantsId = Shader.PropertyToID("_Plants");
         private static readonly int CoverageId = Shader.PropertyToID("_Coverage");
         private static readonly int CoverageAreaId = Shader.PropertyToID("_CoverageArea");
-        private static readonly int GroundId = Shader.PropertyToID("_Ground");
-        private static readonly int GroundAreaId = Shader.PropertyToID("_GroundArea");
-        private static readonly int CameraId = Shader.PropertyToID("_Camera");
         private static readonly int ThinningId = Shader.PropertyToID("_Thinning");
         private static readonly int ShapingId = Shader.PropertyToID("_Shaping");
-        private static readonly int TileSizeId = Shader.PropertyToID("_TileSize");
 
         private readonly GrassField _field;
         private readonly GraphicsBuffer _plants;
-        private readonly TerrainHeightInput _heights;
+        private readonly ScatterInputs _scatter;
         private readonly Texture _coverage;
 
         /// <summary>Uploads the plants and binds what stays fixed while the map is open.</summary>
@@ -37,9 +33,8 @@ namespace HyperRTS.Presentation.Environment.Grass
             compute.SetTexture(Scatter, CoverageId, _coverage);
             var area = field.area;
             compute.SetVector(CoverageAreaId, TerrainHeightInput.Rect(new float2(area.xMin, area.yMin), new float2(area.width, area.height)));
-            compute.SetVector(ThinningId, GrassView.Thinning);
-            compute.SetFloat(TileSizeId, GrassField.TileSize);
-            _heights = new TerrainHeightInput(compute, Scatter, terrain);
+            compute.SetVector(ThinningId, GrassBands.Thinning);
+            _scatter = new ScatterInputs(compute, Scatter, terrain);
         }
 
         public ComputeShader Compute { get; }
@@ -49,21 +44,14 @@ namespace HyperRTS.Presentation.Environment.Grass
         public int Count { get; }
 
         /// <summary>Whether a map rebuild changed the plants, the coverage or the heightmap bound to the kernel.</summary>
-        public bool Stale => _plants.count != Mathf.Max(1, _field.plants.Count) || _coverage != _field.coverage || _heights.Stale;
+        public bool Stale => _plants.count != Mathf.Max(1, _field.plants.Count) || _coverage != _field.coverage || _scatter.Stale;
 
         /// <summary>Binds one camera's view, the quality knobs, the ground picture, the building mask, crater depth and ash.</summary>
-        public void SetCamera(Vector3 camera, GrassSettings settings)
+        public void SetCamera(Vector3 camera, ScatterSettings settings)
         {
-            Compute.SetVector(CameraId, new Vector4(camera.x, camera.y, camera.z, settings.Distance));
-            Compute.SetVector(ShapingId, new Vector4(settings.Density, settings.ShadowDistance, GrassView.KeepEdge, 0f));
-            var ground = Shader.GetGlobalTexture(GroundColor.PictureId);
-            var rect = Shader.GetGlobalVector(GroundColor.RectId);
-            var on = ground != null && rect.z > 0f;
-            Compute.SetTexture(Scatter, GroundId, on ? ground : Texture2D.blackTexture);
-            Compute.SetVector(GroundAreaId, on ? rect : Vector4.zero);
-            BuildingFootprintMask.Bind(Compute, Scatter);
-            CraterTerrain.BindCraters(Compute, Scatter);
-            InteractionSurfaces.BindRemains(Compute, Scatter);
+            Compute.SetVector(ShapingId, new Vector4(settings.Density, settings.ShadowDistance, GrassBands.KeepEdge, 0f));
+            _scatter.BindCamera(camera, settings.Distance);
+            GroundColor.Bind(Compute, Scatter);
         }
 
         public void Dispose() => _plants.Release();

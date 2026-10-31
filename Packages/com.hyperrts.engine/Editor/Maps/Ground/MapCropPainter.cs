@@ -5,6 +5,7 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.RowCrops;
 using UnityEngine;
 
@@ -55,9 +56,9 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var along = MapGeometry.Forward(region.RowAngle);
             var across = MapGeometry.Right(along);
-            var hash = RowCropSpots.Hash(region.Seed, int.MinValue, int.MaxValue);
-            var phaseAcross = RowCropSpots.Unit(RowCropSpots.Channel(hash, RowCropSpots.AcrossChannel));
-            var phaseAlong = RowCropSpots.Unit(RowCropSpots.Channel(hash, RowCropSpots.AlongChannel));
+            var hash = ScatterHash.Hash(region.Seed, int.MinValue, int.MaxValue);
+            var phaseAcross = ScatterHash.Unit(ScatterHash.Channel(hash, RowCropSpots.AcrossChannel));
+            var phaseAlong = ScatterHash.Unit(ScatterHash.Channel(hash, RowCropSpots.AlongChannel));
             var origin = across * (phaseAcross * crop.rowSpacing) + along * (phaseAlong * crop.plantSpacing);
             return new RowCropField
             {
@@ -160,7 +161,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
         private static void Tile(MapCropBake bake)
         {
-            var cellsPerTile = Mathf.RoundToInt(RowCropFields.TileSize / MapLand.CellSize);
+            var cellsPerTile = Mathf.RoundToInt(ScatterTiles.Size / MapLand.CellSize);
             var columns = (bake.Width + cellsPerTile - 1) / cellsPerTile;
             var rows = (bake.Height + cellsPerTile - 1) / cellsPerTile;
             var found = new SortedSet<int>();

@@ -2,7 +2,7 @@ using System;
 
 namespace HyperRTS.Presentation.Environment.Grass
 {
-    /// <summary>A <see cref="GrassField.TileSize"/> square of the field's tile grid that grows any plant.</summary>
+    /// <summary>A <see cref="ScatterTiles.Size"/> square of the field's tile grid that grows any plant.</summary>
     [Serializable]
     public struct GrassTile
     {

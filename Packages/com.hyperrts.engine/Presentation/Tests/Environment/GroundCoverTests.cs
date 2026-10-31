@@ -49,11 +49,11 @@ namespace HyperRTS.Presentation.Tests.Environment
         {
             var gpuPlants = _field.GpuPlants();
 
-            Assert.AreEqual((2 + 3) * GrassView.Bands, _field.SlotCount);
+            Assert.AreEqual((2 + 3) * GrassBands.Bands, _field.SlotCount);
             Assert.AreEqual(0, gpuPlants[0].firstSlot);
-            Assert.AreEqual(2 * GrassView.Bands, gpuPlants[1].firstSlot);
+            Assert.AreEqual(2 * GrassBands.Bands, gpuPlants[1].firstSlot);
             Assert.AreEqual(3, gpuPlants[1].variants);
-            CollectionAssert.AreEqual(new[] { 0, 2 * GrassView.Bands, 5 * GrassView.Bands }, _field.FirstSlots());
+            CollectionAssert.AreEqual(new[] { 0, 2 * GrassBands.Bands, 5 * GrassBands.Bands }, _field.FirstSlots());
             Assert.AreNotEqual(gpuPlants[0].seed, gpuPlants[1].seed);
             Assert.AreEqual(1f / 3f, gpuPlants[0].spacing, 1e-5f);
             Assert.AreEqual(2f, _field.plants[1].Spacing, 1e-5f);
@@ -65,7 +65,7 @@ namespace HyperRTS.Presentation.Tests.Environment
         {
             var rect = _field.TileRect(new GrassTile { x = 2, z = 1 });
 
-            Assert.AreEqual(new Rect(-32f + 2f * GrassField.TileSize, -32f + GrassField.TileSize, 16f, 16f), rect);
+            Assert.AreEqual(new Rect(-32f + 2f * ScatterTiles.Size, -32f + ScatterTiles.Size, 16f, 16f), rect);
         }
 
         [Test]
@@ -85,21 +85,21 @@ namespace HyperRTS.Presentation.Tests.Environment
         [Test]
         public void Keep_IsFullNear_ThinsSteadily_AndGrowCoversTheThinnedPlants()
         {
-            Assert.AreEqual(1f, GrassView.Keep(0f, 200f));
-            Assert.AreEqual(1f, GrassView.Keep(GrassView.ThinStart * 200f, 200f), 1e-5f);
-            Assert.AreEqual(GrassView.FarKeep, GrassView.Keep(200f, 200f), 1e-5f);
+            Assert.AreEqual(1f, GrassBands.Keep(0f, 200f));
+            Assert.AreEqual(1f, GrassBands.Keep(GrassBands.ThinStart * 200f, 200f), 1e-5f);
+            Assert.AreEqual(GrassBands.FarKeep, GrassBands.Keep(200f, 200f), 1e-5f);
             var last = 1f;
             for (var range = 0f; range <= 200f; range += 10f)
             {
-                var keep = GrassView.Keep(range, 200f);
+                var keep = GrassBands.Keep(range, 200f);
                 Assert.That(keep, Is.LessThanOrEqualTo(last), $"keep at {range} m");
                 last = keep;
             }
 
-            Assert.AreEqual(Mathf.Sqrt(2f), GrassView.Grow(0.5f), 1e-5f);
-            Assert.AreEqual(GrassView.MaxGrow, GrassView.Grow(GrassView.FarKeep));
-            Assert.AreEqual(1f, GrassView.Drawn(0f, 200f));
-            Assert.AreEqual(GrassView.FarKeep * (1f + GrassView.KeepEdge), GrassView.Drawn(200f, 200f), 1e-5f);
+            Assert.AreEqual(Mathf.Sqrt(2f), GrassBands.Grow(0.5f), 1e-5f);
+            Assert.AreEqual(GrassBands.MaxGrow, GrassBands.Grow(GrassBands.FarKeep));
+            Assert.AreEqual(1f, GrassBands.Drawn(0f, 200f));
+            Assert.AreEqual(GrassBands.FarKeep * (1f + GrassBands.KeepEdge), GrassBands.Drawn(200f, 200f), 1e-5f);
         }
 
         [TestCase(0f, 40f, 30f, true, true)]
@@ -108,20 +108,20 @@ namespace HyperRTS.Presentation.Tests.Environment
         [TestCase(0f, 20f, 0f, false, true)]
         public void Bands_HoldTheTilesThatReachThem(float near, float far, float shadows, bool inNear, bool inFar)
         {
-            Assert.AreEqual(inNear, GrassView.InBand(GrassView.Near, shadows, near, far));
-            Assert.AreEqual(inFar, GrassView.InBand(GrassView.Far, shadows, near, far));
+            Assert.AreEqual(inNear, GrassBands.InBand(GrassBands.Near, shadows, near, far));
+            Assert.AreEqual(inFar, GrassBands.InBand(GrassBands.Far, shadows, near, far));
         }
 
         [TestCase(0f)]
         [TestCase(5000f)]
         public void Capacity_LeavesRoomOverTheExpectedCount(float expected) =>
-            Assert.That(GrassView.Capacity(expected), Is.GreaterThan(expected * 1.05f + 3f));
+            Assert.That(GrassBands.Capacity(expected), Is.GreaterThan(expected * 1.05f + 3f));
 
         [Test]
         public void GpuStructs_MatchTheKernelsLayouts()
         {
             Assert.AreEqual(36, GrassPlantGpu.Stride);
-            Assert.AreEqual(28, GrassJob.Stride);
+            Assert.AreEqual(28, ScatterJob.Stride);
         }
 
         [TestCase(0f, 0f, 0.29f)]
@@ -129,12 +129,12 @@ namespace HyperRTS.Presentation.Tests.Environment
         [TestCase(32f, -16f, 1.3f)]
         public void Jobs_CoverEveryCellWhosePlantCanFallInTheTile(float x, float z, float spacing)
         {
-            var tile = new Rect(x, z, GrassField.TileSize, GrassField.TileSize);
-            var job = new GrassJob(tile, 3, spacing);
+            var tile = new Rect(x, z, ScatterTiles.Size, ScatterTiles.Size);
+            var job = ScatterJob.Square(tile, 3, spacing);
 
-            Assert.AreEqual(3, job.plant);
+            Assert.AreEqual(3, job.id);
             Assert.AreEqual(tile.min, job.tileMin);
-            for (var probe = 0f; probe < GrassField.TileSize; probe += spacing * 0.37f)
+            for (var probe = 0f; probe < ScatterTiles.Size; probe += spacing * 0.37f)
             {
                 var cell = new Vector2Int(Mathf.FloorToInt((x + probe) / spacing), Mathf.FloorToInt((z + probe) / spacing));
                 var offset = cell - job.first;
@@ -142,7 +142,7 @@ namespace HyperRTS.Presentation.Tests.Environment
                 Assert.That(offset.y, Is.InRange(0, job.count.y - 1), $"cell {cell}");
             }
 
-            Assert.That(job.Cells, Is.LessThanOrEqualTo(Mathf.Pow(GrassField.TileSize / spacing + 2f, 2f)));
+            Assert.That(job.Threads, Is.LessThanOrEqualTo(Mathf.Pow(ScatterTiles.Size / spacing + 2f, 2f)));
         }
 
         [Test]

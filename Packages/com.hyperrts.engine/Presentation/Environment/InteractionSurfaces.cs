@@ -42,6 +42,18 @@ namespace HyperRTS.Presentation.Environment
             compute.SetTexture(kernel, RemainsId, remains != null ? remains : Texture2D.blackTexture);
         }
 
+        /// <summary>Whether a trample map is published, which changes every frame.</summary>
+        public static bool Published => Shader.GetGlobalVector(RectId).z > 0f;
+
+        /// <summary>Copies the trample map and its rect to a kernel. Black and a zero rect while none is published.</summary>
+        public static void BindTrample(ComputeShader compute, int kernel)
+        {
+            var trample = Shader.GetGlobalTexture(TrampleId);
+            var on = trample != null && Published;
+            compute.SetTexture(kernel, TrampleId, on ? trample : Texture2D.blackTexture);
+            compute.SetVector(RectId, on ? Shader.GetGlobalVector(RectId) : Vector4.zero);
+        }
+
         public InteractionSurfaces(float2 min, float2 size, InteractionQuality quality)
         {
             if (math.any(size <= 0f))

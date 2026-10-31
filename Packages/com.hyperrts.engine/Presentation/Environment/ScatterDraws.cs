@@ -15,16 +15,14 @@ namespace HyperRTS.Presentation.Environment
         private static readonly int ArgsId = Shader.PropertyToID("_Args");
 
         private readonly Mesh[] _meshes;
-        private readonly int _jobStride;
         private readonly GraphicsBuffer _args;
         private readonly GraphicsBuffer _counters;
         private GraphicsBuffer _jobs;
 
-        /// <summary>Draws for <paramref name="meshes"/>, one slot each, fed jobs of <paramref name="jobStride"/> bytes.</summary>
-        public ScatterDraws(Mesh[] meshes, int jobStride)
+        /// <summary>Draws for <paramref name="meshes"/>, one slot each.</summary>
+        public ScatterDraws(Mesh[] meshes)
         {
             _meshes = meshes;
-            _jobStride = jobStride;
             var count = Mathf.Max(1, meshes.Length);
             _counters = new GraphicsBuffer(GraphicsBuffer.Target.Structured, count, sizeof(uint));
             _counters.SetData(new uint[count]);
@@ -49,12 +47,12 @@ namespace HyperRTS.Presentation.Environment
         }
 
         /// <summary>Uploads the queued jobs, growing the buffer when there are more, and binds them and the counters to the grow kernel.</summary>
-        public void BindGrow<T>(List<T> jobs, ComputeShader compute, int kernel) where T : struct
+        public void BindGrow(List<ScatterJob> jobs, ComputeShader compute, int kernel)
         {
             if (_jobs == null || _jobs.count < jobs.Count)
             {
                 _jobs?.Release();
-                _jobs = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(64, jobs.Count * 2), _jobStride);
+                _jobs = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(64, jobs.Count * 2), ScatterJob.Stride);
             }
 
             _jobs.SetData(jobs);

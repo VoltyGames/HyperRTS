@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.Grass;
 using UnityEngine;
 
@@ -56,11 +57,11 @@ namespace HyperRTS.Editor.Maps.Ground
             }
         }
 
-        /// <summary>Every <see cref="GrassField.TileSize"/> tile that grows any plant, with each plant's mean coverage there.</summary>
+        /// <summary>Every <see cref="ScatterTiles.Size"/> tile that grows any plant, with each plant's mean coverage there.</summary>
         public (List<GrassTile> Tiles, List<GrassTilePlant> Plants) Tiles()
         {
-            var across = Mathf.CeilToInt(Area.width / GrassField.TileSize);
-            var deep = Mathf.CeilToInt(Area.height / GrassField.TileSize);
+            var across = Mathf.CeilToInt(Area.width / ScatterTiles.Size);
+            var deep = Mathf.CeilToInt(Area.height / ScatterTiles.Size);
             var (sums, texels) = TileSums(across, deep);
             var (tiles, plants) = (new List<GrassTile>(), new List<GrassTilePlant>());
             for (var t = 0; t < across * deep; t++)
@@ -97,8 +98,8 @@ namespace HyperRTS.Editor.Maps.Ground
             for (var i = 0; i < Resolution * Resolution; i++)
             {
                 var (x, z) = (i % Resolution, i / Resolution);
-                var tileX = Mathf.Min(across - 1, Mathf.FloorToInt((x + 0.5f) * cell.x / GrassField.TileSize));
-                var tileZ = Mathf.Min(deep - 1, Mathf.FloorToInt((z + 0.5f) * cell.y / GrassField.TileSize));
+                var tileX = Mathf.Min(across - 1, Mathf.FloorToInt((x + 0.5f) * cell.x / ScatterTiles.Size));
+                var tileZ = Mathf.Min(deep - 1, Mathf.FloorToInt((z + 0.5f) * cell.y / ScatterTiles.Size));
                 var tile = tileZ * across + tileX;
                 texels[tile]++;
                 for (var p = 0; p < Layers.Length; p++)

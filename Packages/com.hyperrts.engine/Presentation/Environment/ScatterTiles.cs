@@ -7,6 +7,9 @@ namespace HyperRTS.Presentation.Environment
     /// <summary>A scatter renderer's tiles as culling boxes, and the ones a camera sees within its draw distance.</summary>
     public sealed class ScatterTiles
     {
+        /// <summary>Side of a tile in metres: the unit the renderers cull and scatter.</summary>
+        public const float Size = 16f;
+
         /// <summary>Horizontal metres a plant can stand outside its tile: its jitter is under half a spacing.</summary>
         public const float Overhang = 1f;
 

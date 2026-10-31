@@ -28,12 +28,12 @@ namespace HyperRTS.Presentation.Environment.Grass
         private GrassComputeInputs _kernels;
         private Material[] _materials;
 
-        private static GrassSettings Settings
+        private static ScatterSettings Settings
         {
             get
             {
                 var quality = PresentationQuality.Current;
-                return new GrassSettings(quality.GrassDensity, quality.GrassDistance, quality.GrassShadowDistance);
+                return new ScatterSettings(quality.GrassDensity, quality.GrassDistance, quality.GrassShadowDistance);
             }
         }
 
@@ -102,7 +102,7 @@ namespace HyperRTS.Presentation.Environment.Grass
 #endif
 
         /// <summary>Hands every visible tile's plants to the batch.</summary>
-        private void Queue(GrassBatch batch, Vector3 position, GrassSettings settings)
+        private void Queue(GrassBatch batch, Vector3 position, ScatterSettings settings)
         {
             batch.Begin();
             foreach (var t in Tiles.Visible)
@@ -114,7 +114,7 @@ namespace HyperRTS.Presentation.Environment.Grass
                 for (var i = tile.firstPlant; i < tile.firstPlant + tile.plantCount; i++)
                 {
                     var grows = field.tilePlants[i];
-                    var job = new GrassJob(rect, grows.plant, field.plants[grows.plant].Spacing);
+                    var job = ScatterJob.Square(rect, grows.plant, field.plants[grows.plant].Spacing);
                     batch.Add(job, grows.coverage, bounds, range, settings);
                 }
             }

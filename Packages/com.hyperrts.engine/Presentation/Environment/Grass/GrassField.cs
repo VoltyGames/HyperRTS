@@ -9,9 +9,6 @@ namespace HyperRTS.Presentation.Environment.Grass
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class GrassField : ScriptableObject
     {
-        /// <summary>Side of a grass tile in metres: the unit the renderer culls and scatters.</summary>
-        public const float TileSize = 16f;
-
         [Tooltip("Share of the ground each plant covers, 0 to 1, one slice per plant in plant order, north up.")]
         public Texture2DArray coverage;
 
@@ -26,7 +23,8 @@ namespace HyperRTS.Presentation.Environment.Grass
         public List<GrassTilePlant> tilePlants = new();
 
         public Rect TileRect(GrassTile tile) =>
-            new(area.xMin + tile.x * TileSize, area.yMin + tile.z * TileSize, TileSize, TileSize);
+            new(area.xMin + tile.x * ScatterTiles.Size, area.yMin + tile.z * ScatterTiles.Size,
+                ScatterTiles.Size, ScatterTiles.Size);
 
         /// <summary>Draw slots over all plants: one per model and band, in plant order.</summary>
         public int SlotCount => FirstSlots()[plants.Count];
@@ -36,9 +34,8 @@ namespace HyperRTS.Presentation.Environment.Grass
         {
             get
             {
-                // 1.15 is Grass.compute's tallest patch.
                 var height = 0f;
-                plants.ForEach(plant => height = Mathf.Max(height, plant.Tallest * GrassView.MaxGrow * 1.15f));
+                plants.ForEach(plant => height = Mathf.Max(height, plant.Tallest * GrassBands.MaxGrow * GrassBands.TallestPatch));
                 return height;
             }
         }
@@ -49,7 +46,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             var first = new int[plants.Count + 1];
             for (var p = 0; p < plants.Count; p++)
             {
-                first[p + 1] = first[p] + plants[p].meshes.Count * GrassView.Bands;
+                first[p + 1] = first[p] + plants[p].meshes.Count * GrassBands.Bands;
             }
 
             return first;

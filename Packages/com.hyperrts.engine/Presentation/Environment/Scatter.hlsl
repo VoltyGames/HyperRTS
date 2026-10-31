@@ -1,5 +1,5 @@
-// Hashes, noise, terrain height and the slot counting shared by the plant scatter kernels, RowCrops.compute and
-// Grass.compute. The hashes and noise match RowCropSpots.cs; the counters and args are bound by ScatterDraws.cs.
+// Jobs, hashes, noise, terrain height and the slot counting shared by RowCrops.compute and Grass.compute. The job
+// matches ScatterJob.cs and the hashes and noise ScatterHash.cs; ScatterDraws.cs binds the jobs, counters and args.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
 
@@ -14,6 +14,15 @@ struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
     uint startInstance;
 };
 
+struct ScatterJob // ScatterJob.cs, 28 bytes
+{
+    float2 tileMin;
+    int id;     // the plant or field this job grows
+    int2 first; // first lattice spot that can fall in the tile
+    int2 count; // spots from first
+};
+
+StructuredBuffer<ScatterJob> _Jobs;
 RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
 RWStructuredBuffer<DrawArgs> _Args;
 float _TileSize;

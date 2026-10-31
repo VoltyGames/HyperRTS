@@ -4,6 +4,7 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Tests.Environment;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -36,7 +37,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
                 {
                     for (var plant = -320; plant < 320; plant++)
                     {
-                        var position = RowCropSpots.Position(lattice, row, plant, crop);
+                        var position = RowCropPlacement.Position(lattice, row, plant, crop);
                         var across = Vector2.Dot(position - lattice.origin, lattice.across);
                         var margin = Mathf.Abs(lattice.tramlines.Distance(across) - Width * 0.5f);
                         var inside = InField(position, 2f) || InField(-position, 2f);
@@ -45,7 +46,7 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
                             continue;
                         }
 
-                        var gap = RowCropSpots.OnTramline(lattice, row, plant, crop);
+                        var gap = RowCropPlacement.OnTramline(lattice, row, plant, crop);
                         Assert.AreEqual(gap, lines.Tramline(field, position) > 0.5f, $"plant at {position}");
                         gaps += gap ? 1 : 0;
                         plants++;

@@ -1,12 +1,11 @@
 using System;
-using HyperRTS.Presentation.Environment.Grass;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
     /// <summary>
-    /// What RowCrops.compute reads. The trample, remains and building maps are copied from the globals: compute shaders
-    /// don't see them.
+    /// What RowCrops.compute reads. The trample map is copied from the globals, as the shared inputs copy the rest:
+    /// compute shaders don't see them.
     /// </summary>
     internal sealed class RowCropComputeInputs : IDisposable
     {
@@ -14,14 +13,12 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private static readonly int FieldIdsId = Shader.PropertyToID("_FieldIds");
         private static readonly int FieldAreaId = Shader.PropertyToID("_FieldArea");
         private static readonly int FieldTexelsId = Shader.PropertyToID("_FieldTexels");
-        private static readonly int CameraId = Shader.PropertyToID("_Camera");
-        private static readonly int TileSizeId = Shader.PropertyToID("_TileSize");
         private static readonly int DensityId = Shader.PropertyToID("_Density");
 
         private readonly RowCropCompute _kernels;
         private readonly RowCropFields _fields;
         private readonly GraphicsBuffer _fieldBuffer;
-        private readonly TerrainHeightInput _heights;
+        private readonly ScatterInputs _scatter;
         private Texture _ids;
 
         /// <summary>Uploads the fields and binds what stays fixed while the map is open.</summary>
@@ -33,7 +30,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                 RowCropField.Stride);
             _fieldBuffer.SetData(fields.fields);
             SetFields();
-            _heights = new TerrainHeightInput(kernels.Compute, kernels.Plant, terrain);
+            _scatter = new ScatterInputs(kernels.Compute, kernels.Plant, terrain);
         }
 
         /// <summary>
@@ -49,26 +46,16 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                     return true;
                 }
 
-                return _ids != _fields.fieldIds || _heights.Stale;
+                return _ids != _fields.fieldIds || _scatter.Stale;
             }
         }
 
-        /// <summary>Whether a trample map is published, which changes every frame and so needs regrowing every frame.</summary>
-        public static bool Trampled => Shader.GetGlobalVector(InteractionSurfaces.RectId).z > 0f;
-
-        /// <summary>Binds one camera's view, the trample map, the building mask, crater depth and ash for its dispatches.</summary>
-        public void SetCamera(Vector3 camera, float density, float distance)
+        /// <summary>Binds one camera's view, the quality density and the trample map for its dispatches.</summary>
+        public void SetCamera(Vector3 camera, ScatterSettings settings)
         {
-            var compute = _kernels.Compute;
-            compute.SetVector(CameraId, new Vector4(camera.x, camera.y, camera.z, distance));
-            compute.SetFloat(DensityId, density);
-            var trample = Shader.GetGlobalTexture(InteractionSurfaces.TrampleId);
-            var on = trample != null && Trampled;
-            compute.SetTexture(_kernels.Plant, InteractionSurfaces.TrampleId, on ? trample : Texture2D.blackTexture);
-            compute.SetVector(InteractionSurfaces.RectId, on ? Shader.GetGlobalVector(InteractionSurfaces.RectId) : Vector4.zero);
-            BuildingFootprintMask.Bind(compute, _kernels.Plant);
-            CraterTerrain.BindCraters(compute, _kernels.Plant);
-            InteractionSurfaces.BindRemains(compute, _kernels.Plant);
+            _kernels.Compute.SetFloat(DensityId, settings.Density);
+            _scatter.BindCamera(camera, settings.Distance);
+            InteractionSurfaces.BindTrample(_kernels.Compute, _kernels.Plant);
         }
 
         public void Dispose() => _fieldBuffer.Release();
@@ -82,7 +69,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             compute.SetTexture(_kernels.Plant, FieldIdsId, ids);
             compute.SetVector(FieldAreaId, new Vector4(area.xMin, area.yMin, ids.width / area.width, ids.height / area.height));
             compute.SetVector(FieldTexelsId, new Vector4(ids.width, ids.height, 0f, 0f));
-            compute.SetFloat(TileSizeId, RowCropFields.TileSize);
         }
     }
 }

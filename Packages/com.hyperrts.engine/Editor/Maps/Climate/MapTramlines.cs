@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.RowCrops;
 using UnityEngine;
 
@@ -36,8 +37,8 @@ namespace HyperRTS.Editor.Maps.Climate
                 return default;
             }
 
-            var hash = RowCropSpots.Hash(seed, int.MinValue, int.MaxValue);
-            var phase = RowCropSpots.Unit(RowCropSpots.Channel(hash, RowCropSpots.TramlineChannel));
+            var hash = ScatterHash.Hash(seed, int.MinValue, int.MaxValue);
+            var phase = ScatterHash.Unit(ScatterHash.Channel(hash, RowCropSpots.TramlineChannel));
             return new RowCropTramlines
             {
                 spacing = spacing,

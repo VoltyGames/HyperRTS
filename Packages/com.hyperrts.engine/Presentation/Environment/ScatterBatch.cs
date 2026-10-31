@@ -8,18 +8,18 @@ namespace HyperRTS.Presentation.Environment
     /// One camera's scatter on the GPU: a mesh and property block per slot, the jobs queued for the grow kernel, and
     /// the indirect draws the count kernel fills. Subclasses own the slots' room, buffers and look.
     /// </summary>
-    internal abstract class ScatterBatch<TJob> : IDisposable where TJob : struct
+    internal abstract class ScatterBatch : IDisposable
     {
         // Matches GrassInstance.hlsl and RowCropInstance.hlsl.
         protected const int InstanceStride = 48;
         private const int ThreadGroup = 64;
 
-        private readonly List<TJob> _pending = new();
+        private readonly List<ScatterJob> _pending = new();
         private readonly ScatterDraws _draws;
         private int _largestJob;
 
-        /// <summary>Slots drawing <paramref name="meshes"/>, grown by <paramref name="grow"/> from jobs of <paramref name="jobStride"/> bytes.</summary>
-        protected ScatterBatch(ComputeShader compute, int grow, int count, Mesh[] meshes, int jobStride)
+        /// <summary>Slots drawing <paramref name="meshes"/>, grown by <paramref name="grow"/>.</summary>
+        protected ScatterBatch(ComputeShader compute, int grow, int count, Mesh[] meshes)
         {
             Compute = compute;
             GrowKernel = grow;
@@ -31,7 +31,7 @@ namespace HyperRTS.Presentation.Environment
                 Blocks[slot] = new MaterialPropertyBlock();
             }
 
-            _draws = new ScatterDraws(meshes, jobStride);
+            _draws = new ScatterDraws(meshes);
         }
 
         protected ComputeShader Compute { get; }
@@ -97,11 +97,11 @@ namespace HyperRTS.Presentation.Environment
             _draws.Dispose();
         }
 
-        /// <summary>Queues one job, which runs <paramref name="threads"/> threads of the grow kernel.</summary>
-        protected void Queue(TJob job, int threads)
+        /// <summary>Queues one job for the grow kernel.</summary>
+        protected void Queue(ScatterJob job)
         {
             _pending.Add(job);
-            _largestJob = Mathf.Max(_largestJob, threads);
+            _largestJob = Mathf.Max(_largestJob, job.Threads);
         }
 
         /// <summary>Runs the grow kernel over every queued job, one thread group row per job.</summary>

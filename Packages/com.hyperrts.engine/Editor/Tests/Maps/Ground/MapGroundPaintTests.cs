@@ -10,6 +10,7 @@ using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Presentation.Environment.RowCrops;
+using HyperRTS.Presentation.Tests.Environment;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using UnityEngine;
@@ -133,8 +134,8 @@ namespace HyperRTS.Editor.Tests.Maps.Ground
             {
                 for (var plant = -40; plant <= 40; plant += 7)
                 {
-                    var a = RowCropSpots.Position(west, row, plant, crop);
-                    var b = RowCropSpots.Position(east, row, plant, crop);
+                    var a = RowCropPlacement.Position(west, row, plant, crop);
+                    var b = RowCropPlacement.Position(east, row, plant, crop);
                     Assert.AreEqual(-a.x, b.x, 1e-4f);
                     Assert.AreEqual(a.y, b.y, 1e-4f);
                 }

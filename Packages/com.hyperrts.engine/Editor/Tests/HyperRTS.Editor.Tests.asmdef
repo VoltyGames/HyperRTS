@@ -4,6 +4,7 @@
     "references": [
         "HyperRTS.Simulation",
         "HyperRTS.Presentation",
+        "HyperRTS.Presentation.Tests",
         "Unity.RenderPipelines.Universal.Runtime",
         "HyperRTS.Editor",
         "Unity.Mathematics",

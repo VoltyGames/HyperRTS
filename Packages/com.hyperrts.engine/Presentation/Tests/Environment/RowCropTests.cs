@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.Environment;
 using HyperRTS.Presentation.Environment.RowCrops;
 using NUnit.Framework;
 using UnityEngine;
@@ -10,7 +11,7 @@ namespace HyperRTS.Presentation.Tests.Environment
     {
         private const float RowSpacing = 0.75f;
         private const float PlantSpacing = 0.3f;
-        private const float Tile = RowCropFields.TileSize;
+        private const float Tile = ScatterTiles.Size;
 
         private RowCrop _crop;
 
@@ -49,8 +50,8 @@ namespace HyperRTS.Presentation.Tests.Environment
             {
                 for (var plant = -400; plant <= 400; plant++)
                 {
-                    var spot = RowCropSpots.Spot(field, row, plant, RowSpacing, PlantSpacing);
-                    if (!RowCropSpots.Owns(area, spot))
+                    var spot = RowCropPlacement.Spot(field, row, plant, RowSpacing, PlantSpacing);
+                    if (!RowCropPlacement.Owns(area, spot))
                     {
                         continue;
                     }
@@ -73,10 +74,10 @@ namespace HyperRTS.Presentation.Tests.Environment
             var tile = new Rect(Tile, -Tile, Tile, Tile);
             for (var angle = 0f; angle < 360f; angle += 7.5f)
             {
-                var job = new RowCropJob(tile, 0, Field(angle), RowSpacing, PlantSpacing);
+                var job = RowCropSpots.Job(tile, 0, Field(angle), RowSpacing, PlantSpacing);
                 Assert.LessOrEqual(job.count.x, rows, $"rows at {angle} degrees");
                 Assert.LessOrEqual(job.count.y, plants, $"plants at {angle} degrees");
-                Assert.AreEqual(job.count.x * job.count.y, job.Spots);
+                Assert.AreEqual(job.count.x * job.count.y, job.Threads);
                 Assert.LessOrEqual(Grown(tile, Field(angle)).Count, bound, $"at {angle} degrees");
             }
         }
@@ -94,7 +95,6 @@ namespace HyperRTS.Presentation.Tests.Environment
         public void GpuStructs_MatchTheKernelsLayouts()
         {
             Assert.AreEqual(48, RowCropField.Stride);
-            Assert.AreEqual(28, RowCropJob.Stride);
         }
 
         [Test]
@@ -105,14 +105,14 @@ namespace HyperRTS.Presentation.Tests.Environment
             {
                 for (var plant = -30; plant < 30; plant++)
                 {
-                    var variant = RowCropSpots.Variant(7, row, plant, used.Length);
-                    Assert.AreEqual(variant, RowCropSpots.Variant(7, row, plant, used.Length));
+                    var variant = RowCropPlacement.Variant(7, row, plant, used.Length);
+                    Assert.AreEqual(variant, RowCropPlacement.Variant(7, row, plant, used.Length));
                     used[variant]++;
                 }
             }
 
             Assert.That(used, Is.All.InRange(700, 1100), "each of four models takes about a quarter of 3600 plants");
-            Assert.AreEqual(0, RowCropSpots.Variant(3, 1, 17, 1), "one model is always it");
+            Assert.AreEqual(0, RowCropPlacement.Variant(3, 1, 17, 1), "one model is always it");
         }
 
         [Test]
@@ -124,9 +124,9 @@ namespace HyperRTS.Presentation.Tests.Environment
             var steps = Mathf.CeilToInt(30f / _crop.plantSpacing);
             for (var plant = 0; plant < steps; plant++)
             {
-                var here = RowCropSpots.Wander(field, 4, plant, _crop);
-                var next = RowCropSpots.Wander(field, 4, plant + 1, _crop);
-                var beside = RowCropSpots.Wander(field, 5, plant, _crop);
+                var here = RowCropPlacement.Wander(field, 4, plant, _crop);
+                var next = RowCropPlacement.Wander(field, 4, plant + 1, _crop);
+                var beside = RowCropPlacement.Wander(field, 5, plant, _crop);
                 Assert.LessOrEqual(Mathf.Abs(here), _crop.wander + 1e-5f);
                 Assert.Less(Mathf.Abs(next - here), 0.025f, "one plant along the row");
                 Assert.Less(Mathf.Abs(beside - here), 0.05f, "the next row wanders with this one");
@@ -142,7 +142,7 @@ namespace HyperRTS.Presentation.Tests.Environment
             {
                 for (var plant = 0; plant < 40; plant += 3)
                 {
-                    Assert.That(RowCropSpots.GrowthVariation(field, row, plant, _crop), Is.InRange(0.8f, 1.2f));
+                    Assert.That(RowCropPlacement.GrowthVariation(field, row, plant, _crop), Is.InRange(0.8f, 1.2f));
                 }
             }
         }
@@ -158,8 +158,8 @@ namespace HyperRTS.Presentation.Tests.Environment
             var widest = 0f;
             for (var plant = 0; plant < 400; plant++)
             {
-                Assert.LessOrEqual(RowCropSpots.Lean(field, 2, plant, _crop, 0f).magnitude, inside);
-                var atEdge = RowCropSpots.Lean(field, 2, plant, _crop, 1f).magnitude;
+                Assert.LessOrEqual(RowCropPlacement.Lean(field, 2, plant, _crop, 0f).magnitude, inside);
+                var atEdge = RowCropPlacement.Lean(field, 2, plant, _crop, 1f).magnitude;
                 Assert.LessOrEqual(atEdge, edge);
                 widest = Mathf.Max(widest, atEdge);
             }
@@ -181,29 +181,29 @@ namespace HyperRTS.Presentation.Tests.Environment
         [TestCase(200f, 220f, false, false, true, TestName = "Far tile: cards only")]
         public void Bands_FollowTheTilesDistances(float near, float far, bool full, bool simple, bool card)
         {
-            Assert.AreEqual(full, RowCropView.InBand(RowCropView.Full, _crop, 300f, near, far));
-            Assert.AreEqual(simple, RowCropView.InBand(RowCropView.Simple, _crop, 300f, near, far));
-            Assert.AreEqual(card, RowCropView.InBand(RowCropView.Card, _crop, 300f, near, far));
+            Assert.AreEqual(full, RowCropBands.InBand(RowCropBands.Full, _crop, 300f, near, far));
+            Assert.AreEqual(simple, RowCropBands.InBand(RowCropBands.Simple, _crop, 300f, near, far));
+            Assert.AreEqual(card, RowCropBands.InBand(RowCropBands.Card, _crop, 300f, near, far));
         }
 
         [Test]
         public void Bands_PastTheDrawDistance_AreEmpty()
         {
-            Assert.IsFalse(RowCropView.InBand(RowCropView.Card, _crop, 100f, 0f, 500f));
-            Assert.IsFalse(RowCropView.InBand(RowCropView.Simple, _crop, 30f, 0f, 500f));
-            Assert.IsTrue(RowCropView.InBand(RowCropView.Full, _crop, 30f, 0f, 500f));
+            Assert.IsFalse(RowCropBands.InBand(RowCropBands.Card, _crop, 100f, 0f, 500f));
+            Assert.IsFalse(RowCropBands.InBand(RowCropBands.Simple, _crop, 30f, 0f, 500f));
+            Assert.IsTrue(RowCropBands.InBand(RowCropBands.Full, _crop, 30f, 0f, 500f));
         }
 
         // The spots RowCrops.compute's Plant keeps, one thread per spot of the job.
         private static List<(int, int)> Grown(Rect tile, RowCropField field)
         {
             var grown = new List<(int, int)>();
-            var job = new RowCropJob(tile, 0, field, RowSpacing, PlantSpacing);
-            for (var thread = 0; thread < job.Spots; thread++)
+            var job = RowCropSpots.Job(tile, 0, field, RowSpacing, PlantSpacing);
+            for (var thread = 0; thread < job.Threads; thread++)
             {
                 var row = job.first.x + thread % job.count.x;
                 var plant = job.first.y + thread / job.count.x;
-                if (RowCropSpots.Owns(tile, RowCropSpots.Spot(field, row, plant, RowSpacing, PlantSpacing)))
+                if (RowCropPlacement.Owns(tile, RowCropPlacement.Spot(field, row, plant, RowSpacing, PlantSpacing)))
                 {
                     grown.Add((row, plant));
                 }

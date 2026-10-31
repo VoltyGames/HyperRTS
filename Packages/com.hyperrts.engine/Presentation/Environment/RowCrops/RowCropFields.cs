@@ -9,9 +9,6 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class RowCropFields : ScriptableObject
     {
-        /// <summary>Side of a crop tile in metres: the unit the renderer culls and generates.</summary>
-        public const float TileSize = 16f;
-
         /// <summary>Field id 0: no crop here.</summary>
         public const int None = 0;
 
@@ -39,7 +36,8 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         public static int Decode(Color32 texel) => texel.r | (texel.g << 8);
 
         public Rect TileRect(RowCropTile tile) =>
-            new(area.xMin + tile.x * TileSize, area.yMin + tile.z * TileSize, TileSize, TileSize);
+            new(area.xMin + tile.x * ScatterTiles.Size, area.yMin + tile.z * ScatterTiles.Size,
+                ScatterTiles.Size, ScatterTiles.Size);
 
         /// <summary>Metres the tallest crop can grow to, the height of every tile's culling box.</summary>
         public float TallestPlant

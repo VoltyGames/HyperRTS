@@ -1,15 +1,15 @@
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Environment.Grass
+namespace HyperRTS.Presentation.Environment
 {
-    /// <summary>The quality knobs a camera's grass is scattered for, from <see cref="GrassRenderer"/>.</summary>
-    internal readonly struct GrassSettings
+    /// <summary>The quality knobs a camera's plants are scattered for. Crops draw no shadow band, so pass 0 for it.</summary>
+    internal readonly struct ScatterSettings
     {
         public readonly float Density;
         public readonly float Distance;
         public readonly float ShadowDistance;
 
-        public GrassSettings(float density, float distance, float shadowDistance)
+        public ScatterSettings(float density, float distance, float shadowDistance)
         {
             Density = density;
             Distance = distance;

@@ -2,7 +2,7 @@ using System;
 
 namespace HyperRTS.Presentation.Environment.RowCrops
 {
-    /// <summary>A <see cref="RowCropFields.TileSize"/> square of the map where crops grow, and the fields that reach into it.</summary>
+    /// <summary>A <see cref="ScatterTiles.Size"/> square of the map where crops grow, and the fields that reach into it.</summary>
     [Serializable]
     public struct RowCropTile
     {

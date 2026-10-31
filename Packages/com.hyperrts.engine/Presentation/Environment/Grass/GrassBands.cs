@@ -3,7 +3,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Grass
 {
     /// <summary>The grass kernel's distance rules on the CPU: thinning, bands and the buffer room they need.</summary>
-    public static class GrassView
+    public static class GrassBands
     {
         /// <summary>Near plants cast shadows, far ones don't.</summary>
         public const int Bands = 2;
@@ -15,6 +15,9 @@ namespace HyperRTS.Presentation.Environment.Grass
 
         /// <summary>Share of plants left at the draw distance.</summary>
         public const float FarKeep = 0.3f;
+
+        /// <summary>The tallest patch of Grass.compute's patch scale (<c>lerp(0.85, 1.15, noise)</c>), the height a culling box must allow for.</summary>
+        public const float TallestPatch = 1.15f;
 
         /// <summary>The most a far plant grows to cover for the thinned ones round it.</summary>
         public const float MaxGrow = 1.5f;

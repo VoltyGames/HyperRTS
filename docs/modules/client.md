@@ -497,7 +497,7 @@ redone whenever a building appears, goes or moves, before that frame's ignitions
 - A seen cell that burns out stamps a soft 2.6 m disc of full ash into the remains map and of scorch into the tracks
   map (`InteractionStamps.AddScorch`), nudged up to 0.35 m off the grid, so neighbours overlap into one char. The grass and row crop kernels get the remains map bound by
   `InteractionSurfaces.BindRemains` and drop plants where ash lies (`BurntPlants.hlsl`), so burnt fields stay bare;
-  a crater's lighter ash only thins them. A still camera's grass regrows when `FieldFireSystem.BurntCells` changes.
+  a crater's lighter ash only thins them. A still camera's grass and crops regrow when `FieldFireSystem.BurntCells` changes (`ScatterView` tracks it).
 
 ### Building footprints
 
@@ -526,8 +526,8 @@ dark gaps between lit tops. That canopy term is the crop's ambient occlusion, so
 default) keeps screen-space AO from darkening it again: GTAO reads a dense field of blades as a deep crevice and
 turns shaded wheat into a flat dark patch. Foliage has the same property at 1.
 
-A camera regrows the plants of its visible tiles when it moves, the quality changes or a trample map is published,
-which regrows them every frame. Trampled plants bend or disappear, and none grow under a building's footprint. Plants
+A camera regrows the plants of its visible tiles when it moves, the quality changes or new ash falls, and every frame
+while a trample map is published (`ScatterView`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants
 shrink away over the last 15 % of the draw distance. It also runs in edit mode.
 
 #### Scatter host
@@ -539,11 +539,16 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
   `ScatterTiles` and, in edit mode, rebuilds after `OnValidate` or a map rebuild. A subclass makes its inputs, tiles
   and camera states, says when its data went stale and grows and draws each camera. Density and distance come from
   `PresentationQuality.Current`.
-- `ScatterBatch<TJob>`, the base of `RowCropBatch` and `GrassBatch`, holds one camera's slots: a mesh and property
-  block each, the jobs queued for the grow kernel and the `ScatterDraws` indirect draws. `Generate` reserves room,
+- `ScatterBatch`, the base of `RowCropBatch` and `GrassBatch`, holds one camera's slots: a mesh and property
+  block each, the `ScatterJob`s queued for the grow kernel (one visible tile of one plant or field) and the `ScatterDraws` indirect
+  draws. `Generate` reserves room,
   binds the jobs, grows and counts; `Draw` draws each slot with room. A subclass owns its slots' room, buffers,
   material, culling box and shadows.
-- `Scatter.hlsl` holds the kernels' hashes, noise and slot counting; instances are 48 bytes.
+- `ScatterInputs` binds what both kernels read: the tile size (`ScatterTiles.Size`), the heightmap, and each camera's
+  position with the building mask, crater depth and ash. `ScatterSettings` carries density, distance and shadow
+  distance (crops pass 0), and a density of 0 draws nothing for both.
+- `Scatter.hlsl` holds the job struct, hashes, noise and slot counting; `ScatterHash` is the C# twin of the hashes.
+  Instances are 48 bytes.
 
 ### Ambient life
 

@@ -1,6 +1,6 @@
 // Grows row crop plants for RowCropBatch: Plant runs one thread per lattice spot of a job, dispatched as
 // (spots / 64, 1, jobs) once per model variant; Count then writes the draw args and clears the counters.
-// Lattice maths match RowCropSpots.cs; hashes, noise and slot counting are in Scatter.hlsl.
+// Lattice maths match RowCropSpots.Range; hashes, noise and slot counting are in Scatter.hlsl.
 #pragma kernel Plant
 #pragma kernel Count
 
@@ -42,16 +42,7 @@ struct RowCropField // RowCropField.cs, 48 bytes
     float4 tramlines; // RowCropTramlines: spacing (0 for none), gauge, half width, offset
 };
 
-struct RowCropJob // RowCropJob.cs, 28 bytes
-{
-    float2 tileMin;
-    uint field;
-    int2 first; // first (row, plant) whose spot can fall in the tile
-    int2 count; // rows and plants from first
-};
-
 StructuredBuffer<RowCropField> _Fields;
-StructuredBuffer<RowCropJob> _Jobs;
 StructuredBuffer<uint> _Capacities; // instances each slot's buffer holds
 Texture2D<float4> _FieldIds;
 
@@ -142,7 +133,7 @@ void Store(uint lod, RowCropInstance grown)
 [numthreads(64, 1, 1)]
 void Plant(uint3 id : SV_DispatchThreadID)
 {
-    RowCropJob job = _Jobs[id.z];
+    ScatterJob job = _Jobs[id.z];
     if (id.x >= (uint)(job.count.x * job.count.y))
     {
         return;
@@ -150,7 +141,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
 
     int row = job.first.x + (int)(id.x % (uint)job.count.x);
     int plant = job.first.y + (int)(id.x / (uint)job.count.x);
-    RowCropField field = _Fields[job.field];
+    RowCropField field = _Fields[job.id];
     float2 spot = field.origin + field.across * (row * _Planting.x) + field.along * (plant * _Planting.y);
     if (!Owns(job.tileMin, spot))
     {
@@ -170,7 +161,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     }
 
     float2 stray = float2(Channel(hash, CHANNEL_EDGE), Channel(hash, CHANNEL_EDGE + 1u)) - 0.5;
-    if (FieldAt(spot + stray * EDGE_DITHER) != job.field + 1u)
+    if (FieldAt(spot + stray * EDGE_DITHER) != (uint)job.id + 1u)
     {
         return;
     }
@@ -216,7 +207,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     grown.trampleDirection = trample.direction;
     grown.bend = trample.crop;
     grown.shade = Channel(hash, CHANNEL_SHADE);
-    grown.lean = Lean(hash, spot, field, job.field + 1u);
+    grown.lean = Lean(hash, spot, field, (uint)job.id + 1u);
     uint lod = range < _Size.z ? 0u : (range < _Size.w ? 1u : 2u);
     Store(lod, grown);
 }

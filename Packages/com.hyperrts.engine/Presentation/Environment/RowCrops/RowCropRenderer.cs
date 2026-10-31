@@ -23,6 +23,15 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         private RowCropCompute _kernels;
         private RowCropComputeInputs _inputs;
 
+        private static ScatterSettings Settings
+        {
+            get
+            {
+                var quality = PresentationQuality.Current;
+                return new ScatterSettings(quality.CropDensity, quality.CropDistance, 0f);
+            }
+        }
+
         private protected override float DrawDistance => PresentationQuality.Current.CropDistance;
 
         private protected override void BuildInputs()
@@ -44,10 +53,10 @@ namespace HyperRTS.Presentation.Environment.RowCrops
 
         private protected override void Draw(RowCropCameraState state, Camera camera, Vector3 position)
         {
-            var quality = PresentationQuality.Current;
-            if (!state.Holds(position, quality.CropDensity, quality.CropDistance, Tiles.Visible))
+            var settings = Settings;
+            if (!state.Holds(position, settings, Tiles.Visible))
             {
-                Grow(state, position);
+                Grow(state, position, settings);
             }
 
             foreach (var batch in state.Batches)
@@ -56,17 +65,16 @@ namespace HyperRTS.Presentation.Environment.RowCrops
             }
         }
 
-        private void Grow(RowCropCameraState state, Vector3 position)
+        private void Grow(RowCropCameraState state, Vector3 position, ScatterSettings settings)
         {
-            var quality = PresentationQuality.Current;
-            Queue(state.Batches, position, quality.CropDistance);
-            _inputs.SetCamera(position, quality.CropDensity, quality.CropDistance);
+            Queue(state.Batches, position, settings.Distance);
+            _inputs.SetCamera(position, settings);
             foreach (var batch in state.Batches)
             {
                 batch.Generate();
             }
 
-            state.Remember(position, quality.CropDensity, quality.CropDistance, Tiles.Visible);
+            state.Remember(position, settings, Tiles.Visible);
         }
 
 #if UNITY_EDITOR
@@ -99,7 +107,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
                     var index = fields.tileFields[f];
                     var field = fields.fields[index];
                     var crop = fields.crops[field.crop];
-                    var job = new RowCropJob(rect, index, field, crop.rowSpacing, crop.plantSpacing);
+                    var job = RowCropSpots.Job(rect, index, field, crop.rowSpacing, crop.plantSpacing);
                     batches[field.crop].Add(job, bounds, distance, near, far);
                 }
             }

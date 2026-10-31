@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Environment.RowCrops
     /// <summary>One camera's crop batches and the view they were last grown for, so a still camera only redraws.</summary>
     public sealed class RowCropCameraState : IDisposable
     {
-        private readonly ScatterView _view = new();
+        private readonly ScatterView _view = new(readsTrample: true);
 
         internal RowCropCameraState(RowCropFields fields, RowCropCompute kernels)
         {
@@ -20,13 +20,13 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         /// <summary>One batch per crop, in the field asset's crop order.</summary>
         internal List<RowCropBatch> Batches { get; } = new();
 
-        /// <summary>Whether the batches already hold this view: same spot, settings and visible tiles, and no trample map.</summary>
-        internal bool Holds(Vector3 position, float density, float distance, List<int> tiles) =>
-            !RowCropComputeInputs.Trampled && _view.Holds(position, new Vector4(density, distance), tiles);
+        /// <summary>Whether the batches already hold this view.</summary>
+        internal bool Holds(Vector3 position, ScatterSettings settings, List<int> tiles) =>
+            _view.Holds(position, settings, tiles);
 
         /// <summary>Records the view the batches were just grown for.</summary>
-        internal void Remember(Vector3 position, float density, float distance, List<int> tiles) =>
-            _view.Remember(position, new Vector4(density, distance), tiles);
+        internal void Remember(Vector3 position, ScatterSettings settings, List<int> tiles) =>
+            _view.Remember(position, settings, tiles);
 
         /// <summary>Whether the batches no longer match the field asset's crops or their models.</summary>
         internal bool Stale(RowCropFields fields)

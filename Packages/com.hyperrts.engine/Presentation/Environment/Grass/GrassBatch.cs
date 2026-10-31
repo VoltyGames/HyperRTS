@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Environment.Grass
     /// One camera's grass on the GPU: the visible tiles, one instance buffer cut into a slot per (plant, model, band)
     /// that Grass.compute fills, and the indirect draws.
     /// </summary>
-    internal sealed class GrassBatch : ScatterBatch<GrassJob>
+    internal sealed class GrassBatch : ScatterBatch
     {
         private const int MinInstances = 4096;
 
@@ -32,16 +32,21 @@ namespace HyperRTS.Presentation.Environment.Grass
 
         /// <summary>A batch drawing <paramref name="field"/>'s plants with their instanced materials, in plant order.</summary>
         public GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials)
-            : base(kernels.Compute, kernels.Scatter, kernels.Count, SlotMeshes(field), GrassJob.Stride)
+            : this(field, kernels, materials, field.FirstSlots())
+        {
+        }
+
+        private GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials, int[] firstSlots)
+            : base(kernels.Compute, kernels.Scatter, kernels.Count, SlotMeshes(field, firstSlots))
         {
             _field = field;
             _materials = materials;
-            _firstSlots = field.FirstSlots();
+            _firstSlots = firstSlots;
             var count = Meshes.Length;
             _slotPlants = SlotPlants(field, _firstSlots);
             _expected = new float[count];
             _table = new uint[count * 2];
-            _bounds = new Bounds[field.plants.Count * GrassView.Bands];
+            _bounds = new Bounds[field.plants.Count * GrassBands.Bands];
             _slots = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, count), sizeof(uint) * 2);
             _instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MinInstances, InstanceStride);
             for (var slot = 0; slot < count; slot++)
@@ -53,7 +58,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             }
         }
 
-        /// <summary>Whether the batch no longer draws the field's plants as they are: other models or materials.</summary>
+        /// <summary>Whether the batch no longer draws the field's plants as they are: another plant count or other models.</summary>
         public bool Stale()
         {
             if (_materials.Length != _field.plants.Count)
@@ -67,7 +72,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             {
                 foreach (var mesh in plant.meshes)
                 {
-                    for (var band = 0; band < GrassView.Bands; band++, slot++)
+                    for (var band = 0; band < GrassBands.Bands; band++, slot++)
                     {
                         if (slot >= Meshes.Length || Meshes[slot] != mesh)
                         {
@@ -83,21 +88,21 @@ namespace HyperRTS.Presentation.Environment.Grass
         protected override void ForgetView() => Array.Clear(_expected, 0, _expected.Length);
 
         /// <summary>Queues one plant of a visible tile, <paramref name="near"/> to <paramref name="far"/> metres away.</summary>
-        public void Add(GrassJob job, float coverage, Bounds bounds, (float Near, float Far) range, GrassSettings settings)
+        public void Add(ScatterJob job, float coverage, Bounds bounds, (float Near, float Far) range, ScatterSettings settings)
         {
-            Queue(job, job.Cells);
-            var plant = _field.plants[job.plant];
-            var share = job.Cells * coverage * settings.Density * GrassView.Drawn(range.Near, settings.Distance) /
+            Queue(job);
+            var plant = _field.plants[job.id];
+            var share = job.Threads * coverage * settings.Density * GrassBands.Drawn(range.Near, settings.Distance) /
                         plant.meshes.Count;
-            var first = _firstSlots[job.plant];
-            for (var band = 0; band < GrassView.Bands; band++)
+            var first = _firstSlots[job.id];
+            for (var band = 0; band < GrassBands.Bands; band++)
             {
-                if (!GrassView.InBand(band, settings.ShadowDistance, range.Near, range.Far))
+                if (!GrassBands.InBand(band, settings.ShadowDistance, range.Near, range.Far))
                 {
                     continue;
                 }
 
-                var box = job.plant * GrassView.Bands + band;
+                var box = job.id * GrassBands.Bands + band;
                 if (_expected[first + band] == 0f)
                 {
                     _bounds[box] = bounds;
@@ -106,7 +111,7 @@ namespace HyperRTS.Presentation.Environment.Grass
                 _bounds[box].Encapsulate(bounds);
                 for (var variant = 0; variant < plant.meshes.Count; variant++)
                 {
-                    _expected[first + variant * GrassView.Bands + band] += share;
+                    _expected[first + variant * GrassBands.Bands + band] += share;
                 }
             }
         }
@@ -128,12 +133,12 @@ namespace HyperRTS.Presentation.Environment.Grass
 
         protected override RenderParams Parameters(int slot)
         {
-            var band = slot % GrassView.Bands;
+            var band = slot % GrassBands.Bands;
             var plant = _slotPlants[slot];
             return new RenderParams(_materials[plant])
             {
-                worldBounds = _bounds[plant * GrassView.Bands + band],
-                shadowCastingMode = band == GrassView.Near ? ShadowCastingMode.On : ShadowCastingMode.Off,
+                worldBounds = _bounds[plant * GrassBands.Bands + band],
+                shadowCastingMode = band == GrassBands.Near ? ShadowCastingMode.On : ShadowCastingMode.Off,
             };
         }
 
@@ -149,7 +154,7 @@ namespace HyperRTS.Presentation.Environment.Grass
             var total = 0u;
             for (var slot = 0; slot < _expected.Length; slot++)
             {
-                var capacity = _expected[slot] > 0f ? (uint)GrassView.Capacity(_expected[slot]) : 0u;
+                var capacity = _expected[slot] > 0f ? (uint)GrassBands.Capacity(_expected[slot]) : 0u;
                 _table[slot * 2] = total;
                 _table[slot * 2 + 1] = capacity;
                 total += capacity;
@@ -171,16 +176,15 @@ namespace HyperRTS.Presentation.Environment.Grass
         }
 
         // Slot = the plant's first slot + model * Bands + band, the order of the table, counters and draw commands.
-        private static Mesh[] SlotMeshes(GrassField field)
+        private static Mesh[] SlotMeshes(GrassField field, int[] firstSlots)
         {
-            var firstSlots = field.FirstSlots();
             var meshes = new Mesh[firstSlots[field.plants.Count]];
             for (var p = 0; p < field.plants.Count; p++)
             {
                 var models = field.plants[p].meshes;
                 for (var slot = firstSlots[p]; slot < firstSlots[p + 1]; slot++)
                 {
-                    meshes[slot] = models[(slot - firstSlots[p]) / GrassView.Bands];
+                    meshes[slot] = models[(slot - firstSlots[p]) / GrassBands.Bands];
                 }
             }
 

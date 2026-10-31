@@ -16,12 +16,12 @@ namespace HyperRTS.Presentation.Environment.RowCrops
         [Tooltip("Impostor card past lod1Distance, one submesh.")]
         public Mesh card;
 
-        /// <summary>The mesh drawn in a <see cref="RowCropView"/> band.</summary>
+        /// <summary>The mesh drawn in a <see cref="RowCropBands"/> band.</summary>
         public Mesh Mesh(int lod) => lod switch
         {
-            RowCropView.Full => lod0,
-            RowCropView.Simple => lod1,
-            RowCropView.Card => card,
+            RowCropBands.Full => lod0,
+            RowCropBands.Simple => lod1,
+            RowCropBands.Card => card,
             _ => throw new ArgumentOutOfRangeException(nameof(lod), lod, "Row crop bands are 0 to 2."),
         };
     }

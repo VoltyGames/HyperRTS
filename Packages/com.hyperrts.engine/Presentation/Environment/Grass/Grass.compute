@@ -1,6 +1,6 @@
 // Scatters grass and small plants for GrassBatch: Scatter runs one thread per lattice cell of a job, a visible tile
 // of one plant, dispatched as (cells / 64, 1, jobs); Count then writes the draw args and clears the counters.
-// The lattice matches GrassJob.cs and the thinning GrassView.cs.
+// The lattice matches ScatterJob.Square and the thinning GrassBands.cs.
 #pragma kernel Scatter
 #pragma kernel Count
 
@@ -38,7 +38,7 @@ SamplerState sampler_LinearClamp;
 #define MAX_LEAN 0.3      // sine of the most a plant leans at random, so cards show some top to the RTS camera
 #define NORMAL_STEP 0.75  // metres between the ground normal's height probes
 #define GROUND_REACH 8.0  // metres to the probes of the ground colour round a plant
-#define BANDS 2u          // GrassView.Bands: near casts shadows, far doesn't
+#define BANDS 2u          // GrassBands.Bands: near casts shadows, far doesn't
 
 struct GrassPlantGpu // GrassPlantGpu.cs, 36 bytes
 {
@@ -51,14 +51,6 @@ struct GrassPlantGpu // GrassPlantGpu.cs, 36 bytes
     int seed;
 };
 
-struct GrassJob // GrassJob.cs, 28 bytes
-{
-    float2 tileMin;
-    int plant;
-    int2 first; // first lattice cell that can fall in the tile
-    int2 count; // cells from first
-};
-
 struct GrassSlot // GrassBatch's slot table: where a (plant, variant, band) writes and how many it holds
 {
     uint offset;
@@ -66,7 +58,6 @@ struct GrassSlot // GrassBatch's slot table: where a (plant, variant, band) writ
 };
 
 StructuredBuffer<GrassPlantGpu> _Plants;
-StructuredBuffer<GrassJob> _Jobs;
 StructuredBuffer<GrassSlot> _Slots;
 Texture2DArray<float> _Coverage;
 Texture2D<float4> _Ground;
@@ -76,7 +67,7 @@ RWStructuredBuffer<GrassInstance> _Instances;
 float4 _CoverageArea; // x min, z min, 1 / width, 1 / depth
 float4 _GroundArea;   // the same for the ground picture; zero without one
 float4 _Camera;       // xyz position, w draw distance
-float4 _Thinning;     // GrassView: thinning start share, keep at the draw distance, most growth, fade share
+float4 _Thinning;     // GrassBands: thinning start share, keep at the draw distance, most growth, fade share
 float4 _Shaping;      // x quality density, y shadow distance, z keep edge
 uint _SlotCount;
 
@@ -124,7 +115,7 @@ float3 GroundPatch(float2 xz)
     return clamp(GroundAt(xz) / max(around * 0.25, 0.02), 0.85, 1.2);
 }
 
-// Share of plants kept at a range, as GrassView.Keep.
+// Share of plants kept at a range, as GrassBands.Keep.
 float Keep(float range)
 {
     float start = _Thinning.x * _Camera.w;
@@ -145,13 +136,13 @@ void Store(uint slot, GrassInstance grown)
 [numthreads(64, 1, 1)]
 void Scatter(uint3 id : SV_DispatchThreadID)
 {
-    GrassJob job = _Jobs[id.z];
+    ScatterJob job = _Jobs[id.z];
     if (id.x >= (uint)(job.count.x * job.count.y))
     {
         return;
     }
 
-    GrassPlantGpu plant = _Plants[job.plant];
+    GrassPlantGpu plant = _Plants[job.id];
     int2 cell = job.first + int2(id.x % (uint)job.count.x, id.x / (uint)job.count.x);
     uint hash = Hash(plant.seed, cell.x, cell.y);
     float2 xz = (cell + float2(Channel(hash, CHANNEL_X), Channel(hash, CHANNEL_Z))) * plant.spacing;
@@ -161,7 +152,7 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     }
 
     float2 dither = (float2(Channel(hash, CHANNEL_DITHER), Channel(hash, CHANNEL_DITHER + 1u)) - 0.5) * COVER_DITHER;
-    float painted = Coverage(xz + dither, job.plant);
+    float painted = Coverage(xz + dither, job.id);
     if (Channel(hash, CHANNEL_COVER) >= Clumped(painted, plant, xz) * (1.0 - BurntShare(xz)) || UnderBuilding(xz))
     {
         return;
@@ -182,6 +173,7 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     float shrink = saturate((keep - pick) / _Shaping.z);
     float grow = min(rsqrt(raw), _Thinning.z);
     float fade = saturate((_Camera.w - range) / (_Thinning.w * _Camera.w));
+    // The 1.15 is GrassBands.TallestPatch, which sizes the tile culling boxes.
     float patch = lerp(0.85, 1.15, Noise(plant.seed, PATCH_SALT, xz / PATCH_SIZE));
     float sparse = lerp(0.7, 1.0, saturate(painted * 1.5));
     float size = Channel(hash, CHANNEL_SIZE);

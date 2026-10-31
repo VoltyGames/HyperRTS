@@ -18,6 +18,10 @@ namespace HyperRTS.Presentation.Environment
         internal static readonly int PictureId = Shader.PropertyToID("_HyperRTSGroundColor");
         internal static readonly int RectId = Shader.PropertyToID("_HyperRTSGroundRect");
 
+        // Grass.compute's own names for the copy.
+        private static readonly int KernelPictureId = Shader.PropertyToID("_Ground");
+        private static readonly int KernelRectId = Shader.PropertyToID("_GroundArea");
+
         [Tooltip("Top-down albedo of the ground, north up.")]
         public Texture2D picture;
 
@@ -32,6 +36,16 @@ namespace HyperRTS.Presentation.Environment
             {
                 Publish();
             }
+        }
+
+        /// <summary>Copies the picture and its rect to a kernel: compute shaders don't see globals. A zero rect while there is none.</summary>
+        public static void Bind(ComputeShader compute, int kernel)
+        {
+            var picture = Shader.GetGlobalTexture(PictureId);
+            var rect = Shader.GetGlobalVector(RectId);
+            var on = picture != null && rect.z > 0f;
+            compute.SetTexture(kernel, KernelPictureId, on ? picture : Texture2D.blackTexture);
+            compute.SetVector(KernelRectId, on ? rect : Vector4.zero);
         }
 
         protected override void OnDisabled() => Clear();

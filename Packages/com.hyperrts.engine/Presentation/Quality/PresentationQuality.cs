@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Quality
         /// <summary>Ground mark (tracks, trampling) resolution, or Off.</summary>
         public InteractionQuality Interactions;
 
-        /// <summary>Share of grass and small plants grown, above 0 and at most 1.</summary>
+        /// <summary>Share of grass and small plants grown, 0 (none) to 1.</summary>
         public float GrassDensity;
 
         /// <summary>Metres grass is drawn to.</summary>
@@ -68,7 +68,7 @@ namespace HyperRTS.Presentation.Quality
 
         private void Check()
         {
-            Require(GrassDensity is > 0f and <= 1f, nameof(GrassDensity), GrassDensity, "above 0 and at most 1");
+            Require(GrassDensity is >= 0f and <= 1f, nameof(GrassDensity), GrassDensity, "0 to 1");
             Require(GrassDistance > 0f, nameof(GrassDistance), GrassDistance, "above 0");
             Require(GrassShadowDistance >= 0f, nameof(GrassShadowDistance), GrassShadowDistance, "not negative");
             Require(CropDensity is >= 0f and <= 1f, nameof(CropDensity), CropDensity, "0 to 1");
