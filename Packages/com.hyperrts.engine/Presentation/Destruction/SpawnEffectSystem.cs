@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Combat;
 using Unity.Entities;
 using Unity.Mathematics;

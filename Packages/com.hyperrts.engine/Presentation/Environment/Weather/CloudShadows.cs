@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Lights;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;

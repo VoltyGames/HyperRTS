@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
+using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;

@@ -1,4 +1,4 @@
-﻿using HyperRTS.Presentation.Rendering;
+﻿using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Burst;

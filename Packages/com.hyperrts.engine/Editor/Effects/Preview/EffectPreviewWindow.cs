@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEditor.SceneManagement;

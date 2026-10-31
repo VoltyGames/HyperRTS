@@ -1,4 +1,5 @@
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Lights;
+using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Tests.Effects;
 using HyperRTS.Simulation.Common;

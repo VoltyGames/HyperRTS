@@ -1,5 +1,6 @@
 using System.Linq;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
+using HyperRTS.Presentation.Effects.Streams;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Effects

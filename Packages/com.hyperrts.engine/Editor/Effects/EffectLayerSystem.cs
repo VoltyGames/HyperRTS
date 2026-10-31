@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Effects
     /// </summary>
     public sealed class EffectLayerSystem
     {
-        public const string Includes = "Packages/com.hyperrts.engine/Presentation/Effects/";
+        public const string Includes = "Packages/com.hyperrts.engine/Presentation/Effects/Shaders/";
         private const float Gravity = 9.81f;
 
         private readonly GraphModel _graph;

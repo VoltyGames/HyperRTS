@@ -1,7 +1,8 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
+using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;

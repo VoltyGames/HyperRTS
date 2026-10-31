@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;

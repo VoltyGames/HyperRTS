@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;

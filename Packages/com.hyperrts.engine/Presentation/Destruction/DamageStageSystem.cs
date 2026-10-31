@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Effects;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Effects.Rig;
+using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;

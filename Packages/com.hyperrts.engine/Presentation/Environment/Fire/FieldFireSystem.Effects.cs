@@ -1,6 +1,6 @@
 using System;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;

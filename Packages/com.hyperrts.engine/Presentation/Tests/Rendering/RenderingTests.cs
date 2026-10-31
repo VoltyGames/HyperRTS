@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Destruction;
+using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;

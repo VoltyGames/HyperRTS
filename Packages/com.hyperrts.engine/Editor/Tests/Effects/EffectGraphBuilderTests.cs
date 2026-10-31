@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using HyperRTS.Editor.Effects;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
+using HyperRTS.Presentation.Effects.Streams;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;

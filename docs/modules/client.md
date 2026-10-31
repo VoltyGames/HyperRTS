@@ -46,6 +46,11 @@ relations and colours.
 `Fire`, `Weather` (atmosphere, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`, `RowCrops`,
 `Scatter`, `Shading`) and `Ambient`. `GridArea` and `EdgeNoise.png`, which several of them share, stay at the top.
 `Quality/` holds the knobs the game sets from its graphics options.
+`Effects/` is split into `Rig` (the rig component, its graphs, pools and playback), `Streams` (graph streams, trails,
+dust and rotor wash, and loop effects), `Lights` (effect and loop lights, smoke shadows) and `Shaders` (the Custom HLSL
+includes and the two effect shader graphs). In `Rendering/`, the instance batches and `EntityExtent` sit in `Overlays/`,
+the fog of war renderer feature and its passes in `Fog/`, and the hide, model variant, garrison part and paint core in
+`Rendering/Visibility/` (namespace `HyperRTS.Presentation.Rendering.Visibility`).
 
 ### HUD
 

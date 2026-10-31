@@ -5,7 +5,7 @@ using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
 using HyperRTS.Presentation.Animation;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;

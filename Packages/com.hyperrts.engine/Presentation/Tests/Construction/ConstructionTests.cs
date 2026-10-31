@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Construction;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;

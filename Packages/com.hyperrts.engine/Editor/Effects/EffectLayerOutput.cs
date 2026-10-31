@@ -9,8 +9,8 @@ namespace HyperRTS.Editor.Effects
     /// </summary>
     public sealed class EffectLayerOutput
     {
-        public const string DistortShader = "Packages/com.hyperrts.engine/Presentation/Effects/EffectDistort.shadergraph";
-        public const string SixWayShader = "Packages/com.hyperrts.engine/Presentation/Effects/EffectSixWay.shadergraph";
+        public const string DistortShader = "Packages/com.hyperrts.engine/Presentation/Effects/Shaders/EffectDistort.shadergraph";
+        public const string SixWayShader = "Packages/com.hyperrts.engine/Presentation/Effects/Shaders/EffectSixWay.shadergraph";
 
         // Before the other transparents, which the opaque texture lacks, so smoke and flames are never bent away.
         private const int DistortQueueOffset = -50;

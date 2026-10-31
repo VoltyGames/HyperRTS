@@ -1,5 +1,6 @@
 using System.Linq;
-using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Lights;
+using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEngine;
