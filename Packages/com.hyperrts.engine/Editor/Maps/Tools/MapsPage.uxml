@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../../Common/HyperRTSEditor.uss" />
+  <Style src="MapsPage.uss" />
   <uie:Toolbar>
     <uie:ToolbarButton name="build-all" text="Build all" />
     <uie:ToolbarButton name="new-scene" text="New blank scene..." />

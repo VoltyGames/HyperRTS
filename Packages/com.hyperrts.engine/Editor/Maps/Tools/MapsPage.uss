@@ -1,0 +1,23 @@
+/* The Maps page rows. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-map__name {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 3px;
+}
+
+.hrts-map__build {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.hrts-map__info {
+    width: 130px;
+    flex-shrink: 0;
+    color: var(--hrts-dim-text);
+}
+
+.hrts-map__status {
+    width: 150px;
+    flex-shrink: 0;
+}

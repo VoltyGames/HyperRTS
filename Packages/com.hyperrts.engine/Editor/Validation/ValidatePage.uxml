@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="Issues.uss" />
   <uie:Toolbar>
     <uie:ToolbarButton name="validate" text="Validate" />
     <uie:ToolbarToggle name="selection-only" text="Selection only" />

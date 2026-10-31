@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="ToolsWindow.uss" />
   <ui:VisualElement class="hrts-tools">
     <ui:ListView name="sidebar" class="hrts-sidebar" fixed-item-height="22" selection-type="Single" />
     <ui:VisualElement name="content" class="hrts-page-host" />

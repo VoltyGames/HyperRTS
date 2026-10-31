@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="DebugOverlay.uss" />
   <ui:VisualElement class="hrts-debug-overlay">
     <ui:VisualElement name="layers" />
     <ui:Label name="ai" class="hrts-debug-overlay__ai" />

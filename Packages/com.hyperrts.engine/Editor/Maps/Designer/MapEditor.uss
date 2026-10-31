@@ -1,0 +1,135 @@
+/* The Map Editor window. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-map-editor {
+    flex-grow: 1;
+}
+
+.hrts-map-toolbar__picker {
+    min-width: 160px;
+}
+
+.hrts-map-tools {
+    flex-direction: row;
+    margin-left: 6px;
+}
+
+.hrts-map-tools__kind {
+    min-width: 110px;
+    margin: 0 2px;
+}
+
+.hrts-map-editor__body {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.hrts-map-list {
+    width: 200px;
+    flex-shrink: 0;
+    border-right-width: 1px;
+    border-color: var(--hrts-border);
+}
+
+.hrts-map-list__group > .unity-foldout__toggle {
+    -unity-font-style: bold;
+    margin: 2px 0 0 3px;
+}
+
+.hrts-map-list__item {
+    padding: 1px 4px 1px 16px;
+}
+
+.hrts-map-list__item:hover {
+    background-color: rgba(128, 128, 128, 0.2);
+}
+
+.hrts-map-list__item--selected {
+    background-color: rgba(62, 125, 231, 0.6);
+}
+
+.hrts-map-canvas {
+    flex-grow: 1;
+    overflow: hidden;
+    background-color: rgb(32, 34, 36);
+}
+
+.hrts-map-canvas__image {
+    position: absolute;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.hrts-map-canvas__overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hrts-map-canvas__scale {
+    position: absolute;
+    left: 6px;
+    bottom: 4px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.hrts-map-canvas__error {
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    color: var(--hrts-error);
+    white-space: normal;
+}
+
+.hrts-map-inspector {
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding: 4px;
+}
+
+.hrts-map-editor__side {
+    width: 300px;
+    flex-shrink: 0;
+    border-left-width: 1px;
+    border-color: var(--hrts-border);
+}
+
+.hrts-map-inspector__details {
+    flex-grow: 1;
+}
+
+.hrts-map-inspector__fields {
+    flex-grow: 1;
+    margin-top: 4px;
+}
+
+.hrts-map-report {
+    max-height: 50%;
+    flex-shrink: 0;
+    padding: 4px;
+    border-top-width: 1px;
+    border-color: var(--hrts-border);
+}
+
+.hrts-map-report__content {
+    flex-shrink: 1;
+}
+
+.hrts-map-report__show {
+    width: 48px;
+    margin: 0 0 0 2px;
+}
+
+.hrts-map-report__name {
+    width: 90px;
+    margin-left: 3px;
+}
+
+.hrts-map-toolbar__strip {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hrts-map-toolbar__busy {
+    color: var(--hrts-warning);
+}

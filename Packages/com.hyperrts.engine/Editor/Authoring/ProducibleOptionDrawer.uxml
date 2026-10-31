@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="Authoring.uss" />
   <ui:VisualElement class="hrts-option">
     <uie:ObjectField name="option" class="hrts-option__field" allow-scene-objects="false" />
     <ui:Image name="icon" class="hrts-option__icon" />

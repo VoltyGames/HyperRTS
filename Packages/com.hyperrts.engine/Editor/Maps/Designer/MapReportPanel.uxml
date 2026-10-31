@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../../Common/HyperRTSEditor.uss" />
+  <Style src="../../Validation/Issues.uss" />
   <ui:Label name="source" class="hrts-section__title" />
   <ui:ScrollView class="hrts-map-report__content">
     <ui:Label name="empty" class="hrts-note" text="No preview or build yet." />

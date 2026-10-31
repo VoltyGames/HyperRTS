@@ -1,0 +1,10 @@
+/* The Play-mode debug overlay. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-debug-overlay {
+    min-width: 180px;
+}
+
+.hrts-debug-overlay__ai {
+    margin-top: 4px;
+    white-space: normal;
+}

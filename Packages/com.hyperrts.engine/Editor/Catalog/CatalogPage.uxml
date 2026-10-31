@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="Catalog.uss" />
   <uie:Toolbar>
     <uie:ToolbarSpacer class="hrts-fill" />
     <uie:ToolbarSearchField name="search" />

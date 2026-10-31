@@ -1,0 +1,39 @@
+/* Validation issue rows and their rule and asset groups. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-issue {
+    flex-direction: row;
+    align-items: stretch;
+    margin: 1px 0;
+}
+
+.hrts-issue__context {
+    width: 140px;
+    margin: 0 2px 0 0;
+}
+
+.hrts-issue__message {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0;
+}
+
+.hrts-issue__fix {
+    width: 100px;
+    margin: 0 0 0 2px;
+    white-space: normal;
+}
+
+.hrts-issue-group {
+    margin: 2px 0;
+}
+
+.hrts-issue-group__asset {
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    align-self: flex-start;
+    margin: 4px 0 1px 14px;
+}
+
+.hrts-issue-group__issues {
+    margin-left: 14px;
+}

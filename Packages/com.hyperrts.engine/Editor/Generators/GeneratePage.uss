@@ -1,0 +1,39 @@
+/* The Generate page. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-generate__run-all {
+    height: 24px;
+    margin: 4px 3px 4px 3px;
+}
+
+.hrts-generate__row {
+    flex-direction: row;
+    align-items: center;
+    margin: 1px 0;
+    padding: 3px;
+    border-bottom-width: 1px;
+    border-color: rgba(128, 128, 128, 0.25);
+}
+
+.hrts-generate__name {
+    -unity-font-style: bold;
+}
+
+.hrts-generate__description {
+    white-space: normal;
+    opacity: 0.75;
+}
+
+.hrts-generate__last-run {
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+.hrts-generate__last-run--failed {
+    color: var(--hrts-error);
+    opacity: 1;
+}
+
+.hrts-generate__run {
+    width: 60px;
+    flex-shrink: 0;
+}

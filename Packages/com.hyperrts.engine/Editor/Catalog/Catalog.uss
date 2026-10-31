@@ -1,0 +1,33 @@
+/* The Catalog page: the stats table and the tech tree. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-table__cell {
+    margin: 0 2px;
+}
+
+/* A field's [Header] and [Space] would draw inside its table cell. */
+.hrts-table__cell .unity-decorator-drawers-container {
+    display: none;
+}
+
+.hrts-tree__node {
+    margin: 0 0 6px 0;
+    padding: 4px;
+    border-width: 1px;
+    border-color: var(--hrts-border);
+    border-radius: 3px;
+}
+
+.hrts-tree__name {
+    -unity-font-style: bold;
+}
+
+.hrts-tree__line {
+    margin-left: 8px;
+    white-space: normal;
+}
+
+.hrts-tabs,
+.hrts-tabs .unity-tab-view__content-container,
+.hrts-tabs .unity-tab__content-container {
+    flex-grow: 1;
+}

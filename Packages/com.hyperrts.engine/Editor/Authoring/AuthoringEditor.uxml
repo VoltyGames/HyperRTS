@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="Authoring.uss" />
   <HyperRTS.Editor.Authoring.IssueBadge name="issues" class="hrts-issue-badge" />
   <ui:VisualElement name="header" />
   <ui:VisualElement name="fields" />

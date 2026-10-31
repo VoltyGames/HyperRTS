@@ -3,7 +3,7 @@
   <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
   <ui:ScrollView class="hrts-fill">
     <ui:VisualElement class="hrts-page__body">
-      <ui:HelpBox name="hint" class="hrts-hint" message-type="Info" text="Enter Play mode to use cheats, networking and recording." />
+      <ui:HelpBox name="hint" class="hrts-note" message-type="Info" text="Enter Play mode to use cheats, networking and recording." />
       <ui:Instance template="CheatsSection" name="cheats" />
       <ui:VisualElement class="hrts-section">
         <ui:Label class="hrts-section__title" text="Network" />
