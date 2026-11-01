@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Destruction;

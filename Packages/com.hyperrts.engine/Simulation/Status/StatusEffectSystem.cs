@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;

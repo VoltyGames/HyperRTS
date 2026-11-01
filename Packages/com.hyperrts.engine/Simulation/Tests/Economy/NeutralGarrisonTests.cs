@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation;

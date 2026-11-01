@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;

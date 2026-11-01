@@ -1,8 +1,8 @@
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Linq;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;

@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Projectiles;
+using HyperRTS.Simulation.Combat.Weapons;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules

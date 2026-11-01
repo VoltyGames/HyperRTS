@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Combat.Projectiles;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
@@ -5,7 +7,6 @@ using System.Linq;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;
 using UnityEngine;

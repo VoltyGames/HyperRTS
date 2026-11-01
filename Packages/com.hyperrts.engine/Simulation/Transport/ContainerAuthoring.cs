@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;

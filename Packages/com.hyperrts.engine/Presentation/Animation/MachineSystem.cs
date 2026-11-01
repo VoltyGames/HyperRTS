@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Simulation.Animation;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using Unity.Burst;

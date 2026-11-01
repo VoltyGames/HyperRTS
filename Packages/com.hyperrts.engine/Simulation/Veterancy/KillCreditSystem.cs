@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;

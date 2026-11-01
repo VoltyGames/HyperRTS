@@ -1,7 +1,7 @@
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;

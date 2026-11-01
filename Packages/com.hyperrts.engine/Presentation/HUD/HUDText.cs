@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;

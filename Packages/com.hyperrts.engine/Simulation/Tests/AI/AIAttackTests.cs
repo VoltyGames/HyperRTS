@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Targeting;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;

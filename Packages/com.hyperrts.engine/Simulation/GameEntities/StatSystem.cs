@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Stats;

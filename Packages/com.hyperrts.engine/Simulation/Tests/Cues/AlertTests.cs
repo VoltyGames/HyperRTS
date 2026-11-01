@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Sounds;
@@ -5,7 +6,6 @@ using HyperRTS.Simulation.Cues.Voice;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Orders;

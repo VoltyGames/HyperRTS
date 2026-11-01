@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Auras;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation;

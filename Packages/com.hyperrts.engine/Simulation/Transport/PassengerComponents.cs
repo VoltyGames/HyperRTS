@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Targeting;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Transport

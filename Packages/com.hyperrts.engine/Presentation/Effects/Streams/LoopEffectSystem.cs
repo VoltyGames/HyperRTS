@@ -3,7 +3,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;

@@ -1,7 +1,8 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Targeting;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Orders;

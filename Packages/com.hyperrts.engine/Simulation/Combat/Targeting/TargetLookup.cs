@@ -1,0 +1,138 @@
+﻿using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Vision;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
+
+namespace HyperRTS.Simulation.Combat.Targeting
+{
+    /// <summary>
+    /// Read-only view of other entities for combat jobs: alive, hostile, detected, hittable, where and how big.
+    /// </summary>
+    public struct TargetLookup
+    {
+        [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
+        [ReadOnly] private ComponentLookup<Health> _health;
+        [ReadOnly] private ComponentLookup<Faction> _factions;
+        [ReadOnly] private ComponentLookup<NavAgent> _agents;
+        [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
+        [ReadOnly] private ComponentLookup<Inside> _inside;
+        [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
+        [ReadOnly] private ComponentLookup<Destructible> _destructibles;
+        private DamageFactors _damage;
+        [ReadOnly] private FogOfWar _fog;
+
+        public TargetLookup(ref SystemState state)
+        {
+            _transforms = state.GetComponentLookup<LocalTransform>(true);
+            _health = state.GetComponentLookup<Health>(true);
+            _factions = state.GetComponentLookup<Faction>(true);
+            _agents = state.GetComponentLookup<NavAgent>(true);
+            _obstacles = state.GetComponentLookup<NavObstacle>(true);
+            _inside = state.GetComponentLookup<Inside>(true);
+            _stealthed = state.GetComponentLookup<Stealthed>(true);
+            _destructibles = state.GetComponentLookup<Destructible>(true);
+            _damage = new DamageFactors(ref state);
+            FogQuery(ref state).TryGetSingleton(out _fog);
+        }
+
+        /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
+        public void Update(ref SystemState state, EntityQuery fog)
+        {
+            _transforms.Update(ref state);
+            _health.Update(ref state);
+            _factions.Update(ref state);
+            _agents.Update(ref state);
+            _obstacles.Update(ref state);
+            _inside.Update(ref state);
+            _stealthed.Update(ref state);
+            _destructibles.Update(ref state);
+            _damage.Update(ref state);
+            fog.TryGetSingleton(out _fog);
+        }
+
+        /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
+        public bool IsAlive(Entity entity) => Health.IsAlive(_health, entity);
+
+        /// <summary>Alive, hostile, not tucked inside a container and not hidden from the attacker by stealth.</summary>
+        public bool IsValidTarget(Entity target, byte attackerFaction, in FactionRelations relations)
+        {
+            if (!IsAlive(target) || IsInside(target) || !_factions.TryGetComponent(target, out var faction))
+            {
+                return false;
+            }
+
+            var hostile = relations.IsHostile(attackerFaction, faction.Value);
+            return hostile && !IsHiddenByStealth(target, relations.GetTeam(attackerFaction));
+        }
+
+        /// <summary>
+        /// What an explicit attack order may target: a valid hostile target, or any living <see cref="Destructible"/>
+        /// map scenery the weapon can hit. Units never pick scenery on their own.
+        /// </summary>
+        public bool IsAttackable(Entity target, byte attackerFaction, in FactionRelations relations, WeaponTargets targets)
+        {
+            if (IsValidTarget(target, attackerFaction, relations, targets))
+            {
+                return true;
+            }
+
+            var scenery = _destructibles.HasComponent(target) && IsAlive(target) && !IsInside(target);
+            return scenery && CanHit(target, targets);
+        }
+
+        /// <summary>A valid target (see above) that a weapon reaching <paramref name="targets"/> can hit.</summary>
+        public bool IsValidTarget(Entity target, byte attackerFaction, in FactionRelations relations,
+            WeaponTargets targets) =>
+            IsValidTarget(target, attackerFaction, relations) && CanHit(target, targets);
+
+        public bool CanHit(Entity target, WeaponTargets targets)
+        {
+            return Weapon.CanHit(targets, NavAgent.GetLayer(_agents, target));
+        }
+
+        /// <summary>The weapon can hit the target and its damage is worth it (<see cref="Weapon.Affects"/>).</summary>
+        public bool CanHurt(Entity target, in Weapon weapon) => CanHit(target, weapon.Targets) && Affects(target, weapon);
+
+        /// <summary>The target's armor lets the weapon's damage type through at <see cref="Weapon.MinEffect"/> or more.</summary>
+        public bool Affects(Entity target, in Weapon weapon) =>
+            weapon.MinEffect <= 0f || _damage.Armor(target, weapon.DamageType) >= weapon.MinEffect;
+
+        /// <summary>Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsHiddenByStealth"/>).</summary>
+        // Stealth first, so unstealthed candidates skip the transform lookup.
+        public bool IsHiddenByStealth(Entity target, byte team) =>
+            _stealthed.HasEnabled(target) && !_fog.IsDetected(Position(target), team);
+
+        /// <summary>
+        /// In the team's sight right now and not cloaked from it: all a unit may pick on its own. Callers require the
+        /// fog grid, which fog-off maps fill as all-visible.
+        /// </summary>
+        public bool IsSpotted(Entity target, float3 position, byte team) =>
+            _fog.CanSee(team, position, _stealthed.HasEnabled(target));
+
+        public float3 Position(Entity entity) => _transforms[entity].Position;
+
+        /// <summary>Edge to edge distance with <paramref name="entity"/> standing at <paramref name="position"/>.</summary>
+        public float Gap(Entity entity, float3 position, Entity target) =>
+            EntityRadius.EdgeDistance(position, Radius(entity), Position(target), Radius(target));
+
+        /// <summary>Passengers take their container's footprint, so they fire from its edge.</summary>
+        public float Radius(Entity entity) =>
+            EntityRadius.Get(IsInside(entity) ? _inside[entity].Container : entity, _agents, _obstacles);
+
+        /// <summary>Tucked inside a transport or garrison: hidden and untargetable.</summary>
+        public bool IsInside(Entity entity) => _inside.HasEnabled(entity);
+
+        /// <summary>
+        /// The fog singleton's query. Systems build it in OnCreate and pass it to <see cref="Update"/>: this lookup
+        /// travels into jobs, which can't carry a query, and Burst only lets the [ReadOnly] fog field be filled
+        /// through <c>out</c>. Building it here also makes the system's jobs wait for the fog restamp.
+        /// </summary>
+        public static EntityQuery FogQuery(ref SystemState state) =>
+            new EntityQueryBuilder(Allocator.Temp).WithAll<FogOfWar>().Build(ref state);
+    }
+}

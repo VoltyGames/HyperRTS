@@ -3,7 +3,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Destruction;

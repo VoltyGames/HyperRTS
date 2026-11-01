@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Network.Common;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Netcode;

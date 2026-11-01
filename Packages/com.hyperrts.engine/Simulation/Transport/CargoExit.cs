@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
+using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Collections;

@@ -1,8 +1,8 @@
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;

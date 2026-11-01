@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;

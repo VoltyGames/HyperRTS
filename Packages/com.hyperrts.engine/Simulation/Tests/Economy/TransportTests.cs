@@ -1,4 +1,6 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Projectiles;
+using HyperRTS.Simulation.Combat.Targeting;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues;

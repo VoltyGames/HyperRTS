@@ -1,6 +1,6 @@
 using HyperRTS.Client.Interaction;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;

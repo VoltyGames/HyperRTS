@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 
 namespace HyperRTS.Editor.Validation.Rules
 {

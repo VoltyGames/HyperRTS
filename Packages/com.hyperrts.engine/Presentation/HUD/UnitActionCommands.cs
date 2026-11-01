@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
 using Unity.Entities;

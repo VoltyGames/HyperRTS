@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;

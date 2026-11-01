@@ -1,7 +1,7 @@
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using Unity.Entities;
 using UnityEngine;
 

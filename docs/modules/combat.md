@@ -9,6 +9,12 @@ hidden by stealth is never auto-acquired, so long-range weapons need a spotter; 
 past sight. Every hit goes through one damage
 queue, so armor, splash and kill credit apply to all of them.
 
+Combat's code sits in sub-folders of `Simulation/Combat/`, each its own `HyperRTS.Simulation.Combat.<Folder>`
+namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, interceptors, impact surfaces),
+`Targeting` (acquisition, engagement, attack orders, stance), `Damage` (damage queue, armor, shelter, crush) and
+`Death` (death, remains, decay, turret toss, damage stages).
+
+
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |

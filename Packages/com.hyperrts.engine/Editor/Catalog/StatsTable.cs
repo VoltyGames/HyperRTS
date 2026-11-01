@@ -1,9 +1,9 @@
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Stats;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Common;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Units;
 using Unity.Scripting.LifecycleManagement;

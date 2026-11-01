@@ -1,3 +1,7 @@
+using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Death;
+using HyperRTS.Simulation.Combat.Projectiles;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Cues.Effects;
 using System;
 using System.Collections.Generic;
@@ -13,7 +17,6 @@ using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;

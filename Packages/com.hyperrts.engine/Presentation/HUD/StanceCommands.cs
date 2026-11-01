@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 

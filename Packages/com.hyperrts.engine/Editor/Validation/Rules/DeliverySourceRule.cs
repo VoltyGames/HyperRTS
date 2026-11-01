@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Resources;
 
 namespace HyperRTS.Editor.Validation.Rules

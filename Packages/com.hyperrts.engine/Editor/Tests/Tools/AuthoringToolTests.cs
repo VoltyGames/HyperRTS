@@ -1,9 +1,10 @@
+using HyperRTS.Simulation.Combat.Death;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Stats;
 using System;
 using System.Linq;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Templates;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;

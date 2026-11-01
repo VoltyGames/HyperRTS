@@ -4,7 +4,7 @@ using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;

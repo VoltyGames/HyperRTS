@@ -1,7 +1,8 @@
+using HyperRTS.Simulation.Combat.Targeting;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;

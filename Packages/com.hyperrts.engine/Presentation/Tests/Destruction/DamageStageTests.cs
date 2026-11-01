@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using NUnit.Framework;
