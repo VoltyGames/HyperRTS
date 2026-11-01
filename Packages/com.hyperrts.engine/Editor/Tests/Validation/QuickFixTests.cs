@@ -91,7 +91,7 @@ namespace HyperRTS.Editor.Tests.Validation
         public void RemoveEmptyDropsArmorEntriesWithoutADamageType()
         {
             var armor = Track(EntityTemplates.Unit()).AddComponent<ArmorAuthoring>();
-            armor.modifiers.Add(new ArmorAuthoring.Entry { multiplier = 2f });
+            armor.modifiers.Add(new DamageFactor { multiplier = 2f });
 
             Fix(armor, "Remove Empty");
 

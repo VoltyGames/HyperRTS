@@ -27,7 +27,6 @@ namespace HyperRTS.Simulation.Combat
         private EntityQuery _fogQuery;
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<Ammo> _ammo;
-        private BufferLookup<ArmorModifier> _armor;
         private uint _frame;
 
         [BurstCompile]
@@ -37,7 +36,6 @@ namespace HyperRTS.Simulation.Combat
             _fogQuery = TargetLookup.FogQuery(ref state);
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _ammo = state.GetComponentLookup<Ammo>(true);
-            _armor = state.GetBufferLookup<ArmorModifier>(true);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<FogOfWar>();
@@ -49,7 +47,6 @@ namespace HyperRTS.Simulation.Combat
             _targets.Update(ref state, _fogQuery);
             _orders.Update(ref state);
             _ammo.Update(ref state);
-            _armor.Update(ref state);
             _frame++;
 
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
@@ -62,7 +59,6 @@ namespace HyperRTS.Simulation.Combat
                 Orders = _orders,
                 Traits = traits,
                 AmmoLookup = _ammo,
-                Armor = _armor,
                 Slot = (int)(_frame % ScanInterval),
             }.ScheduleParallel();
         }
@@ -78,7 +74,6 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
-            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
             public int Slot;
 
             private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in CombatStance stance,
@@ -97,9 +92,9 @@ namespace HyperRTS.Simulation.Combat
 
                 var range = stance.Value == Stance.HoldPosition
                     ? weapon.Range
-                    : CombatMath.AcquireRange(weapon, vision.Value);
+                    : weapon.ScanRange(vision.Value);
                 var radius = Targets.Radius(entity);
-                var finder = new NearestHostile(Relations, Targets, Armor, weapon, faction.Value, transform.Position,
+                var finder = new NearestHostile(Relations, Targets, weapon, faction.Value, transform.Position,
                     radius);
                 Index.Query(transform.Position, range + radius, ref finder);
 

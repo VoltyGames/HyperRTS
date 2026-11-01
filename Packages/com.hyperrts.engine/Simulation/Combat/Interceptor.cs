@@ -22,34 +22,27 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Index into the pose buffer, after the weapons, and the fire cue's variant.</summary>
         public byte Pose;
 
-        public int Rounds;
-
-        /// <summary>0 never runs dry.</summary>
-        public int MaxRounds;
-
-        /// <summary>Seconds per round refilled while online.</summary>
-        public float ReloadTime;
-
-        public float ReloadElapsed;
+        /// <summary>Refills one round per reload time while online.</summary>
+        public Ammo Ammo;
 
         /// <summary>Engagements so far, which seed each kill roll.</summary>
         public uint Engagements;
 
         public bool Engages(ProjectileKind kind) => (Kinds & kind) != 0;
 
-        public bool Ready => !Aim.CoolingDown && (MaxRounds == 0 || Rounds > 0);
+        public bool Ready => !Aim.CoolingDown && !Ammo.Empty;
 
         public void Tick(float deltaTime)
         {
             Aim.Tick(deltaTime);
-            Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, AmmoRefill.Round, deltaTime);
+            Ammo.Reload(deltaTime);
         }
 
         /// <summary>Spends a round and restarts the cooldown; true when the roll downs <paramref name="target"/>.</summary>
         public bool Engage(Entity self, Entity target)
         {
             Aim.StartCooldown();
-            Rounds -= MaxRounds > 0 ? 1 : 0;
+            Ammo.Spend();
             Engagements++;
             // Seeded by shooter, target and count, so the same fight rolls the same.
             var seed = math.hash(new uint4((uint)self.Index, (uint)target.Index, (uint)target.Version, Engagements));

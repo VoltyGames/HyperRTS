@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -36,6 +37,14 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Layers the splash reaches: the weapon's targets, else the surface only.</summary>
         public WeaponTargets Reach;
+
+        /// <summary>Linear falloff from full damage at the centre to <see cref="EdgeFactor"/> at <see cref="Radius"/>.</summary>
+        public readonly float SplashFactor(float gap) =>
+            math.lerp(1f, EdgeFactor, math.saturate(gap / math.max(Radius, 1e-4f)));
+
+        /// <summary>Reports where a shot of a shooter type landed; a type id of 0 is ignored.</summary>
+        public readonly void AddImpact(ref CueWriter cues, int typeId, float3 direction) =>
+            cues.Add(typeId, CueSlot.Impact, Position, direction, SourceFaction, radius: Radius, target: Target);
     }
 
     /// <summary>Tags the singleton holding this frame's <see cref="DamageEvent"/>s.</summary>

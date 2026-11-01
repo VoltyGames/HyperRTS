@@ -183,7 +183,7 @@ namespace HyperRTS.Simulation.Tests.Economy
             return (aircraft, _world.SpawnUnit(2, new float3(30f, 0f, 0f), maxHealth: 1000f));
         }
 
-        private int Missiles(Entity aircraft) => _world.EntityManager.GetBuffer<WeaponMount>(aircraft)[0].Rounds;
+        private int Missiles(Entity aircraft) => _world.EntityManager.GetBuffer<WeaponMount>(aircraft)[0].Ammo.Current;
 
         private void Attack(Entity unit, Entity target) => _world.Command(1, new PlayerCommand
         {

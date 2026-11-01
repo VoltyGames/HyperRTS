@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Tests.Validation
             yield return Row<ArmorRule>("no damage type", f =>
             {
                 var armor = f.Add<ArmorAuthoring>(EntityTemplates.Unit());
-                armor.modifiers.Add(new ArmorAuthoring.Entry { multiplier = 2f });
+                armor.modifiers.Add(new DamageFactor { multiplier = 2f });
                 return armor;
             });
             yield return Row<BuilderRule>("is a scene object", f =>

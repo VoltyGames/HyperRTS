@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Combat
         public UnityObjectRef<DamageType> DamageType;
     }
 
-    /// <summary>The hit that killed a <see cref="TurretToss"/> unit: its type, how far it overshot and which way it pushed.</summary>
+    /// <summary>The hit that killed a <see cref="TurretToss"/> unit or a <see cref="Topple"/> piece: its type, how far it overshot and which way it pushed.</summary>
     public struct LethalHit : IComponentData
     {
         public UnityObjectRef<DamageType> Type;

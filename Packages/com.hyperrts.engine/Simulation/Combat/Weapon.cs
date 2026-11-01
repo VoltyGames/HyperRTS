@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -89,6 +90,35 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Holds fire until its unit is <see cref="Deployable"/> and deployed.</summary>
         public bool NeedsDeploy;
 
+        /// <summary>Aircraft are air targets; everything else (units on any other layer, buildings) is surface.</summary>
+        public static bool CanHit(WeaponTargets targets, NavLayer layer) => targets switch
+        {
+            WeaponTargets.Surface => layer != NavLayer.Air,
+            WeaponTargets.Air => layer == NavLayer.Air,
+            _ => true,
+        };
+
+        /// <summary>How far it looks for targets: <see cref="AcquireRange"/>, else <paramref name="visionRange"/>, never under <see cref="Range"/>.</summary>
+        public readonly float ScanRange(float visionRange) =>
+            math.max(AcquireRange > 0f ? AcquireRange : visionRange, Range);
+
+        /// <summary>The hit it deals: full damage to the target plus its splash, if any.</summary>
+        public readonly DamageEvent Hit(Entity source, byte faction, float3 origin, Entity target, float3 position) => new()
+        {
+            Target = target,
+            Position = position,
+            Origin = origin,
+            Source = source,
+            SourceFaction = faction,
+            Amount = Damage,
+            Type = DamageType,
+            GarrisonFactor = GarrisonFactor,
+            Radius = SplashRadius,
+            EdgeFactor = SplashEdgeFactor,
+            FriendlyFire = FriendlyFire,
+            Reach = Targets,
+        };
+
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
         public bool CoolingDown => CooldownRemaining > 0f;
@@ -139,9 +169,6 @@ namespace HyperRTS.Simulation.Combat
             var offset = random.NextFloat2Direction() * Spread * math.sqrt(random.NextFloat());
             return aim + new float3(offset.x, 0f, offset.y);
         }
-
-        public bool Affects(in BufferLookup<ArmorModifier> armor, Entity target) =>
-            MinEffect <= 0f || CombatMath.ArmorMultiplier(armor, target, DamageType) >= MinEffect;
 
         /// <summary>Where a projectile starts: the posed muzzle, else <see cref="ProjectileHeight"/> above the pivot.</summary>
         public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose) =>

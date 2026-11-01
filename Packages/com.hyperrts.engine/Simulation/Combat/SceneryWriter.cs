@@ -79,31 +79,15 @@ namespace HyperRTS.Simulation.Combat
             }
         }
 
-        /// <summary>
-        /// Breaks and rebuilds a sectioned building's sections to match <paramref name="broken"/>; the settling that
-        /// follows opens paths and drops rubble as the server's did.
-        /// </summary>
+        /// <summary>Matches a sectioned building's broken sections to <paramref name="broken"/>, as the server's are.</summary>
         public void SetBroken(Entity scenery, ulong broken)
         {
-            if (!_buildings.TryGetComponent(scenery, out var building) || building.Broken == broken)
+            if (!_buildings.TryGetComponent(scenery, out var building))
             {
                 return;
             }
 
-            var sections = _sections[scenery];
-            for (var i = 0; i < sections.Length; i++)
-            {
-                var section = sections[i];
-                var now = (broken & (1ul << i)) != 0;
-                if (now != section.IsBroken)
-                {
-                    section.Health = now ? 0f : section.MaxHealth;
-                    section.BreakOrder = now ? ++building.Breaks : 0;
-                    sections[i] = section;
-                }
-            }
-
-            building.Broken = broken;
+            building.SetBroken(_sections[scenery], broken);
             _buildings[scenery] = building;
         }
 
@@ -121,31 +105,13 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Removes a piece or its remains with nothing left behind, as a building site does.</summary>
         public void Clear(Entity piece, EntityCommandBuffer ecb)
         {
-            var parts = new NativeList<Entity>(4, Allocator.Temp);
-            EntityParts.Collect(piece, _groups, _children, parts);
-            ecb.DestroyEntity(parts.AsArray());
+            EntityParts.Destroy(piece, _groups, _children, ecb.AsParallelWriter(), 0);
         }
 
         private void SpawnRemains(Entity scenery, Entity prefab, bool witnessed, byte fall, EntityCommandBuffer ecb)
         {
-            var remains = Remains.FromPiece(scenery, _transforms[scenery], fall, witnessed, _remainsLookups);
-            var spawned = ecb.Instantiate(prefab);
-            ecb.Place(spawned, remains.Transform, remains.StretchMatrix);
-            if (remains.Stretched)
-            {
-                ecb.AddComponent(spawned, remains.Stretch);
-            }
-
-            if (remains.PartsStretched)
-            {
-                ecb.AddComponent(spawned, remains.Parts);
-            }
-
-            if (remains.Felled)
-            {
-                ecb.AddComponent(spawned, remains.ToppleFall);
-            }
-
+            var spawned = _remainsLookups.Spawn(ecb.AsParallelWriter(), 0, scenery, prefab, _transforms[scenery], fall,
+                witnessed);
             if (!witnessed && _effects.HasComponent(prefab))
             {
                 ecb.SetComponentEnabled<SpawnEffect>(spawned, false);

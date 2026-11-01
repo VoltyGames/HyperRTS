@@ -86,7 +86,7 @@ namespace HyperRTS.Network.Scenery
 
         private void Track(ref SystemState state, ushort teams)
         {
-            var fallen = SystemAPI.GetComponentLookup<ToppleHeading>(true);
+            var fallen = SystemAPI.GetComponentLookup<LethalHit>(true);
             var buildings = SystemAPI.GetComponentLookup<Sections>(true);
             foreach (var (health, id, entity) in SystemAPI.Query<RefRO<Health>, RefRO<SceneryId>>()
                          .WithAll<LocalTransform>().WithNone<GhostInstance>().WithChangeFilter<Health>().WithEntityAccess())

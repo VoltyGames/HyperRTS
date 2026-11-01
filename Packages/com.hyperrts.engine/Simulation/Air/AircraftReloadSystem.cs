@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Air
                         continue;
                     }
 
-                    if (mount.HasRounds)
+                    if (!mount.Ammo.Empty)
                     {
                         return false;
                     }
@@ -132,9 +132,9 @@ namespace HyperRTS.Simulation.Air
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    if (mount.Refill == AmmoRefill.Docked)
+                    if (mount.Ammo.Refill == AmmoRefill.Docked)
                     {
-                        mount.Reload(DeltaTime);
+                        mount.Ammo.Reload(DeltaTime);
                         mounts[i] = mount;
                     }
                 }

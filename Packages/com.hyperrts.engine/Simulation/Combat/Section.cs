@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -36,6 +37,14 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>An outer wall, which shelters a garrison.</summary>
         public bool Exterior;
+
+        /// <summary>A broken outer wall on the ground leaves a heap at its foot.</summary>
+        public readonly bool LeavesRubble => Exterior && Anchored;
+
+        /// <summary>The heap's pose: on the ground under the wall, turned with the building.</summary>
+        public readonly LocalTransform RubblePose(in LocalTransform building) =>
+            LocalTransform.FromPositionRotation(building.TransformPoint(new float3(Center.x, 0f, Center.z)),
+                building.Rotation);
 
         /// <summary>Carries the walkable deck of the building's <see cref="NavArea"/>, which closes while it is broken.</summary>
         public bool Deck;

@@ -34,10 +34,4 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Unwitnessed falls show lying down at once.</summary>
         public bool Witnessed;
     }
-
-    /// <summary>The fall heading (<see cref="ToppleMath"/>) a <see cref="Topple"/> piece's lethal hit gave it.</summary>
-    public struct ToppleHeading : IComponentData
-    {
-        public byte Heading;
-    }
 }

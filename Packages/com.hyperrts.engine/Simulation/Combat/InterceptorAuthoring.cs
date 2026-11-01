@@ -118,9 +118,7 @@ namespace HyperRTS.Simulation.Combat
                 Kinds = kinds,
                 Aim = aim,
                 Pose = (byte)Pose,
-                Rounds = rounds,
-                MaxRounds = rounds,
-                ReloadTime = reloadTime,
+                Ammo = Ammo.Create(rounds, reloadTime, AmmoRefill.Round),
             };
         }
 

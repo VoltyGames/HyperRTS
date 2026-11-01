@@ -154,13 +154,13 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             _world.Run(2f);
             Assert.AreEqual(80f, _world.GetHealth(enemy), "two rounds, then it held fire");
-            Assert.AreEqual(0, _world.Mount(gun).Rounds);
+            Assert.AreEqual(0, _world.Mount(gun).Ammo.Current);
 
             _world.EntityManager.DestroyEntity(enemy);
             _world.EntityManager.AddComponent<Docked>(gun);
             _world.Run(1.5f);
 
-            Assert.AreEqual(2, _world.Mount(gun).Rounds, "reloaded while docked");
+            Assert.AreEqual(2, _world.Mount(gun).Ammo.Current, "reloaded while docked");
         }
 
         [Test]

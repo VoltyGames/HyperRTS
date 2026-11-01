@@ -17,21 +17,19 @@ namespace HyperRTS.Simulation.Combat
 
         private FactionRelations _relations;
         private TargetLookup _targets;
-        [ReadOnly] private BufferLookup<ArmorModifier> _armor;
         private Weapon _weapon;
         private byte _faction;
         private byte _team;
         private float3 _center;
         private float _radius;
 
-        public NearestHostile(in FactionRelations relations, in TargetLookup targets,
-            in BufferLookup<ArmorModifier> armor, in Weapon weapon, byte faction, float3 center, float radius)
+        public NearestHostile(in FactionRelations relations, in TargetLookup targets, in Weapon weapon, byte faction,
+            float3 center, float radius)
         {
             Best = Entity.Null;
             BestDistance = float.MaxValue;
             _relations = relations;
             _targets = targets;
-            _armor = armor;
             _weapon = weapon;
             _faction = faction;
             _team = relations.GetTeam(faction);
@@ -41,12 +39,12 @@ namespace HyperRTS.Simulation.Combat
 
         public void Visit(in SpatialEntry entry)
         {
-            if (!_relations.IsHostile(_faction, entry.Faction) || !CombatMath.CanHit(_weapon.Targets, entry.Layer))
+            if (!_relations.IsHostile(_faction, entry.Faction) || !Weapon.CanHit(_weapon.Targets, entry.Layer))
             {
                 return;
             }
 
-            if (!_targets.IsSpotted(entry.Entity, entry.Position, _team) || !_weapon.Affects(_armor, entry.Entity))
+            if (!_targets.IsSpotted(entry.Entity, entry.Position, _team) || !_targets.Affects(entry.Entity, _weapon))
             {
                 return;
             }

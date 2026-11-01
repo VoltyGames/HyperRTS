@@ -11,7 +11,16 @@ namespace HyperRTS.Simulation.Combat
     /// </summary>
     public static class EntityParts
     {
-        public static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> groups, in BufferLookup<Child> children,
+        /// <summary>Destroys <paramref name="root"/> with everything it is made of.</summary>
+        public static void Destroy(Entity root, in BufferLookup<LinkedEntityGroup> groups,
+            in BufferLookup<Child> children, EntityCommandBuffer.ParallelWriter ecb, int sortKey)
+        {
+            var parts = new NativeList<Entity>(4, Allocator.Temp);
+            Collect(root, groups, children, parts);
+            ecb.DestroyEntity(sortKey, parts.AsArray());
+        }
+
+        private static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> groups, in BufferLookup<Child> children,
             NativeList<Entity> parts)
         {
             var start = parts.Length;

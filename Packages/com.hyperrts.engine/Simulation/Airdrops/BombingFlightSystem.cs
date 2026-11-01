@@ -142,7 +142,7 @@ namespace HyperRTS.Simulation.Airdrops
         }
 
         private static bool Covers(in Weapon weapon, float3 from, float3 point) =>
-            CombatMath.CanHit(weapon.Targets, NavLayer.Air) && weapon.Reaches(math.distance(from.xz, point.xz));
+            Weapon.CanHit(weapon.Targets, NavLayer.Air) && weapon.Reaches(math.distance(from.xz, point.xz));
 
         /// <summary>Enemy structures in the zone, nearest the aim point first.</summary>
         private NativeList<NearStructure> Structures(ref SystemState state, float3 point, float radius, byte faction,

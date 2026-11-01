@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
@@ -17,19 +16,8 @@ namespace HyperRTS.Simulation.Combat
     [DisallowMultipleComponent]
     public class ArmorAuthoring : AuthoringBehaviour
     {
-        [Serializable]
-        public struct Entry
-        {
-            [Tooltip("Damage type this entry applies to.")]
-            public DamageType damageType;
-
-            [Tooltip("Damage multiplier: 0.25 = takes a quarter, 2 = takes double.")]
-            [Min(0f)]
-            public float multiplier;
-        }
-
         [Tooltip("Per-type multipliers; unlisted types deal full damage.")]
-        public List<Entry> modifiers = new();
+        public List<DamageFactor> modifiers = new();
 
         [Header("Directional")]
         [Tooltip("Damage multiplier for hits within 45° of the front.")]

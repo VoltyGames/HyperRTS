@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             _world.Tick();
 
             var right = SectionOf(house, Right);
-            var expected = 30f * CombatMath.SplashFactor(right.Gap(centre), 3f, 0.5f);
+            var expected = 30f * new DamageEvent { Radius = 3f, EdgeFactor = 0.5f }.SplashFactor(right.Gap(centre));
             Assert.AreEqual(100f - expected, right.Health, 1e-3f);
             Assert.Less(SectionOf(house, Roof).Health, 100f, "the roof's edge is in reach");
             Assert.Greater(SectionOf(house, Roof).Health, right.Health, "and farther, so it takes less");

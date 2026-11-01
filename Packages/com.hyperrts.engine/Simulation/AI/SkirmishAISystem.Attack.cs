@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < army.Length; i++)
             {
                 var targets = SystemAPI.GetComponent<Weapon>(army.Entities[i]).Targets;
-                if (army.IsOwnedBy(i, faction) && CombatMath.CanHit(targets, NavLayer.Ground))
+                if (army.IsOwnedBy(i, faction) && Weapon.CanHit(targets, NavLayer.Ground))
                 {
                     wave.Add(i);
                     sum += army.Position(i);

@@ -22,7 +22,6 @@ namespace HyperRTS.Simulation.Combat
         private BufferLookup<StatModifier> _modifiers;
         private BufferLookup<DamageTakenModifier> _typedModifiers;
         private ComponentLookup<Destructible> _destructibles;
-        private ComponentLookup<ToppleHeading> _toppleHeadings;
         private ComponentLookup<LethalHit> _lethalHits;
         private ComponentLookup<Faction> _factions;
         private BufferLookup<EntityDamaged> _damaged;
@@ -43,7 +42,6 @@ namespace HyperRTS.Simulation.Combat
             _modifiers = state.GetBufferLookup<StatModifier>(true);
             _typedModifiers = state.GetBufferLookup<DamageTakenModifier>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
-            _toppleHeadings = state.GetComponentLookup<ToppleHeading>();
             _lethalHits = state.GetComponentLookup<LethalHit>();
             _factions = state.GetComponentLookup<Faction>(true);
             _damaged = state.GetBufferLookup<EntityDamaged>();
@@ -72,7 +70,6 @@ namespace HyperRTS.Simulation.Combat
             _modifiers.Update(ref state);
             _typedModifiers.Update(ref state);
             _destructibles.Update(ref state);
-            _toppleHeadings.Update(ref state);
             _lethalHits.Update(ref state);
             _factions.Update(ref state);
             _damaged.Update(ref state);
@@ -95,7 +92,6 @@ namespace HyperRTS.Simulation.Combat
                 Modifiers = _modifiers,
                 TypedModifiers = _typedModifiers,
                 Destructibles = _destructibles,
-                FallSources = _toppleHeadings,
                 LethalHits = _lethalHits,
                 Factions = _factions,
                 Damaged = _damaged,
@@ -123,7 +119,6 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public BufferLookup<StatModifier> Modifiers;
             [ReadOnly] public BufferLookup<DamageTakenModifier> TypedModifiers;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
-            public ComponentLookup<ToppleHeading> FallSources;
             public ComponentLookup<LethalHit> LethalHits;
             [ReadOnly] public ComponentLookup<Faction> Factions;
             public BufferLookup<EntityDamaged> Damaged;
@@ -166,7 +161,7 @@ namespace HyperRTS.Simulation.Combat
                     }
 
                     var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
-                    var amount = hit.Amount * CombatMath.SplashFactor(gap, hit.Radius, hit.EdgeFactor);
+                    var amount = hit.Amount * hit.SplashFactor(gap);
                     Apply(victim.Entity, amount, hit, hit.Position, damaged);
                 }
             }
@@ -174,7 +169,7 @@ namespace HyperRTS.Simulation.Combat
             /// <summary>Splash stays on the layers the hit reaches, so a ground burst spares aircraft above. Heals reach allies only.</summary>
             private bool SplashReaches(in DamageEvent hit, in SpatialEntry victim)
             {
-                if (!CombatMath.CanHit(hit.Reach, victim.Layer))
+                if (!Weapon.CanHit(hit.Reach, victim.Layer))
                 {
                     return false;
                 }
@@ -205,7 +200,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 PassToPassengers(target, amount, health, hit, from);
-                var scale = CombatMath.ArmorMultiplier(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
+                var scale = ArmorModifier.Against(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
                             StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
                 amount = BuildingSections.HasBuffer(target) ? Route(target, hit, scale) : amount * scale;
                 var overkill = amount - health.Current;
@@ -216,12 +211,6 @@ namespace HyperRTS.Simulation.Combat
                 {
                     var heading = ToppleMath.Quantize(from, Transforms[target].Position);
                     LethalHits[target] = new LethalHit { Type = hit.Type, Overkill = overkill, Heading = heading };
-                }
-
-                if (health.Current <= 0f && FallSources.HasComponent(target))
-                {
-                    var fall = ToppleMath.Quantize(from, Transforms[target].Position);
-                    FallSources[target] = new ToppleHeading { Heading = fall };
                 }
 
                 if (Attackers.HasComponent(target) && hit.SourceFaction != 0)

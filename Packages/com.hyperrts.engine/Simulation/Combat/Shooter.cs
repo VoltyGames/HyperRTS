@@ -12,12 +12,11 @@ namespace HyperRTS.Simulation.Combat
     /// Fires a weapon from a job: the fire cue, an instant hit or a launched <see cref="Projectile"/>, and the stealth
     /// reveal. Use from one thread.
     /// </summary>
-    public struct ShotWriter
+    public struct Shooter
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
         private ComponentLookup<Stealth> _stealth;
-        private ComponentLookup<Ammo> _ammo;
         [ReadOnly] private ComponentLookup<Deployable> _deployables;
         [ReadOnly] private BufferLookup<WeaponMuzzle> _muzzles;
         [ReadOnly] private ComponentLookup<Inside> _inside;
@@ -27,12 +26,11 @@ namespace HyperRTS.Simulation.Combat
         private CueWriter _cues;
         private EntityCommandBuffer _ecb;
 
-        public ShotWriter(ref SystemState state) : this()
+        public Shooter(ref SystemState state) : this()
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
             _stealth = state.GetComponentLookup<Stealth>();
-            _ammo = state.GetComponentLookup<Ammo>();
             _deployables = state.GetComponentLookup<Deployable>(true);
             _muzzles = state.GetBufferLookup<WeaponMuzzle>(true);
             _inside = state.GetComponentLookup<Inside>(true);
@@ -48,7 +46,6 @@ namespace HyperRTS.Simulation.Combat
             _transforms.Update(ref state);
             _stretches.Update(ref state);
             _stealth.Update(ref state);
-            _ammo.Update(ref state);
             _deployables.Update(ref state);
             _muzzles.Update(ref state);
             _inside.Update(ref state);
@@ -59,30 +56,12 @@ namespace HyperRTS.Simulation.Combat
             _ecb = ecb;
         }
 
-        /// <summary>Spends one of the shooter's <see cref="Ammo"/> rounds; shooters without ammo never run dry.</summary>
-        public bool TryUseRound(Entity shooter)
-        {
-            if (!_ammo.TryGetRefRW(shooter, out var ammo))
-            {
-                return true;
-            }
-
-            if (ammo.ValueRO.Current <= 0)
-            {
-                return false;
-            }
-
-            ammo.ValueRW.Current--;
-            return true;
-        }
-
         /// <summary>
         /// The fire step both the primary and the mounts take: deployed if it must be, off cooldown, a turret on target,
-        /// spend a round (the shooter's <see cref="Ammo"/> when <paramref name="usesShooterAmmo"/>), restart the
-        /// cooldown or step the salvo, and fire from the next muzzle.
+        /// restart the cooldown or step the
+        /// salvo, and fire from the next muzzle.
         /// </summary>
-        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction,
-            bool usesShooterAmmo)
+        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction)
         {
             if (Deployable.Holds(_deployables, shooter, weapon))
             {
@@ -91,11 +70,6 @@ namespace HyperRTS.Simulation.Combat
             }
 
             if (weapon.CoolingDown || !Aimed(shooter, weapon, pose, target))
-            {
-                return false;
-            }
-
-            if (usesShooterAmmo && !TryUseRound(shooter))
             {
                 return false;
             }
@@ -156,10 +130,10 @@ namespace HyperRTS.Simulation.Combat
             if (weapon.ProjectilePrefab == Entity.Null)
             {
                 var origin = shot.HitOrigin(place, fired);
-                var hit = CombatMath.Hit(weapon, shooter, faction, origin, target, targetPosition);
+                var hit = weapon.Hit(shooter, faction, origin, target, targetPosition);
                 _damage.Add(hit);
                 var along = math.normalizesafe(targetPosition - origin, place.Forward());
-                _cues.AddImpact(_cues.TypeIdFor(shooter, CueSlot.Impact), hit, along);
+                hit.AddImpact(ref _cues, _cues.TypeIdFor(shooter, CueSlot.Impact), along);
             }
             else
             {
@@ -215,7 +189,7 @@ namespace HyperRTS.Simulation.Combat
                 Speed = weapon.ProjectileSpeed,
                 Height = weapon.ProjectileHeight,
                 ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
-                Hit = CombatMath.Hit(weapon, shooter, faction, origin, weapon.KeepsLock ? target : Entity.Null, aim),
+                Hit = weapon.Hit(shooter, faction, origin, weapon.KeepsLock ? target : Entity.Null, aim),
                 Trajectory = weapon.Trajectory,
                 Kind = weapon.ProjectileKind,
                 Start = origin,

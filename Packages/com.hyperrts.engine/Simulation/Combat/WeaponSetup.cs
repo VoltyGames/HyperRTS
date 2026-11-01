@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Combat
         public static void AddAmmo<TWriter>(ref TWriter writer, int rounds, float reloadTime, AmmoRefill refill)
             where TWriter : struct, IEntityWriter
         {
-            writer.Add(new Ammo { Max = rounds, Current = rounds, ReloadTime = reloadTime, Refill = refill });
+            writer.Add(Ammo.Create(rounds, reloadTime, refill));
         }
 
         /// <summary>The muzzles of weapons that fire from several in turn; see <see cref="Weapon.FirstMuzzle"/>.</summary>

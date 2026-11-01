@@ -38,5 +38,25 @@ namespace HyperRTS.Simulation.Combat
     {
         public UnityObjectRef<DamageType> DamageType;
         public float Multiplier;
+
+        /// <summary>The multiplier of the target's armor against <paramref name="damageType"/>, 1 when unlisted.</summary>
+        public static float Against(in BufferLookup<ArmorModifier> armor, Entity target,
+            UnityObjectRef<DamageType> damageType)
+        {
+            if (!armor.TryGetBuffer(target, out var modifiers))
+            {
+                return 1f;
+            }
+
+            foreach (var modifier in modifiers)
+            {
+                if (modifier.DamageType.Equals(damageType))
+                {
+                    return modifier.Multiplier;
+                }
+            }
+
+            return 1f;
+        }
     }
 }

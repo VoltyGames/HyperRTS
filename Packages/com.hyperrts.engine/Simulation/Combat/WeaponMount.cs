@@ -19,17 +19,7 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>What the mount shoots this frame; <c>Entity.Null</c> while it holds fire.</summary>
         public Entity Target;
 
-        public int Rounds;
-
-        /// <summary>0 never runs dry.</summary>
-        public int MaxRounds;
-
-        /// <summary>Seconds per round, or per magazine with <see cref="AmmoRefill.Magazine"/>.</summary>
-        public float ReloadTime;
-
-        public float ReloadElapsed;
-
-        public AmmoRefill Refill;
+        public Ammo Ammo;
 
         /// <summary>Research type the owner must have finished; 0 needs none.</summary>
         public int RequiredResearchTypeId;
@@ -43,17 +33,14 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>May pick its own target when it can't hit the shared one.</summary>
         public bool Independent;
 
-        public static WeaponMount Create(in Weapon weapon, int rounds, float reloadTime, AmmoRefill refill,
-            int requiredResearchTypeId, byte pose, bool independent) => new()
+        public static WeaponMount Create(in Weapon weapon, in Ammo ammo, int requiredResearchTypeId, byte pose,
+            bool independent) => new()
         {
             Weapon = Turned(weapon),
             BaseDamage = weapon.Damage,
             BaseRange = weapon.Range,
             BaseCooldown = weapon.Cooldown,
-            Rounds = rounds,
-            MaxRounds = rounds,
-            ReloadTime = reloadTime,
-            Refill = refill,
+            Ammo = ammo,
             RequiredResearchTypeId = requiredResearchTypeId,
             Pose = pose,
             Independent = independent,
@@ -68,22 +55,9 @@ namespace HyperRTS.Simulation.Combat
 
         public bool Enabled => RequiredResearchTypeId == 0 || Unlocked;
 
-        public bool HasRounds => MaxRounds == 0 || Rounds > 0;
-
         /// <summary>A usable mount that runs dry and needs reloading.</summary>
-        public bool IsLimited => Enabled && MaxRounds > 0;
+        public bool IsLimited => Enabled && Ammo.Limited;
 
-        public bool Ready => Enabled && HasRounds;
-
-        public void UseRound()
-        {
-            if (MaxRounds > 0)
-            {
-                Rounds--;
-            }
-        }
-
-        public void Reload(float deltaTime) =>
-            Ammo.Reload(ref Rounds, MaxRounds, ref ReloadElapsed, ReloadTime, Refill, deltaTime);
+        public bool Ready => Enabled && !Ammo.Empty;
     }
 }

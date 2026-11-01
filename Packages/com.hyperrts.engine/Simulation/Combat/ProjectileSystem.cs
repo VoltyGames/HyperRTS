@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Combat
                 hit.Origin = transform.Position;
                 Damage.Add(hit);
                 Ecb.DestroyEntity(entity);
-                Cues.AddImpact(projectile.ImpactTypeId, hit, transform.Forward());
+                hit.AddImpact(ref Cues, projectile.ImpactTypeId, transform.Forward());
             }
 
             private bool FlyDirect(ref LocalTransform transform, in Projectile projectile)

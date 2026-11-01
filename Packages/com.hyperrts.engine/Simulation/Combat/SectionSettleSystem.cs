@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>
     /// Follows a building's broken mask in every world, whether its own damage broke the sections or the server's
     /// changes did: sections on the ground open and close their <see cref="NavObstaclePart"/>s and deck sections their
-    /// <see cref="NavAreaPart"/>s (one per section, in order), and newly broken outer walls leave <see cref="SectionRubble"/>.
+    /// <see cref="NavAreaPart"/>s (one per section, in order), and newly broken outer walls leave a heap of rubble, map scenery with an id of its own that multiplayer can crush or clear.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -56,6 +56,14 @@ namespace HyperRTS.Simulation.Combat
             public BufferLookup<NavObstaclePart> Parts;
             public BufferLookup<NavAreaPart> Decks;
 
+            // Every world places the heap at the same spot, so its id is its pose.
+            private void SpawnRubble(Entity prefab, in LocalTransform pose)
+            {
+                var heap = Ecb.Instantiate(prefab);
+                Ecb.SetComponent(heap, pose);
+                Ecb.AddComponent(heap, SceneryId.At(pose.Position, pose.Rotation));
+            }
+
             private void Execute(Entity entity, in DynamicBuffer<Section> sections, in LocalTransform transform)
             {
                 var building = Buildings[entity];
@@ -67,9 +75,9 @@ namespace HyperRTS.Simulation.Combat
                 var broken = building.Broken & ~building.Settled;
                 for (var i = 0; i < sections.Length; i++)
                 {
-                    if ((broken & (1ul << i)) != 0 && building.Rubble != Entity.Null && SectionRubble.Leaves(sections[i]))
+                    if ((broken & (1ul << i)) != 0 && building.Rubble != Entity.Null && sections[i].LeavesRubble)
                     {
-                        SectionRubble.Spawn(Ecb, building.Rubble, transform, sections[i]);
+                        SpawnRubble(building.Rubble, sections[i].RubblePose(transform));
                     }
                 }
 

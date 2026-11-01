@@ -55,7 +55,8 @@ namespace HyperRTS.Simulation.Tests
                 MinEffect = minEffect,
             };
             Aim(ref weapon, 360f);
-            var mount = WeaponMount.Create(weapon, rounds, reloadTime, refill, requiredResearchTypeId, 1, independent);
+            var mount = WeaponMount.Create(weapon, Ammo.Create(rounds, reloadTime, refill), requiredResearchTypeId, 1,
+                independent);
             var writer = new EntityManagerWriter(world.EntityManager, entity);
             WeaponSetup.AddMounts(ref writer, new[] { mount });
             world.EntityManager.GetBuffer<WeaponPose>(entity).Add(default);

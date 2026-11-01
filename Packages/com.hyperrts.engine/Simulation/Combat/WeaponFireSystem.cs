@@ -30,7 +30,8 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Inside> _inside;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<FacingGoal> _facingGoals;
-        private ShotWriter _shots;
+        private ComponentLookup<Ammo> _ammo;
+        private Shooter _shots;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -40,7 +41,8 @@ namespace HyperRTS.Simulation.Combat
             _inside = state.GetComponentLookup<Inside>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _facingGoals = state.GetComponentLookup<FacingGoal>();
-            _shots = new ShotWriter(ref state);
+            _ammo = state.GetComponentLookup<Ammo>();
+            _shots = new Shooter(ref state);
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -54,6 +56,7 @@ namespace HyperRTS.Simulation.Combat
             _inside.Update(ref state);
             _transforms.Update(ref state);
             _facingGoals.Update(ref state);
+            _ammo.Update(ref state);
             _shots.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
                 SystemAPI.GetSingletonEntity<CueQueue>(),
                 SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
@@ -68,6 +71,7 @@ namespace HyperRTS.Simulation.Combat
                 InsideLookup = _inside,
                 Transforms = _transforms,
                 FacingGoals = _facingGoals,
+                Ammos = _ammo,
                 Shots = _shots,
             }.Schedule();
         }
@@ -83,7 +87,8 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             public ComponentLookup<FacingGoal> FacingGoals;
-            public ShotWriter Shots;
+            public ComponentLookup<Ammo> Ammos;
+            public Shooter Shots;
 
             private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
                 EnabledRefRO<AttackTarget> attacking, in Faction faction)
@@ -104,7 +109,16 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                Shots.TryFire(entity, ref weapon, 0, target, faction.Value, true);
+                var limited = Ammos.TryGetRefRW(entity, out var ammo);
+                if (limited && ammo.ValueRO.Empty)
+                {
+                    return;
+                }
+
+                if (Shots.TryFire(entity, ref weapon, 0, target, faction.Value) && limited)
+                {
+                    ammo.ValueRW.Spend();
+                }
             }
 
             /// <summary>Turns the hull level toward the target; true once it faces it within <paramref name="tolerance"/>.</summary>

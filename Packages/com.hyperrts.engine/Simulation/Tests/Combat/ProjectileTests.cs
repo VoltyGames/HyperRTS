@@ -262,9 +262,7 @@ namespace HyperRTS.Simulation.Tests.Combat
                     AimTolerance = math.radians(2f),
                 },
                 Pose = pose,
-                Rounds = rounds,
-                MaxRounds = rounds,
-                ReloadTime = reloadTime,
+                Ammo = Ammo.Create(rounds, reloadTime, AmmoRefill.Round),
             };
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
             InterceptorAuthoring.Add(ref writer, interceptor);

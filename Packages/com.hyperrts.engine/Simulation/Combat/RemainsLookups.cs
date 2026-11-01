@@ -1,10 +1,11 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
-    /// <summary>The read-only lookups <see cref="Remains.FromPiece"/> takes a destroyed piece's stretch and fall from.</summary>
+    /// <summary>The read-only lookups a destroyed piece's remains take their stretch and fall from, and the one place they spawn.</summary>
     public struct RemainsLookups
     {
         [ReadOnly] public ComponentLookup<PostTransformMatrix> Stretches;
@@ -17,6 +18,34 @@ namespace HyperRTS.Simulation.Combat
             PartStretches = state.GetComponentLookup<PartStretch>(true),
             Topples = state.GetComponentLookup<Topple>(true),
         };
+
+        /// <summary>
+        /// Spawns <paramref name="prefab"/> as the remains of <paramref name="piece"/>, which stood at
+        /// <paramref name="standing"/>; <paramref name="fall"/> is read only for <see cref="Topple"/> pieces.
+        /// </summary>
+        public Entity Spawn(EntityCommandBuffer.ParallelWriter ecb, int sortKey, Entity piece, Entity prefab,
+            in LocalTransform standing, byte fall, bool witnessed)
+        {
+            var remains = Remains.FromPiece(piece, standing, fall, witnessed, this);
+            var spawned = ecb.Instantiate(sortKey, prefab);
+            ecb.Place(sortKey, spawned, remains.Transform, remains.StretchMatrix);
+            if (remains.Stretched)
+            {
+                ecb.AddComponent(sortKey, spawned, remains.Stretch);
+            }
+
+            if (remains.PartsStretched)
+            {
+                ecb.AddComponent(sortKey, spawned, remains.Parts);
+            }
+
+            if (remains.Felled)
+            {
+                ecb.AddComponent(sortKey, spawned, remains.ToppleFall);
+            }
+
+            return spawned;
+        }
 
         public void Update(ref SystemState state)
         {

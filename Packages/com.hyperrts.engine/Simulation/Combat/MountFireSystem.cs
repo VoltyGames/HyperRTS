@@ -23,8 +23,7 @@ namespace HyperRTS.Simulation.Combat
     {
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
-        private BufferLookup<ArmorModifier> _armor;
-        private ShotWriter _shots;
+        private Shooter _shots;
         private uint _frame;
 
         [BurstCompile]
@@ -32,8 +31,7 @@ namespace HyperRTS.Simulation.Combat
         {
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _armor = state.GetBufferLookup<ArmorModifier>(true);
-            _shots = new ShotWriter(ref state);
+            _shots = new Shooter(ref state);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<FogOfWar>();
@@ -46,7 +44,6 @@ namespace HyperRTS.Simulation.Combat
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state, _fogQuery);
-            _armor.Update(ref state);
             _frame++;
 
             new AimJob
@@ -54,7 +51,6 @@ namespace HyperRTS.Simulation.Combat
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Targets = _targets,
-                Armor = _armor,
                 Slot = (int)(_frame % TargetAcquisitionSystem.ScanInterval),
             }.ScheduleParallel();
 
@@ -76,7 +72,6 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public SpatialIndex Index;
             public FactionRelations Relations;
             public TargetLookup Targets;
-            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
             public int Slot;
 
             private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in LocalTransform transform,
@@ -135,7 +130,7 @@ namespace HyperRTS.Simulation.Combat
             private Entity Scan(Entity entity, float3 position, in Weapon weapon, byte faction)
             {
                 var radius = Targets.Radius(entity);
-                var finder = new NearestHostile(Relations, Targets, Armor, weapon, faction, position, radius);
+                var finder = new NearestHostile(Relations, Targets, weapon, faction, position, radius);
                 Index.Query(position, weapon.Range + radius, ref finder);
                 var found = finder.Best != Entity.Null;
                 return found && CanShoot(entity, position, weapon, finder.Best) ? finder.Best : Entity.Null;
@@ -145,7 +140,7 @@ namespace HyperRTS.Simulation.Combat
                 Targets.IsAlive(target) && InReach(entity, position, weapon, target);
 
             private bool InReach(Entity entity, float3 position, in Weapon weapon, Entity target) =>
-                Targets.CanHurt(target, weapon, Armor) && weapon.Reaches(Targets.Gap(entity, position, target));
+                Targets.CanHurt(target, weapon) && weapon.Reaches(Targets.Gap(entity, position, target));
         }
 
         [BurstCompile]
@@ -153,7 +148,7 @@ namespace HyperRTS.Simulation.Combat
         private partial struct ShotJob : IJobEntity
         {
             public float DeltaTime;
-            public ShotWriter Shots;
+            public Shooter Shots;
 
             private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in Faction faction)
             {
@@ -166,9 +161,9 @@ namespace HyperRTS.Simulation.Combat
                     {
                         mount.Weapon.EndSalvo();
                     }
-                    else if (Shots.TryFire(entity, ref mount.Weapon, mount.Pose, mount.Target, faction.Value, false))
+                    else if (Shots.TryFire(entity, ref mount.Weapon, mount.Pose, mount.Target, faction.Value))
                     {
-                        mount.UseRound();
+                        mount.Ammo.Spend();
                     }
 
                     mounts[i] = mount;

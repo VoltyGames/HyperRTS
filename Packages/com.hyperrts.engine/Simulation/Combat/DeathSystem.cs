@@ -20,7 +20,6 @@ namespace HyperRTS.Simulation.Combat
     {
         private ComponentLookup<SpawnOnDeath> _spawnLookup;
         private RemainsLookups _remains;
-        private ComponentLookup<ToppleHeading> _toppleHeadings;
         private ComponentLookup<DropRemains> _drops;
         private ComponentLookup<TurretToss> _tosses;
         private ComponentLookup<LethalHit> _lethalHits;
@@ -34,7 +33,6 @@ namespace HyperRTS.Simulation.Combat
         {
             _spawnLookup = state.GetComponentLookup<SpawnOnDeath>(true);
             _remains = RemainsLookups.Create(ref state);
-            _toppleHeadings = state.GetComponentLookup<ToppleHeading>(true);
             _drops = state.GetComponentLookup<DropRemains>(true);
             _tosses = state.GetComponentLookup<TurretToss>(true);
             _lethalHits = state.GetComponentLookup<LethalHit>(true);
@@ -50,7 +48,6 @@ namespace HyperRTS.Simulation.Combat
         {
             _spawnLookup.Update(ref state);
             _remains.Update(ref state);
-            _toppleHeadings.Update(ref state);
             _drops.Update(ref state);
             _tosses.Update(ref state);
             _lethalHits.Update(ref state);
@@ -64,7 +61,7 @@ namespace HyperRTS.Simulation.Combat
             state.Dependency = new DeathJob
             {
                 Ecb = ecb, SpawnLookup = _spawnLookup, RemainsLookups = _remains,
-                FallSources = _toppleHeadings, Drops = _drops,
+                Drops = _drops,
                 Tosses = _tosses, LethalHits = _lethalHits, TossTypes = _tossTypes, Ids = _ids, Groups = _groups, Children = _children,
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new ClearJob { Ecb = ecb, Groups = _groups, Children = _children }
@@ -80,7 +77,6 @@ namespace HyperRTS.Simulation.Combat
             public EntityCommandBuffer.ParallelWriter Ecb;
             [ReadOnly] public ComponentLookup<SpawnOnDeath> SpawnLookup;
             [ReadOnly] public RemainsLookups RemainsLookups;
-            [ReadOnly] public ComponentLookup<ToppleHeading> FallSources;
             [ReadOnly] public ComponentLookup<DropRemains> Drops;
             [ReadOnly] public ComponentLookup<TurretToss> Tosses;
             [ReadOnly] public ComponentLookup<LethalHit> LethalHits;
@@ -98,9 +94,7 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 dead.ValueRW = true;
-                var parts = new NativeList<Entity>(4, Allocator.Temp);
-                EntityParts.Collect(entity, Groups, Children, parts);
-                Ecb.DestroyEntity(sortKey, parts.AsArray());
+                EntityParts.Destroy(entity, Groups, Children, Ecb, sortKey);
                 if (SpawnLookup.TryGetComponent(entity, out var spawn))
                 {
                     var thrown = Tosses.TryGetComponent(entity, out var toss) && Catastrophic(entity, toss, health);
@@ -131,26 +125,9 @@ namespace HyperRTS.Simulation.Combat
             /// </summary>
             private void SpawnRemains(int sortKey, Entity entity, Entity prefab, in LocalTransform transform)
             {
-                // Only Topple pieces carry ToppleHeading, and only they read the heading.
-                FallSources.TryGetComponent(entity, out var fell);
-                var remains = Remains.FromPiece(entity, transform, fell.Heading, true, RemainsLookups);
-                var spawned = Ecb.Instantiate(sortKey, prefab);
-                Ecb.Place(sortKey, spawned, remains.Transform, remains.StretchMatrix);
-                if (remains.Stretched)
-                {
-                    Ecb.AddComponent(sortKey, spawned, remains.Stretch);
-                }
-
-                if (remains.PartsStretched)
-                {
-                    Ecb.AddComponent(sortKey, spawned, remains.Parts);
-                }
-
-                if (remains.Felled)
-                {
-                    Ecb.AddComponent(sortKey, spawned, remains.ToppleFall);
-                }
-
+                // Only Topple pieces and turret tosses carry a LethalHit, and only Topple pieces read the heading.
+                LethalHits.TryGetComponent(entity, out var fell);
+                var spawned = RemainsLookups.Spawn(Ecb, sortKey, entity, prefab, transform, fell.Heading, true);
                 if (Drops.HasComponent(entity))
                 {
                     Ecb.AddComponent<FallingRemains>(sortKey, spawned);
@@ -174,9 +151,7 @@ namespace HyperRTS.Simulation.Combat
 
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity)
             {
-                var parts = new NativeList<Entity>(4, Allocator.Temp);
-                EntityParts.Collect(entity, Groups, Children, parts);
-                Ecb.DestroyEntity(sortKey, parts.AsArray());
+                EntityParts.Destroy(entity, Groups, Children, Ecb, sortKey);
             }
         }
     }

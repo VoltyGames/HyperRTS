@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Combat
                     continue;
                 }
 
-                var share = i == entry ? 1f : CombatMath.SplashFactor(gap, hit.Radius, hit.EdgeFactor);
+                var share = i == entry ? 1f : hit.SplashFactor(gap);
                 var amount = hit.Amount * share * scale * SectionFactor.Find(factors, section.Material, hit.Type);
                 dealt += Damage(sections, i, amount);
             }
@@ -86,6 +86,32 @@ namespace HyperRTS.Simulation.Combat
 
             sections[index] = section;
             return dealt;
+        }
+
+        /// <summary>
+        /// Breaks and rebuilds sections so exactly those in <paramref name="broken"/> stand broken, as another world
+        /// decided; the settling that follows opens paths and drops rubble.
+        /// </summary>
+        public void SetBroken(DynamicBuffer<Section> sections, ulong broken)
+        {
+            if (Broken == broken)
+            {
+                return;
+            }
+
+            for (var i = 0; i < sections.Length; i++)
+            {
+                var section = sections[i];
+                var now = (broken & (1ul << i)) != 0;
+                if (now != section.IsBroken)
+                {
+                    section.Health = now ? 0f : section.MaxHealth;
+                    section.BreakOrder = now ? ++Breaks : 0;
+                    sections[i] = section;
+                }
+            }
+
+            Broken = broken;
         }
 
         /// <summary>The mask with a bit for each of <paramref name="count"/> sections.</summary>

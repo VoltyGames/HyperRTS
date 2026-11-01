@@ -12,52 +12,60 @@ namespace HyperRTS.Simulation.Combat
         public float ReloadElapsed;
         public AmmoRefill Refill;
 
-        public void Reload(float deltaTime) =>
-            Reload(ref Current, Max, ref ReloadElapsed, ReloadTime, Refill, deltaTime);
+        /// <summary>0 rounds max never runs dry.</summary>
+        public bool Limited => Max > 0;
+
+        public bool Empty => Limited && Current <= 0;
+
+        public void Spend()
+        {
+            if (Limited)
+            {
+                Current--;
+            }
+        }
+
+        public static Ammo Create(int rounds, float reloadTime, AmmoRefill refill) => new()
+        {
+            Max = rounds,
+            Current = rounds,
+            ReloadTime = reloadTime,
+            Refill = refill,
+        };
 
         /// <summary>
-        /// Refills one round per <paramref name="reloadTime"/>, or with <see cref="AmmoRefill.Magazine"/> all of them
-        /// once <paramref name="reloadTime"/> has passed since it ran empty. <see cref="WeaponMount"/> and
-        /// <see cref="Interceptor"/> share it.
+        /// Refills one round per <see cref="ReloadTime"/>, or with <see cref="AmmoRefill.Magazine"/> all of them once
+        /// <see cref="ReloadTime"/> has passed since it ran empty.
         /// </summary>
-        public static void Reload(ref int rounds, int max, ref float elapsed, float reloadTime, AmmoRefill refill,
-            float deltaTime)
+        public void Reload(float deltaTime)
         {
-            if (!CanReload(rounds, max, refill))
+            if (!CanReload())
             {
-                elapsed = 0f;
+                ReloadElapsed = 0f;
                 return;
             }
 
-            elapsed += deltaTime;
-            if (elapsed < reloadTime)
+            ReloadElapsed += deltaTime;
+            if (ReloadElapsed < ReloadTime)
             {
                 return;
             }
 
-            if (refill == AmmoRefill.Magazine)
+            if (Refill == AmmoRefill.Magazine)
             {
-                elapsed = 0f;
-                rounds = max;
+                ReloadElapsed = 0f;
+                Current = Max;
                 return;
             }
 
-            elapsed -= reloadTime;
-            rounds++;
+            ReloadElapsed -= ReloadTime;
+            Current++;
         }
 
         /// <summary>Weapons without ammo never run dry.</summary>
         public static bool IsEmpty(in ComponentLookup<Ammo> lookup, Entity entity) =>
-            lookup.TryGetComponent(entity, out var ammo) && ammo.Current <= 0;
+            lookup.TryGetComponent(entity, out var ammo) && ammo.Empty;
 
-        private static bool CanReload(int rounds, int max, AmmoRefill refill)
-        {
-            if (rounds >= max)
-            {
-                return false;
-            }
-
-            return refill != AmmoRefill.Magazine || rounds <= 0;
-        }
+        private bool CanReload() => Current < Max && (Refill != AmmoRefill.Magazine || Current <= 0);
     }
 }

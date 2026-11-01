@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Combat
                 Due = due, Now = now, Decays = _decays, Transforms = _transforms, Blockers = _blockers,
                 Groups = _groups, Children = _children,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(state.WorldUnmanaged),
+                    .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
             }.Schedule(state.Dependency);
             due.Dispose(state.Dependency);
         }
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Combat
             public ComponentLookup<Blocker> Blockers;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
-            public EntityCommandBuffer Ecb;
+            public EntityCommandBuffer.ParallelWriter Ecb;
 
             public void Execute()
             {
@@ -118,9 +118,7 @@ namespace HyperRTS.Simulation.Combat
                     return;
                 }
 
-                var parts = new NativeList<Entity>(4, Allocator.Temp);
-                EntityParts.Collect(entity, Groups, Children, parts);
-                Ecb.DestroyEntity(parts.AsArray());
+                EntityParts.Destroy(entity, Groups, Children, Ecb, 0);
             }
         }
     }

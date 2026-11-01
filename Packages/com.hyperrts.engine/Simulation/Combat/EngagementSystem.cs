@@ -31,7 +31,6 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Ammo> _ammo;
         private ComponentLookup<Deployable> _deployables;
         private BufferLookup<WeaponMount> _mounts;
-        private BufferLookup<ArmorModifier> _armor;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -43,7 +42,6 @@ namespace HyperRTS.Simulation.Combat
             _ammo = state.GetComponentLookup<Ammo>(true);
             _deployables = state.GetComponentLookup<Deployable>(true);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
-            _armor = state.GetBufferLookup<ArmorModifier>(true);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -56,7 +54,6 @@ namespace HyperRTS.Simulation.Combat
             _ammo.Update(ref state);
             _deployables.Update(ref state);
             _mounts.Update(ref state);
-            _armor.Update(ref state);
 
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
 
@@ -70,7 +67,6 @@ namespace HyperRTS.Simulation.Combat
                 AmmoLookup = _ammo,
                 Deployables = _deployables,
                 Mounts = _mounts,
-                Armor = _armor,
             }.ScheduleParallel();
         }
 
@@ -85,7 +81,6 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
-            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
 
             // Each entity writes only its own MoveDestination.
             [NativeDisableParallelForRestriction] public ComponentLookup<MoveDestination> Moves;
@@ -185,7 +180,7 @@ namespace HyperRTS.Simulation.Combat
 
                 // Defensive units measure from their post, so a fleeing target can't drag them away.
                 var origin = stance.Value == Stance.Defensive ? stance.ReturnPoint : position;
-                var leash = CombatMath.AcquireRange(weapon, vision.Value) * weapon.LeashFactor;
+                var leash = weapon.ScanRange(vision.Value) * weapon.LeashFactor;
                 return Targets.Gap(entity, origin, target) > leash;
             }
 
@@ -218,7 +213,7 @@ namespace HyperRTS.Simulation.Combat
                     return false;
                 }
 
-                return Targets.CanHurt(target, mount.Weapon, Armor);
+                return Targets.CanHurt(target, mount.Weapon);
             }
 
             private void Release(Entity entity, in Order order, in CombatStance stance, ref AttackTarget attack,
