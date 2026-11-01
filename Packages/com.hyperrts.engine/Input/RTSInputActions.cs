@@ -193,6 +193,16 @@ namespace HyperRTS.Input
                     ""interactions"": """",
                     ""initialStateCheck"": false,
                     ""priority"": 0
+                },
+                {
+                    ""name"": ""SightShape"",
+                    ""type"": ""Button"",
+                    ""id"": ""9d346b84-6285-51de-88e7-eaa2daf9aa9f"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
                 }
             ],
             ""bindings"": [
@@ -336,6 +346,28 @@ namespace HyperRTS.Input
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Group5"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ca62d0e7-6902-52b1-b480-1dab836e2fa9"",
+                    ""path"": ""<Keyboard>/leftAlt"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SightShape"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a1f0ea62-af17-5b7b-b630-5662a81e49dd"",
+                    ""path"": ""<Keyboard>/rightAlt"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SightShape"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -784,6 +816,7 @@ namespace HyperRTS.Input
             m_Selection_Group3 = m_Selection.FindAction("Group3", throwIfNotFound: true);
             m_Selection_Group4 = m_Selection.FindAction("Group4", throwIfNotFound: true);
             m_Selection_Group5 = m_Selection.FindAction("Group5", throwIfNotFound: true);
+            m_Selection_SightShape = m_Selection.FindAction("SightShape", throwIfNotFound: true);
             // Commands
             m_Commands = asset.FindActionMap("Commands", throwIfNotFound: true);
             m_Commands_Point = m_Commands.FindAction("Point", throwIfNotFound: true);
@@ -897,6 +930,7 @@ namespace HyperRTS.Input
         private readonly InputAction m_Selection_Group3;
         private readonly InputAction m_Selection_Group4;
         private readonly InputAction m_Selection_Group5;
+        private readonly InputAction m_Selection_SightShape;
         /// <summary>
         /// Provides access to input actions defined in input action map "Selection".
         /// </summary>
@@ -948,6 +982,10 @@ namespace HyperRTS.Input
             /// Provides access to the underlying input action "Selection/Group5".
             /// </summary>
             public InputAction @Group5 => m_Wrapper.m_Selection_Group5;
+            /// <summary>
+            /// Provides access to the underlying input action "Selection/SightShape".
+            /// </summary>
+            public InputAction @SightShape => m_Wrapper.m_Selection_SightShape;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -1004,6 +1042,9 @@ namespace HyperRTS.Input
                 @Group5.started += instance.OnGroup5;
                 @Group5.performed += instance.OnGroup5;
                 @Group5.canceled += instance.OnGroup5;
+                @SightShape.started += instance.OnSightShape;
+                @SightShape.performed += instance.OnSightShape;
+                @SightShape.canceled += instance.OnSightShape;
             }
 
             /// <summary>
@@ -1045,6 +1086,9 @@ namespace HyperRTS.Input
                 @Group5.started -= instance.OnGroup5;
                 @Group5.performed -= instance.OnGroup5;
                 @Group5.canceled -= instance.OnGroup5;
+                @SightShape.started -= instance.OnSightShape;
+                @SightShape.performed -= instance.OnSightShape;
+                @SightShape.canceled -= instance.OnSightShape;
             }
 
             /// <summary>
@@ -1512,6 +1556,13 @@ namespace HyperRTS.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnGroup5(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "SightShape" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnSightShape(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Commands" which allows adding and removing callbacks.

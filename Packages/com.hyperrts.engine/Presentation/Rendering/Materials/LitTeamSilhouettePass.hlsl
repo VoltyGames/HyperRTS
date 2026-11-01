@@ -51,6 +51,7 @@ half4 UnitMaskFragment(SilhouetteVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    ClipReveal(input.positionCS);
     return 0;
 }
 
@@ -59,6 +60,7 @@ half4 SilhouetteFragment(SilhouetteVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    ClipReveal(input.positionCS);
 
     clip(_TeamColor.a - 0.001);
     half3 normalWS = normalize(input.normalWS);

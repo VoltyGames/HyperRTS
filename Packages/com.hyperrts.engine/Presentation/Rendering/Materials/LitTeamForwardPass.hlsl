@@ -17,6 +17,7 @@ void LitTeamPassFragment(
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    ClipReveal(input.positionCS);
 
     // The mask follows the model's own UVs, not the base map's tiling.
     float2 uv0 = (input.uv - _BaseMap_ST.zw) / _BaseMap_ST.xy;

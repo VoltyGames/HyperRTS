@@ -313,10 +313,20 @@ grass stamps that skip unseen units test `FogHidden` and `Inside` on the root.
 
 ### Fog
 
-Entities hidden by fog, and passengers inside a container, stop rendering. `FogOfWarRenderer` publishes the local
-fog grid and its colour as shader globals. `FogOfWarFeature`, on the URP renderer with its shader set to
-`Hidden/HyperRTS/FogOfWar`, blends it full screen from the depth buffer before the transparents, so terrain and
-buildings fog where they stand while health bars, markers and the placement ghost stay clear. Water and effect
+Passengers inside a container stop rendering at once. An enemy the local player saw fades out over 0.25 s once it
+is in the fog (`FogVisibilitySystem.FadeTime`), then stops rendering; one coming into sight fades in. The fade is
+`RevealFade`, `_Reveal` on `HyperRTS/LitTeam`, which drops pixels in a 4 by 4 dither in the forward and silhouette
+passes; shadows stay until the unit hides. An enemy first spotted in the fog is hidden at once.
+
+`FogOfWarRenderer` publishes the local fog grid and its look as shader globals. Each restamp sets a target opacity
+per cell, and the shown grid eases toward it over `fadeTime` (0.3 s), so the edge moves smoothly; the shader blurs it
+over about a cell, so it reads round. `FogOfWarFeature`, on the URP renderer with its shader set to
+`Hidden/HyperRTS/FogOfWar`, copies the camera colour through the fog before the transparents, from the depth buffer:
+fogged ground loses `desaturation` of its colour and darkens toward the fog colour, so terrain and buildings fog where
+they stand while health bars, markers and the placement ghost stay clear. Transparents only darken.
+
+While the Selection map's `SightShape` key (Alt) is held, `SightShapeView` is shown and `SightShape` paints the
+ground the selected units see, from their `SightPatch`es, into a mask the fog pass outlines in `sightShapeColor`. Water and effect
 graphs apply it themselves through `SceneFog.hlsl` and `GraphFogOfWar.hlsl`. Map buildings stay visible, but their flags, dials and
 pips hide under the local fog.
 

@@ -41,6 +41,7 @@ float4 _TrackLift0;
 float4 _TrackLift1;
 float4 _TrackSpan;
 float _BuildProgress;
+float _Reveal;
 float _BuildDropHeight;
 float _BuildDropSlice;
 float _BuildDropFrom;
@@ -69,6 +70,7 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackLift1)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackSpan)
     UNITY_DOTS_INSTANCED_PROP(float , _BuildProgress)
+    UNITY_DOTS_INSTANCED_PROP(float , _Reveal)
     UNITY_DOTS_INSTANCED_PROP(float , _LightsOn)
     UNITY_DOTS_INSTANCED_PROP(float , _Cutoff)
     UNITY_DOTS_INSTANCED_PROP(float , _Smoothness)
@@ -90,6 +92,7 @@ static float4 unity_DOTS_Sampled_TrackLift0;
 static float4 unity_DOTS_Sampled_TrackLift1;
 static float4 unity_DOTS_Sampled_TrackSpan;
 static float  unity_DOTS_Sampled_BuildProgress;
+static float  unity_DOTS_Sampled_Reveal;
 static float  unity_DOTS_Sampled_LightsOn;
 static float  unity_DOTS_Sampled_Cutoff;
 static float  unity_DOTS_Sampled_Smoothness;
@@ -111,6 +114,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
     unity_DOTS_Sampled_TrackLift1           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackLift1);
     unity_DOTS_Sampled_TrackSpan            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackSpan);
     unity_DOTS_Sampled_BuildProgress        = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _BuildProgress);
+    unity_DOTS_Sampled_Reveal               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Reveal);
     unity_DOTS_Sampled_LightsOn             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _LightsOn);
     unity_DOTS_Sampled_Cutoff               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Cutoff);
     unity_DOTS_Sampled_Smoothness           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Smoothness);
@@ -134,6 +138,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 #define _TrackLift1             unity_DOTS_Sampled_TrackLift1
 #define _TrackSpan              unity_DOTS_Sampled_TrackSpan
 #define _BuildProgress          unity_DOTS_Sampled_BuildProgress
+#define _Reveal                 unity_DOTS_Sampled_Reveal
 #define _LightsOn               unity_DOTS_Sampled_LightsOn
 #define _Cutoff                 unity_DOTS_Sampled_Cutoff
 #define _Smoothness             unity_DOTS_Sampled_Smoothness
@@ -168,5 +173,14 @@ half4 GetSpecColor()                    { return _SpecColor; }
 half4 SampleSpecGlossMap(float2 uv)     { return _SpecColor; }
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/Materials/LitTeamSurface.hlsl"
+
+// Drops a growing share of a mesh's pixels in a 4 by 4 ordered pattern as _Reveal falls, so a unit fading into the
+// fog thins out instead of popping. 1 keeps every pixel.
+void ClipReveal(float4 positionCS)
+{
+    static const float pattern[16] = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
+    uint2 pixel = uint2(positionCS.xy) & 3;
+    clip(_Reveal - (pattern[pixel.y * 4 + pixel.x] + 0.5) / 16.0);
+}
 
 #endif

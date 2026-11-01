@@ -21,6 +21,7 @@ namespace HyperRTS.Presentation.Tests.Fog
         private EntityManager _em;
         private SystemHandle _fog;
         private EntityCommandBufferSystem _commands;
+        private double _time;
 
         [SetUp]
         public void SetUp()
@@ -53,6 +54,42 @@ namespace HyperRTS.Presentation.Tests.Fog
             Run();
             Assert.IsTrue(Drawn(enemy));
             Assert.IsTrue(Drawn(child));
+        }
+
+        [Test]
+        public void SeenEnemy_FadesOutOfTheFog_ThenStopsDrawing_AndFadesBackIn()
+        {
+            var enemy = Spawn(2);
+            var child = Part(enemy);
+            Run();
+            Assert.AreEqual(1f, Reveal(child), "in sight: fully shown");
+
+            _em.AddComponent<FogHidden>(enemy);
+            Run(FogVisibilitySystem.FadeTime * 0.5f);
+            Assert.That(Reveal(child), Is.InRange(0.3f, 0.7f), "half way out");
+            Assert.IsTrue(Drawn(child), "still drawn while fading");
+
+            Run(FogVisibilitySystem.FadeTime * 0.6f);
+            Assert.IsFalse(Drawn(child), "gone once faded out");
+
+            _em.RemoveComponent<FogHidden>(enemy);
+            Run(FogVisibilitySystem.FadeTime * 0.5f);
+            Assert.IsTrue(Drawn(child), "drawn again at once");
+            Assert.That(Reveal(child), Is.InRange(0.3f, 0.7f), "half way in");
+        }
+
+        [Test]
+        public void Ease_ReachesTheTarget_InTheFadeTime()
+        {
+            using var shown = new NativeArray<byte>(new byte[] { 0, 255, 100 }, Allocator.TempJob);
+            using var target = new NativeArray<byte>(new byte[] { 255, 0, 100 }, Allocator.TempJob);
+
+            Assert.IsFalse(FogEase.Step(shown, target, 0.15f, 0.3f), "half way after half the time");
+            Assert.That(shown[0], Is.InRange(120, 135));
+            Assert.That(shown[1], Is.InRange(120, 135));
+
+            Assert.IsTrue(FogEase.Step(shown, target, 0.15f, 0.3f), "there after the whole time");
+            CollectionAssert.AreEqual(new byte[] { 255, 0, 100 }, shown.ToArray());
         }
 
         [Test]
@@ -162,8 +199,12 @@ namespace HyperRTS.Presentation.Tests.Fog
             return entity;
         }
 
-        private void Run()
+        private float Reveal(Entity part) => _em.GetComponentData<RevealFade>(part).Value;
+
+        private void Run(float deltaTime = 0.02f)
         {
+            _time += deltaTime;
+            _kit.World.SetTime(new Unity.Core.TimeData(_time, deltaTime));
             _fog.Update(_kit.World.Unmanaged);
             _commands.Update();
             _em.CompleteAllTrackedJobs();
