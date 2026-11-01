@@ -5,14 +5,14 @@ using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Transport
 {
     /// <summary>
     /// Each standing floor of a container with <see cref="IntactFloors"/> holds an even share of its slots, filled
     /// ground floor first in boarding order. When a floor falls its passengers take a hit of
-    /// <see cref="FallHit"/> of their maximum health and get out, and its slots close until it is rebuilt.
+    /// <see cref="FallHit"/> of their maximum health and get out, and its slots stay shut
+    /// (<see cref="Container.LostSlots"/>) until it is rebuilt.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
@@ -40,17 +40,7 @@ namespace HyperRTS.Simulation.Transport
         {
             _exit.Update(ref state);
             _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
-            new CloseJob().Schedule();
             new EmptyJob { Exit = _exit, Damage = _damage, Grid = SystemAPI.GetSingleton<NavGrid>() }.Schedule();
-        }
-
-        /// <summary>Closes the slots of fallen floors, apart from the emptying, which reads containers through its exit.</summary>
-        [BurstCompile]
-        private partial struct CloseJob : IJobEntity
-        {
-            private void Execute(ref Container container, in IntactFloors floors) =>
-                container.LostSlots = math.min(container.Capacity,
-                    container.PerFloor(floors.Count) * math.countbits((uint)floors.Fallen));
         }
 
         /// <summary>Single-threaded: exits and hits write other entities.</summary>

@@ -17,6 +17,7 @@ namespace HyperRTS.Simulation.Transport
         [ReadOnly] private ComponentLookup<ConstructionProgress> _sites;
         [ReadOnly] private ComponentLookup<Faction> _factions;
         [ReadOnly] private ComponentLookup<NeutralGarrison> _garrisons;
+        [ReadOnly] private ComponentLookup<IntactFloors> _floors;
 
         /// <summary>Order resolution only checks, so it passes <paramref name="isReadOnly"/> and never boards.</summary>
         public Boarding(ref SystemState state, bool isReadOnly)
@@ -30,6 +31,7 @@ namespace HyperRTS.Simulation.Transport
             _sites = state.GetComponentLookup<ConstructionProgress>(true);
             _factions = state.GetComponentLookup<Faction>(true);
             _garrisons = state.GetComponentLookup<NeutralGarrison>(true);
+            _floors = state.GetComponentLookup<IntactFloors>(true);
         }
 
         public void Update(ref SystemState state)
@@ -43,6 +45,7 @@ namespace HyperRTS.Simulation.Transport
             _sites.Update(ref state);
             _factions.Update(ref state);
             _garrisons.Update(ref state);
+            _floors.Update(ref state);
         }
 
         /// <summary>
@@ -56,7 +59,13 @@ namespace HyperRTS.Simulation.Transport
                 return false;
             }
 
-            if (!_containers.TryGetComponent(container, out var data) || !data.Fits(_cargo[container], passenger.Size))
+            if (!_containers.TryGetComponent(container, out var data))
+            {
+                return false;
+            }
+
+            var lost = _floors.TryGetComponent(container, out var floors) ? data.LostSlots(floors) : 0;
+            if (!data.Fits(_cargo[container], passenger.Size, lost))
             {
                 return false;
             }

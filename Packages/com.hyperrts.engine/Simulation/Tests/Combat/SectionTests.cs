@@ -181,7 +181,7 @@ namespace HyperRTS.Simulation.Tests.Combat
                 Assert.AreEqual(100f * (1f - FallenFloorSystem.FallHit), _world.GetHealth(squads[i]), 1e-3f);
             }
 
-            Assert.AreEqual(2, _world.Get<Container>(house).LostSlots, "and its slots close");
+            Assert.AreEqual(2, _world.Get<Container>(house).LostSlots(_world.Get<IntactFloors>(house)), "and its slots close");
         }
 
         [Test]
