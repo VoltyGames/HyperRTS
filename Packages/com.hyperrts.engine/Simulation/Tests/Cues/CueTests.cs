@@ -77,19 +77,24 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.IsEmpty(_world.Queued());
         }
 
-        [TestCase(false, TestName = "Death plays the victim's death sound")]
-        [TestCase(true, TestName = "Death plays the victim's death effect")]
-        public void Death_PlaysTheVictimsDeathCue(bool effect)
+        [TestCase("sound", TestName = "Death plays the victim's death sound")]
+        [TestCase("effect", TestName = "Death plays the victim's death effect")]
+        [TestCase("remains", TestName = "Death plays a cue for remains alone")]
+        public void Death_PlaysTheVictimsDeathCue(string leaves)
         {
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero), damage: 100f);
             var victim = _world.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim");
-            if (effect)
+            switch (leaves)
             {
-                Rigged(victim, CueSlot.Death, float3.zero);
-            }
-            else
-            {
-                Voiced(victim, CueSlot.Death);
+                case "sound":
+                    Voiced(victim, CueSlot.Death);
+                    break;
+                case "effect":
+                    Rigged(victim, CueSlot.Death, float3.zero);
+                    break;
+                default:
+                    _world.EntityManager.AddComponentData(victim, new DeathRemains { Radius = 2f, Amounts = 1f });
+                    break;
             }
 
             var typeId = _world.GetTypeId(victim);

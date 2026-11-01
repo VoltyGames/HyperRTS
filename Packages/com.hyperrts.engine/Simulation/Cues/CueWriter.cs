@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.Cues
         [ReadOnly] private BufferLookup<EntityEffect> _effects;
         [ReadOnly] private BufferLookup<EntityImpactMark> _marks;
         [ReadOnly] private ComponentLookup<EntityImpactEffects> _impactEffects;
+        [ReadOnly] private ComponentLookup<DeathRemains> _remains;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
         [ReadOnly] private ComponentLookup<Stealthed> _cloaks;
         private Entity _queue;
@@ -29,6 +30,7 @@ namespace HyperRTS.Simulation.Cues
             _effects = state.GetBufferLookup<EntityEffect>(true);
             _marks = state.GetBufferLookup<EntityImpactMark>(true);
             _impactEffects = state.GetComponentLookup<EntityImpactEffects>(true);
+            _remains = state.GetComponentLookup<DeathRemains>(true);
             _info = state.GetComponentLookup<EntityInfo>(true);
             _cloaks = state.GetComponentLookup<Stealthed>(true);
         }
@@ -41,6 +43,7 @@ namespace HyperRTS.Simulation.Cues
             _effects.Update(ref state);
             _marks.Update(ref state);
             _impactEffects.Update(ref state);
+            _remains.Update(ref state);
             _info.Update(ref state);
             _cloaks.Update(ref state);
             _queue = queue;
@@ -73,7 +76,7 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>
         /// <paramref name="source"/>'s type id if it has a sound or an effect for the slot and variant (for impacts
-        /// also marks or impact effects), else 0.
+        /// also marks or impact effects, for deaths also remains), else 0.
         /// </summary>
         public int TypeIdFor(Entity source, CueSlot slot, byte variant = 0)
         {
@@ -116,6 +119,11 @@ namespace HyperRTS.Simulation.Cues
         private bool HasCue(Entity source, CueSlot slot, byte variant)
         {
             if (slot == CueSlot.Impact && LeavesImpact(source))
+            {
+                return true;
+            }
+
+            if (slot == CueSlot.Death && _remains.HasComponent(source))
             {
                 return true;
             }
