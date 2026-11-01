@@ -1,7 +1,5 @@
 using HyperRTS.Simulation.Navigation.Spatial;
-using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.DebugDraw
@@ -13,20 +11,21 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
 
         public override void Draw(EntityManager entityManager)
         {
-            if (!TryGetSingleton(entityManager, out SpatialIndex index) || !index.Cells.IsCreated)
+            if (!TryGetSingleton(entityManager, out SpatialIndex index) || index.CellStarts.Length <= index.Frame.Count)
             {
                 return;
             }
 
-            var (keys, count) = index.Cells.GetUniqueKeyArray(Allocator.Temp);
             BeginCells(new Color(0.3f, 0.6f, 1f, 0.25f));
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < index.Frame.Count; i++)
             {
-                Cell((float2)SpatialIndex.CellOfKey(keys[i]) * index.CellSize, index.CellSize);
+                if (index.CountIn(i) > 0)
+                {
+                    Cell(index.Frame.Corner(index.Frame.Cell(i)), index.CellSize);
+                }
             }
 
             EndCells();
-            keys.Dispose();
         }
     }
 }

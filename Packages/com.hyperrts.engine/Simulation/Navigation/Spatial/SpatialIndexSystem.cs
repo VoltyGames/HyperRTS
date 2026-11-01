@@ -6,6 +6,7 @@ using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Transforms;
@@ -14,7 +15,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
 {
     /// <summary>
     /// Rebuilds the <see cref="SpatialIndex"/> from every living entity with health and an owner, except passengers
-    /// inside a container.
+    /// inside a container: snapshots in parallel, then a counting sort by cell.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
@@ -26,16 +27,25 @@ namespace HyperRTS.Simulation.Navigation.Spatial
 
         private EntityQuery _indexed;
 
+        // One slot per queried entity, empty between frames; the sort reads and empties it.
+        private NativeList<SpatialEntry> _snapshots;
+
         public void OnCreate(ref SystemState state)
         {
             _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, Health>().WithNone<Dead, Inside>().Build();
 
+            _snapshots = new NativeList<SpatialEntry>(1024, Allocator.Persistent);
+            // Systems ordered before the first build, such as placement, query it: until then it is one empty cell.
+            var starts = new NativeList<int>(1024, Allocator.Persistent);
+            starts.Resize(2, NativeArrayOptions.ClearMemory);
             state.EntityManager.CreateSingleton(new SpatialIndex
             {
-                Cells = new NativeParallelMultiHashMap<int, SpatialEntry>(1024, Allocator.Persistent),
-                CellSize = CellSize,
+                Frame = new GridFrame(float2.zero, CellSize, new int2(1)),
+                CellStarts = starts,
+                Entries = new NativeList<SpatialEntry>(1024, Allocator.Persistent),
                 Oversized = new NativeList<SpatialEntry>(16, Allocator.Persistent),
             }, "SpatialIndex");
+            state.RequireForUpdate<MapSettings>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -43,36 +53,30 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             state.CompleteDependency();
             if (SystemAPI.TryGetSingletonRW<SpatialIndex>(out var index))
             {
-                index.ValueRW.Cells.Dispose();
+                index.ValueRW.CellStarts.Dispose();
+                index.ValueRW.Entries.Dispose();
                 index.ValueRW.Oversized.Dispose();
             }
+
+            _snapshots.Dispose();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             ref var index = ref SystemAPI.GetSingletonRW<SpatialIndex>().ValueRW;
-            // Unfiltered: an upper bound is enough for capacity and doesn't wait on jobs toggling Dead or Inside.
+            var map = SystemAPI.GetSingleton<MapSettings>();
+            index.Frame = new GridFrame(map.Min, CellSize, math.max(1, (int2)math.ceil(map.Size / CellSize)));
+            // Unfiltered: an upper bound is enough and doesn't wait on jobs toggling Dead or Inside.
             var count = _indexed.CalculateEntityCountWithoutFiltering();
-            index.Cells.Clear();
-            index.Oversized.Clear();
-            if (index.Cells.Capacity < count)
+            if (_snapshots.Length < count)
             {
-                index.Cells.Capacity = count;
+                _snapshots.Resize(count, NativeArrayOptions.ClearMemory);
             }
 
-            // The parallel writer can't grow the list, so size it for the worst case.
-            if (index.Oversized.Capacity < count)
+            state.Dependency = new SnapshotJob
             {
-                index.Oversized.Capacity = count;
-            }
-
-
-            state.Dependency = new IndexJob
-            {
-                Writer = index.Cells.AsParallelWriter(),
-                Oversized = index.Oversized.AsParallelWriter(),
-                CellSize = index.CellSize,
+                Snapshots = _snapshots.AsArray(),
                 AgentLookup = SystemAPI.GetComponentLookup<NavAgent>(true),
                 ObstacleLookup = SystemAPI.GetComponentLookup<NavObstacle>(true),
                 BuildingLookup = SystemAPI.GetComponentLookup<BuildingTag>(true),
@@ -80,14 +84,15 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 ArrivalLookup = SystemAPI.GetComponentLookup<Arrival>(true),
                 VelocityLookup = SystemAPI.GetComponentLookup<Velocity>(true),
             }.ScheduleParallel(_indexed, state.Dependency);
+            state.Dependency = new SortJob { Index = index, Snapshots = _snapshots.AsArray() }
+                .Schedule(state.Dependency);
         }
 
         [BurstCompile]
-        private partial struct IndexJob : IJobEntity, IJobEntityChunkBeginEnd
+        private partial struct SnapshotJob : IJobEntity, IJobEntityChunkBeginEnd
         {
-            public NativeParallelMultiHashMap<int, SpatialEntry>.ParallelWriter Writer;
-            public NativeList<SpatialEntry>.ParallelWriter Oversized;
-            public float CellSize;
+            // Each entity writes only its own slot.
+            [NativeDisableParallelForRestriction] public NativeArray<SpatialEntry> Snapshots;
             [ReadOnly] public ComponentLookup<NavAgent> AgentLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
@@ -106,7 +111,8 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask, bool chunkWasExecuted) => IndexMarker.End();
 
-            private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
+            private void Execute([EntityIndexInQuery] int slot, Entity entity, in LocalTransform transform,
+                in Faction faction)
             {
                 // Without an agent or a destination it is round, unspaced, still, on the ground and in no group.
                 var isUnit = AgentLookup.TryGetComponent(entity, out var agent);
@@ -133,7 +139,8 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     SegmentAxis = facing * agent.HalfSegment,
                     Spacing = agent.Spacing,
                 };
-                entry.AddTo(Writer, Oversized, CellSize);
+                entry.FixReach();
+                Snapshots[slot] = entry;
             }
         }
     }

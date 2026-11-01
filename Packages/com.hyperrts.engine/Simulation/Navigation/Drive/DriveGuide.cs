@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
     /// A <see cref="DriveSearch"/>'s heuristic: the cost from each cell of its window to the goal for a disc the hull's
     /// width.
     /// </summary>
-    internal struct DriveGuide : IDisposable
+    internal struct DriveGuide : IDisposable, IReverseGraph
     {
         // Turning where walls crowd the hull takes shuffles, so the guide charges the turn's arc many times over.
         private const float CrowdedTurnArcs = 16f;
@@ -25,15 +25,11 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private const float FrontAhead = 2f;
         private const float FrontHulls = 2f;
 
-        private UnsafeList<float> _costs;
-        private UnsafeList<bool> _settled;
+        private ReverseDijkstra _search;
 
         // The way each cell's cheapest route leaves it towards the goal.
         private UnsafeList<float2> _ways;
 
-        // The Dijkstra queue in buckets half a cell wide: each bucket's first entry, each entry's cell and the next.
-        private UnsafeList<int> _buckets;
-        private UnsafeList<int2> _entries;
         private NavAccess _access;
         private float _turnRadius;
         private float _hullLength;
@@ -46,11 +42,8 @@ namespace HyperRTS.Simulation.Navigation.Drive
             _access = default;
             _turnRadius = 0f;
             _hullLength = 0f;
-            _costs = new UnsafeList<float>(capacity, allocator);
-            _settled = new UnsafeList<bool>(capacity, allocator);
+            _search = new ReverseDijkstra(capacity, allocator);
             _ways = new UnsafeList<float2>(capacity, allocator);
-            _buckets = new UnsafeList<int>(1024, allocator);
-            _entries = new UnsafeList<int2>(capacity, allocator);
             _walls = default;
             _window = default;
             _goal = float2.zero;
@@ -58,11 +51,8 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
         public void Dispose()
         {
-            _costs.Dispose();
-            _settled.Dispose();
+            _search.Dispose();
             _ways.Dispose();
-            _buckets.Dispose();
-            _entries.Dispose();
         }
 
         /// <summary>
@@ -82,15 +72,12 @@ namespace HyperRTS.Simulation.Navigation.Drive
             _window = window;
             _goal = goal.Center;
             var count = window.Count;
-            _costs.Resize(count);
-            _settled.Resize(count);
+            // Every step costs at least a cell.
+            _search.Reset(count, _access.Grid.Frame.CellSize);
             _ways.Resize(count);
-            _buckets.Clear();
-            _entries.Clear();
             for (var i = 0; i < count; i++)
             {
-                _costs[i] = float.PositiveInfinity;
-                _settled[i] = !IsOpen(_window.Cell(i));
+                _search.Settled[i] = !IsOpen(_window.Cell(i));
                 _ways[i] = float2.zero;
             }
 
@@ -100,7 +87,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             }
 
             Seed(goal.Facing);
-            Settle();
+            _search.Settle(ref this);
         }
 
         /// <summary>
@@ -111,7 +98,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         {
             var cell = _access.Grid.Frame.Cell(point);
             var index = _window.Index(cell);
-            var cost = index < 0 ? float.PositiveInfinity : _costs[index];
+            var cost = index < 0 ? float.PositiveInfinity : _search.Costs[index];
             if (cost == float.PositiveInfinity)
             {
                 return math.distance(point, _goal);
@@ -169,7 +156,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var index = _window.Index(_access.Grid.Frame.Cell(point));
             if (index >= 0)
             {
-                _settled[index] = true;
+                _search.Settled[index] = true;
             }
         }
 
@@ -181,46 +168,16 @@ namespace HyperRTS.Simulation.Navigation.Drive
             {
                 var index = _window.Index(cell);
                 var isGoal = cell.Equals(goal);
-                if (index >= 0 && (isGoal || !_settled[index]))
+                if (index >= 0 && (isGoal || !_search.Settled[index]))
                 {
-                    _costs[index] = 0f;
                     _ways[index] = facing;
-                    Push(index, 0f);
+                    _search.Seed(index);
                 }
             }
-        }
-
-        // Every step costs at least a cell, so a bucket never grows while it is read.
-        private void Settle()
-        {
-            for (var bucket = 0; bucket < _buckets.Length; bucket++)
-            {
-                for (var entry = _buckets[bucket]; entry >= 0; entry = _entries[entry].y)
-                {
-                    var index = _entries[entry].x;
-                    if (!_settled[index])
-                    {
-                        _settled[index] = true;
-                        Relax(index);
-                    }
-                }
-            }
-        }
-
-        private void Push(int index, float cost)
-        {
-            var bucket = (int)(cost / (_access.Grid.Frame.CellSize * 0.5f));
-            while (_buckets.Length <= bucket)
-            {
-                _buckets.Add(-1);
-            }
-
-            _entries.Add(new int2(index, _buckets[bucket]));
-            _buckets[bucket] = _entries.Length - 1;
         }
 
         // Settles backwards: a neighbour pays its step onto this cell, and for the turn it makes there.
-        private void Relax(int index)
+        public void Relax(int index, ref ReverseDijkstra search)
         {
             var cell = _window.Cell(index);
             var crowded = Crowding(cell);
@@ -228,19 +185,17 @@ namespace HyperRTS.Simulation.Navigation.Drive
             foreach (var offset in new Neighbours())
             {
                 var at = _window.Index(cell + offset);
-                if (at < 0 || _settled[at] || !CanStep(cell, offset))
+                if (at < 0 || search.Settled[at] || !CanStep(cell, offset))
                 {
                     continue;
                 }
 
                 var step = GridAStar.StepCost(int2.zero, offset);
                 var way = -(float2)offset / step;
-                var cost = _costs[index] + step * _access.Grid.Frame.CellSize + Turn(way, leaving) * crowded;
-                if (cost < _costs[at])
+                var cost = search.Costs[index] + step * _access.Grid.Frame.CellSize + Turn(way, leaving) * crowded;
+                if (search.Offer(at, cost))
                 {
-                    _costs[at] = cost;
                     _ways[at] = way;
-                    Push(at, cost);
                 }
             }
         }

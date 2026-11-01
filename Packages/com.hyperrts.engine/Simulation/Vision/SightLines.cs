@@ -91,9 +91,8 @@ namespace HyperRTS.Simulation.Vision
 
                 var point = frame.Center(ray.Cell);
                 var distance = math.max(math.distance(point, origin.xy), 1e-3f);
-                var index = frame.Index(ray.Cell);
-                var terrain = Blockers.Ground[index];
-                var ground = Surface(index, point, terrain) - origin.z;
+                var cell = Blockers.Cells[frame.Index(ray.Cell)];
+                var ground = Surface(cell, point) - origin.z;
                 // A cell just out of range still hides what lies behind it.
                 if (distance <= range && (ground + TallTargetHeight) / distance >= horizon)
                 {
@@ -102,7 +101,7 @@ namespace HyperRTS.Simulation.Vision
 
                 horizon = math.max(horizon, ground / distance);
                 // Cover takes its share once crossed, so the near edge of a wood is still seen.
-                cover += Blockers.Loss(index, origin.z - terrain, (ray.Exit - ray.Entry) * length);
+                cover += cell.Loss(origin.z - cell.Ground, (ray.Exit - ray.Entry) * length);
                 if (cover >= 1f)
                 {
                     break;
@@ -111,16 +110,16 @@ namespace HyperRTS.Simulation.Vision
         }
 
         /// <summary>The ground or water at a cell, raised by the solid blockers on it.</summary>
-        private readonly float Surface(int index, float2 point, float terrain)
+        private readonly float Surface(in SightCell cell, float2 point)
         {
             // Most cells hold no solid, so the own-block test runs only where one stands.
-            var solid = Blockers.SolidHeight(index);
+            var solid = cell.SolidHeight;
             if (solid > 0f && IsOwn(point))
             {
                 solid = 0f;
             }
 
-            return math.max(terrain + solid, WaterFloor);
+            return math.max(cell.Ground + solid, WaterFloor);
         }
 
         // Blocks raise every cell they touch, so the own block reaches cells whose centre lies just outside it.

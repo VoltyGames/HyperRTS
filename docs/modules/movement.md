@@ -63,13 +63,13 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
   it moves, the path's last waypoint follows it if the corner before it, or the unit on its last leg, still sees it and
   it moved no more than a quarter of the path left. Otherwise the unit keeps its path and searches again at most
   every 0.5 s. A new order always plans at once.
-- A formation move's members of one class share a flow field (`GroupFields`): a Dijkstra with the same step costs
-  from the cell nearest the centre of their slots, over the union of their corridors. Each member traces it downhill,
-  leaves it at its first cell near the goal that sees its own slot, and is pulled tight with line of sight, so it
-  still gets ordinary waypoints. A replan while the field is valid is a trace again, with no search. A field goes when
-  a grid change reaches its corridor, within a second of no moving unit using it, or after 30 s idle. Over 60,000
-  cells, members split by start sector into several fields. A member alone, or one whose slot lies out of sight of the centre or
-  over 48 m from it, searches by itself, as do chases and walk-ups.
+- A formation move's members of one class share a flow field (`GroupFields`): a `ReverseDijkstra` with the same step
+  costs from the cell nearest the centre of their slots, over the union of their corridors. Each member traces it
+  downhill, leaves it at its first cell near the goal that sees its own slot, and is pulled tight with line of sight, so
+  it still gets ordinary waypoints. A replan while the field is valid is a trace again, with no search. A field goes
+  when a grid change reaches its corridor, within a second of no moving unit using it, or after 30 s idle. Over 60,000
+  cells, members split by start sector into several fields. A member alone, or one whose slot lies out of sight of the
+  centre or over 48 m from it, searches by itself, as do chases and walk-ups.
 - Smoothing and corner skipping use line of sight, which walks every cell the line crosses (`GridRay`, Amanatides and
   Woo) and needs each open; through a corner, both cells beside it too.
 - Movement holds the whole capsule off walls (`NavCapsule`). Its depth sums how far points half a radius apart
@@ -92,7 +92,10 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
 - A walk-up whose move locomotion ends by itself short of the target, given up or at the end of a path that can't
   get there, is `WalkUp.Stuck`, and build, repair, capture, board and gather finish their order. A target that moved
   off is walked to again. A new order clears the last one's `Arrival`.
-- `SpatialIndex` answers fast range queries over living entities.
+- `SpatialIndex` answers fast range queries over living entities: a grid of 8 m cells over the map, rebuilt each
+  frame by a parallel snapshot and a counting sort, so a query scans each row of cells as one run and meets
+  neighbours in the same order every run. Entries off the map file under the nearest edge cell; ones wider than a
+  cell go in a short `Oversized` list every query scans.
 
 ### Drive planner
 
@@ -124,15 +127,16 @@ stretch past it as drawn (`PathState.PartlyPlanned`), planned once its planned p
   the step to it, may overlap walls only while the overlap shrinks, so a wedged start plans its way out. Steps cost
   their length times the wall-margin cell cost, twice in reverse, plus two hull lengths per gear change and a little
   per change of steer.
-- **Guide.** A `DriveGuide` gives each window cell its cost to the goal for a disc the hull's width, by Dijkstra over
-  buckets half a cell wide. A turn where walls crowd the hull (within a turn radius of them) costs its arc up to 16
-  times over, so the guide prefers routes the hull can turn on, and a pose facing off the way its cell's route leaves
-  pays a quarter of that turn. A pose goal in a lane, walls on both sides within two hull lengths, has its front
-  closed, so the guide leads in from behind, as the hull must arrive. Cells it doesn't reach read the straight
-  distance, and a pose goal reads no less than the forward curve to it. The guide is weighted 1.5. Every 10
-  expansions, and every third near the goal, a clear forward curve to the goal ends the search. Goals are a pose
-  within 0.75 m and 10 degrees, or the path's end within the arrival tolerance. A pose goal whose hull centre sits in
-  a wall, as at the end of an attack path into a building, fails at once instead of spending the cap.
+- **Guide.** A `DriveGuide` gives each window cell its cost to the goal for a disc the hull's width, by the same
+  `ReverseDijkstra` as flow fields, whose queue is buckets half the cheapest step wide. A turn where walls crowd the
+  hull (within a turn radius of them) costs its arc up to 16 times over, so the guide prefers routes the hull can turn
+  on, and a pose facing off the way its cell's route leaves pays a quarter of that turn. A pose goal in a lane, walls on
+  both sides within two hull lengths, has its front closed, so the guide leads in from behind, as the hull must arrive.
+  Cells it doesn't reach read the straight distance, and a pose goal reads no less than the forward curve to it. The
+  guide is weighted 1.5. Every 10 expansions, and every third near the goal, a clear forward curve to the goal ends the
+  search. Goals are a pose within 0.75 m and 10 degrees, or the path's end within the arrival tolerance. A pose goal
+  whose hull centre sits in a wall, as at the end of an attack path into a building, fails at once instead of spending
+  the cap.
 - A search stops after 6,000 expansions (`DriveSearch.MaxExpansions`). A stretch that fails tries once more
   reaching twice as far along the path, where the hull may find room to turn, then stays as drawn.
 - The result replaces the stretch with `PathWaypoint`s every 1.5 m, each `Tight`; `Reverse` marks a leg driven

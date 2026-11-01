@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common;
 using System;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -51,55 +50,15 @@ namespace HyperRTS.Simulation.Navigation.Fields
         public int Build(in NavAccess access)
         {
             using var scope = BuildMarker.Auto();
-            for (var i = 0; i < _costs.Length; i++)
-            {
-                _costs[i] = float.PositiveInfinity;
-            }
-
-            var settled = new NativeArray<bool>(_costs.Length, Allocator.Temp);
-            var open = new OpenSet(1024, Allocator.Temp);
-            var goal = Corridor.Index(Goal);
-            _costs[goal] = 0f;
-            open.Push(goal, 0f);
-            var count = 0;
-            while (open.TryPop(out var current))
-            {
-                if (settled[current])
-                {
-                    continue;
-                }
-
-                settled[current] = true;
-                count++;
-                Relax(access, current, ref open);
-            }
-
-            open.Dispose();
-            settled.Dispose();
+            var search = new ReverseDijkstra(_costs.Length, Allocator.Temp);
+            // A step costs its length in cells, raised near walls, so never less than one.
+            search.Reset(_costs.Length, 1f);
+            search.Seed(Corridor.Index(Goal));
+            var graph = new CorridorGraph { Access = access, Corridor = Corridor };
+            var count = search.Settle(ref graph);
+            _costs.CopyFrom(search.Costs);
+            search.Dispose();
             return count;
-        }
-
-        // Settles backwards: a neighbour pays its step onto this cell, as a search from it would.
-        private void Relax(in NavAccess access, int index, ref OpenSet open)
-        {
-            var cell = Corridor.Cell(index);
-            var cost = _costs[index];
-            var block = new CellBlock(access, cell);
-            foreach (var offset in new Neighbours())
-            {
-                var at = Corridor.Index(index, cell, offset);
-                if (at < 0 || !block.CanStepIn(offset))
-                {
-                    continue;
-                }
-
-                var next = cost + block.CostIn(offset);
-                if (next < _costs[at])
-                {
-                    _costs[at] = next;
-                    open.Push(at, next);
-                }
-            }
         }
 
         /// <summary>
@@ -154,6 +113,28 @@ namespace HyperRTS.Simulation.Navigation.Fields
             }
 
             return bestCost < float.PositiveInfinity;
+        }
+
+        // Settles backwards: a neighbour pays its step onto this cell, as a search from it would.
+        private struct CorridorGraph : IReverseGraph
+        {
+            public NavAccess Access;
+            public NavCorridor Corridor;
+
+            public void Relax(int index, ref ReverseDijkstra search)
+            {
+                var cell = Corridor.Cell(index);
+                var cost = search.Costs[index];
+                var block = new CellBlock(Access, cell);
+                foreach (var offset in new Neighbours())
+                {
+                    var at = Corridor.Index(index, cell, offset);
+                    if (at >= 0 && block.CanStepIn(offset))
+                    {
+                        search.Offer(at, cost + block.CostIn(offset));
+                    }
+                }
+            }
         }
     }
 }

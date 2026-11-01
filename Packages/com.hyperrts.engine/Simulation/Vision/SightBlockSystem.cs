@@ -33,8 +33,8 @@ namespace HyperRTS.Simulation.Vision
         private int _builtCount;
         private ulong _builtSignature;
 
-        // The last stamp's solid, porous and porous-top layers, to tell which tiles a restamp changed.
-        private NativeArray<byte> _previous;
+        // The last stamp, to tell which tiles a restamp changed.
+        private NativeArray<SightCell> _previous;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -79,11 +79,9 @@ namespace HyperRTS.Simulation.Vision
             ref var blockers = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
             // Crop cover stays, flattened lanes and all.
             state.Dependency = new KeepJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
-            state.Dependency = ClearJob<byte>.Schedule(blockers.Solid, state.Dependency);
+            state.Dependency = new ClearBlocksJob { Cells = blockers.Cells }
+                .Schedule(blockers.Cells.Length, 4096, state.Dependency);
             state.Dependency = ClearJob<Entity>.Schedule(blockers.Owner, state.Dependency);
-            state.Dependency = ClearJob<byte>.Schedule(blockers.Porous, state.Dependency);
-            state.Dependency = ClearJob<byte>.Schedule(blockers.PorousTop, state.Dependency);
-            state.Dependency = ClearJob<byte>.Schedule(blockers.Conceals, state.Dependency);
             state.Dependency = new StampJob { Blockers = blockers, Terrain = terrain }
                 .Schedule(_blocks, state.Dependency);
             state.Dependency = new DiffJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
@@ -142,9 +140,9 @@ namespace HyperRTS.Simulation.Vision
                 _previous.Dispose();
             }
 
-            _previous = new NativeArray<byte>(grid.Solid.Length * 3, Allocator.Persistent);
+            _previous = new NativeArray<SightCell>(grid.Cells.Length, Allocator.Persistent);
             state.Dependency = new GroundJob { Blockers = grid, Terrain = terrain }
-                .Schedule(grid.Ground.Length, 1024, state.Dependency);
+                .Schedule(grid.Cells.Length, 1024, state.Dependency);
 
             if (crops.Blob.IsCreated)
             {

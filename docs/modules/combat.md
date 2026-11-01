@@ -308,7 +308,8 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 - Each layer is one bit plane per team in 64-bit words. Every viewer keeps its sight in a `SightPatch` (made by
   `VisionSetup`), drawn again in parallel only when it moves to another cell, its eye, reach or team changes, a grid
   is built anew or `SightBlockers.DirtyTiles` marks a change round it. `FogMergeJob` rebuilds the planes from the
-  patches in bands of rows. Sight lines read the ground from `SightBlockers.Ground`, cached per cell.
+  patches in bands of rows. Sight lines read each cell once, as a `SightCell` packing its cached ground with its
+  blocker heights and densities; the blocker owner sits apart, read only when a shot is blocked.
 - `HighGroundSystem` measures each fog cell's ground against the mean within `SightRules.Radius` (50 m) when
   the map or terrain loads. A viewer on high ground sees `SightPerMetre` further per metre of rise, up to
   `MaxSight`.

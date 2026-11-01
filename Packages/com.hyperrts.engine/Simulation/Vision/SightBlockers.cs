@@ -21,24 +21,11 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Cells across a square of <see cref="DirtyTiles"/>.</summary>
         public const int TileCells = 8;
 
-        /// <summary>Terrain height at each cell's centre, so sight lines needn't sample the heightfield.</summary>
-        public NativeArray<float> Ground;
-
-        public NativeArray<byte> Solid;
+        /// <summary>Ground and blockers of each cell.</summary>
+        public NativeArray<SightCell> Cells;
 
         /// <summary>The block whose solid top each cell rises to, so a blocked shot knows what it hit.</summary>
         public NativeArray<Entity> Owner;
-
-        public NativeArray<byte> Porous;
-        public NativeArray<byte> PorousTop;
-
-        /// <summary>Crop cover from the map's <see cref="CropCover"/>, cleared where vehicles flatten it.</summary>
-        public NativeArray<byte> Crop;
-
-        public NativeArray<byte> CropTop;
-
-        /// <summary>Cells a block conceals on, such as ruins and trenches; woods and crops conceal too.</summary>
-        public NativeArray<byte> Conceals;
 
         /// <summary>Squares of <see cref="TileCells"/> cells whose sight changed since the fog last drew round them.</summary>
         public NativeArray<byte> DirtyTiles;
@@ -50,7 +37,7 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Bumped whenever the grid is built anew, so every viewer's sight is drawn again.</summary>
         public int Generation;
 
-        public readonly bool IsCreated => Solid.IsCreated;
+        public readonly bool IsCreated => Cells.IsCreated;
 
         /// <summary>An empty grid laid out as the map's fog grid.</summary>
         public static SightBlockers Create(in MapSettings map, Allocator allocator)
@@ -62,28 +49,16 @@ namespace HyperRTS.Simulation.Vision
             {
                 DirtyTiles = new NativeArray<byte>(tiles.x * tiles.y, allocator),
                 Tiles = tiles,
-                Ground = new NativeArray<float>(count, allocator),
+                Cells = new NativeArray<SightCell>(count, allocator),
                 Owner = new NativeArray<Entity>(count, allocator),
-                Solid = new NativeArray<byte>(count, allocator),
-                Porous = new NativeArray<byte>(count, allocator),
-                PorousTop = new NativeArray<byte>(count, allocator),
-                Crop = new NativeArray<byte>(count, allocator),
-                CropTop = new NativeArray<byte>(count, allocator),
-                Conceals = new NativeArray<byte>(count, allocator),
                 Frame = frame,
             };
         }
 
         public readonly void Dispose()
         {
-            Ground.Dispose();
+            Cells.Dispose();
             Owner.Dispose();
-            Solid.Dispose();
-            Porous.Dispose();
-            PorousTop.Dispose();
-            Crop.Dispose();
-            CropTop.Dispose();
-            Conceals.Dispose();
             DirtyTiles.Dispose();
         }
 
@@ -107,13 +82,14 @@ namespace HyperRTS.Simulation.Vision
                 var own = obstacle != Entity.Null && (obstacle == shooter || obstacle == target);
                 // Shooter and target stand on their own ground, which their cell's one height only roughs out.
                 var end = ray.Entry == 0f || ray.Exit >= 1f;
-                if (end && Solid[index] == 0)
+                var cell = Cells[index];
+                if (end && cell.Solid == 0)
                 {
                     continue;
                 }
 
                 if (!own && TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit),
-                        Ground[index] + SolidHeight(index), out contact))
+                        cell.Ground + cell.SolidHeight, out contact))
                 {
                     return true;
                 }
@@ -134,9 +110,9 @@ namespace HyperRTS.Simulation.Vision
             {
                 if (Frame.Contains(ray.Cell))
                 {
-                    var index = Frame.Index(ray.Cell);
+                    var cell = Cells[Frame.Index(ray.Cell)];
                     var middle = math.lerp(from.y, to.y, (ray.Entry + ray.Exit) * 0.5f);
-                    haze += Loss(index, middle - Ground[index], (ray.Exit - ray.Entry) * length);
+                    haze += cell.Loss(middle - cell.Ground, (ray.Exit - ray.Entry) * length);
                 }
             }
 
@@ -164,22 +140,10 @@ namespace HyperRTS.Simulation.Vision
             return false;
         }
 
-        public readonly float SolidHeight(int index) => Solid[index] * Step;
-
-        /// <summary>Share of sight lost crossing <paramref name="length"/> metres of the cell at <paramref name="height"/> above its ground.</summary>
-        public readonly float Loss(int index, float height, float length)
-        {
-            var porous = height < PorousTop[index] * Step ? Porous[index] : 0;
-            var crop = height < CropTop[index] * Step ? Crop[index] : 0;
-            return (porous + crop) * DensityStep * length;
-        }
-
-        public readonly bool IsConcealing(int index) => (Conceals[index] | Porous[index] | Crop[index]) != 0;
-
         public readonly bool IsConcealing(float3 position)
         {
             var cell = Frame.Cell(position);
-            return Frame.Contains(cell) && IsConcealing(Frame.Index(cell));
+            return Frame.Contains(cell) && Cells[Frame.Index(cell)].IsConcealing;
         }
 
         /// <summary>Raises every cell the block touches to its tops and densities, rounded up to a step.</summary>
@@ -196,16 +160,18 @@ namespace HyperRTS.Simulation.Vision
 
                 var footing = transform.Position.y - terrain.Height(center);
                 var index = Frame.Index(cell);
-                var solid = Solid[index];
-                Raise(Solid, index, (footing + block.Height) / Step, block.Height > 0f);
-                if (Solid[index] > solid)
+                var sight = Cells[index];
+                var solid = sight.Solid;
+                Raise(ref sight.Solid, (footing + block.Height) / Step, block.Height > 0f);
+                if (sight.Solid > solid)
                 {
                     Owner[index] = entity;
                 }
 
-                Raise(PorousTop, index, (footing + block.PorousTop) / Step, block.Density > 0f);
-                Raise(Porous, index, block.Density / DensityStep, block.Density > 0f);
-                Raise(Conceals, index, 1f, block.Conceals);
+                Raise(ref sight.PorousTop, (footing + block.PorousTop) / Step, block.Density > 0f);
+                Raise(ref sight.Porous, block.Density / DensityStep, block.Density > 0f);
+                Raise(ref sight.Conceals, 1f, block.Conceals);
+                Cells[index] = sight;
             }
         }
 
@@ -215,9 +181,11 @@ namespace HyperRTS.Simulation.Vision
             foreach (var cell in CellsUnder(box))
             {
                 var index = Frame.Index(cell);
-                if (Crop[index] != 0 && Touches(box, Frame.Center(cell)))
+                var sight = Cells[index];
+                if (sight.Crop != 0 && Touches(box, Frame.Center(cell)))
                 {
-                    Crop[index] = 0;
+                    sight.Crop = 0;
+                    Cells[index] = sight;
                     MarkDirty(cell);
                 }
             }
@@ -250,11 +218,11 @@ namespace HyperRTS.Simulation.Vision
             box.Overlaps(new NavBox(new float3(center.x, 0f, center.y), quaternion.identity,
                 new float2(Frame.CellSize)));
 
-        private static void Raise(NativeArray<byte> cells, int index, float steps, bool applies)
+        private static void Raise(ref byte layer, float steps, bool applies)
         {
             if (applies)
             {
-                cells[index] = (byte)math.max(cells[index], (int)math.clamp(math.ceil(steps), 0f, byte.MaxValue));
+                layer = (byte)math.max(layer, (int)math.clamp(math.ceil(steps), 0f, byte.MaxValue));
             }
         }
     }

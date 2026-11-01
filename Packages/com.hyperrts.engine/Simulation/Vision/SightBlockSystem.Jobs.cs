@@ -15,14 +15,21 @@ namespace HyperRTS.Simulation.Vision
         private struct KeepJob : IJob
         {
             [ReadOnly] public SightBlockers Blockers;
-            public NativeArray<byte> Previous;
+            public NativeArray<SightCell> Previous;
 
-            public void Execute()
+            public void Execute() => Previous.CopyFrom(Blockers.Cells);
+        }
+
+        [BurstCompile]
+        private struct ClearBlocksJob : IJobParallelFor
+        {
+            public NativeArray<SightCell> Cells;
+
+            public void Execute(int index)
             {
-                var count = Blockers.Solid.Length;
-                NativeArray<byte>.Copy(Blockers.Solid, 0, Previous, 0, count);
-                NativeArray<byte>.Copy(Blockers.Porous, 0, Previous, count, count);
-                NativeArray<byte>.Copy(Blockers.PorousTop, 0, Previous, count * 2, count);
+                var cell = Cells[index];
+                cell.ClearBlocks();
+                Cells[index] = cell;
             }
         }
 
@@ -31,16 +38,13 @@ namespace HyperRTS.Simulation.Vision
         private struct DiffJob : IJob
         {
             public SightBlockers Blockers;
-            [ReadOnly] public NativeArray<byte> Previous;
+            [ReadOnly] public NativeArray<SightCell> Previous;
 
             public void Execute()
             {
-                var count = Blockers.Solid.Length;
-                for (var i = 0; i < count; i++)
+                for (var i = 0; i < Previous.Length; i++)
                 {
-                    var solid = Blockers.Solid[i] != Previous[i];
-                    var porous = Blockers.Porous[i] != Previous[count + i] || Blockers.PorousTop[i] != Previous[count * 2 + i];
-                    if (solid || porous)
+                    if (Blockers.Cells[i].BlocksUnlike(Previous[i]))
                     {
                         Blockers.MarkDirty(Blockers.Frame.Cell(i));
                     }
@@ -57,7 +61,9 @@ namespace HyperRTS.Simulation.Vision
             public void Execute(int index)
             {
                 var frame = Blockers.Frame;
-                Blockers.Ground[index] = Terrain.Height(frame.Center(frame.Cell(index)));
+                var cell = Blockers.Cells[index];
+                cell.Ground = Terrain.Height(frame.Center(frame.Cell(index)));
+                Blockers.Cells[index] = cell;
             }
         }
 
@@ -89,7 +95,8 @@ namespace HyperRTS.Simulation.Vision
             {
                 ref var crops = ref Crops.Blob.Value;
                 var fog = Blockers.Frame;
-                var sums = new NativeArray<int>(Blockers.Crop.Length, Allocator.Temp);
+                var cells = Blockers.Cells;
+                var sums = new NativeArray<int>(cells.Length, Allocator.Temp);
                 foreach (var crop in crops.Frame.Cells(int2.zero, crops.Frame.Size - 1))
                 {
                     var index = crops.Frame.Index(crop);
@@ -101,13 +108,17 @@ namespace HyperRTS.Simulation.Vision
 
                     var target = fog.Index(cell);
                     sums[target] += crops.Density[index];
-                    Blockers.CropTop[target] = (byte)math.max(Blockers.CropTop[target], (int)crops.Top[index]);
+                    var sight = cells[target];
+                    sight.CropTop = (byte)math.max(sight.CropTop, (int)crops.Top[index]);
+                    cells[target] = sight;
                 }
 
                 var perCell = math.max(1f, math.square(fog.CellSize / crops.Frame.CellSize));
                 for (var i = 0; i < sums.Length; i++)
                 {
-                    Blockers.Crop[i] = (byte)math.min(byte.MaxValue, (int)math.round(sums[i] / perCell));
+                    var sight = cells[i];
+                    sight.Crop = (byte)math.min(byte.MaxValue, (int)math.round(sums[i] / perCell));
+                    cells[i] = sight;
                 }
             }
         }

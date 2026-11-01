@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -53,22 +52,11 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// <summary>Bounding radius of the footprint plus its spacing, for <see cref="SpatialIndex.QueryHulls{T}"/>.</summary>
         public float HullReach;
 
-        /// <summary>
-        /// Fixes <see cref="HullReach"/> once, so queries skip the length, and files the entry by its centre cell or,
-        /// wider than a cell, in the oversized list.
-        /// </summary>
-        public void AddTo(NativeParallelMultiHashMap<int, SpatialEntry>.ParallelWriter cells,
-            NativeList<SpatialEntry>.ParallelWriter oversized, float cellSize)
-        {
-            HullReach = Radius + math.length(SegmentAxis) + Spacing;
-            if (HullReach > cellSize)
-            {
-                oversized.AddNoResize(this);
-                return;
-            }
+        /// <summary>Wider than a cell, so it goes in <see cref="SpatialIndex.Oversized"/> rather than by its centre.</summary>
+        public readonly bool IsOversized(float cellSize) => HullReach > cellSize;
 
-            cells.Add(SpatialIndex.Key(SpatialIndex.CellAt(Position, cellSize)), this);
-        }
+        /// <summary>Fixes <see cref="HullReach"/> once, so queries skip the length.</summary>
+        public void FixReach() => HullReach = Radius + math.length(SegmentAxis) + Spacing;
 
         /// <summary>From this entry's core segment to another's, between their closest points.</summary>
         public readonly float2 ClosestOffset(float2 position, float2 axis) =>

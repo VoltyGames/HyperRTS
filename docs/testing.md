@@ -60,13 +60,14 @@ that it reports, so a new rule needs a row there. `ModuleLayoutTests` checks the
 
 ## Benchmarks
 
-Timing tests are `[Test, Performance]` cases in the `Benchmark` category (`NavBenchmarkTests`, `VisionBenchmarkTests`),
-built on the Performance Testing package that Entities already pulls in. `BenchmarkKit.Median` wraps
-`Measure.Method` with a warm-up, 20 measured runs, an untimed prepare and finish step, and the profiler markers to
-record (`GridAStar.Search`, `FogMergeJob.Merge` and so on). It returns the median, and each test keeps one coarse
-assert on it at twice its budget, so a regression fails. Systems the benchmarks cover have markers named
-`<Type>.<Step>`. A per-entity job opens and closes its marker in
-`IJobEntityChunkBeginEnd`, once a chunk; heavier per-item work uses `ProfilerMarker.Auto()`.
+Timing tests are `[Test, Performance]` cases in the `Benchmark` category (`NavBenchmarkTests`, `VisionBenchmarkTests`,
+`CombatBenchmarkTests`), built on the Performance Testing package that Entities already pulls in. They cover path
+searches, flow fields, drive plans, steering 500 units, indexing and querying 1000 units, fog stamps and a 500 a side
+battle. `BenchmarkKit.Median` wraps `Measure.Method` with a warm-up, 20 measured runs, an untimed prepare and finish
+step, and the profiler markers to record (`GridAStar.Search`, `FogMergeJob.Merge` and so on). It returns the median,
+and each test keeps one coarse assert on it at twice its budget, so a regression fails. Systems the benchmarks cover
+have markers named `<Type>.<Step>`. A per-entity job opens and closes its marker in `IJobEntityChunkBeginEnd`, once a
+chunk; heavier per-item work uses `ProfilerMarker.Auto()`.
 
 ## Command line
 

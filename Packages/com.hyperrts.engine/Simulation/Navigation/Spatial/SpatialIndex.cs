@@ -6,13 +6,20 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation.Spatial
 {
     /// <summary>
-    /// Singleton uniform-grid hash of living units and buildings, rebuilt each frame by
-    /// <see cref="SpatialIndexSystem"/>. Read it with <c>SystemAPI.GetSingleton</c> so job dependencies chain.
+    /// Singleton uniform grid of living units and buildings over the map, rebuilt each frame by
+    /// <see cref="SpatialIndexSystem"/>: entries sorted by cell, so a query scans each row of cells in one run and
+    /// meets neighbours in the same order every time. Read it with <c>SystemAPI.GetSingleton</c> so job dependencies
+    /// chain.
     /// </summary>
     public struct SpatialIndex : IComponentData
     {
-        public NativeParallelMultiHashMap<int, SpatialEntry> Cells;
-        public float CellSize;
+        /// <summary>The map in <see cref="SpatialIndexSystem.CellSize"/> cells; entries off it file under the nearest edge cell.</summary>
+        public GridFrame Frame;
+
+        /// <summary>Where each cell's run in <see cref="Entries"/> starts, and one past the last cell, where they end.</summary>
+        public NativeList<int> CellStarts;
+
+        public NativeList<SpatialEntry> Entries;
 
         /// <summary>
         /// Entries wider than a cell (airfields, shipyards). Cells hold the rest by centre, so queries pad by one cell
@@ -20,14 +27,13 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// </summary>
         public NativeList<SpatialEntry> Oversized;
 
-        public readonly int2 CellAt(float3 position) => CellAt(position, CellSize);
+        public readonly float CellSize => Frame.CellSize;
 
-        public static int2 CellAt(float3 position, float cellSize) => (int2)math.floor(position.xz / cellSize);
+        /// <summary>The cell an entry at the position files under, clamped onto the map.</summary>
+        public readonly int CellIndex(float3 position) => Frame.Index(Frame.Clamp(Frame.Cell(position)));
 
-        /// <summary>Unique for cells within ±32k of the origin, so queries never see foreign cells twice.</summary>
-        public static int Key(int2 cell) => (cell.x & 0xFFFF) | (cell.y << 16);
-
-        public static int2 CellOfKey(int key) => new((short)(key & 0xFFFF), key >> 16);
+        /// <summary>How many entries the cell holds.</summary>
+        public readonly int CountIn(int cell) => CellStarts[cell + 1] - CellStarts[cell];
 
         /// <summary>Visits entries whose circle overlaps the query circle on the XZ plane.</summary>
         public readonly void Query<T>(float3 center, float radius, ref T visitor) where T : struct, ISpatialVisitor =>
@@ -42,17 +48,16 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             where T : struct, ISpatialVisitor
         {
             var search = radius + CellSize;
-            foreach (var cell in new CellRange(CellAt(center - search), CellAt(center + search)))
+            var min = Frame.Clamp(Frame.Cell(center.xz - search));
+            var max = Frame.Clamp(Frame.Cell(center.xz + search));
+            // A row's cells sit side by side, so their entries form one run.
+            for (var y = min.y; y <= max.y; y++)
             {
-                if (!Cells.TryGetFirstValue(Key(cell), out var entry, out var iterator))
+                var end = CellStarts[Frame.Index(new int2(max.x, y)) + 1];
+                for (var i = CellStarts[Frame.Index(new int2(min.x, y))]; i < end; i++)
                 {
-                    continue;
+                    VisitIfOverlapping(Entries[i], center, radius, hulls, ref visitor);
                 }
-
-                do
-                {
-                    VisitIfOverlapping(entry, center, radius, hulls, ref visitor);
-                } while (Cells.TryGetNextValue(out entry, ref iterator));
             }
 
             foreach (var entry in Oversized)
