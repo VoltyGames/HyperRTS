@@ -1,4 +1,4 @@
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;

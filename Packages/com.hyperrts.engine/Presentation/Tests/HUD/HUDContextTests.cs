@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;

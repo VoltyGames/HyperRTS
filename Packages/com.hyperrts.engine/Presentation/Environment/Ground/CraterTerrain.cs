@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -65,11 +65,11 @@ namespace HyperRTS.Presentation.Environment.Ground
         /// <summary>Copies the crater depth globals to a kernel: compute shaders don't see globals.</summary>
         public static void BindCraters(ComputeShader compute, int kernel)
         {
-            var tracks = Shader.GetGlobalTexture(InteractionSurfaces.TracksId);
-            var rect = Shader.GetGlobalVector(InteractionSurfaces.RectId);
+            var tracks = Shader.GetGlobalTexture(TrampleSurfaces.TracksId);
+            var rect = Shader.GetGlobalVector(TrampleSurfaces.RectId);
             var on = tracks != null && rect.z > 0f;
-            compute.SetTexture(kernel, InteractionSurfaces.TracksId, on ? tracks : Texture2D.blackTexture);
-            compute.SetVector(InteractionSurfaces.RectId, on ? rect : Vector4.zero);
+            compute.SetTexture(kernel, TrampleSurfaces.TracksId, on ? tracks : Texture2D.blackTexture);
+            compute.SetVector(TrampleSurfaces.RectId, on ? rect : Vector4.zero);
         }
 
         /// <summary>Dented on the GPU but not yet read back into the terrain's heights, collider and LOD.</summary>

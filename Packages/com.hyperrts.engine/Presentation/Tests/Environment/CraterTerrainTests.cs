@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Environment.Ground;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Cues.Effects;
 using NUnit.Framework;
@@ -23,8 +23,8 @@ namespace HyperRTS.Presentation.Tests.Environment
 
         private TerrainData _data;
         private Terrain _terrain;
-        private InteractionSurfaces _surfaces;
-        private InteractionBrush _brush;
+        private TrampleSurfaces _surfaces;
+        private TrampleBrush _brush;
         private ImpactMark _mark;
         private CraterTerrain _crater;
 
@@ -44,9 +44,9 @@ namespace HyperRTS.Presentation.Tests.Environment
             _data.SetHeights(0, 0, flat);
             _terrain = Terrain.CreateTerrainGameObject(_data).GetComponent<Terrain>();
             _terrain.transform.position = new Vector3(-32f, 0f, -32f);
-            _surfaces = new InteractionSurfaces(new float2(-32f), new float2(64f), InteractionQuality.Full);
+            _surfaces = new TrampleSurfaces(new float2(-32f), new float2(64f), TrampleQuality.Full);
             _surfaces.Publish();
-            _brush = new InteractionBrush(Shader.Find(InteractionBrush.ShaderName));
+            _brush = new TrampleBrush(Shader.Find(TrampleBrush.ShaderName));
             _brush.Clear(_surfaces);
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
             _mark.craterDepth = CraterDepth;
@@ -59,7 +59,7 @@ namespace HyperRTS.Presentation.Tests.Environment
             _crater.Dispose();
             _brush.Dispose();
             _surfaces.Dispose();
-            InteractionSurfaces.Clear();
+            TrampleSurfaces.Clear();
             Object.DestroyImmediate(_mark);
             Object.DestroyImmediate(_terrain.gameObject);
             Object.DestroyImmediate(_data);
@@ -114,7 +114,7 @@ namespace HyperRTS.Presentation.Tests.Environment
 
         private void StampCrater()
         {
-            var stamps = new InteractionStamps();
+            var stamps = new TrampleStamps();
             stamps.AddCrater(Crater, _mark, CraterDiameter);
             _brush.Draw(_surfaces, 0, 0, 0, stamps);
             _crater.Dent(Crater - CraterDiameter, Crater + CraterDiameter);

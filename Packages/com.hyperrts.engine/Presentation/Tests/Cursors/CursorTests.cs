@@ -1,4 +1,4 @@
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Cursors;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Common;

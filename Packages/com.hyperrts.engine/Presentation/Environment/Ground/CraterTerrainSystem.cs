@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -11,10 +11,10 @@ namespace HyperRTS.Presentation.Environment.Ground
     /// <see cref="SyncSeconds"/> on a frame with no new crater. Restores the terrain on a replay seek, when the maps
     /// go or change, and when the terrain or this world goes. Visual only: the simulation's ground never changes.
     /// </summary>
-    // Before InteractionStampSystem clears last frame's stamps, which InteractionMap has drawn by now.
+    // Before TrampleStampSystem clears last frame's stamps, which TrampleMap has drawn by now.
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateBefore(typeof(InteractionStampSystem))]
+    [UpdateBefore(typeof(TrampleStampSystem))]
     public partial class CraterTerrainSystem : SystemBase
     {
         public const float SyncSeconds = 0.5f;
@@ -30,7 +30,7 @@ namespace HyperRTS.Presentation.Environment.Ground
 
         protected override void OnUpdate()
         {
-            var stamps = InteractionStampSystem.Find(World);
+            var stamps = TrampleStampSystem.Find(World);
             if (stamps == null || !Bind())
             {
                 Release();
@@ -56,11 +56,11 @@ namespace HyperRTS.Presentation.Environment.Ground
             }
         }
 
-        /// <summary>False without a terrain or interaction maps. New maps start clear, so the terrain does too.</summary>
+        /// <summary>False without a terrain or trample maps. New maps start clear, so the terrain does too.</summary>
         private bool Bind()
         {
             var terrain = Terrain.activeTerrain;
-            var tracks = Shader.GetGlobalTexture(InteractionSurfaces.TracksId);
+            var tracks = Shader.GetGlobalTexture(TrampleSurfaces.TracksId);
             if (terrain == null || tracks is not RenderTexture)
             {
                 return false;
@@ -76,7 +76,7 @@ namespace HyperRTS.Presentation.Environment.Ground
             return true;
         }
 
-        private static bool TryGetBowls(InteractionStamps stamps, out float2 min, out float2 max)
+        private static bool TryGetBowls(TrampleStamps stamps, out float2 min, out float2 max)
         {
             min = new float2(float.MaxValue);
             max = new float2(float.MinValue);

@@ -1,4 +1,4 @@
-using HyperRTS.Client.Common;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.Rendering;

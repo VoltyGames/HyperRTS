@@ -10,7 +10,7 @@ The simulation has no rendering, input or UI, so it runs on a dedicated server a
 | --- | --- |
 | `HyperRTS.Simulation` | Components, systems, authoring, phase groups. Includes `Core/` |
 | `HyperRTS.Network` | Sessions, join, command RPCs, replication, fog relevancy |
-| `HyperRTS.Presentation` | HUD, overlays, fog rendering, team colours, audio. Includes `Client/` |
+| `HyperRTS.Presentation` | HUD, overlays, fog rendering, team colours, audio. |
 | `HyperRTS.Input` | Camera and input, turned into `PlayerCommand`s |
 | `HyperRTS.Editor` | Tools window, inspectors, validation, debug tools, Map Editor |
 

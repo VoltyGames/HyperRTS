@@ -1,6 +1,6 @@
 using System;
-using HyperRTS.Client.Common;
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;

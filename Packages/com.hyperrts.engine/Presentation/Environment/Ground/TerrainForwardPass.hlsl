@@ -5,7 +5,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Interaction/Interaction.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainWetness.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainRemains.hlsl"
 
@@ -58,10 +58,10 @@ TerrainForwardVaryings TerrainForwardVertex(TerrainAttributes input)
 }
 
 // Returns where puddles gather.
-half ApplyInteraction(inout TerrainSurface surface, float2 positionXZ)
+half ApplyTrample(inout TerrainSurface surface, float2 positionXZ)
 {
     UNITY_BRANCH
-    if (!InteractionMapsOn())
+    if (!TrampleMapsOn())
     {
         return 0.0;
     }
@@ -136,7 +136,7 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
         ApplyMicro(surface, pixel);
     #endif
     half dampness = ApplyGroundTint(surface, input.uv, input.positionWS.xz);
-    half rut = ApplyInteraction(surface, input.positionWS.xz);
+    half rut = ApplyTrample(surface, input.positionWS.xz);
     half mud = ApplyRemains(surface, pixel);
     ApplyWetness(surface, dampness, max(rut, mud), input.positionWS.xz);
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);

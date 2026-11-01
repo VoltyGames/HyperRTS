@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         {
             _kernels.Compute.SetFloat(DensityId, settings.Density);
             _scatter.BindCamera(camera, settings.Distance);
-            InteractionSurfaces.BindTrample(_kernels.Compute, _kernels.Plant);
+            TrampleSurfaces.BindTrample(_kernels.Compute, _kernels.Plant);
         }
 
         public void Dispose() => _fieldBuffer.Release();

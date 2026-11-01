@@ -1,6 +1,6 @@
 namespace HyperRTS.Core
 {
-    /// <summary>A graphics detail step shared by the presentation quality knobs (effects, ground).</summary>
+    /// <summary>A graphics detail step for effects; ground uses <see cref="TerrainQuality"/>.</summary>
     public enum DetailLevel
     {
         Low,

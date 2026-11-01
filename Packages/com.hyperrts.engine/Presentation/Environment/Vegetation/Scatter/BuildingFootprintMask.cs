@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 {
     /// <summary>
     /// Where buildings stand, as an R8 picture over the map at nav-cell resolution, published as
-    /// <c>_HyperRTSFootprints</c> so grass and row crops skip those spots whatever the interaction-map quality.
+    /// <c>_HyperRTSFootprints</c> so grass and row crops skip those spots whatever the trample-map quality.
     /// </summary>
     public sealed partial class BuildingFootprintMask : IDisposable
     {

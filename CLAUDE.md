@@ -10,7 +10,7 @@ sample game.
 
 Assemblies layer so the simulation runs headless: `Network` and `Presentation` build on `Simulation`, `Input` on
 `Presentation`, Editor and tests on top. `HyperRTS.Simulation` never references Graphics, InputSystem or
-UIElements, and a headless server never runs `Client/`. See [architecture](docs/architecture.md) and
+UIElements, and a headless server never runs `Presentation/`. See [architecture](docs/architecture.md) and
 [modules](docs/modules.md).
 
 ## Gameplay contract

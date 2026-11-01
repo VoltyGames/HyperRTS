@@ -9,7 +9,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Tests.Orders
 {
     /// <summary>Placement rules and the pure helpers the input layer uses to build commands.</summary>
-    public class InteractionTests
+    public class TrampleTests
     {
         private static MapSettings Map(float cellSize = 1f) => new()
         {

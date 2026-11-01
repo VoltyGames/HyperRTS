@@ -1,4 +1,4 @@
-// World-rect and heightmap lookups shared by the terrain, crater and interaction shaders.
+// World-rect and heightmap lookups shared by the terrain, crater and trample shaders.
 #ifndef HYPERRTS_WORLD_RECT_INCLUDED
 #define HYPERRTS_WORLD_RECT_INCLUDED
 

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 
         /// <summary>Whether the batches already hold this view. Crops bend under the trample map, which changes every frame it is published.</summary>
         internal bool Holds(Vector3 position, ScatterSettings settings, List<int> tiles) =>
-            !InteractionSurfaces.Published && _view.Holds(position, settings, tiles);
+            !TrampleSurfaces.Published && _view.Holds(position, settings, tiles);
 
         /// <summary>Records the view the batches were just grown for.</summary>
         internal void Remember(Vector3 position, ScatterSettings settings, List<int> tiles) =>

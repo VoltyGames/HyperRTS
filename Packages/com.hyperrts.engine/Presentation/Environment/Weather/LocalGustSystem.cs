@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>
     /// Publishes this frame's <see cref="LocalGust"/>s to the vegetation shaders: downwash under low rotors the local
-    /// player sees and the blasts of seen impacts. Off with the interaction maps.
+    /// player sees and the blasts of seen impacts. Off with the trample maps.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -40,7 +40,7 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         protected override void OnUpdate()
         {
-            if (!InteractionStampSystem.MapsOn)
+            if (!TrampleStampSystem.MapsOn)
             {
                 _blasts.Clear();
                 Shader.SetGlobalFloat(CountId, 0f);

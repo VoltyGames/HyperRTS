@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Quality
         private static readonly GlobalKeyword NoParallax = GlobalKeyword.Create(NoParallaxKeyword);
 
         /// <summary>Sets the one keyword <paramref name="level"/> needs and clears the others.</summary>
-        internal static void SetKeywords(GroundLevel level)
+        internal static void SetKeywords(TerrainQuality level)
         {
             var keyword = KeywordFor(level);
             Shader.SetKeyword(Simple, keyword == SimpleKeyword);
@@ -34,12 +34,12 @@ namespace HyperRTS.Presentation.Quality
         }
 
         /// <summary>The one keyword a level sets, or null for Ultra, which is the shader's full path.</summary>
-        public static string KeywordFor(GroundLevel level) => level switch
+        public static string KeywordFor(TerrainQuality level) => level switch
         {
-            GroundLevel.Low => SimpleKeyword,
-            GroundLevel.Medium => NoFarKeyword,
-            GroundLevel.High => NoParallaxKeyword,
-            GroundLevel.Ultra => null,
+            TerrainQuality.Low => SimpleKeyword,
+            TerrainQuality.Medium => NoFarKeyword,
+            TerrainQuality.High => NoParallaxKeyword,
+            TerrainQuality.Ultra => null,
             _ => throw new System.ArgumentOutOfRangeException(nameof(level), level, "HyperRTS: unknown ground level."),
         };
 

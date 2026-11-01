@@ -162,13 +162,13 @@ namespace HyperRTS.Presentation.Tests.Environment
         [Test]
         public void TerrainDetail_GivesEachLevelBelowUltraItsOwnKeyword_AndUltraNone()
         {
-            var keywords = new[] { GroundLevel.Low, GroundLevel.Medium, GroundLevel.High }
+            var keywords = new[] { TerrainQuality.Low, TerrainQuality.Medium, TerrainQuality.High }
                 .Select(TerrainDetail.KeywordFor).ToArray();
 
             Assert.That(keywords, Is.All.Not.Null);
             Assert.That(keywords, Is.Unique);
-            Assert.AreEqual(TerrainDetail.NoParallaxKeyword, TerrainDetail.KeywordFor(GroundLevel.High));
-            Assert.IsNull(TerrainDetail.KeywordFor(GroundLevel.Ultra), "the shader's full path");
+            Assert.AreEqual(TerrainDetail.NoParallaxKeyword, TerrainDetail.KeywordFor(TerrainQuality.High));
+            Assert.IsNull(TerrainDetail.KeywordFor(TerrainQuality.Ultra), "the shader's full path");
         }
 
         [Test]

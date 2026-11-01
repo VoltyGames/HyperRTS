@@ -8,7 +8,7 @@
 
 SamplerState sampler_LinearClamp;
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Interaction/Interaction.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropInstance.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/Scatter.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"

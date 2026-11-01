@@ -1,4 +1,4 @@
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Overlays;
 using HyperRTS.Simulation.Common;

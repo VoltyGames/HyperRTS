@@ -1,5 +1,5 @@
-using HyperRTS.Client.Common;
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Core;
 using HyperRTS.Presentation.HUD;
 using Unity.Entities;

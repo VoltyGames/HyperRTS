@@ -115,7 +115,7 @@ interceptor does nothing.
 | --- | --- |
 | `Crusher` | A vehicle that flattens destructible scenery it drives over |
 | `DamageStagesAuthoring` | Models swapped by health fraction |
-| `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` footprint block it until they go, and while they are buried leave a square scorched and churned scar on the interaction maps |
+| `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` footprint block it until they go, and while they are buried leave a square scorched and churned scar on the trample maps |
 | `DropRemains` | Remains that fall from where the entity died onto the nav grid surface: ground, water or deck. Aircraft get it with `Flight` |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
 | `TurretTossAuthoring` | A unit that throws its turret when it dies to a catastrophic hit (below) |

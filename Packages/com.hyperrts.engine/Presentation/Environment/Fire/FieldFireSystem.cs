@@ -4,7 +4,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
@@ -25,10 +25,10 @@ namespace HyperRTS.Presentation.Environment.Fire
     /// them on with the wind, fog or not, so clients agree. Only what the local player sees gets ash and scorch, a fire
     /// effect per cluster and battle haze. Client visuals only; idle without a <see cref="FieldFireSettings"/> or terrain.
     /// </summary>
-    // After InteractionStampSystem, which clears the stamps these join.
+    // After TrampleStampSystem, which clears the stamps these join.
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateAfter(typeof(InteractionStampSystem))]
+    [UpdateAfter(typeof(TrampleStampSystem))]
     public partial class FieldFireSystem : SystemBase
     {
         // Discs well past a cell, nudged off the grid, so the stamps' soft edges overlap into one char with no tiling.
@@ -163,12 +163,12 @@ namespace HyperRTS.Presentation.Environment.Fire
         {
             var burntOut = _fires.BurntOut;
             SystemAPI.GetSingletonRW<FieldFireState>().ValueRW.BurntCells += burntOut.Count;
-            if (!InteractionStampSystem.MapsOn || burntOut.Count == 0)
+            if (!TrampleStampSystem.MapsOn || burntOut.Count == 0)
             {
                 return;
             }
 
-            var stamps = InteractionStampSystem.Find(World);
+            var stamps = TrampleStampSystem.Find(World);
             if (stamps == null)
             {
                 return;

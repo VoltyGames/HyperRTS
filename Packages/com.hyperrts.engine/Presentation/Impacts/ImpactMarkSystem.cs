@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Cues.Effects;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -19,13 +19,13 @@ namespace HyperRTS.Presentation.Impacts
     /// <summary>
     /// Lays the frame's impact <see cref="CueEvent"/>s on open ground as their shooter type's <see cref="ImpactMark"/>s:
     /// pooled URP decal projectors at terrain height, along the ground's slope, turned and sized at random, fading
-    /// with age; past a kind's cap the oldest is reused. Craters, scorch and remains also scar the interaction maps. Skips
+    /// with age; past a kind's cap the oldest is reused. Craters, scorch and remains also scar the trample maps. Skips
     /// impacts the local player can't see. During a replay, marks age on its clock and clear when it seeks back.
     /// </summary>
-    // After InteractionStampSystem, which clears the stamps craters join.
+    // After TrampleStampSystem, which clears the stamps craters join.
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateAfter(typeof(InteractionStampSystem))]
+    [UpdateAfter(typeof(TrampleStampSystem))]
     public partial class ImpactMarkSystem : SystemBase
     {
         private readonly Dictionary<ImpactMark, ImpactMarkDecals> _decals = new();
@@ -86,11 +86,11 @@ namespace HyperRTS.Presentation.Impacts
         private float Clock() =>
             SystemAPI.TryGetSingleton(out ReplayPlayback replay) ? replay.Time : (float)SystemAPI.Time.ElapsedTime;
 
-        private InteractionStamps Scars() => InteractionStampSystem.MapsOn
-            ? InteractionStampSystem.Find(World)
+        private TrampleStamps Scars() => TrampleStampSystem.MapsOn
+            ? TrampleStampSystem.Find(World)
             : null;
 
-        private void PlaceNew(float now, InteractionStamps scars)
+        private void PlaceNew(float now, TrampleStamps scars)
         {
             var cues = SystemAPI.GetSingletonBuffer<CueEvent>(true);
             if (cues.IsEmpty)
@@ -116,7 +116,7 @@ namespace HyperRTS.Presentation.Impacts
             }
         }
 
-        private void Place(ImpactMark mark, in CueEvent impact, in TerrainHeight terrain, float now, InteractionStamps scars)
+        private void Place(ImpactMark mark, in CueEvent impact, in TerrainHeight terrain, float now, TrampleStamps scars)
         {
             if (mark == null)
             {

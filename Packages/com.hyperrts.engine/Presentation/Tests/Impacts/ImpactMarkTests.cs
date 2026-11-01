@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System.Linq;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Tests.Impacts
         private World _world;
         private EntityManager _em;
         private ImpactMarkSystem _system;
-        private InteractionStampSystem _stamps;
+        private TrampleStampSystem _stamps;
         private ImpactMark _mark;
         private Material _decal;
 
@@ -37,7 +37,7 @@ namespace HyperRTS.Presentation.Tests.Impacts
             _kit = new PresentationWorldKit("Impact Mark Tests");
             _world = _kit.World;
             _em = _kit.EntityManager;
-            _stamps = _world.CreateSystemManaged<InteractionStampSystem>();
+            _stamps = _world.CreateSystemManaged<TrampleStampSystem>();
             _system = _world.CreateSystemManaged<ImpactMarkSystem>();
             _kit.AddCues();
 

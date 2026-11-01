@@ -1,4 +1,4 @@
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Interaction;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Cursors

@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Environment.Ground;
-using HyperRTS.Presentation.Environment.Interaction;
+using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using UnityEngine;
 
@@ -36,7 +36,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             _compute.SetVector(CameraId, new Vector4(position.x, position.y, position.z, distance));
             BuildingFootprintMask.Bind(_compute, _kernel);
             CraterTerrain.BindCraters(_compute, _kernel);
-            InteractionSurfaces.BindRemains(_compute, _kernel);
+            TrampleSurfaces.BindRemains(_compute, _kernel);
         }
     }
 }

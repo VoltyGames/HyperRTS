@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Client.Common;
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Buildings;
 using Unity.Entities;

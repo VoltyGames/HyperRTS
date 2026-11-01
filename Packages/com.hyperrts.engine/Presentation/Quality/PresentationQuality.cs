@@ -17,10 +17,10 @@ namespace HyperRTS.Presentation.Quality
         public DetailLevel Effects;
 
         /// <summary>Terrain shader detail (hex tiling, far sample, micro detail, triplanar slopes, parallax).</summary>
-        public GroundLevel Ground;
+        public TerrainQuality Ground;
 
         /// <summary>Ground mark (tracks, trampling) resolution, or Off.</summary>
-        public InteractionQuality Interactions;
+        public TrampleQuality Trampling;
 
         /// <summary>Share of grass and small plants grown, 0 (none) to 1.</summary>
         public float GrassDensity;
@@ -47,8 +47,8 @@ namespace HyperRTS.Presentation.Quality
         public static readonly PresentationQuality Default = new()
         {
             Effects = DetailLevel.High,
-            Ground = GroundLevel.Ultra,
-            Interactions = InteractionQuality.Full,
+            Ground = TerrainQuality.Ultra,
+            Trampling = TrampleQuality.Full,
             GrassDensity = 1f,
             GrassDistance = 200f,
             GrassShadowDistance = 40f,

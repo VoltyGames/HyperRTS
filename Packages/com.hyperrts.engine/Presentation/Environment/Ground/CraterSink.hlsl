@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_CRATER_SINK_INCLUDED
 #define HYPERRTS_CRATER_SINK_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Interaction/InteractionGlobals.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/TrampleGlobals.hlsl"
 
 #define SINK_FULL_HEIGHT 0.5 // metres above the undented ground an object still sinks fully
 #define SINK_NONE_HEIGHT 2.0 // and from where it stays put: aircraft, bridge decks, rooftops
@@ -16,10 +16,10 @@ float4 _HyperRTSUndentedScale;
 // Metres the drawn ground sank at positionXZ; none off the maps, where CraterTerrainSystem dents nothing.
 float CraterDepth(float2 positionXZ)
 {
-    float2 uv = InteractionUV(positionXZ);
+    float2 uv = TrampleUV(positionXZ);
     float depth = 0.0;
     UNITY_BRANCH
-    if (OnInteractionMaps(uv))
+    if (OnTrampleMaps(uv))
     {
         depth = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).a * HYPERRTS_MAX_CRATER_DEPTH;
     }

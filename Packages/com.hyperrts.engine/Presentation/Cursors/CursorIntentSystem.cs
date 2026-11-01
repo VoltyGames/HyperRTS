@@ -1,4 +1,4 @@
-using HyperRTS.Client.Interaction;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Common;

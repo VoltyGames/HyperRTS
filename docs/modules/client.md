@@ -7,8 +7,8 @@ simulation, so two clients may look slightly different.
 
 ## Interaction
 
-UI state that input, the HUD and overlays share, created once per presented world. It lives in `Client/`.
-`DefaultWorld` and `LiveQuery` give MonoBehaviours the presented world and a query that survives world swaps.
+UI state that input, the HUD and overlays share, created once per presented world. It lives in `Presentation/Interaction/`.
+`DefaultWorld` and `LiveQuery` (in `Presentation/Common/`) give MonoBehaviours the presented world and a query that survives world swaps.
 
 | Singleton | Role |
 | --- | --- |
@@ -42,7 +42,7 @@ Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()
 Rendering, HUD, effects and audio. `MatchView` is a once-per-frame read model for MonoBehaviours: local player,
 relations and colours.
 
-`Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Interaction`,
+`Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Trampling`,
 `Fire`, `Weather` (atmosphere, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`, `RowCrops`,
 `Scatter`, `Shading`) and `Ambient`. `GridArea` and `EdgeNoise.png`, which several of them share, stay at the top.
 `Quality/` holds the knobs the game sets from its graphics options.
@@ -473,12 +473,12 @@ Tree meshes for Foliage with **Tree Wind** on, and for Bark, carry wind data in 
 | COLOR b | Stiffness: 0 limb, 1 twig |
 | COLOR a | Flutter weight, 1 on leaf cards |
 
-### Interaction maps
+### Trample maps
 
 Vehicles leave ruts and flatten grass and crops, shells leave craters and scorch, and units moving through water
-leave wakes, and the ground keeps rubble, ash, fuel and wet mud. `InteractionMap` on the rig keeps four GPU textures
+leave wakes, and the ground keeps rubble, ash, fuel and wet mud. `TrampleMap` on the rig keeps four GPU textures
 over the map and stamps them each frame. It needs
-the `Hidden/HyperRTS/Interaction Brush` shader.
+the `Hidden/HyperRTS/Trample Brush` shader.
 
 | Texture | Channels |
 | --- | --- |
@@ -493,12 +493,12 @@ whose `ImpactMark` has a `craterDepth` or `scorch` stamps a round bowl half the 
 slightly wider scorch disc, and flattens the plants over it. Its `rubble`, `ash` and `fuel` cover the scorch's
 disc in the remains map. A death cue the local player sees on the ground stamps the type's `DeathRemains` (from
 `DeathRemainsAuthoring`: a radius and the four amounts), such as fuel and wet mud under a vehicle's hull. Other
-sources (collapsing buildings, field fires) call `InteractionStamps.AddRemains` with a centre, a radius and the four
-amounts, after `InteractionStampSystem` has run. Units with a `NavAgent` riding water cells stamp foam
+sources (collapsing buildings, field fires) call `TrampleStamps.AddRemains` with a centre, a radius and the four
+amounts, after `TrampleStampSystem` has run. Units with a `NavAgent` riding water cells stamp foam
 behind them. A replay seeking back clears the maps, as it clears the decals.
 
-Shaders read the maps through `Interaction.hlsl` (trample, tracks, craters and wake), which builds on
-`InteractionGlobals.hlsl`: the map globals, `InteractionMapsOn`, `InteractionUV`, `OnInteractionMaps` and the crater depth
+Shaders read the maps through `Trample.hlsl` (trample, tracks, craters and wake), which builds on
+`TrampleGlobals.hlsl`: the map globals, `TrampleMapsOn`, `TrampleUV`, `OnTrampleMaps` and the crater depth
 `HYPERRTS_MAX_CRATER_DEPTH`. The terrain darkens ruts and flattened grass, bends its normal down
 the crater's slope so the sun lights the bowl, darkens and dampens the bowl's soil, and blackens scorched ground. `TerrainRemains.hlsl` then lays the terrain
 material's tiled rubble, ash and wet mud textures (`_Remains*`) and an untextured dark, glossy fuel slick with a faint
@@ -548,8 +548,8 @@ redone whenever a building appears, goes or moves, before that frame's ignitions
   fiftieth of a shell's puff each second), and the nearest seen squares stream
   the rig, up to the cap; a square that falls back into fog drops its stream.
 - A seen cell that burns out stamps a soft 2.6 m disc of full ash into the remains map and of scorch into the tracks
-  map (`InteractionStamps.AddScorch`), nudged up to 0.35 m off the grid, so neighbours overlap into one char. The grass and row crop kernels get the remains map bound by
-  `InteractionSurfaces.BindRemains` and drop plants where ash lies (`BurntPlants.hlsl`), so burnt fields stay bare;
+  map (`TrampleStamps.AddScorch`), nudged up to 0.35 m off the grid, so neighbours overlap into one char. The grass and row crop kernels get the remains map bound by
+  `TrampleSurfaces.BindRemains` and drop plants where ash lies (`BurntPlants.hlsl`), so burnt fields stay bare;
   a crater's lighter ash only thins them. A still camera's grass and crops regrow when `FieldFireState.BurntCells` changes (`ScatterView` tracks it).
 
 ### Building footprints
@@ -557,13 +557,13 @@ redone whenever a building appears, goes or moves, before that frame's ignitions
 `BuildingFootprintSystem` draws every building's turned obstacle box into an R8 mask over the map at nav-cell
 resolution and publishes it as `_HyperRTSFootprints`, with `_HyperRTSFootprintRect` (zero without a map). Cells
 within half a cell of a wall count too. Grass and row crops skip plants where it is set, whatever the
-interaction-map quality, through `BuildingFootprints.hlsl`. It redraws only when buildings appear or go and their
+trample-map quality, through `BuildingFootprints.hlsl`. It redraws only when buildings appear or go and their
 boxes differ, and each redraw bumps `BuildingFootprintMask.Version` so cameras rescatter their plants. With no map
 loaded it holds no texture.
 
 `LocalGustSystem` also sends up to 8 radial gusts to `Wind.hlsl`: downwash under a seen rotorcraft within its rotor
 wash height of the ground (25 m without one), and the blast of each seen impact with a splash of 1 m or more, which
-spreads out and relaxes over about a second. Plants lean away from them and tree trunks bend as in wind. Interaction quality Off turns them off.
+spreads out and relaxes over about a second. Plants lean away from them and tree trunks bend as in wind. Trample quality Off turns them off.
 
 ### Row crops
 
@@ -721,7 +721,7 @@ loop it streams this frame:
 ### Quality
 
 The game fills one `PresentationQuality` and calls `PresentationQuality.Apply`. It covers effect and ground detail,
-interaction maps, grass and row crop density and distance, and render scale. Apply sets them all, and again on each
+trample maps, grass and row crop density and distance, and render scale. Apply sets them all, and again on each
 scene load. Shadows and the other pipeline features come from the game's quality levels, each with its own URP
 asset, so the game sets the quality level before Apply, which writes render scale onto that level's asset.
 Apply throws naming the first knob out of range before it writes anything. `Current` holds the last settings and

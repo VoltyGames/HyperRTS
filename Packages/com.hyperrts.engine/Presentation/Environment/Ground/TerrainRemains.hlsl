@@ -4,7 +4,7 @@
 #define HYPERRTS_TERRAIN_REMAINS_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Interaction/Interaction.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
 
 #define REMAINS_NOISE_SIZE 3.0 // metres
@@ -87,12 +87,12 @@ void ApplyChar(inout TerrainSurface surface, TerrainPixel pixel, half ash, half 
 half ApplyRemains(inout TerrainSurface surface, TerrainPixel pixel)
 {
     UNITY_BRANCH
-    if (!InteractionMapsOn())
+    if (!TrampleMapsOn())
     {
         return 0.0;
     }
 
-    half4 remains = SAMPLE_TEXTURE2D_LOD(_HyperRTSRemains, sampler_LinearClamp, InteractionUV(pixel.xz), 0);
+    half4 remains = SAMPLE_TEXTURE2D_LOD(_HyperRTSRemains, sampler_LinearClamp, TrampleUV(pixel.xz), 0);
     UNITY_BRANCH
     if (!any(remains > 0.0))
     {

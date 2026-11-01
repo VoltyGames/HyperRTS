@@ -121,7 +121,7 @@ Shader "HyperRTS/Water"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
 
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Interaction/Interaction.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/Trample.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterFoam.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterReflection.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneFog.hlsl"

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Client.Common;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
