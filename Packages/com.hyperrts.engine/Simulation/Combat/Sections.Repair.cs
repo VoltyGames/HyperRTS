@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Combat
             var latest = -1;
             for (var i = 0; i < sections.Length; i++)
             {
-                var stands = sections[i].Anchored || (sections[i].Supports & supported) != 0;
+                var stands = sections[i].StandsOn(supported);
                 if (sections[i].IsBroken && stands && (latest < 0 || sections[i].BreakOrder > sections[latest].BreakOrder))
                 {
                     latest = i;

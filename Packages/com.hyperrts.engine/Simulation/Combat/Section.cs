@@ -34,6 +34,9 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Carries the walkable deck of the building's <see cref="NavArea"/>, which closes while it is broken.</summary>
         public bool Deck;
 
+        /// <summary>Needs every support standing, not just one (a bridge span), so it falls when any goes.</summary>
+        public bool NeedsAllSupports;
+
         /// <summary>Horizontal, or up for a roof over the centre; the way debris flies.</summary>
         public float3 Outward;
 
@@ -41,6 +44,25 @@ namespace HyperRTS.Simulation.Combat
         public int BreakOrder;
 
         public readonly bool IsBroken => BreakOrder > 0;
+
+        /// <summary>Whether it rests on something and every support is in <paramref name="broken"/>, so a stub would hang in the air.</summary>
+        public readonly bool Hangs(ulong broken) => Supports != 0ul && (Supports & ~broken) == 0ul;
+
+        /// <summary>Whether it stands on <paramref name="supported"/>: anchored, or resting on one support or on all of them.</summary>
+        public readonly bool StandsOn(ulong supported)
+        {
+            if (Anchored)
+            {
+                return true;
+            }
+
+            if (NeedsAllSupports)
+            {
+                return Supports != 0ul && (Supports & ~supported) == 0ul;
+            }
+
+            return (Supports & supported) != 0ul;
+        }
 
         /// <summary>Distance from <paramref name="local"/> to the box, 0 inside it.</summary>
         public readonly float Gap(float3 local) => math.length(math.max(math.abs(local - Center) - HalfSize, 0f));

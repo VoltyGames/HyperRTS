@@ -155,8 +155,9 @@ three break clips are baked once per building. See [client](client.md#destructio
   reach. Splash from a hit elsewhere reaches every section within its radius with the usual falloff. Each section's
   material multiplies the damage after the building's own armor. A section at 0 health breaks and takes the next
   break order.
-- **Collapse.** `SectionCollapseSystem` floods the supports up from the anchored sections after each break. Whatever
-  no longer reaches the ground falls one support level every 0.3 s (`Sections.FallDelay`): first the sections whose
+- **Collapse.** `SectionCollapseSystem` floods the supports up from the anchored sections after each break. A section
+  stands while any of its supports does, or only while all of them do when its `needsAllSupports` is ticked (a bridge
+  span, so it falls with either pier). Whatever no longer reaches the ground falls one support level every 0.3 s (`Sections.FallDelay`): first the sections whose
   supports are all down, or all of them at once when they only hold each other up.
 - **Floors.** A section that falls marks its floor fallen in `IntactFloors`. A container gives each floor an even
   share of its slots, filled ground floor first; `FallenFloorSystem` hits the passengers of a fallen floor for 60 % of

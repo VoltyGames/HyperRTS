@@ -71,6 +71,7 @@ namespace HyperRTS.Simulation.Combat
                     Anchored = entry.anchored,
                     Exterior = entry.exterior,
                     Deck = entry.deck,
+                    NeedsAllSupports = entry.needsAllSupports,
                     Outward = Outward(box.center, middle),
                 });
             }

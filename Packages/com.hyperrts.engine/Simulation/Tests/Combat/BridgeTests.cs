@@ -115,5 +115,24 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.AreEqual(100f * SpanCount, _world.GetHealth(bridge), 1e-3f);
             Assert.IsFalse(_world.IsEnabled<ActiveOrder>(engineer), "the order ends when it is whole");
         }
+
+        [Test]
+        public void SpanNeedingEverySupport_FallsWhenOneSupportGoes()
+        {
+            var bridge = Bridge();
+            var sections = _world.EntityManager.GetBuffer<Section>(bridge);
+            var span = sections[1];
+            span.Supports = 1ul | (1ul << (SpanCount - 1));
+            span.NeedsAllSupports = true;
+            sections[1] = span;
+            _world.Tick(frames: 2);
+            Assert.IsTrue(Open(1));
+
+            Hit(bridge, 0);
+            _world.RunUntil(() => !Open(1), 5f);
+
+            Assert.IsFalse(Open(1), "one pier gone brings the span down");
+            Assert.IsTrue(Open(3), "the span over the other bank stays");
+        }
     }
 }

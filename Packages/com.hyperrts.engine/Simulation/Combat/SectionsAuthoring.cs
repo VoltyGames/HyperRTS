@@ -57,6 +57,9 @@ namespace HyperRTS.Simulation.Combat
             [Tooltip("Carries the walkable deck of this object's Nav Area (a bridge span): that stretch closes while it is broken.")]
             public bool deck;
 
+            [Tooltip("Needs every support standing, not one (a bridge span): it falls when any of them goes.")]
+            public bool needsAllSupports;
+
             [Tooltip("Share of the building's health, against the others' shares.")]
             [Min(0.01f)]
             public float share;

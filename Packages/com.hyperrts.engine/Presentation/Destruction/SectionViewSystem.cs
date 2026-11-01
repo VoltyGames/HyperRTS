@@ -92,6 +92,7 @@ namespace HyperRTS.Presentation.Destruction
             var touched = quiet ? all : broken ^ shown.Broken;
             touched |= quiet ? 0ul : Record(at, impacts, broken);
             touched |= Finished(at, shown.Breaking);
+            touched |= quiet ? 0ul : Unpropped(at, broken ^ shown.Broken, broken, shown.Breaking);
             if (touched != 0ul)
             {
                 var parts = new NativeList<Entity>(Allocator.Temp);
@@ -142,6 +143,22 @@ namespace HyperRTS.Presentation.Destruction
             return changed;
         }
 
+        /// <summary>Broken sections not mid-clip whose supports changed, since their stub shows only while one stands.</summary>
+        private static ulong Unpropped(Context at, ulong changed, ulong broken, ulong breaking)
+        {
+            var touched = 0ul;
+            for (var i = 0; i < at.Models.Length; i++)
+            {
+                var bit = 1ul << i;
+                if ((broken & bit) != 0ul && (breaking & bit) == 0ul && (at.Sections[i].Supports & changed) != 0ul)
+                {
+                    touched |= bit;
+                }
+            }
+
+            return touched;
+        }
+
         private static ulong Finished(Context at, ulong breaking)
         {
             var done = 0ul;
@@ -179,7 +196,8 @@ namespace HyperRTS.Presentation.Destruction
 
             shown.Breaking = phase == Phase.Breaking ? shown.Breaking | bit : shown.Breaking & ~bit;
             at.Looks[index] = look;
-            Display(parts, at.Models[index], look, phase);
+            var hangs = phase == Phase.Broken && at.Sections[index].Hangs(broken);
+            Display(parts, at.Models[index], look, phase, hangs);
         }
 
         /// <summary>Starts a seen break: its effect and debris, and the pieces' clip when it has them.</summary>
@@ -218,7 +236,7 @@ namespace HyperRTS.Presentation.Destruction
             return fromOutside ? clips.BlownIn : clips.BlownOut;
         }
 
-        private void Display(NativeList<Entity> parts, in SectionModel model, in SectionLook look, Phase phase)
+        private void Display(NativeList<Entity> parts, in SectionModel model, in SectionLook look, Phase phase, bool hangs)
         {
             var standing = phase == Phase.Standing;
             Hide(parts, model.Intact, !standing || look.Hole != 0);
@@ -228,7 +246,7 @@ namespace HyperRTS.Presentation.Destruction
             }
 
             Hide(parts, model.Pieces, phase != Phase.Breaking);
-            Hide(parts, model.Stub, standing);
+            Hide(parts, model.Stub, standing || hangs);
             Hide(parts, model.Heap, phase != Phase.Broken);
             Hide(parts, model.Broken, standing);
         }

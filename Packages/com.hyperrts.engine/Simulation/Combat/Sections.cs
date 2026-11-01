@@ -108,7 +108,7 @@ namespace HyperRTS.Simulation.Combat
                         continue;
                     }
 
-                    if (section.Anchored || (section.Supports & supported) != 0)
+                    if (section.StandsOn(supported))
                     {
                         supported |= bit;
                         grew = true;

@@ -120,10 +120,12 @@ namespace HyperRTS.Simulation.Combat
         private SectionsAuthoring.Entry Entry(SectionsAuthoring owner, Part part)
         {
             var intact = FindModel(owner, part.meshes.intact);
+            var kept = Array.Find(owner.sections, item => item.intact == intact);
             var entry = new SectionsAuthoring.Entry
             {
                 intact = intact,
-                deck = Array.Find(owner.sections, item => item.intact == intact).deck,
+                deck = kept.deck,
+                needsAllSupports = kept.needsAllSupports,
                 material = FindMaterial(owner, part.material),
                 pieces = Hidden(owner, part.meshes.pieces),
                 stub = Hidden(owner, part.meshes.stub),

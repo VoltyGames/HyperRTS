@@ -112,6 +112,29 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
+        public void Stub_HidesWhileNoSupportStands_AndReturnsOnRepair()
+        {
+            var house = Building(0ul, true, out var models);
+            var sections = _em.GetBuffer<Section>(house);
+            var resting = sections[2];
+            resting.Supports = 0b1000ul;
+            sections[2] = resting;
+            Update(0f);
+            SetBroken(house, 0b0100ul);
+            Update(1f);
+            Update(1f + Clips.Collapse.Seconds + 0.1f);
+            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
+
+            SetBroken(house, 0b1100ul);
+            Update(10f);
+            AssertDrawn(models[2], intact: false, pieces: false, stub: false, heap: true);
+
+            SetBroken(house, 0b0100ul);
+            Update(11f);
+            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
+        }
+
+        [Test]
         public void Repair_RevealsTheSectionAgain()
         {
             var house = Building(0ul, true, out var models);

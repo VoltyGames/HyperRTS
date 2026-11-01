@@ -362,7 +362,8 @@ and cosmetic, following the simulation's broken mask, which is the same on every
   and a collapse when no impact is known, as when it falls from lost supports. The building's effect, debris and, for
   a ground floor section, its dust wave play with it. When the clip ends the pieces hide and the heap shows.
 - **Broken:** the stub and heap, with no clip, for a break nobody saw or a building first seen
-  (`ShownSections.Seen` cleared by the scenery writer, which also resets the holes).
+  (`ShownSections.Seen` cleared by the scenery writer, which also resets the holes). A stub whose supports are all
+  broken is hidden, since it would hang in the air, and shows again once one is repaired.
 - **Repair:** clearing the bit shows the intact model again and hides the rest.
 
 The clip rows come from the structure file (`SectionClips`, shared by every section), and per-section sight state
