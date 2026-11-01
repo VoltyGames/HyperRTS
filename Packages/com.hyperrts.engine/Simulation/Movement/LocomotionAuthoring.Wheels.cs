@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace HyperRTS.Simulation.Movement
         /// Measures <see cref="wheelbase"/> and <see cref="rearAxle"/> from the model's Wheel_L01... wheels: the first
         /// <see cref="steeringAxles"/> axles from the front steer, the rest make the rear axle.
         /// </summary>
-        [ContextMenu("Fill From Wheels")]
+        [InspectorButton("Fill from wheels")]
         public void FillFromWheels()
         {
             var axles = Axles();
@@ -31,9 +32,6 @@ namespace HyperRTS.Simulation.Movement
             var rear = axles.Skip(steeringAxles).Average();
             wheelbase = front - rear;
             rearAxle = -rear;
-#if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(this);
-#endif
         }
 
         /// <summary>Whether <paramref name="wheel"/> sits on one of the steering axles of a wheeled hull.</summary>

@@ -44,7 +44,6 @@ Shader "HyperRTS/RowCrop"
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/SimpleLightingKeywords.hlsl"
-            #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropPasses.hlsl"
             ENDHLSL
         }
@@ -74,7 +73,7 @@ Shader "HyperRTS/RowCrop"
             ColorMask R
 
             HLSLPROGRAM
-            #pragma vertex CutoutVert
+            #pragma vertex DepthVert
             #pragma fragment DepthFrag
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropPasses.hlsl"
             ENDHLSL
@@ -88,7 +87,7 @@ Shader "HyperRTS/RowCrop"
             ZWrite On
 
             HLSLPROGRAM
-            #pragma vertex CutoutVert
+            #pragma vertex DepthVert
             #pragma fragment DepthNormalsFrag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropPasses.hlsl"

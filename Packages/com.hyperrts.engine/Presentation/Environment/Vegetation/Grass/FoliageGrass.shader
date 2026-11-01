@@ -57,7 +57,6 @@ Shader "Hidden/HyperRTS/FoliageGrass"
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/SimpleLightingKeywords.hlsl"
-            #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -87,7 +86,7 @@ Shader "Hidden/HyperRTS/FoliageGrass"
             ColorMask R
 
             HLSLPROGRAM
-            #pragma vertex CutoutVert
+            #pragma vertex DepthVert
             #pragma fragment DepthFrag
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
@@ -101,7 +100,7 @@ Shader "Hidden/HyperRTS/FoliageGrass"
             ZWrite On
 
             HLSLPROGRAM
-            #pragma vertex CutoutVert
+            #pragma vertex DepthVert
             #pragma fragment DepthNormalsFrag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"

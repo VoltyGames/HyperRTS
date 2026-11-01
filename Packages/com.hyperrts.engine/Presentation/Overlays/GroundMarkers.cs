@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Overlays
 {
-    /// <summary>One frame's selection and hover markers, draped on the active terrain in one instanced draw.</summary>
+    /// <summary>One frame's selection and hover markers, draped on the active terrain in one draw.</summary>
     public sealed class GroundMarkers : IDisposable
     {
         private const float HoverLine = 0.6f;
@@ -14,14 +14,14 @@ namespace HyperRTS.Presentation.Overlays
         // Keeps the shader's corner radius non-zero so its sign can carry the bracket flag.
         private const float MinCorner = 0.01f;
 
-        private readonly InstanceDataBatch _batch;
+        private readonly InstanceBuffer<MarkerInstance> _markers;
         private readonly Material _material;
         private Terrain _terrain;
         private TerrainHeightInput _heights;
 
         public GroundMarkers(Mesh grid, Material material)
         {
-            _batch = new InstanceDataBatch(grid, "_Tint", "_Marker");
+            _markers = new InstanceBuffer<MarkerInstance>(grid);
             _material = new Material(material) { hideFlags = HideFlags.DontSave };
             BindFlatGround();
         }
@@ -32,16 +32,25 @@ namespace HyperRTS.Presentation.Overlays
             var fill = selected ? style.markerFill : 0f;
             var corner = Mathf.Max(footprint.CornerRadius, MinCorner);
             var signedCorner = footprint.Shape == MarkerShape.Brackets ? -corner : corner;
-            _batch.Add(pose.Matrix(footprint), color, new Vector4(line, style.markerFade, fill, signedCorner));
+            _markers.Add(new MarkerInstance
+            {
+                ObjectToWorld = pose.Matrix(footprint),
+                Tint = color,
+                Shape = new Vector4(line, style.markerFade, fill, signedCorner),
+            });
         }
 
         public void Draw(int layer)
         {
             BindTerrain(Terrain.activeTerrain);
-            _batch.Draw(_material, layer);
+            _markers.Draw(_material, layer);
         }
 
-        public void Dispose() => Object.Destroy(_material);
+        public void Dispose()
+        {
+            _markers.Dispose();
+            Object.Destroy(_material);
+        }
 
         // A map rebuild or scene change swaps the terrain or its heightmap texture.
         private void BindTerrain(Terrain terrain)

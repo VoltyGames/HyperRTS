@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
     /// <summary>One crop's GPU side for one camera: visible tiles, a slot per (variant, band) that RowCrops.compute fills, and the indirect draws.</summary>
-    internal sealed class RowCropBatch : ScatterBatch
+    public sealed class RowCropBatch : ScatterBatch
     {
         private const int MinCapacity = 1024;
 
@@ -29,8 +29,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         private readonly int _plantBound;
         private readonly float _height;
 
-        public RowCropBatch(RowCrop crop, RowCropCompute kernels)
-            : base(kernels.Compute, kernels.Plant, kernels.Count, SlotMeshes(crop), MinCapacity)
+        internal RowCropBatch(RowCrop crop, RowCropComputeInputs kernels)
+            : base(kernels, SlotMeshes(crop), MinCapacity)
         {
             _crop = crop;
             _variants = crop.variants.Count;
@@ -44,7 +44,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         }
 
         /// <summary>Whether the batch no longer draws <paramref name="crop"/> as it is: another crop, its height or its models changed.</summary>
-        public bool Stale(RowCrop crop)
+        internal bool Stale(RowCrop crop)
         {
             if (crop == null || crop != _crop || crop.variants.Count != _variants || crop.height != _height)
             {
@@ -64,10 +64,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             return false;
         }
 
-        protected override void ForgetView() => Array.Clear(_needed, 0, _needed.Length);
+        private protected override void ForgetView() => Array.Clear(_needed, 0, _needed.Length);
 
         /// <summary>Queues a visible tile of one of the crop's fields, <paramref name="near"/> to <paramref name="far"/> metres away.</summary>
-        public void Add(ScatterJob job, Bounds bounds, float drawDistance, float near, float far)
+        internal void Add(ScatterJob job, Bounds bounds, float drawDistance, float near, float far)
         {
             Queue(job);
             for (var lod = 0; lod < RowCropBands.Lods; lod++)
@@ -87,7 +87,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             }
         }
 
-        protected override void BindShaping()
+        private protected override void BindShaping()
         {
             Compute.SetVector(PlantingId, new Vector4(_crop.rowSpacing, _crop.plantSpacing, _crop.jitter,
                 _crop.yawJitter * Mathf.Deg2Rad));
@@ -101,7 +101,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         }
 
         // Each slot holds its band's share of the queued tiles' worst case.
-        protected override void Reserve()
+        private protected override void Reserve()
         {
             for (var slot = 0; slot < Meshes.Length; slot++)
             {
@@ -113,7 +113,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             Slots.Fit(_capacities);
         }
 
-        protected override RenderParams Parameters(int slot)
+        private protected override RenderParams Parameters(int slot)
         {
             var card = slot % RowCropBands.Lods == RowCropBands.Card;
             return new RenderParams(card ? _crop.cardMaterial : _crop.material)

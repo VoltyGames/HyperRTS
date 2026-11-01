@@ -3,9 +3,8 @@
 // u = (column + 0.5) / width, v = row within the frame, so it survives Unity splitting vertices on import.
 // With _VAT_RIGID on, the mesh is rigid pieces instead: UV1's u names the piece's column, and the piece moves by its
 // position in _VATPositions and rotation (a quaternion) in _VATRotations at the frame's row, about where row 0 has it.
-// The wrappers then apply the construction reveal (LitTeamBuild.hlsl), bend track meshes over their wheels
-// (LitTeamTrack.hlsl) and sink the object into craters.
-// Include it after the pass file: it wraps whichever pass vertex function that file defined.
+// LIT_TEAM_DEFORM then applies the construction reveal (LitTeamBuild.hlsl), bends track meshes over their wheels
+// (LitTeamTrack.hlsl) and sinks the object into craters.
 #ifndef HYPERRTS_LIT_TEAM_VAT_INCLUDED
 #define HYPERRTS_LIT_TEAM_VAT_INCLUDED
 
@@ -24,9 +23,6 @@
 #else
 #define VAT_INDEX_INPUT
 #endif
-
-// Instanced properties are only readable once the DOTS property cache is set up.
-#define LIT_TEAM_SETUP_INSTANCE(input) UNITY_SETUP_INSTANCE_ID(input)
 
 // Mirrors VATClip.FrameAt on the C# side: x frame, y next frame, z blend.
 float3 VATFrameAt(float4 clip, float time)
@@ -78,25 +74,6 @@ void ApplyRigidVAT(float2 vatIndex, inout float3 positionOS, inout float3 normal
     normalOS = VATRotate(rotation, normalOS);
 }
 
-float3 VATPosition(float2 vatIndex, float3 positionOS)
-{
-#ifdef _VAT_RIGID
-    float3 normal = float3(0.0, 1.0, 0.0);
-    ApplyRigidVAT(vatIndex, positionOS, normal);
-    return positionOS;
-#else
-    float3 frame = VATFrameAt(_VATClip, _VATTime);
-    float3 position = VAT_LOAD(_VATPositions, vatIndex, frame);
-    float weight = VATFadeWeight();
-    if (weight < 1.0)
-    {
-        float3 old = _VATFade.xyz;
-        position = lerp(VAT_LOAD(_VATPositions, vatIndex, old), position, weight);
-    }
-    return position;
-#endif
-}
-
 void ApplyVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
 {
 #ifdef _VAT_RIGID
@@ -122,77 +99,22 @@ float3 DeformObject(float3 positionOS)
     return SinkObjectIntoCrater(BendTrack(positionOS));
 }
 
-// The forward pass reads UV1 as URP's static lightmap UV, which VAT renderers never use.
-#if defined(UNIVERSAL_FORWARD_LIT_PASS_INCLUDED)
-Varyings LitTeamForwardVertex(Attributes input BUILD_ORDER_INPUT)
-{
-    LIT_TEAM_SETUP_INSTANCE(input);
 #ifdef LIT_TEAM_VAT
-    ApplyVAT(input.staticLightmapUV, input.positionOS.xyz, input.normalOS);
-#endif
-#ifdef _BUILD
-    ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
-#endif
-    input.positionOS.xyz = DeformObject(input.positionOS.xyz);
-    return LitPassVertex(input);
-}
-#elif defined(UNIVERSAL_SHADOW_CASTER_PASS_INCLUDED)
-Varyings LitTeamShadowVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
-{
-    LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef LIT_TEAM_VAT
-    ApplyVAT(vatIndex, input.positionOS.xyz, input.normalOS);
-#endif
-#ifdef _BUILD
-    ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
-#endif
-    input.positionOS.xyz = DeformObject(input.positionOS.xyz);
-    return ShadowPassVertex(input);
-}
-#elif defined(UNIVERSAL_DEPTH_ONLY_PASS_INCLUDED)
-Varyings LitTeamDepthOnlyVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
-{
-    LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef LIT_TEAM_VAT
-#if defined(REQUIRES_TANGENT_SPACE_VIEW_DIR_INTERPOLATOR)
-    ApplyVAT(vatIndex, input.position.xyz, input.normalOS);
+    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS) ApplyVAT(vatIndex, positionOS, normalOS);
 #else
-    input.position.xyz = VATPosition(vatIndex, input.position.xyz);
+    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS)
 #endif
-#endif
+
 #ifdef _BUILD
-    input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
+    #define LIT_TEAM_BUILD(positionOS, normalOS) ApplyBuild(buildOrder, positionOS, normalOS);
+#else
+    #define LIT_TEAM_BUILD(positionOS, normalOS)
 #endif
-    input.position.xyz = DeformObject(input.position.xyz);
-    return DepthOnlyVertex(input);
-}
-#elif defined(UNIVERSAL_FORWARD_LIT_DEPTH_NORMALS_PASS_INCLUDED)
-Varyings LitTeamDepthNormalsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
-{
-    LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef LIT_TEAM_VAT
-    ApplyVAT(vatIndex, input.positionOS.xyz, input.normal);
-#endif
-#ifdef _BUILD
-    ApplyBuild(buildOrder, input.positionOS.xyz, input.normal);
-#endif
-    input.positionOS.xyz = DeformObject(input.positionOS.xyz);
-    return DepthNormalsVertex(input);
-}
-#elif defined(UNIVERSAL_OBJECT_MOTION_VECTORS_INCLUDED)
-// Previous and current pose read the same frame, so only the transform's motion shows.
-Varyings LitTeamMotionVectorsVertex(Attributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
-{
-    LIT_TEAM_SETUP_INSTANCE(input);
-#ifdef LIT_TEAM_VAT
-    input.position.xyz = VATPosition(vatIndex, input.position.xyz);
-#endif
-#ifdef _BUILD
-    input.position.xyz = BuildPosition(buildOrder, input.position.xyz);
-#endif
-    input.position.xyz = DeformObject(input.position.xyz);
-    return vert(input);
-}
-#endif
+
+// Every LitTeam pass moves its vertices through this, so all of them agree on depth. Reads the buildOrder input.
+#define LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS) \
+    LIT_TEAM_POSE(vatIndex, positionOS, normalOS) \
+    LIT_TEAM_BUILD(positionOS, normalOS) \
+    positionOS = DeformObject(positionOS);
 
 #endif

@@ -51,6 +51,9 @@ namespace HyperRTS.Editor.Effects
             return JsonFormat.Write(JsonChanges.Apply(JsonFormat.Parse(fileJson), before, after, LayerDefaults.Value));
         }
 
+        /// <summary>The JSON Schema of <c>.effect.json</c>, for editors to complete and check recipes.</summary>
+        public static string Schema() => JsonFormat.Write(JsonSpecSchema.Build(typeof(EffectGraphSpec), "Effect graph spec", _ => null));
+
         public static bool IsRecipe(string path) => path.EndsWith(Extension, StringComparison.Ordinal);
 
         /// <summary>The graph a spec at <paramref name="jsonPath"/> builds.</summary>

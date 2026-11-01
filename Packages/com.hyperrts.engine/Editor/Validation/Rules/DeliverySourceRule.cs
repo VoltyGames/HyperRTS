@@ -18,7 +18,6 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues.Error(source, "Delivery source has no resource type.");
             }
 
-            CheckPrefabReference(source, source.carrier, "Carrier", issues);
             CheckUnarmed(source, issues);
         }
 

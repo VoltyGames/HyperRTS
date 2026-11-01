@@ -41,6 +41,9 @@ namespace HyperRTS.Editor.Maps.Build
         public MapPlacements Placements => _plan.Placements;
         public MapLand Land => _plan.Land;
 
+        /// <summary>How long each stage took so far.</summary>
+        public MapStageTimer Timer { get; } = new();
+
         /// <summary>The land-use borders the ground texture, grass and ground tint painters share, so they end on one line.</summary>
         public MapEdgeField Edges { get; private set; }
 
@@ -58,7 +61,7 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>Old craters and burnt patches of the map's war age, copies included.</summary>
         public MapWarScars WarScars => _plan.WarScars;
 
-        public float[,,] TextureWeights { get; private set; }
+        public MapTextureWeights TextureWeights { get; private set; }
         public MapGrassBake Grass { get; private set; }
 
         /// <summary>Props in the backdrop, drawn on the terrain from their scenery models.</summary>
@@ -116,12 +119,12 @@ namespace HyperRTS.Editor.Maps.Build
         private void PlanLand()
         {
             var palette = Project.Palette;
-            var heights = MapHeightShaper.Shape(Layout, Shapes);
-            var placements = MapPropPlacer.Place(Layout, Shapes, palette, Project.Climate, _issues);
+            var heights = Timer.Time("heights", () => MapHeightShaper.Shape(Layout, Shapes));
+            var placements = Timer.Time("props", () => MapPropPlacer.Place(Layout, Shapes, palette, Project.Climate, _issues));
             _plan = new MapPlanContext(Layout, Shapes, heights, palette, Project.Climate, placements, _issues);
-            MapLandPlanner.Plan(_plan);
+            Timer.Time("land", () => MapLandPlanner.Plan(_plan));
             MapRoadChecks.Check(Layout, Shapes, palette.baseRadius, _issues);
-            Crops = MapCropPainter.Paint(this);
+            Crops = Timer.Time("crops", () => MapCropPainter.Paint(this));
             // Wet decals show on top of the dry ones after rain, so the cap holds for both together.
             var maxDecals = Project.Rules.maxDecals;
             var decals = Decals.Count + WetDecals.Count;
@@ -136,15 +139,16 @@ namespace HyperRTS.Editor.Maps.Build
         private void Paint()
         {
             var climate = Project.Climate;
-            Level();
-            Edges = new MapEdgeField(Layout, Land, climate);
-            TextureWeights = MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution);
+            Timer.Time("level", Level);
+            Edges = Timer.Time("edges", () => new MapEdgeField(Layout, Land, climate));
+            TextureWeights = Timer.Time("texture", () =>
+                MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution));
             WarScars.Burn(TextureWeights, Layout.TerrainBounds, climate);
-            Grass = MapGrassPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate, Placements.Clearance,
-                Layout.GrassResolution);
+            Grass = Timer.Time("grass", () => MapGrassPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate,
+                Placements.Clearance, Layout.GrassResolution));
             Grass.ThinByLayers(TextureWeights, climate.layers.ConvertAll(l => l.plants).ToArray());
             WarScars.Regrow(Grass, climate);
-            TerrainTrees = _plan.Trees.PlaceEntities(Placements, Layout.Bounds);
+            TerrainTrees = Timer.Time("trees", () => _plan.Trees.PlaceEntities(Placements, Layout.Bounds));
         }
 
         private void Level()

@@ -19,11 +19,11 @@ namespace HyperRTS.Simulation.Production
     public class ProducerAuthoring : AuthoringBehaviour
     {
         [Tooltip("Unit prefabs this building can train.")]
-        [ProducibleOption]
+        [ProducibleOption, PrefabAsset("Production option"), NoEmptyEntries]
         public List<UnitAuthoring> productionOptions = new();
 
         [Tooltip("Research prefabs (upgrades) this building can research, each once per player.")]
-        [ProducibleOption]
+        [ProducibleOption, PrefabAsset("Research option"), NoEmptyEntries]
         public List<UpgradeAuthoring> researchOptions = new();
 
         [Tooltip("Local offset where finished units appear.")]

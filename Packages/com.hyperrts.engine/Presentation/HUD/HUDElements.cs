@@ -55,6 +55,17 @@ namespace HyperRTS.Presentation.HUD
         public static void SetInvisible(this VisualElement element, bool invisible) =>
             element.EnableInClassList("hrts-invisible", invisible);
 
+        /// <summary>Runs <paramref name="on"/> each time the element joins a panel and <paramref name="off"/> each time it leaves.</summary>
+        public static void WhileAttached(this VisualElement element, Action on, Action off)
+        {
+            element.RegisterCallback<AttachToPanelEvent>(_ => on());
+            element.RegisterCallback<DetachFromPanelEvent>(_ => off());
+            if (element.panel != null)
+            {
+                on();
+            }
+        }
+
         /// <summary>Removes the element from layout, for elements outside the HUD's sheets.</summary>
         public static void SetVisible(this VisualElement element, bool visible) =>
             element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;

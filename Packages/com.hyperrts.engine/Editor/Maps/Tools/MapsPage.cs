@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Designer;
@@ -20,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Tools
     /// </summary>
     public class MapsPage : HubPage
     {
-        private HelpBox _none;
+        private PageShell _shell;
         private VisualElement _specs;
         private VisualTreeAsset _row;
 
@@ -30,29 +29,24 @@ namespace HyperRTS.Editor.Maps.Tools
 
         public override VisualElement Build()
         {
-            var root = EditorAssets.Layout(typeof(MapsPage)).Instantiate();
+            var root = Layout().Instantiate();
             root.Require<ToolbarButton>("build-all").clicked += BuildAll;
             root.Require<ToolbarButton>("new-scene").clicked += RTSSceneWizard.Open;
-            _none = root.Require<HelpBox>("none");
+            _shell = root.Require<PageShell>("shell");
             _specs = root.Require<VisualElement>("specs");
-            _row = EditorAssets.Layout(typeof(MapsPage), "Row");
+            _row = Layout("Row");
 
-            EditorApplication.projectChanged += ShowSpecs;
+            root.WhileAttached(() => EditorApplication.projectChanged += ShowSpecs,
+                () => EditorApplication.projectChanged -= ShowSpecs);
             ShowSpecs();
             return root;
-        }
-
-        public override void Release()
-        {
-            EditorApplication.projectChanged -= ShowSpecs;
-            _specs = null;
         }
 
         private void ShowSpecs()
         {
             _specs.Clear();
             var specs = MapPaths.All();
-            _none.SetHidden(specs.Length > 0);
+            _shell.ShowEmpty(specs.Length == 0);
             foreach (var spec in specs)
             {
                 _specs.Add(SpecRow(spec));

@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Overlays
         private const int MarkerGridCells = 12;
 
         [SerializeField]
-        [Tooltip("HyperRTS/Overlay material; tinted per overlay through _BaseColor.")]
+        [Tooltip("HyperRTS/Overlay material; each instance carries its own colour.")]
         private Material material;
 
         [SerializeField]
@@ -87,11 +87,11 @@ namespace HyperRTS.Presentation.Overlays
 
             _units.Gather(view, style, HealthBars, Time.unscaledTime);
             _buildings.Gather(view, style, camera);
-            _commands.Gather(view);
+            _commands.Gather(view, style);
             _ghosts.Update(view, style);
             _units.Draw(style, UIScale, gameObject.layer);
-            _buildings.Draw(_materials, view, style, gameObject.layer);
-            _commands.Draw(_materials, style, gameObject.layer);
+            _buildings.Draw(_materials, gameObject.layer);
+            _commands.Draw(_materials, gameObject.layer);
         }
 
         protected override void OnDestroyed()
@@ -102,6 +102,8 @@ namespace HyperRTS.Presentation.Overlays
             }
 
             _units.Dispose();
+            _buildings.Dispose();
+            _commands.Dispose();
             _ghosts.Dispose();
             _materials?.Dispose();
         }

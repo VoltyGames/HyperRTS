@@ -30,15 +30,16 @@ namespace HyperRTS.Editor.Maps.Build
             }
 
             project.Paths.EnsureGenerated();
-            var data = MapTerrainWriter.Write(generation);
-            var ground = MapEnvironmentWriter.WriteGround(generation, data);
+            var timer = generation.Timer;
+            var data = timer.Time("terrain", () => MapTerrainWriter.Write(generation));
+            var ground = timer.Time("ground", () => MapEnvironmentWriter.WriteGround(generation, data));
             var scene = MapScene.Open(generation);
             MapEnvironmentWriter.Write(scene, generation, data, ground);
             MapRoadMeshWriter.Write(scene, generation);
             MapPlacementWriter.Write(scene, generation);
             MapDecalWriter.Write(scene, generation);
             scene.SaveMain();
-            var minimap = Render(generation);
+            var minimap = timer.Time("lighting", () => Render(generation));
             MapEnvironmentWriter.SetMinimap(scene, minimap);
             var report = Measure(generation, scene, data, issues);
             scene.SaveAndCloseEntities();
@@ -65,6 +66,7 @@ namespace HyperRTS.Editor.Maps.Build
             MapHintWriter.Write(scene, generation, nav, issues);
             var report = MapReport.Create(generation.Project.Spec, issues, measurer.Metrics);
             report.land = MapLandFigures.Measure(generation);
+            report.stages.AddRange(generation.Timer.Stages);
             report.Write(MapReportImage.Draw(generation, nav, measurer.Paths));
             return report;
         }

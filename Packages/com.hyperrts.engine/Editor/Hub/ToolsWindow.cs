@@ -12,9 +12,6 @@ namespace HyperRTS.Editor.Hub
     {
         private const string WindowTitle = "HyperRTS Tools";
 
-        // SessionState survives domain reloads, so the window reopens on the page it showed.
-        private const string LastPageKey = "HyperRTS.Tools.LastPage";
-
         private const long BadgeMilliseconds = 2000;
 
         private HubPage[] _pages = Array.Empty<HubPage>();
@@ -29,7 +26,7 @@ namespace HyperRTS.Editor.Hub
         /// <summary>Opens or focuses the window on the page of type <typeparamref name="TPage"/>.</summary>
         public static void Show<TPage>() where TPage : HubPage
         {
-            SessionState.SetString(LastPageKey, typeof(TPage).FullName);
+            RememberPage(typeof(TPage));
             var window = GetWindow<ToolsWindow>(WindowTitle);
             window.SelectSaved();
         }
@@ -66,7 +63,7 @@ namespace HyperRTS.Editor.Hub
                 return;
             }
 
-            var saved = SessionState.GetString(LastPageKey, "");
+            var saved = HyperRTSEditorState.instance.toolsPage;
             var index = Array.FindIndex(_pages, page => page.GetType().FullName == saved);
             _sidebar.SetSelection(Math.Max(index, 0));
         }
@@ -81,7 +78,7 @@ namespace HyperRTS.Editor.Hub
 
             ReleaseCurrent();
             _current = _pages[index];
-            SessionState.SetString(LastPageKey, _current.GetType().FullName);
+            RememberPage(_current.GetType());
 
             var page = _current.Build();
             page.AddToClassList("hrts-page");
@@ -97,6 +94,13 @@ namespace HyperRTS.Editor.Hub
             badge.SetHidden(string.IsNullOrEmpty(_badges[index]));
         }
 
+        private static void RememberPage(Type page)
+        {
+            HyperRTSEditorState.instance.toolsPage = page.FullName;
+            HyperRTSEditorState.instance.Save();
+        }
+
+        // Clearing detaches the page, which drops its callbacks and polling.
         private void ReleaseCurrent()
         {
             if (_current == null)
@@ -104,7 +108,6 @@ namespace HyperRTS.Editor.Hub
                 return;
             }
 
-            _current.Release();
             _current = null;
             _content?.Clear();
         }

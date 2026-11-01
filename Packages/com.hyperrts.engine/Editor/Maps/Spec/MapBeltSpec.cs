@@ -7,11 +7,13 @@ namespace HyperRTS.Editor.Maps.Spec
 {
     /// <summary>A shelterbelt or hedgerow along a polyline: rows of trees and shrubs from a climate belt kit.</summary>
     [Serializable]
-    public sealed class MapBeltSpec
+    [MapFeature("belt", 90, 0.35f, 0.7f, 0.3f)]
+    public sealed class MapBeltSpec : MapFeatureSpec, IMapLine
     {
         public List<MapPoint> points = new();
         [MapKey(typeof(MapBeltKit))]
         public string kind;
-        public bool shared;
+
+        public List<MapPoint> Points => points;
     }
 }

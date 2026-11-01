@@ -266,7 +266,7 @@ A hull with a turn radius that doesn't pivot is wheeled. Each frame a wheeled ve
   drifts slightly inward in a turn and the front axle runs a wider circle than the rear.
 
 Tracks and instant units turn their facing about the centre at the turn rate (`Chassis.Rotate`) and move along it.
-**Fill From Wheels**, on the Locomotion's context menu, measures the wheelbase and rear axle from the model's
+The Locomotion's **Fill from wheels** button measures the wheelbase and rear axle from the model's
 `Wheel_L01`... parts, front to back: the first Steering Axles axles steer and the rest make the rear axle.
 `LocomotionRule` checks a wheeled unit has a wheelbase and both axles inside its hull.
 

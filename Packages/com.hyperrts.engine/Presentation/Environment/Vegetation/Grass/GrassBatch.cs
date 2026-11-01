@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
     /// One camera's grass on the GPU: the visible tiles, a slot per (plant, model, band) that Grass.compute fills, and
     /// the indirect draws.
     /// </summary>
-    internal sealed class GrassBatch : ScatterBatch
+    public sealed class GrassBatch : ScatterBatch
     {
         private const int MinInstances = 4096;
 
@@ -25,13 +25,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         private readonly Bounds[] _bounds;
 
         /// <summary>A batch drawing <paramref name="field"/>'s plants with their instanced materials, in plant order.</summary>
-        public GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials)
+        internal GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials)
             : this(field, kernels, materials, field.FirstSlots())
         {
         }
 
         private GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials, int[] firstSlots)
-            : base(kernels.Compute, kernels.Scatter, kernels.Count, SlotMeshes(field, firstSlots), MinInstances)
+            : base(kernels, SlotMeshes(field, firstSlots), MinInstances)
         {
             _field = field;
             _materials = materials;
@@ -50,7 +50,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         }
 
         /// <summary>Whether the batch no longer draws the field's plants as they are: another plant count or other models.</summary>
-        public bool Stale()
+        internal bool Stale()
         {
             if (_materials.Length != _field.plants.Count)
             {
@@ -76,10 +76,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             return slot != Meshes.Length;
         }
 
-        protected override void ForgetView() => Array.Clear(_expected, 0, _expected.Length);
+        private protected override void ForgetView() => Array.Clear(_expected, 0, _expected.Length);
 
         /// <summary>Queues one plant of a visible tile, <paramref name="near"/> to <paramref name="far"/> metres away.</summary>
-        public void Add(ScatterJob job, float coverage, Bounds bounds, (float Near, float Far) range, ScatterSettings settings)
+        internal void Add(ScatterJob job, float coverage, Bounds bounds, (float Near, float Far) range, ScatterSettings settings)
         {
             Queue(job);
             var plant = _field.plants[job.id];
@@ -107,7 +107,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             }
         }
 
-        protected override RenderParams Parameters(int slot)
+        private protected override RenderParams Parameters(int slot)
         {
             var band = slot % GrassBands.Bands;
             var plant = _slotPlants[slot];
@@ -119,7 +119,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         }
 
         // Lays the slots out end to end in the one instance buffer.
-        protected override void Reserve()
+        private protected override void Reserve()
         {
             for (var slot = 0; slot < _expected.Length; slot++)
             {

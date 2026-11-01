@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
@@ -22,24 +21,23 @@ namespace HyperRTS.Editor.Maps.Heights
             { (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1) };
 
         private readonly MapSymmetry _symmetry;
-        private readonly Rect _bounds;
-        private readonly int _width;
-        private readonly int _height;
-        private readonly float[] _strength;
+        private readonly MapField<float> _strength;
 
         public MapFlow(MapSymmetry symmetry, MapHeights heights)
         {
             _symmetry = symmetry;
-            _bounds = heights.Bounds;
-            _width = Mathf.Max(2, Mathf.CeilToInt(_bounds.width / CellSize));
-            _height = Mathf.Max(2, Mathf.CeilToInt(_bounds.height / CellSize));
-            var ground = new float[_width * _height];
+            _strength = new MapField<float>(MapGrid.Centres(heights.Bounds, CellSize));
+            var ground = new float[_strength.Grid.Count];
             for (var i = 0; i < ground.Length; i++)
             {
-                ground[i] = heights.Height(Center(i % _width, i / _width));
+                ground[i] = heights.Height(_strength.Grid.Position(i));
             }
 
-            _strength = Catchment(ground).Select(Strength).ToArray();
+            var catchment = Catchment(ground);
+            for (var i = 0; i < ground.Length; i++)
+            {
+                _strength[i] = Strength(catchment[i]);
+            }
         }
 
         public float At(Vector2 point)
@@ -48,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Heights
             var sum = 0f;
             foreach (var copy in _symmetry.Copies)
             {
-                sum += Sample(copy.Apply(sector));
+                sum += _strength.Grid.Bilinear(copy.Apply(sector)).Blend(_strength);
             }
 
             return sum / _symmetry.Copies.Count;
@@ -73,17 +71,18 @@ namespace HyperRTS.Editor.Maps.Heights
         /// <summary>The neighbour a cell drains to, or -1.</summary>
         private int Steepest(float[] ground, int cell)
         {
-            var (x, z) = (cell % _width, cell / _width);
+            var grid = _strength.Grid;
+            var at = grid.Frame.Cell(cell);
             var (best, drop) = (-1, 0f);
             foreach (var (dx, dz) in Neighbours)
             {
-                var (nx, nz) = (x + dx, z + dz);
-                if (nx < 0 || nz < 0 || nx >= _width || nz >= _height)
+                var (nx, nz) = (at.x + dx, at.y + dz);
+                if (!grid.Contains(nx, nz))
                 {
                     continue;
                 }
 
-                var next = nz * _width + nx;
+                var next = grid.Index(nx, nz);
                 var slope = (ground[cell] - ground[next]) / (dx != 0 && dz != 0 ? 1.41421356f : 1f);
                 if (slope > drop)
                 {
@@ -98,20 +97,6 @@ namespace HyperRTS.Editor.Maps.Heights
         {
             var t = (Mathf.Log(catchment) - Mathf.Log(RillArea)) / (Mathf.Log(SwaleArea) - Mathf.Log(RillArea));
             return MapGeometry.Smooth(t);
-        }
-
-        private Vector2 Center(int x, int z) => _bounds.min + new Vector2(x + 0.5f, z + 0.5f) * CellSize;
-
-        private float Sample(Vector2 point)
-        {
-            var at = (point - _bounds.min) / CellSize - new Vector2(0.5f, 0.5f);
-            var x0 = Math.Clamp(Mathf.FloorToInt(at.x), 0, _width - 2);
-            var z0 = Math.Clamp(Mathf.FloorToInt(at.y), 0, _height - 2);
-            var (fx, fz) = (Mathf.Clamp01(at.x - x0), Mathf.Clamp01(at.y - z0));
-            var row = z0 * _width + x0;
-            var low = Mathf.Lerp(_strength[row], _strength[row + 1], fx);
-            var high = Mathf.Lerp(_strength[row + _width], _strength[row + _width + 1], fx);
-            return Mathf.Lerp(low, high, fz);
         }
     }
 }

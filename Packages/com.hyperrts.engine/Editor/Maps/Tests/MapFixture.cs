@@ -19,6 +19,8 @@ namespace HyperRTS.Editor.Maps.Tests
     /// <summary>Specs, climates and plan contexts the map tests share.</summary>
     internal static class MapFixture
     {
+        private static readonly List<UnityEngine.Object> Made = new();
+
         /// <summary>A 240 m rotate-180 map: the authored sector is z at or under 0, the playable edge is at 120.</summary>
         public static MapSpec Spec() => new()
         {
@@ -40,7 +42,22 @@ namespace HyperRTS.Editor.Maps.Tests
             var item = ScriptableObject.CreateInstance<T>();
             item.key = key;
             item.name = key;
+            Made.Add(item);
             return item;
+        }
+
+        /// <summary>Destroys every item made since the last call; <see cref="DestroyFixtureItemsAttribute"/> runs it after each test.</summary>
+        public static void DestroyItems()
+        {
+            foreach (var made in Made)
+            {
+                if (made != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(made);
+                }
+            }
+
+            Made.Clear();
         }
 
         /// <summary>Asphalt (8 m, rank 2, 25 m curves) and Dirt (4 m, rank 0, 10 m curves) with their surfaces.</summary>

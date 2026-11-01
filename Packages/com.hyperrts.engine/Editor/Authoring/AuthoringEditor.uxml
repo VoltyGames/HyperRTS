@@ -4,5 +4,7 @@
   <HyperRTS.Editor.Authoring.IssueBadge name="issues" class="hrts-issue-badge" />
   <ui:VisualElement name="header" />
   <ui:VisualElement name="fields" />
+  <ui:VisualElement name="buttons" class="hrts-buttons" />
+  <ui:HelpBox name="button-error" class="hrts-hidden" message-type="Error" />
   <ui:VisualElement name="footer" />
 </ui:UXML>

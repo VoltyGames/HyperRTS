@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Presentation.Environment.Trampling;
+using HyperRTS.Presentation.Rendering;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -22,8 +23,7 @@ namespace HyperRTS.Presentation.Environment.Ground
         private static readonly int DepthScaleId = Shader.PropertyToID("_DepthScale");
 
         /// <summary>The heights from before any crater, which sinking shaders measure an object's height above.</summary>
-        public static readonly int UndentedHeightsId = Shader.PropertyToID("_HyperRTSUndentedHeights");
-        public static readonly int UndentedAreaId = Shader.PropertyToID("_HyperRTSUndentedArea");
+        public static readonly WorldGridGlobal Undented = new("_HyperRTSUndentedHeights", "_HyperRTSUndentedArea");
         public static readonly int UndentedScaleId = Shader.PropertyToID("_HyperRTSUndentedScale");
 
         private readonly TerrainData _data;
@@ -55,22 +55,15 @@ namespace HyperRTS.Presentation.Environment.Ground
             _material.SetTexture(OriginalHeightsId, _original);
             _material.SetVector(TerrainTexelsId, new float4(_origin, 1f / _texelsPerMetre));
             _material.SetFloat(DepthScaleId, TerrainHeightInput.HeightmapFull / size.y);
-            Shader.SetGlobalTexture(UndentedHeightsId, _original);
-            Shader.SetGlobalVector(UndentedAreaId, TerrainHeightInput.Area(terrain));
+            Undented.Publish(_original, TerrainHeightInput.Area(terrain));
             Shader.SetGlobalVector(UndentedScaleId, TerrainHeightInput.Scale(terrain));
         }
 
         public Terrain Terrain { get; }
 
-        /// <summary>Copies the crater depth globals to a kernel: compute shaders don't see globals.</summary>
-        public static void BindCraters(ComputeShader compute, int kernel)
-        {
-            var tracks = Shader.GetGlobalTexture(TrampleSurfaces.TracksId);
-            var rect = Shader.GetGlobalVector(TrampleSurfaces.RectId);
-            var on = tracks != null && rect.z > 0f;
-            compute.SetTexture(kernel, TrampleSurfaces.TracksId, on ? tracks : Texture2D.blackTexture);
-            compute.SetVector(TrampleSurfaces.RectId, on ? rect : Vector4.zero);
-        }
+        /// <summary>Copies the crater depth, kept in the tracks map, to a kernel.</summary>
+        public static void BindCraters(ComputeShader compute, int kernel) =>
+            TrampleSurfaces.TracksGlobal.Bind(compute, kernel);
 
         /// <summary>Dented on the GPU but not yet read back into the terrain's heights, collider and LOD.</summary>
         public bool Unsynced => _unsynced.width > 0;
@@ -130,8 +123,7 @@ namespace HyperRTS.Presentation.Environment.Ground
                 Restore();
             }
 
-            Shader.SetGlobalTexture(UndentedHeightsId, Texture2D.blackTexture);
-            Shader.SetGlobalVector(UndentedAreaId, Vector4.zero);
+            Undented.Clear();
             Shader.SetGlobalVector(UndentedScaleId, Vector4.zero);
             _commands.Release();
             _original.Release();

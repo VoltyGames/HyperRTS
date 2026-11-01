@@ -8,19 +8,19 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
     /// One camera's scatter on the GPU: a mesh and property block per slot, the jobs queued for the grow kernel, and
     /// the indirect draws the count kernel fills. Subclasses size the slots and own their look.
     /// </summary>
-    internal abstract class ScatterBatch : IDisposable
+    public abstract class ScatterBatch : IDisposable
     {
         private const int ThreadGroup = 64;
 
         private readonly List<ScatterJob> _pending = new();
         private readonly ScatterDraws _draws;
 
-        /// <summary>Slots drawing <paramref name="meshes"/>, grown by <paramref name="grow"/>, with room for at least <paramref name="minInstances"/>.</summary>
-        protected ScatterBatch(ComputeShader compute, int grow, int count, Mesh[] meshes, int minInstances)
+        /// <summary>Slots drawing <paramref name="meshes"/>, grown by the kernels, with room for at least <paramref name="minInstances"/>.</summary>
+        private protected ScatterBatch(ScatterComputeInputs kernels, Mesh[] meshes, int minInstances)
         {
-            Compute = compute;
-            GrowKernel = grow;
-            CountKernel = count;
+            Compute = kernels.Compute;
+            GrowKernel = kernels.Grow;
+            CountKernel = kernels.Count;
             Meshes = meshes;
             Blocks = new MaterialPropertyBlock[meshes.Length];
             for (var slot = 0; slot < meshes.Length; slot++)
@@ -32,27 +32,27 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             Slots = new ScatterSlots(Blocks, minInstances);
         }
 
-        protected ComputeShader Compute { get; }
+        private protected ComputeShader Compute { get; }
 
-        protected int GrowKernel { get; }
+        private protected int GrowKernel { get; }
 
-        protected int CountKernel { get; }
+        private protected int CountKernel { get; }
 
-        protected Mesh[] Meshes { get; }
+        private protected Mesh[] Meshes { get; }
 
-        protected MaterialPropertyBlock[] Blocks { get; }
+        private protected MaterialPropertyBlock[] Blocks { get; }
 
-        protected ScatterSlots Slots { get; }
+        private protected ScatterSlots Slots { get; }
 
         /// <summary>Forgets the last view's tiles.</summary>
-        public void Begin()
+        internal void Begin()
         {
             _pending.Clear();
             ForgetView();
         }
 
         /// <summary>Grows the queued jobs into the slots. The renderer's compute inputs bind the shared inputs first.</summary>
-        public void Generate()
+        internal void Generate()
         {
             Reserve();
             if (_pending.Count == 0)
@@ -70,7 +70,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         }
 
         /// <summary>Draws, for <paramref name="camera"/> only, each slot with room, culled by its tiles' box.</summary>
-        public void Draw(int layer, Camera camera)
+        internal void Draw(int layer, Camera camera)
         {
             for (var slot = 0; slot < Meshes.Length; slot++)
             {
@@ -96,7 +96,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         }
 
         /// <summary>Queues one job for the grow kernel.</summary>
-        protected void Queue(ScatterJob job) => _pending.Add(job);
+        private protected void Queue(ScatterJob job) => _pending.Add(job);
 
         /// <summary>Runs the grow kernel over every queued job, one thread group row per job.</summary>
         private void DispatchGrow()
@@ -112,17 +112,17 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         }
 
         /// <summary>Clears the room the last view's tiles asked for.</summary>
-        protected abstract void ForgetView();
+        private protected abstract void ForgetView();
 
         /// <summary>Fits the slots' capacities to the queued tiles before the grow kernel writes into them.</summary>
-        protected abstract void Reserve();
+        private protected abstract void Reserve();
 
         /// <summary>Binds what only this batch's kernel inputs hold, such as a crop's planting.</summary>
-        protected virtual void BindShaping()
+        private protected virtual void BindShaping()
         {
         }
 
         /// <summary>The slot's material, culling box and shadows.</summary>
-        protected abstract RenderParams Parameters(int slot);
+        private protected abstract RenderParams Parameters(int slot);
     }
 }

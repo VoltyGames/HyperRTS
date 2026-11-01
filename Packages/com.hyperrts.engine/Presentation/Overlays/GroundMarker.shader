@@ -1,5 +1,5 @@
 // Selection and hover markers draped on the terrain heightmap: a crisp outline or corner brackets with a soft inner
-// fill. The instance matrix scales a unit grid to the footprint and its height is the lowest the marker may sit.
+// fill, drawn from _Instances by InstanceBuffer.
 Shader "HyperRTS/Ground Marker"
 {
     Properties
@@ -30,9 +30,9 @@ Shader "HyperRTS/Ground Marker"
             Cull Off
 
             HLSLPROGRAM
+            #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -47,15 +47,19 @@ Shader "HyperRTS/Ground Marker"
 
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHeight.hlsl"
 
-            UNITY_INSTANCING_BUFFER_START(Props)
-                UNITY_DEFINE_INSTANCED_PROP(float4, _Tint)
-                UNITY_DEFINE_INSTANCED_PROP(float4, _Marker) // line width m, fade m, fill opacity, corner radius m (negative for brackets)
-            UNITY_INSTANCING_BUFFER_END(Props)
+            struct MarkerInstance // MarkerInstance.cs
+            {
+                float4x4 objectToWorld; // scales a unit grid to the footprint; its height is the lowest the marker sits
+                float4 tint;
+                float4 shape; // line width m, fade m, fill opacity, corner radius m (negative for brackets)
+            };
+
+            StructuredBuffer<MarkerInstance> _Instances;
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                uint instanceID : SV_InstanceID;
             };
 
             struct Varyings
@@ -75,14 +79,14 @@ Shader "HyperRTS/Ground Marker"
 
             Varyings Vert(Attributes input)
             {
-                UNITY_SETUP_INSTANCE_ID(input);
+                MarkerInstance instance = _Instances[input.instanceID];
                 Varyings output;
-                float4x4 m = UNITY_MATRIX_M;
+                float4x4 m = instance.objectToWorld;
                 float2 size = float2(length(m._m00_m10_m20), length(m._m02_m12_m22));
                 float2 grown = size + 2.0 * EDGE_PAD;
                 float3 positionOS = float3(input.positionOS.x * grown.x / size.x, 0.0, input.positionOS.z * grown.y / size.y);
 
-                float3 world = TransformObjectToWorld(positionOS);
+                float3 world = mul(m, float4(positionOS, 1.0)).xyz;
                 world.y = max(GroundHeight(world.xz), world.y) + _Lift;
                 // Terrain LODs sag above the heightmap at range, so nudge toward the camera instead of floating higher.
                 world += normalize(_WorldSpaceCameraPos - world) * _CameraPull;
@@ -90,8 +94,8 @@ Shader "HyperRTS/Ground Marker"
                 output.positionCS = TransformWorldToHClip(world);
                 output.local = input.positionOS.xz * grown;
                 output.halfSize = size * 0.5;
-                output.tint = UNITY_ACCESS_INSTANCED_PROP(Props, _Tint);
-                output.marker = UNITY_ACCESS_INSTANCED_PROP(Props, _Marker);
+                output.tint = instance.tint;
+                output.marker = instance.shape;
                 return output;
             }
 

@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Presentation.Environment.Ground;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Collections;
@@ -16,8 +17,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
     /// </summary>
     public sealed partial class BuildingFootprintMask : IDisposable
     {
-        public static readonly int TextureId = Shader.PropertyToID("_HyperRTSFootprints");
-        public static readonly int RectId = Shader.PropertyToID("_HyperRTSFootprintRect");
+        private static readonly WorldGridGlobal Global = new("_HyperRTSFootprints", "_HyperRTSFootprintRect");
 
         // Cells within half a cell of a wall count, so plants at its foot stay hidden too.
         private const float Inset = 0.5f;
@@ -58,8 +58,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
             _texture.SetPixelData(_cells, 0);
             _texture.Apply(false);
-            Shader.SetGlobalTexture(TextureId, _texture);
-            Shader.SetGlobalVector(RectId, TerrainHeightInput.Rect(_frame.Min, (float2)_frame.Size * _frame.CellSize));
+            Global.Publish(_texture, TerrainHeightInput.Rect(_frame.Min, (float2)_frame.Size * _frame.CellSize));
             Version++;
         }
 
@@ -69,24 +68,15 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             return _frame.Contains(cell) && _cells[_frame.Index(cell)] != 0;
         }
 
-        /// <summary>No mask: shaders read a zero rect as no buildings.</summary>
         public void Dispose()
         {
-            Shader.SetGlobalTexture(TextureId, Texture2D.blackTexture);
-            Shader.SetGlobalVector(RectId, Vector4.zero);
+            Global.Clear();
             Version++;
             Object.DestroyImmediate(_texture);
         }
 
         /// <summary>Copies the published mask to a compute kernel: compute shaders don't see globals.</summary>
-        public static void Bind(ComputeShader compute, int kernel)
-        {
-            var mask = Shader.GetGlobalTexture(TextureId);
-            var rect = Shader.GetGlobalVector(RectId);
-            var on = mask != null && rect.z > 0f;
-            compute.SetTexture(kernel, TextureId, on ? mask : Texture2D.blackTexture);
-            compute.SetVector(RectId, on ? rect : Vector4.zero);
-        }
+        public static void Bind(ComputeShader compute, int kernel) => Global.Bind(compute, kernel);
 
         private void Stamp(in NavBox box)
         {

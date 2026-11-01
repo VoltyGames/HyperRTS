@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
         private static Texture2D WritePicture(string path, MapCropBake bake)
         {
-            var pixels = new Color32[bake.Ids.Length];
+            var pixels = new Color32[bake.Ids.Values.Length];
             for (var i = 0; i < pixels.Length; i++)
             {
                 pixels[i] = RowCropFields.Encode(bake.Ids[i]);

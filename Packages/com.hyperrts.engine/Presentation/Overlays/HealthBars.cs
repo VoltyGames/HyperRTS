@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Overlays
 {
-    /// <summary>One frame's screen-aligned health bars, all in one instanced draw.</summary>
+    /// <summary>One frame's screen-aligned health bars, all in one draw.</summary>
     public sealed class HealthBars : IDisposable
     {
         // Sizes are authored in pixels on a 1080p screen.
@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Overlays
         private static readonly int RankPipId = Shader.PropertyToID("_RankPip");
         private static readonly int MemberPipId = Shader.PropertyToID("_MemberPip");
 
-        private readonly InstanceDataBatch _batch;
+        private readonly InstanceBuffer<HealthBarInstance> _bars;
         private readonly Material _material;
         private OverlayStyle _appliedStyle;
         private float _appliedPixelScale;
@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Overlays
 
         public HealthBars(Mesh billboard, Material material)
         {
-            _batch = new InstanceDataBatch(billboard, "_Bar", "_Size");
+            _bars = new InstanceBuffer<HealthBarInstance>(billboard);
             _material = new Material(material) { hideFlags = HideFlags.DontSave };
         }
 
@@ -37,15 +37,17 @@ namespace HyperRTS.Presentation.Overlays
 
         public void Add(Vector3 anchor, in HealthBarData bar, OverlayStyle style)
         {
-            var matrix = Matrix4x4.Translate(anchor);
-            var first = new Vector4(bar.Fraction, bar.Segments, bar.Rank, 1f);
-            var second = new Vector4(bar.Width, style.barHeight, bar.Members, bar.Alive);
-            _batch.Add(matrix, first, second);
+            _bars.Add(new HealthBarInstance
+            {
+                Bar = new Vector4(bar.Fraction, bar.Segments, bar.Rank, 1f),
+                Size = new Vector4(bar.Width, style.barHeight, bar.Members, bar.Alive),
+                Anchor = anchor,
+            });
         }
 
         public void Draw(OverlayStyle style, float uiScale, int layer)
         {
-            if (_batch.Count == 0)
+            if (_bars.Count == 0)
             {
                 return;
             }
@@ -57,10 +59,14 @@ namespace HyperRTS.Presentation.Overlays
                 Apply(style, pixelScale);
             }
 
-            _batch.Draw(_material, layer);
+            _bars.Draw(_material, layer);
         }
 
-        public void Dispose() => Object.Destroy(_material);
+        public void Dispose()
+        {
+            _bars.Dispose();
+            Object.Destroy(_material);
+        }
 
         // Style values are read once per style version, not every frame.
         private void Apply(OverlayStyle style, float pixelScale)

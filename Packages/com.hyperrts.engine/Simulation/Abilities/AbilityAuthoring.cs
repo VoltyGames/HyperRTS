@@ -54,6 +54,7 @@ namespace HyperRTS.Simulation.Abilities
 
             [Header("Built-in effects")]
             [Tooltip("Prefab spawned at the target (mine, beacon, incoming aircraft), owned by the caster's player.")]
+            [PrefabAsset("Spawn prefab")]
             public GameObject spawnPrefab;
 
             [Tooltip("Damage dealt around the target, 0 for none; negative heals.")]

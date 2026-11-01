@@ -31,14 +31,7 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_TRANSFER_INSTANCE_ID(input, output);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-#ifdef LIT_TEAM_VAT
-    ApplyVAT(vatIndex, input.positionOS.xyz, input.normalOS);
-#endif
-#ifdef _BUILD
-    ApplyBuild(buildOrder, input.positionOS.xyz, input.normalOS);
-#endif
-    input.positionOS.xyz = BendTrack(input.positionOS.xyz);
-    input.positionOS.xyz = SinkObjectIntoCrater(input.positionOS.xyz);
+    LIT_TEAM_DEFORM(vatIndex, input.positionOS.xyz, input.normalOS)
 
     VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
     output.positionCS = vertexInput.positionCS;

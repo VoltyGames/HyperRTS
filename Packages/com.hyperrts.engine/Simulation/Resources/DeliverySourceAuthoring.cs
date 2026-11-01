@@ -16,6 +16,7 @@ namespace HyperRTS.Simulation.Resources
     public class DeliverySourceAuthoring : AuthoringBehaviour
     {
         [Tooltip("Unit prefab that carries the delivery (a truck, a cargo plane); give it no weapons.")]
+        [PrefabAsset("Carrier")]
         public UnitAuthoring carrier;
 
         [Tooltip("Carriers sent per wave.")]

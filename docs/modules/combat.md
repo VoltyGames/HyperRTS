@@ -172,14 +172,14 @@ Death sit in this module's folder.
 `SectionsAuthoring` splits a building into up to 64 `Section`s: wall panels, roof panels and floors, each a box in the
 building's space with a share of its health, a `SectionMaterial`, a floor, the sections it rests on, and whether it is
 anchored (stands on the ground) and exterior (an outer wall). The building's health is the sum of its sections', so
-the HUD, the AI, capture and repair read it as before. **Fill From Parts** in the context menu lists the sections from
+the HUD, the AI, capture and repair read it as before. The **Fill from parts** button lists the sections from
 `<Name>_Intact` children and their `<Name>_Broken` siblings, saved hidden at scale 0, and guesses the rest for you to
 correct: anchored when it reaches the ground, exterior when it is a wall, a full share for a wall and half for the
 rest, and supports from the sections it touches below. `SectionsRule` checks the pairs, the materials and that
 everything reaches the ground.
 
 A building from the structure tool (see [tools](../../../docs/tech/tools.md#structure)) lists its sections with
-**Fill From Structure** instead: set `structure` to the `<Asset>.structure.json` and fill `materialNames`, the
+**Fill from structure** instead: set `structure` to the `<Asset>.structure.json` and fill `materialNames`, the
 structure file's material names mapped to `SectionMaterial`s (no name matching). It finds each section's intact,
 holed (with the hole centres), pieces, stub and heap objects by the exact names the file lists, hides all but the
 intact one at scale 0, and takes the box, facing, material, floor, anchored, exterior and supports from the file, and writes the file's three
@@ -296,7 +296,7 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 | `StealthAuthoring` | Hidden unless detected. Revealed for a while after firing. `inConcealment` hides it only in concealing cover, from enemies without a detector or a ground unit within `SightRules.RevealDistance` |
 | `DetectorAuthoring` | Detection radius. Detects nothing while `Offline`, so a radar goes blind on low power |
 | `RememberedInFog` | Leaves a last-seen memory when it goes out of sight. On buildings by default |
-| `SightBlockAuthoring` | A box that blocks sight: solid below `height` (houses, walls, wrecks), porous below `porousTop` with a `density` per metre (tree crowns, smoke), and concealing still infantry when `conceals` is set (ruins, trenches). Fit To Model fills the solid box |
+| `SightBlockAuthoring` | A box that blocks sight: solid below `height` (houses, walls, wrecks), porous below `porousTop` with a `density` per metre (tree crowns, smoke), and concealing still infantry when `conceals` is set (ruins, trenches). **Fit to model** fills the solid box |
 | `CropCoverAuthoring` | Bakes the map's `CropCoverMap`, which the map build paints from each crop's `sightDensity` |
 | `GameEntityAuthoring.tall` | A `TallTarget`, as tall as a vehicle or a building: seen over cover that hides infantry |
 | `MatchAuthoring.sight` | `SightRules`: what high ground is worth to sight and direct-fire range, and the reveal distance |

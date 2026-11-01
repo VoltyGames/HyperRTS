@@ -10,7 +10,8 @@ namespace HyperRTS.Editor.Maps.Spec
     /// it; ends on the playable edge run on into the backdrop.
     /// </summary>
     [Serializable]
-    public sealed class MapRoadSpec
+    [MapFeature("road", 110, 0.92f, 0.9f, 0.85f)]
+    public sealed class MapRoadSpec : MapFeatureSpec, IMapLine
     {
         public List<MapPoint> points = new();
 
@@ -18,6 +19,6 @@ namespace HyperRTS.Editor.Maps.Spec
         [MapKey(typeof(MapRoadClass))]
         public string kind;
 
-        public bool shared;
+        public List<MapPoint> Points => points;
     }
 }

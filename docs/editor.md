@@ -28,11 +28,15 @@ follows the [UI rule](../CLAUDE.md#conventions).
 **New blank scene...** asks for map size, player count and an optional starting base. It builds a scene with
 light, ground, the `RTSWorld` rig and a SubScene holding the `Match`. See [scenes from code](#scenes-from-code).
 
-To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order`, return the content from
-`Build()` and drop callbacks in `Release()`. Engine pages clone their `<Page>.uxml` layout there with
-`EditorAssets.Layout(typeof(Page)).Instantiate()` and wire its elements by name with `Require<T>(name)`. An optional
-`Badge` shows short text such as the Validate page's `3E 12W` (errors and warnings). `ToolsWindow.Show<TPage>()` opens
-the window on a page.
+To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order` and return the content from
+`Build()`: clone the page's layout with `Layout().Instantiate()`, which finds `<Page>.uxml` beside the script in its
+package or in `Assets` (`Layout("Row")` finds `<Page>Row.uxml`), and wire its elements by name with
+`Require<T>(name)`. The layout's root is a `PageShell`: a `uie:Toolbar` written as its first child goes in the toolbar
+slot and the rest in a scrolling body (`scroll="false"` for a page whose list or tree scrolls itself). `empty-text`
+and `ShowEmpty` show the empty-state note, and `ShowBusy` a busy note while a long task runs. The page leaves the panel
+when it hides, so subscribe to editor events with `root.WhileAttached(on, off)`; scheduled polls stop on their own. An
+optional `Badge` shows short text such as the Validate page's `3E 12W` (errors and warnings).
+`ToolsWindow.Show<TPage>()` opens the window on a page.
 
 ## Commands
 
@@ -130,6 +134,10 @@ public class WeaponAuthoring : AuthoringBehaviour
   and an accent colour in the **Component icons** generator.
 - `[Owner]` on an int field shows a dropdown of the Match's players.
 - `[RequiresAuthoring(typeof(T), "why")]` declares a component needed alongside. Validation offers to add it.
+- Field checks need no rule of their own: `[PrefabAsset("Production option")]` wants a prefab asset, not a scene
+  object; `[GhostPrefab("Hull")]` wants a ghost prefab, as the server spawns it; `[NoEmptyEntries]` (with
+  `Key = nameof(...)` for entries that are structs) flags list entries the baker skips. `FieldAttributeRule` reads
+  them in nested blocks and lists too, with Use Prefab, Make Ghost and Remove Empty fixes.
 
 ## Inspectors
 
@@ -137,20 +145,29 @@ public class WeaponAuthoring : AuthoringBehaviour
 validation issues; click it for the list and quick fixes. Units and buildings start with a summary line, such as
 "Unit · Weapon, Builder · 12 DPS · 150 Supplies".
 
+`[InspectorButton("Fill from model")]` on a parameterless method of the component draws a button under its fields,
+or on a static editor method whose one parameter is the component, for work that needs editor code (`SectionsFill`,
+`ToppleMeasure`). A click runs it on every selected object as one undo step over the object's hierarchy, and an
+`InvalidOperationException` it throws shows as an error under the buttons.
+
 `[ShowIf(nameof(field))]` hides a field while a bool is false, a number is 0 or less, or a reference is empty. It names a sibling, so it also works inside a nested block such as
 `WeaponStats`.
 
 Scene handles show vision, radius, footprints, weapon reach, producer spawn points and the map bounds, in the
 owner's colour.
 
-A component needs its own editor only for extra UI or handles. Subclass `AuthoringEditor` and override
+A component needs its own editor only for UI a button can't give, or handles. Subclass `AuthoringEditor` and override
 `BuildHeader`, `BuildFooter` or `Refresh`. For handles, use `GroundHandles.EditBox` or `EditRadius` in
-`OnSceneGUI`; each drag is one undo step. Editor layouts are `.uxml` files beside their scripts, and each one
-except row templates links the shared `Editor/Common/HyperRTSEditor.uss` with a `<Style>` tag, then its feature's
-own sheet beside it (`MapEditor.uss`, `Issues.uss`, `ToolsWindow.uss`...). Row templates take their styles from the
-layout they are cloned into. The shared sheet holds the layout classes and the colour tokens (`--hrts-border`,
-`--hrts-dim-text`, `--hrts-error`, `--hrts-warning`) the feature sheets use. `EditorAssets.Layout(type, part)` finds
-`<Type><part>.uxml` in the engine package, caches it and throws when it is missing. Rows built from data clone a row
+`OnSceneGUI`; each drag is one undo step. Editor layouts are `.uxml` files beside their scripts. Only root windows, inspectors and drawers link the shared
+`Editor/Common/HyperRTSEditor.uss` with a `<Style>` tag; pages, parts and row templates take it from the window they
+show in, and link only their feature's own sheet (`MapsPage.uss`, `Catalog.uss`). A `[UxmlElement]` control with a
+sheet of its own adds it in its constructor with `EditorAssets.Sheet(name)`, as `IssueList` adds `Issues.uss`. The
+shared sheet holds the layout classes and the colour tokens the feature sheets use: `--hrts-border` and
+`--hrts-dim-text` alias Unity's editor theme variables, so the light skin follows, and `--hrts-error`,
+`--hrts-warning` and `--hrts-note` read on both skins. Lists and trees use Unity's own selection colour. The shared
+controls are `Section` (a titled block, `title="Bot matches"`), `FigureList` (name and value rows, filled with
+`Set`) and `PageShell`. `EditorAssets.Layout(type, part)` finds
+`<Type><part>.uxml` in the type's package, caches it and throws when it is missing. Rows built from data clone a row
 template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
 `HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
 
@@ -163,6 +180,16 @@ parsed value for Undo and property fields. Override `Read`, `Write`, `WriteOver`
 text, changing only what differs, as `JsonChanges` does) and `Canonical`. Edit through `Serialized` and `Apply`,
 or `Record` for code; each finished edit saves, an undo saves the file back, and an outside write reloads it.
 `MapSpecDocument` and `EffectRecipeDocument` are the two.
+
+## Editor state
+
+`HyperRTSEditorState`, a `ScriptableSingleton` saved in `UserSettings/HyperRTS.asset`, keeps every remembered
+editor setting, per user and project: the Tools window's last page, Validate's **Selection only**, the Map Editor's
+auto preview, the debug layers switched on, the cheat amounts, the bot match settings and the Effect Preview
+controls. A layout binds its fields with `binding-path` and `HyperRTSEditorState.Bind(root)`, which saves each change;
+defaults, `[Min]` and `[Range]` live on the fields, never in the UXML. Code that sets a value calls `Save()`. Values
+that must reset each session stay in `SessionState`: the last validation's counts behind the Validate badge, the
+replay waiting for Play mode and the local package import stamp.
 
 ## Effect preview
 
@@ -218,9 +245,29 @@ builder throws on a bad path, player count or size. For maps built from JSON spe
 
 ## Play-mode debugging
 
-The **HyperRTS Debug** overlay in the Scene view toggles views of the nav grid, fog, spatial-index cells, unit
-paths and attack targets. It also shows when each AI player thinks next and its attack wave size. To add a view,
-subclass `DebugLayer` or `CellDebugLayer`. Layers read the authoritative world unless they override `Source`.
+The **HyperRTS Debug** overlay in the Scene view toggles these layers; each is a `DebugLayer` discovered by type:
+
+| Layer | Shows |
+| --- | --- |
+| Nav grid | Blocked, water and deck cells |
+| Wall distance | Distance to the nearest wall for the first field key, red at a wall to blue at 8 m |
+| Sectors | Connected regions of the first movement class, white where a region ends |
+| Flow field | Cost to the goal of the latest group field, as repeating bands |
+| Fog | Cells the local team sees |
+| Sight patch | The selected unit's sight: ground, tall-only and close cells |
+| Sight blockers | Solid, porous or crop, and other concealing cells |
+| High ground | Rise above the surrounding ground, scaled by the sight bonus |
+| Spatial cells | Spatial index cells holding an entity |
+| Paths and targets | Waypoints, manoeuvres, attack targets and dock bays, with the pathfinder's totals in a corner label |
+
+The pathfinder totals (`PathStats`) cover all units, not the selected one. AI layers show when each AI player
+thinks next and its attack wave size.
+
+To add a grid view, subclass `CellTextureLayer` and implement `Paint`: give `CellTexture.Paint` the grid's
+`GridFrame` and a struct implementing `ICellColors`, which maps a cell index to a `Color32` from the world's native
+arrays. A Burst job fills one texture, which is drawn as a single quad, so a layer costs one upload per repaint
+whatever the grid size. For anything else subclass `DebugLayer`. Layers read the authoritative world unless they
+override `Source`.
 
 The **Play** page drives a running match:
 

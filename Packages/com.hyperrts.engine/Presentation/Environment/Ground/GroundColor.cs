@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Ground
@@ -15,8 +16,7 @@ namespace HyperRTS.Presentation.Environment.Ground
     [DisallowMultipleComponent]
     public sealed class GroundColor : PresentationBehaviour
     {
-        internal static readonly int PictureId = Shader.PropertyToID("_HyperRTSGroundColor");
-        internal static readonly int RectId = Shader.PropertyToID("_HyperRTSGroundRect");
+        private static readonly WorldGridGlobal Global = new("_HyperRTSGroundColor", "_HyperRTSGroundRect");
 
         // Grass.compute's own names for the copy.
         private static readonly int KernelPictureId = Shader.PropertyToID("_Ground");
@@ -39,35 +39,22 @@ namespace HyperRTS.Presentation.Environment.Ground
         }
 
         /// <summary>Copies the picture and its rect to a kernel: compute shaders don't see globals. A zero rect while there is none.</summary>
-        public static void Bind(ComputeShader compute, int kernel)
-        {
-            var picture = Shader.GetGlobalTexture(PictureId);
-            var rect = Shader.GetGlobalVector(RectId);
-            var on = picture != null && rect.z > 0f;
-            compute.SetTexture(kernel, KernelPictureId, on ? picture : Texture2D.blackTexture);
-            compute.SetVector(KernelRectId, on ? rect : Vector4.zero);
-        }
+        public static void Bind(ComputeShader compute, int kernel) =>
+            Global.Bind(compute, kernel, KernelPictureId, KernelRectId);
 
-        protected override void OnDisabled() => Clear();
+        // Shaders read the cleared global as "no ground picture" and skip blending.
+        protected override void OnDisabled() => Global.Clear();
 
         private void Publish()
         {
             if (picture == null || area.width <= 0f || area.height <= 0f)
             {
                 Debug.LogError("HyperRTS: Ground Color needs a picture and an area with a size.", this);
-                Clear();
+                Global.Clear();
                 return;
             }
 
-            Shader.SetGlobalTexture(PictureId, picture);
-            Shader.SetGlobalVector(RectId, TerrainHeightInput.Rect(area.min, area.size));
-        }
-
-        /// <summary>The outside-a-map state: shaders read a zero rect as "no ground picture" and skip blending.</summary>
-        private static void Clear()
-        {
-            Shader.SetGlobalTexture(PictureId, Texture2D.blackTexture);
-            Shader.SetGlobalVector(RectId, Vector4.zero);
+            Global.Publish(picture, TerrainHeightInput.Rect(area.min, area.size));
         }
     }
 }

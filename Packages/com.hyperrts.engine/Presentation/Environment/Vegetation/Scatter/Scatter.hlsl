@@ -1,9 +1,11 @@
-// Jobs, hashes, noise, terrain height and the slot layout and counting shared by RowCrops.compute and Grass.compute. The job
-// matches ScatterJob.cs and the hashes and noise ScatterHash.cs; ScatterDraws.cs binds the jobs, counters and args and ScatterSlots.cs the slots.
+// Jobs, seeded hashes and noise, terrain height and the slot layout and counting shared by RowCrops.compute and
+// Grass.compute. The job matches ScatterJob.cs and the hashes and noise ScatterHash.cs; ScatterDraws.cs binds the
+// jobs, counters and args and ScatterSlots.cs the slots.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHeight.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
 
 struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
 {
@@ -35,26 +37,9 @@ RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
 RWStructuredBuffer<DrawArgs> _Args;
 float _TileSize;
 
-uint Pcg(uint value)
-{
-    uint state = value * 747796405u + 2891336453u;
-    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-    return (word >> 22u) ^ word;
-}
-
 uint Hash(int seed, int row, int plant)
 {
-    return Pcg(asuint(seed) ^ Pcg(asuint(row) ^ Pcg(asuint(plant))));
-}
-
-float Unit(uint value)
-{
-    return (value >> 8) * (1.0 / 16777216.0);
-}
-
-float Channel(uint hash, uint channel)
-{
-    return Unit(Pcg(hash + channel * 0x9E3779B9u));
+    return Pcg3(asuint(int3(seed, row, plant)));
 }
 
 // Smooth value noise from 0 to 1 on an integer grid.

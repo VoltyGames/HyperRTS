@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.AI;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -21,11 +22,9 @@ namespace HyperRTS.Editor.Authoring
                 }
             });
 
-            var end = property.GetEndProperty();
-            var child = property.Copy();
-            for (var enter = true; child.NextVisible(enter) && !SerializedProperty.EqualContents(child, end); enter = false)
+            foreach (var child in property.VisibleChildren())
             {
-                foldout.Add(new PropertyField(child.Copy()));
+                foldout.Add(new PropertyField(child));
             }
 
             void Show(SerializedProperty changed) => foldout.text = Title(changed);

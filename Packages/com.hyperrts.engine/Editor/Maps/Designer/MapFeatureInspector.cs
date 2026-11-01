@@ -1,6 +1,5 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
-using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
@@ -14,8 +13,7 @@ namespace HyperRTS.Editor.Maps.Designer
     public sealed partial class MapFeatureInspector : VisualElement
     {
         private readonly Label _none;
-        private readonly VisualElement _details;
-        private readonly Label _title;
+        private readonly Section _details;
         private readonly Label _path;
         private readonly VisualElement _fields;
         private MapSpecDocument _document;
@@ -24,8 +22,7 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             EditorAssets.Layout(typeof(MapFeatureInspector)).CloneTree(this);
             _none = this.Require<Label>("none");
-            _details = this.Require<VisualElement>("details");
-            _title = this.Require<Label>("title");
+            _details = this.Require<Section>("details");
             _path = this.Require<Label>("path");
             _fields = this.Require<VisualElement>("fields");
             // Raised by a field the user changed, never by the binding catching up with an undo or a reload.
@@ -44,16 +41,13 @@ namespace HyperRTS.Editor.Maps.Designer
                 return;
             }
 
-            _title.text = feature.ToString();
+            _details.Title = feature.ToString();
             _path.text = $"{feature.Kind.Field}[{feature.Index}]";
             var serialized = document.Serialized;
             serialized.Update();
-            var element = serialized.FindProperty(feature.PropertyPath);
-            var end = element.GetEndProperty();
-            var child = element.Copy();
-            for (var enter = true; child.NextVisible(enter) && !SerializedProperty.EqualContents(child, end); enter = false)
+            foreach (var child in serialized.FindProperty(feature.PropertyPath).VisibleChildren())
             {
-                _fields.Add(new PropertyField(child.Copy()));
+                _fields.Add(new PropertyField(child));
             }
 
             _fields.Bind(serialized);

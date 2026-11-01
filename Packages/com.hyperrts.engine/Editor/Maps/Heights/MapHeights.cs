@@ -6,44 +6,29 @@ namespace HyperRTS.Editor.Maps.Heights
     /// <summary>World ground heights (metres) on a square grid of samples covering the map, row by row from the south.</summary>
     public sealed class MapHeights
     {
-        private readonly float[] _samples;
+        private readonly MapField<float> _samples;
 
         public MapHeights(int resolution, Rect bounds)
         {
-            Resolution = resolution;
-            Bounds = bounds;
-            _samples = new float[resolution * resolution];
+            _samples = new MapField<float>(MapGrid.Corners(bounds, resolution));
         }
 
-        public int Resolution { get; }
+        public int Resolution => _samples.Grid.Width;
 
-        public Rect Bounds { get; }
+        public Rect Bounds => _samples.Grid.Bounds;
 
-        public Vector2 Spacing => Bounds.size / (Resolution - 1);
+        public Vector2 Spacing => _samples.Grid.Spacing;
 
         public float this[int x, int z]
         {
-            get => _samples[z * Resolution + x];
-            set => _samples[z * Resolution + x] = value;
+            get => _samples[x, z];
+            set => _samples[x, z] = value;
         }
 
-        public Vector2 Position(int x, int z) => Bounds.min + Vector2.Scale(new Vector2(x, z), Spacing);
+        public Vector2 Position(int x, int z) => _samples.Grid.Position(x, z);
 
         /// <summary>Bilinear height, clamped to the edge samples outside the map.</summary>
-        public float Height(Vector2 point)
-        {
-            var local = (point - Bounds.min) / Spacing;
-            var max = Resolution - 1;
-            local.x = Mathf.Clamp(local.x, 0f, max);
-            local.y = Mathf.Clamp(local.y, 0f, max);
-            var x = Mathf.Min((int)local.x, max - 1);
-            var z = Mathf.Min((int)local.y, max - 1);
-            var tx = local.x - x;
-            var tz = local.y - z;
-            var bottom = Mathf.Lerp(this[x, z], this[x + 1, z], tx);
-            var top = Mathf.Lerp(this[x, z + 1], this[x + 1, z + 1], tx);
-            return Mathf.Lerp(bottom, top, tz);
-        }
+        public float Height(Vector2 point) => _samples.Grid.Bilinear(point).Blend(_samples);
 
         /// <summary>Ground slope in degrees, measured across <paramref name="span"/> metres.</summary>
         public float Slope(Vector2 point, float span = 2f)
@@ -70,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Heights
         public MapHeights Copy()
         {
             var copy = new MapHeights(Resolution, Bounds);
-            _samples.CopyTo(copy._samples, 0);
+            _samples.Values.CopyTo(copy._samples.Values, 0);
             return copy;
         }
 
@@ -103,29 +88,19 @@ namespace HyperRTS.Editor.Maps.Heights
         }
 
         /// <summary>Calls back for every sample inside a rectangle of the map, with its position.</summary>
-        public void ForEachIn(Rect area, System.Action<int, int, Vector2> visit)
-        {
-            var min = Vector2Int.FloorToInt((area.min - Bounds.min) / Spacing);
-            var max = Vector2Int.CeilToInt((area.max - Bounds.min) / Spacing);
-            for (var z = Mathf.Max(0, min.y); z <= Mathf.Min(Resolution - 1, max.y); z++)
-            {
-                for (var x = Mathf.Max(0, min.x); x <= Mathf.Min(Resolution - 1, max.x); x++)
-                {
-                    visit(x, z, Position(x, z));
-                }
-            }
-        }
+        public void ForEachIn(Rect area, System.Action<int, int, Vector2> visit) => _samples.Grid.ForEachIn(area, visit);
 
         /// <summary>Keeps every height inside the terrain's range; returns how many samples had to move.</summary>
         public int Clamp(float min, float max)
         {
             var moved = 0;
-            for (var i = 0; i < _samples.Length; i++)
+            var samples = _samples.Values;
+            for (var i = 0; i < samples.Length; i++)
             {
-                var clamped = Mathf.Clamp(_samples[i], min, max);
-                if (clamped != _samples[i])
+                var clamped = Mathf.Clamp(samples[i], min, max);
+                if (clamped != samples[i])
                 {
-                    _samples[i] = clamped;
+                    samples[i] = clamped;
                     moved++;
                 }
             }

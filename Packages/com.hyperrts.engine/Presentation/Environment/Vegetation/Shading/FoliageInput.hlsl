@@ -87,7 +87,7 @@ float2 GrassFacing(GrassInstance grass)
 #endif
 
 // Trampled, before wind. Tree wind places nothing: it sways the object-space vertex.
-float3 PlaceFoliage(Attributes input, out float3 origin)
+float3 PlaceFoliage(Attributes input, float4x4 objectToWorld, out float3 origin)
 {
 #if defined(_GRASS_INSTANCES)
     GrassInstance grass = GrassAt(input);
@@ -95,11 +95,11 @@ float3 PlaceFoliage(Attributes input, out float3 origin)
     float3 scaled = input.positionOS.xyz * float3(grass.width, grass.height, grass.width);
     return PlantTrample(origin + LeanOffset(PlantToWorld(scaled, GrassFacing(grass)), grass.lean), origin);
 #elif defined(_TREE_WIND)
-    origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
+    origin = objectToWorld._m03_m13_m23;
     return input.positionOS.xyz;
 #else
-    origin = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
-    return PlantTrample(TransformObjectToWorld(input.positionOS.xyz), origin);
+    origin = objectToWorld._m03_m13_m23;
+    return PlantTrample(mul(objectToWorld, float4(input.positionOS.xyz, 1.0)).xyz, origin);
 #endif
 }
 
@@ -112,23 +112,23 @@ half3 FoliageNormal(Attributes input)
 #endif
 }
 
-// Motion vectors reuse the current object matrix: vegetation never moves.
-float3 SwayFoliage(Attributes input, float3 placed, float3 origin, WindFrame frame)
+float3 SwayFoliage(Attributes input, float4x4 objectToWorld, float3 placed, float3 origin, WindFrame frame)
 {
 #if defined(_TREE_WIND)
     TreeWindSettings settings = TreeWind(_WindStrength, _WindSpeed, _BranchSway, _CardFlutter, _TreeHeight, _WindScale);
     TreeWindVertex v = TreeWindData(placed, input.uv2, input.uv3, input.uv4, input.color);
-    return SinkIntoCrater(TransformObjectToWorld(TreeWindPosition(v, settings, frame)), origin);
+    return SinkIntoCrater(mul(objectToWorld, float4(TreeWindPosition(v, settings, frame), 1.0)).xyz, origin);
 #else
     float3 swayed = PlantWindPosition(placed, origin, _WindStrength, _WindSpeed, _Flutter, _WindScale, frame);
     return SinkIntoCrater(swayed, origin);
 #endif
 }
 
-float3 FoliagePosition(Attributes input, WindFrame frame, out float3 origin)
+// Grass ignores the object matrix: its instances are placed in world space.
+float3 FoliagePosition(Attributes input, WindFrame frame, float4x4 objectToWorld, out float3 origin)
 {
-    float3 placed = PlaceFoliage(input, origin);
-    return SwayFoliage(input, placed, origin, frame);
+    float3 placed = PlaceFoliage(input, objectToWorld, origin);
+    return SwayFoliage(input, objectToWorld, placed, origin, frame);
 }
 
 #endif

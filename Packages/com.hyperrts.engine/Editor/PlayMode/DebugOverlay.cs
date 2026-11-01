@@ -28,8 +28,8 @@ namespace HyperRTS.Editor.PlayMode
             // Every layer draws live simulation state, so outside Play mode they stay set but greyed out.
             void ShowMode(PlayModeStateChange _) => layers.SetEnabled(EditorApplication.isPlaying);
             ShowMode(default);
-            root.RegisterCallback<AttachToPanelEvent>(_ => EditorApplication.playModeStateChanged += ShowMode);
-            root.RegisterCallback<DetachFromPanelEvent>(_ => EditorApplication.playModeStateChanged -= ShowMode);
+            root.WhileAttached(() => EditorApplication.playModeStateChanged += ShowMode,
+                () => EditorApplication.playModeStateChanged -= ShowMode);
 
             var ai = root.Require<Label>("ai");
             root.schedule.Execute(() => ai.text = AIStatus()).Every(500);

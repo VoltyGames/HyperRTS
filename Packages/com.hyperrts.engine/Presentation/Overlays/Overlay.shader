@@ -1,10 +1,10 @@
-// Flat-colour, alpha-blended, instanced overlay (selection rings, health bars, command markers). _ZTest lets a
-// material clone draw through scenery, so the local player's selected units keep their rings behind buildings.
+// Flat-colour, alpha-blended overlay (selection rings, dials, command markers) drawn from _Instances by
+// InstanceBuffer. _ZTest lets a material clone draw through scenery, so the local player's selection shows behind
+// buildings.
 Shader "HyperRTS/Overlay"
 {
     Properties
     {
-        _BaseColor ("Color", Color) = (1, 1, 1, 1)
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
     }
 
@@ -29,38 +29,45 @@ Shader "HyperRTS/Overlay"
             Cull Off
 
             HLSLPROGRAM
+            #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            CBUFFER_START(UnityPerMaterial)
-                half4 _BaseColor;
-            CBUFFER_END
+            struct OverlayInstance // OverlayInstance.cs
+            {
+                float4x4 objectToWorld;
+                float4 color;
+            };
+
+            StructuredBuffer<OverlayInstance> _Instances;
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                uint instanceID : SV_InstanceID;
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                nointerpolation half4 color : COLOR;
             };
 
             Varyings Vert(Attributes input)
             {
-                UNITY_SETUP_INSTANCE_ID(input);
+                OverlayInstance instance = _Instances[input.instanceID];
                 Varyings output;
-                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                float3 positionWS = mul(instance.objectToWorld, float4(input.positionOS.xyz, 1.0)).xyz;
+                output.positionCS = TransformWorldToHClip(positionWS);
+                output.color = instance.color;
                 return output;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
-                return _BaseColor;
+                return input.color;
             }
             ENDHLSL
         }

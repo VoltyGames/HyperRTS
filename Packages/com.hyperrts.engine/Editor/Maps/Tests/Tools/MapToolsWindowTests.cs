@@ -23,7 +23,6 @@ namespace HyperRTS.Editor.Maps.Tests.Tools
             foreach (var page in pages)
             {
                 Assert.That(page.Build(), Is.Not.Null, page.Title);
-                page.Release();
             }
         }
 

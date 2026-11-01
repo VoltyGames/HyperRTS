@@ -12,7 +12,7 @@ half4 FoliageTint(Attributes input, float3 origin)
     GrassInstance grass = GrassAt(input);
     half random = grass.shade;
 #else
-    half random = WindHash(float3(origin.x, 0.0, origin.z));
+    half random = Random(float3(origin.x, 0.0, origin.z));
 #endif
     half dry = saturate(DryPatch(origin.xz) * 0.65 + random * 0.35);
     half3 tint = PlantTint(dry, random);
@@ -26,44 +26,22 @@ ForwardVaryings ForwardVert(Attributes input)
 {
     UNITY_SETUP_INSTANCE_ID(input);
     float3 origin;
-    float3 world = FoliagePosition(input, WindThisFrame(), origin);
+    float3 world = FoliagePosition(input, WindThisFrame(), UNITY_MATRIX_M, origin);
     ForwardVaryings output = PlantForwardVaryings(world, origin, input.uv, input.uv.y, FoliageNormal(input),
         FoliageTint(input, origin));
     UNITY_TRANSFER_INSTANCE_ID(input, output);
     return output;
 }
 
-CutoutVaryings CutoutVert(Attributes input)
+void Displace(Attributes input, WindFrame frame, float4x4 objectToWorld, out float3 positionWS, out half3 normalWS,
+    out float2 uv)
 {
-    UNITY_SETUP_INSTANCE_ID(input);
     float3 origin;
-    float4 positionCS = TransformWorldToHClip(FoliagePosition(input, WindThisFrame(), origin));
-    CutoutVaryings output = PlantCutoutVaryings(positionCS, input.uv, FoliageNormal(input));
-    UNITY_TRANSFER_INSTANCE_ID(input, output);
-    return output;
+    positionWS = FoliagePosition(input, frame, objectToWorld, origin);
+    normalWS = FoliageNormal(input);
+    uv = TRANSFORM_TEX(input.uv, _BaseMap);
 }
 
-CutoutVaryings ShadowVert(Attributes input)
-{
-    UNITY_SETUP_INSTANCE_ID(input);
-    float3 origin;
-    float3 world = FoliagePosition(input, WindThisFrame(), origin);
-    half3 normal = FoliageNormal(input);
-    CutoutVaryings output = PlantCutoutVaryings(ShadowCasterPositionCS(world, normal), input.uv, normal);
-    UNITY_TRANSFER_INSTANCE_ID(input, output);
-    return output;
-}
-
-MotionVaryings MotionVert(Attributes input)
-{
-    UNITY_SETUP_INSTANCE_ID(input);
-    float3 origin;
-    float3 placed = PlaceFoliage(input, origin);
-    float3 now = SwayFoliage(input, placed, origin, WindThisFrame());
-    float3 last = SwayFoliage(input, placed, origin, WindLastFrame());
-    MotionVaryings output = PlantMotionVaryings(now, last, input.uv);
-    UNITY_TRANSFER_INSTANCE_ID(input, output);
-    return output;
-}
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/DisplacedPasses.hlsl"
 
 #endif

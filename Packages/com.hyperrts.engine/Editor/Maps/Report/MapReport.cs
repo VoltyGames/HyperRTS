@@ -30,6 +30,9 @@ namespace HyperRTS.Editor.Maps.Report
         public MapMetrics metrics;
         public MapLandFigures land;
 
+        /// <summary>Milliseconds per build stage, so a slow painter shows.</summary>
+        public List<MapStageTime> stages = new();
+
         public bool Passed => errors.Count == 0;
 
         public static string Folder => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "MapReports"));

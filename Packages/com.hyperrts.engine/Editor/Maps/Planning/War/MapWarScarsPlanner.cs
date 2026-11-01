@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
         private float _hectares;
 
         /// <summary>Distance in cells from every land cell to the nearest belt or wood.</summary>
-        private float[] _cover;
+        private MapField<float> _cover;
 
         public MapWarScarsPlanner(MapPlanContext context) : base(context)
         {
@@ -50,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
             _density = _kit.Density(age);
             _open = OpenCells();
             _hectares = Hectares(_open.Count);
-            _cover = MapLandDistance.To(Land.Width, Land.Height, (x, z) => IsCover(Land.Region(x, z)));
+            _cover = MapLandDistance.To(Land.Grid, (x, z) => IsCover(Land.Region(x, z)));
             ShredTrees();
             PlaceWrecks();
             DigTrenches();
@@ -144,7 +144,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
             for (var laid = 0f; laid < length;)
             {
                 var entry = Context.Palette.Entry(_kit.trenchProps[random.Next(_kit.trenchProps.Count)]);
-                if (!Land.TryCell(at, out var x, out var z) || !InTrenchBand(z * Land.Width + x, MapLand.CellSize * 1.5f))
+                if (!Land.TryCell(at, out var x, out var z) || !InTrenchBand(_cover.Grid.Index(x, z), MapLand.CellSize * 1.5f))
                 {
                     return;
                 }
@@ -167,10 +167,10 @@ namespace HyperRTS.Editor.Maps.Planning.War
         /// <summary>The direction along the nearest cover's edge, kept pointing the way <paramref name="heading"/> went.</summary>
         private Vector2 AlongCover(int x, int z, Vector2 heading)
         {
-            var east = _cover[z * Land.Width + Mathf.Min(x + 1, Land.Width - 1)];
-            var west = _cover[z * Land.Width + Mathf.Max(x - 1, 0)];
-            var north = _cover[Mathf.Min(z + 1, Land.Height - 1) * Land.Width + x];
-            var south = _cover[Mathf.Max(z - 1, 0) * Land.Width + x];
+            var east = _cover[Mathf.Min(x + 1, Land.Width - 1), z];
+            var west = _cover[Mathf.Max(x - 1, 0), z];
+            var north = _cover[x, Mathf.Min(z + 1, Land.Height - 1)];
+            var south = _cover[x, Mathf.Max(z - 1, 0)];
             var gradient = new Vector2(east - west, north - south);
             if (gradient == Vector2.zero)
             {

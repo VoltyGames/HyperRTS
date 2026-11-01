@@ -21,17 +21,16 @@ namespace HyperRTS.Editor.Maps.Designer
     public sealed partial class MapReportPanel : VisualElement
     {
         private readonly VisualTreeAsset _issueRow = EditorAssets.Layout(typeof(MapReportPanel), "Issue");
-        private readonly VisualTreeAsset _figureRow = EditorAssets.Layout(typeof(MapReportPanel), "Figure");
         private readonly Label _source;
         private readonly Label _empty;
         private readonly VisualElement _report;
-        private readonly Label _issuesTitle;
+        private readonly Section _issuesSection;
         private readonly VisualElement _issueRows;
         private readonly Label _noIssues;
         private readonly VisualElement _landSection;
-        private readonly VisualElement _landRows;
+        private readonly FigureList _landFigures;
         private readonly VisualElement _metricsSection;
-        private readonly VisualElement _metricRows;
+        private readonly FigureList _metricFigures;
         private readonly Button _openScene;
         private readonly Button _recapture;
 
@@ -43,16 +42,17 @@ namespace HyperRTS.Editor.Maps.Designer
         public MapReportPanel()
         {
             EditorAssets.Layout(typeof(MapReportPanel)).CloneTree(this);
+            styleSheets.Add(EditorAssets.Sheet("Issues"));
             _source = this.Require<Label>("source");
             _empty = this.Require<Label>("empty");
             _report = this.Require<VisualElement>("report");
-            _issuesTitle = this.Require<Label>("issues-title");
+            _issuesSection = this.Require<Section>("issues");
             _issueRows = this.Require<VisualElement>("issue-rows");
             _noIssues = this.Require<Label>("no-issues");
             _landSection = this.Require<VisualElement>("land");
-            _landRows = this.Require<VisualElement>("land-rows");
+            _landFigures = this.Require<FigureList>("land-figures");
             _metricsSection = this.Require<VisualElement>("metrics");
-            _metricRows = this.Require<VisualElement>("metric-rows");
+            _metricFigures = this.Require<FigureList>("metric-figures");
             _openScene = this.Require<Button>("open-scene");
             _openScene.clicked += OpenScene;
             _recapture = this.Require<Button>("recapture");
@@ -148,7 +148,7 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Errors then warnings. Issues that name a feature get a Show button.</summary>
         private void ShowIssues(MapReport report)
         {
-            _issuesTitle.text = $"Issues ({report.errors.Count} errors, {report.warnings.Count} warnings)";
+            _issuesSection.Title = $"Issues ({report.errors.Count} errors, {report.warnings.Count} warnings)";
             _issueRows.Clear();
             AddIssues(report.errors, report.errorFeatures, HelpBoxMessageType.Error);
             AddIssues(report.warnings, report.warningFeatures, HelpBoxMessageType.Warning);
@@ -175,47 +175,38 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Land use shares and what stands on the land, from a preview or a build.</summary>
         private void ShowLand(MapLandFigures land)
         {
-            _landRows.Clear();
-            foreach (var share in land.shares)
-            {
-                AddFigure(_landRows, share.kind, Percent(share.share));
-            }
-
-            AddFigure(_landRows, "Fields", Count(land.fields));
-            AddFigure(_landRows, "Trees", Count(land.trees));
-            AddFigure(_landRows, "Placements", Count(land.placements));
-            AddFigure(_landRows, "Decals", Count(land.decals));
-            AddFigure(_landRows, "Wet decals", Count(land.wetDecals));
-            AddFigure(_landRows, "Entities", Count(land.entities));
-            AddFigure(_landRows, "Crop tiles", Count(land.cropTiles));
-            AddFigure(_landRows, "Crop plants", land.cropPlants.ToString("N0", CultureInfo.InvariantCulture));
+            var figures = land.shares.ConvertAll(share => (share.kind, Percent(share.share)));
+            figures.Add(("Fields", Count(land.fields)));
+            figures.Add(("Trees", Count(land.trees)));
+            figures.Add(("Placements", Count(land.placements)));
+            figures.Add(("Decals", Count(land.decals)));
+            figures.Add(("Wet decals", Count(land.wetDecals)));
+            figures.Add(("Entities", Count(land.entities)));
+            figures.Add(("Crop tiles", Count(land.cropTiles)));
+            figures.Add(("Crop plants", land.cropPlants.ToString("N0", CultureInfo.InvariantCulture)));
+            _landFigures.Set(figures);
         }
 
         /// <summary>What a build measured: rush times, attack paths, view contrast and each base's buildable ground and resources.</summary>
         private void ShowMetrics(MapMetrics metrics)
         {
-            _metricRows.Clear();
-            AddFigure(_metricRows, "Rush", $"{Seconds(metrics.minRush)} to {Seconds(metrics.maxRush)}");
-            AddFigure(_metricRows, "Attack paths", Count(metrics.paths));
-            AddFigure(_metricRows, "Path search", $"{metrics.maxExpansions:N0} cells");
-            AddFigure(_metricRows, "Renewable fields", $"{metrics.renewableFieldsPerPlayer:0.#} per player");
-            AddFigure(_metricRows, "View contrast",
-                $"spread {metrics.viewLuminanceSpread:0.000}, local {metrics.viewLocalContrast:0.000}");
+            var figures = new List<(string, string)>
+            {
+                ("Rush", $"{Seconds(metrics.minRush)} to {Seconds(metrics.maxRush)}"),
+                ("Attack paths", Count(metrics.paths)),
+                ("Path search", $"{metrics.maxExpansions:N0} cells"),
+                ("Renewable fields", $"{metrics.renewableFieldsPerPlayer:0.#} per player"),
+                ("View contrast", $"spread {metrics.viewLuminanceSpread:0.000}, local {metrics.viewLocalContrast:0.000}"),
+            };
             foreach (var spawn in metrics.spawns)
             {
                 var text = $"team {spawn.team}, rush {Seconds(spawn.rush)}, buildable {Percent(spawn.buildable)}, "
                     + $"{spawn.finiteFields} finite fields ({spawn.finiteSupply:N0}), "
                     + $"{spawn.renewableFields} renewable ({spawn.renewableSupply:N0})";
-                AddFigure(_metricRows, $"Slot {spawn.slot}", text);
+                figures.Add(($"Slot {spawn.slot}", text));
             }
-        }
 
-        private void AddFigure(VisualElement rows, string name, string value)
-        {
-            var row = _figureRow.CloneRoot();
-            row.Require<Label>("name").text = name;
-            row.Require<Label>("value").text = value;
-            rows.Add(row);
+            _metricFigures.Set(figures);
         }
 
         private static string Count(int count) => count.ToString(CultureInfo.InvariantCulture);

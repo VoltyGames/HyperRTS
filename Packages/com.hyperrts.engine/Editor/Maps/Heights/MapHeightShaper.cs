@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Spec;
@@ -29,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Heights
             var heights = new MapHeights(terrain.resolution, layout.TerrainBounds);
             var relief = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.Relief);
             var edgeWander = shapes.EdgeWander;
-            for (var z = 0; z < heights.Resolution; z++)
+            MapRows.For(heights.Resolution, z =>
             {
                 for (var x = 0; x < heights.Resolution; x++)
                 {
@@ -38,8 +39,9 @@ namespace HyperRTS.Editor.Maps.Heights
                     h = Rivers(shapes, p, h, terrain.waterLevel, edgeWander);
                     heights[x, z] = Fords(shapes, p, h, terrain.waterLevel);
                 }
-            }
+            });
 
+            // Ravines, roads and bridges each reshape what the last left, so they stay in order.
             var open = heights.Copy();
             CutRavines(heights, shapes, terrain.waterLevel);
             MapRoadLeveller.Level(heights, open, shapes, terrain.waterLevel);

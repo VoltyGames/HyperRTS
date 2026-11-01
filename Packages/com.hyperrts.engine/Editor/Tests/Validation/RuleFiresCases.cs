@@ -16,8 +16,6 @@ using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Animation;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
@@ -64,17 +62,12 @@ namespace HyperRTS.Editor.Tests.Validation
                 field.affects = AuraTargets.Units;
                 return field;
             });
-            yield return Row<ArmorRule>("no damage type", f =>
+            yield return Row<FieldAttributeRule>("Extra Weapons 1: Projectile 'Shell' is a scene object", f =>
             {
-                var armor = f.Add<ArmorAuthoring>(EntityTemplates.Unit());
-                armor.modifiers.Add(new DamageFactor { multiplier = 2f });
-                return armor;
-            });
-            yield return Row<BuilderRule>("is a scene object", f =>
-            {
-                var builder = f.Track(EntityTemplates.Worker()).GetComponent<BuilderAuthoring>();
-                builder.buildOptions.Add(f.Track(EntityTemplates.Building()).GetComponent<BuildingAuthoring>());
-                return builder;
+                var weapon = f.Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
+                weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
+                weapon.extraWeapons[0].stats.projectilePrefab = f.Make("Shell");
+                return weapon;
             });
             yield return Row<ContainerRule>("exceeds capacity", f =>
             {
@@ -89,10 +82,10 @@ namespace HyperRTS.Editor.Tests.Validation
 
         private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> EntityRows()
         {
-            yield return Row<GameEntityRule>("Death spawn 'Wreck'", f =>
+            yield return Row<GameEntityRule>("never met", f =>
             {
                 var unit = f.Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
-                unit.deathSpawn = f.Track(EntityTemplates.Unit("Wreck"));
+                unit.prerequisites.Add(f.Track(EntityTemplates.Unit("Scout")).GetComponent<UnitAuthoring>());
                 return unit;
             });
             yield return Row<MatchRule>("no players", f =>
@@ -162,10 +155,10 @@ namespace HyperRTS.Editor.Tests.Validation
             yield return Row<UpgradeRule>("No stat bonuses",
                 f => f.Track(EntityTemplates.Upgrade()).GetComponent<UpgradeAuthoring>());
             yield return Row<VeterancyRule>("No ranks", f => f.Add<VeterancyAuthoring>(EntityTemplates.CombatUnit()));
-            yield return Row<WeaponRule>("is a scene object", f =>
+            yield return Row<WeaponRule>("negative arc height", f =>
             {
                 var weapon = f.Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
-                weapon.stats.projectilePrefab = f.Make("Shell");
+                weapon.stats.arcHeight = -1f;
                 return weapon;
             });
         }

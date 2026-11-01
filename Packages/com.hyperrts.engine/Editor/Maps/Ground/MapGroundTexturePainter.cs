@@ -1,5 +1,6 @@
 using System.Linq;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Layout;
@@ -59,34 +60,31 @@ namespace HyperRTS.Editor.Maps.Ground
             _slope = climate.SurfaceLayer(climate.slopeSurface);
         }
 
-        /// <summary>Layer weights as Unity's alphamaps want them: [z, x, layer], summing to 1 per texel.</summary>
-        public static float[,,] Paint(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
+        /// <summary>Layer weights per texel, summing to 1 before they are stored as bytes.</summary>
+        public static MapTextureWeights Paint(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
             int resolution)
         {
-            var textureWeights = new float[resolution, resolution, climate.layers.Count];
-            new MapGroundTexturePainter(layout, edges, heights, climate, resolution).Paint(textureWeights, resolution);
+            var textureWeights = new MapTextureWeights(resolution, climate.layers.Count);
+            var painter = new MapGroundTexturePainter(layout, edges, heights, climate, resolution);
+            MapRows.For(resolution, () => new float[climate.layers.Count], (z, weights) => painter.Row(textureWeights, z, weights));
             return textureWeights;
         }
 
-        private void Paint(float[,,] textureWeights, int resolution)
+        private void Row(MapTextureWeights textureWeights, int z, float[] weights)
         {
-            var layers = _climate.layers.Count;
-            var weights = new float[layers];
+            var resolution = textureWeights.Resolution;
             var area = _layout.TerrainBounds;
             var texel = area.size / resolution;
-            for (var z = 0; z < resolution; z++)
+            for (var x = 0; x < resolution; x++)
             {
-                for (var x = 0; x < resolution; x++)
+                var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), texel);
+                System.Array.Clear(weights, 0, weights.Length);
+                Surfaces(weights, p);
+                var steepness = (_heights.Slope(p) - _climate.slopeStart) / (_climate.slopeFull - _climate.slopeStart);
+                Over(weights, _slope, MapGeometry.Smooth(steepness));
+                for (var l = 0; l < weights.Length; l++)
                 {
-                    var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), texel);
-                    System.Array.Clear(weights, 0, layers);
-                    Surfaces(weights, p);
-                    var steepness = (_heights.Slope(p) - _climate.slopeStart) / (_climate.slopeFull - _climate.slopeStart);
-                    Over(weights, _slope, MapGeometry.Smooth(steepness));
-                    for (var l = 0; l < layers; l++)
-                    {
-                        textureWeights[z, x, l] = weights[l];
-                    }
+                    textureWeights[x, z, l] = weights[l];
                 }
             }
         }

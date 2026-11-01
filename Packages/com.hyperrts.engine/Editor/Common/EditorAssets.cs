@@ -23,36 +23,42 @@ namespace HyperRTS.Editor.Common
         private const string MatchStateGuid = "37a4b4ac2aee31d42895a37c3d702bed";
 
         [AutoStaticsCleanup]
-        private static readonly Dictionary<string, VisualTreeAsset> Layouts = new();
+        private static readonly Dictionary<string, Object> Found = new();
 
-        /// <summary>The engine layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapsPageRow.uxml.</summary>
-        public static VisualTreeAsset Layout(Type owner, string part = "")
+        /// <summary>
+        /// The layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapsPageRow.uxml, in
+        /// the owner's package, or in Assets for a game type.
+        /// </summary>
+        public static VisualTreeAsset Layout(Type owner, string part = "") =>
+            Find<VisualTreeAsset>(owner.Name + part, Folder(owner), owner.Name);
+
+        /// <summary>The engine stylesheet called <paramref name="name"/>, for a control that brings its own styles.</summary>
+        public static StyleSheet Sheet(string name) => Find<StyleSheet>(name, EnginePackage.Folder, name);
+
+        private static T Find<T>(string name, string folder, string user) where T : Object
         {
-            var name = owner.Name + part;
-            if (Layouts.TryGetValue(name, out var cached) && cached != null)
+            var key = $"{folder}/{name}.{typeof(T).Name}";
+            if (Found.TryGetValue(key, out var cached) && cached != null)
             {
-                return cached;
+                return (T)cached;
             }
 
-            var layout = FindLayout(name) ?? throw new InvalidOperationException(
-                $"HyperRTS: {name}.uxml for {owner.Name} is missing from the engine package.");
-            Layouts[name] = layout;
-            return layout;
-        }
-
-        private static VisualTreeAsset FindLayout(string name)
-        {
-            foreach (var guid in AssetDatabase.FindAssets("t:VisualTreeAsset " + name, new[] { EnginePackage.Folder }))
+            foreach (var guid in AssetDatabase.FindAssets($"t:{typeof(T).Name} {name}", new[] { folder }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (Path.GetFileNameWithoutExtension(path) == name)
                 {
-                    return AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
+                    var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+                    Found[key] = asset;
+                    return asset;
                 }
             }
 
-            return null;
+            throw new InvalidOperationException($"HyperRTS: {name} ({typeof(T).Name}) for {user} is missing from {folder}.");
         }
+
+        private static string Folder(Type owner) =>
+            UnityEditor.PackageManager.PackageInfo.FindForAssembly(owner.Assembly)?.assetPath ?? "Assets";
 
         public static GameObject RigPrefab => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(RigGuid));
 

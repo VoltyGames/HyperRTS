@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Catalog
 
         public override VisualElement Build()
         {
-            _root = EditorAssets.Layout(typeof(CatalogPage)).Instantiate();
+            _root = Layout().Instantiate();
             var search = _root.Require<ToolbarSearchField>("search");
             search.SetValueWithoutNotify(_filter);
             search.RegisterValueChangedCallback(change =>
@@ -48,26 +48,30 @@ namespace HyperRTS.Editor.Catalog
             _treeTab = _root.Require<Tab>("tree-tab");
             _tabs.activeTabChanged += (_, _) => ShowPrefabs();
 
-            EditorApplication.projectChanged += OnProjectChange;
-            ObjectChangeEvents.changesPublished += OnObjectsChanged;
+            _root.WhileAttached(Subscribe, Unsubscribe);
             Reload();
             return _root;
         }
 
-        public override void Release()
+        private void Subscribe()
+        {
+            EditorApplication.projectChanged += OnProjectChange;
+            ObjectChangeEvents.changesPublished += OnObjectsChanged;
+        }
+
+        // A hidden page's scheduled reloads never run, so the pending flags start over.
+        private void Unsubscribe()
         {
             EditorApplication.projectChanged -= OnProjectChange;
             ObjectChangeEvents.changesPublished -= OnObjectsChanged;
-            _stats?.Release();
-            _root = null;
-            _tabs = null;
+            _stats.Release();
             _reloadPending = false;
             _treePending = false;
         }
 
         private void OnProjectChange()
         {
-            if (_reloadPending || _tabs == null)
+            if (_reloadPending)
             {
                 return;
             }
@@ -79,7 +83,7 @@ namespace HyperRTS.Editor.Catalog
         // Inspector edits to options or prerequisites show up in the open tree, once a burst of edits (a drag) settles.
         private void OnObjectsChanged(ref ObjectChangeEventStream stream)
         {
-            if (_treePending || _tabs == null || _tabs.activeTab != _treeTab)
+            if (_treePending || _tabs.activeTab != _treeTab)
             {
                 return;
             }

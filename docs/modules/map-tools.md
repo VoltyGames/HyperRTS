@@ -24,7 +24,7 @@ The folders below follow the pipeline, from the data a build reads to what it wr
 
 | Folder | Holds |
 | --- | --- |
-| `Spec/` | `MapSpec` and one class per feature. `MapSpecJson` reads and writes it in `JsonFormat` (`Editor/Common/`), the layout specs and effect recipes are saved in |
+| `Spec/` | `MapSpec` and one class per feature, each a `MapFeatureSpec` with `[MapFeature]` and `IMapPoint` or `IMapLine`. `MapSpecJson` reads and writes it in `JsonFormat` (`Editor/Common/`), the layout specs and effect recipes are saved in |
 | `Climate/` | Climate library items: the climate, its surfaces, layers, trees, plants, row crops, road classes, decals and its belt, farmland, woodland and war kits |
 | `Palette/` | The palette: props, sides and their start kits, settlement kits |
 | `Library/` | `MapLibrary`, the `MapLibraryItem` base, `MapKeys`, `MapClimateAssembly`, the `[MapKey]` attribute and its dropdown, `MapLibraryRule` |
@@ -33,11 +33,11 @@ The folders below follow the pipeline, from the data a build reads to what it wr
 
 | Folder | Holds |
 | --- | --- |
-| `Checks/` | `MapAssetCheck`, `MapSpecCheck`, `MapKeyCheck`, and `MapRoadChecks` after a build; `MapSpecRule`; `MapRules`, the thresholds per mode and the props a surface should carry, which the checks, report and nav grid measure against |
-| `Common/` | `MapIssues` and `MapIssueFeature`, `MapRandom` and its channels |
+| `Checks/` | `MapAssetCheck`, `MapSpecCheck`, `MapSpecKeys` (every `[MapKey]` field of a spec), `MapKeyCheck`, and `MapRoadChecks` after a build; `MapSpecRule`; `MapRules`, the thresholds per mode and the props a surface should carry, which the checks, report and nav grid measure against |
+| `Common/` | `MapIssues` and `MapIssueFeature`, `MapRandom` and its channels, and `MapRows`, which runs a per-texel painter's rows on worker threads (each row writes only its own texels, so the output matches a serial run to the bit; `MapRowsTests` checks it) |
 | `Refine/` | `MapRefiner`: river meanders, road curves and joins, ravine gullies |
 | `Layout/` | `MapSymmetry`, the sector's copies and how they number slots; `MapExpander` copies the sector into a `MapLayout` |
-| `Geometry/` | `MapShapes` for rivers, roads, ravines and crossings in map space, plus curves and noise |
+| `Geometry/` | `MapShapes` for rivers, roads, ravines and crossings in map space, plus curves and noise. `MapGrid` lays every map grid on a `GridFrame`, with samples on cell corners (heights) or cell centres (land, drainage); `MapField<T>` holds a value per sample and `MapBilinear` blends the four round a point |
 
 ## Plan
 
@@ -60,13 +60,13 @@ Inside the playable area, trees with entity versions become placements. The rest
 
 | Folder | Holds |
 | --- | --- |
-| `Ground/` | The ground painters: texture, tint, colour, grass, row crops and rows. `MapCropWriter` and `MapGrassWriter` save them |
+| `Ground/` | The ground painters: texture, tint, colour, grass, row crops and rows. The texture weights are `MapTextureWeights`, a byte layer per climate layer as the terrain keeps them, written to the terrain in strips of rows. `MapCropWriter` and `MapGrassWriter` save them |
 | `Texturing/` | The `HyperRTS/Terrain` material and its layer texture arrays |
 | `Meshes/` | Road ribbons and river meshes |
 | `Scenes/` | `MapScene` and the writers for terrain, environment, placements, decals and lighting |
 | `Nav/` | `MapNavGrid` builds the runtime nav grid with the runtime's stamps (`NavGrid.StampArea`). `MapPathfinder` runs the runtime `GridAStar` without its budget, so rush times and attack paths match in-game pathing |
 | `Hints/` | `MapHintWriter`: bot hints from the nav grid |
-| `Report/` | `MapMeasurer`, `MapReport` and its image (`MapReportImage`) |
+| `Report/` | `MapMeasurer`, `MapReport` and its image (`MapReportImage`); `MapStageTimer` puts each build stage's milliseconds in the report's `stages` |
 | `Views/` | `MapViews`: match-camera screenshots and their contrast, the minimap and the overview picture |
 | `Build/` | `MapProject`, `MapPaths`, `MapGeneration`, `MapBuilder.Build`, `MapPreview.Run` and `IMapBuildHook` |
 
@@ -75,10 +75,9 @@ Inside the playable area, trees with entity versions become placements. The rest
 | Folder | Holds |
 | --- | --- |
 | `Designer/` | **HyperRTS ▸ Map Editor**. `MapSpecDocument` (a `JsonDocument`) holds the open spec in a hidden ScriptableObject for Undo and property fields, saves each edit through `JsonChanges` and reloads on import; the canvas tools (`IMapTool`) edit through `MapFeatureEdits` |
-| `Tools/` | The **Tools ▸ Maps** page, `MapBuildRunner`, `MapCommandLine`, `MapKeyReference`, `MapCommands` |
+| `Tools/` | The **Tools ▸ Maps** page, `MapBuildRunner`, `MapCommandLine`, `MapKeyReference`, `MapSpecSchema`, `MapCommands` |
 
 ## Extending
 
-- **A new kind of land use**: a kit in `Climate/`, a land pass in `Planning/`, a spec class and a feature kind for
-  the Map Editor. Steps: [maps](../maps.md#adding-a-kind-of-land-use).
+- **A new kind of land use**: a kit in `Climate/`, a land pass in `Planning/` and a spec class with `[MapFeature]`. Steps: [maps](../maps.md#adding-a-kind-of-land-use).
 - **Game code after every build**: implement `IMapBuildHook`.

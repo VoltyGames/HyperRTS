@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
@@ -37,24 +38,28 @@ namespace HyperRTS.Editor.Maps.Ground
         /// Scales every plant by the share each terrain layer keeps (<paramref name="keep"/> per layer), weighted by
         /// the layers painted under it. <paramref name="textureWeights"/> covers the same area.
         /// </summary>
-        public void ThinByLayers(float[,,] textureWeights, float[] keep)
+        public void ThinByLayers(MapTextureWeights textureWeights, float[] keep)
         {
-            var size = textureWeights.GetLength(0);
-            for (var i = 0; i < Resolution * Resolution; i++)
+            var size = textureWeights.Resolution;
+            MapRows.For(Resolution, z =>
             {
-                var tx = Mathf.Min(size - 1, (i % Resolution) * size / Resolution);
-                var tz = Mathf.Min(size - 1, (i / Resolution) * size / Resolution);
-                var kept = 0f;
-                for (var l = 0; l < keep.Length; l++)
+                var tz = Mathf.Min(size - 1, z * size / Resolution);
+                for (var x = 0; x < Resolution; x++)
                 {
-                    kept += textureWeights[tz, tx, l] * keep[l];
-                }
+                    var tx = Mathf.Min(size - 1, x * size / Resolution);
+                    var kept = 0f;
+                    for (var l = 0; l < keep.Length; l++)
+                    {
+                        kept += textureWeights[tx, tz, l] * keep[l];
+                    }
 
-                foreach (var layer in Layers)
-                {
-                    layer[i] = (byte)Mathf.RoundToInt(layer[i] * Mathf.Clamp01(kept));
+                    var i = z * Resolution + x;
+                    foreach (var layer in Layers)
+                    {
+                        layer[i] = (byte)Mathf.RoundToInt(layer[i] * Mathf.Clamp01(kept));
+                    }
                 }
-            }
+            });
         }
 
         /// <summary>Every <see cref="ScatterTiles.Size"/> tile that grows any plant, with each plant's mean coverage there.</summary>

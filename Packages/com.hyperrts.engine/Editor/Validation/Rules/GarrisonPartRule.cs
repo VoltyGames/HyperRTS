@@ -14,7 +14,6 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues.Error(part, $"'{part.name}' has no Container above it, so nothing ever shows it.");
             }
 
-            CheckEmptyEntries(part, part.shownFor, unit => unit == null, "A garrison part entry names no passenger.", issues);
             if (part.shownFor.Count == 0)
             {
                 issues.Error(part, $"'{part.name}' lists no passengers, so it never shows.");

@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
     [Icon(HyperRTSIcons.Environment)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class GrassRenderer : ScatterRenderer<GrassCameraState>
+    public sealed class GrassRenderer : ScatterRenderer<GrassBatch>
     {
         [Tooltip("The baked plants this map grows.")]
         public GrassField field;
@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         private GrassComputeInputs _kernels;
         private Material[] _materials;
 
-        private static ScatterSettings Settings
+        private protected override ScatterSettings Settings
         {
             get
             {
@@ -38,7 +38,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             }
         }
 
-        private protected override float DrawDistance => PresentationQuality.Current.GrassDistance;
+        private protected override ScatterComputeInputs Inputs => _kernels;
 
         private protected override void BuildInputs()
         {
@@ -48,7 +48,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         private protected override ScatterField Field => field;
 
-        private protected override GrassCameraState NewState() => new(field, _kernels, _materials);
+        private protected override List<GrassBatch> NewBatches() => new() { new GrassBatch(field, _kernels, _materials) };
 
         private Material Instanced(GrassPlant plant)
         {
@@ -68,39 +68,15 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             }
         }
 
-        private protected override void Draw(GrassCameraState state, Camera camera, Vector3 position)
-        {
-            var settings = Settings;
-            if (!state.Holds(position, settings, Tiles.Visible))
-            {
-                Queue(state.Batch, position, settings);
-                _kernels.SetCamera(position, settings);
-                state.Batch.Generate();
-                state.Remember(position, settings, Tiles.Visible);
-            }
-
-            state.Batch.Draw(gameObject.layer, camera);
-        }
-
 #if UNITY_EDITOR
-        // Catches a map rebuild that reshaped the field or its plants while the scene stayed open.
-        private protected override bool InputsStale()
-        {
-            if (field == null || shader == null)
-            {
-                return true;
-            }
+        private protected override bool ReferencesStale() => shader == null;
 
-            return _kernels.Stale || Tiles.Count != field.tiles.Count;
-        }
-
-        private protected override bool Stale(GrassCameraState state) => state.Batch.Stale();
+        private protected override bool Stale(List<GrassBatch> batches) => batches[0].Stale();
 #endif
 
-        /// <summary>Hands every visible tile's plants to the batch.</summary>
-        private void Queue(GrassBatch batch, Vector3 position, ScatterSettings settings)
+        private protected override void Queue(List<GrassBatch> batches, Vector3 position, ScatterSettings settings)
         {
-            batch.Begin();
+            var batch = batches[0];
             foreach (var t in Tiles.Visible)
             {
                 var bounds = Tiles[t];

@@ -1,9 +1,7 @@
-using System;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Network.Session;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Match;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,7 +12,7 @@ namespace HyperRTS.Editor.PlayMode
     {
         private const long PollMilliseconds = 250;
 
-        private HelpBox _hint;
+        private PageShell _shell;
         private CheatsSection _cheats;
         private Button _host;
         private Button _join;
@@ -24,10 +22,8 @@ namespace HyperRTS.Editor.PlayMode
         private Button _runBots;
         private Button _stopBots;
         private Label _botStatus;
-        private readonly BotMatches.Settings _bots = new();
         private Button _save;
         private Button _play;
-        private IVisualElementScheduledItem _poll;
 
         public override string Title => "Play";
 
@@ -35,8 +31,9 @@ namespace HyperRTS.Editor.PlayMode
 
         public override VisualElement Build()
         {
-            var root = EditorAssets.Layout(typeof(PlayPage)).Instantiate();
-            _hint = root.Require<HelpBox>("hint");
+            var root = Layout().Instantiate();
+            HyperRTSEditorState.Bind(root);
+            _shell = root.Require<PageShell>("shell");
             _cheats = new CheatsSection(root.Require<VisualElement>("cheats"));
             BindNetwork(root);
             BindBots(root);
@@ -45,16 +42,9 @@ namespace HyperRTS.Editor.PlayMode
             _play = root.Require<Button>("play");
             _play.clicked += ReplayPlayback.PlayReplay;
 
-            _poll = root.schedule.Execute(Poll).Every(PollMilliseconds);
+            root.schedule.Execute(Poll).Every(PollMilliseconds);
             Poll();
             return root;
-        }
-
-        public override void Release()
-        {
-            _poll?.Pause();
-            _poll = null;
-            _cheats = null;
         }
 
         private void BindNetwork(VisualElement root)
@@ -72,24 +62,8 @@ namespace HyperRTS.Editor.PlayMode
 
         private void BindBots(VisualElement root)
         {
-            var matches = root.Require<IntegerField>("bot-matches");
-            matches.value = _bots.matches;
-            matches.RegisterValueChangedCallback(change => _bots.matches = Math.Max(1, change.newValue));
-            var players = root.Require<IntegerField>("bot-players");
-            players.value = _bots.players;
-            players.RegisterValueChangedCallback(change => _bots.players = Math.Max(2, change.newValue));
-            var difficulty = root.Require<EnumField>("bot-difficulty");
-            difficulty.Init(_bots.difficulty);
-            difficulty.RegisterValueChangedCallback(change => _bots.difficulty = (AIDifficulty)change.newValue);
-            var speed = root.Require<FloatField>("bot-speed");
-            speed.value = _bots.speed;
-            speed.RegisterValueChangedCallback(change => _bots.speed = Math.Max(1f, change.newValue));
-            var limit = root.Require<FloatField>("bot-limit");
-            limit.value = _bots.timeLimitMinutes;
-            limit.RegisterValueChangedCallback(change => _bots.timeLimitMinutes = Math.Max(1f, change.newValue));
-
             _runBots = root.Require<Button>("run-bots");
-            _runBots.clicked += () => BotMatches.Start(_bots);
+            _runBots.clicked += () => BotMatches.Start(HyperRTSEditorState.instance.bots);
             _stopBots = root.Require<Button>("stop-bots");
             _stopBots.clicked += BotMatches.Stop;
             _botStatus = root.Require<Label>("bot-status");
@@ -98,7 +72,7 @@ namespace HyperRTS.Editor.PlayMode
         private void Poll()
         {
             var playing = Application.isPlaying;
-            _hint.SetHidden(playing);
+            _shell.ShowEmpty(!playing);
             _cheats.Poll();
 
             var running = NetworkSession.IsRunning;

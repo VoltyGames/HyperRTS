@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Destruction;
 using Unity.Mathematics;
-using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
@@ -21,12 +21,11 @@ namespace HyperRTS.Editor.Authoring
 
         public SectionsFill(SectionsAuthoring owner) => _owner = owner;
 
-        [MenuItem("CONTEXT/SectionsAuthoring/Fill From Parts")]
-        private static void FillFromParts(MenuCommand command) => new SectionsFill((SectionsAuthoring)command.context).FromParts();
+        [InspectorButton("Fill from parts")]
+        private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
 
-        [MenuItem("CONTEXT/SectionsAuthoring/Fill From Structure")]
-        private static void FillFromStructure(MenuCommand command) =>
-            new SectionsFill((SectionsAuthoring)command.context).FromStructure();
+        [InspectorButton("Fill from structure")]
+        private static void FillFromStructure(SectionsAuthoring sections) => new SectionsFill(sections).FromStructure();
 
         /// <summary>
         /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling (hidden at scale 0), and guesses what
@@ -36,7 +35,6 @@ namespace HyperRTS.Editor.Authoring
         /// </summary>
         public void FromParts()
         {
-            Undo.RecordObject(_owner, "Fill sections");
             var found = new List<SectionsAuthoring.Entry>();
             foreach (var child in _owner.GetComponentsInChildren<Transform>(true))
             {
@@ -56,12 +54,6 @@ namespace HyperRTS.Editor.Authoring
             {
                 throw new InvalidOperationException(
                     $"HyperRTS: sections on '{_owner.name}' have no structure file to fill from.");
-            }
-
-            Undo.RecordObject(_owner, "Fill sections");
-            foreach (var child in _owner.GetComponentsInChildren<Transform>(true))
-            {
-                Undo.RecordObject(child, "Fill sections");
             }
 
             var file = SectionStructure.Parse(_owner.structure.text, _owner.structure.name);
@@ -103,7 +95,6 @@ namespace HyperRTS.Editor.Authoring
         {
             if (broken != null)
             {
-                Undo.RecordObject(broken, "Fill sections");
                 broken.localScale = Vector3.zero;
             }
 

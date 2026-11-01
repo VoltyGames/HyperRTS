@@ -19,7 +19,7 @@ Varyings Vert(Attributes input)
     Varyings output;
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_TRANSFER_INSTANCE_ID(input, output);
-    Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x);
+    Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x, UNITY_MATRIX_M);
     output.positionWS = cloth.positionWS;
     output.positionCS = TransformWorldToHClip(cloth.positionWS);
     output.uv = input.uv;

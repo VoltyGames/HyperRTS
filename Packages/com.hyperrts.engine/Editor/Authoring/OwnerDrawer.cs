@@ -39,8 +39,8 @@ namespace HyperRTS.Editor.Authoring
 
             // Undo, other inspectors and Match edits (renamed or added players) change what the field shows.
             row.TrackPropertyValue(property, _ => Show());
-            row.RegisterCallback<AttachToPanelEvent>(_ => EditorApplication.hierarchyChanged += Show);
-            row.RegisterCallback<DetachFromPanelEvent>(_ => EditorApplication.hierarchyChanged -= Show);
+            row.WhileAttached(() => EditorApplication.hierarchyChanged += Show,
+                () => EditorApplication.hierarchyChanged -= Show);
             Show();
             return row;
         }

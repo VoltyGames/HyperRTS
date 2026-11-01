@@ -1,8 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <Style src="../Common/HyperRTSEditor.uss" />
   <Style src="GeneratePage.uss" />
-  <ui:Button name="run-all" class="hrts-generate__run-all" text="Run all" />
-  <ui:ScrollView class="hrts-fill">
+  <HyperRTS.Editor.Hub.PageShell>
+    <uie:Toolbar>
+      <uie:ToolbarButton name="run-all" text="Run all" />
+      <uie:ToolbarSpacer class="hrts-fill" />
+    </uie:Toolbar>
     <ui:VisualElement name="groups" />
-  </ui:ScrollView>
+  </HyperRTS.Editor.Hub.PageShell>
 </ui:UXML>

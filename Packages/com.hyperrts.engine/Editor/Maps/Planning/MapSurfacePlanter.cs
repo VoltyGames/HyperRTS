@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         // Metres between a prop's footprint and the centre of the nearest tree, so props fit between wood trees.
         private const float TreeClearance = 0.5f;
-        private float[] _edges;
+        private MapField<float> _edges;
 
         public MapSurfacePlanter(MapPlanContext context) : base(context)
         {
@@ -72,12 +72,12 @@ namespace HyperRTS.Editor.Maps.Planning
 
         private float EdgeDistance(int cell)
         {
-            _edges ??= MapLandDistance.ToRegionEdge(Land.Width, Land.Height, Land.RegionIndex);
+            _edges ??= Land.RegionEdgeDistance();
             return _edges[cell] * MapLand.CellSize;
         }
 
         private float EdgeDistance(Vector2 point) =>
-            Land.TryCell(point, out var x, out var z) ? EdgeDistance(z * Land.Width + x) : float.PositiveInfinity;
+            Land.TryCell(point, out var x, out var z) ? EdgeDistance(Land.Grid.Index(x, z)) : float.PositiveInfinity;
 
         private void PlaceProps(MapLandRegion region, MapPropDensity props, List<int> cells, float hectares,
             System.Random random)
@@ -182,7 +182,7 @@ namespace HyperRTS.Editor.Maps.Planning
             var max = new Vector2(float.MinValue, float.MinValue);
             foreach (var cell in cells)
             {
-                var center = Land.Center(cell % Land.Width, cell / Land.Width);
+                var center = Land.Center(cell);
                 min = Vector2.Min(min, center);
                 max = Vector2.Max(max, center);
             }

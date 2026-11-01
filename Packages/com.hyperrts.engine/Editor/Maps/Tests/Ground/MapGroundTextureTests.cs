@@ -147,8 +147,9 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
                 {
                     var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), texel);
                     var gap = Gap(tint.At(p), other.At(p));
-                    var weightB = textureWeights[z, x, b];
-                    Assert.IsFalse(weightB <= 0f && gap > 1e-6f, $"B's tint reaches {p}, where its texture doesn't");
+                    var weightB = textureWeights[x, z, b];
+                    // Weights are bytes: under half a step a texel stores none of B while its tint still shows a trace.
+                    Assert.IsFalse(weightB <= 0f && gap > 1e-3f, $"B's tint reaches {p}, where its texture doesn't");
                     Assert.IsFalse(weightB > 0.999f && gap < 1e-4f, $"B's texture covers {p} without its tint");
                     wandered += weightB > 0.5f && p.x < -0.6f ? 1 : 0;
                 }
@@ -212,7 +213,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             {
                 for (var x = 0; x < Resolution; x++)
                 {
-                    var weight = textureWeights[z, x, a];
+                    var weight = textureWeights[x, z, a];
                     blended += weight > 0.02f && weight < 0.98f ? 1 : 0;
                 }
             }
@@ -284,12 +285,12 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             return heights;
         }
 
-        private static float Weight(float[,,] textureWeights, MapLayout layout, Vector2 p, int layer)
+        private static float Weight(MapTextureWeights textureWeights, MapLayout layout, Vector2 p, int layer)
         {
             var area = layout.TerrainBounds;
             var x = Mathf.FloorToInt((p.x - area.xMin) / area.width * Resolution);
             var z = Mathf.FloorToInt((p.y - area.yMin) / area.height * Resolution);
-            return textureWeights[z, x, layer];
+            return textureWeights[x, z, layer];
         }
 
         private static float Gap(Color a, Color b) =>

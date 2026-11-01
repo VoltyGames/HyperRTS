@@ -18,10 +18,10 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>Mean colours are read from a small blit; its mips do the averaging.</summary>
         private const int MeanSize = 64;
 
-        public static Texture2D Write(string path, float[,,] textureWeights, MapClimate climate, Texture2D groundTint)
+        public static Texture2D Write(string path, MapTextureWeights textureWeights, MapClimate climate, Texture2D groundTint)
         {
-            var size = textureWeights.GetLength(0) / Downsample;
-            var albedo = LayerAlbedo(climate, textureWeights.GetLength(2));
+            var size = textureWeights.Resolution / Downsample;
+            var albedo = LayerAlbedo(climate, textureWeights.LayerCount);
             var tint = Read(groundTint, size);
             var pixels = new Color32[size * size];
             for (var z = 0; z < size; z++)
@@ -66,7 +66,7 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>The box average of the texture weight texels under one ground texel, mixed into a colour.</summary>
-        private static Color Ground(float[,,] textureWeights, Color[] albedo, int x, int z)
+        private static Color Ground(MapTextureWeights textureWeights, Color[] albedo, int x, int z)
         {
             var color = Color.clear;
             for (var dz = 0; dz < Downsample; dz++)
@@ -75,7 +75,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 {
                     for (var layer = 0; layer < albedo.Length; layer++)
                     {
-                        color += albedo[layer] * textureWeights[z * Downsample + dz, x * Downsample + dx, layer];
+                        color += albedo[layer] * textureWeights[x * Downsample + dx, z * Downsample + dz, layer];
                     }
                 }
             }

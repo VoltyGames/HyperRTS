@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Combat.Projectiles;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Movement;
@@ -30,6 +31,7 @@ namespace HyperRTS.Presentation.Animation
         /// Fills the slots, and the weapons' turret and barrel pivots, from parts named Turret, Barrel, Launcher,
         /// Wheel_L01, Rotor_Main, Prop_01, Hull and so on, in every model under it, such as a damaged one.
         /// </summary>
+        [InspectorButton("Fill from model")]
         public void FillFromModel()
         {
             var all = GetComponentsInChildren<Transform>(true).Where(IsBelow).ToList();

@@ -22,6 +22,9 @@ namespace HyperRTS.Simulation.Destruction
         [Tooltip("Heading in degrees from +Z toward +X that the canopy points in the remains model.")]
         public float lie;
 
+        [Tooltip("The material of the trunk faces in the standing model's LOD0, which Measure from model reads. Editor only.")]
+        public Material trunkMaterial;
+
         /// <summary><paramref name="trunk"/> is a unit vector.</summary>
         public static void AddTopple(EntityWriter writer, float3 trunk, float height, float lie,
             float canopyRadius)

@@ -14,9 +14,11 @@ namespace HyperRTS.Simulation.Buildings
     public class BuilderAuthoring : AuthoringBehaviour
     {
         [Tooltip("Building prefabs this unit can place.")]
+        [PrefabAsset("Build option"), NoEmptyEntries]
         public List<BuildingAuthoring> buildOptions = new();
 
         [Tooltip("Building prefabs on the command card's second page, behind a More card.")]
+        [PrefabAsset("Advanced build option"), NoEmptyEntries]
         public List<BuildingAuthoring> advancedBuildOptions = new();
 
         [Tooltip("Construction speed multiplier; several builders on one site add up.")]

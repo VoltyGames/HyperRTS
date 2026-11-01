@@ -31,6 +31,7 @@ namespace HyperRTS.Simulation.GameEntities
         public bool tall;
 
         [Tooltip("Optional prefab spawned where this dies (wreck, debris).")]
+        [PrefabAsset("Death spawn"), GhostPrefab("Death spawn", OnlyOnGhosts = true)]
         public GameObject deathSpawn;
 
         [Tooltip("The owner is defeated once no entity with this flag remains.")]

@@ -17,8 +17,6 @@ namespace HyperRTS.Editor.Validation.Rules
             }
 
             CheckAbility(asset, issues);
-            CheckPrefabReference(asset, asset.aircraft, "Aircraft", issues);
-            CheckPrefabReference(asset, asset.bomb, "Bomb", issues);
         }
 
         private static void CheckAircraft(StrategicAssetAuthoring asset, ValidationIssues issues)

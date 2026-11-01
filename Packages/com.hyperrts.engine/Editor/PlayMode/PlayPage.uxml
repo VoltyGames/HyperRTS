@@ -1,40 +1,33 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <Style src="../Common/HyperRTSEditor.uss" />
   <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
-  <ui:ScrollView class="hrts-fill">
-    <ui:VisualElement class="hrts-page__body">
-      <ui:HelpBox name="hint" class="hrts-note" message-type="Info" text="Enter Play mode to use cheats, networking and recording." />
-      <ui:Instance template="CheatsSection" name="cheats" />
-      <ui:VisualElement class="hrts-section">
-        <ui:Label class="hrts-section__title" text="Network" />
-        <ui:VisualElement class="hrts-buttons">
-          <ui:Button name="host" text="Host" />
-          <ui:Button name="join" text="Join Localhost" />
-          <ui:Button name="server" text="Dedicated Server" />
-          <ui:Button name="stop" text="Stop" />
-        </ui:VisualElement>
-        <ui:Label name="traffic" class="hrts-note" />
+  <HyperRTS.Editor.Hub.PageShell name="shell" empty-text="Enter Play mode to use cheats, networking and recording.">
+    <ui:Instance template="CheatsSection" name="cheats" />
+    <HyperRTS.Editor.Common.Section title="Network">
+      <ui:VisualElement class="hrts-buttons">
+        <ui:Button name="host" text="Host" />
+        <ui:Button name="join" text="Join Localhost" />
+        <ui:Button name="server" text="Dedicated Server" />
+        <ui:Button name="stop" text="Stop" />
       </ui:VisualElement>
-      <ui:VisualElement class="hrts-section">
-        <ui:Label class="hrts-section__title" text="Bot matches" />
-        <ui:IntegerField name="bot-matches" label="Matches" />
-        <ui:IntegerField name="bot-players" label="Players" />
-        <ui:EnumField name="bot-difficulty" label="Difficulty" />
-        <ui:FloatField name="bot-speed" label="Game speed" />
-        <ui:FloatField name="bot-limit" label="Time limit (min)" />
-        <ui:VisualElement class="hrts-buttons">
-          <ui:Button name="run-bots" text="Run" />
-          <ui:Button name="stop-bots" text="Stop" />
-        </ui:VisualElement>
-        <ui:Label name="bot-status" class="hrts-note" />
+      <ui:Label name="traffic" class="hrts-note" />
+    </HyperRTS.Editor.Common.Section>
+    <HyperRTS.Editor.Common.Section title="Bot matches">
+      <uie:PropertyField binding-path="bots.matches" label="Matches" />
+      <uie:PropertyField binding-path="bots.players" label="Players" />
+      <uie:PropertyField binding-path="bots.difficulty" label="Difficulty" />
+      <uie:PropertyField binding-path="bots.speed" label="Game speed" />
+      <uie:PropertyField binding-path="bots.timeLimitMinutes" label="Time limit (min)" />
+      <ui:VisualElement class="hrts-buttons">
+        <ui:Button name="run-bots" text="Run" />
+        <ui:Button name="stop-bots" text="Stop" />
       </ui:VisualElement>
-      <ui:VisualElement class="hrts-section">
-        <ui:Label class="hrts-section__title" text="Replays" />
-        <ui:VisualElement class="hrts-buttons">
-          <ui:Button name="save" text="Save Recording..." />
-          <ui:Button name="play" text="Play Replay..." />
-        </ui:VisualElement>
+      <ui:Label name="bot-status" class="hrts-note" />
+    </HyperRTS.Editor.Common.Section>
+    <HyperRTS.Editor.Common.Section title="Replays">
+      <ui:VisualElement class="hrts-buttons">
+        <ui:Button name="save" text="Save Recording..." />
+        <ui:Button name="play" text="Play Replay..." />
       </ui:VisualElement>
-    </ui:VisualElement>
-  </ui:ScrollView>
+    </HyperRTS.Editor.Common.Section>
+  </HyperRTS.Editor.Hub.PageShell>
 </ui:UXML>

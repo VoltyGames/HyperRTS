@@ -25,12 +25,6 @@ namespace HyperRTS.Editor.Effects.Preview
         private const float LongestFrame = 0.1f;
 
         [SerializeField] private GameObject _rig;
-        [SerializeField] private bool _follow = true;
-        [SerializeField] private bool _loop = true;
-        [SerializeField] private float _interval = 4f;
-        [SerializeField] private float _scale = 1f;
-        [SerializeField] private float _windStrength;
-        [SerializeField] private float _windDegrees;
 
         private EffectPreviewPlayer _player;
         private Label _hint;
@@ -53,16 +47,14 @@ namespace HyperRTS.Editor.Effects.Preview
             _picker.SetValueWithoutNotify(_rig);
             _picker.RegisterValueChangedCallback(evt => Show(evt.newValue as GameObject));
 
-            Bind(root.Require<Toggle>("follow"), _follow, value => _follow = value);
-            Bind(root.Require<Toggle>("loop"), _loop, value => _loop = value);
-            Bind(root.Require<Toggle>("pause"), false, value => _player.Paused = value);
-            Bind(root.Require<Slider>("interval"), _interval, value => _interval = value);
-            Bind(root.Require<Slider>("scale"), _scale, value => _scale = _player.Scale = value);
-            Bind(root.Require<Slider>("wind-strength"), _windStrength, value => _windStrength = value, ApplyWind);
-            Bind(root.Require<Slider>("wind-direction"), _windDegrees, value => _windDegrees = value, ApplyWind);
+            HyperRTSEditorState.Bind(root);
+            root.Require<Toggle>("pause").RegisterValueChangedCallback(change => _player.Paused = change.newValue);
+            root.Require<PropertyField>("scale").RegisterValueChangeCallback(_ => _player.Scale = Settings.scale);
+            root.Require<PropertyField>("wind-strength").RegisterValueChangeCallback(_ => ApplyWind());
+            root.Require<PropertyField>("wind-heading").RegisterValueChangeCallback(_ => ApplyWind());
             root.Require<Button>("replay").clicked += () => Replay(true);
 
-            _player.Scale = _scale;
+            _player.Scale = Settings.scale;
             ApplyWind();
             Show(_rig);
         }
@@ -95,16 +87,6 @@ namespace HyperRTS.Editor.Effects.Preview
 
             // After the import, since the build imports the graph it writes.
             EditorApplication.delayCall += () => Rebuild(changed);
-        }
-
-        private static void Bind<T>(BaseField<T> field, T value, Action<T> changed, Action after = null)
-        {
-            field.SetValueWithoutNotify(value);
-            field.RegisterValueChangedCallback(evt =>
-            {
-                changed(evt.newValue);
-                after?.Invoke();
-            });
         }
 
         private void Rebuild(List<string> recipes)
@@ -158,11 +140,13 @@ namespace HyperRTS.Editor.Effects.Preview
             _sinceBurst = 0f;
         }
 
-        private void ApplyWind() => _player.SetWind(_windDegrees, _windStrength);
+        private static EffectPreviewSettings Settings => HyperRTSEditorState.instance.effectPreview;
+
+        private void ApplyWind() => _player.SetWind(Settings.windHeading, Settings.windStrength);
 
         private void OnSelectionChanged()
         {
-            if (_follow && Selection.activeObject is GameObject selected && EditorUtility.IsPersistent(selected) && selected.TryGetComponent<EffectRig>(out _))
+            if (Settings.follow && Selection.activeObject is GameObject selected && EditorUtility.IsPersistent(selected) && selected.TryGetComponent<EffectRig>(out _))
             {
                 Show(selected);
             }
@@ -171,7 +155,7 @@ namespace HyperRTS.Editor.Effects.Preview
         private void OnSceneChanged(Scene previous, Scene current)
         {
             _player.Dispose();
-            _player = new EffectPreviewPlayer(current) { Scale = _scale };
+            _player = new EffectPreviewPlayer(current) { Scale = Settings.scale };
             ApplyWind();
             Show(_rig);
         }
@@ -191,7 +175,7 @@ namespace HyperRTS.Editor.Effects.Preview
                 _sinceBurst += deltaTime;
             }
 
-            if (_loop && _sinceBurst >= _interval)
+            if (Settings.loop && _sinceBurst >= Settings.interval)
             {
                 Replay(false);
             }

@@ -163,7 +163,7 @@ Health bars are screen-aligned quads of a fixed pixel size (reference pixels at 
 above the model's top: a dark backing, a fill cut into segments of `healthPerSegment` (one per member for squads)
 and coloured from healthy to critical, with squad member pips on the left and veterancy rank pips on the right.
 `OverlayRenderer.HealthBars` picks who shows one: everyone, damaged units, or only selected ones. Selected and
-hovered units always do. Both overlays are one instanced draw each through `InstanceDataBatch`. The bars set the style's
+hovered units always do. Both overlays are one draw each through `InstanceBuffer<T>`. The bars set the style's
 material values only when the style, its edit count or the pixel scale changes, so Play mode edits to the asset
 show at once.
 
@@ -397,6 +397,13 @@ is the `SectionLook` buffer.
 | `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches. Lit by the sun, Forward+ point and spot lights (per vertex on scattered grass) and Surface Cache GI |
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
+| `HyperRTS/Bird` | Unlit alpha-cut bird quads, each picking its wing pose from a 2x2 flipbook |
+
+Instances built on the CPU each frame (overlays, health bars, ground markers, birds) go through `InstanceBuffer<T>`: a
+structured buffer the shader reads as `_Instances[SV_InstanceID]`, drawn in one indirect call and doubled when full.
+Each shader declares the struct beside its C# twin (`OverlayInstance`, `HealthBarInstance`, `MarkerInstance`,
+`BirdInstance`) and builds its own object-to-world from it. Flying debris keeps `RenderMeshInstanced`, since its
+`HyperRTS/LitTeam` material reads the instanced transforms in every pass and needs last frame's for motion vectors.
 
 Water vertex colours shape the flow: alpha thins fords, green streaks rapids foam, and red trails foam lines
 downstream of fords and bridges. Open water carries no streaks; banks get their own foam band.
@@ -408,9 +415,19 @@ URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/
 cookies, for Road), `ForwardLightingKeywords` (that plus probes, fog and rendering layers, for the full Lit model),
 `ObjectLightingKeywords` and `LightmapKeywords` (LitTeam and Bark add falloff, box projection, exposure, debug and probe
 volumes, and LitTeam its lightmaps), `MainLightKeywords` (Water), `SimpleLightingKeywords` (that plus screen space
-occlusion, for plant and flag forward passes), `ShadowCasterKeywords` and `DepthNormalsKeywords`. An include holds
-only lines identical in every pass that uses it, so a pass needing a different line keeps its own; material keywords
-(`shader_feature_local`) stay in each shader.
+occlusion and the Forward+ cluster loop, for plant and flag forward passes), `ShadowCasterKeywords`,
+`DepthNormalsKeywords`, `InstancingKeywords` (GPU and Entities Graphics instancing, for every pass drawn both ways) and
+`LitTeamVertexKeywords` (LitTeam's VAT and build keywords, in every pass that moves its vertices). An include holds
+only lines identical in every pass that uses it, so a pass needing a different line keeps its own; other material
+keywords (`shader_feature_local`) stay in each shader.
+
+Shaders that move their vertices share their prepasses. `Rendering/DisplacedPasses.hlsl` gives Foliage, RowCrop,
+Flag and Bark's motion vectors their shadow, depth, depth-normals and motion vector entries from one `Displace` hook
+taking a `WindFrame` and an object matrix: motion vectors call it with last frame's wind and matrix, so sway and
+toppling both show. `Rendering/DisplacedLitPasses.hlsl` wraps whichever URP pass file came before it in one
+`DisplacedLitVertex`, for LitTeam (`LitTeamPasses.hlsl`) and Bark (`BarkPasses.hlsl`), and hides the field names that
+change from pass to pass. `Rendering/Hash.hlsl` holds the one PCG hash, `Random` and value noise, used by wind,
+plant tints, grime, terrain hex tiling and the scatter compute shaders.
 
 ### Atmosphere
 
@@ -570,13 +587,15 @@ redone whenever a building appears, goes or moves, before that frame's ignitions
   the rig, up to the cap; a square that falls back into fog drops its stream.
 - A seen cell that burns out stamps a soft 2.6 m disc of full ash into the remains map and of scorch into the tracks
   map (`TrampleStamps.AddScorch`), nudged up to 0.35 m off the grid, so neighbours overlap into one char. The grass and row crop kernels get the remains map bound by
-  `TrampleSurfaces.BindRemains` and drop plants where ash lies (`BurntPlants.hlsl`), so burnt fields stay bare;
+  `TrampleSurfaces.RemainsGlobal` and drop plants where ash lies (`BurntPlants.hlsl`), so burnt fields stay bare;
   a crater's lighter ash only thins them. A still camera's grass and crops regrow when `FieldFireState.BurntCells` changes (`ScatterView` tracks it).
 
 ### Building footprints
 
 `BuildingFootprintSystem` draws every building's turned obstacle box into an R8 mask over the map at nav-cell
-resolution and publishes it as `_HyperRTSFootprints`, with `_HyperRTSFootprintRect` (zero without a map). Cells
+resolution and publishes it as `_HyperRTSFootprints`, with `_HyperRTSFootprintRect` (zero without a map). Like the
+ground picture, the trample maps, the undented heights and the fog grid, it goes through a `WorldGridGlobal`: a
+texture global and its rect, cleared to black and a zero rect, which shaders read as nothing published. Cells
 within half a cell of a wall count too. Grass and row crops skip plants where it is set, whatever the
 trample-map quality, through `BuildingFootprints.hlsl`. It redraws only when buildings appear or go and their
 boxes differ, and each redraw bumps `BuildingFootprintMask.Version` so cameras rescatter their plants. With no map
@@ -601,18 +620,19 @@ default) keeps screen-space AO from darkening it again: GTAO reads a dense field
 turns shaded wheat into a flat dark patch. Foliage has the same property at 1.
 
 A camera regrows the plants of its visible tiles when it moves, the quality changes or new ash falls, and every frame
-while a trample map is published (`RowCropCameraState`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants
+while a trample map is published (`RowCropRenderer.RegrowsEveryFrame`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants
 shrink away over the last 15 % of the draw distance. It also runs in edit mode.
 
 #### Scatter host
 
 Row crops and grass (see [maps](../maps.md)) share one host, built to take more scattered things such as debris:
 
-- `ScatterRenderer<TState>`, the base of `RowCropRenderer` and `GrassRenderer`, holds the `compute` and `terrain`
-  fields, builds and releases the inputs, keeps one state per camera in `CameraStates`, culls tiles through
-  `ScatterTiles` and, in edit mode, rebuilds after `OnValidate` or a map rebuild. A subclass makes its inputs and camera
-  states, names its `ScatterField`, says when its data went stale and grows and draws each camera. Density and distance come from
-  `PresentationQuality.Current`.
+- `ScatterRenderer<TBatch>`, the base of `RowCropRenderer` and `GrassRenderer`, holds the `compute` and `terrain`
+  fields, builds and releases the inputs, keeps one `ScatterCameraState` (the camera's batches and the view they
+  were grown for) per camera in `CameraStates`, culls tiles through `ScatterTiles`, regrows a camera when its view
+  changed and, in edit mode, rebuilds after `OnValidate` or a map rebuild. A subclass makes its inputs and batches,
+  names its `ScatterField`, queues each visible tile's jobs and says when its batches went stale. Density and
+  distance come from `PresentationQuality.Current`.
 - `ScatterField`, the base of `RowCropFields` and `GrassField`, holds the baked `area` and the `tiles` (`ScatterTile`: column
   and row from the area's corner, and the `first` and `count` of the tile's run in the field's own per-tile list). It
   makes the `ScatterTiles` culling boxes and checks the area has a size.
@@ -625,8 +645,10 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
   of each slot's offset and capacity that the grow and count kernels and the draws (`_SlotOffset`) read. Grass slots
   are (plant, model, band); a crop's are variant times three LOD bands, and each lattice spot picks its variant in the
   kernel, so a crop grows in one dispatch. A crop sizes every slot to its share of the tiles' worst case.
-- `ScatterInputs` binds what both kernels read: the tile size (`ScatterTiles.Size`), the heightmap, and each camera's
-  position with the building mask, crater depth and ash. `ScatterSettings` carries density, distance and shadow
+- `ScatterComputeInputs`, the base of `GrassComputeInputs` and `RowCropComputeInputs`, finds the grow and `Count`
+  kernels, uploads the baked items and binds what both kernels read: the tile size (`ScatterTiles.Size`), the
+  heightmap, and each camera's position with the building mask, crater depth and ash. Its `Stale` catches a map
+  rebuild that changed the items, the subclass's own inputs or the heightmap. `ScatterSettings` carries density, distance and shadow
   distance (crops pass 0), and a density of 0 draws nothing for both.
 - `Scatter.hlsl` holds the job struct, hashes, noise and slot counting; `ScatterHash` is the C# twin of the hashes.
   The kernels share its slot table and `Claim` and `CloseSlots`.
@@ -636,7 +658,8 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
 An `AmbientLife` component in the scene, one per climate, adds birds and dust devils. They live on the client only,
 so clients may differ. A count of zero turns a feature off. Both are skipped at Low effect detail.
 
-- Bird flocks circle over the map. A nearby impact scatters them, and they settle again at least 150 m away.
+- Bird flocks circle over the map. A nearby impact scatters them, and they settle again at least 150 m away. Every
+  bird draws in one call on `HyperRTS/Bird`, with no cap on their number.
 - Dust devils form near the camera on the chosen ground and drift downwind.
 
 ### Effects

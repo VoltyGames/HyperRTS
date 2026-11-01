@@ -13,5 +13,8 @@ namespace HyperRTS.Editor.Maps.Library
         public MapKeyAttribute(params Type[] types) => Types = types;
 
         public Type[] Types { get; }
+
+        /// <summary>A spec may leave the key empty for "none" (a ford's bridge prop).</summary>
+        public bool Optional { get; set; }
     }
 }

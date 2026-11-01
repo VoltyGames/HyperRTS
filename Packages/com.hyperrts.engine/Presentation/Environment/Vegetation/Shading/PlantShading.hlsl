@@ -1,5 +1,5 @@
 // Shading shared by HyperRTS/Foliage and HyperRTS/RowCrop. Include after the shader's input file, which declares
-// _BaseMap, the UnityPerMaterial shading properties and PLANT_TWO_SIDED; its passes place the vertices.
+// _BaseMap, the UnityPerMaterial shading properties and PLANT_TWO_SIDED; its pass file places the vertices.
 // PLANT_VERTEX_LIGHTS lights point and spot lights per vertex instead of per pixel.
 #ifndef HYPERRTS_PLANT_SHADING_INCLUDED
 #define HYPERRTS_PLANT_SHADING_INCLUDED
@@ -12,11 +12,9 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/WorldRect.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
 #if defined(LOD_FADE_CROSSFADE)
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 #endif
@@ -40,23 +38,6 @@ struct ForwardVaryings
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-struct CutoutVaryings
-{
-    float4 positionCS : SV_POSITION;
-    float2 uv : TEXCOORD0;
-    half3 normalWS : TEXCOORD1;
-    UNITY_VERTEX_INPUT_INSTANCE_ID
-};
-
-struct MotionVaryings
-{
-    float4 positionCS : SV_POSITION;
-    float4 positionCSNoJitter : TEXCOORD0;
-    float4 previousPositionCSNoJitter : TEXCOORD1;
-    float2 uv : TEXCOORD2;
-    UNITY_VERTEX_INPUT_INSTANCE_ID
-};
-
 // Ground colour over the texture's mean brightness, so the root keeps the texture's detail.
 half4 RootGround(float3 origin)
 {
@@ -74,17 +55,19 @@ half3 PlantTint(half dry, half random)
     return straw * (1.0 - _HueVariation + random * _HueVariation * 2.0);
 }
 
-void ClipCoverage(float2 uv)
-{
-    clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).a * _BaseColor.a - _Cutoff);
-}
-
 // LOD crossfade dither. positionCS is the fragment's SV_POSITION.
 void PlantCrossFade(float4 positionCS)
 {
 #if defined(LOD_FADE_CROSSFADE)
     LODFadeCrossFade(positionCS);
 #endif
+}
+
+// DisplacedPasses.hlsl's alpha cut for every plant prepass.
+void ClipDisplaced(float2 uv, float4 positionCS)
+{
+    clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).a * _BaseColor.a - _Cutoff);
+    PlantCrossFade(positionCS);
 }
 
 // Wrapped light on the facing side plus light through the leaf toward the eye; the root wraps and passes none.
@@ -131,26 +114,6 @@ ForwardVaryings PlantForwardVaryings(float3 positionWS, float3 origin, float2 uv
     #if defined(PLANT_VERTEX_LIGHTS)
         output.vertexLight = PlantVertexLights(positionWS, output.positionCS, normalWS);
     #endif
-    return output;
-}
-
-CutoutVaryings PlantCutoutVaryings(float4 positionCS, float2 uv, half3 normalWS)
-{
-    CutoutVaryings output = (CutoutVaryings)0;
-    output.positionCS = positionCS;
-    output.uv = TRANSFORM_TEX(uv, _BaseMap);
-    output.normalWS = normalWS;
-    return output;
-}
-
-// Last frame's position comes from last frame's wind.
-MotionVaryings PlantMotionVaryings(float3 now, float3 last, float2 uv)
-{
-    MotionVaryings output = (MotionVaryings)0;
-    output.positionCS = TransformWorldToHClip(now);
-    output.positionCSNoJitter = mul(_NonJitteredViewProjMatrix, float4(now, 1.0));
-    output.previousPositionCSNoJitter = mul(_PrevViewProjMatrix, float4(last, 1.0));
-    output.uv = TRANSFORM_TEX(uv, _BaseMap);
     return output;
 }
 
@@ -221,38 +184,6 @@ half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Targe
     half3 normal = PlantNormal(input.normalWS, front, root);
     half3 color = PlantLight(albedo.rgb, input, normal, root);
     return half4(color, 1.0);
-}
-
-half4 ShadowFrag(CutoutVaryings input) : SV_Target
-{
-    UNITY_SETUP_INSTANCE_ID(input);
-    ClipCoverage(input.uv);
-    PlantCrossFade(input.positionCS);
-    return 0;
-}
-
-half4 DepthFrag(CutoutVaryings input) : SV_Target
-{
-    UNITY_SETUP_INSTANCE_ID(input);
-    ClipCoverage(input.uv);
-    PlantCrossFade(input.positionCS);
-    return input.positionCS.z;
-}
-
-half4 DepthNormalsFrag(CutoutVaryings input) : SV_Target
-{
-    UNITY_SETUP_INSTANCE_ID(input);
-    ClipCoverage(input.uv);
-    PlantCrossFade(input.positionCS);
-    return DepthNormalOutput(normalize(input.normalWS));
-}
-
-float4 MotionFrag(MotionVaryings input) : SV_Target
-{
-    UNITY_SETUP_INSTANCE_ID(input);
-    ClipCoverage(input.uv);
-    PlantCrossFade(input.positionCS);
-    return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0.0, 0.0);
 }
 
 #endif

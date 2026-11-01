@@ -8,7 +8,8 @@ namespace HyperRTS.Editor.Maps.Spec
     /// side gullies branch off and part of the floor is wooded.
     /// </summary>
     [Serializable]
-    public sealed class MapRavineSpec
+    [MapFeature("ravine", 80, 0.6f, 0.4f, 0.25f)]
+    public sealed class MapRavineSpec : MapFeatureSpec, IMapLine
     {
         public List<MapPoint> points = new();
         public float width = 24f;
@@ -23,6 +24,6 @@ namespace HyperRTS.Editor.Maps.Spec
         /// <summary>Share of the floor and lower walls that carries trees (0 to 1).</summary>
         public float wooded = 0.5f;
 
-        public bool shared;
+        public List<MapPoint> Points => points;
     }
 }

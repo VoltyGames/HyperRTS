@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Airdrops
         public string ability = "Strategic Strike";
 
         [Tooltip("Aircraft prefab with Flight and Stealth that flies the strike; air defence can engage it once revealed.")]
+        [PrefabAsset("Aircraft")]
         public UnitAuthoring aircraft;
 
         [Tooltip("Cruise height of the aircraft above the target.")]
@@ -38,6 +39,7 @@ namespace HyperRTS.Simulation.Airdrops
 
         [Header("Bombs")]
         [Tooltip("Projectile prefab each guided bomb flies as.")]
+        [PrefabAsset("Bomb")]
         public GameObject bomb;
 
         [Tooltip("Bombs in the stick before air defence removes any.")]

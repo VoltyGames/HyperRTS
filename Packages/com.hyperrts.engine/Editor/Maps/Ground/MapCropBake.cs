@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
@@ -8,23 +9,20 @@ namespace HyperRTS.Editor.Maps.Ground
     /// <summary>Where a map's row crops grow, before <see cref="MapCropWriter"/> saves it.</summary>
     public sealed class MapCropBake
     {
-        public MapCropBake(Rect area, int width, int height)
+        public MapCropBake(MapGrid grid)
         {
-            Area = area;
-            Width = width;
-            Height = height;
-            Ids = new int[width * height];
+            Ids = new MapField<int>(grid);
         }
 
         /// <summary>World XZ rectangle the cells cover, one metre each.</summary>
-        public Rect Area { get; }
+        public Rect Area => Ids.Grid.Bounds;
 
-        public int Width { get; }
+        public int Width => Ids.Grid.Width;
 
-        public int Height { get; }
+        public int Height => Ids.Grid.Height;
 
-        /// <summary>Field index plus one per cell, row by row from the minimum corner. 0 means no crop.</summary>
-        public int[] Ids { get; }
+        /// <summary>Field index plus one per cell. 0 means no crop.</summary>
+        public MapField<int> Ids { get; }
 
         public List<RowCrop> Crops { get; } = new();
 
@@ -42,6 +40,6 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public bool IsEmpty => Fields.Count == 0;
 
-        public int Id(int x, int z) => Ids[z * Width + x];
+        public int Id(int x, int z) => Ids[x, z];
     }
 }

@@ -28,6 +28,7 @@ namespace HyperRTS.Editor.Maps.Tests
 
             Assert.IsEmpty(missing, "MapFeatureKinds needs a row for: " + string.Join(", ", missing));
             Assert.That(MapFeatureKinds.All.Select(kind => kind.Field), Is.Unique);
+            Assert.That(MapFeatureKinds.All.Select(kind => kind.Order), Is.Unique, "two kinds would draw in field order");
         }
 
         [Test]

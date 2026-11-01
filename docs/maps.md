@@ -138,7 +138,7 @@ All arrays are optional and authored for the sector only. Land is claimed in the
 | `rows` | `points`, `kind`, `spacing` | A row every `spacing` metres of a climate tree or a palette prop |
 | `scatters` | `points` (polygon), `kind`, `count` | Palette props at random in the polygon. `besideRoad` entries move onto the nearest road's verge and face along it, so the polygon must reach a road |
 
-Every feature except spawns and settlements also takes `shared`. A river crossing has `along` (0 to 1 down the
+Every feature except spawns also takes `shared`. A river crossing has `along` (0 to 1 down the
 authored river), `kind` (`bridge` or `ford`), `width` and `prop`: a bridge's prefab carries the walkable deck, a ford's
 bed sits just under the water. Fords thin the water and streak it with foam; the climate's `fordShallowsWidth` and
 `fordRapidsLength` set how far, and `crossingFoamLength` how far foam lines trail below fords and bridges.
@@ -255,7 +255,8 @@ so map captures show Ultra.
 ### Checks and measures
 
 Checks run before anything is refined. `MapAssetCheck` covers the climate and palette, and `MapSpecCheck` covers
-the spec. Every key must resolve, or the error names the key and the feature. Settings that only work in some
+the spec. `MapSpecKeys` walks every `[MapKey]` field of the spec and checks it against the climate and palette the
+map builds with, naming the key by its path: `belts[1].kind 'Hedge' is not a belt in climate 'Steppe'`. Settings that only work in some
 places, such as a prop's `besideRoad`, are rejected elsewhere. After the checks, lookups throw, so a missed key
 fails loudly. Once props are placed, `MapPlacements.CheckEntities` makes every prop in the play area an entity: a
 prefab without HyperRTS authoring is an error naming its key, since the simulation must see it to clear or crush it.
@@ -362,6 +363,7 @@ that names no item and a link to an asset that no longer exists, on the Validate
 | `MapPreview.Run`, `MapBuilder.Build`, `MapViewCapture.Capture` | The same from editor code |
 | `MapBuildRunner.Build(spec)`, `.BuildAll()` | Builds as the editor does, saving and reopening scenes; with `ask: false` unsaved scenes throw instead |
 | `MapKeyReference.Write(path, MapLibrary.Load())` | Writes a Markdown list of every `kind` a spec may name |
+| `MapSpecSchema.Write(path, MapLibrary.Load())`, `EffectGraphSpec.Schema()` | The JSON Schemas of `.map.json` and `.effect.json`, built from the spec classes by `JsonSpecSchema`; `[MapKey]` fields list the library's keys |
 | `MapPaths.Find(map)` | The spec for a map name or spec path, as the commands take it |
 
 Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a crash or a missing `-map`. Add
@@ -382,6 +384,8 @@ Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a cr
 3. Add a `MapLandPass` in `Planning/` that claims land through `MapPlanContext`. Decide in the authored sector and
    place in every copy.
 4. Slot the pass into `MapLandPlanner.Plan` at its priority.
-5. Add a spec class in `Spec/`, an array on `MapSpec`, key checks in `MapSpecCheck`, and a `MapFeatureKind` in
-   `MapFeatureKinds` so the Map Editor shows it.
+5. Add a spec class in `Spec/` that derives from `MapFeatureSpec`, implements `IMapPoint` or `IMapLine` and
+   carries `[MapFeature(name, order, colour)]`, with `[MapKey]` on its keys. Add its list to `MapSpec` and to
+   `MapLayout`, and one `Points` or `Lines` call in `MapExpander`. `MapSpecKeys` checks its keys, the Map Editor
+   lists and draws it from the attribute, and the schema picks it up on the next generator run.
 6. Write EditMode tests: the planner's output on a small layout, and a bad key failing loudly.

@@ -17,7 +17,7 @@
 }
 
 .hrts-issue-badge__button--open {
-    border-color: rgb(120, 120, 120);
+    border-color: var(--hrts-border);
 }
 
 .hrts-issue-badge__count {
@@ -35,7 +35,7 @@
 }
 
 .hrts-issue-badge__notes {
-    color: rgb(150, 190, 255);
+    color: var(--hrts-note);
 }
 
 .hrts-option {

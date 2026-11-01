@@ -41,11 +41,11 @@ namespace HyperRTS.Simulation.Navigation.Docks
             public float runIn;
         }
 
-        [Tooltip("The bays. Fill Bays in the context menu fills it from Bay_NN children and their Bay_NN_Exit siblings.")]
+        [Tooltip("The bays. The Fill bays button fills it from Bay_NN children and their Bay_NN_Exit siblings.")]
         public Bay[] bays = Array.Empty<Bay>();
 
         /// <summary>Lists every <c>Bay_NN</c> child in name order with its <c>Bay_NN_Exit</c> sibling, keeping run-ins.</summary>
-        [ContextMenu("Fill Bays")]
+        [InspectorButton("Fill bays")]
         public void FillBays()
         {
             var stops = GetComponentsInChildren<Transform>(true).Where(child => StopName.IsMatch(child.name))
@@ -62,9 +62,6 @@ namespace HyperRTS.Simulation.Navigation.Docks
                 });
             }
 
-#if UNITY_EDITOR
-            UnityEditor.Undo.RecordObject(this, "Fill Bays");
-#endif
             bays = filled.ToArray();
         }
 

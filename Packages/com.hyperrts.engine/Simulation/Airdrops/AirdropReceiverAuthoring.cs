@@ -17,9 +17,11 @@ namespace HyperRTS.Simulation.Airdrops
     public class AirdropReceiverAuthoring : AuthoringBehaviour
     {
         [Tooltip("Unarmed aircraft prefab with Flight that flies the delivery; enemy air defence can shoot it down.")]
+        [PrefabAsset("Aircraft")]
         public UnitAuthoring aircraft;
 
         [Tooltip("Ghost prefab of the cargo under its parachutes, sinking from the aircraft onto this structure.")]
+        [PrefabAsset("Crate"), GhostPrefab("Crate")]
         public GameObject crate;
 
         [Tooltip("Optional point on this structure the crate lands on, such as the middle of a drop field; empty lands it on the origin.")]

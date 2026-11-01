@@ -64,7 +64,7 @@ Shader "Hidden/HyperRTS/Trample Brush"
             output.local = corner;
             output.value = stamp.value;
             output.forward = stamp.forward;
-            output.phase = WindHash(float3(stamp.center, 0.0)) * TWO_PI;
+            output.phase = Random(float3(stamp.center, 0.0)) * TWO_PI;
             return output;
         }
 

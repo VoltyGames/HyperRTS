@@ -8,7 +8,8 @@ namespace HyperRTS.Editor.Maps.Spec
     /// <see cref="valleyWidth"/>.
     /// </summary>
     [Serializable]
-    public sealed class MapRiverSpec
+    [MapFeature("river", 70, 0.25f, 0.5f, 0.95f)]
+    public sealed class MapRiverSpec : MapFeatureSpec, IMapLine
     {
         public List<MapPoint> points = new();
         public float width = 14f;
@@ -26,6 +27,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public float widthVariation = 0.25f;
 
         public List<MapCrossingSpec> crossings = new();
-        public bool shared;
+
+        public List<MapPoint> Points => points;
     }
 }

@@ -112,14 +112,14 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         private void ClaimFields(MapFarmlandKit kit, MapFieldGrid grid, List<Vector2> polygon, int index, float angle)
         {
             var fields = Assign(grid, polygon);
-            var edge = MapLandDistance.ToRegionEdge(Land.Width, Land.Height, (x, z) => fields[z * Land.Width + x]);
-            var (sizes, reach) = MapFieldFragments.Measure(fields, edge, Land.Width, Land.Height);
+            var edge = MapLandDistance.ToRegionEdge(fields);
+            var (sizes, reach) = MapFieldFragments.Measure(fields, edge);
             var regions = new MapFieldRegions(Context, kit, index, angle);
             var noise = Context.Noise(MapNoiseChannel.FieldMargins);
             var minCells = kit.minField / (MapLand.CellSize * MapLand.CellSize);
             Land.ForEach((x, z, p) =>
             {
-                var i = z * Land.Width + x;
+                var i = fields.Grid.Index(x, z);
                 var field = fields[i];
                 if (field == NoField)
                 {
@@ -148,7 +148,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         }
 
         /// <summary>Whether the field ends within <paramref name="reach"/> along the rows, in a stretch long enough to turn.</summary>
-        private bool IsFieldEnd(int[] fields, MapFieldGrid grid, Vector2 sector, int copy, int field, float reach)
+        private bool IsFieldEnd(MapField<int> fields, MapFieldGrid grid, Vector2 sector, int copy, int field, float reach)
         {
             var transform = Symmetry.Copies[copy];
             var ahead = Run(fields, transform, sector, grid.Forward, field, HeadlandBody * reach);
@@ -157,7 +157,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         }
 
         /// <summary>Metres of field ahead along <paramref name="way"/>, up to <paramref name="limit"/>.</summary>
-        private float Run(int[] fields, MapTransform transform, Vector2 sector, Vector2 way, int field, float limit)
+        private float Run(MapField<int> fields, MapTransform transform, Vector2 sector, Vector2 way, int field, float limit)
         {
             var step = SampleStep;
             while (step <= limit && InField(fields, transform.Apply(sector + way * step), field))
@@ -168,16 +168,16 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             return step;
         }
 
-        private bool InField(int[] fields, Vector2 point, int field) =>
-            Land.TryCell(point, out var x, out var z) && fields[z * Land.Width + x] == field;
+        private bool InField(MapField<int> fields, Vector2 point, int field) =>
+            Land.TryCell(point, out var x, out var z) && fields[x, z] == field;
 
         /// <summary>The field key of every free farmland cell, <see cref="NoField"/> elsewhere.</summary>
-        private int[] Assign(MapFieldGrid grid, List<Vector2> polygon)
+        private MapField<int> Assign(MapFieldGrid grid, List<Vector2> polygon)
         {
-            var fields = new int[Land.Width * Land.Height];
+            var fields = new MapField<int>(Land.Grid);
             Land.ForEach((x, z, p) =>
             {
-                var i = z * Land.Width + x;
+                var i = fields.Grid.Index(x, z);
                 fields[i] = NoField;
                 if (!Land.IsFree(x, z))
                 {

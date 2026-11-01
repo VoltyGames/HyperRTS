@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Production
 
         [Header("Production")]
         [Tooltip("Resources spent to produce, place or research this.")]
+        [NoEmptyEntries(Key = nameof(ResourceQuantity.type))]
         public List<ResourceQuantity> cost = new();
 
         [Tooltip("Seconds to produce (units), construct (buildings) or research (upgrades).")]

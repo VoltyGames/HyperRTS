@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Destruction;
@@ -14,6 +15,17 @@ namespace HyperRTS.Editor.Authoring
 
         // Closer than this, the remains' mass gives no clear direction.
         private const float MinReach = 0.25f;
+
+        [InspectorButton("Measure from model")]
+        private static void MeasureFromModel(ToppleAuthoring topple)
+        {
+            if (topple.trunkMaterial == null)
+            {
+                throw new InvalidOperationException($"{topple.name}: set the trunk material to measure the trunk.");
+            }
+
+            Measure(topple, topple.trunkMaterial);
+        }
 
         /// <summary>Sets trunk and lie from the LODGroup model in its children and its Destructible's remains.</summary>
         public static void Measure(ToppleAuthoring topple, Material trunk)

@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         [Header("Projectile")]
         [Tooltip("Optional projectile prefab; leave empty for instant hits.")]
+        [PrefabAsset("Projectile"), GhostPrefab("Projectile")]
         public GameObject projectilePrefab;
 
         [Tooltip("Child transform shots spawn at; none spawns projectiles above the pivot.")]

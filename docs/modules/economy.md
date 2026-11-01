@@ -28,7 +28,7 @@ round never flips between two.
 
 `DockAuthoring` on a drop-off or resource node lists bays where vehicles load and unload. Each bay is a `stop`
 transform (where the vehicle's centre stands, its +Z the facing), an optional `exit` (12 m straight ahead without
-one) and a `runIn`, the metres driven straight before the stop (6 by default). **Fill Bays** in the context menu fills
+one) and a `runIn`, the metres driven straight before the stop (6 by default). The **Fill bays** button fills
 the list from `Bay_NN` children and their `Bay_NN_Exit` siblings. Bays are driven through: in along the run-in, out
 straight ahead.
 

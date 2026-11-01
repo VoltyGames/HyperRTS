@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
@@ -70,7 +71,7 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             var kinds = MapToolbox.KindsFor(_toolbox.Mode);
-            _kind.style.display = kinds.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            _kind.SetHidden(kinds.Count == 0);
             _kind.choices = new List<MapFeatureKind>(kinds);
             _kind.SetValueWithoutNotify(_toolbox.Kind);
         }

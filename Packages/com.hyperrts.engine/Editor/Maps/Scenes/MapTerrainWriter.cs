@@ -33,8 +33,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.size = new Vector3(layout.TerrainBounds.width, terrain.maxHeight, layout.TerrainBounds.height);
             data.SetHeights(0, 0, Normalised(heights, terrain.maxHeight));
             data.terrainLayers = climate.layers.Select(l => l.terrainLayer).ToArray();
-            data.alphamapResolution = textureWeights.GetLength(0);
-            data.SetAlphamaps(0, 0, textureWeights);
+            textureWeights.WriteTo(data);
             // Grass is the GrassRenderer's: an asset rebuilt in place keeps no terrain details.
             data.detailPrototypes = System.Array.Empty<DetailPrototype>();
             WriteTrees(data, trees, generation.Scenery, climate, layout, generation.Project.Paths);

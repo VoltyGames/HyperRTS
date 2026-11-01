@@ -21,9 +21,11 @@ namespace HyperRTS.Simulation.Destruction
     public class TurretTossAuthoring : AuthoringBehaviour
     {
         [Tooltip("Death spawn used instead of the usual one after a catastrophic hit: the wreck without its turret. A ghost.")]
+        [GhostPrefab("Hull")]
         public GameObject hull;
 
         [Tooltip("Remains of the thrown turret. A ghost whose blocker holds its cell.")]
+        [GhostPrefab("Turret")]
         public GameObject turret;
 
         [Tooltip("A lethal hit of any of these damage types is catastrophic.")]

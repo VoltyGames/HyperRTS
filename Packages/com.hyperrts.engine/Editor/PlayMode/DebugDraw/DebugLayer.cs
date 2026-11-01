@@ -1,6 +1,6 @@
 using HyperRTS.Core;
+using HyperRTS.Editor.Common;
 using Unity.Entities;
-using UnityEditor;
 
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
@@ -9,20 +9,12 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     {
         public abstract string Label { get; }
 
-        private bool? _enabled;
-
-        /// <summary>Remembered per layer type in EditorPrefs, so toggles survive domain reloads and restarts.</summary>
+        /// <summary>Remembered per layer type in the editor state, so toggles survive domain reloads and restarts.</summary>
         public bool Enabled
         {
-            get => _enabled ??= EditorPrefs.GetBool(PrefsKey);
-            set
-            {
-                _enabled = value;
-                EditorPrefs.SetBool(PrefsKey, value);
-            }
+            get => HyperRTSEditorState.instance.IsLayerOn(GetType().FullName);
+            set => HyperRTSEditorState.instance.SetLayer(GetType().FullName, value);
         }
-
-        private string PrefsKey => "HyperRTS.DebugLayer." + GetType().FullName;
 
         /// <summary>The world drawn: server-side truth by default; <see cref="SimulationWorlds.Presented"/> for client-only state.</summary>
         public virtual WorldSystemFilterFlags Source => SimulationWorlds.Authoritative;

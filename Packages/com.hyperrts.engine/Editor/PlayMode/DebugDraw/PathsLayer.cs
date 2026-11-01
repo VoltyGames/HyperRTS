@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Docks;
 using HyperRTS.Simulation.Navigation.Drive;
+using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -14,7 +15,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     /// <summary>
     /// Each unit's remaining waypoints, planned manoeuvres in orange with reverse legs dashed and gear changes as
     /// dots, each vehicle's rear axle, a dotted line to its attack target, and dock bays: run-in in green, exit in
-    /// yellow and a line to the occupant.
+    /// yellow and a line to the occupant. A corner label totals the pathfinder's work.
     /// </summary>
     public sealed class PathsLayer : DebugLayer
     {
@@ -30,6 +31,37 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
             DrawRearAxles(entityManager);
             DrawAttackTargets(entityManager);
             DrawBays(entityManager);
+            DrawStats(entityManager);
+        }
+
+        internal static bool TryGetPathfinding(EntityManager entityManager, out PathfindingSystem pathfinding)
+        {
+            var world = entityManager.World.Unmanaged;
+            var handle = world.GetExistingUnmanagedSystem<PathfindingSystem>();
+            pathfinding = default;
+            if (handle == SystemHandle.Null)
+            {
+                return false;
+            }
+
+            pathfinding = world.GetUnsafeSystemRef<PathfindingSystem>(handle);
+            return true;
+        }
+
+        // The totals cover every unit: the pathfinder keeps no count per unit.
+        private static void DrawStats(EntityManager entityManager)
+        {
+            if (!TryGetPathfinding(entityManager, out var pathfinding))
+            {
+                return;
+            }
+
+            var stats = pathfinding.Stats;
+            Handles.BeginGUI();
+            GUI.Label(new Rect(10f, 60f, 420f, 60f),
+                $"Searches {stats.Searches} (by cause {stats.SearchesByCause}), traces {stats.Traces}, retraces {stats.Retraces}" +
+                $"\nFields {stats.Fields}, expansions {stats.Expansions}, deferred drives {stats.DeferredDrives}");
+            Handles.EndGUI();
         }
 
         private static void DrawPaths(EntityManager entityManager)

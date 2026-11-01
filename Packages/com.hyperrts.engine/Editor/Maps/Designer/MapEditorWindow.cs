@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _toolbar = root.Require<MapEditorToolbar>("toolbar");
             _toolbar.SpecPicked += Load;
             _toolbar.Tools.Bind(_toolbox);
-            _toolbar.GhostsToggled += OnGhostsToggled;
+            _toolbar.GhostsToggled += on => _canvas.ShowGhosts = on;
             _toolbar.Strip.PreviewClicked += () => _preview?.Preview();
             _toolbar.Strip.BuildClicked += () => _preview?.Build();
             _hint = root.Require<Label>("hint");
@@ -165,11 +165,6 @@ namespace HyperRTS.Editor.Maps.Designer
             _list.ShowSelection();
             _inspector.Show(_document, _selection.Current);
             _canvas.Refresh();
-        }
-
-        private void OnGhostsToggled(bool on)
-        {
-            _canvas.ShowGhosts = on;
         }
     }
 }

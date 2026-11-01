@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Tests
 
             var issues = CheckSpec(spec);
 
-            var error = issues.Errors.FirstOrDefault(e => e.Message.Contains("Road 2") && e.Message.Contains("Cobbles"));
+            var error = issues.Errors.FirstOrDefault(e => e.Message.Contains("roads[1].kind 'Cobbles' is not a road in climate"));
             Assert.IsNotNull(error.Message, issues.ToString());
             Assert.AreEqual(new MapIssueFeature(nameof(MapSpec.roads), 1), error.Feature);
         }
@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.Maps.Tests
 
             var issues = CheckSpec(spec);
 
-            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("Row 1") && e.Message.Contains("Hedge")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("rows[0].kind 'Hedge' is not a tree in climate") && e.Message.Contains("or a prop in palette")), issues.ToString());
         }
 
         [Test]

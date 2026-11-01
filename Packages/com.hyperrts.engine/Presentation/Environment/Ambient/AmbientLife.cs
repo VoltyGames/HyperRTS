@@ -18,13 +18,9 @@ namespace HyperRTS.Presentation.Environment.Ambient
     [DisallowMultipleComponent]
     public sealed partial class AmbientLife : PresentationBehaviour
     {
-        // Graphics.RenderMeshInstanced draws at most this many instances per call.
-        private const int MaxBirds = 1023;
-
         [Header("Birds")]
-        [Tooltip("Bird quad material: GPU Instancing on, double-sided, alpha clip, a 2×2 flipbook of wing poses in " +
-                 "_BaseMap (frames left to right, top to bottom; seen from above, head up). Each frame is drawn by " +
-                 "setting _BaseMap_ST, so URP Unlit works as is.")]
+        [Tooltip("HyperRTS/Bird material with a 2x2 flipbook of wing poses in _BaseMap (frames left to right, top " +
+                 "to bottom; seen from above, head up).")]
         public Material birdMaterial;
 
         [Tooltip("Flocks over the map. 0 turns birds off.")]
@@ -84,9 +80,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         public void RequireBirds()
         {
             Require(birdMaterial != null, nameof(birdMaterial), "is missing");
-            Require(birdMaterial.enableInstancing, nameof(birdMaterial), "needs GPU Instancing enabled");
             Require(birdsPerFlock.x >= 1 && birdsPerFlock.y >= birdsPerFlock.x, nameof(birdsPerFlock), "needs 1 ≤ min ≤ max");
-            Require(flocks * birdsPerFlock.y <= MaxBirds, nameof(birdsPerFlock), $"allows over {MaxBirds} birds in all");
             Require(IsRange(height) && height.x > 0f, nameof(height), "needs 0 < min ≤ max");
             Require(IsRange(returnDelay), nameof(returnDelay), "needs 0 ≤ min ≤ max");
         }

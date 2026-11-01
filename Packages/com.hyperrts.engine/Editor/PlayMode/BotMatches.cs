@@ -27,10 +27,18 @@ namespace HyperRTS.Editor.PlayMode
         [Serializable]
         public class Settings
         {
+            [Min(1)]
             public int matches = 4;
+
+            [Min(2)]
             public int players = 2;
+
             public AIDifficulty difficulty = AIDifficulty.Normal;
+
+            [Min(1f)]
             public float speed = 8f;
+
+            [Min(1f)]
             public float timeLimitMinutes = 40f;
         }
 

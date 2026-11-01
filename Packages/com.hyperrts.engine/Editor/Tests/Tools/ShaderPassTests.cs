@@ -1,7 +1,6 @@
 ﻿using HyperRTS.Editor.Validation;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
@@ -58,12 +57,19 @@ namespace HyperRTS.Editor.Tests.Tools
                 Assert.IsTrue(HasPass(shader, "MotionVectors"), $"{shader.name} sets AlwaysRenderMotionVectors and needs a MotionVectors pass.");
             }
 
-            // Only shaders drawn through Entities Graphics declare the keyword; terrain borrows Unity passes that can't.
-            if (File.ReadAllText(Path.GetFullPath(path)).Contains("DOTS_INSTANCING_ON"))
+            // Read from the source: the keyword space also lists Unity's global keyword for terrain, whose borrowed
+            // picking pass can't compile with it.
+            if (DeclaresDOTSInstancing(path))
             {
                 var errors = ShaderChecks.VertexVariantErrors(shader, "DOTS_INSTANCING_ON");
                 Assert.IsEmpty(errors, string.Join("\n", errors));
             }
+        }
+
+        private static bool DeclaresDOTSInstancing(string path)
+        {
+            var source = System.IO.File.ReadAllText(System.IO.Path.GetFullPath(path));
+            return source.Contains("DOTS_INSTANCING_ON") || source.Contains("InstancingKeywords.hlsl");
         }
 
         [Test]

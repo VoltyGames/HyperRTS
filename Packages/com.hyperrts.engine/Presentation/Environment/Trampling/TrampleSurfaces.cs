@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Presentation.Rendering;
 using System;
 using Unity.Mathematics;
 using UnityEngine;
@@ -14,11 +15,13 @@ namespace HyperRTS.Presentation.Environment.Trampling
         /// <summary>Largest side of either map; bigger maps get coarser texels.</summary>
         public const int MaxTextureSize = 8192;
 
-        public static readonly int TrampleId = Shader.PropertyToID("_HyperRTSTrample");
-        public static readonly int TracksId = Shader.PropertyToID("_HyperRTSTracks");
-        public static readonly int WakeId = Shader.PropertyToID("_HyperRTSWake");
-        public static readonly int RemainsId = Shader.PropertyToID("_HyperRTSRemains");
-        public static readonly int RectId = Shader.PropertyToID("_HyperRTSTrampleRect");
+        private const string RectName = "_HyperRTSTrampleRect";
+
+        // The four maps share one rect.
+        public static readonly WorldGridGlobal TrampleGlobal = new("_HyperRTSTrample", RectName);
+        public static readonly WorldGridGlobal TracksGlobal = new("_HyperRTSTracks", RectName);
+        public static readonly WorldGridGlobal WakeGlobal = new("_HyperRTSWake", RectName);
+        public static readonly WorldGridGlobal RemainsGlobal = new("_HyperRTSRemains", RectName);
         public static readonly int TracksTexelId = Shader.PropertyToID("_HyperRTSTracksTexel");
 
         /// <summary>No direction, standing plants.</summary>
@@ -35,25 +38,6 @@ namespace HyperRTS.Presentation.Environment.Trampling
 
         private readonly float2 _min;
         private readonly float2 _size;
-
-        /// <summary>Copies the remains map to a kernel: compute shaders don't see globals. Black while there is none.</summary>
-        public static void BindRemains(ComputeShader compute, int kernel)
-        {
-            var remains = Shader.GetGlobalTexture(RemainsId);
-            compute.SetTexture(kernel, RemainsId, remains != null ? remains : Texture2D.blackTexture);
-        }
-
-        /// <summary>Whether a trample map is published, which changes every frame.</summary>
-        public static bool Published => Shader.GetGlobalVector(RectId).z > 0f;
-
-        /// <summary>Copies the trample map and its rect to a kernel. Black and a zero rect while none is published.</summary>
-        public static void BindTrample(ComputeShader compute, int kernel)
-        {
-            var trample = Shader.GetGlobalTexture(TrampleId);
-            var on = trample != null && Published;
-            compute.SetTexture(kernel, TrampleId, on ? trample : Texture2D.blackTexture);
-            compute.SetVector(RectId, on ? Shader.GetGlobalVector(RectId) : Vector4.zero);
-        }
 
         public TrampleSurfaces(float2 min, float2 size, TrampleQuality quality)
         {
@@ -94,23 +78,20 @@ namespace HyperRTS.Presentation.Environment.Trampling
 
         public void Publish()
         {
-            Shader.SetGlobalTexture(TrampleId, Trample);
-            Shader.SetGlobalTexture(TracksId, Tracks);
-            Shader.SetGlobalTexture(WakeId, Wake);
-            Shader.SetGlobalTexture(RemainsId, Remains);
-            Shader.SetGlobalVector(RectId, Rect);
+            TrampleGlobal.Publish(Trample, Rect);
+            TracksGlobal.Publish(Tracks, Rect);
+            WakeGlobal.Publish(Wake, Rect);
+            RemainsGlobal.Publish(Remains, Rect);
             var texels = new float2(Tracks.width, Tracks.height);
             Shader.SetGlobalVector(TracksTexelId, new float4(texels, _size / texels));
         }
 
-        /// <summary>No maps: shaders read a zero rect as nothing trampled.</summary>
         public static void Clear()
         {
-            Shader.SetGlobalTexture(TrampleId, Texture2D.blackTexture);
-            Shader.SetGlobalTexture(TracksId, Texture2D.blackTexture);
-            Shader.SetGlobalTexture(WakeId, Texture2D.blackTexture);
-            Shader.SetGlobalTexture(RemainsId, Texture2D.blackTexture);
-            Shader.SetGlobalVector(RectId, Vector4.zero);
+            TrampleGlobal.Clear();
+            TracksGlobal.Clear();
+            WakeGlobal.Clear();
+            RemainsGlobal.Clear();
             Shader.SetGlobalVector(TracksTexelId, Vector4.zero);
         }
 

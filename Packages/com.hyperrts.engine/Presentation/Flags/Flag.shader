@@ -40,10 +40,7 @@ Shader "HyperRTS/Flag"
             #pragma vertex Vert
             #pragma fragment Frag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/SimpleLightingKeywords.hlsl"
-            #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
-
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagForward.hlsl"
             ENDHLSL
         }
@@ -57,35 +54,11 @@ Shader "HyperRTS/Flag"
             ColorMask 0
 
             HLSLPROGRAM
-            #pragma vertex Vert
-            #pragma fragment Frag
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #pragma vertex ShadowVert
+            #pragma fragment ShadowFrag
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
-
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            Varyings Vert(Attributes input)
-            {
-                Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x);
-                output.positionCS = ShadowCasterPositionCS(cloth.positionWS, cloth.normalWS);
-                return output;
-            }
-
-            half4 Frag(Varyings input) : SV_Target
-            {
-                UNITY_SETUP_INSTANCE_ID(input);
-                return 0;
-            }
+            #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
 
@@ -98,31 +71,10 @@ Shader "HyperRTS/Flag"
             ColorMask R
 
             HLSLPROGRAM
-            #pragma vertex Vert
-            #pragma fragment Frag
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            Varyings Vert(Attributes input)
-            {
-                Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                output.positionCS = TransformWorldToHClip(FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x).positionWS);
-                return output;
-            }
-
-            half4 Frag(Varyings input) : SV_Target
-            {
-                UNITY_SETUP_INSTANCE_ID(input);
-                return input.positionCS.z;
-            }
+            #pragma vertex DepthVert
+            #pragma fragment DepthFrag
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
 
@@ -134,37 +86,11 @@ Shader "HyperRTS/Flag"
             ZWrite On
 
             HLSLPROGRAM
-            #pragma vertex Vert
-            #pragma fragment Frag
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #pragma vertex DepthVert
+            #pragma fragment DepthNormalsFrag
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
-
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-                half3 normalWS : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            Varyings Vert(Attributes input)
-            {
-                Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                Cloth cloth = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x);
-                output.positionCS = TransformWorldToHClip(cloth.positionWS);
-                output.normalWS = cloth.normalWS;
-                return output;
-            }
-
-            half4 Frag(Varyings input, FRONT_FACE_TYPE face : FRONT_FACE_SEMANTIC) : SV_Target
-            {
-                UNITY_SETUP_INSTANCE_ID(input);
-                return DepthNormalOutput(normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0, -1.0));
-            }
+            #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
 
@@ -176,39 +102,10 @@ Shader "HyperRTS/Flag"
             ColorMask RG
 
             HLSLPROGRAM
-            #pragma vertex Vert
-            #pragma fragment Frag
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
-
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
-
-            struct Varyings
-            {
-                float4 positionCS : SV_POSITION;
-                float4 positionCSNoJitter : TEXCOORD0;
-                float4 previousPositionCSNoJitter : TEXCOORD1;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-            };
-
-            Varyings Vert(Attributes input)
-            {
-                Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                float3 now = FlagCloth(input.positionOS.xyz, input.uv, _TimeParameters.x).positionWS;
-                float3 last = FlagCloth(input.positionOS.xyz, input.uv, _LastTimeParameters.x).positionWS;
-                output.positionCS = TransformWorldToHClip(now);
-                output.positionCSNoJitter = mul(_NonJitteredViewProjMatrix, float4(now, 1.0));
-                output.previousPositionCSNoJitter = mul(_PrevViewProjMatrix, float4(last, 1.0));
-                return output;
-            }
-
-            float4 Frag(Varyings input) : SV_Target
-            {
-                UNITY_SETUP_INSTANCE_ID(input);
-                return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0.0, 0.0);
-            }
+            #pragma vertex MotionVert
+            #pragma fragment MotionFrag
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
 

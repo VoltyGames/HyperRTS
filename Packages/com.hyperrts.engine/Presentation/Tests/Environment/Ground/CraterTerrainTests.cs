@@ -95,7 +95,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground
             var before = Texels(_data.heightmapTexture);
             StampCrater();
 
-            var undented = Shader.GetGlobalTexture(CraterTerrain.UndentedHeightsId);
+            var undented = Shader.GetGlobalTexture(CraterTerrain.Undented.TextureId);
             var dented = Texels(_data.heightmapTexture);
 
             Assert.AreEqual(before, Texels(undented));

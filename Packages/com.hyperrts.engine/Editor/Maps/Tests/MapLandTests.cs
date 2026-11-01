@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Tests
         [Test]
         public void LandDistance_IsTheDistanceToTheNearestSeed()
         {
-            var distance = MapLandDistance.To(20, 20, (x, z) => x == 5 && z == 5);
+            var distance = MapLandDistance.To(MapGrid.Centres(new Rect(0f, 0f, 20f, 20f), 1f), (x, z) => x == 5 && z == 5);
 
             Assert.AreEqual(0f, distance[5 * 20 + 5]);
             Assert.AreEqual(4f, distance[5 * 20 + 9], 0.01f);

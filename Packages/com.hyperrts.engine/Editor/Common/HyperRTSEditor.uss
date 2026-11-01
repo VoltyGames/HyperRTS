@@ -1,13 +1,29 @@
 /*
- * The shared editor layout: sections, rows, buttons, notes and the hide toggles, plus the colour tokens every
- * feature sheet uses. Each window, page or inspector keeps its own sheet beside its UXML.
+ * The shared editor layout: pages, sections, figures, rows, buttons, notes and the hide toggles, plus the colour
+ * tokens every feature sheet uses. Root windows, inspectors and drawers link it; a feature keeps its own sheet.
  */
 
+/* Theme colours alias Unity's editor variables so the light skin follows; severity colours read on both skins. */
 :root {
-    --hrts-border: rgba(128, 128, 128, 0.4);
-    --hrts-dim-text: rgb(160, 160, 160);
-    --hrts-error: rgb(255, 90, 80);
-    --hrts-warning: rgb(255, 200, 60);
+    --hrts-border: var(--unity-colors-default-border);
+    --hrts-dim-text: var(--unity-colors-label-text-disabled);
+    --hrts-error: rgb(222, 64, 52);
+    --hrts-warning: rgb(196, 136, 0);
+    --hrts-note: rgb(64, 128, 222);
+}
+
+.hrts-page {
+    flex-grow: 1;
+}
+
+.hrts-page__body {
+    padding: 4px;
+    flex-grow: 1;
+}
+
+.hrts-page__busy {
+    margin: 2px 4px;
+    color: var(--hrts-warning);
 }
 
 .hrts-section {
@@ -17,6 +33,11 @@
 .hrts-section__title {
     -unity-font-style: bold;
     margin: 0 0 2px 3px;
+}
+
+.hrts-figure__name {
+    width: 90px;
+    margin-left: 3px;
 }
 
 .hrts-row {

@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var map = EditorAssets.LoadOrCreate<CropCoverMap>(path);
             (map.width, map.height, map.spacing) = (bake.Width, bake.Height, bake.Area.width / bake.Width);
-            map.density = new byte[bake.Width * bake.Height];
+            map.density = new byte[bake.Ids.Values.Length];
             map.top = new byte[map.density.Length];
             for (var i = 0; i < map.density.Length; i++)
             {

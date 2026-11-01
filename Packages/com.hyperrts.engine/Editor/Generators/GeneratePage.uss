@@ -1,17 +1,12 @@
 /* The Generate page. Colour tokens are in Common/HyperRTSEditor.uss. */
 
-.hrts-generate__run-all {
-    height: 24px;
-    margin: 4px 3px 4px 3px;
-}
-
 .hrts-generate__row {
     flex-direction: row;
     align-items: center;
     margin: 1px 0;
     padding: 3px;
     border-bottom-width: 1px;
-    border-color: rgba(128, 128, 128, 0.25);
+    border-color: var(--hrts-border);
 }
 
 .hrts-generate__name {

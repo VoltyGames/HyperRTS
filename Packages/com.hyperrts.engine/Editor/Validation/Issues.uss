@@ -1,4 +1,4 @@
-/* Validation issue rows and their rule and asset groups. Colour tokens are in Common/HyperRTSEditor.uss. */
+/* Validation issue rows and the rule and asset headings of the grouped tree. Colour tokens are in Common/HyperRTSEditor.uss. */
 
 .hrts-issue {
     flex-direction: row;
@@ -23,17 +23,14 @@
     white-space: normal;
 }
 
-.hrts-issue-group {
-    margin: 2px 0;
-}
-
-.hrts-issue-group__asset {
+.hrts-issue__rule {
     -unity-font-style: bold;
     -unity-text-align: middle-left;
-    align-self: flex-start;
-    margin: 4px 0 1px 14px;
+    flex-grow: 1;
 }
 
-.hrts-issue-group__issues {
-    margin-left: 14px;
+.hrts-issue__asset {
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    margin: 2px 0;
 }

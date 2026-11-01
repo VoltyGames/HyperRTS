@@ -18,6 +18,7 @@ namespace HyperRTS.Simulation.Combat.Damage
     public class ArmorAuthoring : AuthoringBehaviour
     {
         [Tooltip("Per-type multipliers; unlisted types deal full damage.")]
+        [NoEmptyEntries(Key = nameof(DamageFactor.damageType))]
         public List<DamageFactor> modifiers = new();
 
         [Header("Directional")]

@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Ground
         public static Color[] Paint(MapLand land, MapSymmetry symmetry)
         {
             var pixels = new Color[land.Width * land.Height];
-            land.ForEach((x, z, center) => pixels[z * land.Width + x] = Pixel(land.Region(x, z), symmetry, center));
+            land.ForEach((x, z, center) => pixels[land.Grid.Index(x, z)] = Pixel(land.Region(x, z), symmetry, center));
             return pixels;
         }
 

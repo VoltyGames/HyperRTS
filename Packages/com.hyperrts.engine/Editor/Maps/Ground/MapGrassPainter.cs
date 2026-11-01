@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
@@ -38,35 +39,37 @@ namespace HyperRTS.Editor.Maps.Ground
             var cell = area.size / resolution;
             var rowLines = new MapRowLines(layout.Symmetry, edges, cell.x);
             var water = layout.Terrain.waterLevel;
-            for (var i = 0; i < resolution * resolution; i++)
+            MapRows.For(resolution, z =>
             {
-                var (x, z) = (i % resolution, i / resolution);
-                var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), cell);
-                var open = GrassNearProps(clearance, p);
-                if (open <= 0f || shapes.RoadEdgeDistance(p) < 0.3f)
+                for (var x = 0; x < resolution; x++)
                 {
-                    continue;
-                }
+                    var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), cell);
+                    var open = GrassNearProps(clearance, p);
+                    if (open <= 0f || shapes.RoadEdgeDistance(p) < 0.3f)
+                    {
+                        continue;
+                    }
 
-                var height = heights.Height(p);
-                if (reed >= 0)
-                {
-                    bake.Set(reed, x, z, Reeds(shapes, climate, clumps, p, height, water) * open);
-                }
+                    var height = heights.Height(p);
+                    if (reed >= 0)
+                    {
+                        bake.Set(reed, x, z, Reeds(shapes, climate, clumps, p, height, water) * open);
+                    }
 
-                if (height < water + 0.15f)
-                {
-                    continue;
-                }
+                    if (height < water + 0.15f)
+                    {
+                        continue;
+                    }
 
-                var region = edges.Sample(p).Region;
-                var cover = Cover(IsField(land, region), clumps, p) * open * rowLines.Plants(region, p);
-                foreach (var (plant, entry) in plants[region])
-                {
-                    var stand = entry.stands >= 1f ? 1f : stands[plant].Blotches(p, entry.standSize, entry.stands);
-                    bake.Set(plant, x, z, entry.coverage * cover * stand);
+                    var region = edges.Sample(p).Region;
+                    var cover = Cover(IsField(land, region), clumps, p) * open * rowLines.Plants(region, p);
+                    foreach (var (plant, entry) in plants[region])
+                    {
+                        var stand = entry.stands >= 1f ? 1f : stands[plant].Blotches(p, entry.standSize, entry.stands);
+                        bake.Set(plant, x, z, entry.coverage * cover * stand);
+                    }
                 }
-            }
+            });
 
             return bake;
         }

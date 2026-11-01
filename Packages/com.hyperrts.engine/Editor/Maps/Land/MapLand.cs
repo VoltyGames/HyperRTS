@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Land
@@ -16,22 +17,21 @@ namespace HyperRTS.Editor.Maps.Land
         /// <summary>The region index of a cell nothing has claimed.</summary>
         public const int Unclaimed = 0;
 
-        private readonly ushort[] _cells;
+        private readonly MapField<ushort> _cells;
         private readonly List<MapLandRegion> _regions = new() { null };
 
         public MapLand(Rect bounds)
         {
-            Bounds = bounds;
-            Width = Mathf.CeilToInt(bounds.width / CellSize);
-            Height = Mathf.CeilToInt(bounds.height / CellSize);
-            _cells = new ushort[Width * Height];
+            _cells = new MapField<ushort>(MapGrid.Centres(bounds, CellSize));
         }
 
-        public Rect Bounds { get; }
+        public MapGrid Grid => _cells.Grid;
 
-        public int Width { get; }
+        public Rect Bounds => _cells.Grid.Bounds;
 
-        public int Height { get; }
+        public int Width => _cells.Grid.Width;
+
+        public int Height => _cells.Grid.Height;
 
         /// <summary>Every region by index; index 0 is "unclaimed" and holds null.</summary>
         public IReadOnlyList<MapLandRegion> Regions => _regions;
@@ -47,21 +47,21 @@ namespace HyperRTS.Editor.Maps.Land
             return _regions.Count - 1;
         }
 
-        public int RegionIndex(int x, int z) => _cells[z * Width + x];
+        public int RegionIndex(int x, int z) => _cells[x, z];
 
-        public MapLandRegion Region(int x, int z) => _regions[_cells[z * Width + x]];
+        public MapLandRegion Region(int x, int z) => _regions[_cells[x, z]];
 
         /// <summary>The region at a map point, or null off the terrain or where nothing claimed it yet.</summary>
         public MapLandRegion At(Vector2 point) => TryCell(point, out var x, out var z) ? Region(x, z) : null;
 
         public MapLandKind KindAt(Vector2 point) => At(point)?.Kind ?? MapLandKind.Open;
 
-        public bool IsFree(int x, int z) => _cells[z * Width + x] == 0;
+        public bool IsFree(int x, int z) => _cells[x, z] == 0;
 
         /// <summary>Claims a cell for a region unless something claimed it already; returns whether it did.</summary>
         public bool Claim(int x, int z, int region)
         {
-            var i = z * Width + x;
+            var i = _cells.Grid.Index(x, z);
             if (_cells[i] != 0)
             {
                 return false;
@@ -72,16 +72,17 @@ namespace HyperRTS.Editor.Maps.Land
         }
 
         /// <summary>Gives a claimed cell to another region, for land worn into what was laid first (a yard path).</summary>
-        public void Reclaim(int x, int z, int region) => _cells[z * Width + x] = (ushort)region;
+        public void Reclaim(int x, int z, int region) => _cells[x, z] = (ushort)region;
 
-        public Vector2 Center(int x, int z) => Bounds.min + new Vector2((x + 0.5f) * CellSize, (z + 0.5f) * CellSize);
+        public Vector2 Center(int x, int z) => _cells.Grid.Position(x, z);
 
-        public bool TryCell(Vector2 point, out int x, out int z)
-        {
-            x = Mathf.FloorToInt((point.x - Bounds.xMin) / CellSize);
-            z = Mathf.FloorToInt((point.y - Bounds.yMin) / CellSize);
-            return x >= 0 && z >= 0 && x < Width && z < Height;
-        }
+        /// <summary>The centre of a cell by its index in <see cref="Grid"/>.</summary>
+        public Vector2 Center(int cell) => _cells.Grid.Position(cell);
+
+        public bool TryCell(Vector2 point, out int x, out int z) => _cells.Grid.TryCell(point, out x, out z);
+
+        /// <summary>Cells from every cell to the nearest cell of another region (0 on a region's edge).</summary>
+        public MapField<float> RegionEdgeDistance() => MapLandDistance.ToRegionEdge(_cells);
 
         /// <summary>Claims every free cell in an area whose centre passes the test; returns how many it took.</summary>
         public int ClaimWhere(Rect area, int region, Func<Vector2, bool> inside)
@@ -121,20 +122,7 @@ namespace HyperRTS.Editor.Maps.Land
         }
 
         /// <summary>Calls back for every cell whose centre lies in a rectangle of the map.</summary>
-        public void ForEachIn(Rect area, Action<int, int, Vector2> visit)
-        {
-            var minX = Mathf.Max(0, Mathf.FloorToInt((area.xMin - Bounds.xMin) / CellSize));
-            var minZ = Mathf.Max(0, Mathf.FloorToInt((area.yMin - Bounds.yMin) / CellSize));
-            var maxX = Mathf.Min(Width - 1, Mathf.CeilToInt((area.xMax - Bounds.xMin) / CellSize));
-            var maxZ = Mathf.Min(Height - 1, Mathf.CeilToInt((area.yMax - Bounds.yMin) / CellSize));
-            for (var z = minZ; z <= maxZ; z++)
-            {
-                for (var x = minX; x <= maxX; x++)
-                {
-                    visit(x, z, Center(x, z));
-                }
-            }
-        }
+        public void ForEachIn(Rect area, Action<int, int, Vector2> visit) => _cells.Grid.ForEachIn(area, visit);
 
         /// <summary>Calls back for every cell of the terrain.</summary>
         public void ForEach(Action<int, int, Vector2> visit) => ForEachIn(Bounds, visit);

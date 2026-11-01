@@ -22,6 +22,12 @@ Most test classes derive from `SimulationFixture`, which creates the `TestWorld`
 disposes it after. Reach the world through `World`, and override `Teams` (default `{ 1, 2 }`, one team per player) for
 another match shape.
 
+`GridDump` renders a window of a grid as ASCII, north up, for a failed assert: `GridDump.Path` shows the nav cells
+round a path (`#` blocked, `~` water, `=` deck, `S` start, `*` waypoint, `G` goal) and `GridDump.Fog` a team's fog
+round a point. Pass it in a lazy failure message, `Assert.That(x, Is.True, () => GridDump.Fog(...))`, or queue it
+with `DumpOnFailure(() => ...)` in a `SimulationFixture` test, which writes it to the test output only when the test
+failed.
+
 ```csharp
 public class AimTests : SimulationFixture
 {

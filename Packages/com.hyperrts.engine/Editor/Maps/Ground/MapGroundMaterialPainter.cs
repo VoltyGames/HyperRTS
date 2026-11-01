@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var painter = new MapGroundMaterialPainter(land, climate);
             var cells = new byte[land.Width * land.Height];
-            land.ForEach((x, z, _) => cells[z * land.Width + x] = (byte)painter.Cell(x, z));
+            land.ForEach((x, z, _) => cells[land.Grid.Index(x, z)] = (byte)painter.Cell(x, z));
             return cells;
         }
 

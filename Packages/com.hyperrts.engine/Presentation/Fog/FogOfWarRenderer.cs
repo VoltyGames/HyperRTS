@@ -5,6 +5,7 @@ using Unity.Collections;
 using Unity.Scripting.LifecycleManagement;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Fog
@@ -20,8 +21,7 @@ namespace HyperRTS.Presentation.Fog
     [DisallowMultipleComponent]
     public partial class FogOfWarRenderer : PresentationBehaviour
     {
-        private static readonly int TextureId = Shader.PropertyToID("_HyperRTSFogOfWar");
-        private static readonly int RectId = Shader.PropertyToID("_HyperRTSFogOfWarRect");
+        private static readonly WorldGridGlobal Global = new("_HyperRTSFogOfWar", "_HyperRTSFogOfWarRect");
         private static readonly int ColorId = Shader.PropertyToID("_HyperRTSFogOfWarColor");
         private static readonly int BorderId = Shader.PropertyToID("_HyperRTSFogOfWarBorder");
         private static readonly int LookId = Shader.PropertyToID("_HyperRTSFogOfWarLook");
@@ -149,9 +149,8 @@ namespace HyperRTS.Presentation.Fog
 
         private void Publish(in FogOfWar fog)
         {
-            var area = new Vector2(fog.Frame.Size.x * fog.Frame.CellSize, fog.Frame.Size.y * fog.Frame.CellSize);
-            Shader.SetGlobalTexture(TextureId, _texture);
-            Shader.SetGlobalVector(RectId, new Vector4(fog.Frame.Min.x, fog.Frame.Min.y, area.x, area.y));
+            // Unlike the ground maps, the fog rect holds the size, not its inverse.
+            Global.Publish(_texture, new float4(fog.Frame.Min, (float2)fog.Frame.Size * fog.Frame.CellSize));
             Shader.SetGlobalColor(ColorId, color);
             Shader.SetGlobalVector(BorderId, new Vector4(borderOpacity, borderFade, 1f / fog.Frame.Size.x, 1f / fog.Frame.Size.y));
             Shader.SetGlobalVector(LookId, new Vector4(desaturation, 0f, 0f, 0f));
@@ -170,6 +169,7 @@ namespace HyperRTS.Presentation.Fog
         protected override void OnDestroyed()
         {
             Hide();
+            Global.Clear();
             _sightShape.Dispose();
             DestroyTexture();
         }

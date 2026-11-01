@@ -10,7 +10,8 @@ namespace HyperRTS.Editor.Maps.Spec
     /// field tracks from a climate farmland kit. No points: it fills all land nothing else uses.
     /// </summary>
     [Serializable]
-    public sealed class MapFarmlandSpec
+    [MapFeature("farmland", 10, 0.85f, 0.75f, 0.3f, Closed = true)]
+    public sealed class MapFarmlandSpec : MapFeatureSpec, IMapLine
     {
         public List<MapPoint> points = new();
         [MapKey(typeof(MapFarmlandKit))]
@@ -19,6 +20,6 @@ namespace HyperRTS.Editor.Maps.Spec
         /// <summary>Direction the crop rows and the long sides of fields run, in degrees clockwise from north.</summary>
         public float angle;
 
-        public bool shared;
+        public List<MapPoint> Points => points;
     }
 }

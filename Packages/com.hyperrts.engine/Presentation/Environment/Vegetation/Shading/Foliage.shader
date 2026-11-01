@@ -52,10 +52,8 @@ Shader "HyperRTS/Foliage"
             #pragma fragment ForwardFrag
             #pragma shader_feature_local _TREE_WIND
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/SimpleLightingKeywords.hlsl"
-            #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -73,8 +71,7 @@ Shader "HyperRTS/Foliage"
             #pragma fragment ShadowFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
@@ -89,12 +86,11 @@ Shader "HyperRTS/Foliage"
             ColorMask R
 
             HLSLPROGRAM
-            #pragma vertex CutoutVert
+            #pragma vertex DepthVert
             #pragma fragment DepthFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -107,12 +103,11 @@ Shader "HyperRTS/Foliage"
             ZWrite On
 
             HLSLPROGRAM
-            #pragma vertex CutoutVert
+            #pragma vertex DepthVert
             #pragma fragment DepthNormalsFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
@@ -130,8 +125,7 @@ Shader "HyperRTS/Foliage"
             #pragma fragment MotionFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_instancing
-            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }

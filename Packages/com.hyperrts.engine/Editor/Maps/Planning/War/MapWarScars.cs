@@ -28,8 +28,8 @@ namespace HyperRTS.Editor.Maps.Planning.War
             Craters.Add(crater);
         }
 
-        /// <summary>Lays the climate's burnt layer over the texture weights ([z, x, layer] over <paramref name="area"/>).</summary>
-        public void Burn(float[,,] textureWeights, Rect area, MapClimate climate)
+        /// <summary>Lays the climate's burnt layer over the texture weights, which cover <paramref name="area"/>.</summary>
+        public void Burn(MapTextureWeights textureWeights, Rect area, MapClimate climate)
         {
             if (Burns.Count == 0)
             {
@@ -37,18 +37,18 @@ namespace HyperRTS.Editor.Maps.Planning.War
             }
 
             var burnt = climate.LayerIndex(climate.war.burntLayer);
-            var layers = textureWeights.GetLength(2);
+            var layers = textureWeights.LayerCount;
             foreach (var patch in Burns)
             {
-                ForEachTexel(area, textureWeights.GetLength(0), patch.Center, patch.Reach, (x, z, p) =>
+                ForEachTexel(area, textureWeights.Resolution, patch.Center, patch.Reach, (x, z, p) =>
                 {
                     var cover = patch.Cover(p, _edges);
+                    // The burnt layer is stored once per texel, so it is rounded to a byte once.
                     for (var l = 0; l < layers; l++)
                     {
-                        textureWeights[z, x, l] *= 1f - cover;
+                        var weight = textureWeights[x, z, l] * (1f - cover);
+                        textureWeights[x, z, l] = l == burnt ? weight + cover : weight;
                     }
-
-                    textureWeights[z, x, burnt] += cover;
                 });
             }
         }

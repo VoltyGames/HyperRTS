@@ -40,9 +40,8 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma vertex BarkForwardVertex
+            #pragma vertex DisplacedLitVertex
             #pragma fragment LitPassFragment
-            #define BARK_PASS_FORWARD
 
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local_fragment _MASKMAP
@@ -51,10 +50,11 @@ Shader "HyperRTS/Bark"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ObjectLightingKeywords.hlsl"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
 
-            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #pragma instancing_options renderinglayer
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
 
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
             ENDHLSL
         }
@@ -70,13 +70,13 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma vertex BarkShadowVertex
+            #pragma vertex DisplacedLitVertex
             #pragma fragment ShadowPassFragment
-            #define BARK_PASS_SHADOW
-            #pragma multi_compile_instancing
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
             ENDHLSL
         }
@@ -91,12 +91,12 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma vertex BarkDepthVertex
+            #pragma vertex DisplacedLitVertex
             #pragma fragment DepthOnlyFragment
-            #define BARK_PASS_DEPTH
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_instancing
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
             ENDHLSL
         }
@@ -110,15 +110,15 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma vertex BarkDepthNormalsVertex
+            #pragma vertex DisplacedLitVertex
             #pragma fragment DepthNormalsFragment
-            #define BARK_PASS_DEPTH_NORMALS
             #pragma shader_feature_local _NORMALMAP
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
-            #pragma multi_compile_instancing
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitDepthNormalsPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
             ENDHLSL
         }
@@ -132,13 +132,12 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma vertex BarkMotionVertex
-            #pragma fragment BarkMotionFragment
-            #define BARK_PASS_MOTION
+            #pragma vertex MotionVert
+            #pragma fragment MotionFrag
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile_instancing
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkMotionPass.hlsl"
             ENDHLSL
         }
 

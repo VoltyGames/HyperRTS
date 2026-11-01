@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Geometry;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
@@ -12,20 +13,20 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         /// <summary>
         /// For every cell, its piece's cell count and its piece's largest <paramref name="edge"/> distance (0 off fields).
         /// </summary>
-        public static (int[] Sizes, float[] Reach) Measure(int[] fields, float[] edge, int width, int height)
+        public static (MapField<int> Sizes, MapField<float> Reach) Measure(MapField<int> fields, MapField<float> edge)
         {
-            var sizes = new int[fields.Length];
-            var reach = new float[fields.Length];
+            var sizes = new MapField<int>(fields.Grid);
+            var reach = new MapField<float>(fields.Grid);
             var piece = new List<int>();
             var queue = new Queue<int>();
-            for (var start = 0; start < fields.Length; start++)
+            for (var start = 0; start < fields.Grid.Count; start++)
             {
                 if (fields[start] < 0 || sizes[start] != 0)
                 {
                     continue;
                 }
 
-                Flood(fields, width, height, start, sizes, piece, queue);
+                Flood(fields, start, sizes.Values, piece, queue);
                 var deepest = 0f;
                 foreach (var cell in piece)
                 {
@@ -42,9 +43,10 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             return (sizes, reach);
         }
 
-        private static void Flood(int[] fields, int width, int height, int start, int[] sizes, List<int> piece,
-            Queue<int> queue)
+        private static void Flood(MapField<int> fields, int start, int[] sizes, List<int> piece, Queue<int> queue)
         {
+            var grid = fields.Grid;
+            var width = grid.Width;
             piece.Clear();
             var field = fields[start];
             sizes[start] = -1;
@@ -53,16 +55,15 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             {
                 var cell = queue.Dequeue();
                 piece.Add(cell);
-                var x = cell % width;
-                var z = cell / width;
-                Visit(fields, sizes, queue, field, x > 0 ? cell - 1 : -1);
-                Visit(fields, sizes, queue, field, x < width - 1 ? cell + 1 : -1);
-                Visit(fields, sizes, queue, field, z > 0 ? cell - width : -1);
-                Visit(fields, sizes, queue, field, z < height - 1 ? cell + width : -1);
+                var at = grid.Frame.Cell(cell);
+                Visit(fields, sizes, queue, field, at.x > 0 ? cell - 1 : -1);
+                Visit(fields, sizes, queue, field, at.x < width - 1 ? cell + 1 : -1);
+                Visit(fields, sizes, queue, field, at.y > 0 ? cell - width : -1);
+                Visit(fields, sizes, queue, field, at.y < grid.Height - 1 ? cell + width : -1);
             }
         }
 
-        private static void Visit(int[] fields, int[] sizes, Queue<int> queue, int field, int cell)
+        private static void Visit(MapField<int> fields, int[] sizes, Queue<int> queue, int field, int cell)
         {
             if (cell < 0 || sizes[cell] != 0 || fields[cell] != field)
             {

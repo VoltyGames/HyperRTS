@@ -79,9 +79,10 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             _world.MoveTo(unit, goal);
             _world.Tick();
 
-            Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<MoveDestination>(unit), 40f), "the move ended");
-            Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(unit).Reason, "by arriving");
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1f, "at the goal");
+            string Dump() => $"unit at {_world.GetPosition(unit)}, goal {goal}\n" + GridDump.Path(_world.Grid(), float3.zero, Waypoints(unit));
+            Assert.That(_world.RunUntil(() => !_world.IsEnabled<MoveDestination>(unit), 40f), Is.True, () => "the move ended\n" + Dump());
+            Assert.That(_world.Get<Arrival>(unit).Reason, Is.Not.EqualTo(ArrivalReason.Stalled), () => "by arriving\n" + Dump());
+            Assert.That(math.distance(_world.GetPosition(unit).xz, goal.xz), Is.LessThan(1f), () => "at the goal\n" + Dump());
         }
 
         [Test]

@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Hub
@@ -13,12 +14,10 @@ namespace HyperRTS.Editor.Hub
         /// <summary>Short text on the sidebar entry (an error count), or null for none.</summary>
         public virtual string Badge => null;
 
-        /// <summary>Builds the page's content each time the page is shown.</summary>
+        /// <summary>Builds the page's content each time the page is shown; it leaves the panel when the page hides.</summary>
         public abstract VisualElement Build();
 
-        /// <summary>Drops callbacks and polling when the page is hidden or the window closes.</summary>
-        public virtual void Release()
-        {
-        }
+        /// <summary>The page's <c>&lt;Page&gt;&lt;part&gt;.uxml</c>, such as MapsPageRow.uxml, from its own package or Assets.</summary>
+        protected VisualTreeAsset Layout(string part = "") => EditorAssets.Layout(GetType(), part);
     }
 }

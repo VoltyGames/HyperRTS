@@ -1,12 +1,10 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <Style src="../Common/HyperRTSEditor.uss" />
-  <ui:VisualElement class="hrts-section">
-    <ui:Label class="hrts-section__title" text="Cheats" />
+  <HyperRTS.Editor.Common.Section title="Cheats">
     <ui:HelpBox name="status" class="hrts-note" message-type="Info" />
     <ui:VisualElement name="controls">
       <ui:DropdownField name="player" label="Player" />
       <ui:VisualElement class="hrts-row">
-        <ui:IntegerField name="amount" label="Resources" value="1000" class="hrts-row__grow" />
+        <ui:IntegerField name="amount" label="Resources" binding-path="cheatResources" class="hrts-row__grow" />
         <ui:Button name="add" text="Add" />
       </ui:VisualElement>
       <ui:VisualElement class="hrts-buttons">
@@ -19,10 +17,10 @@
         <ui:Button name="at-view" text="At view" />
       </ui:VisualElement>
       <ui:VisualElement class="hrts-row">
-        <ui:IntegerField name="per-side" label="Armies per side" value="250" class="hrts-row__grow" />
+        <ui:IntegerField name="per-side" label="Armies per side" binding-path="armiesPerSide" class="hrts-row__grow" />
         <ui:Button name="attack" text="Attack" />
       </ui:VisualElement>
       <ui:Slider name="speed" label="Game speed" low-value="0" high-value="4" show-input-field="true" />
     </ui:VisualElement>
-  </ui:VisualElement>
+  </HyperRTS.Editor.Common.Section>
 </ui:UXML>

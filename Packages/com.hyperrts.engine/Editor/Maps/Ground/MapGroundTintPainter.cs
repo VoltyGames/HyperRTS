@@ -1,5 +1,6 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
@@ -25,14 +26,14 @@ namespace HyperRTS.Editor.Maps.Ground
             var size = Size(area);
             var tint = new MapGroundTint(layout, land, edges, shapes, heights, strength);
             var pixels = new Color[size * size];
-            for (var y = 0; y < size; y++)
+            MapRows.For(size, y =>
             {
                 for (var x = 0; x < size; x++)
                 {
                     var p = area.min + new Vector2((x + 0.5f) / size * area.width, (y + 0.5f) / size * area.height);
                     pixels[y * size + x] = tint.At(p);
                 }
-            }
+            });
 
             return EditorTextures.WritePng(path, size, size, TextureFormat.RGBA32, pixels, importer =>
             {

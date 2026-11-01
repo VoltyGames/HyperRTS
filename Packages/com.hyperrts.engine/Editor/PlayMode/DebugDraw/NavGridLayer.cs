@@ -1,46 +1,59 @@
-using System;
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Navigation.Grid;
+using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
     /// <summary>Nav grid cells: blocked (buildings, obstacles, slopes), water, and decks over water or gaps.</summary>
-    public sealed class NavGridLayer : CellDebugLayer
+    public sealed class NavGridLayer : CellTextureLayer
     {
         private const float Alpha = 0.35f;
 
         public override string Label => "Nav grid (blocked, water, decks)";
 
-        public override void Draw(EntityManager entityManager)
+        protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {
             if (!TryGetSingleton(entityManager, out NavGrid grid) || !grid.IsCreated)
             {
-                return;
+                return false;
             }
 
-            DrawCells(grid, cell => cell == NavSurface.Blocked, NavColors.Blocked);
-            DrawCells(grid, cell => cell == NavSurface.Water, NavColors.Water);
-            DrawCells(grid, cell => (cell & NavSurface.Deck) != 0, NavColors.Deck);
+            texture.Paint(grid.Frame, new Colors
+            {
+                Cells = grid.Cells,
+                Blocked = Tint(NavColors.Blocked),
+                Water = Tint(NavColors.Water),
+                Deck = Tint(NavColors.Deck),
+            });
+            return true;
         }
 
-        private static void DrawCells(in NavGrid grid, Func<NavSurface, bool> include, Color color)
-        {
-            BeginCells(new Color(color.r, color.g, color.b, Alpha));
-            for (var y = 0; y < grid.Frame.Size.y; y++)
-            {
-                for (var x = 0; x < grid.Frame.Size.x; x++)
-                {
-                    if (include(grid.Surface(new int2(x, y))))
-                    {
-                        Cell(grid.Frame.Min + new float2(x, y) * grid.Frame.CellSize, grid.Frame.CellSize);
-                    }
-                }
-            }
+        private static Color32 Tint(Color color) => new Color(color.r, color.g, color.b, Alpha);
 
-            EndCells();
+        private struct Colors : ICellColors
+        {
+            [ReadOnly] public NativeArray<byte> Cells;
+            public Color32 Blocked;
+            public Color32 Water;
+            public Color32 Deck;
+
+            public Color32 At(int index)
+            {
+                var surface = (NavSurface)Cells[index];
+                if ((surface & NavSurface.Deck) != 0)
+                {
+                    return Deck;
+                }
+
+                if (surface == NavSurface.Blocked)
+                {
+                    return Blocked;
+                }
+
+                return surface == NavSurface.Water ? Water : default;
+            }
         }
     }
 }

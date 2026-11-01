@@ -37,24 +37,10 @@ CBUFFER_END
 // HDRP mask layout: R metallic, G occlusion, A smoothness.
 TEXTURE2D(_MaskMap);    SAMPLER(sampler_MaskMap);
 
-// Own vertex struct: URP Lit's Attributes would read TEXCOORD1/2 as lightmap UVs.
-struct BarkAttributes
-{
-    float4 positionOS : POSITION;
-    float3 normalOS : NORMAL;
-    float4 tangentOS : TANGENT;
-    float2 texcoord : TEXCOORD0;
-    float2 uv2 : TEXCOORD2;
-    float2 uv3 : TEXCOORD3;
-    float2 uv4 : TEXCOORD4;
-    half4 color : COLOR;
-    UNITY_VERTEX_INPUT_INSTANCE_ID
-};
-
-float3 BarkWindPosition(BarkAttributes input, WindFrame frame)
+float3 BarkWindPosition(float3 positionOS, float2 uv2, float2 uv3, float2 uv4, half4 color, WindFrame frame)
 {
     TreeWindSettings settings = TreeWind(_WindStrength, _WindSpeed, _BranchSway, 0.0, _TreeHeight, _WindScale);
-    TreeWindVertex v = TreeWindData(input.positionOS.xyz, input.uv2, input.uv3, input.uv4, input.color);
+    TreeWindVertex v = TreeWindData(positionOS, uv2, uv3, uv4, color);
     return SinkObjectIntoCrater(TreeWindPosition(v, settings, frame));
 }
 

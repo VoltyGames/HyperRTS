@@ -60,7 +60,7 @@ namespace HyperRTS.Presentation.Environment.Ground
         private bool Bind()
         {
             var terrain = Terrain.activeTerrain;
-            var tracks = Shader.GetGlobalTexture(TrampleSurfaces.TracksId);
+            var tracks = Shader.GetGlobalTexture(TrampleSurfaces.TracksGlobal.TextureId);
             if (terrain == null || tracks is not RenderTexture)
             {
                 return false;

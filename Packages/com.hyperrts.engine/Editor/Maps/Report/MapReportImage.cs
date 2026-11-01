@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
@@ -110,16 +111,16 @@ namespace HyperRTS.Editor.Maps.Report
             return image;
         }
 
-        private static Color TextureColor(MapLayout layout, float[,,] textureWeights, MapClimate climate, Vector2 p)
+        private static Color TextureColor(MapLayout layout, MapTextureWeights textureWeights, MapClimate climate, Vector2 p)
         {
-            var resolution = textureWeights.GetLength(0);
+            var resolution = textureWeights.Resolution;
             var area = layout.TerrainBounds;
             var sx = Mathf.Clamp((int)((p.x - area.xMin) / area.width * resolution), 0, resolution - 1);
             var sz = Mathf.Clamp((int)((p.y - area.yMin) / area.height * resolution), 0, resolution - 1);
             var color = Color.black;
             for (var l = 0; l < climate.layers.Count; l++)
             {
-                color += climate.layers[l].mapColor * textureWeights[sz, sx, l];
+                color += climate.layers[l].mapColor * textureWeights[sx, sz, l];
             }
 
             return color;

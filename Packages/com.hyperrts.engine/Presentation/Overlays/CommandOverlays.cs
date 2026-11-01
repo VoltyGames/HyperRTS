@@ -1,6 +1,6 @@
+using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Overlays
     /// The placement footprint outline with red cells where the spot is blocked, and rally markers of selected
     /// producers. The building's own ghost is <see cref="PlacementGhosts"/>.
     /// </summary>
-    public sealed class CommandOverlays
+    public sealed class CommandOverlays : IDisposable
     {
         private const float RallyRadius = 0.6f;
         private const float RallyLineWidth = 0.12f;
@@ -38,23 +38,20 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalToWorld>()));
 
-        private readonly InstanceBatch _validOutline;
-        private readonly InstanceBatch _invalidOutline;
-        private readonly InstanceBatch _blockedCells;
-        private readonly InstanceBatch _rallyRings;
-        private readonly InstanceBatch _rallyLines;
+        // Footprint outlines and rally lines: flat strips on the ground, tested against depth.
+        private readonly InstanceBuffer<OverlayInstance> _strips;
+        private readonly InstanceBuffer<OverlayInstance> _blockedCells;
+        private readonly InstanceBuffer<OverlayInstance> _rallyRings;
         private int _blockedCount;
 
         public CommandOverlays(Mesh ring, Mesh flatQuad)
         {
-            _validOutline = new InstanceBatch(flatQuad);
-            _invalidOutline = new InstanceBatch(flatQuad);
-            _blockedCells = new InstanceBatch(flatQuad);
-            _rallyRings = new InstanceBatch(ring);
-            _rallyLines = new InstanceBatch(flatQuad);
+            _strips = new InstanceBuffer<OverlayInstance>(flatQuad);
+            _blockedCells = new InstanceBuffer<OverlayInstance>(flatQuad);
+            _rallyRings = new InstanceBuffer<OverlayInstance>(ring);
         }
 
-        public void Gather(MatchView view)
+        public void Gather(MatchView view, OverlayStyle style)
         {
             var entityManager = view.EntityManager;
             _blockedCount = 0;
@@ -62,7 +59,7 @@ namespace HyperRTS.Presentation.Overlays
             var placing = state.Active;
             if (placing && TryReadGrid(entityManager, out var grid))
             {
-                AddPlacement(entityManager, view.PlacementEntity, state, grid);
+                AddPlacement(entityManager, view.PlacementEntity, state, grid, style);
             }
 
             var query = _rallies.In(entityManager);
@@ -73,19 +70,24 @@ namespace HyperRTS.Presentation.Overlays
             {
                 if (factions[i].Value == view.Local.Faction)
                 {
-                    AddRally(transforms[i].Position, rallies[i].Position);
+                    AddRally(transforms[i].Position, rallies[i].Position, style.rally);
                 }
             }
         }
 
-        public void Draw(OverlayMaterials materials, OverlayStyle style, int layer)
+        public void Draw(OverlayMaterials materials, int layer)
         {
             // On top, or the very prop or wall that blocks a cell hides its marker.
-            _blockedCells.Draw(materials.OnTop, style.placementInvalid, layer);
-            _validOutline.Draw(materials.DepthTested, style.placementValid, layer);
-            _invalidOutline.Draw(materials.DepthTested, style.placementInvalid, layer);
-            _rallyRings.Draw(materials.DepthTested, style.rally, layer);
-            _rallyLines.Draw(materials.DepthTested, style.rally, layer);
+            _blockedCells.Draw(materials.OnTop, layer);
+            _strips.Draw(materials.DepthTested, layer);
+            _rallyRings.Draw(materials.DepthTested, layer);
+        }
+
+        public void Dispose()
+        {
+            _strips.Dispose();
+            _blockedCells.Dispose();
+            _rallyRings.Dispose();
         }
 
         /// <summary>The cells are read on the main thread, so the jobs stamping them finish first.</summary>
@@ -96,13 +98,13 @@ namespace HyperRTS.Presentation.Overlays
         }
 
         private void AddPlacement(EntityManager entityManager, Entity singleton, in PlacementState state,
-            in NavGrid grid)
+            in NavGrid grid, OverlayStyle style)
         {
             if (entityManager.HasComponent<LinePlacement>(state.Prefab))
             {
                 foreach (var segment in entityManager.GetBuffer<PlacementSegment>(singleton, true))
                 {
-                    AddSpot(segment.Spot, segment.Valid, grid);
+                    AddSpot(segment.Spot, segment.Valid, grid, style);
                 }
 
                 return;
@@ -110,20 +112,20 @@ namespace HyperRTS.Presentation.Overlays
 
             var footprint = entityManager.GetComponentData<NavObstacle>(state.Prefab).Size;
             var surface = BuildingPlacement.GetSurface(entityManager, state.Prefab);
-            AddSpot(new BuildingSpot(state.Position, state.Yaw, footprint, surface), state.Valid, grid);
+            AddSpot(new BuildingSpot(state.Position, state.Yaw, footprint, surface), state.Valid, grid, style);
         }
 
-        private void AddSpot(in BuildingSpot spot, bool valid, in NavGrid grid)
+        private void AddSpot(in BuildingSpot spot, bool valid, in NavGrid grid, OverlayStyle style)
         {
-            AddOutline(spot, valid ? _validOutline : _invalidOutline);
+            AddOutline(spot, valid ? style.placementValid : style.placementInvalid);
             if (!valid)
             {
-                AddBlockedCells(spot, grid);
+                AddBlockedCells(spot, grid, style.placementInvalid);
             }
         }
 
         /// <summary>Four flat strips along the turned box's sides, so the outline is exactly what the server checks.</summary>
-        private static void AddOutline(in BuildingSpot spot, InstanceBatch batch)
+        private void AddOutline(in BuildingSpot spot, Color color)
         {
             var box = spot.Box;
             var rotation = (Quaternion)spot.Rotation;
@@ -133,13 +135,13 @@ namespace HyperRTS.Presentation.Overlays
             var center = new Vector3(box.Center.x, height, box.Center.y);
             var across = new Vector3(box.Half.x * 2f + OutlineWidth, 1f, OutlineWidth);
             var along = new Vector3(OutlineWidth, 1f, box.Half.y * 2f);
-            batch.Add(Matrix4x4.TRS(center + forward, rotation, across));
-            batch.Add(Matrix4x4.TRS(center - forward, rotation, across));
-            batch.Add(Matrix4x4.TRS(center + right, rotation, along));
-            batch.Add(Matrix4x4.TRS(center - right, rotation, along));
+            _strips.Add(new OverlayInstance(Matrix4x4.TRS(center + forward, rotation, across), color));
+            _strips.Add(new OverlayInstance(Matrix4x4.TRS(center - forward, rotation, across), color));
+            _strips.Add(new OverlayInstance(Matrix4x4.TRS(center + right, rotation, along), color));
+            _strips.Add(new OverlayInstance(Matrix4x4.TRS(center - right, rotation, along), color));
         }
 
-        private void AddBlockedCells(in BuildingSpot spot, in NavGrid grid)
+        private void AddBlockedCells(in BuildingSpot spot, in NavGrid grid, Color color)
         {
             var box = spot.Box;
             var size = new Vector3(grid.Frame.CellSize, 1f, grid.Frame.CellSize);
@@ -157,15 +159,16 @@ namespace HyperRTS.Presentation.Overlays
 
                 var center = grid.Frame.CenterPoint(cell);
                 center.y = grid.SurfaceHeight(center) + Lift;
-                _blockedCells.Add(Matrix4x4.TRS(center, Quaternion.identity, size));
+                _blockedCells.Add(new OverlayInstance(Matrix4x4.TRS(center, Quaternion.identity, size), color));
                 _blockedCount++;
             }
         }
 
-        private void AddRally(float3 from, float3 to)
+        private void AddRally(float3 from, float3 to, Color color)
         {
             var target = new Vector3(to.x, to.y + Lift, to.z);
-            _rallyRings.Add(Matrix4x4.TRS(target, Quaternion.identity, new Vector3(RallyRadius, 1f, RallyRadius)));
+            var ring = Matrix4x4.TRS(target, Quaternion.identity, new Vector3(RallyRadius, 1f, RallyRadius));
+            _rallyRings.Add(new OverlayInstance(ring, color));
 
             var start = new Vector3(from.x, to.y + Lift, from.z);
             var delta = target - start;
@@ -175,7 +178,8 @@ namespace HyperRTS.Presentation.Overlays
             }
 
             var rotation = Quaternion.LookRotation(delta, Vector3.up);
-            _rallyLines.Add(Matrix4x4.TRS((start + target) * 0.5f, rotation, new Vector3(RallyLineWidth, 1f, delta.magnitude)));
+            var line = Matrix4x4.TRS((start + target) * 0.5f, rotation, new Vector3(RallyLineWidth, 1f, delta.magnitude));
+            _strips.Add(new OverlayInstance(line, color));
         }
     }
 }

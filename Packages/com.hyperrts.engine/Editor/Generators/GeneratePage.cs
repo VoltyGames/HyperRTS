@@ -3,6 +3,7 @@ using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Presentation.HUD;
+using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Generators
@@ -19,14 +20,14 @@ namespace HyperRTS.Editor.Generators
 
         public override VisualElement Build()
         {
-            var root = EditorAssets.Layout(typeof(GeneratePage)).Instantiate();
-            root.Require<Button>("run-all").clicked += () => RunThenFill(GeneratorRunner.RunAll, root);
+            var root = Layout().Instantiate();
+            root.Require<ToolbarButton>("run-all").clicked += () => RunThenFill(GeneratorRunner.RunAll, root);
             Fill(root);
             return root;
         }
 
         // Filled again after a run, even a failed one, so the rows show its time and result.
-        private static void RunThenFill(Action run, VisualElement root)
+        private void RunThenFill(Action run, VisualElement root)
         {
             try
             {
@@ -38,17 +39,15 @@ namespace HyperRTS.Editor.Generators
             }
         }
 
-        private static void Fill(VisualElement root)
+        private void Fill(VisualElement root)
         {
             var groups = root.Require<VisualElement>("groups");
             groups.Clear();
             var log = GeneratorRunLog.Load();
-            var groupTemplate = EditorAssets.Layout(typeof(GeneratePage), "Group");
-            var rowTemplate = EditorAssets.Layout(typeof(GeneratePage), "Row");
+            var rowTemplate = Layout("Row");
             foreach (var group in GeneratorRunner.All().GroupBy(generator => generator.Group))
             {
-                var section = groupTemplate.CloneRoot();
-                section.Require<Label>("title").text = group.Key;
+                var section = new Section { Title = group.Key };
                 foreach (var generator in group)
                 {
                     section.Add(Row(rowTemplate, generator, log, root));
@@ -58,7 +57,7 @@ namespace HyperRTS.Editor.Generators
             }
         }
 
-        private static VisualElement Row(VisualTreeAsset template, Generator generator, GeneratorRunLog log,
+        private VisualElement Row(VisualTreeAsset template, Generator generator, GeneratorRunLog log,
             VisualElement root)
         {
             var row = template.CloneRoot();

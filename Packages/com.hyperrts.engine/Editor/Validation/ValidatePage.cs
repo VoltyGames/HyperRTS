@@ -13,14 +13,12 @@ namespace HyperRTS.Editor.Validation
     /// <summary>Tools ▸ Validate: lists setup problems in prefabs and open scenes; click one to select it.</summary>
     public class ValidatePage : HubPage
     {
-        private const string SelectionOnlyKey = "HyperRTS.Validate.SelectionOnly";
         private const string NoProblems = "No problems found. Closed SubScenes aren't checked: open them to include their content.";
 
         private List<ValidationIssue> _issues = new();
         private Label _counts;
-        private HelpBox _empty;
+        private PageShell _shell;
         private IssueList _list;
-        private ToolbarToggle _selectionOnly;
 
         public override string Title => "Validate";
 
@@ -49,64 +47,44 @@ namespace HyperRTS.Editor.Validation
 
         public override VisualElement Build()
         {
-            var root = EditorAssets.Layout(typeof(ValidatePage)).Instantiate();
+            var root = Layout().Instantiate();
+            HyperRTSEditorState.Bind(root);
             root.Require<ToolbarButton>("validate").clicked += Refresh;
             _counts = root.Require<Label>("counts");
-            _empty = root.Require<HelpBox>("empty");
+            _shell = root.Require<PageShell>("shell");
             _list = root.Require<IssueList>("issues");
             _list.Fixed += Refresh;
-            _selectionOnly = root.Require<ToolbarToggle>("selection-only");
-            _selectionOnly.SetValueWithoutNotify(EditorPrefs.GetBool(SelectionOnlyKey));
-            _selectionOnly.RegisterValueChangedCallback(change =>
-            {
-                EditorPrefs.SetBool(SelectionOnlyKey, change.newValue);
-                Show();
-            });
-            Selection.selectionChanged += OnSelectionChanged;
+            root.Require<ToolbarToggle>("selection-only").RegisterValueChangedCallback(change => Show(change.newValue));
+            root.WhileAttached(() => Selection.selectionChanged += OnSelectionChanged,
+                () => Selection.selectionChanged -= OnSelectionChanged);
             Refresh();
             return root;
         }
 
-        public override void Release()
-        {
-            Selection.selectionChanged -= OnSelectionChanged;
-            _selectionOnly = null;
-            _list = null;
-            _counts = null;
-            _empty = null;
-        }
+        private static bool SelectionOnly => HyperRTSEditorState.instance.validateSelectionOnly;
 
         private void Refresh()
         {
             _issues = ProjectValidator.Run();
-            if (_list == null)
-            {
-                return;
-            }
-
             _counts.text = $"{Count(MessageType.Error)} errors · {Count(MessageType.Warning)} warnings · " +
                            $"{Count(MessageType.Info)} notes";
-            Show();
+            Show(SelectionOnly);
         }
 
         private void OnSelectionChanged()
         {
-            if (_selectionOnly != null && _selectionOnly.value)
+            if (SelectionOnly)
             {
-                Show();
+                Show(true);
             }
         }
 
-        private void Show()
+        // The toggle passes its new value, since the binding may write the state after this callback runs.
+        private void Show(bool selectionOnly)
         {
-            if (_list == null)
-            {
-                return;
-            }
-
-            var shown = _selectionOnly.value ? _issues.FindAll(issue => OnSelection(issue.Context)) : _issues;
-            _empty.text = _issues.Count == 0 ? NoProblems : "No problems on the selection.";
-            _empty.SetHidden(shown.Count > 0);
+            var shown = selectionOnly ? _issues.FindAll(issue => OnSelection(issue.Context)) : _issues;
+            _shell.EmptyText = _issues.Count == 0 ? NoProblems : "No problems on the selection.";
+            _shell.ShowEmpty(shown.Count == 0);
             _list.Show(shown);
         }
 

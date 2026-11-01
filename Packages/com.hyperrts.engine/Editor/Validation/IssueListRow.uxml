@@ -1,5 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <ui:VisualElement class="hrts-issue">
+    <ui:Label name="rule" class="hrts-issue__rule" />
+    <ui:Button name="asset" class="hrts-issue__asset" />
     <ui:Button name="context" class="hrts-issue__context" />
     <ui:HelpBox name="message" class="hrts-issue__message" />
     <ui:Button name="fix" class="hrts-issue__fix" />

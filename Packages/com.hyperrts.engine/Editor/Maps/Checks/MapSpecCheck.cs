@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
@@ -13,7 +12,8 @@ namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
     /// Checks a spec before it is refined: its size, terrain and amounts are sane and every kind it names is in the
-    /// climate, the palette or the rules. Where features lie (sector, bounds, symmetry) is the expander's to check.
+    /// climate, the palette (through <see cref="MapSpecKeys"/>) or the rules. Where features lie (sector, bounds,
+    /// symmetry) is the expander's to check.
     /// </summary>
     public sealed class MapSpecCheck : MapKeyCheck
     {
@@ -34,32 +34,15 @@ namespace HyperRTS.Editor.Maps.Checks
         private void Run()
         {
             Header();
+            MapSpecKeys.Check(_spec, Climate, Palette, Issues);
             Require(MapKeys.Contains(_rules.modes, _spec.mode), $"The map rules have no thresholds for mode '{_spec.mode}'.");
             Each(_spec.resources, nameof(MapSpec.resources), "Resource", (resource, name) =>
-            {
-                Entry(resource.kind, name);
-                Require(resource.amount > 0, $"{name} ('{resource.kind}') needs an amount above 0.");
-            });
-            Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) =>
-            {
-                Entry(prop.kind, name);
-                NotBesideRoad(prop.kind, name);
-            });
-            Each(_spec.scatters, nameof(MapSpec.scatters), "Scatter", (scatter, name) => Entry(scatter.kind, name));
-            Each(_spec.rows, nameof(MapSpec.rows), "Row", Row);
-            Each(_spec.roads, nameof(MapSpec.roads), "Road", Road);
+                Require(resource.amount > 0, $"{name} ('{resource.kind}') needs an amount above 0."));
+            Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) => NotBesideRoad(prop.kind, name));
+            Each(_spec.roads, nameof(MapSpec.roads), "Road", (road, name) =>
+                Require(road.points.Count >= 2, $"{name} needs at least two points."));
             Each(_spec.rivers, nameof(MapSpec.rivers), "River", (river, name) =>
                 river.crossings.ForEach(crossing => Crossing(river, crossing, name)));
-            Each(_spec.woods, nameof(MapSpec.woods), "Wood", (wood, name) =>
-                InClimate(Climate.woodlandKits, wood.kind, "woodland kit", name));
-            Each(_spec.belts, nameof(MapSpec.belts), "Belt", (belt, name) =>
-                InClimate(Climate.beltKits, belt.kind, "belt kit", name));
-            Each(_spec.farmland, nameof(MapSpec.farmland), "Farmland", (farmland, name) =>
-                InClimate(Climate.farmlandKits, farmland.kind, "farmland kit", name));
-            Each(_spec.areas, nameof(MapSpec.areas), "Area", (area, name) => Surface(area.kind, name));
-            Each(_spec.settlements, nameof(MapSpec.settlements), "Settlement", (settlement, name) =>
-                Require(MapKeys.Contains(Palette.settlementKits, settlement.kind),
-                    $"{name}: settlement kit '{settlement.kind}' is not in the palette."));
         }
 
         private void Header()
@@ -96,19 +79,6 @@ namespace HyperRTS.Editor.Maps.Checks
             InClimate(Climate.weathers, _spec.weather, "weather", "The map spec's 'weather' key");
         }
 
-        /// <summary>A row plants a climate tree or places a palette prop.</summary>
-        private void Row(MapRowSpec row, string name)
-        {
-            var known = Climate.HasTree(row.kind) || MapKeys.Contains(Palette.entries, row.kind);
-            Require(known, $"{name}: '{row.kind}' is neither a climate tree nor in the palette.");
-        }
-
-        private void Road(MapRoadSpec road, string name)
-        {
-            InClimate(Climate.roadClasses, road.kind, "road class", name);
-            Require(road.points.Count >= 2, $"{name} needs at least two points.");
-        }
-
         private void Crossing(MapRiverSpec river, MapCrossingSpec crossing, string name)
         {
             if (crossing.kind == MapCrossingSpec.Ford)
@@ -124,9 +94,15 @@ namespace HyperRTS.Editor.Maps.Checks
                 return;
             }
 
+            if (string.IsNullOrEmpty(crossing.prop))
+            {
+                Issues.Error($"{name}: a bridge crossing needs a prop.", Feature);
+                return;
+            }
+
+            // MapSpecKeys reports a prop that isn't in the palette.
             if (!MapKeys.Contains(Palette.entries, crossing.prop))
             {
-                Issues.Error($"{name}: bridge '{crossing.prop}' is not in the palette.", Feature);
                 return;
             }
 

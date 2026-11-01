@@ -33,28 +33,20 @@ namespace HyperRTS.Editor.Maps.Layout
             var layout = new MapLayout(spec, MapSymmetry.Parse(spec.symmetry));
             var expander = new MapExpander(layout, issues);
             expander.AddSpawns();
-            layout.Resources = expander.Points(spec.resources, nameof(MapSpec.resources), "resource", r => r.shared,
-                r => r.pos, (r, t) => r.pos = t.Apply(r.pos));
-            layout.Props = expander.Points(spec.props, nameof(MapSpec.props), "prop", p => p.shared, p => p.pos, (p, t) =>
-            {
-                p.pos = t.Apply(p.pos);
-                p.yaw = t.ApplyYaw(p.yaw);
-            });
-            layout.Hills = expander.Points(spec.hills, nameof(MapSpec.hills), "hill", h => h.shared, h => h.pos,
-                (h, t) => h.pos = t.Apply(h.pos));
-            layout.Settlements = expander.Points(spec.settlements, nameof(MapSpec.settlements), "settlement", _ => false,
-                w => w.center, (w, t) => w.center = t.Apply(w.center));
-            layout.Rivers = expander.Lines(spec.rivers, nameof(MapSpec.rivers), "river", r => r.shared, r => r.points);
-            layout.Ravines = expander.Lines(spec.ravines, nameof(MapSpec.ravines), "ravine", r => r.shared, r => r.points);
-            layout.Roads = expander.Lines(spec.roads, nameof(MapSpec.roads), "road", r => r.shared, r => r.points);
-            layout.Woods = expander.Lines(spec.woods, nameof(MapSpec.woods), "wood", w => w.shared, w => w.points);
-            layout.Belts = expander.Lines(spec.belts, nameof(MapSpec.belts), "belt", b => b.shared, b => b.points);
-            layout.Farmland = expander.Lines(spec.farmland, nameof(MapSpec.farmland), "farmland", f => f.shared,
-                f => f.points, true);
-            layout.Areas = expander.Lines(spec.areas, nameof(MapSpec.areas), "area", a => a.shared, a => a.points);
-            layout.Rows = expander.Lines(spec.rows, nameof(MapSpec.rows), "row", r => r.shared, r => r.points);
-            layout.Scatters = expander.Lines(spec.scatters, nameof(MapSpec.scatters), "scatter", s => s.shared,
-                s => s.points);
+            layout.Resources = expander.Points(spec.resources, nameof(MapSpec.resources));
+            layout.Props = expander.Points(spec.props, nameof(MapSpec.props));
+            layout.Hills = expander.Points(spec.hills, nameof(MapSpec.hills));
+            layout.Settlements = expander.Points(spec.settlements, nameof(MapSpec.settlements));
+            layout.Rivers = expander.Lines(spec.rivers, nameof(MapSpec.rivers));
+            layout.Ravines = expander.Lines(spec.ravines, nameof(MapSpec.ravines));
+            layout.Roads = expander.Lines(spec.roads, nameof(MapSpec.roads));
+            layout.Woods = expander.Lines(spec.woods, nameof(MapSpec.woods));
+            layout.Belts = expander.Lines(spec.belts, nameof(MapSpec.belts));
+            layout.Farmland = expander.Lines(spec.farmland, nameof(MapSpec.farmland), true);
+            layout.Areas = expander.Lines(spec.areas, nameof(MapSpec.areas));
+            layout.Rows = expander.Lines(spec.rows, nameof(MapSpec.rows));
+            layout.Scatters = expander.Lines(spec.scatters, nameof(MapSpec.scatters));
+            TurnProps(layout.Props);
             ContinueRivers(layout.Rivers);
             return layout;
         }
@@ -103,29 +95,29 @@ namespace HyperRTS.Editor.Maps.Layout
         }
 
         /// <summary>Point features: they must lie in the playable area.</summary>
-        private List<MapCopy<T>> Points<T>(List<T> authored, string array, string label, Func<T, bool> shared,
-            Func<T, MapPoint> anchor, Action<T, MapTransform> transform) where T : class =>
-            Copy(authored, array, label, _layout.Bounds, shared, f => new[] { anchor(f).ToVector2() }, transform);
+        private List<MapCopy<T>> Points<T>(List<T> authored, string array) where T : MapFeatureSpec, IMapPoint =>
+            Copy(authored, array, _layout.Bounds, f => new[] { f.Position.ToVector2() }, (f, t) => f.Position = t.Apply(f.Position));
 
         /// <summary>
         /// Lines and areas: they may reach into the backdrop. <paramref name="mayBeEmpty"/>: no points is allowed
         /// (farmland that fills the free land).
         /// </summary>
-        private List<MapCopy<T>> Lines<T>(List<T> authored, string array, string label, Func<T, bool> shared,
-            Func<T, List<MapPoint>> points, bool mayBeEmpty = false) where T : class =>
-            Copy(authored, array, label, _layout.TerrainBounds, shared, f => points(f).Select(p => p.ToVector2()).ToList(), (f, t) =>
+        private List<MapCopy<T>> Lines<T>(List<T> authored, string array, bool mayBeEmpty = false)
+            where T : MapFeatureSpec, IMapLine =>
+            Copy(authored, array, _layout.TerrainBounds, f => f.Points.Select(p => p.ToVector2()).ToList(), (f, t) =>
             {
-                var list = points(f);
+                var list = f.Points;
                 for (var i = 0; i < list.Count; i++)
                 {
                     list[i] = t.Apply(list[i]);
                 }
             }, mayBeEmpty);
 
-        private List<MapCopy<T>> Copy<T>(List<T> authored, string array, string label, Rect bounds, Func<T, bool> shared,
+        private List<MapCopy<T>> Copy<T>(List<T> authored, string array, Rect bounds,
             Func<T, IReadOnlyList<Vector2>> anchors, Action<T, MapTransform> transform, bool mayBeEmpty = false)
-            where T : class
+            where T : MapFeatureSpec
         {
+            var label = MapFeatureAttribute.Require(typeof(T)).Name;
             var copies = new List<MapCopy<T>>();
             for (var index = 0; index < authored.Count; index++)
             {
@@ -133,12 +125,12 @@ namespace HyperRTS.Editor.Maps.Layout
                 var points = anchors(feature);
                 var unbounded = mayBeEmpty && points.Count == 0;
                 var name = $"{label} {index + 1}";
-                if (!unbounded && !Check(name, new MapIssueFeature(array, index), points, bounds, shared(feature)))
+                if (!unbounded && !Check(name, new MapIssueFeature(array, index), points, bounds, feature.shared))
                 {
                     continue;
                 }
 
-                var count = shared(feature) ? 1 : Symmetry.Copies.Count;
+                var count = feature.shared ? 1 : Symmetry.Copies.Count;
                 for (var copy = 0; copy < count; copy++)
                 {
                     var placed = JsonUtility.FromJson<T>(JsonUtility.ToJson(feature));
@@ -183,6 +175,14 @@ namespace HyperRTS.Editor.Maps.Layout
         {
             var acrossX = point.x < bounds.xMin || point.x > bounds.xMax;
             return acrossX || point.y < bounds.yMin || point.y > bounds.yMax;
+        }
+
+        private static void TurnProps(List<MapCopy<MapPropSpec>> props)
+        {
+            foreach (var prop in props)
+            {
+                prop.Placed.yaw = prop.Transform.ApplyYaw(prop.Placed.yaw);
+            }
         }
 
         /// <summary>A river copy that ends where the authored river ends is turned around, so the water keeps flowing.</summary>

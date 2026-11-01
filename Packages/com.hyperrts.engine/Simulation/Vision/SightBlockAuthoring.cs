@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Vision
         public bool conceals;
 
         /// <summary>Sets the size and height to the box round the active meshes, centred on this transform.</summary>
-        [ContextMenu("Fit To Model")]
+        [InspectorButton("Fit to model")]
         public void FitToModel()
         {
             var reach = Vector3.zero;

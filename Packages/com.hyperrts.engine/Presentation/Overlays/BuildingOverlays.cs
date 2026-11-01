@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Common;
+using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.Rendering;
@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Overlays
     /// while a capture is under way, and a pip per garrison slot, filled in the holder's colour, while anyone is
     /// inside. Hidden where the building is fogged.
     /// </summary>
-    public sealed class BuildingOverlays
+    public sealed class BuildingOverlays : IDisposable
     {
         private const int DialSteps = 64;
         private const float DialStepDegrees = 360f / DialSteps;
@@ -50,12 +50,10 @@ namespace HyperRTS.Presentation.Overlays
         private readonly LiveSingleton<FogOfWar> _fogGrid = new();
         private readonly LiveSingleton<LocalFogView> _fogView = new();
 
-        private readonly InstanceBatch _dialBacks;
-        private readonly InstanceBatch _dialTrack;
-        private readonly FactionBatches _dialFills;
-        private readonly InstanceBatch _pipBacks;
-        private readonly InstanceBatch _pipEmpty;
-        private readonly FactionBatches _pipFills;
+        private readonly InstanceBuffer<OverlayInstance> _dialBacks;
+        private readonly InstanceBuffer<OverlayInstance> _dialSteps;
+        private readonly InstanceBuffer<OverlayInstance> _pipBacks;
+        private readonly InstanceBuffer<OverlayInstance> _pips;
         private LocalFogView _view;
         private FogOfWar _fog;
         private bool _fogRead;
@@ -69,12 +67,10 @@ namespace HyperRTS.Presentation.Overlays
 
         public BuildingOverlays(Mesh dialSegment, Mesh disc, Mesh billboard)
         {
-            _dialBacks = new InstanceBatch(disc);
-            _dialTrack = new InstanceBatch(dialSegment);
-            _dialFills = new FactionBatches(dialSegment);
-            _pipBacks = new InstanceBatch(billboard);
-            _pipEmpty = new InstanceBatch(billboard);
-            _pipFills = new FactionBatches(billboard);
+            _dialBacks = new InstanceBuffer<OverlayInstance>(disc);
+            _dialSteps = new InstanceBuffer<OverlayInstance>(dialSegment);
+            _pipBacks = new InstanceBuffer<OverlayInstance>(billboard);
+            _pips = new InstanceBuffer<OverlayInstance>(billboard);
         }
 
         public static Mesh DialSegment() => OverlayMeshes.DialSegment(DialSteps, DialInner);
@@ -88,14 +84,20 @@ namespace HyperRTS.Presentation.Overlays
         }
 
         // Backings first, then rings and pips over them; neither tests depth, so buildings never cut through them.
-        public void Draw(OverlayMaterials materials, MatchView view, OverlayStyle style, int layer)
+        public void Draw(OverlayMaterials materials, int layer)
         {
-            _dialBacks.Draw(materials.OnTop, style.markerBack, layer);
-            _pipBacks.Draw(materials.OnTop, style.markerBack, layer);
-            _dialTrack.Draw(materials.OnTopFront, style.dialTrack, layer);
-            _dialFills.Draw(materials.OnTopFront, view, layer);
-            _pipEmpty.Draw(materials.OnTopFront, style.pipEmpty, layer);
-            _pipFills.Draw(materials.OnTopFront, view, layer);
+            _dialBacks.Draw(materials.OnTop, layer);
+            _pipBacks.Draw(materials.OnTop, layer);
+            _dialSteps.Draw(materials.OnTopFront, layer);
+            _pips.Draw(materials.OnTopFront, layer);
+        }
+
+        public void Dispose()
+        {
+            _dialBacks.Dispose();
+            _dialSteps.Dispose();
+            _pipBacks.Dispose();
+            _pips.Dispose();
         }
 
         private void GatherDials(MatchView view, OverlayStyle style)
@@ -119,27 +121,21 @@ namespace HyperRTS.Presentation.Overlays
                 var top = Top(entityManager, entities[i], position);
                 var pixel = PixelSize(top);
                 var center = top + Vector3.up * (pixel * (style.markerOffset + style.dialRadius * BackRim));
-                AddDial(center, capture.Faction, capture.Value, pixel * style.dialRadius);
+                AddDial(center, view.GetColor(capture.Faction), capture.Value, pixel * style.dialRadius, style);
             }
         }
 
-        private void AddDial(Vector3 center, byte capturer, float progress, float radius)
+        private void AddDial(Vector3 center, Color capturer, float progress, float radius, OverlayStyle style)
         {
             var back = radius * BackRim;
-            _dialBacks.Add(Matrix4x4.TRS(center, _cameraRotation, new Vector3(back, back, 1f)));
+            _dialBacks.Add(new OverlayInstance(Matrix4x4.TRS(center, _cameraRotation, new Vector3(back, back, 1f)), style.markerBack));
             var filled = Mathf.RoundToInt(Mathf.Clamp01(progress) * DialSteps);
             var scale = new Vector3(radius, radius, 1f);
             for (var step = 0; step < DialSteps; step++)
             {
                 var matrix = Matrix4x4.TRS(center, _cameraRotation * DialRotations[step], scale);
-                if (step < filled)
-                {
-                    _dialFills.Add(capturer, matrix);
-                }
-                else
-                {
-                    _dialTrack.Add(matrix);
-                }
+                var color = step < filled ? capturer : style.dialTrack;
+                _dialSteps.Add(new OverlayInstance(matrix, color));
             }
         }
 
@@ -164,28 +160,22 @@ namespace HyperRTS.Presentation.Overlays
                 var top = Top(entityManager, entities[i], position);
                 var pixel = PixelSize(top);
                 var center = top + Vector3.up * (pixel * (style.markerOffset + style.pipSize));
-                AddPips(center, owner, used, containers[i].Capacity, pixel * style.pipSize);
+                AddPips(center, view.GetColor(owner), used, containers[i].Capacity, pixel * style.pipSize, style);
             }
         }
 
-        private void AddPips(Vector3 center, byte owner, int used, int capacity, float size)
+        private void AddPips(Vector3 center, Color owner, int used, int capacity, float size, OverlayStyle style)
         {
             var pitch = size * PipPitch;
             var backSize = new Vector3(pitch * capacity + size * 0.5f, size * 2f, 1f);
-            _pipBacks.Add(Matrix4x4.TRS(center, _cameraRotation, backSize));
+            _pipBacks.Add(new OverlayInstance(Matrix4x4.TRS(center, _cameraRotation, backSize), style.markerBack));
             var first = center - _cameraRight * (pitch * (capacity - 1) * 0.5f);
             var scale = new Vector3(size, size, 1f);
             for (var slot = 0; slot < capacity; slot++)
             {
                 var matrix = Matrix4x4.TRS(first + _cameraRight * (pitch * slot), _cameraRotation, scale);
-                if (slot < used)
-                {
-                    _pipFills.Add(owner, matrix);
-                }
-                else
-                {
-                    _pipEmpty.Add(matrix);
-                }
+                var color = slot < used ? owner : style.pipEmpty;
+                _pips.Add(new OverlayInstance(matrix, color));
             }
         }
 

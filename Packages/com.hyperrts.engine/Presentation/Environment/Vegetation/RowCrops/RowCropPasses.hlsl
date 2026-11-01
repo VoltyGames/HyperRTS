@@ -16,28 +16,16 @@ ForwardVaryings ForwardVert(Attributes input)
     return PlantForwardVaryings(world, plant.position, input.uv, height, normal, tint);
 }
 
-CutoutVaryings CutoutVert(Attributes input)
+// Instances are placed in world space, so the object matrix plays no part.
+void Displace(Attributes input, WindFrame frame, float4x4 objectToWorld, out float3 positionWS, out half3 normalWS,
+    out float2 uv)
 {
     RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
-    float4 positionCS = TransformWorldToHClip(RowCropPosition(input, plant, WindThisFrame()));
-    return PlantCutoutVaryings(positionCS, input.uv, RowCropNormal(input, plant));
+    positionWS = RowCropPosition(input, plant, frame);
+    normalWS = RowCropNormal(input, plant);
+    uv = TRANSFORM_TEX(input.uv, _BaseMap);
 }
 
-CutoutVaryings ShadowVert(Attributes input)
-{
-    RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
-    float3 world = RowCropPosition(input, plant, WindThisFrame());
-    half3 normal = RowCropNormal(input, plant);
-    return PlantCutoutVaryings(ShadowCasterPositionCS(world, normal), input.uv, normal);
-}
-
-MotionVaryings MotionVert(Attributes input)
-{
-    RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
-    float3 placed = PlaceRowCrop(input, plant);
-    float3 now = SwayRowCrop(placed, plant, WindThisFrame());
-    float3 last = SwayRowCrop(placed, plant, WindLastFrame());
-    return PlantMotionVaryings(now, last, input.uv);
-}
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/DisplacedPasses.hlsl"
 
 #endif

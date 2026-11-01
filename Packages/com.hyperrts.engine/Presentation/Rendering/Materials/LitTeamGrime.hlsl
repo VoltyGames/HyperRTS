@@ -3,27 +3,10 @@
 #ifndef HYPERRTS_LIT_TEAM_GRIME_INCLUDED
 #define HYPERRTS_LIT_TEAM_GRIME_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+
 float4 _HyperRTSDustColor;
 float4 _HyperRTSMudColor;
-
-float GrimeHash(float3 p)
-{
-    p = frac(p * 0.1031);
-    p += dot(p, p.zyx + 31.32);
-    return frac((p.x + p.y) * p.z);
-}
-
-float GrimeNoise(float3 p)
-{
-    float3 cell = floor(p);
-    float3 f = frac(p);
-    f = f * f * (3.0 - 2.0 * f);
-    float x00 = lerp(GrimeHash(cell), GrimeHash(cell + float3(1, 0, 0)), f.x);
-    float x10 = lerp(GrimeHash(cell + float3(0, 1, 0)), GrimeHash(cell + float3(1, 1, 0)), f.x);
-    float x01 = lerp(GrimeHash(cell + float3(0, 0, 1)), GrimeHash(cell + float3(1, 0, 1)), f.x);
-    float x11 = lerp(GrimeHash(cell + float3(0, 1, 1)), GrimeHash(cell + float3(1, 1, 1)), f.x);
-    return lerp(lerp(x00, x10, f.y), lerp(x01, x11, f.y), f.z);
-}
 
 void ApplyGrime(float3 positionWS, inout SurfaceData surface)
 {
@@ -37,12 +20,12 @@ void ApplyGrime(float3 positionWS, inout SurfaceData surface)
     float height = positionOS.y - _GrimeBand.x;
     float mudTop = _GrimeBand.y;
     float dustTop = _GrimeBand.z;
-    float coarse = GrimeNoise(positionOS * 7.0);
+    float coarse = ValueNoise(positionOS * 7.0);
     // Without mud or soot their noise alone stays below the threshold, so it is not sampled.
     float fine = 0.0;
     if (_Grime.y > 0.0)
     {
-        fine = GrimeNoise(positionOS * 29.0);
+        fine = ValueNoise(positionOS * 29.0);
     }
     half3 albedo = surface.albedo;
     half smoothness = surface.smoothness;
@@ -68,7 +51,7 @@ void ApplyGrime(float3 positionWS, inout SurfaceData surface)
     half soot = 0.0;
     if (_Grime.w > 0.0)
     {
-        soot = saturate((_Grime.w * 1.1 + (GrimeNoise(positionOS * 3.0) - 0.5) * 0.8 - 0.42) * 3.0);
+        soot = saturate((_Grime.w * 1.1 + (ValueNoise(positionOS * 3.0) - 0.5) * 0.8 - 0.42) * 3.0);
     }
     albedo *= lerp(1.0, 0.25, soot * 0.85);
     smoothness *= lerp(1.0, 0.4, soot);

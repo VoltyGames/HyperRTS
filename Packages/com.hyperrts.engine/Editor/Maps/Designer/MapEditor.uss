@@ -30,21 +30,13 @@
     border-color: var(--hrts-border);
 }
 
-.hrts-map-list__group > .unity-foldout__toggle {
+.hrts-map-list__group {
     -unity-font-style: bold;
-    margin: 2px 0 0 3px;
+    -unity-text-align: middle-left;
 }
 
 .hrts-map-list__item {
-    padding: 1px 4px 1px 16px;
-}
-
-.hrts-map-list__item:hover {
-    background-color: rgba(128, 128, 128, 0.2);
-}
-
-.hrts-map-list__item--selected {
-    background-color: rgba(62, 125, 231, 0.6);
+    -unity-text-align: middle-left;
 }
 
 .hrts-map-canvas {
@@ -118,11 +110,6 @@
 .hrts-map-report__show {
     width: 48px;
     margin: 0 0 0 2px;
-}
-
-.hrts-map-report__name {
-    width: 90px;
-    margin-left: 3px;
 }
 
 .hrts-map-toolbar__strip {

@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;
@@ -21,8 +22,8 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapEdgeWander _wander;
         private readonly MapEdgeNeighbours _neighbours;
         private readonly MapClimateSurface[] _surfaces;
-        private readonly float[] _width;
-        private readonly float[] _wanderAmount;
+        private readonly MapField<float> _width;
+        private readonly MapField<float> _wanderAmount;
 
         public MapEdgeField(MapLayout layout, MapLand land, MapClimate climate)
         {
@@ -50,66 +51,39 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>The border round a map point, looked up through the edge wander.</summary>
         public MapEdgeSample Sample(Vector2 point)
         {
-            var at = point + _wander.Offset(point, Bilinear(_wanderAmount, point));
-            Corners(at, out var x0, out var z0, out var x1, out var z1, out var fx, out var fz);
-            var cx = fx < 0.5f ? x0 : x1;
-            var cz = fz < 0.5f ? z0 : z1;
+            var grid = _land.Grid;
+            var at = point + _wander.Offset(point, grid.Bilinear(point).Blend(_wanderAmount));
+            var corners = grid.Bilinear(at);
+            var (cx, cz) = corners.Nearest;
             var own = _land.RegionIndex(cx, cz);
-            var other = _neighbours.Other[cz * _land.Width + cx];
-            var inside = Mathf.Lerp(
-                Mathf.Lerp(Signed(x0, z0, own), Signed(x1, z0, own), fx),
-                Mathf.Lerp(Signed(x0, z1, own), Signed(x1, z1, own), fx), fz);
-            return new MapEdgeSample(at, own, other, inside, Lerp(_width, x0, z0, x1, z1, fx, fz));
+            var other = _neighbours.Other[cx, cz];
+            var inside = corners.Blend(Signed(corners.X0, corners.Z0, own), Signed(corners.X1, corners.Z0, own),
+                Signed(corners.X0, corners.Z1, own), Signed(corners.X1, corners.Z1, own));
+            return new MapEdgeSample(at, own, other, inside, corners.Blend(_width));
         }
 
         /// <summary>Per cell, the crisper of the two sides' values, blurred so it changes smoothly.</summary>
-        private float[] Style(System.Func<MapClimateSurface, float> value)
+        private MapField<float> Style(System.Func<MapClimateSurface, float> value)
         {
-            var cells = new float[_land.Width * _land.Height];
+            var cells = new MapField<float>(_land.Grid);
             for (var z = 0; z < _land.Height; z++)
             {
                 for (var x = 0; x < _land.Width; x++)
                 {
-                    var i = z * _land.Width + x;
+                    var i = cells.Grid.Index(x, z);
                     var own = value(_surfaces[_land.RegionIndex(x, z)]);
                     cells[i] = Mathf.Min(own, value(_surfaces[_neighbours.Other[i]]));
                 }
             }
 
-            return MapGridBlur.Box(cells, _land.Width, _land.Height, StyleBlurCells);
+            return MapGridBlur.Box(cells, StyleBlurCells);
         }
 
         /// <summary>A cell's distance to its border measured from its edge, positive in <paramref name="own"/>.</summary>
         private float Signed(int x, int z, int own)
         {
-            var distance = Mathf.Min(_neighbours.Distance[z * _land.Width + x], FarInside) + 0.5f * MapLand.CellSize;
+            var distance = Mathf.Min(_neighbours.Distance[x, z], FarInside) + 0.5f * MapLand.CellSize;
             return _land.RegionIndex(x, z) == own ? distance : -distance;
-        }
-
-        private float Bilinear(float[] field, Vector2 point)
-        {
-            Corners(point, out var x0, out var z0, out var x1, out var z1, out var fx, out var fz);
-            return Lerp(field, x0, z0, x1, z1, fx, fz);
-        }
-
-        private float Lerp(float[] field, int x0, int z0, int x1, int z1, float fx, float fz)
-        {
-            var width = _land.Width;
-            var near = Mathf.Lerp(field[z0 * width + x0], field[z0 * width + x1], fx);
-            var far = Mathf.Lerp(field[z1 * width + x0], field[z1 * width + x1], fx);
-            return Mathf.Lerp(near, far, fz);
-        }
-
-        /// <summary>The four cell centres round a point, clamped to the land, and where it sits between them.</summary>
-        private void Corners(Vector2 point, out int x0, out int z0, out int x1, out int z1, out float fx, out float fz)
-        {
-            var grid = (point - _land.Bounds.min) / MapLand.CellSize - new Vector2(0.5f, 0.5f);
-            x0 = Mathf.Clamp(Mathf.FloorToInt(grid.x), 0, _land.Width - 1);
-            z0 = Mathf.Clamp(Mathf.FloorToInt(grid.y), 0, _land.Height - 1);
-            x1 = Mathf.Min(x0 + 1, _land.Width - 1);
-            z1 = Mathf.Min(z0 + 1, _land.Height - 1);
-            fx = Mathf.Clamp01(grid.x - x0);
-            fz = Mathf.Clamp01(grid.y - z0);
         }
     }
 }

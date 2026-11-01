@@ -6,6 +6,7 @@
         "HyperRTS.Input",
         "HyperRTS.Presentation",
         "HyperRTS.Network",
+        "Unity.Burst",
         "Unity.Collections",
         "Unity.Entities",
         "Unity.Entities.Graphics",

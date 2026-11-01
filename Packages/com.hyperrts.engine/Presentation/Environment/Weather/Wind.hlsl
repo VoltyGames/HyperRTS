@@ -141,9 +141,9 @@ float WindSwing(float time, float phase)
 float3 CardFlutter(float3 p, TreeWindVertex v, TreeWindSettings s, float push, WindFrame frame, float3 origin)
 {
     float3 seed = v.cardPivot + origin;
-    float3 axis = WindSafeNormalize(float3(WindHash(seed) - 0.5, 0.3, WindHash(seed.zxy) - 0.5));
+    float3 axis = WindSafeNormalize(float3(Random(seed) - 0.5, 0.3, Random(seed.zxy) - 0.5));
     float frequency = s.speed * lerp(6.0, 10.0, v.stiffness);
-    float wave = sin(frame.time * frequency + WindHash(seed.yzx) * WIND_TAU);
+    float wave = sin(frame.time * frequency + Random(seed.yzx) * WIND_TAU);
     float angle = v.flutter * s.cardFlutter * saturate(push * 2.0) * wave;
     return WindRotate(p, v.cardPivot, axis, angle);
 }
@@ -153,7 +153,7 @@ float3 BranchSway(float3 p, TreeWindVertex v, TreeWindSettings s, float3 downwin
     float3 pivotWS = TransformObjectToWorld(v.branchPivot);
     float push = WindPush(pivotWS.xz, frame) * s.scale;
     float frequency = s.speed * lerp(1.0, 3.0, v.stiffness);
-    float swing = WindSwing(frame.time * frequency, WindHash(pivotWS) * WIND_TAU) * s.scale;
+    float swing = WindSwing(frame.time * frequency, Random(pivotWS) * WIND_TAU) * s.scale;
     float amplitude = s.branchSway * lerp(1.0, 0.5, v.stiffness);
     float3 axis = WindSafeNormalize(cross(float3(0.0, 1.0, 0.0), downwind));
     return WindRotate(p, v.branchPivot, axis, v.flex * amplitude * (push + swing));
@@ -162,7 +162,7 @@ float3 BranchSway(float3 p, TreeWindVertex v, TreeWindSettings s, float3 downwin
 // Pulls each point back to its distance from the root so the trunk keeps its length.
 float3 TrunkBend(float3 p, TreeWindSettings s, float3 downwind, float push, WindFrame frame, float3 origin)
 {
-    float swing = WindSwing(frame.time * s.speed * 0.6, WindHash(origin) * WIND_TAU) * s.scale;
+    float swing = WindSwing(frame.time * s.speed * 0.6, Random(origin) * WIND_TAU) * s.scale;
     float along = max(p.y, 0.0) / max(s.height, 0.01);
     float3 bent = p + downwind * ((push + swing) * s.trunkSway * s.height * along * along);
     float reach = length(p);
@@ -200,7 +200,7 @@ float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
 float PlantWindLean(float3 origin, float sway, float speed, float scale, WindFrame frame)
 {
     float push = WindPush(origin.xz, frame);
-    float swing = WindSwing(frame.time * speed, WindHash(origin) * WIND_TAU);
+    float swing = WindSwing(frame.time * speed, Random(origin) * WIND_TAU);
     return (push + swing) * sway * scale;
 }
 

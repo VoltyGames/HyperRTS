@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             var fog = _world.Fog();
             Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 1f), Team1, false), "in front of the building");
             Assert.IsTrue(fog.IsVisible(new float3(11f, 0f, 1f), Team1, false), "its roof");
-            Assert.IsFalse(fog.IsVisible(Behind, Team1, false), "behind it");
+            Assert.That(fog.IsVisible(Behind, Team1, false), Is.False, () => "behind it\n" + GridDump.Fog(fog, Team1, Behind, 12));
             Assert.IsTrue(fog.IsVisible(new float3(1f, 0f, 15f), Team1, false), "open ground beside it");
         }
 

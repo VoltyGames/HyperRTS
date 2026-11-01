@@ -1,22 +1,24 @@
+using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground
 {
-    /// <summary>Box blur of a row-major grid with clamped borders, run across then along.</summary>
+    /// <summary>Box blur of a map field with clamped borders, run across then along.</summary>
     public static class MapGridBlur
     {
-        public static float[] Box(float[] values, int width, int height, int radius)
+        public static MapField<float> Box(MapField<float> field, int radius)
         {
-            var across = new float[values.Length];
-            for (var z = 0; z < height; z++)
+            var grid = field.Grid;
+            var across = new float[grid.Count];
+            for (var z = 0; z < grid.Height; z++)
             {
-                Line(values, across, z * width, 1, width, radius);
+                Line(field.Values, across, grid.Index(0, z), 1, grid.Width, radius);
             }
 
-            var along = new float[values.Length];
-            for (var x = 0; x < width; x++)
+            var along = new MapField<float>(grid);
+            for (var x = 0; x < grid.Width; x++)
             {
-                Line(across, along, x, width, height, radius);
+                Line(across, along.Values, x, grid.Width, grid.Height, radius);
             }
 
             return along;

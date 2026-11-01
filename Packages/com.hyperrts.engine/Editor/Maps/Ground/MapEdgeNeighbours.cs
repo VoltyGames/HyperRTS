@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
 
 namespace HyperRTS.Editor.Maps.Ground
@@ -8,44 +9,41 @@ namespace HyperRTS.Editor.Maps.Ground
     /// </summary>
     public sealed class MapEdgeNeighbours
     {
-        private readonly int _width;
-        private readonly int _height;
-        private readonly int[] _own;
+        private readonly MapField<int> _own;
 
         public MapEdgeNeighbours(MapLand land)
         {
-            _width = land.Width;
-            _height = land.Height;
-            Distance = new float[_width * _height];
-            Other = new int[_width * _height];
-            _own = new int[_width * _height];
-            for (var z = 0; z < _height; z++)
+            var grid = land.Grid;
+            Distance = new MapField<float>(grid);
+            Other = new MapField<int>(grid);
+            _own = new MapField<int>(grid);
+            for (var z = 0; z < grid.Height; z++)
             {
-                for (var x = 0; x < _width; x++)
+                for (var x = 0; x < grid.Width; x++)
                 {
                     Seed(land, x, z);
                 }
             }
 
-            MapLandDistance.Spread(_width, _height, Carry);
+            MapLandDistance.Spread(grid, Carry);
         }
 
         /// <summary>Cells to the nearest cell of another region; 0 where a cell touches one.</summary>
-        public float[] Distance { get; }
+        public MapField<float> Distance { get; }
 
         /// <summary>The region of that nearest other cell; the cell's own region on land of one region only.</summary>
-        public int[] Other { get; }
+        public MapField<int> Other { get; }
 
         private void Seed(MapLand land, int x, int z)
         {
-            var i = z * _width + x;
+            var i = _own.Grid.Index(x, z);
             var own = _own[i] = land.RegionIndex(x, z);
             Distance[i] = float.MaxValue;
             Other[i] = own;
             foreach (var (dx, dz) in Sides)
             {
                 var (nx, nz) = (x + dx, z + dz);
-                var inside = nx >= 0 && nx < _width && nz >= 0 && nz < _height;
+                var inside = _own.Grid.Contains(nx, nz);
                 var neighbour = inside ? land.RegionIndex(nx, nz) : own;
                 if (neighbour == own)
                 {

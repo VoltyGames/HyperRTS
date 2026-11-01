@@ -3,6 +3,8 @@
 #ifndef HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 #define HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+
 // Hex grid vertices per tile, as in the paper.
 #define HEX_GRID_SCALE 3.4641016
 // Barycentric sharpening, and how much texel height shapes the weights.
@@ -39,12 +41,11 @@ float2 RotateUV(float2 uv, float2 rotation)
     return float2(uv.x * rotation.x - uv.y * rotation.y, uv.x * rotation.y + uv.y * rotation.x);
 }
 
-// Hash without sine, stable for large cell indices (Hoskins, "Hash without Sine").
+// Three independent [0, 1) values per grid vertex.
 float3 HexHash(float2 vertex)
 {
-    float3 p = frac(vertex.xyx * float3(0.1031, 0.1030, 0.0973));
-    p += dot(p, p.yxz + 33.33);
-    return frac((p.xxy + p.yzz) * p.zyx);
+    uint hash = Pcg3(asuint(int3((int2)vertex, 0)));
+    return float3(Channel(hash, 0u), Channel(hash, 1u), Channel(hash, 2u));
 }
 
 // The three triangle-grid vertices around st, in the skewed grid, and their barycentric weights.

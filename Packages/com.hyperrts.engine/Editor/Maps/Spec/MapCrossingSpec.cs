@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public float width = 10f;
 
         /// <summary>Bridges: the palette key of the bridge prefab.</summary>
-        [MapKey(typeof(MapProp))]
+        [MapKey(typeof(MapProp), Optional = true)]
         public string prop;
     }
 }

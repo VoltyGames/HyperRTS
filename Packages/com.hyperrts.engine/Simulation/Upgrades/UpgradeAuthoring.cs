@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Upgrades
         public class Effect
         {
             [Tooltip("Unit and building types affected; empty affects everything the owner has.")]
+            [PrefabAsset("Upgrade target"), NoEmptyEntries]
             public List<GameEntityAuthoring> appliesTo = new();
 
             [Tooltip("Bonuses given to every affected entity.")]

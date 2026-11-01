@@ -11,12 +11,14 @@ namespace HyperRTS.Editor.Maps.Spec
     /// (pylons, fences).
     /// </summary>
     [Serializable]
-    public sealed class MapRowSpec
+    [MapFeature("row", 100, 0.8f, 0.5f, 0.9f)]
+    public sealed class MapRowSpec : MapFeatureSpec, IMapLine
     {
         public List<MapPoint> points = new();
         [MapKey(typeof(MapClimateTree), typeof(MapProp))]
         public string kind;
         public float spacing = 8f;
-        public bool shared;
+
+        public List<MapPoint> Points => points;
     }
 }

@@ -7,11 +7,13 @@ namespace HyperRTS.Editor.Maps.Spec
 {
     /// <summary>A polygon of one climate surface (field, forest, meadow): ground texture, trees and grass.</summary>
     [Serializable]
-    public sealed class MapAreaSpec
+    [MapFeature("area", 20, 0.55f, 0.8f, 0.4f, Closed = true)]
+    public sealed class MapAreaSpec : MapFeatureSpec, IMapLine
     {
         public List<MapPoint> points = new();
         [MapKey(typeof(MapClimateSurface))]
         public string kind;
-        public bool shared;
+
+        public List<MapPoint> Points => points;
     }
 }

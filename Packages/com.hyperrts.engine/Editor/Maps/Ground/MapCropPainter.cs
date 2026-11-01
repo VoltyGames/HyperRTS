@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Maps.Ground
         public static MapCropBake Paint(MapLand land, MapSymmetry symmetry, MapClimate climate,
             Func<Vector2, float, float, bool> blocked)
         {
-            var bake = new MapCropBake(land.Bounds, land.Width, land.Height);
+            var bake = new MapCropBake(land.Grid);
             var regionCrops = RegionCrops(land, climate, bake);
             AssignFields(land, symmetry, climate, regionCrops, bake);
             Clear(land, bake, blocked);
@@ -131,7 +131,7 @@ namespace HyperRTS.Editor.Maps.Ground
                     bake.Fields.Add(Lattice(sown, symmetry.Copies[copy], bake.Crops[crop], crop, tramlines));
                 }
 
-                bake.Ids[z * bake.Width + x] = RowCropFields.FieldId(field);
+                bake.Ids[x, z] = RowCropFields.FieldId(field);
             });
         }
 
@@ -139,9 +139,9 @@ namespace HyperRTS.Editor.Maps.Ground
         private static void Clear(MapLand land, MapCropBake bake, Func<Vector2, float, float, bool> blocked)
         {
             var ids = bake.Ids;
-            var edges = MapLandDistance.ToRegionEdge(bake.Width, bake.Height, (x, z) => ids[z * bake.Width + x]);
+            var edges = MapLandDistance.ToRegionEdge(ids);
             var plants = 0d;
-            for (var i = 0; i < ids.Length; i++)
+            for (var i = 0; i < ids.Values.Length; i++)
             {
                 if (ids[i] == RowCropFields.None)
                 {
@@ -150,7 +150,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
                 var crop = bake.Crops[bake.Fields[ids[i] - 1].crop];
                 var edge = (edges[i] + 0.5f) * MapLand.CellSize;
-                var center = land.Center(i % bake.Width, i / bake.Width);
+                var center = land.Center(i);
                 if (edge < crop.edgeMargin || blocked(center, edge, crop.edgeMargin))
                 {
                     ids[i] = RowCropFields.None;

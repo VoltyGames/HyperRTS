@@ -57,7 +57,7 @@ namespace HyperRTS.Editor.Maps.Planning
                     cells[region] = list = new List<int>();
                 }
 
-                list.Add(z * Land.Width + x);
+                list.Add(Land.Grid.Index(x, z));
             });
             return cells;
         }
@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.Maps.Planning
         {
             var cell = cells[random.Next(cells.Count)];
             var jitter = new Vector2(random.Value() - 0.5f, random.Value() - 0.5f);
-            return Land.Center(cell % Land.Width, cell / Land.Width) + jitter * MapLand.CellSize;
+            return Land.Center(cell) + jitter * MapLand.CellSize;
         }
     }
 }

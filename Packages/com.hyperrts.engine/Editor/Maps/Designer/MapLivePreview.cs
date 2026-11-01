@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Build;
 using UnityEditor;
 using UnityEngine;
@@ -12,7 +13,6 @@ namespace HyperRTS.Editor.Maps.Designer
     /// </summary>
     public sealed class MapLivePreview
     {
-        private const string AutoPref = "HyperRTS.MapEditor.AutoPreview";
         private const double AutoInterval = 1.0;
 
         private readonly MapSpecDocument _document;
@@ -35,8 +35,12 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public static bool Auto
         {
-            get => EditorPrefs.GetBool(AutoPref, true);
-            set => EditorPrefs.SetBool(AutoPref, value);
+            get => HyperRTSEditorState.instance.mapAutoPreview;
+            set
+            {
+                HyperRTSEditorState.instance.mapAutoPreview = value;
+                HyperRTSEditorState.instance.Save();
+            }
         }
 
         public bool Busy { get; private set; }

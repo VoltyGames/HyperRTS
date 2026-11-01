@@ -23,6 +23,7 @@ namespace HyperRTS.Editor.Authoring
         public IssueBadge()
         {
             EditorAssets.Layout(typeof(IssueBadge)).CloneTree(this);
+            styleSheets.Add(EditorAssets.Sheet("Authoring"));
             _badge = this.Require<Button>("badge");
             _badge.clicked += Toggle;
             _errors = this.Require<Label>("errors");

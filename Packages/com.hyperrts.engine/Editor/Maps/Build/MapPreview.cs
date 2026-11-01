@@ -58,6 +58,7 @@ namespace HyperRTS.Editor.Maps.Build
             if (generation != null)
             {
                 report.land = MapLandFigures.Measure(generation);
+                report.stages.AddRange(generation.Timer.Stages);
                 image = MapReportImage.DrawLand(generation);
             }
 

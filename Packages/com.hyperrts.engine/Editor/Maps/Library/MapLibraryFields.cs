@@ -7,11 +7,14 @@ namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
     /// Walks the serialized strings of an item or a spec (nested classes and lists included) and hands each to a
-    /// visitor with its field, so callers can follow <see cref="MapKeyAttribute"/> fields.
+    /// visitor with its field and JSON path (<c>rivers[0].crossings[1].prop</c>), so callers can follow
+    /// <see cref="MapKeyAttribute"/> fields.
     /// </summary>
     public static class MapLibraryFields
     {
-        public static void Walk(object target, Action<FieldInfo, string> visit)
+        public static void Walk(object target, Action<FieldInfo, string, string> visit) => Walk(target, string.Empty, visit);
+
+        private static void Walk(object target, string at, Action<FieldInfo, string, string> visit)
         {
             foreach (var field in target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
@@ -20,23 +23,24 @@ namespace HyperRTS.Editor.Maps.Library
                     continue;
                 }
 
-                Visit(field, field.GetValue(target), visit);
+                var path = at.Length == 0 ? field.Name : $"{at}.{field.Name}";
+                Visit(field, path, field.GetValue(target), visit);
             }
         }
 
-        private static void Visit(FieldInfo field, object value, Action<FieldInfo, string> visit)
+        private static void Visit(FieldInfo field, string path, object value, Action<FieldInfo, string, string> visit)
         {
             switch (value)
             {
                 case null:
                     return;
                 case string text:
-                    visit(field, text);
+                    visit(field, path, text);
                     return;
                 case IList list:
-                    foreach (var element in list)
+                    for (var i = 0; i < list.Count; i++)
                     {
-                        Visit(field, element, visit);
+                        Visit(field, $"{path}[{i}]", list[i], visit);
                     }
 
                     return;
@@ -44,7 +48,7 @@ namespace HyperRTS.Editor.Maps.Library
 
             if (IsNested(value.GetType()))
             {
-                Walk(value, visit);
+                Walk(value, path, visit);
             }
         }
 

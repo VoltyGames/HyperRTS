@@ -1,5 +1,5 @@
-// Screen-aligned health bars of a fixed pixel size, with squad member and veterancy pips above. The instance matrix
-// only places the anchor at the top of the model; sizes are reference pixels times _PixelScale.
+// Screen-aligned health bars of a fixed pixel size, with squad member and veterancy pips above, drawn from
+// _Instances by InstanceBuffer. Each sits above its anchor; sizes are reference pixels times _PixelScale.
 Shader "HyperRTS/Health Bar"
 {
     Properties
@@ -35,9 +35,9 @@ Shader "HyperRTS/Health Bar"
             Cull Off
 
             HLSLPROGRAM
+            #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -56,16 +56,20 @@ Shader "HyperRTS/Health Bar"
                 half4 _MemberPip;
             CBUFFER_END
 
-            UNITY_INSTANCING_BUFFER_START(Props)
-                UNITY_DEFINE_INSTANCED_PROP(float4, _Bar)  // health fraction, segments, rank, opacity
-                UNITY_DEFINE_INSTANCED_PROP(float4, _Size) // width px, bar height px, squad members, members alive
-            UNITY_INSTANCING_BUFFER_END(Props)
+            struct HealthBarInstance // HealthBarInstance.cs
+            {
+                float4 bar;  // health fraction, segments, rank, opacity
+                float4 size; // width px, bar height px, squad members, members alive
+                float3 anchor;
+            };
+
+            StructuredBuffer<HealthBarInstance> _Instances;
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                uint instanceID : SV_InstanceID;
             };
 
             struct Varyings
@@ -89,16 +93,16 @@ Shader "HyperRTS/Health Bar"
 
             Varyings Vert(Attributes input)
             {
-                UNITY_SETUP_INSTANCE_ID(input);
+                HealthBarInstance instance = _Instances[input.instanceID];
                 Varyings output;
-                float4 bar = UNITY_ACCESS_INSTANCED_PROP(Props, _Bar);
-                float4 size = UNITY_ACCESS_INSTANCED_PROP(Props, _Size);
+                float4 bar = instance.bar;
+                float4 size = instance.size;
                 bool pips = size.z > 0.0 || bar.z > 0.0;
                 float2 box = float2(size.x + 2.0, size.y + 2.0 + (pips ? PIP_ROW : 0.0));
 
                 float2 pixel = input.uv * box;
                 float2 offset = float2(pixel.x - box.x * 0.5, pixel.y + _Offset) * _PixelScale;
-                float4 anchor = TransformWorldToHClip(UNITY_MATRIX_M._m03_m13_m23);
+                float4 anchor = TransformWorldToHClip(instance.anchor);
                 anchor.xy += offset * 2.0 / _ScreenParams.xy * anchor.w * float2(1.0, _ProjectionParams.x);
 
                 output.positionCS = anchor;

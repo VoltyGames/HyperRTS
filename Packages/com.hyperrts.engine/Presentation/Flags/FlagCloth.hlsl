@@ -62,9 +62,9 @@ struct Cloth
 };
 
 // In still air the flag keeps the heading it was placed with.
-float3 Downwind()
+float3 Downwind(float4x4 objectToWorld)
 {
-    float3 placed = TransformObjectToWorldDir(float3(1.0, 0.0, 0.0));
+    float3 placed = objectToWorld._m00_m10_m20;
     float2 wind = _HyperRTSWindDirection.xz;
     float2 heading = dot(wind, wind) > 1e-6 ? wind : placed.xz;
     heading = normalize(heading + 1e-5);
@@ -72,10 +72,9 @@ float3 Downwind()
 }
 
 // Streams downwind from the pole top, sliding down as it is lowered and shrinking to nothing while hidden.
-// Takes the time so motion vectors can pose last frame's cloth.
-Cloth FlagCloth(float3 positionOS, float2 uv, float time)
+// Takes the time and object matrix so motion vectors can pose last frame's cloth.
+Cloth FlagCloth(float3 positionOS, float2 uv, float time, float4x4 objectToWorld)
 {
-    float4x4 objectToWorld = GetObjectToWorldMatrix();
     float3 origin = float3(objectToWorld._m03, objectToWorld._m13, objectToWorld._m23);
     float height = length(float3(objectToWorld._m01, objectToWorld._m11, objectToWorld._m21)) * _FlagState.z;
     float strength = saturate(_HyperRTSWindStrength);
@@ -89,7 +88,7 @@ Cloth FlagCloth(float3 positionOS, float2 uv, float time)
     float sag = (1.0 - strength) * 0.25 * uv.x * uv.x;
     float drop = (1.0 - _FlagState.y) * _FlagState.w;
 
-    float3 downwind = Downwind();
+    float3 downwind = Downwind(objectToWorld);
     float3 side = float3(-downwind.z, 0.0, downwind.x);
     float3 offset = downwind * along + side * ripple + float3(0.0, positionOS.y - drop - sag, 0.0);
 
