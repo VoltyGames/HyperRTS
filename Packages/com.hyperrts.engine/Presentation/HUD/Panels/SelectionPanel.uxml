@@ -5,13 +5,13 @@
         <HyperRTS.Presentation.HUD.HUDIcon name="icon" class="hud-single__icon" />
         <ui:VisualElement class="hud-single__details">
           <ui:Label name="name" class="hud-single__name" />
-          <HyperRTS.Presentation.HUD.HUDBar name="health" class="hud-health" />
+          <HyperRTS.Presentation.HUD.HUDBar name="health" class="hud-single__health" />
           <ui:Label name="health-text" class="hud-single__caption" />
-          <HyperRTS.Presentation.HUD.HUDBar name="construction" class="hud-construction" />
+          <HyperRTS.Presentation.HUD.HUDBar name="construction" class="hud-single__construction" />
         </ui:VisualElement>
       </ui:VisualElement>
-      <ui:VisualElement name="queue" class="hud-queue" />
+      <ui:VisualElement name="queue" class="hud-single__queue" />
     </ui:VisualElement>
-    <ui:VisualElement name="groups" class="hud-groups" />
+    <ui:VisualElement name="groups" class="hud-single__groups" />
   </ui:VisualElement>
 </ui:UXML>

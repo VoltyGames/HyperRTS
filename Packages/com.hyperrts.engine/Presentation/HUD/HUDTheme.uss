@@ -1,20 +1,51 @@
-/* HyperRTS default HUD look: dark translucent panels. Layout is in HUD.uss; a game swaps this sheet for its own. */
+/* HyperRTS default HUD look: dark translucent panels. Layout is in HUD.uss. A game restyles the HUD by overriding the
+   --hud-* properties below on .hud-root in a sheet that imports this one (see docs/extending.md). */
 
 .hud-root {
-    color: rgb(228, 232, 238);
+    --hud-text: rgb(228, 232, 238);
+    --hud-text-muted: rgb(150, 160, 175);
+    --hud-panel-bg: rgba(12, 16, 22, 0.82);
+    --hud-tooltip-bg: rgba(12, 16, 22, 0.94);
+    --hud-overlay-bg: rgba(8, 10, 14, 0.75);
+    --hud-badge-bg: rgba(0, 0, 0, 0.7);
+    --hud-line: rgba(255, 255, 255, 0.08);
+    --hud-line-strong: rgba(255, 255, 255, 0.12);
+    --hud-tile-bg: rgba(255, 255, 255, 0.06);
+    --hud-radius: 6px;
+    --hud-radius-small: 4px;
+    --hud-radius-tiny: 3px;
+    --hud-card-bg: rgba(255, 255, 255, 0.06);
+    --hud-card-bg-hover: rgba(255, 255, 255, 0.14);
+    --hud-card-bg-active: rgba(120, 200, 255, 0.25);
+    --hud-card-line: rgba(255, 255, 255, 0.1);
+    --hud-card-line-hover: rgba(120, 200, 255, 0.7);
+    --hud-card-active-line: rgb(110, 220, 120);
+    --hud-card-active-bg: rgba(110, 220, 120, 0.18);
+    --hud-card-queued-line: rgb(110, 220, 120);
+    --hud-card-queued-bg: rgba(110, 220, 120, 0.18);
+    --hud-card-picture-bg: rgb(34, 40, 48);
+    --hud-card-picture-bg-hover: rgb(46, 54, 64);
+    --hud-resource-amount: var(--hud-text);
+    --hud-warn: rgb(255, 184, 56);
+    --hud-danger: rgb(255, 95, 80);
+    --hud-bar-health: rgb(82, 214, 96);
+    --hud-bar-build: rgb(240, 190, 60);
+    --hud-bar-progress: rgb(90, 180, 255);
+    color: var(--hud-text);
     font-size: 13px;
 }
 
 .hud-panel {
-    background-color: rgba(12, 16, 22, 0.82);
+    background-color: var(--hud-panel-bg);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
+    border-color: var(--hud-line);
+    border-radius: var(--hud-radius);
 }
 
-.hud-icon {
-    background-color: rgba(255, 255, 255, 0.06);
-    border-radius: 4px;
+/* Only a tile without a picture, so a transparent icon sits straight on its panel. */
+.hud-icon--empty {
+    background-color: var(--hud-tile-bg);
+    border-radius: var(--hud-radius-small);
 }
 
 .hud-icon__initials {
@@ -24,43 +55,41 @@
 }
 
 .hud-bar {
+    --bar-fill: var(--hud-bar-health);
     background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 3px;
+    border-radius: var(--hud-radius-tiny);
 }
 
 .hud-bar__fill {
-    background-color: rgb(82, 214, 96);
+    background-color: var(--bar-fill);
 }
 
 /* Top bar */
 
-.hud-resource__icon {
-    background-color: rgba(0, 0, 0, 0);
-}
-
 .hud-resource__name {
     font-size: 11px;
-    color: rgb(140, 150, 165);
+    color: var(--hud-text-muted);
 }
 
 .hud-resource__amount {
+    color: var(--hud-resource-amount);
     font-size: 15px;
     -unity-font-style: bold;
 }
 
 .hud-resource__amount--full {
-    color: rgb(255, 102, 89);
+    color: var(--hud-danger);
 }
 
 .hud-resource__amount--low-power {
-    color: rgb(255, 184, 56);
+    color: var(--hud-warn);
 }
 
 /* Bottom row */
 
 .hud-minimap__canvas {
     background-color: rgba(30, 42, 34, 0.9);
-    border-radius: 4px;
+    border-radius: var(--hud-radius-small);
 }
 
 .hud-single__icon {
@@ -75,19 +104,19 @@
 
 .hud-single__caption {
     font-size: 11px;
-    color: rgb(150, 160, 175);
+    color: var(--hud-text-muted);
 }
 
-.hud-construction > .hud-bar__fill {
-    background-color: rgb(240, 190, 60);
+.hud-single__construction {
+    --bar-fill: var(--hud-bar-build);
 }
 
 /* Production queue */
 
 .hud-slot {
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.12);
-    border-radius: 4px;
+    border-color: var(--hud-line-strong);
+    border-radius: var(--hud-radius-small);
     background-color: rgba(255, 255, 255, 0.05);
 }
 
@@ -95,8 +124,8 @@
     border-color: rgb(255, 110, 90);
 }
 
-.hud-slot__progress > .hud-bar__fill {
-    background-color: rgb(90, 180, 255);
+.hud-slot__progress {
+    --bar-fill: var(--hud-bar-progress);
 }
 
 /* Group tiles */
@@ -104,43 +133,47 @@
 .hud-group__count {
     font-size: 12px;
     -unity-font-style: bold;
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 3px;
+    background-color: var(--hud-badge-bg);
+    border-radius: var(--hud-radius-tiny);
 }
 
 /* Command card */
 
 .hud-command {
-    color: rgb(228, 232, 238);
-    background-color: rgba(255, 255, 255, 0.06);
+    color: var(--hud-text);
+    background-color: var(--hud-card-bg);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+    border-color: var(--hud-card-line);
+    border-radius: var(--hud-radius-small);
     font-size: 11px;
 }
 
 /* Solid, so a transparent icon reads as well as a full-bleed one. */
 .hud-command--picture {
-    background-color: rgb(34, 40, 48);
+    background-color: var(--hud-card-picture-bg);
 }
 
 .hud-command:hover {
-    background-color: rgba(255, 255, 255, 0.14);
-    border-color: rgba(120, 200, 255, 0.7);
+    background-color: var(--hud-card-bg-hover);
+    border-color: var(--hud-card-line-hover);
 }
 
 .hud-command--picture:hover {
-    background-color: rgb(46, 54, 64);
+    background-color: var(--hud-card-picture-bg-hover);
 }
 
 .hud-command:active {
-    background-color: rgba(120, 200, 255, 0.25);
+    background-color: var(--hud-card-bg-active);
 }
 
-.hud-command--active,
+.hud-command--active {
+    border-color: var(--hud-card-active-line);
+    background-color: var(--hud-card-active-bg);
+}
+
 .hud-command--queued {
-    border-color: rgb(110, 220, 120);
-    background-color: rgba(110, 220, 120, 0.18);
+    border-color: var(--hud-card-queued-line);
+    background-color: var(--hud-card-queued-bg);
 }
 
 .hud-command--unaffordable .hud-command__icon {
@@ -159,16 +192,16 @@
 
 .hud-command--maxed .hud-command__limit,
 .hud-costs--short .hud-costs__amount {
-    color: rgb(255, 95, 80);
+    color: var(--hud-danger);
 }
 
 .hud-command__lock {
-    color: rgb(228, 232, 238);
-    background-color: rgba(0, 0, 0, 0.75);
+    color: var(--hud-text);
+    background-color: var(--hud-badge-bg);
 }
 
 .hud-command__chevron {
-    color: rgb(228, 232, 238);
+    color: var(--hud-text);
 }
 
 .hud-command__caption {
@@ -177,7 +210,7 @@
 }
 
 .hud-command__unpowered {
-    color: rgb(255, 210, 80);
+    color: var(--hud-warn);
 }
 
 .hud-command__sweep {
@@ -191,8 +224,8 @@
 .hud-command__count {
     font-size: 12px;
     -unity-font-style: bold;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 3px;
+    background-color: var(--hud-badge-bg);
+    border-radius: var(--hud-radius-tiny);
 }
 
 .hud-command__limit {
@@ -224,10 +257,10 @@
 /* Tooltip */
 
 .hud-tooltip {
-    background-color: rgba(12, 16, 22, 0.94);
+    background-color: var(--hud-tooltip-bg);
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
+    border-color: var(--hud-line-strong);
+    border-radius: var(--hud-radius);
     font-size: 12px;
 }
 
@@ -241,11 +274,11 @@
 }
 
 .hud-tooltip__line--warning {
-    color: rgb(255, 95, 80);
+    color: var(--hud-danger);
 }
 
 .hud-tooltip__stat-name {
-    color: rgb(150, 160, 175);
+    color: var(--hud-text-muted);
 }
 
 /* Game over */
@@ -253,7 +286,7 @@
 .hud-banner__title {
     font-size: 72px;
     -unity-font-style: bold;
-    background-color: rgba(8, 10, 14, 0.75);
+    background-color: var(--hud-overlay-bg);
     border-radius: 8px;
     letter-spacing: 8px;
 }
@@ -263,24 +296,24 @@
 }
 
 .hud-banner__title--defeat {
-    color: rgb(255, 95, 80);
+    color: var(--hud-danger);
 }
 
 .hud-countdowns__row {
     font-size: 16px;
     -unity-font-style: bold;
-    background-color: rgba(8, 10, 14, 0.75);
-    border-radius: 4px;
+    background-color: var(--hud-overlay-bg);
+    border-radius: var(--hud-radius-small);
 }
 
 .hud-countdowns__row--ready {
     border-width: 1px;
-    border-color: rgb(255, 210, 90);
+    border-color: var(--hud-warn);
 }
 
 .hud-line-cost {
-    background-color: rgba(8, 10, 14, 0.75);
-    border-radius: 4px;
+    background-color: var(--hud-overlay-bg);
+    border-radius: var(--hud-radius-small);
 }
 
 .hud-line-cost .hud-costs__amount {
@@ -288,17 +321,21 @@
 }
 
 .hud-placement-hint {
-    background-color: rgba(8, 10, 14, 0.75);
-    border-radius: 4px;
+    background-color: var(--hud-overlay-bg);
+    border-radius: var(--hud-radius-small);
     color: rgb(220, 226, 235);
     font-size: 12px;
 }
 
-.drag-box {
-    background-color: rgba(200, 225, 255, 0.1);
-    border-color: rgba(200, 225, 255, 0.9);
+/* The box sits beside .hud-root, so it carries its own properties. */
+.hud-drag-box {
+    --hud-drag-fill: rgba(200, 225, 255, 0.1);
+    --hud-drag-line: rgba(200, 225, 255, 0.9);
+    --hud-drag-corner: rgb(225, 238, 255);
+    background-color: var(--hud-drag-fill);
+    border-color: var(--hud-drag-line);
 }
 
-.drag-box__corner {
-    border-color: rgb(225, 238, 255);
+.hud-drag-box__corner {
+    border-color: var(--hud-drag-corner);
 }

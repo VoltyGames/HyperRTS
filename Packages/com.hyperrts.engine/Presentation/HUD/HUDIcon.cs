@@ -9,11 +9,14 @@ namespace HyperRTS.Presentation.HUD
     [UxmlElement]
     public partial class HUDIcon : VisualElement
     {
+        private const string EmptyClass = "hud-icon--empty";
+
         private readonly Label _initials;
 
         public HUDIcon()
         {
             AddToClassList("hud-icon");
+            AddToClassList(EmptyClass);
             _initials = HUDElements.Text("", "hud-icon__initials", this);
         }
 
@@ -23,6 +26,7 @@ namespace HyperRTS.Presentation.HUD
             style.backgroundImage = hasTexture ? new StyleBackground(texture) : new StyleBackground(StyleKeyword.Null);
             _initials.text = hasTexture ? "" : Initials(name);
             _initials.SetHidden(hasTexture);
+            EnableInClassList(EmptyClass, !hasTexture);
         }
 
         /// <summary>Shows a unit or building prefab or instance, from its <see cref="EntityInfo"/>.</summary>

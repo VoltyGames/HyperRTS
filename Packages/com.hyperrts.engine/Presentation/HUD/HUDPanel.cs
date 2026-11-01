@@ -29,8 +29,11 @@ namespace HyperRTS.Presentation.HUD
 
         public abstract void Refresh(HUDContext context);
 
-        /// <summary>Pins an absolutely positioned root beside a world point, such as the placement ghost under the cursor.</summary>
-        protected void PlaceBeside(float3 point, Vector2 offset)
+        /// <summary>
+        /// Pins an absolutely positioned root at left 0, top 0 beside a world point, such as the placement ghost under the
+        /// cursor. <paramref name="lift"/> raises it by its own height.
+        /// </summary>
+        protected void PlaceBeside(float3 point, Vector2 offset, bool lift = false)
         {
             var camera = Camera.main;
             if (camera == null || Root.panel == null)
@@ -39,8 +42,8 @@ namespace HyperRTS.Presentation.HUD
             }
 
             var position = RuntimePanelUtils.CameraTransformWorldToPanel(Root.panel, point, camera);
-            Root.style.left = position.x + offset.x;
-            Root.style.top = position.y + offset.y;
+            var height = lift ? Root.resolvedStyle.height : 0f;
+            Root.style.translate = new Translate(position.x + offset.x, position.y + offset.y - height);
         }
     }
 }

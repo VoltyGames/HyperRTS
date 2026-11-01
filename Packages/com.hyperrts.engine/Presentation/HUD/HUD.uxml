@@ -12,8 +12,8 @@
     </ui:VisualElement>
     <ui:Instance template="ResourceBar" name="top-bar" />
     <ui:Instance template="GameOverBanner" name="game-over" />
-    <HyperRTS.Presentation.HUD.Commands.CostRow name="line-cost" class="hud-line-cost" picking-mode="Ignore" />
-    <ui:Label name="placement-hint" class="hud-placement-hint" picking-mode="Ignore" />
+    <HyperRTS.Presentation.HUD.Commands.CostRow name="line-cost" class="hud-line-cost" picking-mode="Ignore" usage-hints="DynamicTransform" />
+    <ui:Label name="placement-hint" class="hud-placement-hint" picking-mode="Ignore" usage-hints="DynamicTransform" />
     <ui:VisualElement name="strategic-countdowns" class="hud-countdowns" picking-mode="Ignore" />
   </ui:VisualElement>
 </ui:UXML>

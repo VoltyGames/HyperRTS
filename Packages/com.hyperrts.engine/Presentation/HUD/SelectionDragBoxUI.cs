@@ -44,8 +44,7 @@ namespace HyperRTS.Presentation.HUD
             }
 
             var rect = ScreenToPanelRect(marquee.panel, drag.StartScreen, drag.CurrentScreen);
-            marquee.style.left = rect.x;
-            marquee.style.top = rect.y;
+            marquee.style.translate = new Translate(rect.x, rect.y);
             marquee.style.width = rect.width;
             marquee.style.height = rect.height;
         }

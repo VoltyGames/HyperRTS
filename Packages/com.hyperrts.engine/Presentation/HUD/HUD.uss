@@ -9,6 +9,15 @@
     top: 0;
     right: 0;
     bottom: 0;
+    --hud-inset: 8px;
+    --hud-panel-padding: 8px;
+    --hud-minimap-size: 208px;
+    --hud-console-height: 246px;
+    --hud-icon-size: 72px;
+    --hud-slot-size: 48px;
+    --hud-group-size: 52px;
+    --hud-resource-icon-size: 20px;
+    --hud-resource-gap: 16px;
 }
 
 .hrts-hidden { display: none; }
@@ -17,7 +26,7 @@
 .hrts-invisible { visibility: hidden; }
 
 .hud-panel {
-    padding: 8px;
+    padding: var(--hud-panel-padding);
 }
 
 .hud-icon {
@@ -45,8 +54,8 @@
 
 .hud-topbar {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: var(--hud-inset);
+    right: var(--hud-inset);
     flex-direction: row;
     align-items: center;
     padding: 6px 12px;
@@ -60,12 +69,12 @@
 .hud-resource {
     flex-direction: row;
     align-items: center;
-    margin-left: 16px;
+    margin-left: var(--hud-resource-gap);
 }
 
 .hud-resource__icon {
-    width: 20px;
-    height: 20px;
+    width: var(--hud-resource-icon-size);
+    height: var(--hud-resource-icon-size);
     margin-right: 6px;
 }
 
@@ -83,16 +92,16 @@
 
 .hud-bottom {
     position: absolute;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    left: var(--hud-inset);
+    right: var(--hud-inset);
+    bottom: var(--hud-inset);
     flex-direction: row;
     align-items: flex-end;
 }
 
 .hud-minimap {
-    width: 208px;
-    height: 208px;
+    width: var(--hud-minimap-size);
+    height: var(--hud-minimap-size);
     padding: 4px;
 }
 
@@ -142,8 +151,8 @@
 }
 
 .hud-single__icon {
-    width: 72px;
-    height: 72px;
+    width: var(--hud-icon-size);
+    height: var(--hud-icon-size);
 }
 
 .hud-single__details {
@@ -162,24 +171,24 @@
     margin-top: 3px;
 }
 
-.hud-health {
+.hud-single__health {
     height: 10px;
 }
 
-.hud-construction {
+.hud-single__construction {
     margin-top: 6px;
 }
 
 /* Production queue */
 
-.hud-queue {
+.hud-single__queue {
     flex-direction: row;
     margin-top: 10px;
 }
 
 .hud-slot {
-    width: 48px;
-    height: 48px;
+    width: var(--hud-slot-size);
+    height: var(--hud-slot-size);
     margin: 0 6px 0 0;
     padding: 0;
 }
@@ -198,14 +207,14 @@
 
 /* Group tiles */
 
-.hud-groups {
+.hud-single__groups {
     flex-direction: row;
     flex-wrap: wrap;
 }
 
 .hud-group {
-    width: 52px;
-    height: 52px;
+    width: var(--hud-group-size);
+    height: var(--hud-group-size);
     margin: 0 6px 6px 0;
 }
 
@@ -249,35 +258,40 @@
     margin-bottom: 2px;
 }
 
-/* Line cost, above and right of the dragged line's end */
+/* Line cost, above and right of the dragged line's end; PlaceBeside moves both by translate */
 
 .hud-line-cost {
     position: absolute;
-    translate: 0 -100%;
+    left: 0;
+    top: 0;
     padding: 2px 6px;
 }
 
 .hud-placement-hint {
     position: absolute;
+    left: 0;
+    top: 0;
     padding: 2px 6px;
 }
 
-.drag-box {
+.hud-drag-box {
     position: absolute;
+    left: 0;
+    top: 0;
     border-width: 2px;
 }
 
 /* An 18px L from two 4px borders, set over the box's 2px edge; panel px scale with resolution and UI scale. */
-.drag-box__corner {
+.hud-drag-box__corner {
     position: absolute;
     width: 18px;
     height: 18px;
 }
 
-.drag-box__corner--tl, .drag-box__corner--bl { left: -2px; border-left-width: 4px; }
+.hud-drag-box__corner--tl, .hud-drag-box__corner--bl { left: -2px; border-left-width: 4px; }
 
-.drag-box__corner--tr, .drag-box__corner--br { right: -2px; border-right-width: 4px; }
+.hud-drag-box__corner--tr, .hud-drag-box__corner--br { right: -2px; border-right-width: 4px; }
 
-.drag-box__corner--tl, .drag-box__corner--tr { top: -2px; border-top-width: 4px; }
+.hud-drag-box__corner--tl, .hud-drag-box__corner--tr { top: -2px; border-top-width: 4px; }
 
-.drag-box__corner--bl, .drag-box__corner--br { bottom: -2px; border-bottom-width: 4px; }
+.hud-drag-box__corner--bl, .hud-drag-box__corner--br { bottom: -2px; border-bottom-width: 4px; }

@@ -79,8 +79,28 @@ it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
   `PanelLayouts`. Put the subclass on your HUD prefab.
 - **Text:** subclass `HUDText` and set `HUDText.Current` before the HUD builds. Keys are listed in
   [client](modules/client.md#presentation).
-- **Style:** `HUD.uss` holds layout and `HUDTheme.uss` the look. Assign your own sheet as
-  `HUDController.themeSheet`.
+- **Style:** `HUD.uss` holds layout and `HUDTheme.uss` the look, both read from custom properties declared on
+  `.hud-root`. Assign your own sheet as `HUDController.themeSheet`: it imports the engine `HUDTheme.uss` and overrides
+  the properties it wants on `.hud-root`, plus any rule of its own.
+  - Layout, in `HUD.uss`: `--hud-inset` (edge gap of the top bar and bottom row), `--hud-panel-padding`,
+    `--hud-minimap-size`, `--hud-console-height` (command card height), `--hud-icon-size` (selected unit icon),
+    `--hud-slot-size` (queue slot), `--hud-group-size` (group tile), `--hud-resource-icon-size`, `--hud-resource-gap`.
+  - Text and lines: `--hud-text`, `--hud-text-muted`, `--hud-resource-amount` (resource amount colour), `--hud-line`
+    (panel border), `--hud-line-strong` (slot and tooltip border).
+  - Fills: `--hud-panel-bg`, `--hud-tooltip-bg`, `--hud-overlay-bg` (banner, countdowns, line cost, hint),
+    `--hud-badge-bg` (count and lock badges), `--hud-tile-bg` (icon tile shown while it has no picture).
+  - Corners: `--hud-radius` (panels, tooltip), `--hud-radius-small` (tiles, cards, slots), `--hud-radius-tiny` (bars,
+    badges).
+  - Command cards: `--hud-card-bg`, `--hud-card-bg-hover`, `--hud-card-bg-active`, `--hud-card-line`,
+    `--hud-card-line-hover`, `--hud-card-picture-bg` and `--hud-card-picture-bg-hover` (cards with a picture),
+    `--hud-card-active-line`, `--hud-card-active-bg`, `--hud-card-queued-line`, `--hud-card-queued-bg`.
+  - Signals: `--hud-warn` (low power, unpowered, ready countdown), `--hud-danger` (full storage, short cost, defeat).
+  - Bars: `--hud-bar-health`, `--hud-bar-build`, `--hud-bar-progress`; each `HUDBar` fill reads `--bar-fill`, so a
+    rule can set that on any bar.
+  - Drag box, declared on `.hud-drag-box` because it sits beside `.hud-root`: `--hud-drag-fill`, `--hud-drag-line`,
+    `--hud-drag-corner`.
+  - The font is not a property, since the engine sets none: set `-unity-font-definition` on `.hud-root` and on the
+    labels a game wants in another face.
 - **Team colours:** write a `TeamColorOverride` singleton, for example for colour-blind palettes.
 
 ## AI
