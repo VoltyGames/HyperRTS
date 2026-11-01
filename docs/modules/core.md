@@ -24,7 +24,7 @@ The base tier: ownership, identity, health and shared helpers.
 | `ConstructionProgress` | 0 to 1. An unfinished building doesn't produce, fire or count for prerequisites |
 | `Offline` | Out of action, with a reason mask. Games add reasons from `OfflineReason.Custom` |
 | `GameEvents` | This frame's unit produced, building completed and owner changed events |
-| `Ownership.Transfer` | The one way to change an owner. Raises `OwnerChanged` |
+| `OwnerChanged.Transfer` | The one way to change an owner. Raises `OwnerChanged` |
 | `EntityInfo`, `PrefabRegistry` | Type id, name and icon. The registry maps type id to prefab |
 | `IEntityWriter` | Writes component sets, so bakers and tests build the same entities |
 | `SpawnExtensions.Spawn` | Instantiates a baked prefab, places it with its `LocalToWorld` (stretch included) and sets its `Faction` |

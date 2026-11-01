@@ -15,12 +15,16 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("Material struck by hits on this entity (metal for vehicles, masonry for houses, wood for trees).")]
         public SurfaceMaterial material = SurfaceMaterial.Metal;
 
+        public static void Add<TWriter>(ref TWriter writer, SurfaceMaterial material)
+            where TWriter : struct, IEntityWriter =>
+            writer.Add(new HitMaterial { Value = material });
+
         public class Baker : Baker<HitMaterialAuthoring>
         {
             public override void Bake(HitMaterialAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                EffectSetup.AddHitMaterial(ref writer, authoring.material);
+                Add(ref writer, authoring.material);
             }
         }
     }

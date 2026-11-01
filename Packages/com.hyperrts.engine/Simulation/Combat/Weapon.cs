@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
@@ -193,6 +194,20 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Where an instant hit comes from, for directional armor.</summary>
         public float3 HitOrigin(in LocalTransform shooter, in WeaponPose pose) =>
             HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position;
+
+        /// <summary>Bakes the muzzle and pivots from child transforms of <paramref name="root"/>; a missing barrel pivots at the muzzle.</summary>
+        public void BakeSockets(IBaker baker, UnityEngine.Transform root, UnityEngine.Transform muzzle,
+            UnityEngine.Transform turret, UnityEngine.Transform barrel)
+        {
+            if (muzzle != null)
+            {
+                Muzzle = AuthoringBehaviour.Socket(baker, root, muzzle);
+                HasMuzzle = true;
+            }
+
+            TurretPivot = AuthoringBehaviour.Socket(baker, root, turret);
+            BarrelPivot = barrel != null ? AuthoringBehaviour.Socket(baker, root, barrel) : Muzzle;
+        }
 
         /// <summary>The muzzle raised about the barrel pivot, then turned about the turret pivot.</summary>
         public float3 PosedMuzzle(in WeaponPose pose)

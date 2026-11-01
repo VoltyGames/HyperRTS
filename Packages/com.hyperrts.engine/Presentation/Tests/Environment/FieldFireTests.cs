@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Fire;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
@@ -163,10 +164,10 @@ namespace HyperRTS.Presentation.Tests.Environment
             var view = new LocalFogView { Viewer = 1, Team = 1, Active = true };
             try
             {
-                Assert.IsTrue(CueRules.IsGroundSeenLocally(new float3(5f, 0f, 5f), view, fog), "in sight");
-                Assert.IsFalse(CueRules.IsGroundSeenLocally(new float3(15f, 0f, 5f), view, fog), "in fog");
+                Assert.IsTrue(CueVisibility.IsGroundSeenLocally(new float3(5f, 0f, 5f), view, fog), "in sight");
+                Assert.IsFalse(CueVisibility.IsGroundSeenLocally(new float3(15f, 0f, 5f), view, fog), "in fog");
                 view.Active = false;
-                Assert.IsTrue(CueRules.IsGroundSeenLocally(new float3(15f, 0f, 5f), view, fog), "fog view off");
+                Assert.IsTrue(CueVisibility.IsGroundSeenLocally(new float3(15f, 0f, 5f), view, fog), "fog view off");
             }
             finally
             {

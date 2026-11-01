@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Transport
                     PassengersFire = authoring.passengersFire,
                     PassengersSurvive = authoring.passengersSurvive,
                     HasExit = authoring.exit != null,
-                    Exit = EffectSetup.Socket(this, authoring.transform, authoring.exit),
+                    Exit = AuthoringBehaviour.Socket(this, authoring.transform, authoring.exit),
                 });
                 if (authoring.firingPorts is { Length: > 0 })
                 {

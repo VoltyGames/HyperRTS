@@ -4,6 +4,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Cues
@@ -42,31 +43,35 @@ namespace HyperRTS.Simulation.Cues
             public Transform muzzle;
         }
 
+        public static DynamicBuffer<EntityEffect> Add<TWriter>(ref TWriter writer)
+            where TWriter : struct, IEntityWriter =>
+            writer.AddBuffer<EntityEffect>();
+
+        /// <summary>Unset rigs are skipped, so the entity writes no events for them.</summary>
+        public static void Set(DynamicBuffer<EntityEffect> effects, CueSlot slot, GameObject rig, float3 socket,
+            byte variant = 0)
+        {
+            if (rig != null)
+            {
+                effects.Add(new EntityEffect { Slot = slot, Variant = variant, Rig = rig, Socket = socket });
+            }
+        }
+
         public class Baker : Baker<EntityEffectsAuthoring>
         {
             public override void Bake(EntityEffectsAuthoring authoring)
             {
-                if (authoring.muzzle != null)
-                {
-                    DependsOn(authoring.muzzle);
-                }
-
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var effects = EffectSetup.Add(ref writer);
-                var muzzle = EffectSetup.Socket(this, authoring.transform, authoring.muzzle);
-                EffectSetup.Set(effects, CueSlot.Fire, authoring.fire, muzzle);
-                EffectSetup.Set(effects, CueSlot.Death, authoring.death, default);
-                EffectSetup.Set(effects, CueSlot.Ability, authoring.ability, default);
+                var effects = Add(ref writer);
+                var muzzle = Socket(this, authoring.transform, authoring.muzzle);
+                Set(effects, CueSlot.Fire, authoring.fire, muzzle);
+                Set(effects, CueSlot.Death, authoring.death, default);
+                Set(effects, CueSlot.Ability, authoring.ability, default);
                 for (var i = 0; i < authoring.mountFire.Count; i++)
                 {
                     var mount = authoring.mountFire[i];
-                    if (mount.muzzle != null)
-                    {
-                        DependsOn(mount.muzzle);
-                    }
-
-                    EffectSetup.Set(effects, CueSlot.Fire, mount.rig,
-                        EffectSetup.Socket(this, authoring.transform, mount.muzzle), (byte)(i + 1));
+                    Set(effects, CueSlot.Fire, mount.rig,
+                        Socket(this, authoring.transform, mount.muzzle), (byte)(i + 1));
                 }
             }
         }

@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Cues
         {
             var position = transform.Position;
             var rigged = _effects.TryGetBuffer(source, out var effects);
-            if (rigged && EffectRules.TryGetSocket(effects, slot, variant, out var socket))
+            if (rigged && TryGetSocket(effects, slot, variant, out var socket))
             {
                 position = transform.TransformPoint(socket);
             }
@@ -128,19 +128,48 @@ namespace HyperRTS.Simulation.Cues
                 return true;
             }
 
-            if (_sounds.TryGetBuffer(source, out var sounds) && SoundRules.HasCue(sounds, slot, variant))
+            if (_sounds.TryGetBuffer(source, out var sounds) && PlaysSound(sounds, slot, variant))
             {
                 return true;
             }
 
             var rigged = _effects.TryGetBuffer(source, out var effects);
-            return rigged && EffectRules.TryGetSocket(effects, slot, variant, out _);
+            return rigged && TryGetSocket(effects, slot, variant, out _);
         }
 
         private bool LeavesImpact(Entity shooter)
         {
             var marked = _marks.TryGetBuffer(shooter, out var marks) && !marks.IsEmpty;
             return marked || _impactEffects.HasComponent(shooter);
+        }
+
+        private static bool PlaysSound(DynamicBuffer<EntitySound> sounds, CueSlot slot, byte variant)
+        {
+            foreach (var sound in sounds)
+            {
+                if (sound.Plays(slot, variant))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryGetSocket(DynamicBuffer<EntityEffect> effects, CueSlot slot, byte variant,
+            out float3 socket)
+        {
+            foreach (var effect in effects)
+            {
+                if (effect.Plays(slot, variant))
+                {
+                    socket = effect.Socket;
+                    return true;
+                }
+            }
+
+            socket = float3.zero;
+            return false;
         }
     }
 }

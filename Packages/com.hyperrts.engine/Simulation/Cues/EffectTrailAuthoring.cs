@@ -15,12 +15,20 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("Rig that follows the projectile while it flies.")]
         public GameObject rig;
 
+        public static void Add<TWriter>(ref TWriter writer, GameObject rig) where TWriter : struct, IEntityWriter
+        {
+            if (rig != null)
+            {
+                writer.Add(new EffectTrail { Rig = rig });
+            }
+        }
+
         public class Baker : Baker<EffectTrailAuthoring>
         {
             public override void Bake(EffectTrailAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                EffectSetup.AddTrail(ref writer, authoring.rig);
+                Add(ref writer, authoring.rig);
             }
         }
     }

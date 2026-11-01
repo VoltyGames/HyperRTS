@@ -17,13 +17,22 @@ namespace HyperRTS.Simulation.Cues
         [Tooltip("Rigs per surface material (dirt spray, water splash, sparks on metal).")]
         public SurfaceEffects effects;
 
+        public static void Add<TWriter>(ref TWriter writer, SurfaceEffects effects)
+            where TWriter : struct, IEntityWriter
+        {
+            if (effects != null)
+            {
+                writer.Add(new EntityImpactEffects { Effects = effects });
+            }
+        }
+
         public class Baker : Baker<ImpactEffectsAuthoring>
         {
             public override void Bake(ImpactEffectsAuthoring authoring)
             {
                 DependsOn(authoring.effects);
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                EffectSetup.AddImpactEffects(ref writer, authoring.effects);
+                Add(ref writer, authoring.effects);
             }
         }
     }

@@ -543,7 +543,7 @@ redone whenever a building appears, goes or moves, before that frame's ignitions
 - Every random choice hashes the impact's landing spot and source, the cell and its age, so clients that see the same
   impacts burn closely the same fields. A replay seeking back puts the fires out.
 - Fires burn and spread in fog too, so clients agree, but only ground the local player sees shows them
-  (`CueVisibility.IsSeen(position)`, from `CueRules.IsGroundSeenLocally`), so they never reveal where enemy shells land.
+  (`CueVisibility.IsSeen(position)`), so they never reveal where enemy shells land.
 - Burning cells gather in 8 m squares. Each seen square feeds `BattleHaze.Add` a light smudge (a full square about a
   fiftieth of a shell's puff each second), and the nearest seen squares stream
   the rig, up to the cap; a square that falls back into fog drops its stream.

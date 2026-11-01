@@ -5,7 +5,6 @@ namespace HyperRTS.Simulation.Cues
     /// owner (<see cref="CueRules.IsOwnerOnly"/>). <see cref="Impact"/> is where a shot landed: its sound, the shooter's
     /// impact effects and marks. Values from <see cref="GameFirst"/> up belong to games.
     /// </summary>
-    // Retired values 9 to 11 and 15 to 20 stay unused, so recorded slot numbers keep their meaning.
     public enum CueSlot : byte
     {
         None = 0,
@@ -23,19 +22,19 @@ namespace HyperRTS.Simulation.Cues
         Attack = 8,
 
         /// <summary>The caster's voice when it uses an ability, beside the world <see cref="Ability"/> sound.</summary>
-        AbilityVoice = 12,
+        AbilityVoice = 9,
 
         /// <summary>Taking damage after a quiet spell, throttled per unit and per player.</summary>
-        UnderFire = 13,
+        UnderFire = 10,
 
         /// <summary>At the producer when a unit or research in its queue finishes.</summary>
-        ProductionDone = 14,
+        ProductionDone = 11,
 
         /// <summary>
         /// An announcer alert to the owner's player, its <see cref="AnnouncementKind"/> in
         /// <see cref="CueEvent.Variant"/>. The local <c>AnnouncerSet</c> picks the line, not the source's sounds.
         /// </summary>
-        Announce = 21,
+        Announce = 12,
 
         /// <summary>First value a game may use for its own slots; the engine never defines one from here up.</summary>
         GameFirst = 128,

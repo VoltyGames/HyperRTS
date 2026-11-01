@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Air
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 AirSetup.AddFlight(ref writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius,
-                    EffectSetup.Socket(this, authoring.transform, authoring.releasePoint));
+                    AuthoringBehaviour.Socket(this, authoring.transform, authoring.releasePoint));
                 if (authoring.usesLandingPads)
                 {
                     AirSetup.AddPadUser(ref writer, authoring.padKind);

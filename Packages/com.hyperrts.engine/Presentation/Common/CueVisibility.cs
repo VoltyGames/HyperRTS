@@ -40,9 +40,33 @@ namespace HyperRTS.Presentation.Common
             _fog.TryGetSingleton(out _fogOfWar);
         }
 
-        public readonly bool IsSeen(in CueEvent cue) => CueRules.IsSeenLocally(cue, _view, _fogOfWar, _factions);
+        public readonly bool IsSeen(in CueEvent cue) => IsSeenLocally(cue, _view, _fogOfWar, _factions);
 
         /// <summary>Whether the local player sees the ground at <paramref name="position"/>.</summary>
-        public readonly bool IsSeen(float3 position) => CueRules.IsGroundSeenLocally(position, _view, _fogOfWar);
+        public readonly bool IsSeen(float3 position) => IsGroundSeenLocally(position, _view, _fogOfWar);
+
+        /// <summary>Whether the local player sees the ground at a point: in their team's sight, or the fog view is off.</summary>
+        public static bool IsGroundSeenLocally(float3 position, in LocalFogView view, in FogOfWar fog) =>
+            !view.Active || !fog.IsCreated || fog.IsVisible(position, view.Team);
+
+        /// <summary>
+        /// Whether the local player gets the cue: their own owner-only cues, and every other cue while the fog view is
+        /// inactive (no fog, or everything revealed).
+        /// </summary>
+        public static bool IsSeenLocally(in CueEvent cue, in LocalFogView view, in FogOfWar fog,
+            in FactionRelations relations)
+        {
+            if (CueRules.IsOwnerOnly(cue.Slot))
+            {
+                return cue.Faction == view.Viewer;
+            }
+
+            if (!view.Active)
+            {
+                return true;
+            }
+
+            return CueRules.IsVisible(cue, view.Viewer, fog, relations);
+        }
     }
 }

@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Buildings
                 {
                     if (point.name.StartsWith(WorkPrefix, StringComparison.Ordinal))
                     {
-                        points.Add(new ConstructionWorkPoint { Socket = EffectSetup.Socket(this, authoring.transform, point) });
+                        points.Add(new ConstructionWorkPoint { Socket = AuthoringBehaviour.Socket(this, authoring.transform, point) });
                     }
                 }
             }

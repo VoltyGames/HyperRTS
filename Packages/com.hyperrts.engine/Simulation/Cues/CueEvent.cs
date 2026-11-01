@@ -41,6 +41,12 @@ namespace HyperRTS.Simulation.Cues
         public Entity Target;
 
         public readonly AnnouncementKind Announcement => new(Variant);
+
+        /// <summary>A shot that landed on the ground, the only impact that marks or deforms terrain.</summary>
+        public readonly bool IsGroundImpact => Slot == CueSlot.Impact && Surface == ImpactSurface.Ground;
+
+        /// <summary>An impact with a splash radius, a blast that shakes and throws what is near it.</summary>
+        public readonly bool IsBlast => Slot == CueSlot.Impact && Radius > 0f;
     }
 
     /// <summary>Tags the singleton holding this frame's <see cref="CueEvent"/>s.</summary>

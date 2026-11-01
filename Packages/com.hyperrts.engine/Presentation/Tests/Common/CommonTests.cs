@@ -6,6 +6,7 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;
 using UnityEngine;
@@ -153,6 +154,19 @@ namespace HyperRTS.Presentation.Tests.Common
                 : _em.CreateEntity(typeof(EntityInfo));
             _em.SetComponentData(entity, new EntityInfo { TypeId = TypeId });
             return entity;
+        }
+
+        [Test]
+        public void VoicesPlayLocally_ForTheirOwnerOnly_WithoutAFogView()
+        {
+            var noFog = new LocalFogView { Viewer = 1, Active = false };
+            var own = new CueEvent { Slot = CueSlot.Select, Faction = 1 };
+            var other = new CueEvent { Slot = CueSlot.Select, Faction = 2 };
+
+            Assert.IsTrue(CueVisibility.IsSeenLocally(own, noFog, default, default));
+            Assert.IsFalse(CueVisibility.IsSeenLocally(other, noFog, default, default), "another player's voice stays private");
+            Assert.IsTrue(CueVisibility.IsSeenLocally(new CueEvent { Slot = CueSlot.Fire, Faction = 2 }, noFog, default,
+                default), "world cues play for all without fog");
         }
     }
 }

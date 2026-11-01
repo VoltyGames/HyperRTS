@@ -103,14 +103,7 @@ namespace HyperRTS.Simulation.Combat
                 AimTolerance = math.radians(aimTolerance),
                 NeedsDeploy = needsDeploy,
             };
-            if (muzzle != null)
-            {
-                aim.Muzzle = EffectSetup.Socket(baker, root, muzzle);
-                aim.HasMuzzle = true;
-            }
-
-            aim.TurretPivot = EffectSetup.Socket(baker, root, turret);
-            aim.BarrelPivot = barrel != null ? EffectSetup.Socket(baker, root, barrel) : aim.Muzzle;
+            aim.BakeSockets(baker, root, muzzle, turret, barrel);
             return new Interceptor
             {
                 Radius = radius,

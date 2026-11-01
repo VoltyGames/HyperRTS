@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Common
 
     /// <summary>
     /// An entity changed hands this frame (capture, a game's mind control). Its <see cref="Faction"/> switches to
-    /// <see cref="To"/> when the frame's commands play back; write it with <see cref="Ownership.Transfer"/>.
+    /// <see cref="To"/> when the frame's commands play back; write it with <see cref="Transfer"/>.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct OwnerChanged : IBufferElementData
@@ -39,6 +39,14 @@ namespace HyperRTS.Simulation.Common
         public Entity Entity;
         public byte From;
         public byte To;
+
+        /// <summary>The one way to give an entity a new owner, so every module can react to the event.</summary>
+        public static void Transfer(EntityCommandBuffer ecb, DynamicBuffer<OwnerChanged> events, Entity entity,
+            byte from, byte to)
+        {
+            ecb.SetComponent(entity, new Faction { Value = to });
+            events.Add(new OwnerChanged { Entity = entity, From = from, To = to });
+        }
     }
 
     /// <summary>A producer finished a research item this frame.</summary>

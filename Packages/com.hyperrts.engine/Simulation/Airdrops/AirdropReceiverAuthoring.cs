@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Airdrops
                     Interval = authoring.interval,
                     Altitude = authoring.altitude,
                     FallSpeed = authoring.fallSpeed,
-                    Landing = EffectSetup.Socket(this, authoring.transform, authoring.landingPoint),
+                    Landing = AuthoringBehaviour.Socket(this, authoring.transform, authoring.landingPoint),
                 });
             }
         }

@@ -244,19 +244,6 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.IsTrue(CueRules.IsVisible(hiddenShot, 1, fog, relations), "own cues always");
         }
 
-        [Test]
-        public void VoicesPlayLocally_ForTheirOwnerOnly_WithoutAFogView()
-        {
-            var noFog = new LocalFogView { Viewer = 1, Active = false };
-            var own = new CueEvent { Slot = CueSlot.Select, Faction = 1 };
-            var other = new CueEvent { Slot = CueSlot.Select, Faction = 2 };
-
-            Assert.IsTrue(CueRules.IsSeenLocally(own, noFog, default, default));
-            Assert.IsFalse(CueRules.IsSeenLocally(other, noFog, default, default), "another player's voice stays private");
-            Assert.IsTrue(CueRules.IsSeenLocally(new CueEvent { Slot = CueSlot.Fire, Faction = 2 }, noFog, default,
-                default), "world cues play for all without fog");
-        }
-
         private Entity Voiced(Entity entity, params CueSlot[] slots)
         {
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
@@ -272,7 +259,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         private Entity Rigged(Entity entity, CueSlot slot, float3 socket)
         {
             var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            EffectSetup.Set(EffectSetup.Add(ref writer), slot, _rig, socket);
+            EntityEffectsAuthoring.Set(EntityEffectsAuthoring.Add(ref writer), slot, _rig, socket);
             return entity;
         }
 

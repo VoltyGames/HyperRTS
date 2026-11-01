@@ -170,14 +170,7 @@ namespace HyperRTS.Simulation.Combat
                 Spread = spread,
                 NeedsDeploy = needsDeploy,
             };
-            if (muzzle != null)
-            {
-                weapon.Muzzle = EffectSetup.Socket(baker, root, muzzle);
-                weapon.HasMuzzle = true;
-            }
-
-            weapon.TurretPivot = EffectSetup.Socket(baker, root, turret);
-            weapon.BarrelPivot = barrel != null ? EffectSetup.Socket(baker, root, barrel) : weapon.Muzzle;
+            weapon.BakeSockets(baker, root, muzzle, turret, barrel);
             BakeMuzzles(baker, root, muzzles, ref weapon);
             return weapon;
         }
@@ -199,7 +192,7 @@ namespace HyperRTS.Simulation.Combat
             muzzles.Add(new WeaponMuzzle { Point = weapon.Muzzle });
             foreach (var extra in extraMuzzles)
             {
-                muzzles.Add(new WeaponMuzzle { Point = EffectSetup.Socket(baker, root, extra) });
+                muzzles.Add(new WeaponMuzzle { Point = AuthoringBehaviour.Socket(baker, root, extra) });
             }
         }
     }

@@ -22,7 +22,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | A new command | A `CommandType` from `GameFirst` (128) up, read with a `CommandReader` in `OrderSystemGroup` |
 | Custom right-click | Add a `SmartOrderRule` to the unit in its baker |
 | React to production or capture | Read `GameEvents` after `ProductionSystemGroup` |
-| Change an owner | `Ownership.Transfer` |
+| Change an owner | `OwnerChanged.Transfer` |
 | React to deaths | Query `Dead` entities after `DeathSystem`. `LastAttacker` names the killer |
 | Damage or heal | `DamageWriter`. A negative amount heals |
 | Custom ability effects | Read `AbilityActivation` after `AbilitySystem` |

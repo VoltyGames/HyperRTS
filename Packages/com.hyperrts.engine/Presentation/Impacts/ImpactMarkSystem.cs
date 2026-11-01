@@ -102,7 +102,7 @@ namespace HyperRTS.Presentation.Impacts
             var registry = SystemAPI.GetSingleton<PrefabRegistry>();
             foreach (var impact in cues)
             {
-                if (!CueRules.IsGroundImpact(impact) || !_visibility.IsSeen(impact))
+                if (!impact.IsGroundImpact || !_visibility.IsSeen(impact))
                 {
                     continue;
                 }

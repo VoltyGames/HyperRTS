@@ -8,6 +8,7 @@ namespace HyperRTS.Core
         public const string Audio = Root + "Audio/";
         public const string Buildings = Root + "Buildings/";
         public const string Combat = Root + "Combat/";
+        public const string Cues = Root + "Cues/";
         public const string Effects = Root + "Effects/";
         public const string Environment = Root + "Environment/";
         public const string MapLibrary = Root + "Map Library/";

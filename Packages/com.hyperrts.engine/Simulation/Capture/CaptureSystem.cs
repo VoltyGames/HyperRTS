@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Capture
     /// <summary>
     /// Runs Capture orders: capturers walk to the building and add <c>Rate / CaptureTime</c> progress per second.
     /// A different player starting over resets it. On completion the building is transferred
-    /// (<see cref="Ownership.Transfer"/>; it changes owner at the end of the frame) and a single-use capturer is
+    /// (<see cref="OwnerChanged.Transfer"/>; it changes owner at the end of the frame) and a single-use capturer is
     /// consumed.
     /// </summary>
     [BurstCompile]
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Capture
                 ProgressLookup = _progressLookup,
                 FactionLookup = _factionLookup,
                 Reach = _reach,
-                OwnerChanged = _ownerChangedLookup,
+                OwnerEvents = _ownerChangedLookup,
                 Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Capture
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             public TargetReach Reach;
-            public BufferLookup<OwnerChanged> OwnerChanged;
+            public BufferLookup<OwnerChanged> OwnerEvents;
             public Entity Events;
 
             private void Execute(Entity entity, in Capturer capturer, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                Ownership.Transfer(Ecb, OwnerChanged[Events], target, FactionLookup[target].Value, faction);
+                OwnerChanged.Transfer(Ecb, OwnerEvents[Events], target, FactionLookup[target].Value, faction);
                 busy.ValueRW = false;
                 if (capturer.ConsumedOnCapture)
                 {

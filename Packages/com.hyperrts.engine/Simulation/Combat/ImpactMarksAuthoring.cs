@@ -8,7 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>Craters and scorch marks this unit's or building's shots leave where they land on open ground.</summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Impact Marks")]
+    [AddComponentMenu(HyperRTSMenu.Cues + "Impact Marks")]
     [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]

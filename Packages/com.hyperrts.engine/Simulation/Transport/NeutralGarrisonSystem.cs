@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Transport
 {
     /// <summary>
     /// Hands a <see cref="NeutralGarrison"/> building to the owner of its passengers, so enemies can fight over it,
-    /// and back to neutral once it empties. The change goes through <see cref="Ownership.Transfer"/>, so the
+    /// and back to neutral once it empties. The change goes through <see cref="OwnerChanged.Transfer"/>, so the
     /// building also drops its selection when it changes hands.
     /// </summary>
     [BurstCompile]
@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Transport
             state.Dependency = new OwnerJob
             {
                 Factions = _factions,
-                OwnerChanged = _ownerChanged,
+                OwnerEvents = _ownerChanged,
                 Events = SystemAPI.GetSingletonEntity<GameEvents>(),
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Transport
         private partial struct OwnerJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<Faction> Factions;
-            public BufferLookup<OwnerChanged> OwnerChanged;
+            public BufferLookup<OwnerChanged> OwnerEvents;
             public Entity Events;
             public EntityCommandBuffer Ecb;
 
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Transport
                     return;
                 }
 
-                Ownership.Transfer(Ecb, OwnerChanged[Events], entity, faction.Value, owner);
+                OwnerChanged.Transfer(Ecb, OwnerEvents[Events], entity, faction.Value, owner);
             }
 
             /// <summary>The first passenger's faction, or neutral when empty.</summary>
