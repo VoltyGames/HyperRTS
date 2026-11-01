@@ -74,7 +74,8 @@ namespace HyperRTS.Editor.Import
             importer.meshCompression = ModelImporterMeshCompression.Off;
         }
 
-        // Half-float u loses whole columns past 2048.
+        // Half-float u loses whole columns past 2048. Only the animated meshes carry the texel index: a sectioned
+        // model's standing and broken meshes stay still.
         private void OnPostprocessModel(GameObject model)
         {
             if (!IsVATModel(assetPath))
@@ -83,20 +84,26 @@ namespace HyperRTS.Editor.Import
             }
 
             var uv = new List<Vector2>();
+            var animated = 0;
             foreach (var filter in model.GetComponentsInChildren<MeshFilter>(true))
             {
                 var mesh = filter.sharedMesh;
                 if (!mesh.HasVertexAttribute(VertexAttribute.TexCoord1))
                 {
-                    Debug.LogError($"[HyperRTS] VAT model {assetPath} mesh '{mesh.name}' has no UV1 texel index.", model);
                     continue;
                 }
 
+                animated++;
                 if (mesh.GetVertexAttributeFormat(VertexAttribute.TexCoord1) != VertexAttributeFormat.Float32)
                 {
                     mesh.GetUVs(1, uv);
                     mesh.SetUVs(1, uv);
                 }
+            }
+
+            if (animated == 0)
+            {
+                Debug.LogError($"[HyperRTS] VAT model {assetPath} has no mesh with a UV1 texel index.", model);
             }
         }
 
