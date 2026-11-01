@@ -49,9 +49,6 @@ namespace HyperRTS.Simulation.Vision
         public float2 Min;
         public float CellSize;
 
-        /// <summary>Bumped whenever the blocks are restamped.</summary>
-        public int Version;
-
         /// <summary>Bumped whenever the grid is built anew, so every viewer's sight is drawn again.</summary>
         public int Generation;
 

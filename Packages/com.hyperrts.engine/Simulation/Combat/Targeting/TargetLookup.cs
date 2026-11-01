@@ -146,7 +146,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public float Reach(Entity shooter, float3 position, in Weapon weapon, Entity target)
         {
             var bonus = GarrisonBonus(shooter);
-            if (weapon.Aim.Trajectory != Trajectory.Ballistic)
+            if (weapon.NeedsLineOfFire)
             {
                 bonus += _sight.RangeBonus(position.y - Position(target).y);
             }
@@ -154,8 +154,11 @@ namespace HyperRTS.Simulation.Combat.Targeting
             return weapon.Range * (1f + bonus);
         }
 
+        /// <summary>How far the weapon reaches before the target's height counts: further from a garrison.</summary>
+        public float GarrisonReach(Entity shooter, in Weapon weapon) => weapon.Range * (1f + GarrisonBonus(shooter));
+
         /// <summary>Range share a passenger gains from the container it fires out of.</summary>
-        public float GarrisonBonus(Entity shooter) =>
+        private float GarrisonBonus(Entity shooter) =>
             IsInside(shooter) && _passengerRange.TryGetComponent(_inside[shooter].Container, out var range)
                 ? range.Bonus
                 : 0f;
@@ -167,15 +170,22 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public bool HasLineOfFire(Entity shooter, float3 position, in Weapon weapon, Entity target) =>
             !weapon.NeedsLineOfFire || !IsObstructed(shooter, position, target);
 
+        /// <summary>
+        /// Whether the weapon may fire now: rounds fire into what's in the way, other direct fire waits for a clear
+        /// line (<see cref="HasLineOfFire"/>).
+        /// </summary>
+        public bool CanFireAt(Entity shooter, float3 position, in Weapon weapon, Entity target) =>
+            weapon.FiresRounds || HasLineOfFire(shooter, position, weapon, target);
+
         /// <summary>Whether something solid stands between the shooter's eye and the target's top.</summary>
-        public bool IsObstructed(Entity shooter, float3 position, Entity target)
+        private bool IsObstructed(Entity shooter, float3 position, Entity target)
         {
             if (!_blockers.IsCreated)
             {
                 return false;
             }
 
-            var holder = IsInside(shooter) ? _inside[shooter].Container : shooter;
+            var holder = Holder(shooter);
             _vision.TryGetComponent(shooter, out var vision);
             var from = position + new float3(0f, vision.EyeHeight, 0f);
             var to = Position(target) + new float3(0f, IsTall(target) ? 2.5f : 1f, 0f);
@@ -197,10 +207,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         /// <summary>Passengers take their container's footprint, so they fire from its edge.</summary>
         public float Radius(Entity entity) =>
-            EntityRadius.Get(IsInside(entity) ? _inside[entity].Container : entity, _agents, _obstacles);
+            EntityRadius.Get(Holder(entity), _agents, _obstacles);
 
         /// <summary>Tucked inside a transport or garrison: hidden and untargetable.</summary>
         public bool IsInside(Entity entity) => _inside.HasEnabled(entity);
+
+        /// <summary>The container a passenger sits in, otherwise the entity itself.</summary>
+        public Entity Holder(Entity entity) => IsInside(entity) ? _inside[entity].Container : entity;
 
         /// <summary>
         /// The fog singleton's query. Systems build it in OnCreate and pass it to <see cref="Update"/>: this lookup

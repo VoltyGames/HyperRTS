@@ -74,7 +74,6 @@ namespace HyperRTS.Simulation.Vision
             }
 
             ref var blockers = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
-            blockers.Version++;
             state.Dependency = new ClearJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
             state.Dependency = new StampJob { Blockers = blockers, Terrain = terrain }
                 .Schedule(_blocks, state.Dependency);
@@ -128,7 +127,6 @@ namespace HyperRTS.Simulation.Vision
             {
                 state.CompleteDependency();
                 ref var current = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
-                grid.Version = current.Version;
                 grid.Generation = current.Generation + 1;
                 current.Dispose();
                 current = grid;

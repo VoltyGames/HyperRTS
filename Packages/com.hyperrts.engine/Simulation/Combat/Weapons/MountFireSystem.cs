@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             {
                 var radius = Targets.Radius(entity);
                 var finder = new NearestHostile(Relations, Targets, weapon, faction, entity, position, radius);
-                var reach = weapon.Range * (1f + Targets.GarrisonBonus(entity)) + radius;
+                var reach = Targets.GarrisonReach(entity, weapon) + radius;
                 Index.Query(position, reach, ref finder);
                 var found = finder.Best != Entity.Null;
                 return found && CanShoot(entity, position, weapon, finder.Best) ? finder.Best : Entity.Null;
@@ -149,8 +149,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     return false;
                 }
 
-                // Rounds fire into what's in the way; bullets wait for a clear line.
-                return weapon.FiresRounds || Targets.HasLineOfFire(entity, position, weapon, target);
+                return Targets.CanFireAt(entity, position, weapon, target);
             }
         }
 

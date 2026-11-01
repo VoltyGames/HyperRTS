@@ -93,7 +93,13 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>The ground or water at a cell, raised by the solid blockers on it.</summary>
         private readonly float Surface(int index, float2 point, float terrain)
         {
-            var solid = IsOwn(point) ? 0f : Blockers.SolidHeight(index);
+            // Most cells hold no solid, so the own-block test runs only where one stands.
+            var solid = Blockers.SolidHeight(index);
+            if (solid > 0f && IsOwn(point))
+            {
+                solid = 0f;
+            }
+
             return math.max(terrain + solid, WaterFloor);
         }
 

@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 }
 
                 attack.Reach = Targets.Reach(entity, transform.Position, weapon, target);
-                var reach = Reach(entity, transform.Position, weapon, target, out var floor);
+                var reach = Reach(entity, transform.Position, weapon, target, attack.Reach, out var floor);
 
                 var gap = Targets.Gap(entity, transform.Position, target);
                 if (!ordered && ShouldLeash(entity, transform.Position, weapon, vision, stance, target, gap, reach))
@@ -125,8 +125,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
                     stance.ReturnPoint = transform.Position;
                 }
 
-                // Rounds fire into what's in the way; bullets close in until the line is clear.
-                var clear = weapon.FiresRounds || Targets.HasLineOfFire(entity, transform.Position, weapon, target);
+                // Bullets close in until the line is clear.
+                var clear = Targets.CanFireAt(entity, transform.Position, weapon, target);
                 Engage(entity, transform.Position, target, ref attack, floor, reach, clear);
             }
 
@@ -186,9 +186,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             /// <summary>Longest range and shortest minimum of the primary and the ready shared-target mounts that can hit it.</summary>
-            private float Reach(Entity entity, float3 position, in Weapon weapon, Entity target, out float floor)
+            private float Reach(Entity entity, float3 position, in Weapon weapon, Entity target, float reach,
+                out float floor)
             {
-                var reach = Targets.Reach(entity, position, weapon, target);
                 floor = weapon.MinRange;
                 if (Mounts.TryGetBuffer(entity, out var mounts))
                 {
