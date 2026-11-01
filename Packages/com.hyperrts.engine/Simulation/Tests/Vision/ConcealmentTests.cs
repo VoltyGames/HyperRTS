@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         [TestCase(12f, true, TestName = "ViewerAboveTheCanopy_SeesOverTheWoods")]
         public void Woods_StopSight_UnlessTheEyeIsAboveThem(float eye, bool seesPast)
         {
-            Viewer(new float3(1f, 0f, 1f), eye);
+            _world.SpawnViewer(Team1, new float3(1f, 0f, 1f), 40f, eye);
             _world.SpawnSightBlock(new float3(15f, 0f, 1f), Woods);
 
             _world.Tick();
@@ -61,10 +61,10 @@ namespace HyperRTS.Simulation.Tests.Vision
         public void SunflowerField_HidesATeamInIt_UntilAVehicleFlattensALane()
         {
             AddCropField(new float2(5f, -20f), new int2(40, 40), density: 0.05f, top: 2.5f);
-            Viewer(new float3(1f, 0f, 1f), 2f);
+            _world.SpawnViewer(Team1, new float3(1f, 0f, 1f), 40f);
             var team = _world.SpawnUnit(Team2, new float3(37f, 0f, 1f));
             _world.Tick(frames: 2);
-            Assert.IsTrue(IsHidden(team), "30 m of sunflowers hide it");
+            Assert.IsTrue(_world.IsFogHidden(team), "30 m of sunflowers hide it");
 
             var tank = _world.SpawnUnit(Team1, new float3(3f, 0f, 1f), radius: 1.5f);
             _world.EntityManager.AddComponentData(tank, new Crusher { Size = 3 });
@@ -73,33 +73,33 @@ namespace HyperRTS.Simulation.Tests.Vision
             Assert.IsTrue(_world.RunUntil(() => _world.Get<Unity.Transforms.LocalTransform>(tank).Position.x > 28f, 20f));
             _world.Run(FogOfWarSystem.UpdateInterval * 2f);
 
-            Assert.IsFalse(IsHidden(team), "the lane opens a line of sight");
+            Assert.IsFalse(_world.IsFogHidden(team), "the lane opens a line of sight");
         }
 
         [Test]
         public void StillInfantryInWoods_HideBeyondTheRevealDistance_AndShowAfterFiring()
         {
             _world.SpawnSightBlock(new float3(31f, 0f, 1f), Woods);
-            var viewer = Viewer(new float3(1f, 0f, 1f), 2f);
+            var viewer = _world.SpawnViewer(Team1, new float3(1f, 0f, 1f), 40f);
             var squad = Concealable(_world.SpawnUnit(Team2, new float3(23f, 0f, 1f)));
 
             _world.Run(0.3f);
             Assert.IsTrue(_world.IsEnabled<Concealed>(squad), "still in the woods");
-            Assert.IsTrue(IsHidden(squad), "hidden 22 m away though the woods' edge is in sight");
+            Assert.IsTrue(_world.IsFogHidden(squad), "hidden 22 m away though the woods' edge is in sight");
 
             _world.EntityManager.SetComponentData(viewer, Unity.Transforms.LocalTransform.FromPosition(new float3(11f, 0f, 1f)));
             _world.Run(0.3f);
-            Assert.IsFalse(IsHidden(squad), "shown 12 m away");
+            Assert.IsFalse(_world.IsFogHidden(squad), "shown 12 m away");
 
             _world.EntityManager.SetComponentData(viewer, Unity.Transforms.LocalTransform.FromPosition(new float3(1f, 0f, 1f)));
             var stealth = _world.Get<Stealth>(squad);
             stealth.RevealTimer = 3f;
             _world.EntityManager.SetComponentData(squad, stealth);
             _world.Run(0.3f);
-            Assert.IsFalse(IsHidden(squad), "shown after firing");
+            Assert.IsFalse(_world.IsFogHidden(squad), "shown after firing");
 
             _world.Run(3f);
-            Assert.IsTrue(IsHidden(squad), "hidden again once the reveal ends");
+            Assert.IsTrue(_world.IsFogHidden(squad), "hidden again once the reveal ends");
         }
 
         [TestCase(false, true, TestName = "Aircraft_DontSpotConcealedInfantry")]
@@ -107,7 +107,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         public void Aircraft_SpotConcealedInfantry_OnlyWithADetector(bool detector, bool hidden)
         {
             _world.SpawnSightBlock(new float3(31f, 0f, 1f), Woods);
-            var drone = Viewer(new float3(23f, 0f, 3f), 2f);
+            var drone = _world.SpawnViewer(Team1, new float3(23f, 0f, 3f), 40f);
             _world.EntityManager.SetComponentData(drone, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
             if (detector)
             {
@@ -119,14 +119,7 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             _world.Run(0.3f);
 
-            Assert.AreEqual(hidden, IsHidden(squad));
-        }
-
-        private Entity Viewer(float3 position, float eye)
-        {
-            var viewer = _world.SpawnUnit(Team1, position);
-            _world.EntityManager.SetComponentData(viewer, new VisionRange { Value = 40f, EyeHeight = eye });
-            return viewer;
+            Assert.AreEqual(hidden, _world.IsFogHidden(squad));
         }
 
         private Entity Concealable(Entity unit)
@@ -154,7 +147,5 @@ namespace HyperRTS.Simulation.Tests.Vision
             System.Array.Fill(cells, (byte)math.round(steps));
             return cells;
         }
-
-        private bool IsHidden(Entity entity) => _world.EntityManager.HasComponent<FogHidden>(entity);
     }
 }

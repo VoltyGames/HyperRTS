@@ -25,8 +25,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         [Test]
         public void TankBehindAWall_IsSeen_InfantryAreNot()
         {
-            var viewer = _world.SpawnUnit(Team1, new float3(1f, 0f, 1f));
-            _world.EntityManager.SetComponentData(viewer, new VisionRange { Value = 30f, EyeHeight = 2f });
+            _world.SpawnViewer(Team1, new float3(1f, 0f, 1f), 30f);
             _world.SpawnSightBlock(new float3(7f, 0f, 1f), new float2(0.4f, 10f), 1.8f);
             var infantry = _world.SpawnUnit(Team2, new float3(15f, 0f, 1f));
             var tank = _world.SpawnUnit(Team2, new float3(15f, 0f, 3f));
@@ -34,8 +33,8 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             _world.Tick(frames: 2);
 
-            Assert.IsTrue(_world.EntityManager.HasComponent<FogHidden>(infantry), "infantry hide behind the wall");
-            Assert.IsFalse(_world.EntityManager.HasComponent<FogHidden>(tank), "a tank shows over it");
+            Assert.IsTrue(_world.IsFogHidden(infantry), "infantry hide behind the wall");
+            Assert.IsFalse(_world.IsFogHidden(tank), "a tank shows over it");
         }
 
         // A cone 20 m across the base on flat ground, the viewer on its top with 20 m of sight. Its rise over the mean
@@ -45,8 +44,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         public void ViewerOnAKurgan_SeesFurther_WithinTheCap(float height, float seen, float unseen)
         {
             _world.CreateTerrain(p => math.max(0f, height * (1f - math.distance(p, new float2(1f, 1f)) / 20f)));
-            var viewer = _world.SpawnUnit(Team1, new float3(1f, height, 1f));
-            _world.EntityManager.SetComponentData(viewer, new VisionRange { Value = 20f, EyeHeight = 2f });
+            _world.SpawnViewer(Team1, new float3(1f, height, 1f), 20f);
 
             _world.Tick();
 

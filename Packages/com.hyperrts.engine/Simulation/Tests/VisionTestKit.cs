@@ -29,11 +29,24 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        public static void DisableFog(this TestWorld world)
+        /// <summary>A unit of <paramref name="faction"/> that sees <paramref name="range"/> metres from an eye <paramref name="eye"/> high.</summary>
+        public static Entity SpawnViewer(this TestWorld world, byte faction, float3 position, float range, float eye = 2f)
+        {
+            var viewer = world.SpawnUnit(faction, position);
+            world.EntityManager.SetComponentData(viewer, new VisionRange { Value = range, EyeHeight = eye });
+            return viewer;
+        }
+
+        public static bool IsFogHidden(this TestWorld world, Entity entity) =>
+            world.EntityManager.HasComponent<FogHidden>(entity);
+
+        public static void DisableFog(this TestWorld world) => world.SetFog(false);
+
+        public static void SetFog(this TestWorld world, bool on)
         {
             using var query = world.EntityManager.CreateEntityQuery(typeof(MapSettings));
             var settings = query.GetSingleton<MapSettings>();
-            settings.FogOfWar = false;
+            settings.FogOfWar = on;
             query.SetSingleton(settings);
         }
     }

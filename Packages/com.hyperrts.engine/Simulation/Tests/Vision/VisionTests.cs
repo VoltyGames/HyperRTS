@@ -107,9 +107,9 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             _world.Tick(frames: 2);
 
-            Assert.IsTrue(_world.EntityManager.HasComponent<FogHidden>(unseen));
-            Assert.IsFalse(_world.EntityManager.HasComponent<FogHidden>(seen));
-            Assert.IsFalse(_world.EntityManager.HasComponent<FogHidden>(scout), "own units are never hidden");
+            Assert.IsTrue(_world.IsFogHidden(unseen));
+            Assert.IsFalse(_world.IsFogHidden(seen));
+            Assert.IsFalse(_world.IsFogHidden(scout), "own units are never hidden");
             Assert.IsFalse(_world.IsEnabled<Selected>(unseen), "enemies in fog drop out of the selection");
         }
 
@@ -118,12 +118,12 @@ namespace HyperRTS.Simulation.Tests.Vision
         {
             var unseen = _world.SpawnUnit(2, new float3(50f, 0f, 0f));
             _world.Tick();
-            Assert.IsTrue(_world.EntityManager.HasComponent<FogHidden>(unseen));
+            Assert.IsTrue(_world.IsFogHidden(unseen));
 
             _world.DisableFog();
             _world.Tick();
 
-            Assert.IsFalse(_world.EntityManager.HasComponent<FogHidden>(unseen));
+            Assert.IsFalse(_world.IsFogHidden(unseen));
         }
 
         [Test]
@@ -134,11 +134,11 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             _world.Run(1f);
             Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier), "inside vision, outside detection");
-            Assert.IsTrue(IsHidden(enemy));
+            Assert.IsTrue(_world.IsFogHidden(enemy));
 
             _world.EntityManager.SetComponentData(enemy, LocalTransform.FromPosition(new float3(3f, 0f, 0f)));
             _world.Run(0.3f);
-            Assert.IsFalse(IsHidden(enemy));
+            Assert.IsFalse(_world.IsFogHidden(enemy));
 
             _world.Run(3f);
             Assert.IsFalse(_world.EntityManager.Exists(enemy), "detected, so acquired and killed");
@@ -151,11 +151,11 @@ namespace HyperRTS.Simulation.Tests.Vision
             var enemy = Stealthy(_world.SpawnUnit(2, new float3(5f, 0f, 0f)));
 
             _world.Run(0.3f);
-            Assert.IsTrue(IsHidden(enemy), "a radar on low power is off");
+            Assert.IsTrue(_world.IsFogHidden(enemy), "a radar on low power is off");
 
             _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), new float2(4f, 4f), power: 5f);
             _world.Run(0.3f);
-            Assert.IsFalse(IsHidden(enemy), "powered again, so it detects");
+            Assert.IsFalse(_world.IsFogHidden(enemy), "powered again, so it detects");
         }
 
         [Test]
@@ -167,11 +167,11 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Run(0.4f);
             Assert.Less(_world.GetHealth(target), 1000f, "fired once");
             Assert.IsFalse(_world.IsEnabled<Stealthed>(shooter));
-            Assert.IsFalse(IsHidden(shooter), "visible while revealed");
+            Assert.IsFalse(_world.IsFogHidden(shooter), "visible while revealed");
 
             _world.Run(1.2f);
             Assert.IsTrue(_world.IsEnabled<Stealthed>(shooter));
-            Assert.IsTrue(IsHidden(shooter), "hidden again once the reveal ends");
+            Assert.IsTrue(_world.IsFogHidden(shooter), "hidden again once the reveal ends");
         }
 
         [Test]
@@ -184,12 +184,12 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             _world.Run(1f);
             Assert.AreEqual(100f, _world.GetHealth(enemy));
-            Assert.IsTrue(IsHidden(enemy));
-            Assert.IsFalse(IsHidden(far), "fog off shows everything else");
+            Assert.IsTrue(_world.IsFogHidden(enemy));
+            Assert.IsFalse(_world.IsFogHidden(far), "fog off shows everything else");
 
             Detect(soldier, 5f);
             _world.Run(1f);
-            Assert.IsFalse(IsHidden(enemy));
+            Assert.IsFalse(_world.IsFogHidden(enemy));
             Assert.Less(_world.GetHealth(enemy), 100f);
         }
 
@@ -242,7 +242,5 @@ namespace HyperRTS.Simulation.Tests.Vision
             StealthSetup.AddDetector(ref writer, radius);
             return entity;
         }
-
-        private bool IsHidden(Entity entity) => _world.EntityManager.HasComponent<FogHidden>(entity);
     }
 }

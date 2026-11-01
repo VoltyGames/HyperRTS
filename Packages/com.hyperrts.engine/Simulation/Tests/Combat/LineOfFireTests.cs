@@ -65,15 +65,8 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void Smoke_HidesATarget_BreaksAGuidedRoundsLock_ThenClears()
         {
-            using (var map = _world.EntityManager.CreateEntityQuery(typeof(MapSettings)))
-            {
-                var settings = map.GetSingleton<MapSettings>();
-                settings.FogOfWar = true;
-                map.SetSingleton(settings);
-            }
-
-            var launcher = _world.SpawnUnit(1, new float3(1f, 0f, 1f));
-            _world.EntityManager.SetComponentData(launcher, new VisionRange { Value = 40f, EyeHeight = 2f });
+            _world.SetFog(true);
+            var launcher = _world.SpawnViewer(1, new float3(1f, 0f, 1f), 40f);
             _world.AddWeapon(launcher, range: 30f, cooldown: 100f, projectile: _world.ProjectilePrefab(),
                 trajectory: Trajectory.Rocket);
             var smoke = Smoke(new float3(11f, 0f, 1f));

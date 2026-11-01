@@ -25,7 +25,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [ReadOnly] private ComponentLookup<Inside> _inside;
         private CoverLookup _cover;
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
-        [ReadOnly] private ComponentLookup<TallTarget> _tall;
         [ReadOnly] private ComponentLookup<PassengerRange> _passengerRange;
         [ReadOnly] private ComponentLookup<VisionRange> _vision;
         [ReadOnly] private SightBlockers _blockers;
@@ -43,7 +42,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _inside = state.GetComponentLookup<Inside>(true);
             _cover = new CoverLookup(ref state);
             _destructibles = state.GetComponentLookup<Destructible>(true);
-            _tall = state.GetComponentLookup<TallTarget>(true);
             _passengerRange = state.GetComponentLookup<PassengerRange>(true);
             _vision = state.GetComponentLookup<VisionRange>(true);
             _blockers = default;
@@ -63,7 +61,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _inside.Update(ref state);
             _cover.Update(ref state);
             _destructibles.Update(ref state);
-            _tall.Update(ref state);
             _passengerRange.Update(ref state);
             _vision.Update(ref state);
             _damage.Update(ref state);
@@ -137,7 +134,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _fog.CanSee(team, position, _cover.Find(target), IsTall(target));
 
         /// <summary>As tall as a vehicle or a building, so seen over low cover (see <see cref="TallTarget"/>).</summary>
-        public bool IsTall(Entity entity) => _tall.HasComponent(entity);
+        public bool IsTall(Entity entity) => _cover.IsTall(entity);
 
         /// <summary>
         /// How far the weapon of <paramref name="shooter"/>, standing at <paramref name="position"/>, reaches

@@ -55,7 +55,6 @@ namespace HyperRTS.Network.Replication
             state.EntityManager.CompleteDependencyBeforeRO<Stealthed>();
             state.EntityManager.CompleteDependencyBeforeRO<Concealed>();
             var covers = new CoverLookup(ref state);
-            var tall = SystemAPI.GetComponentLookup<TallTarget>(true);
             foreach (var (transform, owner, ghost, entity) in SystemAPI
                          .Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>().WithNone<Destructible>()
                          .WithEntityAccess())
@@ -71,7 +70,7 @@ namespace HyperRTS.Network.Replication
                 var faction = owner.ValueRO.Value;
                 foreach (var viewer in viewers)
                 {
-                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position, cover, tall.HasComponent(entity)))
+                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position, cover, covers.IsTall(entity)))
                     {
                         relevancy.GhostRelevancySet.TryAdd(
                             new RelevantGhostForConnection(viewer.NetworkId, ghost.ValueRO.ghostId), 1);

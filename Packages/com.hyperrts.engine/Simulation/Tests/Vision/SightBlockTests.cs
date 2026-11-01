@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         [Test]
         public void Building_HidesTheCellsBehindIt_NotInFront()
         {
-            SpawnViewer(Viewer, 2f);
+            _world.SpawnViewer(Team1, Viewer, 30f);
             SpawnBlock(new float3(11f, 0f, 1f), new float2(4f, 4f), 6f);
 
             _world.Tick();
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         [TestCase(8f, true, TestName = "Wall_HidesNothing_FromAViewerTallerThanIt")]
         public void Wall_HidesTheGround_FromViewersBelowItsTop(float eye, bool seen)
         {
-            SpawnViewer(Viewer, eye);
+            _world.SpawnViewer(Team1, Viewer, 30f, eye);
             SpawnBlock(new float3(7f, 0f, 1f), new float2(0.4f, 10f), 2.5f);
 
             _world.Tick();
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             var house = SpawnBlock(Viewer, new float2(6f, 6f), 6f);
             _world.EntityManager.AddComponentData(house, new PassengerEye { AboveTop = 0.5f });
             SpawnBlock(new float3(11f, 0f, 1f), new float2(2f, 8f), 3f);
-            var squad = SpawnViewer(Viewer, 2f);
+            var squad = _world.SpawnViewer(Team1, Viewer, 30f);
             if (inside)
             {
                 _world.EntityManager.AddComponentData(squad, new Inside { Container = house });
@@ -80,7 +80,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         [TestCase(false, TestName = "DisabledBlock_StopsBlocking_AtTheNextStamp")]
         public void RemovedBlock_StopsBlocking_AtTheNextStamp(bool destroyed)
         {
-            SpawnViewer(Viewer, 2f);
+            _world.SpawnViewer(Team1, Viewer, 30f);
             var building = SpawnBlock(new float3(11f, 0f, 1f), new float2(4f, 4f), 6f);
             _world.Tick();
             Assert.IsFalse(_world.Fog().IsVisible(Behind, Team1, false), "hidden while it stands");
@@ -97,13 +97,6 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Run(FogOfWarSystem.UpdateInterval * 2f);
 
             Assert.IsTrue(_world.Fog().IsVisible(Behind, Team1, false));
-        }
-
-        private Entity SpawnViewer(float3 position, float eye)
-        {
-            var viewer = _world.SpawnUnit(Team1, position);
-            _world.EntityManager.SetComponentData(viewer, new VisionRange { Value = 30f, EyeHeight = eye });
-            return viewer;
         }
 
         private Entity SpawnBlock(float3 position, float2 size, float height) =>
