@@ -1,7 +1,6 @@
 using System;
-using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Presentation.TeamColors;
+using HyperRTS.Presentation.Rendering.Materials;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;

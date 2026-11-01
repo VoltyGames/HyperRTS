@@ -5,6 +5,9 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using HyperRTS.Presentation.HUD.CommandCard;
+using HyperRTS.Presentation.HUD.Minimap;
+using HyperRTS.Presentation.HUD.Panels;
 
 namespace HyperRTS.Presentation.Tests.HUD
 {

@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;

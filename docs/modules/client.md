@@ -50,7 +50,9 @@ relations and colours.
 dust and rotor wash, and loop effects), `Lights` (effect and loop lights, smoke shadows) and `Shaders` (the Custom HLSL
 includes and the two effect shader graphs). In `Rendering/`, the instance batches and `EntityExtent` sit in `Overlays/`,
 the fog of war renderer feature and its passes in `Fog/`, and the hide, model variant, garrison part and paint core in
-`Rendering/Visibility/` (namespace `HyperRTS.Presentation.Rendering.Visibility`).
+`Rendering/Parts/` (namespace `HyperRTS.Presentation.Rendering.Parts`). `Rendering/Materials/` holds the `LitTeam`
+shader with its team colour, faction palette, grime and building lights; contact shadows and the unit silhouette stay
+at the `Rendering/` root.
 
 ### HUD
 
@@ -59,6 +61,10 @@ shell and row templates (UXML beside each script) and the drag box. `HUDControll
 panels in the tree's named slots, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks, hands the asset
 to every panel and keeps it in sync with the simulation. Code fills in only per-frame data. Games add or replace panels by overriding
 `CreatePanels`.
+
+`HUD/` holds the controller, the `HUD*` building blocks and the sheets. `CommandCard/` (the card, its buttons and the
+`ICommandSource`s), `Minimap/` and `Panels/` (resource bar, selection, production queue) each have their own namespace
+and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 
 | Type | Role |
 | --- | --- |

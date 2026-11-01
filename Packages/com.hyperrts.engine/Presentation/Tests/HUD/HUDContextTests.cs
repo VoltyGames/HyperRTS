@@ -10,6 +10,7 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.UIElements;
+using HyperRTS.Presentation.HUD.CommandCard;
 
 namespace HyperRTS.Presentation.Tests.HUD
 {

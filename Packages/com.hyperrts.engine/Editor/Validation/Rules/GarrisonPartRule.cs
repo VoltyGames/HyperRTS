@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Transport;
 
 namespace HyperRTS.Editor.Validation.Rules

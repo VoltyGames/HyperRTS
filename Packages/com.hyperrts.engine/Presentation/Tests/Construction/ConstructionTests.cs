@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Construction;
-using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;

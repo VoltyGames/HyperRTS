@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;

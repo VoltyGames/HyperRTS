@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Rendering;
-using HyperRTS.Presentation.TeamColors;
+using HyperRTS.Presentation.Rendering.Materials;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;

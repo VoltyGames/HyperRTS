@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Destruction;
-using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues;

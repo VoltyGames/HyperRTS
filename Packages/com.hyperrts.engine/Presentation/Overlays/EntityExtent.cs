@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Presentation.Rendering.Parts;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

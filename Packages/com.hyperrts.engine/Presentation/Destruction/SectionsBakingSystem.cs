@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;

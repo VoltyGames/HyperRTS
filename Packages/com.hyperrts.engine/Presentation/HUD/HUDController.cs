@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.HUD.CommandCard;
+using HyperRTS.Presentation.HUD.Panels;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -61,9 +63,9 @@ namespace HyperRTS.Presentation.HUD
         protected virtual void CreatePanels(VisualElement hud)
         {
             var bottom = hud.Require<VisualElement>("bottom");
-            Add(new Minimap(panelLayouts), bottom);
+            Add(new Minimap.Minimap(panelLayouts), bottom);
             Add(new SelectionPanel(panelLayouts), bottom);
-            Add(new CommandCard(panelLayouts), bottom);
+            Add(new CommandCard.CommandCard(panelLayouts), bottom);
             Add(new ResourceBar(panelLayouts), hud);
             Add(new GameOverBanner(panelLayouts), hud);
             Add(new LineCost(hud.Require<CostRow>("line-cost")), hud);

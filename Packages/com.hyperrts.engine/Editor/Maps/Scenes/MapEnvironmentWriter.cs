@@ -16,6 +16,7 @@ using HyperRTS.Simulation.Navigation.Heights;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using HyperRTS.Presentation.HUD.Minimap;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {

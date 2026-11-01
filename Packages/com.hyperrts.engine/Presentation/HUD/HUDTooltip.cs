@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using UnityEngine.UIElements;
+using HyperRTS.Presentation.HUD.CommandCard;
 
 namespace HyperRTS.Presentation.HUD
 {
