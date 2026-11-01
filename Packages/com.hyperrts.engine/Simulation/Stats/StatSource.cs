@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Stats
     {
         public StatSourceKind Kind;
 
-        /// <summary>The upgrade type id, field id, status effect type id or game-defined id.</summary>
+        /// <summary>The upgrade type id, aura id, status effect type id or game-defined id.</summary>
         public int Id;
 
         public StatSource(StatSourceKind kind, int id)
@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Stats
 
         public static StatSource Upgrade(int typeId) => new(StatSourceKind.Upgrade, typeId);
 
-        public static StatSource Field(int fieldId) => new(StatSourceKind.Field, fieldId);
+        public static StatSource Aura(int auraId) => new(StatSourceKind.Aura, auraId);
 
         public static StatSource Difficulty => new(StatSourceKind.Difficulty, 0);
 

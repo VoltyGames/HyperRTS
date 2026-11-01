@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

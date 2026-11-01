@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

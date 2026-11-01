@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests

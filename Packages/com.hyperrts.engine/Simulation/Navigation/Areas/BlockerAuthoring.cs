@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
     /// <summary>Makes remains such as a wreck a fixed blocker units go round, until Decay starts to bury it.</summary>
     [AddComponentMenu(HyperRTSMenu.Navigation + "Blocker")]
     [Icon(HyperRTSIcons.Navigation)]
-    [HelpURL(HyperRTSDocs.Units)]
+    [HelpURL(HyperRTSDocs.Movement)]
     [DisallowMultipleComponent]
     public class BlockerAuthoring : AuthoringBehaviour
     {

@@ -1,10 +1,10 @@
 using System.Linq;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using UnityEngine;
 

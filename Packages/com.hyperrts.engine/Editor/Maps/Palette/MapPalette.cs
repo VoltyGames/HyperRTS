@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using UnityEngine;
 

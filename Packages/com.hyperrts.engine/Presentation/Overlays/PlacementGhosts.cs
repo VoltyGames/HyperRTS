@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Rendering;
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Placement;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;

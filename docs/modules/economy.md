@@ -1,6 +1,6 @@
 # Economy modules
 
-[Modules](../modules.md) ▸ Resources, Buildings, Production, Capture, Airdrops
+[Modules](../modules.md) ▸ Resources, Buildings, Power, Production, Capture, Airdrops
 
 ## Resources
 
@@ -69,11 +69,14 @@ Defaults for the balance pass: a truck carries 100 a trip, about 240 a minute on
 
 ## Power
 
-Part of `Buildings`. A building with positive **Power** generates it, negative draws it. While demand exceeds
+Its own module, `Power`. A building with positive **Power** generates it, negative draws it. While demand exceeds
 supply, consumers go offline: weapons hold fire, detectors go blind and production slows to `MatchRules.LowPowerProductionRate`.
 `Offline` replicates, so every client can stop machines and dim [lights](client.md#building-lights) with it.
 
 ## Buildings
+
+Code sits in `Simulation/Buildings/`, with `Construction/` (sites, work points, clearing) and `Placement/` (spots,
+surfaces, line placement) in sub-folders.
 
 `BuildingAuthoring` sets the footprint, population, power and whether it starts under construction. A unit with
 `BuilderAuthoring` places sites and builds them up; its `advancedBuildOptions` go on the command card's second page.

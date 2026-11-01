@@ -7,7 +7,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;

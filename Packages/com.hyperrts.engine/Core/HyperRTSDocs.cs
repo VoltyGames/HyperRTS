@@ -16,15 +16,16 @@ namespace HyperRTS.Core
         public const string Airdrops = Pages + "economy.md#airdrops";
         public const string Animation = Pages + "support.md#animation";
         public const string Audio = Pages + "support.md#audio";
+        public const string Auras = Pages + "combat.md#auras";
         public const string Buildings = Pages + "economy.md#buildings";
         public const string Capture = Pages + "economy.md#capture";
         public const string Combat = Pages + "combat.md#combat";
         public const string Destruction = Pages + "combat.md#destruction";
         public const string Docks = Pages + "economy.md#docks";
         public const string Effects = Pages + "support.md#effects";
-        public const string Fields = Pages + "combat.md#fields";
         public const string Input = Pages + "client.md#input";
         public const string Match = Pages + "core.md#match";
+        public const string Movement = Pages + "movement.md#movement";
         public const string Navigation = Pages + "movement.md#navigation";
         public const string Presentation = Pages + "client.md#presentation";
         public const string Production = Pages + "economy.md#production";
@@ -33,7 +34,6 @@ namespace HyperRTS.Core
         public const string Status = Pages + "combat.md#status-effects";
         public const string StrategicAssets = Pages + "support.md#strategic-assets";
         public const string Transport = Pages + "movement.md#transport";
-        public const string Units = Pages + "movement.md#units";
         public const string Upgrades = Pages + "combat.md#upgrades";
         public const string Veterancy = Pages + "combat.md#veterancy";
         public const string Vision = Pages + "combat.md#vision";

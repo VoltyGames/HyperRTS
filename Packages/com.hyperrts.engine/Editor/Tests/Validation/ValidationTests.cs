@@ -4,8 +4,8 @@ using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Auras;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Veterancy;
 using NUnit.Framework;
 using UnityEditor;
@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Tests.Validation
 
         // RuleFiresTests checks the message; these cases must also block the project.
         [TestCase("ResourceNode", "no resource type")]
-        [TestCase("AreaField", "Affects nobody")]
+        [TestCase("Aura", "Affects nobody")]
         [TestCase("ArmedCarrier", "unarmed")]
         public void BrokenCaseIsAnError(string broken, string message)
         {
@@ -65,9 +65,9 @@ namespace HyperRTS.Editor.Tests.Validation
             {
                 case "ResourceNode":
                     return Track(EntityTemplates.ResourceNode()).GetComponent<ResourceNodeAuthoring>();
-                case "AreaField":
-                    var field = Track(EntityTemplates.Building()).AddComponent<AreaFieldAuthoring>();
-                    field.affects = FieldTargets.Units;
+                case "Aura":
+                    var field = Track(EntityTemplates.Building()).AddComponent<AuraAuthoring>();
+                    field.affects = AuraTargets.Units;
                     return field;
                 default:
                     var source = Track(EntityTemplates.Building()).AddComponent<DeliverySourceAuthoring>();

@@ -26,7 +26,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | React to deaths | Query `Dead` entities after `DeathSystem`. `LastAttacker` names the killer |
 | Damage or heal | `DamageWriter`. A negative amount heals |
 | Custom ability effects | Read `AbilityActivation` after `AbilitySystem` |
-| Field effects | Read the entity's `FieldPresence` |
+| Aura effects | Read the entity's `AuraPresence` |
 | Disable an entity | Set a bit from `OfflineReason.Custom` up in `Offline.Reasons`. Units need `Offline` baked, disabled |
 | Change a stat | Add a `StatModifier`. On the player entity it changes player-wide stats such as income |
 | A sound or effect | `CueWriter.Play` before the lifecycle phase ends |
@@ -54,7 +54,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | Oil derricks | `Capturable` building with `ResourceIncome` |
 | Garrisons, transports | `Container` and `Passenger` |
 | General's powers | `Ability` on the player entity |
-| Radar jamming, healing zones | `Area Field` |
+| Radar jamming, healing zones | `Aura` |
 | Aircraft | `Flight`, `Airfield` pads, `Ammo` |
 
 ## HUD

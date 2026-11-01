@@ -12,7 +12,7 @@ queue, so armor, splash and kill credit apply to all of them.
 Combat's code sits in sub-folders of `Simulation/Combat/`, each its own `HyperRTS.Simulation.Combat.<Folder>`
 namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, interceptors, impact surfaces),
 `Targeting` (acquisition, engagement, attack orders, stance), `Damage` (damage queue, armor, shelter, crush) and
-`Death` (death, remains, decay, turret toss, damage stages).
+`Death` (death, remains, decay).
 
 
 | Type | Role |
@@ -137,7 +137,8 @@ ghost field set on spawn; `TurretTossSystem` flies the remains' models from the 
 Building sections and toppling scenery, beside `Presentation/Destruction`, which shows them
 ([client](client.md#destruction)). Combat uses it, never the other way round: `DamageSystem` routes hits into
 sections through `SectionDamage` and fells `Topple` pieces away from their `LethalHit`. A building's
-`SectionedBuilding` holds its section masks.
+`SectionedBuilding` holds its section masks. The damage stages and turret toss under
+Death sit in this module's folder.
 
 | Type | Role |
 | --- | --- |
@@ -223,11 +224,11 @@ cost times `MatchRules.ExperiencePerCost` to the last hostile attacker.
 An upgrade is a research prefab with `UpgradeAuthoring`: stat bonuses per target type. Once researched, it applies
 to the owner's matching entities, including ones built later.
 
-## Fields
+## Auras
 
-Part of `Auras`. `AreaFieldAuthoring` makes an aura with a radius, target filter, stat bonuses and heal or damage
-per second. Every 0.25 s, each entity's `FieldPresence` lists the fields it is in. The same field never stacks.
-Games read `FieldPresence` for their own effects.
+`AuraAuthoring` makes an aura with a radius, target filter, stat bonuses and heal or damage per second. Every 0.25 s,
+each entity's `AuraPresence` lists the auras it is in. The same aura never stacks. Games read `AuraPresence` for their
+own effects.
 
 ## Abilities
 

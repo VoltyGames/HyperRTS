@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;

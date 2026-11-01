@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;

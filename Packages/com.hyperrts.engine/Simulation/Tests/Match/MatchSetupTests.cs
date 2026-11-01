@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
 using NUnit.Framework;

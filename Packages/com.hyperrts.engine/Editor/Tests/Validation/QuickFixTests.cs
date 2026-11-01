@@ -11,7 +11,6 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
-using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;

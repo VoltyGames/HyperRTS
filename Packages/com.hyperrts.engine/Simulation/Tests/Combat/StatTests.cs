@@ -6,7 +6,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Veterancy;
 using NUnit.Framework;
 using Unity.Entities;

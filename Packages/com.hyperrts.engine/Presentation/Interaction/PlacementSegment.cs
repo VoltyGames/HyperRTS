@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Placement;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Interaction

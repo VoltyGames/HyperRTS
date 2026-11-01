@@ -8,7 +8,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Status;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

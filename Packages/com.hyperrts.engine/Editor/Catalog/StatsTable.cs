@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Units;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.UIElements;

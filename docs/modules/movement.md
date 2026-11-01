@@ -1,6 +1,6 @@
 # Movement modules
 
-[Modules](../modules.md) ▸ Navigation, Units, Air, Transport
+[Modules](../modules.md) ▸ Navigation, Movement, Air, Transport
 
 ## Navigation
 
@@ -149,7 +149,7 @@ stretch past it as drawn (`PathState.PartlyPlanned`), planned once its planned p
 - The Paths debug layer draws tight legs in orange, reverse legs dashed, gear changes as dots, each wheeled
   vehicle's rear axle and dock bays.
 
-## Units
+## Movement
 
 `UnitAuthoring` sets speed, radius, hull length, spacing, nav layer, whether it walks through scenery, and
 population. Units follow their path and

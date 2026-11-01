@@ -1,8 +1,8 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
 using Unity.Rendering;
 using Unity.Transforms;

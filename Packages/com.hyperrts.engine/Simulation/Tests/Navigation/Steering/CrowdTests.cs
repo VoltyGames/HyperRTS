@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

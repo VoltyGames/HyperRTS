@@ -9,7 +9,7 @@ using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;

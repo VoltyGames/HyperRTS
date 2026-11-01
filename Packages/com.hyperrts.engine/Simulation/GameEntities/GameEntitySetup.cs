@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.GameEntities
             writer.AddBuffer<BaseStat>();
             writer.Add<StatBasesPending>();
             writer.AddBuffer<StatModifier>();
-            writer.AddBuffer<FieldPresence>();
+            writer.AddBuffer<AuraPresence>();
             writer.AddBuffer<ActiveStatus>();
             writer.AddBuffer<DamageTakenModifier>();
             writer.Add(new AppliedUpgrades { Faction = spec.Owner });

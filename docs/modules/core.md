@@ -1,6 +1,6 @@
 # Core modules
 
-[Modules](../modules.md) ▸ Common, Stats, GameEntities, Match, Orders, Commands, Selection
+[Modules](../modules.md) ▸ Common, Stats, GameEntities, MatchStart, Match, Orders, Commands, Selection
 
 The modules every other module builds on: who owns what, how a match is set up, and how player intent becomes
 unit orders.
@@ -43,8 +43,19 @@ define the value formula, and `BaseStat` holds a stat's unmodified value. The re
 | Type | Role |
 | --- | --- |
 | `GameEntityAuthoring` | Base of unit and building authoring: name, icon, owner, health, vision, cost, build time, prerequisites, death spawn |
-| `PlayerSetup` | The components of a player entity: stats, population, power, commands, research, stock |
 | `TeamStripAuthoring` | Height band where the owner's colour shows, for buildings painted in strips |
+
+## MatchStart
+
+Orchestration module that applies the `MatchSetupRequest` to the baked players, spawns start kits and enables
+prespawned ghosts in single player.
+
+| Type | Role |
+| --- | --- |
+| `MatchSetupSystem` | Applies the lobby request at match start |
+| `PlayerSetup` | The components of a player entity: stats, population, power, commands, research, stock |
+| `SideContentSystem` | Spawns each side's start kit and gives it its AI build order |
+| `LocalGhostActivationSystem` | Enables prespawned ghosts such as the Match in single player |
 
 ## Match
 
@@ -59,7 +70,7 @@ spawn point, and its side's build order. A side the Match doesn't list is an err
 | --- | --- |
 | `MatchState` | Replicated phase, winning team, and `Started` once every human joined |
 | `MatchRules` | Low-power production rate, sell refund, experience per cost, replays, join timeout |
-| `MatchSetupRequest` | Lobby configuration. Set it before the map loads |
+| `MatchSetupRequest` | Lobby configuration (in `MatchStart`). Set it before the map loads |
 | `LocalGameSpeed` | Single-player pause and speed |
 | `VictoryCritical` | A player who loses all of these is defeated |
 | `PopulationProvider`, `Population` | Population sources, and used and cap per player |

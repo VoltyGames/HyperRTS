@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Simulation.Animation;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Movement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Animation

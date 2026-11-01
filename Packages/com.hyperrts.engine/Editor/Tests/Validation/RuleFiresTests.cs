@@ -5,7 +5,7 @@ using HyperRTS.Editor.Maps.Tools;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
 using Unity.Scripting.LifecycleManagement;

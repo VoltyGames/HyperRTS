@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

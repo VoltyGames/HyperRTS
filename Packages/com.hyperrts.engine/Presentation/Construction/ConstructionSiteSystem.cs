@@ -3,7 +3,7 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;

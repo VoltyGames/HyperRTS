@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Stats;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
 

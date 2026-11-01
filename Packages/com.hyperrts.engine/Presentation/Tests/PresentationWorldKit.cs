@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.MatchStart;
 using Unity.Entities;
 using Unity.Mathematics;
 

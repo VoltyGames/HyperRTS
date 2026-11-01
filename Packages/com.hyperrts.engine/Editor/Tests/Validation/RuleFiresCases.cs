@@ -25,7 +25,7 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Transport;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Upgrades;
 using HyperRTS.Simulation.Veterancy;
 using Unity.Scenes;
@@ -58,10 +58,10 @@ namespace HyperRTS.Editor.Tests.Validation
                 f.Add<AirdropReceiverAuthoring>(EntityTemplates.Building()));
             yield return Row<StrategicAssetRule>("no aircraft prefab", f =>
                 f.Add<StrategicAssetAuthoring>(EntityTemplates.Building()));
-            yield return Row<AreaFieldRule>("Affects nobody", f =>
+            yield return Row<AuraRule>("Affects nobody", f =>
             {
-                var field = f.Add<AreaFieldAuthoring>(EntityTemplates.Building());
-                field.affects = FieldTargets.Units;
+                var field = f.Add<AuraAuthoring>(EntityTemplates.Building());
+                field.affects = AuraTargets.Units;
                 return field;
             });
             yield return Row<ArmorRule>("no damage type", f =>

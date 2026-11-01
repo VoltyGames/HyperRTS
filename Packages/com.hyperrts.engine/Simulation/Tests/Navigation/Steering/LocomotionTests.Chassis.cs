@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Mathematics;
 using static HyperRTS.Simulation.Tests.TestVehicles;

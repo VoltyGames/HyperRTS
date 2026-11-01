@@ -13,7 +13,7 @@ prefabs. The simulation runs headless for tests and dedicated servers.
 | Economy | Any number of resources, harvesters, finite or regrowing nodes, power |
 | Bases | Building placement and construction, production and research queues, rally points, prerequisites, population, repair, sell |
 | Combat | Auto-targeting, stances, instant and projectile weapons, splash, damage types, directional armour, ammo, veterancy |
-| Mechanics | Upgrades, area fields, abilities and player powers, capture, garrisons, transports, aircraft, stealth and detection |
+| Mechanics | Upgrades, auras, abilities and player powers, capture, garrisons, transports, aircraft, stealth and detection |
 | Vision | Per-team fog of war with terrain line of sight |
 | Players | Teams, colours, human, AI and remote slots, victory and defeat, skirmish AI with build orders and difficulties |
 | Multiplayer | Server-authoritative: host, dedicated server, relay, join and rejoin, per-client fog of war |

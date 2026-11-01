@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Transport;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

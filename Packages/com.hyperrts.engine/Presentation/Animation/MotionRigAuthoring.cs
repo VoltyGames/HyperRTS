@@ -7,7 +7,7 @@ using System.Linq;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using Unity.Entities;
 using UnityEngine;
 

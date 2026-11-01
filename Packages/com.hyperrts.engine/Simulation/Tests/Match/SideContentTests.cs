@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Entities;

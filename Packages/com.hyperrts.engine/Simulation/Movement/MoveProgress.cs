@@ -1,0 +1,173 @@
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Grid;
+using HyperRTS.Simulation.Navigation.Paths;
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace HyperRTS.Simulation.Movement
+{
+    /// <summary>
+    /// Whether a unit's move gets anywhere, by the path left shrinking or the hull turning, so a stalled unit replans
+    /// and in the end gives up.
+    /// </summary>
+    public struct MoveProgress : IComponentData
+    {
+        public const float ReplanSeconds = 1f;
+        public const float MaxReplanSeconds = 4f;
+        public const float GiveUpSeconds = 3f;
+
+        // Stuck within this many radii of the path's end, the goal is taken; farther out it is traffic that clears.
+        public const float NearEndRadii = 4f;
+
+        // About 20 degrees of turn is progress, so a pivot or a three-point turn never stalls.
+        private const float TurnedCos = 0.94f;
+
+        /// <summary>Shortest path left so far, measured on the current path.</summary>
+        public float Best;
+
+        /// <summary>Facing at the last progress.</summary>
+        public float2 Facing;
+
+        /// <summary>Seconds since the last progress.</summary>
+        public float Stalled;
+
+        /// <summary>Value of <see cref="Stalled"/> at which the next replan is due.</summary>
+        public float NextReplan;
+
+        /// <summary>A replan was asked for, so the next path is measured afresh while the clock runs on.</summary>
+        public bool Replanned;
+
+        public bool IsTracking;
+
+        /// <summary>A turn-out from the walls was tried since the unit last got closer, so the next hold gives up.</summary>
+        public bool TurnedOut;
+
+        /// <summary>How walls hold a unit this frame.</summary>
+        public enum WallHold : byte
+        {
+            None,
+
+            /// <summary>Against walls, unmoved, with no other unit near: only the walls stop it.</summary>
+            Wedged,
+
+            /// <summary>Sunk in walls and getting no shallower.</summary>
+            Sunk,
+        }
+
+        /// <summary>
+        /// Measures the path left and asks for a replan when due, backing off from <see cref="ReplanSeconds"/> to
+        /// <see cref="MaxReplanSeconds"/>; true once stalled <see cref="GiveUpSeconds"/> near the end or held by walls.
+        /// </summary>
+        public bool HasGivenUp(float2 position, float2 facing, in NavAgent agent, float3 goal,
+            DynamicBuffer<PathWaypoint> waypoints, ref PathState path, WallHold hold, float deltaTime)
+        {
+            if (path.Status != PathStatus.Ready)
+            {
+                return false;
+            }
+
+            var remaining = waypoints.Length > 0
+                ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
+                : math.distance(position, goal.xz);
+            var margin = NavTolerances.Arrive(agent.Radius);
+            // A planned manoeuvre stands to change gear and steer, so it replans sooner only while walls hold it.
+            var planned = PathState.IsPlannedManoeuvre(waypoints) && hold == WallHold.None &&
+                          Stalled < MaxReplanSeconds;
+            if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime) && !planned)
+            {
+                path.Replan(hold != WallHold.None);
+                Replanned = true;
+            }
+
+            // Held by walls alone, no replan frees it, however far the goal.
+            var nearEnd = remaining <= agent.Radius * NearEndRadii + margin;
+            return Stalled >= GiveUpSeconds && (hold != WallHold.None || nearEnd);
+        }
+
+        /// <summary>
+        /// Before a vehicle held by walls gives up, its driver drives the other way once
+        /// (<see cref="Locomotion.TurnOut"/>) with the clock restarted; true when it does.
+        /// </summary>
+        public bool TryTurnOut(ref Driver driver, WallHold hold)
+        {
+            if (hold == WallHold.None || TurnedOut || !driver.Handling.CanTurnOut)
+            {
+                return false;
+            }
+
+            TurnedOut = true;
+            Stalled = 0f;
+            NextReplan = ReplanSeconds;
+            driver.Handling.TurnOut(ref driver.State);
+            return true;
+        }
+
+        /// <summary>Records this frame's path left; true when a replan is due.</summary>
+        private bool Track(float remaining, float2 facing, float margin, bool sunk, float deltaTime)
+        {
+            if (!IsTracking)
+            {
+                IsTracking = true;
+                Restart(remaining, facing);
+                return false;
+            }
+
+            // A replanned path is measured afresh, but the clock runs on so endless replans still give up.
+            if (Replanned)
+            {
+                Replanned = false;
+                Best = remaining;
+                Facing = facing;
+                return false;
+            }
+
+            // A hull stuck sunk in walls turning on the spot gets nowhere.
+            var turned = !sunk && math.dot(facing, Facing) < TurnedCos;
+            var closer = remaining < Best - margin;
+            if (closer || turned)
+            {
+                // Only getting closer earns another turn-out, so a hull can't rock in a wedge for ever.
+                TurnedOut &= !closer;
+                Restart(remaining, facing);
+                return false;
+            }
+
+            Stalled += deltaTime;
+            if (Stalled < NextReplan)
+            {
+                return false;
+            }
+
+            NextReplan += math.min(NextReplan, MaxReplanSeconds);
+            return true;
+        }
+
+        private void Restart(float remaining, float2 facing)
+        {
+            Best = remaining;
+            Facing = facing;
+            Stalled = 0f;
+            NextReplan = ReplanSeconds;
+        }
+
+        /// <summary>A move that just ended records why; the next one measures progress afresh.</summary>
+        public void Report(bool wasMoving, bool isMoving, ArrivalReason reason, ref Arrival arrival,
+            EnabledRefRW<Arrival> arrived)
+        {
+            if (isMoving)
+            {
+                arrived.ValueRW = false;
+                return;
+            }
+
+            IsTracking = false;
+            Replanned = false;
+            TurnedOut = false;
+            if (wasMoving)
+            {
+                arrived.ValueRW = true;
+                arrival.Reason = reason;
+            }
+        }
+    }
+}

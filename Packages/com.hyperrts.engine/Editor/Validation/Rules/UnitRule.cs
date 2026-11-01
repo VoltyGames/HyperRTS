@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Units;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Validation.Rules

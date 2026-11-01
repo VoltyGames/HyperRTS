@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
 using UnityEngine;
 using UnityEngine.UIElements;

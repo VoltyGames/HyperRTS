@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
 using UnityEngine;
 

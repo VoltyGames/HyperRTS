@@ -6,7 +6,7 @@ using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Tests;
-using HyperRTS.Simulation.Units;
+using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEngine;

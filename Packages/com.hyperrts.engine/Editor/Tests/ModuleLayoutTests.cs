@@ -23,10 +23,10 @@ namespace HyperRTS.Editor.Tests
             new[] { "Animation", "Navigation", "Vision", "Selection", "Orders", "Cues" },
             new[]
             {
-                "Combat", "Destruction", "Transport", "Air", "Units", "Resources", "Production", "Upgrades", "Buildings",
-                "Abilities", "Auras", "Veterancy", "Capture", "Match", "Status", "Airdrops",
+                "Combat", "Destruction", "Transport", "Air", "Movement", "Resources", "Production", "Upgrades", "Buildings",
+                "Power", "Abilities", "Auras", "Veterancy", "Capture", "Match", "Status", "Airdrops",
             },
-            new[] { "AI", "GameEntities", "Commands", "Replays" },
+            new[] { "AI", "GameEntities", "MatchStart", "Commands", "Replays" },
         };
 
         private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);

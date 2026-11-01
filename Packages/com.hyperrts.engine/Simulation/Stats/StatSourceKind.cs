@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Stats
         None = 0,
         Upgrade = 1,
         Veterancy = 2,
-        Field = 3,
+        Aura = 3,
 
         /// <summary>An AI difficulty's handicap or bonus, on the AI player.</summary>
         Difficulty = 4,

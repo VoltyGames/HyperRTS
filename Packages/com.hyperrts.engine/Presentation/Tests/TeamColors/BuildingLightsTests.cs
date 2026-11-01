@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.TeamColors;
-using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using NUnit.Framework;
