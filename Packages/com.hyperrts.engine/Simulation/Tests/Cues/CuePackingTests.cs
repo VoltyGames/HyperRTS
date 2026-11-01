@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Cues.Surfaces;
 using System.IO;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Mathematics;
 
@@ -17,7 +18,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var cue = new CueEvent
             {
                 TypeId = 1234, Slot = CueSlot.Fire, Faction = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
-                Direction = math.normalize(new float3(1f, 0.5f, -1f)), Stealthed = true,
+                Direction = math.normalize(new float3(1f, 0.5f, -1f)), Cover = Cover.Concealed, Tall = true,
             };
 
             var read = PackedCue.Pack(cue).Unpack();
@@ -27,8 +28,9 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.AreEqual(cue.Faction, read.Faction);
             Assert.That(math.distance(cue.Position, read.Position), Is.LessThan(QuantizedPosition.Step));
             Assert.That(math.dot(cue.Direction, read.Direction), Is.GreaterThan(0.999f));
-            Assert.IsTrue(read.Stealthed);
-            Assert.IsFalse(PackedCue.Pack(default).Unpack().Stealthed);
+            Assert.AreEqual(Cover.Concealed, read.Cover);
+            Assert.IsTrue(read.Tall);
+            Assert.AreEqual(Cover.None, PackedCue.Pack(default).Unpack().Cover);
         }
 
         [Test]

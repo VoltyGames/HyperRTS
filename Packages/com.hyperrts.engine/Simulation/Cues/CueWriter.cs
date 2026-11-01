@@ -75,9 +75,8 @@ namespace HyperRTS.Simulation.Cues
             byte variant = 0)
         {
             var typeId = TypeIdFor(source, slot, variant);
-            // A concealed source's cues stay as hidden as a stealthed one's.
-            var hidden = _cover.Find(source) != Cover.None;
-            return Add(typeId, slot, position, direction, faction, hidden, variant: variant);
+            return Add(typeId, slot, position, direction, faction, _cover.Find(source), _cover.IsTall(source),
+                variant: variant);
         }
 
         /// <summary>
@@ -96,7 +95,7 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>Plays the slot's cue of an entity type; a type id of 0 is ignored and returns false.</summary>
         public bool Add(int typeId, CueSlot slot, float3 position, float3 direction, byte faction,
-            bool stealthed = false, float radius = 0f, Entity target = default, byte variant = 0)
+            Cover cover = Cover.None, bool tall = false, float radius = 0f, Entity target = default, byte variant = 0)
         {
             if (typeId == 0)
             {
@@ -106,7 +105,7 @@ namespace HyperRTS.Simulation.Cues
             _events[_queue].Add(new CueEvent
             {
                 TypeId = typeId, Slot = slot, Variant = variant, Faction = faction, Position = position,
-                Direction = direction, Stealthed = stealthed, Radius = radius, Target = target,
+                Direction = direction, Cover = cover, Tall = tall, Radius = radius, Target = target,
             });
             return true;
         }

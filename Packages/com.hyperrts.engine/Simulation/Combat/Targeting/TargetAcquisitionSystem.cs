@@ -91,12 +91,11 @@ namespace HyperRTS.Simulation.Combat.Targeting
                     return;
                 }
 
-                var range = stance.Value == Stance.HoldPosition
-                    ? Targets.GarrisonReach(entity, weapon)
-                    : weapon.ScanRange(vision.Value);
+                var holding = stance.Value == Stance.HoldPosition;
+                var range = holding ? Targets.ScanReach(entity, weapon) : weapon.ScanRange(vision.Value);
                 var radius = Targets.Radius(entity);
                 var finder = new NearestHostile(Relations, Targets, weapon, faction.Value, entity, transform.Position,
-                    radius);
+                    radius, holding);
                 Index.Query(transform.Position, range + radius, ref finder);
 
                 if (finder.Best != Entity.Null)

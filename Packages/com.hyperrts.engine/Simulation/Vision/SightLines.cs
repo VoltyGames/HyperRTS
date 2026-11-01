@@ -19,6 +19,9 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Height judged for <see cref="FogOfWar.VisibleTall"/>, like a vehicle's or a building's top.</summary>
         public const float TallTargetHeight = 3f;
 
+        /// <summary>How far above its ground a target's top stands, which sight and direct fire both aim for.</summary>
+        public static float TopOf(bool tall) => tall ? TallTargetHeight : TargetHeight;
+
         /// <summary>The grid the patch lies on; only its layout is read.</summary>
         public FogOfWar Fog;
 

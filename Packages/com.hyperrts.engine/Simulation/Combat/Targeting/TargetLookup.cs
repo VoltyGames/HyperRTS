@@ -151,8 +151,20 @@ namespace HyperRTS.Simulation.Combat.Targeting
             return weapon.Range * (1f + bonus);
         }
 
-        /// <summary>How far the weapon reaches before the target's height counts: further from a garrison.</summary>
-        public float GarrisonReach(Entity shooter, in Weapon weapon) => weapon.Range * (1f + GarrisonBonus(shooter));
+        /// <summary>
+        /// Furthest the weapon could <see cref="Reach"/> any target: from a garrison, and for direct fire with the
+        /// most high ground can add.
+        /// </summary>
+        public float ScanReach(Entity shooter, in Weapon weapon)
+        {
+            var bonus = GarrisonBonus(shooter);
+            if (weapon.NeedsLineOfFire)
+            {
+                bonus += _sight.MaxRange;
+            }
+
+            return weapon.Range * (1f + bonus);
+        }
 
         /// <summary>Range share a passenger gains from the container it fires out of.</summary>
         private float GarrisonBonus(Entity shooter) =>
@@ -185,7 +197,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             var holder = Holder(shooter);
             _vision.TryGetComponent(shooter, out var vision);
             var from = position + new float3(0f, vision.EyeHeight, 0f);
-            var to = Position(target) + new float3(0f, IsTall(target) ? 2.5f : 1f, 0f);
+            var to = Position(target) + new float3(0f, SightLines.TopOf(IsTall(target)), 0f);
             return _blockers.TryFindObstruction(from, to, holder, target, out _, out _);
         }
 

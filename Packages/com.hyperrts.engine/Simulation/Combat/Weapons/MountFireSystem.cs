@@ -132,8 +132,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             private Entity Scan(Entity entity, float3 position, in Weapon weapon, byte faction)
             {
                 var radius = Targets.Radius(entity);
-                var finder = new NearestHostile(Relations, Targets, weapon, faction, entity, position, radius);
-                var reach = Targets.GarrisonReach(entity, weapon) + radius;
+                var finder = new NearestHostile(Relations, Targets, weapon, faction, entity, position, radius, true);
+                var reach = Targets.ScanReach(entity, weapon) + radius;
                 Index.Query(position, reach, ref finder);
                 var found = finder.Best != Entity.Null;
                 return found && CanShoot(entity, position, weapon, finder.Best) ? finder.Best : Entity.Null;

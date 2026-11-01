@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Surfaces;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -28,8 +29,11 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>Unit vector the effect faces, e.g. along the shot.</summary>
         public float3 Direction;
 
-        /// <summary>The source was stealthed: only teams detecting it get the cue.</summary>
-        public bool Stealthed;
+        /// <summary>What kept the source hidden, so a cue reaches only the teams that could see its source.</summary>
+        public Cover Cover;
+
+        /// <summary>The source was a <see cref="TallTarget"/>, seen over low cover.</summary>
+        public bool Tall;
 
         /// <summary>An impact's splash radius; bigger blasts leave bigger marks.</summary>
         public float Radius;

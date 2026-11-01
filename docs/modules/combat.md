@@ -41,7 +41,7 @@ for the mounts, which `mountFire` on the sound and effect authoring fills in ord
 silently. `Shooter.TryFire` is the fire step both weapon kinds share.
 
 Direct fire and rockets (`Weapon.NeedsLineOfFire`, any trajectory but ballistic) need a clear line from the
-shooter's eye to the target's top, over the ground and solid sight blocks (`SightBlockers.TryFindObstruction`;
+shooter's eye to the target's top (`SightLines.TopOf`, 1 m, or 3 m for a `TallTarget`, as sight judges it), over the ground and solid sight blocks (`SightBlockers.TryFindObstruction`;
 the shooter's own block, its garrison's and the target's don't count). Scans skip blocked targets. A weapon that
 hits at once waits for a clear line, so an ordered attack closes in until it has one. One that fires rounds
 (`FiresRounds`) shoots anyway, and `Shooter` turns the round onto the obstacle, hitting it where the line meets
@@ -52,6 +52,8 @@ smoke) loses its lock and flies on to the aim point.
 `PassengerRange` (`ContainerAuthoring.passengerRangeBonus`) reaches that share further. A direct-fire or rocket weapon
 standing above its target gains `SightRules.RangePerMetre` of range per metre, up to `MaxRange`; ballistic fire
 gains nothing. `EngagementSystem` stores the primary's reach in `AttackTarget.Reach`, and the fire step checks it.
+A unit on Hold Position and a weapon mount scan out to `TargetLookup.ScanReach` (the garrison share plus, for
+direct fire, `MaxRange`) and take only targets within their reach.
 
 ### Salvos, muzzles and ammo
 
@@ -302,7 +304,8 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
   flatten crop cover under their hull (`CropFlattenSystem`), in every world so clients' fog matches.
 - `FogOfWar.Close` holds the cells within `RevealDistance` of a team's ground units; aircraft and passengers add
   none. A `Cover` (none, `Concealed`, `Stealthed`) goes with every visibility check: stealth shows only to detectors,
-  concealment also to close ground units. Woods, crops and blocks with `conceals` conceal.
+  concealment also to close ground units. Woods, crops and blocks with `conceals` conceal. A cue carries its
+  source's cover and tall flag (`CueEvent.Cover`, `CueEvent.Tall`), so it reaches whoever could see the source.
 - A viewer's own block, or the block of the container it is in, hides nothing from it. Garrisons see from above
   the roof.
 - Hidden enemies can't be selected, picked or seen, but splash still hits them.

@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Cues.Surfaces;
 using System.IO;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Vision;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Cues
@@ -11,8 +12,10 @@ namespace HyperRTS.Simulation.Cues
     /// </summary>
     public struct PackedCue
     {
-        public const byte StealthedBit = 0x80;
         private const float PitchSteps = 127f;
+        private const int CoverShift = 4;
+        private const byte SurfaceBits = 0x0F;
+        private const byte TallBit = 0x40;
 
         public int TypeId;
         public short X;
@@ -25,11 +28,12 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>Heading in 256ths of a turn, clockwise from +Z.</summary>
         public byte Yaw;
 
-        /// <summary>Elevation in 7 bits from straight down (0) to straight up (127); <see cref="StealthedBit"/> on top.</summary>
-        public byte PitchFlags;
+        /// <summary>Elevation in 7 bits from straight down (0) to straight up (127).</summary>
+        public byte Pitch;
 
         // Bytes rather than the enums, so the RPC codegen sends one byte each.
-        public byte Surface;
+        /// <summary>The impact's surface in the low 4 bits, the source's cover in the next 2, then its tall bit.</summary>
+        public byte SurfaceCover;
 
         /// <summary>An impact's material, else the cue's <see cref="CueEvent.Variant"/>; impacts never set one.</summary>
         public byte Detail;
@@ -38,7 +42,7 @@ namespace HyperRTS.Simulation.Cues
         {
             var direction = math.normalizesafe(cue.Direction, new float3(0f, 0f, 1f));
             var pitch = math.asin(math.clamp(direction.y, -1f, 1f)) / math.PI + 0.5f;
-            var flags = cue.Stealthed ? StealthedBit : (byte)0;
+            var tall = cue.Tall ? TallBit : 0;
             return new PackedCue
             {
                 TypeId = cue.TypeId,
@@ -49,16 +53,15 @@ namespace HyperRTS.Simulation.Cues
                 Slot = (byte)cue.Slot,
                 Faction = cue.Faction,
                 Yaw = HeadingByte.Encode(direction.xz),
-                PitchFlags = (byte)(flags | (int)math.round(pitch * PitchSteps)),
-                Surface = (byte)cue.Surface,
+                Pitch = (byte)math.round(pitch * PitchSteps),
+                SurfaceCover = (byte)((int)cue.Surface | (int)cue.Cover << CoverShift | tall),
                 Detail = cue.Slot == CueSlot.Impact ? (byte)cue.Material : cue.Variant,
             };
         }
 
         public readonly CueEvent Unpack()
         {
-            var pitchStep = PitchFlags & ~StealthedBit;
-            var pitch = (pitchStep / PitchSteps - 0.5f) * math.PI;
+            var pitch = (Pitch / PitchSteps - 0.5f) * math.PI;
             var level = HeadingByte.Direction(Yaw);
             math.sincos(pitch, out var sinPitch, out var cosPitch);
             var impact = (CueSlot)Slot == CueSlot.Impact;
@@ -70,9 +73,10 @@ namespace HyperRTS.Simulation.Cues
                 Faction = Faction,
                 Position = QuantizedPosition.Dequantize(X, Y, Z),
                 Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
-                Stealthed = (PitchFlags & StealthedBit) != 0,
+                Cover = (Cover)((SurfaceCover >> CoverShift) & 3),
+                Tall = (SurfaceCover & TallBit) != 0,
                 Radius = Radius * QuantizedPosition.Step,
-                Surface = (ImpactSurface)Surface,
+                Surface = (ImpactSurface)(SurfaceCover & SurfaceBits),
                 Material = impact ? (SurfaceMaterial)Detail : default,
             };
         }
@@ -87,8 +91,8 @@ namespace HyperRTS.Simulation.Cues
             writer.Write(Slot);
             writer.Write(Faction);
             writer.Write(Yaw);
-            writer.Write(PitchFlags);
-            writer.Write(Surface);
+            writer.Write(Pitch);
+            writer.Write(SurfaceCover);
             writer.Write(Detail);
         }
 
@@ -102,8 +106,8 @@ namespace HyperRTS.Simulation.Cues
             Slot = reader.ReadByte(),
             Faction = reader.ReadByte(),
             Yaw = reader.ReadByte(),
-            PitchFlags = reader.ReadByte(),
-            Surface = reader.ReadByte(),
+            Pitch = reader.ReadByte(),
+            SurfaceCover = reader.ReadByte(),
             Detail = reader.ReadByte(),
         };
     }
