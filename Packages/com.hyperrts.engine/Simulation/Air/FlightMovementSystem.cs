@@ -26,16 +26,10 @@ namespace HyperRTS.Simulation.Air
     public partial struct FlightMovementSystem : ISystem
     {
         private GivingWay _givingWay;
-        private ComponentLookup<Docked> _docked;
-        private ComponentLookup<Locomotion> _locomotions;
-        private ComponentLookup<LocomotionState> _locomotionStates;
 
         public void OnCreate(ref SystemState state)
         {
             _givingWay = new GivingWay(ref state);
-            _docked = state.GetComponentLookup<Docked>(true);
-            _locomotions = state.GetComponentLookup<Locomotion>(true);
-            _locomotionStates = state.GetComponentLookup<LocomotionState>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
         }
@@ -44,9 +38,6 @@ namespace HyperRTS.Simulation.Air
         public void OnUpdate(ref SystemState state)
         {
             _givingWay.Update(ref state);
-            _docked.Update(ref state);
-            _locomotions.Update(ref state);
-            _locomotionStates.Update(ref state);
             var index = SystemAPI.GetSingleton<SpatialIndex>();
             var grid = SystemAPI.GetSingleton<NavGrid>();
             if (SystemAPI.Time.DeltaTime <= 0f)
@@ -59,9 +50,9 @@ namespace HyperRTS.Simulation.Air
                 Index = index,
                 Grid = grid,
                 GivingWay = _givingWay,
-                Docked = _docked,
-                Locomotions = _locomotions,
-                States = _locomotionStates,
+                Docked = SystemAPI.GetComponentLookup<Docked>(true),
+                Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
+                States = SystemAPI.GetComponentLookup<LocomotionState>(false),
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }

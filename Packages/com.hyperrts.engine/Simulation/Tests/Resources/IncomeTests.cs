@@ -13,39 +13,35 @@ namespace HyperRTS.Simulation.Tests.Resources
     /// Harvesting (the loop, depletion and regrowth) and passive income: offline pauses, occupants,
     /// finite reserves with refills and casualties.
     /// </summary>
-    public class IncomeTests
+    public class IncomeTests : SimulationFixture
     {
-        private TestWorld _world;
+        protected override byte[] Teams => new byte[] { 1, 2, 1 };
+
         private ResourceType _supplies;
 
         [SetUp]
-        public void SetUp()
+        public void Prepare()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2, 1);
-            _supplies = _world.CreateSupplies();
+            _supplies = World.CreateSupplies();
         }
 
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         private Entity SpawnBuilding(byte faction, float x) =>
-            _world.SpawnBuilding(faction, new float3(x, 0f, 0f), new float2(4f, 4f));
+            World.SpawnBuilding(faction, new float3(x, 0f, 0f), new float2(4f, 4f));
 
         private Entity SpawnDropOff(float3 position)
         {
-            var building = _world.SpawnBuilding(1, position, new float2(4f, 4f));
-            _world.EntityManager.AddComponent<ResourceDropOff>(building);
+            var building = World.SpawnBuilding(1, position, new float2(4f, 4f));
+            World.EntityManager.AddComponent<ResourceDropOff>(building);
             return building;
         }
 
         private Entity SpawnHarvester(float3 position, float replacementRange = 30f) =>
-            _world.MakeHarvester(_world.SpawnUnit(1, position), 10, 10f, replacementRange);
+            World.MakeHarvester(World.SpawnUnit(1, position), 10, 10f, replacementRange);
 
         private Entity SpawnReserve(byte faction, float x, int capacity, float interval = 1f)
         {
-            var derrick = _world.AddIncome(SpawnBuilding(faction, x), _supplies, 10, interval);
-            var writer = new EntityWriter(_world.EntityManager, derrick);
+            var derrick = World.AddIncome(SpawnBuilding(faction, x), _supplies, 10, interval);
+            var writer = World.Writer(derrick);
             writer.Add(new ResourceReserve { Remaining = capacity, Capacity = capacity });
             return derrick;
         }
@@ -53,57 +49,57 @@ namespace HyperRTS.Simulation.Tests.Resources
         private Entity SpawnRefill(byte faction, float x, int amount)
         {
             var depot = SpawnBuilding(faction, x);
-            var writer = new EntityWriter(_world.EntityManager, depot);
+            var writer = World.Writer(depot);
             writer.Add(new ReserveRefill { Type = _supplies, Amount = amount, Interval = 1f });
             return depot;
         }
 
         private void SpawnCasualtyIncome(float x)
         {
-            var writer = new EntityWriter(_world.EntityManager, SpawnBuilding(1, x));
+            var writer = World.Writer(SpawnBuilding(1, x));
             writer.Add(new CasualtyIncome { Type = _supplies, Share = 0.5f });
         }
 
         private void Kill(byte faction, int cost)
         {
-            var unit = _world.SpawnUnit(faction, new float3(0f, 0f, 20f));
-            _world.SetCost(unit, _supplies, cost);
-            _world.Kill(unit);
+            var unit = World.SpawnUnit(faction, new float3(0f, 0f, 20f));
+            World.SetCost(unit, _supplies, cost);
+            World.Kill(unit);
         }
 
         [Test]
         public void Harvester_LoopsBetweenNodeAndDropOff()
         {
             SpawnDropOff(new float3(-10f, 0f, 0f));
-            var node = _world.SpawnNode(new float3(10f, 0f, 0f), _supplies, 100);
+            var node = World.SpawnNode(new float3(10f, 0f, 0f), _supplies, 100);
             var harvester = SpawnHarvester(float3.zero);
 
-            _world.Order(harvester, OrderType.Gather, node);
-            _world.Run(20f);
+            World.Order(harvester, OrderType.Gather, node);
+            World.Run(20f);
 
-            var stock = _world.GetResources(1, _supplies);
-            var left = _world.Get<ResourceNode>(node).Amount;
-            var cargo = _world.Get<Harvester>(harvester).CargoAmount;
+            var stock = World.GetResources(1, _supplies);
+            var left = World.Get<ResourceNode>(node).Amount;
+            var cargo = World.Get<Harvester>(harvester).CargoAmount;
             Assert.GreaterOrEqual(stock, 20, "several trips were delivered");
             Assert.AreEqual(100, stock + left + cargo, "nothing is created or lost");
-            Assert.AreEqual(stock, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
-            Assert.IsTrue(_world.IsEnabled<ActiveOrder>(harvester), "the loop keeps running");
+            Assert.AreEqual(stock, World.Get<PlayerStats>(World.Player(1)).ResourcesGathered);
+            Assert.IsTrue(World.IsEnabled<ActiveOrder>(harvester), "the loop keeps running");
         }
 
         [Test]
         public void DepletedNode_IsDestroyed_AndHarvesterDeliversThenStops()
         {
             SpawnDropOff(new float3(-6f, 0f, 0f));
-            var node = _world.SpawnNode(new float3(4f, 0f, 0f), _supplies, 5);
+            var node = World.SpawnNode(new float3(4f, 0f, 0f), _supplies, 5);
             var harvester = SpawnHarvester(float3.zero);
 
-            _world.Order(harvester, OrderType.Gather, node);
-            _world.RunUntil(() => _world.GetResources(1, _supplies) == 5 && !_world.IsEnabled<ActiveOrder>(harvester),
+            World.Order(harvester, OrderType.Gather, node);
+            World.RunUntil(() => World.GetResources(1, _supplies) == 5 && !World.IsEnabled<ActiveOrder>(harvester),
                 10f);
 
-            Assert.IsFalse(_world.EntityManager.Exists(node));
-            Assert.AreEqual(5, _world.GetResources(1, _supplies));
-            Assert.IsFalse(_world.IsEnabled<ActiveOrder>(harvester), "no node left, so the order completes");
+            Assert.IsFalse(World.EntityManager.Exists(node));
+            Assert.AreEqual(5, World.GetResources(1, _supplies));
+            Assert.IsFalse(World.IsEnabled<ActiveOrder>(harvester), "no node left, so the order completes");
         }
 
         [TestCase(30f, true, TestName = "DepletedNode_HarvesterMovesToNearbyNodeOfSameType")]
@@ -111,72 +107,72 @@ namespace HyperRTS.Simulation.Tests.Resources
         public void DepletedNode_ReplacedWithinRange(float replacementRange, bool replaced)
         {
             SpawnDropOff(new float3(-6f, 0f, 0f));
-            var first = _world.SpawnNode(new float3(4f, 0f, 0f), _supplies, 5);
-            var second = _world.SpawnNode(new float3(8f, 0f, 4f), _supplies, 100);
+            var first = World.SpawnNode(new float3(4f, 0f, 0f), _supplies, 5);
+            var second = World.SpawnNode(new float3(8f, 0f, 4f), _supplies, 100);
             var harvester = SpawnHarvester(float3.zero, replacementRange);
 
-            _world.Order(harvester, OrderType.Gather, first);
-            _world.RunUntil(() => _world.Get<ResourceNode>(second).Amount < 100 || !_world.IsEnabled<ActiveOrder>(harvester),
+            World.Order(harvester, OrderType.Gather, first);
+            World.RunUntil(() => World.Get<ResourceNode>(second).Amount < 100 || !World.IsEnabled<ActiveOrder>(harvester),
                 10f);
 
-            Assert.IsFalse(_world.EntityManager.Exists(first));
-            Assert.AreEqual(replaced, _world.Get<ResourceNode>(second).Amount < 100);
+            Assert.IsFalse(World.EntityManager.Exists(first));
+            Assert.AreEqual(replaced, World.Get<ResourceNode>(second).Amount < 100);
             if (replaced)
             {
-                Assert.AreEqual(second, _world.Get<ActiveOrder>(harvester).Value.Target);
+                Assert.AreEqual(second, World.Get<ActiveOrder>(harvester).Value.Target);
             }
         }
 
         [Test]
         public void RenewableNode_SurvivesDepletionAndRegrows()
         {
-            var node = _world.SpawnNode(new float3(2f, 0f, 0f), _supplies, 5, regrowth: 10f);
+            var node = World.SpawnNode(new float3(2f, 0f, 0f), _supplies, 5, regrowth: 10f);
             var harvester = SpawnHarvester(float3.zero);
 
-            _world.Order(harvester, OrderType.Gather, node);
-            _world.Run(1f);
-            _world.EntityManager.SetComponentEnabled<ActiveOrder>(harvester, false);
-            _world.Run(1f);
+            World.Order(harvester, OrderType.Gather, node);
+            World.Run(1f);
+            World.SetEnabled<ActiveOrder>(harvester, false);
+            World.Run(1f);
 
-            Assert.IsTrue(_world.EntityManager.Exists(node));
-            Assert.AreEqual(5, _world.Get<ResourceNode>(node).Amount, "regrown to its maximum");
+            Assert.IsTrue(World.EntityManager.Exists(node));
+            Assert.AreEqual(5, World.Get<ResourceNode>(node).Amount, "regrown to its maximum");
         }
 
         [Test]
         public void Income_PausesWhileOffline_AndEntitiesWithoutOfflineKeepPaying()
         {
-            var derrick = _world.AddIncome(SpawnBuilding(1, 0f), _supplies, 10, 1f);
-            _world.AddIncome(_world.SpawnUnit(1, new float3(10f, 0f, 0f)), _supplies, 1, 1f);
-            _world.SetOffline(derrick, true);
+            var derrick = World.AddIncome(SpawnBuilding(1, 0f), _supplies, 10, 1f);
+            World.AddIncome(World.SpawnUnit(1, new float3(10f, 0f, 0f)), _supplies, 1, 1f);
+            World.SetOffline(derrick, true);
 
-            _world.Run(2.5f);
-            Assert.AreEqual(2, _world.GetResources(1, _supplies), "only the entity without Offline paid");
+            World.Run(2.5f);
+            Assert.AreEqual(2, World.GetResources(1, _supplies), "only the entity without Offline paid");
 
-            _world.SetOffline(derrick, false);
-            _world.Run(1f);
-            Assert.AreEqual(13, _world.GetResources(1, _supplies), "back online, the paused timer resumes");
-            Assert.AreEqual(13, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
+            World.SetOffline(derrick, false);
+            World.Run(1f);
+            Assert.AreEqual(13, World.GetResources(1, _supplies), "back online, the paused timer resumes");
+            Assert.AreEqual(13, World.Get<PlayerStats>(World.Player(1)).ResourcesGathered);
         }
 
         [Test]
         public void OccupantIncome_PaysPerPassenger_AndNothingWhenEmpty()
         {
-            var bunker = _world.AddIncome(SpawnBuilding(1, 0f), _supplies, 5, 1f);
-            var writer = new EntityWriter(_world.EntityManager, bunker);
+            var bunker = World.AddIncome(SpawnBuilding(1, 0f), _supplies, 5, 1f);
+            var writer = World.Writer(bunker);
             TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             writer.Add<OccupantIncome>();
 
-            _world.Run(1.5f);
-            Assert.AreEqual(0, _world.GetResources(1, _supplies), "empty, it pays nothing");
+            World.Run(1.5f);
+            Assert.AreEqual(0, World.GetResources(1, _supplies), "empty, it pays nothing");
 
             for (var i = 0; i < 3; i++)
             {
-                var unit = _world.SpawnUnit(1, new float3(10f + i, 0f, 0f));
-                _world.EntityManager.GetBuffer<Cargo>(bunker).Add(new Cargo { Unit = unit, Size = 1 });
+                var unit = World.SpawnUnit(1, new float3(10f + i, 0f, 0f));
+                World.Buffer<Cargo>(bunker).Add(new Cargo { Unit = unit, Size = 1 });
             }
 
-            _world.Run(1f);
-            Assert.AreEqual(15, _world.GetResources(1, _supplies), "one payment for each of three passengers");
+            World.Run(1f);
+            Assert.AreEqual(15, World.GetResources(1, _supplies), "one payment for each of three passengers");
         }
 
         [Test]
@@ -184,14 +180,14 @@ namespace HyperRTS.Simulation.Tests.Resources
         {
             var derrick = SpawnReserve(1, 0f, 25);
 
-            _world.Run(4.5f);
-            Assert.AreEqual(25, _world.GetResources(1, _supplies), "never more than the reserve held");
-            Assert.AreEqual(0, _world.Get<ResourceReserve>(derrick).Remaining);
-            Assert.IsTrue(_world.EntityManager.Exists(derrick), "a dry reserve stays to be refilled");
+            World.Run(4.5f);
+            Assert.AreEqual(25, World.GetResources(1, _supplies), "never more than the reserve held");
+            Assert.AreEqual(0, World.Get<ResourceReserve>(derrick).Remaining);
+            Assert.IsTrue(World.EntityManager.Exists(derrick), "a dry reserve stays to be refilled");
 
             SpawnRefill(1, 10f, 7);
-            _world.Run(2f);
-            Assert.AreEqual(32, _world.GetResources(1, _supplies), "the refill was paid out again");
+            World.Run(2f);
+            Assert.AreEqual(32, World.GetResources(1, _supplies), "the refill was paid out again");
         }
 
         [Test]
@@ -199,18 +195,18 @@ namespace HyperRTS.Simulation.Tests.Resources
         {
             var own = SpawnReserve(1, 0f, 20, interval: 1000f);
             var enemy = SpawnReserve(2, 30f, 20, interval: 1000f);
-            _world.EntityManager.SetComponentData(own, new ResourceReserve { Remaining = 15, Capacity = 20 });
-            _world.EntityManager.SetComponentData(enemy, new ResourceReserve { Remaining = 0, Capacity = 20 });
+            World.Set(own, new ResourceReserve { Remaining = 15, Capacity = 20 });
+            World.Set(enemy, new ResourceReserve { Remaining = 0, Capacity = 20 });
             var depot = SpawnRefill(1, 10f, 10);
 
-            _world.Run(1.5f);
-            Assert.AreEqual(20, _world.Get<ResourceReserve>(own).Remaining, "capped at capacity");
-            Assert.AreEqual(0, _world.Get<ResourceReserve>(enemy).Remaining, "another owner's reserve is untouched");
+            World.Run(1.5f);
+            Assert.AreEqual(20, World.Get<ResourceReserve>(own).Remaining, "capped at capacity");
+            Assert.AreEqual(0, World.Get<ResourceReserve>(enemy).Remaining, "another owner's reserve is untouched");
 
-            _world.EntityManager.SetComponentData(own, new ResourceReserve { Remaining = 0, Capacity = 20 });
-            _world.SetOffline(depot, true);
-            _world.Run(2f);
-            Assert.AreEqual(0, _world.Get<ResourceReserve>(own).Remaining, "an offline refill adds nothing");
+            World.Set(own, new ResourceReserve { Remaining = 0, Capacity = 20 });
+            World.SetOffline(depot, true);
+            World.Run(2f);
+            Assert.AreEqual(0, World.Get<ResourceReserve>(own).Remaining, "an offline refill adds nothing");
         }
 
         [Test]
@@ -222,20 +218,20 @@ namespace HyperRTS.Simulation.Tests.Resources
             Kill(1, 100);
             Kill(2, 40);
             Kill(3, 1000);
-            _world.Tick();
+            World.Tick();
 
-            Assert.AreEqual(140, _world.GetResources(1, _supplies), "half of own and enemy costs, twice; allies pay nothing");
-            Assert.AreEqual(140, _world.Get<PlayerStats>(_world.Player(1)).ResourcesGathered);
+            Assert.AreEqual(140, World.GetResources(1, _supplies), "half of own and enemy costs, twice; allies pay nothing");
+            Assert.AreEqual(140, World.Get<PlayerStats>(World.Player(1)).ResourcesGathered);
 
-            foreach (var earner in _world.All<CasualtyIncome>().ToArray())
+            foreach (var earner in World.All<CasualtyIncome>().ToArray())
             {
-                _world.SetOffline(earner, true);
+                World.SetOffline(earner, true);
             }
 
-            _world.Tick();
+            World.Tick();
             Kill(2, 100);
-            _world.Tick();
-            Assert.AreEqual(140, _world.GetResources(1, _supplies), "offline earners pay nothing");
+            World.Tick();
+            Assert.AreEqual(140, World.GetResources(1, _supplies), "offline earners pay nothing");
         }
     }
 }

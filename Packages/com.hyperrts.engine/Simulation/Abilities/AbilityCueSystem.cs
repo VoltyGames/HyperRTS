@@ -19,13 +19,11 @@ namespace HyperRTS.Simulation.Abilities
     public partial struct AbilityCueSystem : ISystem
     {
         private CueWriter _cues;
-        private ComponentLookup<LocalTransform> _transforms;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _cues = new CueWriter(ref state);
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
             state.RequireForUpdate<AbilityEvents>();
         }
 
@@ -33,8 +31,7 @@ namespace HyperRTS.Simulation.Abilities
         public void OnUpdate(ref SystemState state)
         {
             _cues.Update(ref state);
-            _transforms.Update(ref state);
-            new CastJob { Cues = _cues, Transforms = _transforms }.Schedule();
+            new CastJob { Cues = _cues, Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true) }.Schedule();
         }
 
         [BurstCompile]

@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
         }
 
         private DynamicBuffer<PathWaypoint> Waypoints(Entity unit) =>
-            _world.EntityManager.GetBuffer<PathWaypoint>(unit);
+            _world.Buffer<PathWaypoint>(unit);
 
         [Test]
         public void CrossMapPath_OnAFullSizeMap_EndsAtTheGoal()
@@ -253,7 +253,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             // From here the north end is far shorter, so a fresh search would turn the unit round.
             var transform = _world.Get<LocalTransform>(unit);
             transform.Position = new float3(-2f, 0f, 12f);
-            _world.EntityManager.SetComponentData(unit, transform);
+            _world.Set(unit, transform);
 
             var arrived = _world.RunUntil(() => !_world.IsEnabled<MoveDestination>(unit), 20f);
             Assert.IsTrue(arrived, "the move ended");

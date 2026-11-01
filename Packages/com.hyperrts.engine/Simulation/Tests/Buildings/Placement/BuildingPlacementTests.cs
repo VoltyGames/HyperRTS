@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
     /// neighbours sit flush, the building gap refuses narrow lanes, and only enemy units on
     /// the spot rule it out.
     /// </summary>
-    public class BuildingPlacementTests
+    public class BuildingPlacementTests : SimulationFixture
     {
         private static readonly float3 Far = new(90f, 0f, 90f);
         private static readonly float3 SpawnOffset = new(0f, 0f, 4f);
@@ -24,35 +24,29 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         // Right along (0.8, -0.6), so a neighbour one width over sits on the half-cell lattice.
         private static readonly float TiltedYaw = math.atan2(0.6f, 0.8f);
 
-        private TestWorld _world;
         private ResourceType _supplies;
 
         [SetUp]
-        public void SetUp()
+        public void Prepare()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-            _supplies = _world.CreateSupplies();
-            _world.AddResources(1, _supplies, 1000);
+            _supplies = World.CreateSupplies();
+            World.AddResources(1, _supplies, 1000);
         }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
 
         private Entity FactoryPrefab(float2 footprint)
         {
-            var prefab = _world.MakePrefab(_world.SpawnBuilding(0, Far, footprint, name: "Factory"));
-            _world.SetCost(prefab, _supplies, 100);
-            var unit = _world.UnitPrefab(_supplies, 10);
-            return _world.MakeProducer(prefab, SpawnOffset, unit);
+            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, footprint, name: "Factory"));
+            World.SetCost(prefab, _supplies, 100);
+            var unit = World.UnitPrefab(_supplies, 10);
+            return World.MakeProducer(prefab, SpawnOffset, unit);
         }
 
         private static float Quarter(int turn) => PlacementMath.CameraYaw + math.PI * 0.5f * turn;
 
         private void Command(Entity prefab, float3 position, float yaw)
         {
-            var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
-            _world.Command(1, new PlayerCommand
+            var builder = World.MakeBuilder(World.SpawnUnit(1, float3.zero), prefab);
+            World.Command(1, new PlayerCommand
             {
                 Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position, Yaw = yaw,
             });
@@ -61,10 +55,10 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         private Entity Place(Entity prefab, float3 position, float yaw)
         {
             Command(prefab, position, yaw);
-            _world.Tick();
-            foreach (var site in _world.All<ConstructionProgress>())
+            World.Tick();
+            foreach (var site in World.All<ConstructionProgress>())
             {
-                if (_world.Get<Faction>(site).Value == 1)
+                if (World.Get<Faction>(site).Value == 1)
                 {
                     return site;
                 }
@@ -73,7 +67,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             return Entity.Null;
         }
 
-        private float3 Front(Entity site) => math.rotate(_world.Get<LocalTransform>(site).Rotation, math.forward());
+        private float3 Front(Entity site) => math.rotate(World.Get<LocalTransform>(site).Rotation, math.forward());
 
         [TestCase(0, 0f, -1f, 10.5f, 10f)]
         [TestCase(1, -1f, 0f, 10f, 10.5f)]
@@ -83,16 +77,16 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             float centerX, float centerZ)
         {
             var site = Place(FactoryPrefab(new float2(3f, 2f)), new float3(10.2f, 0f, 10.2f), Quarter(turn));
-            var transform = _world.Get<LocalTransform>(site);
+            var transform = World.Get<LocalTransform>(site);
             var front = new float3(frontX, 0f, frontZ);
 
             MathAssert.Near(front, Front(site));
             Assert.AreEqual(centerX, transform.Position.x, 1e-4f, "snapped to the turned footprint");
             Assert.AreEqual(centerZ, transform.Position.z, 1e-4f);
-            var box = new NavBox(transform.Position, transform.Rotation, _world.Get<NavObstacle>(site).Size);
+            var box = new NavBox(transform.Position, transform.Rotation, World.Get<NavObstacle>(site).Size);
             var extent = box.Extents * 2f;
             MathAssert.Near(turn % 2 == 1 ? new float2(2f, 3f) : new float2(3f, 2f), extent);
-            var spawn = transform.TransformPoint(_world.Get<Producer>(site).SpawnOffset);
+            var spawn = transform.TransformPoint(World.Get<Producer>(site).SpawnOffset);
             MathAssert.Near(transform.Position + front * SpawnOffset.z, spawn);
         }
 
@@ -109,7 +103,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         public void NonFiniteYaw_IsRefused()
         {
             Assert.AreEqual(Entity.Null, Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), float.NaN));
-            Assert.AreEqual(1000, _world.GetResources(1, _supplies), "nothing charged");
+            Assert.AreEqual(1000, World.GetResources(1, _supplies), "nothing charged");
         }
 
         [Test]
@@ -117,7 +111,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         {
             const float yaw = 0.7f;
             var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10.3f, 0f, 10.1f), yaw);
-            var transform = _world.Get<LocalTransform>(site);
+            var transform = World.Get<LocalTransform>(site);
 
             MathAssert.Near(new float3(math.sin(yaw), 0f, math.cos(yaw)), Front(site));
             Assert.AreEqual(10.5f, transform.Position.x, 1e-4f);
@@ -131,7 +125,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             var prefab = FactoryPrefab(new float2(5f, 5f));
             Command(prefab, new float3(10f, 0f, 10f), TiltedYaw);
             Command(prefab, new float3(x, 0f, z), TiltedYaw);
-            _world.Tick();
+            World.Tick();
 
             Assert.AreEqual(expected, PlayerSites());
         }
@@ -145,7 +139,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             var prefab = FactoryPrefab(turn < 0 ? new float2(5f, 5f) : new float2(4f, 4f));
             Command(prefab, new float3(10f, 0f, 10f), yaw);
             Command(prefab, new float3(x, 0f, z), yaw);
-            _world.Tick();
+            World.Tick();
 
             Assert.AreEqual(2, PlayerSites());
         }
@@ -160,7 +154,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         {
             UseBuildingGap(4f);
             // The new site spans x 8 to 12, so this neighbour's right edge sits gap metres from it.
-            _world.SpawnBuilding(0, new float3(6f - gap, 0f, 10f), new float2(4f, 4f));
+            World.SpawnBuilding(0, new float3(6f - gap, 0f, 10f), new float2(4f, 4f));
 
             var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), Quarter(0));
 
@@ -180,17 +174,17 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
 
         private void UseBuildingGap(float gap)
         {
-            var map = _world.Singleton<MapSettings>();
+            var map = World.Singleton<MapSettings>();
             map.BuildingGap = gap;
-            _world.EntityManager.SetComponentData(_world.MatchEntity(), map);
+            World.Set(World.MatchEntity(), map);
         }
 
         private int PlayerSites()
         {
             var count = 0;
-            foreach (var site in _world.All<ConstructionProgress>())
+            foreach (var site in World.All<ConstructionProgress>())
             {
-                count += _world.Get<Faction>(site).Value == 1 ? 1 : 0;
+                count += World.Get<Faction>(site).Value == 1 ? 1 : 0;
             }
 
             return count;
@@ -203,9 +197,9 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         {
             var spot = new float3(20f, 0f, 20f);
             var prefab = FactoryPrefab(new float2(6f, 6f));
-            _world.SpawnUnit((byte)faction, spot + new float3(x, 0f, z));
+            World.SpawnUnit((byte)faction, spot + new float3(x, 0f, z));
             // One tick first, so the spatial index holds the unit.
-            _world.Tick();
+            World.Tick();
 
             Assert.AreEqual(places, Place(prefab, spot, Quarter(0)) != Entity.Null);
         }

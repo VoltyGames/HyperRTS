@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.Tests.Common
             var producer = _world.MakeProducer(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f)),
                 new float3(0f, 0f, -4f), prefab);
             var facing = quaternion.RotateY(0.7f);
-            _world.EntityManager.SetComponentData(producer, LocalTransform.FromPositionRotation(float3.zero, facing));
+            _world.Set(producer, LocalTransform.FromPositionRotation(float3.zero, facing));
             _world.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
             _world.AddResources(1, _supplies, 100);
 
@@ -104,8 +104,8 @@ namespace HyperRTS.Simulation.Tests.Common
         {
             var stretch = float4x4.Scale(1f, 1f, 3f);
             var prefab = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(prefab, LocalTransform.FromScale(2f));
-            _world.EntityManager.AddComponentData(prefab, new PostTransformMatrix { Value = stretch });
+            _world.Add(prefab, LocalTransform.FromScale(2f));
+            _world.Add(prefab, new PostTransformMatrix { Value = stretch });
             _world.MakePrefab(prefab);
             _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f, projectile: prefab);
             _world.SpawnUnit(2, new float3(4f, 0f, 4f), speed: 0f);
@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Tests.Common
         {
             var stretch = float4x4.Scale(2f, 1f, 1f);
             var prefab = Scaled(_world.MakePrefab(_world.SpawnUnit(0, Far)), 1.5f);
-            _world.EntityManager.AddComponentData(prefab, new PostTransformMatrix { Value = stretch });
+            _world.Add(prefab, new PostTransformMatrix { Value = stretch });
             var rotation = quaternion.RotateY(0.4f);
 
             var spawned = _world.EntityManager.Spawn(prefab, new float3(3f, 0f, 7f), rotation, 2);
@@ -144,9 +144,9 @@ namespace HyperRTS.Simulation.Tests.Common
             var pose = LocalTransform.FromPositionRotationScale(new float3(5f, 0f, 3f), quaternion.RotateY(0.6f), 1.3f);
             var stretch = float4x4.Scale(1f, 2.5f, 0.8f);
             var piece = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(piece, pose);
-            _world.EntityManager.AddComponentData(piece, new PostTransformMatrix { Value = stretch });
-            var writer = new EntityWriter(_world.EntityManager, piece);
+            _world.Add(piece, pose);
+            _world.Add(piece, new PostTransformMatrix { Value = stretch });
+            var writer = _world.Writer(piece);
             DestructibleAuthoring.AddScenery(writer, 50f, 0, remains, float2.zero, SceneryId.At(pose.Position,
                 pose.Rotation));
 
@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Tests.Common
         {
             var carrier = Scaled(_world.MakePrefab(_world.SpawnUnit(0, float3.zero, speed: 20f, name: "Truck")), 1.2f);
             var source = _world.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
-            var writer = new EntityWriter(_world.EntityManager, source);
+            var writer = _world.Writer(source);
             writer.Add(new DeliverySource
             {
                 Carrier = carrier, Count = 2, Interval = 1f, Type = _supplies, Amount = 50, ArrivalRange = 6f,
@@ -189,7 +189,7 @@ namespace HyperRTS.Simulation.Tests.Common
         {
             var pose = LocalTransform.FromPositionRotationScale(Far, quaternion.RotateY(0.9f), 1.4f);
             var beacon = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(beacon, pose);
+            _world.Add(beacon, pose);
             _world.MakePrefab(beacon);
             var strike = new Ability
             {
@@ -197,7 +197,7 @@ namespace HyperRTS.Simulation.Tests.Common
                 Filter = AbilityTargetFilter.Hostile, Cooldown = 2f, SpawnPrefab = beacon,
             };
             var silo = _world.SpawnBuilding(1, float3.zero, new float2(4f, 4f));
-            var writer = new EntityWriter(_world.EntityManager, silo);
+            var writer = _world.Writer(silo);
             writer.AddBuffer(new[] { strike });
 
             _world.Command(1, new PlayerCommand
@@ -218,14 +218,14 @@ namespace HyperRTS.Simulation.Tests.Common
         {
             var transform = _world.Get<LocalTransform>(prefab);
             transform.Scale = scale;
-            _world.EntityManager.SetComponentData(prefab, transform);
+            _world.Set(prefab, transform);
             return prefab;
         }
 
         /// <summary>Ticks one frame at a time so the new entities are read on the tick they appear.</summary>
         private List<Entity> TickUntilSpawned(int maxFrames, params ComponentType[] types)
         {
-            using var query = _world.EntityManager.CreateEntityQuery(types);
+            using var query = _world.Query(types);
             using var existing = query.ToEntityArray(Allocator.Temp);
             var before = new HashSet<Entity>(existing.ToArray());
             for (var frame = 0; frame < maxFrames; frame++)

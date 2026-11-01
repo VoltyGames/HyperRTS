@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests
         public static void ConfigureMap(this TestWorld world, float waterLevel = 0f, float maxSlope = 0f,
             bool floodTerrain = false)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(MapSettings));
+            using var query = world.Query(typeof(MapSettings));
             var map = query.GetSingleton<MapSettings>();
             map.WaterLevel = waterLevel;
             map.MaxSlope = maxSlope;
@@ -28,8 +28,8 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnNavArea(this TestWorld world, float3 position, float2 size, NavAreaKind kind)
         {
             var area = world.EntityManager.CreateEntity();
-            world.EntityManager.AddComponentData(area, LocalTransform.FromPosition(position));
-            var writer = new EntityWriter(world.EntityManager, area);
+            world.Add(area, LocalTransform.FromPosition(position));
+            var writer = world.Writer(area);
             NavSetup.AddArea(writer, size, kind);
             return area;
         }
@@ -37,9 +37,9 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnObstacle(this TestWorld world, float3 center, float2 size, float yaw = 0f)
         {
             var obstacle = world.EntityManager.CreateEntity();
-            world.EntityManager.AddComponentData(obstacle,
+            world.Add(obstacle,
                 LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
-            var writer = new EntityWriter(world.EntityManager, obstacle);
+            var writer = world.Writer(obstacle);
             NavSetup.AddObstacle(writer, size);
             return obstacle;
         }
@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnShip(this TestWorld world, byte faction, float3 position, float radius = 0.5f)
         {
             var ship = world.SpawnUnit(faction, position, speed: 8f, radius: radius, name: "Ship");
-            world.EntityManager.SetComponentData(ship, new NavAgent { Radius = radius, Layer = NavLayer.Naval });
+            world.Set(ship, new NavAgent { Radius = radius, Layer = NavLayer.Naval });
             return ship;
         }
 
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Tests
         public static NavGrid Grid(this TestWorld world)
         {
             world.EntityManager.CompleteAllTrackedJobs();
-            using var query = world.EntityManager.CreateEntityQuery(typeof(NavGrid));
+            using var query = world.Query(typeof(NavGrid));
             return query.GetSingleton<NavGrid>();
         }
 

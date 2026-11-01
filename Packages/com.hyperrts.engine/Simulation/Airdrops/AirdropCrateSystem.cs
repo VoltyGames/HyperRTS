@@ -17,12 +17,6 @@ namespace HyperRTS.Simulation.Airdrops
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct AirdropCrateSystem : ISystem
     {
-        private ComponentLookup<AirdropReceiver> _receiverLookup;
-        private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<Dead> _deadLookup;
-        private BufferLookup<ResourceStock> _stockLookup;
-        private ComponentLookup<PlayerStats> _statsLookup;
-        private BufferLookup<StatModifier> _modifierLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -30,35 +24,23 @@ namespace HyperRTS.Simulation.Airdrops
             state.RequireForUpdate<PlayerRegistry>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<AirdropCrate>();
-            _receiverLookup = state.GetComponentLookup<AirdropReceiver>(true);
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _deadLookup = state.GetComponentLookup<Dead>(true);
-            _stockLookup = state.GetBufferLookup<ResourceStock>();
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _modifierLookup = state.GetBufferLookup<StatModifier>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _receiverLookup.Update(ref state);
-            _factionLookup.Update(ref state);
-            _deadLookup.Update(ref state);
-            _stockLookup.Update(ref state);
-            _statsLookup.Update(ref state);
-            _modifierLookup.Update(ref state);
             new LandJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                ReceiverLookup = _receiverLookup,
-                FactionLookup = _factionLookup,
-                DeadLookup = _deadLookup,
-                StockLookup = _stockLookup,
-                StatsLookup = _statsLookup,
-                ModifierLookup = _modifierLookup,
+                ReceiverLookup = SystemAPI.GetComponentLookup<AirdropReceiver>(true),
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
+                StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
+                StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
+                ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
             }.Schedule();
         }
 

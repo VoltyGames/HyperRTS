@@ -22,7 +22,6 @@ namespace HyperRTS.Presentation.Rendering.Materials
     {
         private EntityQuery _unseen;
         private MeshPainter<LightsOn> _painter;
-        private ComponentLookup<ConstructionSite> _sites;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -30,7 +29,6 @@ namespace HyperRTS.Presentation.Rendering.Materials
             _unseen = SystemAPI.QueryBuilder().WithAll<BuildingTag>().WithPresent<Offline>().WithNone<BuildingLights>()
                 .Build();
             _painter = new MeshPainter<LightsOn>(ref state);
-            _sites = state.GetComponentLookup<ConstructionSite>(true);
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<BuildingTag>().WithPresent<Offline>().Build());
         }
 
@@ -39,7 +37,6 @@ namespace HyperRTS.Presentation.Rendering.Materials
         {
             state.CompleteDependency();
             _painter.Update(ref state);
-            _sites.Update(ref state);
             var parts = new NativeList<Entity>(Allocator.Temp);
             var site = new NativeList<Entity>(Allocator.Temp);
             var commands = new EntityCommandBuffer(Allocator.Temp);
@@ -47,7 +44,7 @@ namespace HyperRTS.Presentation.Rendering.Materials
             foreach (var root in _unseen.ToEntityArray(Allocator.Temp))
             {
                 var lights = BuildingLights.Seen(!SystemAPI.IsComponentEnabled<Offline>(root));
-                CollectLit(root, parts, site);
+                CollectLit(ref state, root, parts, site);
                 _painter.Add(parts, new LightsOn { Value = lights.Value }, commands);
                 commands.AddComponent(root, lights);
             }
@@ -55,24 +52,24 @@ namespace HyperRTS.Presentation.Rendering.Materials
             commands.Playback(state.EntityManager);
             // After playback, so the painter sees the meshes that just got the property.
             _painter.Update(ref state);
-            _sites.Update(ref state);
             var deltaTime = SystemAPI.Time.DeltaTime;
             foreach (var (lights, offline, root) in SystemAPI.Query<RefRW<BuildingLights>, EnabledRefRO<Offline>>()
                          .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).WithEntityAccess())
             {
                 if (lights.ValueRW.Advance(!offline.ValueRO, deltaTime))
                 {
-                    CollectLit(root, parts, site);
+                    CollectLit(ref state, root, parts, site);
                     _painter.Set(parts, new LightsOn { Value = lights.ValueRO.Value });
                 }
             }
         }
 
         // The site's meshes are left out, so its work lights stay on while the building is dark.
-        private void CollectLit(Entity root, NativeList<Entity> parts, NativeList<Entity> site)
+        private void CollectLit(ref SystemState state, Entity root, NativeList<Entity> parts, NativeList<Entity> site)
         {
             _painter.Collect(root, parts);
-            if (!_sites.TryGetComponent(root, out var dressing) || dressing.Visual == Entity.Null)
+            var sites = SystemAPI.GetComponentLookup<ConstructionSite>(true);
+            if (!sites.TryGetComponent(root, out var dressing) || dressing.Visual == Entity.Null)
             {
                 return;
             }

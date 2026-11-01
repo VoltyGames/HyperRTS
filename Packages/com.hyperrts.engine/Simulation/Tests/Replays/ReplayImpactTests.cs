@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Tests.Replays
             Combat.ImpactTests.Marked(world, gun, _mark);
             if (loud)
             {
-                var writer = new EntityWriter(world.EntityManager, gun);
+                var writer = world.Writer(gun);
                 EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(writer), CueSlot.Fire, _sound);
             }
 
@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.Tests.Replays
 
         private static int QueuedAfterSeek(TestWorld world, float time)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(ReplayPlayback));
+            using var query = world.Query(typeof(ReplayPlayback));
             var clock = query.GetSingleton<ReplayPlayback>();
             clock.Playing = false;
             clock.Time = time;

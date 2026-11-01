@@ -20,14 +20,7 @@ namespace HyperRTS.Simulation.Production
     [UpdateAfter(typeof(PopulationSystem))]
     public partial struct ProductionSystem : ISystem
     {
-        private ComponentLookup<Population> _populationLookup;
-        private ComponentLookup<Producible> _producibleLookup;
         private PrefabSpawner _spawner;
-        private ComponentLookup<Research> _researchLookup;
-        private ComponentLookup<Offline> _offlineLookup;
-        private BufferLookup<CompletedResearch> _completedResearchLookup;
-        private BufferLookup<LandingPad> _padLookup;
-        private ComponentLookup<HomePad> _padUserLookup;
         private EventWriter<UnitProduced> _produced;
         private EventWriter<ResearchCompleted> _researched;
 
@@ -35,14 +28,7 @@ namespace HyperRTS.Simulation.Production
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
-            _populationLookup = state.GetComponentLookup<Population>(true);
-            _producibleLookup = state.GetComponentLookup<Producible>(true);
             _spawner = new PrefabSpawner(ref state);
-            _researchLookup = state.GetComponentLookup<Research>(true);
-            _offlineLookup = state.GetComponentLookup<Offline>(true);
-            _completedResearchLookup = state.GetBufferLookup<CompletedResearch>();
-            _padLookup = state.GetBufferLookup<LandingPad>(true);
-            _padUserLookup = state.GetComponentLookup<HomePad>(true);
             _produced = new EventWriter<UnitProduced>(ref state);
             _researched = new EventWriter<ResearchCompleted>(ref state);
             state.RequireForUpdate<MatchRules>();
@@ -52,14 +38,7 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _populationLookup.Update(ref state);
-            _producibleLookup.Update(ref state);
             _spawner.Update(ref state);
-            _researchLookup.Update(ref state);
-            _offlineLookup.Update(ref state);
-            _completedResearchLookup.Update(ref state);
-            _padLookup.Update(ref state);
-            _padUserLookup.Update(ref state);
             _produced.Update(ref state);
             _researched.Update(ref state);
 
@@ -72,14 +51,14 @@ namespace HyperRTS.Simulation.Production
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 SpawnedPopulation = CollectionHelper.CreateNativeArray<int>(PlayerRegistry.Capacity, allocator),
-                PopulationLookup = _populationLookup,
-                ProducibleLookup = _producibleLookup,
+                PopulationLookup = SystemAPI.GetComponentLookup<Population>(true),
+                ProducibleLookup = SystemAPI.GetComponentLookup<Producible>(true),
                 Spawner = _spawner,
-                ResearchLookup = _researchLookup,
-                OfflineLookup = _offlineLookup,
-                CompletedResearchLookup = _completedResearchLookup,
-                PadLookup = _padLookup,
-                PadUserLookup = _padUserLookup,
+                ResearchLookup = SystemAPI.GetComponentLookup<Research>(true),
+                OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
+                CompletedResearchLookup = SystemAPI.GetBufferLookup<CompletedResearch>(false),
+                PadLookup = SystemAPI.GetBufferLookup<LandingPad>(true),
+                PadUserLookup = SystemAPI.GetComponentLookup<HomePad>(true),
                 Produced = _produced,
                 Researched = _researched,
             }.Schedule();

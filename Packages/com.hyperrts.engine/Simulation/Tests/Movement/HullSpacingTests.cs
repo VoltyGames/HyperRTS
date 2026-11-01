@@ -17,48 +17,36 @@ namespace HyperRTS.Simulation.Tests.Movement
     /// Capsule footprints and spacing: hulls keep their gap side by side and nose to tail, close at most half the room
     /// between them, slide along walls, and formations give each unit a slot its own width on open ground.
     /// </summary>
-    public class HullSpacingTests
+    public class HullSpacingTests : SimulationFixture
     {
         private const float TankRadius = 1.85f;
         private const float TankLength = 6.9f;
         private const float Spacing = 0.6f;
 
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         private Entity SpawnTank(float3 position, float3 facing)
         {
-            var tank = _world.SpawnUnit(1, position, radius: TankRadius);
-            _world.EntityManager.SetComponentData(tank, new NavAgent
+            var tank = World.SpawnUnit(1, position, radius: TankRadius);
+            World.Set(tank, new NavAgent
             {
                 Radius = TankRadius, HullLength = TankLength, Spacing = Spacing,
             });
-            var transform = _world.Get<LocalTransform>(tank);
+            var transform = World.Get<LocalTransform>(tank);
             transform.Rotation = quaternion.LookRotationSafe(facing, math.up());
-            _world.EntityManager.SetComponentData(tank, transform);
+            World.Set(tank, transform);
             return tank;
         }
 
-        private bool Arrived(Entity unit) => !_world.IsEnabled<ActiveOrder>(unit);
+        private bool Arrived(Entity unit) => !World.IsEnabled<ActiveOrder>(unit);
 
         // Selects the units and gives one move, as a player's right-click does.
         private void OrderFormation(float3 goal, params Entity[] units)
         {
             foreach (var unit in units)
             {
-                _world.EntityManager.SetComponentEnabled<Selected>(unit, true);
+                World.SetEnabled<Selected>(unit, true);
             }
 
-            _world.Command(1, new PlayerCommand { Type = CommandType.Smart, Position = goal });
+            World.Command(1, new PlayerCommand { Type = CommandType.Smart, Position = goal });
         }
 
         [Test]
@@ -67,9 +55,9 @@ namespace HyperRTS.Simulation.Tests.Movement
             var left = SpawnTank(float3.zero, math.forward());
             var right = SpawnTank(new float3(1f, 0f, 0.5f), math.forward());
 
-            _world.Run(2f);
+            World.Run(2f);
 
-            var gap = _world.GetPosition(right) - _world.GetPosition(left);
+            var gap = World.GetPosition(right) - World.GetPosition(left);
             Assert.AreEqual(TankRadius * 2f + Spacing, gap.x, 0.05f, "pushed apart sideways");
             Assert.AreEqual(0.5f, gap.z, 0.05f, "never pushed along the hull");
         }
@@ -80,9 +68,9 @@ namespace HyperRTS.Simulation.Tests.Movement
             var rear = SpawnTank(float3.zero, math.forward());
             var front = SpawnTank(new float3(0f, 0f, 3f), math.forward());
 
-            _world.Run(2f);
+            World.Run(2f);
 
-            var gap = _world.GetPosition(front) - _world.GetPosition(rear);
+            var gap = World.GetPosition(front) - World.GetPosition(rear);
             Assert.AreEqual(TankLength + Spacing, gap.z, 0.05f, "pushed apart along the hulls");
             Assert.AreEqual(0f, gap.x, 0.05f);
         }
@@ -90,12 +78,12 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void RoundUnits_WithoutHullOrSpacing_TouchEdgeToEdge()
         {
-            var a = _world.SpawnUnit(1, float3.zero);
-            var b = _world.SpawnUnit(1, new float3(0.4f, 0f, 0f));
+            var a = World.SpawnUnit(1, float3.zero);
+            var b = World.SpawnUnit(1, new float3(0.4f, 0f, 0f));
 
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.AreEqual(1f, math.distance(_world.GetPosition(a).xz, _world.GetPosition(b).xz), 0.05f);
+            Assert.AreEqual(1f, math.distance(World.GetPosition(a).xz, World.GetPosition(b).xz), 0.05f);
         }
 
         [Test]
@@ -109,15 +97,15 @@ namespace HyperRTS.Simulation.Tests.Movement
 
             OrderFormation(new float3(20f, 0f, 0f), tanks);
             // The command only starts the orders on the next tick.
-            _world.Tick();
-            _world.RunUntil(() => Array.TrueForAll(tanks, Arrived), 25f);
+            World.Tick();
+            World.RunUntil(() => Array.TrueForAll(tanks, Arrived), 25f);
 
             for (var i = 0; i < tanks.Length; i++)
             {
-                Assert.IsFalse(_world.IsEnabled<ActiveOrder>(tanks[i]), "every move order completed");
+                Assert.IsFalse(World.IsEnabled<ActiveOrder>(tanks[i]), "every move order completed");
                 for (var j = i + 1; j < tanks.Length; j++)
                 {
-                    var apart = math.distance(_world.GetPosition(tanks[i]).xz, _world.GetPosition(tanks[j]).xz);
+                    var apart = math.distance(World.GetPosition(tanks[i]).xz, World.GetPosition(tanks[j]).xz);
                     Assert.Greater(apart, TankRadius * 2f, "hulls overlap");
                 }
             }
@@ -129,22 +117,22 @@ namespace HyperRTS.Simulation.Tests.Movement
             var units = new Entity[9];
             for (var i = 0; i < units.Length; i++)
             {
-                units[i] = _world.SpawnUnit(1, new float3(-10f + i % 3 * 1.2f, 0f, i / 3 * 1.2f));
+                units[i] = World.SpawnUnit(1, new float3(-10f + i % 3 * 1.2f, 0f, i / 3 * 1.2f));
             }
 
             var goal = new float3(10f, 0f, 0f);
             OrderFormation(goal, units);
-            bool Settled(Entity unit) => Arrived(unit) && math.distance(_world.GetPosition(unit).xz, goal.xz) < 4f;
-            _world.RunUntil(() => Array.TrueForAll(units, Settled), 10f);
+            bool Settled(Entity unit) => Arrived(unit) && math.distance(World.GetPosition(unit).xz, goal.xz) < 4f;
+            World.RunUntil(() => Array.TrueForAll(units, Settled), 10f);
 
             for (var i = 0; i < units.Length; i++)
             {
-                var position = _world.GetPosition(units[i]);
-                Assert.IsFalse(_world.IsEnabled<ActiveOrder>(units[i]), "every move order completed");
+                var position = World.GetPosition(units[i]);
+                Assert.IsFalse(World.IsEnabled<ActiveOrder>(units[i]), "every move order completed");
                 Assert.Less(math.distance(position.xz, goal.xz), 4f);
                 for (var j = i + 1; j < units.Length; j++)
                 {
-                    Assert.Greater(math.distance(position.xz, _world.GetPosition(units[j]).xz), 0.9f, "units stacked");
+                    Assert.Greater(math.distance(position.xz, World.GetPosition(units[j]).xz), 0.9f, "units stacked");
                 }
             }
         }
@@ -153,23 +141,23 @@ namespace HyperRTS.Simulation.Tests.Movement
         public void Formation_IntoABuilding_PutsEverySlotOnOpenGround()
         {
             var goal = new float3(10f, 0f, 0f);
-            _world.SpawnBuilding(2, goal, new float2(8f, 8f));
-            _world.Tick();
+            World.SpawnBuilding(2, goal, new float2(8f, 8f));
+            World.Tick();
             var units = new Entity[4];
             for (var i = 0; i < units.Length; i++)
             {
-                units[i] = _world.SpawnUnit(1, new float3(-10f, 0f, i * 1.5f));
+                units[i] = World.SpawnUnit(1, new float3(-10f, 0f, i * 1.5f));
             }
 
             // A frame first registers their movement class, as a prefab's is before any unit spawns.
-            _world.Tick();
+            World.Tick();
             OrderFormation(goal, units);
-            _world.Tick();
+            World.Tick();
 
             foreach (var unit in units)
             {
-                var slot = _world.Get<ActiveOrder>(unit).Value.Position;
-                Assert.IsTrue(_world.Grid().IsWalkable(slot), "the slot moved out of the building");
+                var slot = World.Get<ActiveOrder>(unit).Value.Position;
+                Assert.IsTrue(World.Grid().IsWalkable(slot), "the slot moved out of the building");
             }
         }
 
@@ -242,10 +230,10 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void Constrain_KeepsTheCapsuleNoseOffAWall_AndSlidesAlongIt()
         {
-            _world.AddAgentPrefabs(new NavAgent { Radius = 0.5f });
-            _world.SpawnObstacle(new float3(2.5f, 0f, 0f), new float2(1f, 20f));
-            _world.Tick();
-            var access = new NavAgent { Radius = 0.5f, HullLength = 4f }.Access(_world.Grid());
+            World.AddAgentPrefabs(new NavAgent { Radius = 0.5f });
+            World.SpawnObstacle(new float3(2.5f, 0f, 0f), new float2(1f, 20f));
+            World.Tick();
+            var access = new NavAgent { Radius = 0.5f, HullLength = 4f }.Access(World.Grid());
             var capsule = new NavCapsule(access, new float2(1.5f, 0f));
             var from = new float2(-0.5f, 0.5f);
 
@@ -261,12 +249,12 @@ namespace HyperRTS.Simulation.Tests.Movement
         public void Capsule_PushedIntoADiagonalWall_SlidesAlongIt()
         {
             var wide = new NavAgent { Radius = 1f };
-            _world.AddAgentPrefabs(wide);
+            World.AddAgentPrefabs(wide);
             // A wall along x = z, stamped as a staircase of cells.
-            _world.SpawnObstacle(float3.zero, new float2(1f, 40f), math.PI * 0.25f);
-            _world.Tick();
+            World.SpawnObstacle(float3.zero, new float2(1f, 40f), math.PI * 0.25f);
+            World.Tick();
             // Two cells wide, so it rides the step corners rather than sitting in the notches between them.
-            var capsule = new NavCapsule(wide.Access(_world.Grid()), float2.zero);
+            var capsule = new NavCapsule(wide.Access(World.Grid()), float2.zero);
             var along = math.normalize(new float2(1f, 1f));
             var move = 0.2f * new float2(math.cos(math.radians(20f)), math.sin(math.radians(20f)));
 

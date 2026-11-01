@@ -21,24 +21,18 @@ namespace HyperRTS.Simulation.Air
     public partial struct AircraftReloadSystem : ISystem
     {
         private OrderWriter _writer;
-        private ComponentLookup<Ammo> _ammo;
-        private BufferLookup<WeaponMount> _mounts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _writer = new OrderWriter(ref state);
-            _ammo = state.GetComponentLookup<Ammo>(true);
-            _mounts = state.GetBufferLookup<WeaponMount>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
-            _ammo.Update(ref state);
-            _mounts.Update(ref state);
-            new ReturnJob { Writer = _writer, Ammos = _ammo, Mounts = _mounts }.Schedule();
+            new ReturnJob { Writer = _writer, Ammos = SystemAPI.GetComponentLookup<Ammo>(true), Mounts = SystemAPI.GetBufferLookup<WeaponMount>(true) }.Schedule();
             new ReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
             new MountReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }

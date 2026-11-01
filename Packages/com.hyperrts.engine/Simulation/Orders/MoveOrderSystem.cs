@@ -18,22 +18,14 @@ namespace HyperRTS.Simulation.Orders
     [UpdateAfter(typeof(OrderDispatchSystem))]
     public partial struct MoveOrderSystem : ISystem
     {
-        private ComponentLookup<AttackTarget> _attacks;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            _attacks = state.GetComponentLookup<AttackTarget>(true);
-        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _attacks.Update(ref state);
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
             new MoveOrderJob
             {
-                Attacks = _attacks,
+                Attacks = SystemAPI.GetComponentLookup<AttackTarget>(true),
                 Traits = traits,
             }.ScheduleParallel();
         }

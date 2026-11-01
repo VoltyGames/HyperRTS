@@ -23,10 +23,6 @@ namespace HyperRTS.Simulation.Auras
         public const float Interval = 0.25f;
 
         private NativeParallelMultiHashMap<Entity, AuraPresence> _hits;
-        private ComponentLookup<Aura> _auras;
-        private BufferLookup<AuraBonus> _bonuses;
-        private BufferLookup<StatModifier> _modifiers;
-        private ComponentLookup<LocalTransform> _transforms;
         private EventWriter<DamageEvent> _damage;
         private EntityQuery _auraQuery;
         private bool _hadAuras;
@@ -35,10 +31,6 @@ namespace HyperRTS.Simulation.Auras
         public void OnCreate(ref SystemState state)
         {
             _hits = new NativeParallelMultiHashMap<Entity, AuraPresence>(256, Allocator.Persistent);
-            _auras = state.GetComponentLookup<Aura>(true);
-            _bonuses = state.GetBufferLookup<AuraBonus>(true);
-            _modifiers = state.GetBufferLookup<StatModifier>();
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
             _damage = new EventWriter<DamageEvent>(ref state);
             _auraQuery = SystemAPI.QueryBuilder().WithAll<Aura>().Build();
             state.RequireForUpdate<SpatialIndex>();
@@ -59,10 +51,6 @@ namespace HyperRTS.Simulation.Auras
                 return;
             }
 
-            _auras.Update(ref state);
-            _bonuses.Update(ref state);
-            _modifiers.Update(ref state);
-            _transforms.Update(ref state);
             _damage.Update(ref state);
 
             state.Dependency = new ClearJob { Hits = _hits }.Schedule(state.Dependency);
@@ -75,10 +63,10 @@ namespace HyperRTS.Simulation.Auras
             new ApplyJob
             {
                 Hits = _hits,
-                Auras = _auras,
-                Bonuses = _bonuses,
-                Modifiers = _modifiers,
-                Transforms = _transforms,
+                Auras = SystemAPI.GetComponentLookup<Aura>(true),
+                Bonuses = SystemAPI.GetBufferLookup<AuraBonus>(true),
+                Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Damage = _damage,
             }.Schedule();
         }

@@ -17,32 +17,23 @@ namespace HyperRTS.Simulation.Upgrades
     [UpdateAfter(typeof(ProductionSystem))]
     public partial struct UpgradeSystem : ISystem
     {
-        private BufferLookup<CompletedResearch> _researched;
-        private BufferLookup<UpgradeEffect> _effects;
-        private BufferLookup<StatModifier> _modifiers;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
-            _researched = state.GetBufferLookup<CompletedResearch>(true);
-            _effects = state.GetBufferLookup<UpgradeEffect>(true);
-            _modifiers = state.GetBufferLookup<StatModifier>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _researched.Update(ref state);
-            _effects.Update(ref state);
-            _modifiers.Update(ref state);
 
             new ApplyJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                Researched = _researched,
-                Effects = _effects,
-                Modifiers = _modifiers,
+                Researched = SystemAPI.GetBufferLookup<CompletedResearch>(true),
+                Effects = SystemAPI.GetBufferLookup<UpgradeEffect>(true),
+                Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
             }.ScheduleParallel();
         }
 

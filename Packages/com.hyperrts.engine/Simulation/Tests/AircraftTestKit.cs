@@ -17,8 +17,8 @@ namespace HyperRTS.Simulation.Tests
             float loiterRadius = 0f, float speed = 10f)
         {
             var aircraft = world.SpawnUnit(faction, position, speed: speed, name: "Aircraft");
-            world.EntityManager.SetComponentData(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
-            var writer = new EntityWriter(world.EntityManager, aircraft);
+            world.Set(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
+            var writer = world.Writer(aircraft);
             AirSetup.AddFlight(writer, altitude, climbSpeed: 20f, loiterRadius);
             return aircraft;
         }
@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity AddPadUser(this TestWorld world, Entity aircraft, int rounds = 0, float reloadTime = 0.5f,
             PadKind kind = PadKind.Any)
         {
-            var writer = new EntityWriter(world.EntityManager, aircraft);
+            var writer = world.Writer(aircraft);
             AirSetup.AddPadUser(writer, kind);
             if (rounds > 0)
             {
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnAirfield(this TestWorld world, byte faction, float3 position, params float3[] pads)
         {
             var airfield = world.SpawnBuilding(faction, position, new float2(4f, 4f), name: "Airfield");
-            var writer = new EntityWriter(world.EntityManager, airfield);
+            var writer = world.Writer(airfield);
             var buffer = AirSetup.AddAirfield(writer);
             foreach (var offset in pads)
             {

@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Tests
                 },
             };
             Aim(ref weapon, traverseSpeed);
-            var writer = new EntityWriter(world.EntityManager, entity);
+            var writer = world.Writer(entity);
             WeaponSetup.Add(writer, weapon, stance, world.Get<LocalTransform>(entity).Position, 0);
             return entity;
         }
@@ -64,9 +64,9 @@ namespace HyperRTS.Simulation.Tests
             Aim(ref weapon, 360f);
             var mount = WeaponMount.Create(weapon, Ammo.Create(rounds, reloadTime, refill), requiredResearchTypeId, 1,
                 independent);
-            var writer = new EntityWriter(world.EntityManager, entity);
+            var writer = world.Writer(entity);
             WeaponSetup.AddMounts(writer, new[] { mount });
-            world.EntityManager.GetBuffer<WeaponPose>(entity).Add(default);
+            world.Buffer<WeaponPose>(entity).Add(default);
             return entity;
         }
 
@@ -76,7 +76,7 @@ namespace HyperRTS.Simulation.Tests
             var weapon = world.Get<Weapon>(entity);
             weapon.SalvoSize = size;
             weapon.SalvoInterval = interval;
-            world.EntityManager.SetComponentData(entity, weapon);
+            world.Set(entity, weapon);
         }
 
         /// <summary>Gives the primary a muzzle at each point, fired in turn.</summary>
@@ -86,14 +86,14 @@ namespace HyperRTS.Simulation.Tests
             weapon.Aim.Muzzle = points[0];
             weapon.Aim.HasMuzzle = true;
             weapon.MuzzleCount = (byte)points.Length;
-            world.EntityManager.SetComponentData(entity, weapon);
+            world.Set(entity, weapon);
             var muzzles = new WeaponMuzzle[points.Length];
             for (var i = 0; i < points.Length; i++)
             {
                 muzzles[i] = new WeaponMuzzle { Point = points[i] };
             }
 
-            var writer = new EntityWriter(world.EntityManager, entity);
+            var writer = world.Writer(entity);
             WeaponSetup.AddMuzzles(writer, muzzles);
         }
 
@@ -101,11 +101,11 @@ namespace HyperRTS.Simulation.Tests
         public static void AddDeployable(this TestWorld world, Entity unit, float deployTime, float packUpTime,
             bool needsDeploy = true)
         {
-            var writer = new EntityWriter(world.EntityManager, unit);
+            var writer = world.Writer(unit);
             DeployableAuthoring.Add(writer, deployTime, packUpTime);
             var weapon = world.Get<Weapon>(unit);
             weapon.NeedsDeploy = needsDeploy;
-            world.EntityManager.SetComponentData(unit, weapon);
+            world.Set(unit, weapon);
         }
 
         /// <summary>Quick turning, wide limits and a tight tolerance, so poses settle within a test's first second.</summary>
@@ -122,12 +122,12 @@ namespace HyperRTS.Simulation.Tests
         public static Entity ProjectilePrefab(this TestWorld world)
         {
             var prefab = world.EntityManager.CreateEntity();
-            world.EntityManager.AddComponentData(prefab, LocalTransform.Identity);
+            world.Add(prefab, LocalTransform.Identity);
             return world.MakePrefab(prefab);
         }
 
         public static WeaponMount Mount(this TestWorld world, Entity entity) =>
-            world.EntityManager.GetBuffer<WeaponMount>(entity)[0];
+            world.Buffer<WeaponMount>(entity)[0];
 
         public static float GetHealth(this TestWorld world, Entity entity) => world.Get<Health>(entity).Current;
 
@@ -136,7 +136,7 @@ namespace HyperRTS.Simulation.Tests
         {
             var health = world.Get<Health>(entity);
             health.Current = 0f;
-            world.EntityManager.SetComponentData(entity, health);
+            world.Set(entity, health);
         }
 
         /// <summary>No order, attack target or move destination left.</summary>
@@ -152,7 +152,7 @@ namespace HyperRTS.Simulation.Tests
 
         public static void QueueDamage(this TestWorld world, DamageEvent hit)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(DamageQueue));
+            using var query = world.Query(typeof(DamageQueue));
             world.EntityManager.GetBuffer<DamageEvent>(query.GetSingletonEntity()).Add(hit);
         }
     }

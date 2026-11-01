@@ -18,11 +18,6 @@ namespace HyperRTS.Simulation.Resources
     {
         private EntityQuery _dying;
         private EntityQuery _earners;
-        private BufferLookup<ResourceStock> _stockLookup;
-        private ComponentLookup<PlayerStats> _statsLookup;
-        private ComponentLookup<CasualtyIncome> _incomeLookup;
-        private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<Offline> _offlineLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -32,11 +27,6 @@ namespace HyperRTS.Simulation.Resources
             state.RequireForUpdate<CasualtyIncome>();
             _dying = SystemAPI.QueryBuilder().WithAll<Dead, Faction, UnitTag, ResourceCost>().Build();
             _earners = SystemAPI.QueryBuilder().WithAll<CasualtyIncome, Faction>().Build();
-            _stockLookup = state.GetBufferLookup<ResourceStock>();
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _incomeLookup = state.GetComponentLookup<CasualtyIncome>(true);
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _offlineLookup = state.GetComponentLookup<Offline>(true);
         }
 
         [BurstCompile]
@@ -47,21 +37,16 @@ namespace HyperRTS.Simulation.Resources
                 return;
             }
 
-            _stockLookup.Update(ref state);
-            _statsLookup.Update(ref state);
-            _incomeLookup.Update(ref state);
-            _factionLookup.Update(ref state);
-            _offlineLookup.Update(ref state);
             new CasualtyJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Earners = _earners.ToEntityArray(state.WorldUpdateAllocator),
-                StockLookup = _stockLookup,
-                StatsLookup = _statsLookup,
-                IncomeLookup = _incomeLookup,
-                FactionLookup = _factionLookup,
-                OfflineLookup = _offlineLookup,
+                StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
+                StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
+                IncomeLookup = SystemAPI.GetComponentLookup<CasualtyIncome>(true),
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
             }.Schedule(_dying);
         }
 

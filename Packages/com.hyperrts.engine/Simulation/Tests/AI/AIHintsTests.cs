@@ -60,13 +60,13 @@ namespace HyperRTS.Simulation.Tests.AI
         {
             var world = new TestWorld();
             world.CreateMatch(teams);
-            var writer = new EntityWriter(world.EntityManager, world.Player(2));
+            var writer = world.Writer(world.Player(2));
             AIPlayerSetup.Add(writer, ai);
             return world;
         }
 
         private static IEnumerable<float3> Legs(TestWorld world, Entity soldier) =>
-            world.EntityManager.GetBuffer<QueuedOrder>(soldier).AsNativeArray().Select(queued => queued.Value.Position)
+            world.Buffer<QueuedOrder>(soldier).AsNativeArray().Select(queued => queued.Value.Position)
                 .Prepend(world.Get<ActiveOrder>(soldier).Value.Position).ToList();
 
         private static List<float3> AttackOrders(uint seed, AIMapHintsData hints) =>

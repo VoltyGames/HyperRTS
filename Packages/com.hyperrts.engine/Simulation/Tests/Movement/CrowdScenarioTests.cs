@@ -42,18 +42,18 @@ namespace HyperRTS.Simulation.Tests.Movement
             var vehicle = _world.SpawnUnit(1, position, speed, agent.Radius);
             agent.Spacing = UnitAuthoring.DefaultSpacing;
             agent.WallMargin = agent.HullWallMargin;
-            _world.EntityManager.SetComponentData(vehicle, agent);
-            _world.EntityManager.SetComponentData(vehicle, LocalTransform.FromPositionRotation(position,
+            _world.Set(vehicle, agent);
+            _world.Set(vehicle, LocalTransform.FromPositionRotation(position,
                 quaternion.RotateY(yaw)));
-            var writer = new EntityWriter(_world.EntityManager, vehicle);
+            var writer = _world.Writer(vehicle);
             LocomotionAuthoring.Add(writer, locomotion);
             return vehicle;
         }
 
         private void Send(Entity unit, float3 goal, int group)
         {
-            _world.EntityManager.SetComponentData(unit, new MoveDestination { Value = goal, Group = group });
-            _world.EntityManager.SetComponentEnabled<MoveDestination>(unit, true);
+            _world.Set(unit, new MoveDestination { Value = goal, Group = group });
+            _world.SetEnabled<MoveDestination>(unit, true);
         }
 
         // Selects the units and gives one move, as a player's right-click does.
@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             foreach (var unit in units)
             {
-                _world.EntityManager.SetComponentEnabled<Selected>(unit, true);
+                _world.SetEnabled<Selected>(unit, true);
             }
 
             _world.Command(1, new PlayerCommand { Type = CommandType.Move, Position = goal });

@@ -15,69 +15,57 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Tests.Combat
 {
     /// <summary>Extra weapon mounts, salvos, muzzles in turn, spread and ammo, fired through the systems.</summary>
-    public class WeaponTests
+    public class WeaponTests : SimulationFixture
     {
         private const int Research = 4242;
 
         /// <summary>One yaw step.</summary>
         private const float YawTolerance = 2f * math.PI / HeadingByte.Steps;
 
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         [Test]
         public void BothWeapons_FireAtOneTarget()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
-            _world.AddMount(gun, range: 6f, damage: 5f, cooldown: 100f);
-            var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
+            World.AddMount(gun, range: 6f, damage: 5f, cooldown: 100f);
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
 
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.AreEqual(85f, _world.GetHealth(enemy), "one shot from each weapon");
+            Assert.AreEqual(85f, World.GetHealth(enemy), "one shot from each weapon");
         }
 
         [Test]
         public void MinEffect_MountSkipsTargetsItsDamageBarelyHurts()
         {
-            var missile = _world.Own(ScriptableObject.CreateInstance<DamageType>());
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
-            _world.AddMount(gun, range: 6f, damage: 50f, cooldown: 100f, minEffect: 0.5f, damageType: missile);
-            var soldier = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
-            var writer = new EntityWriter(_world.EntityManager, soldier);
+            var missile = World.Own(ScriptableObject.CreateInstance<DamageType>());
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
+            World.AddMount(gun, range: 6f, damage: 50f, cooldown: 100f, minEffect: 0.5f, damageType: missile);
+            var soldier = World.SpawnUnit(2, new float3(4f, 0f, 0f));
+            var writer = World.Writer(soldier);
             writer.AddBuffer(new[] { new ArmorModifier { DamageType = missile, Multiplier = 0.1f } });
 
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.AreEqual(90f, _world.GetHealth(soldier), "only the primary fired");
-            Assert.AreEqual(Entity.Null, _world.Mount(gun).Target);
+            Assert.AreEqual(90f, World.GetHealth(soldier), "only the primary fired");
+            Assert.AreEqual(Entity.Null, World.Mount(gun).Target);
         }
 
         [Test]
         public void IndependentAirMount_EngagesAndAimsAtAircraft_WhileThePrimaryShootsGround()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f,
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f,
                 turreted: true);
-            _world.AddMount(gun, range: 6f, damage: 20f, cooldown: 100f, targets: WeaponTargets.Air,
+            World.AddMount(gun, range: 6f, damage: 20f, cooldown: 100f, targets: WeaponTargets.Air,
                 independent: true);
-            var tank = _world.SpawnUnit(2, new float3(-3f, 0f, 0f));
-            var aircraft = _world.SpawnAircraft(2, new float3(3f, 0f, 0f));
+            var tank = World.SpawnUnit(2, new float3(-3f, 0f, 0f));
+            var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
 
-            _world.Run(2f);
+            World.Run(2f);
 
-            Assert.AreEqual(tank, _world.Get<AttackTarget>(gun).Value, "the primary keeps the ground target");
-            Assert.AreEqual(90f, _world.GetHealth(tank));
-            Assert.AreEqual(80f, _world.GetHealth(aircraft), "the mount picked the aircraft itself");
-            var poses = _world.EntityManager.GetBuffer<WeaponPose>(gun);
+            Assert.AreEqual(tank, World.Get<AttackTarget>(gun).Value, "the primary keeps the ground target");
+            Assert.AreEqual(90f, World.GetHealth(tank));
+            Assert.AreEqual(80f, World.GetHealth(aircraft), "the mount picked the aircraft itself");
+            var poses = World.Buffer<WeaponPose>(gun);
             Assert.AreEqual(-0.5f * math.PI, poses[0].YawRadians, YawTolerance, "the primary looks left");
             Assert.AreEqual(0f, poses[0].PitchRadians, 0.02f, "level with a ground target");
             Assert.AreEqual(0.5f * math.PI, poses[1].YawRadians, YawTolerance, "the mount looks right");
@@ -86,35 +74,35 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void ResearchGatedMount_HoldsFireUntilTheResearchIsDone()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
-            _world.AddMount(gun, range: 6f, damage: 5f, cooldown: 0.5f, requiredResearchTypeId: Research);
-            var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
+            World.AddMount(gun, range: 6f, damage: 5f, cooldown: 0.5f, requiredResearchTypeId: Research);
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
 
-            _world.Run(1f);
-            Assert.AreEqual(990f, _world.GetHealth(enemy), "locked mount stayed silent");
+            World.Run(1f);
+            Assert.AreEqual(990f, World.GetHealth(enemy), "locked mount stayed silent");
 
-            _world.EntityManager.GetBuffer<CompletedResearch>(_world.Player(1))
+            World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1))
                 .Add(new CompletedResearch { TypeId = Research });
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.IsTrue(_world.Mount(gun).Unlocked);
-            Assert.Less(_world.GetHealth(enemy), 990f, "the unlocked mount opened fire");
+            Assert.IsTrue(World.Mount(gun).Unlocked);
+            Assert.Less(World.GetHealth(enemy), 990f, "the unlocked mount opened fire");
         }
 
         [Test]
         public void ResearchGatedMount_Relocks_WhenTheResearchIsGone()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);
-            _world.AddMount(gun, range: 6f, damage: 10f, cooldown: 100f, requiredResearchTypeId: Research);
-            _world.EntityManager.GetBuffer<CompletedResearch>(_world.Player(1))
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);
+            World.AddMount(gun, range: 6f, damage: 10f, cooldown: 100f, requiredResearchTypeId: Research);
+            World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1))
                 .Add(new CompletedResearch { TypeId = Research });
-            _world.Tick();
-            Assert.IsTrue(_world.Mount(gun).Unlocked);
+            World.Tick();
+            Assert.IsTrue(World.Mount(gun).Unlocked);
 
-            _world.EntityManager.GetBuffer<CompletedResearch>(_world.Player(1)).Clear();
-            _world.Tick();
+            World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1)).Clear();
+            World.Tick();
 
-            Assert.IsFalse(_world.Mount(gun).Unlocked);
+            Assert.IsFalse(World.Mount(gun).Unlocked);
         }
 
         [Test]
@@ -151,83 +139,83 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void MountRounds_RunOut_AndRefillWhileDocked()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);
-            _world.AddMount(gun, range: 6f, damage: 10f, cooldown: 0.2f, rounds: 2, reloadTime: 0.5f);
-            var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);
+            World.AddMount(gun, range: 6f, damage: 10f, cooldown: 0.2f, rounds: 2, reloadTime: 0.5f);
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
 
-            _world.Run(2f);
-            Assert.AreEqual(80f, _world.GetHealth(enemy), "two rounds, then it held fire");
-            Assert.AreEqual(0, _world.Mount(gun).Ammo.Current);
+            World.Run(2f);
+            Assert.AreEqual(80f, World.GetHealth(enemy), "two rounds, then it held fire");
+            Assert.AreEqual(0, World.Mount(gun).Ammo.Current);
 
-            _world.EntityManager.DestroyEntity(enemy);
-            _world.EntityManager.AddComponent<Docked>(gun);
-            _world.Run(1.5f);
+            World.EntityManager.DestroyEntity(enemy);
+            World.EntityManager.AddComponent<Docked>(gun);
+            World.Run(1.5f);
 
-            Assert.AreEqual(2, _world.Mount(gun).Ammo.Current, "reloaded while docked");
+            Assert.AreEqual(2, World.Mount(gun).Ammo.Current, "reloaded while docked");
         }
 
         [Test]
         public void MagazineRefill_ReloadsAGroundUnitInTheField()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 0.5f);
-            var writer = new EntityWriter(_world.EntityManager, gun);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 0.5f);
+            var writer = World.Writer(gun);
             WeaponSetup.AddAmmo(writer, 2, 3f, AmmoRefill.Magazine);
-            var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4f));
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
-            Assert.IsTrue(_world.RunUntil(() => _world.Get<Ammo>(gun).Current == 0, 2f), "fires the magazine");
-            Assert.AreEqual(80f, _world.GetHealth(enemy));
-            _world.Run(2.5f);
-            Assert.AreEqual(0, _world.Get<Ammo>(gun).Current, "a full reload time");
-            Assert.IsTrue(_world.RunUntil(() => _world.GetHealth(enemy) <= 70f, 1.5f), "fires again once refilled");
+            Assert.IsTrue(World.RunUntil(() => World.Get<Ammo>(gun).Current == 0, 2f), "fires the magazine");
+            Assert.AreEqual(80f, World.GetHealth(enemy));
+            World.Run(2.5f);
+            Assert.AreEqual(0, World.Get<Ammo>(gun).Current, "a full reload time");
+            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) <= 70f, 1.5f), "fires again once refilled");
         }
 
         [Test]
         public void Salvo_FiresEachShotAtTheInterval_ThenCoolsDown()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 5f);
-            _world.SetSalvo(gun, 3, 0.5f);
-            var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4f));
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 5f);
+            World.SetSalvo(gun, 3, 0.5f);
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
-            Assert.IsTrue(_world.RunUntil(() => _world.GetHealth(enemy) < 100f, 1f), "the first shot");
-            Assert.AreEqual(90f, _world.GetHealth(enemy));
-            _world.Run(0.3f);
-            Assert.AreEqual(90f, _world.GetHealth(enemy), "waits the interval");
-            _world.Run(0.3f);
-            Assert.AreEqual(80f, _world.GetHealth(enemy), "the second shot");
-            _world.Run(0.5f);
-            Assert.AreEqual(70f, _world.GetHealth(enemy), "the third shot");
-            _world.Run(4.6f);
-            Assert.AreEqual(70f, _world.GetHealth(enemy), "the cooldown runs after the salvo");
-            _world.Run(0.6f);
-            Assert.AreEqual(60f, _world.GetHealth(enemy), "the next salvo");
+            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f), "the first shot");
+            Assert.AreEqual(90f, World.GetHealth(enemy));
+            World.Run(0.3f);
+            Assert.AreEqual(90f, World.GetHealth(enemy), "waits the interval");
+            World.Run(0.3f);
+            Assert.AreEqual(80f, World.GetHealth(enemy), "the second shot");
+            World.Run(0.5f);
+            Assert.AreEqual(70f, World.GetHealth(enemy), "the third shot");
+            World.Run(4.6f);
+            Assert.AreEqual(70f, World.GetHealth(enemy), "the cooldown runs after the salvo");
+            World.Run(0.6f);
+            Assert.AreEqual(60f, World.GetHealth(enemy), "the next salvo");
         }
 
         [Test]
         public void SalvoOfOne_FiresOncePerCooldown()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 1f);
-            _world.SetSalvo(gun, 1, 0.1f);
-            var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4f));
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 1f);
+            World.SetSalvo(gun, 1, 0.1f);
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
-            Assert.IsTrue(_world.RunUntil(() => _world.GetHealth(enemy) < 100f, 1f));
-            _world.Run(0.8f);
-            Assert.AreEqual(90f, _world.GetHealth(enemy), "the interval goes unused");
-            _world.Run(0.3f);
-            Assert.AreEqual(80f, _world.GetHealth(enemy));
+            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f));
+            World.Run(0.8f);
+            Assert.AreEqual(90f, World.GetHealth(enemy), "the interval goes unused");
+            World.Run(0.3f);
+            Assert.AreEqual(80f, World.GetHealth(enemy));
         }
 
         [Test]
         public void Salvo_StopsWhenItsTargetDies()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 5f);
-            _world.SetSalvo(gun, 3, 0.5f);
-            var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4f));
-            Assert.IsTrue(_world.RunUntil(() => _world.GetHealth(enemy) < 100f, 1f));
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 5f);
+            World.SetSalvo(gun, 3, 0.5f);
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
+            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f));
 
-            _world.Kill(enemy);
-            _world.Run(0.2f);
+            World.Kill(enemy);
+            World.Run(0.2f);
 
-            var weapon = _world.Get<Weapon>(gun);
+            var weapon = World.Get<Weapon>(gun);
             Assert.AreEqual(0, weapon.SalvoShot);
             Assert.Greater(weapon.CooldownRemaining, 0.5f, $"the full cooldown runs, not the interval: {weapon.CooldownRemaining}");
         }
@@ -248,14 +236,14 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void Salvo_FiresFromEachMuzzleInTurn()
         {
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, cooldown: 100f,
-                projectile: _world.ProjectilePrefab());
-            _world.SetSalvo(gun, 4, 0.2f);
-            _world.SetMuzzles(gun, new float3(-1f, 1f, 0f), new float3(0f, 1f, 0f), new float3(1f, 1f, 0f));
-            var weapon = _world.Get<Weapon>(gun);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, cooldown: 100f,
+                projectile: World.ProjectilePrefab());
+            World.SetSalvo(gun, 4, 0.2f);
+            World.SetMuzzles(gun, new float3(-1f, 1f, 0f), new float3(0f, 1f, 0f), new float3(1f, 1f, 0f));
+            var weapon = World.Get<Weapon>(gun);
             weapon.ProjectileSpeed = 0.5f;
-            _world.EntityManager.SetComponentData(gun, weapon);
-            _world.SpawnUnit(2, new float3(0f, 0f, 4f));
+            World.Set(gun, weapon);
+            World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
             var starts = LaunchedFrom(1.5f);
 
@@ -296,16 +284,16 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var seen = new HashSet<Entity>();
             var starts = new List<float>();
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
+            using var query = World.Query(typeof(Projectile));
             for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
             {
-                _world.Tick();
+                World.Tick();
                 using var projectiles = query.ToEntityArray(Allocator.Temp);
                 foreach (var projectile in projectiles)
                 {
                     if (seen.Add(projectile))
                     {
-                        starts.Add(math.round(_world.Get<Projectile>(projectile).Start.x * 100f) / 100f);
+                        starts.Add(math.round(World.Get<Projectile>(projectile).Start.x * 100f) / 100f);
                     }
                 }
             }

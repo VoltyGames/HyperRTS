@@ -22,13 +22,11 @@ namespace HyperRTS.Simulation.Combat.Projectiles
     [UpdateBefore(typeof(ProjectileSystem))]
     public partial struct InterceptorSystem : ISystem
     {
-        private ComponentLookup<Projectile> _projectiles;
         private CueWriter _cues;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _projectiles = state.GetComponentLookup<Projectile>();
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<Interceptor>();
             state.RequireForUpdate<FactionRelations>();
@@ -38,7 +36,6 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _projectiles.Update(ref state);
             _cues.Update(ref state);
 
             var candidates = new NativeList<Candidate>(state.WorldUpdateAllocator);
@@ -48,7 +45,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Candidates = candidates,
-                Projectiles = _projectiles,
+                Projectiles = SystemAPI.GetComponentLookup<Projectile>(false),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Cues = _cues,

@@ -10,38 +10,32 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Tests.Combat
 {
     /// <summary>Hits on a sheltering building reach its garrison past the walls, by damage type and building health.</summary>
-    public class GarrisonDamageTests
+    public class GarrisonDamageTests : SimulationFixture
     {
         private const float Protection = 0.6f;
         private const float Shot = 20f;
 
-        private TestWorld _world;
         private DamageType _smallArms;
         private DamageType _highExplosive;
 
         [SetUp]
-        public void SetUp()
+        public void Prepare()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
             _smallArms = Type(0.5f);
             _highExplosive = Type(1.3f);
         }
 
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         private DamageType Type(float garrisonFactor)
         {
-            var type = _world.Own(ScriptableObject.CreateInstance<DamageType>());
+            var type = World.Own(ScriptableObject.CreateInstance<DamageType>());
             type.garrisonFactor = garrisonFactor;
             return type;
         }
 
         private Entity House(float3 position)
         {
-            var house = _world.SpawnBuilding(1, position, new float2(8f, 8f));
-            var writer = new EntityWriter(_world.EntityManager, house);
+            var house = World.SpawnBuilding(1, position, new float2(8f, 8f));
+            var writer = World.Writer(house);
             TransportSetup.AddContainer(writer, new Container { Capacity = 5, MaxPassengerSize = 1 });
             TransportSetup.AddShelter(writer, Protection);
             return house;
@@ -49,8 +43,8 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         private Entity Squad(float3 position)
         {
-            var squad = _world.SpawnUnit(1, position);
-            var writer = new EntityWriter(_world.EntityManager, squad);
+            var squad = World.SpawnUnit(1, position);
+            var writer = World.Writer(squad);
             TransportSetup.AddPassenger(writer, 1);
             return squad;
         }
@@ -58,13 +52,13 @@ namespace HyperRTS.Simulation.Tests.Combat
         /// <summary>Puts <paramref name="squad"/> straight into <paramref name="house"/>, as boarding ends.</summary>
         private void Garrison(Entity squad, Entity house)
         {
-            _world.EntityManager.GetBuffer<Cargo>(house).Add(new Cargo { Unit = squad, Size = 1 });
-            _world.EntityManager.SetComponentData(squad, new Inside { Container = house });
-            _world.EntityManager.SetComponentEnabled<Inside>(squad, true);
+            World.Buffer<Cargo>(house).Add(new Cargo { Unit = squad, Size = 1 });
+            World.Set(squad, new Inside { Container = house });
+            World.SetEnabled<Inside>(squad, true);
         }
 
         private void Hit(Entity target, DamageType type, float amount = Shot) =>
-            _world.QueueDamage(new DamageEvent
+            World.QueueDamage(new DamageEvent
             {
                 Target = target,
                 Origin = new float3(30f, 0f, 0f),
@@ -75,9 +69,9 @@ namespace HyperRTS.Simulation.Tests.Combat
             });
 
         /// <summary>One frame resolves the hit on the house, the next its passengers' shares.</summary>
-        private void Resolve() => _world.Tick(frames: 3);
+        private void Resolve() => World.Tick(frames: 3);
 
-        private float Lost(Entity unit) => 100f - _world.GetHealth(unit);
+        private float Lost(Entity unit) => 100f - World.GetHealth(unit);
 
         [Test]
         public void GarrisonedSquad_LosesLessThanInTheOpen()
@@ -86,7 +80,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var inside = Squad(new float3(10f, 0f, 0f));
             var outside = Squad(new float3(40f, 0f, 0f));
             Garrison(inside, house);
-            _world.Tick();
+            World.Tick();
 
             Hit(house, _smallArms);
             Hit(outside, _smallArms);
@@ -105,7 +99,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var shells = Squad(new float3(40f, 0f, 0f));
             Garrison(rifles, shot);
             Garrison(shells, shelled);
-            _world.Tick();
+            World.Tick();
 
             Hit(shot, _smallArms);
             Hit(shelled, _highExplosive);
@@ -121,10 +115,10 @@ namespace HyperRTS.Simulation.Tests.Combat
             var house = House(float3.zero);
             var squad = Squad(new float3(10f, 0f, 0f));
             Garrison(squad, house);
-            var health = _world.Get<Health>(house);
+            var health = World.Get<Health>(house);
             health.Current = health.Max * 0.5f;
-            _world.EntityManager.SetComponentData(house, health);
-            _world.Tick();
+            World.Set(house, health);
+            World.Tick();
 
             Hit(house, _smallArms);
             Resolve();
@@ -140,7 +134,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var second = Squad(new float3(12f, 0f, 0f));
             Garrison(first, house);
             Garrison(second, house);
-            _world.Tick();
+            World.Tick();
 
             Hit(house, _highExplosive);
             Resolve();
@@ -156,12 +150,12 @@ namespace HyperRTS.Simulation.Tests.Combat
             var house = House(float3.zero);
             var squad = Squad(new float3(10f, 0f, 0f));
             Garrison(squad, house);
-            _world.Tick();
+            World.Tick();
 
             Hit(house, _highExplosive, 400f);
             Resolve();
 
-            Assert.IsEmpty(_world.EntityManager.GetBuffer<Cargo>(house).AsNativeArray().ToArray());
+            Assert.IsEmpty(World.Buffer<Cargo>(house).AsNativeArray().ToArray());
         }
     }
 }

@@ -16,30 +16,23 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
     /// Group flow fields: a trace is as short as A*, a shoved member re-traces with no search, a building on the
     /// corridor rebuilds the field, and each movement class of a group gets its own.
     /// </summary>
-    public class FlowFieldTests
+    public class FlowFieldTests : SimulationFixture
     {
         private const int Group = 7;
 
-        private TestWorld _world;
-
         [SetUp]
-        public void SetUp()
+        public void Prepare()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
             // A wall between the start and goal areas, open at both ends.
-            _world.SpawnObstacle(new float3(0f, 0f, 0f), new float2(4f, 120f), 0.2f);
-            _world.SpawnObstacle(new float3(-30f, 0f, 40f), new float2(16f, 10f), 0.7f);
+            World.SpawnObstacle(new float3(0f, 0f, 0f), new float2(4f, 120f), 0.2f);
+            World.SpawnObstacle(new float3(-30f, 0f, 40f), new float2(16f, 10f), 0.7f);
         }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
 
         private PathfindingSystem Pathfinder()
         {
-            _world.EntityManager.CompleteAllTrackedJobs();
-            var handle = _world.World.GetExistingSystem<PathfindingSystem>();
-            return _world.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(handle);
+            World.EntityManager.CompleteAllTrackedJobs();
+            var handle = World.World.GetExistingSystem<PathfindingSystem>();
+            return World.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(handle);
         }
 
         // A block of units west of the wall, each sent to its own slot east of it.
@@ -49,27 +42,27 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             for (var i = 0; i < count; i++)
             {
                 var start = new float3(-40f + i % 4 * 4f, 0f, -20f + i / 4 * 4f + slotOffset);
-                units[i] = _world.SpawnUnit(1, start, radius: radius);
+                units[i] = World.SpawnUnit(1, start, radius: radius);
             }
 
-            _world.Tick();
+            World.Tick();
             for (var i = 0; i < count; i++)
             {
                 var slot = new float3(40f + i % 4 * 5f, 0f, -10f + i / 4 * 5f + slotOffset);
-                _world.Issue(units[i], new Order { Type = OrderType.Move, Position = slot, Group = Group });
+                World.Issue(units[i], new Order { Type = OrderType.Move, Position = slot, Group = Group });
             }
 
-            _world.Tick(frames: 2);
+            World.Tick(frames: 2);
             return units;
         }
 
         [Test]
         public void TracedPath_IsWithinTwoPercentOfTheAStarPath()
         {
-            var unit = _world.SpawnUnit(1, new float3(-40f, 0f, -20f));
-            _world.Tick();
-            var agent = _world.Get<NavAgent>(unit);
-            var grid = _world.Grid();
+            var unit = World.SpawnUnit(1, new float3(-40f, 0f, -20f));
+            World.Tick();
+            var agent = World.Get<NavAgent>(unit);
+            var grid = World.Grid();
             var access = agent.Access(grid);
             var start = new float3(-40f, 0f, -20f);
             var goal = new float3(45f, 0f, 30f);
@@ -124,16 +117,16 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
 
             // Shoved aside, and asking for a replan as MoveProgress does.
             var shoved = units[2];
-            var transform = _world.Get<LocalTransform>(shoved);
+            var transform = World.Get<LocalTransform>(shoved);
             transform.Position += new float3(0f, 0f, 3f);
-            _world.EntityManager.SetComponentData(shoved, transform);
-            var path = _world.Get<PathState>(shoved);
+            World.Set(shoved, transform);
+            var path = World.Get<PathState>(shoved);
             path.Status = PathStatus.None;
-            _world.EntityManager.SetComponentData(shoved, path);
-            _world.Tick();
+            World.Set(shoved, path);
+            World.Tick();
 
             var after = Pathfinder().Stats;
-            Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(shoved).Status, "re-planned");
+            Assert.AreEqual(PathStatus.Ready, World.Get<PathState>(shoved).Status, "re-planned");
             Assert.AreEqual(before.Traces + 1, after.Traces, "by tracing the field again");
             Assert.AreEqual(before.Searches, after.Searches, "with no search");
             Assert.AreEqual(before.Fields, after.Fields, "nor a new field");
@@ -146,17 +139,17 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             var built = Pathfinder().Stats.Fields;
 
             // Across the members' way from the wall's south end to their slots.
-            _world.SpawnObstacle(new float3(14f, 0f, -36f), new float2(4f, 24f), 0f);
-            _world.Tick(frames: 2);
+            World.SpawnObstacle(new float3(14f, 0f, -36f), new float2(4f, 24f), 0f);
+            World.Tick(frames: 2);
 
             var pathfinder = Pathfinder();
             Assert.Greater(pathfinder.Stats.Fields, built, "the field was built again");
             Assert.AreEqual(1, pathfinder.Fields.Fields.Length, "and the old one dropped");
-            var access = _world.Get<NavAgent>(units[0]).Access(_world.Grid());
+            var access = World.Get<NavAgent>(units[0]).Access(World.Grid());
             foreach (var unit in units)
             {
-                var from = _world.GetPosition(unit);
-                foreach (var waypoint in _world.EntityManager.GetBuffer<PathWaypoint>(unit))
+                var from = World.GetPosition(unit);
+                foreach (var waypoint in World.Buffer<PathWaypoint>(unit))
                 {
                     Assert.IsTrue(access.HasLineOfSight(from, waypoint.Position), "each leg keeps to open ground");
                     from = waypoint.Position;
@@ -171,23 +164,23 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             var tanks = new Entity[3];
             for (var i = 0; i < tanks.Length; i++)
             {
-                tanks[i] = _world.SpawnUnit(1, new float3(-40f + i * 6f, 0f, 10f), radius: 1.85f);
+                tanks[i] = World.SpawnUnit(1, new float3(-40f + i * 6f, 0f, 10f), radius: 1.85f);
             }
 
-            _world.Tick();
+            World.Tick();
             for (var i = 0; i < tanks.Length; i++)
             {
                 var slot = new float3(40f + i * 6f, 0f, 20f);
-                _world.Issue(tanks[i], new Order { Type = OrderType.Move, Position = slot, Group = Group });
+                World.Issue(tanks[i], new Order { Type = OrderType.Move, Position = slot, Group = Group });
             }
 
-            _world.Tick(frames: 2);
+            World.Tick(frames: 2);
             var fields = Pathfinder().Fields.Fields;
             Assert.AreEqual(2, fields.Length, "infantry and tanks each have a field");
             Assert.AreNotEqual(fields[0].Key.y, fields[1].Key.y, "of their own class");
             Assert.AreEqual(fields[0].Key.x, fields[1].Key.x, "for the one group");
-            Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(infantry[0]).Status);
-            Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(tanks[0]).Status);
+            Assert.AreEqual(PathStatus.Ready, World.Get<PathState>(infantry[0]).Status);
+            Assert.AreEqual(PathStatus.Ready, World.Get<PathState>(tanks[0]).Status);
         }
     }
 }

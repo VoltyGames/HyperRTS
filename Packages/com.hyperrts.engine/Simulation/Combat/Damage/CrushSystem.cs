@@ -25,8 +25,6 @@ namespace HyperRTS.Simulation.Combat.Damage
         private const float Lethal = 1e6f;
 
         private EventWriter<DamageEvent> _damage;
-        private ComponentLookup<Destructible> _destructibles;
-        private ComponentLookup<Health> _health;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -34,22 +32,18 @@ namespace HyperRTS.Simulation.Combat.Damage
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<Crusher>();
             _damage = new EventWriter<DamageEvent>(ref state);
-            _destructibles = state.GetComponentLookup<Destructible>(true);
-            _health = state.GetComponentLookup<Health>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _damage.Update(ref state);
-            _destructibles.Update(ref state);
-            _health.Update(ref state);
             new CrushJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Damage = _damage,
-                Destructibles = _destructibles,
-                Health = _health,
+                Destructibles = SystemAPI.GetComponentLookup<Destructible>(true),
+                Health = SystemAPI.GetComponentLookup<Health>(true),
             }.Schedule();
         }
 

@@ -17,37 +17,25 @@ namespace HyperRTS.Simulation.Resources
     public partial struct ReserveRefillSystem : ISystem
     {
         private EntityQuery _reserves;
-        private ComponentLookup<ResourceReserve> _reserveLookup;
-        private ComponentLookup<ResourceIncome> _incomeLookup;
-        private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<Offline> _offlineLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ReserveRefill>();
             _reserves = SystemAPI.QueryBuilder().WithAll<ResourceReserve, ResourceIncome, Faction>().Build();
-            _reserveLookup = state.GetComponentLookup<ResourceReserve>();
-            _incomeLookup = state.GetComponentLookup<ResourceIncome>(true);
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _offlineLookup = state.GetComponentLookup<Offline>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _reserveLookup.Update(ref state);
-            _incomeLookup.Update(ref state);
-            _factionLookup.Update(ref state);
-            _offlineLookup.Update(ref state);
             new RefillJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Reserves = _reserves.ToEntityArray(state.WorldUpdateAllocator),
-                ReserveLookup = _reserveLookup,
-                IncomeLookup = _incomeLookup,
-                FactionLookup = _factionLookup,
-                OfflineLookup = _offlineLookup,
+                ReserveLookup = SystemAPI.GetComponentLookup<ResourceReserve>(false),
+                IncomeLookup = SystemAPI.GetComponentLookup<ResourceIncome>(true),
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
             }.Schedule();
         }
 

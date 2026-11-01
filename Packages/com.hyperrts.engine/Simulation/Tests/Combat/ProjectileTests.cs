@@ -13,30 +13,18 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Combat
 {
     /// <summary>Projectiles in flight: ballistic arcs, rocket dives, their kind, and interceptors that shoot them down.</summary>
-    public class ProjectileTests
+    public class ProjectileTests : SimulationFixture
     {
         private const int FlightCap = 300;
 
         /// <summary>One yaw step.</summary>
         private const float YawTolerance = 2f * math.PI / HeadingByte.Steps;
 
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         [Test]
         public void BallisticShell_PeaksAtItsArcHeight()
         {
             SpawnShooter(Trajectory.Ballistic, range: 8f);
-            _world.SpawnUnit(2, new float3(6f, 0f, 0f));
+            World.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             var peak = float.MinValue;
             foreach (var point in Fly(_ => { }))
@@ -52,14 +40,14 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void BallisticShell_LandsWhereTheTargetStood_EvenIfItMovedAndDied()
         {
             SpawnShooter(Trajectory.Ballistic, range: 8f);
-            var enemy = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
+            var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             var path = Fly(flown =>
             {
                 if (flown == 5)
                 {
-                    _world.EntityManager.SetComponentData(enemy, LocalTransform.FromPosition(new float3(0f, 0f, 6f)));
-                    _world.Kill(enemy);
+                    World.Set(enemy, LocalTransform.FromPosition(new float3(0f, 0f, 6f)));
+                    World.Kill(enemy);
                 }
             });
 
@@ -71,48 +59,48 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void BallisticShell_MissesATargetThatMovedAway()
         {
             SpawnShooter(Trajectory.Ballistic, range: 8f);
-            var enemy = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
+            var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             Fly(flown =>
             {
                 if (flown == 5)
                 {
-                    _world.EntityManager.SetComponentData(enemy, LocalTransform.FromPosition(new float3(6f, 0f, 3f)));
+                    World.Set(enemy, LocalTransform.FromPosition(new float3(6f, 0f, 3f)));
                 }
             });
 
-            Assert.AreEqual(100f, _world.GetHealth(enemy));
+            Assert.AreEqual(100f, World.GetHealth(enemy));
         }
 
         [Test]
         public void Rocket_ClimbsThenReachesAMovingTarget()
         {
             SpawnShooter(Trajectory.Rocket, range: 12f);
-            var enemy = _world.SpawnUnit(2, new float3(6f, 0f, 0f));
+            var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             var last = float3.zero;
             var path = Fly(_ =>
             {
-                last = _world.Get<LocalTransform>(enemy).Position + new float3(0.1f, 0f, 0f);
-                _world.EntityManager.SetComponentData(enemy, LocalTransform.FromPosition(last));
+                last = World.Get<LocalTransform>(enemy).Position + new float3(0.1f, 0f, 0f);
+                World.Set(enemy, LocalTransform.FromPosition(last));
             });
 
             Assert.Greater(path[1].y - path[0].y, math.abs(path[1].x - path[0].x), "it climbs steeply first");
             Assert.Less(math.distance(path[^1], last + new float3(0f, 1f, 0f)), 1f, "it dove onto the target");
-            Assert.Less(_world.GetHealth(enemy), 100f);
+            Assert.Less(World.GetHealth(enemy), 100f);
         }
 
         [Test]
         public void Launch_GivesTheProjectileItsWeaponsKind()
         {
             var gun = SpawnShooter(Trajectory.Rocket, range: 8f);
-            var weapon = _world.Get<Weapon>(gun);
+            var weapon = World.Get<Weapon>(gun);
             weapon.ProjectileKind = ProjectileKind.Rocket;
-            _world.EntityManager.SetComponentData(gun, weapon);
-            _world.SpawnUnit(2, new float3(7f, 0f, 0f));
+            World.Set(gun, weapon);
+            World.SpawnUnit(2, new float3(7f, 0f, 0f));
 
-            using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
-            Assert.IsTrue(_world.RunUntil(() => !projectiles.IsEmpty, 2f), "the gun fired");
+            using var projectiles = World.Query(typeof(Projectile));
+            Assert.IsTrue(World.RunUntil(() => !projectiles.IsEmpty, 2f), "the gun fired");
             Assert.AreEqual(ProjectileKind.Rocket, projectiles.GetSingleton<Projectile>().Kind);
         }
 
@@ -123,10 +111,10 @@ namespace HyperRTS.Simulation.Tests.Combat
             var near = Shot(new float3(-6f, 4f, 0f));
             var far = Shot(new float3(10f, 4f, 0f));
 
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.IsFalse(_world.EntityManager.Exists(near), "the nearer shot is down");
-            Assert.IsTrue(_world.EntityManager.Exists(far), "one engagement, one kill");
+            Assert.IsFalse(World.EntityManager.Exists(near), "the nearer shot is down");
+            Assert.IsTrue(World.EntityManager.Exists(far), "one engagement, one kill");
             Assert.AreEqual(0.5f * math.PI, Pose(defence, 0).YawRadians, YawTolerance, "it turned to the far shot");
             Assert.AreEqual(1, Pose(defence, 0).Shots);
         }
@@ -137,9 +125,9 @@ namespace HyperRTS.Simulation.Tests.Combat
             var defence = Defence(Site(), killChance: 0f);
             var shot = Shot(new float3(6f, 4f, 0f));
 
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.IsTrue(_world.EntityManager.Exists(shot));
+            Assert.IsTrue(World.EntityManager.Exists(shot));
             Assert.Greater(Pose(defence, 0).Shots, 1, "it kept engaging");
         }
 
@@ -151,11 +139,11 @@ namespace HyperRTS.Simulation.Tests.Combat
             var friendly = Shot(new float3(0f, 4f, 6f), faction: 1);
             var distant = Shot(new float3(0f, 4f, -40f));
 
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.IsTrue(_world.EntityManager.Exists(bomb));
-            Assert.IsTrue(_world.EntityManager.Exists(friendly));
-            Assert.IsTrue(_world.EntityManager.Exists(distant));
+            Assert.IsTrue(World.EntityManager.Exists(bomb));
+            Assert.IsTrue(World.EntityManager.Exists(friendly));
+            Assert.IsTrue(World.EntityManager.Exists(distant));
             Assert.AreEqual(0, Pose(defence, 0).Shots);
             Assert.AreEqual(0, Pose(defence, 0).Yaw, "nothing tracked, so it stays straight ahead");
         }
@@ -166,7 +154,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var defence = Defence(Site());
             Shot(new float3(0f, 4f, -40f), aim: float3.zero);
 
-            _world.Run(1f);
+            World.Run(1f);
 
             Assert.AreEqual(math.PI, math.abs(Pose(defence, 0).YawRadians), YawTolerance,
                 "aimed inside the radius, so the turret is on it");
@@ -176,12 +164,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void InterceptorOffline_DoesNothing()
         {
-            var defence = Defence(_world.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false));
+            var defence = Defence(World.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false));
             var shot = Shot(new float3(6f, 4f, 0f));
 
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.IsTrue(_world.EntityManager.Exists(shot));
+            Assert.IsTrue(World.EntityManager.Exists(shot));
             Assert.AreEqual(0, Pose(defence, 0).Shots);
         }
 
@@ -191,10 +179,10 @@ namespace HyperRTS.Simulation.Tests.Combat
             var defence = Defence(Site(), killChance: 0f, rounds: 1, reloadTime: 1.5f);
             Shot(new float3(6f, 4f, 0f));
 
-            _world.Run(1f);
+            World.Run(1f);
             Assert.AreEqual(1, Pose(defence, 0).Shots, "one round, then dry");
 
-            _world.Run(1f);
+            World.Run(1f);
             Assert.AreEqual(2, Pose(defence, 0).Shots, "a reloaded round fires");
         }
 
@@ -202,31 +190,31 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void InterceptorBesideAWeapon_AimsThePoseAfterTheWeapons()
         {
             var tower = Site();
-            _world.AddWeapon(tower, range: 6f, cooldown: 100f, turreted: true);
-            _world.EntityManager.GetBuffer<WeaponPose>(tower).Add(default);
+            World.AddWeapon(tower, range: 6f, cooldown: 100f, turreted: true);
+            World.Buffer<WeaponPose>(tower).Add(default);
             Defence(tower, killChance: 0f, pose: 1);
-            _world.SpawnUnit(2, new float3(4f, 0f, 0f));
+            World.SpawnUnit(2, new float3(4f, 0f, 0f));
             Shot(new float3(-6f, 4f, 0f));
 
-            _world.Run(1f);
+            World.Run(1f);
 
             Assert.AreEqual(0.5f * math.PI, Pose(tower, 0).YawRadians, YawTolerance, "the gun on the unit");
             Assert.AreEqual(-0.5f * math.PI, Pose(tower, 1).YawRadians, YawTolerance, "the interceptor on the shot");
         }
 
         private Entity SpawnShooter(Trajectory trajectory, float range) =>
-            _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: range, cooldown: 100f,
-                projectile: _world.ProjectilePrefab(), trajectory: trajectory, arcHeight: 0.5f);
+            World.AddWeapon(World.SpawnUnit(1, float3.zero), range: range, cooldown: 100f,
+                projectile: World.ProjectilePrefab(), trajectory: trajectory, arcHeight: 0.5f);
 
         /// <summary>Ticks until the one shot has landed, recording its flight; the callback gets the frames flown.</summary>
         private List<float3> Fly(Action<int> beforeTick)
         {
-            using var shots = _world.EntityManager.CreateEntityQuery(typeof(Projectile), typeof(LocalTransform));
+            using var shots = World.Query(typeof(Projectile), typeof(LocalTransform));
             var path = new List<float3>();
             for (var frame = 0; frame < FlightCap; frame++)
             {
                 beforeTick(path.Count);
-                _world.Tick();
+                World.Tick();
                 if (shots.IsEmpty)
                 {
                     if (path.Count > 0)
@@ -244,7 +232,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             return path;
         }
 
-        private Entity Site() => _world.SpawnBuilding(1, float3.zero, new float2(2f, 2f));
+        private Entity Site() => World.SpawnBuilding(1, float3.zero, new float2(2f, 2f));
 
         private Entity Defence(Entity entity, float interval = 0.2f, float killChance = 1f, int rounds = 0,
             float reloadTime = 1f, byte pose = 0)
@@ -267,7 +255,7 @@ namespace HyperRTS.Simulation.Tests.Combat
                 Pose = pose,
                 Ammo = Ammo.Create(rounds, reloadTime, AmmoRefill.Round),
             };
-            var writer = new EntityWriter(_world.EntityManager, entity);
+            var writer = World.Writer(entity);
             InterceptorAuthoring.Add(writer, interceptor);
             return entity;
         }
@@ -276,9 +264,9 @@ namespace HyperRTS.Simulation.Tests.Combat
         private Entity Shot(float3 position, ProjectileKind kind = ProjectileKind.Rocket, byte faction = 2,
             float3? aim = null)
         {
-            var shot = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(shot, LocalTransform.FromPosition(position));
-            _world.EntityManager.AddComponentData(shot, new Projectile
+            var shot = World.EntityManager.CreateEntity();
+            World.Add(shot, LocalTransform.FromPosition(position));
+            World.Add(shot, new Projectile
             {
                 Speed = 0.1f,
                 Kind = kind,
@@ -287,6 +275,6 @@ namespace HyperRTS.Simulation.Tests.Combat
             return shot;
         }
 
-        private WeaponPose Pose(Entity entity, int index) => _world.EntityManager.GetBuffer<WeaponPose>(entity)[index];
+        private WeaponPose Pose(Entity entity, int index) => World.Buffer<WeaponPose>(entity)[index];
     }
 }

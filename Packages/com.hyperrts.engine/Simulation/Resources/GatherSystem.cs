@@ -27,13 +27,8 @@ namespace HyperRTS.Simulation.Resources
     {
         private EntityQuery _nodes;
         private EntityQuery _dropOffs;
-        private ComponentLookup<ResourceNode> _nodeLookup;
-        private BufferLookup<ResourceStock> _stockLookup;
         private TargetReach _reach;
         private DockBays _bays;
-        private ComponentLookup<Faction> _factionLookup;
-        private BufferLookup<StatModifier> _modifierLookup;
-        private ComponentLookup<PlayerStats> _statsLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -42,14 +37,9 @@ namespace HyperRTS.Simulation.Resources
             _dropOffs = SystemAPI.QueryBuilder().WithAll<ResourceDropOff, LocalTransform, Faction>()
                 .WithNone<ConstructionProgress, Dead>().Build();
             state.RequireForUpdate<PlayerRegistry>();
-            _nodeLookup = state.GetComponentLookup<ResourceNode>();
-            _stockLookup = state.GetBufferLookup<ResourceStock>();
             _reach = new TargetReach(ref state);
             _bays = new DockBays(ref state);
             state.RequireForUpdate<MapSettings>();
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _modifierLookup = state.GetBufferLookup<StatModifier>(true);
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
             state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
         }
@@ -62,13 +52,8 @@ namespace HyperRTS.Simulation.Resources
             var dropOffs = _dropOffs.ToEntityListAsync(allocator, state.Dependency, out var dropOffsReady);
             state.Dependency = JobHandle.CombineDependencies(nodesReady, dropOffsReady);
 
-            _nodeLookup.Update(ref state);
-            _stockLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
             _bays.Update(ref state);
-            _factionLookup.Update(ref state);
-            _modifierLookup.Update(ref state);
-            _statsLookup.Update(ref state);
 
             new GatherJob
             {
@@ -76,13 +61,13 @@ namespace HyperRTS.Simulation.Resources
                 Nodes = nodes.AsDeferredJobArray(),
                 DropOffs = dropOffs.AsDeferredJobArray(),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                NodeLookup = _nodeLookup,
-                StockLookup = _stockLookup,
+                NodeLookup = SystemAPI.GetComponentLookup<ResourceNode>(false),
+                StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 Reach = _reach,
                 Bays = _bays,
-                FactionLookup = _factionLookup,
-                ModifierLookup = _modifierLookup,
-                StatsLookup = _statsLookup,
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
+                StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
         }

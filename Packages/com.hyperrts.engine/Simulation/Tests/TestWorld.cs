@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Tests
     /// Isolated world running every system in HyperRTS.Simulation (no rendering, input or physics), plus
     /// helpers that build entities with the same setup code the bakers use.
     /// </summary>
-    public sealed class TestWorld : IDisposable
+    public sealed partial class TestWorld : IDisposable
     {
         public const float FrameTime = 1f / 30f;
 
@@ -130,24 +130,6 @@ namespace HyperRTS.Simulation.Tests
 
             return done();
         }
-
-        public T Get<T>(Entity entity) where T : unmanaged, IComponentData => EntityManager.GetComponentData<T>(entity);
-
-        public T Singleton<T>() where T : unmanaged, IComponentData
-        {
-            using var query = EntityManager.CreateEntityQuery(typeof(T));
-            return query.GetSingleton<T>();
-        }
-
-        /// <summary>The match singleton carrying <see cref="MapSettings"/>.</summary>
-        public Entity MatchEntity()
-        {
-            using var query = EntityManager.CreateEntityQuery(typeof(MapSettings));
-            return query.GetSingletonEntity();
-        }
-
-        public bool IsEnabled<T>(Entity entity) where T : unmanaged, IComponentData, IEnableableComponent =>
-            EntityManager.IsComponentEnabled<T>(entity);
 
         /// <summary>
         /// Creates map, rules, relations, AI tunings and one player per team entry (faction = index + 1, first is

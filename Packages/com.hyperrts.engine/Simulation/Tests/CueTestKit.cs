@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>This frame's cues.</summary>
         public static CueEvent[] Queued(this TestWorld world)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(CueQueue));
+            using var query = world.Query(typeof(CueQueue));
             return world.EntityManager.GetBuffer<CueEvent>(query.GetSingletonEntity()).AsNativeArray().ToArray();
         }
 

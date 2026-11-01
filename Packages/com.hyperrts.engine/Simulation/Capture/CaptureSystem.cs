@@ -21,9 +21,6 @@ namespace HyperRTS.Simulation.Capture
     public partial struct CaptureSystem : ISystem
     {
         private CaptureLookup _targets;
-        private ComponentLookup<Capturable> _capturableLookup;
-        private ComponentLookup<CaptureProgress> _progressLookup;
-        private ComponentLookup<Faction> _factionLookup;
         private TargetReach _reach;
         private EventWriter<OwnerChanged> _ownerChanges;
 
@@ -31,9 +28,6 @@ namespace HyperRTS.Simulation.Capture
         public void OnCreate(ref SystemState state)
         {
             _targets = new CaptureLookup(ref state);
-            _capturableLookup = state.GetComponentLookup<Capturable>(true);
-            _progressLookup = state.GetComponentLookup<CaptureProgress>();
-            _factionLookup = state.GetComponentLookup<Faction>(true);
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
             _ownerChanges = new EventWriter<OwnerChanged>(ref state);
@@ -45,9 +39,6 @@ namespace HyperRTS.Simulation.Capture
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state);
-            _capturableLookup.Update(ref state);
-            _progressLookup.Update(ref state);
-            _factionLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
             _ownerChanges.Update(ref state);
 
@@ -58,9 +49,9 @@ namespace HyperRTS.Simulation.Capture
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Targets = _targets,
-                CapturableLookup = _capturableLookup,
-                ProgressLookup = _progressLookup,
-                FactionLookup = _factionLookup,
+                CapturableLookup = SystemAPI.GetComponentLookup<Capturable>(true),
+                ProgressLookup = SystemAPI.GetComponentLookup<CaptureProgress>(false),
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
                 Reach = _reach,
                 OwnerChanges = _ownerChanges,
             }.Schedule();

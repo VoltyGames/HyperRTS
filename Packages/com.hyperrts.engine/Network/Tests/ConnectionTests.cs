@@ -36,11 +36,11 @@ namespace HyperRTS.Network.Tests
             world.EntityManager.AddBuffer<ProductionQueueItem>(holder)
                 .Add(new ProductionQueueItem { TypeId = EntityInfo.TypeIdFromName("Scout") });
 
-            var registry = world.EntityManager.CreateEntityQuery(typeof(PrefabRegistry)).GetSingleton<PrefabRegistry>();
-            var holders = world.EntityManager.CreateEntityQuery(typeof(ProductionQueueItem));
+            var registry = world.Query(typeof(PrefabRegistry)).GetSingleton<PrefabRegistry>();
+            var holders = world.Query(typeof(ProductionQueueItem));
             PrefabReferences.Resolve<ProductionQueueItem>(world.EntityManager, holders, registry);
 
-            Assert.AreEqual(prefab, world.EntityManager.GetBuffer<ProductionQueueItem>(holder)[0].Prefab);
+            Assert.AreEqual(prefab, world.Buffer<ProductionQueueItem>(holder)[0].Prefab);
         }
 
         [Test]

@@ -17,45 +17,27 @@ namespace HyperRTS.Simulation.Resources
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ResourceIncomeSystem : ISystem
     {
-        private BufferLookup<ResourceStock> _stockLookup;
-        private ComponentLookup<PlayerStats> _statsLookup;
-        private ComponentLookup<Offline> _offlineLookup;
-        private ComponentLookup<OccupantIncome> _occupantLookup;
-        private BufferLookup<Cargo> _cargoLookup;
-        private ComponentLookup<ResourceReserve> _reserveLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
             state.RequireForUpdate<ResourceIncome>();
-            _stockLookup = state.GetBufferLookup<ResourceStock>();
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _offlineLookup = state.GetComponentLookup<Offline>(true);
-            _occupantLookup = state.GetComponentLookup<OccupantIncome>(true);
-            _cargoLookup = state.GetBufferLookup<Cargo>(true);
-            _reserveLookup = state.GetComponentLookup<ResourceReserve>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _stockLookup.Update(ref state);
-            _statsLookup.Update(ref state);
-            _offlineLookup.Update(ref state);
-            _occupantLookup.Update(ref state);
-            _cargoLookup.Update(ref state);
-            _reserveLookup.Update(ref state);
             new IncomeJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                StockLookup = _stockLookup,
-                StatsLookup = _statsLookup,
-                OfflineLookup = _offlineLookup,
-                OccupantLookup = _occupantLookup,
-                CargoLookup = _cargoLookup,
-                ReserveLookup = _reserveLookup,
+                StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
+                StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
+                OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
+                OccupantLookup = SystemAPI.GetComponentLookup<OccupantIncome>(true),
+                CargoLookup = SystemAPI.GetBufferLookup<Cargo>(true),
+                ReserveLookup = SystemAPI.GetComponentLookup<ResourceReserve>(false),
             }.Schedule();
         }
 

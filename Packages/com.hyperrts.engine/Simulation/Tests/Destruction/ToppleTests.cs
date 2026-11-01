@@ -11,21 +11,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Destruction
 {
     /// <summary>Felled trees: the heading they fall along, their remains pose, and the fall clients show.</summary>
-    public class ToppleTests
+    public class ToppleTests : SimulationFixture
     {
         private const float PoseTolerance = 0.01f;
-
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
 
         [Test]
         public void Quantize_RoundTripsEveryHeading_FallingAwayFromTheSource()
@@ -73,13 +61,13 @@ namespace HyperRTS.Simulation.Tests.Destruction
         [Test]
         public void LethalSplash_FellsTheTreeAwayFromTheBlast_InThePoseClientsDerive()
         {
-            var remains = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
+            var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var tree = SpawnTree(new float3(5f, 0f, 0f), remains, out var standing, out var topple);
 
-            _world.QueueDamage(new DamageEvent { Position = float3.zero, Amount = 999f, Radius = 8f, EdgeFactor = 1f });
-            _world.Tick();
+            World.QueueDamage(new DamageEvent { Position = float3.zero, Amount = 999f, Radius = 8f, EdgeFactor = 1f });
+            World.Tick();
 
-            Assert.IsFalse(_world.EntityManager.Exists(tree));
+            Assert.IsFalse(World.EntityManager.Exists(tree));
             var fall = ToppleMath.Quantize(float3.zero, standing.Position);
             MathAssert.Near(new float3(1f, 0f, 0f), HeadingByte.Direction(fall), PoseTolerance);
             var expected = ToppleMath.Fell(standing, topple, fall, true, out var pose);
@@ -92,11 +80,11 @@ namespace HyperRTS.Simulation.Tests.Destruction
         [Test]
         public void DirectHit_FellsTheTreeAwayFromTheShooter()
         {
-            var remains = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
+            var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var tree = SpawnTree(new float3(5f, 0f, 0f), remains, out _, out _);
 
-            _world.QueueDamage(new DamageEvent { Target = tree, Origin = new float3(5f, 0f, -10f), Amount = 999f });
-            _world.Tick();
+            World.QueueDamage(new DamageEvent { Target = tree, Origin = new float3(5f, 0f, -10f), Amount = 999f });
+            World.Tick();
 
             var (shown, _) = FellRemains();
             MathAssert.Near(new float3(0f, 0f, 1f), math.rotate(shown.Rotation, new float3(0f, 0f, 1f)), PoseTolerance);
@@ -104,11 +92,11 @@ namespace HyperRTS.Simulation.Tests.Destruction
 
         private Entity SpawnTree(float3 position, Entity remains, out LocalTransform standing, out Topple topple)
         {
-            var entity = _world.EntityManager.CreateEntity();
+            var entity = World.EntityManager.CreateEntity();
             standing = LocalTransform.FromPositionRotation(position, quaternion.RotateY(0.5f));
             topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 12f, Lie = 0f, CanopyRadius = 3f };
-            _world.EntityManager.AddComponentData(entity, standing);
-            var writer = new EntityWriter(_world.EntityManager, entity);
+            World.Add(entity, standing);
+            var writer = World.Writer(entity);
             DestructibleAuthoring.AddScenery(writer, 50f, 0, remains, float2.zero,
                 SceneryId.At(position, standing.Rotation));
             ToppleAuthoring.AddTopple(writer, topple.Trunk, topple.Height, topple.Lie, topple.CanopyRadius);
@@ -117,13 +105,13 @@ namespace HyperRTS.Simulation.Tests.Destruction
 
         private (LocalTransform, ToppleFall) FellRemains()
         {
-            using var query = _world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ToppleFall>(),
+            using var query = World.Query(ComponentType.ReadOnly<ToppleFall>(),
                 ComponentType.ReadOnly<LocalTransform>());
             using var entities = query.ToEntityArray(Allocator.Temp);
             Assert.AreEqual(1, entities.Length, "one felled remains");
             var entity = entities[0];
-            return (_world.EntityManager.GetComponentData<LocalTransform>(entity),
-                _world.EntityManager.GetComponentData<ToppleFall>(entity));
+            return (World.Get<LocalTransform>(entity),
+                World.Get<ToppleFall>(entity));
         }
     }
 }

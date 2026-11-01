@@ -43,12 +43,12 @@ namespace HyperRTS.Simulation.Tests.Replays
         {
             get
             {
-                using var query = _world.EntityManager.CreateEntityQuery(typeof(ReplayPlayback));
+                using var query = _world.Query(typeof(ReplayPlayback));
                 return query.GetSingleton<ReplayPlayback>();
             }
             set
             {
-                using var query = _world.EntityManager.CreateEntityQuery(typeof(ReplayPlayback));
+                using var query = _world.Query(typeof(ReplayPlayback));
                 query.SetSingleton(value);
             }
         }
@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Tests.Replays
         private int Count(string name)
         {
             var typeId = EntityInfo.TypeIdFromName(name);
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(EntityInfo));
+            using var query = _world.Query(typeof(EntityInfo));
             using var infos = query.ToComponentDataArray<EntityInfo>(Allocator.Temp);
             var count = 0;
             foreach (var info in infos)
@@ -152,7 +152,7 @@ namespace HyperRTS.Simulation.Tests.Replays
         private float3 FirstPosition(string name)
         {
             var typeId = EntityInfo.TypeIdFromName(name);
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(EntityInfo), typeof(LocalTransform));
+            using var query = _world.Query(typeof(EntityInfo), typeof(LocalTransform));
             using var infos = query.ToComponentDataArray<EntityInfo>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             for (var i = 0; i < infos.Length; i++)

@@ -19,14 +19,12 @@ namespace HyperRTS.Simulation.Combat.Targeting
     {
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
-        private ComponentLookup<Ammo> _ammo;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -34,11 +32,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state, _fogQuery);
-            _ammo.Update(ref state);
             new AttackOrderJob
             {
                 Targets = _targets,
-                AmmoLookup = _ammo,
+                AmmoLookup = SystemAPI.GetComponentLookup<Ammo>(true),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
             }.ScheduleParallel();
         }

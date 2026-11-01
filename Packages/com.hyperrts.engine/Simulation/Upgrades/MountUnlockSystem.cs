@@ -18,7 +18,6 @@ namespace HyperRTS.Simulation.Upgrades
     [UpdateAfter(typeof(UpgradeSystem))]
     public partial struct MountUnlockSystem : ISystem
     {
-        private BufferLookup<CompletedResearch> _researched;
         private BufferTypeHandle<WeaponMount> _mounts;
         private ComponentTypeHandle<Faction> _factions;
         private EntityQuery _query;
@@ -27,7 +26,6 @@ namespace HyperRTS.Simulation.Upgrades
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
-            _researched = state.GetBufferLookup<CompletedResearch>(true);
             _mounts = state.GetBufferTypeHandle<WeaponMount>();
             _factions = state.GetComponentTypeHandle<Faction>(true);
             _query = SystemAPI.QueryBuilder().WithAllRW<WeaponMount>().WithAll<Faction>().Build();
@@ -36,13 +34,12 @@ namespace HyperRTS.Simulation.Upgrades
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _researched.Update(ref state);
             _mounts.Update(ref state);
             _factions.Update(ref state);
             state.Dependency = new UnlockJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                Researched = _researched,
+                Researched = SystemAPI.GetBufferLookup<CompletedResearch>(true),
                 Mounts = _mounts,
                 Factions = _factions,
             }.ScheduleParallel(_query, state.Dependency);

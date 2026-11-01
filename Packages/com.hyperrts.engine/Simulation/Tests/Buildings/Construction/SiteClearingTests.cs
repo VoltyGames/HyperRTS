@@ -14,21 +14,9 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
     /// <summary>
     /// A building site removes the open scenery its footprint overlaps and the remains on it, quietly.
     /// </summary>
-    public class SiteClearingTests
+    public class SiteClearingTests : SimulationFixture
     {
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
-        private EntityManager Manager => _world.EntityManager;
+        private EntityManager Manager => World.EntityManager;
 
         private Entity SpawnScenery(float3 position, Entity remains = default, float2 block = default)
         {
@@ -50,7 +38,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
 
         private Entity SpawnTurnedSite(float yaw)
         {
-            var site = _world.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            var site = World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
             Manager.SetComponentData(site, LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(yaw)));
             return site;
         }
@@ -58,13 +46,13 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
         [Test]
         public void Site_ClearsSceneryCrossingItsEdgeAndRuinsOnIt_AndLeavesNoRemains()
         {
-            var remains = _world.MakePrefab(Manager.CreateEntity(typeof(LocalTransform), typeof(Decay)));
+            var remains = World.MakePrefab(Manager.CreateEntity(typeof(LocalTransform), typeof(Decay)));
             var fence = SpawnScenery(new float3(5.3f, 0f, 0f), remains);
             var ruin = SpawnRuin(new float3(-3f, 0f, 0f));
             var outside = SpawnScenery(new float3(7f, 0f, 0f));
-            _world.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
             Assert.IsFalse(Manager.Exists(fence), "a fence whose end reaches over the edge is cleared");
             Assert.IsFalse(Manager.Exists(ruin), "so are remains lying on the site");
@@ -80,7 +68,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
             var across = SpawnScenery(new float3(3f, 0f, 3f));
             SpawnTurnedSite(math.PI / 4f);
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
             Assert.IsFalse(Manager.Exists(along), "scenery along the turned length is cleared");
             Assert.IsTrue(Manager.Exists(across), "scenery off its side stands");
@@ -97,9 +85,9 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
                 ToppleAuthoring.AddTopple(writer, new float3(0f, 1f, 0f), 12f, 0f, 2.5f);
             }
 
-            _world.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
             Assert.IsFalse(Manager.Exists(overhanging), "a trunk 2 m off the edge hangs its canopy over the site");
             Assert.IsTrue(Manager.Exists(clear), "a canopy that stops short stands");
@@ -109,15 +97,15 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
         public void SolidScenery_StaysAndStillBlocksPlacement()
         {
             var wall = SpawnScenery(new float3(6f, 0f, 0f), block: new float2(4f, 4f));
-            _world.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
             Assert.IsTrue(Manager.Exists(wall), "solid scenery over the site's edge is an obstacle, not cleared");
             var spot = new BuildingSpot(new float3(2f, 0f, 20f), 0f, new float2(4f, 4f), PlacementSurface.Land);
             var blocked = new BuildingSpot(new float3(8f, 0f, 0f), 0f, new float2(2f, 2f), PlacementSurface.Land);
-            var map = _world.Singleton<MapSettings>();
-            var grid = _world.Singleton<NavGrid>();
+            var map = World.Singleton<MapSettings>();
+            var grid = World.Singleton<NavGrid>();
             Assert.IsTrue(spot.IsValid(in map, in grid), "open ground takes a building");
             Assert.IsFalse(blocked.IsValid(in map, in grid), "the wall's cells refuse one");
         }

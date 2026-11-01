@@ -21,14 +21,7 @@ namespace HyperRTS.Simulation.Airdrops
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct AirdropSystem : ISystem
     {
-        private ComponentLookup<LocalTransform> _transformLookup;
         private PrefabSpawner _spawner;
-        private ComponentLookup<Offline> _offlineLookup;
-        private ComponentLookup<PlayerSpawn> _spawnLookup;
-        private ComponentLookup<Flight> _flightLookup;
-        private ComponentLookup<AirdropReceiver> _receiverLookup;
-        private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<Dead> _deadLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -37,27 +30,13 @@ namespace HyperRTS.Simulation.Airdrops
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAny<AirdropReceiver, AirdropFlight>().Build());
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _spawner = new PrefabSpawner(ref state);
-            _offlineLookup = state.GetComponentLookup<Offline>(true);
-            _spawnLookup = state.GetComponentLookup<PlayerSpawn>(true);
-            _flightLookup = state.GetComponentLookup<Flight>(true);
-            _receiverLookup = state.GetComponentLookup<AirdropReceiver>(true);
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _deadLookup = state.GetComponentLookup<Dead>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _transformLookup.Update(ref state);
             _spawner.Update(ref state);
-            _offlineLookup.Update(ref state);
-            _spawnLookup.Update(ref state);
-            _flightLookup.Update(ref state);
-            _receiverLookup.Update(ref state);
-            _factionLookup.Update(ref state);
-            _deadLookup.Update(ref state);
             var ecbSystem = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
             var map = SystemAPI.GetSingleton<MapSettings>();
 
@@ -65,11 +44,11 @@ namespace HyperRTS.Simulation.Airdrops
             {
                 Map = map,
                 Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged),
-                TransformLookup = _transformLookup,
+                TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Spawner = _spawner,
-                ReceiverLookup = _receiverLookup,
-                FactionLookup = _factionLookup,
-                DeadLookup = _deadLookup,
+                ReceiverLookup = SystemAPI.GetComponentLookup<AirdropReceiver>(true),
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
             }.Schedule();
 
             new SendJob
@@ -78,11 +57,11 @@ namespace HyperRTS.Simulation.Airdrops
                 Map = map,
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged),
-                TransformLookup = _transformLookup,
+                TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Spawner = _spawner,
-                OfflineLookup = _offlineLookup,
-                SpawnLookup = _spawnLookup,
-                FlightLookup = _flightLookup,
+                OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
+                SpawnLookup = SystemAPI.GetComponentLookup<PlayerSpawn>(true),
+                FlightLookup = SystemAPI.GetComponentLookup<Flight>(true),
             }.Schedule();
         }
 

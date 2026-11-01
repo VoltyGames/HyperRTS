@@ -14,26 +14,14 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Transport
 {
     /// <summary>A neutral garrison building (a village house): boarding as a group, selling and unloading.</summary>
-    public class NeutralGarrisonTests
+    public class NeutralGarrisonTests : SimulationFixture
     {
         private static readonly float2 Footprint = new(10f, 9f);
-
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
 
         /// <summary>Maps use coarser nav cells than the engine default.</summary>
         private void SetNavCellSize(float size)
         {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(MapSettings));
+            using var query = World.Query(typeof(MapSettings));
             var map = query.GetSingleton<MapSettings>();
             map.NavCellSize = size;
             query.SetSingleton(map);
@@ -41,10 +29,10 @@ namespace HyperRTS.Simulation.Tests.Transport
 
         private Entity House(float3 position, float yawDegrees = 0f, int capacity = 4)
         {
-            var house = _world.SpawnBuilding(Faction.Neutral, position, Footprint);
+            var house = World.SpawnBuilding(Faction.Neutral, position, Footprint);
             var turned = LocalTransform.FromPositionRotation(position, quaternion.RotateY(math.radians(yawDegrees)));
-            _world.EntityManager.SetComponentData(house, turned);
-            var writer = new EntityWriter(_world.EntityManager, house);
+            World.Set(house, turned);
+            var writer = World.Writer(house);
             TransportSetup.AddContainer(writer, new Container
             {
                 Capacity = capacity, MaxPassengerSize = 1, PassengersFire = true, PassengersSurvive = true,
@@ -56,16 +44,16 @@ namespace HyperRTS.Simulation.Tests.Transport
 
         private Entity Rifleman(byte faction, float3 position)
         {
-            var unit = _world.SpawnUnit(faction, position);
-            var writer = new EntityWriter(_world.EntityManager, unit);
+            var unit = World.SpawnUnit(faction, position);
+            var writer = World.Writer(unit);
             TransportSetup.AddPassenger(writer, 1);
-            _world.AddWeapon(unit, range: 7f, damage: 8f);
+            World.AddWeapon(unit, range: 7f, damage: 8f);
             return unit;
         }
 
-        private int Occupants(Entity house) => _world.EntityManager.GetBuffer<Cargo>(house).Length;
+        private int Occupants(Entity house) => World.Buffer<Cargo>(house).Length;
 
-        private byte Owner(Entity house) => _world.Get<Faction>(house).Value;
+        private byte Owner(Entity house) => World.Get<Faction>(house).Value;
 
         /// <summary>
         /// Grids as the maps build them (2 m cells) park a unit up to three metres from a footprint, depending on
@@ -88,14 +76,14 @@ namespace HyperRTS.Simulation.Tests.Transport
             var first = Rifleman(1, center + new float3(14f, 0f, 0f));
             var second = Rifleman(1, center + new float3(18f, 0f, 1f));
             var third = Rifleman(1, center + new float3(22f, 0f, -1f));
-            _world.Enter(first, house);
-            _world.Enter(second, house);
-            _world.Enter(third, house);
+            World.Enter(first, house);
+            World.Enter(second, house);
+            World.Enter(third, house);
 
-            _world.RunUntil(() => Occupants(house) == 3 && Owner(house) == 1, 20f);
+            World.RunUntil(() => Occupants(house) == 3 && Owner(house) == 1, 20f);
 
             Assert.AreEqual(3, Occupants(house));
-            Assert.IsTrue(_world.IsInside(first) && _world.IsInside(second) && _world.IsInside(third));
+            Assert.IsTrue(World.IsInside(first) && World.IsInside(second) && World.IsInside(third));
             Assert.AreEqual(1, Owner(house), "it belongs to its garrison");
         }
 
@@ -106,15 +94,15 @@ namespace HyperRTS.Simulation.Tests.Transport
             SetNavCellSize(navCellSize);
             var house = House(float3.zero);
             var first = Rifleman(1, new float3(10f, 0f, 0f));
-            _world.Enter(first, house);
-            _world.Run(5f);
+            World.Enter(first, house);
+            World.Run(5f);
             Assert.AreEqual(1, Owner(house));
 
             var second = Rifleman(1, new float3(10f, 0f, 3f));
-            _world.Enter(second, house);
-            _world.Run(5f);
+            World.Enter(second, house);
+            World.Run(5f);
 
-            Assert.IsTrue(_world.IsInside(second));
+            Assert.IsTrue(World.IsInside(second));
             Assert.AreEqual(2, Occupants(house));
         }
 
@@ -123,24 +111,24 @@ namespace HyperRTS.Simulation.Tests.Transport
         {
             var house = House(float3.zero);
             var first = Rifleman(1, new float3(10f, 0f, 0f));
-            _world.Enter(first, house);
-            _world.Run(5f);
+            World.Enter(first, house);
+            World.Run(5f);
 
             var enemy = Rifleman(2, new float3(10f, 0f, 3f));
-            _world.Command(2, new PlayerCommand { Type = CommandType.Enter, Unit = enemy, Target = house });
-            _world.Run(5f);
+            World.Command(2, new PlayerCommand { Type = CommandType.Enter, Unit = enemy, Target = house });
+            World.Run(5f);
 
-            Assert.IsFalse(_world.IsInside(enemy));
+            Assert.IsFalse(World.IsInside(enemy));
             Assert.AreEqual(1, Occupants(house));
         }
 
         [Test]
         public void IsSellable_OnlyForBuildingsThatAreNotGarrisons()
         {
-            var depot = _world.SpawnBuilding(1, float3.zero, Footprint);
+            var depot = World.SpawnBuilding(1, float3.zero, Footprint);
             var house = House(new float3(30f, 0f, 0f));
             var unit = Rifleman(1, new float3(60f, 0f, 0f));
-            var entityManager = _world.EntityManager;
+            var entityManager = World.EntityManager;
 
             Assert.IsTrue(BuildingRules.IsSellable(entityManager, depot));
             Assert.IsFalse(BuildingRules.IsSellable(entityManager, house), "occupying a house doesn't make it yours to sell");
@@ -152,15 +140,15 @@ namespace HyperRTS.Simulation.Tests.Transport
         {
             var house = House(float3.zero);
             var rifleman = Rifleman(1, new float3(10f, 0f, 0f));
-            _world.Enter(rifleman, house);
-            _world.Run(5f);
+            World.Enter(rifleman, house);
+            World.Run(5f);
             Assert.AreEqual(1, Owner(house));
 
-            _world.Command(1, new PlayerCommand { Type = CommandType.Sell, Unit = house });
-            _world.Tick(frames: 3);
+            World.Command(1, new PlayerCommand { Type = CommandType.Sell, Unit = house });
+            World.Tick(frames: 3);
 
-            Assert.IsTrue(_world.EntityManager.Exists(house));
-            Assert.IsTrue(_world.IsInside(rifleman));
+            Assert.IsTrue(World.EntityManager.Exists(house));
+            Assert.IsTrue(World.IsInside(rifleman));
             Assert.AreEqual(1, Owner(house));
         }
 
@@ -173,30 +161,30 @@ namespace HyperRTS.Simulation.Tests.Transport
             for (var i = 0; i < garrison.Length; i++)
             {
                 garrison[i] = Rifleman(1, new float3(10f, 0f, i * 2f - 5f));
-                _world.Enter(garrison[i], house);
+                World.Enter(garrison[i], house);
             }
 
-            _world.RunUntil(() => Occupants(house) == garrison.Length, 12f);
+            World.RunUntil(() => Occupants(house) == garrison.Length, 12f);
             Assert.AreEqual(garrison.Length, Occupants(house));
-            _world.EntityManager.SetComponentEnabled<Selected>(house, true);
+            World.SetEnabled<Selected>(house, true);
 
-            _world.Command(1, new PlayerCommand { Type = CommandType.Unload, Unit = house, Argument = -1 });
-            _world.Tick(frames: 3);
+            World.Command(1, new PlayerCommand { Type = CommandType.Unload, Unit = house, Argument = -1 });
+            World.Tick(frames: 3);
 
             Assert.AreEqual(0, Occupants(house));
             Assert.AreEqual(Faction.Neutral, Owner(house), "empty, it is nobody's again");
-            Assert.IsFalse(_world.IsEnabled<Selected>(house), "a neutral building isn't a selection");
+            Assert.IsFalse(World.IsEnabled<Selected>(house), "a neutral building isn't a selection");
             for (var i = 0; i < garrison.Length; i++)
             {
                 AssertStandsBesideTheHouse(garrison[i]);
                 for (var j = i + 1; j < garrison.Length; j++)
                 {
-                    var apart = math.distance(_world.GetPosition(garrison[i]).xz, _world.GetPosition(garrison[j]).xz);
+                    var apart = math.distance(World.GetPosition(garrison[i]).xz, World.GetPosition(garrison[j]).xz);
                     Assert.Greater(apart, 1f, "passengers don't share a spot");
                 }
             }
 
-            _world.Run(5f);
+            World.Run(5f);
             Assert.AreEqual(0, Occupants(house), "nobody walks back in");
             foreach (var unit in garrison)
             {
@@ -206,15 +194,15 @@ namespace HyperRTS.Simulation.Tests.Transport
 
         private void AssertStandsBesideTheHouse(Entity unit)
         {
-            Assert.IsFalse(_world.IsInside(unit), "got out");
-            var position = _world.GetPosition(unit);
+            Assert.IsFalse(World.IsInside(unit), "got out");
+            var position = World.GetPosition(unit);
             Assert.IsTrue(math.all(math.isfinite(position)), "has a position");
             var outside = math.abs(position.x) >= Footprint.x * 0.5f || math.abs(position.z) >= Footprint.y * 0.5f;
             Assert.IsTrue(outside, $"stands outside the walls, was at {position}");
             Assert.Less(math.length(position.xz), 12f, "stays next to the house");
-            Assert.IsFalse(_world.IsEnabled<Dead>(unit));
-            Assert.IsFalse(_world.EntityManager.HasComponent<FogHidden>(unit), "its own side sees it");
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(NavGrid));
+            Assert.IsFalse(World.IsEnabled<Dead>(unit));
+            Assert.IsFalse(World.EntityManager.HasComponent<FogHidden>(unit), "its own side sees it");
+            using var query = World.Query(typeof(NavGrid));
             var grid = query.GetSingleton<NavGrid>();
             Assert.IsTrue(grid.IsWalkable(position), "stands on open ground");
         }

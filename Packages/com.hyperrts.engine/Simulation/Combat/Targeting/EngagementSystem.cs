@@ -26,20 +26,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
-        private ComponentLookup<ActiveOrder> _orders;
         private MoveLookup _moves;
-        private ComponentLookup<Ammo> _ammo;
-        private BufferLookup<WeaponMount> _mounts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _orders = state.GetComponentLookup<ActiveOrder>(true);
             _moves = new MoveLookup(ref state);
-            _ammo = state.GetComponentLookup<Ammo>(true);
-            _mounts = state.GetBufferLookup<WeaponMount>(true);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -47,10 +41,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state, _fogQuery);
-            _orders.Update(ref state);
             _moves.Update(ref state);
-            _ammo.Update(ref state);
-            _mounts.Update(ref state);
 
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
 
@@ -58,11 +49,11 @@ namespace HyperRTS.Simulation.Combat.Targeting
             {
                 Targets = _targets,
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
-                Orders = _orders,
+                Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Traits = traits,
                 Moves = _moves,
-                AmmoLookup = _ammo,
-                Mounts = _mounts,
+                AmmoLookup = SystemAPI.GetComponentLookup<Ammo>(true),
+                Mounts = SystemAPI.GetBufferLookup<WeaponMount>(true),
             }.ScheduleParallel();
         }
 

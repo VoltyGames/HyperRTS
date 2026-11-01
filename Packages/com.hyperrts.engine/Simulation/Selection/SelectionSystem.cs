@@ -16,19 +16,11 @@ namespace HyperRTS.Simulation.Selection
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct SelectionSystem : ISystem
     {
-        private ComponentLookup<EntityInfo> _infoLookup;
-        private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<BuildingTag> _buildingLookup;
-        private ComponentLookup<ControlGroup> _groupLookup;
         private PickRanking _ranking;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _infoLookup = state.GetComponentLookup<EntityInfo>(true);
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
-            _groupLookup = state.GetComponentLookup<ControlGroup>(true);
             _ranking = new PickRanking(ref state);
             // Input writes it, so it must exist before either system runs.
             state.EntityManager.CreateSingleton<SelectionInput>();
@@ -71,10 +63,6 @@ namespace HyperRTS.Simulation.Selection
         private SelectionHitTest CreateHitTest(ref SystemState state, in SelectionInput input)
         {
             _ranking.Update(ref state);
-            _infoLookup.Update(ref state);
-            _factionLookup.Update(ref state);
-            _buildingLookup.Update(ref state);
-            _groupLookup.Update(ref state);
 
             var test = new SelectionHitTest
             {
@@ -84,17 +72,17 @@ namespace HyperRTS.Simulation.Selection
                 PreferredRank = -1,
                 Hidden = _ranking.Hidden,
                 Inside = _ranking.Inside,
-                Info = _infoLookup,
-                Factions = _factionLookup,
+                Info = SystemAPI.GetComponentLookup<EntityInfo>(true),
+                Factions = SystemAPI.GetComponentLookup<Faction>(true),
                 Units = _ranking.Units,
-                Buildings = _buildingLookup,
-                Groups = _groupLookup,
+                Buildings = SystemAPI.GetComponentLookup<BuildingTag>(true),
+                Groups = SystemAPI.GetComponentLookup<ControlGroup>(true),
             };
 
             // Double-click selects every on-screen entity of the clicked type and owner.
-            if (input.Command == SelectionCommand.DoubleClick && _infoLookup.HasComponent(test.Clicked))
+            if (input.Command == SelectionCommand.DoubleClick && test.Info.HasComponent(test.Clicked))
             {
-                test.DoubleClickType = _infoLookup[test.Clicked].TypeId;
+                test.DoubleClickType = test.Info[test.Clicked].TypeId;
                 test.DoubleClickFaction = test.GetFaction(test.Clicked);
             }
 

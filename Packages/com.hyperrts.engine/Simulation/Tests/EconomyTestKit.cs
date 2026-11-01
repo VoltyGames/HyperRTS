@@ -38,14 +38,14 @@ namespace HyperRTS.Simulation.Tests
                 new float3(0f, 0f, -4f), unitPrefab);
 
         public static int QueueLength(this TestWorld world, Entity producer) =>
-            world.EntityManager.GetBuffer<ProductionQueueItem>(producer).Length;
+            world.Buffer<ProductionQueueItem>(producer).Length;
 
         public static Entity SpawnNode(this TestWorld world, float3 position, ResourceType type, int amount,
             float regrowth = 0f)
         {
             var node = world.EntityManager.CreateEntity();
-            world.EntityManager.AddComponentData(node, LocalTransform.FromPosition(position));
-            var writer = new EntityWriter(world.EntityManager, node);
+            world.Add(node, LocalTransform.FromPosition(position));
+            var writer = world.Writer(node);
             ResourceNodeAuthoring.Add(writer, type, amount, regrowth);
             return node;
         }
@@ -53,14 +53,14 @@ namespace HyperRTS.Simulation.Tests
         public static Entity MakeHarvester(this TestWorld world, Entity unit, int capacity, float gatherRate,
             float replacementRange = 30f)
         {
-            var writer = new EntityWriter(world.EntityManager, unit);
+            var writer = world.Writer(unit);
             HarvesterAuthoring.Add(writer, capacity, gatherRate, replacementRange);
             return unit;
         }
 
         public static Entity MakeBuilder(this TestWorld world, Entity unit, params Entity[] options)
         {
-            var writer = new EntityWriter(world.EntityManager, unit);
+            var writer = world.Writer(unit);
             var buffer = BuilderAuthoring.Add(writer, 1f);
             foreach (var option in options)
             {
@@ -73,7 +73,7 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>Adds second-page options to a builder made by <see cref="MakeBuilder"/>.</summary>
         public static Entity AddAdvancedBuildOptions(this TestWorld world, Entity builder, params Entity[] options)
         {
-            var buffer = world.EntityManager.GetBuffer<BuildOption>(builder);
+            var buffer = world.Buffer<BuildOption>(builder);
             foreach (var option in options)
             {
                 buffer.Add(new BuildOption { Prefab = option, Advanced = true });
@@ -85,7 +85,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity MakeProducer(this TestWorld world, Entity building, float3 spawnOffset,
             params Entity[] options)
         {
-            var writer = new EntityWriter(world.EntityManager, building);
+            var writer = world.Writer(building);
             var buffer = ProducerAuthoring.Add(writer, spawnOffset, 5);
             foreach (var option in options)
             {
@@ -101,14 +101,14 @@ namespace HyperRTS.Simulation.Tests
         public static Entity AddIncome(this TestWorld world, Entity entity, ResourceType type, int amount,
             float interval)
         {
-            var writer = new EntityWriter(world.EntityManager, entity);
+            var writer = world.Writer(entity);
             writer.Add(new ResourceIncome { Type = type, Amount = amount, Interval = interval });
             return entity;
         }
 
         public static Entity AddBuildLimit(this TestWorld world, Entity entity, int max)
         {
-            var writer = new EntityWriter(world.EntityManager, entity);
+            var writer = world.Writer(entity);
             writer.Add(new BuildLimit { Max = max });
             return entity;
         }
@@ -118,11 +118,11 @@ namespace HyperRTS.Simulation.Tests
         {
             var state = world.Get<Offline>(entity);
             state.Set(OfflineReason.Custom, offline);
-            world.EntityManager.SetComponentData(entity, state);
+            world.Set(entity, state);
         }
 
         public static void SetCost(this TestWorld world, Entity prefab, ResourceType type, int amount) =>
-            world.EntityManager.GetBuffer<ResourceCost>(prefab).Add(new ResourceCost { Type = type, Amount = amount });
+            world.Buffer<ResourceCost>(prefab).Add(new ResourceCost { Type = type, Amount = amount });
 
         public static void AddResources(this TestWorld world, byte faction, ResourceType type, int amount) =>
             ResourceMath.Add(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type, amount);
@@ -150,12 +150,12 @@ namespace HyperRTS.Simulation.Tests
             });
 
         public static void SetBuildTime(this TestWorld world, Entity entity, float seconds, int population = 1) =>
-            world.EntityManager.SetComponentData(entity, new Producible { BuildTime = seconds, Population = population });
+            world.Set(entity, new Producible { BuildTime = seconds, Population = population });
 
         /// <summary>Live (non-prefab) entities carrying <typeparamref name="T"/>.</summary>
         public static NativeArray<Entity> All<T>(this TestWorld world) where T : unmanaged, IComponentData
         {
-            using var query = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
+            using var query = world.Query(ComponentType.ReadOnly<T>());
             return query.ToEntityArray(Allocator.Temp);
         }
 

@@ -93,8 +93,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
         private void PlantTree(float3 position, int crush)
         {
             var tree = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(tree, LocalTransform.FromPosition(position));
-            var writer = new EntityWriter(_world.EntityManager, tree);
+            _world.Add(tree, LocalTransform.FromPosition(position));
+            var writer = _world.Writer(tree);
             DestructibleAuthoring.AddScenery(writer, 50f, crush, Entity.Null, float2.zero,
                 SceneryId.At(position, quaternion.identity));
         }
@@ -235,8 +235,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
             for (var i = 0; i < count; i++)
             {
                 var slot = new float3(245f + i % side * 3f, 0f, -20f + i / side * 3f + place * 50f - 100f);
-                _world.EntityManager.SetComponentData(units[i], new MoveDestination { Value = slot, Group = group });
-                _world.EntityManager.SetComponentEnabled<MoveDestination>(units[i], true);
+                _world.Set(units[i], new MoveDestination { Value = slot, Group = group });
+                _world.SetEnabled<MoveDestination>(units[i], true);
             }
 
             return units;

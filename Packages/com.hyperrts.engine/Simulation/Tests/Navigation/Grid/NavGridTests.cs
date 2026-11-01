@@ -18,14 +18,12 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
     /// The nav grid: obstacle boxes, rebuilds when buildings change, the signed distance field, and sector regions
     /// that match a flood fill and, rebuilt piece by piece, a whole build.
     /// </summary>
-    public class NavGridTests
+    public class NavGridTests : SimulationFixture
     {
         private static readonly NavAgent Infantry = new() { Radius = 0.5f, SceneryCrushLimit = NavAccess.AllScenery };
         private static readonly NavAgent Truck = new() { Radius = 1.2f };
         private static readonly NavAgent Tank = new() { Radius = 1.85f, SceneryCrushLimit = 3 };
         private static readonly NavAgent Boat = new() { Radius = 1f, Layer = NavLayer.Naval };
-
-        private TestWorld _world;
 
         // Stands in for fog tags, which move enemy buildings between archetypes without changing their footprints.
         private struct ArchetypeTag : IComponentData
@@ -33,15 +31,10 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         }
 
         [SetUp]
-        public void SetUp()
+        public void Prepare()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-            _world.AddAgentPrefabs(Infantry, Truck, Tank, Boat);
+            World.AddAgentPrefabs(Infantry, Truck, Tank, Boat);
         }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
 
         [Test]
         public void QuarterTurnedBox_SwapsWidthAndDepth_AndStaysAxisAligned()
@@ -68,15 +61,15 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         [Test]
         public void Grid_RebuildsWhenBuildingIsAdded()
         {
-            _world.Tick();
+            World.Tick();
             var site = new float3(20f, 0f, 20f);
-            var before = _world.Grid();
+            var before = World.Grid();
             Assert.IsTrue(before.IsWalkable(site));
 
-            _world.SpawnBuilding(2, site, new float2(4f, 4f), complete: false);
-            _world.Tick();
+            World.SpawnBuilding(2, site, new float2(4f, 4f), complete: false);
+            World.Tick();
 
-            var after = _world.Grid();
+            var after = World.Grid();
             Assert.Greater(after.Version, before.Version);
             Assert.IsFalse(after.IsWalkable(site), "buildings under construction block too");
             Assert.IsTrue(after.IsWalkable(site + new float3(2.5f, 0f, 0f)));
@@ -86,21 +79,21 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         public void Grid_KeepsItsVersion_WhenABuildingOnlyChangesArchetype_AndRebuildsWhenItMoves()
         {
             var site = new float3(20f, 0f, 20f);
-            var building = _world.SpawnBuilding(2, site, new float2(4f, 4f));
-            _world.Tick();
-            var version = _world.Grid().Version;
+            var building = World.SpawnBuilding(2, site, new float2(4f, 4f));
+            World.Tick();
+            var version = World.Grid().Version;
 
-            _world.EntityManager.AddComponent<ArchetypeTag>(building);
-            _world.Tick();
-            Assert.AreEqual(version, _world.Grid().Version, "same footprints, so paths stay valid");
+            World.EntityManager.AddComponent<ArchetypeTag>(building);
+            World.Tick();
+            Assert.AreEqual(version, World.Grid().Version, "same footprints, so paths stay valid");
 
             var moved = site + new float3(10f, 0f, 0f);
-            var transform = _world.EntityManager.GetComponentData<LocalTransform>(building);
-            _world.EntityManager.SetComponentData(building, transform.WithPosition(moved));
-            _world.EntityManager.RemoveComponent<ArchetypeTag>(building);
-            _world.Tick();
+            var transform = World.Get<LocalTransform>(building);
+            World.Set(building, transform.WithPosition(moved));
+            World.EntityManager.RemoveComponent<ArchetypeTag>(building);
+            World.Tick();
 
-            var grid = _world.Grid();
+            var grid = World.Grid();
             Assert.Greater(grid.Version, version);
             Assert.IsTrue(grid.IsWalkable(site));
             Assert.IsFalse(grid.IsWalkable(moved));
@@ -108,28 +101,28 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
 
         private float GroundField(float x, float z)
         {
-            var grid = _world.Grid();
+            var grid = World.Grid();
             return Infantry.Access(grid).Distance(grid.WorldToCell(new float3(x, 0f, z)));
         }
 
         [Test]
         public void Field_IsNegativeInsideWalls_AboutZeroOnTheirEdge_AndFollowsObstacles()
         {
-            var obstacle = _world.SpawnObstacle(new float3(0.5f, 0f, 0.5f), new float2(1f, 1f));
-            _world.SpawnObstacle(new float3(50f, 0f, 50f), new float2(20f, 20f));
-            _world.Tick();
+            var obstacle = World.SpawnObstacle(new float3(0.5f, 0f, 0.5f), new float2(1f, 1f));
+            World.SpawnObstacle(new float3(50f, 0f, 50f), new float2(20f, 20f));
+            World.Tick();
 
             Assert.AreEqual(-0.5f, GroundField(0.5f, 0.5f), 1e-4f, "the closed cell");
             Assert.AreEqual(0.5f, GroundField(-0.5f, 0.5f), 1e-4f, "beside it");
             Assert.AreEqual(math.SQRT2 - 0.5f, GroundField(-0.5f, -0.5f), 1e-4f, "diagonally below it");
             Assert.AreEqual(2.5f, GroundField(-2.5f, 0.5f), 1e-4f, "three cells out");
             Assert.AreEqual(-NavField.MaxDistance, GroundField(50f, 50f), "deep inside a building, capped");
-            var access = Infantry.Access(_world.Grid());
+            var access = Infantry.Access(World.Grid());
             Assert.AreEqual(0f, access.Distance(new float2(0f, 0.5f)), 1e-4f, "on its edge");
             MathAssert.Near(new float2(-1f, 0f), access.Normal(new float2(-0.2f, 0.5f)));
 
-            _world.EntityManager.DestroyEntity(obstacle);
-            _world.Tick();
+            World.EntityManager.DestroyEntity(obstacle);
+            World.Tick();
 
             Assert.AreEqual(NavField.MaxDistance, GroundField(0.5f, 0.5f), "reopened once the obstacle is gone");
             Assert.AreEqual(NavField.MaxDistance, GroundField(-0.5f, -0.5f));
@@ -139,14 +132,14 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         public void GapExactlyTwoRadiiWide_LetsThatRadiusThrough()
         {
             // A wall along x with a three-cell gap from x -1 to 2, so the middle cell is 1.5 m from each side.
-            _world.SpawnObstacle(new float3(-51f, 0f, 0.5f), new float2(100f, 1f));
-            _world.SpawnObstacle(new float3(52f, 0f, 0.5f), new float2(100f, 1f));
+            World.SpawnObstacle(new float3(-51f, 0f, 0.5f), new float2(100f, 1f));
+            World.SpawnObstacle(new float3(52f, 0f, 0.5f), new float2(100f, 1f));
             var exact = new NavAgent { Radius = 1.5f };
             var wider = new NavAgent { Radius = 1.6f };
-            _world.AddAgentPrefabs(exact, wider);
-            _world.Tick();
+            World.AddAgentPrefabs(exact, wider);
+            World.Tick();
 
-            var grid = _world.Grid();
+            var grid = World.Grid();
             var south = new float3(0.5f, 0f, -10f);
             var north = new float3(0.5f, 0f, 10f);
             Assert.IsTrue(exact.Access(grid).IsOpen(grid.WorldToCell(new float3(0.5f, 0f, 0.5f))), "the gap's middle");
@@ -163,7 +156,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             {
                 var center = new float3(random.NextFloat(-95f, 95f), 0f, random.NextFloat(-95f, 95f));
                 var size = random.NextFloat2(new float2(2f), new float2(18f));
-                placed.Add(_world.SpawnObstacle(center, size, random.NextFloat(math.PI)));
+                placed.Add(World.SpawnObstacle(center, size, random.NextFloat(math.PI)));
             }
 
             return placed;
@@ -171,9 +164,9 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
 
         private Entity PlantTree(float3 position, int crush)
         {
-            var tree = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(tree, LocalTransform.FromPosition(position));
-            var writer = new EntityWriter(_world.EntityManager, tree);
+            var tree = World.EntityManager.CreateEntity();
+            World.Add(tree, LocalTransform.FromPosition(position));
+            var writer = World.Writer(tree);
             DestructibleAuthoring.AddScenery(writer, 50f, crush, Entity.Null, float2.zero,
                 SceneryId.At(position, quaternion.identity));
             return tree;
@@ -182,17 +175,17 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         [Test]
         public void Regions_MatchAFloodFillOverOpenCells()
         {
-            _world.SpawnNavArea(new float3(0f, 0f, 30f), new float2(200f, 12f), NavAreaKind.Water);
-            _world.SpawnNavArea(new float3(-40f, 0f, 30f), new float2(6f, 14f), NavAreaKind.Deck);
+            World.SpawnNavArea(new float3(0f, 0f, 30f), new float2(200f, 12f), NavAreaKind.Water);
+            World.SpawnNavArea(new float3(-40f, 0f, 30f), new float2(6f, 14f), NavAreaKind.Deck);
             // A closed ring, so its inside is a region of its own.
-            _world.SpawnObstacle(new float3(50f, 0f, -50f), new float2(20f, 2f));
-            _world.SpawnObstacle(new float3(50f, 0f, -70f), new float2(20f, 2f));
-            _world.SpawnObstacle(new float3(41f, 0f, -60f), new float2(2f, 20f));
-            _world.SpawnObstacle(new float3(59f, 0f, -60f), new float2(2f, 20f));
+            World.SpawnObstacle(new float3(50f, 0f, -50f), new float2(20f, 2f));
+            World.SpawnObstacle(new float3(50f, 0f, -70f), new float2(20f, 2f));
+            World.SpawnObstacle(new float3(41f, 0f, -60f), new float2(2f, 20f));
+            World.SpawnObstacle(new float3(59f, 0f, -60f), new float2(2f, 20f));
             SpawnClutter(11, 30);
-            _world.Tick();
+            World.Tick();
 
-            var grid = _world.Grid();
+            var grid = World.Grid();
             foreach (var agent in new[] { Infantry, Tank, Boat })
             {
                 AssertMatchesFlood(agent.Access(grid), $"radius {agent.Radius}");
@@ -270,9 +263,9 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         [Test]
         public void Rebuilds_AfterBuildingsAndSceneryChange_MatchAWholeBuild()
         {
-            _world.SpawnNavArea(new float3(40f, 0f, 0f), new float2(20f, 200f), NavAreaKind.Water);
+            World.SpawnNavArea(new float3(40f, 0f, 0f), new float2(20f, 200f), NavAreaKind.Water);
             var placed = SpawnClutter(5, 10);
-            _world.Tick();
+            World.Tick();
             var random = new Random(9);
             for (var round = 0; round < 6; round++)
             {
@@ -283,15 +276,15 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
                     placed.Add(PlantTree(spot, random.NextInt(1, 6)));
                 }
 
-                _world.EntityManager.DestroyEntity(placed[random.NextInt(placed.Count)]);
-                _world.Tick();
+                World.EntityManager.DestroyEntity(placed[random.NextInt(placed.Count)]);
+                World.Tick();
                 AssertMatchesWholeBuild($"round {round}");
             }
         }
 
         private void AssertMatchesWholeBuild(string when)
         {
-            var grid = _world.Grid();
+            var grid = World.Grid();
             var whole = NavGrid.Create(grid.Size, grid.Min, grid.CellSize, grid.Terrain, grid.WaterLevel);
             try
             {

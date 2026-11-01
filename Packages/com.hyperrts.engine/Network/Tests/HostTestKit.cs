@@ -109,7 +109,7 @@ namespace HyperRTS.Network.Tests
 
         public static Entity LocalPlayer(TestWorld world)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(LocalPlayer));
+            using var query = world.Query(typeof(LocalPlayer));
             return query.GetSingletonEntity();
         }
 
@@ -122,13 +122,13 @@ namespace HyperRTS.Network.Tests
 
         private static void Prefer(TestWorld world, byte faction)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(JoinPreference));
+            using var query = world.Query(typeof(JoinPreference));
             query.SetSingleton(new JoinPreference { Faction = faction });
         }
 
         private static bool HasLocalPlayer(TestWorld world)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(LocalPlayer));
+            using var query = world.Query(typeof(LocalPlayer));
             return query.CalculateEntityCount() == 1;
         }
 

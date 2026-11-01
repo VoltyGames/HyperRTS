@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         internal static Entity Marked(TestWorld world, Entity shooter, ImpactMark mark)
         {
-            var writer = new EntityWriter(world.EntityManager, shooter);
+            var writer = world.Writer(shooter);
             ImpactMarksAuthoring.Add(writer, new[] { mark });
             return shooter;
         }
@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var typeId = _world.GetTypeId(gun);
             _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
-            using var projectiles = _world.EntityManager.CreateEntityQuery(typeof(Projectile));
+            using var projectiles = _world.Query(typeof(Projectile));
             Assert.IsTrue(_world.RunUntil(() => !projectiles.IsEmpty, 1f), "the shell is in flight");
 
             _world.EntityManager.DestroyEntity(gun);
@@ -127,7 +127,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             Gun(float3.zero);
             Gun(new float3(0f, 0f, 40f));
             var tank = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
-            var writer = new EntityWriter(_world.EntityManager, tank);
+            var writer = _world.Writer(tank);
             HitMaterialAuthoring.Add(writer, SurfaceMaterial.Metal);
             _world.SpawnUnit(2, new float3(3f, 0f, 40f));
 
@@ -146,7 +146,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var effects = ScriptableObject.CreateInstance<SurfaceEffects>();
             var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Rifle"), cooldown: 100f);
-            var writer = new EntityWriter(_world.EntityManager, gun);
+            var writer = _world.Writer(gun);
             ImpactEffectsAuthoring.Add(writer, effects);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 

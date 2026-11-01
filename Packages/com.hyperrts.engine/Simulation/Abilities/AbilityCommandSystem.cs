@@ -25,7 +25,6 @@ namespace HyperRTS.Simulation.Abilities
         private OrderWriter _writer;
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
-        private ComponentLookup<Faction> _factions;
         private AbilityCaster _caster;
 
         public void OnCreate(ref SystemState state)
@@ -38,7 +37,6 @@ namespace HyperRTS.Simulation.Abilities
             _writer = new OrderWriter(ref state);
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<MapSettings>();
@@ -58,7 +56,6 @@ namespace HyperRTS.Simulation.Abilities
             state.CompleteDependency();
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _targets.Update(ref state, _fogQuery);
-            _factions.Update(ref state);
             _caster.Update(ref state);
 
             var context = new Context
@@ -133,15 +130,15 @@ namespace HyperRTS.Simulation.Abilities
 
             var abilities = SystemAPI.GetBuffer<Ability>(caster);
             var index = AbilityRules.FindAbility(abilities, command.Argument);
-            return index >= 0 && IsUsable(abilities[index], faction, command, context) ? index : -1;
+            return index >= 0 && IsUsable(ref state, abilities[index], faction, command, context) ? index : -1;
         }
 
         /// <summary>A caster that is finished and powered.</summary>
         private bool CanCast(ref SystemState state, Entity caster) =>
             SystemAPI.HasBuffer<Ability>(caster) && AbilityRules.CanCast(state.EntityManager, caster);
 
-        private bool IsUsable(in Ability ability, byte faction, in PlayerCommand command, in Context context) =>
-            AbilityRules.IsUsable(ability, command.Target, faction, context.Completed, _targets, _factions,
+        private bool IsUsable(ref SystemState state, in Ability ability, byte faction, in PlayerCommand command, in Context context) =>
+            AbilityRules.IsUsable(ability, command.Target, faction, context.Completed, _targets, SystemAPI.GetComponentLookup<Faction>(true),
                 context.Relations);
 
         private void Cast(ref SystemState state, Entity caster, int index, byte faction, in PlayerCommand command,
@@ -178,7 +175,7 @@ namespace HyperRTS.Simulation.Abilities
 
             var abilities = SystemAPI.GetBuffer<Ability>(player);
             var index = AbilityRules.FindAbility(abilities, command.Argument);
-            if (index < 0 || !IsUsable(abilities[index], faction, command, context))
+            if (index < 0 || !IsUsable(ref state, abilities[index], faction, command, context))
             {
                 return;
             }

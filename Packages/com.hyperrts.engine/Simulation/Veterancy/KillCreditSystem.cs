@@ -18,14 +18,10 @@ namespace HyperRTS.Simulation.Veterancy
     [UpdateAfter(typeof(DeathSystem))]
     public partial struct KillCreditSystem : ISystem
     {
-        private ComponentLookup<Experience> _experience;
-        private ComponentLookup<Health> _health;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _experience = state.GetComponentLookup<Experience>();
-            _health = state.GetComponentLookup<Health>(true);
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<MatchRules>();
         }
@@ -33,15 +29,13 @@ namespace HyperRTS.Simulation.Veterancy
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _experience.Update(ref state);
-            _health.Update(ref state);
 
             new CreditJob
             {
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 ExperiencePerCost = SystemAPI.GetSingleton<MatchRules>().ExperiencePerCost,
-                Experience = _experience,
-                HealthLookup = _health,
+                Experience = SystemAPI.GetComponentLookup<Experience>(false),
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
             }.Schedule();
         }
 

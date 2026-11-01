@@ -19,24 +19,10 @@ namespace HyperRTS.Simulation.Status
     [UpdateBefore(typeof(DamageSystem))]
     public partial struct StatusEffectSystem : ISystem
     {
-        private ComponentLookup<StatusEffectDefinition> _definitions;
-        private ComponentLookup<EntityInfo> _infos;
-        private BufferLookup<StatusStatBonus> _statBonuses;
-        private BufferLookup<StatusDamageBonus> _damageBonuses;
-        private BufferLookup<ActiveStatus> _statuses;
-        private BufferLookup<StatModifier> _modifiers;
-        private BufferLookup<DamageTakenModifier> _typedModifiers;
         private EventWriter<DamageEvent> _damage;
 
         public void OnCreate(ref SystemState state)
         {
-            _definitions = state.GetComponentLookup<StatusEffectDefinition>(true);
-            _infos = state.GetComponentLookup<EntityInfo>(true);
-            _statBonuses = state.GetBufferLookup<StatusStatBonus>(true);
-            _damageBonuses = state.GetBufferLookup<StatusDamageBonus>(true);
-            _statuses = state.GetBufferLookup<ActiveStatus>();
-            _modifiers = state.GetBufferLookup<StatModifier>();
-            _typedModifiers = state.GetBufferLookup<DamageTakenModifier>();
             _damage = new EventWriter<DamageEvent>(ref state);
 
             EventQueues.Create<StatusQueue>(ref state, typeof(StatusRequest));
@@ -45,35 +31,28 @@ namespace HyperRTS.Simulation.Status
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _definitions.Update(ref state);
-            _infos.Update(ref state);
-            _statBonuses.Update(ref state);
-            _damageBonuses.Update(ref state);
-            _statuses.Update(ref state);
-            _modifiers.Update(ref state);
-            _typedModifiers.Update(ref state);
             _damage.Update(ref state);
 
             var now = (float)SystemAPI.Time.ElapsedTime;
             new ApplyJob
             {
                 Now = now,
-                Definitions = _definitions,
-                Infos = _infos,
-                StatBonuses = _statBonuses,
-                DamageBonuses = _damageBonuses,
-                Statuses = _statuses,
-                Modifiers = _modifiers,
-                TypedModifiers = _typedModifiers,
+                Definitions = SystemAPI.GetComponentLookup<StatusEffectDefinition>(true),
+                Infos = SystemAPI.GetComponentLookup<EntityInfo>(true),
+                StatBonuses = SystemAPI.GetBufferLookup<StatusStatBonus>(true),
+                DamageBonuses = SystemAPI.GetBufferLookup<StatusDamageBonus>(true),
+                Statuses = SystemAPI.GetBufferLookup<ActiveStatus>(false),
+                Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
+                TypedModifiers = SystemAPI.GetBufferLookup<DamageTakenModifier>(false),
             }.Schedule();
 
             new TickJob
             {
                 Now = now,
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                Definitions = _definitions,
-                Modifiers = _modifiers,
-                TypedModifiers = _typedModifiers,
+                Definitions = SystemAPI.GetComponentLookup<StatusEffectDefinition>(true),
+                Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
+                TypedModifiers = SystemAPI.GetBufferLookup<DamageTakenModifier>(false),
                 Damage = _damage,
             }.Schedule();
         }

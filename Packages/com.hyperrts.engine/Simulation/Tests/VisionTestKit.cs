@@ -23,8 +23,8 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnSightBlock(this TestWorld world, float3 position, in SightBlock block)
         {
             var entity = world.EntityManager.CreateEntity();
-            world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
-            var writer = new EntityWriter(world.EntityManager, entity);
+            world.Add(entity, LocalTransform.FromPosition(position));
+            var writer = world.Writer(entity);
             SightBlockAuthoring.Add(writer, block);
             return entity;
         }
@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnViewer(this TestWorld world, byte faction, float3 position, float range, float eye = 2f)
         {
             var viewer = world.SpawnUnit(faction, position);
-            world.EntityManager.SetComponentData(viewer, new VisionRange { Value = range, EyeHeight = eye });
+            world.Set(viewer, new VisionRange { Value = range, EyeHeight = eye });
             return viewer;
         }
 
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Tests
 
         public static void SetFog(this TestWorld world, bool on)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(MapSettings));
+            using var query = world.Query(typeof(MapSettings));
             var settings = query.GetSingleton<MapSettings>();
             settings.FogOfWar = on;
             query.SetSingleton(settings);

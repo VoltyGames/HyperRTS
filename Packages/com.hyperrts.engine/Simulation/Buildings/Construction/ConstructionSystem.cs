@@ -20,20 +20,14 @@ namespace HyperRTS.Simulation.Buildings.Construction
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct ConstructionSystem : ISystem
     {
-        private ComponentLookup<ConstructionProgress> _siteLookup;
-        private ComponentLookup<Producible> _producibleLookup;
         private TargetReach _reach;
-        private ComponentLookup<Faction> _factionLookup;
         private EventWriter<BuildingCompleted> _completed;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _siteLookup = state.GetComponentLookup<ConstructionProgress>();
-            _producibleLookup = state.GetComponentLookup<Producible>(true);
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
-            _factionLookup = state.GetComponentLookup<Faction>(true);
             _completed = new EventWriter<BuildingCompleted>(ref state);
             state.RequireForUpdate<FactionRelations>();
         }
@@ -41,20 +35,17 @@ namespace HyperRTS.Simulation.Buildings.Construction
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _siteLookup.Update(ref state);
-            _producibleLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
-            _factionLookup.Update(ref state);
             _completed.Update(ref state);
 
             new BuildJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
-                SiteLookup = _siteLookup,
-                ProducibleLookup = _producibleLookup,
+                SiteLookup = SystemAPI.GetComponentLookup<ConstructionProgress>(false),
+                ProducibleLookup = SystemAPI.GetComponentLookup<Producible>(true),
                 Reach = _reach,
-                FactionLookup = _factionLookup,
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
             }.Schedule();
 
             new FinishJob

@@ -19,53 +19,29 @@ namespace HyperRTS.Simulation.Combat.Death
     [UpdateBefore(typeof(DeathCueSystem))]
     public partial struct DeathSystem : ISystem
     {
-        private ComponentLookup<SpawnOnDeath> _spawnLookup;
         private RemainsLookups _remains;
-        private ComponentLookup<DropRemains> _drops;
-        private ComponentLookup<TurretToss> _tosses;
-        private ComponentLookup<LethalHit> _lethalHits;
-        private BufferLookup<TossType> _tossTypes;
-        private ComponentLookup<SceneryId> _ids;
-        private BufferLookup<LinkedEntityGroup> _groups;
-        private BufferLookup<Child> _children;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _spawnLookup = state.GetComponentLookup<SpawnOnDeath>(true);
             _remains = RemainsLookups.Create(ref state);
-            _drops = state.GetComponentLookup<DropRemains>(true);
-            _tosses = state.GetComponentLookup<TurretToss>(true);
-            _lethalHits = state.GetComponentLookup<LethalHit>(true);
-            _tossTypes = state.GetBufferLookup<TossType>(true);
-            _ids = state.GetComponentLookup<SceneryId>(true);
-            _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
-            _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _spawnLookup.Update(ref state);
             _remains.Update(ref state);
-            _drops.Update(ref state);
-            _tosses.Update(ref state);
-            _lethalHits.Update(ref state);
-            _tossTypes.Update(ref state);
-            _ids.Update(ref state);
-            _groups.Update(ref state);
-            _children.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             state.Dependency = new DeathJob
             {
-                Ecb = ecb, SpawnLookup = _spawnLookup, RemainsLookups = _remains,
-                Drops = _drops,
-                Tosses = _tosses, LethalHits = _lethalHits, TossTypes = _tossTypes, Ids = _ids, Groups = _groups, Children = _children,
+                Ecb = ecb, SpawnLookup = SystemAPI.GetComponentLookup<SpawnOnDeath>(true), RemainsLookups = _remains,
+                Drops = SystemAPI.GetComponentLookup<DropRemains>(true),
+                Tosses = SystemAPI.GetComponentLookup<TurretToss>(true), LethalHits = SystemAPI.GetComponentLookup<LethalHit>(true), TossTypes = SystemAPI.GetBufferLookup<TossType>(true), Ids = SystemAPI.GetComponentLookup<SceneryId>(true), Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true), Children = SystemAPI.GetBufferLookup<Child>(true),
             }.ScheduleParallel(state.Dependency);
-            state.Dependency = new ClearJob { Ecb = ecb, Groups = _groups, Children = _children }
+            state.Dependency = new ClearJob { Ecb = ecb, Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true), Children = SystemAPI.GetBufferLookup<Child>(true) }
                 .ScheduleParallel(state.Dependency);
         }
 

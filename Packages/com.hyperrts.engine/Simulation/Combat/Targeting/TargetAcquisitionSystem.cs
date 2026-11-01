@@ -23,16 +23,12 @@ namespace HyperRTS.Simulation.Combat.Targeting
     {
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
-        private ComponentLookup<ActiveOrder> _orders;
-        private ComponentLookup<Ammo> _ammo;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _orders = state.GetComponentLookup<ActiveOrder>(true);
-            _ammo = state.GetComponentLookup<Ammo>(true);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<FogOfWar>();
@@ -43,8 +39,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state, _fogQuery);
-            _orders.Update(ref state);
-            _ammo.Update(ref state);
 
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
 
@@ -53,9 +47,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Targets = _targets,
-                Orders = _orders,
+                Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Traits = traits,
-                AmmoLookup = _ammo,
+                AmmoLookup = SystemAPI.GetComponentLookup<Ammo>(true),
                 Slot = new ScanSlot(SystemAPI.GetSingleton<SimulationFrame>()),
             }.ScheduleParallel();
         }

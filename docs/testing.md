@@ -18,6 +18,27 @@ world.Run(3f);
 Assert.That(world.Get<LocalTransform>(unit).Position.x, Is.EqualTo(10f).Within(0.5f));
 ```
 
+Most test classes derive from `SimulationFixture`, which creates the `TestWorld` and the match before each test and
+disposes it after. Reach the world through `World`, and override `Teams` (default `{ 1, 2 }`, one team per player) for
+another match shape.
+
+```csharp
+public class AimTests : SimulationFixture
+{
+    [Test]
+    public void Shot_HitsTheEnemy()
+    {
+        var gun = World.SpawnUnit(1, float3.zero);
+        World.Set(gun, new Health { Current = 5f, Max = 10f });
+        World.Run(1f);
+    }
+}
+```
+
+Write through the world's helpers rather than its `EntityManager`: `Set<T>`, `Add<T>`, `Buffer<T>`,
+`SetEnabled<T>`, `Writer(entity)` (an `EntityWriter`) and `Query(types)`, which the caller disposes. A class whose
+setup differs keeps its own `[SetUp]` and `TestWorld` field.
+
 `SpawnUnit` and `SpawnBuilding` build entities the way the bakers do, without a mesh. `MakePrefab` turns one into a
 prefab for producers. `CreateMatch` also builds the nav grid and match rules, which systems require.
 

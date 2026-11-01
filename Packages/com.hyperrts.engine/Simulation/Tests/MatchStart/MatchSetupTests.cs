@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
 
         private int PlayerCount()
         {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(Player));
+            using var query = _world.Query(typeof(Player));
             return query.CalculateEntityCount();
         }
 
@@ -111,7 +111,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
 
             var ai = _world.Player(2);
             Assert.AreEqual(0.25f, _world.Get<AIPlayer>(ai).ThinkInterval);
-            var modifiers = _world.EntityManager.GetBuffer<StatModifier>(ai);
+            var modifiers = _world.Buffer<StatModifier>(ai);
             Assert.AreEqual(1.5f, StatMath.Evaluate(modifiers, Stat.Income, 1f), 1e-5f);
         }
 
@@ -140,7 +140,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             MatchSetupRequest.Set(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
             _world.Tick();
 
-            _world.EntityManager.SetComponentData(_world.Player(2), new Player { Faction = 2, Name = "Renamed" });
+            _world.Set(_world.Player(2), new Player { Faction = 2, Name = "Renamed" });
             _world.Tick();
 
             Assert.AreEqual("Renamed", _world.Get<Player>(_world.Player(2)).Name.ToString());
@@ -192,7 +192,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
 
         private FactionRelations Relations()
         {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(FactionRelations));
+            using var query = _world.Query(typeof(FactionRelations));
             return query.GetSingleton<FactionRelations>();
         }
     }

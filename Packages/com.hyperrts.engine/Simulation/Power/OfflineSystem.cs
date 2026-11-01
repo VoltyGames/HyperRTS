@@ -16,16 +16,10 @@ namespace HyperRTS.Simulation.Power
     [UpdateAfter(typeof(PowerSystem))]
     public partial struct OfflineSystem : ISystem
     {
-        private ComponentLookup<ConstructionProgress> _sites;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state) => _sites = state.GetComponentLookup<ConstructionProgress>(true);
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _sites.Update(ref state);
-            new UpdateJob { Sites = _sites }.ScheduleParallel();
+            new UpdateJob { Sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true) }.ScheduleParallel();
         }
 
         [BurstCompile]

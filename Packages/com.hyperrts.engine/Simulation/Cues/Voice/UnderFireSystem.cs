@@ -19,18 +19,12 @@ namespace HyperRTS.Simulation.Cues.Voice
         public const float PlayerInterval = 5f;
 
         private CueWriter _cues;
-        private ComponentLookup<UnderFireVoice> _voices;
-        private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<Health> _health;
         private NativeArray<double> _nextByPlayer;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _cues = new CueWriter(ref state);
-            _voices = state.GetComponentLookup<UnderFireVoice>();
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _health = state.GetComponentLookup<Health>(true);
             _nextByPlayer = new NativeArray<double>(Faction.Max + 1, Allocator.Persistent);
             state.RequireForUpdate<GameEvents>();
         }
@@ -42,16 +36,13 @@ namespace HyperRTS.Simulation.Cues.Voice
         public void OnUpdate(ref SystemState state)
         {
             _cues.Update(ref state);
-            _voices.Update(ref state);
-            _transforms.Update(ref state);
-            _health.Update(ref state);
             new CallOutJob
             {
                 Now = SystemAPI.Time.ElapsedTime,
                 Cues = _cues,
-                Voices = _voices,
-                Transforms = _transforms,
-                Health = _health,
+                Voices = SystemAPI.GetComponentLookup<UnderFireVoice>(false),
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                Health = SystemAPI.GetComponentLookup<Health>(true),
                 NextByPlayer = _nextByPlayer,
             }.Schedule();
         }

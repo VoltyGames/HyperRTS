@@ -22,13 +22,11 @@ namespace HyperRTS.Presentation.Rendering.Materials
     {
         private MeshPainter<GrimeLevels> _levels;
         private MeshPainter<GrimeBand> _bands;
-        private ComponentLookup<LocalToWorld> _transforms;
 
         public void OnCreate(ref SystemState state)
         {
             _levels = new MeshPainter<GrimeLevels>(ref state);
             _bands = new MeshPainter<GrimeBand>(ref state);
-            _transforms = state.GetComponentLookup<LocalToWorld>(true);
             state.RequireForUpdate<GroundMaterials>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<UnitTag, Grime>().Build());
         }
@@ -38,7 +36,7 @@ namespace HyperRTS.Presentation.Rendering.Materials
             state.CompleteDependency();
             _levels.Update(ref state);
             _bands.Update(ref state);
-            _transforms.Update(ref state);
+            var transforms = SystemAPI.GetComponentLookup<LocalToWorld>(true);
             var ground = SystemAPI.GetSingleton<GroundMaterials>();
             var wetness = Wetness.Level;
             var deltaTime = SystemAPI.Time.DeltaTime;
@@ -52,7 +50,7 @@ namespace HyperRTS.Presentation.Rendering.Materials
                 var first = !grime.ValueRO.Placed;
                 var position = transform.ValueRO.Position;
                 // A unit spawned this frame has no world transforms yet, which the bands are measured from.
-                if (first && math.distancesq(_transforms[root].Position, position) > 0.01f)
+                if (first && math.distancesq(transforms[root].Position, position) > 0.01f)
                 {
                     continue;
                 }
@@ -63,7 +61,7 @@ namespace HyperRTS.Presentation.Rendering.Materials
                 {
                     _levels.Collect(root, parts);
                     _levels.Add(parts, new GrimeLevels { Value = grime.ValueRW.Paint() }, commands);
-                    AddBands(root, grime.ValueRO, parts, commands);
+                    AddBands(ref state, root, grime.ValueRO, parts, commands);
                 }
                 else if (moved)
                 {
@@ -76,13 +74,14 @@ namespace HyperRTS.Presentation.Rendering.Materials
         }
 
         // Each mesh gets the ground height and the band in its own object space, as the unit stands when first seen.
-        private void AddBands(Entity root, in Grime grime, NativeList<Entity> parts, EntityCommandBuffer commands)
+        private void AddBands(ref SystemState state, Entity root, in Grime grime, NativeList<Entity> parts, EntityCommandBuffer commands)
         {
-            var ground = _transforms[root].Position;
+            var transforms = SystemAPI.GetComponentLookup<LocalToWorld>(true);
+            var ground = transforms[root].Position;
             var one = new NativeList<Entity>(1, Allocator.Temp);
             foreach (var part in parts)
             {
-                if (!_transforms.TryGetComponent(part, out var mesh))
+                if (!transforms.TryGetComponent(part, out var mesh))
                 {
                     continue;
                 }

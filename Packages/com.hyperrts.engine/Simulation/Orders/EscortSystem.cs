@@ -21,37 +21,17 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Edge-to-edge gap the escort closes before it stops following.</summary>
         public const float FollowDistance = 2f;
 
-        private ComponentLookup<Health> _health;
-        private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<NavAgent> _agents;
-        private ComponentLookup<NavObstacle> _obstacles;
-        private ComponentLookup<AttackTarget> _attacks;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            _health = state.GetComponentLookup<Health>(true);
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _agents = state.GetComponentLookup<NavAgent>(true);
-            _obstacles = state.GetComponentLookup<NavObstacle>(true);
-            _attacks = state.GetComponentLookup<AttackTarget>(true);
-        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _health.Update(ref state);
-            _transforms.Update(ref state);
-            _agents.Update(ref state);
-            _obstacles.Update(ref state);
-            _attacks.Update(ref state);
             new EscortJob
             {
-                HealthLookup = _health,
-                Transforms = _transforms,
-                Agents = _agents,
-                Obstacles = _obstacles,
-                Attacks = _attacks,
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                Agents = SystemAPI.GetComponentLookup<NavAgent>(true),
+                Obstacles = SystemAPI.GetComponentLookup<NavObstacle>(true),
+                Attacks = SystemAPI.GetComponentLookup<AttackTarget>(true),
             }.ScheduleParallel();
         }
 

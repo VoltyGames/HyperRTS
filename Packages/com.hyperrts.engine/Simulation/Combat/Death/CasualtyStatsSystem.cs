@@ -16,18 +16,12 @@ namespace HyperRTS.Simulation.Combat.Death
     public partial struct CasualtyStatsSystem : ISystem
     {
         private EntityQuery _dying;
-        private ComponentLookup<PlayerStats> _statsLookup;
-        private ComponentLookup<LastAttacker> _attackerLookup;
-        private ComponentLookup<BuildingTag> _buildingLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
             _dying = SystemAPI.QueryBuilder().WithAll<Dead, Faction>().WithAny<UnitTag, BuildingTag>().Build();
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _attackerLookup = state.GetComponentLookup<LastAttacker>(true);
-            _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
             state.RequireForUpdate<PlayerStats>();
         }
 
@@ -39,15 +33,12 @@ namespace HyperRTS.Simulation.Combat.Death
                 return;
             }
 
-            _statsLookup.Update(ref state);
-            _attackerLookup.Update(ref state);
-            _buildingLookup.Update(ref state);
             new CountJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                StatsLookup = _statsLookup,
-                AttackerLookup = _attackerLookup,
-                BuildingLookup = _buildingLookup,
+                StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
+                AttackerLookup = SystemAPI.GetComponentLookup<LastAttacker>(true),
+                BuildingLookup = SystemAPI.GetComponentLookup<BuildingTag>(true),
             }.Schedule(_dying);
         }
 

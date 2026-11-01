@@ -15,32 +15,20 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Destruction
 {
     /// <summary>Destructible scenery, crushing, remains that fall, and captured income.</summary>
-    public class DestructionTests
+    public class DestructionTests : SimulationFixture
     {
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         [Test]
         public void HeavyCrusher_FlattensScenery_AndLeavesRemains()
         {
-            var remains = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
+            var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var fence = SpawnScenery(new float3(5f, 0f, 0f), 1, remains);
-            var tank = _world.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1.5f);
-            _world.EntityManager.AddComponentData(tank, new Crusher { Size = 3 });
+            var tank = World.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1.5f);
+            World.Add(tank, new Crusher { Size = 3 });
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
-            Assert.IsFalse(_world.EntityManager.Exists(fence), "the fence is flattened");
-            using var query = _world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalTransform>(),
+            Assert.IsFalse(World.EntityManager.Exists(fence), "the fence is flattened");
+            using var query = World.Query(ComponentType.ReadOnly<LocalTransform>(),
                 ComponentType.Exclude<Health>());
             Assert.AreEqual(5f, FindNear(query, new float3(5f, 0f, 0f)).x, 0.01f, "its remains lie where it stood");
         }
@@ -51,17 +39,17 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var underNose = SpawnScenery(new float3(1.5f, 0f, 3.5f), 1);
             var underTail = SpawnScenery(new float3(-1.5f, 0f, -3.5f), 1);
             var beside = SpawnScenery(new float3(3f, 0f, 0f), 1);
-            var tank = _world.SpawnUnit(1, float3.zero, radius: 1.85f);
-            var agent = _world.EntityManager.GetComponentData<NavAgent>(tank);
+            var tank = World.SpawnUnit(1, float3.zero, radius: 1.85f);
+            var agent = World.Get<NavAgent>(tank);
             agent.HullLength = 7.9f;
-            _world.EntityManager.SetComponentData(tank, agent);
-            _world.EntityManager.AddComponentData(tank, new Crusher { Size = 3 });
+            World.Set(tank, agent);
+            World.Add(tank, new Crusher { Size = 3 });
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
-            Assert.IsFalse(_world.EntityManager.Exists(underNose), "the hull's front corner reaches past a centre circle");
-            Assert.IsFalse(_world.EntityManager.Exists(underTail), "so does its rear corner");
-            Assert.IsTrue(_world.EntityManager.Exists(beside), "scenery clear of the tracks stands");
+            Assert.IsFalse(World.EntityManager.Exists(underNose), "the hull's front corner reaches past a centre circle");
+            Assert.IsFalse(World.EntityManager.Exists(underTail), "so does its rear corner");
+            Assert.IsTrue(World.EntityManager.Exists(beside), "scenery clear of the tracks stands");
         }
 
         [Test]
@@ -74,16 +62,16 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 fence.Add(SpawnScenery(new float3(i * segment, 0f, 0f), 1, block: new float2(segment, 0.3f)));
             }
 
-            var tank = _world.SpawnUnit(1, float3.zero, radius: 0.9f);
-            _world.EntityManager.AddComponentData(tank, new Crusher { Size = 3 });
-            _world.Run(0.5f);
+            var tank = World.SpawnUnit(1, float3.zero, radius: 0.9f);
+            World.Add(tank, new Crusher { Size = 3 });
+            World.Run(0.5f);
 
             for (var i = 0; i < fence.Count; i++)
             {
-                Assert.AreEqual(i == 3, !_world.EntityManager.Exists(fence[i]), $"segment {i}");
+                Assert.AreEqual(i == 3, !World.EntityManager.Exists(fence[i]), $"segment {i}");
             }
 
-            var grid = _world.Grid();
+            var grid = World.Grid();
             Assert.IsTrue(grid.IsWalkable(new float3(0f, 0f, 0f)), "the gap is open");
             Assert.IsFalse(grid.IsWalkable(new float3(segment * 2f, 0f, 0f)), "the next segment still blocks");
         }
@@ -92,13 +80,13 @@ namespace HyperRTS.Simulation.Tests.Destruction
         public void LightCrusher_LeavesSturdierSceneryStanding()
         {
             var tree = SpawnScenery(new float3(5f, 0f, 0f), 3);
-            var jeep = _world.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1f);
-            _world.EntityManager.AddComponentData(jeep, new Crusher { Size = 1 });
+            var jeep = World.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1f);
+            World.Add(jeep, new Crusher { Size = 1 });
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
-            Assert.IsTrue(_world.EntityManager.Exists(tree));
-            Assert.AreEqual(50f, _world.GetHealth(tree));
+            Assert.IsTrue(World.EntityManager.Exists(tree));
+            Assert.AreEqual(50f, World.GetHealth(tree));
         }
 
         [Test]
@@ -108,71 +96,71 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var fence = SpawnScenery(new float3(-1f, 0f, -2f), 1);
             var outside = SpawnScenery(new float3(5f, 0f, 0f), 0);
             var wall = SpawnScenery(new float3(0f, 0f, 2.5f), 0, block: new float2(1f, 1f));
-            _world.SpawnBuilding(1, float3.zero, new float2(6f, 6f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(6f, 6f), complete: false);
 
-            _world.Run(0.5f);
+            World.Run(0.5f);
 
-            Assert.IsFalse(_world.EntityManager.Exists(tree), "a tree inside the site is cleared");
-            Assert.IsFalse(_world.EntityManager.Exists(fence), "so is a fence");
-            Assert.IsTrue(_world.EntityManager.Exists(outside), "scenery outside the footprint stands");
-            Assert.IsTrue(_world.EntityManager.Exists(wall), "solid scenery is an obstacle, not cleared");
+            Assert.IsFalse(World.EntityManager.Exists(tree), "a tree inside the site is cleared");
+            Assert.IsFalse(World.EntityManager.Exists(fence), "so is a fence");
+            Assert.IsTrue(World.EntityManager.Exists(outside), "scenery outside the footprint stands");
+            Assert.IsTrue(World.EntityManager.Exists(wall), "solid scenery is an obstacle, not cleared");
         }
 
         [Test]
         public void Splash_HitsNeutralScenery_ButSparesNeutralBuildings()
         {
             var tree = SpawnScenery(new float3(2f, 0f, 0f), 0);
-            var house = _world.SpawnBuilding(0, new float3(-2f, 0f, 0f), new float2(2f, 2f));
+            var house = World.SpawnBuilding(0, new float3(-2f, 0f, 0f), new float2(2f, 2f));
 
-            _world.QueueDamage(new DamageEvent { Position = float3.zero, SourceFaction = 1, Amount = 20f, Radius = 6f, EdgeFactor = 1f });
-            _world.Tick();
+            World.QueueDamage(new DamageEvent { Position = float3.zero, SourceFaction = 1, Amount = 20f, Radius = 6f, EdgeFactor = 1f });
+            World.Tick();
 
-            Assert.Less(_world.GetHealth(tree), 50f, "destructible scenery takes the blast");
-            Assert.AreEqual(500f, _world.GetHealth(house), "plain neutral buildings don't");
+            Assert.Less(World.GetHealth(tree), 50f, "destructible scenery takes the blast");
+            Assert.AreEqual(500f, World.GetHealth(house), "plain neutral buildings don't");
         }
 
         [Test]
         public void AircraftKilledAtAltitude_ItsRemainsFallToTheGround()
         {
-            _world.CreateTerrain(_ => 2f);
-            var wreck = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
-            var aircraft = _world.SpawnAircraft(1, new float3(5f, 2f, 0f));
-            _world.EntityManager.AddComponentData(aircraft, new SpawnOnDeath { Prefab = wreck });
-            _world.Run(1f);
-            Assert.AreEqual(12f, _world.GetPosition(aircraft).y, 1e-3f, "flying");
+            World.CreateTerrain(_ => 2f);
+            var wreck = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
+            var aircraft = World.SpawnAircraft(1, new float3(5f, 2f, 0f));
+            World.Add(aircraft, new SpawnOnDeath { Prefab = wreck });
+            World.Run(1f);
+            Assert.AreEqual(12f, World.GetPosition(aircraft).y, 1e-3f, "flying");
 
-            _world.EntityManager.SetComponentData(aircraft, new Health { Current = 0f, Max = 100f });
-            _world.Tick(frames: 3);
-            using var falling = _world.All<FallingRemains>();
+            World.Set(aircraft, new Health { Current = 0f, Max = 100f });
+            World.Tick(frames: 3);
+            using var falling = World.All<FallingRemains>();
             Assert.AreEqual(1, falling.Length);
             var remains = falling[0];
-            Assert.Greater(_world.GetPosition(remains).y, 10f, "the wreck starts where the aircraft died");
+            Assert.Greater(World.GetPosition(remains).y, 10f, "the wreck starts where the aircraft died");
 
-            Assert.IsTrue(_world.RunUntil(() => !_world.EntityManager.HasComponent<FallingRemains>(remains), 3f));
-            Assert.AreEqual(2f, _world.GetPosition(remains).y, 1e-3f, "and lands on the ground");
+            Assert.IsTrue(World.RunUntil(() => !World.EntityManager.HasComponent<FallingRemains>(remains), 3f));
+            Assert.AreEqual(2f, World.GetPosition(remains).y, 1e-3f, "and lands on the ground");
         }
 
         [Test]
         public void ResourceIncome_PaysOwnerWithFirstOwnerBonus_AndNothingWhileNeutral()
         {
-            var supplies = _world.CreateSupplies();
-            var derrick = _world.SpawnBuilding(0, float3.zero, new float2(4f, 4f));
-            var writer = new EntityWriter(_world.EntityManager, derrick);
+            var supplies = World.CreateSupplies();
+            var derrick = World.SpawnBuilding(0, float3.zero, new float2(4f, 4f));
+            var writer = World.Writer(derrick);
             writer.Add(new ResourceIncome { Type = supplies, Amount = 10, Interval = 5f, FirstOwnerBonus = 100 });
 
-            _world.Run(6f);
-            Assert.AreEqual(0, _world.GetResources(1, supplies), "a neutral derrick pays no one");
+            World.Run(6f);
+            Assert.AreEqual(0, World.GetResources(1, supplies), "a neutral derrick pays no one");
 
-            _world.EntityManager.SetComponentData(derrick, new Faction { Value = 1 });
-            _world.Run(11f);
-            Assert.AreEqual(120, _world.GetResources(1, supplies), "the bonus plus two payments");
+            World.Set(derrick, new Faction { Value = 1 });
+            World.Run(11f);
+            Assert.AreEqual(120, World.GetResources(1, supplies), "the bonus plus two payments");
         }
 
         private Entity SpawnScenery(float3 position, int crush, Entity remains = default, float2 block = default)
         {
-            var entity = _world.EntityManager.CreateEntity();
-            _world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
-            var writer = new EntityWriter(_world.EntityManager, entity);
+            var entity = World.EntityManager.CreateEntity();
+            World.Add(entity, LocalTransform.FromPosition(position));
+            var writer = World.Writer(entity);
             DestructibleAuthoring.AddScenery(writer, 50f, crush, remains, block,
                 SceneryId.At(position, quaternion.identity));
             return entity;

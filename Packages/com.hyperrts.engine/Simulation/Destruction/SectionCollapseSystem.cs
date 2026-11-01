@@ -16,39 +16,24 @@ namespace HyperRTS.Simulation.Destruction
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
     public partial struct SectionCollapseSystem : ISystem
     {
-        private ComponentLookup<SectionedBuilding> _buildings;
-        private BufferLookup<Section> _sections;
-        private ComponentLookup<Health> _health;
-        private ComponentLookup<IntactFloors> _floors;
-        private ComponentLookup<Repairable> _repairables;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _buildings = state.GetComponentLookup<SectionedBuilding>();
-            _sections = state.GetBufferLookup<Section>();
-            _health = state.GetComponentLookup<Health>();
-            _floors = state.GetComponentLookup<IntactFloors>();
-            _repairables = state.GetComponentLookup<Repairable>(true);
             state.RequireForUpdate<SectionedBuilding>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _buildings.Update(ref state);
-            _sections.Update(ref state);
-            _health.Update(ref state);
-            _floors.Update(ref state);
-            _repairables.Update(ref state);
             new CollapseJob
             {
                 Now = SystemAPI.Time.ElapsedTime,
-                Buildings = _buildings,
-                Sections = _sections,
-                Health = _health,
-                Floors = _floors,
-                Repairables = _repairables,
+                Buildings = SystemAPI.GetComponentLookup<SectionedBuilding>(false),
+                Sections = SystemAPI.GetBufferLookup<Section>(false),
+                Health = SystemAPI.GetComponentLookup<Health>(false),
+                Floors = SystemAPI.GetComponentLookup<IntactFloors>(false),
+                Repairables = SystemAPI.GetComponentLookup<Repairable>(true),
             }.Schedule();
         }
 

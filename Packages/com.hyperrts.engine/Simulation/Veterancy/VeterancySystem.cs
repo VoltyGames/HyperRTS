@@ -12,16 +12,10 @@ namespace HyperRTS.Simulation.Veterancy
     [UpdateAfter(typeof(KillCreditSystem))]
     public partial struct VeterancySystem : ISystem
     {
-        private BufferLookup<StatModifier> _modifierLookup;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state) => _modifierLookup = state.GetBufferLookup<StatModifier>();
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _modifierLookup.Update(ref state);
-            new PromoteJob { ModifierLookup = _modifierLookup }.ScheduleParallel();
+            new PromoteJob { ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>() }.ScheduleParallel();
         }
 
         /// <summary>Writes modifiers through a lookup so only promotions wake the stat systems' change filters.</summary>

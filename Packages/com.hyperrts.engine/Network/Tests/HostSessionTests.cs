@@ -113,7 +113,7 @@ namespace HyperRTS.Network.Tests
 
         private static int ReceivedCueRpcs(TestWorld world)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(CueRpc), typeof(ReceiveRpcCommandRequest));
+            using var query = world.Query(typeof(CueRpc), typeof(ReceiveRpcCommandRequest));
             return query.CalculateEntityCount();
         }
     }

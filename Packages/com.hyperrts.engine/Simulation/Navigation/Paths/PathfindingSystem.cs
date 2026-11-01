@@ -25,8 +25,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
         private EntityQuery _agents;
         private GroupFields _fields;
         private NativeReference<PathStats> _stats;
-        private BufferLookup<PathWaypoint> _waypointLookup;
-        private ComponentLookup<PathState> _stateLookup;
         private uint _frame;
         private double _nextUseCheck;
 
@@ -46,8 +44,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 .Build();
             _fields = new GroupFields(Allocator.Persistent);
             _stats = new NativeReference<PathStats>(Allocator.Persistent);
-            _waypointLookup = state.GetBufferLookup<PathWaypoint>();
-            _stateLookup = state.GetComponentLookup<PathState>();
             state.RequireForUpdate<NavGrid>();
         }
 
@@ -84,23 +80,21 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 Now = now,
             }.ScheduleParallel(_agents, state.Dependency);
 
-            _waypointLookup.Update(ref state);
-            _stateLookup.Update(ref state);
             var plan = new PathPlan(Allocator.TempJob);
             state.Dependency = new PlanJob
             {
                 Requests = requests, Used = used, ChecksUse = checksUse, Grid = grid, Fields = _fields, Plan = plan,
                 Now = now,
             }.Schedule(state.Dependency);
-            state.Dependency = Serve(grid, requests, plan, now, state.Dependency);
+            state.Dependency = Serve(ref state, grid, requests, plan, now, state.Dependency);
             requests.Dispose(state.Dependency);
             used.Dispose(state.Dependency);
             plan.Dispose(state.Dependency);
         }
 
         // Fields first, as traces read them; then every task at once, each writing only its own unit.
-        private JobHandle Serve(in NavGrid grid, NativeList<PathRequest> requests, in PathPlan plan, double now,
-            JobHandle dependency)
+        private JobHandle Serve(ref SystemState state, in NavGrid grid, NativeList<PathRequest> requests,
+            in PathPlan plan, double now, JobHandle dependency)
         {
             var fields = _fields.Fields.AsDeferredJobArray();
             dependency = new FieldJob { Grid = grid, Fields = fields, Builds = plan.Builds.AsDeferredJobArray() }
@@ -113,8 +107,8 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 Results = plan.Results.AsDeferredJobArray(),
                 Fields = fields,
                 Grid = grid,
-                WaypointLookup = _waypointLookup,
-                StateLookup = _stateLookup,
+                WaypointLookup = SystemAPI.GetBufferLookup<PathWaypoint>(false),
+                StateLookup = SystemAPI.GetComponentLookup<PathState>(false),
                 Now = now,
             }.Schedule(plan.Tasks, 1, dependency);
             dependency = new DriveJob
@@ -123,8 +117,8 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 Tasks = plan.Tasks.AsDeferredJobArray(),
                 Results = plan.Results.AsDeferredJobArray(),
                 Grid = grid,
-                WaypointLookup = _waypointLookup,
-                StateLookup = _stateLookup,
+                WaypointLookup = SystemAPI.GetBufferLookup<PathWaypoint>(false),
+                StateLookup = SystemAPI.GetComponentLookup<PathState>(false),
                 Now = now,
             }.Schedule(dependency);
             return new StatsJob { Plan = plan, Requests = requests.AsDeferredJobArray(), Stats = _stats }

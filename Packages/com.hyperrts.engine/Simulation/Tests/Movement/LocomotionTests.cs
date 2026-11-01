@@ -51,11 +51,11 @@ namespace HyperRTS.Simulation.Tests.Movement
             Chassis chassis)
         {
             var vehicle = _world.SpawnUnit(1, position, speed: 8f, radius: radius);
-            _world.EntityManager.SetComponentData(vehicle, new NavAgent
+            _world.Set(vehicle, new NavAgent
             {
                 Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing, Chassis = chassis,
             });
-            var writer = new EntityWriter(_world.EntityManager, vehicle);
+            var writer = _world.Writer(vehicle);
             LocomotionAuthoring.Add(writer, locomotion);
             return vehicle;
         }

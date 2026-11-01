@@ -17,16 +17,10 @@ namespace HyperRTS.Simulation.Destruction
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct SectionSettleSystem : ISystem
     {
-        private ComponentLookup<SectionedBuilding> _buildings;
-        private BufferLookup<NavObstaclePart> _parts;
-        private BufferLookup<NavAreaPart> _decks;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _buildings = state.GetComponentLookup<SectionedBuilding>();
-            _parts = state.GetBufferLookup<NavObstaclePart>();
-            _decks = state.GetBufferLookup<NavAreaPart>();
             state.RequireForUpdate<SectionedBuilding>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -34,16 +28,13 @@ namespace HyperRTS.Simulation.Destruction
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _buildings.Update(ref state);
-            _parts.Update(ref state);
-            _decks.Update(ref state);
             new SettleJob
             {
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
-                Buildings = _buildings,
-                Parts = _parts,
-                Decks = _decks,
+                Buildings = SystemAPI.GetComponentLookup<SectionedBuilding>(false),
+                Parts = SystemAPI.GetBufferLookup<NavObstaclePart>(false),
+                Decks = SystemAPI.GetBufferLookup<NavAreaPart>(false),
             }.Schedule();
         }
 

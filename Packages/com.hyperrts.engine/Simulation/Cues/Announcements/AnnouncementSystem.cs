@@ -19,18 +19,12 @@ namespace HyperRTS.Simulation.Cues.Announcements
     {
         private CueWriter _cues;
         private AnnouncementGate _gate;
-        private ComponentLookup<EntityInfo> _info;
-        private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<BuildingTag> _buildings;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _cues = new CueWriter(ref state);
             _gate = new AnnouncementGate(Allocator.Persistent);
-            _info = state.GetComponentLookup<EntityInfo>(true);
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _buildings = state.GetComponentLookup<BuildingTag>(true);
             // Without an announcer nobody hears alerts, so none are sent.
             state.RequireForUpdate(state.GetEntityQuery(ComponentType.ReadOnly<AnnouncerVoice>()));
             state.RequireForUpdate<GameEvents>();
@@ -43,13 +37,13 @@ namespace HyperRTS.Simulation.Cues.Announcements
         public void OnUpdate(ref SystemState state)
         {
             _cues.Update(ref state);
-            _info.Update(ref state);
-            _transforms.Update(ref state);
-            _buildings.Update(ref state);
             var now = SystemAPI.Time.ElapsedTime;
             new EventsJob
             {
-                Now = now, Cues = _cues, Gate = _gate, Info = _info, Transforms = _transforms, Buildings = _buildings,
+                Now = now, Cues = _cues, Gate = _gate,
+                Info = SystemAPI.GetComponentLookup<EntityInfo>(true),
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                Buildings = SystemAPI.GetComponentLookup<BuildingTag>(true),
             }.Schedule();
             new LostJob { Now = now, Cues = _cues, Gate = _gate }.Schedule();
         }

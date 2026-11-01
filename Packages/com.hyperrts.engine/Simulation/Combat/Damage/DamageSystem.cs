@@ -19,30 +19,14 @@ namespace HyperRTS.Simulation.Combat.Damage
     [UpdateBefore(typeof(SectionCollapseSystem))]
     public partial struct DamageSystem : ISystem
     {
-        private ComponentLookup<Health> _health;
-        private ComponentLookup<LastAttacker> _attackers;
-        private ComponentLookup<LocalTransform> _transforms;
         private DamageFactors _factors;
-        private ComponentLookup<Destructible> _destructibles;
-        private ComponentLookup<LethalHit> _lethalHits;
-        private ComponentLookup<Faction> _factions;
         private EventWriter<EntityDamaged> _damaged;
-        private ComponentLookup<Shelter> _shelters;
-        private BufferLookup<ShelterHit> _shelterHits;
         private SectionDamage _buildings;
 
         public void OnCreate(ref SystemState state)
         {
-            _health = state.GetComponentLookup<Health>();
-            _attackers = state.GetComponentLookup<LastAttacker>();
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
             _factors = new DamageFactors(ref state);
-            _destructibles = state.GetComponentLookup<Destructible>(true);
-            _lethalHits = state.GetComponentLookup<LethalHit>();
-            _factions = state.GetComponentLookup<Faction>(true);
             _damaged = new EventWriter<EntityDamaged>(ref state);
-            _shelters = state.GetComponentLookup<Shelter>(true);
-            _shelterHits = state.GetBufferLookup<ShelterHit>();
             _buildings = new SectionDamage(ref state);
 
             EventQueues.Create<DamageQueue>(ref state, typeof(DamageEvent));
@@ -53,32 +37,24 @@ namespace HyperRTS.Simulation.Combat.Damage
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _health.Update(ref state);
-            _attackers.Update(ref state);
-            _transforms.Update(ref state);
             _factors.Update(ref state);
-            _destructibles.Update(ref state);
-            _lethalHits.Update(ref state);
-            _factions.Update(ref state);
             _damaged.Update(ref state);
-            _shelters.Update(ref state);
-            _shelterHits.Update(ref state);
             _buildings.Update(ref state);
 
             new ResolveJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
-                Health = _health,
-                Attackers = _attackers,
-                Transforms = _transforms,
+                Health = SystemAPI.GetComponentLookup<Health>(false),
+                Attackers = SystemAPI.GetComponentLookup<LastAttacker>(false),
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Factors = _factors,
-                Destructibles = _destructibles,
-                LethalHits = _lethalHits,
-                Factions = _factions,
+                Destructibles = SystemAPI.GetComponentLookup<Destructible>(true),
+                LethalHits = SystemAPI.GetComponentLookup<LethalHit>(false),
+                Factions = SystemAPI.GetComponentLookup<Faction>(true),
                 Damaged = _damaged,
-                Shelters = _shelters,
-                ShelterHits = _shelterHits,
+                Shelters = SystemAPI.GetComponentLookup<Shelter>(true),
+                ShelterHits = SystemAPI.GetBufferLookup<ShelterHit>(false),
                 Buildings = _buildings,
             }.Schedule();
         }

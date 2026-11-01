@@ -23,11 +23,6 @@ namespace HyperRTS.Simulation.Buildings.Construction
     [UpdateInGroup(typeof(CombatSystemGroup))]
     public partial struct SiteClearingSystem : ISystem
     {
-        private ComponentLookup<Destructible> _destructibles;
-        private ComponentLookup<NavObstacle> _obstacles;
-        private ComponentLookup<NavAgent> _agents;
-        private ComponentLookup<Health> _health;
-        private ComponentLookup<SceneryCleared> _cleared;
         private int _siteOrder;
         private int _sceneryOrder;
 
@@ -37,21 +32,11 @@ namespace HyperRTS.Simulation.Buildings.Construction
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<BuildingTag, ConstructionProgress>().Build());
-            _destructibles = state.GetComponentLookup<Destructible>(true);
-            _obstacles = state.GetComponentLookup<NavObstacle>(true);
-            _agents = state.GetComponentLookup<NavAgent>(true);
-            _health = state.GetComponentLookup<Health>(true);
-            _cleared = state.GetComponentLookup<SceneryCleared>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _destructibles.Update(ref state);
-            _obstacles.Update(ref state);
-            _agents.Update(ref state);
-            _health.Update(ref state);
-            _cleared.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var siteOrder = state.EntityManager.GetComponentOrderVersion<ConstructionProgress>();
@@ -66,11 +51,11 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Ecb = ecb,
                 Sites = sites,
-                Destructibles = _destructibles,
-                Obstacles = _obstacles,
-                Agents = _agents,
-                Health = _health,
-                Cleared = _cleared,
+                Destructibles = SystemAPI.GetComponentLookup<Destructible>(true),
+                Obstacles = SystemAPI.GetComponentLookup<NavObstacle>(true),
+                Agents = SystemAPI.GetComponentLookup<NavAgent>(true),
+                Health = SystemAPI.GetComponentLookup<Health>(true),
+                Cleared = SystemAPI.GetComponentLookup<SceneryCleared>(true),
             }.Schedule();
             new RemainsJob { Ecb = ecb, Sites = sites }.Schedule();
             if (changed)

@@ -67,8 +67,8 @@ namespace HyperRTS.Simulation.Tests.Vision
             Assert.IsTrue(_world.IsFogHidden(team), "30 m of sunflowers hide it");
 
             var tank = _world.SpawnUnit(Team1, new float3(3f, 0f, 1f), radius: 1.5f);
-            _world.EntityManager.AddComponentData(tank, new Crusher { Size = 3 });
-            _world.EntityManager.SetComponentData(tank, new VisionRange());
+            _world.Add(tank, new Crusher { Size = 3 });
+            _world.Set(tank, new VisionRange());
             _world.MoveTo(tank, new float3(30f, 0f, 1f));
             Assert.IsTrue(_world.RunUntil(() => _world.Get<Unity.Transforms.LocalTransform>(tank).Position.x > 28f, 20f));
             _world.Run(FogOfWarSystem.UpdateInterval * 2f);
@@ -87,14 +87,14 @@ namespace HyperRTS.Simulation.Tests.Vision
             Assert.IsTrue(_world.IsEnabled<Concealed>(squad), "still in the woods");
             Assert.IsTrue(_world.IsFogHidden(squad), "hidden 22 m away though the woods' edge is in sight");
 
-            _world.EntityManager.SetComponentData(viewer, Unity.Transforms.LocalTransform.FromPosition(new float3(11f, 0f, 1f)));
+            _world.Set(viewer, Unity.Transforms.LocalTransform.FromPosition(new float3(11f, 0f, 1f)));
             _world.Run(0.3f);
             Assert.IsFalse(_world.IsFogHidden(squad), "shown 12 m away");
 
-            _world.EntityManager.SetComponentData(viewer, Unity.Transforms.LocalTransform.FromPosition(new float3(1f, 0f, 1f)));
+            _world.Set(viewer, Unity.Transforms.LocalTransform.FromPosition(new float3(1f, 0f, 1f)));
             var stealth = _world.Get<Stealth>(squad);
             stealth.RevealTimer = 3f;
-            _world.EntityManager.SetComponentData(squad, stealth);
+            _world.Set(squad, stealth);
             _world.Run(0.3f);
             Assert.IsFalse(_world.IsFogHidden(squad), "shown after firing");
 
@@ -108,10 +108,10 @@ namespace HyperRTS.Simulation.Tests.Vision
         {
             _world.SpawnSightBlock(new float3(31f, 0f, 1f), Woods);
             var drone = _world.SpawnViewer(Team1, new float3(23f, 0f, 3f), 40f);
-            _world.EntityManager.SetComponentData(drone, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
+            _world.Set(drone, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
             if (detector)
             {
-                var writer = new EntityWriter(_world.EntityManager, drone);
+                var writer = _world.Writer(drone);
                 StealthSetup.AddDetector(writer, 20f);
             }
 
@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Tests.Vision
 
         private Entity Concealable(Entity unit)
         {
-            var writer = new EntityWriter(_world.EntityManager, unit);
+            var writer = _world.Writer(unit);
             StealthSetup.AddStealth(writer, new Stealth { RevealDuration = 3f, OnlyWhenStill = true, InConcealment = true },
                 true);
             return unit;

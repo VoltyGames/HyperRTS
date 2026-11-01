@@ -14,14 +14,14 @@ namespace HyperRTS.Simulation.Tests
         {
             world.RemoveHints();
             var entity = world.EntityManager.CreateEntity();
-            var writer = new EntityWriter(world.EntityManager, entity);
+            var writer = world.Writer(entity);
             AIMapHintsAuthoring.Add(writer, data);
             return entity;
         }
 
         public static void RemoveHints(this TestWorld world)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(AIMapHints));
+            using var query = world.Query(typeof(AIMapHints));
             world.EntityManager.DestroyEntity(query);
         }
 

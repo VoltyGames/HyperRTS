@@ -19,22 +19,19 @@ namespace HyperRTS.Simulation.Transport
     public partial struct GarrisonDamageSystem : ISystem
     {
         private EventWriter<DamageEvent> _damage;
-        private ComponentLookup<Health> _health;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<Container>();
             _damage = new EventWriter<DamageEvent>(ref state);
-            _health = state.GetComponentLookup<Health>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _damage.Update(ref state);
-            _health.Update(ref state);
-            new PruneJob { Health = _health }.Schedule();
+            new PruneJob { Health = SystemAPI.GetComponentLookup<Health>(true) }.Schedule();
             new ShareJob { Damage = _damage }.Schedule();
         }
 

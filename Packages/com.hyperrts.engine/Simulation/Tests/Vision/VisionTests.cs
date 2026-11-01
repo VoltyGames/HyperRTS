@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Tick();
             var version = _world.Fog().Version;
 
-            _world.EntityManager.SetComponentData(scout, LocalTransform.FromPosition(new float3(50f, 0f, 0f)));
+            _world.Set(scout, LocalTransform.FromPosition(new float3(50f, 0f, 0f)));
             _world.Run(0.5f);
             var fog = _world.Fog();
 
@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             var scout = _world.SpawnUnit(1, float3.zero);
             var seen = _world.SpawnUnit(2, new float3(5f, 0f, 0f));
             var unseen = _world.SpawnUnit(2, new float3(50f, 0f, 0f));
-            _world.EntityManager.SetComponentEnabled<Selected>(unseen, true);
+            _world.SetEnabled<Selected>(unseen, true);
 
             _world.Tick(frames: 2);
 
@@ -136,7 +136,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier), "inside vision, outside detection");
             Assert.IsTrue(_world.IsFogHidden(enemy));
 
-            _world.EntityManager.SetComponentData(enemy, LocalTransform.FromPosition(new float3(3f, 0f, 0f)));
+            _world.Set(enemy, LocalTransform.FromPosition(new float3(3f, 0f, 0f)));
             _world.Run(0.3f);
             Assert.IsFalse(_world.IsFogHidden(enemy));
 
@@ -219,9 +219,9 @@ namespace HyperRTS.Simulation.Tests.Vision
             Assert.IsFalse(_world.IsEnabled<Stealthed>(toggled));
             Assert.IsTrue(_world.IsEnabled<Stealthed>(still));
 
-            _world.EntityManager.SetComponentEnabled<Stealth>(toggled, true);
-            _world.EntityManager.SetComponentData(still, new MoveDestination { Value = new float3(-40f, 0f, 0f) });
-            _world.EntityManager.SetComponentEnabled<MoveDestination>(still, true);
+            _world.SetEnabled<Stealth>(toggled, true);
+            _world.Set(still, new MoveDestination { Value = new float3(-40f, 0f, 0f) });
+            _world.SetEnabled<MoveDestination>(still, true);
             _world.Tick();
 
             Assert.IsTrue(_world.IsEnabled<Stealthed>(toggled), "games toggle stealth at runtime");
@@ -230,7 +230,7 @@ namespace HyperRTS.Simulation.Tests.Vision
 
         private Entity Stealthy(Entity entity, float reveal = 1f, bool onlyWhenStill = false, bool enabled = true)
         {
-            var writer = new EntityWriter(_world.EntityManager, entity);
+            var writer = _world.Writer(entity);
             StealthSetup.AddStealth(writer,
                 new Stealth { RevealDuration = reveal, OnlyWhenStill = onlyWhenStill }, enabled);
             return entity;
@@ -238,7 +238,7 @@ namespace HyperRTS.Simulation.Tests.Vision
 
         private Entity Detect(Entity entity, float radius)
         {
-            var writer = new EntityWriter(_world.EntityManager, entity);
+            var writer = _world.Writer(entity);
             StealthSetup.AddDetector(writer, radius);
             return entity;
         }

@@ -76,7 +76,7 @@ namespace HyperRTS.Simulation.Tests.Vision
                 },
                 () =>
                 {
-                    _world.EntityManager.SetComponentEnabled<SightBlock>(houses[next++], false);
+                    _world.SetEnabled<SightBlock>(houses[next++], false);
                     AdvanceTime();
                 }, null, "SightBlockSystem.Stamp", "SightPatchJob.Draw", "FogMergeJob.Merge");
 
@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             {
                 var place = random.NextFloat2(min, max);
                 units[i] = _world.SpawnUnit((byte)(1 + i % 2), new float3(place.x, 0f, place.y));
-                _world.EntityManager.SetComponentData(units[i], new VisionRange { Value = 35f, EyeHeight = 2f });
+                _world.Set(units[i], new VisionRange { Value = 35f, EyeHeight = 2f });
             }
 
             return units;
@@ -120,7 +120,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             {
                 var transform = _world.Get<LocalTransform>(units[i]);
                 transform.Position.x += step;
-                _world.EntityManager.SetComponentData(units[i], transform);
+                _world.Set(units[i], transform);
             }
         }
 

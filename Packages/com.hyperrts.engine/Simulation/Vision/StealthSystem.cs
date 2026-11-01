@@ -18,18 +18,15 @@ namespace HyperRTS.Simulation.Vision
     [UpdateInGroup(typeof(CombatSystemGroup))]
     public partial struct StealthSystem : ISystem
     {
-        private ComponentLookup<MoveDestination> _moves;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state) => _moves = state.GetComponentLookup<MoveDestination>(true);
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _moves.Update(ref state);
             SystemAPI.TryGetSingleton<SightBlockers>(out var blockers);
-            new StealthJob { DeltaTime = SystemAPI.Time.DeltaTime, Moves = _moves, Blockers = blockers }
-                .ScheduleParallel();
+            new StealthJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime, Moves = SystemAPI.GetComponentLookup<MoveDestination>(true),
+                Blockers = blockers,
+            }.ScheduleParallel();
         }
 
         [BurstCompile]

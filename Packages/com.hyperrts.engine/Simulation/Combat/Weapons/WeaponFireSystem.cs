@@ -26,23 +26,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
     [UpdateBefore(typeof(StealthSystem))]
     public partial struct WeaponFireSystem : ISystem
     {
-        private ComponentLookup<Health> _health;
-        private ComponentLookup<UnitTag> _units;
-        private ComponentLookup<Inside> _inside;
-        private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<FacingGoal> _facingGoals;
-        private ComponentLookup<Ammo> _ammo;
         private Shooter _shots;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _health = state.GetComponentLookup<Health>(true);
-            _units = state.GetComponentLookup<UnitTag>(true);
-            _inside = state.GetComponentLookup<Inside>(true);
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _facingGoals = state.GetComponentLookup<FacingGoal>();
-            _ammo = state.GetComponentLookup<Ammo>();
             _shots = new Shooter(ref state);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -50,12 +38,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _health.Update(ref state);
-            _units.Update(ref state);
-            _inside.Update(ref state);
-            _transforms.Update(ref state);
-            _facingGoals.Update(ref state);
-            _ammo.Update(ref state);
             _shots.Update(ref state, SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged));
 
@@ -63,12 +45,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
             new FireJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                HealthLookup = _health,
-                Units = _units,
-                InsideLookup = _inside,
-                Transforms = _transforms,
-                FacingGoals = _facingGoals,
-                Ammos = _ammo,
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
+                Units = SystemAPI.GetComponentLookup<UnitTag>(true),
+                InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                FacingGoals = SystemAPI.GetComponentLookup<FacingGoal>(false),
+                Ammos = SystemAPI.GetComponentLookup<Ammo>(false),
                 Shots = _shots,
             }.Schedule();
         }

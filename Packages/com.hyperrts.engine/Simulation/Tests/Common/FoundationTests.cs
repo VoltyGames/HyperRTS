@@ -14,20 +14,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Tests.Common
 {
     /// <summary>Shared building blocks: spatial index, command lifetime, which worlds run a system, rotation math.</summary>
-    public class FoundationTests
+    public class FoundationTests : SimulationFixture
     {
-        private TestWorld _world;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         private struct Collector : ISpatialVisitor
         {
             public NativeList<Entity> Found;
@@ -36,9 +24,9 @@ namespace HyperRTS.Simulation.Tests.Common
 
         private NativeList<Entity> QuerySpatialIndex(float radius)
         {
-            _world.Tick();
-            _world.EntityManager.CompleteAllTrackedJobs();
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(SpatialIndex));
+            World.Tick();
+            World.EntityManager.CompleteAllTrackedJobs();
+            using var query = World.Query(typeof(SpatialIndex));
             var collector = new Collector { Found = new NativeList<Entity>(Allocator.Temp) };
             query.GetSingleton<SpatialIndex>().Query(float3.zero, radius, ref collector);
             return collector.Found;
@@ -47,9 +35,9 @@ namespace HyperRTS.Simulation.Tests.Common
         [Test]
         public void SpatialIndex_FindsOnlyEntitiesWithinRadius()
         {
-            var near = _world.SpawnUnit(1, new float3(3f, 0f, 0f));
-            var far = _world.SpawnUnit(2, new float3(40f, 0f, 0f));
-            var building = _world.SpawnBuilding(2, new float3(-9f, 0f, 0f), new float2(8f, 8f));
+            var near = World.SpawnUnit(1, new float3(3f, 0f, 0f));
+            var far = World.SpawnUnit(2, new float3(40f, 0f, 0f));
+            var building = World.SpawnBuilding(2, new float3(-9f, 0f, 0f), new float2(8f, 8f));
 
             var found = QuerySpatialIndex(5f);
 
@@ -61,7 +49,7 @@ namespace HyperRTS.Simulation.Tests.Common
         [Test]
         public void SpatialIndex_FindsEntitiesWiderThanACell_FromBeyondTheirCentreCell()
         {
-            var airfield = _world.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(40f, 40f));
+            var airfield = World.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(40f, 40f));
 
             Assert.IsTrue(QuerySpatialIndex(1f).Contains(airfield), "its 20 m radius reaches two cells from its centre");
         }
@@ -69,10 +57,10 @@ namespace HyperRTS.Simulation.Tests.Common
         [Test]
         public void PlayerCommands_AreClearedAfterTheOrderPhase()
         {
-            _world.Command(1, new PlayerCommand { Type = CommandType.Stop });
-            _world.Tick();
+            World.Command(1, new PlayerCommand { Type = CommandType.Stop });
+            World.Tick();
 
-            Assert.AreEqual(0, _world.EntityManager.GetBuffer<PlayerCommand>(_world.Player(1)).Length);
+            Assert.AreEqual(0, World.EntityManager.GetBuffer<PlayerCommand>(World.Player(1)).Length);
         }
 
         // Gameplay runs only where the state lives; selection and fog view run where a player looks.

@@ -20,37 +20,17 @@ namespace HyperRTS.Simulation.GameEntities
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct StatBaseSystem : ISystem
     {
-        private ComponentLookup<Weapon> _weapons;
-        private ComponentLookup<MovementSpeed> _speeds;
-        private ComponentLookup<VisionRange> _visions;
-        private ComponentLookup<Builder> _builders;
-        private ComponentLookup<Producer> _producers;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            _weapons = state.GetComponentLookup<Weapon>(true);
-            _speeds = state.GetComponentLookup<MovementSpeed>(true);
-            _visions = state.GetComponentLookup<VisionRange>(true);
-            _builders = state.GetComponentLookup<Builder>(true);
-            _producers = state.GetComponentLookup<Producer>(true);
-        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _weapons.Update(ref state);
-            _speeds.Update(ref state);
-            _visions.Update(ref state);
-            _builders.Update(ref state);
-            _producers.Update(ref state);
             new RecordJob
             {
-                Weapons = _weapons,
-                Speeds = _speeds,
-                Visions = _visions,
-                Builders = _builders,
-                Producers = _producers,
+                Weapons = SystemAPI.GetComponentLookup<Weapon>(true),
+                Speeds = SystemAPI.GetComponentLookup<MovementSpeed>(true),
+                Visions = SystemAPI.GetComponentLookup<VisionRange>(true),
+                Builders = SystemAPI.GetComponentLookup<Builder>(true),
+                Producers = SystemAPI.GetComponentLookup<Producer>(true),
             }.ScheduleParallel();
         }
 

@@ -61,12 +61,12 @@ namespace HyperRTS.Simulation.Tests.Vision
         public void Garrison_SeesFromAboveItsRoof(bool inside)
         {
             var house = SpawnBlock(Viewer, new float2(6f, 6f), 6f);
-            _world.EntityManager.AddComponentData(house, new PassengerEye { AboveTop = 0.5f });
+            _world.Add(house, new PassengerEye { AboveTop = 0.5f });
             SpawnBlock(new float3(11f, 0f, 1f), new float2(2f, 8f), 3f);
             var squad = _world.SpawnViewer(Team1, Viewer, 30f);
             if (inside)
             {
-                _world.EntityManager.AddComponentData(squad, new Inside { Container = house });
+                _world.Add(squad, new Inside { Container = house });
             }
 
             _world.Tick();
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             }
             else
             {
-                _world.EntityManager.SetComponentEnabled<SightBlock>(building, false);
+                _world.SetEnabled<SightBlock>(building, false);
             }
 
             _world.Run(FogOfWarSystem.UpdateInterval * 2f);

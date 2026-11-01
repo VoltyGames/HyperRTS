@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Tests.Match
             _world.SpawnUnit(2, new float3(4f, 0f, 0f));
             _world.SpawnProvider(1, new float3(10f, 0f, 0f), 10);
             var unfinished = _world.SpawnProvider(1, new float3(20f, 0f, 0f), 5);
-            _world.EntityManager.SetComponentEnabled<ConstructionProgress>(unfinished, true);
+            _world.SetEnabled<ConstructionProgress>(unfinished, true);
 
             _world.Tick();
 

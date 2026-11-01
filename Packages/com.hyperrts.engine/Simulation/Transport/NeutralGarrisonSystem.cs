@@ -16,7 +16,6 @@ namespace HyperRTS.Simulation.Transport
     [UpdateAfter(typeof(ContainerDeathSystem))]
     public partial struct NeutralGarrisonSystem : ISystem
     {
-        private ComponentLookup<Faction> _factions;
         private EventWriter<OwnerChanged> _ownerChanges;
 
         [BurstCompile]
@@ -24,18 +23,16 @@ namespace HyperRTS.Simulation.Transport
         {
             state.RequireForUpdate<NeutralGarrison>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            _factions = state.GetComponentLookup<Faction>(true);
             _ownerChanges = new EventWriter<OwnerChanged>(ref state);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _factions.Update(ref state);
             _ownerChanges.Update(ref state);
             state.Dependency = new OwnerJob
             {
-                Factions = _factions,
+                Factions = SystemAPI.GetComponentLookup<Faction>(true),
                 OwnerChanges = _ownerChanges,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),

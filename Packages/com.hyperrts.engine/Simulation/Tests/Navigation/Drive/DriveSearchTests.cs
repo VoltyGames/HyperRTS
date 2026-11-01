@@ -51,10 +51,10 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
         {
             var unit = _world.SpawnUnit(1, position, 8f, agent.Radius);
             agent.WallMargin = agent.HullWallMargin;
-            _world.EntityManager.SetComponentData(unit, agent);
-            _world.EntityManager.SetComponentData(unit,
+            _world.Set(unit, agent);
+            _world.Set(unit,
                 LocalTransform.FromPositionRotation(position, quaternion.RotateY(yaw)));
-            var writer = new EntityWriter(_world.EntityManager, unit);
+            var writer = _world.Writer(unit);
             LocomotionAuthoring.Add(writer, locomotion);
             return unit;
         }
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
             return _world.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(handle).Stats;
         }
 
-        private DynamicBuffer<PathWaypoint> Waypoints(Entity unit) => _world.EntityManager.GetBuffer<PathWaypoint>(unit);
+        private DynamicBuffer<PathWaypoint> Waypoints(Entity unit) => _world.Buffer<PathWaypoint>(unit);
 
         private bool HasTightWaypoints(Entity unit)
         {

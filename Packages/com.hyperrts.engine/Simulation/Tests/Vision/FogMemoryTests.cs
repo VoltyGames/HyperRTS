@@ -8,24 +8,18 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Vision
 {
     /// <summary>Last-seen buildings: remembered when they leave sight, forgotten when seen again or found gone.</summary>
-    public class FogMemoryTests
+    public class FogMemoryTests : SimulationFixture
     {
         private static readonly float3 BuildingAt = new(5f, 0f, 0f);
         private static readonly float3 FarAway = new(60f, 0f, 60f);
 
-        private TestWorld _world;
         private Entity _scout;
 
         [SetUp]
-        public void SetUp()
+        public void Prepare()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-            _scout = _world.SpawnUnit(1, float3.zero);
+            _scout = World.SpawnUnit(1, float3.zero);
         }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
 
         [Test]
         public void Memory_CreatedWhenBuildingLeavesSight_AndKeptInFog()
@@ -34,12 +28,12 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             MoveScout(FarAway);
             var memory = SingleMemory();
-            _world.Run(3f);
+            World.Run(3f);
 
-            Assert.AreEqual(_world.Get<EntityInfo>(building).TypeId, memory.State.TypeId);
+            Assert.AreEqual(World.Get<EntityInfo>(building).TypeId, memory.State.TypeId);
             Assert.AreEqual(2, memory.State.Faction);
             Assert.AreEqual(BuildingAt, memory.State.Transform.Position);
-            Assert.AreEqual(1, CountMemories(_world), "the memory stays while its place is in the fog");
+            Assert.AreEqual(1, CountMemories(World), "the memory stays while its place is in the fog");
         }
 
         [Test]
@@ -51,8 +45,8 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             MoveScout(float3.zero);
 
-            Assert.AreEqual(0, CountMemories(_world));
-            Assert.IsTrue(_world.EntityManager.HasComponent<LatestSeen>(building), "seen again, it is sighted anew");
+            Assert.AreEqual(0, CountMemories(World));
+            Assert.IsTrue(World.EntityManager.HasComponent<LatestSeen>(building), "seen again, it is sighted anew");
         }
 
         [Test]
@@ -61,13 +55,13 @@ namespace HyperRTS.Simulation.Tests.Vision
             var building = SightedBuilding(2);
             MoveScout(FarAway);
             SingleMemory();
-            _world.EntityManager.DestroyEntity(building);
+            World.EntityManager.DestroyEntity(building);
 
             MoveScout(float3.zero);
-            Assert.AreEqual(1, CountMemories(_world), "kept a moment, as a client gets the live building later");
-            _world.Run(FogMemorySystem.Grace);
+            Assert.AreEqual(1, CountMemories(World), "kept a moment, as a client gets the live building later");
+            World.Run(FogMemorySystem.Grace);
 
-            Assert.AreEqual(0, CountMemories(_world));
+            Assert.AreEqual(0, CountMemories(World));
         }
 
         [Test]
@@ -77,11 +71,11 @@ namespace HyperRTS.Simulation.Tests.Vision
 
             // A client's ghost is despawned once the server stops sending it, which a destroyed entity stands in for.
             MoveScoutAndBlind(FarAway);
-            _world.EntityManager.DestroyEntity(building);
-            _world.Tick();
+            World.EntityManager.DestroyEntity(building);
+            World.Tick();
 
-            Assert.AreEqual(1, CountMemories(_world));
-            Assert.IsFalse(_world.EntityManager.Exists(building), "the latest released the despawned root");
+            Assert.AreEqual(1, CountMemories(World));
+            Assert.IsFalse(World.EntityManager.Exists(building), "the latest released the despawned root");
         }
 
         [Test]
@@ -89,11 +83,11 @@ namespace HyperRTS.Simulation.Tests.Vision
         {
             var building = SightedBuilding(2);
 
-            _world.EntityManager.DestroyEntity(building);
-            _world.Tick();
+            World.EntityManager.DestroyEntity(building);
+            World.Tick();
 
-            Assert.AreEqual(0, CountMemories(_world));
-            Assert.IsFalse(_world.EntityManager.Exists(building));
+            Assert.AreEqual(0, CountMemories(World));
+            Assert.IsFalse(World.EntityManager.Exists(building));
         }
 
         [Test]
@@ -103,10 +97,10 @@ namespace HyperRTS.Simulation.Tests.Vision
             MoveScout(FarAway);
             SingleMemory();
 
-            var health = _world.Get<Health>(building);
+            var health = World.Get<Health>(building);
             health.Current = health.Max * 0.25f;
-            _world.EntityManager.SetComponentData(building, health);
-            _world.Run(0.5f);
+            World.Set(building, health);
+            World.Run(0.5f);
 
             Assert.AreEqual(1f, SingleMemory().State.Health);
         }
@@ -120,7 +114,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             world.SpawnBuilding(2, BuildingAt, new float2(4f, 4f));
             world.Run(0.5f);
 
-            world.EntityManager.SetComponentData(scout, LocalTransform.FromPosition(FarAway));
+            world.Set(scout, LocalTransform.FromPosition(FarAway));
             world.Run(0.5f);
 
             Assert.AreEqual(0, CountMemories(world));
@@ -129,13 +123,13 @@ namespace HyperRTS.Simulation.Tests.Vision
         [Test]
         public void NoMemories_WithFogOff()
         {
-            _world.DisableFog();
+            World.DisableFog();
             var building = SightedBuilding(2);
 
             MoveScout(FarAway);
 
-            Assert.AreEqual(0, CountMemories(_world));
-            Assert.IsFalse(_world.EntityManager.HasComponent<LatestSeen>(building));
+            Assert.AreEqual(0, CountMemories(World));
+            Assert.IsFalse(World.EntityManager.HasComponent<LatestSeen>(building));
         }
 
         [Test]
@@ -145,29 +139,29 @@ namespace HyperRTS.Simulation.Tests.Vision
             MoveScout(FarAway);
             SingleMemory();
 
-            LocalFogViewSystem.SetRevealAll(_world.EntityManager, true);
+            LocalFogViewSystem.SetRevealAll(World.EntityManager, true);
 
-            Assert.AreEqual(0, CountMemories(_world));
+            Assert.AreEqual(0, CountMemories(World));
         }
 
         private Entity SightedBuilding(byte faction)
         {
-            var building = _world.SpawnBuilding(faction, BuildingAt, new float2(4f, 4f));
-            _world.Run(0.5f);
+            var building = World.SpawnBuilding(faction, BuildingAt, new float2(4f, 4f));
+            World.Run(0.5f);
             return building;
         }
 
         private void MoveScout(float3 position)
         {
-            _world.EntityManager.SetComponentData(_scout, LocalTransform.FromPosition(position));
-            _world.Run(0.5f);
+            World.Set(_scout, LocalTransform.FromPosition(position));
+            World.Run(0.5f);
         }
 
         /// <summary>Moves the scout and clears its team's sight at once instead of at the next restamp.</summary>
         private void MoveScoutAndBlind(float3 position)
         {
-            _world.EntityManager.SetComponentData(_scout, LocalTransform.FromPosition(position));
-            var visible = _world.Fog().Visible;
+            World.Set(_scout, LocalTransform.FromPosition(position));
+            var visible = World.Fog().Visible;
             for (var i = 0; i < visible.Length; i++)
             {
                 visible[i] = 0;
@@ -176,14 +170,14 @@ namespace HyperRTS.Simulation.Tests.Vision
 
         private LastSeen SingleMemory()
         {
-            using var query = _world.EntityManager.CreateEntityQuery(typeof(LastSeen));
+            using var query = World.Query(typeof(LastSeen));
             Assert.AreEqual(1, query.CalculateEntityCount());
             return query.GetSingleton<LastSeen>();
         }
 
         private static int CountMemories(TestWorld world)
         {
-            using var query = world.EntityManager.CreateEntityQuery(typeof(LastSeen));
+            using var query = world.Query(typeof(LastSeen));
             return query.CalculateEntityCount();
         }
     }

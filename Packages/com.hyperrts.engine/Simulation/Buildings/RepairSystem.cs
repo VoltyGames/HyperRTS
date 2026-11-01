@@ -25,26 +25,14 @@ namespace HyperRTS.Simulation.Buildings
         private const float MinRepairTime = 1f;
 
         private EventWriter<DamageEvent> _damage;
-        private ComponentLookup<Health> _healthLookup;
-        private ComponentLookup<Producible> _producibleLookup;
         private TargetReach _reach;
-        private ComponentLookup<Faction> _factionLookup;
-        private ComponentLookup<ConstructionProgress> _siteLookup;
-        private ComponentLookup<Repairable> _repairableLookup;
-        private BufferLookup<Section> _sectionLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _damage = new EventWriter<DamageEvent>(ref state);
-            _healthLookup = state.GetComponentLookup<Health>(true);
-            _producibleLookup = state.GetComponentLookup<Producible>(true);
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
-            _factionLookup = state.GetComponentLookup<Faction>(true);
-            _siteLookup = state.GetComponentLookup<ConstructionProgress>(true);
-            _repairableLookup = state.GetComponentLookup<Repairable>(true);
-            _sectionLookup = state.GetBufferLookup<Section>(true);
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -52,26 +40,20 @@ namespace HyperRTS.Simulation.Buildings
         public void OnUpdate(ref SystemState state)
         {
             _damage.Update(ref state);
-            _healthLookup.Update(ref state);
-            _producibleLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
-            _factionLookup.Update(ref state);
-            _siteLookup.Update(ref state);
-            _repairableLookup.Update(ref state);
-            _sectionLookup.Update(ref state);
 
             new RepairJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Damage = _damage,
-                HealthLookup = _healthLookup,
-                ProducibleLookup = _producibleLookup,
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
+                ProducibleLookup = SystemAPI.GetComponentLookup<Producible>(true),
                 Reach = _reach,
-                FactionLookup = _factionLookup,
-                SiteLookup = _siteLookup,
-                RepairableLookup = _repairableLookup,
-                SectionLookup = _sectionLookup,
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                SiteLookup = SystemAPI.GetComponentLookup<ConstructionProgress>(true),
+                RepairableLookup = SystemAPI.GetComponentLookup<Repairable>(true),
+                SectionLookup = SystemAPI.GetBufferLookup<Section>(true),
             }.Schedule();
         }
 

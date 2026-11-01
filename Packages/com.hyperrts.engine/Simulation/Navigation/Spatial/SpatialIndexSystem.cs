@@ -25,22 +25,10 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         private static readonly ProfilerMarker IndexMarker = new("SpatialIndexSystem.Index");
 
         private EntityQuery _indexed;
-        private ComponentLookup<NavAgent> _agentLookup;
-        private ComponentLookup<NavObstacle> _obstacleLookup;
-        private ComponentLookup<BuildingTag> _buildingLookup;
-        private ComponentLookup<MoveDestination> _movingLookup;
-        private ComponentLookup<Arrival> _arrivalLookup;
-        private ComponentLookup<Velocity> _velocityLookup;
 
         public void OnCreate(ref SystemState state)
         {
             _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, Health>().WithNone<Dead, Inside>().Build();
-            _agentLookup = state.GetComponentLookup<NavAgent>(true);
-            _obstacleLookup = state.GetComponentLookup<NavObstacle>(true);
-            _buildingLookup = state.GetComponentLookup<BuildingTag>(true);
-            _movingLookup = state.GetComponentLookup<MoveDestination>(true);
-            _arrivalLookup = state.GetComponentLookup<Arrival>(true);
-            _velocityLookup = state.GetComponentLookup<Velocity>(true);
 
             state.EntityManager.CreateSingleton(new SpatialIndex
             {
@@ -79,24 +67,18 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 index.Oversized.Capacity = count;
             }
 
-            _agentLookup.Update(ref state);
-            _obstacleLookup.Update(ref state);
-            _buildingLookup.Update(ref state);
-            _movingLookup.Update(ref state);
-            _arrivalLookup.Update(ref state);
-            _velocityLookup.Update(ref state);
 
             state.Dependency = new IndexJob
             {
                 Writer = index.Cells.AsParallelWriter(),
                 Oversized = index.Oversized.AsParallelWriter(),
                 CellSize = index.CellSize,
-                AgentLookup = _agentLookup,
-                ObstacleLookup = _obstacleLookup,
-                BuildingLookup = _buildingLookup,
-                MovingLookup = _movingLookup,
-                ArrivalLookup = _arrivalLookup,
-                VelocityLookup = _velocityLookup,
+                AgentLookup = SystemAPI.GetComponentLookup<NavAgent>(true),
+                ObstacleLookup = SystemAPI.GetComponentLookup<NavObstacle>(true),
+                BuildingLookup = SystemAPI.GetComponentLookup<BuildingTag>(true),
+                MovingLookup = SystemAPI.GetComponentLookup<MoveDestination>(true),
+                ArrivalLookup = SystemAPI.GetComponentLookup<Arrival>(true),
+                VelocityLookup = SystemAPI.GetComponentLookup<Velocity>(true),
             }.ScheduleParallel(_indexed, state.Dependency);
         }
 

@@ -21,29 +21,15 @@ namespace HyperRTS.Simulation.Combat.Weapons
     [UpdateBefore(typeof(WeaponFireSystem))]
     public partial struct WeaponPoseSystem : ISystem
     {
-        private ComponentLookup<LocalTransform> _transforms;
-        private BufferLookup<WeaponMount> _mounts;
-        private ComponentLookup<Deployable> _deployables;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _mounts = state.GetBufferLookup<WeaponMount>(true);
-            _deployables = state.GetComponentLookup<Deployable>(true);
-        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _transforms.Update(ref state);
-            _mounts.Update(ref state);
-            _deployables.Update(ref state);
             new PoseJob
             {
-                Transforms = _transforms,
-                Mounts = _mounts,
-                Deployables = _deployables,
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                Mounts = SystemAPI.GetBufferLookup<WeaponMount>(true),
+                Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }

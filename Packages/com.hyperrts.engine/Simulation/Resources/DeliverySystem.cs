@@ -19,14 +19,7 @@ namespace HyperRTS.Simulation.Resources
     [UpdateInGroup(typeof(ProductionSystemGroup))]
     public partial struct DeliverySystem : ISystem
     {
-        private ComponentLookup<LocalTransform> _transformLookup;
         private PrefabSpawner _spawner;
-        private ComponentLookup<Offline> _offlineLookup;
-        private ComponentLookup<DeliverySource> _sourceLookup;
-        private ComponentLookup<Dead> _deadLookup;
-        private BufferLookup<ResourceStock> _stockLookup;
-        private ComponentLookup<PlayerStats> _statsLookup;
-        private BufferLookup<StatModifier> _modifierLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -36,39 +29,25 @@ namespace HyperRTS.Simulation.Resources
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             // Carriers still arrive after their source dies, so either keeps the system running.
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAny<DeliverySource, DeliveryCarrier>().Build());
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
             _spawner = new PrefabSpawner(ref state);
-            _offlineLookup = state.GetComponentLookup<Offline>(true);
-            _sourceLookup = state.GetComponentLookup<DeliverySource>(true);
-            _deadLookup = state.GetComponentLookup<Dead>(true);
-            _stockLookup = state.GetBufferLookup<ResourceStock>();
-            _statsLookup = state.GetComponentLookup<PlayerStats>();
-            _modifierLookup = state.GetBufferLookup<StatModifier>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _transformLookup.Update(ref state);
             _spawner.Update(ref state);
-            _offlineLookup.Update(ref state);
-            _sourceLookup.Update(ref state);
-            _deadLookup.Update(ref state);
-            _stockLookup.Update(ref state);
-            _statsLookup.Update(ref state);
-            _modifierLookup.Update(ref state);
             var ecbSystem = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
 
             new ArriveJob
             {
                 Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                TransformLookup = _transformLookup,
-                SourceLookup = _sourceLookup,
-                DeadLookup = _deadLookup,
-                StockLookup = _stockLookup,
-                StatsLookup = _statsLookup,
-                ModifierLookup = _modifierLookup,
+                TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                SourceLookup = SystemAPI.GetComponentLookup<DeliverySource>(true),
+                DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
+                StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
+                StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
+                ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
             }.Schedule();
 
             new SendJob
@@ -76,9 +55,9 @@ namespace HyperRTS.Simulation.Resources
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Map = SystemAPI.GetSingleton<MapSettings>(),
                 Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                TransformLookup = _transformLookup,
+                TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Spawner = _spawner,
-                OfflineLookup = _offlineLookup,
+                OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
             }.ScheduleParallel();
         }
 

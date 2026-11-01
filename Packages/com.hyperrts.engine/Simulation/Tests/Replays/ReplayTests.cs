@@ -31,8 +31,8 @@ namespace HyperRTS.Simulation.Tests.Replays
             var mover = world.SpawnUnit(1, MoverStart, name: "Mover");
             world.SpawnUnit(1, IdlePosition, name: "Idle");
             var victim = world.SpawnUnit(2, VictimPosition, name: "Victim");
-            world.EntityManager.SetComponentData(mover, new MoveDestination { Value = new float3(30f, 0f, 0f) });
-            world.EntityManager.SetComponentEnabled<MoveDestination>(mover, true);
+            world.Set(mover, new MoveDestination { Value = new float3(30f, 0f, 0f) });
+            world.SetEnabled<MoveDestination>(mover, true);
             ReplayRecorder.Start(world.World, sampleRate: 10f, keyframeInterval: 0.5f);
 
             for (var frame = 0; frame < 45; frame++)
@@ -187,7 +187,7 @@ namespace HyperRTS.Simulation.Tests.Replays
         {
             using var world = new TestWorld();
             world.CreateMatch(1, 2);
-            using var query = world.EntityManager.CreateEntityQuery(typeof(MatchRules));
+            using var query = world.Query(typeof(MatchRules));
             var rules = query.GetSingleton<MatchRules>();
             rules.RecordReplay = true;
             query.SetSingleton(rules);

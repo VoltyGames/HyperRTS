@@ -20,18 +20,10 @@ namespace HyperRTS.Simulation.Combat.Projectiles
     [UpdateAfter(typeof(ProjectileSystem))]
     public partial struct ImpactSurfaceSystem : ISystem
     {
-        private ComponentLookup<BuildingTag> _buildings;
-        private ComponentLookup<NavAgent> _agents;
-        private ComponentLookup<HitMaterial> _materials;
-        private ComponentLookup<Projectile> _projectiles;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _buildings = state.GetComponentLookup<BuildingTag>(true);
-            _agents = state.GetComponentLookup<NavAgent>(true);
-            _materials = state.GetComponentLookup<HitMaterial>(true);
-            _projectiles = state.GetComponentLookup<Projectile>(true);
             state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<NavGrid>();
         }
@@ -39,17 +31,13 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _buildings.Update(ref state);
-            _agents.Update(ref state);
-            _materials.Update(ref state);
-            _projectiles.Update(ref state);
             var hasGround = SystemAPI.TryGetSingleton<GroundMaterials>(out var ground);
             new ClassifyJob
             {
-                Buildings = _buildings,
-                Agents = _agents,
-                Materials = _materials,
-                Projectiles = _projectiles,
+                Buildings = SystemAPI.GetComponentLookup<BuildingTag>(true),
+                Agents = SystemAPI.GetComponentLookup<NavAgent>(true),
+                Materials = SystemAPI.GetComponentLookup<HitMaterial>(true),
+                Projectiles = SystemAPI.GetComponentLookup<Projectile>(true),
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
                 Ground = ground,
                 HasGround = hasGround,

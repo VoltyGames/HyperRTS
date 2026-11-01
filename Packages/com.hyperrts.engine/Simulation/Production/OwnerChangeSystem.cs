@@ -20,23 +20,13 @@ namespace HyperRTS.Simulation.Production
     [UpdateAfter(typeof(NeutralGarrisonSystem))]
     public partial struct OwnerChangeSystem : ISystem
     {
-        private BufferLookup<ProductionQueueItem> _queues;
-        private BufferLookup<ResourceStock> _stocks;
-        private BufferLookup<ResourceCost> _costs;
         private OrderWriter _orders;
-        private ComponentLookup<RallyPoint> _rallies;
-        private ComponentLookup<Selected> _selected;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
-            _queues = state.GetBufferLookup<ProductionQueueItem>(true);
-            _stocks = state.GetBufferLookup<ResourceStock>();
-            _costs = state.GetBufferLookup<ResourceCost>(true);
             _orders = new OrderWriter(ref state);
-            _rallies = state.GetComponentLookup<RallyPoint>(true);
-            _selected = state.GetComponentLookup<Selected>(true);
             state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -44,24 +34,19 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _queues.Update(ref state);
-            _stocks.Update(ref state);
-            _costs.Update(ref state);
             _orders.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
-            _rallies.Update(ref state);
-            _selected.Update(ref state);
 
             new ClearJob
             {
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                Queues = _queues,
-                Stocks = _stocks,
-                Costs = _costs,
+                Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
+                Stocks = SystemAPI.GetBufferLookup<ResourceStock>(false),
+                Costs = SystemAPI.GetBufferLookup<ResourceCost>(true),
                 Orders = _orders,
-                Rallies = _rallies,
-                Selected = _selected,
+                Rallies = SystemAPI.GetComponentLookup<RallyPoint>(true),
+                Selected = SystemAPI.GetComponentLookup<Selected>(true),
             }.Schedule();
         }
 

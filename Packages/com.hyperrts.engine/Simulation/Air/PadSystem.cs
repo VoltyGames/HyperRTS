@@ -20,35 +20,15 @@ namespace HyperRTS.Simulation.Air
     [UpdateAfter(typeof(MoveOrderSystem))]
     public partial struct PadSystem : ISystem
     {
-        private BufferLookup<LandingPad> _pads;
-        private ComponentLookup<HomePad> _homes;
-        private ComponentLookup<Faction> _factions;
-        private ComponentLookup<ConstructionProgress> _sites;
-        private ComponentLookup<LocalTransform> _transforms;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
-        {
-            _pads = state.GetBufferLookup<LandingPad>();
-            _homes = state.GetComponentLookup<HomePad>(true);
-            _factions = state.GetComponentLookup<Faction>(true);
-            _sites = state.GetComponentLookup<ConstructionProgress>(true);
-            _transforms = state.GetComponentLookup<LocalTransform>(true);
-        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _pads.Update(ref state);
-            _homes.Update(ref state);
-            _factions.Update(ref state);
-            _sites.Update(ref state);
-            _transforms.Update(ref state);
 
-            new ReleaseJob { Homes = _homes }.ScheduleParallel();
-            var airfields = new Airfields { Pads = _pads, Factions = _factions, Sites = _sites };
+            new ReleaseJob { Homes = SystemAPI.GetComponentLookup<HomePad>(true) }.ScheduleParallel();
+            var airfields = new Airfields { Pads = SystemAPI.GetBufferLookup<LandingPad>(false), Factions = SystemAPI.GetComponentLookup<Faction>(true), Sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true) };
             new HomeJob { Airfields = airfields }.Schedule();
-            new ReturnJob { Airfields = airfields, Transforms = _transforms }.Schedule();
+            new ReturnJob { Airfields = airfields, Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true) }.Schedule();
         }
 
         /// <summary>Frees pads whose aircraft is gone or now calls another pad home.</summary>

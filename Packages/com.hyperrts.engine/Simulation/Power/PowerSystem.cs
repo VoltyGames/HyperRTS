@@ -16,19 +16,13 @@ namespace HyperRTS.Simulation.Power
     [UpdateInGroup(typeof(OrderSystemGroup), OrderLast = true)]
     public partial struct PowerSystem : ISystem
     {
-        private ComponentLookup<Offline> _offline;
-
-        [BurstCompile]
-        public void OnCreate(ref SystemState state) => _offline = state.GetComponentLookup<Offline>(true);
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _offline.Update(ref state);
             var produced = CollectionHelper.CreateNativeArray<float>(PlayerRegistry.Capacity, state.WorldUpdateAllocator);
             var consumed = CollectionHelper.CreateNativeArray<float>(PlayerRegistry.Capacity, state.WorldUpdateAllocator);
 
-            new CountJob { Produced = produced, Consumed = consumed, Offline = _offline }.Schedule();
+            new CountJob { Produced = produced, Consumed = consumed, Offline = SystemAPI.GetComponentLookup<Offline>(true) }.Schedule();
             new ApplyJob { Produced = produced, Consumed = consumed }.ScheduleParallel();
             new FlagJob { Produced = produced, Consumed = consumed }.ScheduleParallel();
         }

@@ -91,11 +91,11 @@ namespace HyperRTS.Presentation.Tests.Cursors
         public void Infantry_OnOwnContainer_Garrisons()
         {
             var rifleman = _world.SpawnUnit(1, float3.zero);
-            var writer = new EntityWriter(_world.EntityManager, rifleman);
+            var writer = _world.Writer(rifleman);
             TransportSetup.AddPassenger(writer, 1);
             Select(rifleman);
             var bunker = _world.SpawnBuilding(1, new float3(8f, 0f, 0f), Footprint);
-            writer = new EntityWriter(_world.EntityManager, bunker);
+            writer = _world.Writer(bunker);
             TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
 
             Assert.AreEqual(CursorKind.Garrison, Decide(bunker));
@@ -106,7 +106,7 @@ namespace HyperRTS.Presentation.Tests.Cursors
         {
             Select(_world.MakeBuilder(_world.SpawnUnit(1, float3.zero)));
             var barracks = _world.SpawnBuilding(1, new float3(8f, 0f, 0f), Footprint);
-            _world.EntityManager.SetComponentData(barracks, new Health { Current = 200f, Max = 500f });
+            _world.Set(barracks, new Health { Current = 200f, Max = 500f });
 
             Assert.AreEqual(CursorKind.Repair, Decide(barracks));
         }
@@ -227,18 +227,18 @@ namespace HyperRTS.Presentation.Tests.Cursors
 
         private void SetSingleton<T>(T value) where T : unmanaged, IComponentData
         {
-            using var query = _world.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
+            using var query = _world.Query(ComponentType.ReadWrite<T>());
             query.SetSingleton(value);
         }
 
-        private void Select(Entity entity) => _world.EntityManager.SetComponentEnabled<Selected>(entity, true);
+        private void Select(Entity entity) => _world.SetEnabled<Selected>(entity, true);
 
         private Entity Tank(float3 position) => _world.AddWeapon(_world.SpawnUnit(1, position));
 
         private Entity Engineer(float3 position)
         {
             var engineer = _world.SpawnUnit(1, position);
-            var writer = new EntityWriter(_world.EntityManager, engineer);
+            var writer = _world.Writer(engineer);
             CaptureSetup.AddCapturer(writer, 1f, consumedOnCapture: false);
             return engineer;
         }
@@ -246,7 +246,7 @@ namespace HyperRTS.Presentation.Tests.Cursors
         private Entity Post()
         {
             var post = _world.SpawnBuilding(Faction.Neutral, new float3(10f, 0f, 0f), Footprint);
-            var writer = new EntityWriter(_world.EntityManager, post);
+            var writer = _world.Writer(post);
             CaptureSetup.AddCapturable(writer, 2f);
             return post;
         }

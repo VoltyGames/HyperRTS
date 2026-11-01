@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
     /// Sectioned buildings: hits land on the section they reach, materials scale them, what loses its supports falls
     /// and empties its floor, repair rebuilds the latest first, and broken ground-floor walls open paths and leave rubble.
     /// </summary>
-    public class SectionTests
+    public class SectionTests : SimulationFixture
     {
         private const int Front = 0;
         private const int Back = 1;
@@ -26,21 +26,15 @@ namespace HyperRTS.Simulation.Tests.Destruction
         private const int Upper = 5;
         private const byte RubbleCrush = 3;
 
-        private TestWorld _world;
         private DamageType _highExplosive;
         private DamageType _smallArms;
 
         [SetUp]
-        public void SetUp()
+        public void Prepare()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-            _highExplosive = _world.Own(ScriptableObject.CreateInstance<DamageType>());
-            _smallArms = _world.Own(ScriptableObject.CreateInstance<DamageType>());
+            _highExplosive = World.Own(ScriptableObject.CreateInstance<DamageType>());
+            _smallArms = World.Own(ScriptableObject.CreateInstance<DamageType>());
         }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
 
         private static Section Wall(float3 center, float3 half, int floor = 0, ulong supports = 0) => new()
         {
@@ -76,22 +70,22 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 new() { Material = 0, DamageType = _highExplosive, Multiplier = 1.5f },
                 new() { Material = 0, DamageType = _smallArms, Multiplier = 0.25f },
             };
-            var house = _world.SpawnBuilding(1, position, new float2(8.3f, 8.3f));
-            var writer = new EntityWriter(_world.EntityManager, house);
+            var house = World.SpawnBuilding(1, position, new float2(8.3f, 8.3f));
+            var writer = World.Writer(house);
             SectionsSetup.Add(writer, sections, factors, rubble);
-            var health = _world.Get<Health>(house);
+            var health = World.Get<Health>(house);
             health.Max = health.Current = 100f * sections.Count;
-            _world.EntityManager.SetComponentData(house, health);
+            World.Set(house, health);
             return house;
         }
 
-        private Section SectionOf(Entity house, int index) => _world.EntityManager.GetBuffer<Section>(house)[index];
+        private Section SectionOf(Entity house, int index) => World.Buffer<Section>(house)[index];
 
         private bool IsBroken(Entity house, int index) =>
-            (_world.Get<SectionedBuilding>(house).Broken & (1ul << index)) != 0;
+            (World.Get<SectionedBuilding>(house).Broken & (1ul << index)) != 0;
 
         private void Shoot(Entity house, float3 from, float3 at, float amount, DamageType type = null, float radius = 0f) =>
-            _world.QueueDamage(new DamageEvent
+            World.QueueDamage(new DamageEvent
             {
                 Target = house, Origin = from, Position = at, SourceFaction = 2, Amount = amount, Type = type,
                 Radius = radius, EdgeFactor = 0.5f,
@@ -101,29 +95,29 @@ namespace HyperRTS.Simulation.Tests.Destruction
         public void DirectHit_DamagesTheSectionItsLineEnters_NotTheOneBehind()
         {
             var house = House(float3.zero);
-            _world.Tick();
+            World.Tick();
 
             Shoot(house, new float3(0f, 1.5f, 30f), new float3(0f, 1.5f, 0f), 30f);
-            _world.Tick();
+            World.Tick();
 
             Assert.AreEqual(70f, SectionOf(house, Front).Health, 1e-3f);
             Assert.AreEqual(100f, SectionOf(house, Back).Health);
-            Assert.AreEqual(470f, _world.GetHealth(house), 1e-3f, "building health is the sum of its sections");
+            Assert.AreEqual(470f, World.GetHealth(house), 1e-3f, "building health is the sum of its sections");
         }
 
         [Test]
         public void Splash_ReachesSectionsWithinItsRadius_WithFalloff()
         {
             var house = House(float3.zero);
-            _world.Tick();
+            World.Tick();
 
             var centre = new float3(4.5f, 1.5f, 0f);
-            _world.QueueDamage(new DamageEvent
+            World.QueueDamage(new DamageEvent
             {
                 Position = centre, Origin = new float3(30f, 1.5f, 0f), SourceFaction = 2, Amount = 30f, Radius = 3f,
                 EdgeFactor = 0.5f,
             });
-            _world.Tick();
+            World.Tick();
 
             var right = SectionOf(house, Right);
             var expected = 30f * new DamageEvent { Radius = 3f, EdgeFactor = 0.5f }.SplashFactor(right.Gap(centre));
@@ -138,11 +132,11 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             var shelled = House(float3.zero);
             var shot = House(new float3(30f, 0f, 0f));
-            _world.Tick();
+            World.Tick();
 
             Shoot(shelled, new float3(0f, 1.5f, 30f), new float3(0f, 1.5f, 0f), 20f, _highExplosive);
             Shoot(shot, new float3(30f, 1.5f, 30f), new float3(30f, 1.5f, 0f), 20f, _smallArms);
-            _world.Tick();
+            World.Tick();
 
             Assert.AreEqual(70f, SectionOf(shelled, Front).Health, 1e-3f);
             Assert.AreEqual(95f, SectionOf(shot, Front).Health, 1e-3f);
@@ -152,79 +146,79 @@ namespace HyperRTS.Simulation.Tests.Destruction
         public void SectionCutOffFromTheGround_FallsAfterTheDelay_AndEmptiesItsFloor()
         {
             var house = House(float3.zero, upper: true);
-            var writer = new EntityWriter(_world.EntityManager, house);
+            var writer = World.Writer(house);
             TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             var squads = new Entity[4];
             for (var i = 0; i < squads.Length; i++)
             {
-                squads[i] = _world.SpawnUnit(1, new float3(20f + i * 2f, 0f, 0f));
-                var passenger = new EntityWriter(_world.EntityManager, squads[i]);
+                squads[i] = World.SpawnUnit(1, new float3(20f + i * 2f, 0f, 0f));
+                var passenger = World.Writer(squads[i]);
                 TransportSetup.AddPassenger(passenger, 1);
-                _world.EntityManager.GetBuffer<Cargo>(house).Add(new Cargo { Unit = squads[i], Size = 1 });
-                _world.EntityManager.SetComponentData(squads[i], new Inside { Container = house });
-                _world.EntityManager.SetComponentEnabled<Inside>(squads[i], true);
+                World.Buffer<Cargo>(house).Add(new Cargo { Unit = squads[i], Size = 1 });
+                World.Set(squads[i], new Inside { Container = house });
+                World.SetEnabled<Inside>(squads[i], true);
             }
 
-            _world.Tick();
+            World.Tick();
 
             Shoot(house, new float3(0f, 1.5f, 30f), new float3(0f, 1.5f, 0f), 200f);
-            _world.Tick();
+            World.Tick();
             Assert.IsTrue(IsBroken(house, Front));
             Assert.IsFalse(IsBroken(house, Upper), "it waits a support level's delay");
 
-            _world.Run(SectionedBuilding.FallDelay + 0.2f);
+            World.Run(SectionedBuilding.FallDelay + 0.2f);
 
             Assert.IsTrue(IsBroken(house, Upper));
             Assert.IsFalse(IsBroken(house, Roof), "the other walls still hold the roof");
-            Assert.IsTrue(_world.IsEnabled<Inside>(squads[0]) && _world.IsEnabled<Inside>(squads[1]), "ground floor stays");
+            Assert.IsTrue(World.IsEnabled<Inside>(squads[0]) && World.IsEnabled<Inside>(squads[1]), "ground floor stays");
             for (var i = 2; i < 4; i++)
             {
-                Assert.IsFalse(_world.IsEnabled<Inside>(squads[i]), "the first floor's passengers get out");
-                Assert.AreEqual(100f * (1f - FallenFloorSystem.FallHit), _world.GetHealth(squads[i]), 1e-3f);
+                Assert.IsFalse(World.IsEnabled<Inside>(squads[i]), "the first floor's passengers get out");
+                Assert.AreEqual(100f * (1f - FallenFloorSystem.FallHit), World.GetHealth(squads[i]), 1e-3f);
             }
 
-            Assert.AreEqual(2, _world.Get<Container>(house).LostSlots(_world.Get<IntactFloors>(house)), "and its slots close");
+            Assert.AreEqual(2, World.Get<Container>(house).LostSlots(World.Get<IntactFloors>(house)), "and its slots close");
         }
 
         [Test]
         public void Repair_RebuildsTheLatestBrokenSectionFirst()
         {
             var house = House(float3.zero);
-            _world.Tick();
+            World.Tick();
 
             Shoot(house, new float3(0f, 1.5f, 30f), new float3(0f, 1.5f, 0f), 100f);
-            _world.Tick();
+            World.Tick();
             Shoot(house, new float3(30f, 1.5f, 0f), new float3(0f, 1.5f, 0f), 100f);
-            _world.Tick();
-            Assert.AreEqual(300f, _world.GetHealth(house), 1e-3f);
+            World.Tick();
+            Assert.AreEqual(300f, World.GetHealth(house), 1e-3f);
 
-            _world.QueueDamage(new DamageEvent { Target = house, Amount = -110f });
-            _world.Tick();
+            World.QueueDamage(new DamageEvent { Target = house, Amount = -110f });
+            World.Tick();
 
             Assert.IsFalse(IsBroken(house, Right), "the latest comes back first");
             Assert.IsTrue(IsBroken(house, Front), "the earlier stays down until it is full");
             Assert.AreEqual(10f, SectionOf(house, Front).Health, 1e-3f);
-            Assert.AreEqual(410f, _world.GetHealth(house), 1e-3f);
+            Assert.AreEqual(410f, World.GetHealth(house), 1e-3f);
         }
 
         [Test]
         public void FallenGroundFloorWall_OpensItsCells_AndLeavesRubble()
         {
-            var rubble = _world.MakePrefab(_world.EntityManager.CreateEntity());
-            _world.EntityManager.AddComponentData(rubble, LocalTransform.Identity);
-            _world.EntityManager.AddComponentData(rubble, new Destructible { Crush = RubbleCrush });
+            var rubble = World.MakePrefab(World.EntityManager.CreateEntity());
+            World.Add(rubble, LocalTransform.Identity);
+            World.Add(rubble, new Destructible { Crush = RubbleCrush });
             var house = House(new float3(0.5f, 0f, 0.5f), rubble: rubble);
-            _world.Tick(frames: 2);
+            World.Tick(frames: 2);
             var wall = new float3(0.5f, 0f, 4.5f);
-            Assert.IsFalse(_world.Grid().IsWalkable(wall), "a standing wall closes its cells");
+            Assert.IsFalse(World.Grid().IsWalkable(wall), "a standing wall closes its cells");
 
             Shoot(house, new float3(0.5f, 1.5f, 30f), new float3(0.5f, 1.5f, 0.5f), 200f);
-            _world.Tick(frames: 3);
+            World.Tick(frames: 3);
 
-            var grid = _world.Grid();
+            var grid = World.Grid();
             Assert.IsTrue(grid.IsWalkable(wall), "the breach opens");
             Assert.AreEqual(RubbleCrush, grid.Scenery[grid.Index(grid.WorldToCell(wall))], "rubble lies in it");
-            using var heaps = _world.EntityManager.CreateEntityQuery(typeof(SceneryId), typeof(Destructible))
+            using var heaps = World.Query(typeof(SceneryId), typeof(Destructible))
                 .ToEntityArray(Allocator.Temp);
             Assert.AreEqual(1, heaps.Length, "one heap, at the broken wall's foot");
         }

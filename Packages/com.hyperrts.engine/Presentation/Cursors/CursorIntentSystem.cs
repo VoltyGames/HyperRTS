@@ -25,8 +25,6 @@ namespace HyperRTS.Presentation.Cursors
         private EntityQuery _fogQuery;
         private EntityQuery _selected;
         private EntityQuery _localPlayer;
-        private ComponentLookup<Inside> _inside;
-        private ComponentLookup<Selectable> _selectable;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,8 +33,6 @@ namespace HyperRTS.Presentation.Cursors
             _fogQuery = TargetLookup.FogQuery(ref state);
             _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithNone<Dead>().Build();
             _localPlayer = SystemAPI.QueryBuilder().WithAll<LocalPlayer, Player>().Build();
-            _inside = state.GetComponentLookup<Inside>(true);
-            _selectable = state.GetComponentLookup<Selectable>(true);
             state.RequireForUpdate<CursorIntent>();
         }
 
@@ -77,8 +73,7 @@ namespace HyperRTS.Presentation.Cursors
         /// <summary>The highest-precedence order a right-click on <paramref name="hovered"/> gives the selection.</summary>
         private CursorKind RightClick(ref SystemState state, Entity hovered)
         {
-            _selectable.Update(ref state);
-            var selectable = _selectable.HasComponent(hovered);
+            var selectable = SystemAPI.GetComponentLookup<Selectable>(true).HasComponent(hovered);
             if (_selected.IsEmpty || !_localPlayer.TryGetSingleton(out Player local) || !SystemAPI.HasSingleton<FactionRelations>())
             {
                 return selectable ? CursorKind.Select : CursorKind.Default;
@@ -86,7 +81,6 @@ namespace HyperRTS.Presentation.Cursors
 
             state.CompleteDependency();
             _resolver.Update(ref state, _fogQuery);
-            _inside.Update(ref state);
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var best = CursorKind.Default;
             var producers = false;
@@ -125,7 +119,7 @@ namespace HyperRTS.Presentation.Cursors
                 return false;
             }
 
-            return !_inside.HasEnabled(entity);
+            return !SystemAPI.GetComponentLookup<Inside>(true).HasEnabled(entity);
         }
 
         // Clicking a selectable entity that no unit acts on selects it, and producers alone set their rally point.

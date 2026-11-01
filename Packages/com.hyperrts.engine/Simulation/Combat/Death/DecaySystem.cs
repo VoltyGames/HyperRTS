@@ -19,22 +19,10 @@ namespace HyperRTS.Simulation.Combat.Death
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct DecaySystem : ISystem
     {
-        private ComponentLookup<Decay> _decays;
-        private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<Blocker> _blockers;
-        private ComponentLookup<SightBlock> _sightBlocks;
-        private BufferLookup<LinkedEntityGroup> _groups;
-        private BufferLookup<Child> _children;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _decays = state.GetComponentLookup<Decay>();
-            _transforms = state.GetComponentLookup<LocalTransform>();
-            _blockers = state.GetComponentLookup<Blocker>();
-            _sightBlocks = state.GetComponentLookup<SightBlock>();
-            _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
-            _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<Decay>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -43,20 +31,14 @@ namespace HyperRTS.Simulation.Combat.Death
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _decays.Update(ref state);
-            _transforms.Update(ref state);
-            _blockers.Update(ref state);
-            _sightBlocks.Update(ref state);
-            _groups.Update(ref state);
-            _children.Update(ref state);
             var now = SystemAPI.Time.ElapsedTime;
             var due = new NativeQueue<Entity>(Allocator.TempJob);
             new FindDueJob { Due = due.AsParallelWriter(), Now = now }.ScheduleParallel();
             state.Dependency = new DespawnJob
             {
-                Due = due, Now = now, Decays = _decays, Transforms = _transforms, Blockers = _blockers,
-                SightBlocks = _sightBlocks,
-                Groups = _groups, Children = _children,
+                Due = due, Now = now, Decays = SystemAPI.GetComponentLookup<Decay>(false), Transforms = SystemAPI.GetComponentLookup<LocalTransform>(false), Blockers = SystemAPI.GetComponentLookup<Blocker>(false),
+                SightBlocks = SystemAPI.GetComponentLookup<SightBlock>(false),
+                Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true), Children = SystemAPI.GetBufferLookup<Child>(true),
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
             }.Schedule(state.Dependency);
