@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;

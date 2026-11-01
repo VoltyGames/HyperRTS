@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using Unity.Mathematics;

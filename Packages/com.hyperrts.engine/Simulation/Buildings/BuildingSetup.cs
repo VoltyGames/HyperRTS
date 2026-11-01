@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Vision;
 using Unity.Mathematics;
 

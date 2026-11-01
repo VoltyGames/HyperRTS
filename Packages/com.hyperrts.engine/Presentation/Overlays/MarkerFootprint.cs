@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Overlays

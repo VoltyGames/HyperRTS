@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;

@@ -1,7 +1,8 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Entities;
 using UnityEngine;
 

@@ -1,6 +1,8 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Navigation.Grid;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

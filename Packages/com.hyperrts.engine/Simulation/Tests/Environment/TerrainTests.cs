@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;

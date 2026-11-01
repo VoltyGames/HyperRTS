@@ -1,6 +1,9 @@
 using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Navigation.Drive;
+using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;

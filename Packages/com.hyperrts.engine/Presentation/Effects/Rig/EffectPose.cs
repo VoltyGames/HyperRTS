@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Surfaces;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Mathematics;
 using UnityEngine;
 

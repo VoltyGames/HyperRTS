@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;

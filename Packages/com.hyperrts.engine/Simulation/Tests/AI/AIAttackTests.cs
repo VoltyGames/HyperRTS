@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;

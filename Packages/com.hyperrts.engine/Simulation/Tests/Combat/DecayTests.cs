@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Navigation.Areas;
 using System;
-using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

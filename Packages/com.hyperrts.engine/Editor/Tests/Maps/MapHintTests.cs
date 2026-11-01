@@ -6,7 +6,7 @@ using HyperRTS.Editor.Maps.Hints;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Grid;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEngine;

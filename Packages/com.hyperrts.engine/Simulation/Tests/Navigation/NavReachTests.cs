@@ -1,6 +1,11 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Navigation.Drive;
+using HyperRTS.Simulation.Navigation.Grid;
+using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;

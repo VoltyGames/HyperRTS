@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Cues.Effects;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Impacts

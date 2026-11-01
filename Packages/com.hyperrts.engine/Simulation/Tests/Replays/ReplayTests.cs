@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Collections;

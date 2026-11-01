@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;

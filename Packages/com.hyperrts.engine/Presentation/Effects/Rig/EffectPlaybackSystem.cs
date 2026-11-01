@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Surfaces;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using UnityEngine;
 

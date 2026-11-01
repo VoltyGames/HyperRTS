@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Mathematics;

@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
-using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Collections;

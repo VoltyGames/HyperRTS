@@ -1,7 +1,8 @@
 ﻿using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;

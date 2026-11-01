@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Paths;
 using NUnit.Framework;
 using Unity.Mathematics;
 using static HyperRTS.Simulation.Tests.TestVehicles;

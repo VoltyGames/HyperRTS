@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System.Linq;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;

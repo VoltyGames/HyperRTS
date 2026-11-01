@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Destruction;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;

@@ -9,7 +9,7 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Grid;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Report

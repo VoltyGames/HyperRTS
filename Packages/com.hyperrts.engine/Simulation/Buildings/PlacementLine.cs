@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings

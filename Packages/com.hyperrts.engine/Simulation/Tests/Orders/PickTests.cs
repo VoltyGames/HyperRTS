@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;

@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using HyperRTS.Presentation.Environment.Ambient;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;

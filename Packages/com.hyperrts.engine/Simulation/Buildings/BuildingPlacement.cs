@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Buildings

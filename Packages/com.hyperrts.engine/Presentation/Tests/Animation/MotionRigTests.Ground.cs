@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Animation;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;

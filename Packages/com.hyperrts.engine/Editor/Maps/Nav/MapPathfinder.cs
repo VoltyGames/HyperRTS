@@ -1,5 +1,7 @@
 using System.Collections.Generic;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Grid;
+using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
 using Unity.Mathematics;
 

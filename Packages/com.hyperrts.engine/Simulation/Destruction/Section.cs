@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;

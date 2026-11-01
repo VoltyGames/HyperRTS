@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Units;
 using UnityEditor;
 

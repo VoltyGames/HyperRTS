@@ -1,7 +1,9 @@
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

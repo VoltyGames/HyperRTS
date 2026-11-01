@@ -1,0 +1,24 @@
+using HyperRTS.Simulation.Navigation.Areas;
+using Unity.Mathematics;
+
+namespace HyperRTS.Simulation.Navigation.Grid
+{
+    /// <summary>
+    /// The slope limit and nav area rules that set a cell's surface after the ground
+    /// (<see cref="NavGrid.GroundSurface"/>), shared with editor tools that measure maps.
+    /// </summary>
+    public static class NavGround
+    {
+        /// <summary>Rise per metre of the steepest walkable ground; no limit for 0 or 90 degrees and above.</summary>
+        public static float MaxGradient(float maxSlope) =>
+            maxSlope > 0f && maxSlope < 90f ? math.tan(math.radians(maxSlope)) : float.PositiveInfinity;
+
+        /// <summary>The surface a nav area leaves on a cell; a deck keeps any water under it open to ships.</summary>
+        public static NavSurface Stamp(NavAreaKind kind, NavSurface cell) => kind switch
+        {
+            NavAreaKind.Water => NavSurface.Water,
+            NavAreaKind.Blocked => NavSurface.Blocked,
+            _ => (cell & NavSurface.Water) | NavSurface.Land | NavSurface.Deck,
+        };
+    }
+}

@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Reach;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders

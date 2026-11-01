@@ -1,5 +1,7 @@
 using HyperRTS.Presentation.Animation;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Overlays

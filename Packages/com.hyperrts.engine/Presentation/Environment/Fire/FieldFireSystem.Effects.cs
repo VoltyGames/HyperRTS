@@ -2,7 +2,7 @@ using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Environment.Weather;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

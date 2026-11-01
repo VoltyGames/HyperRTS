@@ -1,5 +1,8 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Fields;
+using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Navigation.Sectors;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Collections;

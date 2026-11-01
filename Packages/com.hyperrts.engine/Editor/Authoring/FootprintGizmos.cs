@@ -1,6 +1,7 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Navigation.Docks;
 using UnityEditor;
 using UnityEngine;
 

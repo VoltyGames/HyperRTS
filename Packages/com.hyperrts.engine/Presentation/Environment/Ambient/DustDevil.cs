@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment.Ambient

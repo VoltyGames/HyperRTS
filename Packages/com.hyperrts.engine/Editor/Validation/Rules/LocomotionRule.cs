@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Units;
 
 namespace HyperRTS.Editor.Validation.Rules

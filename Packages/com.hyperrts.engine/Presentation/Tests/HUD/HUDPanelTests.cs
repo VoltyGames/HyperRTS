@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEditor;

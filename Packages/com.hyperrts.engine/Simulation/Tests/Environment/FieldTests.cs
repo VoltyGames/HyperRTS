@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;

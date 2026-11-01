@@ -1,5 +1,5 @@
 using HyperRTS.Editor.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Authoring

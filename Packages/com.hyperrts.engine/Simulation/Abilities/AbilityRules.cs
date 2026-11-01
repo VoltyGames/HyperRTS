@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Production;
 using Unity.Entities;
 using Unity.Mathematics;

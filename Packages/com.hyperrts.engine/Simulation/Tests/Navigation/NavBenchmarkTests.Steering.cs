@@ -1,7 +1,8 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Diagnostics;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;
 using Unity.Entities;

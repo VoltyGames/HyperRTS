@@ -7,6 +7,8 @@
 Units find paths on a grid over the map. Each cell is land, water, deck or blocked. Each unit moves on one layer:
 Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestination`.
 
+The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`: `Grid` (the cell grid, layers and movement classes), `Areas` (obstacles, water and deck boxes), `Fields` (distance and flow fields), `Sectors` (the coarse sector graph), `Paths` (pathfinding and path requests), `Agents` (agent components), `Drive` (vehicle drive planning), `Reach` (target reach and move control), `Docks`, `Spatial` (the spatial index) and `Heights` (the terrain heightfield).
+
 | Authoring | Does |
 | --- | --- |
 | `TerrainHeightAuthoring` | A baked heightfield. Without one the ground is flat |

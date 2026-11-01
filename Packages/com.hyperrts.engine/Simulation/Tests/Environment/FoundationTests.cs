@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;

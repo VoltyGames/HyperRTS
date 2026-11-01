@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Common

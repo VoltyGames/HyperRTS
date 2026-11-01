@@ -2,7 +2,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;

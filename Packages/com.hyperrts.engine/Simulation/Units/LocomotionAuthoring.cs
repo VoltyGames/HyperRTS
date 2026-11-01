@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Drive;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

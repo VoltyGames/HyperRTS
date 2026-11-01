@@ -5,7 +5,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

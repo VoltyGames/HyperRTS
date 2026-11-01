@@ -1,6 +1,10 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Docks;
+using HyperRTS.Simulation.Navigation.Drive;
+using HyperRTS.Simulation.Navigation.Grid;
+using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;

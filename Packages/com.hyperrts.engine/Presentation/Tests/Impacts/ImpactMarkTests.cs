@@ -6,7 +6,7 @@ using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Collections;

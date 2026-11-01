@@ -1,0 +1,30 @@
+using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
+using Unity.Entities;
+using UnityEngine;
+
+namespace HyperRTS.Simulation.Navigation.Areas
+{
+    /// <summary>
+    /// Blocks a box of the pathfinding grid (rocks, cliffs). Buildings block their footprint already; water and
+    /// bridges are Nav Areas.
+    /// </summary>
+    [AddComponentMenu(HyperRTSMenu.Navigation + "Nav Obstacle")]
+    [Icon(HyperRTSIcons.Navigation)]
+    [HelpURL(HyperRTSDocs.Navigation)]
+    [DisallowMultipleComponent]
+    public class NavObstacleAuthoring : AuthoringBehaviour
+    {
+        [Tooltip("Blocked area (X by Z) centred on this transform.")]
+        public Vector2 size = new(2f, 2f);
+
+        public class Baker : Baker<NavObstacleAuthoring>
+        {
+            public override void Bake(NavObstacleAuthoring authoring)
+            {
+                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                NavSetup.AddObstacle(ref writer, authoring.size);
+            }
+        }
+    }
+}

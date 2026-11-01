@@ -5,7 +5,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Environment.Interaction

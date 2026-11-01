@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Mathematics;
 using Random = Unity.Mathematics.Random;
 

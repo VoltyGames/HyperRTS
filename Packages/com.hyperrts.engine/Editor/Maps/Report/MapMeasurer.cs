@@ -7,7 +7,6 @@ using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Rules;
-using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 using UnityEngine;
 

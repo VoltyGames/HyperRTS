@@ -1,7 +1,7 @@
 using System;
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Scripting.LifecycleManagement;

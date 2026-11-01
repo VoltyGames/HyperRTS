@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Destruction;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEngine;

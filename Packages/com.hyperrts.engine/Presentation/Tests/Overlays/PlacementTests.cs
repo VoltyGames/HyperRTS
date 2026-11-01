@@ -3,7 +3,7 @@ using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Overlays;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;

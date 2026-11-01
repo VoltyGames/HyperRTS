@@ -1,6 +1,6 @@
 using HyperRTS.Input.Cameras;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;

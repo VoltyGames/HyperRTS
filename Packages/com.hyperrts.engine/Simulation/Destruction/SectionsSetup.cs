@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Navigation.Areas;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 

@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;

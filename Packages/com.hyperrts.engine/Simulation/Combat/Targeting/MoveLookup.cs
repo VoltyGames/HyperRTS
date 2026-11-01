@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

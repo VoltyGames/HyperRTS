@@ -4,7 +4,7 @@ using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;

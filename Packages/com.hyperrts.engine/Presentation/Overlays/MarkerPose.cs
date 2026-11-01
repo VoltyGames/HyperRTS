@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
