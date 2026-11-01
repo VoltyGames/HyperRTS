@@ -47,9 +47,7 @@ namespace HyperRTS.Simulation.Navigation
             public bool Closed;
         }
 
-        private NavAccess _access;
-        private Chassis _chassis;
-        private float _halfSegment;
+        private DriveHull _hull;
 
         // Unchecked, as they are the inner loop of every search.
         private UnsafeList<Node> _nodes;
@@ -82,9 +80,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>A search for no agent yet, whose scratch serves each one <see cref="SetAgent"/> gives it.</summary>
         public DriveSearch(int cap, Allocator allocator)
         {
-            _access = default;
-            _chassis = default;
-            _halfSegment = 0f;
+            _hull = default;
             Cap = cap;
             _nodes = new UnsafeList<Node>(4096, allocator);
             _moves = new UnsafeList<Move>(24, allocator);
@@ -102,12 +98,12 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Searches for <paramref name="agent"/> from now on; its moves follow its chassis.</summary>
         public void SetAgent(in NavAccess access, in NavAgent agent)
         {
-            _access = access;
-            _chassis = agent.Chassis;
-            _halfSegment = agent.HalfSegment;
+            _hull = new DriveHull(access, agent);
             _moves.Clear();
-            _guide.SetAgent(access, CurveRadius, HullLength);
+            _guide.SetAgent(access, _hull.CurveRadius, _hull.HullLength);
         }
+
+        public readonly bool IsCreated => _nodes.IsCreated;
 
         public void Dispose()
         {
@@ -127,7 +123,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             using var scope = RunMarker.Auto();
             Expansions = 0;
-            if (!Fits(_chassis.Center(start), goal.Center) || !CanStand(goal))
+            if (!Fits(_hull.Chassis.Center(start), goal.Center) || !CanStand(goal))
             {
                 return false;
             }
@@ -146,7 +142,7 @@ namespace HyperRTS.Simulation.Navigation
         private void Begin(in AxlePose start, in DriveGoal goal)
         {
             _goal = goal;
-            _goalPose = _chassis.Pose(goal.Center, goal.Facing);
+            _goalPose = _hull.Chassis.Pose(goal.Center, goal.Facing);
             _nodes.Clear();
             _open.Clear();
             _visited.Clear();
@@ -155,9 +151,9 @@ namespace HyperRTS.Simulation.Navigation
                 AddMoves();
             }
 
-            SetWindow(_chassis.Center(start), goal.Center);
+            SetWindow(_hull.Chassis.Center(start), goal.Center);
             var key = Key(start);
-            var depth = HullDepth(start, float.PositiveInfinity);
+            var depth = _hull.Depth(_walls, start, float.PositiveInfinity);
             _nodes.Add(new Node { Pose = start, Key = key, Parent = -1, Depth = depth });
             _visited[key] = 0;
             _open.Push(0, Guide(start));
@@ -166,7 +162,7 @@ namespace HyperRTS.Simulation.Navigation
         // Both ends on the grid and within one window, so the guide and the closed set hold them.
         private readonly bool Fits(float2 from, float2 to)
         {
-            var grid = _access.Grid;
+            var grid = _hull.Access.Grid;
             var onGrid = grid.InBounds(grid.WorldToCell(from)) && grid.InBounds(grid.WorldToCell(to));
             return onGrid && math.all(math.abs(to - from) <= MaxWindow);
         }
@@ -174,7 +170,7 @@ namespace HyperRTS.Simulation.Navigation
         // A pose goal whose hull centre sits in walls beyond the pose tolerance, as where a path runs into a building,
         // can never be reached, so it costs no expansions.
         private readonly bool CanStand(in DriveGoal goal) =>
-            !goal.HasFacing || _access.Distance(goal.Center) >= _access.Class.Radius - PoseReach;
+            !goal.HasFacing || _hull.Access.Distance(goal.Center) >= _hull.Access.Class.Radius - PoseReach;
 
         private bool Search(out int last, out DriveCurve curve, out float curveLength)
         {
@@ -217,16 +213,17 @@ namespace HyperRTS.Simulation.Navigation
         // Every few expansions, and every one near the goal, where a curve most often fits.
         private readonly bool IsShortcutDue(in AxlePose pose)
         {
-            var near = math.distancesq(_chassis.Center(pose), _goal.Center) <= 4f * CurveRadius * CurveRadius;
+            var radius = _hull.CurveRadius;
+            var near = math.distancesq(_hull.Chassis.Center(pose), _goal.Center) <= 4f * radius * radius;
             return Expansions % (near ? ShortcutNearEvery : ShortcutEvery) == 1;
         }
 
         private readonly bool IsAtGoal(in AxlePose pose)
         {
-            var center = _chassis.Center(pose);
+            var center = _hull.Chassis.Center(pose);
             if (!_goal.HasFacing)
             {
-                return math.distance(center, _goal.Center) <= NavTolerances.Arrive(_access.Class.Radius);
+                return math.distance(center, _goal.Center) <= NavTolerances.Arrive(_hull.Access.Class.Radius);
             }
 
             return math.distance(center, _goal.Center) <= PoseReach && math.dot(pose.Facing, _goal.Facing) >= PoseAngleCos;
@@ -239,12 +236,12 @@ namespace HyperRTS.Simulation.Navigation
             AddChain(last, points);
             for (var distance = FineStep; distance < curveLength; distance += FineStep)
             {
-                points.Add(Waypoint(_chassis.Center(curve.Sample(distance)), false));
+                points.Add(Waypoint(_hull.Chassis.Center(curve.Sample(distance)), false));
             }
 
             if (curveLength > 0f)
             {
-                points.Add(Waypoint(_chassis.Center(curve.Sample(curveLength)), false));
+                points.Add(Waypoint(_hull.Chassis.Center(curve.Sample(curveLength)), false));
             }
 
             if (_goal.HasFacing)
@@ -268,9 +265,9 @@ namespace HyperRTS.Simulation.Navigation
             for (var i = last; _nodes[i].Parent >= 0; i = _nodes[i].Parent)
             {
                 var node = _nodes[i];
-                var center = _chassis.Center(node.Pose);
+                var center = _hull.Chassis.Center(node.Pose);
                 // A pivot turns about the centre, which stays put.
-                if (math.distancesq(center, _chassis.Center(_nodes[node.Parent].Pose)) > 1e-4f)
+                if (math.distancesq(center, _hull.Chassis.Center(_nodes[node.Parent].Pose)) > 1e-4f)
                 {
                     points.Add(Waypoint(center, node.Gear < 0));
                 }

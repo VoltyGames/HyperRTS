@@ -42,25 +42,42 @@ namespace HyperRTS.Simulation.Navigation
                 firstNewKey = grid.FitAccess();
             }
 
-            var work = new NativeList<int2>(Allocator.TempJob);
-            var dependency = new CollectJob
+            state.Dependency = Rebuild(grid, firstNewKey, state.Dependency);
+        }
+
+        // Fields first, as relabelling reads them; then the sector graph of the sectors they marked.
+        private static JobHandle Rebuild(in NavGrid grid, int firstNewKey, JobHandle dependency)
+        {
+            var rebuilds = new NativeList<int2>(Allocator.TempJob);
+            var relabels = new NativeList<int2>(Allocator.TempJob);
+            dependency = new CollectJob
             {
                 Field = grid.Field,
                 SectorDirty = grid.Sectors.Dirty,
                 Keys = grid.Classes.Keys,
                 FirstNewKey = firstNewKey,
-                Work = work,
-            }.Schedule(state.Dependency);
+                ClassCount = grid.Sectors.ClassCount,
+                Rebuilds = rebuilds,
+                Relabels = relabels,
+            }.Schedule(dependency);
             dependency = new RebuildJob
             {
                 Cells = grid.Cells,
                 Scenery = grid.Scenery,
                 Keys = grid.Classes.Keys.AsDeferredJobArray(),
-                Work = work.AsDeferredJobArray(),
+                Work = rebuilds.AsDeferredJobArray(),
                 Field = grid.Field,
-            }.Schedule(work, 1, dependency);
-            dependency = grid.Sectors.Schedule(grid.Field, grid.Classes, dependency);
-            state.Dependency = work.Dispose(dependency);
+            }.Schedule(rebuilds, 1, dependency);
+            dependency = new RelabelJob
+            {
+                Field = grid.Field,
+                Classes = grid.Classes,
+                Work = relabels.AsDeferredJobArray(),
+                Sectors = grid.Sectors,
+            }.Schedule(relabels, 4, dependency);
+            dependency = new ConnectJob { Sectors = grid.Sectors }.Schedule(dependency);
+            dependency = relabels.Dispose(dependency);
+            return rebuilds.Dispose(dependency);
         }
 
         private void Register(ref NavGrid grid)
@@ -78,7 +95,10 @@ namespace HyperRTS.Simulation.Navigation
             agents.Dispose();
         }
 
-        /// <summary>Every sector of a new key, else its dirty sectors; the marks pass on to the sector graph.</summary>
+        /// <summary>
+        /// Every sector of a new key, else its dirty sectors, to rebuild; the marks pass on to the sector graph, which
+        /// relabels every class of each of its dirty sectors, sector then class.
+        /// </summary>
         [BurstCompile]
         private struct CollectJob : IJob
         {
@@ -86,7 +106,9 @@ namespace HyperRTS.Simulation.Navigation
             public NativeArray<bool> SectorDirty;
             [ReadOnly] public NativeList<MovementClass> Keys;
             public int FirstNewKey;
-            public NativeList<int2> Work;
+            public int ClassCount;
+            public NativeList<int2> Rebuilds;
+            public NativeList<int2> Relabels;
 
             public void Execute()
             {
@@ -97,7 +119,7 @@ namespace HyperRTS.Simulation.Navigation
                     {
                         if (slot >= FirstNewKey || dirty[sector])
                         {
-                            Work.Add(new int2(sector, slot));
+                            Rebuilds.Add(new int2(sector, slot));
                         }
                     }
                 }
@@ -106,6 +128,14 @@ namespace HyperRTS.Simulation.Navigation
                 {
                     SectorDirty[sector] |= dirty[sector];
                     dirty[sector] = false;
+                }
+
+                for (var sector = 0; sector < SectorDirty.Length; sector++)
+                {
+                    for (var classIndex = 0; SectorDirty[sector] && classIndex < ClassCount; classIndex++)
+                    {
+                        Relabels.Add(new int2(sector, classIndex));
+                    }
                 }
             }
         }
@@ -133,6 +163,36 @@ namespace HyperRTS.Simulation.Navigation
                 Field.Rebuild(Cells, Scenery, Keys[item.y], item.y, item.x, ref transform);
                 transform.Dispose();
             }
+        }
+
+        /// <summary>One sector of one class per index; each writes only that sector's entries of that class.</summary>
+        [BurstCompile]
+        private struct RelabelJob : IJobParallelForDefer
+        {
+            private static readonly ProfilerMarker RelabelMarker = new("NavSectors.Relabel");
+
+            [ReadOnly] public NavField Field;
+            [ReadOnly] public MovementClasses Classes;
+
+            /// <summary>Sector, then class.</summary>
+            [ReadOnly] public NativeArray<int2> Work;
+
+            [NativeDisableParallelForRestriction] public NavSectors Sectors;
+
+            public void Execute(int index)
+            {
+                using var scope = RelabelMarker.Auto();
+                var item = Work[index];
+                Sectors.Relabel(Field, Classes, item.y, item.x);
+            }
+        }
+
+        [BurstCompile]
+        private struct ConnectJob : IJob
+        {
+            public NavSectors Sectors;
+
+            public void Execute() => Sectors.Connect();
         }
     }
 }

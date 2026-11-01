@@ -19,10 +19,10 @@ namespace HyperRTS.Simulation.Navigation
             var from = request.Start.xz;
             for (var distance = RunStep; distance < request.ExitRun; distance += RunStep)
             {
-                AddTight(from + request.Facing * distance);
+                _writer.AddTight(from + request.Facing * distance);
             }
 
-            AddTight(request.RouteStart.xz);
+            _writer.AddTight(request.RouteStart.xz);
             _start = Chassis.Pose(request.RouteStart.xz, request.Facing);
         }
 
@@ -32,8 +32,8 @@ namespace HyperRTS.Simulation.Navigation
         {
             _endFacing = float2.zero;
             _runIn = 0f;
-            var end = _corners[_corners.Length - 1];
-            if (_corners.Length < 2 || math.distancesq(end, request.Goal.xz) > 0.01f)
+            var end = _line.End;
+            if (_line.Corners.Length < 2 || math.distancesq(end, request.Goal.xz) > 0.01f)
             {
                 return;
             }
@@ -52,28 +52,28 @@ namespace HyperRTS.Simulation.Navigation
                 return;
             }
 
-            if (HasPoseEnd && _written < Total - 1e-3f)
+            if (HasPoseEnd && _writer.Written < _line.Total - 1e-3f)
             {
-                var from = math.max(_written, Total - _runIn - 2f * Chassis.TurnRadius - HullLength);
+                var from = math.max(_writer.Written, _line.Total - _runIn - 2f * Chassis.TurnRadius - HullLength);
                 if (!TryAddCurve(from))
                 {
-                    Search(from, Total);
+                    Search(from, _line.Total);
                 }
             }
 
-            if (!HasPoseEnd || _written < Total - 1e-3f)
+            if (!HasPoseEnd || _writer.Written < _line.Total - 1e-3f)
             {
-                AddDrawn(float.PositiveInfinity);
+                _writer.AddDrawn(_line, float.PositiveInfinity);
                 return;
             }
 
-            var stop = _corners[_corners.Length - 1];
+            var stop = _line.End;
             for (var distance = _runIn - RunStep; distance > 0f; distance -= RunStep)
             {
-                AddTight(stop - _endFacing * distance);
+                _writer.AddTight(stop - _endFacing * distance);
             }
 
-            AddTight(stop);
+            _writer.AddTight(stop);
         }
 
         private readonly bool CanDrive(float from, float to) => TryCurve(from, to, out _, out _);
@@ -81,44 +81,45 @@ namespace HyperRTS.Simulation.Navigation
         private readonly bool TryCurve(float from, float to, out DriveCurve curve, out float length)
         {
             var start = PoseAt(from);
-            if (!_search.TryFit(start, GoalAt(to), out curve, out length))
+            if (!_hull.TryFit(start, GoalAt(to), out curve, out length))
             {
                 return false;
             }
 
-            return _search.IsClear(curve, length, math.max(_search.Depth(start, float.PositiveInfinity), SweepSlack));
+            return _hull.IsClear(curve, length, math.max(_hull.Depth(start, float.PositiveInfinity), SweepSlack));
         }
 
         private bool TryAddCurve(float from)
         {
-            if (!TryCurve(from, Total, out var curve, out var length))
+            if (!TryCurve(from, _line.Total, out var curve, out var length))
             {
                 return false;
             }
 
-            BeginStretch(from);
+            _writer.BeginStretch(_line, from);
             for (var distance = RunStep; distance < length; distance += RunStep)
             {
-                AddTight(Chassis.Center(curve.Sample(distance)));
+                _writer.AddTight(Chassis.Center(curve.Sample(distance)));
             }
 
-            AddTight(Chassis.Center(curve.Sample(length)));
-            _written = Total;
+            _writer.AddTight(Chassis.Center(curve.Sample(length)));
+            _writer.Written = _line.Total;
             return true;
         }
 
-        // A stretch that doesn't follow on from the last starts at its pose on the path.
-        private void BeginStretch(float from)
-        {
-            var joins = from <= _written;
-            AddDrawn(from);
-            if (!joins)
-            {
-                AddTight(PointAt(from));
-            }
-        }
+        private readonly AxlePose PoseAt(float distance) =>
+            distance <= 0f ? _start : Chassis.Pose(_line.PointAt(distance), _line.HeadingAt(distance));
 
-        private void AddTight(float2 point) =>
-            _output.Add(new PathWaypoint { Position = new float3(point.x, _height, point.y), Tight = true });
+        // A pose along the path; at its end the point, or for a pose end where its run-in starts.
+        private readonly DriveGoal GoalAt(float distance)
+        {
+            if (distance < _line.Total - 1e-3f)
+            {
+                return DriveGoal.ToPose(_line.PointAt(distance), _line.HeadingAt(distance));
+            }
+
+            var end = _line.End;
+            return HasPoseEnd ? DriveGoal.ToPose(end - _endFacing * _runIn, _endFacing) : DriveGoal.ToPoint(end);
+        }
     }
 }

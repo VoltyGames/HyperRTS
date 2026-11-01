@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Navigation
             private static bool TryDrive(in PathRequest request, in NavAccess access, NativeList<float3> points,
                 DynamicBuffer<PathWaypoint> waypoints)
             {
-                var planner = new DrivePlanner(Allocator.Temp);
+                var planner = DrivePlanner.WithoutSearch(Allocator.Temp);
                 var done = planner.Plan(request, access, points, waypoints, 0, true);
                 planner.Dispose();
                 return done;

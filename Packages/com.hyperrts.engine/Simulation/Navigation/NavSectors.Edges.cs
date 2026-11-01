@@ -1,6 +1,4 @@
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 
@@ -11,7 +9,6 @@ namespace HyperRTS.Simulation.Navigation
         private const int East = 0;
         private const int North = 1;
 
-        private static readonly ProfilerMarker RelabelMarker = new("NavSectors.Relabel");
         private static readonly ProfilerMarker ConnectMarker = new("NavSectors.Connect");
 
         /// <summary>Edges per class, sector and border (east, north).</summary>
@@ -214,77 +211,6 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             return component;
-        }
-
-        /// <summary>Relabels the dirty sectors of every class at once, one job each, then connects them.</summary>
-        public readonly JobHandle Schedule(in NavField field, in MovementClasses classes, JobHandle dependency)
-        {
-            var work = new NativeList<int2>(Allocator.TempJob);
-            dependency = new CollectJob { Dirty = Dirty, ClassCount = ClassCount, Work = work }.Schedule(dependency);
-            dependency = new RelabelJob
-            {
-                Field = field, Classes = classes, Work = work.AsDeferredJobArray(), Labels = Labels, Counts = Counts,
-                Representatives = Representatives, Layout = Layout, ClassCount = ClassCount,
-            }.Schedule(work, 4, dependency);
-            dependency = new ConnectJob { Graph = this }.Schedule(dependency);
-            return work.Dispose(dependency);
-        }
-
-        /// <summary>Every class of each dirty sector, sector then class.</summary>
-        [BurstCompile]
-        private struct CollectJob : IJob
-        {
-            [ReadOnly] public NativeArray<bool> Dirty;
-            public int ClassCount;
-            public NativeList<int2> Work;
-
-            public void Execute()
-            {
-                for (var sector = 0; sector < Dirty.Length; sector++)
-                {
-                    for (var classIndex = 0; Dirty[sector] && classIndex < ClassCount; classIndex++)
-                    {
-                        Work.Add(new int2(sector, classIndex));
-                    }
-                }
-            }
-        }
-
-        /// <summary>One sector of one class per index; each writes only that sector's entries of that class.</summary>
-        [BurstCompile]
-        private struct RelabelJob : IJobParallelForDefer
-        {
-            [ReadOnly] public NavField Field;
-            [ReadOnly] public MovementClasses Classes;
-
-            /// <summary>Sector, then class.</summary>
-            [ReadOnly] public NativeArray<int2> Work;
-
-            [NativeDisableParallelForRestriction] public NativeArray<byte> Labels;
-            [NativeDisableParallelForRestriction] public NativeArray<byte> Counts;
-            [NativeDisableParallelForRestriction] public NativeArray<byte> Representatives;
-            public SectorLayout Layout;
-            public int ClassCount;
-
-            public void Execute(int index)
-            {
-                using var scope = RelabelMarker.Auto();
-                var item = Work[index];
-                var graph = new NavSectors
-                {
-                    Labels = Labels, Counts = Counts, Representatives = Representatives,
-                    Layout = Layout, ClassCount = ClassCount,
-                };
-                graph.Relabel(Field, Classes, item.y, item.x);
-            }
-        }
-
-        [BurstCompile]
-        private struct ConnectJob : IJob
-        {
-            public NavSectors Graph;
-
-            public void Execute() => Graph.Connect();
         }
     }
 }

@@ -30,8 +30,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   sectors round the cells they changed, so wrecks far apart in one frame leave the sectors between them alone.
 - A cell is open to a class when the field at its centre is at least its radius (`NavAccess`). A*, the nearest
   cell search and line of sight all use that one rule, so a gap exactly two radii wide lets a unit through.
-- Each class has a sector graph (`NavSectors`), rebuilt right after the field in the same worlds. Inside each 16 by
-  16 sector the open cells split into 4-connected components, each with a representative cell near its centroid.
+- Each class has a sector graph (`NavSectors`), rebuilt right after the field by the same `NavFieldSystem`. Inside each
+  16 by 16 sector the open cells split into 4-connected components, each with a representative cell near its centroid.
   Components of neighbouring sectors that touch across the border share an edge, and union-find over the edges gives
   region ids. A dirty sector relabels alone, then the edges along its borders and the region ids follow.
 - A goal the start's region can't reach snaps to the nearest open cell it can, within 64 cells, so a click across a
@@ -52,11 +52,11 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   1 + 2 x max(0, margin - distance) / margin, where the margin is the agent's `WallMargin`: its radius, 2 m, and a
   quarter of its half hull segment, set at bake. Paths so keep room off walls where there is room; turning room
   is the drive planner's to find.
-- Each frame takes requests oldest first until their estimated expansions spend the budget of 30,000, so it runs
-  over by one search at most, then serves them at once, one job each. A search's estimate is half its corridor's
-  cells. The rest wait a frame, and their units brake and turn toward the goal. Each search runs to the end, so no
-  path is ever partial. `PathStats` counts searches by cause (`PathCause`: order, chase, grid change, replan, and
-  broken group traces) and both the estimated and the real expansions.
+- Each frame a `PathPlanner` takes requests oldest first until their estimated expansions spend the budget of 30,000, so
+  it runs over by one search at most, then serves them at once, one job each. A search's estimate is half its corridor's
+  cells. The rest wait a frame, and their units brake and turn toward the goal. Each search runs to the end, so no path
+  is ever partial. `PathStats` counts searches by cause (`PathCause`: order, chase, grid change, replan, and broken
+  group traces) and both the estimated and the real expansions.
 - A goal set by `MoveDestination.MoveTo`, as chases, walk-ups and escorts do, is a chase (`MoveDestination.Chase`). When
   it moves, the path's last waypoint follows it if the corner before it, or the unit on its last leg, still sees it and
   it moved no more than a quarter of the path left. Otherwise the unit keeps its path and searches again at most
@@ -94,11 +94,12 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
 
 ### Drive planner
 
-`DrivePlanner` checks every fresh path of a unit with a turn radius or a hull longer than it is wide, in the same
-serve job, after the route. Easy paths run no search. Paths with a stretch to search go to one serial `DriveJob`,
-which spends at most `PathfindingSystem.DriveBudget` (one capped search, 6,000 expansions) a frame, in task order. The
-frame's first such path plans within it and leaves any stretch past it as drawn (`PathState.PartlyPlanned`), planned
-once its planned part is driven. Later paths wait a frame (`PathStats.DeferredDrives`).
+`DrivePlanner` checks every fresh path of a unit with a turn radius or a hull longer than it is wide, in the same serve
+job, after the route, with a planner that holds no search (`DrivePlanner.WithoutSearch`). Easy paths run no search.
+Paths with a stretch to search go to one serial `DriveJob`, which spends at most `PathfindingSystem.DriveBudget` (one
+capped search, 6,000 expansions) a frame, in task order. The frame's first such path plans within it and leaves any
+stretch past it as drawn (`PathState.PartlyPlanned`), planned once its planned part is driven. Later paths wait a frame
+(`PathStats.DeferredDrives`).
 
 - **Start.** Wheels sweep the forward curve from the unit's pose to the pose `2 x TurnRadius + hull length` along
   the path. Tracks sweep a turn in place to the first leg, sliding off walls as locomotion does, or that curve. When
@@ -106,10 +107,11 @@ once its planned part is driven. Later paths wait a frame (`PathStats.DeferredDr
   always searched.
 - **Corners.** Each corner sweeps the forward curve from a fillet length plus a hull before it to as far after. Tracks
   may pivot on the corner instead.
-- Curves are `DriveCurve`s: the shortest forward turn, straight, turn (Dubins) at a little over the turn radius (85%
-  of full lock, so the follower has room to correct), or one hull length for tracks, with `TryFit` to a pose and
-  `TryFitPoint` to a point. Sweeps sample the hull every 0.5 m and count a stretch blocked once it sinks deeper than
-  0.05 m into walls, grown by 0.25 m of room.
+- Curves are `DriveCurve`s: the shortest forward turn, straight, turn (Dubins) at a little over the turn radius (85% of
+  full lock, so the follower has room to correct), or one hull length for tracks, with `TryFit` to a pose and
+  `TryFitPoint` to a point. A `DriveHull` (access, chassis and half segment) fits and sweeps them for both the planner
+  and the search. Sweeps sample the hull every 0.5 m and count a stretch blocked once it sinks deeper than 0.05 m into
+  walls, grown by 0.25 m of room.
 - **Search.** A blocked stretch runs a `DriveSearch`, Hybrid A* over the rear axle's pose in a window round it (its
   ends plus two turn radii and a hull, at most 128 m across). It copies the window's wall distances once
   (`FieldWindow`), so its hull checks read them unchecked. Steps are 1.5 m arcs: wheels at none, half and 85% of

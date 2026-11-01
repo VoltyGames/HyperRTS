@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Navigation
                 var goal = destination.Value;
                 var goalFar = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
                 if (path.Status == PathStatus.Ready && path.GridVersion != Grid.Version &&
-                    !IsNearChange(path, waypoints, transform.Position, agent))
+                    !path.IsNearChange(Grid, waypoints, transform.Position, agent))
                 {
                     path.GridVersion = Grid.Version;
                 }
@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 var nudged = isCurrent && !goalFar;
-                if (nudged && FollowSmallGoalMove(ref path, waypoints, goal, agent.Layer))
+                if (nudged && path.FollowSmallGoalMove(Grid, waypoints, goal, agent.Layer))
                 {
                     return;
                 }
@@ -104,57 +104,6 @@ namespace HyperRTS.Simulation.Navigation
                 }
 
                 return PathCause.GridChange;
-            }
-
-            // A change past the wall margin can neither block a leg nor make another way cheaper.
-            private readonly bool IsNearChange(in PathState path, DynamicBuffer<PathWaypoint> waypoints,
-                float3 position, in NavAgent agent)
-            {
-                if (path.IsShort || !Grid.Changes.Covers(path.GridVersion, Grid.Version))
-                {
-                    return true;
-                }
-
-                var margin = math.max(agent.Radius * 2f, agent.WallMargin) + Grid.CellSize;
-                var from = position.xz;
-                for (var i = 0; i < waypoints.Length; i++)
-                {
-                    var to = waypoints[i].Position.xz;
-                    if (Grid.Changes.Touches(Grid, path.GridVersion, from, to, margin))
-                    {
-                        return true;
-                    }
-
-                    from = to;
-                }
-
-                return false;
-            }
-
-            // Re-planning for sub-cell nudges (re-clicks, a creeping chase target) isn't worth a search, but the end
-            // of a planned manoeuvre never moves; false when it would, so it searches again.
-            private readonly bool FollowSmallGoalMove(ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
-                float3 goal, NavLayer layer)
-            {
-                if (waypoints.Length == 0 || !Grid.IsWalkable(goal, layer))
-                {
-                    return true;
-                }
-
-                var last = waypoints[waypoints.Length - 1];
-                var distanceSq = math.distancesq(last.Position.xz, goal.xz);
-                if (distanceSq <= 1e-6f || distanceSq > Grid.CellSize * Grid.CellSize)
-                {
-                    return true;
-                }
-
-                if (last.Tight)
-                {
-                    return false;
-                }
-
-                path.MoveLast(waypoints, goal.xz);
-                return true;
             }
         }
 

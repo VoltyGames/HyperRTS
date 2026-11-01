@@ -224,6 +224,61 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Whether a chase may search again: its last search is <see cref="ChaseSearchSeconds"/> old.</summary>
         public readonly bool IsChaseSearchDue(double now) => now - PlanTime >= ChaseSearchSeconds;
 
+        /// <summary>Whether the grid changed near enough to the path's legs to block one or open a cheaper way.</summary>
+        public readonly bool IsNearChange(in NavGrid grid, DynamicBuffer<PathWaypoint> waypoints, float3 position,
+            in NavAgent agent)
+        {
+            if (IsShort || !grid.Changes.Covers(GridVersion, grid.Version))
+            {
+                return true;
+            }
+
+            // A change past the wall margin can neither block a leg nor make another way cheaper.
+            var margin = math.max(agent.Radius * 2f, agent.WallMargin) + grid.CellSize;
+            var from = position.xz;
+            for (var i = 0; i < waypoints.Length; i++)
+            {
+                var to = waypoints[i].Position.xz;
+                if (grid.Changes.Touches(grid, GridVersion, from, to, margin))
+                {
+                    return true;
+                }
+
+                from = to;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Moves the path's end onto a goal nudged within a cell; false for a planned manoeuvre's end, which never
+        /// moves, so it searches again.
+        /// </summary>
+        public bool FollowSmallGoalMove(in NavGrid grid, DynamicBuffer<PathWaypoint> waypoints, float3 goal,
+            NavLayer layer)
+        {
+            // Re-planning for sub-cell nudges (re-clicks, a creeping chase target) isn't worth a search.
+            if (waypoints.Length == 0 || !grid.IsWalkable(goal, layer))
+            {
+                return true;
+            }
+
+            var last = waypoints[waypoints.Length - 1];
+            var distanceSq = math.distancesq(last.Position.xz, goal.xz);
+            if (distanceSq <= 1e-6f || distanceSq > grid.CellSize * grid.CellSize)
+            {
+                return true;
+            }
+
+            if (last.Tight)
+            {
+                return false;
+            }
+
+            MoveLast(waypoints, goal.xz);
+            return true;
+        }
+
         /// <summary>Moves the last waypoint, keeping <see cref="LengthPastCorner"/> in step.</summary>
         public void MoveLast(DynamicBuffer<PathWaypoint> waypoints, float2 position)
         {
