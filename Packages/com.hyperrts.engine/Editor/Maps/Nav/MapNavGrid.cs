@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -72,6 +74,34 @@ namespace HyperRTS.Editor.Maps.Nav
         public bool TryFindWalkable(Vector2 point, float radius, out int2 cell) =>
             Access.TryFindNearest(Cell(point), Mathf.CeilToInt(radius / Grid.CellSize), out cell);
 
+        /// <summary>
+        /// Whether any cell within <paramref name="radius"/> metres of a point is walkable and in <paramref name="reachable"/>
+        /// (a flood). Not just the nearest cell: a walled building's inside is walkable but shut.
+        /// </summary>
+        public bool AnyReachable(Vector2 point, float radius, bool[] reachable)
+        {
+            var centre = Cell(point);
+            var reach = Mathf.CeilToInt(radius / Grid.CellSize);
+            for (var y = -reach; y <= reach; y++)
+            {
+                for (var x = -reach; x <= reach; x++)
+                {
+                    var cell = centre + new int2(x, y);
+                    if (math.length(new float2(x, y)) > reach || !Grid.InBounds(cell))
+                    {
+                        continue;
+                    }
+
+                    if (IsWalkable(cell) && reachable[Grid.Index(cell)])
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>A copy with its own cells and access, for searches that close cells; the caller disposes it.</summary>
         internal NavGrid Copy()
         {
@@ -109,8 +139,25 @@ namespace HyperRTS.Editor.Maps.Nav
             var boxes = new List<(Transform Transform, Vector2 Size)>();
             boxes.AddRange(roots.SelectMany(r => r.GetComponentsInChildren<NavObstacleAuthoring>(true))
                 .Select(o => (o.transform, o.size)));
-            boxes.AddRange(roots.SelectMany(r => r.GetComponentsInChildren<BuildingAuthoring>(true))
-                .Select(b => (b.transform, b.footprint)));
+            foreach (var building in roots.SelectMany(r => r.GetComponentsInChildren<BuildingAuthoring>(true)))
+            {
+                if (!building.TryGetComponent<SectionsAuthoring>(out var sections))
+                {
+                    boxes.Add((building.transform, building.footprint));
+                    continue;
+                }
+
+                // A sectioned building closes only what its sections do, as at runtime: a bridge's deck stays open.
+                var materials = new List<SectionMaterial>();
+                var shapes = new SectionShape(sections).Bake(sections.sections,
+                    building.GetComponent<GameEntityAuthoring>().maxHealth, materials);
+                foreach (var part in SectionsSetup.ObstacleParts(shapes).Where(part => part.Closed))
+                {
+                    var center = building.transform.TransformPoint(new Vector3(part.Center.x, 0f, part.Center.y));
+                    grid.StampArea(new NavBox(center, building.transform.rotation, part.Size), NavAreaKind.Blocked, 0f);
+                }
+            }
+
             foreach (var (transform, size) in boxes)
             {
                 grid.StampArea(new NavBox(transform.position, transform.rotation, size), NavAreaKind.Blocked, 0f);

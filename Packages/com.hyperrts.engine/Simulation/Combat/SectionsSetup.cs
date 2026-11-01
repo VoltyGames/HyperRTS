@@ -13,16 +13,12 @@ namespace HyperRTS.Simulation.Combat
         public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<Section> sections,
             IReadOnlyList<SectionFactor> factors, Entity rubble) where TWriter : struct, IEntityWriter
         {
-            var parts = new List<NavObstaclePart>(sections.Count);
+            var parts = ObstacleParts(sections);
             var decks = new List<NavAreaPart>(sections.Count);
             var floors = 0;
             var bridge = sections.Any(section => section.Deck);
             foreach (var section in sections)
             {
-                parts.Add(new NavObstaclePart
-                {
-                    Center = section.Center.xz, Size = section.HalfSize.xz * 2f, Closed = section.Anchored && !bridge,
-                });
                 decks.Add(new NavAreaPart { Center = section.Center.xz, Size = section.HalfSize.xz * 2f, Open = section.Deck });
                 floors = math.max(floors, section.Floor + 1);
             }
@@ -37,6 +33,25 @@ namespace HyperRTS.Simulation.Combat
             writer.AddBuffer(factors);
             writer.Add(new Sections { Rubble = rubble });
             writer.Add(new IntactFloors { Count = (byte)floors });
+        }
+
+        /// <summary>
+        /// The footprint a building's sections close: each anchored section while it stands, none for a bridge, whose
+        /// banks and deck stay open.
+        /// </summary>
+        public static List<NavObstaclePart> ObstacleParts(IReadOnlyList<Section> sections)
+        {
+            var bridge = sections.Any(section => section.Deck);
+            var parts = new List<NavObstaclePart>(sections.Count);
+            foreach (var section in sections)
+            {
+                parts.Add(new NavObstaclePart
+                {
+                    Center = section.Center.xz, Size = section.HalfSize.xz * 2f, Closed = section.Anchored && !bridge,
+                });
+            }
+
+            return parts;
         }
 
         /// <summary>Lets engineers rebuild the building, <paramref name="sectionTime"/> seconds a section.</summary>

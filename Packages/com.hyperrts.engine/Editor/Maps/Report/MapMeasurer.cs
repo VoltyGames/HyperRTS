@@ -151,8 +151,7 @@ namespace HyperRTS.Editor.Maps.Report
             var reachable = MapPathCounter.Flood(_nav, _spawnCells[0]);
             foreach (var placement in placements.Where(p => p.Entry.IsGameplay))
             {
-                var found = _nav.TryFindWalkable(placement.Position, placement.Radius + 4f, out var cell);
-                if (!found || !reachable[_nav.Grid.Index(cell)])
+                if (!_nav.AnyReachable(placement.Position, placement.Radius + 4f, reachable))
                 {
                     _issues.Error($"'{placement.Entry.key}' at {placement.Position} can't be reached by ground from slot 1.");
                 }
