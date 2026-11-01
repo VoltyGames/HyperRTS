@@ -16,6 +16,11 @@
     flex-grow: 1;
 }
 
+.hrts-page__toolbar {
+    /* A list or tree in the body would otherwise squeeze the toolbar flat. */
+    flex-shrink: 0;
+}
+
 .hrts-page__body {
     padding: 4px;
     flex-grow: 1;

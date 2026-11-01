@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -64,7 +65,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private DriveHeuristic _heuristic;
         private DriveGoal _goal;
         private AxlePose _goalPose;
-        private CellRect _window;
+        private CellRange _window;
 
         // The ground height the run's waypoints sit at.
         private float _height;

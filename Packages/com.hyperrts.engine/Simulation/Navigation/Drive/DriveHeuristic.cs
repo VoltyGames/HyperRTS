@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private float _turnRadius;
         private float _hullLength;
         private FieldWindow _walls;
-        private CellRect _window;
+        private CellRange _window;
         private float2 _goal;
 
         public DriveHeuristic(int capacity, Allocator allocator)
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         }
 
         /// <summary>Fills the costs over the window's cells.</summary>
-        public void Build(in FieldWindow walls, in CellRect window, in DriveGoal goal)
+        public void Build(in FieldWindow walls, in CellRange window, in DriveGoal goal)
         {
             _walls = walls;
             _window = window;

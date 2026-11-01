@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
     internal struct FieldWindow : IDisposable, ICellValues, IWallDistance
     {
         private UnsafeList<float> _distances;
-        private CellRect _box;
+        private CellRange _box;
         private CellGrid _grid;
 
         public FieldWindow(int capacity, Allocator allocator)
@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
         /// <summary>Copies the cells from <paramref name="min"/> to <paramref name="max"/>, both included.</summary>
         public void Fill(in NavAccess access, int2 min, int2 max)
         {
-            _box = new CellRect(min, max - min + 1);
+            _box = new CellRange(min, max);
             _grid = access.Grid.Field.Grid;
             _distances.Resize(_box.Count);
             for (var i = 0; i < _box.Count; i++)

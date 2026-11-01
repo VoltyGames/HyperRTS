@@ -1,5 +1,12 @@
 /* The Catalog page: the stats table and the tech tree. Colour tokens are in Common/HyperRTSEditor.uss. */
 
+.hrts-table__name {
+    -unity-text-align: middle-left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .hrts-table__cell {
     margin: 0 2px;
 }

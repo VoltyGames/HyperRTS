@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
@@ -18,7 +19,7 @@ namespace HyperRTS.Editor.Catalog
     [UxmlElement]
     public sealed partial class StatsTable : MultiColumnListView
     {
-        private const float NameWidth = 140f;
+        private const float NameWidth = 190f;
         private const float Narrow = 76f;
 
         [NoAutoStaticsCleanup]
@@ -81,6 +82,7 @@ namespace HyperRTS.Editor.Catalog
             makeCell = () =>
             {
                 var button = new Button();
+                button.AddToClassList("hrts-table__name");
                 button.clicked += () => EditorAssets.Reveal(((Component)button.userData).gameObject);
                 return button;
             },
@@ -89,6 +91,7 @@ namespace HyperRTS.Editor.Catalog
                 var button = (Button)cell;
                 button.userData = Prefab(index);
                 button.text = Prefab(index).DisplayName;
+                button.tooltip = button.text;
             },
         };
 
@@ -97,27 +100,28 @@ namespace HyperRTS.Editor.Catalog
         {
             title = header,
             width = Narrow,
-            makeCell = () => new VisualElement(),
+            // One field a cell, rebound as rows scroll: building a PropertyField a bind left the cells filling late.
+            makeCell = () =>
+            {
+                var cell = new VisualElement();
+                cell.Add(Cell("-"));
+                var property = new PropertyField { label = "" };
+                property.AddToClassList("hrts-table__cell");
+                cell.Add(property);
+                return cell;
+            },
             bindCell = (cell, index) =>
             {
                 var component = Prefab(index).GetComponent(type);
-                if (component == null)
+                var property = cell.Q<PropertyField>();
+                cell.Q<Label>().SetHidden(component != null);
+                property.SetHidden(component == null);
+                if (component != null)
                 {
-                    cell.Add(Cell("-"));
-                    return;
+                    property.BindProperty(Serialized(component).FindProperty(field));
                 }
-
-                var serialized = Serialized(component);
-                var property = new PropertyField(serialized.FindProperty(field), "");
-                property.AddToClassList("hrts-table__cell");
-                property.Bind(serialized);
-                cell.Add(property);
             },
-            unbindCell = (cell, _) =>
-            {
-                cell.Unbind();
-                cell.Clear();
-            },
+            unbindCell = (cell, _) => cell.Q<PropertyField>().Unbind(),
         };
 
         private Column DpsColumn() => new()

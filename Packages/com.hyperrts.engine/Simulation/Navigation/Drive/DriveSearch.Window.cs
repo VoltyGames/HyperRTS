@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Navigation.Grid;
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Drive
@@ -19,9 +20,9 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var span = math.abs(to - from);
             var margin = math.min(_hull.CurveRadius * 2f + _hull.HullLength, (MaxWindow - span) * 0.5f);
             var first = grid.Grid.Cell(math.min(from, to) - margin);
-            _window = new CellRect(first, (int2)math.ceil((span + margin * 2f) / grid.Grid.CellSize) + 1);
+            _window = CellRange.Sized(first, (int2)math.ceil((span + margin * 2f) / grid.Grid.CellSize) + 1);
             var halo = (int)math.ceil((_hull.HullLength * 0.5f + DriveHull.Clearance) / grid.Grid.CellSize) + 2;
-            _walls.Fill(_hull.Access, first - halo, first + _window.Cells + halo);
+            _walls.Fill(_hull.Access, first - halo, first + _window.Size + halo);
             _heuristic.Build(_walls, _window, _goal);
         }
 
@@ -42,9 +43,9 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var turn = math.atan2(pose.Facing.y, pose.Facing.x) / (math.PI * 2f) + 1f;
             if (IsOpen(pose))
             {
-                var coarse = (cell - _window.First) / OpenCells;
+                var coarse = (cell - _window.Min) / OpenCells;
                 var fine = _window.Count * HeadingBins;
-                return fine + (coarse.y * _window.Cells.x + coarse.x) * OpenBins + (int)(turn * OpenBins) % OpenBins;
+                return fine + (coarse.y * _window.Size.x + coarse.x) * OpenBins + (int)(turn * OpenBins) % OpenBins;
             }
 
             return index * HeadingBins + (int)(turn * HeadingBins) % HeadingBins;
