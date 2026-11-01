@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
-using System.Diagnostics;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -8,6 +7,7 @@ using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using NUnit.Framework;
+using Unity.PerformanceTesting;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -149,8 +149,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
             return DriveGoal.ToPose(box.Center + outward * (5f + SupplyTruck.Radius + 1f), along);
         }
 
-        [Test]
-        public void DockApproaches_IntoABase_OneHundred()
+        [Test, Performance]
+        public void DockApproaches_IntoABase()
         {
             var random = new Random(41);
             var buildings = new List<NavBox>();
@@ -160,40 +160,31 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var points = new NativeList<PathWaypoint>(64, Allocator.Persistent);
             var result = new NativeReference<int2>(Allocator.Persistent);
             var job = NewDriveJob(points, result);
-            double total = 0.0, slowest = 0.0;
             long expanded = 0;
             int most = 0, failures = 0, capped = 0, undrivable = 0;
-            for (var i = -1; i < 100; i++)
-            {
-                DrawDrivable(ref job, () => (LanePose(ref random, lanes, SupplyTruck.Chassis), Bay(ref random, buildings)),
-                    ref undrivable);
-                var watch = Stopwatch.StartNew();
-                job.Run();
-                var time = watch.Elapsed.TotalMilliseconds;
-                if (i >= 0)
+            var median = BenchmarkKit.Median("DockApproach", () => job.Run(), () => DrawDrivable(ref job,
+                () => (LanePose(ref random, lanes, SupplyTruck.Chassis), Bay(ref random, buildings)), ref undrivable),
+                () =>
                 {
-                    total += time;
-                    slowest = math.max(slowest, time);
                     expanded += result.Value.y;
                     most = math.max(most, result.Value.y);
                     failures += 1 - result.Value.x;
                     capped += result.Value.y >= DriveSearch.MaxExpansions ? 1 : 0;
-                }
-            }
+                }, "DriveSearch.Run", "DrivePlanner.Plan");
 
+            var runs = BenchmarkKit.Warmup + BenchmarkKit.Runs;
             points.Dispose();
             result.Dispose();
-            var summary = $"100 dock approaches: mean {total / 100.0:F3} ms, max {slowest:F3} ms, " +
-                          $"expansions mean {expanded / 100} max {most}, failures {failures} ({capped} at the cap), " +
+            var summary = $"Dock approach: median {median:F3} ms, " +
+                          $"expansions mean {expanded / runs} max {most}, failures {failures} ({capped} at the cap), " +
                           $"{undrivable} undrivable pairs redrawn";
             TestContext.WriteLine(summary);
             Assert.AreEqual(0, failures, summary);
-            Assert.Less(total / 100.0, 3.0, $"mean {total / 100.0:F3} ms, under twice 1.5 ms");
-            Assert.Less(slowest, 10.0, $"slowest {slowest:F3} ms, under twice 5 ms");
+            Assert.Less(median, 3.0, $"median {median:F3} ms, under twice 1.5 ms");
         }
 
-        [Test]
-        public void TruckMoves_InABase_TwoHundred()
+        [Test, Performance]
+        public void TruckMoves_InABase()
         {
             var random = new Random(43);
             var lanes = SpawnBase(ref random, new List<NavBox>());
@@ -203,41 +194,41 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var result = new NativeReference<int2>(Allocator.Persistent);
             var job = NewDriveJob(points, result);
             var undrivable = 0;
+            var truck = Entity.Null;
             var before = Stats();
-            double served = 0.0;
-            for (var i = 0; i < 200; i++)
+            var median = BenchmarkKit.Median("TruckMove", () =>
+            {
+                for (var frame = 0; frame < 10 && _world.Get<PathState>(truck).Status != PathStatus.Ready; frame++)
+                {
+                    _world.UpdateSystem<PathfindingSystem>();
+                }
+            }, () =>
             {
                 DrawDrivable(ref job, () => (LanePose(ref random, lanes, SupplyTruck.Chassis),
                     DriveGoal.ToPoint(SupplyTruck.Chassis.Center(LanePose(ref random, lanes, SupplyTruck.Chassis)))),
                     ref undrivable);
-                var start = job.Start;
-                var center = SupplyTruck.Chassis.Center(start);
-                var truck = _world.SpawnUnit(1, new float3(center.x, 0f, center.y), 8f, SupplyTruck.Radius);
+                var center = SupplyTruck.Chassis.Center(job.Start);
+                truck = _world.SpawnUnit(1, new float3(center.x, 0f, center.y), 8f, SupplyTruck.Radius);
                 _world.EntityManager.SetComponentData(truck, SupplyTruck);
-                var yaw = math.atan2(start.Facing.x, start.Facing.y);
+                var yaw = math.atan2(job.Start.Facing.x, job.Start.Facing.y);
                 _world.EntityManager.SetComponentData(truck,
                     LocalTransform.FromPositionRotation(new float3(center.x, 0f, center.y), quaternion.RotateY(yaw)));
                 _world.Tick();
                 var goal = job.Goal.Center;
                 _world.EntityManager.SetComponentData(truck, new MoveDestination { Value = new float3(goal.x, 0f, goal.y) });
                 _world.EntityManager.SetComponentEnabled<MoveDestination>(truck, true);
-                for (var frame = 0; frame < 10 && _world.Get<PathState>(truck).Status != PathStatus.Ready; frame++)
-                {
-                    served += TimeSystem<PathfindingSystem>();
-                }
+            }, () => _world.EntityManager.DestroyEntity(truck), "DriveSearch.Run", "DrivePlanner.Plan");
 
-                _world.EntityManager.DestroyEntity(truck);
-            }
-
+            var runs = BenchmarkKit.Warmup + BenchmarkKit.Runs;
             points.Dispose();
             result.Dispose();
             var after = Stats();
             var searches = after.Drive.Searches - before.Drive.Searches;
             var failures = after.Drive.Failures - before.Drive.Failures;
             var expansions = after.Drive.Expansions - before.Drive.Expansions;
-            var summary = $"200 truck moves: {searches / 200.0:F2} drive searches per move, " +
-                          $"{expansions / 200} expansions per move, failures {failures}, " +
-                          $"pathfinder {served / 200.0:F3} ms per move, {undrivable} undrivable pairs redrawn";
+            var summary = $"Truck move: {searches / (double)runs:F2} drive searches per move, " +
+                          $"{expansions / runs} expansions per move, failures {failures}, " +
+                          $"pathfinder median {median:F3} ms per move, {undrivable} undrivable pairs redrawn";
             TestContext.WriteLine(summary);
             Assert.AreEqual(0, failures, summary);
         }

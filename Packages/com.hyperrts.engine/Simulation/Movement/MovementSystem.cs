@@ -7,9 +7,11 @@ using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Transport;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Profiling;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Movement
@@ -24,6 +26,8 @@ namespace HyperRTS.Simulation.Movement
     [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct MovementSystem : ISystem
     {
+        private static readonly ProfilerMarker MoveMarker = new("MovementSystem.Move");
+
         private GivingWay _givingWay;
         private ComponentLookup<Locomotion> _locomotions;
         private ComponentLookup<LocomotionState> _locomotionStates;
@@ -65,7 +69,7 @@ namespace HyperRTS.Simulation.Movement
         [BurstCompile]
         [WithNone(typeof(Inside))]
         [WithPresent(typeof(MoveDestination), typeof(Arrival), typeof(FacingGoal))]
-        private partial struct MoveJob : IJobEntity
+        private partial struct MoveJob : IJobEntity, IJobEntityChunkBeginEnd
         {
             [ReadOnly] public SpatialIndex Index;
             [ReadOnly] public NavGrid Grid;
@@ -75,6 +79,17 @@ namespace HyperRTS.Simulation.Movement
             // Each unit writes only its own state.
             [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
             public float DeltaTime;
+
+            // Per chunk, not per unit, so the marker costs little and the profiler stays readable.
+            public bool OnChunkBegin(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
+            {
+                MoveMarker.Begin();
+                return true;
+            }
+
+            public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask, bool chunkWasExecuted) => MoveMarker.End();
 
             // `ref`, not `in`: each must share one writable handle with its EnabledRefRW.
             private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,

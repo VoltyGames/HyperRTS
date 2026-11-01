@@ -1,11 +1,11 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using System.Diagnostics;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
+using Unity.PerformanceTesting;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
         };
 
-        [Test]
+        [Test, Performance]
         public void SteeringFrame_FiveHundredUnits()
         {
             var units = new Entity[500];
@@ -39,17 +39,11 @@ namespace HyperRTS.Simulation.Tests.Navigation
 
             // Until the heads of both crowds meet, so most units steer round someone.
             _world.Run(5f);
-            double total = 0.0, slowest = 0.0;
-            for (var frame = 0; frame < 60; frame++)
-            {
-                _world.Tick();
-                var time = TimeSystem<MovementSystem>();
-                total += time;
-                slowest = math.max(slowest, time);
-            }
+            var median = BenchmarkKit.Median("SteeringFrame", _world.UpdateSystem<MovementSystem>, () => _world.Tick(),
+                null, "MovementSystem.Move", "Steering.Pick");
 
-            TestContext.WriteLine($"500-unit steering frame: mean {total / 60.0:F3} ms, max {slowest:F3} ms");
-            Assert.Less(total / 60.0, 3.0, $"mean {total / 60.0:F3} ms, under twice 1.5 ms");
+            TestContext.WriteLine($"500-unit steering frame: median {median:F3} ms");
+            Assert.Less(median, 3.0, $"median {median:F3} ms, under twice 1.5 ms");
         }
 
         // Each crowd is 200 infantry beside 50 tanks in the clear west strip, the halves facing each other.

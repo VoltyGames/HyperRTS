@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Vision
@@ -21,6 +22,8 @@ namespace HyperRTS.Simulation.Vision
     [UpdateBefore(typeof(FogOfWarSystem))]
     public partial struct SightBlockSystem : ISystem
     {
+        private static readonly ProfilerMarker StampMarker = new("SightBlockSystem.Stamp");
+
         private EntityQuery _blocks;
         private EntityQuery _changed;
         private MapSettings _builtMap;

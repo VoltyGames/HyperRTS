@@ -60,6 +60,10 @@
     margin: 4px;
 }
 
+.hrts-hint {
+    color: var(--hrts-dim-text);
+}
+
 /* Last, so a toggle wins over any rule above that sets display or visibility. */
 .hrts-hidden {
     display: none;

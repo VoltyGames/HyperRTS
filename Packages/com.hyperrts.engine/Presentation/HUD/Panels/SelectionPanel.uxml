@@ -1,10 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
   <ui:VisualElement class="hud-selection hud-panel">
-    <ui:VisualElement name="single" class="hud-single">
+    <ui:VisualElement name="single">
       <ui:VisualElement class="hud-single__header">
-        <ui:VisualElement class="hud-single__icon-slot">
-          <HyperRTS.Presentation.HUD.HUDIcon name="icon" class="hud-single__icon" />
-        </ui:VisualElement>
+        <HyperRTS.Presentation.HUD.HUDIcon name="icon" class="hud-single__icon" />
         <ui:VisualElement class="hud-single__details">
           <ui:Label name="name" class="hud-single__name" />
           <HyperRTS.Presentation.HUD.HUDBar name="health" class="hud-health" />

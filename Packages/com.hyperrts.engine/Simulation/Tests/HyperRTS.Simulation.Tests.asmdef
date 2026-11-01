@@ -9,6 +9,7 @@
         "Unity.Mathematics",
         "Unity.Collections",
         "Unity.Burst",
+        "Unity.PerformanceTesting",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

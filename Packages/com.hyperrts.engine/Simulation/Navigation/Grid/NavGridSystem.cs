@@ -8,6 +8,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation.Grid
@@ -21,6 +22,8 @@ namespace HyperRTS.Simulation.Navigation.Grid
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
     public partial struct NavGridSystem : ISystem
     {
+        private static readonly ProfilerMarker RestampMarker = new("NavGridSystem.Restamp");
+
         private EntityQuery _obstacles;
         private EntityQuery _areas;
         private EntityQuery _scenery;

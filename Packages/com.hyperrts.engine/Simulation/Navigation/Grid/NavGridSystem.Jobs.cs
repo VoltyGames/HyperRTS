@@ -56,6 +56,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             private void Execute(Entity entity, in NavArea area, in LocalTransform transform)
             {
+                using var marker = RestampMarker.Auto();
                 if ((area.Kind == NavAreaKind.Deck) != Decks)
                 {
                     return;
@@ -87,6 +88,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             private void Execute(Entity entity, in NavObstacle obstacle, in LocalTransform transform)
             {
+                using var marker = RestampMarker.Auto();
                 if (!Parts.TryGetBuffer(entity, out var parts))
                 {
                     Grid.StampArea(new NavBox(transform.Position, transform.Rotation, obstacle.Size), NavAreaKind.Blocked, 0f);
@@ -109,7 +111,11 @@ namespace HyperRTS.Simulation.Navigation.Grid
         {
             public NavGrid Grid;
 
-            private void Execute(in Blocker blocker, in LocalTransform transform) => blocker.Stamp(ref Grid, transform);
+            private void Execute(in Blocker blocker, in LocalTransform transform)
+            {
+                using var marker = RestampMarker.Auto();
+                blocker.Stamp(ref Grid, transform);
+            }
         }
 
         /// <summary>Marks the field sectors round scenery that changed, then keeps this fill to compare with.</summary>

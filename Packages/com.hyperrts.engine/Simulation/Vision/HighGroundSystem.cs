@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 
 namespace HyperRTS.Simulation.Vision
 {
@@ -19,6 +20,8 @@ namespace HyperRTS.Simulation.Vision
     [UpdateBefore(typeof(FogOfWarSystem))]
     public partial struct HighGroundSystem : ISystem
     {
+        private static readonly ProfilerMarker RiseMarker = new("HighGroundSystem.Rise");
+
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private SightRules _builtRules;
@@ -97,6 +100,7 @@ namespace HyperRTS.Simulation.Vision
 
             public void Execute()
             {
+                using var marker = RiseMarker.Auto();
                 var size = Ground.Size;
                 var sums = new NativeArray<double>((size.x + 1) * (size.y + 1), Allocator.Temp);
                 for (var y = 0; y < size.y; y++)

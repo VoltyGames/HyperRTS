@@ -1,6 +1,7 @@
-using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Editor.Validation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
@@ -11,7 +12,8 @@ namespace HyperRTS.Editor.Tests.Tools
 {
     /// <summary>
     /// Every hand-written engine shader lit by URP has a Meta pass, so Surface Cache GI bounces its own colour rather
-    /// than URP's fallback material's.
+    /// than URP's fallback material's. Opaque and cutout shaders also take part in the shadow, depth and motion vector
+    /// prepasses, and every shader that declares DOTS instancing compiles with it.
     /// </summary>
     public class ShaderPassTests
     {
@@ -28,6 +30,41 @@ namespace HyperRTS.Editor.Tests.Tools
         };
 
         private static readonly ShaderTagId LightMode = new("LightMode");
+        private static readonly ShaderTagId RenderType = new("RenderType");
+        private static readonly ShaderTagId AlwaysRenderMotionVectors = new("AlwaysRenderMotionVectors");
+
+        private static IEnumerable<string> HandWrittenShaders() =>
+            AssetDatabase.FindAssets("t:Shader", new[] { Package })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(path => path.EndsWith(".shader", StringComparison.Ordinal));
+
+        [TestCaseSource(nameof(HandWrittenShaders))]
+        public void ShaderHasItsPrepassesAndCompilesForDOTS(string path)
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
+
+            // Opaque and cutout shaders are the ones that cast shadows and fill the depth and normals textures.
+            var renderType = shader.FindSubshaderTagValue(0, RenderType).name;
+            if (renderType is "Opaque" or "TransparentCutout")
+            {
+                foreach (var lightMode in new[] { "ShadowCaster", "DepthOnly", "DepthNormals" })
+                {
+                    Assert.IsTrue(HasPass(shader, lightMode), $"{shader.name} is {renderType} and needs a {lightMode} pass.");
+                }
+            }
+
+            if (shader.FindSubshaderTagValue(0, AlwaysRenderMotionVectors).name == "true")
+            {
+                Assert.IsTrue(HasPass(shader, "MotionVectors"), $"{shader.name} sets AlwaysRenderMotionVectors and needs a MotionVectors pass.");
+            }
+
+            // Only shaders drawn through Entities Graphics declare the keyword; terrain borrows Unity passes that can't.
+            if (File.ReadAllText(Path.GetFullPath(path)).Contains("DOTS_INSTANCING_ON"))
+            {
+                var errors = ShaderChecks.VertexVariantErrors(shader, "DOTS_INSTANCING_ON");
+                Assert.IsEmpty(errors, string.Join("\n", errors));
+            }
+        }
 
         [Test]
         public void EveryLitShaderHasAMetaPass()

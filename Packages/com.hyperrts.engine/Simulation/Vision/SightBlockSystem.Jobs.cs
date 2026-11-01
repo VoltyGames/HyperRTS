@@ -85,8 +85,11 @@ namespace HyperRTS.Simulation.Vision
             public SightBlockers Blockers;
             public TerrainHeight Terrain;
 
-            private void Execute(Entity entity, in SightBlock block, in LocalTransform transform) =>
+            private void Execute(Entity entity, in SightBlock block, in LocalTransform transform)
+            {
+                using var marker = StampMarker.Auto();
                 Blockers.Stamp(entity, block, transform, Terrain);
+            }
         }
 
         /// <summary>

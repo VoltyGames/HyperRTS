@@ -3,9 +3,11 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Profiling;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation.Spatial
@@ -19,6 +21,8 @@ namespace HyperRTS.Simulation.Navigation.Spatial
     public partial struct SpatialIndexSystem : ISystem
     {
         public const float CellSize = 8f;
+
+        private static readonly ProfilerMarker IndexMarker = new("SpatialIndexSystem.Index");
 
         private EntityQuery _indexed;
         private ComponentLookup<NavAgent> _agentLookup;
@@ -97,7 +101,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         }
 
         [BurstCompile]
-        private partial struct IndexJob : IJobEntity
+        private partial struct IndexJob : IJobEntity, IJobEntityChunkBeginEnd
         {
             public NativeParallelMultiHashMap<int, SpatialEntry>.ParallelWriter Writer;
             public NativeList<SpatialEntry>.ParallelWriter Oversized;
@@ -108,6 +112,17 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             [ReadOnly] public ComponentLookup<MoveDestination> MovingLookup;
             [ReadOnly] public ComponentLookup<Arrival> ArrivalLookup;
             [ReadOnly] public ComponentLookup<Velocity> VelocityLookup;
+
+            // Per chunk, not per unit, so the marker costs little and the profiler stays readable.
+            public bool OnChunkBegin(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
+            {
+                IndexMarker.Begin();
+                return true;
+            }
+
+            public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask, bool chunkWasExecuted) => IndexMarker.End();
 
             private void Execute(Entity entity, in LocalTransform transform, in Faction faction)
             {

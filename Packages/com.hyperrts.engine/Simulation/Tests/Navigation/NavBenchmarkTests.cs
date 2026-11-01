@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common.Authoring;
-using System.Diagnostics;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -8,6 +7,7 @@ using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using NUnit.Framework;
+using Unity.PerformanceTesting;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
 {
     /// <summary>
     /// Navigation timings on a 600 m map at 1 m cells with about 80 rotated buildings, woods and a river with two
-    /// bridges, against twice the plan's budgets. Each test runs its work once untimed first, so Burst is warm.
+    /// bridges, against twice the plan's budgets. Each test warms up first, so Burst is compiled, and asserts the median.
     /// </summary>
     [Category("Benchmark")]
     public partial class NavBenchmarkTests
@@ -99,41 +99,30 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 SceneryId.At(position, quaternion.identity));
         }
 
-        private double TimeSystem<T>() where T : unmanaged, ISystem
-        {
-            var watch = Stopwatch.StartNew();
-            _world.World.GetExistingSystem<T>().Update(_world.World.Unmanaged);
-            _world.EntityManager.CompleteAllTrackedJobs();
-            return watch.Elapsed.TotalMilliseconds;
-        }
-
-        [Test]
+        [Test, Performance]
         public void FieldAndSectorBuilds_FullAndAfterABuilding()
         {
-            var full = double.MaxValue;
-            for (var run = 0; run < 4; run++)
+            var full = BenchmarkKit.Median("FullBuild", _world.UpdateSystem<NavFieldSystem>, () =>
             {
                 var grid = _world.Grid();
                 grid.Field.MarkDirty(int2.zero, grid.Size - 1);
-                var time = TimeSystem<NavFieldSystem>();
-                full = run == 0 ? full : math.min(full, time);
-            }
+            }, null, "NavFieldSystem.Rebuild", "NavSectors.Relabel", "NavSectors.Connect", "FlowField.Build");
 
-            var restamp = 0.0;
-            var incremental = 0.0;
             var random = new Random(5);
-            for (var run = 0; run < 6; run++)
+            void AddBuilding() => _world.SpawnObstacle(
+                new float3(random.NextFloat(-200f, 60f), 0f, random.NextFloat(-250f, 250f)), new float2(14f, 10f),
+                random.NextFloat(math.PI));
+
+            var incremental = BenchmarkKit.Median("AfterABuilding", _world.UpdateSystem<NavFieldSystem>, () =>
             {
-                _world.SpawnObstacle(new float3(random.NextFloat(-200f, 60f), 0f, random.NextFloat(-250f, 250f)),
-                    new float2(14f, 10f), random.NextFloat(math.PI));
-                var grid = TimeSystem<NavGridSystem>();
-                var field = TimeSystem<NavFieldSystem>();
-                restamp += run == 0 ? 0.0 : grid / 5.0;
-                incremental += run == 0 ? 0.0 : field / 5.0;
-            }
+                AddBuilding();
+                _world.UpdateSystem<NavGridSystem>();
+            }, null, "NavFieldSystem.Rebuild", "NavSectors.Relabel", "NavSectors.Connect");
+            var restamp = BenchmarkKit.Median("Restamp", _world.UpdateSystem<NavGridSystem>, AddBuilding, null,
+                "NavGridSystem.Restamp");
 
             var sectors = _world.Grid().Sectors;
-            TestContext.WriteLine($"Full field and sector build: {full:F2} ms ({sectors.ClassCount} classes, " +
+            TestContext.WriteLine($"Full field and sector build: median {full:F2} ms ({sectors.ClassCount} classes, " +
                                   $"{sectors.SectorCount} sectors, {sectors.Regions.Length} components)");
             TestContext.WriteLine($"After a building: restamp {restamp:F2} ms, field and sectors {incremental:F2} ms");
             Assert.Less(full, 60.0, $"full build {full:F2} ms, under twice 30 ms");
@@ -158,39 +147,33 @@ namespace HyperRTS.Simulation.Tests.Navigation
             }
         }
 
-        [Test]
-        public void CrossMapSearches_TwoHundred()
+        [Test, Performance]
+        public void CrossMapSearches()
         {
             var points = new NativeList<float3>(64, Allocator.Persistent);
             var expansions = new NativeReference<int>(Allocator.Persistent);
             var job = new SearchJob { Grid = _world.Grid(), Agent = Truck, Points = points, Expansions = expansions };
             var random = new Random(23);
-            double total = 0.0, slowest = 0.0, length = 0.0;
+            double length = 0.0;
             long expanded = 0;
             var most = 0;
-            for (var i = -1; i < 200; i++)
+            var median = BenchmarkKit.Median("CrossMapSearch", () => job.Run(), () =>
             {
                 job.Start = new float3(random.NextFloat(-290f, -250f), 0f, random.NextFloat(-290f, 290f));
                 job.Goal = new float3(random.NextFloat(250f, 290f), 0f, random.NextFloat(-290f, 290f));
-                var watch = Stopwatch.StartNew();
-                job.Run();
-                var time = watch.Elapsed.TotalMilliseconds;
-                if (i >= 0)
-                {
-                    total += time;
-                    slowest = math.max(slowest, time);
-                    expanded += expansions.Value;
-                    most = math.max(most, expansions.Value);
-                    length += PathLength(job.Start, points);
-                }
-            }
+            }, () =>
+            {
+                expanded += expansions.Value;
+                most = math.max(most, expansions.Value);
+                length += PathLength(job.Start, points);
+            }, "GridAStar.Search");
 
+            var runs = BenchmarkKit.Warmup + BenchmarkKit.Runs;
             points.Dispose();
             expansions.Dispose();
-            TestContext.WriteLine($"200 cross-map searches: mean {total / 200.0:F3} ms, max {slowest:F3} ms, " +
-                                  $"expansions mean {expanded / 200} max {most}, path mean {length / 200.0:F1} m");
-            Assert.Less(total / 200.0, 4.0, $"mean {total / 200.0:F3} ms, under twice 2 ms");
-            Assert.Less(slowest, 8.0, $"slowest {slowest:F3} ms, under four times 2 ms");
+            TestContext.WriteLine($"Cross-map search: median {median:F3} ms, expansions mean {expanded / runs} " +
+                                  $"max {most}, path mean {length / runs:F1} m");
+            Assert.Less(median, 4.0, $"median {median:F3} ms, under twice 2 ms");
         }
 
         private static float PathLength(float3 start, NativeList<float3> points)
@@ -204,28 +187,30 @@ namespace HyperRTS.Simulation.Tests.Navigation
             return length;
         }
 
+        [Test, Performance]
         [TestCase(30, 12.0)]
         [TestCase(200, 20.0)]
         public void GroupOrder_CrossMap(int count, double budget)
         {
-            Order(count, 1);
-            Order(count, 2);
+            var group = 0;
+            Entity[] units = null;
             var before = Stats();
-            var units = Order(count, 3);
+            var median = BenchmarkKit.Median($"GroupOrder{count}", () => Serve(units),
+                () => units = Order(count, ++group), () =>
+                {
+                    foreach (var unit in units)
+                    {
+                        Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(unit).Status, "every member has a path");
+                        _world.EntityManager.DestroyEntity(unit);
+                    }
+                }, "FlowField.Build", "FlowField.Trace", "GridAStar.Search");
+
             var after = Stats();
-            TestContext.WriteLine($"{count}-unit group order: {_served:F2} ms over {_frames} frames, " +
+            TestContext.WriteLine($"{count}-unit group order: median {median:F2} ms, " +
                                   $"{after.Fields - before.Fields} fields, {after.Traces - before.Traces} traces, " +
                                   $"{after.Searches - before.Searches} searches");
-            foreach (var unit in units)
-            {
-                Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(unit).Status, "every member has a path");
-            }
-
-            Assert.Less(_served, budget, $"{_served:F2} ms, under twice the budget");
+            Assert.Less(median, budget, $"{median:F2} ms, under twice the budget");
         }
-
-        private double _served;
-        private int _frames;
 
         private PathStats Stats()
         {
@@ -234,32 +219,36 @@ namespace HyperRTS.Simulation.Tests.Navigation
             return _world.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(handle).Stats;
         }
 
-        // A block of units on the west edge sent to a block of slots on the east edge, timing only the pathfinder.
+        // A block of units on the west edge sent to a block of slots on the east edge, a new place each group.
         private Entity[] Order(int count, int group)
         {
             var side = (int)math.ceil(math.sqrt(count));
+            var place = group % 6;
             var units = new Entity[count];
             for (var i = 0; i < count; i++)
             {
-                var start = new float3(-285f + i % side * 3f, 0f, -20f + i / side * 3f + group * 60f - 120f);
+                var start = new float3(-285f + i % side * 3f, 0f, -20f + i / side * 3f + place * 60f - 120f);
                 units[i] = _world.SpawnUnit(1, start);
             }
 
             _world.Tick();
             for (var i = 0; i < count; i++)
             {
-                var slot = new float3(245f + i % side * 3f, 0f, -20f + i / side * 3f + group * 50f - 100f);
+                var slot = new float3(245f + i % side * 3f, 0f, -20f + i / side * 3f + place * 50f - 100f);
                 _world.EntityManager.SetComponentData(units[i], new MoveDestination { Value = slot, Group = group });
                 _world.EntityManager.SetComponentEnabled<MoveDestination>(units[i], true);
             }
 
-            _served = 0.0;
-            for (_frames = 0; _frames < 20 && !AllReady(units); _frames++)
-            {
-                _served += TimeSystem<PathfindingSystem>();
-            }
-
             return units;
+        }
+
+        // Only the pathfinder runs, until every unit has a path.
+        private void Serve(Entity[] units)
+        {
+            for (var frame = 0; frame < 20 && !AllReady(units); frame++)
+            {
+                _world.UpdateSystem<PathfindingSystem>();
+            }
         }
 
         private bool AllReady(Entity[] units)

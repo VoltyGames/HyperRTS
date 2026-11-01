@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <Style src="Common/HyperRTSEditor.uss" />
+  <Style src="../Common/HyperRTSEditor.uss" />
   <ui:VisualElement class="hrts-note">
     <ui:Vector2Field name="map-size" label="Map Size" value="200,200" tooltip="Playable area (X by Z); the ground is sized to match." />
     <ui:SliderInt name="players" label="Players" low-value="1" value="2" show-input-field="true" tooltip="Player 1 is you, the rest are AI on their own teams." />

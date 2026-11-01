@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
+using Unity.PerformanceTesting;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Tests.Vision
 {
     /// <summary>
     /// Vision timings on a 600 m map at 2 m fog cells with hills, a village and woods, against twice the plan's budgets.
-    /// Each case runs once untimed first, so Burst is warm.
+    /// Each case warms up first, so Burst is compiled, and asserts the median.
     /// </summary>
     [Category("Benchmark")]
     public class VisionBenchmarkTests
@@ -46,52 +46,52 @@ namespace HyperRTS.Simulation.Tests.Vision
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        [Test]
+        [Test, Performance]
         public void EightHundredASide_HalfMoving()
         {
             var units = Viewers(800, new float2(-280f, -280f), new float2(280f, 280f));
-            var stamp = Measure(round => Shift(units, 0, units.Length / 2, round));
+            var stamp = MeasureStamp("HalfMoving", () => Shift(units, 0, units.Length / 2));
 
-            TestContext.WriteLine($"1,600 viewers, 800 moving: stamp mean {stamp.x:F3} ms, max {stamp.y:F3} ms");
-            Assert.Less(stamp.x, 2.4, $"mean {stamp.x:F3} ms, under twice the 1.2 ms of drawing and merging");
+            TestContext.WriteLine($"1,600 viewers, 800 moving: stamp median {stamp:F3} ms");
+            Assert.Less(stamp, 2.4, $"median {stamp:F3} ms, under twice the 1.2 ms of drawing and merging");
         }
 
-        [Test]
+        [Test, Performance]
         public void VillageCollapsing_OneSectionASecond()
         {
             Viewers(800, new float2(-280f, -280f), new float2(280f, 280f));
-            var houses = new Entity[Rounds + 1];
+            var houses = new Entity[BenchmarkKit.Warmup + BenchmarkKit.Runs];
             for (var i = 0; i < houses.Length; i++)
             {
                 houses[i] = _world.SpawnSightBlock(new float3(-40f + i * 4f, 0f, -100f), new float2(4f, 4f), 6f);
             }
 
             Run();
-            double total = 0.0, slowest = 0.0;
-            for (var i = -1; i < Rounds; i++)
-            {
-                _world.EntityManager.SetComponentEnabled<SightBlock>(houses[i + 1], false);
-                var restamp = Time(_world.World.GetExistingSystem<SightBlockSystem>());
-                var stamp = Time(_world.World.GetExistingSystem<FogOfWarSystem>());
-                if (i >= 0)
+            var next = 0;
+            var median = BenchmarkKit.Median("Collapse",
+                () =>
                 {
-                    total += restamp + stamp;
-                    slowest = math.max(slowest, restamp + stamp);
-                }
-            }
+                    _world.UpdateSystem<SightBlockSystem>();
+                    _world.UpdateSystem<FogOfWarSystem>();
+                },
+                () =>
+                {
+                    _world.EntityManager.SetComponentEnabled<SightBlock>(houses[next++], false);
+                    AdvanceTime();
+                }, null, "SightBlockSystem.Stamp", "SightPatchJob.Draw", "FogMergeJob.Merge");
 
-            TestContext.WriteLine($"a section a second: restamp and fog mean {total / Rounds:F3} ms, max {slowest:F3} ms");
-            Assert.Less(total / Rounds, 2.6, $"mean {total / Rounds:F3} ms, under twice 0.1 ms of blockers and 1.2 ms of fog");
+            TestContext.WriteLine($"a section a second: restamp and fog median {median:F3} ms");
+            Assert.Less(median, 2.6, $"median {median:F3} ms, under twice 0.1 ms of blockers and 1.2 ms of fog");
         }
 
-        [Test]
+        [Test, Performance]
         public void ForestEdge_TwoHundredViewers()
         {
             var units = Viewers(100, new float2(80f, -150f), new float2(110f, 150f));
-            var stamp = Measure(round => Shift(units, 0, units.Length, round));
+            var stamp = MeasureStamp("ForestEdge", () => Shift(units, 0, units.Length));
 
-            TestContext.WriteLine($"200 viewers at a forest edge, all moving: stamp mean {stamp.x:F3} ms, max {stamp.y:F3} ms");
-            Assert.Less(stamp.x, 2.4, $"mean {stamp.x:F3} ms, under twice 1.2 ms");
+            TestContext.WriteLine($"200 viewers at a forest edge, all moving: stamp median {stamp:F3} ms");
+            Assert.Less(stamp, 2.4, $"median {stamp:F3} ms, under twice 1.2 ms");
         }
 
         /// <summary>Spawns this many viewers a side between the corners, 35 m of sight each.</summary>
@@ -113,7 +113,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         /// Moves units east at 7.5 m/s, a brisk vehicle: 0.75 m a stamp, so about a third of them cross into another
         /// fog cell each stamp, as the plan's budget assumes.
         /// </summary>
-        private void Shift(Entity[] units, int from, int count, int round)
+        private void Shift(Entity[] units, int from, int count)
         {
             const float step = 0.75f;
             for (var i = from; i < from + count; i++)
@@ -124,41 +124,30 @@ namespace HyperRTS.Simulation.Tests.Vision
             }
         }
 
-        /// <summary>Mean and slowest fog stamp in milliseconds after each change.</summary>
-        private float2 Measure(System.Action<int> change)
+        /// <summary>Median fog stamp in milliseconds after each change.</summary>
+        private double MeasureStamp(string name, System.Action change)
         {
             Run();
-            double total = 0.0, slowest = 0.0;
-            for (var round = -1; round < Rounds; round++)
+            return BenchmarkKit.Median(name, _world.UpdateSystem<FogOfWarSystem>, () =>
             {
-                change(round + 1);
-                var time = Time(_world.World.GetExistingSystem<FogOfWarSystem>());
-                if (round >= 0)
-                {
-                    total += time;
-                    slowest = math.max(slowest, time);
-                }
-            }
-
-            return new float2((float)(total / Rounds), (float)slowest);
+                change();
+                AdvanceTime();
+            }, null, "SightPatchJob.Draw", "FogMergeJob.Merge");
         }
 
         private void Run()
         {
-            Time(_world.World.GetExistingSystem<SightBlockSystem>());
-            Time(_world.World.GetExistingSystem<FogOfWarSystem>());
+            AdvanceTime();
+            _world.UpdateSystem<SightBlockSystem>();
+            _world.UpdateSystem<FogOfWarSystem>();
         }
 
-        /// <summary>Updates one system past the fog's interval and waits for its jobs.</summary>
-        private double Time(SystemHandle system)
+        /// <summary>Moves the clock past the fog's interval and waits for jobs, so the next update stamps.</summary>
+        private void AdvanceTime()
         {
             _time += FogOfWarSystem.UpdateInterval * 2f;
             _world.World.SetTime(new TimeData(_time, FogOfWarSystem.UpdateInterval));
             _world.EntityManager.CompleteAllTrackedJobs();
-            var watch = Stopwatch.StartNew();
-            system.Update(_world.World.Unmanaged);
-            _world.EntityManager.CompleteAllTrackedJobs();
-            return watch.Elapsed.TotalMilliseconds;
         }
     }
 }
