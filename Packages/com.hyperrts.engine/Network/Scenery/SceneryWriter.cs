@@ -1,9 +1,10 @@
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Network.Scenery
 {
     /// <summary>Applies scenery states another world decided, such as a multiplayer server, to this world's map.</summary>
     public struct SceneryWriter

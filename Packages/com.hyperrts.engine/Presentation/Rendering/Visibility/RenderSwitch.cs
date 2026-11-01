@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;

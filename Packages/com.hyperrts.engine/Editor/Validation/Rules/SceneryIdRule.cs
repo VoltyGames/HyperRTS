@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Netcode;
 

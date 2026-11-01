@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Client.Interaction;
+using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Cursors

@@ -4,7 +4,6 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.VFX;

@@ -1,4 +1,4 @@
-namespace HyperRTS.Simulation.Navigation
+namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>What ground a building's footprint must cover.</summary>
     public enum PlacementSurface : byte

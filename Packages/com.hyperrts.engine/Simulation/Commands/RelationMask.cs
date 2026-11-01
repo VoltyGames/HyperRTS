@@ -1,6 +1,7 @@
 using System;
+using HyperRTS.Simulation.Common;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Commands
 {
     /// <summary>A set of <see cref="Relation"/>s, for rules that apply to some of them.</summary>
     [Flags]

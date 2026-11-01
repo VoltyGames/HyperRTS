@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -67,7 +68,7 @@ namespace HyperRTS.Simulation.Navigation
 
                 var low = grid.Min + (float2)area.xy * grid.CellSize;
                 var high = grid.Min + (float2)(area.zw + 1) * grid.CellSize;
-                if (NavCapsule.SegmentRectDistance(from, to, low, high) <= margin)
+                if (Planar.SegmentRectDistance(from, to, low, high) <= margin)
                 {
                     return true;
                 }

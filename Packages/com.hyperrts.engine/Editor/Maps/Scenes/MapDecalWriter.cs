@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Presentation.Environment.Weather;

@@ -1,4 +1,4 @@
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Core
 {
     /// <summary>A graphics detail step shared by the presentation quality knobs (effects, ground).</summary>
     public enum DetailLevel

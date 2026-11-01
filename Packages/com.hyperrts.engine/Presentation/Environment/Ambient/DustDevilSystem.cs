@@ -5,7 +5,6 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;

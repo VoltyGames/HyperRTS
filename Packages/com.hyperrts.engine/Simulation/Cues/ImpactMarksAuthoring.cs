@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Cues
 {
     /// <summary>Craters and scorch marks this unit's or building's shots leave where they land on open ground.</summary>
     [AddComponentMenu(HyperRTSMenu.Cues + "Impact Marks")]

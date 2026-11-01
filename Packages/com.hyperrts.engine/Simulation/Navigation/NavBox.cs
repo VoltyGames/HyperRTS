@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -68,7 +69,7 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>Gap between the box and the segment from a to b, 0 when they touch.</summary>
-        public float Gap(float2 a, float2 b) => NavCapsule.SegmentRectDistance(Local(a), Local(b), -Half, Half);
+        public float Gap(float2 a, float2 b) => Planar.SegmentRectDistance(Local(a), Local(b), -Half, Half);
 
         /// <summary>Least distance between the two boxes, 0 when they overlap.</summary>
         public float Gap(in NavBox other)

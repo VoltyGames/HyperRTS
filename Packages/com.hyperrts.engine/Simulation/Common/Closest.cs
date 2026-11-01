@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Navigation
+namespace HyperRTS.Simulation.Common
 {
     /// <summary>
     /// Running nearest-candidate search. Ties go to the lower entity index, so every machine picks the same entity

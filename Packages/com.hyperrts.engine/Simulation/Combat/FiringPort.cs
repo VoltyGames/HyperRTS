@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Combat
 {
     /// <summary>A window or loophole on a container that its passengers fire out of, in the container's local space.</summary>
     [InternalBufferCapacity(0)]

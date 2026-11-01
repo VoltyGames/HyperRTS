@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.GameEntities
 {
     /// <summary>
     /// Netcode keeps prespawned ghosts (scene objects with a GhostAuthoringComponent, like the Match) disabled until

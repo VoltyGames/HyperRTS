@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
 namespace HyperRTS.Input.Commands

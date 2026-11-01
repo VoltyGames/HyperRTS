@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// The floors of a building that still stand, a bit each, ground floor first. Combat marks the ones that fell;

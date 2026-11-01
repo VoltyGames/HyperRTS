@@ -1,4 +1,6 @@
-namespace HyperRTS.Simulation.Common
+using HyperRTS.Simulation.Common;
+
+namespace HyperRTS.Simulation.Commands
 {
     /// <summary>Whether a RelationMask includes a Relation.</summary>
     public static class RelationMaskExtensions

@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using Unity.Burst;
 using Unity.Entities;

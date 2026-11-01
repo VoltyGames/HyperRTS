@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Navigation;
-using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;

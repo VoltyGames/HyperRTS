@@ -1,7 +1,7 @@
 using System.Linq;
+using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Rig;
-using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEngine;
 

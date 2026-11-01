@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Core;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Quality;

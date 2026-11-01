@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Combat;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Editor.Authoring
 {
     /// <summary>
     /// A building's <c>&lt;Asset&gt;.structure.json</c> from the structure tool: the break clip rows and each section's
@@ -74,7 +75,7 @@ namespace HyperRTS.Simulation.Combat
             {
                 var middle = new Vector3(center[0], center[1], center[2]);
                 var size = 2f * new Vector3(halfSize[0], halfSize[1], halfSize[2]);
-                return SectionShape.Moved(new Bounds(middle, size), owner.transform.worldToLocalMatrix * model.localToWorldMatrix);
+                return SectionsFill.Moved(new Bounds(middle, size), owner.transform.worldToLocalMatrix * model.localToWorldMatrix);
             }
 
             /// <summary>The way it faces in the owner's space: the file's for a wall, else away from <paramref name="middle"/>.</summary>
@@ -82,7 +83,7 @@ namespace HyperRTS.Simulation.Combat
             {
                 if (!exterior)
                 {
-                    return SectionShape.Outward(boxCenter, middle);
+                    return SectionsFill.Outward(boxCenter, middle);
                 }
 
                 var facing = new Vector3(outward[0], outward[1], outward[2]);
@@ -180,7 +181,7 @@ namespace HyperRTS.Simulation.Combat
             }
             else
             {
-                entry.share = SectionShape.Share(box.size);
+                entry.share = SectionsFill.Share(box.size);
             }
 
             for (var i = 0; i < entry.holes.Length; i++)

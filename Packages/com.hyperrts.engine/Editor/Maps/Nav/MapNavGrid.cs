@@ -171,7 +171,7 @@ namespace HyperRTS.Editor.Maps.Nav
 
                 // A sectioned building closes only what its sections do, as at runtime: a bridge's deck stays open.
                 var materials = new List<SectionMaterial>();
-                var shapes = new SectionShape(sections).Bake(sections.sections,
+                var shapes = SectionShape.Bake(sections.sections,
                     building.GetComponent<GameEntityAuthoring>().maxHealth, materials);
                 foreach (var part in SectionsSetup.ObstacleParts(shapes).Where(part => part.Closed))
                 {

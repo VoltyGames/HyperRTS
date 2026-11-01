@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Common
 {
     /// <summary>
     /// Name of a piece of map scenery that every world loading the map agrees on, so multiplayer can refer to it

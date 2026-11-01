@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -69,6 +70,6 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>From this entry's core segment to another's, between their closest points.</summary>
         public readonly float2 ClosestOffset(float2 position, float2 axis) =>
-            NavCapsule.ClosestOffset(position, axis, Position.xz, SegmentAxis);
+            Planar.ClosestOffset(position, axis, Position.xz, SegmentAxis);
     }
 }

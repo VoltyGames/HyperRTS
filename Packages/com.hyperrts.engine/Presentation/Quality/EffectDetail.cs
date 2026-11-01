@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Core;
+
 
 namespace HyperRTS.Presentation.Quality
 {

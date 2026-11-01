@@ -2,7 +2,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Common
 {
     /// <summary>
     /// The entities one object is made of, to destroy it whole. Instantiated prefabs list theirs in

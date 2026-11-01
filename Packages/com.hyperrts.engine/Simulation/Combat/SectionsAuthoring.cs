@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Combat
             public SectionMaterial material;
         }
 
-        [Tooltip("The building's <Asset>.structure.json from the structure tool. Fill From Structure lists the sections from it.")]
+        [Tooltip("The building's <Asset>.structure.json from the structure tool. Fill From Structure (context menu) lists the sections from it.")]
         public TextAsset structure;
 
         [Tooltip("Which section material each material name in the structure file means.")]
@@ -119,51 +119,8 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.1f)]
         public float repairSeconds = 10f;
 
-        [Tooltip("The sections, at most 64. Fill From Structure lists them from the structure file with its boxes, Fill From Parts from X_Intact and X_Broken children.")]
+        [Tooltip("The sections, at most 64. Fill From Structure (context menu) lists them from the structure file with its boxes, Fill From Parts from X_Intact and X_Broken children.")]
         public Entry[] sections = Array.Empty<Entry>();
-
-        /// <summary>
-        /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling (hidden at scale 0), and guesses what
-        /// the inspector then lets you correct: the box, anchored when it reaches the ground, exterior when it is a wall, a full
-        /// share for a wall and half for the rest, and supports from the sections it touches below. Materials and floors
-        /// already set stay.
-        /// </summary>
-        [ContextMenu("Fill From Parts")]
-        public void FillFromParts()
-        {
-            Record(this);
-            var found = new List<Entry>();
-            foreach (var child in GetComponentsInChildren<Transform>(true))
-            {
-                if (child.name.EndsWith("_Intact", StringComparison.Ordinal))
-                {
-                    found.Add(Kept(child.gameObject, child.parent.Find(child.name[..^"_Intact".Length] + "_Broken")));
-                }
-            }
-
-            var shape = new SectionShape(this);
-            sections = shape.Guess(found).ToArray();
-        }
-
-        /// <summary>Lists the sections from the structure file; see <see cref="SectionStructure.Entries"/>.</summary>
-        [ContextMenu("Fill From Structure")]
-        public void FillFromStructure()
-        {
-            if (structure == null)
-            {
-                throw new InvalidOperationException($"HyperRTS: sections on '{name}' have no structure file to fill from.");
-            }
-
-            Record(this);
-            foreach (var child in GetComponentsInChildren<Transform>(true))
-            {
-                Record(child);
-            }
-
-            var file = SectionStructure.Parse(structure.text, structure.name);
-            clips = file.BreakClips();
-            sections = file.Entries(this).ToArray();
-        }
 
         /// <summary>What stops the sections baking; empty when they are fine.</summary>
         public List<string> Problems()
@@ -191,27 +148,6 @@ namespace HyperRTS.Simulation.Combat
             return problems;
         }
 
-        private Entry Kept(GameObject intact, Transform broken)
-        {
-            if (broken != null)
-            {
-                Record(broken);
-                broken.localScale = Vector3.zero;
-            }
-
-            var entry = Array.Find(sections, item => item.intact == intact);
-            entry.intact = intact;
-            entry.broken = broken != null ? broken.gameObject : null;
-            return entry;
-        }
-
-        private static void Record(UnityEngine.Object target)
-        {
-#if UNITY_EDITOR
-            UnityEditor.Undo.RecordObject(target, "Fill sections");
-#endif
-        }
-
         public class Baker : Baker<SectionsAuthoring>
         {
             public override void Bake(SectionsAuthoring authoring)
@@ -224,7 +160,7 @@ namespace HyperRTS.Simulation.Combat
 
                 var building = GetComponent<GameEntityAuthoring>();
                 var materials = new List<SectionMaterial>();
-                var sections = new SectionShape(authoring).Bake(authoring.sections, building.maxHealth, materials);
+                var sections = SectionShape.Bake(authoring.sections, building.maxHealth, materials);
                 var models = new List<SectionModel>(sections.Count);
                 var looks = new List<SectionLook>(sections.Count);
                 foreach (var entry in authoring.sections)

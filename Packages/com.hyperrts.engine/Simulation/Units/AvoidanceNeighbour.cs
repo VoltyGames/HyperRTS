@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 
@@ -38,7 +39,7 @@ namespace HyperRTS.Simulation.Units
             var closest = speedSq > 1e-6f ? -math.dot(position - Position, relative) / speedSq : to;
             var time = math.clamp(closest, from, to);
             var self = position + shared * time;
-            var offset = NavCapsule.ClosestOffset(self, axis, Position + Velocity * time, SegmentAxis);
+            var offset = Planar.ClosestOffset(self, axis, Position + Velocity * time, SegmentAxis);
             return math.max(0f, Reach - math.length(offset) - Contact);
         }
     }

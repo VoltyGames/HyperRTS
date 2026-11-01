@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -92,7 +93,7 @@ namespace HyperRTS.Simulation.Navigation
         public readonly float CellGap(int2 cell, float2 a, float2 b)
         {
             var low = Min + (float2)cell * CellSize;
-            return NavCapsule.SegmentRectDistance(a, b, low, low + CellSize);
+            return Planar.SegmentRectDistance(a, b, low, low + CellSize);
         }
 
         public readonly bool InBounds(int2 cell) => math.all(cell >= 0 & cell < Size);

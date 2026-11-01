@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using Unity.Collections;

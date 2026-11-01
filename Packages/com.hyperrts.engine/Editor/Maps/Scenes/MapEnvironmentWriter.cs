@@ -1,3 +1,4 @@
+using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;

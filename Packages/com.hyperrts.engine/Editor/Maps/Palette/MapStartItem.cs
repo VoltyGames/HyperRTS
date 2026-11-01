@@ -1,6 +1,6 @@
 using System;
 using HyperRTS.Editor.Maps.Library;
-using HyperRTS.Simulation.Navigation;
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using UnityEngine;
 
