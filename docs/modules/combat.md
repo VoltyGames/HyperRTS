@@ -146,9 +146,11 @@ A building from the structure tool (see [tools](../../../docs/tech/tools.md#stru
 **Fill From Structure** instead: set `structure` to the `<Asset>.structure.json` and fill `materialNames`, the
 structure file's material names mapped to `SectionMaterial`s (no name matching). It finds each section's intact,
 holed (with the hole centres), pieces, stub and heap objects by the exact names the file lists, hides all but the
-intact one at scale 0, and takes the material, floor, anchored, exterior and supports from the file; shares are
-guessed as above. A section either has a broken model or pieces with a stub and a heap, and the structure file's
-three break clips are baked once per building. See [client](client.md#destruction) for how they show.
+intact one at scale 0, and takes the box, facing, material, floor, anchored, exterior and supports from the file, and writes the file's three
+break clips into `clips`. A refill keeps the share, deck and needs-all-supports of the entry for the same intact model;
+a new section's share is guessed as above. A section either has a broken model or pieces with a stub and a heap, and
+the baker reads the sections' stored boxes and `clips`, never the file, so the prefab is the only bake input. Pieces
+without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how they show.
 
 - **Hits.** `DamageSystem` hands a hit on a sectioned building to `Sections.Route`. A direct hit lands in full on the
   first section the line from its origin to its point enters (else the nearest), and its splash on the others in

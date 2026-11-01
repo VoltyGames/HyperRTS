@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
     /// Measures a <see cref="SectionsAuthoring"/>'s sections in the building's space: the boxes their intact models
-    /// fill, the inspector guesses Fill From Parts makes from them, and the baked <see cref="Section"/>s.
+    /// fill, the inspector guesses Fill From Parts makes from them, and the baked <see cref="Section"/>s from the entries.
     /// </summary>
     public sealed class SectionShape
     {
@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.Combat
         public List<SectionsAuthoring.Entry> Guess(List<SectionsAuthoring.Entry> entries)
         {
             var boxes = entries.ConvertAll(entry => Measure(entry.intact.transform));
+            var middle = Measure(_root).center;
             var ground = float.MaxValue;
             foreach (var box in boxes)
             {
@@ -36,7 +37,10 @@ namespace HyperRTS.Simulation.Combat
                 var entry = entries[i];
                 entry.anchored = boxes[i].min.y <= ground + Contact;
                 entry.exterior = IsWall(boxes[i].size);
-                entry.share = entry.exterior ? 1f : 0.5f;
+                entry.share = Share(boxes[i].size);
+                entry.center = boxes[i].center;
+                entry.halfSize = boxes[i].extents;
+                entry.outward = Outward(boxes[i].center, middle);
                 entry.supports = Below(entries, boxes, i);
                 entries[i] = entry;
             }
@@ -53,16 +57,14 @@ namespace HyperRTS.Simulation.Combat
                 total += entry.share;
             }
 
-            var middle = Measure(_root).center;
             var sections = new List<Section>(entries.Length);
             foreach (var entry in entries)
             {
-                var box = Measure(entry.intact.transform);
                 var health = maxHealth * entry.share / math.max(total, 1e-4f);
                 sections.Add(new Section
                 {
-                    Center = box.center,
-                    HalfSize = box.extents,
+                    Center = entry.center,
+                    HalfSize = entry.halfSize,
                     Health = health,
                     MaxHealth = health,
                     Material = (byte)MaterialIndex(materials, entry.material),
@@ -72,12 +74,15 @@ namespace HyperRTS.Simulation.Combat
                     Exterior = entry.exterior,
                     Deck = entry.deck,
                     NeedsAllSupports = entry.needsAllSupports,
-                    Outward = Outward(box.center, middle),
+                    Outward = entry.outward,
                 });
             }
 
             return sections;
         }
+
+        /// <summary>A full share for a wall and half for anything else.</summary>
+        public static float Share(Vector3 size) => IsWall(size) ? 1f : 0.5f;
 
         /// <summary>Upright and thin, and no taller than twice its length, unlike a chimney.</summary>
         private static bool IsWall(Vector3 size)
@@ -131,7 +136,7 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>Out from the middle of the building, or up for a section over it.</summary>
-        private static float3 Outward(float3 center, float3 middle)
+        public static float3 Outward(float3 center, float3 middle)
         {
             var offset = center - middle;
             offset.y = 0f;

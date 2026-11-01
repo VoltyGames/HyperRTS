@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Combat
 {
     /// <summary>
-    /// A building's <c>&lt;Asset&gt;.structure.json</c> from the structure tool: each section's box, material, floor,
-    /// supports, model names and break clip rows. Only the keys listed here are read.
+    /// A building's <c>&lt;Asset&gt;.structure.json</c> from the structure tool: the break clip rows and each section's
+    /// box, facing, material, floor, supports and model names. Only the keys listed here are read.
     /// </summary>
     [Serializable]
     public class SectionStructure
@@ -18,8 +19,6 @@ namespace HyperRTS.Simulation.Combat
             public int frameCount;
 
             public SectionClip ToClip(float fps) => new() { StartRow = startRow, FrameCount = frameCount, Fps = fps };
-
-            public bool Same(Rows other) => startRow == other.startRow && frameCount == other.frameCount;
         }
 
         [Serializable]
@@ -51,17 +50,64 @@ namespace HyperRTS.Simulation.Combat
         public class Part
         {
             public string name;
+            public float[] center;
+            public float[] halfSize;
             public string material;
             public int floor;
             public string[] supports;
             public bool anchored;
             public bool exterior;
-            public Clips clips;
+            public float[] outward;
             public Meshes meshes;
+
+            public void Check(string source)
+            {
+                var shaped = center?.Length == 3 && halfSize?.Length == 3 && supports != null && meshes != null;
+                if (!shaped || string.IsNullOrEmpty(meshes.intact) || exterior != (outward != null && outward.Length == 3))
+                {
+                    throw new InvalidOperationException($"HyperRTS: structure file '{source}' section '{name}' needs 'center', 'halfSize', 'supports', 'meshes' and an 'outward' exactly when 'exterior'.");
+                }
+            }
+
+            /// <summary>The box in the owner's space; the file states it in the space of the intact model.</summary>
+            public Bounds Box(SectionsAuthoring owner, Transform model)
+            {
+                var middle = new Vector3(center[0], center[1], center[2]);
+                var half = new Vector3(halfSize[0], halfSize[1], halfSize[2]);
+                var box = new Bounds();
+                for (var corner = 0; corner < 8; corner++)
+                {
+                    var sign = new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f);
+                    var point = owner.transform.InverseTransformPoint(model.TransformPoint(middle + Vector3.Scale(half, sign)));
+                    if (corner == 0)
+                    {
+                        box = new Bounds(point, Vector3.zero);
+                    }
+                    else
+                    {
+                        box.Encapsulate(point);
+                    }
+                }
+
+                return box;
+            }
+
+            /// <summary>The way it faces in the owner's space: the file's for a wall, else away from <paramref name="middle"/>.</summary>
+            public Vector3 Outward(SectionsAuthoring owner, Transform model, Vector3 boxCenter, float3 middle)
+            {
+                if (!exterior)
+                {
+                    return SectionShape.Outward(boxCenter, middle);
+                }
+
+                var facing = new Vector3(outward[0], outward[1], outward[2]);
+                return owner.transform.InverseTransformDirection(model.TransformDirection(facing)).normalized;
+            }
         }
 
         public string asset;
         public float fps;
+        public Clips clips;
         public Part[] sections;
 
         public static SectionStructure Parse(string json, string source)
@@ -72,66 +118,86 @@ namespace HyperRTS.Simulation.Combat
                 throw new InvalidOperationException($"HyperRTS: structure file '{source}' needs 'fps' and 'sections'.");
             }
 
+            if (structure.clips?.@in == null || structure.clips.@out == null || structure.clips.collapse == null)
+            {
+                throw new InvalidOperationException($"HyperRTS: structure file '{source}' needs 'clips' with 'in', 'out' and 'collapse'.");
+            }
+
+            foreach (var part in structure.sections)
+            {
+                part.Check(source);
+            }
+
             return structure;
         }
 
-        /// <summary>The break clips, which every section of the building shares; throws when two sections differ.</summary>
-        public SectionClips BreakClips(string source)
+        /// <summary>The break clips, which every section of the building shares.</summary>
+        public SectionClips BreakClips() => new()
         {
-            var first = sections[0].clips;
-            foreach (var part in sections)
-            {
-                var same = part.clips.@in.Same(first.@in) && part.clips.@out.Same(first.@out) &&
-                           part.clips.collapse.Same(first.collapse);
-                if (!same)
-                {
-                    throw new InvalidOperationException($"HyperRTS: structure file '{source}' section '{part.name}' has its own clip rows.");
-                }
-            }
-
-            return new SectionClips
-            {
-                BlownIn = first.@in.ToClip(fps), BlownOut = first.@out.ToClip(fps), Collapse = first.collapse.ToClip(fps),
-            };
-        }
+            BlownIn = clips.@in.ToClip(fps), BlownOut = clips.@out.ToClip(fps), Collapse = clips.collapse.ToClip(fps),
+        };
 
         /// <summary>
         /// The sections as authoring entries under <paramref name="owner"/>: each model is the object of that exact name,
-        /// and material (through the owner's name map), floor, anchored, exterior and supports come from the file. The
-        /// share is guessed as Fill From Parts does. Holed, pieces, stub and heap models are set to scale 0.
+        /// and box, facing, material (through the owner's name map), floor, anchored, exterior and supports come from
+        /// the file. Share, deck and needs-all-supports stay from the owner's entry for the same model, else the share
+        /// is guessed as Fill From Parts does. Holed, pieces, stub and heap models are set to scale 0.
         /// </summary>
         public List<SectionsAuthoring.Entry> Entries(SectionsAuthoring owner)
         {
+            var boxes = new Bounds[sections.Length];
+            for (var i = 0; i < boxes.Length; i++)
+            {
+                boxes[i] = sections[i].Box(owner, FindModel(owner, sections[i].meshes.intact).transform);
+            }
+
+            var all = boxes[0];
+            foreach (var box in boxes)
+            {
+                all.Encapsulate(box);
+            }
+
             var found = new List<SectionsAuthoring.Entry>(sections.Length);
-            foreach (var part in sections)
+            for (var i = 0; i < sections.Length; i++)
             {
-                found.Add(Entry(owner, part));
+                found.Add(Entry(owner, sections[i], boxes[i], all.center));
             }
 
-            var guessed = new SectionShape(owner).Guess(found);
-            for (var i = 0; i < guessed.Count; i++)
-            {
-                guessed[i] = Corrected(owner, guessed[i], sections[i]);
-            }
-
-            return guessed;
+            return found;
         }
 
-        private SectionsAuthoring.Entry Entry(SectionsAuthoring owner, Part part)
+        private SectionsAuthoring.Entry Entry(SectionsAuthoring owner, Part part, Bounds box, float3 middle)
         {
             var intact = FindModel(owner, part.meshes.intact);
-            var kept = Array.Find(owner.sections, item => item.intact == intact);
+            var keptAt = Array.FindIndex(owner.sections, item => item.intact == intact);
             var entry = new SectionsAuthoring.Entry
             {
                 intact = intact,
-                deck = kept.deck,
-                needsAllSupports = kept.needsAllSupports,
+                center = box.center,
+                halfSize = box.extents,
+                outward = part.Outward(owner, intact.transform, box.center, middle),
                 material = FindMaterial(owner, part.material),
+                floor = part.floor,
+                anchored = part.anchored,
+                exterior = part.exterior,
+                supports = Supports(owner, part),
                 pieces = Hidden(owner, part.meshes.pieces),
                 stub = Hidden(owner, part.meshes.stub),
                 heap = Hidden(owner, part.meshes.heap),
                 holes = new SectionsAuthoring.Hole[part.meshes.holed?.Length ?? 0],
             };
+            if (keptAt >= 0)
+            {
+                var kept = owner.sections[keptAt];
+                entry.share = kept.share;
+                entry.deck = kept.deck;
+                entry.needsAllSupports = kept.needsAllSupports;
+            }
+            else
+            {
+                entry.share = SectionShape.Share(box.size);
+            }
+
             for (var i = 0; i < entry.holes.Length; i++)
             {
                 var hole = part.meshes.holed[i];
@@ -146,12 +212,8 @@ namespace HyperRTS.Simulation.Combat
             return entry;
         }
 
-        // The file knows the walls and supports better than the box guess does.
-        private SectionsAuthoring.Entry Corrected(SectionsAuthoring owner, SectionsAuthoring.Entry entry, Part part)
+        private GameObject[] Supports(SectionsAuthoring owner, Part part)
         {
-            entry.floor = part.floor;
-            entry.anchored = part.anchored;
-            entry.exterior = part.exterior;
             var supports = new GameObject[part.supports.Length];
             for (var i = 0; i < supports.Length; i++)
             {
@@ -159,8 +221,7 @@ namespace HyperRTS.Simulation.Combat
                 supports[i] = FindModel(owner, support.meshes.intact);
             }
 
-            entry.supports = supports;
-            return entry;
+            return supports;
         }
 
         private static GameObject Hidden(SectionsAuthoring owner, string modelName)

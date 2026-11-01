@@ -22,9 +22,14 @@ namespace HyperRTS.Simulation.Combat
                     return $"Section '{intact.name}' on '{owner.name}' needs either a broken model, or pieces with a stub and a heap.";
                 }
 
-                if (pieces != null && owner.structure == null)
+                if (pieces != null && !owner.clips.IsSet)
                 {
-                    return $"Section '{intact.name}' on '{owner.name}' has pieces but the building has no structure file for their clips.";
+                    return $"Section '{intact.name}' on '{owner.name}' has pieces but the building has no break clips; Fill From Structure sets them.";
+                }
+
+                if (halfSize.x <= 0f || halfSize.y <= 0f || halfSize.z <= 0f)
+                {
+                    return $"Section '{intact.name}' on '{owner.name}' has no box; run Fill From Structure or Fill From Parts.";
                 }
 
                 if (material == null)

@@ -366,7 +366,7 @@ and cosmetic, following the simulation's broken mask, which is the same on every
   broken is hidden, since it would hang in the air, and shows again once one is repaired.
 - **Repair:** clearing the bit shows the intact model again and hides the rest.
 
-The clip rows come from the structure file (`SectionClips`, shared by every section), and per-section sight state
+The clip rows come from the `clips` field of `SectionsAuthoring` (`SectionClips`, shared by every section), and per-section sight state
 is the `SectionLook` buffer.
 
 ### Shaders

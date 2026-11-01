@@ -109,7 +109,7 @@ namespace HyperRTS.Editor.Tests.Tools
             File.WriteAllText(VATModel, Triangle);
             File.WriteAllBytes(VATPositions, SixColumnEXR());
             // An OBJ carries no UV1, which the rule reports.
-            LogAssert.Expect(LogType.Error, new Regex("has no UV1 texel index"));
+            LogAssert.Expect(LogType.Error, new Regex("has no mesh with a UV1 texel index"));
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
             var importer = (ModelImporter)AssetImporter.GetAtPath(VATModel);

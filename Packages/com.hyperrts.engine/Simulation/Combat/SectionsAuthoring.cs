@@ -60,6 +60,15 @@ namespace HyperRTS.Simulation.Combat
             [Tooltip("Needs every support standing, not one (a bridge span): it falls when any of them goes.")]
             public bool needsAllSupports;
 
+            [Tooltip("Centre of the section's box, in the building's space.")]
+            public Vector3 center;
+
+            [Tooltip("Half the section's box size, in the building's space.")]
+            public Vector3 halfSize;
+
+            [Tooltip("The way debris flies and which side a hit comes from: horizontal out of a wall, or up for a roof.")]
+            public Vector3 outward;
+
             [Tooltip("Share of the building's health, against the others' shares.")]
             [Min(0.01f)]
             public float share;
@@ -91,6 +100,9 @@ namespace HyperRTS.Simulation.Combat
         [Tooltip("Which section material each material name in the structure file means.")]
         public MaterialName[] materialNames = Array.Empty<MaterialName>();
 
+        [Tooltip("How the pieces of every section break: blown in, blown out and collapse. Fill From Structure sets them.")]
+        public SectionClips clips;
+
         [Tooltip("Heap left at the foot of a broken ground-floor outer wall: crushable scenery tanks flatten.")]
         public GameObject rubble;
 
@@ -107,12 +119,12 @@ namespace HyperRTS.Simulation.Combat
         [Min(0.1f)]
         public float repairSeconds = 10f;
 
-        [Tooltip("The sections, at most 64. Fill From Structure lists them from the structure file, Fill From Parts from X_Intact and X_Broken children.")]
+        [Tooltip("The sections, at most 64. Fill From Structure lists them from the structure file with its boxes, Fill From Parts from X_Intact and X_Broken children.")]
         public Entry[] sections = Array.Empty<Entry>();
 
         /// <summary>
         /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling (hidden at scale 0), and guesses what
-        /// the inspector then lets you correct: anchored when it reaches the ground, exterior when it is a wall, a full
+        /// the inspector then lets you correct: the box, anchored when it reaches the ground, exterior when it is a wall, a full
         /// share for a wall and half for the rest, and supports from the sections it touches below. Materials and floors
         /// already set stay.
         /// </summary>
@@ -149,6 +161,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             var file = SectionStructure.Parse(structure.text, structure.name);
+            clips = file.BreakClips();
             sections = file.Entries(this).ToArray();
         }
 
@@ -209,13 +222,6 @@ namespace HyperRTS.Simulation.Combat
                     throw new InvalidOperationException("HyperRTS: " + problems[0]);
                 }
 
-                // Through the baker, so moves and mesh edits rebake.
-                GetComponentsInChildren<Transform>();
-                foreach (var filter in GetComponentsInChildren<MeshFilter>())
-                {
-                    DependsOn(filter.sharedMesh);
-                }
-
                 var building = GetComponent<GameEntityAuthoring>();
                 var materials = new List<SectionMaterial>();
                 var sections = new SectionShape(authoring).Bake(authoring.sections, building.maxHealth, materials);
@@ -240,11 +246,9 @@ namespace HyperRTS.Simulation.Combat
                 writer.AddBuffer(models);
                 writer.AddBuffer(looks);
                 writer.Add(new ShownSections { Effect = authoring.effect, DustWave = authoring.dustWave });
-                if (authoring.structure != null)
+                if (authoring.clips.IsSet)
                 {
-                    DependsOn(authoring.structure);
-                    var file = SectionStructure.Parse(authoring.structure.text, authoring.structure.name);
-                    writer.Add(file.BreakClips(authoring.structure.name));
+                    writer.Add(authoring.clips);
                 }
             }
 

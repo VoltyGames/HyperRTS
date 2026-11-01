@@ -74,6 +74,7 @@ namespace HyperRTS.Simulation.Combat
     }
 
     /// <summary>One break clip's rows in the building's vertex animation textures.</summary>
+    [System.Serializable]
     public struct SectionClip
     {
         public int StartRow;
@@ -84,6 +85,7 @@ namespace HyperRTS.Simulation.Combat
     }
 
     /// <summary>The three ways a section's pieces break, shared by every section of the building.</summary>
+    [System.Serializable]
     public struct SectionClips : IComponentData
     {
         /// <summary>Blown inward by a hit from outside.</summary>
@@ -94,6 +96,9 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Falling apart with nothing hitting it, once its supports are gone.</summary>
         public SectionClip Collapse;
+
+        /// <summary>Whether all three clips have frames, which pieces need to play.</summary>
+        public readonly bool IsSet => BlownIn.FrameCount > 0 && BlownOut.FrameCount > 0 && Collapse.FrameCount > 0;
     }
 
     /// <summary>What this client has seen happen to a <see cref="Section"/>, at the same index; presentation keeps it.</summary>
