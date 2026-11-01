@@ -77,8 +77,9 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 
 - Play `Assets/Demo/Scenes/SampleScene.unity`; its entities bake from a SubScene. The Hierarchy lists entity worlds
   beside GameObjects: filter with `t:` and a component name.
-- EditMode tests live in `HyperRTS.Simulation.Tests` (end to end through `TestWorld`), `HyperRTS.Presentation.Tests`
-  and `HyperRTS.Editor.Tests`.
+- EditMode tests live in `HyperRTS.Simulation.Tests` (end to end through `TestWorld`), `HyperRTS.Network.Tests`
+  (sessions, RPCs), `HyperRTS.Presentation.Tests` and `HyperRTS.Editor.Tests`. Each `Tests/` folder mirrors its
+  module folders, with the shared kits at its root.
 - Test behaviour that matters and hard edge cases, not every method or path. Extend an existing test before adding a
   near-copy, and skip a case another test already covers.
 - A new authoring rule is an `AuthoringRule<T>` in `Editor/Validation/Rules/`. The inspector,

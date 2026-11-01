@@ -1,0 +1,34 @@
+{
+    "name": "HyperRTS.Network.Tests",
+    "rootNamespace": "HyperRTS.Network.Tests",
+    "references": [
+        "HyperRTS.Simulation",
+        "HyperRTS.Simulation.Tests",
+        "HyperRTS.Network",
+        "Unity.NetCode",
+        "Unity.Networking.Transport",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Transforms",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -12,7 +12,7 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
-using HyperRTS.Presentation.Tests.Environment;
+using HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops;
 using NUnit.Framework;
 using UnityEngine;
 

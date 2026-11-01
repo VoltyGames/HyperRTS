@@ -1,7 +1,7 @@
 # Testing
 
-The engine's tests are EditMode tests in `HyperRTS.Simulation.Tests`, `HyperRTS.Presentation.Tests` and
-`HyperRTS.Editor.Tests`. Run them from **Window ▸ General ▸ Test Runner**.
+The engine's tests are EditMode tests in `HyperRTS.Simulation.Tests`, `HyperRTS.Network.Tests`,
+`HyperRTS.Presentation.Tests` and `HyperRTS.Editor.Tests`. Run them from **Window ▸ General ▸ Test Runner**.
 
 ## TestWorld
 
@@ -26,7 +26,7 @@ prefab for producers. `CreateMatch` also builds the nav grid and match rules, wh
 - Kits add setup per area: `CombatTestKit` (`Kill`, `IsIdle`), `EconomyTestKit` (supplies, unit prefabs, producers),
   `ContainerTestKit`, `AircraftTestKit` and `CueTestKit` (queued cues and type ids).
 - Presentation tests build their world through `PresentationWorldKit`, with players made by `PlayerSetup.Add`.
-- `HostTestKit` builds a single-world host the way `NetworkSession` does and a client joined to it over IPC, each
+- `HostTestKit` (in `HyperRTS.Network.Tests`, which references the Simulation tests for `TestWorld`) builds a single-world host the way `NetworkSession` does and a client joined to it over IPC, each
   wrapped in a `TestWorld` for setup. It ticks both at 60 Hz with a fixed time step.
 
 ## Validation in CI

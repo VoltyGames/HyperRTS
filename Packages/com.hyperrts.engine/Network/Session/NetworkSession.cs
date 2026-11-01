@@ -9,7 +9,7 @@ using Unity.Networking.Transport.Relay;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
-[assembly: InternalsVisibleTo("HyperRTS.Simulation.Tests")]
+[assembly: InternalsVisibleTo("HyperRTS.Network.Tests")]
 
 namespace HyperRTS.Network.Session
 {
