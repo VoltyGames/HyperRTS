@@ -24,6 +24,11 @@ namespace HyperRTS.Simulation.Vision
                 NativeArray<byte>.Copy(Blockers.Porous, 0, Previous, count, count);
                 NativeArray<byte>.Copy(Blockers.PorousTop, 0, Previous, count * 2, count);
                 Clear(Blockers.Solid);
+                for (var i = 0; i < Blockers.Owner.Length; i++)
+                {
+                    Blockers.Owner[i] = Entity.Null;
+                }
+
                 Clear(Blockers.Porous);
                 Clear(Blockers.PorousTop);
                 Clear(Blockers.Conceals);
@@ -80,8 +85,8 @@ namespace HyperRTS.Simulation.Vision
             public SightBlockers Blockers;
             public TerrainHeight Terrain;
 
-            private void Execute(in SightBlock block, in LocalTransform transform) =>
-                Blockers.Stamp(block, transform, Terrain);
+            private void Execute(Entity entity, in SightBlock block, in LocalTransform transform) =>
+                Blockers.Stamp(entity, block, transform, Terrain);
         }
 
         /// <summary>

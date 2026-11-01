@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
     /// Finds the closest hostile a weapon can hit, worth its damage (<see cref="Weapon.MinEffect"/>), beyond its
-    /// <see cref="Weapon.MinRange"/> and spotted by the shooter's team.
+    /// <see cref="Weapon.MinRange"/>, spotted by the shooter's team and, for direct fire, with a clear line to it.
     /// </summary>
     public struct NearestHostile : ISpatialVisitor
     {
@@ -23,10 +23,12 @@ namespace HyperRTS.Simulation.Combat.Targeting
         private byte _team;
         private float3 _center;
         private float _radius;
+        private Entity _shooter;
 
         public NearestHostile(in FactionRelations relations, in TargetLookup targets, in Weapon weapon, byte faction,
-            float3 center, float radius)
+            Entity shooter, float3 center, float radius)
         {
+            _shooter = shooter;
             Best = Entity.Null;
             BestDistance = float.MaxValue;
             _relations = relations;
@@ -56,7 +58,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 return;
             }
 
-            if (Closest.IsCloser(distance, entry.Entity, BestDistance, Best))
+            // Last, as it marches a line: a blocked direct-fire target isn't picked at all.
+            var closer = Closest.IsCloser(distance, entry.Entity, BestDistance, Best);
+            if (closer && _targets.HasLineOfFire(_shooter, _center, _weapon, entry.Entity))
             {
                 Best = entry.Entity;
                 BestDistance = distance;

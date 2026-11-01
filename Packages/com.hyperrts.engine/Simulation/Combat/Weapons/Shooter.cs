@@ -12,7 +12,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
     /// Fires a weapon from a job: the fire cue, an instant hit or a launched <see cref="Projectile"/>, and the stealth
-    /// reveal. Use from one thread.
+    /// reveal. A direct-fire round with something solid in the way hits that instead, and one launched through smoke
+    /// loses its target. Use from one thread.
     /// </summary>
     public struct Shooter
     {
@@ -27,6 +28,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         private DamageWriter _damage;
         private CueWriter _cues;
         private EntityCommandBuffer _ecb;
+        [ReadOnly] private SightBlockers _blockers;
 
         public Shooter(ref SystemState state) : this()
         {
@@ -56,6 +58,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _damage.Update(ref state, damageQueue);
             _cues.Update(ref state, cueQueue);
             _ecb = ecb;
+            new EntityQueryBuilder(Allocator.Temp).WithAll<SightBlockers>().Build(ref state)
+                .TryGetSingleton(out _blockers);
         }
 
         /// <summary>
@@ -139,7 +143,27 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
             else
             {
+                Obstruct(shooter, shot, fired, place, ref target, ref targetPosition);
                 Launch(shooter, shot, fired, place, target, targetPosition, faction);
+            }
+        }
+
+        /// <summary>Turns a direct-fire round onto whatever solid stands between the muzzle and the target.</summary>
+        private void Obstruct(Entity shooter, in Weapon weapon, in WeaponPose pose, in LocalTransform place,
+            ref Entity target, ref float3 targetPosition)
+        {
+            if (!weapon.NeedsLineOfFire || !_blockers.IsCreated)
+            {
+                return;
+            }
+
+            var holder = _inside.HasEnabled(shooter) ? _inside[shooter].Container : shooter;
+            var origin = weapon.Aim.LaunchPoint(place, pose);
+            var aim = weapon.Aim.TargetPoint(targetPosition);
+            if (_blockers.TryFindObstruction(origin, aim, holder, target, out var contact, out var obstacle))
+            {
+                target = obstacle;
+                targetPosition = contact;
             }
         }
 
@@ -186,12 +210,14 @@ namespace HyperRTS.Simulation.Combat.Weapons
             var seed = math.hash(new uint3((uint)shooter.Index, (uint)target.Index, pose.Shots));
             var aim = weapon.Scatter(weapon.Aim.TargetPoint(targetPosition), seed);
 
+            // Smoke thick enough to hide the target breaks a guided round's lock; it flies on to the aim point.
+            var locked = weapon.KeepsLock && !(_blockers.IsCreated && _blockers.Haze(origin, aim) >= 1f);
             var flight = new Projectile
             {
                 Speed = weapon.ProjectileSpeed,
                 Height = weapon.Aim.ProjectileHeight,
                 ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
-                Hit = weapon.Hit(shooter, faction, origin, weapon.KeepsLock ? target : Entity.Null, aim),
+                Hit = weapon.Hit(shooter, faction, origin, locked ? target : Entity.Null, aim),
                 Trajectory = weapon.Aim.Trajectory,
                 Kind = weapon.ProjectileKind,
                 Start = origin,

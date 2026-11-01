@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                     ? weapon.Range * (1f + Targets.GarrisonBonus(entity))
                     : weapon.ScanRange(vision.Value);
                 var radius = Targets.Radius(entity);
-                var finder = new NearestHostile(Relations, Targets, weapon, faction.Value, transform.Position,
+                var finder = new NearestHostile(Relations, Targets, weapon, faction.Value, entity, transform.Position,
                     radius);
                 Index.Query(transform.Position, range + radius, ref finder);
 

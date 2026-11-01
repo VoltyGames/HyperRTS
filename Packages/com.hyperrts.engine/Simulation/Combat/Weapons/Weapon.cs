@@ -94,6 +94,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
+        /// <summary>Direct fire and rockets need a clear line to the target; lobbed shells don't.</summary>
+        public readonly bool NeedsLineOfFire => Aim.Trajectory != Trajectory.Ballistic;
+
+        /// <summary>Launches rounds, which hit whatever is in the way, rather than hitting at once.</summary>
+        public readonly bool FiresRounds => ProjectilePrefab != Entity.Null;
+
         public bool CoolingDown => CooldownRemaining > 0f;
 
         public void Tick(float deltaTime) => CooldownRemaining = math.max(0f, CooldownRemaining - deltaTime);

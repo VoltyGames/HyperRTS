@@ -40,6 +40,14 @@ empty), and each fires its own Fire cue: the cue's variant is the weapon's pose 
 for the mounts, which `mountFire` on the sound and effect authoring fills in order. A mount without an entry fires
 silently. `Shooter.TryFire` is the fire step both weapon kinds share.
 
+Direct fire and rockets (`Weapon.NeedsLineOfFire`, any trajectory but ballistic) need a clear line from the
+shooter's eye to the target's top, over the ground and solid sight blocks (`SightBlockers.TryFindObstruction`;
+the shooter's own block, its garrison's and the target's don't count). Scans skip blocked targets. A weapon that
+hits at once waits for a clear line, so an ordered attack closes in until it has one. One that fires rounds
+(`FiresRounds`) shoots anyway, and `Shooter` turns the round onto the obstacle, hitting it where the line meets
+it. A round launched through porous cover that hides the target (`SightBlockers.Haze` of 1 or more, such as
+smoke) loses its lock and flies on to the aim point.
+
 `TargetLookup.Reach` is a weapon's range against one target. A passenger firing out of a container with a
 `PassengerRange` (`ContainerAuthoring.passengerRangeBonus`) reaches that share further. A direct-fire or rocket weapon
 standing above its target gains `SightRules.RangePerMetre` of range per metre, up to `MaxRange`; ballistic fire
@@ -243,6 +251,9 @@ frame's `AbilityActivation`.
 
 A self-targeted ability fires on every ready caster. An aimed one walks the nearest caster into range. Player
 powers are `Ability` entries on the player entity.
+
+A smoke screen is an ability whose spawned prefab carries a dense porous `SightBlock` and a `Decay`: it blocks
+sight and breaks guided rounds' lock until its lifetime ends, when the decay turns the block off.
 
 ## Status effects
 

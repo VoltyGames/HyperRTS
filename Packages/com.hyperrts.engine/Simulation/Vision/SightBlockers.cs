@@ -25,6 +25,10 @@ namespace HyperRTS.Simulation.Vision
         public NativeArray<float> Ground;
 
         public NativeArray<byte> Solid;
+
+        /// <summary>The block whose solid top each cell rises to, so a blocked shot knows what it hit.</summary>
+        public NativeArray<Entity> Owner;
+
         public NativeArray<byte> Porous;
         public NativeArray<byte> PorousTop;
 
@@ -64,6 +68,7 @@ namespace HyperRTS.Simulation.Vision
                 DirtyTiles = new NativeArray<byte>(tiles.x * tiles.y, allocator),
                 Tiles = tiles,
                 Ground = new NativeArray<float>(count, allocator),
+                Owner = new NativeArray<Entity>(count, allocator),
                 Solid = new NativeArray<byte>(count, allocator),
                 Porous = new NativeArray<byte>(count, allocator),
                 PorousTop = new NativeArray<byte>(count, allocator),
@@ -79,6 +84,7 @@ namespace HyperRTS.Simulation.Vision
         public readonly void Dispose()
         {
             Ground.Dispose();
+            Owner.Dispose();
             Solid.Dispose();
             Porous.Dispose();
             PorousTop.Dispose();
@@ -86,6 +92,56 @@ namespace HyperRTS.Simulation.Vision
             CropTop.Dispose();
             Conceals.Dispose();
             DirtyTiles.Dispose();
+        }
+
+        /// <summary>
+        /// Whether the straight line from <paramref name="from"/> to <paramref name="to"/> runs into the ground or a
+        /// solid block, and where; the blocks of <paramref name="shooter"/> and <paramref name="target"/> don't count.
+        /// </summary>
+        public readonly bool TryFindObstruction(float3 from, float3 to, Entity shooter, Entity target,
+            out float3 contact, out Entity obstacle)
+        {
+            var samples = (int)math.ceil(math.distance(from.xz, to.xz) / (CellSize * 0.5f));
+            for (var i = 1; i < samples; i++)
+            {
+                contact = math.lerp(from, to, (float)i / samples);
+                var cell = (int2)math.floor((contact.xz - Min) / CellSize);
+                if (!InBounds(cell))
+                {
+                    continue;
+                }
+
+                var index = Index(cell);
+                obstacle = Owner[index];
+                var own = obstacle != Entity.Null && (obstacle == shooter || obstacle == target);
+                if (!own && contact.y < Ground[index] + SolidHeight(index))
+                {
+                    return true;
+                }
+            }
+
+            contact = to;
+            obstacle = Entity.Null;
+            return false;
+        }
+
+        /// <summary>Share of sight the porous cover along the line takes, such as smoke between a missile and its target.</summary>
+        public readonly float Haze(float3 from, float3 to)
+        {
+            var samples = (int)math.ceil(math.distance(from.xz, to.xz) / (CellSize * 0.5f));
+            var length = math.distance(from.xz, to.xz) / math.max(samples, 1);
+            var haze = 0f;
+            for (var i = 1; i < samples; i++)
+            {
+                var point = math.lerp(from, to, (float)i / samples);
+                var cell = (int2)math.floor((point.xz - Min) / CellSize);
+                if (InBounds(cell))
+                {
+                    haze += Loss(Index(cell), point.y - Ground[Index(cell)], length);
+                }
+            }
+
+            return haze;
         }
 
         public void MarkDirty(int2 cell) => DirtyTiles[cell.y / TileCells * Tiles.x + cell.x / TileCells] = 1;
@@ -132,7 +188,7 @@ namespace HyperRTS.Simulation.Vision
         public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
 
         /// <summary>Raises every cell the block touches to its tops and densities, rounded up to a step.</summary>
-        public void Stamp(in SightBlock block, in LocalTransform transform, in TerrainHeight terrain)
+        public void Stamp(Entity entity, in SightBlock block, in LocalTransform transform, in TerrainHeight terrain)
         {
             var box = block.Box(transform);
             GetCells(box, out var min, out var max);
@@ -148,7 +204,13 @@ namespace HyperRTS.Simulation.Vision
 
                     var footing = transform.Position.y - terrain.Height(center);
                     var index = Index(new int2(x, y));
+                    var solid = Solid[index];
                     Raise(Solid, index, (footing + block.Height) / Step, block.Height > 0f);
+                    if (Solid[index] > solid)
+                    {
+                        Owner[index] = entity;
+                    }
+
                     Raise(PorousTop, index, (footing + block.PorousTop) / Step, block.Density > 0f);
                     Raise(Porous, index, block.Density / DensityStep, block.Density > 0f);
                     Raise(Conceals, index, 1f, block.Conceals);

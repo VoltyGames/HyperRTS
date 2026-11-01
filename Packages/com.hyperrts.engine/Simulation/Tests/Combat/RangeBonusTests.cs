@@ -35,8 +35,9 @@ namespace HyperRTS.Simulation.Tests.Combat
         [TestCase(30f, Trajectory.Ballistic, 1f)]
         public void DirectFire_ReachesFurther_FromAbove(float height, Trajectory trajectory, float scale)
         {
+            // The shooter stands at the cliff's edge, so its line down to the target clears the cliff top.
             _world.CreateTerrain(p => p.x < 3f ? height : 0f);
-            var shooter = _world.SpawnUnit(1, new float3(0f, height, 0f));
+            var shooter = _world.SpawnUnit(1, new float3(1f, height, 0f));
             _world.AddWeapon(shooter, range: Range, trajectory: trajectory, arcHeight: 5f);
             _world.SpawnUnit(2, new float3(8f, 0f, 0f));
 

@@ -132,7 +132,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             private Entity Scan(Entity entity, float3 position, in Weapon weapon, byte faction)
             {
                 var radius = Targets.Radius(entity);
-                var finder = new NearestHostile(Relations, Targets, weapon, faction, position, radius);
+                var finder = new NearestHostile(Relations, Targets, weapon, faction, entity, position, radius);
                 var reach = weapon.Range * (1f + Targets.GarrisonBonus(entity)) + radius;
                 Index.Query(position, reach, ref finder);
                 var found = finder.Best != Entity.Null;
@@ -142,8 +142,16 @@ namespace HyperRTS.Simulation.Combat.Weapons
             private bool CanShoot(Entity entity, float3 position, in Weapon weapon, Entity target) =>
                 Targets.IsAlive(target) && InReach(entity, position, weapon, target);
 
-            private bool InReach(Entity entity, float3 position, in Weapon weapon, Entity target) =>
-                Targets.CanHurt(target, weapon) && Targets.Reaches(entity, position, weapon, target);
+            private bool InReach(Entity entity, float3 position, in Weapon weapon, Entity target)
+            {
+                if (!Targets.CanHurt(target, weapon) || !Targets.Reaches(entity, position, weapon, target))
+                {
+                    return false;
+                }
+
+                // Rounds fire into what's in the way; bullets wait for a clear line.
+                return weapon.FiresRounds || Targets.HasLineOfFire(entity, position, weapon, target);
+            }
         }
 
         [BurstCompile]

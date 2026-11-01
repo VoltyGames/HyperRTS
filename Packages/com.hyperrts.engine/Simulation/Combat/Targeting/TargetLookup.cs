@@ -27,6 +27,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
         [ReadOnly] private ComponentLookup<TallTarget> _tall;
         [ReadOnly] private ComponentLookup<PassengerRange> _passengerRange;
+        [ReadOnly] private ComponentLookup<VisionRange> _vision;
+        [ReadOnly] private SightBlockers _blockers;
         private DamageFactors _damage;
         [ReadOnly] private FogOfWar _fog;
         private SightRules _sight;
@@ -43,6 +45,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _tall = state.GetComponentLookup<TallTarget>(true);
             _passengerRange = state.GetComponentLookup<PassengerRange>(true);
+            _vision = state.GetComponentLookup<VisionRange>(true);
+            _blockers = default;
             _damage = new DamageFactors(ref state);
             FogQuery(ref state).TryGetSingleton(out _fog);
             _sight = default;
@@ -61,10 +65,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _destructibles.Update(ref state);
             _tall.Update(ref state);
             _passengerRange.Update(ref state);
+            _vision.Update(ref state);
             _damage.Update(ref state);
             fog.TryGetSingleton(out _fog);
             new EntityQueryBuilder(Allocator.Temp).WithAll<SightRules>().Build(ref state)
                 .TryGetSingleton(out _sight);
+            new EntityQueryBuilder(Allocator.Temp).WithAll<SightBlockers>().Build(ref state)
+                .TryGetSingleton(out _blockers);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -152,6 +159,28 @@ namespace HyperRTS.Simulation.Combat.Targeting
             IsInside(shooter) && _passengerRange.TryGetComponent(_inside[shooter].Container, out var range)
                 ? range.Bonus
                 : 0f;
+
+        /// <summary>
+        /// Whether the weapon may shoot at the target from <paramref name="position"/>: lobbed fire always may, direct
+        /// fire only with a line from the shooter's eye to the target's top clear of the ground and solid blocks.
+        /// </summary>
+        public bool HasLineOfFire(Entity shooter, float3 position, in Weapon weapon, Entity target) =>
+            !weapon.NeedsLineOfFire || !IsObstructed(shooter, position, target);
+
+        /// <summary>Whether something solid stands between the shooter's eye and the target's top.</summary>
+        public bool IsObstructed(Entity shooter, float3 position, Entity target)
+        {
+            if (!_blockers.IsCreated)
+            {
+                return false;
+            }
+
+            var holder = IsInside(shooter) ? _inside[shooter].Container : shooter;
+            _vision.TryGetComponent(shooter, out var vision);
+            var from = position + new float3(0f, vision.EyeHeight, 0f);
+            var to = Position(target) + new float3(0f, IsTall(target) ? 2.5f : 1f, 0f);
+            return _blockers.TryFindObstruction(from, to, holder, target, out _, out _);
+        }
 
         /// <summary>Whether the target sits between the weapon's minimum range and its <see cref="Reach"/>.</summary>
         public bool Reaches(Entity shooter, float3 position, in Weapon weapon, Entity target)

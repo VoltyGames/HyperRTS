@@ -125,21 +125,27 @@ namespace HyperRTS.Simulation.Combat.Targeting
                     stance.ReturnPoint = transform.Position;
                 }
 
-                Engage(entity, transform.Position, target, ref attack, floor, reach);
+                // Rounds fire into what's in the way; bullets close in until the line is clear.
+                var clear = weapon.FiresRounds || Targets.HasLineOfFire(entity, transform.Position, weapon, target);
+                Engage(entity, transform.Position, target, ref attack, floor, reach, clear);
             }
 
-            /// <summary>Halts in range, chases out of it, and backs an ordered unit off a target inside its minimum range.</summary>
+            /// <summary>
+            /// Halts in range with a <paramref name="clear"/> line, chases otherwise, and backs an ordered unit off a
+            /// target inside its minimum range.
+            /// </summary>
             private void Engage(Entity entity, float3 position, Entity target, ref AttackTarget attack, float floor,
-                float reach)
+                float reach, bool clear)
             {
                 var middle = 0.5f * (floor + reach);
                 attack.BackingOff = BacksOff(entity, attack, floor, middle);
-                attack.InRange = !attack.BackingOff && attack.Gap >= floor && attack.Gap <= reach;
+                var within = attack.Gap >= floor && attack.Gap <= reach;
+                attack.InRange = !attack.BackingOff && within && clear;
                 if (attack.BackingOff)
                 {
                     BackOff(entity, position, target, middle);
                 }
-                else if (attack.Gap <= reach)
+                else if (attack.Gap <= reach && clear)
                 {
                     Moves.Halt(entity);
                 }
