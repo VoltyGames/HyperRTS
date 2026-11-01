@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System.Diagnostics;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;

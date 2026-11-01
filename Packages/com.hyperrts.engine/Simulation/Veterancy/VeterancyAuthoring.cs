@@ -1,7 +1,8 @@
+using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Stats;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;

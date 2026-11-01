@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Stats;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Authoring;

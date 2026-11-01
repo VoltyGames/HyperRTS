@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using Unity.Mathematics;
 

@@ -1,3 +1,7 @@
+using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Cues.Effects;
+using HyperRTS.Simulation.Cues.Sounds;
+using HyperRTS.Simulation.Cues.Voice;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;

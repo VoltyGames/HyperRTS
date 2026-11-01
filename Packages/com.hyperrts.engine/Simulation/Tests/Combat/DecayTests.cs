@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Entities;

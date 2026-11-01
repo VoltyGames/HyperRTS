@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Cues.Sounds;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Scripting.LifecycleManagement;
 

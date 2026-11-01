@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
+
 
 namespace HyperRTS.Simulation.Capture
 {

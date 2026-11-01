@@ -1,6 +1,7 @@
+using HyperRTS.Simulation.Cues.Announcements;
+using HyperRTS.Simulation.Cues.Sounds;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Audio;
-using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using UnityEngine;
 

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Sounds;
 using Unity.Entities;
 using UnityEngine;
 

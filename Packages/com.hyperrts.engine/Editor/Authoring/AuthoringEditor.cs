@@ -1,8 +1,8 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Common;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;

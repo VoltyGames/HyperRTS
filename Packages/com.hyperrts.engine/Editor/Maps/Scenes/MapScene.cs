@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System.IO;
 using System.Linq;
 using HyperRTS.Core;

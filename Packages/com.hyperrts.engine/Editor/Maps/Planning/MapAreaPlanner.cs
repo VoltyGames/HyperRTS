@@ -1,5 +1,6 @@
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Simulation.Common;
 
 namespace HyperRTS.Editor.Maps.Planning
 {

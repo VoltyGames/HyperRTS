@@ -1,4 +1,6 @@
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Effects;
+using HyperRTS.Simulation.Cues.Surfaces;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Effects.Rig

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Visibility;

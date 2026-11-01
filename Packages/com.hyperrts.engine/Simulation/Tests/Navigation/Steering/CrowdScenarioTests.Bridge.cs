@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using System.Collections.Generic;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;

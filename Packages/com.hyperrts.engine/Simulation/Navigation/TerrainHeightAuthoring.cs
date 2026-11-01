@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Construction;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Core;

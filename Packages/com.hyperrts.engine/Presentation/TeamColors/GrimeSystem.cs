@@ -2,7 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

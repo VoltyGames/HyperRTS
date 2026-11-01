@@ -1,8 +1,8 @@
-﻿using System;
+﻿using HyperRTS.Simulation.Common.Authoring;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;

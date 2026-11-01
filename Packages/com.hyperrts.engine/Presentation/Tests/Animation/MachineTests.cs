@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Core;

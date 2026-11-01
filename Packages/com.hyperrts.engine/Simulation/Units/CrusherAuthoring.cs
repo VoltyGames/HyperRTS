@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 

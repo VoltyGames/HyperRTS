@@ -2,7 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;

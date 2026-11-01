@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Stats;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

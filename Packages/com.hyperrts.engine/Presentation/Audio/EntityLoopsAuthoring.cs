@@ -1,6 +1,6 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;

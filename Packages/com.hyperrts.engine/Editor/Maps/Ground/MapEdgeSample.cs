@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Ground

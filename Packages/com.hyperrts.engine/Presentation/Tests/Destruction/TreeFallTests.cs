@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Destruction;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;

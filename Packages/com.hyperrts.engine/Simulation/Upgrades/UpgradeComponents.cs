@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Upgrades

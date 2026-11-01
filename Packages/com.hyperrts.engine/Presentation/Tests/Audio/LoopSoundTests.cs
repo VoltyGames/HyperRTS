@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Audio;
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Cues.Sounds;
 using NUnit.Framework;
 using Unity.Entities;
 using UnityEngine;

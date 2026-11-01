@@ -1,7 +1,6 @@
 using HyperRTS.Client.Common;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -3,6 +3,7 @@ using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Rendering.Visibility;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Destruction;
 using Unity.Collections;

@@ -5,7 +5,6 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;

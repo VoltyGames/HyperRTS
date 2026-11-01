@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 

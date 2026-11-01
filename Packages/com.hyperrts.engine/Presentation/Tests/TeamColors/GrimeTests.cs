@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.TeamColors;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using NUnit.Framework;
 using Unity.Mathematics;
 

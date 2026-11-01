@@ -5,6 +5,7 @@ using HyperRTS.Network.Players;
 using HyperRTS.Network.Replication;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Collections;

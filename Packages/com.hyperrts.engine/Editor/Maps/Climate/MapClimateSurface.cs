@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using UnityEngine;
 

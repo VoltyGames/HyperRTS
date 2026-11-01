@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Effects.Rig;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using UnityEditor;
 using UnityEngine;
 

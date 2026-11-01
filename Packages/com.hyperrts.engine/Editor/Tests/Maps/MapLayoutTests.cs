@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps;

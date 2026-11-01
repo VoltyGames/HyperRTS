@@ -1,7 +1,7 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
 using UnityEngine.UIElements;
 

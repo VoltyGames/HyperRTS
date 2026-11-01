@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat;

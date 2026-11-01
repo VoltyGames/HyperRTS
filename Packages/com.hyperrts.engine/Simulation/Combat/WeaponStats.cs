@@ -1,7 +1,7 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

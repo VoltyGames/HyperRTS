@@ -1,4 +1,5 @@
-﻿using Unity.Mathematics;
+﻿using HyperRTS.Simulation.Common;
+using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.TeamColors
 {

@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Stats;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;

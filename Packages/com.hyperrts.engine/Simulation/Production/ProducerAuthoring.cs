@@ -1,7 +1,7 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
 using HyperRTS.Simulation.Upgrades;
 using Unity.Entities;

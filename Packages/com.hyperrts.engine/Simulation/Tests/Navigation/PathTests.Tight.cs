@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Entities;

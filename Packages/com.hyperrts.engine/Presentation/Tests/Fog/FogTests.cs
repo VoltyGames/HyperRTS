@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;

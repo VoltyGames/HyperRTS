@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Cues.Surfaces;
 using System;
-using HyperRTS.Simulation.Cues;
 
 namespace HyperRTS.Editor.Maps.Climate
 {

@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Cues.Effects;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Units;
 using Unity.Mathematics;
 

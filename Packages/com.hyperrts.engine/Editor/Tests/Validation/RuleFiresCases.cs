@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues.Effects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,6 @@ using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;

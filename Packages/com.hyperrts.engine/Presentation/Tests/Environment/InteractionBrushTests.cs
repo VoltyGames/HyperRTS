@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Effects;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEditor;

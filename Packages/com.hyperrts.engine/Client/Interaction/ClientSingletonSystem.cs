@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Burst;
 using Unity.Entities;
 

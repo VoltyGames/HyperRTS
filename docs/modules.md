@@ -20,7 +20,7 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 
 | Tier | Modules |
 | --- | --- |
-| Base | Common |
+| Base | Common, Stats |
 | Foundation | Animation, Navigation, Vision, Selection, Orders, Cues |
 | Gameplay | Combat, Destruction, Transport, Air, Units, Resources, Production, Upgrades, Buildings, Abilities, Auras, Veterancy, Capture, Match, Status, Airdrops |
 | Orchestration | AI, GameEntities, Commands, Replays |

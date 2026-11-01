@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Cues.Sounds;
 using System;
-using HyperRTS.Simulation.Cues;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;

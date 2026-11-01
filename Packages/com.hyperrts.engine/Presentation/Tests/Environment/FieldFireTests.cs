@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Fire;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;

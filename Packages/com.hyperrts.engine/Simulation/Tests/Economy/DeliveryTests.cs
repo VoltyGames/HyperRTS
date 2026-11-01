@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Resources;

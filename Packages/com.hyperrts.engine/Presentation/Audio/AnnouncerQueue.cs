@@ -1,5 +1,6 @@
+using HyperRTS.Simulation.Cues.Announcements;
+using HyperRTS.Simulation.Cues.Sounds;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Cues;
 
 namespace HyperRTS.Presentation.Audio
 {

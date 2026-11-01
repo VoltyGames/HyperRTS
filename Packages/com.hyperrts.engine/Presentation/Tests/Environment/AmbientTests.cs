@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using HyperRTS.Presentation.Environment.Ambient;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Collections;

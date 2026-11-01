@@ -1,7 +1,9 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Status;
 using HyperRTS.Simulation.Units;
 using NUnit.Framework;

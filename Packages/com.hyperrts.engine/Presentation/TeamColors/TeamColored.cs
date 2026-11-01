@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.TeamColors

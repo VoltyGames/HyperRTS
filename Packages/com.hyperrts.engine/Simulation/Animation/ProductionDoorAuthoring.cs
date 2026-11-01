@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Production;
 using Unity.Entities;
 using Unity.Mathematics;

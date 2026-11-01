@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Maps.Palette;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using UnityEngine;
 

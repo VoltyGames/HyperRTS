@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues.Effects;
 using System.Runtime.CompilerServices;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using HyperRTS.Core;

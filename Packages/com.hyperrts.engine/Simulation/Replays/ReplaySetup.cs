@@ -1,4 +1,5 @@
-﻿using HyperRTS.Simulation.Match;
+﻿using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Match;
 using Unity.Collections;
 
 namespace HyperRTS.Simulation.Replays

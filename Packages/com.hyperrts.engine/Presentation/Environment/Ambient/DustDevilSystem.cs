@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
@@ -5,7 +6,6 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;

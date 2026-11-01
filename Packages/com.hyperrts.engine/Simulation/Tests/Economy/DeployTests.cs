@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Entities;

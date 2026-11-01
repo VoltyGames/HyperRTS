@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues.Surfaces;
 using System.IO;
 using HyperRTS.Simulation.Common;
 using Unity.Mathematics;

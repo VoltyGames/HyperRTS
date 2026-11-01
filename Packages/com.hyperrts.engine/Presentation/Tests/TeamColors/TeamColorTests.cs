@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.TeamColors;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using NUnit.Framework;
 using Unity.Collections;

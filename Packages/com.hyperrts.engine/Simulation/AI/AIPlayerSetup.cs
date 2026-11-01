@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.AI

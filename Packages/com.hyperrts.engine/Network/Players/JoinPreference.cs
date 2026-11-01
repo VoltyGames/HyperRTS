@@ -1,4 +1,5 @@
-﻿using Unity.Entities;
+﻿using HyperRTS.Simulation.Common;
+using Unity.Entities;
 
 namespace HyperRTS.Network.Players
 {

@@ -1,8 +1,8 @@
+using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Simulation.Cues;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Maps.Ground

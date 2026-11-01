@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Stats;
 using System;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;

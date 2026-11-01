@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,6 @@ using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Tests.Environment;
-using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using UnityEngine;
 

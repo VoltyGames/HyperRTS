@@ -1,10 +1,10 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Editor.Validation;
-using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEditor.PackageManager;
 
@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Tests
         // Simulation module tiers, lowest first: a module may use its own tier or lower ones, never a higher tier.
         private static readonly string[][] Tiers =
         {
-            new[] { "Common" },
+            new[] { "Common", "Stats" },
             new[] { "Animation", "Navigation", "Vision", "Selection", "Orders", "Cues" },
             new[]
             {

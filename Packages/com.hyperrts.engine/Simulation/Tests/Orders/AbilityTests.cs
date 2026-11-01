@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System;
 using HyperRTS.Simulation.Destruction;
 using Unity.Entities;

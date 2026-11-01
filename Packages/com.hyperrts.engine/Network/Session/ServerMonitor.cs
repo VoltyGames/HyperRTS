@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;

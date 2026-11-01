@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Cues.Sounds;
 using System.Linq;
-using HyperRTS.Simulation.Cues;
 
 namespace HyperRTS.Editor.Validation.Rules
 {

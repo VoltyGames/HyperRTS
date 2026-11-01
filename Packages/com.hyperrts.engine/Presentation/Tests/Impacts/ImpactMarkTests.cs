@@ -1,3 +1,6 @@
+using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Cues.Effects;
+using HyperRTS.Simulation.Cues.Surfaces;
 using System.Linq;
 using HyperRTS.Presentation.Environment.Interaction;
 using HyperRTS.Presentation.Impacts;

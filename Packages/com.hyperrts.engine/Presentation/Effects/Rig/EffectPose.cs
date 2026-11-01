@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation;
 using Unity.Mathematics;
 using UnityEngine;

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
 using Unity.Collections;

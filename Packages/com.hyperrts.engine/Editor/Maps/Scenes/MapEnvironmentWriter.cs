@@ -10,7 +10,7 @@ using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation;
 using UnityEditor;
 using UnityEngine;

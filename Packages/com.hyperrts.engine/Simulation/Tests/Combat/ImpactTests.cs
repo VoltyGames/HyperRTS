@@ -1,6 +1,9 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Effects;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Collections;

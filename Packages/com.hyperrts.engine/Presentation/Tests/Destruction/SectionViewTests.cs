@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Vision;

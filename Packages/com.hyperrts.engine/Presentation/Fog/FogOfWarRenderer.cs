@@ -3,7 +3,6 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using Unity.Scripting.LifecycleManagement;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using UnityEngine;

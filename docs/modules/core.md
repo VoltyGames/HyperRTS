@@ -1,6 +1,6 @@
 # Core modules
 
-[Modules](../modules.md) ▸ Common, GameEntities, Match, Orders, Commands, Selection
+[Modules](../modules.md) ▸ Common, Stats, GameEntities, Match, Orders, Commands, Selection
 
 The modules every other module builds on: who owns what, how a match is set up, and how player intent becomes
 unit orders.
@@ -28,9 +28,15 @@ The base tier: ownership, identity, health and shared helpers.
 | `EntityInfo`, `PrefabRegistry` | Type id, name and icon. The registry maps type id to prefab |
 | `IEntityWriter` | Writes component sets, so bakers and tests build the same entities |
 | `SpawnExtensions.Spawn` | Instantiates a baked prefab, places it with its `LocalToWorld` (stretch included) and sets its `Faction` |
-| `AuthoringBehaviour` | Base of all authoring components |
+| `AuthoringBehaviour` | Base of all authoring components. It lives in the `Common.Authoring` sub-namespace with `IEntityWriter` and the authoring attributes |
 
 An entity's type id is a hash of its display name, so two prefab types must not share a name.
+
+## Stats
+
+The base tier: live stats with modifiers, in `Simulation/Stats/`. `Stat`, `StatModifier`, `StatSource` and `StatMath`
+define the value formula, and `BaseStat` holds a stat's unmodified value. The recompute is in
+[Combat](combat.md#stats).
 
 ## GameEntities
 
