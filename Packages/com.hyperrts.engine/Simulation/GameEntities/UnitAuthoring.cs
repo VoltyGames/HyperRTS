@@ -58,8 +58,7 @@ namespace HyperRTS.Simulation.GameEntities
 
         protected override int Population => population;
 
-        public static void Add<TWriter>(ref TWriter writer, float moveSpeed, NavAgent agent)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, float moveSpeed, NavAgent agent)
         {
             writer.Add<UnitTag>();
             writer.Add(new MovementSpeed { Value = moveSpeed });
@@ -88,7 +87,7 @@ namespace HyperRTS.Simulation.GameEntities
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 authoring.BakeGameEntity(this, entity);
 
-                var writer = new BakerWriter(this, entity);
+                var writer = this.Writer(entity);
                 var agent = new NavAgent
                 {
                     Radius = authoring.radius,
@@ -104,7 +103,7 @@ namespace HyperRTS.Simulation.GameEntities
                 }
 
                 agent.WallMargin = agent.HullWallMargin;
-                UnitAuthoring.Add(ref writer, authoring.moveSpeed, agent);
+                UnitAuthoring.Add(writer, authoring.moveSpeed, agent);
             }
 
             private byte SceneryCrushLimit(UnitAuthoring authoring)

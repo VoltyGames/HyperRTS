@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Airdrops
 {
@@ -20,7 +19,7 @@ namespace HyperRTS.Simulation.Airdrops
     [UpdateAfter(typeof(AbilitySystem))]
     public partial struct StrategicAssetSystem : ISystem
     {
-        private ComponentLookup<PostTransformMatrix> _stretchLookup;
+        private PrefabSpawner _spawner;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -30,13 +29,13 @@ namespace HyperRTS.Simulation.Airdrops
             state.RequireForUpdate<PlayerRegistry>();
             state.RequireForUpdate<AbilityEvents>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            _stretchLookup = state.GetComponentLookup<PostTransformMatrix>(true);
+            _spawner = new PrefabSpawner(ref state);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _stretchLookup.Update(ref state);
+            _spawner.Update(ref state);
             var enabled = SystemAPI.GetSingleton<MatchRules>().StrategicAssets;
             var players = SystemAPI.GetSingleton<PlayerRegistry>();
             foreach (var charge in SystemAPI.Query<RefRW<StrategicCharge>>())
@@ -97,8 +96,8 @@ namespace HyperRTS.Simulation.Airdrops
 
                 var start = SystemAPI.GetComponent<PlayerSpawn>(players[used.Faction]).Position;
                 var route = DropRoute.Plan(map, start, used.Position, asset.Altitude);
-                var aircraft = route.Launch(ecb, asset.Aircraft, SystemAPI.GetComponent<LocalTransform>(asset.Aircraft),
-                    _stretchLookup, SystemAPI.GetComponent<Flight>(asset.Aircraft), asset.Altitude, used.Faction);
+                var flight = SystemAPI.GetComponent<Flight>(asset.Aircraft);
+                var aircraft = route.Launch(ecb, _spawner, asset.Aircraft, flight, asset.Altitude, used.Faction);
                 ecb.AddComponent(aircraft,
                     new BombingFlight { RevealSeconds = asset.RevealSeconds, Bombs = asset.Bombs });
             }

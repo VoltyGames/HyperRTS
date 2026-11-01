@@ -146,8 +146,8 @@ namespace HyperRTS.Simulation.Tests.Common
             var piece = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(piece, pose);
             _world.EntityManager.AddComponentData(piece, new PostTransformMatrix { Value = stretch });
-            var writer = new EntityManagerWriter(_world.EntityManager, piece);
-            DestructibleAuthoring.AddScenery(ref writer, 50f, 0, remains, float2.zero, SceneryId.At(pose.Position,
+            var writer = new EntityWriter(_world.EntityManager, piece);
+            DestructibleAuthoring.AddScenery(writer, 50f, 0, remains, float2.zero, SceneryId.At(pose.Position,
                 pose.Rotation));
 
             _world.QueueDamage(new DamageEvent
@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Tests.Common
         {
             var carrier = Scaled(_world.MakePrefab(_world.SpawnUnit(0, float3.zero, speed: 20f, name: "Truck")), 1.2f);
             var source = _world.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, source);
+            var writer = new EntityWriter(_world.EntityManager, source);
             writer.Add(new DeliverySource
             {
                 Carrier = carrier, Count = 2, Interval = 1f, Type = _supplies, Amount = 50, ArrivalRange = 6f,
@@ -197,7 +197,7 @@ namespace HyperRTS.Simulation.Tests.Common
                 Filter = AbilityTargetFilter.Hostile, Cooldown = 2f, SpawnPrefab = beacon,
             };
             var silo = _world.SpawnBuilding(1, float3.zero, new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, silo);
+            var writer = new EntityWriter(_world.EntityManager, silo);
             writer.AddBuffer(new[] { strike });
 
             _world.Command(1, new PlayerCommand

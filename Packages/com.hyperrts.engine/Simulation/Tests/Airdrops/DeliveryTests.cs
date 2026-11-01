@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
         {
             var carrier = _world.MakePrefab(_world.SpawnUnit(0, float3.zero, speed: 20f, name: "Truck"));
             var source = _world.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, source);
+            var writer = new EntityWriter(_world.EntityManager, source);
             writer.Add(new DeliverySource
             {
                 Carrier = carrier, Count = 2, Interval = CarrierInterval, Type = _supplies, Amount = Amount,
@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             var crate = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
             _world.EntityManager.SetComponentData(crate, LocalTransform.Identity);
             var receiver = _world.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, receiver);
+            var writer = new EntityWriter(_world.EntityManager, receiver);
             writer.Add(new AirdropReceiver
             {
                 Aircraft = aircraft, Crate = crate, Type = _supplies, Amount = Amount, Interval = AirdropInterval,

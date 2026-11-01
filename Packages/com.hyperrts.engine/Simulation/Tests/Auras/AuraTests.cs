@@ -37,8 +37,8 @@ namespace HyperRTS.Simulation.Tests.Auras
                 bonuses[i].Source = StatSource.Aura(id);
             }
 
-            var writer = new EntityManagerWriter(_world.EntityManager, source);
-            AuraAuthoring.AddAura(ref writer, new Aura
+            var writer = new EntityWriter(_world.EntityManager, source);
+            AuraAuthoring.AddAura(writer, new Aura
             {
                 AuraId = id, Radius = 10f, Affects = affects, HealPerSecond = heal, DamagePerSecond = damage,
             }, bonuses);

@@ -65,8 +65,8 @@ namespace HyperRTS.Simulation.Navigation.Heights
                 DependsOn(data);
                 var height = Sample(data, GetComponent<Transform>().position, Allocator.Persistent);
                 AddBlobAsset(ref height.Blob, out _);
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
-                NavSetup.AddTerrain(ref writer, height);
+                var writer = this.Writer(TransformUsageFlags.None);
+                NavSetup.AddTerrain(writer, height);
             }
         }
     }

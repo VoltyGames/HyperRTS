@@ -41,17 +41,17 @@ namespace HyperRTS.Simulation.Tests.Combat
         private Entity House(float3 position)
         {
             var house = _world.SpawnBuilding(1, position, new float2(8f, 8f));
-            var writer = new EntityManagerWriter(_world.EntityManager, house);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 5, MaxPassengerSize = 1 });
-            TransportSetup.AddShelter(ref writer, Protection);
+            var writer = new EntityWriter(_world.EntityManager, house);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 5, MaxPassengerSize = 1 });
+            TransportSetup.AddShelter(writer, Protection);
             return house;
         }
 
         private Entity Squad(float3 position)
         {
             var squad = _world.SpawnUnit(1, position);
-            var writer = new EntityManagerWriter(_world.EntityManager, squad);
-            TransportSetup.AddPassenger(ref writer, 1);
+            var writer = new EntityWriter(_world.EntityManager, squad);
+            TransportSetup.AddPassenger(writer, 1);
             return squad;
         }
 

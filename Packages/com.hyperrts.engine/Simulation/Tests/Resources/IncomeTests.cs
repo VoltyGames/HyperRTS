@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Tests.Resources
         private Entity SpawnReserve(byte faction, float x, int capacity, float interval = 1f)
         {
             var derrick = _world.AddIncome(SpawnBuilding(faction, x), _supplies, 10, interval);
-            var writer = new EntityManagerWriter(_world.EntityManager, derrick);
+            var writer = new EntityWriter(_world.EntityManager, derrick);
             writer.Add(new ResourceReserve { Remaining = capacity, Capacity = capacity });
             return derrick;
         }
@@ -53,14 +53,14 @@ namespace HyperRTS.Simulation.Tests.Resources
         private Entity SpawnRefill(byte faction, float x, int amount)
         {
             var depot = SpawnBuilding(faction, x);
-            var writer = new EntityManagerWriter(_world.EntityManager, depot);
+            var writer = new EntityWriter(_world.EntityManager, depot);
             writer.Add(new ReserveRefill { Type = _supplies, Amount = amount, Interval = 1f });
             return depot;
         }
 
         private void SpawnCasualtyIncome(float x)
         {
-            var writer = new EntityManagerWriter(_world.EntityManager, SpawnBuilding(1, x));
+            var writer = new EntityWriter(_world.EntityManager, SpawnBuilding(1, x));
             writer.Add(new CasualtyIncome { Type = _supplies, Share = 0.5f });
         }
 
@@ -162,8 +162,8 @@ namespace HyperRTS.Simulation.Tests.Resources
         public void OccupantIncome_PaysPerPassenger_AndNothingWhenEmpty()
         {
             var bunker = _world.AddIncome(SpawnBuilding(1, 0f), _supplies, 5, 1f);
-            var writer = new EntityManagerWriter(_world.EntityManager, bunker);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            var writer = new EntityWriter(_world.EntityManager, bunker);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             writer.Add<OccupantIncome>();
 
             _world.Run(1.5f);

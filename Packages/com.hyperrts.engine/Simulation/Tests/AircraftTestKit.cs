@@ -18,8 +18,8 @@ namespace HyperRTS.Simulation.Tests
         {
             var aircraft = world.SpawnUnit(faction, position, speed: speed, name: "Aircraft");
             world.EntityManager.SetComponentData(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
-            var writer = new EntityManagerWriter(world.EntityManager, aircraft);
-            AirSetup.AddFlight(ref writer, altitude, climbSpeed: 20f, loiterRadius);
+            var writer = new EntityWriter(world.EntityManager, aircraft);
+            AirSetup.AddFlight(writer, altitude, climbSpeed: 20f, loiterRadius);
             return aircraft;
         }
 
@@ -27,11 +27,11 @@ namespace HyperRTS.Simulation.Tests
         public static Entity AddPadUser(this TestWorld world, Entity aircraft, int rounds = 0, float reloadTime = 0.5f,
             PadKind kind = PadKind.Any)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, aircraft);
-            AirSetup.AddPadUser(ref writer, kind);
+            var writer = new EntityWriter(world.EntityManager, aircraft);
+            AirSetup.AddPadUser(writer, kind);
             if (rounds > 0)
             {
-                WeaponSetup.AddAmmo(ref writer, rounds, reloadTime, AmmoRefill.Docked);
+                WeaponSetup.AddAmmo(writer, rounds, reloadTime, AmmoRefill.Docked);
             }
 
             return aircraft;
@@ -40,8 +40,8 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnAirfield(this TestWorld world, byte faction, float3 position, params float3[] pads)
         {
             var airfield = world.SpawnBuilding(faction, position, new float2(4f, 4f), name: "Airfield");
-            var writer = new EntityManagerWriter(world.EntityManager, airfield);
-            var buffer = AirSetup.AddAirfield(ref writer);
+            var writer = new EntityWriter(world.EntityManager, airfield);
+            var buffer = AirSetup.AddAirfield(writer);
             foreach (var offset in pads)
             {
                 buffer.Add(new LandingPad { Offset = offset });

@@ -24,15 +24,14 @@ namespace HyperRTS.Simulation.Transport
         public const float FallHit = 0.6f;
 
         private CargoExit _exit;
-        private DamageWriter _damage;
+        private EventWriter<DamageEvent> _damage;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _exit = new CargoExit(ref state);
-            _damage = new DamageWriter(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
             state.RequireForUpdate<IntactFloors>();
-            state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<NavGrid>();
         }
 
@@ -40,7 +39,7 @@ namespace HyperRTS.Simulation.Transport
         public void OnUpdate(ref SystemState state)
         {
             _exit.Update(ref state);
-            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
+            _damage.Update(ref state);
             new EmptyJob { Exit = _exit, Damage = _damage, Grid = SystemAPI.GetSingleton<NavGrid>() }.Schedule();
         }
 
@@ -49,7 +48,7 @@ namespace HyperRTS.Simulation.Transport
         private partial struct EmptyJob : IJobEntity
         {
             public CargoExit Exit;
-            public DamageWriter Damage;
+            public EventWriter<DamageEvent> Damage;
             [ReadOnly] public NavGrid Grid;
 
             private void Execute(Entity entity, in Container container, ref IntactFloors floors,

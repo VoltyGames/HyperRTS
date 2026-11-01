@@ -149,8 +149,8 @@ namespace HyperRTS.Simulation.Tests.Cues
         {
             var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, cooldown: 100f);
             _world.AddMount(gun, range: 6f, cooldown: 100f);
-            var writer = new EntityManagerWriter(_world.EntityManager, gun);
-            var sounds = EntitySoundsAuthoring.Add(ref writer);
+            var writer = new EntityWriter(_world.EntityManager, gun);
+            var sounds = EntitySoundsAuthoring.Add(writer);
             EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, _cue);
             EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, _cue, 1);
             _world.SpawnUnit(2, new float3(4f, 0f, 0f));
@@ -250,8 +250,8 @@ namespace HyperRTS.Simulation.Tests.Cues
 
         private Entity Voiced(Entity entity, params CueSlot[] slots)
         {
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            var sounds = EntitySoundsAuthoring.Add(ref writer);
+            var writer = new EntityWriter(_world.EntityManager, entity);
+            var sounds = EntitySoundsAuthoring.Add(writer);
             foreach (var slot in slots)
             {
                 EntitySoundsAuthoring.Set(sounds, slot, _cue);
@@ -262,8 +262,8 @@ namespace HyperRTS.Simulation.Tests.Cues
 
         private Entity Rigged(Entity entity, CueSlot slot, float3 socket)
         {
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            EntityEffectsAuthoring.Set(EntityEffectsAuthoring.Add(ref writer), slot, _rig, socket);
+            var writer = new EntityWriter(_world.EntityManager, entity);
+            EntityEffectsAuthoring.Set(EntityEffectsAuthoring.Add(writer), slot, _rig, socket);
             return entity;
         }
 

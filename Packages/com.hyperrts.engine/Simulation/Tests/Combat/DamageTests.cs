@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void DirectionalArmor_ScalesByHitSide(float x, float y, float z, float multiplier)
         {
             var tank = _world.SpawnUnit(2, float3.zero);
-            var writer = new EntityManagerWriter(_world.EntityManager, tank);
+            var writer = new EntityWriter(_world.EntityManager, tank);
             writer.Add(new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
 
             _world.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
@@ -113,8 +113,8 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void SplashWeapon_HitsTargetAndNeighbours()
         {
             var gun = _world.SpawnUnit(1, float3.zero);
-            var writer = new EntityManagerWriter(_world.EntityManager, gun);
-            WeaponSetup.Add(ref writer, new Weapon
+            var writer = new EntityWriter(_world.EntityManager, gun);
+            WeaponSetup.Add(writer, new Weapon
             {
                 Range = 8f, Damage = 30f, Cooldown = 100f, SplashRadius = 3f, SplashEdgeFactor = 1f,
                 LeashFactor = 1.5f,
@@ -256,9 +256,9 @@ namespace HyperRTS.Simulation.Tests.Combat
             TypedDamageBonus[] damageBonuses = null)
         {
             var entity = _world.EntityManager.CreateEntity();
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
+            var writer = new EntityWriter(_world.EntityManager, entity);
             var info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name };
-            StatusEffectAuthoring.Add(ref writer, info, definition, bonuses ?? new StatBonus[0],
+            StatusEffectAuthoring.Add(writer, info, definition, bonuses ?? new StatBonus[0],
                 damageBonuses ?? new TypedDamageBonus[0]);
             return _world.MakePrefab(entity);
         }

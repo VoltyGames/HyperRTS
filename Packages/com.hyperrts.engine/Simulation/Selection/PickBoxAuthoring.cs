@@ -39,16 +39,15 @@ namespace HyperRTS.Simulation.Selection
             size = new Vector3(bounds.size.x / scale.x, bounds.size.y / scale.y, bounds.size.z / scale.z);
         }
 
-        public static void AddPickBox<TWriter>(ref TWriter writer, float3 center, float3 size)
-            where TWriter : struct, IEntityWriter =>
+        public static void AddPickBox(EntityWriter writer, float3 center, float3 size) =>
             writer.Add(new PickBox { Center = center, HalfSize = size * 0.5f });
 
         public class Baker : Baker<PickBoxAuthoring>
         {
             public override void Bake(PickBoxAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AddPickBox(ref writer, authoring.center, authoring.size);
+                var writer = this.Writer();
+                AddPickBox(writer, authoring.center, authoring.size);
             }
         }
     }

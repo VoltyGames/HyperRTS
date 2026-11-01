@@ -112,15 +112,8 @@ namespace HyperRTS.Simulation.Combat.Death
                 }
 
                 // Remains being buried are on their way out, so units may drive over and see past them.
-                if (Blockers.HasComponent(entity))
-                {
-                    Blockers.SetComponentEnabled(entity, false);
-                }
-
-                if (SightBlocks.HasComponent(entity))
-                {
-                    SightBlocks.SetComponentEnabled(entity, false);
-                }
+                Blockers.DisableIfPresent(entity);
+                SightBlocks.DisableIfPresent(entity);
 
                 var progress = (float)math.min(1d, (Now - value.DespawnStartTime) / value.DespawnDuration);
                 Transforms.GetRefRW(entity).ValueRW.Position.y -= (progress - value.DespawnProgress) * value.DespawnDepth;

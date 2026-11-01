@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Entities;
 
@@ -15,8 +16,7 @@ namespace HyperRTS.Simulation.Cues
     {
         public void OnCreate(ref SystemState state)
         {
-            var queue = state.EntityManager.CreateEntity(typeof(CueQueue), typeof(CueEvent));
-            state.EntityManager.SetName(queue, "CueQueue");
+            EventQueues.Create<CueQueue>(ref state, typeof(CueEvent));
         }
 
         [BurstCompile]

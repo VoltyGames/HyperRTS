@@ -186,19 +186,16 @@ namespace HyperRTS.Simulation.Destruction
 
         private static int Nearest(DynamicBuffer<Section> sections, float3 position)
         {
-            var nearest = -1;
-            var best = float.MaxValue;
+            var nearest = Closest.None;
             for (var i = 0; i < sections.Length; i++)
             {
-                var gap = sections[i].Gap(position);
-                if (!sections[i].IsBroken && gap < best)
+                if (!sections[i].IsBroken)
                 {
-                    best = gap;
-                    nearest = i;
+                    nearest.Consider(i, Entity.Null, sections[i].Gap(position));
                 }
             }
 
-            return nearest;
+            return nearest.Index;
         }
     }
 }

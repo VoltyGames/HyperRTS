@@ -29,8 +29,8 @@ namespace HyperRTS.Simulation.Tests
         {
             var area = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(area, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(world.EntityManager, area);
-            NavSetup.AddArea(ref writer, size, kind);
+            var writer = new EntityWriter(world.EntityManager, area);
+            NavSetup.AddArea(writer, size, kind);
             return area;
         }
 
@@ -39,8 +39,8 @@ namespace HyperRTS.Simulation.Tests
             var obstacle = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(obstacle,
                 LocalTransform.FromPositionRotation(center, quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(world.EntityManager, obstacle);
-            NavSetup.AddObstacle(ref writer, size);
+            var writer = new EntityWriter(world.EntityManager, obstacle);
+            NavSetup.AddObstacle(writer, size);
             return obstacle;
         }
 

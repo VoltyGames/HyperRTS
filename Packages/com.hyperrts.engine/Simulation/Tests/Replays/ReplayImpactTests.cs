@@ -47,8 +47,8 @@ namespace HyperRTS.Simulation.Tests.Replays
             Combat.ImpactTests.Marked(world, gun, _mark);
             if (loud)
             {
-                var writer = new EntityManagerWriter(world.EntityManager, gun);
-                EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(ref writer), CueSlot.Fire, _sound);
+                var writer = new EntityWriter(world.EntityManager, gun);
+                EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(writer), CueSlot.Fire, _sound);
             }
 
             ReplayRecorder.Start(world.World, sampleRate: 10f, keyframeInterval: 0.5f);

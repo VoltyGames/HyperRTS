@@ -17,28 +17,26 @@ namespace HyperRTS.Simulation.Transport
     public partial struct NeutralGarrisonSystem : ISystem
     {
         private ComponentLookup<Faction> _factions;
-        private BufferLookup<OwnerChanged> _ownerChanged;
+        private EventWriter<OwnerChanged> _ownerChanges;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<NeutralGarrison>();
-            state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             _factions = state.GetComponentLookup<Faction>(true);
-            _ownerChanged = state.GetBufferLookup<OwnerChanged>();
+            _ownerChanges = new EventWriter<OwnerChanged>(ref state);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             _factions.Update(ref state);
-            _ownerChanged.Update(ref state);
+            _ownerChanges.Update(ref state);
             state.Dependency = new OwnerJob
             {
                 Factions = _factions,
-                OwnerEvents = _ownerChanged,
-                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
+                OwnerChanges = _ownerChanges,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
             }.Schedule(state.Dependency);
@@ -51,8 +49,7 @@ namespace HyperRTS.Simulation.Transport
         private partial struct OwnerJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<Faction> Factions;
-            public BufferLookup<OwnerChanged> OwnerEvents;
-            public Entity Events;
+            public EventWriter<OwnerChanged> OwnerChanges;
             public EntityCommandBuffer Ecb;
 
             private void Execute(Entity entity, in Faction faction, in DynamicBuffer<Cargo> cargo)
@@ -63,7 +60,7 @@ namespace HyperRTS.Simulation.Transport
                     return;
                 }
 
-                OwnerChanged.Transfer(Ecb, OwnerEvents[Events], entity, faction.Value, owner);
+                OwnerChanged.Transfer(Ecb, ref OwnerChanges, entity, faction.Value, owner);
             }
 
             /// <summary>The first passenger's faction, or neutral when empty.</summary>

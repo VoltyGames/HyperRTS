@@ -11,8 +11,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
     public static class WeaponSetup
     {
         /// <summary>The primary weapon, with poses for it and <paramref name="extraPoses"/> mounts and interceptors.</summary>
-        public static void Add<TWriter>(ref TWriter writer, in Weapon weapon, Stance stance, float3 returnPoint,
-            int extraPoses) where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, in Weapon weapon, Stance stance, float3 returnPoint,
+            int extraPoses)
         {
             writer.Add(weapon);
             writer.AddBuffer<WeaponPose>().Resize(1 + extraPoses, NativeArrayOptions.ClearMemory);
@@ -22,22 +22,19 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>Limits the weapon to <paramref name="rounds"/> shots, starting full.</summary>
-        public static void AddAmmo<TWriter>(ref TWriter writer, int rounds, float reloadTime, AmmoRefill refill)
-            where TWriter : struct, IEntityWriter
+        public static void AddAmmo(EntityWriter writer, int rounds, float reloadTime, AmmoRefill refill)
         {
             writer.Add(Ammo.Create(rounds, reloadTime, refill));
         }
 
         /// <summary>The muzzles of weapons that fire from several in turn; see <see cref="Weapon.FirstMuzzle"/>.</summary>
-        public static void AddMuzzles<TWriter>(ref TWriter writer, IReadOnlyList<WeaponMuzzle> muzzles)
-            where TWriter : struct, IEntityWriter
+        public static void AddMuzzles(EntityWriter writer, IReadOnlyList<WeaponMuzzle> muzzles)
         {
             writer.AddBuffer(muzzles);
         }
 
         /// <summary>Extra weapons beside the primary; build each with <see cref="WeaponMount.Create"/>.</summary>
-        public static void AddMounts<TWriter>(ref TWriter writer, IReadOnlyList<WeaponMount> mounts)
-            where TWriter : struct, IEntityWriter
+        public static void AddMounts(EntityWriter writer, IReadOnlyList<WeaponMount> mounts)
         {
             writer.AddBuffer(mounts);
         }

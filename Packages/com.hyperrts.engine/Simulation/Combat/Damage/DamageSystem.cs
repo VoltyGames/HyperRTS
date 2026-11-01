@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Combat.Damage
         private ComponentLookup<Destructible> _destructibles;
         private ComponentLookup<LethalHit> _lethalHits;
         private ComponentLookup<Faction> _factions;
-        private BufferLookup<EntityDamaged> _damaged;
+        private EventWriter<EntityDamaged> _damaged;
         private ComponentLookup<Shelter> _shelters;
         private BufferLookup<ShelterHit> _shelterHits;
         private SectionDamage _buildings;
@@ -40,16 +40,14 @@ namespace HyperRTS.Simulation.Combat.Damage
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _lethalHits = state.GetComponentLookup<LethalHit>();
             _factions = state.GetComponentLookup<Faction>(true);
-            _damaged = state.GetBufferLookup<EntityDamaged>();
+            _damaged = new EventWriter<EntityDamaged>(ref state);
             _shelters = state.GetComponentLookup<Shelter>(true);
             _shelterHits = state.GetBufferLookup<ShelterHit>();
             _buildings = new SectionDamage(ref state);
 
-            var queue = state.EntityManager.CreateEntity(typeof(DamageQueue), typeof(DamageEvent));
-            state.EntityManager.SetName(queue, "DamageQueue");
+            EventQueues.Create<DamageQueue>(ref state, typeof(DamageEvent));
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<GameEvents>();
         }
 
         [BurstCompile]
@@ -82,7 +80,6 @@ namespace HyperRTS.Simulation.Combat.Damage
                 Shelters = _shelters,
                 ShelterHits = _shelterHits,
                 Buildings = _buildings,
-                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
 
@@ -99,30 +96,27 @@ namespace HyperRTS.Simulation.Combat.Damage
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             public ComponentLookup<LethalHit> LethalHits;
             [ReadOnly] public ComponentLookup<Faction> Factions;
-            public BufferLookup<EntityDamaged> Damaged;
+            public EventWriter<EntityDamaged> Damaged;
             [ReadOnly] public ComponentLookup<Shelter> Shelters;
             public BufferLookup<ShelterHit> ShelterHits;
             public SectionDamage Buildings;
-            public Entity Events;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
                 var victims = new NativeList<SpatialEntry>(16, Allocator.Temp);
-                var damaged = Damaged[Events];
                 foreach (var hit in events)
                 {
-                    Apply(hit.Target, hit.Amount, hit, hit.Origin, damaged);
+                    Apply(hit.Target, hit.Amount, hit, hit.Origin);
                     if (hit.Radius > 0f)
                     {
-                        Splash(hit, victims, damaged);
+                        Splash(hit, victims);
                     }
                 }
 
                 events.Clear();
             }
 
-            private void Splash(in DamageEvent hit, NativeList<SpatialEntry> victims,
-                DynamicBuffer<EntityDamaged> damaged)
+            private void Splash(in DamageEvent hit, NativeList<SpatialEntry> victims)
             {
                 victims.Clear();
                 var collector = new SplashCollector { Victims = victims };
@@ -137,7 +131,7 @@ namespace HyperRTS.Simulation.Combat.Damage
 
                     var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
                     var amount = hit.Amount * hit.SplashFactor(gap);
-                    Apply(victim.Entity, amount, hit, hit.Position, damaged);
+                    Apply(victim.Entity, amount, hit, hit.Position);
                 }
             }
 
@@ -159,8 +153,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             }
 
             /// <summary>A lethal hit fells a <see cref="Topple"/> target away from <paramref name="from"/>.</summary>
-            private void Apply(Entity target, float amount, in DamageEvent hit, float3 from,
-                DynamicBuffer<EntityDamaged> damaged)
+            private void Apply(Entity target, float amount, in DamageEvent hit, float3 from)
             {
                 if (!Health.TryGetComponent(target, out var health) || health.Current <= 0f)
                 {
@@ -183,7 +176,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 var overkill = amount - health.Current;
                 health.Current = Buildings.Resolved(target, math.max(0f, health.Current - amount));
                 Health[target] = health;
-                Report(target, amount, damaged);
+                Report(target, amount);
                 if (health.Current <= 0f && LethalHits.HasComponent(target))
                 {
                     var heading = ToppleMath.Quantize(from, Transforms[target].Position);
@@ -197,7 +190,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             }
 
             /// <summary>Armor that soaks the whole hit raises no event.</summary>
-            private void Report(Entity target, float amount, DynamicBuffer<EntityDamaged> damaged)
+            private void Report(Entity target, float amount)
             {
                 if (amount <= 0f || !Factions.TryGetComponent(target, out var owner))
                 {
@@ -206,7 +199,7 @@ namespace HyperRTS.Simulation.Combat.Damage
 
                 if (owner.Value != Faction.Neutral)
                 {
-                    damaged.Add(new EntityDamaged { Entity = target, Faction = owner.Value });
+                    Damaged.Add(new EntityDamaged { Entity = target, Faction = owner.Value });
                 }
             }
 

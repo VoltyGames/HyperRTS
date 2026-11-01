@@ -22,8 +22,8 @@ namespace HyperRTS.Simulation.Transport
         {
             public override void Bake(PassengerAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                TransportSetup.AddPassenger(ref writer, authoring.size);
+                var writer = this.Writer();
+                TransportSetup.AddPassenger(writer, authoring.size);
             }
         }
     }

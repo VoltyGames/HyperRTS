@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -43,20 +44,17 @@ namespace HyperRTS.Simulation.Destruction
         /// <summary>The hole variant whose hole is nearest <paramref name="local"/>, or -1 when the section has none.</summary>
         public readonly int NearestHole(float3 local)
         {
-            var nearest = -1;
-            var best = float.MaxValue;
+            var nearest = Closest.None;
             for (var i = 0; i < MostHoles; i++)
             {
                 var hole = Hole(i);
-                var distance = math.distancesq(hole.Center, local);
-                if (hole.Model != Entity.Null && distance < best)
+                if (hole.Model != Entity.Null)
                 {
-                    best = distance;
-                    nearest = i;
+                    nearest.Consider(i, Entity.Null, math.distancesq(hole.Center, local));
                 }
             }
 
-            return nearest;
+            return nearest.Index;
         }
 
         /// <summary>Calls <paramref name="add"/> with every model that starts hidden, everything but <see cref="Intact"/>.</summary>

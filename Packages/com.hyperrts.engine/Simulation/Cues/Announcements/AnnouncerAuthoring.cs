@@ -31,16 +31,15 @@ namespace HyperRTS.Simulation.Cues.Announcements
         [Tooltip("One announcer per side; a side without one hears no alerts.")]
         public List<Entry> sides = new();
 
-        public static DynamicBuffer<AnnouncerVoice> Add<TWriter>(ref TWriter writer)
-            where TWriter : struct, IEntityWriter =>
+        public static DynamicBuffer<AnnouncerVoice> Add(EntityWriter writer) =>
             writer.AddBuffer<AnnouncerVoice>();
 
         public class Baker : Baker<AnnouncerAuthoring>
         {
             public override void Bake(AnnouncerAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
-                var voices = AnnouncerAuthoring.Add(ref writer);
+                var writer = this.Writer(TransformUsageFlags.None);
+                var voices = AnnouncerAuthoring.Add(writer);
                 foreach (var entry in authoring.sides)
                 {
                     if (entry.set == null)

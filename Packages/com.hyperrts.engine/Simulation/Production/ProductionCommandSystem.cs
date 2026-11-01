@@ -153,24 +153,18 @@ namespace HyperRTS.Simulation.Production
         /// <summary>The commanded producer, or the selected one with the shortest queue that offers the prefab.</summary>
         private Entity FindProducer(ref SystemState state, in IssuedCommand issued)
         {
-            var best = Entity.Null;
-            var shortest = int.MaxValue;
-            foreach (var producer in _commands.Subjects(ref state, issued))
+            var shortest = Closest.None;
+            var producers = _commands.Subjects(ref state, issued);
+            for (var i = 0; i < producers.Length; i++)
             {
-                if (!CanProduce(ref state, producer, issued.Command.Prefab))
+                var producer = producers[i];
+                if (CanProduce(ref state, producer, issued.Command.Prefab))
                 {
-                    continue;
-                }
-
-                var length = SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length;
-                if (length < shortest)
-                {
-                    best = producer;
-                    shortest = length;
+                    shortest.Consider(i, producer, SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length);
                 }
             }
 
-            return best;
+            return shortest.Entity;
         }
 
         /// <summary>A finished producer offering <paramref name="prefab"/>.</summary>

@@ -32,7 +32,6 @@ namespace HyperRTS.Simulation.Cues.Voice
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _health = state.GetComponentLookup<Health>(true);
             _nextByPlayer = new NativeArray<double>(Faction.Max + 1, Allocator.Persistent);
-            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<GameEvents>();
         }
 
@@ -42,7 +41,7 @@ namespace HyperRTS.Simulation.Cues.Voice
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _cues.Update(ref state);
             _voices.Update(ref state);
             _transforms.Update(ref state);
             _health.Update(ref state);

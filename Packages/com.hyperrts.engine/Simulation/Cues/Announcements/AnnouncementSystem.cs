@@ -31,7 +31,6 @@ namespace HyperRTS.Simulation.Cues.Announcements
             _info = state.GetComponentLookup<EntityInfo>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _buildings = state.GetComponentLookup<BuildingTag>(true);
-            state.RequireForUpdate<CueQueue>();
             // Without an announcer nobody hears alerts, so none are sent.
             state.RequireForUpdate(state.GetEntityQuery(ComponentType.ReadOnly<AnnouncerVoice>()));
             state.RequireForUpdate<GameEvents>();
@@ -43,7 +42,7 @@ namespace HyperRTS.Simulation.Cues.Announcements
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _cues.Update(ref state);
             _info.Update(ref state);
             _transforms.Update(ref state);
             _buildings.Update(ref state);

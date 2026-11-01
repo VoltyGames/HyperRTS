@@ -22,15 +22,14 @@ namespace HyperRTS.Simulation.Production
     {
         private ComponentLookup<Population> _populationLookup;
         private ComponentLookup<Producible> _producibleLookup;
-        private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<PostTransformMatrix> _stretchLookup;
+        private PrefabSpawner _spawner;
         private ComponentLookup<Research> _researchLookup;
         private ComponentLookup<Offline> _offlineLookup;
         private BufferLookup<CompletedResearch> _completedResearchLookup;
         private BufferLookup<LandingPad> _padLookup;
         private ComponentLookup<HomePad> _padUserLookup;
-        private BufferLookup<UnitProduced> _producedLookup;
-        private BufferLookup<ResearchCompleted> _researchedLookup;
+        private EventWriter<UnitProduced> _produced;
+        private EventWriter<ResearchCompleted> _researched;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -38,16 +37,14 @@ namespace HyperRTS.Simulation.Production
             state.RequireForUpdate<PlayerRegistry>();
             _populationLookup = state.GetComponentLookup<Population>(true);
             _producibleLookup = state.GetComponentLookup<Producible>(true);
-            _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _stretchLookup = state.GetComponentLookup<PostTransformMatrix>(true);
+            _spawner = new PrefabSpawner(ref state);
             _researchLookup = state.GetComponentLookup<Research>(true);
             _offlineLookup = state.GetComponentLookup<Offline>(true);
             _completedResearchLookup = state.GetBufferLookup<CompletedResearch>();
             _padLookup = state.GetBufferLookup<LandingPad>(true);
             _padUserLookup = state.GetComponentLookup<HomePad>(true);
-            _producedLookup = state.GetBufferLookup<UnitProduced>();
-            _researchedLookup = state.GetBufferLookup<ResearchCompleted>();
-            state.RequireForUpdate<GameEvents>();
+            _produced = new EventWriter<UnitProduced>(ref state);
+            _researched = new EventWriter<ResearchCompleted>(ref state);
             state.RequireForUpdate<MatchRules>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -57,15 +54,14 @@ namespace HyperRTS.Simulation.Production
         {
             _populationLookup.Update(ref state);
             _producibleLookup.Update(ref state);
-            _transformLookup.Update(ref state);
-            _stretchLookup.Update(ref state);
+            _spawner.Update(ref state);
             _researchLookup.Update(ref state);
             _offlineLookup.Update(ref state);
             _completedResearchLookup.Update(ref state);
             _padLookup.Update(ref state);
             _padUserLookup.Update(ref state);
-            _producedLookup.Update(ref state);
-            _researchedLookup.Update(ref state);
+            _produced.Update(ref state);
+            _researched.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
             new ProduceJob
@@ -78,16 +74,14 @@ namespace HyperRTS.Simulation.Production
                 SpawnedPopulation = CollectionHelper.CreateNativeArray<int>(PlayerRegistry.Capacity, allocator),
                 PopulationLookup = _populationLookup,
                 ProducibleLookup = _producibleLookup,
-                TransformLookup = _transformLookup,
-                StretchLookup = _stretchLookup,
+                Spawner = _spawner,
                 ResearchLookup = _researchLookup,
                 OfflineLookup = _offlineLookup,
                 CompletedResearchLookup = _completedResearchLookup,
                 PadLookup = _padLookup,
                 PadUserLookup = _padUserLookup,
-                Produced = _producedLookup,
-                Researched = _researchedLookup,
-                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
+                Produced = _produced,
+                Researched = _researched,
             }.Schedule();
         }
 
@@ -104,16 +98,14 @@ namespace HyperRTS.Simulation.Production
             public NativeArray<int> SpawnedPopulation;
             [ReadOnly] public ComponentLookup<Population> PopulationLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
-            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<PostTransformMatrix> StretchLookup;
+            public PrefabSpawner Spawner;
             [ReadOnly] public ComponentLookup<Research> ResearchLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
             public BufferLookup<CompletedResearch> CompletedResearchLookup;
             [ReadOnly] public BufferLookup<LandingPad> PadLookup;
             [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
-            public BufferLookup<UnitProduced> Produced;
-            public BufferLookup<ResearchCompleted> Researched;
-            public Entity Events;
+            public EventWriter<UnitProduced> Produced;
+            public EventWriter<ResearchCompleted> Researched;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
                 in LocalTransform transform, in Faction faction, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
@@ -156,7 +148,7 @@ namespace HyperRTS.Simulation.Production
                     DockOnPad(unit, prefab, entity, pad);
                     SpawnedPopulation[faction.Value] += producible.Population;
                     producer.Released++;
-                    Produced[Events].Add(new UnitProduced
+                    Produced.Add(new UnitProduced
                     {
                         Producer = entity, Prefab = prefab, Faction = faction.Value, Position = position,
                     });
@@ -168,7 +160,7 @@ namespace HyperRTS.Simulation.Production
 
             private void RecordResearch(Entity producer, byte faction, ProductionQueueItem item)
             {
-                Researched[Events].Add(new ResearchCompleted
+                Researched.Add(new ResearchCompleted
                 {
                     Producer = producer, Prefab = item.Prefab, Faction = faction,
                 });
@@ -215,8 +207,7 @@ namespace HyperRTS.Simulation.Production
             private Entity Spawn(Entity prefab, float3 position, in LocalTransform producer,
                 in Faction faction, bool rally, float3 rallyPosition)
             {
-                var unit = Ecb.Spawn(prefab, TransformLookup[prefab], StretchLookup, position, producer.Rotation,
-                    faction.Value);
+                var unit = Spawner.Spawn(Ecb, prefab, position, producer.Rotation, faction.Value);
 
                 if (rally)
                 {

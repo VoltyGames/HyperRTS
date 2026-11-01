@@ -60,8 +60,8 @@ namespace HyperRTS.Simulation.Tests.AI
         {
             var world = new TestWorld();
             world.CreateMatch(teams);
-            var writer = new EntityManagerWriter(world.EntityManager, world.Player(2));
-            AIPlayerSetup.Add(ref writer, ai);
+            var writer = new EntityWriter(world.EntityManager, world.Player(2));
+            AIPlayerSetup.Add(writer, ai);
             return world;
         }
 

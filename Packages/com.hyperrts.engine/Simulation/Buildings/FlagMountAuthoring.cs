@@ -22,8 +22,8 @@ namespace HyperRTS.Simulation.Buildings
         public float poleHeight = 6f;
 
         /// <summary>A fully lowered flag keeps one flag height of pole between it and the pole foot.</summary>
-        public static void AddFlagMount<TWriter>(ref TWriter writer, Entity flag, float flagHeight,
-            float poleHeight) where TWriter : struct, IEntityWriter
+        public static void AddFlagMount(EntityWriter writer, Entity flag, float flagHeight,
+            float poleHeight)
         {
             if (flagHeight <= 0f)
             {
@@ -56,8 +56,8 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var flag = GetComponent<Transform>(authoring.flag);
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                FlagMountAuthoring.AddFlagMount(ref writer, GetEntity(authoring.flag, TransformUsageFlags.Dynamic),
+                var writer = this.Writer();
+                FlagMountAuthoring.AddFlagMount(writer, GetEntity(authoring.flag, TransformUsageFlags.Dynamic),
                     flag.lossyScale.y, authoring.poleHeight);
             }
         }

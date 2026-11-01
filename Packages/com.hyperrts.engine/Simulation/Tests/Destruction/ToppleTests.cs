@@ -108,10 +108,10 @@ namespace HyperRTS.Simulation.Tests.Destruction
             standing = LocalTransform.FromPositionRotation(position, quaternion.RotateY(0.5f));
             topple = new Topple { Trunk = new float3(0f, 1f, 0f), Height = 12f, Lie = 0f, CanopyRadius = 3f };
             _world.EntityManager.AddComponentData(entity, standing);
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            DestructibleAuthoring.AddScenery(ref writer, 50f, 0, remains, float2.zero,
+            var writer = new EntityWriter(_world.EntityManager, entity);
+            DestructibleAuthoring.AddScenery(writer, 50f, 0, remains, float2.zero,
                 SceneryId.At(position, standing.Rotation));
-            ToppleAuthoring.AddTopple(ref writer, topple.Trunk, topple.Height, topple.Lie, topple.CanopyRadius);
+            ToppleAuthoring.AddTopple(writer, topple.Trunk, topple.Height, topple.Lie, topple.CanopyRadius);
             return entity;
         }
 

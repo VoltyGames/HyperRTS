@@ -43,8 +43,7 @@ namespace HyperRTS.Simulation.Cues.Effects
             public Transform muzzle;
         }
 
-        public static DynamicBuffer<EntityEffect> Add<TWriter>(ref TWriter writer)
-            where TWriter : struct, IEntityWriter =>
+        public static DynamicBuffer<EntityEffect> Add(EntityWriter writer) =>
             writer.AddBuffer<EntityEffect>();
 
         /// <summary>Unset rigs are skipped, so the entity writes no events for them.</summary>
@@ -61,8 +60,8 @@ namespace HyperRTS.Simulation.Cues.Effects
         {
             public override void Bake(EntityEffectsAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var effects = Add(ref writer);
+                var writer = this.Writer();
+                var effects = Add(writer);
                 var muzzle = Socket(this, authoring.transform, authoring.muzzle);
                 Set(effects, CueSlot.Fire, authoring.fire, muzzle);
                 Set(effects, CueSlot.Death, authoring.death, default);

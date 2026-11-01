@@ -35,8 +35,8 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             _world.CreateMatch(1, 2);
             _world.EntityManager.AddComponentData(_world.Player(1), new PlayerSpawn { Position = new float3(0f, 0f, -90f) });
             var bomber = _world.SpawnAircraft(0, float3.zero, altitude: 30f, speed: 50f);
-            var stealth = new EntityManagerWriter(_world.EntityManager, bomber);
-            StealthSetup.AddStealth(ref stealth, new Stealth(), enabled: true);
+            var stealth = new EntityWriter(_world.EntityManager, bomber);
+            StealthSetup.AddStealth(stealth, new Stealth(), enabled: true);
             _world.MakePrefab(bomber);
 
             _asset = _world.SpawnBuilding(1, new float3(0f, 0f, -60f), new float2(4f, 6f));
@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
                 Id = Strike, Name = "Strike", Target = AbilityTarget.Point, Cooldown = Charge,
                 CooldownRemaining = Charge,
             });
-            var writer = new EntityManagerWriter(_world.EntityManager, _asset);
+            var writer = new EntityWriter(_world.EntityManager, _asset);
             writer.Add(new StrategicAsset
             {
                 AbilityId = Strike,

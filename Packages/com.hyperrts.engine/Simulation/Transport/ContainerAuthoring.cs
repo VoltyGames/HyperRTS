@@ -62,8 +62,8 @@ namespace HyperRTS.Simulation.Transport
         {
             public override void Bake(ContainerAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                TransportSetup.AddContainer(ref writer, new Container
+                var writer = this.Writer();
+                TransportSetup.AddContainer(writer, new Container
                 {
                     Capacity = authoring.capacity,
                     MaxPassengerSize = authoring.maxPassengerSize,
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Transport
 
                 if (authoring.protection < 1f)
                 {
-                    TransportSetup.AddShelter(ref writer, authoring.protection);
+                    TransportSetup.AddShelter(writer, authoring.protection);
                 }
 
                 if (authoring.neutralGarrison)

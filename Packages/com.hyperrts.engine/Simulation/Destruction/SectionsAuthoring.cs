@@ -173,11 +173,11 @@ namespace HyperRTS.Simulation.Destruction
                 var rubble = authoring.rubble != null
                     ? GetEntity(authoring.rubble, TransformUsageFlags.Dynamic)
                     : Entity.Null;
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                SectionsSetup.Add(ref writer, sections, Factors(materials), rubble);
+                var writer = this.Writer();
+                SectionsSetup.Add(writer, sections, Factors(materials), rubble);
                 if (authoring.repairable)
                 {
-                    SectionsSetup.AddRepairable(ref writer, authoring.repairSeconds);
+                    SectionsSetup.AddRepairable(writer, authoring.repairSeconds);
                 }
 
                 writer.AddBuffer(models);

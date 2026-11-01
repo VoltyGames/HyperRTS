@@ -91,12 +91,12 @@ namespace HyperRTS.Presentation.Tests.Cursors
         public void Infantry_OnOwnContainer_Garrisons()
         {
             var rifleman = _world.SpawnUnit(1, float3.zero);
-            var writer = new EntityManagerWriter(_world.EntityManager, rifleman);
-            TransportSetup.AddPassenger(ref writer, 1);
+            var writer = new EntityWriter(_world.EntityManager, rifleman);
+            TransportSetup.AddPassenger(writer, 1);
             Select(rifleman);
             var bunker = _world.SpawnBuilding(1, new float3(8f, 0f, 0f), Footprint);
-            writer = new EntityManagerWriter(_world.EntityManager, bunker);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            writer = new EntityWriter(_world.EntityManager, bunker);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
 
             Assert.AreEqual(CursorKind.Garrison, Decide(bunker));
         }
@@ -238,16 +238,16 @@ namespace HyperRTS.Presentation.Tests.Cursors
         private Entity Engineer(float3 position)
         {
             var engineer = _world.SpawnUnit(1, position);
-            var writer = new EntityManagerWriter(_world.EntityManager, engineer);
-            CaptureSetup.AddCapturer(ref writer, 1f, consumedOnCapture: false);
+            var writer = new EntityWriter(_world.EntityManager, engineer);
+            CaptureSetup.AddCapturer(writer, 1f, consumedOnCapture: false);
             return engineer;
         }
 
         private Entity Post()
         {
             var post = _world.SpawnBuilding(Faction.Neutral, new float3(10f, 0f, 0f), Footprint);
-            var writer = new EntityManagerWriter(_world.EntityManager, post);
-            CaptureSetup.AddCapturable(ref writer, 2f);
+            var writer = new EntityWriter(_world.EntityManager, post);
+            CaptureSetup.AddCapturable(writer, 2f);
             return post;
         }
     }

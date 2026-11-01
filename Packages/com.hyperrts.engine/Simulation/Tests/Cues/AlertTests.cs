@@ -33,8 +33,8 @@ namespace HyperRTS.Simulation.Tests.Cues
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
             _cue = _world.Own(ScriptableObject.CreateInstance<SoundCue>());
-            var announcer = new EntityManagerWriter(_world.EntityManager, _world.EntityManager.CreateEntity());
-            AnnouncerAuthoring.Add(ref announcer);
+            var announcer = new EntityWriter(_world.EntityManager, _world.EntityManager.CreateEntity());
+            AnnouncerAuthoring.Add(announcer);
         }
 
         [TearDown]
@@ -233,13 +233,13 @@ namespace HyperRTS.Simulation.Tests.Cues
 
         private Entity Voiced(Entity entity, params CueSlot[] slots)
         {
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
+            var writer = new EntityWriter(_world.EntityManager, entity);
             if (System.Array.IndexOf(slots, CueSlot.UnderFire) >= 0)
             {
-                EntitySoundsAuthoring.AddUnderFire(ref writer);
+                EntitySoundsAuthoring.AddUnderFire(writer);
             }
 
-            var sounds = EntitySoundsAuthoring.Add(ref writer);
+            var sounds = EntitySoundsAuthoring.Add(writer);
             foreach (var slot in slots)
             {
                 EntitySoundsAuthoring.Set(sounds, slot, _cue);
@@ -259,9 +259,9 @@ namespace HyperRTS.Simulation.Tests.Cues
         private Entity Upgrade(string name)
         {
             var upgrade = _world.EntityManager.CreateEntity();
-            var writer = new EntityManagerWriter(_world.EntityManager, upgrade);
+            var writer = new EntityWriter(_world.EntityManager, upgrade);
             var info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name };
-            UpgradeAuthoring.Add(ref writer, info, 0.5f, new ResourceCost[0], new Prerequisite[0],
+            UpgradeAuthoring.Add(writer, info, 0.5f, new ResourceCost[0], new Prerequisite[0],
                 new UpgradeEffect[0]);
             return _world.MakePrefab(upgrade);
         }

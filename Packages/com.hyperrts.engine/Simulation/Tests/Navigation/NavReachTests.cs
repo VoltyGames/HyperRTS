@@ -238,8 +238,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing,
                 Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
             });
-            var writer = new EntityManagerWriter(_world.EntityManager, truck);
-            LocomotionAuthoring.Add(ref writer, new Locomotion
+            var writer = new EntityWriter(_world.EntityManager, truck);
+            LocomotionAuthoring.Add(writer, new Locomotion
             {
                 Acceleration = 3f, Braking = 6f, TurnRate = math.radians(35f), SteerRate = math.radians(45f),
                 ReverseSpeed = 3f,

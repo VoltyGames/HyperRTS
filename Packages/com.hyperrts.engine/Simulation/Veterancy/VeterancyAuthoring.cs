@@ -32,8 +32,8 @@ namespace HyperRTS.Simulation.Veterancy
         public List<Rank> ranks = new();
 
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<float> thresholds,
-            IReadOnlyList<VeterancyBonus> bonuses) where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, IReadOnlyList<float> thresholds,
+            IReadOnlyList<VeterancyBonus> bonuses)
         {
             writer.Add<Experience>();
             var ranks = writer.AddBuffer<VeterancyRank>();
@@ -65,8 +65,8 @@ namespace HyperRTS.Simulation.Veterancy
                     }
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                VeterancyAuthoring.Add(ref writer, thresholds, bonuses);
+                var writer = this.Writer();
+                VeterancyAuthoring.Add(writer, thresholds, bonuses);
             }
         }
     }

@@ -45,23 +45,23 @@ namespace HyperRTS.Simulation.Tests
         {
             var node = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(node, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(world.EntityManager, node);
-            ResourceNodeAuthoring.Add(ref writer, type, amount, regrowth);
+            var writer = new EntityWriter(world.EntityManager, node);
+            ResourceNodeAuthoring.Add(writer, type, amount, regrowth);
             return node;
         }
 
         public static Entity MakeHarvester(this TestWorld world, Entity unit, int capacity, float gatherRate,
             float replacementRange = 30f)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, unit);
-            HarvesterAuthoring.Add(ref writer, capacity, gatherRate, replacementRange);
+            var writer = new EntityWriter(world.EntityManager, unit);
+            HarvesterAuthoring.Add(writer, capacity, gatherRate, replacementRange);
             return unit;
         }
 
         public static Entity MakeBuilder(this TestWorld world, Entity unit, params Entity[] options)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, unit);
-            var buffer = BuilderAuthoring.Add(ref writer, 1f);
+            var writer = new EntityWriter(world.EntityManager, unit);
+            var buffer = BuilderAuthoring.Add(writer, 1f);
             foreach (var option in options)
             {
                 buffer.Add(new BuildOption { Prefab = option });
@@ -85,8 +85,8 @@ namespace HyperRTS.Simulation.Tests
         public static Entity MakeProducer(this TestWorld world, Entity building, float3 spawnOffset,
             params Entity[] options)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, building);
-            var buffer = ProducerAuthoring.Add(ref writer, spawnOffset, 5);
+            var writer = new EntityWriter(world.EntityManager, building);
+            var buffer = ProducerAuthoring.Add(writer, spawnOffset, 5);
             foreach (var option in options)
             {
                 buffer.Add(new ProductionOption { Prefab = option });
@@ -101,14 +101,14 @@ namespace HyperRTS.Simulation.Tests
         public static Entity AddIncome(this TestWorld world, Entity entity, ResourceType type, int amount,
             float interval)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            var writer = new EntityWriter(world.EntityManager, entity);
             writer.Add(new ResourceIncome { Type = type, Amount = amount, Interval = interval });
             return entity;
         }
 
         public static Entity AddBuildLimit(this TestWorld world, Entity entity, int max)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            var writer = new EntityWriter(world.EntityManager, entity);
             writer.Add(new BuildLimit { Max = max });
             return entity;
         }

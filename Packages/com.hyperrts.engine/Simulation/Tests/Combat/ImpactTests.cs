@@ -37,8 +37,8 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         internal static Entity Marked(TestWorld world, Entity shooter, ImpactMark mark)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, shooter);
-            ImpactMarksAuthoring.Add(ref writer, new[] { mark });
+            var writer = new EntityWriter(world.EntityManager, shooter);
+            ImpactMarksAuthoring.Add(writer, new[] { mark });
             return shooter;
         }
 
@@ -127,8 +127,8 @@ namespace HyperRTS.Simulation.Tests.Combat
             Gun(float3.zero);
             Gun(new float3(0f, 0f, 40f));
             var tank = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
-            var writer = new EntityManagerWriter(_world.EntityManager, tank);
-            HitMaterialAuthoring.Add(ref writer, SurfaceMaterial.Metal);
+            var writer = new EntityWriter(_world.EntityManager, tank);
+            HitMaterialAuthoring.Add(writer, SurfaceMaterial.Metal);
             _world.SpawnUnit(2, new float3(3f, 0f, 40f));
 
             var landed = _world.QueuedOver(1f, CueSlot.Impact);
@@ -146,8 +146,8 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var effects = ScriptableObject.CreateInstance<SurfaceEffects>();
             var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Rifle"), cooldown: 100f);
-            var writer = new EntityManagerWriter(_world.EntityManager, gun);
-            ImpactEffectsAuthoring.Add(ref writer, effects);
+            var writer = new EntityWriter(_world.EntityManager, gun);
+            ImpactEffectsAuthoring.Add(writer, effects);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
             var landed = _world.QueuedOver(1f, CueSlot.Impact);

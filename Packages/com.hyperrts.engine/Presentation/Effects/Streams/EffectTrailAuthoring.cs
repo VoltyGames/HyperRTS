@@ -15,7 +15,7 @@ namespace HyperRTS.Presentation.Effects.Streams
         [Tooltip("Rig that follows the projectile while it flies.")]
         public GameObject rig;
 
-        public static void Add<TWriter>(ref TWriter writer, GameObject rig) where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, GameObject rig)
         {
             if (rig != null)
             {
@@ -27,8 +27,8 @@ namespace HyperRTS.Presentation.Effects.Streams
         {
             public override void Bake(EffectTrailAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, authoring.rig);
+                var writer = this.Writer();
+                Add(writer, authoring.rig);
             }
         }
     }

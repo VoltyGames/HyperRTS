@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Airdrops
 {
@@ -40,10 +39,10 @@ namespace HyperRTS.Simulation.Airdrops
         /// Spawns <paramref name="prefab"/> for <paramref name="faction"/> at the entry, cruising
         /// <paramref name="altitude"/> up, on a <see cref="DropFlight"/> along this route.
         /// </summary>
-        public readonly Entity Launch(EntityCommandBuffer ecb, Entity prefab, in LocalTransform prefabTransform,
-            in ComponentLookup<PostTransformMatrix> stretches, Flight flight, float altitude, byte faction)
+        public readonly Entity Launch(EntityCommandBuffer ecb, in PrefabSpawner spawner, Entity prefab, Flight flight,
+            float altitude, byte faction)
         {
-            var aircraft = ecb.Spawn(prefab, prefabTransform, stretches, Entry, Facing, faction);
+            var aircraft = spawner.Spawn(ecb, prefab, Entry, Facing, faction);
             flight.Altitude = altitude;
             ecb.SetComponent(aircraft, flight);
             ecb.AddComponent(aircraft, new DropFlight { Route = this });

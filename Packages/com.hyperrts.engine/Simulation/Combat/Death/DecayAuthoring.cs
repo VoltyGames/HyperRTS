@@ -28,8 +28,8 @@ namespace HyperRTS.Simulation.Combat.Death
         [Min(0.01f)]
         public float despawnDepth = 3f;
 
-        public static void Add<TWriter>(ref TWriter writer, string owner, float lifetime, float despawnDuration,
-            float despawnDepth) where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, string owner, float lifetime, float despawnDuration,
+            float despawnDepth)
         {
             Require(lifetime > 0f, owner, "lifetime");
             Require(despawnDuration > 0f, owner, "despawnDuration");
@@ -49,8 +49,8 @@ namespace HyperRTS.Simulation.Combat.Death
         {
             public override void Bake(DecayAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                DecayAuthoring.Add(ref writer, authoring.name, authoring.lifetime, authoring.despawnDuration,
+                var writer = this.Writer();
+                DecayAuthoring.Add(writer, authoring.name, authoring.lifetime, authoring.despawnDuration,
                     authoring.despawnDepth);
             }
         }

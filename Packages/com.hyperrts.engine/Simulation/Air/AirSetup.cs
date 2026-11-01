@@ -12,9 +12,8 @@ namespace HyperRTS.Simulation.Air
         /// Flies the unit at <paramref name="altitude"/>; its <c>NavAgent</c> must be on the Air layer. Its remains
         /// fall to the ground. Drops leave from <paramref name="releasePoint"/>, in its local space.
         /// </summary>
-        public static void AddFlight<TWriter>(ref TWriter writer, float altitude, float climbSpeed, float loiterRadius,
+        public static void AddFlight(EntityWriter writer, float altitude, float climbSpeed, float loiterRadius,
             float3 releasePoint = default)
-            where TWriter : struct, IEntityWriter
         {
             writer.Add(new Flight { Altitude = altitude, ClimbSpeed = climbSpeed, LoiterRadius = loiterRadius });
             writer.Add(new DropRun { ReleasePoint = releasePoint });
@@ -22,7 +21,7 @@ namespace HyperRTS.Simulation.Air
         }
 
         /// <summary>The aircraft takes a pad of <paramref name="kind"/> at the airfield that builds it and docks there to reload.</summary>
-        public static void AddPadUser<TWriter>(ref TWriter writer, PadKind kind) where TWriter : struct, IEntityWriter
+        public static void AddPadUser(EntityWriter writer, PadKind kind)
         {
             writer.Add(new HomePad { Kind = kind });
             writer.Add<Docked>();
@@ -30,8 +29,7 @@ namespace HyperRTS.Simulation.Air
         }
 
         /// <summary>Fill the returned buffer with one <see cref="LandingPad"/> per pad.</summary>
-        public static DynamicBuffer<LandingPad> AddAirfield<TWriter>(ref TWriter writer)
-            where TWriter : struct, IEntityWriter =>
+        public static DynamicBuffer<LandingPad> AddAirfield(EntityWriter writer) =>
             writer.AddBuffer<LandingPad>();
     }
 }

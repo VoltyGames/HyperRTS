@@ -236,8 +236,8 @@ namespace HyperRTS.Simulation.Match
                 playerName.CopyFromTruncated(slot.name);
                 float4 color = (Vector4)slot.color.linear;
 
-                var writer = new BakerWriter(this, player);
-                var stock = PlayerSetup.Add(ref writer, faction, playerName, color, populationCap: 0);
+                var writer = this.Writer(player);
+                var stock = PlayerSetup.Add(writer, faction, playerName, color, populationCap: 0);
                 writer.Add(new PlayerSpawn { Position = slot.spawnPosition, Yaw = math.radians(slot.spawnYaw) });
                 SetComponent(player, new PlayerSide { Value = slot.side });
                 slot.AddStartingResources(stock);
@@ -246,7 +246,7 @@ namespace HyperRTS.Simulation.Match
                 if (slot.control == PlayerControl.AI)
                 {
                     var tuning = authoring.AITuningFor(slot.difficulty);
-                    AddBuildOrder(AIPlayerSetup.Add(ref writer, tuning.ToComponent(slot.difficulty)), buildOrder);
+                    AddBuildOrder(AIPlayerSetup.Add(writer, tuning.ToComponent(slot.difficulty)), buildOrder);
                     if (AIDifficultyTuning.TryGetIncomeBonus(tuning.incomeMultiplier, out var bonus))
                     {
                         AppendToBuffer(player, bonus);

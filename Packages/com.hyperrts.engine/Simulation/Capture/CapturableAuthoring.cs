@@ -22,8 +22,8 @@ namespace HyperRTS.Simulation.Capture
         {
             public override void Bake(CapturableAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                CaptureSetup.AddCapturable(ref writer, authoring.captureTime);
+                var writer = this.Writer();
+                CaptureSetup.AddCapturable(writer, authoring.captureTime);
             }
         }
     }

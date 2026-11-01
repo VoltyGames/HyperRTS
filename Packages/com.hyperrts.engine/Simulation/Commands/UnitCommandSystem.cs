@@ -99,19 +99,8 @@ namespace HyperRTS.Simulation.Commands
         /// <summary>Keeps the command's owned subjects that take orders, in order.</summary>
         private bool GatherSubjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)
         {
-            _commands.Subjects(ref state, issued, subjects);
-            var kept = 0;
-            for (var i = 0; i < subjects.Length; i++)
-            {
-                var entity = subjects[i];
-                if (_writer.CanReceiveOrders(entity))
-                {
-                    subjects[kept++] = entity;
-                }
-            }
-
-            subjects.Length = kept;
-            return kept > 0;
+            _commands.Subjects(ref state, issued, subjects, new TakesOrders { Orders = _writer });
+            return subjects.Length > 0;
         }
 
         private void Execute(in PlayerCommand command, NativeArray<Entity> subjects, in FactionRelations relations,
@@ -146,8 +135,6 @@ namespace HyperRTS.Simulation.Commands
             }
 
             IssueFormation(command, movers.AsArray(), moveOrders.AsArray(), map, grid);
-            movers.Dispose();
-            moveOrders.Dispose();
         }
 
         /// <summary>Stop and stance changes need no order; true if the command was one of them.</summary>
@@ -205,10 +192,6 @@ namespace HyperRTS.Simulation.Commands
                     _writer.Issue(movers[i], order, command.Queue);
                 }
             }
-
-            positions.Dispose();
-            spacings.Dispose();
-            slots.Dispose();
         }
 
         private NavAgent Agent(Entity unit) =>
@@ -277,6 +260,13 @@ namespace HyperRTS.Simulation.Commands
                     _stances[unit] = new CombatStance { Value = stance, ReturnPoint = _transforms[unit].Position };
                 }
             }
+        }
+
+        private struct TakesOrders : ISubjectFilter
+        {
+            public OrderWriter Orders;
+
+            public bool Keeps(Entity subject) => Orders.CanReceiveOrders(subject);
         }
     }
 }

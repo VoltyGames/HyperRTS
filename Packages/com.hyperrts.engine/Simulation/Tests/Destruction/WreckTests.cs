@@ -31,8 +31,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             var ruin = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
             var wreck = _world.EntityManager.CreateEntity(typeof(LocalTransform));
-            var writer = new EntityManagerWriter(_world.EntityManager, wreck);
-            DestructibleAuthoring.AddScenery(ref writer, 300f, 0, ruin, float2.zero, default);
+            var writer = new EntityWriter(_world.EntityManager, wreck);
+            DestructibleAuthoring.AddScenery(writer, 300f, 0, ruin, float2.zero, default);
             var stages = _world.EntityManager.AddBuffer<DamageStage>(wreck);
             stages.Add(new DamageStage { Below = 1f });
             stages.Add(new DamageStage { Below = 0.5f });

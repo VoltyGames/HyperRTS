@@ -186,9 +186,9 @@ namespace HyperRTS.Presentation.Tests.Audio
             using var world = new World("Loops");
             var entity = world.EntityManager.CreateEntity();
             var cue = ScriptableObject.CreateInstance<SoundCue>();
-            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            var writer = new EntityWriter(world.EntityManager, entity);
 
-            var loops = EntityLoopsAuthoring.Add(ref writer, 8f, 0.15f);
+            var loops = EntityLoopsAuthoring.Add(writer, 8f, 0.15f);
             EntityLoopsAuthoring.Set(loops, LoopSlot.EngineIdle, cue);
             EntityLoopsAuthoring.Set(loops, LoopSlot.Rotor, null);
             EntityLoopsAuthoring.Set(loops, LoopSlot.Ambient, cue);

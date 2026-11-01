@@ -156,8 +156,8 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
             var bunker = _em.CreateEntity();
             _em.AddBuffer<Cargo>(bunker);
             var gun = _em.CreateEntity(typeof(HiddenBy), typeof(MaterialMeshInfo));
-            var writer = new EntityManagerWriter(_em, gun);
-            GarrisonPartAuthoring.Add(ref writer, bunker, new[] { gunners });
+            var writer = new EntityWriter(_em, gun);
+            GarrisonPartAuthoring.Add(writer, bunker, new[] { gunners });
             var system = _world.CreateSystem<GarrisonPartSystem>();
 
             UpdateGarrison(system);

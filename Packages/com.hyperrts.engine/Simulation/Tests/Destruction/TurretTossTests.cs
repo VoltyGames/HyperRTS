@@ -40,8 +40,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
             _wreck = MakeRemains(WreckMark);
             _turret = MakeRemains(0);
             _world.EntityManager.AddComponent<TossedTurret>(_turret);
-            var writer = new EntityManagerWriter(_world.EntityManager, _turret);
-            NavSetup.AddObstacle(ref writer, new float2(2f, 2f));
+            var writer = new EntityWriter(_world.EntityManager, _turret);
+            NavSetup.AddObstacle(writer, new float2(2f, 2f));
         }
 
         [TearDown]
@@ -108,8 +108,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             var tank = _world.SpawnUnit(1, position, maxHealth: 100f);
             _world.EntityManager.AddComponentData(tank, new SpawnOnDeath { Prefab = _wreck });
-            var writer = new EntityManagerWriter(_world.EntityManager, tank);
-            TurretTossAuthoring.Add(ref writer, "tank", new TurretToss
+            var writer = new EntityWriter(_world.EntityManager, tank);
+            TurretTossAuthoring.Add(writer, "tank", new TurretToss
             {
                 Hull = _hull, Turret = _turret, Overkill = 1.5f, MinDistance = MinDistance, MaxDistance = MaxDistance,
                 Arc = Arc, Height = 5f, Duration = 1f,

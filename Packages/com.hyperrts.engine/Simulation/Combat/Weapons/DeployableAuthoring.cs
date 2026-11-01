@@ -25,8 +25,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Min(0.1f)]
         public float packUpTime = 3f;
 
-        public static void Add<TWriter>(ref TWriter writer, float deployTime, float packUpTime)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, float deployTime, float packUpTime)
         {
             writer.Add(new Deployable { DeployTime = deployTime, PackUpTime = packUpTime });
         }
@@ -35,8 +34,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             public override void Bake(DeployableAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, authoring.deployTime, authoring.packUpTime);
+                var writer = this.Writer();
+                Add(writer, authoring.deployTime, authoring.packUpTime);
             }
         }
     }

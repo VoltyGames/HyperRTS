@@ -45,8 +45,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.EntityManager.SetComponentData(vehicle, agent);
             _world.EntityManager.SetComponentData(vehicle, LocalTransform.FromPositionRotation(position,
                 quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(_world.EntityManager, vehicle);
-            LocomotionAuthoring.Add(ref writer, locomotion);
+            var writer = new EntityWriter(_world.EntityManager, vehicle);
+            LocomotionAuthoring.Add(writer, locomotion);
             return vehicle;
         }
 

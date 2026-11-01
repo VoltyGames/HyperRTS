@@ -39,12 +39,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void MoveTo(Entity entity, float3 goal, float tolerance) =>
             _moves.GetRefRW(entity).ValueRW.MoveTo(_moves.GetEnabledRefRW<MoveDestination>(entity), goal, tolerance);
 
-        public void Halt(Entity entity)
-        {
-            if (_moves.HasComponent(entity))
-            {
-                _moves.SetComponentEnabled(entity, false);
-            }
-        }
+        public void Halt(Entity entity) => _moves.DisableIfPresent(entity);
     }
 }

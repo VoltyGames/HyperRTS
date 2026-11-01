@@ -22,8 +22,8 @@ namespace HyperRTS.Simulation.Navigation.Areas
         {
             public override void Bake(NavObstacleAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                NavSetup.AddObstacle(ref writer, authoring.size);
+                var writer = this.Writer();
+                NavSetup.AddObstacle(writer, authoring.size);
             }
         }
     }

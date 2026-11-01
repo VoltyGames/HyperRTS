@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.AI
 {
     /// <summary>
     /// Bot hints being assembled: slots and lanes appended with their points, flattened into the three buffers of
-    /// the <see cref="AIMapHints"/> singleton by <see cref="AIMapHintsAuthoring.Add{TWriter}"/>.
+    /// the <see cref="AIMapHints"/> singleton by <see cref="AIMapHintsAuthoring.Add"/>.
     /// </summary>
     public sealed class AIMapHintsData
     {

@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
         {
             public override void Bake(ConstructionSiteAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new ConstructionSite
                 {
                     Visual = authoring.site == null ? Entity.Null : GetEntity(authoring.site, TransformUsageFlags.Dynamic),

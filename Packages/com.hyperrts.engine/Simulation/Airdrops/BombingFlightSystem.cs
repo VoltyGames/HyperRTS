@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Airdrops
     [UpdateAfter(typeof(StrategicAssetSystem))]
     public partial struct BombingFlightSystem : ISystem
     {
-        private ComponentLookup<PostTransformMatrix> _stretchLookup;
+        private PrefabSpawner _spawner;
         private CueWriter _cues;
 
         [BurstCompile]
@@ -35,17 +35,16 @@ namespace HyperRTS.Simulation.Airdrops
             state.RequireForUpdate<BombingFlight>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
-            _stretchLookup = state.GetComponentLookup<PostTransformMatrix>(true);
+            _spawner = new PrefabSpawner(ref state);
             _cues = new CueWriter(ref state);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _stretchLookup.Update(ref state);
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _spawner.Update(ref state);
+            _cues.Update(ref state);
             var map = SystemAPI.GetSingleton<MapSettings>();
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
@@ -94,14 +93,13 @@ namespace HyperRTS.Simulation.Airdrops
             var count = load.CountAfter(Defences(ref state, route.Target, faction, relations));
             var targets = Structures(ref state, route.Target, load.ZoneRadius, faction, relations);
             var impact = _cues.TypeIdFor(bomber, CueSlot.Impact);
-            var prefabTransform = SystemAPI.GetComponent<LocalTransform>(load.Prefab);
             for (var i = 0; i < count; i++)
             {
                 var target = targets.Length > 0 ? targets[i % targets.Length].Entity : Entity.Null;
                 var aim = target == Entity.Null
                     ? route.StickPoint(load.ZoneRadius, i, count)
                     : SystemAPI.GetComponent<LocalTransform>(target).Position;
-                var bomb = ecb.Spawn(load.Prefab, prefabTransform, _stretchLookup, origin,
+                var bomb = _spawner.Spawn(ecb, load.Prefab, origin,
                     quaternion.LookRotationSafe(aim - origin, math.up()), faction);
                 ecb.AddComponent(bomb, new Projectile
                 {

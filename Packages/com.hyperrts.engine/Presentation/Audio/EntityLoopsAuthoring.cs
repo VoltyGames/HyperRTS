@@ -44,8 +44,7 @@ namespace HyperRTS.Presentation.Audio
         [Tooltip("Always while shown, such as a generator hum.")]
         public SoundCue ambient;
 
-        public static DynamicBuffer<EntityLoopSound> Add<TWriter>(ref TWriter writer, float fullSpeed, float pitchRise)
-            where TWriter : struct, IEntityWriter
+        public static DynamicBuffer<EntityLoopSound> Add(EntityWriter writer, float fullSpeed, float pitchRise)
         {
             writer.Add(new LoopSoundTuning { FullSpeed = fullSpeed, PitchRise = pitchRise });
             return writer.AddBuffer<EntityLoopSound>();
@@ -64,8 +63,8 @@ namespace HyperRTS.Presentation.Audio
         {
             public override void Bake(EntityLoopsAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var loops = EntityLoopsAuthoring.Add(ref writer, authoring.fullSpeed, authoring.pitchRise);
+                var writer = this.Writer();
+                var loops = EntityLoopsAuthoring.Add(writer, authoring.fullSpeed, authoring.pitchRise);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.EngineIdle, authoring.engineIdle);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.EngineMove, authoring.engineMove);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.Rotor, authoring.rotor);

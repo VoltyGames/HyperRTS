@@ -140,8 +140,8 @@ namespace HyperRTS.Simulation.Tests.Stats
         private Entity Veteran(float3 position)
         {
             var unit = _world.AddWeapon(_world.SpawnUnit(1, position), damage: 50f);
-            var writer = new EntityManagerWriter(_world.EntityManager, unit);
-            VeterancyAuthoring.Add(ref writer, new[] { 10f, 100f }, new[]
+            var writer = new EntityWriter(_world.EntityManager, unit);
+            VeterancyAuthoring.Add(writer, new[] { 10f, 100f }, new[]
             {
                 new VeterancyBonus
                 {

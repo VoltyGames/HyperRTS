@@ -79,8 +79,7 @@ namespace HyperRTS.Simulation.Movement
             ReverseRun = reverseRun,
         };
 
-        public static void Add<TWriter>(ref TWriter writer, Locomotion locomotion)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, Locomotion locomotion)
         {
             writer.Add(locomotion);
             writer.Add<LocomotionState>();
@@ -90,8 +89,8 @@ namespace HyperRTS.Simulation.Movement
         {
             public override void Bake(LocomotionAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, authoring.Locomotion);
+                var writer = this.Writer();
+                Add(writer, authoring.Locomotion);
             }
         }
     }

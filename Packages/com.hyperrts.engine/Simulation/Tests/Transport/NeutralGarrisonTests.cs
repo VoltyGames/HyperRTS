@@ -44,8 +44,8 @@ namespace HyperRTS.Simulation.Tests.Transport
             var house = _world.SpawnBuilding(Faction.Neutral, position, Footprint);
             var turned = LocalTransform.FromPositionRotation(position, quaternion.RotateY(math.radians(yawDegrees)));
             _world.EntityManager.SetComponentData(house, turned);
-            var writer = new EntityManagerWriter(_world.EntityManager, house);
-            TransportSetup.AddContainer(ref writer, new Container
+            var writer = new EntityWriter(_world.EntityManager, house);
+            TransportSetup.AddContainer(writer, new Container
             {
                 Capacity = capacity, MaxPassengerSize = 1, PassengersFire = true, PassengersSurvive = true,
             });
@@ -57,8 +57,8 @@ namespace HyperRTS.Simulation.Tests.Transport
         private Entity Rifleman(byte faction, float3 position)
         {
             var unit = _world.SpawnUnit(faction, position);
-            var writer = new EntityManagerWriter(_world.EntityManager, unit);
-            TransportSetup.AddPassenger(ref writer, 1);
+            var writer = new EntityWriter(_world.EntityManager, unit);
+            TransportSetup.AddPassenger(writer, 1);
             _world.AddWeapon(unit, range: 7f, damage: 8f);
             return unit;
         }

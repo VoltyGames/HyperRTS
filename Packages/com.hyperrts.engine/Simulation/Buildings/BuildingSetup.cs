@@ -12,9 +12,8 @@ namespace HyperRTS.Simulation.Buildings
     /// <summary>Adds the building components on top of <c>GameEntitySetup</c>.</summary>
     public static class BuildingSetup
     {
-        public static void Add<TWriter>(ref TWriter writer, float2 footprint, int populationProvided, bool complete,
+        public static void Add(EntityWriter writer, float2 footprint, int populationProvided, bool complete,
             float power = 0f, PlacementSurface surface = PlacementSurface.Land, bool rememberedInFog = true)
-            where TWriter : struct, IEntityWriter
         {
             writer.Add<BuildingTag>();
             if (rememberedInFog)
@@ -22,7 +21,7 @@ namespace HyperRTS.Simulation.Buildings
                 writer.Add<RememberedInFog>();
             }
 
-            NavSetup.AddObstacle(ref writer, footprint);
+            NavSetup.AddObstacle(writer, footprint);
             if (surface != PlacementSurface.Land)
             {
                 writer.Add(new BuildingPlacement { Surface = surface });

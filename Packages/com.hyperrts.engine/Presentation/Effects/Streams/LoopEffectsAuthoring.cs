@@ -35,8 +35,7 @@ namespace HyperRTS.Presentation.Effects.Streams
         [Tooltip("Rigs streaming from this entity; entries without a rig are skipped.")]
         public Entry[] loops = { };
 
-        public static DynamicBuffer<LoopEffect> Add<TWriter>(ref TWriter writer)
-            where TWriter : struct, IEntityWriter =>
+        public static DynamicBuffer<LoopEffect> Add(EntityWriter writer) =>
             writer.AddBuffer<LoopEffect>();
 
         public static void AddLoop(DynamicBuffer<LoopEffect> loops, GameObject rig, float3 socket, float aboveHealth,
@@ -52,8 +51,8 @@ namespace HyperRTS.Presentation.Effects.Streams
         {
             public override void Bake(LoopEffectsAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var loops = Add(ref writer);
+                var writer = this.Writer();
+                var loops = Add(writer);
                 foreach (var entry in authoring.loops)
                 {
                     var socket = Socket(this, authoring.transform, entry.socket);

@@ -33,8 +33,8 @@ namespace HyperRTS.Simulation.Production
         [Range(1, 10)]
         public int queueLimit = 5;
 
-        public static DynamicBuffer<ProductionOption> Add<TWriter>(ref TWriter writer, float3 spawnOffset,
-            int queueLimit) where TWriter : struct, IEntityWriter
+        public static DynamicBuffer<ProductionOption> Add(EntityWriter writer, float3 spawnOffset,
+            int queueLimit)
         {
             writer.Add(new Producer { SpawnOffset = spawnOffset, QueueLimit = queueLimit, Speed = 1f });
             writer.AddBuffer<ProductionQueueItem>();
@@ -47,8 +47,8 @@ namespace HyperRTS.Simulation.Production
         {
             public override void Bake(ProducerAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var options = ProducerAuthoring.Add(ref writer, authoring.spawnOffset, authoring.queueLimit);
+                var writer = this.Writer();
+                var options = ProducerAuthoring.Add(writer, authoring.spawnOffset, authoring.queueLimit);
                 AddOptions(options, authoring.productionOptions, TransformUsageFlags.Dynamic);
                 AddOptions(options, authoring.researchOptions, TransformUsageFlags.None);
             }

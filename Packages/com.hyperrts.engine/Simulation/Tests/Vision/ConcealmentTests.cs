@@ -111,8 +111,8 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.EntityManager.SetComponentData(drone, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
             if (detector)
             {
-                var writer = new EntityManagerWriter(_world.EntityManager, drone);
-                StealthSetup.AddDetector(ref writer, 20f);
+                var writer = new EntityWriter(_world.EntityManager, drone);
+                StealthSetup.AddDetector(writer, 20f);
             }
 
             var squad = Concealable(_world.SpawnUnit(Team2, new float3(23f, 0f, 1f)));
@@ -124,8 +124,8 @@ namespace HyperRTS.Simulation.Tests.Vision
 
         private Entity Concealable(Entity unit)
         {
-            var writer = new EntityManagerWriter(_world.EntityManager, unit);
-            StealthSetup.AddStealth(ref writer, new Stealth { RevealDuration = 3f, OnlyWhenStill = true, InConcealment = true },
+            var writer = new EntityWriter(_world.EntityManager, unit);
+            StealthSetup.AddStealth(writer, new Stealth { RevealDuration = 3f, OnlyWhenStill = true, InConcealment = true },
                 true);
             return unit;
         }

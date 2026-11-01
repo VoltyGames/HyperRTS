@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                     }
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.AddBuffer(modifiers);
                 if (authoring.IsDirectional)
                 {

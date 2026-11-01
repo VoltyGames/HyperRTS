@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Resources
                     });
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.AddBuffer(stages);
                 writer.Add(new ShownResourceStage { Index = -1 });
             }

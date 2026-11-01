@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Destruction
                     });
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.AddBuffer(stages);
                 writer.Add(new ShownDamageStage { Index = -1 });
             }

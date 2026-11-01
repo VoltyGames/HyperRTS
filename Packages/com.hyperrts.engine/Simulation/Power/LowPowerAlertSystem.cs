@@ -27,7 +27,6 @@ namespace HyperRTS.Simulation.Power
             _cues = new CueWriter(ref state);
             _wasLow = new NativeArray<bool>(PlayerRegistry.Capacity, Allocator.Persistent);
             _gate = new AnnouncementGate(Allocator.Persistent);
-            state.RequireForUpdate<CueQueue>();
             // Without an announcer nobody hears alerts, so none are sent.
             state.RequireForUpdate(state.GetEntityQuery(ComponentType.ReadOnly<AnnouncerVoice>()));
         }
@@ -42,7 +41,7 @@ namespace HyperRTS.Simulation.Power
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _cues.Update(ref state);
             new AlertJob { Now = SystemAPI.Time.ElapsedTime, Cues = _cues, WasLow = _wasLow, Gate = _gate }.Schedule();
         }
 

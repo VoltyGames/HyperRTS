@@ -26,8 +26,7 @@ namespace HyperRTS.Simulation.Resources
         [Min(0f)]
         public float replacementRange = 30f;
 
-        public static void Add<TWriter>(ref TWriter writer, int capacity, float gatherRate, float replacementRange)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, int capacity, float gatherRate, float replacementRange)
         {
             writer.Add(new Harvester
             {
@@ -40,8 +39,8 @@ namespace HyperRTS.Simulation.Resources
         {
             public override void Bake(HarvesterAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                HarvesterAuthoring.Add(ref writer, authoring.capacity, authoring.gatherRate,
+                var writer = this.Writer();
+                HarvesterAuthoring.Add(writer, authoring.capacity, authoring.gatherRate,
                     authoring.replacementRange);
             }
         }

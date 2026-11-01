@@ -51,12 +51,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void Garrison_LengthensItsPassengersRange(bool garrisoned, float scale)
         {
             var house = _world.SpawnBuilding(1, float3.zero, new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, house);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1, PassengersFire = true });
+            var writer = new EntityWriter(_world.EntityManager, house);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1, PassengersFire = true });
             writer.Add(new PassengerRange { Bonus = 0.1f });
             var squad = _world.SpawnUnit(1, new float3(0f, 0f, -5f));
-            var passenger = new EntityManagerWriter(_world.EntityManager, squad);
-            TransportSetup.AddPassenger(ref passenger, 1);
+            var passenger = new EntityWriter(_world.EntityManager, squad);
+            TransportSetup.AddPassenger(passenger, 1);
             _world.AddWeapon(squad, range: Range);
             if (garrisoned)
             {

@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Movement
         {
             public override void Bake(TrackMarksAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new TrackMarks
                 {
                     Width = authoring.width,

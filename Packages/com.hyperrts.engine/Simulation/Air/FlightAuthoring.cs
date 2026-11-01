@@ -44,12 +44,12 @@ namespace HyperRTS.Simulation.Air
         {
             public override void Bake(FlightAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AirSetup.AddFlight(ref writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius,
+                var writer = this.Writer();
+                AirSetup.AddFlight(writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius,
                     AuthoringBehaviour.Socket(this, authoring.transform, authoring.releasePoint));
                 if (authoring.usesLandingPads)
                 {
-                    AirSetup.AddPadUser(ref writer, authoring.padKind);
+                    AirSetup.AddPadUser(writer, authoring.padKind);
                 }
             }
         }

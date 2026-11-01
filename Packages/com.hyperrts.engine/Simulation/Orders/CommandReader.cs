@@ -62,7 +62,16 @@ namespace HyperRTS.Simulation.Orders
         }
 
         /// <summary>The entities the command addresses that its player owns, in the order it lists them.</summary>
-        public void Subjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)
+        public NativeList<Entity> Subjects(ref SystemState state, in IssuedCommand issued)
+        {
+            var subjects = new NativeList<Entity>(Allocator.Temp);
+            Subjects(ref state, issued, subjects, new Everyone());
+            return subjects;
+        }
+
+        /// <summary>Fills <paramref name="subjects"/> with the owned ones that <paramref name="filter"/> keeps.</summary>
+        public void Subjects<TFilter>(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects,
+            in TFilter filter) where TFilter : struct, ISubjectFilter
         {
             var listed = state.EntityManager.GetBuffer<PlayerCommandSubject>(issued.Player, true);
             PlayerCommands.Collect(issued.Command, listed, _selected, subjects);
@@ -70,20 +79,13 @@ namespace HyperRTS.Simulation.Orders
             for (var i = 0; i < subjects.Length; i++)
             {
                 var entity = subjects[i];
-                if (IsOwned(entity, issued.Faction))
+                if (IsOwned(entity, issued.Faction) && filter.Keeps(entity))
                 {
                     subjects[kept++] = entity;
                 }
             }
 
             subjects.Length = kept;
-        }
-
-        public NativeList<Entity> Subjects(ref SystemState state, in IssuedCommand issued)
-        {
-            var subjects = new NativeList<Entity>(Allocator.Temp);
-            Subjects(ref state, issued, subjects);
-            return subjects;
         }
 
         private readonly void Append(EntityManager entityManager, Entity player, NativeList<IssuedCommand> issued)
@@ -100,5 +102,10 @@ namespace HyperRTS.Simulation.Orders
 
         private readonly bool IsOwned(Entity entity, byte faction) =>
             _factions.TryGetComponent(entity, out var owner) && owner.Value == faction;
+
+        private struct Everyone : ISubjectFilter
+        {
+            public readonly bool Keeps(Entity subject) => true;
+        }
     }
 }

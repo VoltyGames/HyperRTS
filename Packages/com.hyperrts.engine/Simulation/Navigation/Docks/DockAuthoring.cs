@@ -95,8 +95,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
             return baked;
         }
 
-        public static void Add<TWriter>(ref TWriter writer, string owner, IReadOnlyList<DockBay> bays)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, string owner, IReadOnlyList<DockBay> bays)
         {
             if (bays.Count == 0)
             {
@@ -124,8 +123,8 @@ namespace HyperRTS.Simulation.Navigation.Docks
                     DependsOn(bay.exit);
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                DockAuthoring.Add(ref writer, authoring.name, authoring.Bays());
+                var writer = this.Writer();
+                DockAuthoring.Add(writer, authoring.name, authoring.Bays());
             }
         }
     }

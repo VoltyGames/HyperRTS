@@ -22,8 +22,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
         [Tooltip("Passengers whose presence aboard shows this part; it is hidden with none of them aboard.")]
         public List<UnitAuthoring> shownFor = new();
 
-        public static void Add<TWriter>(ref TWriter writer, Entity container, IEnumerable<int> typeIds)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, Entity container, IEnumerable<int> typeIds)
         {
             writer.Add(new GarrisonPart { Container = container });
             var passengers = writer.AddBuffer<GarrisonPartPassenger>();
@@ -48,8 +47,8 @@ namespace HyperRTS.Presentation.Rendering.Parts
                     DependsOn(unit);
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, GetEntity(container, TransformUsageFlags.Dynamic), authoring.shownFor.Select(unit => unit.TypeId));
+                var writer = this.Writer();
+                Add(writer, GetEntity(container, TransformUsageFlags.Dynamic), authoring.shownFor.Select(unit => unit.TypeId));
             }
         }
     }

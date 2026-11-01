@@ -68,8 +68,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
             _world.EntityManager.SetComponentData(tank, agent);
             _world.EntityManager.SetComponentData(tank,
                 LocalTransform.FromPositionRotation(position, quaternion.RotateY(north ? math.PI : 0f)));
-            var writer = new EntityManagerWriter(_world.EntityManager, tank);
-            LocomotionAuthoring.Add(ref writer, TankHandling);
+            var writer = new EntityWriter(_world.EntityManager, tank);
+            LocomotionAuthoring.Add(writer, TankHandling);
             return tank;
         }
     }

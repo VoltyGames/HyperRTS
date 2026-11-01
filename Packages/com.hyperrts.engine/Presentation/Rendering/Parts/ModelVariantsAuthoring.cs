@@ -43,7 +43,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
                     }
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.AddBuffer(parts);
                 writer.Add(new ModelVariants { Count = authoring.variants.Count, Shown = -1 });
                 writer.Add<ModelVariantPicked>();

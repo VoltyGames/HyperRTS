@@ -40,8 +40,8 @@ namespace HyperRTS.Simulation.Tests.Buildings
         private Entity Mount(float flagHeight, float poleHeight)
         {
             var building = _em.CreateEntity();
-            var writer = new EntityManagerWriter(_em, building);
-            FlagMountAuthoring.AddFlagMount(ref writer, _em.CreateEntity(), flagHeight, poleHeight);
+            var writer = new EntityWriter(_em, building);
+            FlagMountAuthoring.AddFlagMount(writer, _em.CreateEntity(), flagHeight, poleHeight);
             return building;
         }
     }

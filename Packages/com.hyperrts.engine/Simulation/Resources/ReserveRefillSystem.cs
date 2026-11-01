@@ -64,22 +64,11 @@ namespace HyperRTS.Simulation.Resources
 
             private void Execute(Entity entity, ref ReserveRefill refill, in Faction faction)
             {
-                var owner = faction.Value;
-                if (owner == Faction.Neutral)
-                {
-                    refill.Elapsed = 0f;
-                    return;
-                }
-
-                if (OfflineLookup.HasEnabled(entity))
-                {
-                    return;
-                }
-
-                var due = IntervalTimer.Advance(ref refill.Elapsed, refill.Interval, DeltaTime);
+                var offline = OfflineLookup.HasEnabled(entity);
+                var due = IntervalTimer.Due(ref refill.Elapsed, refill.Interval, DeltaTime, faction.Value, offline);
                 if (due > 0)
                 {
-                    TopUp(owner, refill.Type, due * refill.Amount);
+                    TopUp(faction.Value, refill.Type, due * refill.Amount);
                 }
             }
 

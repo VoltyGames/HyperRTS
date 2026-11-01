@@ -57,8 +57,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         {
             var tree = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(tree, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(_world.EntityManager, tree);
-            DestructibleAuthoring.AddScenery(ref writer, 50f, TreeCrush, Entity.Null, float2.zero,
+            var writer = new EntityWriter(_world.EntityManager, tree);
+            DestructibleAuthoring.AddScenery(writer, 50f, TreeCrush, Entity.Null, float2.zero,
                 SceneryId.At(position, quaternion.identity));
             return tree;
         }
@@ -170,8 +170,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         {
             var wreck = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(wreck, LocalTransform.FromPosition(float3.zero));
-            var writer = new EntityManagerWriter(_world.EntityManager, wreck);
-            BlockerAuthoring.Add(ref writer, "wreck", WreckRadius, WreckLength);
+            var writer = new EntityWriter(_world.EntityManager, wreck);
+            BlockerAuthoring.Add(writer, "wreck", WreckRadius, WreckLength);
             return wreck;
         }
 
@@ -233,8 +233,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         public void BuriedWreck_OpensItsCells()
         {
             var wreck = SpawnWreck();
-            var writer = new EntityManagerWriter(_world.EntityManager, wreck);
-            DecayAuthoring.Add(ref writer, "wreck", 2.5f, 30f, 3f);
+            var writer = new EntityWriter(_world.EntityManager, wreck);
+            DecayAuthoring.Add(writer, "wreck", 2.5f, 30f, 3f);
             _world.Tick();
             Assert.IsFalse(_world.Grid().IsWalkable(float3.zero), "it blocks while it waits");
 

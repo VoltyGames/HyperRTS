@@ -1,5 +1,3 @@
-using Unity.Mathematics;
-
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
@@ -8,8 +6,7 @@ namespace HyperRTS.Simulation.Orders
     /// </summary>
     public struct TypeSet
     {
-        // Eight 32-bit words: column is word / 4, row is word % 4.
-        private uint4x2 _bits;
+        private ByteSet _bits;
 
         public static TypeSet Single(CommandType type) => default(TypeSet).With(type);
 
@@ -29,21 +26,12 @@ namespace HyperRTS.Simulation.Orders
         public readonly TypeSet With(CommandType type)
         {
             var set = this;
-            var word = Word(type);
-            set._bits[word >> 2][word & 3] |= Bit(type);
+            set._bits.Add((byte)type);
             return set;
         }
 
-        public readonly TypeSet With(in TypeSet other) => new() { _bits = _bits | other._bits };
+        public readonly TypeSet With(in TypeSet other) => new() { _bits = _bits.With(other._bits) };
 
-        public readonly bool Contains(CommandType type)
-        {
-            var word = Word(type);
-            return (_bits[word >> 2][word & 3] & Bit(type)) != 0;
-        }
-
-        private static int Word(CommandType type) => (int)type >> 5;
-
-        private static uint Bit(CommandType type) => 1u << ((int)type & 31);
+        public readonly bool Contains(CommandType type) => _bits.Contains((byte)type);
     }
 }

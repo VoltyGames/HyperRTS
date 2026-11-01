@@ -20,8 +20,7 @@ namespace HyperRTS.Simulation.Cues.Effects
         public ImpactMark[] marks = { };
 
         /// <summary>Unset entries are skipped; an entity left without marks writes no impact events.</summary>
-        public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<ImpactMark> marks)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, IReadOnlyList<ImpactMark> marks)
         {
             var buffer = writer.AddBuffer<EntityImpactMark>();
             foreach (var mark in marks)
@@ -37,8 +36,8 @@ namespace HyperRTS.Simulation.Cues.Effects
         {
             public override void Bake(ImpactMarksAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                ImpactMarksAuthoring.Add(ref writer, authoring.marks);
+                var writer = this.Writer();
+                ImpactMarksAuthoring.Add(writer, authoring.marks);
             }
         }
     }

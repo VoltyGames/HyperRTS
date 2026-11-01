@@ -24,7 +24,7 @@ namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, i
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
 | `DamageType` | In `Common`: a damage category that armor and section materials scale, and its `garrisonFactor`, the share that reaches a sheltered garrison ([Transport](movement.md#transport)) |
-| `DamageWriter` | Queues a hit. A negative amount heals |
+| `DamageEvent` | A queued hit, appended through `EventWriter<DamageEvent>`. A negative amount heals |
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
 | `LastAttacker` | Who gets the kill credit |
 
@@ -263,7 +263,7 @@ Part of `Status`. A status effect is a prefab with `StatusEffectAuthoring`: a du
 extra damage taken from chosen damage types and damage over time, all per stack. Its type id is the hash of its
 name, and its bonuses use that id as their source.
 
-Game code applies one with `StatusEffectWriter.Apply`, and an entity-targeted ability applies its `statusEffect`
+Game code applies one by adding a `StatusRequest` through `EventWriter<StatusRequest>`, and an entity-targeted ability applies its `statusEffect`
 on use. `StatusEffectSystem` applies the queue on the server, refreshes or stacks effects already active, expires
 them and credits damage over time to whoever applied the effect. It runs just before `DamageSystem`, so an
 ability's effect applies in the frame it is cast and damage over time lands in the frame it ticks. Each effect is

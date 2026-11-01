@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Movement;
 using Unity.Burst;
 using Unity.Collections;
@@ -23,7 +22,7 @@ namespace HyperRTS.Simulation.Airdrops
     public partial struct AirdropSystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<PostTransformMatrix> _stretchLookup;
+        private PrefabSpawner _spawner;
         private ComponentLookup<Offline> _offlineLookup;
         private ComponentLookup<PlayerSpawn> _spawnLookup;
         private ComponentLookup<Flight> _flightLookup;
@@ -39,7 +38,7 @@ namespace HyperRTS.Simulation.Airdrops
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAny<AirdropReceiver, AirdropFlight>().Build());
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _stretchLookup = state.GetComponentLookup<PostTransformMatrix>(true);
+            _spawner = new PrefabSpawner(ref state);
             _offlineLookup = state.GetComponentLookup<Offline>(true);
             _spawnLookup = state.GetComponentLookup<PlayerSpawn>(true);
             _flightLookup = state.GetComponentLookup<Flight>(true);
@@ -52,7 +51,7 @@ namespace HyperRTS.Simulation.Airdrops
         public void OnUpdate(ref SystemState state)
         {
             _transformLookup.Update(ref state);
-            _stretchLookup.Update(ref state);
+            _spawner.Update(ref state);
             _offlineLookup.Update(ref state);
             _spawnLookup.Update(ref state);
             _flightLookup.Update(ref state);
@@ -67,7 +66,7 @@ namespace HyperRTS.Simulation.Airdrops
                 Map = map,
                 Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged),
                 TransformLookup = _transformLookup,
-                StretchLookup = _stretchLookup,
+                Spawner = _spawner,
                 ReceiverLookup = _receiverLookup,
                 FactionLookup = _factionLookup,
                 DeadLookup = _deadLookup,
@@ -80,7 +79,7 @@ namespace HyperRTS.Simulation.Airdrops
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged),
                 TransformLookup = _transformLookup,
-                StretchLookup = _stretchLookup,
+                Spawner = _spawner,
                 OfflineLookup = _offlineLookup,
                 SpawnLookup = _spawnLookup,
                 FlightLookup = _flightLookup,
@@ -97,25 +96,15 @@ namespace HyperRTS.Simulation.Airdrops
             public PlayerRegistry Players;
             public EntityCommandBuffer Ecb;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<PostTransformMatrix> StretchLookup;
+            public PrefabSpawner Spawner;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
             [ReadOnly] public ComponentLookup<PlayerSpawn> SpawnLookup;
             [ReadOnly] public ComponentLookup<Flight> FlightLookup;
 
             private void Execute(Entity entity, ref AirdropReceiver receiver, in Faction faction)
             {
-                if (faction.Value == Faction.Neutral)
-                {
-                    receiver.Elapsed = 0f;
-                    return;
-                }
-
-                if (OfflineLookup.HasEnabled(entity))
-                {
-                    return;
-                }
-
-                if (IntervalTimer.Advance(ref receiver.Elapsed, receiver.Interval, DeltaTime) == 0)
+                var offline = OfflineLookup.HasEnabled(entity);
+                if (IntervalTimer.Due(ref receiver.Elapsed, receiver.Interval, DeltaTime, faction.Value, offline) == 0)
                 {
                     return;
                 }
@@ -123,8 +112,8 @@ namespace HyperRTS.Simulation.Airdrops
                 var start = SpawnLookup[Players[faction.Value]].Position;
                 var landing = TransformLookup[entity].TransformPoint(receiver.Landing);
                 var route = DropRoute.Plan(Map, start, landing, receiver.Altitude);
-                var aircraft = route.Launch(Ecb, receiver.Aircraft, TransformLookup[receiver.Aircraft], StretchLookup,
-                    FlightLookup[receiver.Aircraft], receiver.Altitude, faction.Value);
+                var aircraft = route.Launch(Ecb, Spawner, receiver.Aircraft, FlightLookup[receiver.Aircraft],
+                    receiver.Altitude, faction.Value);
                 Ecb.AddComponent(aircraft, new AirdropFlight { Receiver = entity });
             }
         }
@@ -138,7 +127,7 @@ namespace HyperRTS.Simulation.Airdrops
             public MapSettings Map;
             public EntityCommandBuffer Ecb;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<PostTransformMatrix> StretchLookup;
+            public PrefabSpawner Spawner;
             [ReadOnly] public ComponentLookup<AirdropReceiver> ReceiverLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             [ReadOnly] public ComponentLookup<Dead> DeadLookup;
@@ -158,9 +147,7 @@ namespace HyperRTS.Simulation.Airdrops
                 if (flight.Fly(transform, speed.Value, ref run, ref destination, out var release))
                 {
                     var crate = ReceiverLookup[delivery.Receiver];
-                    var prefabTransform = TransformLookup[crate.Crate];
-                    var spawned = Ecb.Spawn(crate.Crate, prefabTransform, StretchLookup, release,
-                        prefabTransform.Rotation, faction.Value);
+                    var spawned = Spawner.Spawn(Ecb, crate.Crate, release, faction.Value);
                     Ecb.AddComponent(spawned, new AirdropCrate
                     {
                         Receiver = delivery.Receiver, FallSpeed = crate.FallSpeed, Ground = flight.Route.Target.y,

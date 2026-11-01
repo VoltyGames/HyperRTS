@@ -83,8 +83,7 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>A building stands on levelled ground and never moves, so its body never tilts.</summary>
         private bool IsBuilding => TryGetComponent<BuildingAuthoring>(out _);
 
-        public static void AddRig<TWriter>(ref TWriter writer, in MotionRig rig, IReadOnlyList<MotionRigPart> parts)
-            where TWriter : struct, IEntityWriter
+        public static void AddRig(EntityWriter writer, in MotionRig rig, IReadOnlyList<MotionRigPart> parts)
         {
             writer.Add(rig);
             writer.AddBuffer(parts);
@@ -94,8 +93,7 @@ namespace HyperRTS.Presentation.Animation
             }
         }
 
-        public static void AddTracks<TWriter>(ref TWriter writer, IReadOnlyList<MotionRigTrack> tracks, IReadOnlyList<TrackWheel> wheels)
-            where TWriter : struct, IEntityWriter
+        public static void AddTracks(EntityWriter writer, IReadOnlyList<MotionRigTrack> tracks, IReadOnlyList<TrackWheel> wheels)
         {
             writer.AddBuffer(tracks);
             writer.AddBuffer(wheels);
@@ -192,16 +190,16 @@ namespace HyperRTS.Presentation.Animation
                     parts.Add(slot is WheelSlot { steers: true } wheel ? wheel.Steering(part, root, locomotion.rearAxle) : part);
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AddRig(ref writer, rig, parts);
+                var writer = this.Writer();
+                AddRig(writer, rig, parts);
                 if (authoring.tracks.Count > 0)
                 {
-                    BakeTracks(authoring, slots, ref writer);
+                    BakeTracks(authoring, slots, writer);
                 }
             }
 
             // Each track mesh shares its track's wheel entries, which run from the front.
-            private void BakeTracks(MotionRigAuthoring authoring, List<PartSlot> slots, ref BakerWriter writer)
+            private void BakeTracks(MotionRigAuthoring authoring, List<PartSlot> slots, EntityWriter writer)
             {
                 var tracks = new List<MotionRigTrack>();
                 var wheels = new List<TrackWheel>();
@@ -222,7 +220,7 @@ namespace HyperRTS.Presentation.Animation
                     }));
                 }
 
-                AddTracks(ref writer, tracks, wheels);
+                AddTracks(writer, tracks, wheels);
             }
 
             private MotionRig Rig(MotionRigAuthoring authoring)

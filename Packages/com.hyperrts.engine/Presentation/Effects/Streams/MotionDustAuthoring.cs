@@ -28,9 +28,8 @@ namespace HyperRTS.Presentation.Effects.Streams
         [Min(0.1f)]
         public float fullSpeed = 8f;
 
-        public static void Add<TWriter>(ref TWriter writer, SurfaceEffects effects, float3 socket, float minSpeed,
+        public static void Add(EntityWriter writer, SurfaceEffects effects, float3 socket, float minSpeed,
             float fullSpeed)
-            where TWriter : struct, IEntityWriter
         {
             if (effects != null)
             {
@@ -49,9 +48,9 @@ namespace HyperRTS.Presentation.Effects.Streams
             public override void Bake(MotionDustAuthoring authoring)
             {
                 DependsOn(authoring.effects);
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 var socket = Socket(this, authoring.transform, authoring.socket);
-                Add(ref writer, authoring.effects, socket, authoring.minSpeed,
+                Add(writer, authoring.effects, socket, authoring.minSpeed,
                     authoring.fullSpeed);
             }
         }

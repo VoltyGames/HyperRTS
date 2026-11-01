@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Status
         private BufferLookup<ActiveStatus> _statuses;
         private BufferLookup<StatModifier> _modifiers;
         private BufferLookup<DamageTakenModifier> _typedModifiers;
-        private DamageWriter _damage;
+        private EventWriter<DamageEvent> _damage;
 
         public void OnCreate(ref SystemState state)
         {
@@ -37,11 +37,9 @@ namespace HyperRTS.Simulation.Status
             _statuses = state.GetBufferLookup<ActiveStatus>();
             _modifiers = state.GetBufferLookup<StatModifier>();
             _typedModifiers = state.GetBufferLookup<DamageTakenModifier>();
-            _damage = new DamageWriter(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
 
-            var queue = state.EntityManager.CreateEntity(typeof(StatusQueue), typeof(StatusRequest));
-            state.EntityManager.SetName(queue, "StatusQueue");
-            state.RequireForUpdate<DamageQueue>();
+            EventQueues.Create<StatusQueue>(ref state, typeof(StatusRequest));
         }
 
         [BurstCompile]
@@ -54,7 +52,7 @@ namespace HyperRTS.Simulation.Status
             _statuses.Update(ref state);
             _modifiers.Update(ref state);
             _typedModifiers.Update(ref state);
-            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
+            _damage.Update(ref state);
 
             var now = (float)SystemAPI.Time.ElapsedTime;
             new ApplyJob
@@ -182,7 +180,7 @@ namespace HyperRTS.Simulation.Status
             [ReadOnly] public ComponentLookup<StatusEffectDefinition> Definitions;
             public BufferLookup<StatModifier> Modifiers;
             public BufferLookup<DamageTakenModifier> TypedModifiers;
-            public DamageWriter Damage;
+            public EventWriter<DamageEvent> Damage;
 
             private void Execute(Entity entity, DynamicBuffer<ActiveStatus> statuses, in LocalTransform transform)
             {

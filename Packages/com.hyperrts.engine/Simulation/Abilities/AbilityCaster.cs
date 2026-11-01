@@ -12,51 +12,49 @@ namespace HyperRTS.Simulation.Abilities
     public struct AbilityCaster
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
-        [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
-        private BufferLookup<AbilityActivation> _events;
-        private DamageWriter _damage;
-        private StatusEffectWriter _status;
-        private Entity _eventQueue;
+        private PrefabSpawner _spawner;
+        private EventWriter<AbilityActivation> _events;
+        private EventWriter<DamageEvent> _damage;
+        private EventWriter<StatusRequest> _status;
 
-        public AbilityCaster(ref SystemState state) : this()
+        public AbilityCaster(ref SystemState state)
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
-            _events = state.GetBufferLookup<AbilityActivation>();
-            _damage = new DamageWriter(ref state);
-            _status = new StatusEffectWriter(ref state);
+            _spawner = new PrefabSpawner(ref state);
+            _events = new EventWriter<AbilityActivation>(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
+            _status = new EventWriter<StatusRequest>(ref state);
         }
 
-        public void Update(ref SystemState state, Entity damageQueue, Entity statusQueue, Entity eventQueue)
+        public void Update(ref SystemState state)
         {
             _transforms.Update(ref state);
-            _stretches.Update(ref state);
+            _spawner.Update(ref state);
             _events.Update(ref state);
-            _damage.Update(ref state, damageQueue);
-            _status.Update(ref state, statusQueue);
-            _eventQueue = eventQueue;
+            _damage.Update(ref state);
+            _status.Update(ref state);
         }
 
         public void Cast(ref Ability ability, Entity caster, byte faction, Entity target, float3 position,
             EntityCommandBuffer ecb)
         {
             ability.CooldownRemaining = ability.Cooldown;
-            _events[_eventQueue].Add(new AbilityActivation
+            _events.Add(new AbilityActivation
             {
                 Caster = caster, Faction = faction, AbilityId = ability.Id, Target = target, Position = position,
             });
 
             if (ability.SpawnPrefab != Entity.Null)
             {
-                // Keeps the prefab's rotation: only the position comes from the target.
-                var prefabTransform = _transforms[ability.SpawnPrefab];
-                ecb.Spawn(ability.SpawnPrefab, prefabTransform, _stretches, position, prefabTransform.Rotation,
-                    faction);
+                _spawner.Spawn(ecb, ability.SpawnPrefab, position, faction);
             }
 
             if (ability.StatusEffect != Entity.Null && ability.Target == AbilityTarget.Entity)
             {
-                _status.Apply(target, ability.StatusEffect, caster, faction);
+                _status.Add(new StatusRequest
+                {
+                    Target = target, Definition = ability.StatusEffect, Source = caster, SourceFaction = faction,
+                });
             }
 
             if (ability.Damage != 0f)

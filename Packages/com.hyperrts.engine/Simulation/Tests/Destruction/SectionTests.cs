@@ -77,8 +77,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 new() { Material = 0, DamageType = _smallArms, Multiplier = 0.25f },
             };
             var house = _world.SpawnBuilding(1, position, new float2(8.3f, 8.3f));
-            var writer = new EntityManagerWriter(_world.EntityManager, house);
-            SectionsSetup.Add(ref writer, sections, factors, rubble);
+            var writer = new EntityWriter(_world.EntityManager, house);
+            SectionsSetup.Add(writer, sections, factors, rubble);
             var health = _world.Get<Health>(house);
             health.Max = health.Current = 100f * sections.Count;
             _world.EntityManager.SetComponentData(house, health);
@@ -152,14 +152,14 @@ namespace HyperRTS.Simulation.Tests.Destruction
         public void SectionCutOffFromTheGround_FallsAfterTheDelay_AndEmptiesItsFloor()
         {
             var house = House(float3.zero, upper: true);
-            var writer = new EntityManagerWriter(_world.EntityManager, house);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            var writer = new EntityWriter(_world.EntityManager, house);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             var squads = new Entity[4];
             for (var i = 0; i < squads.Length; i++)
             {
                 squads[i] = _world.SpawnUnit(1, new float3(20f + i * 2f, 0f, 0f));
-                var passenger = new EntityManagerWriter(_world.EntityManager, squads[i]);
-                TransportSetup.AddPassenger(ref passenger, 1);
+                var passenger = new EntityWriter(_world.EntityManager, squads[i]);
+                TransportSetup.AddPassenger(passenger, 1);
                 _world.EntityManager.GetBuffer<Cargo>(house).Add(new Cargo { Unit = squads[i], Size = 1 });
                 _world.EntityManager.SetComponentData(squads[i], new Inside { Container = house });
                 _world.EntityManager.SetComponentEnabled<Inside>(squads[i], true);

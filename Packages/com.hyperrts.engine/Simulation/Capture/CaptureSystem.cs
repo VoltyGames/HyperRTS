@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Capture
         private ComponentLookup<CaptureProgress> _progressLookup;
         private ComponentLookup<Faction> _factionLookup;
         private TargetReach _reach;
-        private BufferLookup<OwnerChanged> _ownerChangedLookup;
+        private EventWriter<OwnerChanged> _ownerChanges;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -36,9 +36,8 @@ namespace HyperRTS.Simulation.Capture
             _factionLookup = state.GetComponentLookup<Faction>(true);
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
-            _ownerChangedLookup = state.GetBufferLookup<OwnerChanged>();
+            _ownerChanges = new EventWriter<OwnerChanged>(ref state);
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -50,7 +49,7 @@ namespace HyperRTS.Simulation.Capture
             _progressLookup.Update(ref state);
             _factionLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
-            _ownerChangedLookup.Update(ref state);
+            _ownerChanges.Update(ref state);
 
             new CaptureJob
             {
@@ -63,8 +62,7 @@ namespace HyperRTS.Simulation.Capture
                 ProgressLookup = _progressLookup,
                 FactionLookup = _factionLookup,
                 Reach = _reach,
-                OwnerEvents = _ownerChangedLookup,
-                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
+                OwnerChanges = _ownerChanges,
             }.Schedule();
         }
 
@@ -82,8 +80,7 @@ namespace HyperRTS.Simulation.Capture
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Faction> FactionLookup;
             public TargetReach Reach;
-            public BufferLookup<OwnerChanged> OwnerEvents;
-            public Entity Events;
+            public EventWriter<OwnerChanged> OwnerChanges;
 
             private void Execute(Entity entity, in Capturer capturer, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
@@ -113,7 +110,7 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                OwnerChanged.Transfer(Ecb, OwnerEvents[Events], target, FactionLookup[target].Value, faction);
+                OwnerChanged.Transfer(Ecb, ref OwnerChanges, target, FactionLookup[target].Value, faction);
                 busy.ValueRW = false;
                 if (capturer.ConsumedOnCapture)
                 {

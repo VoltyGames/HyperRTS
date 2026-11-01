@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Animation
                 var flags = authoring.Scales
                     ? TransformUsageFlags.Dynamic | TransformUsageFlags.NonUniformScale
                     : TransformUsageFlags.Dynamic;
-                var writer = new BakerWriter(this, GetEntity(flags));
+                var writer = this.Writer(flags);
                 writer.Add(new ProductionDoor
                 {
                     Root = GetEntity(root, TransformUsageFlags.Dynamic),

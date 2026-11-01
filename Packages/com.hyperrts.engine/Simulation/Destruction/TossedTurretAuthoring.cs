@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Destruction
         {
             public override void Bake(TossedTurretAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add<TossedTurret>();
             }
         }

@@ -23,14 +23,13 @@ namespace HyperRTS.Simulation.Cues
         {
             _cues = new CueWriter(ref state);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
-            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<GameEvents>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _cues.Update(ref state);
             _transforms.Update(ref state);
             new PlayJob { Cues = _cues, Transforms = _transforms }.Schedule();
         }

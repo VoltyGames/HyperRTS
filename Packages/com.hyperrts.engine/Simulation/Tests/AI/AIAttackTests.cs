@@ -27,8 +27,8 @@ namespace HyperRTS.Simulation.Tests.AI
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
             _supplies = _world.CreateSupplies();
-            var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(2));
-            AIPlayerSetup.Add(ref writer,
+            var writer = new EntityWriter(_world.EntityManager, _world.Player(2));
+            AIPlayerSetup.Add(writer,
                 new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2, UseAbilities = true });
         }
 
@@ -70,8 +70,8 @@ namespace HyperRTS.Simulation.Tests.AI
             for (var i = 0; i < squad.Length; i++)
             {
                 squad[i] = _world.SpawnUnit(2, new float3(i * 3f, 0f, 0f));
-                var writer = new EntityManagerWriter(_world.EntityManager, squad[i]);
-                WeaponSetup.Add(ref writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f }, Stance.Aggressive,
+                var writer = new EntityWriter(_world.EntityManager, squad[i]);
+                WeaponSetup.Add(writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f }, Stance.Aggressive,
                     float3.zero, 0);
             }
 
@@ -161,9 +161,9 @@ namespace HyperRTS.Simulation.Tests.AI
             var soldier = _world.MakePrefab(_world.SpawnUnit(0, new float3(90f, 0f, 90f)));
             _world.SetBuildTime(soldier, 0.5f);
             _world.SetCost(soldier, _supplies, 10);
-            var writer = new EntityManagerWriter(_world.EntityManager, soldier);
+            var writer = new EntityWriter(_world.EntityManager, soldier);
             var weapon = new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f, LeashFactor = 1.5f };
-            WeaponSetup.Add(ref writer, weapon, Stance.Aggressive, float3.zero, 0);
+            WeaponSetup.Add(writer, weapon, Stance.Aggressive, float3.zero, 0);
             _world.MakeProducer(_world.SpawnBuilding(2, at, new float2(4f, 4f)), new float3(0f, 0f, -4f), soldier);
             _world.SpawnProvider(2, at + new float3(-20f, 0f, 0f), 10);
             _world.AddResources(2, _supplies, 100);
@@ -199,8 +199,8 @@ namespace HyperRTS.Simulation.Tests.AI
 
         private static Entity[] Squad(TestWorld world, byte faction, AIPlayer ai, float3 at)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, world.Player(faction));
-            AIPlayerSetup.Add(ref writer, ai);
+            var writer = new EntityWriter(world.EntityManager, world.Player(faction));
+            AIPlayerSetup.Add(writer, ai);
 
             var squad = new Entity[5];
             for (var i = 0; i < squad.Length; i++)

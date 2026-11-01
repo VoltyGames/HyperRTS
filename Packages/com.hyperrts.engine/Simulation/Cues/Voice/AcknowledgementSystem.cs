@@ -36,7 +36,6 @@ namespace HyperRTS.Simulation.Cues.Voice
             _commands = new CommandReader(ref state, answered, selected);
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<LocalPlayer>();
-            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<FactionRelations>();
         }
 
@@ -59,7 +58,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             }
 
             state.CompleteDependency();
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _cues.Update(ref state);
             foreach (var unit in _commands.Subjects(ref state, issued))
             {
                 if (TryAnswer(ref state, unit, slot, issued.Faction))

@@ -267,8 +267,8 @@ namespace HyperRTS.Simulation.Tests.Combat
                 Pose = pose,
                 Ammo = Ammo.Create(rounds, reloadTime, AmmoRefill.Round),
             };
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            InterceptorAuthoring.Add(ref writer, interceptor);
+            var writer = new EntityWriter(_world.EntityManager, entity);
+            InterceptorAuthoring.Add(writer, interceptor);
             return entity;
         }
 

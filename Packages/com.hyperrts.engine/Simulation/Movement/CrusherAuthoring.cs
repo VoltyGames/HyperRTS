@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Movement
         {
             public override void Bake(CrusherAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new Crusher { Size = authoring.size });
             }
         }

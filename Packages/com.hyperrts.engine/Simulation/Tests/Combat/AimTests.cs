@@ -164,8 +164,8 @@ namespace HyperRTS.Simulation.Tests.Combat
             // A wall from x 2.2 to 3.8 along the hull's right side, the target beyond it.
             var wall = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(wall, LocalTransform.FromPosition(new float3(3f, 0f, 0f)));
-            var writer = new EntityManagerWriter(_world.EntityManager, wall);
-            NavSetup.AddObstacle(ref writer, new float2(1.6f, 12f));
+            var writer = new EntityWriter(_world.EntityManager, wall);
+            NavSetup.AddObstacle(writer, new float2(1.6f, 12f));
             _world.Tick();
 
             var gun = SpawnHullGun(float3.zero, 1.6f, 6.9f, 50f, 8f);
@@ -193,8 +193,8 @@ namespace HyperRTS.Simulation.Tests.Combat
             {
                 Radius = radius, HullLength = hullLength, Chassis = new Chassis { Pivots = true },
             });
-            var writer = new EntityManagerWriter(_world.EntityManager, gun);
-            LocomotionAuthoring.Add(ref writer, new Locomotion
+            var writer = new EntityWriter(_world.EntityManager, gun);
+            LocomotionAuthoring.Add(writer, new Locomotion
             {
                 Acceleration = 3f, Braking = 6f, TurnRate = math.radians(turnRate),
             });

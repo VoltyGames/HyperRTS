@@ -18,14 +18,14 @@ namespace HyperRTS.Simulation.Combat.Weapons
     public struct Shooter
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
-        [ReadOnly] private ComponentLookup<PostTransformMatrix> _stretches;
+        private PrefabSpawner _spawner;
         private ComponentLookup<Stealth> _stealth;
         [ReadOnly] private ComponentLookup<Deployable> _deployables;
         [ReadOnly] private BufferLookup<WeaponMuzzle> _muzzles;
         [ReadOnly] private ComponentLookup<Inside> _inside;
         [ReadOnly] private BufferLookup<FiringPort> _ports;
         private BufferLookup<WeaponPose> _poses;
-        private DamageWriter _damage;
+        private EventWriter<DamageEvent> _damage;
         private CueWriter _cues;
         private EntityCommandBuffer _ecb;
         [ReadOnly] private SightBlockers _blockers;
@@ -33,30 +33,30 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public Shooter(ref SystemState state) : this()
         {
             _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _stretches = state.GetComponentLookup<PostTransformMatrix>(true);
+            _spawner = new PrefabSpawner(ref state);
             _stealth = state.GetComponentLookup<Stealth>();
             _deployables = state.GetComponentLookup<Deployable>(true);
             _muzzles = state.GetBufferLookup<WeaponMuzzle>(true);
             _inside = state.GetComponentLookup<Inside>(true);
             _ports = state.GetBufferLookup<FiringPort>(true);
             _poses = state.GetBufferLookup<WeaponPose>();
-            _damage = new DamageWriter(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
             _cues = new CueWriter(ref state);
         }
 
-        /// <summary>Call each update before scheduling, with the damage and cue queues and this frame's buffer.</summary>
-        public void Update(ref SystemState state, Entity damageQueue, Entity cueQueue, EntityCommandBuffer ecb)
+        /// <summary>Call each update before scheduling, with this frame's buffer.</summary>
+        public void Update(ref SystemState state, EntityCommandBuffer ecb)
         {
             _transforms.Update(ref state);
-            _stretches.Update(ref state);
+            _spawner.Update(ref state);
             _stealth.Update(ref state);
             _deployables.Update(ref state);
             _muzzles.Update(ref state);
             _inside.Update(ref state);
             _ports.Update(ref state);
             _poses.Update(ref state);
-            _damage.Update(ref state, damageQueue);
-            _cues.Update(ref state, cueQueue);
+            _damage.Update(ref state);
+            _cues.Update(ref state);
             _ecb = ecb;
             new EntityQueryBuilder(Allocator.Temp).WithAll<SightBlockers>().Build(ref state)
                 .TryGetSingleton(out _blockers);
@@ -226,7 +226,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             var heading = flight.Arcs ? flight.Heading() : aim - origin;
 
             var prefab = weapon.ProjectilePrefab;
-            var projectile = _ecb.Spawn(prefab, _transforms[prefab], _stretches, origin,
+            var projectile = _spawner.Spawn(_ecb, prefab, origin,
                 quaternion.LookRotationSafe(heading, math.up()), faction);
             _ecb.AddComponent(projectile, flight);
         }

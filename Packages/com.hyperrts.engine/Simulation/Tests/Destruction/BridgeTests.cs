@@ -59,10 +59,10 @@ namespace HyperRTS.Simulation.Tests.Destruction
             }
 
             var bridge = _world.SpawnBuilding(0, float3.zero, new float2(9f, SpanCount * SpanLength));
-            var writer = new EntityManagerWriter(_world.EntityManager, bridge);
-            NavSetup.AddArea(ref writer, new float2(9f, SpanCount * SpanLength), NavAreaKind.Deck);
-            SectionsSetup.Add(ref writer, sections, new List<SectionFactor>(), Entity.Null);
-            SectionsSetup.AddRepairable(ref writer, SectionTime);
+            var writer = new EntityWriter(_world.EntityManager, bridge);
+            NavSetup.AddArea(writer, new float2(9f, SpanCount * SpanLength), NavAreaKind.Deck);
+            SectionsSetup.Add(writer, sections, new List<SectionFactor>(), Entity.Null);
+            SectionsSetup.AddRepairable(writer, SectionTime);
             _world.EntityManager.SetComponentData(bridge, new Health { Current = 100f * SpanCount, Max = 100f * SpanCount });
             return bridge;
         }

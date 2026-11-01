@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Animation
         {
             public override void Bake(MachineAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 var owner = GetComponentInParent<GameEntityAuthoring>();
                 writer.Add(new MachineClock
                 {

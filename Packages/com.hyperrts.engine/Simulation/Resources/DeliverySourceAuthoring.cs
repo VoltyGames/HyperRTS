@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Resources
                     return;
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new DeliverySource
                 {
                     Carrier = GetEntity(authoring.carrier, TransformUsageFlags.Dynamic),

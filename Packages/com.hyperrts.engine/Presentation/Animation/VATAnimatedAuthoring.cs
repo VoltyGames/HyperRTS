@@ -44,8 +44,7 @@ namespace HyperRTS.Presentation.Animation
             material.SetFloat(RowsPerFrameId, rowsPerFrame);
         }
 
-        public static void AddVAT<TWriter>(ref TWriter writer, in VATClipRange start, AABB bounds)
-            where TWriter : struct, IEntityWriter
+        public static void AddVAT(EntityWriter writer, in VATClipRange start, AABB bounds)
         {
             writer.Add(VATClip.Started(start, 0f));
             writer.Add(VATFade.None);
@@ -130,8 +129,8 @@ namespace HyperRTS.Presentation.Animation
                     throw new InvalidOperationException($"VAT Animated on '{authoring.name}' {problem}.");
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AddVAT(ref writer, authoring.clips.Range(authoring.startClip), authoring.clips.Bounds);
+                var writer = this.Writer();
+                AddVAT(writer, authoring.clips.Range(authoring.startClip), authoring.clips.Bounds);
             }
         }
     }

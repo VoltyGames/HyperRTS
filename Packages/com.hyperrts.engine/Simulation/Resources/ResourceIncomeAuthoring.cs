@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Resources
         {
             public override void Bake(ResourceIncomeAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new ResourceIncome
                 {
                     Type = authoring.type,

@@ -21,8 +21,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
         [Min(0f)]
         public float hullLength;
 
-        public static void Add<TWriter>(ref TWriter writer, string owner, float radius, float hullLength)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, string owner, float radius, float hullLength)
         {
             if (radius <= 0f)
             {
@@ -36,8 +35,8 @@ namespace HyperRTS.Simulation.Navigation.Areas
         {
             public override void Bake(BlockerAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                BlockerAuthoring.Add(ref writer, authoring.name, authoring.radius, authoring.hullLength);
+                var writer = this.Writer();
+                BlockerAuthoring.Add(writer, authoring.name, authoring.radius, authoring.hullLength);
             }
         }
     }

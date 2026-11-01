@@ -35,26 +35,11 @@ namespace HyperRTS.Simulation.Orders
 
         public void Apply(Entity unit)
         {
-            if (_move.HasComponent(unit))
-            {
-                _move.SetComponentEnabled(unit, false);
-            }
-
+            _move.DisableIfPresent(unit);
             // So a walk-up never reads the last order's arrival as its own.
-            if (_arrival.HasComponent(unit))
-            {
-                _arrival.SetComponentEnabled(unit, false);
-            }
-
-            if (_attack.HasComponent(unit))
-            {
-                _attack.SetComponentEnabled(unit, false);
-            }
-
-            if (_moveOrder.HasComponent(unit))
-            {
-                _moveOrder.SetComponentEnabled(unit, false);
-            }
+            _arrival.DisableIfPresent(unit);
+            _attack.DisableIfPresent(unit);
+            _moveOrder.DisableIfPresent(unit);
         }
     }
 }

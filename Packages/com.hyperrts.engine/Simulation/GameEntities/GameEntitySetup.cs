@@ -20,9 +20,8 @@ namespace HyperRTS.Simulation.GameEntities
     public static class GameEntitySetup
     {
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TWriter>(ref TWriter writer, in GameEntitySpec spec,
+        public static void Add(EntityWriter writer, in GameEntitySpec spec,
             IReadOnlyList<ResourceCost> cost = null, IReadOnlyList<Prerequisite> prerequisites = null)
-            where TWriter : struct, IEntityWriter
         {
             writer.Add(spec.Info);
             writer.Add(new Faction { Value = spec.Owner });
@@ -37,7 +36,7 @@ namespace HyperRTS.Simulation.GameEntities
             writer.AddBuffer<ActiveStatus>();
             writer.AddBuffer<DamageTakenModifier>();
             writer.Add(new AppliedUpgrades { Faction = spec.Owner });
-            VisionSetup.AddVision(ref writer, spec.VisionRange, spec.EyeHeight);
+            VisionSetup.AddVision(writer, spec.VisionRange, spec.EyeHeight);
             writer.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
             writer.AddBuffer(cost);
             writer.AddBuffer(prerequisites);

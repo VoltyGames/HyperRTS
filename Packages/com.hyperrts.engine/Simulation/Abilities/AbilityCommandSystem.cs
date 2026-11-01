@@ -1,11 +1,9 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Status;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -32,9 +30,7 @@ namespace HyperRTS.Simulation.Abilities
 
         public void OnCreate(ref SystemState state)
         {
-            var events = state.EntityManager.CreateEntity(typeof(AbilityEvents), typeof(AbilityActivation));
-            state.EntityManager.SetName(events, "AbilityEvents");
-
+            EventQueues.Create<AbilityEvents>(ref state, typeof(AbilityActivation));
             var selected = SystemAPI.QueryBuilder().WithAll<Ability, Selected, Faction>().WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, TypeSet.Range(CommandType.UseAbility, CommandType.UsePower),
                 selected);
@@ -44,8 +40,6 @@ namespace HyperRTS.Simulation.Abilities
             _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
-            state.RequireForUpdate<DamageQueue>();
-            state.RequireForUpdate<StatusQueue>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -54,8 +48,7 @@ namespace HyperRTS.Simulation.Abilities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var events = SystemAPI.GetSingletonEntity<AbilityEvents>();
-            SystemAPI.GetBuffer<AbilityActivation>(events).Clear();
+            SystemAPI.GetSingletonBuffer<AbilityActivation>().Clear();
             var issued = _commands.Read(ref state);
             if (issued.IsEmpty)
             {
@@ -66,8 +59,7 @@ namespace HyperRTS.Simulation.Abilities
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _targets.Update(ref state, _fogQuery);
             _factions.Update(ref state);
-            _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
-                SystemAPI.GetSingletonEntity<StatusQueue>(), events);
+            _caster.Update(ref state);
 
             var context = new Context
             {

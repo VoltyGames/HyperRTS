@@ -230,16 +230,16 @@ namespace HyperRTS.Simulation.Tests.Vision
 
         private Entity Stealthy(Entity entity, float reveal = 1f, bool onlyWhenStill = false, bool enabled = true)
         {
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            StealthSetup.AddStealth(ref writer,
+            var writer = new EntityWriter(_world.EntityManager, entity);
+            StealthSetup.AddStealth(writer,
                 new Stealth { RevealDuration = reveal, OnlyWhenStill = onlyWhenStill }, enabled);
             return entity;
         }
 
         private Entity Detect(Entity entity, float radius)
         {
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            StealthSetup.AddDetector(ref writer, radius);
+            var writer = new EntityWriter(_world.EntityManager, entity);
+            StealthSetup.AddDetector(writer, radius);
             return entity;
         }
     }

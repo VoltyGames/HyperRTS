@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Resources
     public partial struct DeliverySystem : ISystem
     {
         private ComponentLookup<LocalTransform> _transformLookup;
-        private ComponentLookup<PostTransformMatrix> _stretchLookup;
+        private PrefabSpawner _spawner;
         private ComponentLookup<Offline> _offlineLookup;
         private ComponentLookup<DeliverySource> _sourceLookup;
         private ComponentLookup<Dead> _deadLookup;
@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Resources
             // Carriers still arrive after their source dies, so either keeps the system running.
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAny<DeliverySource, DeliveryCarrier>().Build());
             _transformLookup = state.GetComponentLookup<LocalTransform>(true);
-            _stretchLookup = state.GetComponentLookup<PostTransformMatrix>(true);
+            _spawner = new PrefabSpawner(ref state);
             _offlineLookup = state.GetComponentLookup<Offline>(true);
             _sourceLookup = state.GetComponentLookup<DeliverySource>(true);
             _deadLookup = state.GetComponentLookup<Dead>(true);
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Resources
         public void OnUpdate(ref SystemState state)
         {
             _transformLookup.Update(ref state);
-            _stretchLookup.Update(ref state);
+            _spawner.Update(ref state);
             _offlineLookup.Update(ref state);
             _sourceLookup.Update(ref state);
             _deadLookup.Update(ref state);
@@ -77,7 +77,7 @@ namespace HyperRTS.Simulation.Resources
                 Map = SystemAPI.GetSingleton<MapSettings>(),
                 Ecb = ecbSystem.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 TransformLookup = _transformLookup,
-                StretchLookup = _stretchLookup,
+                Spawner = _spawner,
                 OfflineLookup = _offlineLookup,
             }.ScheduleParallel();
         }
@@ -91,25 +91,15 @@ namespace HyperRTS.Simulation.Resources
             public MapSettings Map;
             public EntityCommandBuffer.ParallelWriter Ecb;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
-            [ReadOnly] public ComponentLookup<PostTransformMatrix> StretchLookup;
+            public PrefabSpawner Spawner;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
 
             private void Execute([ChunkIndexInQuery] int chunk, Entity entity, ref DeliverySource source,
                 in Faction faction)
             {
-                if (faction.Value == Faction.Neutral)
-                {
-                    source.Elapsed = 0f;
-                    return;
-                }
-
-                if (OfflineLookup.HasEnabled(entity))
-                {
-                    return;
-                }
-
+                var offline = OfflineLookup.HasEnabled(entity);
                 // One wave even if a long frame covered several intervals: carriers spawned together would overlap.
-                if (IntervalTimer.Advance(ref source.Elapsed, source.Interval, DeltaTime) == 0)
+                if (IntervalTimer.Due(ref source.Elapsed, source.Interval, DeltaTime, faction.Value, offline) == 0)
                 {
                     return;
                 }
@@ -128,8 +118,8 @@ namespace HyperRTS.Simulation.Resources
                 in Faction faction)
             {
                 var heading = new float3(goal.x - position.x, 0f, goal.z - position.z);
-                var carrier = Ecb.Spawn(chunk, source.Carrier, TransformLookup[source.Carrier], StretchLookup,
-                    position, quaternion.LookRotationSafe(heading, math.up()), faction.Value);
+                var carrier = Spawner.Spawn(Ecb, chunk, source.Carrier, position,
+                    quaternion.LookRotationSafe(heading, math.up()), faction.Value);
                 Ecb.AddComponent(chunk, carrier, new DeliveryCarrier
                 {
                     Source = target, Type = source.Type, Amount = source.Amount,

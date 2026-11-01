@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.GameEntities
         {
             public override void Bake(TeamStripAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new TeamStripBand { Bottom = authoring.bottom, Top = authoring.top });
             }
         }

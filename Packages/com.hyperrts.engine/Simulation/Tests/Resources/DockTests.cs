@@ -53,8 +53,8 @@ namespace HyperRTS.Simulation.Tests.Resources
                 bays.Add(Bay(new float3(0f, 0f, 8f), new float2(-1f, 0f)));
             }
 
-            var writer = new EntityManagerWriter(_world.EntityManager, depot);
-            DockAuthoring.Add(ref writer, "Depot", bays);
+            var writer = new EntityWriter(_world.EntityManager, depot);
+            DockAuthoring.Add(writer, "Depot", bays);
             return depot;
         }
 
@@ -75,8 +75,8 @@ namespace HyperRTS.Simulation.Tests.Resources
             };
             agent.WallMargin = agent.HullWallMargin;
             _world.EntityManager.SetComponentData(truck, agent);
-            var writer = new EntityManagerWriter(_world.EntityManager, truck);
-            LocomotionAuthoring.Add(ref writer, new Locomotion
+            var writer = new EntityWriter(_world.EntityManager, truck);
+            LocomotionAuthoring.Add(writer, new Locomotion
             {
                 Acceleration = 3f, Braking = 6f, TurnRate = math.radians(35f), SteerRate = math.radians(45f),
                 ReverseSpeed = 3f,

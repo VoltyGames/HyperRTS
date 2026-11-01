@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
         private ComponentLookup<Producible> _producibleLookup;
         private TargetReach _reach;
         private ComponentLookup<Faction> _factionLookup;
-        private BufferLookup<BuildingCompleted> _completedLookup;
+        private EventWriter<BuildingCompleted> _completed;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -34,9 +34,8 @@ namespace HyperRTS.Simulation.Buildings.Construction
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
             _factionLookup = state.GetComponentLookup<Faction>(true);
-            _completedLookup = state.GetBufferLookup<BuildingCompleted>();
+            _completed = new EventWriter<BuildingCompleted>(ref state);
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<GameEvents>();
         }
 
         [BurstCompile]
@@ -46,7 +45,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
             _producibleLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
             _factionLookup.Update(ref state);
-            _completedLookup.Update(ref state);
+            _completed.Update(ref state);
 
             new BuildJob
             {
@@ -60,8 +59,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
 
             new FinishJob
             {
-                Completed = _completedLookup,
-                Events = SystemAPI.GetSingletonEntity<GameEvents>(),
+                Completed = _completed,
             }.Schedule();
         }
 
@@ -136,8 +134,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
         [WithNone(typeof(Dead))]
         private partial struct FinishJob : IJobEntity
         {
-            public BufferLookup<BuildingCompleted> Completed;
-            public Entity Events;
+            public EventWriter<BuildingCompleted> Completed;
 
             private void Execute(Entity site, ref ConstructionProgress progress,
                 EnabledRefRW<ConstructionProgress> underConstruction, in Faction faction)
@@ -148,7 +145,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 }
 
                 underConstruction.ValueRW = false;
-                Completed[Events].Add(new BuildingCompleted { Building = site, Faction = faction.Value });
+                Completed.Add(new BuildingCompleted { Building = site, Faction = faction.Value });
             }
         }
     }

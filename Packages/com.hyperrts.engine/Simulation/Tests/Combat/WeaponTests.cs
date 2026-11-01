@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
             _world.AddMount(gun, range: 6f, damage: 50f, cooldown: 100f, minEffect: 0.5f, damageType: missile);
             var soldier = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
-            var writer = new EntityManagerWriter(_world.EntityManager, soldier);
+            var writer = new EntityWriter(_world.EntityManager, soldier);
             writer.AddBuffer(new[] { new ArmorModifier { DamageType = missile, Multiplier = 0.1f } });
 
             _world.Run(1f);
@@ -170,8 +170,8 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void MagazineRefill_ReloadsAGroundUnitInTheField()
         {
             var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 0.5f);
-            var writer = new EntityManagerWriter(_world.EntityManager, gun);
-            WeaponSetup.AddAmmo(ref writer, 2, 3f, AmmoRefill.Magazine);
+            var writer = new EntityWriter(_world.EntityManager, gun);
+            WeaponSetup.AddAmmo(writer, 2, 3f, AmmoRefill.Magazine);
             var enemy = _world.SpawnUnit(2, new float3(0f, 0f, 4f));
 
             Assert.IsTrue(_world.RunUntil(() => _world.Get<Ammo>(gun).Current == 0, 2f), "fires the magazine");

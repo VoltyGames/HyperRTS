@@ -37,9 +37,9 @@ namespace HyperRTS.Simulation.Upgrades
         public List<Effect> effects = new();
 
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TWriter>(ref TWriter writer, in EntityInfo info, float buildTime,
+        public static void Add(EntityWriter writer, in EntityInfo info, float buildTime,
             IReadOnlyList<ResourceCost> cost, IReadOnlyList<Prerequisite> prerequisites,
-            IReadOnlyList<UpgradeEffect> effects) where TWriter : struct, IEntityWriter
+            IReadOnlyList<UpgradeEffect> effects)
         {
             writer.Add<Research>();
             writer.Add(info);
@@ -54,9 +54,9 @@ namespace HyperRTS.Simulation.Upgrades
         {
             public override void Bake(UpgradeAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
+                var writer = this.Writer(TransformUsageFlags.None);
                 var info = authoring.BakeProducible(this, out var costs, out var required);
-                UpgradeAuthoring.Add(ref writer, info, authoring.buildTime, costs, required, BakeEffects(authoring));
+                UpgradeAuthoring.Add(writer, info, authoring.buildTime, costs, required, BakeEffects(authoring));
             }
 
             private List<UpgradeEffect> BakeEffects(UpgradeAuthoring authoring)

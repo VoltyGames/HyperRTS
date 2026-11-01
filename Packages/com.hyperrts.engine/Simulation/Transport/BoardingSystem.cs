@@ -114,15 +114,8 @@ namespace HyperRTS.Simulation.Transport
             /// <summary>Drops target and selection and picks the inside stance; returns the stance to restore.</summary>
             private Stance Settle(Entity entity, Entity container)
             {
-                if (AttackLookup.HasComponent(entity))
-                {
-                    AttackLookup.SetComponentEnabled(entity, false);
-                }
-
-                if (SelectedLookup.HasComponent(entity))
-                {
-                    SelectedLookup.SetComponentEnabled(entity, false);
-                }
+                AttackLookup.DisableIfPresent(entity);
+                SelectedLookup.DisableIfPresent(entity);
 
                 if (!StanceLookup.TryGetComponent(entity, out var stance))
                 {

@@ -23,12 +23,14 @@ The base tier: ownership, identity, health and shared helpers.
 | `Destructible` | Scenery anyone can wreck. Splash hits it and fog never hides it |
 | `ConstructionProgress` | 0 to 1. An unfinished building doesn't produce, fire or count for prerequisites |
 | `Offline` | Out of action, with a reason mask. Games add reasons from `OfflineReason.Custom` |
-| `GameEvents` | This frame's unit produced, building completed and owner changed events |
+| `GameEvents` | This frame's unit produced, building completed, research completed, owner changed and damaged events |
 | `OwnerChanged.Transfer` | The one way to change an owner. Raises `OwnerChanged` |
 | `EntityInfo`, `PrefabRegistry` | Type id, name and icon. The registry maps type id to prefab |
-| `IEntityWriter` | Writes component sets, so bakers and tests build the same entities |
-| `SpawnExtensions.Spawn` | Instantiates a baked prefab, places it with its `LocalToWorld` (stretch included) and sets its `Faction` |
-| `AuthoringBehaviour` | Base of all authoring components. It lives in the `Common.Authoring` sub-namespace with `IEntityWriter` and the authoring attributes |
+| `EntityWriter` | Writes component sets, so bakers and tests build the same entities |
+| `PrefabSpawner` | Instantiates a baked prefab from a job, places it with its `LocalToWorld` (stretch included) and sets its `Faction`. `SpawnExtensions` does the same on an `EntityManager` |
+| `EventWriter<T>`, `EventQueues` | Appends to a per-frame queue singleton (damage, status, cues, game events) from one job thread. `EventQueues.Create` makes the named queue |
+| `IntervalTimer` | A repeating timer: `Due` resets it while neutral and holds it while offline |
+| `AuthoringBehaviour` | Base of all authoring components. It lives in the `Common.Authoring` sub-namespace with `EntityWriter` and the authoring attributes |
 
 An entity's type id is a hash of its display name, so two prefab types must not share a name.
 

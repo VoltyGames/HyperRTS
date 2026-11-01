@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Animation
                 var aims = link || authoring.motion == MachineMotion.Point;
                 var place = GetComponent<Transform>();
                 DependsOn(authoring.aim);
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new MachinePart
                 {
                     Machine = GetEntity(machine, TransformUsageFlags.Dynamic),

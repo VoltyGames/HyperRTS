@@ -18,8 +18,7 @@ namespace HyperRTS.Simulation.Cues.Effects
         [Tooltip("Rigs per surface material (dirt spray, water splash, sparks on metal).")]
         public SurfaceEffects effects;
 
-        public static void Add<TWriter>(ref TWriter writer, SurfaceEffects effects)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, SurfaceEffects effects)
         {
             if (effects != null)
             {
@@ -32,8 +31,8 @@ namespace HyperRTS.Simulation.Cues.Effects
             public override void Bake(ImpactEffectsAuthoring authoring)
             {
                 DependsOn(authoring.effects);
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, authoring.effects);
+                var writer = this.Writer();
+                Add(writer, authoring.effects);
             }
         }
     }

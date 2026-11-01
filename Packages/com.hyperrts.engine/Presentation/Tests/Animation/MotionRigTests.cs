@@ -237,8 +237,8 @@ namespace HyperRTS.Presentation.Tests.Animation
             _unit = _em.CreateEntity();
             _em.AddComponentData(_unit, LocalTransform.FromPosition(_position));
             _em.AddBuffer<WeaponPose>(_unit).Add(default);
-            var writer = new EntityManagerWriter(_em, _unit);
-            MotionRigAuthoring.AddRig(ref writer, new MotionRig { TiltFrame = quaternion.identity, TiltRest = quaternion.identity },
+            var writer = new EntityWriter(_em, _unit);
+            MotionRigAuthoring.AddRig(writer, new MotionRig { TiltFrame = quaternion.identity, TiltRest = quaternion.identity },
                 parts);
             return parts[0].Part;
         }

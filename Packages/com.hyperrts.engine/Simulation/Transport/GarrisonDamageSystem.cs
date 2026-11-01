@@ -18,22 +18,21 @@ namespace HyperRTS.Simulation.Transport
     [UpdateBefore(typeof(ContainerDeathSystem))]
     public partial struct GarrisonDamageSystem : ISystem
     {
-        private DamageWriter _damage;
+        private EventWriter<DamageEvent> _damage;
         private ComponentLookup<Health> _health;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<Container>();
-            _damage = new DamageWriter(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
             _health = state.GetComponentLookup<Health>(true);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
+            _damage.Update(ref state);
             _health.Update(ref state);
             new PruneJob { Health = _health }.Schedule();
             new ShareJob { Damage = _damage }.Schedule();
@@ -62,7 +61,7 @@ namespace HyperRTS.Simulation.Transport
         [WithAll(typeof(Shelter))]
         private partial struct ShareJob : IJobEntity
         {
-            public DamageWriter Damage;
+            public EventWriter<DamageEvent> Damage;
 
             private void Execute(DynamicBuffer<ShelterHit> hits, in DynamicBuffer<Cargo> cargo)
             {

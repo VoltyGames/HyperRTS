@@ -40,9 +40,6 @@ namespace HyperRTS.Simulation.Abilities
             _fogQuery = TargetLookup.FogQuery(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             _caster = new AbilityCaster(ref state);
-            state.RequireForUpdate<DamageQueue>();
-            state.RequireForUpdate<StatusQueue>();
-            state.RequireForUpdate<AbilityEvents>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -52,8 +49,7 @@ namespace HyperRTS.Simulation.Abilities
         {
             _targets.Update(ref state, _fogQuery);
             _factions.Update(ref state);
-            _caster.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
-                SystemAPI.GetSingletonEntity<StatusQueue>(), SystemAPI.GetSingletonEntity<AbilityEvents>());
+            _caster.Update(ref state);
 
             new CooldownJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
 

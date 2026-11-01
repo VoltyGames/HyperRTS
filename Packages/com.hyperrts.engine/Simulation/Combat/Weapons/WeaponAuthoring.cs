@@ -87,17 +87,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 weapon.LeashFactor = authoring.leashFactor;
                 weapon.Aim.Turreted = authoring.AimsTurret;
 
-                var writer = new BakerWriter(this, entity);
+                var writer = this.Writer(entity);
                 var poses = authoring.WeaponPoses + (GetComponent<InterceptorAuthoring>() != null ? 1 : 0);
-                WeaponSetup.Add(ref writer, weapon, authoring.stance, authoring.transform.position, poses - 1);
+                WeaponSetup.Add(writer, weapon, authoring.stance, authoring.transform.position, poses - 1);
                 if (authoring.extraWeapons.Count > 0)
                 {
-                    WeaponSetup.AddMounts(ref writer, BakeMounts(authoring, muzzles));
+                    WeaponSetup.AddMounts(writer, BakeMounts(authoring, muzzles));
                 }
 
                 if (muzzles.Count > 0)
                 {
-                    WeaponSetup.AddMuzzles(ref writer, muzzles);
+                    WeaponSetup.AddMuzzles(writer, muzzles);
                 }
             }
 

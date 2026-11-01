@@ -59,8 +59,8 @@ namespace HyperRTS.Presentation.Animation
         [Min(0f)]
         public float dieHold = 3f;
 
-        public static void AddSquad<TWriter>(
-            ref TWriter writer, in SquadFigures squad, IReadOnlyList<SquadFigure> figures) where TWriter : struct, IEntityWriter
+        public static void AddSquad(
+            EntityWriter writer, in SquadFigures squad, IReadOnlyList<SquadFigure> figures)
         {
             writer.Add(squad);
             var buffer = writer.AddBuffer<SquadFigure>();
@@ -142,8 +142,8 @@ namespace HyperRTS.Presentation.Animation
                     entities.Add(new SquadFigure { Figure = entity, Clips = clips[i] });
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AddSquad(ref writer, authoring.Squad(), entities);
+                var writer = this.Writer();
+                AddSquad(writer, authoring.Squad(), entities);
             }
         }
     }

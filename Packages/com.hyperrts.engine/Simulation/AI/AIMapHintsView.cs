@@ -93,19 +93,13 @@ namespace HyperRTS.Simulation.AI
         /// <summary>The waypoint of a lane nearest a position; the lane's <c>Count</c> when it has none.</summary>
         public int NearestWaypoint(in AILaneHint lane, float2 position)
         {
-            int best = lane.Count;
-            var bestDistance = float.MaxValue;
+            var nearest = Closest.None;
             for (var k = 0; k < lane.Count; k++)
             {
-                var distance = math.distancesq(Waypoint(lane, k), position);
-                if (distance < bestDistance)
-                {
-                    best = k;
-                    bestDistance = distance;
-                }
+                nearest.Consider(k, Entity.Null, math.distancesq(Waypoint(lane, k), position));
             }
 
-            return best;
+            return nearest.Found ? nearest.Index : lane.Count;
         }
     }
 }

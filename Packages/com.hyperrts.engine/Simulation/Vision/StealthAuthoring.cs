@@ -31,8 +31,8 @@ namespace HyperRTS.Simulation.Vision
         {
             public override void Bake(StealthAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                StealthSetup.AddStealth(ref writer, new Stealth
+                var writer = this.Writer();
+                StealthSetup.AddStealth(writer, new Stealth
                 {
                     RevealDuration = authoring.revealAfterFiring,
                     OnlyWhenStill = authoring.onlyWhenStill,

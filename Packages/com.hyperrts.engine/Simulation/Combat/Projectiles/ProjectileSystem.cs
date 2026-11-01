@@ -1,5 +1,6 @@
 ﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Cues;
@@ -21,7 +22,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
     {
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
-        private DamageWriter _damage;
+        private EventWriter<DamageEvent> _damage;
         private CueWriter _cues;
 
         [BurstCompile]
@@ -29,10 +30,8 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         {
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
-            _damage = new DamageWriter(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
             _cues = new CueWriter(ref state);
-            state.RequireForUpdate<DamageQueue>();
-            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -40,8 +39,8 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state, _fogQuery);
-            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _damage.Update(ref state);
+            _cues.Update(ref state);
 
             new HomingJob { Targets = _targets }.ScheduleParallel();
             new FlightJob
@@ -75,7 +74,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         {
             public float DeltaTime;
             public EntityCommandBuffer Ecb;
-            public DamageWriter Damage;
+            public EventWriter<DamageEvent> Damage;
             public CueWriter Cues;
 
             private void Execute(Entity entity, ref LocalTransform transform, ref Projectile projectile)

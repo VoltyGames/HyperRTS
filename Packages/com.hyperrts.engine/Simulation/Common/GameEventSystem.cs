@@ -14,9 +14,8 @@ namespace HyperRTS.Simulation.Common
     {
         public void OnCreate(ref SystemState state)
         {
-            var events = state.EntityManager.CreateEntity(typeof(GameEvents), typeof(UnitProduced),
-                typeof(BuildingCompleted), typeof(OwnerChanged), typeof(ResearchCompleted), typeof(EntityDamaged), typeof(SimulationFrame));
-            state.EntityManager.SetName(events, "GameEvents");
+            EventQueues.Create<GameEvents>(ref state, typeof(UnitProduced), typeof(BuildingCompleted),
+                typeof(OwnerChanged), typeof(ResearchCompleted), typeof(EntityDamaged), typeof(SimulationFrame));
         }
 
         // Scheduled, so last frame's readers needn't finish on the main thread first.

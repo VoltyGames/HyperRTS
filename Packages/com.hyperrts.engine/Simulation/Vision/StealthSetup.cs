@@ -6,8 +6,7 @@ namespace HyperRTS.Simulation.Vision
     /// <summary>Adds the stealth and detector components.</summary>
     public static class StealthSetup
     {
-        public static void AddStealth<TWriter>(ref TWriter writer, in Stealth stealth, bool enabled)
-            where TWriter : struct, IEntityWriter
+        public static void AddStealth(EntityWriter writer, in Stealth stealth, bool enabled)
         {
             writer.Add(stealth);
             writer.SetEnabled<Stealth>(enabled);
@@ -19,8 +18,7 @@ namespace HyperRTS.Simulation.Vision
             writer.SetEnabled<Concealed>(false);
         }
 
-        public static void AddDetector<TWriter>(ref TWriter writer, float radius)
-            where TWriter : struct, IEntityWriter =>
+        public static void AddDetector(EntityWriter writer, float radius) =>
             writer.Add(new Detector { Radius = radius });
     }
 }

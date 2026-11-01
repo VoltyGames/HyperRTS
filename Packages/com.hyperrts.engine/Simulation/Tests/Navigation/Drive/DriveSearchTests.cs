@@ -54,8 +54,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
             _world.EntityManager.SetComponentData(unit, agent);
             _world.EntityManager.SetComponentData(unit,
                 LocalTransform.FromPositionRotation(position, quaternion.RotateY(yaw)));
-            var writer = new EntityManagerWriter(_world.EntityManager, unit);
-            LocomotionAuthoring.Add(ref writer, locomotion);
+            var writer = new EntityWriter(_world.EntityManager, unit);
+            LocomotionAuthoring.Add(writer, locomotion);
             return unit;
         }
 

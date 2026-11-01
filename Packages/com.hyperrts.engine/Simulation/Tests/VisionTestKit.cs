@@ -24,8 +24,8 @@ namespace HyperRTS.Simulation.Tests
         {
             var entity = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(world.EntityManager, entity);
-            SightBlockAuthoring.Add(ref writer, block);
+            var writer = new EntityWriter(world.EntityManager, entity);
+            SightBlockAuthoring.Add(writer, block);
             return entity;
         }
 

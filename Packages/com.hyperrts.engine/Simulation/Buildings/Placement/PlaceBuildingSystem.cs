@@ -36,6 +36,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         private EntityQuery _queues;
         private EntityQuery _limited;
         private OrderWriter _orders;
+        private PrefabSpawner _spawner;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -49,6 +50,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             _orders = new OrderWriter(ref state);
+            _spawner = new PrefabSpawner(ref state);
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate<SpatialIndex>();
@@ -61,6 +63,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var requests = _commands.Read(ref state);
             if (requests.Length > 0)
             {
+                _spawner.Update(ref state);
                 PlaceAll(ref state, requests);
             }
         }
@@ -168,9 +171,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
         private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, quaternion rotation, byte faction,
             EntityCommandBuffer ecb)
         {
-            var transform = SystemAPI.GetComponent<LocalTransform>(prefab);
-            var building = ecb.Spawn(prefab, transform, SystemAPI.GetComponentLookup<PostTransformMatrix>(true),
-                center, math.mul(rotation, transform.Rotation), faction);
+            var facing = math.mul(rotation, SystemAPI.GetComponent<LocalTransform>(prefab).Rotation);
+            var building = _spawner.Spawn(ecb, prefab, center, facing, faction);
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);
             // Offline from the first frame, before OfflineSystem sees the site.

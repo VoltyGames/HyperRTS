@@ -19,13 +19,12 @@ namespace HyperRTS.Simulation.Cues
         public void OnCreate(ref SystemState state)
         {
             _cues = new CueWriter(ref state);
-            state.RequireForUpdate<CueQueue>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _cues.Update(ref state);
             new DeathJob { Cues = _cues }.Schedule();
         }
 

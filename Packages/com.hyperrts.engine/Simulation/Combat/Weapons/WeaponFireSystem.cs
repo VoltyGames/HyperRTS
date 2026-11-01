@@ -2,7 +2,6 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
@@ -45,8 +44,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _facingGoals = state.GetComponentLookup<FacingGoal>();
             _ammo = state.GetComponentLookup<Ammo>();
             _shots = new Shooter(ref state);
-            state.RequireForUpdate<DamageQueue>();
-            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -59,9 +56,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _transforms.Update(ref state);
             _facingGoals.Update(ref state);
             _ammo.Update(ref state);
-            _shots.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
-                SystemAPI.GetSingletonEntity<CueQueue>(),
-                SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
+            _shots.Update(ref state, SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged));
 
             // Single-threaded: every shot appends to the one damage queue.

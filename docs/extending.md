@@ -13,6 +13,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
   `[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`.
 - A component the client reads needs `[GhostField]` on the fields that change.
 - Authoring classes derive from `AuthoringBehaviour` to get the engine inspector and validation.
+- Bakers add components through `this.Writer()`, an `EntityWriter` that a static `Add...` on the authoring class takes, so tests build the same entity with `new EntityWriter(entityManager, entity)`.
 
 ## Mechanics
 
@@ -24,7 +25,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | React to production or capture | Read `GameEvents` after `ProductionSystemGroup` |
 | Change an owner | `OwnerChanged.Transfer` |
 | React to deaths | Query `Dead` entities after `DeathSystem`. `LastAttacker` names the killer |
-| Damage or heal | `DamageWriter`. A negative amount heals |
+| Damage or heal | `EventWriter<DamageEvent>`. A negative amount heals |
 | Custom ability effects | Read `AbilityActivation` after `AbilitySystem` |
 | Aura effects | Read the entity's `AuraPresence` |
 | Disable an entity | Set a bit from `OfflineReason.Custom` up in `Offline.Reasons`. Units need `Offline` baked, disabled |

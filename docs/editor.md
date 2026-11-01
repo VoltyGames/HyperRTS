@@ -125,7 +125,7 @@ public class WeaponAuthoring : AuthoringBehaviour
 
 - Derive from `AuthoringBehaviour`, in games too, so the inspector and validation pick the component up.
 - Give every field a `[Tooltip]`. Guard values with `[Min]` or `[Range]`.
-- Bakers write through `IEntityWriter` methods, so tests build the same entities.
+- Bakers write through `EntityWriter` methods, so tests build the same entities.
 - Paths come from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. A new module adds a line to the first two
   and an accent colour in the **Component icons** generator.
 - `[Owner]` on an int field shows a dropdown of the Match's players.

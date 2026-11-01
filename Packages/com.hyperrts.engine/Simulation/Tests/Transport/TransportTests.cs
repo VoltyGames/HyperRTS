@@ -34,8 +34,8 @@ namespace HyperRTS.Simulation.Tests.Transport
         private Entity Passenger(float3 position, int size = 1, bool armed = false)
         {
             var unit = _world.SpawnUnit(1, position);
-            var writer = new EntityManagerWriter(_world.EntityManager, unit);
-            TransportSetup.AddPassenger(ref writer, size);
+            var writer = new EntityWriter(_world.EntityManager, unit);
+            TransportSetup.AddPassenger(writer, size);
             if (armed)
             {
                 _world.AddWeapon(unit, range: 3f, damage: 10f);
@@ -47,8 +47,8 @@ namespace HyperRTS.Simulation.Tests.Transport
         private Entity Bunker(float3 position, int capacity = 2, bool fire = false, bool survive = true)
         {
             var bunker = _world.SpawnBuilding(1, position, new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, bunker);
-            TransportSetup.AddContainer(ref writer, new Container
+            var writer = new EntityWriter(_world.EntityManager, bunker);
+            TransportSetup.AddContainer(writer, new Container
             {
                 Capacity = capacity, MaxPassengerSize = 2, PassengersFire = fire, PassengersSurvive = survive,
             });
@@ -83,8 +83,8 @@ namespace HyperRTS.Simulation.Tests.Transport
             var agent = _world.Get<NavAgent>(carrier);
             agent.HullLength = 7f;
             _world.EntityManager.SetComponentData(carrier, agent);
-            var writer = new EntityManagerWriter(_world.EntityManager, carrier);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            var writer = new EntityWriter(_world.EntityManager, carrier);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             var rider = Passenger(new float3(-12f, 0f, 0f));
 
             _world.Enter(rider, carrier);
@@ -98,9 +98,9 @@ namespace HyperRTS.Simulation.Tests.Transport
         {
             var ship = Bunker(float3.zero, capacity: 4);
             var truck = _world.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1f);
-            var writer = new EntityManagerWriter(_world.EntityManager, truck);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
-            TransportSetup.AddPassenger(ref writer, 2);
+            var writer = new EntityWriter(_world.EntityManager, truck);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            TransportSetup.AddPassenger(writer, 2);
             _world.Enter(truck, ship);
             _world.Run(2f);
             Assert.IsTrue(_world.IsInside(truck));
@@ -117,8 +117,8 @@ namespace HyperRTS.Simulation.Tests.Transport
         public void Passengers_RideAlong_AndIgnoreOrders()
         {
             var truck = _world.SpawnUnit(1, float3.zero, speed: 5f, radius: 1f);
-            var writer = new EntityManagerWriter(_world.EntityManager, truck);
-            TransportSetup.AddContainer(ref writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            var writer = new EntityWriter(_world.EntityManager, truck);
+            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             var rider = Passenger(new float3(4f, 0f, 0f));
             _world.Enter(rider, truck);
             _world.Run(2f);
@@ -163,9 +163,9 @@ namespace HyperRTS.Simulation.Tests.Transport
 
             var rifle = Passenger(new float3(0f, 0f, 6f));
             _world.AddWeapon(rifle, range: 3f, damage: 10f, projectile: _world.ProjectilePrefab());
-            var writer = new EntityManagerWriter(_world.EntityManager, rifle);
+            var writer = new EntityWriter(_world.EntityManager, rifle);
             var sound = _world.Own(ScriptableObject.CreateInstance<SoundCue>());
-            EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(ref writer), CueSlot.Fire, sound);
+            EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(writer), CueSlot.Fire, sound);
             _world.Enter(rifle, bunker);
             _world.Run(2f);
             _world.SpawnUnit(2, new float3(4.5f, 0f, 0f), speed: 0f);

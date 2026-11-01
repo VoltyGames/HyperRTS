@@ -1,7 +1,6 @@
 using System;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Orders
 {
@@ -18,8 +17,8 @@ namespace HyperRTS.Simulation.Orders
 
         private FixedList512Bytes<OrderTraits> _game;
 
-        // One bit per game type, so a type registered with no traits still counts as registered.
-        private uint4 _registered;
+        // So a type registered with no traits still counts as registered.
+        private ByteSet _registered;
 
         public static OrderTraitTable Create() => new()
         {
@@ -35,21 +34,11 @@ namespace HyperRTS.Simulation.Orders
                     "HyperRTS: only game order types take registered traits.");
             }
 
-            var index = GameIndex(type);
-            _game[index] = traits;
-            _registered[index >> 5] |= 1u << (index & 31);
+            _game[GameIndex(type)] = traits;
+            _registered.Add((byte)type);
         }
 
-        public readonly bool IsRegistered(OrderType type)
-        {
-            if (!IsGameType(type))
-            {
-                return true;
-            }
-
-            var index = GameIndex(type);
-            return (_registered[index >> 5] & (1u << (index & 31))) != 0;
-        }
+        public readonly bool IsRegistered(OrderType type) => !IsGameType(type) || _registered.Contains((byte)type);
 
         public readonly OrderTraits Traits(OrderType type) =>
             IsGameType(type) ? _game[GameIndex(type)] : EngineTraits(type);

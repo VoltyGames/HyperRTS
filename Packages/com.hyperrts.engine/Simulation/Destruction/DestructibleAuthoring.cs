@@ -36,8 +36,8 @@ namespace HyperRTS.Simulation.Destruction
         public Vector2 block;
 
         /// <summary>Adds the components of map scenery. A <paramref name="block"/> of zero leaves pathing open.</summary>
-        public static void AddScenery<TWriter>(ref TWriter writer, float maxHealth, int crush, Entity remains,
-            float2 block, SceneryId id) where TWriter : struct, IEntityWriter
+        public static void AddScenery(EntityWriter writer, float maxHealth, int crush, Entity remains,
+            float2 block, SceneryId id)
         {
             writer.Add(new Health { Current = maxHealth, Max = maxHealth });
             writer.Add(new Faction { Value = Faction.Neutral });
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Destruction
 
             if (math.all(block > 0f))
             {
-                NavSetup.AddObstacle(ref writer, block);
+                NavSetup.AddObstacle(writer, block);
             }
         }
 
@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Destruction
         {
             public override void Bake(DestructibleAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 if (GetComponent<GameEntityAuthoring>() != null)
                 {
                     writer.Add(new Destructible { Crush = authoring.crushedBy });
@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Destruction
                     ? GetEntity(authoring.remains, TransformUsageFlags.Dynamic)
                     : Entity.Null;
                 var place = GetComponent<Transform>();
-                AddScenery(ref writer, authoring.maxHealth, authoring.crushedBy, remains,
+                AddScenery(writer, authoring.maxHealth, authoring.crushedBy, remains,
                     authoring.block, SceneryId.At(place.position, place.rotation));
             }
         }

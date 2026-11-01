@@ -48,8 +48,8 @@ namespace HyperRTS.Simulation.Destruction
         [Min(0.1f)]
         public float duration = 1.4f;
 
-        public static void Add<TWriter>(ref TWriter writer, string owner, in TurretToss toss,
-            IReadOnlyList<DamageType> types) where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, string owner, in TurretToss toss,
+            IReadOnlyList<DamageType> types)
         {
             if (toss.MaxDistance < toss.MinDistance || toss.MinDistance < 0f)
             {
@@ -84,8 +84,8 @@ namespace HyperRTS.Simulation.Destruction
                     DependsOn(type);
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                TurretTossAuthoring.Add(ref writer, authoring.name, new TurretToss
+                var writer = this.Writer();
+                TurretTossAuthoring.Add(writer, authoring.name, new TurretToss
                 {
                     Hull = GetEntity(authoring.hull, TransformUsageFlags.Dynamic),
                     Turret = GetEntity(authoring.turret, TransformUsageFlags.Dynamic),

@@ -94,8 +94,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
         {
             var tree = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(tree, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(_world.EntityManager, tree);
-            DestructibleAuthoring.AddScenery(ref writer, 50f, crush, Entity.Null, float2.zero,
+            var writer = new EntityWriter(_world.EntityManager, tree);
+            DestructibleAuthoring.AddScenery(writer, 50f, crush, Entity.Null, float2.zero,
                 SceneryId.At(position, quaternion.identity));
         }
 

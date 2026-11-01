@@ -34,8 +34,8 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
         {
             var entity = Manager.CreateEntity();
             Manager.AddComponentData(entity, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(Manager, entity);
-            DestructibleAuthoring.AddScenery(ref writer, 50f, 1, remains, block,
+            var writer = new EntityWriter(Manager, entity);
+            DestructibleAuthoring.AddScenery(writer, 50f, 1, remains, block,
                 SceneryId.At(position, quaternion.identity));
             return entity;
         }
@@ -93,8 +93,8 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
             var clear = SpawnScenery(new float3(0f, 0f, -5f));
             foreach (var tree in new[] { overhanging, clear })
             {
-                var writer = new EntityManagerWriter(Manager, tree);
-                ToppleAuthoring.AddTopple(ref writer, new float3(0f, 1f, 0f), 12f, 0f, 2.5f);
+                var writer = new EntityWriter(Manager, tree);
+                ToppleAuthoring.AddTopple(writer, new float3(0f, 1f, 0f), 12f, 0f, 2.5f);
             }
 
             _world.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);

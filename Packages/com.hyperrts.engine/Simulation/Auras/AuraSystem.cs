@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Auras
         private BufferLookup<AuraBonus> _bonuses;
         private BufferLookup<StatModifier> _modifiers;
         private ComponentLookup<LocalTransform> _transforms;
-        private DamageWriter _damage;
+        private EventWriter<DamageEvent> _damage;
         private EntityQuery _auraQuery;
         private bool _hadAuras;
         private float _elapsed;
@@ -39,11 +39,10 @@ namespace HyperRTS.Simulation.Auras
             _bonuses = state.GetBufferLookup<AuraBonus>(true);
             _modifiers = state.GetBufferLookup<StatModifier>();
             _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _damage = new DamageWriter(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
             _auraQuery = SystemAPI.QueryBuilder().WithAll<Aura>().Build();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<DamageQueue>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -64,7 +63,7 @@ namespace HyperRTS.Simulation.Auras
             _bonuses.Update(ref state);
             _modifiers.Update(ref state);
             _transforms.Update(ref state);
-            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
+            _damage.Update(ref state);
 
             state.Dependency = new ClearJob { Hits = _hits }.Schedule(state.Dependency);
             new CollectJob
@@ -157,7 +156,7 @@ namespace HyperRTS.Simulation.Auras
             [ReadOnly] public BufferLookup<AuraBonus> Bonuses;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             public BufferLookup<StatModifier> Modifiers;
-            public DamageWriter Damage;
+            public EventWriter<DamageEvent> Damage;
 
             private void Execute(Entity entity, DynamicBuffer<AuraPresence> presence)
             {

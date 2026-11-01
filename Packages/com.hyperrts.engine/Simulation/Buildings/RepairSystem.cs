@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Buildings
         /// <summary>Floor on the full-repair time, so instant-build and unproduced structures don't heal in a frame.</summary>
         private const float MinRepairTime = 1f;
 
-        private DamageWriter _damage;
+        private EventWriter<DamageEvent> _damage;
         private ComponentLookup<Health> _healthLookup;
         private ComponentLookup<Producible> _producibleLookup;
         private TargetReach _reach;
@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _damage = new DamageWriter(ref state);
+            _damage = new EventWriter<DamageEvent>(ref state);
             _healthLookup = state.GetComponentLookup<Health>(true);
             _producibleLookup = state.GetComponentLookup<Producible>(true);
             _reach = new TargetReach(ref state);
@@ -46,13 +46,12 @@ namespace HyperRTS.Simulation.Buildings
             _repairableLookup = state.GetComponentLookup<Repairable>(true);
             _sectionLookup = state.GetBufferLookup<Section>(true);
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<DamageQueue>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _damage.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>());
+            _damage.Update(ref state);
             _healthLookup.Update(ref state);
             _producibleLookup.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
@@ -84,7 +83,7 @@ namespace HyperRTS.Simulation.Buildings
         {
             public float DeltaTime;
             public FactionRelations Relations;
-            public DamageWriter Damage;
+            public EventWriter<DamageEvent> Damage;
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             public TargetReach Reach;

@@ -12,32 +12,14 @@ namespace HyperRTS.Simulation.Common
     {
         /// <summary>
         /// Instantiates a baked prefab at a pose, keeping its scale and <see cref="PostTransformMatrix"/>, owned by
-        /// <paramref name="faction"/>.
+        /// <paramref name="faction"/>. Jobs spawn through <see cref="PrefabSpawner"/>.
         /// </summary>
-        public static Entity Spawn(this EntityCommandBuffer ecb, Entity prefab, in LocalTransform prefabTransform,
-            in ComponentLookup<PostTransformMatrix> stretches, float3 position, quaternion rotation, byte faction)
-        {
-            var spawned = ecb.Instantiate(prefab);
-            ecb.Place(spawned, Posed(prefabTransform, position, rotation), Stretch(stretches, prefab));
-            // Add rather than Set: unit prefabs bake a Faction, projectile and ability prefabs don't.
-            ecb.AddComponent(spawned, new Faction { Value = faction });
-            return spawned;
-        }
-
-        public static Entity Spawn(this EntityCommandBuffer.ParallelWriter ecb, int sortKey, Entity prefab,
-            in LocalTransform prefabTransform, in ComponentLookup<PostTransformMatrix> stretches, float3 position,
-            quaternion rotation, byte faction)
-        {
-            var spawned = ecb.Instantiate(sortKey, prefab);
-            ecb.Place(sortKey, spawned, Posed(prefabTransform, position, rotation), Stretch(stretches, prefab));
-            ecb.AddComponent(sortKey, spawned, new Faction { Value = faction });
-            return spawned;
-        }
-
         public static Entity Spawn(this EntityManager entityManager, Entity prefab, float3 position,
             quaternion rotation, byte faction)
         {
-            var transform = Posed(entityManager.GetComponentData<LocalTransform>(prefab), position, rotation);
+            var transform = entityManager.GetComponentData<LocalTransform>(prefab);
+            transform.Position = position;
+            transform.Rotation = rotation;
             var stretch = entityManager.HasComponent<PostTransformMatrix>(prefab)
                 ? entityManager.GetComponentData<PostTransformMatrix>(prefab).Value
                 : float4x4.identity;
@@ -62,16 +44,6 @@ namespace HyperRTS.Simulation.Common
             ecb.AddComponent(sortKey, root, transform);
             ecb.AddComponent(sortKey, root, World(transform, stretch));
         }
-
-        private static LocalTransform Posed(LocalTransform prefabTransform, float3 position, quaternion rotation)
-        {
-            prefabTransform.Position = position;
-            prefabTransform.Rotation = rotation;
-            return prefabTransform;
-        }
-
-        private static float4x4 Stretch(ComponentLookup<PostTransformMatrix> stretches, Entity prefab) =>
-            stretches.TryGetComponent(prefab, out var stretch) ? stretch.Value : float4x4.identity;
 
         private static LocalToWorld World(in LocalTransform transform, in float4x4 stretch) =>
             new() { Value = math.mul(transform.ToMatrix(), stretch) };

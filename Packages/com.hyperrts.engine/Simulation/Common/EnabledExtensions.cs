@@ -12,5 +12,15 @@ namespace HyperRTS.Simulation.Common
         public static bool HasEnabled<T>(this EntityManager entityManager, Entity entity)
             where T : unmanaged, IComponentData, IEnableableComponent =>
             entityManager.HasComponent<T>(entity) && entityManager.IsComponentEnabled<T>(entity);
+
+        /// <summary>Turns an optional toggle off on entities that have it.</summary>
+        public static void DisableIfPresent<T>(this ref ComponentLookup<T> lookup, Entity entity)
+            where T : unmanaged, IComponentData, IEnableableComponent
+        {
+            if (lookup.HasComponent(entity))
+            {
+                lookup.SetComponentEnabled(entity, false);
+            }
+        }
     }
 }

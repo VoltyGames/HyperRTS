@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Common
         public byte To;
 
         /// <summary>The one way to give an entity a new owner, so every module can react to the event.</summary>
-        public static void Transfer(EntityCommandBuffer ecb, DynamicBuffer<OwnerChanged> events, Entity entity,
+        public static void Transfer(EntityCommandBuffer ecb, ref EventWriter<OwnerChanged> events, Entity entity,
             byte from, byte to)
         {
             ecb.SetComponent(entity, new Faction { Value = to });

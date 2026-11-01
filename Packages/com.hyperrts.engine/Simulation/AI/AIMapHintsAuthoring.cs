@@ -65,8 +65,7 @@ namespace HyperRTS.Simulation.AI
             return data;
         }
 
-        public static void Add<TWriter>(ref TWriter writer, AIMapHintsData data)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, AIMapHintsData data)
         {
             writer.Add<AIMapHints>();
             writer.AddBuffer(data.Slots);
@@ -78,8 +77,8 @@ namespace HyperRTS.Simulation.AI
         {
             public override void Bake(AIMapHintsAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
-                AIMapHintsAuthoring.Add(ref writer, authoring.ToData());
+                var writer = this.Writer(TransformUsageFlags.None);
+                AIMapHintsAuthoring.Add(writer, authoring.ToData());
             }
         }
     }

@@ -34,8 +34,8 @@ namespace HyperRTS.Simulation.Tests.Combat
             var tank = _world.SpawnUnit(1, new float3(1f, 0f, 1f));
             _world.AddWeapon(tank, range: 30f, damage: 40f, cooldown: 0.5f, projectile: _world.ProjectilePrefab());
             var house = _world.SpawnBuilding(0, new float3(11f, 0f, 1f), new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, house);
-            SightBlockAuthoring.Add(ref writer, new SightBlock { Size = new float2(4f, 4f), Height = 6f });
+            var writer = new EntityWriter(_world.EntityManager, house);
+            SightBlockAuthoring.Add(writer, new SightBlock { Size = new float2(4f, 4f), Height = 6f });
             var enemy = _world.SpawnUnit(2, new float3(21f, 0f, 1f), maxHealth: 1000f);
             var houseHealth = _world.GetHealth(house);
 
@@ -88,8 +88,8 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var smoke = _world.SpawnSightBlock(position,
                 new SightBlock { Size = new float2(12f, 12f), Density = 0.5f, PorousTop = 8f, Conceals = true });
-            var writer = new EntityManagerWriter(_world.EntityManager, smoke);
-            DecayAuthoring.Add(ref writer, "Smoke", 30f, 1f, 0.1f);
+            var writer = new EntityWriter(_world.EntityManager, smoke);
+            DecayAuthoring.Add(writer, "Smoke", 30f, 1f, 0.1f);
             return smoke;
         }
 

@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Destruction
     /// <summary>Adds a sectioned building's components: its sections, their nav parts and floors, and the materials.</summary>
     public static class SectionsSetup
     {
-        public static void Add<TWriter>(ref TWriter writer, IReadOnlyList<Section> sections,
-            IReadOnlyList<SectionFactor> factors, Entity rubble) where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, IReadOnlyList<Section> sections,
+            IReadOnlyList<SectionFactor> factors, Entity rubble)
         {
             var parts = ObstacleParts(sections);
             var decks = new List<NavAreaPart>(sections.Count);
@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Destruction
         }
 
         /// <summary>Lets engineers rebuild the building, <paramref name="sectionTime"/> seconds a section.</summary>
-        public static void AddRepairable<TWriter>(ref TWriter writer, float sectionTime) where TWriter : struct, IEntityWriter =>
+        public static void AddRepairable(EntityWriter writer, float sectionTime) =>
             writer.Add(new Repairable { SectionTime = sectionTime });
     }
 }

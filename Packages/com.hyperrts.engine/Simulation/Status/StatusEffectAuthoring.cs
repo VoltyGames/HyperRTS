@@ -53,9 +53,8 @@ namespace HyperRTS.Simulation.Status
         public int TypeId => EntityInfo.TypeIdFromName(displayName);
 
         // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add<TWriter>(ref TWriter writer, in EntityInfo info, in StatusEffectDefinition definition,
+        public static void Add(EntityWriter writer, in EntityInfo info, in StatusEffectDefinition definition,
             IReadOnlyList<StatBonus> bonuses, IReadOnlyList<TypedDamageBonus> damageBonuses)
-            where TWriter : struct, IEntityWriter
         {
             var source = StatSource.Status(info.TypeId);
             writer.Add(info);
@@ -81,8 +80,8 @@ namespace HyperRTS.Simulation.Status
                 var name = new FixedString64Bytes();
                 name.CopyFromTruncated(authoring.displayName);
                 var info = new EntityInfo { TypeId = authoring.TypeId, Name = name, Icon = authoring.icon };
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
-                StatusEffectAuthoring.Add(ref writer, info, new StatusEffectDefinition
+                var writer = this.Writer(TransformUsageFlags.None);
+                StatusEffectAuthoring.Add(writer, info, new StatusEffectDefinition
                 {
                     Duration = authoring.duration,
                     MaxStacks = authoring.maxStacks,

@@ -80,7 +80,7 @@ namespace HyperRTS.Simulation.Airdrops
                     return;
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new StrategicAsset
                 {
                     AbilityId = EntityInfo.TypeIdFromName(authoring.ability),

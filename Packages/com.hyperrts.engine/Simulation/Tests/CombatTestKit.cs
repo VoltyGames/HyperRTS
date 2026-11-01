@@ -41,8 +41,8 @@ namespace HyperRTS.Simulation.Tests
                 },
             };
             Aim(ref weapon, traverseSpeed);
-            var writer = new EntityManagerWriter(world.EntityManager, entity);
-            WeaponSetup.Add(ref writer, weapon, stance, world.Get<LocalTransform>(entity).Position, 0);
+            var writer = new EntityWriter(world.EntityManager, entity);
+            WeaponSetup.Add(writer, weapon, stance, world.Get<LocalTransform>(entity).Position, 0);
             return entity;
         }
 
@@ -64,8 +64,8 @@ namespace HyperRTS.Simulation.Tests
             Aim(ref weapon, 360f);
             var mount = WeaponMount.Create(weapon, Ammo.Create(rounds, reloadTime, refill), requiredResearchTypeId, 1,
                 independent);
-            var writer = new EntityManagerWriter(world.EntityManager, entity);
-            WeaponSetup.AddMounts(ref writer, new[] { mount });
+            var writer = new EntityWriter(world.EntityManager, entity);
+            WeaponSetup.AddMounts(writer, new[] { mount });
             world.EntityManager.GetBuffer<WeaponPose>(entity).Add(default);
             return entity;
         }
@@ -93,16 +93,16 @@ namespace HyperRTS.Simulation.Tests
                 muzzles[i] = new WeaponMuzzle { Point = points[i] };
             }
 
-            var writer = new EntityManagerWriter(world.EntityManager, entity);
-            WeaponSetup.AddMuzzles(ref writer, muzzles);
+            var writer = new EntityWriter(world.EntityManager, entity);
+            WeaponSetup.AddMuzzles(writer, muzzles);
         }
 
         /// <summary>Makes the unit deploy to fire; with <paramref name="needsDeploy"/> its primary waits for it.</summary>
         public static void AddDeployable(this TestWorld world, Entity unit, float deployTime, float packUpTime,
             bool needsDeploy = true)
         {
-            var writer = new EntityManagerWriter(world.EntityManager, unit);
-            DeployableAuthoring.Add(ref writer, deployTime, packUpTime);
+            var writer = new EntityWriter(world.EntityManager, unit);
+            DeployableAuthoring.Add(writer, deployTime, packUpTime);
             var weapon = world.Get<Weapon>(unit);
             weapon.NeedsDeploy = needsDeploy;
             world.EntityManager.SetComponentData(unit, weapon);

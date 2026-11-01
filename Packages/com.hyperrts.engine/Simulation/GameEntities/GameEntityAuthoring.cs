@@ -44,9 +44,9 @@ namespace HyperRTS.Simulation.GameEntities
         /// <summary>Bakes the shared components; subclasses call this before adding their own.</summary>
         protected void BakeGameEntity(IBaker baker, Entity entity)
         {
-            var writer = new BakerWriter(baker, entity);
+            var writer = baker.Writer(entity);
             var info = BakeProducible(baker, out var costs, out var required);
-            GameEntitySetup.Add(ref writer, new GameEntitySpec
+            GameEntitySetup.Add(writer, new GameEntitySpec
             {
                 Info = info,
                 Owner = (byte)owner,

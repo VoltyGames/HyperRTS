@@ -1,6 +1,8 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Sectors
@@ -184,20 +186,15 @@ namespace HyperRTS.Simulation.Navigation.Sectors
 
         private static byte Nearest(in FixedList512Bytes<byte> members, float2 centroid)
         {
-            var best = members[0];
-            var bestDistance = float.MaxValue;
-            foreach (var local in members)
+            var nearest = Closest.None;
+            for (var i = 0; i < members.Length; i++)
             {
+                var local = members[i];
                 var at = new float2(local % NavField.SectorCells, local / NavField.SectorCells);
-                var distance = math.distancesq(at, centroid);
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    best = local;
-                }
+                nearest.Consider(i, Entity.Null, math.distancesq(at, centroid));
             }
 
-            return best;
+            return members[nearest.Index];
         }
 
         /// <summary>Labels every sector of every class and connects them, as editor tools and tests need.</summary>

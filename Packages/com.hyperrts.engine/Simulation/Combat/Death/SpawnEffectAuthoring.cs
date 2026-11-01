@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Combat.Death
                     return;
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new SpawnEffect { Prefab = authoring.effect });
             }
         }

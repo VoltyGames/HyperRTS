@@ -56,12 +56,11 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [Tooltip("When the owner orders it to attack.")]
         public SoundCue attack;
 
-        /// <summary>Call before <see cref="Add{TWriter}"/>: the under fire voice remembers the last hit.</summary>
-        public static void AddUnderFire<TWriter>(ref TWriter writer) where TWriter : struct, IEntityWriter =>
+        /// <summary>Call before <see cref="Add"/>: the under fire voice remembers the last hit.</summary>
+        public static void AddUnderFire(EntityWriter writer) =>
             writer.Add<UnderFireVoice>();
 
-        public static DynamicBuffer<EntitySound> Add<TWriter>(ref TWriter writer)
-            where TWriter : struct, IEntityWriter =>
+        public static DynamicBuffer<EntitySound> Add(EntityWriter writer) =>
             writer.AddBuffer<EntitySound>();
 
         /// <summary>Unset cues are skipped, so the slot stays silent and writes no events.</summary>
@@ -77,13 +76,13 @@ namespace HyperRTS.Simulation.Cues.Sounds
         {
             public override void Bake(EntitySoundsAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 if (authoring.underFire != null)
                 {
-                    EntitySoundsAuthoring.AddUnderFire(ref writer);
+                    EntitySoundsAuthoring.AddUnderFire(writer);
                 }
 
-                var sounds = EntitySoundsAuthoring.Add(ref writer);
+                var sounds = EntitySoundsAuthoring.Add(writer);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, authoring.fire);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Impact, authoring.impact);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Death, authoring.death);

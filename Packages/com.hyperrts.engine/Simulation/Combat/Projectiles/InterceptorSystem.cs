@@ -32,7 +32,6 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<Interceptor>();
             state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -40,7 +39,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         public void OnUpdate(ref SystemState state)
         {
             _projectiles.Update(ref state);
-            _cues.Update(ref state, SystemAPI.GetSingletonEntity<CueQueue>());
+            _cues.Update(ref state);
 
             var candidates = new NativeList<Candidate>(state.WorldUpdateAllocator);
             new GatherJob { Candidates = candidates }.Schedule();

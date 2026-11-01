@@ -23,8 +23,7 @@ namespace HyperRTS.Presentation.Destruction
         [Tooltip("Throw once when it first appears, for ruins. Off throws from each breakable part as it breaks.")]
         public bool onAppear = true;
 
-        public static void AddDebris<TWriter>(ref TWriter writer, DebrisSet set, float radius, bool onAppear)
-            where TWriter : struct, IEntityWriter
+        public static void AddDebris(EntityWriter writer, DebrisSet set, float radius, bool onAppear)
         {
             writer.Add(new Debris { Set = set, Radius = radius });
             writer.SetEnabled<Debris>(onAppear);
@@ -46,8 +45,8 @@ namespace HyperRTS.Presentation.Destruction
                 }
 
                 DependsOn(authoring.set);
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AddDebris(ref writer, authoring.set, authoring.radius, authoring.onAppear);
+                var writer = this.Writer();
+                AddDebris(writer, authoring.set, authoring.radius, authoring.onAppear);
             }
         }
     }

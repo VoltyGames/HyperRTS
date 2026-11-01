@@ -57,8 +57,7 @@ namespace HyperRTS.Simulation.Vision
             height = Mathf.Max(top, 0.25f);
         }
 
-        public static void Add<TWriter>(ref TWriter writer, in SightBlock block)
-            where TWriter : struct, IEntityWriter =>
+        public static void Add(EntityWriter writer, in SightBlock block) =>
             writer.Add(block);
 
         private void OnDrawGizmosSelected()
@@ -72,8 +71,8 @@ namespace HyperRTS.Simulation.Vision
         {
             public override void Bake(SightBlockAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, new SightBlock
+                var writer = this.Writer();
+                Add(writer, new SightBlock
                 {
                     Size = authoring.size,
                     Height = authoring.height,

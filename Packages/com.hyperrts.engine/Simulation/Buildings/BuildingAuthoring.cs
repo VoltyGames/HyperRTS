@@ -48,8 +48,8 @@ namespace HyperRTS.Simulation.Buildings
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 authoring.BakeGameEntity(this, entity);
 
-                var writer = new BakerWriter(this, entity);
-                BuildingSetup.Add(ref writer, authoring.footprint, authoring.populationProvided,
+                var writer = this.Writer(entity);
+                BuildingSetup.Add(writer, authoring.footprint, authoring.populationProvided,
                     !authoring.startsUnderConstruction, authoring.power, authoring.placementSurface,
                     authoring.rememberedInFog);
                 if (authoring.placedInLines)

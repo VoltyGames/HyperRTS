@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Cues
     /// </summary>
     public struct CueWriter
     {
-        private BufferLookup<CueEvent> _events;
+        private EventWriter<CueEvent> _events;
         [ReadOnly] private BufferLookup<EntitySound> _sounds;
         [ReadOnly] private BufferLookup<EntityEffect> _effects;
         [ReadOnly] private BufferLookup<EntityImpactMark> _marks;
@@ -25,11 +25,10 @@ namespace HyperRTS.Simulation.Cues
         [ReadOnly] private ComponentLookup<DeathRemains> _remains;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
         private CoverLookup _cover;
-        private Entity _queue;
 
         public CueWriter(ref SystemState state) : this()
         {
-            _events = state.GetBufferLookup<CueEvent>();
+            _events = new EventWriter<CueEvent>(ref state);
             _sounds = state.GetBufferLookup<EntitySound>(true);
             _effects = state.GetBufferLookup<EntityEffect>(true);
             _marks = state.GetBufferLookup<EntityImpactMark>(true);
@@ -39,8 +38,8 @@ namespace HyperRTS.Simulation.Cues
             _cover = new CoverLookup(ref state);
         }
 
-        /// <summary>Call each update before scheduling; the queue exists once <see cref="CueClearSystem"/> is created.</summary>
-        public void Update(ref SystemState state, Entity queue)
+        /// <summary>Call each update before scheduling.</summary>
+        public void Update(ref SystemState state)
         {
             _events.Update(ref state);
             _sounds.Update(ref state);
@@ -50,7 +49,6 @@ namespace HyperRTS.Simulation.Cues
             _remains.Update(ref state);
             _info.Update(ref state);
             _cover.Update(ref state);
-            _queue = queue;
         }
 
         /// <summary>
@@ -102,7 +100,7 @@ namespace HyperRTS.Simulation.Cues
                 return false;
             }
 
-            _events[_queue].Add(new CueEvent
+            _events.Add(new CueEvent
             {
                 TypeId = typeId, Slot = slot, Variant = variant, Faction = faction, Position = position,
                 Direction = direction, Cover = cover, Tall = tall, Radius = radius, Target = target,
@@ -115,7 +113,7 @@ namespace HyperRTS.Simulation.Cues
         /// the listener's announcer picks the line; <paramref name="typeId"/> names the subject, 0 for none.
         /// </summary>
         public void Announce(AnnouncementKind kind, byte faction, float3 position, int typeId) =>
-            _events[_queue].Add(new CueEvent
+            _events.Add(new CueEvent
             {
                 TypeId = typeId, Slot = CueSlot.Announce, Variant = kind.Value, Faction = faction, Position = position,
                 Direction = math.forward(),

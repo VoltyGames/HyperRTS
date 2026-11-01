@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Vision
                 var position = GetComponent<Transform>().position;
                 var cover = map.Bake(new float2(position.x, position.z), Allocator.Persistent);
                 AddBlobAsset(ref cover.Blob, out _);
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.None));
+                var writer = this.Writer(TransformUsageFlags.None);
                 writer.Add(cover);
             }
         }

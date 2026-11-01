@@ -31,8 +31,8 @@ namespace HyperRTS.Simulation.Tests.AI
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
             _supplies = _world.CreateSupplies();
-            var writer = new EntityManagerWriter(_world.EntityManager, _world.Player(2));
-            AIPlayerSetup.Add(ref writer,
+            var writer = new EntityWriter(_world.EntityManager, _world.Player(2));
+            AIPlayerSetup.Add(writer,
                 new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50, BuildingGap = BuildingGap });
             var map = _world.Singleton<MapSettings>();
             map.BuildingGap = BuildingGap;
@@ -90,8 +90,8 @@ namespace HyperRTS.Simulation.Tests.AI
         public void AI_BudgetsItsStockpile_AcrossIdleProducers()
         {
             var soldier = UnitPrefab("Soldier", 10, 30f);
-            var writer = new EntityManagerWriter(_world.EntityManager, soldier);
-            WeaponSetup.Add(ref writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f, LeashFactor = 1.5f },
+            var writer = new EntityWriter(_world.EntityManager, soldier);
+            WeaponSetup.Add(writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f, LeashFactor = 1.5f },
                 Stance.Aggressive, float3.zero, 0);
             var tank = UnitPrefab("Tank", 15, 30f);
             var first = _world.MakeProducer(_world.SpawnBuilding(2, float3.zero, new float2(4f, 4f)),
@@ -113,8 +113,8 @@ namespace HyperRTS.Simulation.Tests.AI
         public void AI_QueuesAResearchOnce_AcrossIdleProducers()
         {
             var research = _world.EntityManager.CreateEntity();
-            var writer = new EntityManagerWriter(_world.EntityManager, research);
-            UpgradeAuthoring.Add(ref writer, new EntityInfo { TypeId = EntityInfo.TypeIdFromName("Optics"), Name = "Optics" },
+            var writer = new EntityWriter(_world.EntityManager, research);
+            UpgradeAuthoring.Add(writer, new EntityInfo { TypeId = EntityInfo.TypeIdFromName("Optics"), Name = "Optics" },
                 30f, new[] { new ResourceCost { Type = _supplies, Amount = 50 } }, new Prerequisite[0],
                 new UpgradeEffect[0]);
             research = _world.MakePrefab(research);

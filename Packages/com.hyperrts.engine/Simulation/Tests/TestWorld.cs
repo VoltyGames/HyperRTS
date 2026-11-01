@@ -210,8 +210,8 @@ namespace HyperRTS.Simulation.Tests
             var terrain = TerrainHeight.Create(heights, size, min, spacing, Allocator.Persistent);
             heights.Dispose();
             _terrains.Add(terrain.Blob);
-            var writer = new EntityManagerWriter(EntityManager, EntityManager.CreateEntity());
-            NavSetup.AddTerrain(ref writer, terrain);
+            var writer = new EntityWriter(EntityManager, EntityManager.CreateEntity());
+            NavSetup.AddTerrain(writer, terrain);
             BuildNavGrid();
         }
 
@@ -254,7 +254,7 @@ namespace HyperRTS.Simulation.Tests
             var unit = CreateGameEntity(faction, position, maxHealth, name, out var writer);
             var agent = new NavAgent { Radius = radius };
             agent.WallMargin = agent.HullWallMargin;
-            UnitAuthoring.Add(ref writer, speed, agent);
+            UnitAuthoring.Add(writer, speed, agent);
             return unit;
         }
 
@@ -272,7 +272,7 @@ namespace HyperRTS.Simulation.Tests
             float buildTime = 10f, string name = "Building", int populationProvided = 0, float power = 0f)
         {
             var building = CreateGameEntity(faction, position, 500f, name, out var writer, buildTime);
-            BuildingSetup.Add(ref writer, footprint, populationProvided, complete, power);
+            BuildingSetup.Add(writer, footprint, populationProvided, complete, power);
             return building;
         }
 
@@ -284,12 +284,12 @@ namespace HyperRTS.Simulation.Tests
         }
 
         private Entity CreateGameEntity(byte faction, float3 position, float maxHealth, string name,
-            out EntityManagerWriter writer, float buildTime = 5f)
+            out EntityWriter writer, float buildTime = 5f)
         {
             var entity = EntityManager.CreateEntity();
             EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
-            writer = new EntityManagerWriter(EntityManager, entity);
-            GameEntitySetup.Add(ref writer, new GameEntitySpec
+            writer = new EntityWriter(EntityManager, entity);
+            GameEntitySetup.Add(writer, new GameEntitySpec
             {
                 Info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name },
                 Owner = faction,
@@ -306,8 +306,8 @@ namespace HyperRTS.Simulation.Tests
         private void CreatePlayer(byte faction, bool local)
         {
             var player = EntityManager.CreateEntity();
-            var writer = new EntityManagerWriter(EntityManager, player);
-            PlayerSetup.Add(ref writer, faction, $"P{faction}", float4.zero, populationCap: 100);
+            var writer = new EntityWriter(EntityManager, player);
+            PlayerSetup.Add(writer, faction, $"P{faction}", float4.zero, populationCap: 100);
 
             if (local)
             {

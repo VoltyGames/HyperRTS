@@ -59,9 +59,9 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void DecaySetup_RejectsZeroDespawnDuration()
         {
             var wreck = _world.EntityManager.CreateEntity();
-            var writer = new EntityManagerWriter(_world.EntityManager, wreck);
+            var writer = new EntityWriter(_world.EntityManager, wreck);
 
-            var error = Assert.Throws<ArgumentException>(() => DecayAuthoring.Add(ref writer, "wreck", 180f, 0f, 3f));
+            var error = Assert.Throws<ArgumentException>(() => DecayAuthoring.Add(writer, "wreck", 180f, 0f, 3f));
 
             StringAssert.Contains("despawnDuration", error.Message);
         }
@@ -71,8 +71,8 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void DecayingRuin_OpensItsFootprintWhenItGoes()
         {
             var ruin = SpawnWreck(1f, 1f, 3f);
-            var writer = new EntityManagerWriter(_world.EntityManager, ruin);
-            NavSetup.AddObstacle(ref writer, new float2(6f, 6f));
+            var writer = new EntityWriter(_world.EntityManager, ruin);
+            NavSetup.AddObstacle(writer, new float2(6f, 6f));
             var plot = new float3(4f, 0f, 0f);
 
             _world.Tick();
@@ -90,8 +90,8 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var wreck = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(wreck, LocalTransform.FromPosition(new float3(4f, 2f, 0f)));
-            var writer = new EntityManagerWriter(_world.EntityManager, wreck);
-            DecayAuthoring.Add(ref writer, "wreck", lifetime, despawnDuration, despawnDepth);
+            var writer = new EntityWriter(_world.EntityManager, wreck);
+            DecayAuthoring.Add(writer, "wreck", lifetime, despawnDuration, despawnDepth);
             return wreck;
         }
 

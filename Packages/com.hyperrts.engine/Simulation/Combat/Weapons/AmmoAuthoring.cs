@@ -31,8 +31,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             public override void Bake(AmmoAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                WeaponSetup.AddAmmo(ref writer, authoring.rounds, authoring.reloadTime, authoring.refill);
+                var writer = this.Writer();
+                WeaponSetup.AddAmmo(writer, authoring.rounds, authoring.reloadTime, authoring.refill);
             }
         }
     }

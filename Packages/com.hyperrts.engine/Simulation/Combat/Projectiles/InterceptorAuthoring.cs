@@ -79,8 +79,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         public int Pose => TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponPoses : 0;
 
         /// <summary>Without a weapon, at pose 0, it brings the pose buffer; a weapon's baker sizes it otherwise.</summary>
-        public static void Add<TWriter>(ref TWriter writer, in Interceptor interceptor)
-            where TWriter : struct, IEntityWriter
+        public static void Add(EntityWriter writer, in Interceptor interceptor)
         {
             writer.Add(interceptor);
             if (interceptor.Pose == 0)
@@ -121,8 +120,8 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             {
                 // Registers the dependency, so adding or removing a weapon rebakes the pose index.
                 GetComponent<WeaponAuthoring>();
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, authoring.Bake(this, authoring.transform));
+                var writer = this.Writer();
+                Add(writer, authoring.Bake(this, authoring.transform));
             }
         }
     }

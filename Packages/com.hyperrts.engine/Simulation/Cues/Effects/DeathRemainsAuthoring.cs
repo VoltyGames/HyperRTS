@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Cues.Effects
         {
             public override void Bake(DeathRemainsAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 writer.Add(new DeathRemains
                 {
                     Radius = authoring.radius,

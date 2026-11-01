@@ -46,8 +46,8 @@ namespace HyperRTS.Simulation.Auras
 
         public int AuraId => EntityInfo.TypeIdFromName(auraName);
 
-        public static void AddAura<TWriter>(ref TWriter writer, in Aura aura,
-            IReadOnlyList<StatModifier> bonuses) where TWriter : struct, IEntityWriter
+        public static void AddAura(EntityWriter writer, in Aura aura,
+            IReadOnlyList<StatModifier> bonuses)
         {
             writer.Add(aura);
             var buffer = writer.AddBuffer<AuraBonus>();
@@ -67,8 +67,8 @@ namespace HyperRTS.Simulation.Auras
                     modifiers.Add(bonus.ToModifier(StatSource.Aura(authoring.AuraId)));
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                AuraAuthoring.AddAura(ref writer, new Aura
+                var writer = this.Writer();
+                AuraAuthoring.AddAura(writer, new Aura
                 {
                     AuraId = authoring.AuraId,
                     Radius = authoring.radius,

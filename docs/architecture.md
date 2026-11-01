@@ -38,8 +38,8 @@ in one of the [tiers](modules.md#tiers).
 | Move by destination | Set and enable `MoveDestination`. It is disabled on arrival |
 | Combat owns movement | While `AttackTarget` is enabled, combat writes `MoveDestination` |
 | Ownership | `Faction` on every ownable entity, 0 for neutral. `FactionRelations` decides hostility |
-| Damage goes through the queue | `DamageWriter`, so armor, splash and kill credit apply |
-| Spawn baked prefabs | `ecb.Spawn(prefab, prefabTransform, stretches, position, rotation, faction)` |
+| Damage goes through the queue | `EventWriter<DamageEvent>`, so armor, splash and kill credit apply |
+| Spawn baked prefabs | `PrefabSpawner.Spawn(ecb, prefab, position, rotation, faction)` |
 
 ## Worlds
 

@@ -33,8 +33,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   class carries `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`,
   `[DisallowMultipleComponent]` and a `[Tooltip]` per field, with paths from `HyperRTSMenu`, `HyperRTSIcons` and
   `HyperRTSDocs` ([editor](docs/editor.md)).
-- Bakers use `GetEntity(TransformUsageFlags.Dynamic)` and write through `IEntityWriter`, with a static `Add…` on the
-  authoring class or a shared `*Setup`, so tests build the same entities.
+- Bakers write through `this.Writer()` (an `EntityWriter` on the baked entity), with a static `Add…` on the
+  authoring class or a shared `*Setup` taking `EntityWriter`, so tests build the same entities.
 - Component fields are PascalCase, authoring fields camelCase. Acronyms are all caps (`RTS`, `HUD`, `UI`, `AI`); USS
   classes are lowercase kebab-case (`hud-root`).
 - Simulation systems are `[BurstCompile] partial struct : ISystem` in a phase group from `SystemGroups.cs`, never in
@@ -93,7 +93,7 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   `[OnEnteringPlayMode]` method (its type `partial`), or keep the state in ECS. `UAC*` diagnostics and `UAL*`
   findings are errors.
 - A serialized `Dictionary<K, V>` needs `[SerializeField]`, even on a public field.
-- Entities built through `IEntityWriter` in tests have no mesh; rendered spawns instantiate baked prefabs.
+- Entities built through `EntityWriter` in tests have no mesh; rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames: guard on singletons with `RequireForUpdate`, and never treat
   "nothing exists yet" as a game state (`VictorySystem` shows how).
 - Keep `OverrideAutomaticNetcodeBootstrap`, on `RTSWorld.prefab`, in scenes. `NetworkSession` makes the worlds: one

@@ -23,9 +23,8 @@ namespace HyperRTS.Simulation.Destruction
         public float lie;
 
         /// <summary><paramref name="trunk"/> is a unit vector.</summary>
-        public static void AddTopple<TWriter>(ref TWriter writer, float3 trunk, float height, float lie,
+        public static void AddTopple(EntityWriter writer, float3 trunk, float height, float lie,
             float canopyRadius)
-            where TWriter : struct, IEntityWriter
         {
             writer.Add(new Topple { Trunk = trunk, Height = height, Lie = lie, CanopyRadius = canopyRadius });
             writer.Add<LethalHit>();
@@ -40,9 +39,9 @@ namespace HyperRTS.Simulation.Destruction
                     throw new InvalidOperationException($"Topple on '{authoring.name}' has a zero 'trunk'.");
                 }
 
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
+                var writer = this.Writer();
                 var trunk = math.normalize((float3)authoring.trunk);
-                AddTopple(ref writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
+                AddTopple(writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
                     CanopyRadius(authoring.transform));
             }
 

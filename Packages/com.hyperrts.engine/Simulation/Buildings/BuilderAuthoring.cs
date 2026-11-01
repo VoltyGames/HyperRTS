@@ -23,8 +23,7 @@ namespace HyperRTS.Simulation.Buildings
         [Min(0.01f)]
         public float buildRate = 1f;
 
-        public static DynamicBuffer<BuildOption> Add<TWriter>(ref TWriter writer, float rate)
-            where TWriter : struct, IEntityWriter
+        public static DynamicBuffer<BuildOption> Add(EntityWriter writer, float rate)
         {
             writer.Add(new Builder { Rate = rate });
             return writer.AddBuffer<BuildOption>();
@@ -34,8 +33,8 @@ namespace HyperRTS.Simulation.Buildings
         {
             public override void Bake(BuilderAuthoring authoring)
             {
-                var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                var options = BuilderAuthoring.Add(ref writer, authoring.buildRate);
+                var writer = this.Writer();
+                var options = BuilderAuthoring.Add(writer, authoring.buildRate);
                 AddOptions(options, authoring.buildOptions, false);
                 AddOptions(options, authoring.advancedBuildOptions, true);
             }

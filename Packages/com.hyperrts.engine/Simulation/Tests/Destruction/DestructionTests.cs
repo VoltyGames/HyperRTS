@@ -157,7 +157,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             var supplies = _world.CreateSupplies();
             var derrick = _world.SpawnBuilding(0, float3.zero, new float2(4f, 4f));
-            var writer = new EntityManagerWriter(_world.EntityManager, derrick);
+            var writer = new EntityWriter(_world.EntityManager, derrick);
             writer.Add(new ResourceIncome { Type = supplies, Amount = 10, Interval = 5f, FirstOwnerBonus = 100 });
 
             _world.Run(6f);
@@ -172,8 +172,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             var entity = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(_world.EntityManager, entity);
-            DestructibleAuthoring.AddScenery(ref writer, 50f, crush, remains, block,
+            var writer = new EntityWriter(_world.EntityManager, entity);
+            DestructibleAuthoring.AddScenery(writer, 50f, crush, remains, block,
                 SceneryId.At(position, quaternion.identity));
             return entity;
         }

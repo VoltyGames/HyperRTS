@@ -291,9 +291,9 @@ namespace HyperRTS.Presentation.Tests.Animation
             _em.AddComponentData(squad, new Health { Current = 100f, Max = 100f });
             _em.AddComponentData(squad, new LocalToWorld { Value = float4x4.identity });
             _em.AddBuffer<WeaponPose>(squad).Add(default);
-            var writer = new EntityManagerWriter(_em, squad);
+            var writer = new EntityWriter(_em, squad);
             var setup = new SquadFigures { RunSpeed = 3f, DieHold = DieHold };
-            SquadFiguresAuthoring.AddSquad(ref writer, setup, figures);
+            SquadFiguresAuthoring.AddSquad(writer, setup, figures);
             return squad;
         }
 
