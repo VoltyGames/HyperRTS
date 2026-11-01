@@ -141,17 +141,22 @@ namespace HyperRTS.Simulation.Navigation
         internal static float Reach(float2 axis, int points) =>
             points == 1 ? 1f : 2f * math.csum(math.abs(axis)) / (points - 1);
 
-        private float Depth(float2 center, float2 axis, float radius, float limit, out float2 deepest)
+        private float Depth(float2 center, float2 axis, float radius, float limit, out float2 deepest) =>
+            Depth(Access, center, axis, radius, limit, out deepest);
+
+        // Skips ahead past points that room at one point clears; stops once past the limit.
+        internal static float Depth<T>(in T walls, float2 center, float2 axis, float radius, float limit,
+            out float2 deepest) where T : struct, IWallDistance
         {
             var points = Points(axis, radius);
             var reach = Reach(axis, points);
             var depth = 0f;
             var most = 0f;
             deepest = center;
-            for (var i = 0; i < points;)
+            for (var i = 0; i < points && depth <= limit;)
             {
                 var point = Point(center, axis, i, points);
-                var room = Access.Distance(point) - radius;
+                var room = walls.Distance(point) - radius;
                 if (room >= 0f)
                 {
                     i += 1 + (int)math.min(room / reach, points);
@@ -163,11 +168,6 @@ namespace HyperRTS.Simulation.Navigation
                 {
                     most = -room;
                     deepest = point;
-                }
-
-                if (depth > limit)
-                {
-                    return depth;
                 }
 
                 i++;

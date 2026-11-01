@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Abilities
                 var aim = AbilityRules.Aim(abilities[index], transform.Position, target, order.Value.Position, Targets);
                 if (!AbilityRules.InRange(abilities[index], entity, transform.Position, target, aim, Targets))
                 {
-                    ReachMath.MoveTo(ref destination, moving, aim);
+                    destination.MoveTo(moving, aim);
                     return;
                 }
 

@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Resources
 
                 var facing = math.normalizesafe(transform.Forward().xz);
                 var bay = Bays.Pose(target, harvest.Bay);
-                return ReachMath.ApproachBay(move, bay, transform.Position.xz, facing);
+                return bay.Approach(move, transform.Position.xz, facing);
             }
 
             // Still driving out of another dock's bay, which frees once the hull is clear of the stop.
@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Resources
                 harvest.Place = Bays.Queue(dock, ref harvest.Bay, place);
                 harvest.Dock = dock;
                 var bay = Bays.Pose(dock, harvest.Bay);
-                ReachMath.WaitInLine(move, bay, harvest.Place, agent.HalfLength * 2f, transform.Position.xz);
+                bay.WaitInLine(move, harvest.Place, agent.HalfLength * 2f, transform.Position.xz);
             }
         }
     }

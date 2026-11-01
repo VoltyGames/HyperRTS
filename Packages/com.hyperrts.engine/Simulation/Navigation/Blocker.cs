@@ -19,11 +19,7 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Half the capsule's core segment on XZ, along the entity's facing.</summary>
         public readonly float2 SegmentAxis(quaternion rotation) => NavAgent.SegmentAxis(rotation, Radius, HullLength);
 
-        public readonly ulong Hash(in LocalTransform transform)
-        {
-            var hash = xxHash3.Hash64(transform) ^ xxHash3.Hash64(this).yx;
-            return ((ulong)hash.x << 32) | hash.y;
-        }
+        public readonly ulong Hash(in LocalTransform transform) => NavBox.Hash(transform, this);
 
         /// <summary>Closes the land under the capsule but keeps water and decks, so ships still pass under a wreck on a bridge.</summary>
         public readonly void Stamp(ref NavGrid grid, in LocalTransform transform)

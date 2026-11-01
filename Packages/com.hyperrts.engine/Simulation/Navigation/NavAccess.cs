@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Navigation
     /// One movement class's view of the <see cref="NavGrid"/>: which cells it may stand on, one rule shared by A*, the
     /// nearest-cell search and line of sight, and what steps onto them cost.
     /// </summary>
-    public readonly struct NavAccess
+    public readonly struct NavAccess : IWallDistance
     {
         /// <summary>A <see cref="NavAgent.SceneryCrushLimit"/> that passes all scenery, as infantry walk among trees.</summary>
         public const byte AllScenery = byte.MaxValue;

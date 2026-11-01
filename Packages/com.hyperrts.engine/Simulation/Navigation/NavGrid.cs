@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Navigation
                 Scenery = new NativeArray<byte>(count, Allocator.Persistent),
                 Classes = MovementClasses.Create(Allocator.Persistent),
                 Field = field,
-                Sectors = NavSectors.Create(0, field.SectorsPerAxis, Allocator.Persistent),
+                Sectors = NavSectors.Create(0, field.Layout, Allocator.Persistent),
                 DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
                 Changes = NavChanges.Create(count, Allocator.Persistent),
                 Terrain = terrain,
@@ -128,20 +128,12 @@ namespace HyperRTS.Simulation.Navigation
         public readonly float HeightFor(float3 position, NavLayer layer) =>
             layer == NavLayer.Naval ? WaterLevel : SurfaceHeight(position);
 
-        /// <summary>First and last cell under an XZ box (may lie outside the grid).</summary>
-        public readonly void GetArea(float3 center, float2 size, out int2 min, out int2 max)
-        {
-            var half = new float3(size.x * 0.5f, 0f, size.y * 0.5f);
-            min = WorldToCell(center - half);
-            max = WorldToCell(center + half - 0.001f);
-        }
-
-        /// <summary><see cref="GetArea"/> clamped to the grid; empty (min above max) when the box is off the map.</summary>
+        /// <summary>First and last cell under an XZ box, clamped to the grid; empty (min above max) when it is off the map.</summary>
         public readonly void GetClampedArea(float3 center, float2 size, out int2 min, out int2 max)
         {
-            GetArea(center, size, out min, out max);
-            min = math.max(min, 0);
-            max = math.min(max, Size - 1);
+            var half = new float3(size.x * 0.5f, 0f, size.y * 0.5f);
+            min = math.max(WorldToCell(center - half), 0);
+            max = math.min(WorldToCell(center + half - 0.001f), Size - 1);
         }
 
         /// <summary>Clamped cell range of a turned box's world-axis bounds; test each cell with <see cref="InBox"/>.</summary>
@@ -245,7 +237,7 @@ namespace HyperRTS.Simulation.Navigation
             if (Sectors.ClassCount != Classes.Classes.Length)
             {
                 Sectors.Dispose();
-                Sectors = NavSectors.Create(Classes.Classes.Length, Field.SectorsPerAxis, Allocator.Persistent);
+                Sectors = NavSectors.Create(Classes.Classes.Length, Field.Layout, Allocator.Persistent);
             }
 
             return built;

@@ -72,18 +72,6 @@ namespace HyperRTS.Simulation.Navigation
             return reached;
         }
 
-        /// <summary>Whether an agent may step between neighbouring cells: onto an open one, past open corners.</summary>
-        public static bool CanStep(in NavAccess access, int2 from, int2 to)
-        {
-            if (!access.IsOpen(to))
-            {
-                return false;
-            }
-
-            var diagonal = from.x != to.x && from.y != to.y;
-            return !diagonal || (access.IsOpen(new int2(from.x, to.y)) && access.IsOpen(new int2(to.x, from.y)));
-        }
-
         /// <summary>Octile distance, nudged up slightly so ties favour cells nearer the goal (fewer expansions).</summary>
         public static float Heuristic(int2 cell, int2 goal) => Octile(cell, goal) * 1.001f;
 
@@ -96,9 +84,6 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>A step's length in cells.</summary>
         public static float StepCost(int2 from, int2 to) => from.x != to.x && from.y != to.y ? Diagonal : 1f;
-
-        /// <summary>What the search pays for a step: its length, dearer near walls.</summary>
-        public static float Cost(in NavAccess access, int2 from, int2 to) => StepCost(from, to) * access.CellCost(to);
 
         public void Dispose()
         {

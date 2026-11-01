@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Navigation
         public static int Route(in NavAccess access, in PathQuery query, NativeArray<int> sectors,
             NativeList<float3> points)
         {
-            var corridor = new NavCorridor(access.Grid.Field.SectorsPerAxis, Allocator.Temp);
+            var corridor = new NavCorridor(access.Grid.Field.Layout, Allocator.Temp);
             corridor.AddWithRings(sectors);
             var search = new GridAStar(corridor, Allocator.Temp);
             var cells = new NativeList<int2>(256, Allocator.Temp);

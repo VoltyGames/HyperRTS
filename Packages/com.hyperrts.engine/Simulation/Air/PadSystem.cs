@@ -138,7 +138,7 @@ namespace HyperRTS.Simulation.Air
                 var pad = Transforms[home.Airfield].TransformPoint(Airfields.Pads[home.Airfield][home.Pad].Offset);
                 if (math.distance(Transforms[entity].Position.xz, pad.xz) > agent.Radius)
                 {
-                    ReachMath.MoveTo(ref destination, moving, pad);
+                    destination.MoveTo(moving, pad);
                     return;
                 }
 

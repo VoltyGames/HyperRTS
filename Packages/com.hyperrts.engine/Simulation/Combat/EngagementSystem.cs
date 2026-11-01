@@ -243,8 +243,8 @@ namespace HyperRTS.Simulation.Combat
             {
                 if (Mobile(entity))
                 {
-                    ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity),
-                        targetPosition, RepathDistance);
+                    Moves.GetRefRW(entity).ValueRW.MoveTo(Moves.GetEnabledRefRW<MoveDestination>(entity), targetPosition,
+                        RepathDistance);
                 }
             }
 
@@ -266,8 +266,7 @@ namespace HyperRTS.Simulation.Combat
                 var level = new float3(position.x - from.x, 0f, position.z - from.z);
                 var away = math.normalizesafe(level, new float3(0f, 0f, -1f));
                 var goal = from + away * (gap + Targets.Radius(entity) + Targets.Radius(target));
-                ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity), goal,
-                    RepathDistance);
+                Moves.GetRefRW(entity).ValueRW.MoveTo(Moves.GetEnabledRefRW<MoveDestination>(entity), goal, RepathDistance);
             }
 
             private void Halt(Entity entity)
@@ -279,7 +278,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             private void MoveTo(Entity entity, float3 goal) =>
-                ReachMath.MoveTo(ref Moves.GetRefRW(entity).ValueRW, Moves.GetEnabledRefRW<MoveDestination>(entity), goal);
+                Moves.GetRefRW(entity).ValueRW.MoveTo(Moves.GetEnabledRefRW<MoveDestination>(entity), goal);
 
             private bool IsMoving(Entity entity) => Moves.HasEnabled(entity);
 

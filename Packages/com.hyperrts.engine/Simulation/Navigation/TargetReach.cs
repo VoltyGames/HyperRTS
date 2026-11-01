@@ -12,6 +12,9 @@ namespace HyperRTS.Simulation.Navigation
     /// </summary>
     public struct TargetReach
     {
+        /// <summary>How far a unit's edge may be from the nearest it can get to a footprint.</summary>
+        public const float Slack = 1f;
+
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
@@ -33,6 +36,17 @@ namespace HyperRTS.Simulation.Navigation
             _navCellSize = map.NavCellSize;
         }
 
+        /// <summary>
+        /// Gap from a unit's core segment to a footprint within which it is at it. Closed cells reach up to a cell past
+        /// the footprint and the unit keeps its radius off them, so its edge is allowed a cell more than the slack.
+        /// </summary>
+        public static float Reach(float unitRadius, float navCellSize) => unitRadius + Slack + navCellSize;
+
+        /// <summary>Whether the unit's capsule round <paramref name="unit"/> is at the footprint.</summary>
+        public static bool InReach(in NavBox footprint, float2 unit, float2 axis, float unitRadius,
+            float navCellSize) =>
+            footprint.Gap(unit - axis, unit + axis) <= Reach(unitRadius, navCellSize);
+
         /// <summary>The entity is still in the world (destroyed targets lose their transform first).</summary>
         public bool Exists(Entity entity) => _transforms.HasComponent(entity);
 
@@ -48,7 +62,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             var footprint = Footprint(target);
             var position = unit.Position;
-            if (ReachMath.InReach(footprint, position.xz, agent.SegmentAxis(unit.Rotation), agent.Radius, _navCellSize))
+            if (InReach(footprint, position.xz, agent.SegmentAxis(unit.Rotation), agent.Radius, _navCellSize))
             {
                 move.Stop();
                 return WalkUp.Reached;
@@ -56,7 +70,7 @@ namespace HyperRTS.Simulation.Navigation
 
             // A goal already by the target stays put, so the path isn't restarted as the nearest edge slides.
             var goal = move.Destination.ValueRO.Value.xz;
-            var isGoalByTarget = footprint.Gap(goal, goal) <= ReachMath.Reach(agent.Radius, _navCellSize);
+            var isGoalByTarget = footprint.Gap(goal, goal) <= Reach(agent.Radius, _navCellSize);
             if (isGoalByTarget && move.Arrived.ValueRO && !move.Moving.ValueRO)
             {
                 return WalkUp.Stuck;
@@ -67,8 +81,8 @@ namespace HyperRTS.Simulation.Navigation
                 return WalkUp.Walking;
             }
 
-            var edge = footprint.EdgePoint(position.xz, agent.Radius + ReachMath.Slack * 0.5f);
-            ReachMath.MoveTo(ref move.Destination.ValueRW, move.Moving, new float3(edge.x, position.y, edge.y));
+            var edge = footprint.EdgePoint(position.xz, agent.Radius + Slack * 0.5f);
+            move.Destination.ValueRW.MoveTo(move.Moving, new float3(edge.x, position.y, edge.y));
             move.Arrived.ValueRW = false;
             return WalkUp.Walking;
         }

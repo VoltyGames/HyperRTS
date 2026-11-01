@@ -36,8 +36,7 @@ namespace HyperRTS.Simulation.Navigation
         public readonly void ToPose(float3 goal, float2 facing, float runIn)
         {
             ref var destination = ref Destination.ValueRW;
-            var same = math.distancesq(destination.Value.xz, goal.xz) < 0.01f && math.all(destination.Facing == facing);
-            if (Moving.ValueRO && same)
+            if (destination.IsHeadingTo(Moving, goal, 0.1f) && math.all(destination.Facing == facing))
             {
                 return;
             }

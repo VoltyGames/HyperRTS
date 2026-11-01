@@ -75,5 +75,21 @@ namespace HyperRTS.Simulation.Navigation
 
             return false;
         }
+
+        /// <summary>Whether cells changed after a version lie within the field's halo of a corridor, which can move its costs.</summary>
+        public readonly bool Touches(in NavGrid grid, int planned, in NavCorridor corridor)
+        {
+            for (var version = planned + 1; version <= grid.Version; version++)
+            {
+                var area = Areas[version % History];
+                var changed = math.all(area.xy <= area.zw);
+                if (changed && corridor.Touches(area.xy, area.zw, grid.Field.ReachCells))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

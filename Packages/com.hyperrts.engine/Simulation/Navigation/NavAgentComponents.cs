@@ -122,6 +122,22 @@ namespace HyperRTS.Simulation.Navigation
 
         /// <summary>Metres driven straight ahead before the path proper, as out of a dock bay.</summary>
         public float ExitRun;
+
+        /// <summary>Whether locomotion already heads within <paramref name="tolerance"/> of the goal, so a rewrite would only restart pathing.</summary>
+        public readonly bool IsHeadingTo(EnabledRefRW<MoveDestination> moving, float3 goal, float tolerance) =>
+            moving.ValueRO && math.distancesq(Value.xz, goal.xz) < tolerance * tolerance;
+
+        /// <summary>Points locomotion at a chase goal, rewriting it only when it moved more than <paramref name="tolerance"/>.</summary>
+        public void MoveTo(EnabledRefRW<MoveDestination> moving, float3 goal, float tolerance = 0.1f)
+        {
+            if (IsHeadingTo(moving, goal, tolerance))
+            {
+                return;
+            }
+
+            this = new MoveDestination { Value = goal, Chase = true };
+            moving.ValueRW = true;
+        }
     }
 
     /// <summary>Enabled when locomotion ended the move by itself, with why. Disabled while a move runs.</summary>

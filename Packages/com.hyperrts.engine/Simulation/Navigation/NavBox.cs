@@ -1,4 +1,6 @@
+using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Navigation
 {
@@ -21,6 +23,17 @@ namespace HyperRTS.Simulation.Navigation
             Right = math.normalizesafe(math.mul(rotation, math.right()).xz, new float2(1f, 0f));
             Forward = math.normalizesafe(math.mul(rotation, math.forward()).xz, new float2(0f, 1f));
             Half = size * 0.5f;
+        }
+
+        /// <summary>The box of a part at <paramref name="center"/> in an entity's space, turned with the entity.</summary>
+        public static NavBox FromPart(in LocalTransform transform, float2 center, float2 size) =>
+            new(transform.TransformPoint(new float3(center.x, 0f, center.y)), transform.Rotation, size);
+
+        /// <summary>A hash of a footprint stamped at <paramref name="transform"/>, to tell when it changed.</summary>
+        public static ulong Hash<T>(in LocalTransform transform, in T footprint) where T : unmanaged
+        {
+            var hash = xxHash3.Hash64(transform) ^ xxHash3.Hash64(footprint).yx;
+            return ((ulong)hash.x << 32) | hash.y;
         }
 
         /// <summary>Half size of the world-axis box around it.</summary>

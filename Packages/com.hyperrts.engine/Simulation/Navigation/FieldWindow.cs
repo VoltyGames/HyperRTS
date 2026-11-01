@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Navigation
     /// One class's wall distances copied over a box of cells, so a search that reads them thousands of times reads
     /// them unchecked. Outside the box reads as wall.
     /// </summary>
-    internal struct FieldWindow : IDisposable
+    internal struct FieldWindow : IDisposable, ICellValues, IWallDistance
     {
         private UnsafeList<float> _distances;
         private CellRect _box;
@@ -47,33 +47,13 @@ namespace HyperRTS.Simulation.Navigation
         }
 
         /// <summary>Bilinear between the four nearest cell centres, as <see cref="NavField.Sample"/>.</summary>
-        public readonly float Sample(float2 position)
-        {
-            var p = (position - _origin) / _cellSize - 0.5f;
-            var cell = (int2)math.floor(p);
-            var t = p - cell;
-            var low = math.lerp(At(cell), At(cell + new int2(1, 0)), t.x);
-            var high = math.lerp(At(cell + new int2(0, 1)), At(cell + 1), t.x);
-            return math.lerp(low, high, t.y);
-        }
+        public readonly float Distance(float2 position) => NavField.Bilinear(this, _origin, _cellSize, position);
 
         /// <summary>
         /// How far a capsule reaches into walls, as <see cref="NavCapsule.Depth(float2, float2)"/> sums it, counted
         /// only until past <paramref name="limit"/>.
         /// </summary>
-        public readonly float Depth(float2 center, float2 axis, float radius, float limit)
-        {
-            var points = NavCapsule.Points(axis, radius);
-            var reach = NavCapsule.Reach(axis, points);
-            var depth = 0f;
-            for (var i = 0; i < points && depth <= limit;)
-            {
-                var room = Sample(NavCapsule.Point(center, axis, i, points)) - radius;
-                depth -= math.min(room, 0f);
-                i += room >= 0f ? 1 + (int)math.min(room / reach, points) : 1;
-            }
-
-            return depth;
-        }
+        public readonly float Depth(float2 center, float2 axis, float radius, float limit) =>
+            NavCapsule.Depth(this, center, axis, radius, limit, out _);
     }
 }

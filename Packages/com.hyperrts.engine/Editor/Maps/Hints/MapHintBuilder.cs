@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Hints
                     return null;
                 }
 
-                bases.Add(new MapHintSlot(spawn, cell, input.Nav.Grid.Index(cell), MapWalkField.From(input.Nav, cell)));
+                bases.Add(new MapHintSlot(spawn, cell, input.Nav.Grid.Index(cell), input.Nav.WalkDistances(cell)));
             }
 
             return bases;

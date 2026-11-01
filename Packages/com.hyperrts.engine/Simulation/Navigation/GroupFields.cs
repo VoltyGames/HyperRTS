@@ -141,7 +141,7 @@ namespace HyperRTS.Simulation.Navigation
             {
                 var field = Fields[i];
                 var stale = now - field.LastUsed > IdleSeconds || !grid.Changes.Covers(field.Version, grid.Version) ||
-                            IsTouched(field, grid);
+                            grid.Changes.Touches(grid, field.Version, field.Field.Corridor);
                 if (stale)
                 {
                     Remove(i);
@@ -151,22 +151,6 @@ namespace HyperRTS.Simulation.Navigation
                 field.Version = grid.Version;
                 Fields[i] = field;
             }
-        }
-
-        // A change within the field's halo of the corridor can move its costs.
-        private static bool IsTouched(in GroupField field, in NavGrid grid)
-        {
-            for (var version = field.Version + 1; version <= grid.Version; version++)
-            {
-                var area = grid.Changes.Areas[version % NavChanges.History];
-                var changed = math.all(area.xy <= area.zw);
-                if (changed && field.Field.Corridor.Touches(area.xy, area.zw, grid.Field.ReachCells))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public void MarkUsed(int index, double now)

@@ -29,12 +29,12 @@ namespace HyperRTS.Simulation.Navigation
         /// <summary>Sectors relabelled at the next update, marked from the field's dirty sectors.</summary>
         public NativeArray<bool> Dirty;
 
-        public int2 SectorsPerAxis;
+        public SectorLayout Layout;
         public int ClassCount;
 
-        public static NavSectors Create(int classes, int2 sectors, Allocator allocator)
+        public static NavSectors Create(int classes, SectorLayout layout, Allocator allocator)
         {
-            var count = sectors.x * sectors.y;
+            var count = layout.Total;
             var built = new NavSectors
             {
                 Labels = new NativeArray<byte>(classes * count * Area, allocator),
@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Navigation
                 Firsts = new NativeArray<int>(classes * count + 1, allocator),
                 Owners = new NativeList<int>(allocator),
                 Regions = new NativeList<int>(allocator),
-                SectorsPerAxis = sectors,
+                Layout = layout,
                 ClassCount = classes,
             };
             built.MarkAllDirty();
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Navigation
             Regions.Dispose();
         }
 
-        public readonly int SectorCount => SectorsPerAxis.x * SectorsPerAxis.y;
+        public readonly int SectorCount => Layout.Total;
 
         public void MarkAllDirty()
         {
@@ -75,20 +75,6 @@ namespace HyperRTS.Simulation.Navigation
                 Dirty[i] = true;
             }
         }
-
-        /// <summary>The sector holding a cell, or -1 off the sectors.</summary>
-        public readonly int SectorOf(int2 cell)
-        {
-            var sector = cell / NavField.SectorCells;
-            var outside = math.any(cell < 0 | sector >= SectorsPerAxis);
-            return outside ? -1 : sector.y * SectorsPerAxis.x + sector.x;
-        }
-
-        public readonly int2 Origin(int sector) => Coordinates(sector, SectorsPerAxis) * NavField.SectorCells;
-
-        /// <summary>A sector's column and row among <paramref name="sectorsPerAxis"/>.</summary>
-        public static int2 Coordinates(int sector, int2 sectorsPerAxis) =>
-            new(sector % sectorsPerAxis.x, sector / sectorsPerAxis.x);
 
         // Where one class's entry for a sector sits in the per-sector arrays.
         private readonly int ClassSector(int classIndex, int sector) => classIndex * SectorCount + sector;
@@ -100,13 +86,10 @@ namespace HyperRTS.Simulation.Navigation
             return local.y * NavField.SectorCells + local.x;
         }
 
-        public readonly int2 Cell(int sector, int local) =>
-            Origin(sector) + new int2(local % NavField.SectorCells, local / NavField.SectorCells);
-
         /// <summary>The component holding a cell across all classes and sectors, or -1 when closed or off the grid.</summary>
         public readonly int Component(int classIndex, int2 cell)
         {
-            var sector = SectorOf(cell);
+            var sector = Layout.Index(cell);
             if (sector < 0)
             {
                 return -1;
@@ -128,7 +111,7 @@ namespace HyperRTS.Simulation.Navigation
         {
             var sector = Owners[component];
             var label = component - Firsts[ClassSector(classIndex, sector)];
-            return Cell(sector, Representatives[(ClassSector(classIndex, sector)) * MaxComponents + label]);
+            return Layout.Cell(sector, Representatives[(ClassSector(classIndex, sector)) * MaxComponents + label]);
         }
 
         /// <summary>
@@ -142,7 +125,7 @@ namespace HyperRTS.Simulation.Navigation
             var offset = (ClassSector(classIndex, sector)) * Area;
             for (var local = 0; local < Area; local++)
             {
-                var cell = Cell(sector, local);
+                var cell = Layout.Cell(sector, local);
                 var open = math.all(cell < field.Size) && field.IsOpen(slot, cell, radius);
                 Labels[offset + local] = open ? Unlabelled : (byte)0;
             }

@@ -33,14 +33,14 @@ namespace HyperRTS.Simulation.Navigation
             Firsts[ClassSector(classIndex, sector)] + label - 1;
 
         // The sector across a border, east or north.
-        private readonly int Across(int sector, int border) => border == East ? sector + 1 : sector + SectorsPerAxis.x;
+        private readonly int Across(int sector, int border) => border == East ? sector + 1 : sector + Layout.Count.x;
 
         /// <summary>Adds the components that share an edge with one, of the same class.</summary>
         public readonly void Neighbours(int classIndex, int component, NativeList<int> into)
         {
             var sector = Owners[component];
             var label = component - Firsts[ClassSector(classIndex, sector)] + 1;
-            var at = Coordinates(sector, SectorsPerAxis);
+            var at = Layout.Coordinates(sector);
             AddAcross(classIndex, sector, East, label, true, into);
             AddAcross(classIndex, sector, North, label, true, into);
             if (at.x > 0)
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Navigation
 
             if (at.y > 0)
             {
-                AddAcross(classIndex, sector - SectorsPerAxis.x, North, label, false, into);
+                AddAcross(classIndex, sector - Layout.Count.x, North, label, false, into);
             }
         }
 
@@ -81,9 +81,9 @@ namespace HyperRTS.Simulation.Navigation
             using var scope = ConnectMarker.Auto();
             for (var sector = 0; sector < SectorCount; sector++)
             {
-                var at = Coordinates(sector, SectorsPerAxis);
-                var east = at.x + 1 < SectorsPerAxis.x && Dirty[sector + 1];
-                var north = at.y + 1 < SectorsPerAxis.y && Dirty[sector + SectorsPerAxis.x];
+                var at = Layout.Coordinates(sector);
+                var east = at.x + 1 < Layout.Count.x && Dirty[sector + 1];
+                var north = at.y + 1 < Layout.Count.y && Dirty[sector + Layout.Count.x];
                 if (Dirty[sector] || east || north)
                 {
                     for (var classIndex = 0; classIndex < ClassCount; classIndex++)
@@ -106,11 +106,11 @@ namespace HyperRTS.Simulation.Navigation
         private void Border(int classIndex, int sector, int border)
         {
             var key = ClassSector(classIndex, sector) * 2 + border;
-            var at = Coordinates(sector, SectorsPerAxis);
+            var at = Layout.Coordinates(sector);
             var last = NavField.SectorCells - 1;
             var count = 0;
             var other = Across(sector, border);
-            if ((border == East && at.x + 1 < SectorsPerAxis.x) || (border == North && at.y + 1 < SectorsPerAxis.y))
+            if ((border == East && at.x + 1 < Layout.Count.x) || (border == North && at.y + 1 < Layout.Count.y))
             {
                 var own = ClassSector(classIndex, sector) * Area;
                 var far = ClassSector(classIndex, other) * Area;
@@ -224,7 +224,7 @@ namespace HyperRTS.Simulation.Navigation
             dependency = new RelabelJob
             {
                 Field = field, Classes = classes, Work = work.AsDeferredJobArray(), Labels = Labels, Counts = Counts,
-                Representatives = Representatives, SectorsPerAxis = SectorsPerAxis, ClassCount = ClassCount,
+                Representatives = Representatives, Layout = Layout, ClassCount = ClassCount,
             }.Schedule(work, 4, dependency);
             dependency = new ConnectJob { Graph = this }.Schedule(dependency);
             return work.Dispose(dependency);
@@ -263,7 +263,7 @@ namespace HyperRTS.Simulation.Navigation
             [NativeDisableParallelForRestriction] public NativeArray<byte> Labels;
             [NativeDisableParallelForRestriction] public NativeArray<byte> Counts;
             [NativeDisableParallelForRestriction] public NativeArray<byte> Representatives;
-            public int2 SectorsPerAxis;
+            public SectorLayout Layout;
             public int ClassCount;
 
             public void Execute(int index)
@@ -273,7 +273,7 @@ namespace HyperRTS.Simulation.Navigation
                 var graph = new NavSectors
                 {
                     Labels = Labels, Counts = Counts, Representatives = Representatives,
-                    SectorsPerAxis = SectorsPerAxis, ClassCount = ClassCount,
+                    Layout = Layout, ClassCount = ClassCount,
                 };
                 graph.Relabel(Field, Classes, item.y, item.x);
             }

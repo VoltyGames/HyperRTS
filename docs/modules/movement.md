@@ -57,8 +57,8 @@ Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestin
   cells. The rest wait a frame, and their units brake and turn toward the goal. Each search runs to the end, so no
   path is ever partial. `PathStats` counts searches by cause (`PathCause`: order, chase, grid change, replan, and
   broken group traces) and both the estimated and the real expansions.
-- A goal set by `ReachMath.MoveTo`, as chases, walk-ups and escorts do, is a chase (`MoveDestination.Chase`). When it
-  moves, the path's last waypoint follows it if the corner before it, or the unit on its last leg, still sees it and
+- A goal set by `MoveDestination.MoveTo`, as chases, walk-ups and escorts do, is a chase (`MoveDestination.Chase`). When
+  it moves, the path's last waypoint follows it if the corner before it, or the unit on its last leg, still sees it and
   it moved no more than a quarter of the path left. Otherwise the unit keeps its path and searches again at most
   every 0.5 s. A new order always plans at once.
 - A formation move's members of one class share a flow field (`GroupFields`): a Dijkstra with the same step costs

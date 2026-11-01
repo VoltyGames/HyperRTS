@@ -232,7 +232,7 @@ namespace HyperRTS.Simulation.Navigation
                         continue;
                     }
 
-                    var step = dx != 0 && dy != 0 ? math.SQRT2 : 1f;
+                    var step = GridAStar.StepCost(int2.zero, offset);
                     var way = -(float2)offset / step;
                     var cost = _costs[index] + step * _access.Grid.CellSize + Turn(way, leaving) * crowded;
                     if (cost < _costs[at])
@@ -245,7 +245,7 @@ namespace HyperRTS.Simulation.Navigation
             }
         }
 
-        // A diagonal needs both cells beside it open, so it never cuts a corner.
+        // Reads the window, not a CellBlock: this runs per relaxed cell. A diagonal never cuts a corner.
         private readonly bool CanStep(int2 cell, int2 offset) =>
             offset.x == 0 || offset.y == 0 ||
             (IsOpen(cell + new int2(offset.x, 0)) && IsOpen(cell + new int2(0, offset.y)));

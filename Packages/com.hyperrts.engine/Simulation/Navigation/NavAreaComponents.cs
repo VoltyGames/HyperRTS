@@ -36,8 +36,7 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Size;
         public bool Open;
 
-        public readonly NavBox Box(in LocalTransform transform) =>
-            new(transform.TransformPoint(new float3(Center.x, 0f, Center.y)), transform.Rotation, Size);
+        public readonly NavBox Box(in LocalTransform transform) => NavBox.FromPart(transform, Center, Size);
     }
 
     /// <summary>XZ box, turned with its entity, that pathing and building placement treat as solid.</summary>
@@ -46,11 +45,7 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Size;
 
         /// <summary>A hash of the footprint stamped at <paramref name="transform"/>, to tell when it changed.</summary>
-        public readonly ulong Hash(in LocalTransform transform)
-        {
-            var hash = xxHash3.Hash64(transform) ^ xxHash3.Hash64(this).yx;
-            return ((ulong)hash.x << 32) | hash.y;
-        }
+        public readonly ulong Hash(in LocalTransform transform) => NavBox.Hash(transform, this);
 
         /// <summary>The turned box of every obstacle <paramref name="query"/> matches, which reads LocalTransform too.</summary>
         public static NativeList<NavBox> ReadBoxes(EntityQuery query)
@@ -78,7 +73,6 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Size;
         public bool Closed;
 
-        public readonly NavBox Box(in LocalTransform transform) =>
-            new(transform.TransformPoint(new float3(Center.x, 0f, Center.y)), transform.Rotation, Size);
+        public readonly NavBox Box(in LocalTransform transform) => NavBox.FromPart(transform, Center, Size);
     }
 }

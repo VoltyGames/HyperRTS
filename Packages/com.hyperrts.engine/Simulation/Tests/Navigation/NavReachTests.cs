@@ -152,8 +152,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var centre = new float2(8f + TruckRadius + 0.5f + HalfSegment, 0f);
             var axis = new float2(HalfSegment, 0f);
 
-            Assert.IsTrue(ReachMath.InReach(Yard, centre, axis, TruckRadius, 2f), "nose at the edge");
-            Assert.IsFalse(ReachMath.InReach(Yard, centre + new float2(6f, 0f), axis, TruckRadius, 2f), "well back");
+            Assert.IsTrue(TargetReach.InReach(Yard, centre, axis, TruckRadius, 2f), "nose at the edge");
+            Assert.IsFalse(TargetReach.InReach(Yard, centre + new float2(6f, 0f), axis, TruckRadius, 2f), "well back");
         }
 
         [Test]

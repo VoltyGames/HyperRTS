@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Orders
                 var gap = EntityRadius.EdgeDistance(transform.Position, agent.Radius, wardPosition, wardRadius);
                 if (gap > FollowDistance)
                 {
-                    ReachMath.MoveTo(ref destination, moving, wardPosition);
+                    destination.MoveTo(moving, wardPosition);
                 }
                 else
                 {

@@ -23,22 +23,22 @@ namespace HyperRTS.Simulation.Navigation
         public float2 Min;
         public float CellSize;
 
-        public int2 SectorsPerAxis;
+        public SectorLayout Layout;
 
         /// <summary>Cells round a sector that can bring a wall within <see cref="MaxDistance"/> of it.</summary>
         public int ReachCells;
 
         public static NavField Create(int2 size, float2 min, float cellSize, int keys, Allocator allocator)
         {
-            var sectors = (size + SectorCells - 1) / SectorCells;
+            var layout = SectorLayout.Covering(size);
             var field = new NavField
             {
                 Distances = new NativeArray<float>(keys * size.x * size.y, allocator),
-                DirtySectors = new NativeArray<bool>(sectors.x * sectors.y, allocator),
+                DirtySectors = new NativeArray<bool>(layout.Total, allocator),
                 Size = size,
                 Min = min,
                 CellSize = cellSize,
-                SectorsPerAxis = sectors,
+                Layout = layout,
                 ReachCells = (int)math.ceil(MaxDistance / cellSize + 0.5f),
             };
             field.MarkDirty(int2.zero, size - 1);
@@ -75,10 +75,19 @@ namespace HyperRTS.Simulation.Navigation
             At(slot, cell) >= radius - NavTolerances.WallOverlap;
 
         /// <summary>Bilinear between the four nearest cell centres.</summary>
-        public readonly float Sample(int slot, float2 position)
+        public readonly float Sample(int slot, float2 position) =>
+            Bilinear(new SlotValues(this, slot), Min, CellSize, position);
+
+        /// <summary>Bilinear between the four cell centres nearest a point, for cells starting at <paramref name="origin"/>.</summary>
+        internal static float Bilinear<T>(in T values, float2 origin, float cellSize, float2 position)
+            where T : struct, ICellValues
         {
-            Corners(slot, position, out var low, out var high, out var t);
-            return math.lerp(math.lerp(low.x, low.y, t.x), math.lerp(high.x, high.y, t.x), t.y);
+            var p = (position - origin) / cellSize - 0.5f;
+            var cell = (int2)math.floor(p);
+            var t = p - cell;
+            var low = math.lerp(values.At(cell), values.At(cell + new int2(1, 0)), t.x);
+            var high = math.lerp(values.At(cell + new int2(0, 1)), values.At(cell + 1), t.x);
+            return math.lerp(low, high, t.y);
         }
 
         /// <summary>The way out of the nearest wall: the field's gradient, normalised.</summary>
@@ -91,26 +100,15 @@ namespace HyperRTS.Simulation.Navigation
             return math.normalizesafe(new float2(dx, dz));
         }
 
-        // Values at the cell below-left (low.x), below-right (low.y), above-left and above-right, and the blend.
-        private readonly void Corners(int slot, float2 position, out float2 low, out float2 high, out float2 t)
-        {
-            var p = (position - Min) / CellSize - 0.5f;
-            var cell = (int2)math.floor(p);
-            t = p - cell;
-            low = new float2(At(slot, cell), At(slot, cell + new int2(1, 0)));
-            high = new float2(At(slot, cell + new int2(0, 1)), At(slot, cell + 1));
-        }
-
         /// <summary>Marks every sector whose window holds a cell of the box, so its values get rebuilt.</summary>
         public void MarkDirty(int2 min, int2 max)
         {
-            var low = math.max((min - ReachCells) / SectorCells, 0);
-            var high = math.min((max + ReachCells) / SectorCells, SectorsPerAxis - 1);
+            Layout.Range(min, max, ReachCells, out var low, out var high);
             for (var y = low.y; y <= high.y; y++)
             {
                 for (var x = low.x; x <= high.x; x++)
                 {
-                    DirtySectors[y * SectorsPerAxis.x + x] = true;
+                    DirtySectors[y * Layout.Count.x + x] = true;
                 }
             }
         }
@@ -145,7 +143,7 @@ namespace HyperRTS.Simulation.Navigation
         public void Rebuild(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key, int slot,
             int sector, ref DistanceTransform transform)
         {
-            var first = NavSectors.Coordinates(sector, SectorsPerAxis) * SectorCells;
+            var first = Layout.Origin(sector);
             var origin = first - ReachCells;
             var side = transform.Side;
             for (var i = 0; i < transform.Closed.Length; i++)
@@ -181,6 +179,20 @@ namespace HyperRTS.Simulation.Navigation
                     Distances[slot * CellCount + y * Size.x + x] = open ? edge : -edge;
                 }
             }
+        }
+
+        private readonly struct SlotValues : ICellValues
+        {
+            private readonly NavField _field;
+            private readonly int _slot;
+
+            public SlotValues(in NavField field, int slot)
+            {
+                _field = field;
+                _slot = slot;
+            }
+
+            public float At(int2 cell) => _field.At(_slot, cell);
         }
     }
 }

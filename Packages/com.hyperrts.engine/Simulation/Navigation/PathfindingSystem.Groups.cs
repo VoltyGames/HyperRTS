@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Navigation
                                 access.HasLineOfSight(anchor, query.End);
                     if (joins)
                     {
-                        joiners.Add(new int2(_grid.Sectors.SectorOf(query.From), member));
+                        joiners.Add(new int2(_grid.Sectors.Layout.Index(query.From), member));
                         radius = math.max(radius, distance);
                     }
                 }
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Navigation
             private float Split(GroupField field, in NavAccess access, NativeList<int2> joiners, int2 goal)
             {
                 var cost = 0f;
-                var corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Persistent);
+                var corridor = new NavCorridor(_grid.Field.Layout, Allocator.Persistent);
                 var part = new NativeList<int>(joiners.Length, Allocator.Temp);
                 _routes.Clear();
                 _byComponent.Clear();
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Navigation
                     {
                         corridor.Truncate(kept);
                         cost += Open(field, corridor, goal, part);
-                        corridor = new NavCorridor(_grid.Field.SectorsPerAxis, Allocator.Persistent);
+                        corridor = new NavCorridor(_grid.Field.Layout, Allocator.Persistent);
                         corridor.AddWithRings(path);
                         part.Clear();
                     }

@@ -102,6 +102,28 @@ namespace HyperRTS.Editor.Maps.Nav
             return false;
         }
 
+        /// <summary>Metres to walk from <paramref name="start"/> to each cell by index; infinity where unreachable.</summary>
+        public float[] WalkDistances(int2 start)
+        {
+            var field = new FlowField(NavCorridor.Whole(Grid.Field.Layout, Allocator.Persistent), start,
+                Allocator.Persistent);
+            try
+            {
+                field.Build(Access);
+                var distance = new float[Grid.Cells.Length];
+                for (var i = 0; i < distance.Length; i++)
+                {
+                    distance[i] = field.Cost(Grid.Cell(i)) * Grid.CellSize;
+                }
+
+                return distance;
+            }
+            finally
+            {
+                field.Dispose();
+            }
+        }
+
         /// <summary>A copy with its own cells and access, for searches that close cells; the caller disposes it.</summary>
         internal NavGrid Copy()
         {
