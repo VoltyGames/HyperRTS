@@ -53,15 +53,16 @@ namespace HyperRTS.Network.Replication
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var viewers = Viewers(ref state);
             state.EntityManager.CompleteDependencyBeforeRO<Stealthed>();
-            var cloaks = SystemAPI.GetComponentLookup<Stealthed>(true);
+            state.EntityManager.CompleteDependencyBeforeRO<Concealed>();
+            var covers = new CoverLookup(ref state);
             var tall = SystemAPI.GetComponentLookup<TallTarget>(true);
             foreach (var (transform, owner, ghost, entity) in SystemAPI
                          .Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>().WithNone<Destructible>()
                          .WithEntityAccess())
             {
                 // With fog off only stealth hides anything.
-                var stealthed = cloaks.HasEnabled(entity);
-                if (!fogOn && !stealthed)
+                var cover = covers.Find(entity);
+                if (!fogOn && cover == Cover.None)
                 {
                     continue;
                 }
@@ -70,7 +71,7 @@ namespace HyperRTS.Network.Replication
                 var faction = owner.ValueRO.Value;
                 foreach (var viewer in viewers)
                 {
-                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position, stealthed, tall.HasComponent(entity)))
+                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position, cover, tall.HasComponent(entity)))
                     {
                         relevancy.GhostRelevancySet.TryAdd(
                             new RelevantGhostForConnection(viewer.NetworkId, ghost.ValueRO.ghostId), 1);

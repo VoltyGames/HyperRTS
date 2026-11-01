@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Vision
                 Viewer = view.Viewer,
                 Seen = seen,
                 Latest = SystemAPI.GetComponentLookup<LatestSeen>(),
-                Cloaked = SystemAPI.GetComponentLookup<Stealthed>(true),
+                Covers = new CoverLookup(ref state),
                 Tall = SystemAPI.GetComponentLookup<TallTarget>(true),
                 Construction = SystemAPI.GetComponentLookup<ConstructionProgress>(true),
                 Ghosts = SystemAPI.GetComponentLookup<GhostInstance>(true),
@@ -118,7 +118,7 @@ namespace HyperRTS.Simulation.Vision
             public byte Viewer;
             public NativeHashSet<FogMemoryKey> Seen;
             public ComponentLookup<LatestSeen> Latest;
-            [ReadOnly] public ComponentLookup<Stealthed> Cloaked;
+            [ReadOnly] public CoverLookup Covers;
             [ReadOnly] public ComponentLookup<TallTarget> Tall;
             [ReadOnly] public ComponentLookup<ConstructionProgress> Construction;
             [ReadOnly] public ComponentLookup<GhostInstance> Ghosts;
@@ -128,7 +128,7 @@ namespace HyperRTS.Simulation.Vision
             {
                 var key = FogMemoryKey.Identify(entity, Ghosts);
                 var hostile = Relations.IsHostile(Viewer, faction.Value);
-                var visible = Sight.Fog.CanSee(Sight.Team, transform.Position, Cloaked.HasEnabled(entity),
+                var visible = Sight.Fog.CanSee(Sight.Team, transform.Position, Covers.Find(entity),
                     Tall.HasComponent(entity));
                 // A friendly root is seen too, so the memory of a building since captured by a friend goes.
                 if (!hostile || visible)

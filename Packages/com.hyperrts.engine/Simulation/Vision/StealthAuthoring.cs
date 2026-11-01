@@ -24,6 +24,9 @@ namespace HyperRTS.Simulation.Vision
         [Tooltip("Visible while moving; stealthed only when standing still.")]
         public bool onlyWhenStill;
 
+        [Tooltip("Hidden only in woods, tall crops and ruins, where enemy ground units close by and detectors still see it.")]
+        public bool inConcealment;
+
         public class Baker : Baker<StealthAuthoring>
         {
             public override void Bake(StealthAuthoring authoring)
@@ -33,6 +36,7 @@ namespace HyperRTS.Simulation.Vision
                 {
                     RevealDuration = authoring.revealAfterFiring,
                     OnlyWhenStill = authoring.onlyWhenStill,
+                    InConcealment = authoring.inConcealment,
                 }, authoring.startEnabled);
             }
         }

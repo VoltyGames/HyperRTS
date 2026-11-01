@@ -30,7 +30,8 @@ namespace HyperRTS.Simulation.Cues
                 return true;
             }
 
-            return !fog.IsHiddenFrom(relations, viewer, cue.Faction, cue.Position, cue.Stealthed, false);
+            var cover = cue.Stealthed ? Cover.Stealthed : Cover.None;
+            return !fog.IsHiddenFrom(relations, viewer, cue.Faction, cue.Position, cover, false);
         }
     }
 }

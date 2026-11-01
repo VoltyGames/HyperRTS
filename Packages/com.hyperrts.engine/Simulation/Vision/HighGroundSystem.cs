@@ -10,7 +10,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Builds <see cref="HighGround"/> on the fog grid from the terrain and the match's <see cref="HighGroundRules"/>,
+    /// Builds <see cref="HighGround"/> on the fog grid from the terrain and the match's <see cref="SightRules"/>,
     /// again whenever the map, its terrain or the rules change. Without rules there is no high ground.
     /// </summary>
     [BurstCompile]
@@ -21,13 +21,13 @@ namespace HyperRTS.Simulation.Vision
     {
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
-        private HighGroundRules _builtRules;
+        private SightRules _builtRules;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<HighGroundRules>();
+            state.RequireForUpdate<SightRules>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Vision
         public void OnUpdate(ref SystemState state)
         {
             var map = SystemAPI.GetSingleton<MapSettings>();
-            var rules = SystemAPI.GetSingleton<HighGroundRules>();
+            var rules = SystemAPI.GetSingleton<SightRules>();
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             var exists = SystemAPI.HasSingleton<HighGround>();
             var same = map.SameFogGrid(_builtMap) && terrain.Blob.Equals(_builtTerrain.Blob) && Same(rules, _builtRules);
@@ -84,9 +84,8 @@ namespace HyperRTS.Simulation.Vision
             current = ground;
         }
 
-        private static bool Same(in HighGroundRules a, in HighGroundRules b) =>
-            a.Radius == b.Radius && a.SightPerMetre == b.SightPerMetre && a.MaxSight == b.MaxSight &&
-            a.RangePerMetre == b.RangePerMetre && a.MaxRange == b.MaxRange;
+        private static bool Same(in SightRules a, in SightRules b) =>
+            a.Radius == b.Radius && a.SightPerMetre == b.SightPerMetre && a.MaxSight == b.MaxSight;
 
         /// <summary>Ground at every cell centre less the mean over the square of cells within the radius, by summed areas.</summary>
         [BurstCompile]

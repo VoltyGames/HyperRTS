@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.Cues
         [ReadOnly] private ComponentLookup<DeathRemains> _remains;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
         [ReadOnly] private ComponentLookup<Stealthed> _cloaks;
+        [ReadOnly] private ComponentLookup<Concealed> _concealed;
         private Entity _queue;
 
         public CueWriter(ref SystemState state) : this()
@@ -37,6 +38,7 @@ namespace HyperRTS.Simulation.Cues
             _remains = state.GetComponentLookup<DeathRemains>(true);
             _info = state.GetComponentLookup<EntityInfo>(true);
             _cloaks = state.GetComponentLookup<Stealthed>(true);
+            _concealed = state.GetComponentLookup<Concealed>(true);
         }
 
         /// <summary>Call each update before scheduling; the queue exists once <see cref="CueClearSystem"/> is created.</summary>
@@ -50,6 +52,7 @@ namespace HyperRTS.Simulation.Cues
             _remains.Update(ref state);
             _info.Update(ref state);
             _cloaks.Update(ref state);
+            _concealed.Update(ref state);
             _queue = queue;
         }
 
@@ -75,7 +78,9 @@ namespace HyperRTS.Simulation.Cues
             byte variant = 0)
         {
             var typeId = TypeIdFor(source, slot, variant);
-            return Add(typeId, slot, position, direction, faction, _cloaks.HasEnabled(source), variant: variant);
+            // A concealed source's cues stay as hidden as a stealthed one's.
+            var hidden = _cloaks.HasEnabled(source) || _concealed.HasEnabled(source);
+            return Add(typeId, slot, position, direction, faction, hidden, variant: variant);
         }
 
         /// <summary>

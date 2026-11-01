@@ -6,17 +6,17 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Singleton on the <see cref="FogOfWar"/> grid: how far each cell's ground rises above the mean ground around it,
-    /// and what that is worth under the match's <see cref="HighGroundRules"/>.
+    /// and what that is worth under the match's <see cref="SightRules"/>.
     /// </summary>
     public struct HighGround : IComponentData
     {
-        /// <summary>Metres each cell's ground stands above the mean within <see cref="HighGroundRules.Radius"/>.</summary>
+        /// <summary>Metres each cell's ground stands above the mean within <see cref="SightRules.Radius"/>.</summary>
         public NativeArray<float> Rise;
 
         public int2 Size;
         public float2 Min;
         public float CellSize;
-        public HighGroundRules Rules;
+        public SightRules Rules;
 
         public readonly bool IsCreated => Rise.IsCreated;
 
@@ -29,20 +29,5 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>What a viewer's sight range is multiplied by there; 1 off high ground or without a grid.</summary>
         public readonly float SightScale(float3 position) =>
             IsCreated ? 1f + math.clamp(RiseAt(position) * Rules.SightPerMetre, 0f, Rules.MaxSight) : 1f;
-    }
-
-    /// <summary>On the match: what standing higher is worth to sight and to direct fire.</summary>
-    public struct HighGroundRules : IComponentData
-    {
-        /// <summary>High ground is measured against the mean ground within this many metres.</summary>
-        public float Radius;
-
-        public float SightPerMetre;
-        public float MaxSight;
-        public float RangePerMetre;
-        public float MaxRange;
-
-        /// <summary>Share of range a direct-fire shooter gains standing <paramref name="above"/> metres over its target.</summary>
-        public readonly float RangeBonus(float above) => math.clamp(above * RangePerMetre, 0f, MaxRange);
     }
 }

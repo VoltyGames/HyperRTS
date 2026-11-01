@@ -13,6 +13,7 @@ using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Heights;
+using HyperRTS.Simulation.Vision;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -42,6 +43,11 @@ namespace HyperRTS.Editor.Maps.Scenes
             var picture = MapGroundColor.Write(paths.Ground, generation.TextureWeights, climate, groundTint);
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, groundTint, picture, rows);
             MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
+            if (!generation.Crops.IsEmpty)
+            {
+                MapCropCoverPainter.Write(paths.CropCover, generation.Crops);
+            }
+
             MapGrassWriter.Write(paths.Grass, paths.GrassCoverage, generation.Grass, climate.plants);
             MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, climate);
             return (material, picture);
@@ -59,6 +65,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             height.transform.position = layout.TerrainOrigin;
             height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
             CreateGroundMaterials(scene, generation);
+            CreateCropCover(scene, generation);
             CreateWater(scene, generation);
             CreateWeather(scene, climate, generation.Project.Spec.weather);
             CreateDecks(scene, generation.Shapes, layout.GroundLevel);
@@ -75,6 +82,23 @@ namespace HyperRTS.Editor.Maps.Scenes
             go.transform.position = new Vector3(land.xMin, 0f, land.yMin);
             var materials = go.AddComponent<GroundMaterialsAuthoring>();
             materials.map = map;
+        }
+
+        // Loaded by path because opening the scene unloads the cover WriteGround saved.
+        private static void CreateCropCover(MapScene scene, MapGeneration generation)
+        {
+            if (generation.Crops.IsEmpty)
+            {
+                return;
+            }
+
+            var path = generation.Project.Paths.CropCover;
+            var map = AssetDatabase.LoadAssetAtPath<CropCoverMap>(path)
+                ?? throw new System.InvalidOperationException($"HyperRTS: the crop cover map '{path}' is missing.");
+            var area = generation.Crops.Area;
+            var go = scene.CreateEntityObject("Crop Cover");
+            go.transform.position = new Vector3(area.xMin, 0f, area.yMin);
+            go.AddComponent<CropCoverAuthoring>().map = map;
         }
 
         /// <summary>Points the scene's minimap at a picture of the map.</summary>

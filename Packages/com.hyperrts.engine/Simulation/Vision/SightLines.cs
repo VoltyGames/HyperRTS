@@ -5,9 +5,10 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Stamps a vision circle that terrain and solid blockers can occlude: rays to every cell on the square around
-    /// the viewer walk outward keeping the steepest sight line so far, and a cell is seen only when nothing nearer
-    /// rises above it. The rays visit each cell in the square at least once, so the cost stays proportional to the
+    /// Stamps a vision circle that terrain and blockers can occlude: rays to every cell on the square around the viewer
+    /// walk outward keeping the steepest sight line so far, and a cell is seen only when nothing nearer rises above
+    /// it. Woods, crops and smoke the eye is below take a share of sight per metre, and a ray stops once they have
+    /// taken it all. The rays visit each cell in the square at least once, so the cost stays proportional to the
     /// circle's area.
     /// </summary>
     internal struct SightLines
@@ -21,7 +22,7 @@ namespace HyperRTS.Simulation.Vision
         public FogOfWar Fog;
         public TerrainHeight Terrain;
 
-        /// <summary>Solid blockers on the fog grid; none when not created.</summary>
+        /// <summary>Blockers on the fog grid; none when not created.</summary>
         public SightBlockers Blockers;
 
         /// <summary>Flooded terrain hides its bed below this surface; negative infinity when nothing floods.</summary>
@@ -54,6 +55,8 @@ namespace HyperRTS.Simulation.Vision
         {
             var steps = math.cmax(math.abs(offset));
             var horizon = float.NegativeInfinity;
+            var cover = 0f;
+            var travelled = 0f;
             for (var step = 1; step <= steps; step++)
             {
                 var cell = center + (int2)math.round((float2)offset * step / steps);
@@ -65,20 +68,32 @@ namespace HyperRTS.Simulation.Vision
                     break;
                 }
 
-                var ground = Surface(cell, point) - origin.z;
+                var terrain = Terrain.Height(point);
+                var ground = Surface(cell, point, terrain) - origin.z;
                 if ((ground + TallTargetHeight) / distance >= horizon)
                 {
                     Mark(cell, bit, (ground + TargetHeight) / distance >= horizon);
                 }
 
                 horizon = math.max(horizon, ground / distance);
+                // Cover takes its share once crossed, so the near edge of a wood is still seen.
+                cover += Seep(cell, origin.z - terrain, distance - travelled);
+                travelled = distance;
+                if (cover >= 1f)
+                {
+                    break;
+                }
             }
         }
 
+        /// <summary>Share of sight the cell's porous cover takes over <paramref name="length"/> metres from an eye this far above its ground.</summary>
+        private readonly float Seep(int2 cell, float eye, float length) =>
+            Blockers.IsCreated && Fog.InBounds(cell) ? Blockers.Loss(Fog.Index(cell), eye, length) : 0f;
+
         /// <summary>The ground or water at a cell, raised by the solid blockers on it.</summary>
-        private readonly float Surface(int2 cell, float2 point)
+        private readonly float Surface(int2 cell, float2 point, float terrain)
         {
-            var ground = Terrain.Height(point);
+            var ground = terrain;
             if (Blockers.IsCreated && Fog.InBounds(cell) && !IsOwn(point))
             {
                 ground += Blockers.SolidHeight(Fog.Index(cell));

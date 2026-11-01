@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Burst;
 using Unity.Collections;
@@ -65,7 +66,15 @@ namespace HyperRTS.Simulation.Vision
 
             // Stealth applies with fog off too, so detection is restamped either way.
             state.Dependency = new ClearCellsJob { Cells = fog.Detected }.Schedule(state.Dependency);
+            state.Dependency = new ClearCellsJob { Cells = fog.Close }.Schedule(state.Dependency);
             new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
+            SystemAPI.TryGetSingleton<SightRules>(out var rules);
+            new CloseStampJob
+            {
+                Fog = fog, Relations = relations, Radius = rules.RevealDistance,
+                Agents = SystemAPI.GetComponentLookup<NavAgent>(true),
+                Inside = SystemAPI.GetComponentLookup<Inside>(true),
+            }.Schedule();
             if (settings.FogOfWar)
             {
                 _revealed = false;
@@ -142,6 +151,7 @@ namespace HyperRTS.Simulation.Vision
             fog.VisibleTall.Dispose();
             fog.Explored.Dispose();
             fog.Detected.Dispose();
+            fog.Close.Dispose();
         }
 
         private static FogOfWar CreateGrid(in MapSettings settings)
@@ -155,6 +165,7 @@ namespace HyperRTS.Simulation.Vision
                 VisibleTall = new NativeArray<ushort>(count, Allocator.Persistent),
                 Explored = new NativeArray<ushort>(count, Allocator.Persistent),
                 Detected = new NativeArray<ushort>(count, Allocator.Persistent),
+                Close = new NativeArray<ushort>(count, Allocator.Persistent),
                 Size = size,
                 Min = settings.Min,
                 CellSize = cellSize,

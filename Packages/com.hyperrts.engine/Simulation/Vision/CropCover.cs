@@ -1,0 +1,43 @@
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Mathematics;
+
+namespace HyperRTS.Simulation.Vision
+{
+    /// <summary>Singleton crop cover baked from the map's <see cref="CropCoverMap"/>; <see cref="SightBlockers"/> reads it.</summary>
+    public struct CropCover : IComponentData
+    {
+        public BlobAssetReference<CropCoverBlob> Blob;
+
+        public static CropCover Create(NativeArray<byte> density, NativeArray<byte> top, int2 size, float2 min,
+            float spacing, Allocator allocator)
+        {
+            var builder = new BlobBuilder(Allocator.Temp);
+            ref var root = ref builder.ConstructRoot<CropCoverBlob>();
+            var densities = builder.Allocate(ref root.Density, density.Length);
+            var tops = builder.Allocate(ref root.Top, top.Length);
+            for (var i = 0; i < density.Length; i++)
+            {
+                densities[i] = density[i];
+                tops[i] = top[i];
+            }
+
+            root.Size = size;
+            root.Min = min;
+            root.Spacing = spacing;
+            var blob = builder.CreateBlobAssetReference<CropCoverBlob>(allocator);
+            builder.Dispose();
+            return new CropCover { Blob = blob };
+        }
+    }
+
+    /// <summary>Row-major cells from <see cref="Min"/> (the map's south-west corner), <see cref="Spacing"/> metres apart.</summary>
+    public struct CropCoverBlob
+    {
+        public BlobArray<byte> Density;
+        public BlobArray<byte> Top;
+        public int2 Size;
+        public float2 Min;
+        public float Spacing;
+    }
+}

@@ -3,13 +3,13 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Vision
 {
-    /// <summary>What high ground is worth in a match, as set on the Match; baked into <see cref="HighGroundRules"/>.</summary>
+    /// <summary>A match's sight rules as set on the Match; baked into <see cref="SightRules"/>.</summary>
     [Serializable]
-    public struct HighGroundSettings
+    public struct SightSettings
     {
-        [Tooltip("Metres around a spot whose mean ground it is measured against.")]
+        [Tooltip("Metres around a spot whose mean ground its height is measured against.")]
         [Min(2f)]
-        public float radius;
+        public float highGroundRadius;
 
         [Tooltip("Share of sight range gained per metre a viewer stands above the ground around it.")]
         [Min(0f)]
@@ -27,18 +27,24 @@ namespace HyperRTS.Simulation.Vision
         [Min(0f)]
         public float maxRange;
 
-        public static HighGroundSettings Standard => new()
+        [Tooltip("Concealed infantry show to enemy ground units this close, in metres.")]
+        [Min(0f)]
+        public float revealDistance;
+
+        public static SightSettings Standard => new()
         {
-            radius = 50f, sightPerMetre = 0.02f, maxSight = 0.25f, rangePerMetre = 0.01f, maxRange = 0.1f,
+            highGroundRadius = 50f, sightPerMetre = 0.02f, maxSight = 0.25f, rangePerMetre = 0.01f, maxRange = 0.1f,
+            revealDistance = 15f,
         };
 
-        public readonly HighGroundRules Rules => new()
+        public readonly SightRules Rules => new()
         {
-            Radius = radius,
+            Radius = highGroundRadius,
             SightPerMetre = sightPerMetre,
             MaxSight = maxSight,
             RangePerMetre = rangePerMetre,
             MaxRange = maxRange,
+            RevealDistance = revealDistance,
         };
     }
 }

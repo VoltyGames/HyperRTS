@@ -65,6 +65,8 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>What each ground cell is made of, baked for hit and wheel debris.</summary>
         public string GroundMaterials => $"{Generated}/{Name}_GroundMaterials.asset";
 
+        public string CropCover => $"{Generated}/{Name}_CropCover.asset";
+
         /// <summary>The overview view from the match camera, kept with the map for loading screens.</summary>
         public string Overview => $"{Generated}/{Name}_Overview.png";
 

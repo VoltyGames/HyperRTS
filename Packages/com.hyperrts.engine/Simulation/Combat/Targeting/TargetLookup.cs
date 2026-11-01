@@ -23,13 +23,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         [ReadOnly] private ComponentLookup<Inside> _inside;
-        [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
+        private CoverLookup _cover;
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
         [ReadOnly] private ComponentLookup<TallTarget> _tall;
         [ReadOnly] private ComponentLookup<PassengerRange> _passengerRange;
         private DamageFactors _damage;
         [ReadOnly] private FogOfWar _fog;
-        private HighGroundRules _highGround;
+        private SightRules _sight;
 
         public TargetLookup(ref SystemState state)
         {
@@ -39,13 +39,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _agents = state.GetComponentLookup<NavAgent>(true);
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _inside = state.GetComponentLookup<Inside>(true);
-            _stealthed = state.GetComponentLookup<Stealthed>(true);
+            _cover = new CoverLookup(ref state);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _tall = state.GetComponentLookup<TallTarget>(true);
             _passengerRange = state.GetComponentLookup<PassengerRange>(true);
             _damage = new DamageFactors(ref state);
             FogQuery(ref state).TryGetSingleton(out _fog);
-            _highGround = default;
+            _sight = default;
         }
 
         /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
@@ -57,14 +57,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _agents.Update(ref state);
             _obstacles.Update(ref state);
             _inside.Update(ref state);
-            _stealthed.Update(ref state);
+            _cover.Update(ref state);
             _destructibles.Update(ref state);
             _tall.Update(ref state);
             _passengerRange.Update(ref state);
             _damage.Update(ref state);
             fog.TryGetSingleton(out _fog);
-            new EntityQueryBuilder(Allocator.Temp).WithAll<HighGroundRules>().Build(ref state)
-                .TryGetSingleton(out _highGround);
+            new EntityQueryBuilder(Allocator.Temp).WithAll<SightRules>().Build(ref state)
+                .TryGetSingleton(out _sight);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             var hostile = relations.IsHostile(attackerFaction, faction.Value);
-            return hostile && !IsHiddenByStealth(target, relations.GetTeam(attackerFaction));
+            return hostile && !IsHiddenByCover(target, relations.GetTeam(attackerFaction));
         }
 
         /// <summary>
@@ -114,17 +114,20 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public bool Affects(Entity target, in Weapon weapon) =>
             weapon.MinEffect <= 0f || _damage.Armor(target, weapon.DamageType) >= weapon.MinEffect;
 
-        /// <summary>Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsHiddenByStealth"/>).</summary>
-        // Stealth first, so unstealthed candidates skip the transform lookup.
-        public bool IsHiddenByStealth(Entity target, byte team) =>
-            _stealthed.HasEnabled(target) && !_fog.IsDetected(Position(target), team);
+        /// <summary>Stealthed or concealed from the team (see <see cref="FogOfWar.IsHiddenByCover"/>).</summary>
+        public bool IsHiddenByCover(Entity target, byte team)
+        {
+            // Cover first, so uncovered candidates skip the transform lookup.
+            var cover = _cover.Find(target);
+            return cover != Cover.None && _fog.IsHiddenByCover(team, Position(target), cover);
+        }
 
         /// <summary>
         /// In the team's sight right now and not cloaked from it: all a unit may pick on its own. Callers require the
         /// fog grid, which fog-off maps fill as all-visible.
         /// </summary>
         public bool IsSpotted(Entity target, float3 position, byte team) =>
-            _fog.CanSee(team, position, _stealthed.HasEnabled(target), IsTall(target));
+            _fog.CanSee(team, position, _cover.Find(target), IsTall(target));
 
         /// <summary>As tall as a vehicle or a building, so seen over low cover (see <see cref="TallTarget"/>).</summary>
         public bool IsTall(Entity entity) => _tall.HasComponent(entity);
@@ -138,7 +141,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             var bonus = GarrisonBonus(shooter);
             if (weapon.Aim.Trajectory != Trajectory.Ballistic)
             {
-                bonus += _highGround.RangeBonus(position.y - Position(target).y);
+                bonus += _sight.RangeBonus(position.y - Position(target).y);
             }
 
             return weapon.Range * (1f + bonus);

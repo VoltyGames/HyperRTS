@@ -20,6 +20,9 @@ namespace HyperRTS.Simulation.Vision
 
         public NativeArray<ushort> Explored;
         public NativeArray<ushort> Detected;
+
+        /// <summary>Cells within the reveal distance of a team's ground units, where its concealed enemies show.</summary>
+        public NativeArray<ushort> Close;
         public int2 Size;
         public float2 Min;
         public float CellSize;
@@ -51,19 +54,31 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly bool IsDetected(float3 position, byte team) => Test(Detected, position, team);
 
-        /// <summary>Stealth hides an entity from a team none of whose detectors covers it, with or without fog.</summary>
-        public readonly bool IsHiddenByStealth(byte team, float3 position, bool stealthed) =>
-            stealthed && !IsDetected(position, team);
+        public readonly bool IsClose(float3 position, byte team) => Test(Close, position, team);
 
-        /// <summary>Whether a team sees an entity there: in its sight at the entity's height and, if stealthed, detected.</summary>
-        public readonly bool CanSee(byte team, float3 position, bool stealthed, bool tall) =>
-            IsVisible(position, team, tall) && !IsHiddenByStealth(team, position, stealthed);
+        /// <summary>
+        /// Stealth hides an entity from a team none of whose detectors covers it, and concealment also from one with no
+        /// ground unit close by, with or without fog.
+        /// </summary>
+        public readonly bool IsHiddenByCover(byte team, float3 position, Cover cover)
+        {
+            if (cover == Cover.None || IsDetected(position, team))
+            {
+                return false;
+            }
+
+            return cover == Cover.Stealthed || !IsClose(position, team);
+        }
+
+        /// <summary>Whether a team sees an entity there: in its sight at the entity's height, and not hidden by cover.</summary>
+        public readonly bool CanSee(byte team, float3 position, Cover cover, bool tall) =>
+            IsVisible(position, team, tall) && !IsHiddenByCover(team, position, cover);
 
         /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
         public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,
-            float3 position, bool stealthed, bool tall) =>
+            float3 position, Cover cover, bool tall) =>
             relations.IsHostile(viewerFaction, faction) &&
-            !CanSee(relations.GetTeam(viewerFaction), position, stealthed, tall);
+            !CanSee(relations.GetTeam(viewerFaction), position, cover, tall);
 
         private readonly bool Test(NativeArray<ushort> cells, float3 position, byte team)
         {

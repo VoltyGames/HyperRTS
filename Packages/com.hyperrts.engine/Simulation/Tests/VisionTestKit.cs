@@ -17,13 +17,16 @@ namespace HyperRTS.Simulation.Tests
         }
 
         /// <summary>A solid box sight can't pass below its top, as a house or a wall bakes.</summary>
-        public static Entity SpawnSightBlock(this TestWorld world, float3 position, float2 size, float height)
+        public static Entity SpawnSightBlock(this TestWorld world, float3 position, float2 size, float height) =>
+            world.SpawnSightBlock(position, new SightBlock { Size = size, Height = height });
+
+        public static Entity SpawnSightBlock(this TestWorld world, float3 position, in SightBlock block)
         {
-            var block = world.EntityManager.CreateEntity();
-            world.EntityManager.AddComponentData(block, LocalTransform.FromPosition(position));
-            var writer = new EntityManagerWriter(world.EntityManager, block);
-            SightBlockAuthoring.Add(ref writer, size, height);
-            return block;
+            var entity = world.EntityManager.CreateEntity();
+            world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
+            var writer = new EntityManagerWriter(world.EntityManager, entity);
+            SightBlockAuthoring.Add(ref writer, block);
+            return entity;
         }
 
         public static void DisableFog(this TestWorld world)

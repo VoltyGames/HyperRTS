@@ -6,16 +6,26 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// A box, turned with its entity, that sight can't pass below its top, such as a house, a wall or a wreck.
-    /// Disabled once it stops blocking, as when a wreck is buried.
+    /// A box, turned with its entity, that blocks sight: solid below <see cref="Height"/> (a house, a wall, a wreck),
+    /// porous below <see cref="PorousTop"/> (a tree crown, smoke), or both. Disabled once it stops blocking, as when a
+    /// wreck is buried.
     /// </summary>
     public struct SightBlock : IComponentData, IEnableableComponent
     {
         /// <summary>Ground footprint (X by Z), centred on the entity.</summary>
         public float2 Size;
 
-        /// <summary>Top above the entity's position.</summary>
+        /// <summary>Solid top above the entity's position; 0 for cover that sight seeps through.</summary>
         public float Height;
+
+        /// <summary>Share of sight lost per metre through it below <see cref="PorousTop"/>; 0.1 is lost after 10 m.</summary>
+        public float Density;
+
+        /// <summary>Top of the porous cover above the entity's position.</summary>
+        public float PorousTop;
+
+        /// <summary>Still infantry on it are concealed, as in woods, ruins and trenches.</summary>
+        public bool Conceals;
 
         public readonly NavBox Box(in LocalTransform transform) => new(transform.Position, transform.Rotation, Size);
 

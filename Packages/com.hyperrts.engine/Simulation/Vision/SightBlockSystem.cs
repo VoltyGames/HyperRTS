@@ -11,8 +11,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Builds <see cref="SightBlockers"/> on the fog grid and restamps it when the set of enabled
-    /// <see cref="SightBlock"/>s, their places or their tops change, or the map or its terrain does.
+    /// Builds <see cref="SightBlockers"/> on the fog grid, with the map's <see cref="CropCover"/>, and restamps its
+    /// blocks when the set of enabled <see cref="SightBlock"/>s, their places or their values change. A new map,
+    /// terrain or crop cover builds it again.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -24,6 +25,7 @@ namespace HyperRTS.Simulation.Vision
         private EntityQuery _changed;
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
+        private CropCover _builtCrops;
         private int _builtOrder;
         private int _builtCount;
         private ulong _builtSignature;
@@ -45,7 +47,7 @@ namespace HyperRTS.Simulation.Vision
             state.CompleteDependency();
             if (SystemAPI.TryGetSingleton<SightBlockers>(out var blockers))
             {
-                blockers.Solid.Dispose();
+                blockers.Dispose();
             }
         }
 
@@ -54,7 +56,8 @@ namespace HyperRTS.Simulation.Vision
         {
             var map = SystemAPI.GetSingleton<MapSettings>();
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
-            var rebuilt = EnsureGrid(ref state, map, terrain);
+            SystemAPI.TryGetSingleton<CropCover>(out var crops);
+            var rebuilt = EnsureGrid(ref state, map, terrain, crops);
             // Checked on a rebuild too, so the set it stamps is the one later frames compare with.
             var changed = MayDiffer(ref state) && SignatureChanged(ref state);
             if (!rebuilt && !changed)
@@ -64,7 +67,7 @@ namespace HyperRTS.Simulation.Vision
 
             ref var blockers = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
             blockers.Version++;
-            state.Dependency = new ClearJob { Solid = blockers.Solid }.Schedule(state.Dependency);
+            state.Dependency = new ClearJob { Blockers = blockers }.Schedule(state.Dependency);
             state.Dependency = new StampJob { Blockers = blockers, Terrain = terrain }
                 .Schedule(_blocks, state.Dependency);
         }
@@ -94,62 +97,39 @@ namespace HyperRTS.Simulation.Vision
             return changed;
         }
 
-        /// <summary>Creates the grid, or replaces it when the map's area or terrain changed; true if it did.</summary>
-        private bool EnsureGrid(ref SystemState state, in MapSettings map, in TerrainHeight terrain)
+        /// <summary>Creates the grid, or replaces it when the map's area, terrain or crops changed; true if it did.</summary>
+        private bool EnsureGrid(ref SystemState state, in MapSettings map, in TerrainHeight terrain, in CropCover crops)
         {
             var exists = SystemAPI.HasSingleton<SightBlockers>();
-            if (exists && map.SameFogGrid(_builtMap) && terrain.Blob.Equals(_builtTerrain.Blob))
+            var sameGround = terrain.Blob.Equals(_builtTerrain.Blob) && crops.Blob.Equals(_builtCrops.Blob);
+            if (exists && map.SameFogGrid(_builtMap) && sameGround)
             {
                 return false;
             }
 
             _builtMap = map;
             _builtTerrain = terrain;
-            map.FogLayout(out var size, out var cellSize);
-            var grid = new SightBlockers
-            {
-                Solid = new NativeArray<byte>(size.x * size.y, Allocator.Persistent),
-                Size = size,
-                Min = map.Min,
-                CellSize = cellSize,
-            };
+            _builtCrops = crops;
+            var grid = SightBlockers.Create(map, Allocator.Persistent);
             if (!exists)
             {
                 state.EntityManager.CreateSingleton(grid, "SightBlockers");
-                return true;
             }
-
-            state.CompleteDependency();
-            ref var current = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
-            grid.Version = current.Version;
-            current.Solid.Dispose();
-            current = grid;
-            return true;
-        }
-
-        [BurstCompile]
-        private struct ClearJob : IJob
-        {
-            public NativeArray<byte> Solid;
-
-            public void Execute()
+            else
             {
-                for (var i = 0; i < Solid.Length; i++)
-                {
-                    Solid[i] = 0;
-                }
+                state.CompleteDependency();
+                ref var current = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
+                grid.Version = current.Version;
+                current.Dispose();
+                current = grid;
             }
-        }
 
-        /// <summary>Single-threaded: overlapping blocks raise the same cells.</summary>
-        [BurstCompile]
-        private partial struct StampJob : IJobEntity
-        {
-            public SightBlockers Blockers;
-            public TerrainHeight Terrain;
+            if (crops.Blob.IsCreated)
+            {
+                state.Dependency = new CropJob { Blockers = grid, Crops = crops }.Schedule(state.Dependency);
+            }
 
-            private void Execute(in SightBlock block, in LocalTransform transform) =>
-                Blockers.Stamp(block.Box(transform), block.Top(transform), Terrain);
+            return true;
         }
     }
 }

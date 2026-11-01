@@ -14,7 +14,9 @@ namespace HyperRTS.Simulation.Vision
 
             // Set now so a fresh spawn is never visible for the frame before StealthSystem runs.
             writer.Add<Stealthed>();
-            writer.SetEnabled<Stealthed>(enabled);
+            writer.SetEnabled<Stealthed>(enabled && !stealth.InConcealment);
+            writer.Add<Concealed>();
+            writer.SetEnabled<Concealed>(false);
         }
 
         public static void AddDetector<TWriter>(ref TWriter writer, float radius)

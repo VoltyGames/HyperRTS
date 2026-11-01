@@ -42,7 +42,7 @@ silently. `Shooter.TryFire` is the fire step both weapon kinds share.
 
 `TargetLookup.Reach` is a weapon's range against one target. A passenger firing out of a container with a
 `PassengerRange` (`ContainerAuthoring.passengerRangeBonus`) reaches that share further. A direct-fire or rocket weapon
-standing above its target gains `HighGroundRules.RangePerMetre` of range per metre, up to `MaxRange`; ballistic fire
+standing above its target gains `SightRules.RangePerMetre` of range per metre, up to `MaxRange`; ballistic fire
 gains nothing. `EngagementSystem` stores the primary's reach in `AttackTarget.Reach`, and the fire step checks it.
 
 ### Salvos, muzzles and ammo
@@ -265,22 +265,29 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 | Type | Role |
 | --- | --- |
 | `VisionRange` | Sight radius |
-| `StealthAuthoring` | Hidden unless detected. Revealed for a while after firing |
+| `StealthAuthoring` | Hidden unless detected. Revealed for a while after firing. `inConcealment` hides it only in concealing cover, from enemies without a detector or a ground unit within `SightRules.RevealDistance` |
 | `DetectorAuthoring` | Detection radius. Detects nothing while `Offline`, so a radar goes blind on low power |
 | `RememberedInFog` | Leaves a last-seen memory when it goes out of sight. On buildings by default |
-| `SightBlockAuthoring` | A box sight can't pass below its top: houses, walls, wrecks. Fit To Model fills it |
+| `SightBlockAuthoring` | A box that blocks sight: solid below `height` (houses, walls, wrecks), porous below `porousTop` with a `density` per metre (tree crowns, smoke), and concealing still infantry when `conceals` is set (ruins, trenches). Fit To Model fills the solid box |
+| `CropCoverAuthoring` | Bakes the map's `CropCoverMap`, which the map build paints from each crop's `sightDensity` |
 | `GameEntityAuthoring.tall` | A `TallTarget`, as tall as a vehicle or a building: seen over cover that hides infantry |
-| `MatchAuthoring.highGround` | What high ground is worth: `HighGroundRules` for sight and direct-fire range |
+| `MatchAuthoring.sight` | `SightRules`: what high ground is worth to sight and direct-fire range, and the reveal distance |
 | `ContainerAuthoring.eyeAboveRoof` | Passengers of a container with a sight block see from this far above its top |
 
 - Vision updates 10 times a second. Hills and sight blocks cast shadows. `FogOfWar.Visible` holds the cells
   whose ground is seen at 1 m, for infantry; `VisibleTall` those seen at 3 m, for a `TallTarget`. Explored cells
   follow the tall layer. `CanSee` and `IsHiddenFrom` take the target's layer.
-- `HighGroundSystem` measures each fog cell's ground against the mean within `HighGroundRules.Radius` (50 m) when
+- `HighGroundSystem` measures each fog cell's ground against the mean within `SightRules.Radius` (50 m) when
   the map or terrain loads. A viewer on high ground sees `SightPerMetre` further per metre of rise, up to
   `MaxSight`.
 - `SightBlockSystem` stamps every enabled block onto the fog grid (`SightBlockers`) when one is added, removed,
   moved, turned off or changed. Remains turn theirs off as they are buried.
+- Woods, crops and smoke the eye is below take their density of sight per metre crossed; a ray stops once they have
+  taken it all, so about 10 m of woods hides what lies beyond and a viewer above the canopy sees over. Crushers
+  flatten crop cover under their hull (`CropFlattenSystem`), in every world so clients' fog matches.
+- `FogOfWar.Close` holds the cells within `RevealDistance` of a team's ground units; aircraft and passengers add
+  none. A `Cover` (none, `Concealed`, `Stealthed`) goes with every visibility check: stealth shows only to detectors,
+  concealment also to close ground units. Woods, crops and blocks with `conceals` conceal.
 - A viewer's own block, or the block of the container it is in, hides nothing from it. Garrisons see from above
   the roof.
 - Hidden enemies can't be selected, picked or seen, but splash still hits them.

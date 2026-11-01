@@ -12,5 +12,9 @@ namespace HyperRTS.Editor.Maps.Climate
     {
         [Tooltip("The crop's meshes, materials and planting.")]
         public RowCrop crop;
+
+        [Tooltip("Share of sight lost per metre through the grown crop below its height: 0.05 hides what lies past 20 m. 0 for crops lower than an eye.")]
+        [Min(0f)]
+        public float sightDensity;
     }
 }

@@ -175,7 +175,7 @@ namespace HyperRTS.Simulation.Tests
                 LowPowerProductionRate = 0.5f, SellRefund = 0.5f, ExperiencePerCost = 0.1f, JoinTimeout = 60f,
                 StrategicAssets = true,
             });
-            EntityManager.AddComponentData(match, HighGroundSettings.Standard.Rules);
+            EntityManager.AddComponentData(match, SightSettings.Standard.Rules);
 
             var relations = new FactionRelations();
             relations.Teams.Add(0);

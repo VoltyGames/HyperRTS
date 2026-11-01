@@ -6,7 +6,10 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Vision
 {
-    /// <summary>Blocks sight below its top over a box centred on this transform: a house, a wall or a wreck.</summary>
+    /// <summary>
+    /// Blocks sight over a box centred on this transform: solid below its height (a house, a wall, a wreck), porous
+    /// below its porous top (a tree crown, smoke), and concealing still infantry if set (ruins, trenches).
+    /// </summary>
     [AddComponentMenu(HyperRTSMenu.Vision + "Sight Block")]
     [Icon(HyperRTSIcons.Vision)]
     [HelpURL(HyperRTSDocs.Vision)]
@@ -16,9 +19,20 @@ namespace HyperRTS.Simulation.Vision
         [Tooltip("Blocked footprint (X by Z) centred on this transform. Fit To Model in the context menu fills it.")]
         public Vector2 size = new(4f, 4f);
 
-        [Tooltip("Top of the block above this transform, in metres: the roof or the wall's top.")]
-        [Min(0.25f)]
+        [Tooltip("Solid top above this transform, in metres: the roof or the wall's top. 0 for cover sight seeps through.")]
+        [Min(0f)]
         public float height = 3f;
+
+        [Tooltip("Share of sight lost per metre through the porous part: 0.1 hides what lies past 10 m of it. 0 for none.")]
+        [Min(0f)]
+        public float density;
+
+        [Tooltip("Top of the porous part above this transform, in metres, such as a tree's crown.")]
+        [Min(0f)]
+        public float porousTop;
+
+        [Tooltip("Still infantry on it are concealed, as in ruins and trenches. Porous cover conceals without it.")]
+        public bool conceals;
 
         /// <summary>Sets the size and height to the box round the active meshes, centred on this transform.</summary>
         [ContextMenu("Fit To Model")]
@@ -43,14 +57,15 @@ namespace HyperRTS.Simulation.Vision
             height = Mathf.Max(top, 0.25f);
         }
 
-        public static void Add<TWriter>(ref TWriter writer, float2 size, float height)
+        public static void Add<TWriter>(ref TWriter writer, in SightBlock block)
             where TWriter : struct, IEntityWriter =>
-            writer.Add(new SightBlock { Size = size, Height = height });
+            writer.Add(block);
 
         private void OnDrawGizmosSelected()
         {
             Gizmos.matrix = transform.localToWorldMatrix;
-            Gizmos.DrawWireCube(new Vector3(0f, height * 0.5f, 0f), new Vector3(size.x, height, size.y));
+            var top = Mathf.Max(height, density > 0f ? porousTop : 0f);
+            Gizmos.DrawWireCube(new Vector3(0f, top * 0.5f, 0f), new Vector3(size.x, top, size.y));
         }
 
         public class Baker : Baker<SightBlockAuthoring>
@@ -58,7 +73,14 @@ namespace HyperRTS.Simulation.Vision
             public override void Bake(SightBlockAuthoring authoring)
             {
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
-                Add(ref writer, authoring.size, authoring.height);
+                Add(ref writer, new SightBlock
+                {
+                    Size = authoring.size,
+                    Height = authoring.height,
+                    Density = authoring.density,
+                    PorousTop = authoring.porousTop,
+                    Conceals = authoring.conceals,
+                });
             }
         }
     }

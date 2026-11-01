@@ -28,6 +28,9 @@ namespace HyperRTS.Editor.Maps.Ground
 
         public List<RowCrop> Crops { get; } = new();
 
+        /// <summary>Share of sight each of <see cref="Crops"/> takes per metre crossed.</summary>
+        public List<float> SightDensities { get; } = new();
+
         public List<RowCropField> Fields { get; } = new();
 
         public List<ScatterTile> Tiles { get; } = new();

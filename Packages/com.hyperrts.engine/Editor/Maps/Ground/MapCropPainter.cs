@@ -91,7 +91,9 @@ namespace HyperRTS.Editor.Maps.Ground
                 if (!byKey.TryGetValue(key, out var index))
                 {
                     byKey[key] = index = bake.Crops.Count;
-                    bake.Crops.Add(climate.rowCrops[climate.RowCropIndex(key)].crop);
+                    var item = climate.rowCrops[climate.RowCropIndex(key)];
+                    bake.Crops.Add(item.crop);
+                    bake.SightDensities.Add(item.sightDensity);
                 }
 
                 crops[r] = index;

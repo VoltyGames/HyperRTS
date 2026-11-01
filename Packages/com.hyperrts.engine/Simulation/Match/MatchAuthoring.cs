@@ -52,8 +52,8 @@ namespace HyperRTS.Simulation.Match
         [Range(0f, 90f)]
         public float maxSlope = 45f;
 
-        [Tooltip("What standing higher is worth to sight and to direct fire.")]
-        public HighGroundSettings highGround = HighGroundSettings.Standard;
+        [Tooltip("What high ground is worth to sight and direct fire, and how close enemies spot concealed infantry.")]
+        public SightSettings sight = SightSettings.Standard;
 
         [Header("Rules")]
         [Tooltip("Production speed of power-consuming producers while their owner's power is low.")]
@@ -140,7 +140,7 @@ namespace HyperRTS.Simulation.Match
                     FloodTerrain = authoring.floodBelowWaterLevel,
                     MaxSlope = authoring.maxSlope,
                 });
-                AddComponent(entity, authoring.highGround.Rules);
+                AddComponent(entity, authoring.sight.Rules);
                 AddComponent(entity, new MatchRules
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,
