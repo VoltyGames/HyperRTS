@@ -15,11 +15,8 @@ namespace HyperRTS.Network.Scenery
         private NativeHashMap<ulong, int> _slots;
         private NativeList<SceneryRecord> _records;
 
-        /// <summary>Last <see cref="SceneryChange.Code"/> each team saw, at <c>slot * Teams + team</c>.</summary>
-        private NativeList<ushort> _known;
-
-        /// <summary>Last broken mask each team saw, at the same index as <see cref="_known"/>.</summary>
-        private NativeList<ulong> _knownBroken;
+        /// <summary>What each team last saw, at <c>slot * Teams + team</c>.</summary>
+        private NativeList<Sighted> _known;
 
         /// <summary>Slots some team hasn't caught up with.</summary>
         private NativeList<int> _stale;
@@ -28,8 +25,7 @@ namespace HyperRTS.Network.Scenery
         {
             _slots = new NativeHashMap<ulong, int>(1024, allocator);
             _records = new NativeList<SceneryRecord>(1024, allocator);
-            _known = new NativeList<ushort>(1024 * Teams, allocator);
-            _knownBroken = new NativeList<ulong>(1024 * Teams, allocator);
+            _known = new NativeList<Sighted>(1024 * Teams, allocator);
             _stale = new NativeList<int>(64, allocator);
         }
 
@@ -40,7 +36,6 @@ namespace HyperRTS.Network.Scenery
             _slots.Dispose();
             _records.Dispose();
             _known.Dispose();
-            _knownBroken.Dispose();
             _stale.Dispose();
         }
 
@@ -55,8 +50,7 @@ namespace HyperRTS.Network.Scenery
             _records.Add(new SceneryRecord { Id = id, Position = position, State = SceneryChange.Intact });
             for (var team = 0; team < Teams; team++)
             {
-                _known.Add(SceneryChange.IntactCode);
-                _knownBroken.Add(0);
+                _known.Add(new Sighted { Code = SceneryChange.IntactCode });
             }
 
             return true;
@@ -109,8 +103,7 @@ namespace HyperRTS.Network.Scenery
                         continue;
                     }
 
-                    _known[slot * Teams + team] = record.Change.Code;
-                    _knownBroken[slot * Teams + team] = record.Broken;
+                    _known[slot * Teams + team] = new Sighted { Code = record.Change.Code, Broken = record.Broken };
                     record.Stale &= (ushort)~(1 << team);
                     sightings.Add(new ScenerySighting { Team = (byte)team, Witnessed = record.Changed == frame, Change = record.Change });
                 }
@@ -131,11 +124,10 @@ namespace HyperRTS.Network.Scenery
             for (var slot = 0; slot < _records.Length; slot++)
             {
                 var known = _known[slot * Teams + team];
-                var broken = _knownBroken[slot * Teams + team];
-                if (known != SceneryChange.IntactCode || broken != 0)
+                if (known.Code != SceneryChange.IntactCode || known.Broken != 0)
                 {
                     var record = _records[slot];
-                    changes.Add(SceneryChange.FromCode(record.Id, known, broken, record.Fall));
+                    changes.Add(SceneryChange.FromCode(record.Id, known.Code, known.Broken, record.Fall));
                 }
             }
         }
@@ -159,8 +151,8 @@ namespace HyperRTS.Network.Scenery
             for (var team = 0; team < Teams; team++)
             {
                 var bit = 1 << team;
-                var index = slot * Teams + team;
-                if ((teams & bit) != 0 && (_known[index] != code || _knownBroken[index] != broken))
+                var known = _known[slot * Teams + team];
+                if ((teams & bit) != 0 && (known.Code != code || known.Broken != broken))
                 {
                     stale |= bit;
                 }
@@ -181,6 +173,13 @@ namespace HyperRTS.Network.Scenery
             // Scenery past the fog grid's edge uses the edge cell.
             var cell = math.clamp(fog.WorldToCell(position), 0, fog.Size - 1);
             return FogOfWar.HasTeam(fog.Visible[fog.Index(cell)], (byte)team);
+        }
+
+        /// <summary>A change code and broken mask as one team last saw them.</summary>
+        private struct Sighted
+        {
+            public ushort Code;
+            public ulong Broken;
         }
     }
 }

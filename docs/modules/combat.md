@@ -178,7 +178,8 @@ without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how
   every section broken it stays as a wreck instead of dying.
 - **Decks.** A section with `deck` carries a `NavAreaPart` of the building's `NavArea`: it stamps its deck while the
   section stands and opens the cells to what lies below (water, for ships) while it is broken. A building with a
-  deck closes no `NavObstaclePart`, since its piers stand under the roadway.
+  deck closes no `NavObstaclePart`, since its piers stand under the roadway: the bake leaves `Section.Closes` off
+  for all its sections, and on for every anchored section of any other building.
 - **Clients.** Only `Sections.Broken` reaches them, as a ghost field on a ghost building and in the scenery change of
   non-ghost scenery (see [networking](../networking.md)). `SectionViewSystem` shows each section's intact or broken
   model from it ([client](client.md#destruction)).

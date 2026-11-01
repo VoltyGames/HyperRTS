@@ -44,15 +44,6 @@ namespace HyperRTS.Presentation.Animation
             material.SetFloat(RowsPerFrameId, rowsPerFrame);
         }
 
-        /// <summary>Turns a LitTeam material's rigid VAT on: pieces moved by the bake's positions and rotations.</summary>
-        public static void SetUpRigidMaterial(Material material, Texture positions, Texture rotations)
-        {
-            material.EnableKeyword(RigidKeyword);
-            material.SetTexture(PositionsId, positions);
-            material.SetTexture(RotationsId, rotations);
-            material.SetFloat(RowsPerFrameId, 1f);
-        }
-
         public static void AddVAT<TWriter>(ref TWriter writer, in VATClipRange start, AABB bounds)
             where TWriter : struct, IEntityWriter
         {

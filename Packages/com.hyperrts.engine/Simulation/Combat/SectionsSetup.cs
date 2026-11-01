@@ -35,19 +35,15 @@ namespace HyperRTS.Simulation.Combat
             writer.Add(new IntactFloors { Count = (byte)floors });
         }
 
-        /// <summary>
-        /// The footprint a building's sections close: each anchored section while it stands, none for a bridge, whose
-        /// banks and deck stay open.
-        /// </summary>
+        /// <summary>The footprint a building's sections close while they stand.</summary>
         public static List<NavObstaclePart> ObstacleParts(IReadOnlyList<Section> sections)
         {
-            var bridge = sections.Any(section => section.Deck);
             var parts = new List<NavObstaclePart>(sections.Count);
             foreach (var section in sections)
             {
                 parts.Add(new NavObstaclePart
                 {
-                    Center = section.Center.xz, Size = section.HalfSize.xz * 2f, Closed = section.Anchored && !bridge,
+                    Center = section.Center.xz, Size = section.HalfSize.xz * 2f, Closed = section.Closes,
                 });
             }
 

@@ -191,14 +191,10 @@ namespace HyperRTS.Simulation.Navigation
             }
 
             var areaParts = SystemAPI.GetBufferLookup<NavAreaPart>(true);
-            foreach (var entity in _areas.ToEntityArray(Allocator.Temp))
+            foreach (var (_, entity) in SystemAPI.Query<RefRO<NavArea>>().WithAll<NavAreaPart, LocalTransform>()
+                         .WithEntityAccess())
             {
-                if (!areaParts.TryGetBuffer(entity, out var pieces))
-                {
-                    continue;
-                }
-
-                foreach (var part in pieces)
+                foreach (var part in areaParts[entity])
                 {
                     signature += part.Open ? math.hash(new float4(part.Center, part.Size)) : 0u;
                 }

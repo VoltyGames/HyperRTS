@@ -28,6 +28,12 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Stands on the ground, so it holds up whatever rests on it.</summary>
         public bool Anchored;
 
+        /// <summary>
+        /// Closes its nav part while it stands: anchored, in a building without a deck, since a bridge's piers stand
+        /// under the roadway.
+        /// </summary>
+        public bool Closes;
+
         /// <summary>An outer wall, which shelters a garrison.</summary>
         public bool Exterior;
 

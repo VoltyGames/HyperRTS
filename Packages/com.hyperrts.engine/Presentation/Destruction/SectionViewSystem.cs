@@ -60,7 +60,10 @@ namespace HyperRTS.Presentation.Destruction
                          .Query<RefRO<Sections>, DynamicBuffer<Section>, DynamicBuffer<SectionModel>,
                              DynamicBuffer<SectionLook>, RefRW<ShownSections>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
-                var context = new Context(entity, sections, models, looks, place.ValueRO, now);
+                var context = new Context
+                {
+                    Entity = entity, Sections = sections, Models = models, Looks = looks, Place = place.ValueRO, Now = now,
+                };
                 Refresh(context, building.ValueRO.Broken, impacts, ref shown.ValueRW);
             }
         }
@@ -88,11 +91,11 @@ namespace HyperRTS.Presentation.Destruction
         private void Refresh(Context at, ulong broken, NativeList<float3> impacts, ref ShownSections shown)
         {
             var quiet = !shown.Seen;
-            var all = at.Models.Length >= 64 ? ~0ul : (1ul << at.Models.Length) - 1ul;
-            var touched = quiet ? all : broken ^ shown.Broken;
+            var changed = broken ^ shown.Broken;
+            var touched = quiet ? Sections.All(at.Models.Length) : changed;
             touched |= quiet ? 0ul : Record(at, impacts, broken);
             touched |= Finished(at, shown.Breaking);
-            touched |= quiet ? 0ul : Unpropped(at, broken ^ shown.Broken, broken, shown.Breaking);
+            touched |= quiet ? 0ul : Unpropped(at, changed, broken, shown.Breaking);
             if (touched != 0ul)
             {
                 var parts = new NativeList<Entity>(Allocator.Temp);
@@ -286,17 +289,6 @@ namespace HyperRTS.Presentation.Destruction
             public DynamicBuffer<SectionLook> Looks;
             public LocalToWorld Place;
             public float Now;
-
-            public Context(Entity entity, DynamicBuffer<Section> sections, DynamicBuffer<SectionModel> models,
-                DynamicBuffer<SectionLook> looks, LocalToWorld place, float now)
-            {
-                Entity = entity;
-                Sections = sections;
-                Models = models;
-                Looks = looks;
-                Place = place;
-                Now = now;
-            }
         }
     }
 }

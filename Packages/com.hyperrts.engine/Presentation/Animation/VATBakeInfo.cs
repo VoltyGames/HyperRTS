@@ -24,7 +24,6 @@ namespace HyperRTS.Presentation.Animation
         public string normals;
         public string rotations;
         public int pieceCount;
-        public int restRow;
         public int width;
         public int height;
         public int rowsPerFrame;

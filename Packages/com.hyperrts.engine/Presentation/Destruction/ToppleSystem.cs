@@ -109,14 +109,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             var group = new NativeList<Entity>(Allocator.Temp);
             RenderHierarchy.Collect(remains, _linked, _children, group);
-            foreach (var member in group)
-            {
-                var direct = _parents.TryGetComponent(member, out var parent) && parent.Value == remains;
-                if (direct)
-                {
-                    parts.Add(new FallPart { Part = member, Rest = _transforms[member] });
-                }
-            }
+            FallPart.Record(remains, group, _parents, _transforms, parts);
         }
 
         /// <summary>Turns the children so the remains show <see cref="ToppleMath.Pose"/>; resting puts them back exactly.</summary>

@@ -73,23 +73,8 @@ namespace HyperRTS.Simulation.Combat
             public Bounds Box(SectionsAuthoring owner, Transform model)
             {
                 var middle = new Vector3(center[0], center[1], center[2]);
-                var half = new Vector3(halfSize[0], halfSize[1], halfSize[2]);
-                var box = new Bounds();
-                for (var corner = 0; corner < 8; corner++)
-                {
-                    var sign = new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f);
-                    var point = owner.transform.InverseTransformPoint(model.TransformPoint(middle + Vector3.Scale(half, sign)));
-                    if (corner == 0)
-                    {
-                        box = new Bounds(point, Vector3.zero);
-                    }
-                    else
-                    {
-                        box.Encapsulate(point);
-                    }
-                }
-
-                return box;
+                var size = 2f * new Vector3(halfSize[0], halfSize[1], halfSize[2]);
+                return SectionShape.Moved(new Bounds(middle, size), owner.transform.worldToLocalMatrix * model.localToWorldMatrix);
             }
 
             /// <summary>The way it faces in the owner's space: the file's for a wall, else away from <paramref name="middle"/>.</summary>

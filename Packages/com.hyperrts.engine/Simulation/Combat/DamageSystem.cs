@@ -207,7 +207,7 @@ namespace HyperRTS.Simulation.Combat
                 PassToPassengers(target, amount, health, hit, from);
                 var scale = CombatMath.ArmorMultiplier(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
                             StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
-                amount = BuildingSections.HasBuffer(target) ? Route(target, hit, from, scale) : amount * scale;
+                amount = BuildingSections.HasBuffer(target) ? Route(target, hit, scale) : amount * scale;
                 var overkill = amount - health.Current;
                 health.Current = Resolved(target, math.max(0f, health.Current - amount));
                 Health[target] = health;

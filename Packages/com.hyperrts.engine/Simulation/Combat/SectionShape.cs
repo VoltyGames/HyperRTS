@@ -57,6 +57,7 @@ namespace HyperRTS.Simulation.Combat
                 total += entry.share;
             }
 
+            var bridge = Array.Exists(entries, entry => entry.deck);
             var sections = new List<Section>(entries.Length);
             foreach (var entry in entries)
             {
@@ -71,6 +72,7 @@ namespace HyperRTS.Simulation.Combat
                     Floor = (byte)entry.floor,
                     Supports = SupportBits(entries, entry.supports),
                     Anchored = entry.anchored,
+                    Closes = entry.anchored && !bridge,
                     Exterior = entry.exterior,
                     Deck = entry.deck,
                     NeedsAllSupports = entry.needsAllSupports,
@@ -79,6 +81,19 @@ namespace HyperRTS.Simulation.Combat
             }
 
             return sections;
+        }
+
+        /// <summary>The box round <paramref name="box"/>'s corners moved by <paramref name="matrix"/>.</summary>
+        public static Bounds Moved(Bounds box, Matrix4x4 matrix)
+        {
+            var moved = new Bounds(matrix.MultiplyPoint3x4(box.min), Vector3.zero);
+            for (var corner = 1; corner < 8; corner++)
+            {
+                var sign = new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f);
+                moved.Encapsulate(matrix.MultiplyPoint3x4(box.center + Vector3.Scale(box.extents, sign)));
+            }
+
+            return moved;
         }
 
         /// <summary>A full share for a wall and half for anything else.</summary>
@@ -155,22 +170,15 @@ namespace HyperRTS.Simulation.Combat
                     continue;
                 }
 
-                var toRoot = _root.worldToLocalMatrix * filter.transform.localToWorldMatrix;
-                var mesh = filter.sharedMesh.bounds;
-                for (var corner = 0; corner < 8; corner++)
+                var box = Moved(filter.sharedMesh.bounds, _root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
+                if (any)
                 {
-                    var sign = new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f,
-                        (corner & 4) == 0 ? -1f : 1f);
-                    var point = toRoot.MultiplyPoint3x4(mesh.center + Vector3.Scale(mesh.extents, sign));
-                    if (any)
-                    {
-                        bounds.Encapsulate(point);
-                    }
-                    else
-                    {
-                        bounds = new Bounds(point, Vector3.zero);
-                        any = true;
-                    }
+                    bounds.Encapsulate(box);
+                }
+                else
+                {
+                    bounds = box;
+                    any = true;
                 }
             }
 

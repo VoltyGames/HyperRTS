@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         private static Section Wall(float3 center, float3 half, int floor = 0, ulong supports = 0) => new()
         {
             Center = center, HalfSize = half, Health = 100f, MaxHealth = 100f, Floor = (byte)floor,
-            Anchored = floor == 0, Exterior = true, Supports = supports, Outward = math.normalizesafe(center * new float3(1f, 0f, 1f)),
+            Anchored = floor == 0, Closes = floor == 0, Exterior = true, Supports = supports, Outward = math.normalizesafe(center * new float3(1f, 0f, 1f)),
         };
 
         /// <summary>

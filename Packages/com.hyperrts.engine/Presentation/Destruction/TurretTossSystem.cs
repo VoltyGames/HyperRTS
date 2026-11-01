@@ -69,6 +69,7 @@ namespace HyperRTS.Presentation.Destruction
             var linked = GetBufferLookup<LinkedEntityGroup>(true);
             var children = GetBufferLookup<Child>(true);
             var parents = GetComponentLookup<Parent>(true);
+            var transforms = GetComponentLookup<LocalTransform>(true);
             var members = new NativeList<Entity>(Allocator.Temp);
             foreach (var entity in entities)
             {
@@ -80,14 +81,7 @@ namespace HyperRTS.Presentation.Destruction
                 }
 
                 RenderHierarchy.Collect(entity, linked, children, members);
-                var parts = SystemAPI.GetBuffer<FallPart>(entity);
-                foreach (var member in members)
-                {
-                    if (parents.TryGetComponent(member, out var parent) && parent.Value == entity)
-                    {
-                        parts.Add(new FallPart { Part = member, Rest = SystemAPI.GetComponent<LocalTransform>(member) });
-                    }
-                }
+                FallPart.Record(entity, members, parents, transforms, SystemAPI.GetBuffer<FallPart>(entity));
             }
         }
 

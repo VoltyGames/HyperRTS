@@ -30,7 +30,6 @@ namespace HyperRTS.Presentation.Tests.Animation
             ""width"": 453,
             ""pieceCount"": 453,
             ""height"": 259,
-            ""restRow"": 0,
             ""clips"": [ { ""name"": ""Wall_In"", ""startRow"": 1, ""frameCount"": 76, ""fps"": 30, ""loop"": false } ],
             ""boundsMin"": [-1, -1, -1],
             ""boundsMax"": [1, 1, 1]

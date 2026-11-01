@@ -34,9 +34,6 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Breaks so far, which numbers each <see cref="Section.BreakOrder"/>.</summary>
         public int Breaks;
 
-        /// <summary>Heading of the last hit (<see cref="ToppleMath"/>), which picks the way a section blows.</summary>
-        public byte Side;
-
         /// <summary>Heap left at the foot of a broken ground-floor outer wall; <c>Entity.Null</c> for none.</summary>
         public Entity Rubble;
 
@@ -91,6 +88,9 @@ namespace HyperRTS.Simulation.Combat
             return dealt;
         }
 
+        /// <summary>The mask with a bit for each of <paramref name="count"/> sections.</summary>
+        public static ulong All(int count) => count >= 64 ? ~0ul : (1ul << count) - 1ul;
+
         /// <summary>Standing sections that reach an anchor through standing supports.</summary>
         public static ulong Supported(DynamicBuffer<Section> sections)
         {
@@ -134,32 +134,9 @@ namespace HyperRTS.Simulation.Combat
             return due != 0 ? due : Falling;
         }
 
-        /// <summary>
-        /// Whether section <paramref name="index"/> closes its nav part: on the ground and not broken. A building with
-        /// a deck closes none, since its piers stand under the roadway.
-        /// </summary>
-        public readonly bool Blocks(DynamicBuffer<Section> sections, int index)
-        {
-            if (sections[index].Anchored && (Broken & (1ul << index)) == 0)
-            {
-                return !HasDeck(sections);
-            }
-
-            return false;
-        }
-
-        private static bool HasDeck(DynamicBuffer<Section> sections)
-        {
-            foreach (var section in sections)
-            {
-                if (section.Deck)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        /// <summary>Whether section <paramref name="index"/> closes its nav part: one that <see cref="Section.Closes"/>, not broken.</summary>
+        public readonly bool Blocks(DynamicBuffer<Section> sections, int index) =>
+            sections[index].Closes && (Broken & (1ul << index)) == 0;
 
         /// <summary>Floors, a bit each, that lost a section to a fall.</summary>
         public readonly byte FallenFloors(DynamicBuffer<Section> sections)

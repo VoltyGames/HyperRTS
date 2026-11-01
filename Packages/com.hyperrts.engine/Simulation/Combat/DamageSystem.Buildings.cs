@@ -31,14 +31,13 @@ namespace HyperRTS.Simulation.Combat
             }
 
             /// <summary>The hit on a sectioned building's sections, in its space; returns the damage dealt.</summary>
-            private float Route(Entity target, in DamageEvent hit, float3 from, float scale)
+            private float Route(Entity target, in DamageEvent hit, float scale)
             {
                 var transform = Transforms[target];
                 var building = Buildings[target];
                 var dealt = building.Route(BuildingSections[target], SectionFactors[target], hit,
                     transform.InverseTransformPoint(hit.Origin), transform.InverseTransformPoint(hit.Position), scale,
                     target == hit.Target);
-                building.Side = ToppleMath.Quantize(from, transform.Position);
                 Buildings[target] = building;
                 return dealt;
             }

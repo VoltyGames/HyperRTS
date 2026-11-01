@@ -96,8 +96,7 @@ namespace HyperRTS.Simulation.Combat
             private void Check(ref Sections building, DynamicBuffer<Section> sections)
             {
                 building.Checked = building.Broken;
-                var all = sections.Length == 64 ? ~0ul : (1ul << sections.Length) - 1;
-                building.Falling = all & ~building.Broken & ~Combat.Sections.Supported(sections);
+                building.Falling = Combat.Sections.All(sections.Length) & ~building.Broken & ~Combat.Sections.Supported(sections);
                 if (building.Falling == 0)
                 {
                     building.NextFall = 0;

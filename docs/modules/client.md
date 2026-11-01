@@ -206,12 +206,11 @@ render bounds to cover every frame. It fails the bake when the material and tabl
 
 A bake whose bake info says `"layout": "rigid"` moves whole pieces instead of vertices (a sectioned building's
 walls and roofs breaking). It names a `rotations` texture beside `positions`, with `pieceCount` columns (the `width`),
-one row per frame (`rowsPerFrame` defaults to 1) and `restRow`, the frame every piece sits in at rest. A mesh vertex
+one row per frame (`rowsPerFrame` defaults to 1) and row 0 the frame every piece sits in at rest. A mesh vertex
 holds its piece's column in UV1's u. The material turns on `_VAT_RIGID` instead of `_VAT`, with the two textures:
 the vertex moves to the piece's position for the frame, turned by its rotation quaternion about where the rest row
-has it, and normals only turn. There is no fade between clips. `VATAnimatedAuthoring.SetUpRigidMaterial` sets a
-material up, and `VATSubmeshBakingSystem` gives the extra material entities of a multi-material renderer the same
-clip components.
+has it, and normals only turn. There is no fade between clips. `VATSubmeshBakingSystem` gives the extra material
+entities of a multi-material renderer the same clip components.
 
 Game code plays clips with `VATClip.Play(range, now, ref fade)`, using `SystemAPI.Time.ElapsedTime` as `now`. Every
 switch freezes the pose that was showing into the `VATFade` component, and the shader blends from it to the new clip

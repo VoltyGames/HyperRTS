@@ -1,5 +1,4 @@
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Common
 {
@@ -16,7 +15,5 @@ namespace HyperRTS.Simulation.Common
 
         /// <summary>Fallen floors whose passengers are already out, kept by the container.</summary>
         public byte Emptied;
-
-        public readonly int Standing => Count - math.countbits((uint)Fallen);
     }
 }
