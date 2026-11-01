@@ -1,6 +1,5 @@
 ﻿using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
@@ -27,9 +26,8 @@ namespace HyperRTS.Simulation.Combat
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
         private ComponentLookup<ActiveOrder> _orders;
-        private ComponentLookup<MoveDestination> _moves;
+        private MoveLookup _moves;
         private ComponentLookup<Ammo> _ammo;
-        private ComponentLookup<Deployable> _deployables;
         private BufferLookup<WeaponMount> _mounts;
 
         [BurstCompile]
@@ -38,9 +36,8 @@ namespace HyperRTS.Simulation.Combat
             _targets = new TargetLookup(ref state);
             _fogQuery = TargetLookup.FogQuery(ref state);
             _orders = state.GetComponentLookup<ActiveOrder>(true);
-            _moves = state.GetComponentLookup<MoveDestination>();
+            _moves = new MoveLookup(ref state);
             _ammo = state.GetComponentLookup<Ammo>(true);
-            _deployables = state.GetComponentLookup<Deployable>(true);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
             state.RequireForUpdate<FactionRelations>();
         }
@@ -52,7 +49,6 @@ namespace HyperRTS.Simulation.Combat
             _orders.Update(ref state);
             _moves.Update(ref state);
             _ammo.Update(ref state);
-            _deployables.Update(ref state);
             _mounts.Update(ref state);
 
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
@@ -65,7 +61,6 @@ namespace HyperRTS.Simulation.Combat
                 Traits = traits,
                 Moves = _moves,
                 AmmoLookup = _ammo,
-                Deployables = _deployables,
                 Mounts = _mounts,
             }.ScheduleParallel();
         }
@@ -79,11 +74,8 @@ namespace HyperRTS.Simulation.Combat
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
-            [ReadOnly] public ComponentLookup<Deployable> Deployables;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
-
-            // Each entity writes only its own MoveDestination.
-            [NativeDisableParallelForRestriction] public ComponentLookup<MoveDestination> Moves;
+            public MoveLookup Moves;
 
             private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in VisionRange vision,
                 in Faction faction, ref CombatStance stance, ref AttackTarget attack, EnabledRefRW<AttackTarget> attacking)
@@ -92,7 +84,7 @@ namespace HyperRTS.Simulation.Combat
                 if (!attacking.ValueRO)
                 {
                     // Attack-movers carry their post along, so a defensive leash is measured from where they engage.
-                    var standing = order.Type == OrderType.None && !IsMoving(entity);
+                    var standing = order.Type == OrderType.None && !Moves.IsMoving(entity);
                     if (standing || Traits.Has(order.Type, OrderTraits.EngagesWhileMoving))
                     {
                         stance.ReturnPoint = transform.Position;
@@ -146,7 +138,7 @@ namespace HyperRTS.Simulation.Combat
                 }
                 else if (attack.Gap <= reach)
                 {
-                    Halt(entity);
+                    Moves.Halt(entity);
                 }
                 else
                 {
@@ -173,7 +165,7 @@ namespace HyperRTS.Simulation.Combat
             private bool ShouldLeash(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
                 in CombatStance stance, Entity target, float gap, float reach)
             {
-                if (stance.Value == Stance.HoldPosition || !Mobile(entity))
+                if (stance.Value == Stance.HoldPosition || !Moves.IsMobile(entity))
                 {
                     return gap > reach;
                 }
@@ -189,31 +181,12 @@ namespace HyperRTS.Simulation.Combat
             {
                 var reach = weapon.Range;
                 floor = weapon.MinRange;
-                if (!Mounts.TryGetBuffer(entity, out var mounts))
+                if (Mounts.TryGetBuffer(entity, out var mounts))
                 {
-                    return reach;
-                }
-
-                foreach (var mount in mounts)
-                {
-                    if (JoinsAttack(mount, target))
-                    {
-                        reach = math.max(reach, mount.Weapon.Range);
-                        floor = math.min(floor, mount.Weapon.MinRange);
-                    }
+                    WeaponMount.ExtendReach(mounts, Targets, target, ref reach, ref floor);
                 }
 
                 return reach;
-            }
-
-            private bool JoinsAttack(in WeaponMount mount, Entity target)
-            {
-                if (mount.Independent || !mount.Ready)
-                {
-                    return false;
-                }
-
-                return Targets.CanHurt(target, mount.Weapon);
             }
 
             private void Release(Entity entity, in Order order, in CombatStance stance, ref AttackTarget attack,
@@ -223,7 +196,7 @@ namespace HyperRTS.Simulation.Combat
                 attack.BackingOff = false;
                 attacking.ValueRW = false;
 
-                if (!Mobile(entity))
+                if (!Moves.IsMobile(entity))
                 {
                     return;
                 }
@@ -231,20 +204,19 @@ namespace HyperRTS.Simulation.Combat
                 // Only idle defenders head home. Moves and escorts halt, and their order systems pick up again.
                 if (order.Type == OrderType.None && stance.Value == Stance.Defensive)
                 {
-                    MoveTo(entity, stance.ReturnPoint);
+                    Moves.MoveTo(entity, stance.ReturnPoint);
                 }
                 else
                 {
-                    Halt(entity);
+                    Moves.Halt(entity);
                 }
             }
 
             private void Chase(Entity entity, float3 targetPosition)
             {
-                if (Mobile(entity))
+                if (Moves.IsMobile(entity))
                 {
-                    Moves.GetRefRW(entity).ValueRW.MoveTo(Moves.GetEnabledRefRW<MoveDestination>(entity), targetPosition,
-                        RepathDistance);
+                    Moves.MoveTo(entity, targetPosition, RepathDistance);
                 }
             }
 
@@ -253,10 +225,10 @@ namespace HyperRTS.Simulation.Combat
             {
                 if (attack.BackingOff)
                 {
-                    return attack.Gap < middle && IsMoving(entity);
+                    return attack.Gap < middle && Moves.IsMoving(entity);
                 }
 
-                return attack.Gap < floor && Mobile(entity);
+                return attack.Gap < floor && Moves.IsMobile(entity);
             }
 
             /// <summary>Retreats straight away from the target to <paramref name="gap"/> edge to edge.</summary>
@@ -266,23 +238,8 @@ namespace HyperRTS.Simulation.Combat
                 var level = new float3(position.x - from.x, 0f, position.z - from.z);
                 var away = math.normalizesafe(level, new float3(0f, 0f, -1f));
                 var goal = from + away * (gap + Targets.Radius(entity) + Targets.Radius(target));
-                Moves.GetRefRW(entity).ValueRW.MoveTo(Moves.GetEnabledRefRW<MoveDestination>(entity), goal, RepathDistance);
+                Moves.MoveTo(entity, goal, RepathDistance);
             }
-
-            private void Halt(Entity entity)
-            {
-                if (Moves.HasComponent(entity))
-                {
-                    Moves.SetComponentEnabled(entity, false);
-                }
-            }
-
-            private void MoveTo(Entity entity, float3 goal) =>
-                Moves.GetRefRW(entity).ValueRW.MoveTo(Moves.GetEnabledRefRW<MoveDestination>(entity), goal);
-
-            private bool IsMoving(Entity entity) => Moves.HasEnabled(entity);
-
-            private bool Mobile(Entity entity) => Moves.HasComponent(entity) && !Deployable.IsImmobile(Deployables, entity);
 
             private Order CurrentOrder(Entity entity) => Orders.HasEnabled(entity) ? Orders[entity].Value : default;
         }

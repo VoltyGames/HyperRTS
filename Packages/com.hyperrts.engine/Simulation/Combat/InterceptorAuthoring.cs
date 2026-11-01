@@ -92,16 +92,14 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>The baked interceptor, with its muzzle and pivots relative to <paramref name="root"/>.</summary>
         public Interceptor Bake(IBaker baker, Transform root)
         {
-            var aim = new Weapon
+            var aim = new WeaponAim
             {
-                Cooldown = 1f / engagementsPerSecond,
                 Turreted = true,
                 TraverseRate = math.radians(aimSpeed),
                 ElevationRate = math.radians(aimSpeed),
                 MinPitch = math.radians(minElevation),
                 MaxPitch = math.radians(maxElevation),
                 AimTolerance = math.radians(aimTolerance),
-                NeedsDeploy = needsDeploy,
             };
             aim.BakeSockets(baker, root, muzzle, turret, barrel);
             return new Interceptor
@@ -110,6 +108,8 @@ namespace HyperRTS.Simulation.Combat
                 KillChance = killChance,
                 Kinds = kinds,
                 Aim = aim,
+                Cooldown = 1f / engagementsPerSecond,
+                NeedsDeploy = needsDeploy,
                 Pose = (byte)Pose,
                 Ammo = Ammo.Create(rounds, reloadTime, AmmoRefill.Round),
             };

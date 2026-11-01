@@ -94,10 +94,10 @@ namespace HyperRTS.Simulation.Tests.Combat
             var turret = _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f,
                 projectile: _world.ProjectilePrefab(), turreted: true);
             var weapon = _world.Get<Weapon>(turret);
-            weapon.Muzzle = new float3(0f, 1f, 3f);
-            weapon.HasMuzzle = true;
-            weapon.TurretPivot = new float3(0f, 1f, 0f);
-            weapon.BarrelPivot = weapon.Muzzle;
+            weapon.Aim.Muzzle = new float3(0f, 1f, 3f);
+            weapon.Aim.HasMuzzle = true;
+            weapon.Aim.TurretPivot = new float3(0f, 1f, 0f);
+            weapon.Aim.BarrelPivot = weapon.Aim.Muzzle;
             _world.EntityManager.SetComponentData(turret, weapon);
             _world.SpawnUnit(2, new float3(7f, 0f, 0f));
 

@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Combat
                 var weapon = authoring.stats.Bake(this, authoring.transform, muzzles);
                 weapon.AcquireRange = authoring.acquireRange;
                 weapon.LeashFactor = authoring.leashFactor;
-                weapon.Turreted = authoring.AimsTurret;
+                weapon.Aim.Turreted = authoring.AimsTurret;
 
                 var writer = new BakerWriter(this, entity);
                 var poses = authoring.WeaponPoses + (GetComponent<InterceptorAuthoring>() != null ? 1 : 0);

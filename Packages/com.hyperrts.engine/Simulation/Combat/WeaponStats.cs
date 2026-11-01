@@ -154,23 +154,26 @@ namespace HyperRTS.Simulation.Combat
                     : Entity.Null,
                 ProjectileSpeed = projectileSpeed,
                 ProjectileKind = projectileKind,
-                ProjectileHeight = projectileHeight,
                 Targets = targets,
                 MinEffect = minEffect,
-                Trajectory = trajectory,
-                ArcHeight = arcHeight,
                 MinRange = minRange,
-                TraverseRate = math.radians(traverseSpeed),
-                ElevationRate = math.radians(elevationSpeed),
-                MinPitch = math.radians(minElevation),
-                MaxPitch = math.radians(maxElevation),
-                AimTolerance = math.radians(aimTolerance),
                 SalvoSize = salvoSize,
                 SalvoInterval = salvoInterval,
                 Spread = spread,
                 NeedsDeploy = needsDeploy,
+                Aim = new WeaponAim
+                {
+                    TraverseRate = math.radians(traverseSpeed),
+                    ElevationRate = math.radians(elevationSpeed),
+                    MinPitch = math.radians(minElevation),
+                    MaxPitch = math.radians(maxElevation),
+                    AimTolerance = math.radians(aimTolerance),
+                    ProjectileHeight = projectileHeight,
+                    Trajectory = trajectory,
+                    ArcHeight = arcHeight,
+                },
             };
-            weapon.BakeSockets(baker, root, muzzle, turret, barrel);
+            weapon.Aim.BakeSockets(baker, root, muzzle, turret, barrel);
             BakeMuzzles(baker, root, muzzles, ref weapon);
             return weapon;
         }
@@ -189,7 +192,7 @@ namespace HyperRTS.Simulation.Combat
 
             weapon.FirstMuzzle = (byte)muzzles.Count;
             weapon.MuzzleCount = (byte)(1 + extraMuzzles.Count);
-            muzzles.Add(new WeaponMuzzle { Point = weapon.Muzzle });
+            muzzles.Add(new WeaponMuzzle { Point = weapon.Aim.Muzzle });
             foreach (var extra in extraMuzzles)
             {
                 muzzles.Add(new WeaponMuzzle { Point = AuthoringBehaviour.Socket(baker, root, extra) });

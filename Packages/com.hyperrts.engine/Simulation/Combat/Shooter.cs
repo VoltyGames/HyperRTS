@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Combat
         /// </summary>
         public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction)
         {
-            if (Deployable.Holds(_deployables, shooter, weapon))
+            if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy))
             {
                 weapon.EndSalvo();
                 return false;
@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Combat
             var shot = weapon;
             if (weapon.MuzzleCount > 1)
             {
-                shot.Muzzle = _muzzles[shooter][weapon.FirstMuzzle + weapon.NextMuzzle].Point;
+                shot.Aim.Muzzle = _muzzles[shooter][weapon.FirstMuzzle + weapon.NextMuzzle].Point;
                 weapon.NextMuzzle = (byte)((weapon.NextMuzzle + 1) % weapon.MuzzleCount);
             }
 
@@ -96,14 +96,14 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>A hull-fixed weapon fires as the hull faces; a turret once its pose points at the target.</summary>
         private bool Aimed(Entity shooter, in Weapon weapon, byte pose, Entity target)
         {
-            if (!weapon.Turreted)
+            if (!weapon.Aim.Turreted)
             {
                 return true;
             }
 
             var aimed = _poses[shooter][pose];
-            var aim = weapon.AimPoint(_transforms[target].Position);
-            return weapon.Aligned(aimed, weapon.AimAngles(_transforms[shooter], aimed, aim));
+            var aim = weapon.Aim.TargetPoint(_transforms[target].Position);
+            return weapon.Aim.Aligned(aimed, weapon.Aim.Angles(_transforms[shooter], aimed, aim));
         }
 
         /// <summary>Fires the weapon at <see cref="WeaponPose"/> index <paramref name="pose"/>, counting the shot there.</summary>
@@ -120,8 +120,8 @@ namespace HyperRTS.Simulation.Combat
             if (TryFindPort(shooter, targetPosition, out var port))
             {
                 place = port;
-                shot.HasMuzzle = true;
-                shot.Muzzle = float3.zero;
+                shot.Aim.HasMuzzle = true;
+                shot.Aim.Muzzle = float3.zero;
                 fired.YawAngle = 0f;
                 fired.PitchAngle = 0f;
             }
@@ -129,7 +129,7 @@ namespace HyperRTS.Simulation.Combat
             PlayFire(shooter, shot, fired, pose, place, targetPosition, faction);
             if (weapon.ProjectilePrefab == Entity.Null)
             {
-                var origin = shot.HitOrigin(place, fired);
+                var origin = shot.Aim.HitOrigin(place, fired);
                 var hit = weapon.Hit(shooter, faction, origin, target, targetPosition);
                 _damage.Add(hit);
                 var along = math.normalizesafe(targetPosition - origin, place.Forward());
@@ -165,7 +165,7 @@ namespace HyperRTS.Simulation.Combat
         {
             var toward = targetPosition - transform.Position;
             toward.y = 0f;
-            weapon.PlayFire(ref _cues, shooter, transform, aimed, math.normalizesafe(toward, transform.Forward()), faction,
+            weapon.Aim.PlayFire(ref _cues, shooter, transform, aimed, math.normalizesafe(toward, transform.Forward()), faction,
                 pose);
         }
 
@@ -180,20 +180,20 @@ namespace HyperRTS.Simulation.Combat
         private void Launch(Entity shooter, in Weapon weapon, in WeaponPose pose, in LocalTransform place,
             Entity target, float3 targetPosition, byte faction)
         {
-            var origin = weapon.LaunchPoint(place, pose);
+            var origin = weapon.Aim.LaunchPoint(place, pose);
             var seed = math.hash(new uint3((uint)shooter.Index, (uint)target.Index, pose.Shots));
-            var aim = weapon.Scatter(weapon.AimPoint(targetPosition), seed);
+            var aim = weapon.Scatter(weapon.Aim.TargetPoint(targetPosition), seed);
 
             var flight = new Projectile
             {
                 Speed = weapon.ProjectileSpeed,
-                Height = weapon.ProjectileHeight,
+                Height = weapon.Aim.ProjectileHeight,
                 ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
                 Hit = weapon.Hit(shooter, faction, origin, weapon.KeepsLock ? target : Entity.Null, aim),
-                Trajectory = weapon.Trajectory,
+                Trajectory = weapon.Aim.Trajectory,
                 Kind = weapon.ProjectileKind,
                 Start = origin,
-                Apex = weapon.ArcHeight * math.distance(origin.xz, aim.xz),
+                Apex = weapon.Aim.ArcHeight * math.distance(origin.xz, aim.xz),
             };
             var heading = flight.Arcs ? flight.Heading() : aim - origin;
 

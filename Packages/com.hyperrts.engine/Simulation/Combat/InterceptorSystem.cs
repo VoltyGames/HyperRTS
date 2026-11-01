@@ -109,14 +109,14 @@ namespace HyperRTS.Simulation.Combat
             {
                 interceptor.Tick(DeltaTime);
                 var inRange = false;
-                var held = Deployable.Holds(Deployables, entity, interceptor.Aim);
+                var held = Deployable.Holds(Deployables, entity, interceptor.NeedsDeploy);
                 var target = held ? -1 : Nearest(interceptor, place.Position, faction.Value, out inRange);
                 var pose = poses[interceptor.Pose];
                 // Idle, it turns back to straight ahead and level.
                 var angles = float2.zero;
                 if (target >= 0)
                 {
-                    angles = interceptor.Aim.AimAngles(place, pose, Candidates[target].Position);
+                    angles = interceptor.Aim.Angles(place, pose, Candidates[target].Position);
                 }
 
                 interceptor.Aim.Turn(ref pose, angles, DeltaTime);

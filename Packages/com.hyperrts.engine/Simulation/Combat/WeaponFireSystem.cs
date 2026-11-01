@@ -103,8 +103,8 @@ namespace HyperRTS.Simulation.Combat
                 }
 
                 // A garrisoned passenger fires out of any side of its building without turning.
-                var turnsHull = Units.HasComponent(entity) && !weapon.Turreted && !InsideLookup.HasEnabled(entity);
-                if (turnsHull && !Face(entity, Transforms[target].Position, weapon.AimTolerance))
+                var turnsHull = Units.HasComponent(entity) && !weapon.Aim.Turreted && !InsideLookup.HasEnabled(entity);
+                if (turnsHull && !Face(entity, Transforms[target].Position, weapon.Aim.AimTolerance))
                 {
                     return;
                 }

@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Combat
         [ReadOnly] private ComponentLookup<Inside> _inside;
         [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
-        [ReadOnly] private BufferLookup<ArmorModifier> _armor;
+        private DamageFactors _damage;
         [ReadOnly] private FogOfWar _fog;
 
         public TargetLookup(ref SystemState state)
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Combat
             _inside = state.GetComponentLookup<Inside>(true);
             _stealthed = state.GetComponentLookup<Stealthed>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
-            _armor = state.GetBufferLookup<ArmorModifier>(true);
+            _damage = new DamageFactors(ref state);
             FogQuery(ref state).TryGetSingleton(out _fog);
         }
 
@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Combat
             _inside.Update(ref state);
             _stealthed.Update(ref state);
             _destructibles.Update(ref state);
-            _armor.Update(ref state);
+            _damage.Update(ref state);
             fog.TryGetSingleton(out _fog);
         }
 
@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>The target's armor lets the weapon's damage type through at <see cref="Weapon.MinEffect"/> or more.</summary>
         public bool Affects(Entity target, in Weapon weapon) =>
-            weapon.MinEffect <= 0f || ArmorModifier.Against(_armor, target, weapon.DamageType) >= weapon.MinEffect;
+            weapon.MinEffect <= 0f || _damage.Armor(target, weapon.DamageType) >= weapon.MinEffect;
 
         /// <summary>Stealthed and outside every detector of the team (see <see cref="FogOfWar.IsHiddenByStealth"/>).</summary>
         // Stealth first, so unstealthed candidates skip the transform lookup.

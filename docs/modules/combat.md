@@ -22,7 +22,8 @@ queue, so armor, splash and kill credit apply to all of them.
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
 | `LastAttacker` | Who gets the kill credit |
 
-Idle units look for targets every 4th frame. `DamageSystem` applies all damage last in the combat phase.
+Idle units look for targets every 4th frame. `DamageSystem` applies all damage last in the combat phase, scaled by
+`DamageFactors` (armor by type and side, then damage taken), which `TargetLookup` also reads for `MinEffect`.
 
 The primary `Weapon` sets how a unit engages, and orders and the AI read only it. Extra weapons in
 `WeaponAuthoring.extraWeapons` become `WeaponMount`s that fire at the unit's target when they can hit it, and the
@@ -70,7 +71,8 @@ in, and backs off to mid range when ordered to attack one.
 Each weapon has a `WeaponPose`: yaw relative to the hull, pitch and a wrapping shot count, three bytes per weapon that
 clients read to aim turrets and play recoil. `WeaponPoseSystem` turns them toward the weapon's target at the
 weapon's traverse and elevation speeds, within its elevation limits and lifted to the launch angle for arcs, and turns
-idle ones back to centre. It runs before firing. A `Turreted` weapon, and every extra weapon, fires without turning
+idle ones back to centre. It runs before firing. The pivots, rates, limits and muzzle sit in the weapon's `WeaponAim`,
+which an interceptor holds too. A `Turreted` weapon, and every extra weapon, fires without turning
 the hull and only once its pose is within `aimTolerance` of the target. A unit's hull-fixed primary weapon sets a
 `FacingGoal` instead, and movement turns the parked hull toward it at its `Locomotion` turn rate, never swinging a long
 hull into a closed cell. The weapon fires once the hull is within `aimTolerance` of the target. Buildings never turn,
@@ -151,7 +153,7 @@ a new section's share is guessed as above. A section either has a broken model o
 the baker reads the sections' stored boxes and `clips`, never the file, so the prefab is the only bake input. Pieces
 without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how they show.
 
-- **Hits.** `DamageSystem` hands a hit on a sectioned building to `Sections.Route`. A direct hit lands in full on the
+- **Hits.** `DamageSystem` hands a hit on a sectioned building to `Sections.Route` through `SectionDamage`. A direct hit lands in full on the
   first section the line from its origin to its point enters (else the nearest), and its splash on the others in
   reach. Splash from a hit elsewhere reaches every section within its radius with the usual falloff. Each section's
   material multiplies the damage after the building's own armor. A section at 0 health breaks and takes the next

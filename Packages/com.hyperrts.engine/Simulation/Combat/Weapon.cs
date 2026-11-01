@@ -1,9 +1,6 @@
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -25,9 +22,6 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>What interceptors see its projectiles as.</summary>
         public ProjectileKind ProjectileKind;
 
-        /// <summary>Height above the shooter's and target's pivots that projectiles fly at; 0 flies pivot to pivot.</summary>
-        public float ProjectileHeight;
-
         public float AcquireRange;
 
         /// <summary>Auto-acquired targets are dropped beyond this multiple of the acquire range.</summary>
@@ -39,36 +33,11 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Targets whose armor multiplier for this damage type falls below it are never picked; 0 picks all.</summary>
         public float MinEffect;
 
-        /// <summary>Shot spawn point in the shooter's local space, used when <see cref="HasMuzzle"/>.</summary>
-        public float3 Muzzle;
-
-        public bool HasMuzzle;
-
-        public Trajectory Trajectory;
-
-        /// <summary>Apex of an arcing shot as a fraction of the launch-to-aim ground distance.</summary>
-        public float ArcHeight;
+        /// <summary>Where it points and where its shots leave from.</summary>
+        public WeaponAim Aim;
 
         /// <summary>Targets closer than this, edge to edge, can't be hit.</summary>
         public float MinRange;
-
-        /// <summary>A turret aims instead of the hull turning to fire, and fires once it is on target.</summary>
-        public bool Turreted;
-
-        /// <summary>Radians per second the pose turns and raises.</summary>
-        public float TraverseRate;
-        public float ElevationRate;
-
-        /// <summary>Elevation limits in radians, within the pose's -96 to 95 degrees.</summary>
-        public float MinPitch;
-        public float MaxPitch;
-
-        /// <summary>Radians off target, per axis, a turret or a hull-fixed weapon's hull may fire at.</summary>
-        public float AimTolerance;
-
-        /// <summary>Points in the shooter's space the muzzle traverses and elevates about.</summary>
-        public float3 TurretPivot;
-        public float3 BarrelPivot;
 
         /// <summary>Shots per salvo, <see cref="SalvoInterval"/> seconds apart, before the cooldown; 1 fires singly.</summary>
         public int SalvoSize;
@@ -81,7 +50,7 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Metres around the aim point a ballistic shot lands at random; homing shots ignore it.</summary>
         public float Spread;
 
-        /// <summary>Muzzles fired in turn from the shooter's <see cref="WeaponMuzzle"/>s; up to 1 uses <see cref="Muzzle"/>.</summary>
+        /// <summary>Muzzles fired in turn from the shooter's <see cref="WeaponMuzzle"/>s; up to 1 uses <see cref="WeaponAim.Muzzle"/>.</summary>
         public byte MuzzleCount;
 
         public byte FirstMuzzle;
@@ -156,7 +125,7 @@ namespace HyperRTS.Simulation.Combat
         /// A homing shot keeps its target only without a <see cref="Spread"/>: one with a spread flies to its scattered
         /// point instead, as a rocket ripple saturates an area. Ballistic shells keep it while it stays put.
         /// </summary>
-        public bool KeepsLock => Spread <= 0f || Trajectory == Trajectory.Ballistic;
+        public bool KeepsLock => Spread <= 0f || Aim.Trajectory == Trajectory.Ballistic;
 
         /// <summary><paramref name="aim"/> moved to a random point within <see cref="Spread"/>.</summary>
         public float3 Scatter(float3 aim, uint seed)
@@ -169,76 +138,6 @@ namespace HyperRTS.Simulation.Combat
             var random = Random.CreateFromIndex(seed);
             var offset = random.NextFloat2Direction() * Spread * math.sqrt(random.NextFloat());
             return aim + new float3(offset.x, 0f, offset.y);
-        }
-
-        /// <summary>Where a projectile starts: the posed muzzle, else <see cref="ProjectileHeight"/> above the pivot.</summary>
-        public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose) =>
-            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
-
-        /// <summary>Plays the Fire cue at the posed muzzle, else at the shooter's Fire socket or pivot.</summary>
-        public void PlayFire(ref CueWriter cues, Entity shooter, in LocalTransform place, in WeaponPose pose,
-            float3 direction, byte faction, byte variant)
-        {
-            if (HasMuzzle)
-            {
-                cues.PlayAt(shooter, CueSlot.Fire, LaunchPoint(place, pose), direction, faction, variant);
-                return;
-            }
-
-            cues.Play(shooter, CueSlot.Fire, place, direction, faction, variant);
-        }
-
-        /// <summary>Where the weapon aims on a target standing at <paramref name="target"/>.</summary>
-        public float3 AimPoint(float3 target) => target + new float3(0f, ProjectileHeight, 0f);
-
-        /// <summary>Where an instant hit comes from, for directional armor.</summary>
-        public float3 HitOrigin(in LocalTransform shooter, in WeaponPose pose) =>
-            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position;
-
-        /// <summary>Bakes the muzzle and pivots from child transforms of <paramref name="root"/>; a missing barrel pivots at the muzzle.</summary>
-        public void BakeSockets(IBaker baker, UnityEngine.Transform root, UnityEngine.Transform muzzle,
-            UnityEngine.Transform turret, UnityEngine.Transform barrel)
-        {
-            if (muzzle != null)
-            {
-                Muzzle = AuthoringBehaviour.Socket(baker, root, muzzle);
-                HasMuzzle = true;
-            }
-
-            TurretPivot = AuthoringBehaviour.Socket(baker, root, turret);
-            BarrelPivot = barrel != null ? AuthoringBehaviour.Socket(baker, root, barrel) : Muzzle;
-        }
-
-        /// <summary>The muzzle raised about the barrel pivot, then turned about the turret pivot.</summary>
-        public float3 PosedMuzzle(in WeaponPose pose)
-        {
-            var raised = BarrelPivot + math.rotate(quaternion.AxisAngle(math.right(), -pose.PitchAngle), Muzzle - BarrelPivot);
-            return TurretPivot + math.rotate(quaternion.AxisAngle(math.up(), pose.YawAngle), raised - TurretPivot);
-        }
-
-        /// <summary>Yaw and pitch that point the posed weapon at <paramref name="aim"/>; a hull-fixed weapon keeps yaw 0.</summary>
-        public float2 AimAngles(in LocalTransform shooter, in WeaponPose pose, float3 aim)
-        {
-            var from = LaunchPoint(shooter, pose);
-            var local = math.rotate(math.inverse(shooter.Rotation), aim - from);
-            var yaw = Turreted ? math.atan2(local.x, local.z) : 0f;
-            return new float2(yaw, math.clamp(Elevation(from, aim), MinPitch, MaxPitch));
-        }
-
-        /// <summary>Turns <paramref name="pose"/> toward <paramref name="angles"/> at the traverse and elevation rates.</summary>
-        public void Turn(ref WeaponPose pose, float2 angles, float deltaTime) =>
-            pose.Turn(angles, new float2(TraverseRate, ElevationRate) * deltaTime);
-
-        /// <summary>The pose points within <see cref="AimTolerance"/> of <paramref name="angles"/> on both axes.</summary>
-        public bool Aligned(in WeaponPose pose, float2 angles) => math.all(pose.Gap(angles) <= AimTolerance);
-
-        /// <summary>Radians above level to fire from <paramref name="from"/> at <paramref name="aim"/>, lobbed if arcing.</summary>
-        public float Elevation(float3 from, float3 aim)
-        {
-            var ground = math.max(math.distance(from.xz, aim.xz), 0.01f);
-            var slope = (aim.y - from.y) / ground;
-            // An arc of apex ArcHeight times the ground distance leaves at a slope of 4 ArcHeight above the chord.
-            return math.atan(Trajectory == Trajectory.Direct ? slope : slope + 4f * ArcHeight);
         }
     }
 }

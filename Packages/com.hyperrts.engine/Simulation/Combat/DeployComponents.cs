@@ -58,9 +58,9 @@ namespace HyperRTS.Simulation.Combat
         }
 
         /// <summary>A weapon that needs deployment holds fire until its unit is deployed.</summary>
-        public static bool Holds(in ComponentLookup<Deployable> lookup, Entity unit, in Weapon weapon)
+        public static bool Holds(in ComponentLookup<Deployable> lookup, Entity unit, bool needsDeploy)
         {
-            if (!weapon.NeedsDeploy)
+            if (!needsDeploy)
             {
                 return false;
             }

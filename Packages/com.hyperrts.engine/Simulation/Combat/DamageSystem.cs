@@ -17,40 +17,28 @@ namespace HyperRTS.Simulation.Combat
         private ComponentLookup<Health> _health;
         private ComponentLookup<LastAttacker> _attackers;
         private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<ArmorFacing> _facing;
-        private BufferLookup<ArmorModifier> _armor;
-        private BufferLookup<StatModifier> _modifiers;
-        private BufferLookup<DamageTakenModifier> _typedModifiers;
+        private DamageFactors _factors;
         private ComponentLookup<Destructible> _destructibles;
         private ComponentLookup<LethalHit> _lethalHits;
         private ComponentLookup<Faction> _factions;
         private BufferLookup<EntityDamaged> _damaged;
         private ComponentLookup<Shelter> _shelters;
         private BufferLookup<ShelterHit> _shelterHits;
-        private ComponentLookup<Sections> _buildings;
-        private ComponentLookup<Repairable> _repairables;
-        private BufferLookup<Section> _sections;
-        private BufferLookup<SectionFactor> _sectionFactors;
+        private SectionDamage _buildings;
 
         public void OnCreate(ref SystemState state)
         {
             _health = state.GetComponentLookup<Health>();
             _attackers = state.GetComponentLookup<LastAttacker>();
             _transforms = state.GetComponentLookup<LocalTransform>(true);
-            _facing = state.GetComponentLookup<ArmorFacing>(true);
-            _armor = state.GetBufferLookup<ArmorModifier>(true);
-            _modifiers = state.GetBufferLookup<StatModifier>(true);
-            _typedModifiers = state.GetBufferLookup<DamageTakenModifier>(true);
+            _factors = new DamageFactors(ref state);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _lethalHits = state.GetComponentLookup<LethalHit>();
             _factions = state.GetComponentLookup<Faction>(true);
             _damaged = state.GetBufferLookup<EntityDamaged>();
             _shelters = state.GetComponentLookup<Shelter>(true);
             _shelterHits = state.GetBufferLookup<ShelterHit>();
-            _buildings = state.GetComponentLookup<Sections>();
-            _repairables = state.GetComponentLookup<Repairable>(true);
-            _sections = state.GetBufferLookup<Section>();
-            _sectionFactors = state.GetBufferLookup<SectionFactor>(true);
+            _buildings = new SectionDamage(ref state);
 
             var queue = state.EntityManager.CreateEntity(typeof(DamageQueue), typeof(DamageEvent));
             state.EntityManager.SetName(queue, "DamageQueue");
@@ -65,10 +53,7 @@ namespace HyperRTS.Simulation.Combat
             _health.Update(ref state);
             _attackers.Update(ref state);
             _transforms.Update(ref state);
-            _facing.Update(ref state);
-            _armor.Update(ref state);
-            _modifiers.Update(ref state);
-            _typedModifiers.Update(ref state);
+            _factors.Update(ref state);
             _destructibles.Update(ref state);
             _lethalHits.Update(ref state);
             _factions.Update(ref state);
@@ -76,9 +61,6 @@ namespace HyperRTS.Simulation.Combat
             _shelters.Update(ref state);
             _shelterHits.Update(ref state);
             _buildings.Update(ref state);
-            _repairables.Update(ref state);
-            _sections.Update(ref state);
-            _sectionFactors.Update(ref state);
 
             new ResolveJob
             {
@@ -87,10 +69,7 @@ namespace HyperRTS.Simulation.Combat
                 Health = _health,
                 Attackers = _attackers,
                 Transforms = _transforms,
-                Facing = _facing,
-                Armor = _armor,
-                Modifiers = _modifiers,
-                TypedModifiers = _typedModifiers,
+                Factors = _factors,
                 Destructibles = _destructibles,
                 LethalHits = _lethalHits,
                 Factions = _factions,
@@ -98,9 +77,6 @@ namespace HyperRTS.Simulation.Combat
                 Shelters = _shelters,
                 ShelterHits = _shelterHits,
                 Buildings = _buildings,
-                Repairables = _repairables,
-                BuildingSections = _sections,
-                SectionFactors = _sectionFactors,
                 Events = SystemAPI.GetSingletonEntity<GameEvents>(),
             }.Schedule();
         }
@@ -114,20 +90,14 @@ namespace HyperRTS.Simulation.Combat
             public ComponentLookup<Health> Health;
             public ComponentLookup<LastAttacker> Attackers;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
-            [ReadOnly] public ComponentLookup<ArmorFacing> Facing;
-            [ReadOnly] public BufferLookup<ArmorModifier> Armor;
-            [ReadOnly] public BufferLookup<StatModifier> Modifiers;
-            [ReadOnly] public BufferLookup<DamageTakenModifier> TypedModifiers;
+            public DamageFactors Factors;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             public ComponentLookup<LethalHit> LethalHits;
             [ReadOnly] public ComponentLookup<Faction> Factions;
             public BufferLookup<EntityDamaged> Damaged;
             [ReadOnly] public ComponentLookup<Shelter> Shelters;
             public BufferLookup<ShelterHit> ShelterHits;
-            public ComponentLookup<Sections> Buildings;
-            [ReadOnly] public ComponentLookup<Repairable> Repairables;
-            public BufferLookup<Section> BuildingSections;
-            [ReadOnly] public BufferLookup<SectionFactor> SectionFactors;
+            public SectionDamage Buildings;
             public Entity Events;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
@@ -194,17 +164,19 @@ namespace HyperRTS.Simulation.Combat
 
                 if (amount < 0f)
                 {
-                    health.Current = Resolved(target, math.min(health.Max, health.Current + Repair(target, -amount)));
+                    var restored = Buildings.Repair(target, -amount);
+                    health.Current = Buildings.Resolved(target, math.min(health.Max, health.Current + restored));
                     Health[target] = health;
                     return;
                 }
 
                 PassToPassengers(target, amount, health, hit, from);
-                var scale = ArmorModifier.Against(Armor, target, hit.Type) * FacingMultiplier(target, hit.Origin) *
-                            StatMath.DamageTaken(Modifiers, target) * TypedMultiplier(target, hit.Type);
-                amount = BuildingSections.HasBuffer(target) ? Route(target, hit, scale) : amount * scale;
+                var scale = Factors.Scale(target, hit);
+                amount = Buildings.IsSectioned(target)
+                    ? Buildings.Route(target, Transforms[target], hit, scale)
+                    : amount * scale;
                 var overkill = amount - health.Current;
-                health.Current = Resolved(target, math.max(0f, health.Current - amount));
+                health.Current = Buildings.Resolved(target, math.max(0f, health.Current - amount));
                 Health[target] = health;
                 Report(target, amount, damaged);
                 if (health.Current <= 0f && LethalHits.HasComponent(target))
@@ -233,15 +205,24 @@ namespace HyperRTS.Simulation.Combat
                 }
             }
 
-            private float TypedMultiplier(Entity target, UnityObjectRef<DamageType> type) =>
-                TypedModifiers.TryGetBuffer(target, out var modifiers)
-                    ? DamageTakenModifier.Multiplier(modifiers, type)
-                    : 1f;
+            /// <summary>Passes the share of a hit on a shelter that its walls, at their health before the hit, don't stop.</summary>
+            private void PassToPassengers(Entity target, float amount, in Health health, in DamageEvent hit, float3 from)
+            {
+                if (hit.GarrisonFactor <= 0f || !Shelters.TryGetComponent(target, out var shelter))
+                {
+                    return;
+                }
 
-            private float FacingMultiplier(Entity target, float3 origin) =>
-                Facing.TryGetComponent(target, out var facing) && Transforms.TryGetComponent(target, out var transform)
-                    ? facing.Multiplier(transform, origin)
-                    : 1f;
+                var passing = hit;
+                passing.Target = Entity.Null;
+                passing.Origin = from;
+                passing.Amount = shelter.Passing(hit, amount, Buildings.Intact(target, health));
+                passing.Radius = 0f;
+                if (passing.Amount > 0f)
+                {
+                    ShelterHits[target].Add(new ShelterHit { Hit = passing });
+                }
+            }
         }
 
         private struct SplashCollector : ISpatialVisitor

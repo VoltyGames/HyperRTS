@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Combat
 
             // A packed-up launcher keeps its turret stowed until it has deployed.
             private Entity Aimed(Entity unit, in Weapon weapon, Entity target) =>
-                Deployable.Holds(Deployables, unit, weapon) ? Entity.Null : target;
+                Deployable.Holds(Deployables, unit, weapon.NeedsDeploy) ? Entity.Null : target;
 
             private void Pose(DynamicBuffer<WeaponPose> poses, int index, in LocalTransform hull, in Weapon weapon,
                 Entity target)
@@ -85,10 +85,10 @@ namespace HyperRTS.Simulation.Combat
                 var angles = float2.zero;
                 if (Transforms.TryGetComponent(target, out var aimed))
                 {
-                    angles = weapon.AimAngles(hull, pose, weapon.AimPoint(aimed.Position));
+                    angles = weapon.Aim.Angles(hull, pose, weapon.Aim.TargetPoint(aimed.Position));
                 }
 
-                weapon.Turn(ref pose, angles, DeltaTime);
+                weapon.Aim.Turn(ref pose, angles, DeltaTime);
                 poses[index] = pose;
             }
         }

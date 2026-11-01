@@ -24,14 +24,17 @@ namespace HyperRTS.Simulation.Tests
                 Cooldown = cooldown,
                 ProjectilePrefab = projectile,
                 ProjectileSpeed = 10f,
-                ProjectileHeight = 1f,
                 LeashFactor = 1.5f,
                 DamageType = damageType,
                 Targets = targets,
-                Trajectory = trajectory,
-                ArcHeight = arcHeight,
                 MinRange = minRange,
-                Turreted = turreted,
+                Aim = new WeaponAim
+                {
+                    ProjectileHeight = 1f,
+                    Trajectory = trajectory,
+                    ArcHeight = arcHeight,
+                    Turreted = turreted,
+                },
             };
             Aim(ref weapon, traverseSpeed);
             var writer = new EntityManagerWriter(world.EntityManager, entity);
@@ -76,8 +79,8 @@ namespace HyperRTS.Simulation.Tests
         public static void SetMuzzles(this TestWorld world, Entity entity, params float3[] points)
         {
             var weapon = world.Get<Weapon>(entity);
-            weapon.Muzzle = points[0];
-            weapon.HasMuzzle = true;
+            weapon.Aim.Muzzle = points[0];
+            weapon.Aim.HasMuzzle = true;
             weapon.MuzzleCount = (byte)points.Length;
             world.EntityManager.SetComponentData(entity, weapon);
             var muzzles = new WeaponMuzzle[points.Length];
@@ -104,11 +107,11 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>Quick turning, wide limits and a tight tolerance, so poses settle within a test's first second.</summary>
         private static void Aim(ref Weapon weapon, float traverseSpeed)
         {
-            weapon.TraverseRate = math.radians(traverseSpeed);
-            weapon.ElevationRate = math.radians(360f);
-            weapon.MinPitch = math.radians(-30f);
-            weapon.MaxPitch = math.radians(80f);
-            weapon.AimTolerance = math.radians(1f);
+            weapon.Aim.TraverseRate = math.radians(traverseSpeed);
+            weapon.Aim.ElevationRate = math.radians(360f);
+            weapon.Aim.MinPitch = math.radians(-30f);
+            weapon.Aim.MaxPitch = math.radians(80f);
+            weapon.Aim.AimTolerance = math.radians(1f);
         }
 
         /// <summary>An empty prefab for weapons that launch projectiles.</summary>

@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat
 {
@@ -49,7 +50,7 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>A mount aims with its own pose, never the hull, so it fires once that pose is on target.</summary>
         private static Weapon Turned(Weapon weapon)
         {
-            weapon.Turreted = true;
+            weapon.Aim.Turreted = true;
             return weapon;
         }
 
@@ -59,5 +60,30 @@ namespace HyperRTS.Simulation.Combat
         public bool IsLimited => Enabled && Ammo.Limited;
 
         public bool Ready => Enabled && !Ammo.Empty;
+
+        /// <summary>Widens <paramref name="reach"/> and lowers <paramref name="floor"/> to every mount that joins the attack on <paramref name="target"/>.</summary>
+        public static void ExtendReach(DynamicBuffer<WeaponMount> mounts, in TargetLookup targets, Entity target,
+            ref float reach, ref float floor)
+        {
+            foreach (var mount in mounts)
+            {
+                if (mount.JoinsAttack(targets, target))
+                {
+                    reach = math.max(reach, mount.Weapon.Range);
+                    floor = math.min(floor, mount.Weapon.MinRange);
+                }
+            }
+        }
+
+        /// <summary>A ready mount that shares the unit's target and can hurt it.</summary>
+        private bool JoinsAttack(in TargetLookup targets, Entity target)
+        {
+            if (Independent || !Ready)
+            {
+                return false;
+            }
+
+            return targets.CanHurt(target, Weapon);
+        }
     }
 }

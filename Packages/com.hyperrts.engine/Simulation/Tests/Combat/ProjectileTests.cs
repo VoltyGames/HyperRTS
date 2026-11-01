@@ -251,9 +251,9 @@ namespace HyperRTS.Simulation.Tests.Combat
                 Radius = 20f,
                 KillChance = killChance,
                 Kinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile,
-                Aim = new Weapon
+                Cooldown = interval,
+                Aim = new WeaponAim
                 {
-                    Cooldown = interval,
                     Turreted = true,
                     TraverseRate = math.radians(720f),
                     ElevationRate = math.radians(720f),
