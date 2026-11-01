@@ -128,7 +128,8 @@ namespace HyperRTS.Simulation.AI
                 }
 
                 var building = IsCriticalBuilding(ref state, entity);
-                if (limitedByFog && !IsKnown(snapshot.Fog, targets.Position(i), team, building))
+                var tall = SystemAPI.HasComponent<TallTarget>(entity);
+                if (limitedByFog && !IsKnown(snapshot.Fog, targets.Position(i), team, building, tall))
                 {
                     continue;
                 }
@@ -162,14 +163,14 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>Units must be in sight; buildings stay known once explored, as they would on a human's map.</summary>
-        private static bool IsKnown(in FogOfWar fog, float3 position, byte team, bool building)
+        private static bool IsKnown(in FogOfWar fog, float3 position, byte team, bool building, bool tall)
         {
             if (!fog.IsCreated)
             {
                 return true;
             }
 
-            return building ? fog.IsExplored(position, team) : fog.IsVisible(position, team);
+            return building ? fog.IsExplored(position, team) : fog.IsVisible(position, team, tall);
         }
 
         private bool IsCriticalBuilding(ref SystemState state, Entity entity) =>

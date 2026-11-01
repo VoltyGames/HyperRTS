@@ -63,14 +63,14 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public bool Ready => Enabled && !Ammo.Empty;
 
         /// <summary>Widens <paramref name="reach"/> and lowers <paramref name="floor"/> to every mount that joins the attack on <paramref name="target"/>.</summary>
-        public static void ExtendReach(DynamicBuffer<WeaponMount> mounts, in TargetLookup targets, Entity target,
-            ref float reach, ref float floor)
+        public static void ExtendReach(DynamicBuffer<WeaponMount> mounts, in TargetLookup targets, Entity shooter,
+            float3 position, Entity target, ref float reach, ref float floor)
         {
             foreach (var mount in mounts)
             {
                 if (mount.JoinsAttack(targets, target))
                 {
-                    reach = math.max(reach, mount.Weapon.Range);
+                    reach = math.max(reach, targets.Reach(shooter, position, mount.Weapon, target));
                     floor = math.min(floor, mount.Weapon.MinRange);
                 }
             }

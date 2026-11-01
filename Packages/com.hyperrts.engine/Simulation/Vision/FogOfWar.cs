@@ -7,12 +7,17 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Singleton fog-of-war grid over the map. Each cell holds one bit per team (bit n = team n) for what is
-    /// visible right now, what has ever been seen and what a detector covers. With fog disabled every cell is visible
-    /// to everyone, but stealth still needs detection.
+    /// visible right now, at ground height and at the height of a <see cref="TallTarget"/>, what has ever been seen and
+    /// what a detector covers. With fog disabled every cell is visible to everyone, but stealth still needs detection.
     /// </summary>
     public struct FogOfWar : IComponentData
     {
+        /// <summary>Cells whose ground is in sight, so infantry there are seen.</summary>
         public NativeArray<ushort> Visible;
+
+        /// <summary>Cells where a tall target is in sight; every visible cell is in it too.</summary>
+        public NativeArray<ushort> VisibleTall;
+
         public NativeArray<ushort> Explored;
         public NativeArray<ushort> Detected;
         public int2 Size;
@@ -32,7 +37,15 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly int2 Cell(int index) => new(index % Size.x, index / Size.x);
 
-        public readonly bool IsVisible(float3 position, byte team) => Test(Visible, position, team);
+        public readonly float3 CellCenter(int2 cell)
+        {
+            var center = Min + ((float2)cell + 0.5f) * CellSize;
+            return new float3(center.x, 0f, center.y);
+        }
+
+        /// <summary>Whether the team sees a target there, judged at a tall target's height when <paramref name="tall"/>.</summary>
+        public readonly bool IsVisible(float3 position, byte team, bool tall) =>
+            Test(tall ? VisibleTall : Visible, position, team);
 
         public readonly bool IsExplored(float3 position, byte team) => Test(Explored, position, team);
 
@@ -42,14 +55,15 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool IsHiddenByStealth(byte team, float3 position, bool stealthed) =>
             stealthed && !IsDetected(position, team);
 
-        /// <summary>Whether a team sees an entity there: in its sight and, if stealthed, detected.</summary>
-        public readonly bool CanSee(byte team, float3 position, bool stealthed) =>
-            IsVisible(position, team) && !IsHiddenByStealth(team, position, stealthed);
+        /// <summary>Whether a team sees an entity there: in its sight at the entity's height and, if stealthed, detected.</summary>
+        public readonly bool CanSee(byte team, float3 position, bool stealthed, bool tall) =>
+            IsVisible(position, team, tall) && !IsHiddenByStealth(team, position, stealthed);
 
         /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
         public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,
-            float3 position, bool stealthed) =>
-            relations.IsHostile(viewerFaction, faction) && !CanSee(relations.GetTeam(viewerFaction), position, stealthed);
+            float3 position, bool stealthed, bool tall) =>
+            relations.IsHostile(viewerFaction, faction) &&
+            !CanSee(relations.GetTeam(viewerFaction), position, stealthed, tall);
 
         private readonly bool Test(NativeArray<ushort> cells, float3 position, byte team)
         {

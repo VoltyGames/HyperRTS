@@ -12,8 +12,11 @@ namespace HyperRTS.Simulation.Vision
     /// </summary>
     internal struct SightLines
     {
-        /// <summary>A cell counts as seen when this much above its ground is in sight, like a unit's top.</summary>
+        /// <summary>A cell counts as seen when this much above its ground is in sight, like a soldier's top.</summary>
         public const float TargetHeight = 1f;
+
+        /// <summary>Height judged for <see cref="FogOfWar.VisibleTall"/>, like a vehicle's or a building's top.</summary>
+        public const float TallTargetHeight = 3f;
 
         public FogOfWar Fog;
         public TerrainHeight Terrain;
@@ -35,7 +38,7 @@ namespace HyperRTS.Simulation.Vision
             var center = Fog.WorldToCell(position);
             var radius = (int)math.ceil(range / Fog.CellSize);
             var origin = new float3(position.xz, eye);
-            Mark(center, bit);
+            Mark(center, bit, true);
 
             for (var i = -radius; i <= radius; i++)
             {
@@ -63,9 +66,9 @@ namespace HyperRTS.Simulation.Vision
                 }
 
                 var ground = Surface(cell, point) - origin.z;
-                if ((ground + TargetHeight) / distance >= horizon)
+                if ((ground + TallTargetHeight) / distance >= horizon)
                 {
-                    Mark(cell, bit);
+                    Mark(cell, bit, (ground + TargetHeight) / distance >= horizon);
                 }
 
                 horizon = math.max(horizon, ground / distance);
@@ -87,7 +90,8 @@ namespace HyperRTS.Simulation.Vision
         // Blocks raise every cell they touch, so the own block reaches cells whose centre lies just outside it.
         private readonly bool IsOwn(float2 point) => HasOwn && Own.Contains(point, Fog.CellSize * 0.5f * math.SQRT2);
 
-        private void Mark(int2 cell, ushort bit)
+        /// <summary>Marks the cell seen for tall targets, and for every target when <paramref name="ground"/>.</summary>
+        private void Mark(int2 cell, ushort bit, bool ground)
         {
             if (!Fog.InBounds(cell))
             {
@@ -95,7 +99,11 @@ namespace HyperRTS.Simulation.Vision
             }
 
             var index = Fog.Index(cell);
-            Fog.Visible[index] = (ushort)(Fog.Visible[index] | bit);
+            Fog.VisibleTall[index] = (ushort)(Fog.VisibleTall[index] | bit);
+            if (ground)
+            {
+                Fog.Visible[index] = (ushort)(Fog.Visible[index] | bit);
+            }
         }
     }
 }

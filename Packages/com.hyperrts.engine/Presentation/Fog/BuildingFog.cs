@@ -19,7 +19,7 @@ namespace HyperRTS.Presentation.Fog
             }
 
             var friendly = relations.IsAllied(view.Viewer, owner);
-            return !friendly && !fog.IsVisible(position, view.Team);
+            return !friendly && !fog.IsVisible(position, view.Team, true);
         }
     }
 }

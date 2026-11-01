@@ -58,6 +58,7 @@ namespace HyperRTS.Simulation.Vision
                 Seen = seen,
                 Latest = SystemAPI.GetComponentLookup<LatestSeen>(),
                 Cloaked = SystemAPI.GetComponentLookup<Stealthed>(true),
+                Tall = SystemAPI.GetComponentLookup<TallTarget>(true),
                 Construction = SystemAPI.GetComponentLookup<ConstructionProgress>(true),
                 Ghosts = SystemAPI.GetComponentLookup<GhostInstance>(true),
             }.Schedule(state.Dependency);
@@ -118,6 +119,7 @@ namespace HyperRTS.Simulation.Vision
             public NativeHashSet<FogMemoryKey> Seen;
             public ComponentLookup<LatestSeen> Latest;
             [ReadOnly] public ComponentLookup<Stealthed> Cloaked;
+            [ReadOnly] public ComponentLookup<TallTarget> Tall;
             [ReadOnly] public ComponentLookup<ConstructionProgress> Construction;
             [ReadOnly] public ComponentLookup<GhostInstance> Ghosts;
 
@@ -126,7 +128,8 @@ namespace HyperRTS.Simulation.Vision
             {
                 var key = FogMemoryKey.Identify(entity, Ghosts);
                 var hostile = Relations.IsHostile(Viewer, faction.Value);
-                var visible = Sight.Fog.CanSee(Sight.Team, transform.Position, Cloaked.HasEnabled(entity));
+                var visible = Sight.Fog.CanSee(Sight.Team, transform.Position, Cloaked.HasEnabled(entity),
+                    Tall.HasComponent(entity));
                 // A friendly root is seen too, so the memory of a building since captured by a friend goes.
                 if (!hostile || visible)
                 {
@@ -158,6 +161,7 @@ namespace HyperRTS.Simulation.Vision
                     Transform = transform,
                     Health = health.Fraction,
                     Construction = progress.Value,
+                    Tall = Tall.HasComponent(entity),
                 };
             }
 
@@ -185,7 +189,7 @@ namespace HyperRTS.Simulation.Vision
 
             private void Execute(Entity entity, in LatestSeen latest)
             {
-                if (!Sight.Fog.IsVisible(latest.State.Transform.Position, Sight.Team))
+                if (!Sight.Fog.IsVisible(latest.State.Transform.Position, Sight.Team, latest.State.Tall))
                 {
                     Sight.Remember(latest.State);
                 }
@@ -210,7 +214,7 @@ namespace HyperRTS.Simulation.Vision
                     return;
                 }
 
-                var inSight = Sight.Fog.IsVisible(memory.State.Transform.Position, Sight.Team);
+                var inSight = Sight.Fog.IsVisible(memory.State.Transform.Position, Sight.Team, memory.State.Tall);
                 memory.VisibleFor = inSight ? memory.VisibleFor + DeltaTime : 0f;
                 if (memory.VisibleFor >= Grace)
                 {

@@ -144,7 +144,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             private static bool InReach(in Weapon weapon, in AttackTarget attack, bool attacking)
             {
                 var engaged = attacking && attack.InRange;
-                return engaged && weapon.Reaches(attack.Gap);
+                return engaged && attack.Gap >= weapon.MinRange && attack.Gap <= attack.Reach;
             }
         }
     }

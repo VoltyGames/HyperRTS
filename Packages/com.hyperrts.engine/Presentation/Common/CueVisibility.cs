@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.Common
 
         /// <summary>Whether the local player sees the ground at a point: in their team's sight, or the fog view is off.</summary>
         public static bool IsGroundSeenLocally(float3 position, in LocalFogView view, in FogOfWar fog) =>
-            !view.Active || !fog.IsCreated || fog.IsVisible(position, view.Team);
+            !view.Active || !fog.IsCreated || fog.IsVisible(position, view.Team, false);
 
         /// <summary>
         /// Whether the local player gets the cue: their own owner-only cues, and every other cue while the fog view is

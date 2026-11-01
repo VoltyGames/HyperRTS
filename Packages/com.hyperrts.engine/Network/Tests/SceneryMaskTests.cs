@@ -17,7 +17,10 @@ namespace HyperRTS.Network.Tests
         {
             using var tracker = new SceneryTracker(Allocator.Temp);
             using var visible = new NativeArray<ushort>(1, Allocator.Temp);
-            var fog = new FogOfWar { Visible = visible, Size = new int2(1, 1), Min = new float2(-10f, -10f), CellSize = 20f };
+            var fog = new FogOfWar
+            {
+                Visible = visible, VisibleTall = visible, Size = new int2(1, 1), Min = new float2(-10f, -10f), CellSize = 20f,
+            };
             var sightings = new NativeList<ScenerySighting>(Allocator.Temp);
             tracker.Register(Id, float3.zero);
 
@@ -25,7 +28,7 @@ namespace HyperRTS.Network.Tests
             tracker.Reveal(fog, true, 1, sightings);
             Assert.IsEmpty(sightings.AsArray().ToArray(), "unseen, so unheard");
 
-            var seen = fog.Visible;
+            var seen = fog.VisibleTall;
             seen[0] = 1 << Team;
             tracker.Reveal(fog, true, 2, sightings);
 

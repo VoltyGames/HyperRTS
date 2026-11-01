@@ -97,12 +97,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                var reach = Reach(entity, weapon, target, out var floor);
                 if (Loses(entity, weapon, faction, target, ordered))
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
                 }
+
+                attack.Reach = Targets.Reach(entity, transform.Position, weapon, target);
+                var reach = Reach(entity, transform.Position, weapon, target, out var floor);
 
                 var gap = Targets.Gap(entity, transform.Position, target);
                 if (!ordered && ShouldLeash(entity, transform.Position, weapon, vision, stance, target, gap, reach))
@@ -178,13 +180,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             /// <summary>Longest range and shortest minimum of the primary and the ready shared-target mounts that can hit it.</summary>
-            private float Reach(Entity entity, in Weapon weapon, Entity target, out float floor)
+            private float Reach(Entity entity, float3 position, in Weapon weapon, Entity target, out float floor)
             {
-                var reach = weapon.Range;
+                var reach = Targets.Reach(entity, position, weapon, target);
                 floor = weapon.MinRange;
                 if (Mounts.TryGetBuffer(entity, out var mounts))
                 {
-                    WeaponMount.ExtendReach(mounts, Targets, target, ref reach, ref floor);
+                    WeaponMount.ExtendReach(mounts, Targets, entity, position, target, ref reach, ref floor);
                 }
 
                 return reach;

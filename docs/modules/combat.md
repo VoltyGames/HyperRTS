@@ -40,6 +40,11 @@ empty), and each fires its own Fire cue: the cue's variant is the weapon's pose 
 for the mounts, which `mountFire` on the sound and effect authoring fills in order. A mount without an entry fires
 silently. `Shooter.TryFire` is the fire step both weapon kinds share.
 
+`TargetLookup.Reach` is a weapon's range against one target. A passenger firing out of a container with a
+`PassengerRange` (`ContainerAuthoring.passengerRangeBonus`) reaches that share further. A direct-fire or rocket weapon
+standing above its target gains `HighGroundRules.RangePerMetre` of range per metre, up to `MaxRange`; ballistic fire
+gains nothing. `EngagementSystem` stores the primary's reach in `AttackTarget.Reach`, and the fire step checks it.
+
 ### Salvos, muzzles and ammo
 
 A weapon with `salvoSize` above 1 fires that many shots `salvoInterval` apart, then runs its cooldown. Each shot
@@ -264,10 +269,16 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 | `DetectorAuthoring` | Detection radius. Detects nothing while `Offline`, so a radar goes blind on low power |
 | `RememberedInFog` | Leaves a last-seen memory when it goes out of sight. On buildings by default |
 | `SightBlockAuthoring` | A box sight can't pass below its top: houses, walls, wrecks. Fit To Model fills it |
+| `GameEntityAuthoring.tall` | A `TallTarget`, as tall as a vehicle or a building: seen over cover that hides infantry |
+| `MatchAuthoring.highGround` | What high ground is worth: `HighGroundRules` for sight and direct-fire range |
 | `ContainerAuthoring.eyeAboveRoof` | Passengers of a container with a sight block see from this far above its top |
 
-- Vision updates 10 times a second. Hills and sight blocks cast shadows: a cell is seen when 1 m above its
-  ground or block top is in sight.
+- Vision updates 10 times a second. Hills and sight blocks cast shadows. `FogOfWar.Visible` holds the cells
+  whose ground is seen at 1 m, for infantry; `VisibleTall` those seen at 3 m, for a `TallTarget`. Explored cells
+  follow the tall layer. `CanSee` and `IsHiddenFrom` take the target's layer.
+- `HighGroundSystem` measures each fog cell's ground against the mean within `HighGroundRules.Radius` (50 m) when
+  the map or terrain loads. A viewer on high ground sees `SightPerMetre` further per metre of rise, up to
+  `MaxSight`.
 - `SightBlockSystem` stamps every enabled block onto the fog grid (`SightBlockers`) when one is added, removed,
   moved, turned off or changed. Remains turn theirs off as they are buried.
 - A viewer's own block, or the block of the container it is in, hides nothing from it. Garrisons see from above

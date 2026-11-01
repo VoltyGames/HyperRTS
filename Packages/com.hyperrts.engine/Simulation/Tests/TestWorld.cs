@@ -13,6 +13,7 @@ using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
@@ -174,6 +175,7 @@ namespace HyperRTS.Simulation.Tests
                 LowPowerProductionRate = 0.5f, SellRefund = 0.5f, ExperiencePerCost = 0.1f, JoinTimeout = 60f,
                 StrategicAssets = true,
             });
+            EntityManager.AddComponentData(match, HighGroundSettings.Standard.Rules);
 
             var relations = new FactionRelations();
             relations.Teams.Add(0);

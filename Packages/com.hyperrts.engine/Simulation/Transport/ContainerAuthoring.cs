@@ -44,6 +44,10 @@ namespace HyperRTS.Simulation.Transport
         [Min(0f)]
         public float eyeAboveRoof = 0.5f;
 
+        [Tooltip("Share of range passengers' weapons gain firing out of it, as from a garrisoned house's windows.")]
+        [Min(0f)]
+        public float passengerRangeBonus;
+
         [Tooltip("Child transforms at windows and loopholes that passengers fire out of, their blue axis pointing outward; none fires from the centre.")]
         public Transform[] firingPorts;
 
@@ -69,6 +73,11 @@ namespace HyperRTS.Simulation.Transport
                     Exit = AuthoringBehaviour.Socket(this, authoring.transform, authoring.exit),
                 });
                 writer.Add(new PassengerEye { AboveTop = authoring.eyeAboveRoof });
+                if (authoring.passengerRangeBonus > 0f)
+                {
+                    writer.Add(new PassengerRange { Bonus = authoring.passengerRangeBonus });
+                }
+
                 if (authoring.firingPorts is { Length: > 0 })
                 {
                     var ports = writer.AddBuffer<FiringPort>();

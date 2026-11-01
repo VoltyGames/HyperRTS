@@ -27,6 +27,9 @@ namespace HyperRTS.Simulation.GameEntities
         [Min(0f)]
         public float eyeHeight = 2f;
 
+        [Tooltip("As tall as a vehicle or a building: seen over walls and hedges that hide infantry.")]
+        public bool tall;
+
         [Tooltip("Optional prefab spawned where this dies (wreck, debris).")]
         public GameObject deathSpawn;
 
@@ -50,6 +53,7 @@ namespace HyperRTS.Simulation.GameEntities
                 MaxHealth = maxHealth,
                 VisionRange = visionRange,
                 EyeHeight = eyeHeight,
+                Tall = tall,
                 BuildTime = buildTime,
                 Population = Population,
                 CountsForVictory = countsForVictory,

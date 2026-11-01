@@ -150,7 +150,8 @@ namespace HyperRTS.Presentation.Tests.Flags
             _em.CreateSingleton(relations);
             _em.CreateSingleton(new LocalFogView { Viewer = 1, Team = 1, Active = true });
             var visible = new NativeArray<ushort>(1, Allocator.Persistent);
-            _em.CreateSingleton(new FogOfWar { Visible = visible, Size = new int2(1, 1), CellSize = 1f });
+            // One array for both layers: the cell is either seen or not.
+            _em.CreateSingleton(new FogOfWar { Visible = visible, VisibleTall = visible, Size = new int2(1, 1), CellSize = 1f });
         }
 
         private void Run() => _flags.Update(_world.Unmanaged);

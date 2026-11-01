@@ -1,4 +1,5 @@
 ﻿using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -24,8 +25,11 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [ReadOnly] private ComponentLookup<Inside> _inside;
         [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
+        [ReadOnly] private ComponentLookup<TallTarget> _tall;
+        [ReadOnly] private ComponentLookup<PassengerRange> _passengerRange;
         private DamageFactors _damage;
         [ReadOnly] private FogOfWar _fog;
+        private HighGroundRules _highGround;
 
         public TargetLookup(ref SystemState state)
         {
@@ -37,8 +41,11 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _inside = state.GetComponentLookup<Inside>(true);
             _stealthed = state.GetComponentLookup<Stealthed>(true);
             _destructibles = state.GetComponentLookup<Destructible>(true);
+            _tall = state.GetComponentLookup<TallTarget>(true);
+            _passengerRange = state.GetComponentLookup<PassengerRange>(true);
             _damage = new DamageFactors(ref state);
             FogQuery(ref state).TryGetSingleton(out _fog);
+            _highGround = default;
         }
 
         /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
@@ -52,8 +59,12 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _inside.Update(ref state);
             _stealthed.Update(ref state);
             _destructibles.Update(ref state);
+            _tall.Update(ref state);
+            _passengerRange.Update(ref state);
             _damage.Update(ref state);
             fog.TryGetSingleton(out _fog);
+            new EntityQueryBuilder(Allocator.Temp).WithAll<HighGroundRules>().Build(ref state)
+                .TryGetSingleton(out _highGround);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -113,7 +124,38 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// fog grid, which fog-off maps fill as all-visible.
         /// </summary>
         public bool IsSpotted(Entity target, float3 position, byte team) =>
-            _fog.CanSee(team, position, _stealthed.HasEnabled(target));
+            _fog.CanSee(team, position, _stealthed.HasEnabled(target), IsTall(target));
+
+        /// <summary>As tall as a vehicle or a building, so seen over low cover (see <see cref="TallTarget"/>).</summary>
+        public bool IsTall(Entity entity) => _tall.HasComponent(entity);
+
+        /// <summary>
+        /// How far the weapon of <paramref name="shooter"/>, standing at <paramref name="position"/>, reaches
+        /// <paramref name="target"/>: further from a garrison that grants it, and for direct fire from above the target.
+        /// </summary>
+        public float Reach(Entity shooter, float3 position, in Weapon weapon, Entity target)
+        {
+            var bonus = GarrisonBonus(shooter);
+            if (weapon.Aim.Trajectory != Trajectory.Ballistic)
+            {
+                bonus += _highGround.RangeBonus(position.y - Position(target).y);
+            }
+
+            return weapon.Range * (1f + bonus);
+        }
+
+        /// <summary>Range share a passenger gains from the container it fires out of.</summary>
+        public float GarrisonBonus(Entity shooter) =>
+            IsInside(shooter) && _passengerRange.TryGetComponent(_inside[shooter].Container, out var range)
+                ? range.Bonus
+                : 0f;
+
+        /// <summary>Whether the target sits between the weapon's minimum range and its <see cref="Reach"/>.</summary>
+        public bool Reaches(Entity shooter, float3 position, in Weapon weapon, Entity target)
+        {
+            var gap = Gap(shooter, position, target);
+            return gap >= weapon.MinRange && gap <= Reach(shooter, position, weapon, target);
+        }
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 

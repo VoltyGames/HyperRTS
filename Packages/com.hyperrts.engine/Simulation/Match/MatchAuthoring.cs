@@ -5,6 +5,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.MatchStart;
+using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -50,6 +51,9 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Steepest ground (degrees) units may drive on; steeper Terrain Height cells are blocked. 0 = no limit.")]
         [Range(0f, 90f)]
         public float maxSlope = 45f;
+
+        [Tooltip("What standing higher is worth to sight and to direct fire.")]
+        public HighGroundSettings highGround = HighGroundSettings.Standard;
 
         [Header("Rules")]
         [Tooltip("Production speed of power-consuming producers while their owner's power is low.")]
@@ -136,6 +140,7 @@ namespace HyperRTS.Simulation.Match
                     FloodTerrain = authoring.floodBelowWaterLevel,
                     MaxSlope = authoring.maxSlope,
                 });
+                AddComponent(entity, authoring.highGround.Rules);
                 AddComponent(entity, new MatchRules
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,

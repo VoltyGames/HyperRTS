@@ -45,6 +45,11 @@ namespace HyperRTS.Simulation.GameEntities
             writer.Add<Selected>();
             writer.SetEnabled<Selected>(false);
 
+            if (spec.Tall)
+            {
+                writer.Add<TallTarget>();
+            }
+
             if (spec.CountsForVictory)
             {
                 writer.Add<VictoryCritical>();

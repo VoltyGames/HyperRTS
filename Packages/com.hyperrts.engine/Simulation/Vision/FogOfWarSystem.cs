@@ -77,8 +77,10 @@ namespace HyperRTS.Simulation.Vision
             if (!_revealed)
             {
                 _revealed = true;
-                state.Dependency = new RevealAllJob { Visible = fog.Visible, Explored = fog.Explored }
-                    .Schedule(fog.Visible.Length, 1024, state.Dependency);
+                state.Dependency = new RevealAllJob
+                {
+                    Visible = fog.Visible, VisibleTall = fog.VisibleTall, Explored = fog.Explored,
+                }.Schedule(fog.Visible.Length, 1024, state.Dependency);
             }
         }
 
@@ -86,21 +88,24 @@ namespace HyperRTS.Simulation.Vision
             in MapSettings settings)
         {
             state.Dependency = new ClearCellsJob { Cells = fog.Visible }.Schedule(state.Dependency);
+            state.Dependency = new ClearCellsJob { Cells = fog.VisibleTall }.Schedule(state.Dependency);
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             SystemAPI.TryGetSingleton<SightBlockers>(out var blockers);
+            SystemAPI.TryGetSingleton<HighGround>(out var highGround);
             new SightStampJob
             {
                 Fog = fog,
                 Relations = relations,
                 Terrain = terrain,
                 Blockers = blockers,
+                HighGround = highGround,
                 WaterFloor = settings.FloodTerrain ? settings.WaterLevel : float.NegativeInfinity,
                 Inside = SystemAPI.GetComponentLookup<Inside>(true),
                 Blocks = SystemAPI.GetComponentLookup<SightBlock>(true),
                 Eyes = SystemAPI.GetComponentLookup<PassengerEye>(true),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
             }.Schedule();
-            state.Dependency = new ExploreJob { Visible = fog.Visible, Explored = fog.Explored }
+            state.Dependency = new ExploreJob { Visible = fog.VisibleTall, Explored = fog.Explored }
                 .Schedule(fog.Explored.Length, 1024, state.Dependency);
         }
 
@@ -134,6 +139,7 @@ namespace HyperRTS.Simulation.Vision
         private static void Dispose(in FogOfWar fog)
         {
             fog.Visible.Dispose();
+            fog.VisibleTall.Dispose();
             fog.Explored.Dispose();
             fog.Detected.Dispose();
         }
@@ -146,6 +152,7 @@ namespace HyperRTS.Simulation.Vision
             return new FogOfWar
             {
                 Visible = new NativeArray<ushort>(count, Allocator.Persistent),
+                VisibleTall = new NativeArray<ushort>(count, Allocator.Persistent),
                 Explored = new NativeArray<ushort>(count, Allocator.Persistent),
                 Detected = new NativeArray<ushort>(count, Allocator.Persistent),
                 Size = size,
@@ -159,11 +166,13 @@ namespace HyperRTS.Simulation.Vision
         private struct RevealAllJob : IJobParallelFor
         {
             public NativeArray<ushort> Visible;
+            public NativeArray<ushort> VisibleTall;
             public NativeArray<ushort> Explored;
 
             public void Execute(int index)
             {
                 Visible[index] = ushort.MaxValue;
+                VisibleTall[index] = ushort.MaxValue;
                 Explored[index] = ushort.MaxValue;
             }
         }

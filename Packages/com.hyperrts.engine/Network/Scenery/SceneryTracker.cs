@@ -170,9 +170,9 @@ namespace HyperRTS.Network.Scenery
                 return true;
             }
 
-            // Scenery past the fog grid's edge uses the edge cell.
+            // Scenery past the fog grid's edge uses the edge cell; buildings and bridges are seen as tall.
             var cell = math.clamp(fog.WorldToCell(position), 0, fog.Size - 1);
-            return FogOfWar.HasTeam(fog.Visible[fog.Index(cell)], (byte)team);
+            return fog.IsVisible(fog.CellCenter(cell), (byte)team, true);
         }
 
         /// <summary>A change code and broken mask as one team last saw them.</summary>

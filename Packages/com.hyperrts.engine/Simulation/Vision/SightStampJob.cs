@@ -10,8 +10,9 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Stamps every viewer's sight into <see cref="FogOfWar.Visible"/> for its team, occluded by terrain and
-    /// <see cref="SightBlockers"/>. A passenger inside a container with a <see cref="PassengerEye"/> sees from above
-    /// its roof. Single-threaded because overlapping sight circles OR into the same cells.
+    /// <see cref="SightBlockers"/>, and reaching further from <see cref="HighGround"/>. A passenger inside a container
+    /// with a <see cref="PassengerEye"/> sees from above its roof. Single-threaded because overlapping sight circles OR
+    /// into the same cells.
     /// </summary>
     [BurstCompile]
     [WithAll(typeof(LocalTransform))]
@@ -21,6 +22,7 @@ namespace HyperRTS.Simulation.Vision
         public FactionRelations Relations;
         public TerrainHeight Terrain;
         [ReadOnly] public SightBlockers Blockers;
+        [ReadOnly] public HighGround HighGround;
         public float WaterFloor;
         [ReadOnly] public ComponentLookup<Inside> Inside;
         [ReadOnly] public ComponentLookup<SightBlock> Blocks;
@@ -49,7 +51,7 @@ namespace HyperRTS.Simulation.Vision
                 }
             }
 
-            sight.Stamp(position, eye, vision.Value, bit);
+            sight.Stamp(position, eye, vision.Value * HighGround.SightScale(position), bit);
         }
 
         private readonly bool IsInside(Entity entity, out Entity container)

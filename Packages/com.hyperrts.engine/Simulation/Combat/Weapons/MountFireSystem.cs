@@ -133,7 +133,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             {
                 var radius = Targets.Radius(entity);
                 var finder = new NearestHostile(Relations, Targets, weapon, faction, position, radius);
-                Index.Query(position, weapon.Range + radius, ref finder);
+                var reach = weapon.Range * (1f + Targets.GarrisonBonus(entity)) + radius;
+                Index.Query(position, reach, ref finder);
                 var found = finder.Best != Entity.Null;
                 return found && CanShoot(entity, position, weapon, finder.Best) ? finder.Best : Entity.Null;
             }
@@ -142,7 +143,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 Targets.IsAlive(target) && InReach(entity, position, weapon, target);
 
             private bool InReach(Entity entity, float3 position, in Weapon weapon, Entity target) =>
-                Targets.CanHurt(target, weapon) && weapon.Reaches(Targets.Gap(entity, position, target));
+                Targets.CanHurt(target, weapon) && Targets.Reaches(entity, position, weapon, target);
         }
 
         [BurstCompile]

@@ -11,6 +11,9 @@ namespace HyperRTS.Simulation.GameEntities
         public float MaxHealth;
         public float VisionRange;
         public float EyeHeight;
+
+        /// <summary>Seen as a <see cref="Vision.TallTarget"/>.</summary>
+        public bool Tall;
         public float BuildTime;
         public int Population;
         public bool CountsForVictory;

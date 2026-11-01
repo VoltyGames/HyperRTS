@@ -37,9 +37,9 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Tick();
             var fog = _world.Fog();
 
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1));
-            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team2), "enemies don't share vision");
-            Assert.IsFalse(fog.IsVisible(new float3(30f, 0f, 0f), Team1), "beyond the vision range");
+            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1, false));
+            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team2, false), "enemies don't share vision");
+            Assert.IsFalse(fog.IsVisible(new float3(30f, 0f, 0f), Team1, false), "beyond the vision range");
         }
 
         [Test]
@@ -53,8 +53,8 @@ namespace HyperRTS.Simulation.Tests.Vision
             world.Tick();
             var fog = world.Fog();
 
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), lastTeam), "an eight-player FFA needs teams past 7");
-            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team1));
+            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), lastTeam, false), "an eight-player FFA needs teams past 7");
+            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team1, false));
         }
 
         [Test]
@@ -78,9 +78,9 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Run(0.5f);
             var fog = _world.Fog();
 
-            Assert.IsFalse(fog.IsVisible(float3.zero, Team1));
+            Assert.IsFalse(fog.IsVisible(float3.zero, Team1, false));
             Assert.IsTrue(fog.IsExplored(float3.zero, Team1));
-            Assert.IsTrue(fog.IsVisible(new float3(50f, 0f, 0f), Team1));
+            Assert.IsTrue(fog.IsVisible(new float3(50f, 0f, 0f), Team1, false));
             Assert.Greater(fog.Version, version, "restamps bump the version");
         }
 
@@ -92,8 +92,8 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Tick();
             var fog = _world.Fog();
 
-            Assert.IsTrue(fog.IsVisible(new float3(90f, 0f, -90f), Team1));
-            Assert.IsTrue(fog.IsVisible(new float3(-90f, 0f, 90f), Team2));
+            Assert.IsTrue(fog.IsVisible(new float3(90f, 0f, -90f), Team1, false));
+            Assert.IsTrue(fog.IsVisible(new float3(-90f, 0f, 90f), Team2, false));
             Assert.IsTrue(fog.IsExplored(float3.zero, Team2));
         }
 

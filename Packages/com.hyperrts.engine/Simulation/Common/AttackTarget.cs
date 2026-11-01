@@ -16,6 +16,12 @@ namespace HyperRTS.Simulation.Common
         /// <summary>Edge to edge distance to the target, refreshed with <see cref="InRange"/>.</summary>
         public float Gap;
 
+        /// <summary>
+        /// The primary weapon's reach at the target, refreshed with <see cref="InRange"/>: its range, lengthened by a
+        /// garrison or by standing above the target.
+        /// </summary>
+        public float Reach;
+
         /// <summary>Retreating from an ordered target inside the minimum range; holds fire until clear.</summary>
         public bool BackingOff;
     }

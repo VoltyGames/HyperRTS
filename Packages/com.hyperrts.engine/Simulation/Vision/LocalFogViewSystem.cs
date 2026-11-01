@@ -63,6 +63,7 @@ namespace HyperRTS.Simulation.Vision
                     Viewer = view.Viewer,
                     Hidden = SystemAPI.GetComponentLookup<FogHidden>(true),
                     Cloaked = SystemAPI.GetComponentLookup<Stealthed>(true),
+                    Tall = SystemAPI.GetComponentLookup<TallTarget>(true),
                     Commands = commands,
                 }.ScheduleParallel(state.Dependency)
                 : new RevealAllJob { Commands = commands }.ScheduleParallel(state.Dependency);
@@ -124,13 +125,15 @@ namespace HyperRTS.Simulation.Vision
             public byte Viewer;
             [ReadOnly] public ComponentLookup<FogHidden> Hidden;
             [ReadOnly] public ComponentLookup<Stealthed> Cloaked;
+            [ReadOnly] public ComponentLookup<TallTarget> Tall;
             public EntityCommandBuffer.ParallelWriter Commands;
 
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Faction faction,
                 in LocalTransform transform)
             {
                 var stealthed = Cloaked.HasEnabled(entity);
-                var hide = Fog.IsHiddenFrom(in Relations, Viewer, faction.Value, transform.Position, stealthed);
+                var tall = Tall.HasComponent(entity);
+                var hide = Fog.IsHiddenFrom(in Relations, Viewer, faction.Value, transform.Position, stealthed, tall);
                 if (hide == Hidden.HasComponent(entity))
                 {
                     return;

@@ -12,6 +12,12 @@ namespace HyperRTS.Simulation.Vision
         public float EyeHeight;
     }
 
+    /// <summary>
+    /// A target as tall as a vehicle or a building: seen wherever <see cref="FogOfWar.VisibleTall"/> is, so a low wall
+    /// hides infantry behind it but not a tank.
+    /// </summary>
+    public struct TallTarget : IComponentData { }
+
     /// <summary>Hostile root the local player can't see. Selection, picking, HUD and rendering all skip it.</summary>
     public struct FogHidden : IComponentData { }
 }

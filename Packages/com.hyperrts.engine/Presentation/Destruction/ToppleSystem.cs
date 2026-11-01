@@ -164,7 +164,7 @@ namespace HyperRTS.Presentation.Destruction
                 return true;
             }
 
-            return fog.IsVisible(position, view.Team);
+            return fog.IsVisible(position, view.Team, true);
         }
     }
 }
