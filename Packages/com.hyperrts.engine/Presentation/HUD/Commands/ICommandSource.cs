@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Unity.Entities;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// A group of command card buttons (building, abilities, a game's own orders). The card asks every source to

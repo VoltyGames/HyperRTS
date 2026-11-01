@@ -14,7 +14,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.Minimap
+namespace HyperRTS.Presentation.HUD.Map
 {
     /// <summary>
     /// Map overview: the scene's <see cref="MinimapImage"/>, the local fog of war, owner-coloured markers (squares for

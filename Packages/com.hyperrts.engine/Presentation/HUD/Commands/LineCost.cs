@@ -7,7 +7,7 @@ using Unity.Entities;
 using UnityEngine;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// A dragged line's total cost above and right of its end, in the short colour while the player can't pay it.

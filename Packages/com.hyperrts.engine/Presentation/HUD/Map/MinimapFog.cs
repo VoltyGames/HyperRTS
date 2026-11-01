@@ -5,7 +5,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Presentation.HUD.Minimap
+namespace HyperRTS.Presentation.HUD.Map
 {
     /// <summary>
     /// The local team's fog of war as a minimap layer: dim where explored, dark where never seen. Its texture goes

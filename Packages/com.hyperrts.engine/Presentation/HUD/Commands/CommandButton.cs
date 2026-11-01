@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Command card button: a caption, or a picture card (an ability's or prefab's icon filling the button, a prefab's

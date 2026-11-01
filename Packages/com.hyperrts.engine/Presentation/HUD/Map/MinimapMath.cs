@@ -1,7 +1,7 @@
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.HUD.Minimap
+namespace HyperRTS.Presentation.HUD.Map
 {
     /// <summary>Maps between world XZ and normalized minimap space (0..1, y pointing down like UI).</summary>
     public static class MinimapMath

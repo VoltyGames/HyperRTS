@@ -62,8 +62,8 @@ panels in the tree's named slots, styles it with `HUD.uss` for layout and `HUDTh
 to every panel and keeps it in sync with the simulation. Code fills in only per-frame data. Games add or replace panels by overriding
 `CreatePanels`.
 
-`HUD/` holds the controller, the `HUD*` building blocks and the sheets. `CommandCard/` (the card, its buttons and the
-`ICommandSource`s), `Minimap/` and `Panels/` (resource bar, selection, production queue) each have their own namespace
+`HUD/` holds the controller, the `HUD*` building blocks and the sheets. `Commands/` (the card, its buttons and the
+`ICommandSource`s), `Map/` and `Panels/` (resource bar, selection, production queue) each have their own namespace
 and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 
 | Type | Role |

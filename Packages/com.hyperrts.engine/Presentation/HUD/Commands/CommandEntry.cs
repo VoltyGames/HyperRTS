@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>One command card button and where and how it is reached.</summary>
     public sealed class CommandEntry

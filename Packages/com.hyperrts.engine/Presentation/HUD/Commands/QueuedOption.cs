@@ -1,5 +1,5 @@
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>How many of one option the selected producers have queued, and how far the one in work is.</summary>
     public readonly struct QueuedOption

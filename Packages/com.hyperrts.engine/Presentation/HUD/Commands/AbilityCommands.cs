@@ -8,7 +8,7 @@ using Unity.Mathematics;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Command-card buttons for the selection's abilities and the local player's support powers, greyed out with a

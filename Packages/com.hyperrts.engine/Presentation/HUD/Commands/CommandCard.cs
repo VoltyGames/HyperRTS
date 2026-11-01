@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s: by default building,

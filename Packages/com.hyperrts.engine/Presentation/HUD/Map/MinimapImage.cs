@@ -2,7 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.HUD.Minimap
+namespace HyperRTS.Presentation.HUD.Map
 {
     /// <summary>
     /// A top-down picture of the whole playable area that the minimap draws under its blips. Map tools bake it; one

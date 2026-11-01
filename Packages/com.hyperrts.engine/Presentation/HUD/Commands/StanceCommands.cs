@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>One button per stance for armed units, the stance they all share highlighted.</summary>
     public sealed class StanceCommands : ICommandSource

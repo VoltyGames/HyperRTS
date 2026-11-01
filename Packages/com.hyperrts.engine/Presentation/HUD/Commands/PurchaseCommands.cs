@@ -8,7 +8,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Build, train and research cards, showing why the purchase rules refuse one, what the selected producers have

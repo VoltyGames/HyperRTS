@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>One amount label per cost entry, coloured by resource type.</summary>
     [UxmlElement]

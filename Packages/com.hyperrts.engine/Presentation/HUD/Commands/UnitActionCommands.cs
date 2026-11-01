@@ -7,7 +7,7 @@ using HyperRTS.Simulation.Transport;
 using Unity.Entities;
 using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.CommandCard
+namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>Return to base, unload, deploy, pack up and sell, each shown when some owned entity can do it.</summary>
     public sealed class UnitActionCommands : ICommandSource
