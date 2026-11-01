@@ -1,6 +1,7 @@
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Presentation.Audio
 {
     /// <summary>What drives a continuous entity sound; the client fades each in and out from replicated state.</summary>
     public enum LoopSlot : byte

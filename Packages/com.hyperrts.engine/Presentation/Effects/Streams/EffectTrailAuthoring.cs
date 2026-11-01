@@ -1,9 +1,10 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>A rig streamed along this projectile's path (rocket smoke, a tracer glow).</summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Effect Trail")]

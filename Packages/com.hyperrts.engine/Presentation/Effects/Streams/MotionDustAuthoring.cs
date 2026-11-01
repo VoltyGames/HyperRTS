@@ -1,10 +1,11 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>Dust this vehicle raises as it moves, by the ground material under it and its speed.</summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Motion Dust")]

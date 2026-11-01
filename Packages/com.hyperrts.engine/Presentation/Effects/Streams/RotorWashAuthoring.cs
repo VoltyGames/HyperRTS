@@ -1,10 +1,11 @@
 using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>Dust this rotorcraft's downwash kicks up from the ground under it as it flies low.</summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Rotor Wash")]

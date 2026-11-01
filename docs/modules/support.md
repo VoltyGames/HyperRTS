@@ -41,7 +41,8 @@ Sounds play through [cues](#cues). Playback is on the [client](client.md#audio),
 
 ### Loops
 
-`EntityLoopsAuthoring` gives an entity continuous sounds driven by replicated state, attached to it in 3D:
+`EntityLoopsAuthoring` gives an entity continuous sounds driven by replicated state, attached to it in 3D. It and its
+components live in `Presentation/Audio`, since only the client reads them:
 
 - `engineIdle` and `engineMove` crossfade by speed up to `fullSpeed`, and the pitch rises by `pitchRise`.
 - `rotor` follows the [motion rig](client.md#motion-rig)'s `RotorSpin`, so it stays in step with the blades even
@@ -79,7 +80,8 @@ Part of `Cues`. Effect rigs of VFX graphs that play on cue slots, much like soun
 | `MotionDustAuthoring` | Dust by ground material and speed |
 | `RotorWashAuthoring` | Dust under a low rotorcraft by ground material, thicker lower down |
 
-Rigs play through [cues](#cues), on the client.
+`LoopEffectsAuthoring`, `EffectTrailAuthoring`, `MotionDustAuthoring` and `RotorWashAuthoring` and their components live
+in `Presentation/Effects/Streams`, since only the client reads them. Rigs play through [cues](#cues), on the client.
 
 ## Cues
 

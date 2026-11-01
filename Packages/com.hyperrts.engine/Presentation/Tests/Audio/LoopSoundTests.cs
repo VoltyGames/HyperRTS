@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Audio;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Entities;
@@ -177,6 +178,27 @@ namespace HyperRTS.Presentation.Tests.Audio
             }
 
             mixer.Resolve();
+        }
+
+        [Test]
+        public void EntityLoops_OnlySetCuesGetALoop_WithTheTuning()
+        {
+            using var world = new World("Loops");
+            var entity = world.EntityManager.CreateEntity();
+            var cue = ScriptableObject.CreateInstance<SoundCue>();
+            var writer = new EntityManagerWriter(world.EntityManager, entity);
+
+            var loops = EntityLoopsAuthoring.Add(ref writer, 8f, 0.15f);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.EngineIdle, cue);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.Rotor, null);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.Ambient, cue);
+
+            loops = world.EntityManager.GetBuffer<EntityLoopSound>(entity);
+            Assert.AreEqual(2, loops.Length);
+            Assert.AreEqual(LoopSlot.EngineIdle, loops[0].Slot);
+            Assert.AreEqual(LoopSlot.Ambient, loops[1].Slot);
+            Assert.AreEqual(0.15f, world.EntityManager.GetComponentData<LoopSoundTuning>(entity).PitchRise);
+            Object.DestroyImmediate(cue);
         }
     }
 }

@@ -1,11 +1,12 @@
 using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>Rigs that stream while the entity is shown: exhaust, chimney smoke, a burning wreck.</summary>
     [AddComponentMenu(HyperRTSMenu.Effects + "Loop Effects")]

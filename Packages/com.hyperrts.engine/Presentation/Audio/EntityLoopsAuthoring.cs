@@ -1,10 +1,11 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Presentation.Audio
 {
     /// <summary>Continuous sounds a unit or building plays while shown: engine, rotor, turret, work and hum.</summary>
     [AddComponentMenu(HyperRTSMenu.Audio + "Entity Loops")]

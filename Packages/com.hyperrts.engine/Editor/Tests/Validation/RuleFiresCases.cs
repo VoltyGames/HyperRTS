@@ -7,6 +7,7 @@ using HyperRTS.Editor.Validation.Rules;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Abilities;
+using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Animation;
