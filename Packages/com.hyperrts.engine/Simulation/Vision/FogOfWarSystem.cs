@@ -11,9 +11,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> (again when the map's area changes) and restamps every team's vision
-    /// (occluded by hills when there is a <see cref="TerrainHeight"/>) and detection a few times per second. With fog
-    /// disabled the grid stays fully visible, but detection still runs.
+    /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> (again when the map's area changes) and
+    /// restamps every team's vision (occluded by hills and <see cref="SightBlockers"/>) and detection a few times per
+    /// second. With fog disabled the grid stays fully visible, but detection still runs.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]
@@ -87,12 +87,18 @@ namespace HyperRTS.Simulation.Vision
         {
             state.Dependency = new ClearCellsJob { Cells = fog.Visible }.Schedule(state.Dependency);
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
-            new StampJob
+            SystemAPI.TryGetSingleton<SightBlockers>(out var blockers);
+            new SightStampJob
             {
                 Fog = fog,
                 Relations = relations,
                 Terrain = terrain,
+                Blockers = blockers,
                 WaterFloor = settings.FloodTerrain ? settings.WaterLevel : float.NegativeInfinity,
+                Inside = SystemAPI.GetComponentLookup<Inside>(true),
+                Blocks = SystemAPI.GetComponentLookup<SightBlock>(true),
+                Eyes = SystemAPI.GetComponentLookup<PassengerEye>(true),
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
             }.Schedule();
             state.Dependency = new ExploreJob { Visible = fog.Visible, Explored = fog.Explored }
                 .Schedule(fog.Explored.Length, 1024, state.Dependency);
@@ -103,7 +109,7 @@ namespace HyperRTS.Simulation.Vision
         {
             // Read-only check: write access would complete every job reading the fog, every frame.
             var exists = SystemAPI.HasSingleton<FogOfWar>();
-            if (exists && SameArea(settings, _builtMap))
+            if (exists && settings.SameFogGrid(_builtMap))
             {
                 return false;
             }
@@ -125,9 +131,6 @@ namespace HyperRTS.Simulation.Vision
             return true;
         }
 
-        private static bool SameArea(in MapSettings a, in MapSettings b) =>
-            a.SameArea(b) && a.FogCellSize == b.FogCellSize;
-
         private static void Dispose(in FogOfWar fog)
         {
             fog.Visible.Dispose();
@@ -137,8 +140,7 @@ namespace HyperRTS.Simulation.Vision
 
         private static FogOfWar CreateGrid(in MapSettings settings)
         {
-            var cellSize = math.max(settings.FogCellSize, 0.1f);
-            var size = math.max((int2)math.ceil(settings.Size / cellSize), 1);
+            settings.FogLayout(out var size, out var cellSize);
             var count = size.x * size.y;
 
             return new FogOfWar
@@ -173,33 +175,6 @@ namespace HyperRTS.Simulation.Vision
             public NativeArray<ushort> Explored;
 
             public void Execute(int index) => Explored[index] |= Visible[index];
-        }
-
-        /// <summary>Single-threaded because overlapping sight circles OR into the same cells.</summary>
-        [BurstCompile]
-        private partial struct StampJob : IJobEntity
-        {
-            public FogOfWar Fog;
-            public FactionRelations Relations;
-            public TerrainHeight Terrain;
-            public float WaterFloor;
-
-            private void Execute(in LocalTransform transform, in VisionRange vision, in Faction faction)
-            {
-                if (vision.Value <= 0f || !FogOfWar.TryGetTeamBit(Relations.GetTeam(faction.Value), out var bit))
-                {
-                    return;
-                }
-
-                if (Terrain.IsCreated)
-                {
-                    var sight = new SightLines { Fog = Fog, Terrain = Terrain, WaterFloor = WaterFloor };
-                    sight.Stamp(transform.Position, vision, bit);
-                    return;
-                }
-
-                Fog.StampCircle(Fog.Visible, transform.Position, vision.Value, bit);
-            }
         }
     }
 }

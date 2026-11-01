@@ -36,6 +36,16 @@ namespace HyperRTS.Simulation.Common
         /// <summary>Same area and nav cells, so a nav-cell grid built over one fits the other.</summary>
         public readonly bool SameNavGrid(in MapSettings other) => SameArea(other) && NavCellSize == other.NavCellSize;
 
+        /// <summary>Same area and fog cells, so a fog-cell grid built over one fits the other.</summary>
+        public readonly bool SameFogGrid(in MapSettings other) => SameArea(other) && FogCellSize == other.FogCellSize;
+
+        /// <summary>Cell count and size of the fog grid; every grid on it is laid out the same.</summary>
+        public readonly void FogLayout(out int2 size, out float cellSize)
+        {
+            cellSize = math.max(FogCellSize, 0.1f);
+            size = math.max((int2)math.ceil(Size / cellSize), 1);
+        }
+
         public readonly bool Contains(float3 position) =>
             math.all(position.xz >= Min) && math.all(position.xz <= Max);
 

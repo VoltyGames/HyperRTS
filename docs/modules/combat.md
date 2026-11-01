@@ -263,7 +263,14 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 | `StealthAuthoring` | Hidden unless detected. Revealed for a while after firing |
 | `DetectorAuthoring` | Detection radius. Detects nothing while `Offline`, so a radar goes blind on low power |
 | `RememberedInFog` | Leaves a last-seen memory when it goes out of sight. On buildings by default |
+| `SightBlockAuthoring` | A box sight can't pass below its top: houses, walls, wrecks. Fit To Model fills it |
+| `ContainerAuthoring.eyeAboveRoof` | Passengers of a container with a sight block see from this far above its top |
 
-- Vision updates 10 times a second, and hills block sight.
+- Vision updates 10 times a second. Hills and sight blocks cast shadows: a cell is seen when 1 m above its
+  ground or block top is in sight.
+- `SightBlockSystem` stamps every enabled block onto the fog grid (`SightBlockers`) when one is added, removed,
+  moved, turned off or changed. Remains turn theirs off as they are buried.
+- A viewer's own block, or the block of the container it is in, hides nothing from it. Garrisons see from above
+  the roof.
 - Hidden enemies can't be selected, picked or seen, but splash still hits them.
 - A memory clears when its spot is seen again.

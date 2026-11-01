@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -11,8 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Death
 {
     /// <summary>
-    /// Starts <see cref="Decay"/> remains' clocks, buries them when their lifetime ends (no longer blocking), then destroys
-    /// them.
+    /// Starts <see cref="Decay"/> remains' clocks, buries them when their lifetime ends (no longer blocking movement or
+    /// sight), then destroys them.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
@@ -21,6 +22,7 @@ namespace HyperRTS.Simulation.Combat.Death
         private ComponentLookup<Decay> _decays;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<Blocker> _blockers;
+        private ComponentLookup<SightBlock> _sightBlocks;
         private BufferLookup<LinkedEntityGroup> _groups;
         private BufferLookup<Child> _children;
 
@@ -30,6 +32,7 @@ namespace HyperRTS.Simulation.Combat.Death
             _decays = state.GetComponentLookup<Decay>();
             _transforms = state.GetComponentLookup<LocalTransform>();
             _blockers = state.GetComponentLookup<Blocker>();
+            _sightBlocks = state.GetComponentLookup<SightBlock>();
             _groups = state.GetBufferLookup<LinkedEntityGroup>(true);
             _children = state.GetBufferLookup<Child>(true);
             state.RequireForUpdate<Decay>();
@@ -43,6 +46,7 @@ namespace HyperRTS.Simulation.Combat.Death
             _decays.Update(ref state);
             _transforms.Update(ref state);
             _blockers.Update(ref state);
+            _sightBlocks.Update(ref state);
             _groups.Update(ref state);
             _children.Update(ref state);
             var now = SystemAPI.Time.ElapsedTime;
@@ -51,6 +55,7 @@ namespace HyperRTS.Simulation.Combat.Death
             state.Dependency = new DespawnJob
             {
                 Due = due, Now = now, Decays = _decays, Transforms = _transforms, Blockers = _blockers,
+                SightBlocks = _sightBlocks,
                 Groups = _groups, Children = _children,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
@@ -83,6 +88,7 @@ namespace HyperRTS.Simulation.Combat.Death
             public ComponentLookup<Decay> Decays;
             public ComponentLookup<LocalTransform> Transforms;
             public ComponentLookup<Blocker> Blockers;
+            public ComponentLookup<SightBlock> SightBlocks;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
             public EntityCommandBuffer.ParallelWriter Ecb;
@@ -105,10 +111,15 @@ namespace HyperRTS.Simulation.Combat.Death
                     return;
                 }
 
-                // Remains being buried are on their way out, so units may drive over them.
+                // Remains being buried are on their way out, so units may drive over and see past them.
                 if (Blockers.HasComponent(entity))
                 {
                     Blockers.SetComponentEnabled(entity, false);
+                }
+
+                if (SightBlocks.HasComponent(entity))
+                {
+                    SightBlocks.SetComponentEnabled(entity, false);
                 }
 
                 var progress = (float)math.min(1d, (Now - value.DespawnStartTime) / value.DespawnDuration);

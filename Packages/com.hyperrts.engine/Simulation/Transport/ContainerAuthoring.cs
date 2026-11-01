@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using UnityEngine;
 
@@ -39,6 +40,10 @@ namespace HyperRTS.Simulation.Transport
         [Tooltip("Child transform passengers step out at, such as a door; none lets them out around the container.")]
         public Transform exit;
 
+        [Tooltip("Passengers see from this far above the container's Sight Block, as from its roof, and its walls hide nothing from them. Without a Sight Block they keep their own eyes.")]
+        [Min(0f)]
+        public float eyeAboveRoof = 0.5f;
+
         [Tooltip("Child transforms at windows and loopholes that passengers fire out of, their blue axis pointing outward; none fires from the centre.")]
         public Transform[] firingPorts;
 
@@ -63,6 +68,7 @@ namespace HyperRTS.Simulation.Transport
                     HasExit = authoring.exit != null,
                     Exit = AuthoringBehaviour.Socket(this, authoring.transform, authoring.exit),
                 });
+                writer.Add(new PassengerEye { AboveTop = authoring.eyeAboveRoof });
                 if (authoring.firingPorts is { Length: > 0 })
                 {
                     var ports = writer.AddBuffer<FiringPort>();

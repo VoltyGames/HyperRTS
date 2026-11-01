@@ -11,6 +11,7 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
+using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -105,9 +106,23 @@ namespace HyperRTS.Editor.Tests.Validation
             container.capacity = 2;
             container.maxPassengerSize = 4;
 
-            ProjectValidator.Check(container).Single(found => found.Fix != null).Fix();
+            Fix(container, "Clamp");
 
             Assert.AreEqual(2, container.maxPassengerSize);
+        }
+
+        [Test]
+        public void AddSightBlockFitsTheGarrisonedBuilding()
+        {
+            var container = Track(EntityTemplates.Building()).AddComponent<ContainerAuthoring>();
+
+            Fix(container, "Add Sight Block");
+
+            var block = container.GetComponent<SightBlockAuthoring>();
+            Assert.IsNotNull(block);
+            Assert.AreEqual(4f, block.size.x, 0.01f);
+            Assert.AreEqual(4f, block.size.y, 0.01f);
+            Assert.AreEqual(2.5f, block.height, 0.01f);
         }
 
         private static void Fix(Component component, string label) =>
