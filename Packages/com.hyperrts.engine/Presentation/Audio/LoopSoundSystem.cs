@@ -136,8 +136,8 @@ namespace HyperRTS.Presentation.Audio
         /// <summary>Starts the cue at a random point, so loops of one type never play in step.</summary>
         private AudioSource Claim(int index, SoundCue cue)
         {
-            var clip = cue.clips[Random.Range(0, cue.clips.Length)];
-            var source = _voices.Load(index, cue, clip, Random.Range(cue.pitch.x, cue.pitch.y));
+            cue.Pick(out var clip, out var pitch);
+            var source = _voices.Load(index, cue, clip, pitch);
             _baseVolume[index] = source.volume;
             _basePitch[index] = source.pitch;
             if (clip == null)

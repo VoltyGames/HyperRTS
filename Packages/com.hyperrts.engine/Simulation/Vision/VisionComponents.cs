@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using Unity.Netcode;
 
@@ -6,7 +7,7 @@ namespace HyperRTS.Simulation.Vision
     /// <summary>Sight radius revealing fog of war for the owner's team.</summary>
     public struct VisionRange : IComponentData
     {
-        [GhostField] public float Value;
+        [GhostField] [StatField(Stat.VisionRange)] public float Value;
 
         /// <summary>Eye height above the viewer's ground or its own position, whichever is higher.</summary>
         public float EyeHeight;

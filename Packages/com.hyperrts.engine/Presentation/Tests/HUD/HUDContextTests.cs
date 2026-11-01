@@ -3,7 +3,9 @@ using System.Linq;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.HUD;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
@@ -90,12 +92,12 @@ namespace HyperRTS.Presentation.Tests.HUD
         }
 
         [Test]
-        public void UnitActions_OfferSell_OnlyForBuildingsNotAGarrisonItsOccupantsHold()
+        public void SellCommand_Offered_OnlyForBuildingsNotAGarrisonItsOccupantsHold()
         {
             Refresh();
             var depot = _em.CreateEntity(typeof(BuildingTag));
             var house = _em.CreateEntity(typeof(BuildingTag), typeof(NeutralGarrison));
-            var source = new UnitActionCommands();
+            var source = new PredicateCommand("command.sell", CommandType.Sell, 0, BuildingRules.IsSellable);
 
             var garrisonOnly = new List<CommandEntry>();
             source.Build(_context, new[] { house }, garrisonOnly);
@@ -110,7 +112,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void CommandCard_PlacesSlottedEntriesFirst_AndPressesHotkeys()
         {
             var source = new SlottedSource();
-            var card = Refreshed(new CommandCard(HUDPanelTests.Layouts, source));
+            var card = Refreshed(new CommandCard(HUDPanelTests.Slot("commands"), HUDPanelTests.Layouts, source));
 
             Assert.AreEqual(source.Slotted.Button, card.Root[0], "slot 0 comes before unslotted entries");
             Assert.AreEqual(0, source.Pressed);
@@ -124,7 +126,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void FirstPage_ShowsBasicAndOtherEntries_WithMoreInTheLastSlot()
         {
             var source = new PagedSource();
-            var card = Refreshed(new CommandCard(HUDPanelTests.Layouts, source, new OtherSource()));
+            var card = Refreshed(new CommandCard(HUDPanelTests.Slot("commands"), HUDPanelTests.Layouts, source, new OtherSource()));
 
             Assert.AreEqual(source.Basic.Button, card.Root[0]);
             Assert.AreEqual("Stance", ((CommandButton)card.Root[1]).text, "other sources stay on page one");
@@ -136,7 +138,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void More_ShowsTheAdvancedPage_WithBackInTheSameSlot_AndItsHotkeys()
         {
             var source = new PagedSource();
-            var card = Refreshed(new CommandCard(HUDPanelTests.Layouts, source, new OtherSource()));
+            var card = Refreshed(new CommandCard(HUDPanelTests.Slot("commands"), HUDPanelTests.Layouts, source, new OtherSource()));
 
             Turn(card);
 
@@ -154,7 +156,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void Back_EscapeAndANewSelection_TurnBackToTheFirstPage()
         {
             var source = new PagedSource();
-            var card = Refreshed(new CommandCard(HUDPanelTests.Layouts, source));
+            var card = Refreshed(new CommandCard(HUDPanelTests.Slot("commands"), HUDPanelTests.Layouts, source));
 
             Turn(card);
             Turn(card);
@@ -176,7 +178,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         [Test]
         public void WithoutAdvancedEntries_ThereIsNoMoreCard()
         {
-            var card = Refreshed(new CommandCard(HUDPanelTests.Layouts, new OtherSource()));
+            var card = Refreshed(new CommandCard(HUDPanelTests.Slot("commands"), HUDPanelTests.Layouts, new OtherSource()));
 
             Assert.AreEqual(1, card.Root.Children().Count(child => child.ClassListContains("hud-command")));
         }

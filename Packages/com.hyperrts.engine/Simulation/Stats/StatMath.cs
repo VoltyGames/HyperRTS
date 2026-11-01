@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -7,21 +8,27 @@ namespace HyperRTS.Simulation.Stats
     /// <summary>Modifier arithmetic and bookkeeping. Buffers are tiny, so linear scans are fine.</summary>
     public static class StatMath
     {
-        public static float Evaluate(DynamicBuffer<StatModifier> modifiers, Stat stat, float baseValue)
+        /// <summary>The stat's value from <paramref name="baseValue"/> and its modifiers without a damage type.</summary>
+        public static float Evaluate(DynamicBuffer<StatModifier> modifiers, Stat stat, float baseValue) =>
+            Evaluate(modifiers, stat, default, baseValue);
+
+        /// <summary>The stat's value counting only the modifiers filtered to <paramref name="damageType"/>.</summary>
+        public static float Evaluate(DynamicBuffer<StatModifier> modifiers, Stat stat,
+            UnityObjectRef<DamageType> damageType, float baseValue)
         {
-            SumModifiers(modifiers, stat, out var add, out var percent);
+            SumModifiers(modifiers, stat, damageType, out var add, out var percent);
             return math.max(0f, (baseValue + add) * (1f + percent));
         }
 
         /// <summary>The summed <see cref="StatModifier.Add"/> and <see cref="StatModifier.Percent"/> of a stat.</summary>
-        public static void SumModifiers(DynamicBuffer<StatModifier> modifiers, Stat stat, out float add,
-            out float percent)
+        public static void SumModifiers(DynamicBuffer<StatModifier> modifiers, Stat stat,
+            UnityObjectRef<DamageType> damageType, out float add, out float percent)
         {
             add = 0f;
             percent = 0f;
             foreach (var modifier in modifiers)
             {
-                if (modifier.Stat == stat)
+                if (modifier.Stat == stat && modifier.DamageType.Equals(damageType))
                 {
                     add += modifier.Add;
                     percent += modifier.Percent;
@@ -47,9 +54,22 @@ namespace HyperRTS.Simulation.Stats
             throw new InvalidOperationException("The entity has no recorded base for this stat.");
         }
 
-        /// <summary>Incoming damage multiplier; 1 for entities without modifiers.</summary>
-        public static float DamageTaken(in BufferLookup<StatModifier> modifiers, Entity entity) =>
-            modifiers.TryGetBuffer(entity, out var buffer) ? Evaluate(buffer, Stat.DamageTaken, 1f) : 1f;
+        /// <summary>
+        /// Incoming damage multiplier for a hit of <paramref name="damageType"/>: the untyped modifiers times those of
+        /// that type, each floored at 0 so a large resist never heals. 1 for entities without modifiers.
+        /// </summary>
+        public static float DamageTaken(in BufferLookup<StatModifier> modifiers, Entity entity,
+            UnityObjectRef<DamageType> damageType)
+        {
+            if (!modifiers.TryGetBuffer(entity, out var buffer))
+            {
+                return 1f;
+            }
+
+            var untyped = Evaluate(buffer, Stat.DamageTaken, 1f);
+            var plain = damageType.Equals(default(UnityObjectRef<DamageType>));
+            return plain ? untyped : untyped * Evaluate(buffer, Stat.DamageTaken, damageType, 1f);
+        }
 
         /// <summary>Removes every modifier from <paramref name="source"/>.</summary>
         public static void RemoveSource(DynamicBuffer<StatModifier> modifiers, StatSource source)

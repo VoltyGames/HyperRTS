@@ -222,15 +222,25 @@ without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how
 
 ## Stats
 
-Part of `Common`. Upgrades, veterancy, fields, status effects and difficulty all change stats through one formula,
-and each source can be removed later:
+Part of `Stats`, with the recompute in `GameEntities`. Upgrades, veterancy, auras, status effects and difficulty all
+change stats through one `StatModifier` buffer and one formula, and each source can be removed later:
 
 ```text
 value = (base + Add) × (1 + ΣPercent)
 ```
 
-A `StatModifier` names a `Stat`, such as MaxHealth, Damage, Range or Income, and its `StatSource`. `StatSystem`
-recomputes stats at the end of the frame when modifiers change. A `MaxHealth` change keeps the health fraction.
+A `StatModifier` names a `Stat`, such as MaxHealth, Damage, Range or Income, and its `StatSource`. Authoring lists
+`StatBonus`es and turns them into modifiers with `StatBonus.ToModifiers`; auras and status effects keep theirs as
+`GrantedModifier`s and copy them onto whoever they affect.
+
+`StatBaseSystem` records each stat's base when an entity spawns, and `StatSystem` recomputes stats at the end of the
+frame when modifiers change. Fields marked `[StatField(stat)]` (move speed, vision, build rate, production speed and
+any game stat) go through one generic chunk job each; health, whose `MaxHealth` change keeps the health fraction, and
+the weapon mounts, whose stats sit on each mount, have their own jobs.
+
+A `DamageTaken` modifier may name a `DamageType`. A hit is scaled by the untyped modifiers times those of its type,
+each part floored at 0 so a large resist never heals. Every other stat reads only untyped modifiers, and a bonus that
+names a type for another stat fails the bake.
 
 ## Veterancy
 
@@ -257,13 +267,17 @@ frame's `AbilityActivation`.
 A self-targeted ability fires on every ready caster. An aimed one walks the nearest caster into range. Player
 powers are `Ability` entries on the player entity.
 
+`Ability` is the fixed definition and never replicates: clients bake it from the same prefab. The running cooldown is
+a separate `AbilityState { Id, CooldownRemaining }` buffer, the only replicated part, matched to its definition by id,
+so neither buffer's order matters. Both buffers are baked together.
+
 A smoke screen is an ability whose spawned prefab carries a dense porous `SightBlock` and a `Decay`: it blocks
 sight and breaks guided rounds' lock until its lifetime ends, when the decay turns the block off.
 
 ## Status effects
 
-Part of `Status`. A status effect is a prefab with `StatusEffectAuthoring`: a duration, a stack rule, stat bonuses,
-extra damage taken from chosen damage types and damage over time, all per stack. Its type id is the hash of its
+Part of `Status`. A status effect is a prefab with `StatusEffectAuthoring`: a duration, a stack rule, stat bonuses
+(damage taken ones may name a damage type) and damage over time, all per stack. Its type id is the hash of its
 name, and its bonuses use that id as their source.
 
 Game code applies one by adding a `StatusRequest` through `EventWriter<StatusRequest>`, and an entity-targeted ability applies its `statusEffect`
@@ -271,8 +285,6 @@ on use. `StatusEffectSystem` applies the queue on the server, refreshes or stack
 them and credits damage over time to whoever applied the effect. It runs just before `DamageSystem`, so an
 ability's effect applies in the frame it is cast and damage over time lands in the frame it ticks. Each effect is
 an `ActiveStatus` entry, and clients get only its type id and end time for the HUD.
-
-`DamageTakenModifier`, in `Combat`, scales hits of one damage type on top of the unfiltered `DamageTaken` stat.
 
 ## Vision
 

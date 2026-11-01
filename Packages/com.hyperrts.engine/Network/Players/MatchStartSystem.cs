@@ -29,7 +29,8 @@ namespace HyperRTS.Network.Players
         public void OnCreate(ref SystemState state)
         {
             _players = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection>().Build();
-            _humans = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection>().WithNone<AIPlayer>().Build();
+            _humans = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection, GhostOwner>().WithNone<AIPlayer>()
+                .Build();
             state.RequireForUpdate<MatchState>();
         }
 
@@ -49,7 +50,7 @@ namespace HyperRTS.Network.Players
                 _resume = GameplayPhaseGroup.PauseAllButOrders(state.World);
             }
 
-            var humans = _humans.ToComponentDataArray<PlayerConnection>(Allocator.Temp);
+            var humans = _humans.ToComponentDataArray<GhostOwner>(Allocator.Temp);
             if (!AllJoined(_players.CalculateEntityCount(), humans) && now - _waitingSince < JoinTimeout(ref state))
             {
                 return;
@@ -72,7 +73,7 @@ namespace HyperRTS.Network.Players
         }
 
         /// <summary>Every spawned human has a connection; a match of only AI has once its players spawn.</summary>
-        public static bool AllJoined(int players, NativeArray<PlayerConnection> humans)
+        public static bool AllJoined(int players, NativeArray<GhostOwner> humans)
         {
             // Player ghosts spawn a frame after the map loads, so no players is "not yet", not "nobody".
             if (players == 0)
@@ -80,9 +81,9 @@ namespace HyperRTS.Network.Players
                 return false;
             }
 
-            foreach (var connection in humans)
+            foreach (var owner in humans)
             {
-                if (connection.NetworkId == 0)
+                if (owner.NetworkId == 0)
                 {
                     return false;
                 }

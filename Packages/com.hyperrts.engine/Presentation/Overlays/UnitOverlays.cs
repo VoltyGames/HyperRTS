@@ -34,8 +34,7 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.Exclude<FogHidden>(),
             ComponentType.Exclude<Inside>()));
 
-        private readonly LiveQuery _hovered = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<HoveredEntity>()));
+        private readonly LiveSingleton<HoveredEntity> _hovered = new();
 
         private readonly GroundMarkers _markers;
         private readonly HealthBars _bars;
@@ -51,7 +50,7 @@ namespace HyperRTS.Presentation.Overlays
         {
             var entityManager = view.EntityManager;
             var handles = new UnitHandles(entityManager);
-            _hovered.In(entityManager).TryGetSingleton(out HoveredEntity hovered);
+            _hovered.TryGet(entityManager, out var hovered);
             using var chunks = _living.In(entityManager).ToArchetypeChunkArray(Allocator.Temp);
             foreach (var chunk in chunks)
             {

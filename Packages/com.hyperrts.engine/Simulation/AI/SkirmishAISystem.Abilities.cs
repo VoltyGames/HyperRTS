@@ -27,9 +27,12 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                foreach (var ability in SystemAPI.GetBuffer<Ability>(caster))
+                var abilities = SystemAPI.GetBuffer<Ability>(caster);
+                var cooldowns = SystemAPI.GetBuffer<AbilityState>(caster);
+                foreach (var ability in abilities)
                 {
-                    if (TryAim(ref state, ability, caster, casters.Position(i), true, turn, snapshot, out var aim))
+                    var ready = cooldowns[AbilityRules.FindState(cooldowns, ability.Id)].IsReady;
+                    if (ready && TryAim(ref state, ability, caster, casters.Position(i), true, turn, snapshot, out var aim))
                     {
                         turn.Commands.Add(Command(CommandType.UseAbility, caster, ability, aim));
                         break;
@@ -42,9 +45,12 @@ namespace HyperRTS.Simulation.AI
                 return;
             }
 
-            foreach (var power in SystemAPI.GetBuffer<Ability>(turn.Player))
+            var powers = SystemAPI.GetBuffer<Ability>(turn.Player);
+            var charges = SystemAPI.GetBuffer<AbilityState>(turn.Player);
+            foreach (var power in powers)
             {
-                if (TryAim(ref state, power, turn.Player, turn.Home, false, turn, snapshot, out var aim))
+                var ready = charges[AbilityRules.FindState(charges, power.Id)].IsReady;
+                if (ready && TryAim(ref state, power, turn.Player, turn.Home, false, turn, snapshot, out var aim))
                 {
                     turn.Commands.Add(Command(CommandType.UsePower, Entity.Null, power, aim));
                 }
@@ -65,11 +71,6 @@ namespace HyperRTS.Simulation.AI
         {
             var faction = turn.Faction;
             aim = new Aim { Target = Entity.Null, Position = from };
-            if (!ability.IsReady)
-            {
-                return false;
-            }
-
             if (ability.RequiredTypeId != 0 && !snapshot.Completed.Owns(faction, ability.RequiredTypeId))
             {
                 return false;

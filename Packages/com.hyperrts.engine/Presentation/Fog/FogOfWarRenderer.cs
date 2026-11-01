@@ -64,10 +64,8 @@ namespace HyperRTS.Presentation.Fog
         [Tooltip("Outline round the ground the selected units see, while its key is held; alpha is its strength.")]
         private Color sightShapeColor = new(0.95f, 0.92f, 0.75f, 0.8f);
 
-        private readonly LiveQuery _fogQuery = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogOfWar>()));
-        private readonly LiveQuery _localView = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFogView>()));
+        private readonly LiveSingleton<FogOfWar> _fogGrid = new();
+        private readonly LiveSingleton<LocalFogView> _localView = new();
         private readonly SightShape _sightShape = new();
         private Texture2D _texture;
         private NativeArray<byte> _target;
@@ -87,7 +85,7 @@ namespace HyperRTS.Presentation.Fog
 
             if (view.Version != _version || _texture == null)
             {
-                _fogQuery.In(entityManager).CompleteDependency();
+                _fogGrid.Complete(entityManager);
                 Retarget(fog, view);
             }
 
@@ -112,13 +110,13 @@ namespace HyperRTS.Presentation.Fog
             }
 
             entityManager = match.EntityManager;
-            var hasView = _localView.In(entityManager).TryGetSingleton(out view);
+            var hasView = _localView.TryGet(entityManager, out view);
             if (!hasView || !view.Active)
             {
                 return false;
             }
 
-            return _fogQuery.In(entityManager).TryGetSingleton(out fog);
+            return _fogGrid.TryGet(entityManager, out fog);
         }
 
         /// <summary>Fills the target from the latest stamp; a new grid shows it at once rather than fading in.</summary>

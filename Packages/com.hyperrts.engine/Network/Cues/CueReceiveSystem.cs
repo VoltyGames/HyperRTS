@@ -3,7 +3,6 @@ using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Entities;
-using Unity.Netcode;
 
 namespace HyperRTS.Network.Cues
 {
@@ -15,29 +14,29 @@ namespace HyperRTS.Network.Cues
     [UpdateAfter(typeof(CueClearSystem))]
     public partial struct CueReceiveSystem : ISystem
     {
-        private EntityQuery _rpcs;
+        private RpcInbox<CueRpc> _inbox;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _rpcs = SystemAPI.QueryBuilder().WithAll<CueRpc, ReceiveRpcCommandRequest>().Build();
-            state.RequireForUpdate(_rpcs);
+            _inbox = new RpcInbox<CueRpc>(ref state);
+            state.RequireForUpdate(_inbox.Requests);
             state.RequireForUpdate<CueQueue>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            // Taking destroys entities, which would invalidate a buffer fetched before it.
+            var rpcs = _inbox.Take(state.EntityManager);
             var cues = SystemAPI.GetSingletonBuffer<CueEvent>();
-            foreach (var rpc in SystemAPI.Query<RefRO<CueRpc>>().WithAll<ReceiveRpcCommandRequest>())
+            foreach (var rpc in rpcs)
             {
-                foreach (var packed in rpc.ValueRO.Cues)
+                foreach (var packed in rpc.Cues)
                 {
                     cues.Add(packed.Unpack());
                 }
             }
-
-            state.EntityManager.DestroyEntity(_rpcs);
         }
     }
 }

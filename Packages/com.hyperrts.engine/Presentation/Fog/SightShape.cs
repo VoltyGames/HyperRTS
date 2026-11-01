@@ -22,8 +22,7 @@ namespace HyperRTS.Presentation.Fog
         private static readonly int MaskId = Shader.PropertyToID("_HyperRTSSightShape");
         private static readonly int ColorId = Shader.PropertyToID("_HyperRTSSightShapeColor");
 
-        private readonly LiveQuery _view = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<SightShapeView>()));
+        private readonly LiveSingleton<SightShapeView> _view = new();
         private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(), ComponentType.ReadOnly<SightPatch>(),
             ComponentType.ReadOnly<SightPatchBits>(), ComponentType.ReadOnly<Faction>()));
@@ -32,7 +31,7 @@ namespace HyperRTS.Presentation.Fog
         /// <summary>Paints and publishes the outline, or hides it when not shown.</summary>
         public void Update(EntityManager entityManager, in FogOfWar fog, in LocalFogView view, Color color)
         {
-            var shown = _view.In(entityManager).TryGetSingleton(out SightShapeView shape) && shape.Shown;
+            var shown = _view.TryGet(entityManager, out var shape) && shape.Shown;
             if (!shown)
             {
                 Hide();

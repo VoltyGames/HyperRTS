@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
@@ -11,7 +12,7 @@ namespace HyperRTS.Simulation.Production
         public int QueueLimit;
 
         /// <summary>Production speed multiplier (1 = build times as listed) from stats; low power slows it further.</summary>
-        public float Speed;
+        [StatField(Stat.ProductionSpeed)] public float Speed;
 
         /// <summary>Seconds of work done on the head of the queue.</summary>
         [GhostField] public float Elapsed;

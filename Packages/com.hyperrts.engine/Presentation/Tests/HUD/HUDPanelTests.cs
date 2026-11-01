@@ -20,10 +20,18 @@ namespace HyperRTS.Presentation.Tests.HUD
         internal static HUDPanelLayouts Layouts =>
             AssetDatabase.LoadAssetAtPath<HUDPanelLayouts>(AssetDatabase.GUIDToAssetPath(LayoutsGuid));
 
+        /// <summary>A panel shell as the HUD holds it, taken from the unwrapped HUD tree.</summary>
+        internal static VisualElement Slot(string name)
+        {
+            var hud = Layouts.Root.CloneRoot();
+            hud.UnwrapInstances();
+            return hud.Require<VisualElement>(name);
+        }
+
         [Test]
         public void BoxedPanel_HasPanelClass()
         {
-            var panel = new SelectionPanel(Layouts);
+            var panel = new SelectionPanel(Slot("selection"), Layouts);
 
             Assert.IsTrue(panel.Root.ClassListContains("hud-panel"));
             Assert.IsTrue(panel.BlocksPointer);
@@ -33,7 +41,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         [Test]
         public void GameOverBanner_IsUnboxedPassThroughOverlay()
         {
-            var banner = new GameOverBanner(Layouts);
+            var banner = new GameOverBanner(Slot("game-over"));
 
             Assert.IsTrue(banner.Root.ClassListContains("hud-banner"));
             Assert.IsFalse(banner.Root.ClassListContains("hud-panel"));
@@ -45,11 +53,9 @@ namespace HyperRTS.Presentation.Tests.HUD
         [Test]
         public void EveryPanel_BuildsFromItsShell()
         {
-            var layouts = Layouts;
-
-            Assert.DoesNotThrow(() => new ResourceBar(layouts));
-            Assert.DoesNotThrow(() => new Minimap(layouts));
-            Assert.DoesNotThrow(() => new CommandCard(layouts));
+            Assert.DoesNotThrow(() => new ResourceBar(Slot("top-bar"), Layouts));
+            Assert.DoesNotThrow(() => new Minimap(Slot("minimap")));
+            Assert.DoesNotThrow(() => new CommandCard(Slot("commands"), Layouts));
         }
 
         [Test]

@@ -1,11 +1,8 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Stats;
-using HyperRTS.Simulation.Movement;
-using HyperRTS.Simulation.Vision;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -19,58 +16,86 @@ namespace HyperRTS.Simulation.GameEntities
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct StatBaseSystem : ISystem
     {
+        private StatBindings _bindings;
+        private NativeArray<EntityQuery> _queries;
+
+        public void OnCreate(ref SystemState state)
+        {
+            _bindings = StatBindings.Find(Allocator.Persistent);
+            _queries = new NativeArray<EntityQuery>(_bindings.Components.Length, Allocator.Persistent);
+            for (var i = 0; i < _queries.Length; i++)
+            {
+                _queries[i] = state.GetEntityQuery(new EntityQueryDesc
+                {
+                    All = new[]
+                    {
+                        ComponentType.ReadOnly(_bindings.Components[i].Component.TypeIndex),
+                        ComponentType.ReadWrite<BaseStat>(), ComponentType.ReadOnly<StatBasesPending>(),
+                    },
+                });
+            }
+        }
+
+        public void OnDestroy(ref SystemState state)
+        {
+            _bindings.Dispose();
+            _queries.Dispose();
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new RecordJob
+            for (var i = 0; i < _queries.Length; i++)
             {
-                Speeds = SystemAPI.GetComponentLookup<MovementSpeed>(true),
-                Visions = SystemAPI.GetComponentLookup<VisionRange>(true),
-                Builders = SystemAPI.GetComponentLookup<Builder>(true),
-                Producers = SystemAPI.GetComponentLookup<Producer>(true),
-            }.ScheduleParallel();
+                var binding = _bindings.Components[i];
+                state.Dependency = new FieldJob
+                {
+                    Component = state.GetDynamicComponentTypeHandle(
+                        ComponentType.ReadOnly(binding.Component.TypeIndex)),
+                    Floats = binding.Floats,
+                    Fields = _bindings.FieldsFor(binding),
+                    Bases = SystemAPI.GetBufferTypeHandle<BaseStat>(false),
+                }.ScheduleParallel(_queries[i], state.Dependency);
+            }
+
+            new HealthJob().ScheduleParallel();
         }
 
         [BurstCompile]
-        private partial struct RecordJob : IJobEntity
+        private struct FieldJob : IJobChunk
         {
-            [ReadOnly] public ComponentLookup<MovementSpeed> Speeds;
-            [ReadOnly] public ComponentLookup<VisionRange> Visions;
-            [ReadOnly] public ComponentLookup<Builder> Builders;
-            [ReadOnly] public ComponentLookup<Producer> Producers;
+            [ReadOnly] public DynamicComponentTypeHandle Component;
+            public int Floats;
+            [ReadOnly] public NativeArray<StatField> Fields;
+            public BufferTypeHandle<BaseStat> Bases;
 
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
+            {
+                var values = chunk.GetDynamicComponentDataArrayReinterpret<float>(ref Component, Floats * sizeof(float));
+                var bases = chunk.GetBufferAccessorRW(ref Bases);
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
+                {
+                    foreach (var field in Fields)
+                    {
+                        bases[i].Add(new BaseStat { Stat = field.Stat, Value = values[i * Floats + field.Index] });
+                    }
+                }
+            }
+        }
+
+        /// <summary>Runs after the field jobs, which visit only entities still pending.</summary>
+        [BurstCompile]
+        private partial struct HealthJob : IJobEntity
+        {
             // Modifiers are taken writable so StatSystem's change filter applies any added before the bases existed.
-            private void Execute(Entity entity, EnabledRefRW<StatBasesPending> pending, in Health health,
+            private void Execute(EnabledRefRW<StatBasesPending> pending, in Health health,
                 DynamicBuffer<BaseStat> bases, DynamicBuffer<StatModifier> modifiers)
             {
-                bases.Clear();
-                Record(bases, Stat.MaxHealth, health.Max);
-                if (Speeds.TryGetComponent(entity, out var speed))
-                {
-                    Record(bases, Stat.MoveSpeed, speed.Value);
-                }
-
-                if (Visions.TryGetComponent(entity, out var vision))
-                {
-                    Record(bases, Stat.VisionRange, vision.Value);
-                }
-
-                if (Builders.TryGetComponent(entity, out var builder))
-                {
-                    Record(bases, Stat.BuildRate, builder.Rate);
-                }
-
-                if (Producers.TryGetComponent(entity, out var producer))
-                {
-                    Record(bases, Stat.ProductionSpeed, producer.Speed);
-                }
-
+                bases.Add(new BaseStat { Stat = Stat.MaxHealth, Value = health.Max });
                 pending.ValueRW = false;
             }
-
-            private static void Record(DynamicBuffer<BaseStat> bases, Stat stat, float value) =>
-                bases.Add(new BaseStat { Stat = stat, Value = value });
         }
     }
 }

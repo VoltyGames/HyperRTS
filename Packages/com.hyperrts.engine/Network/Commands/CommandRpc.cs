@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Orders;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
@@ -9,13 +8,10 @@ namespace HyperRTS.Network.Commands
     /// <summary>
     /// A <c>PlayerCommand</c> on the wire. Netcode sends entities as ghost references (id and spawn tick), so a
     /// despawned ghost arrives as <c>Entity.Null</c> rather than as a newer ghost reusing its id. Prefabs travel as
-    /// <c>EntityInfo.TypeId</c>; selection is client-side, so the commanded units come along.
+    /// <c>EntityInfo.TypeId</c>. A command for a group addresses the <see cref="SelectionRpc"/> it was sent after.
     /// </summary>
     public struct CommandRpc : IRpcCommand
     {
-        /// <summary>Most units one command carries; the rest of a larger selection is dropped.</summary>
-        public const int MaxSubjects = 127;
-
         public byte Type;
         public bool Queue;
         public int Argument;
@@ -29,8 +25,11 @@ namespace HyperRTS.Network.Commands
 
         public int PrefabTypeId;
 
-        [GhostFixedListCapacity(Capacity = MaxSubjects)]
-        public FixedList4096Bytes<Entity> Subjects;
+        /// <summary>The one unit or producer commanded; <c>Entity.Null</c> addresses the selection.</summary>
+        public Entity Unit;
+
+        /// <summary>The <see cref="SelectionRpc.Version"/> current when the command was sent.</summary>
+        public ushort Selection;
 
         /// <summary>The plain fields of <paramref name="command"/>; the sender resolves entities and the prefab.</summary>
         public static CommandRpc From(in PlayerCommand command) => new()

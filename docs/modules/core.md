@@ -41,8 +41,8 @@ An entity's type id is a hash of its display name, so two prefab types must not 
 ## Stats
 
 The base tier: live stats with modifiers, in `Simulation/Stats/`. `Stat`, `StatModifier`, `StatSource` and `StatMath`
-define the value formula, and `BaseStat` holds a stat's unmodified value. The recompute is in
-[Combat](combat.md#stats).
+define the value formula, and `BaseStat` holds a stat's unmodified value. `StatFieldAttribute` marks the component
+field a stat drives, and `StatBindings` collects those fields for the recompute in [Combat](combat.md#stats).
 
 ## GameEntities
 

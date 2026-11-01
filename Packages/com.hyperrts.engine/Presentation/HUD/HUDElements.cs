@@ -29,6 +29,19 @@ namespace HyperRTS.Presentation.HUD
             return root;
         }
 
+        /// <summary>Replaces each template instance in the tree by its one root, named after the instance.</summary>
+        public static void UnwrapInstances(this VisualElement tree)
+        {
+            foreach (var slot in tree.Query<TemplateContainer>().ToList())
+            {
+                var shell = slot[0];
+                shell.name = slot.name;
+                shell.RemoveFromHierarchy();
+                slot.parent.Insert(slot.parent.IndexOf(slot), shell);
+                slot.RemoveFromHierarchy();
+            }
+        }
+
         /// <summary>The element called <paramref name="name"/>, which the layout must have.</summary>
         public static T Require<T>(this VisualElement root, string name) where T : VisualElement =>
             root.Q<T>(name) ?? throw new InvalidOperationException(

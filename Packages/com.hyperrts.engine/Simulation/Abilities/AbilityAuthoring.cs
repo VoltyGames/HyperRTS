@@ -71,13 +71,20 @@ namespace HyperRTS.Simulation.Abilities
             public override void Bake(AbilityAuthoring authoring)
             {
                 var abilities = new List<Ability>();
+                var states = new List<AbilityState>();
                 foreach (var entry in authoring.abilities)
                 {
-                    abilities.Add(BakeEntry(entry));
+                    var ability = BakeEntry(entry);
+                    abilities.Add(ability);
+                    states.Add(new AbilityState
+                    {
+                        Id = ability.Id, CooldownRemaining = entry.startsOnCooldown ? entry.cooldown : 0f,
+                    });
                 }
 
                 var writer = this.Writer();
                 writer.AddBuffer(abilities);
+                writer.AddBuffer(states);
             }
 
             private Ability BakeEntry(Entry entry)
@@ -98,7 +105,6 @@ namespace HyperRTS.Simulation.Abilities
                     Filter = entry.filter,
                     Range = entry.range,
                     Cooldown = entry.cooldown,
-                    CooldownRemaining = entry.startsOnCooldown ? entry.cooldown : 0f,
                     RequiredTypeId = entry.requires != null ? entry.requires.TypeId : 0,
                     SpawnPrefab = entry.spawnPrefab != null
                         ? GetEntity(entry.spawnPrefab, TransformUsageFlags.Dynamic)

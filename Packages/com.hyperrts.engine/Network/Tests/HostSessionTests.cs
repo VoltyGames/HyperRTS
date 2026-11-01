@@ -54,9 +54,8 @@ namespace HyperRTS.Network.Tests
             var factions = new[]
             {
                 _session.Host.Get<Player>(hostPlayer).Faction, _session.Client.Get<Player>(clientPlayer).Faction,
-                _session.Host.Singleton<LocalFaction>().Value, _session.Client.Singleton<LocalFaction>().Value,
             };
-            CollectionAssert.AreEqual(new byte[] { 1, 2, 1, 2 }, factions, string.Join(",", factions));
+            CollectionAssert.AreEqual(new byte[] { 1, 2 }, factions, string.Join(",", factions));
         }
 
         [Test]

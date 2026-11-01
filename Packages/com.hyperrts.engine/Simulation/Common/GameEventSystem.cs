@@ -18,9 +18,15 @@ namespace HyperRTS.Simulation.Common
                 typeof(OwnerChanged), typeof(ResearchCompleted), typeof(EntityDamaged), typeof(SimulationFrame));
         }
 
-        // Scheduled, so last frame's readers needn't finish on the main thread first.
         [BurstCompile]
-        public void OnUpdate(ref SystemState state) => new ClearJob().Schedule();
+        public void OnUpdate(ref SystemState state)
+        {
+            // On the main thread, so no job ever writes the frame that systems read as a singleton.
+            SystemAPI.GetSingletonRW<SimulationFrame>().ValueRW.Value++;
+
+            // Scheduled, so last frame's readers needn't finish on the main thread first.
+            new ClearJob().Schedule();
+        }
 
         [BurstCompile]
         [WithAll(typeof(GameEvents))]
@@ -28,9 +34,8 @@ namespace HyperRTS.Simulation.Common
         {
             private void Execute(DynamicBuffer<UnitProduced> produced, DynamicBuffer<BuildingCompleted> completed,
                 DynamicBuffer<OwnerChanged> ownerChanges, DynamicBuffer<ResearchCompleted> researched,
-                DynamicBuffer<EntityDamaged> damaged, ref SimulationFrame frame)
+                DynamicBuffer<EntityDamaged> damaged)
             {
-                frame.Value++;
                 produced.Clear();
                 completed.Clear();
                 ownerChanges.Clear();

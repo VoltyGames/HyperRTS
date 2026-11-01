@@ -4,7 +4,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Auras
 {
-    /// <summary>An aura applied by <see cref="AuraSystem"/>; its stat bonuses are in <see cref="AuraBonus"/>.</summary>
+    /// <summary>An aura applied by <see cref="AuraSystem"/>; its stat bonuses are its <see cref="GrantedModifier"/>s.</summary>
     public struct Aura : IComponentData
     {
         public int AuraId;
@@ -13,13 +13,6 @@ namespace HyperRTS.Simulation.Auras
         public float HealPerSecond;
         public float DamagePerSecond;
         public UnityObjectRef<DamageType> DamageType;
-    }
-
-    /// <summary>A modifier the aura grants, with the aura id as its source.</summary>
-    [InternalBufferCapacity(1)]
-    public struct AuraBonus : IBufferElementData
-    {
-        public StatModifier Modifier;
     }
 
     /// <summary>An aura this entity is inside, one per aura id, sorted by id. Rewritten by <see cref="AuraSystem"/>.</summary>

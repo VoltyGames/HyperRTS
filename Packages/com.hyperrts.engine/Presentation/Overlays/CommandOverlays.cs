@@ -30,11 +30,7 @@ namespace HyperRTS.Presentation.Overlays
         // A 30 by 30 cell footprint, far past any building, so a huge drag can't flood the batch.
         private const int MaxBlockedCells = 900;
 
-        private readonly LiveQuery _placement = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementState>()));
-
-        private readonly LiveQuery _gridQuery = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<NavGrid>()));
+        private readonly LiveSingleton<NavGrid> _grid = new();
 
         private readonly LiveQuery _rallies = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(),
@@ -62,11 +58,11 @@ namespace HyperRTS.Presentation.Overlays
         {
             var entityManager = view.EntityManager;
             _blockedCount = 0;
-            var placement = _placement.In(entityManager);
-            var placing = placement.TryGetSingleton(out PlacementState state) && state.Active;
+            var state = view.Placement;
+            var placing = state.Active;
             if (placing && TryReadGrid(entityManager, out var grid))
             {
-                AddPlacement(entityManager, placement.GetSingletonEntity(), state, grid);
+                AddPlacement(entityManager, view.PlacementEntity, state, grid);
             }
 
             var query = _rallies.In(entityManager);
@@ -95,9 +91,8 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>The cells are read on the main thread, so the jobs stamping them finish first.</summary>
         private bool TryReadGrid(EntityManager entityManager, out NavGrid grid)
         {
-            var query = _gridQuery.In(entityManager);
-            query.CompleteDependency();
-            return query.TryGetSingleton(out grid);
+            _grid.Complete(entityManager);
+            return _grid.TryGet(entityManager, out grid);
         }
 
         private void AddPlacement(EntityManager entityManager, Entity singleton, in PlacementState state,

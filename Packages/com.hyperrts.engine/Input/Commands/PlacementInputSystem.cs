@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace HyperRTS.Input.Commands
 {
@@ -19,7 +20,7 @@ namespace HyperRTS.Input.Commands
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(CommandInputSystem))]
-    public partial class PlacementInputSystem : SystemBase
+    public partial class PlacementInputSystem : InputMapSystem
     {
         // Metres the cursor moves from the press before a held click turns the ghost, so a plain click never does.
         private const float TurnDragDistance = 2f;
@@ -51,10 +52,7 @@ namespace HyperRTS.Input.Commands
             RequireForUpdate<FactionRelations>();
         }
 
-        // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
-        protected override void OnStartRunning() => InputActionsProvider.Enable(_actions.Commands);
-
-        protected override void OnStopRunning() => InputActionsProvider.Disable(_actions.Commands);
+        protected override InputActionMap Map => _actions.Commands;
 
         protected override void OnUpdate()
         {

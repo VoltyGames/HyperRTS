@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Auras
             {
                 Hits = _hits,
                 Auras = SystemAPI.GetComponentLookup<Aura>(true),
-                Bonuses = SystemAPI.GetBufferLookup<AuraBonus>(true),
+                Bonuses = SystemAPI.GetBufferLookup<GrantedModifier>(true),
                 Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Damage = _damage,
@@ -141,7 +141,7 @@ namespace HyperRTS.Simulation.Auras
         {
             [ReadOnly] public NativeParallelMultiHashMap<Entity, AuraPresence> Hits;
             [ReadOnly] public ComponentLookup<Aura> Auras;
-            [ReadOnly] public BufferLookup<AuraBonus> Bonuses;
+            [ReadOnly] public BufferLookup<GrantedModifier> Bonuses;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             public BufferLookup<StatModifier> Modifiers;
             public EventWriter<DamageEvent> Damage;

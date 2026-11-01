@@ -8,8 +8,10 @@ using HyperRTS.Simulation.Tests;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Netcode;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Utilities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
@@ -40,7 +42,11 @@ namespace HyperRTS.Network.Tests
         public TestWorld Host { get; }
         public TestWorld Client { get; }
 
-        public HostTestKit(params byte[] teams)
+        public HostTestKit(params byte[] teams) : this(0, teams)
+        {
+        }
+
+        private HostTestKit(int clientPacketLoss, byte[] teams)
         {
             NetworkSession.ResetStatics();
 
@@ -52,7 +58,7 @@ namespace HyperRTS.Network.Tests
             StopEditorClock(host);
             Host = new TestWorld(host);
             Host.CreateMatch(teams);
-            if (!SessionWorlds.TryListen(host, port, new IpcDrivers()))
+            if (!SessionWorlds.TryListen(host, port, new IpcDrivers(0)))
             {
                 throw new InvalidOperationException($"The test host could not listen on IPC port {port}.");
             }
@@ -72,8 +78,11 @@ namespace HyperRTS.Network.Tests
             Prefer(Host, 1);
             Prefer(Client, 2);
 
-            SessionWorlds.Connect(client, NetworkEndpoint.LoopbackIpv4.WithPort(port), new IpcDrivers());
+            SessionWorlds.Connect(client, NetworkEndpoint.LoopbackIpv4.WithPort(port), new IpcDrivers(clientPacketLoss));
         }
+
+        /// <summary>A session whose client drops this percentage of the packets it sends and receives.</summary>
+        public static HostTestKit WithPacketLoss(int percent, params byte[] teams) => new(percent, teams);
 
         public void Tick(int frames = 1)
         {
@@ -111,6 +120,26 @@ namespace HyperRTS.Network.Tests
         {
             using var query = world.Query(typeof(LocalPlayer));
             return query.GetSingletonEntity();
+        }
+
+        /// <summary>A unit prefab made a ghost in both worlds, as <see cref="PlayerGhostSystem"/> does players.</summary>
+        public Entity GhostUnitPrefab(byte faction, string name)
+        {
+            var config = new GhostPrefabCreation.Config
+            {
+                Name = name,
+                SupportedGhostModes = GhostModeMask.Interpolated,
+                DefaultGhostMode = GhostMode.Interpolated,
+                OptimizationMode = GhostOptimizationMode.Dynamic,
+            };
+            var prefab = Entity.Null;
+            foreach (var world in new[] { Client, Host })
+            {
+                prefab = world.SpawnUnit(faction, float3.zero, name: name);
+                GhostPrefabCreation.ConvertToGhostPrefab(world.EntityManager, prefab, config);
+            }
+
+            return prefab;
         }
 
         public void Dispose()
@@ -159,13 +188,33 @@ namespace HyperRTS.Network.Tests
 
         private readonly struct IpcDrivers : INetworkStreamDriverConstructor
         {
+            private readonly int _packetLoss;
+
+            public IpcDrivers(int packetLoss) => _packetLoss = packetLoss;
+
             public void CreateServerDriver(NetcodeWorld world, ref NetworkDriverStore driverStore, NetDebug netDebug) =>
                 DefaultDriverBuilder.RegisterServerIpcDriver(world, ref driverStore, netDebug,
                     DefaultDriverBuilder.GetNetworkServerSettings());
 
-            public void CreateClientDriver(NetcodeWorld world, ref NetworkDriverStore driverStore, NetDebug netDebug) =>
-                DefaultDriverBuilder.RegisterClientIpcDriver(world, ref driverStore, netDebug,
-                    DefaultDriverBuilder.GetNetworkClientSettings());
+            public void CreateClientDriver(NetcodeWorld world, ref NetworkDriverStore driverStore, NetDebug netDebug)
+            {
+                var settings = DefaultDriverBuilder.GetNetworkClientSettings();
+                if (_packetLoss == 0)
+                {
+                    DefaultDriverBuilder.RegisterClientIpcDriver(world, ref driverStore, netDebug, settings);
+                    return;
+                }
+
+                // A fixed seed keeps the drops the same on every run.
+                settings.WithSimulatorStageParameters(maxPacketCount: 256, mode: ApplyMode.AllPackets,
+                    packetDropPercentage: _packetLoss, randomSeed: 7);
+                var lossy = new NetworkDriverStore.NetworkDriverInstance
+                {
+                    driver = NetworkDriver.Create(new IPCNetworkInterface(), settings),
+                };
+                DefaultDriverBuilder.CreateClientSimulatorPipelines(ref lossy);
+                driverStore.RegisterDriver(TransportType.IPC, lossy);
+            }
         }
     }
 }

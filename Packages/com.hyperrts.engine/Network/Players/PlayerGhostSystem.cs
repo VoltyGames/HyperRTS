@@ -51,6 +51,12 @@ namespace HyperRTS.Network.Players
         private static void Convert(EntityManager entityManager, Entity player)
         {
             entityManager.RemoveComponent<LocalPlayer>(player);
+
+            // The server sets the owner to the seated connection, and Netcode flags the ghost local on that client.
+            entityManager.AddComponent<GhostOwner>(player);
+            entityManager.AddComponent<GhostOwnerIsLocal>(player);
+            entityManager.SetComponentEnabled<GhostOwnerIsLocal>(player, false);
+
             var faction = entityManager.GetComponentData<Player>(player).Faction;
             GhostPrefabCreation.ConvertToGhostPrefab(entityManager, player, new GhostPrefabCreation.Config
             {
@@ -74,6 +80,7 @@ namespace HyperRTS.Network.Players
 
                 var player = entityManager.Instantiate(prefab);
                 entityManager.AddComponent<PlayerConnection>(player);
+                entityManager.AddBuffer<PlayerSelection>(player);
             }
 
             _pending.Clear();

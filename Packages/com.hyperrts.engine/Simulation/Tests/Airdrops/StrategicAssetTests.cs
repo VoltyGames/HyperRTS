@@ -37,11 +37,10 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             StealthSetup.AddStealth(stealth, new Stealth(), enabled: true);
             World.MakePrefab(bomber);
             _asset = World.SpawnBuilding(1, new float3(0f, 0f, -60f), new float2(4f, 6f));
-            World.EntityManager.AddBuffer<Ability>(_asset).Add(new Ability
+            World.GiveAbility(_asset, new Ability
             {
                 Id = Strike, Name = "Strike", Target = AbilityTarget.Point, Cooldown = Charge,
-                CooldownRemaining = Charge,
-            });
+            }, Charge);
             var writer = World.Writer(_asset);
             writer.Add(new StrategicAsset
             {
@@ -114,7 +113,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
 
             World.Run(Charge + 1f);
 
-            Assert.AreEqual(Charge, World.Buffer<Ability>(_asset)[0].CooldownRemaining, 0.01f);
+            Assert.AreEqual(Charge, World.Buffer<AbilityState>(_asset)[0].CooldownRemaining, 0.01f);
             Assert.IsFalse(ReadCharge(1).HasAsset);
         }
 

@@ -197,8 +197,7 @@ namespace HyperRTS.Simulation.Tests.Common
                 Filter = AbilityTargetFilter.Hostile, Cooldown = 2f, SpawnPrefab = beacon,
             };
             var silo = _world.SpawnBuilding(1, float3.zero, new float2(4f, 4f));
-            var writer = _world.Writer(silo);
-            writer.AddBuffer(new[] { strike });
+            _world.GiveAbility(silo, strike);
 
             _world.Command(1, new PlayerCommand
             {

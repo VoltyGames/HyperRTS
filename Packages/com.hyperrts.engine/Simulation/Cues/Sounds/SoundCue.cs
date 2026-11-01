@@ -39,5 +39,14 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [Tooltip("3D only: silent (and skipped) beyond this distance from the listener.")]
         [Min(0.1f)]
         public float maxDistance = 60f;
+
+        /// <summary>Draws one of the clips and a pitch, for a cue that has clips.</summary>
+        public void Pick(out AudioClip clip, out float randomPitch)
+        {
+            clip = clips[Random.Range(0, clips.Length)];
+            randomPitch = Random.Range(pitch.x, pitch.y);
+        }
+
+        public float PickVolume() => Random.Range(volume.x, volume.y);
     }
 }

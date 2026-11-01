@@ -2,9 +2,11 @@ using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
+using Unity.Profiling;
 using Unity.Transforms;
 
 namespace HyperRTS.Network.Replication
@@ -22,6 +24,11 @@ namespace HyperRTS.Network.Replication
     [UpdateBefore(typeof(GhostSendSystem))]
     public partial struct FogRelevancySystem : ISystem
     {
+        private static readonly ProfilerMarker HideMarker = new("FogRelevancySystem.Hide");
+
+        private EntityQuery _ghosts;
+        private CoverLookup _covers;
+
         private struct Viewer
         {
             public int NetworkId;
@@ -31,6 +38,9 @@ namespace HyperRTS.Network.Replication
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _ghosts = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, GhostInstance>()
+                .WithNone<Destructible>().Build();
+            _covers = new CoverLookup(ref state);
             state.RequireForUpdate<GhostRelevancy>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
@@ -40,7 +50,8 @@ namespace HyperRTS.Network.Replication
         public void OnUpdate(ref SystemState state)
         {
             ref var relevancy = ref SystemAPI.GetSingletonRW<GhostRelevancy>().ValueRW;
-            relevancy.GhostRelevancySet.Clear();
+            var hidden = relevancy.GhostRelevancySet;
+            hidden.Clear();
             if (!SystemAPI.TryGetSingleton<FogOfWar>(out var fog))
             {
                 relevancy.GhostRelevancyMode = GhostRelevancyMode.Disabled;
@@ -49,40 +60,35 @@ namespace HyperRTS.Network.Replication
 
             // Only hostile, hidden pairs are listed, so observers and allies cost nothing.
             relevancy.GhostRelevancyMode = GhostRelevancyMode.SetIsIrrelevant;
-            var fogOn = SystemAPI.GetSingleton<MapSettings>().FogOfWar;
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
             var viewers = Viewers(ref state);
-            state.EntityManager.CompleteDependencyBeforeRO<Stealthed>();
-            state.EntityManager.CompleteDependencyBeforeRO<Concealed>();
-            var covers = new CoverLookup(ref state);
-            foreach (var (transform, owner, ghost, entity) in SystemAPI
-                         .Query<RefRO<LocalTransform>, RefRO<Faction>, RefRO<GhostInstance>>().WithNone<Destructible>()
-                         .WithEntityAccess())
+            if (viewers.IsEmpty)
             {
-                // With fog off only stealth hides anything.
-                var cover = covers.Find(entity);
-                if (!fogOn && cover == Cover.None)
-                {
-                    continue;
-                }
-
-                var position = transform.ValueRO.Position;
-                var faction = owner.ValueRO.Value;
-                foreach (var viewer in viewers)
-                {
-                    if (fog.IsHiddenFrom(relations, viewer.Faction, faction, position, cover, covers.IsTall(entity)))
-                    {
-                        relevancy.GhostRelevancySet.TryAdd(
-                            new RelevantGhostForConnection(viewer.NetworkId, ghost.ValueRO.ghostId), 1);
-                    }
-                }
+                return;
             }
+
+            // A parallel writer can't grow the set.
+            var most = _ghosts.CalculateEntityCount() * viewers.Length;
+            if (hidden.Capacity < most)
+            {
+                hidden.Capacity = most;
+            }
+
+            _covers.Update(ref state);
+            state.Dependency = new HideJob
+            {
+                Fog = fog,
+                Covers = _covers,
+                Viewers = viewers.AsArray(),
+                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                FogOn = SystemAPI.GetSingleton<MapSettings>().FogOfWar,
+                Hidden = hidden.AsParallelWriter(),
+            }.ScheduleParallel(_ghosts, state.Dependency);
         }
 
         /// <summary>In-game connections holding a slot, with its faction; observers see all, so are left out.</summary>
         private NativeList<Viewer> Viewers(ref SystemState state)
         {
-            var viewers = new NativeList<Viewer>(8, Allocator.Temp);
+            var viewers = new NativeList<Viewer>(8, state.WorldUpdateAllocator);
             // A host's own connection has no stream: its world holds every ghost, and presentation fog hides enemies.
             foreach (var (id, link) in SystemAPI.Query<RefRO<NetworkId>, RefRO<ConnectionPlayer>>()
                          .WithAll<NetworkStreamInGame, NetworkStreamConnection>())
@@ -92,6 +98,47 @@ namespace HyperRTS.Network.Replication
             }
 
             return viewers;
+        }
+
+        [BurstCompile]
+        private partial struct HideJob : IJobEntity, IJobEntityChunkBeginEnd
+        {
+            [ReadOnly] public FogOfWar Fog;
+            [ReadOnly] public CoverLookup Covers;
+            [ReadOnly] public NativeArray<Viewer> Viewers;
+            public FactionRelations Relations;
+            public bool FogOn;
+            public NativeParallelHashMap<RelevantGhostForConnection, int>.ParallelWriter Hidden;
+
+            // Per chunk, not per ghost, so the marker costs little.
+            public bool OnChunkBegin(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
+            {
+                HideMarker.Begin();
+                return true;
+            }
+
+            public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask, bool chunkWasExecuted) => HideMarker.End();
+
+            private void Execute(Entity entity, in LocalTransform transform, in Faction owner, in GhostInstance ghost)
+            {
+                // With fog off only stealth hides anything.
+                var cover = Covers.Find(entity);
+                if (!FogOn && cover == Cover.None)
+                {
+                    return;
+                }
+
+                var tall = Covers.IsTall(entity);
+                foreach (var viewer in Viewers)
+                {
+                    if (Fog.IsHiddenFrom(Relations, viewer.Faction, owner.Value, transform.Position, cover, tall))
+                    {
+                        Hidden.TryAdd(new RelevantGhostForConnection(viewer.NetworkId, ghost.ghostId), 1);
+                    }
+                }
+            }
         }
     }
 }

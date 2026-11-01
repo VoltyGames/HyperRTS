@@ -55,13 +55,9 @@ namespace HyperRTS.Simulation.Veterancy
                 {
                     var rank = authoring.ranks[i];
                     thresholds.Add(rank.experience);
-                    foreach (var bonus in rank.bonuses)
+                    foreach (var modifier in StatBonus.ToModifiers(rank.bonuses, StatSource.Veterancy))
                     {
-                        bonuses.Add(new VeterancyBonus
-                        {
-                            Rank = (byte)(i + 1),
-                            Modifier = bonus.ToModifier(StatSource.Veterancy),
-                        });
+                        bonuses.Add(new VeterancyBonus { Rank = (byte)(i + 1), Modifier = modifier });
                     }
                 }
 

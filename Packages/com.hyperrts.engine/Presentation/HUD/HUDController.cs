@@ -60,23 +60,29 @@ namespace HyperRTS.Presentation.HUD
 
         public HUDPanelLayouts PanelLayouts => panelLayouts;
 
-        /// <summary>Adds the panels to <paramref name="hud"/>, the HUD.uxml tree, or to its named slots.</summary>
+        /// <summary>Drives the panels in <paramref name="hud"/>, the HUD.uxml tree, and adds a game's own.</summary>
         protected virtual void CreatePanels(VisualElement hud)
         {
-            var bottom = hud.Require<VisualElement>("bottom");
-            Add(new Minimap(panelLayouts), bottom);
-            Add(new SelectionPanel(panelLayouts), bottom);
-            Add(new CommandCard(panelLayouts), bottom);
-            Add(new ResourceBar(panelLayouts), hud);
-            Add(new GameOverBanner(panelLayouts), hud);
-            Add(new LineCost(hud.Require<CostRow>("line-cost")), hud);
-            Add(new PlacementHint(hud.Require<Label>("placement-hint")), hud);
-            Add(new StrategicCountdowns(hud.Require<VisualElement>("strategic-countdowns")), hud);
+            Adopt(new Minimap(hud.Require<VisualElement>("minimap")));
+            Adopt(new SelectionPanel(hud.Require<VisualElement>("selection"), panelLayouts));
+            Adopt(new CommandCard(hud.Require<VisualElement>("commands"), panelLayouts));
+            Adopt(new ResourceBar(hud.Require<VisualElement>("top-bar"), panelLayouts));
+            Adopt(new GameOverBanner(hud.Require<VisualElement>("game-over")));
+            Adopt(new LineCost(hud.Require<CostRow>("line-cost")));
+            Adopt(new PlacementHint(hud.Require<Label>("placement-hint")));
+            Adopt(new StrategicCountdowns(hud.Require<VisualElement>("strategic-countdowns")));
         }
 
+        /// <summary>Adds a panel of a game's own to <paramref name="parent"/>.</summary>
         protected void Add(HUDPanel panel, VisualElement parent)
         {
             parent.Add(panel.Root);
+            Adopt(panel);
+        }
+
+        /// <summary>Drives a panel whose element is already in the HUD tree.</summary>
+        protected void Adopt(HUDPanel panel)
+        {
             _panels.Add(panel);
             if (panel.BlocksPointer)
             {
@@ -95,6 +101,7 @@ namespace HyperRTS.Presentation.HUD
         protected override VisualElement Build()
         {
             var hud = panelLayouts.Root.CloneRoot();
+            hud.UnwrapInstances();
             if (_theme != null)
             {
                 hud.AddToClassList(_theme);

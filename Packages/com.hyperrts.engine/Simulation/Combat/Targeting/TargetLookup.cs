@@ -34,6 +34,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         public TargetLookup(ref SystemState state)
         {
+            // Zeroes the [ReadOnly] blockers too: Burst refuses a direct store to them.
+            this = default;
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _health = state.GetComponentLookup<Health>(true);
             _factions = state.GetComponentLookup<Faction>(true);
@@ -44,10 +46,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _passengerRange = state.GetComponentLookup<PassengerRange>(true);
             _vision = state.GetComponentLookup<VisionRange>(true);
-            _blockers = default;
             _damage = new DamageFactors(ref state);
             FogQuery(ref state).TryGetSingleton(out _fog);
-            _sight = default;
         }
 
         /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>

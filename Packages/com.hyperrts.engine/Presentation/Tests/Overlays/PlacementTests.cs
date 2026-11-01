@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Overlays;
@@ -28,12 +29,15 @@ namespace HyperRTS.Presentation.Tests.Overlays
         private Mesh _mesh;
         private OverlayStyle _style;
         private PlacementGhosts _ghosts;
+        private MatchView _view;
 
         [SetUp]
         public void SetUp()
         {
             _world = new World("Placement Ghost Tests");
             _em = _world.EntityManager;
+            _view = new MatchView();
+            _view.Refresh(_world);
             _source = new Material(Shader.Find("HyperRTS/Overlay"));
             _ghost = new Material(Shader.Find("HyperRTS/Placement Ghost"));
             _mesh = new Mesh();
@@ -89,7 +93,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         {
             StartPlacement(BuildingPrefab());
 
-            _ghosts.Update(_em, _style);
+            _ghosts.Update(_view, _style);
 
             var ghosts = LiveGhosts();
             Assert.AreEqual(1, ghosts.Length);
@@ -115,10 +119,10 @@ namespace HyperRTS.Presentation.Tests.Overlays
         public void Ghost_IsDestroyed_WhenPlacementEnds()
         {
             var singleton = StartPlacement(BuildingPrefab());
-            _ghosts.Update(_em, _style);
+            _ghosts.Update(_view, _style);
 
             _em.SetComponentData(singleton, new PlacementState());
-            _ghosts.Update(_em, _style);
+            _ghosts.Update(_view, _style);
 
             Assert.AreEqual(0, LiveGhosts().Length);
             using var tinted = _em.CreateEntityQuery(new EntityQueryBuilder(Allocator.Temp)

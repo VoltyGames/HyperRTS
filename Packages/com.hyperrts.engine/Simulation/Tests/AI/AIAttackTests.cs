@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Tests.AI
 
             Assert.AreEqual(70f, World.Get<Health>(near).Current, 1e-3f, "the enemy in range was hit");
             Assert.AreEqual(100f, World.Get<Health>(far).Current, 1e-3f, "the one out of range was not");
-            Assert.Greater(World.Buffer<Ability>(caster)[0].CooldownRemaining, 0f);
+            Assert.Greater(World.Buffer<AbilityState>(caster)[0].CooldownRemaining, 0f);
         }
 
         [Test]
@@ -186,7 +186,7 @@ namespace HyperRTS.Simulation.Tests.AI
         private Entity GiveAbility(Entity entity, string name, AbilityTarget target, float range, float damage,
             float radius = 0f)
         {
-            World.EntityManager.AddBuffer<Ability>(entity).Add(new Ability
+            World.GiveAbility(entity, new Ability
             {
                 Id = EntityInfo.TypeIdFromName(name), Name = name, Target = target,
                 Filter = AbilityTargetFilter.Hostile, Range = range, Cooldown = 30f,

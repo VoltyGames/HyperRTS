@@ -64,9 +64,8 @@ namespace HyperRTS.Simulation.Upgrades
                 var effects = new List<UpgradeEffect>();
                 foreach (var effect in authoring.effects)
                 {
-                    foreach (var bonus in effect.bonuses)
+                    foreach (var modifier in StatBonus.ToModifiers(effect.bonuses, StatSource.Upgrade(authoring.TypeId)))
                     {
-                        var modifier = bonus.ToModifier(StatSource.Upgrade(authoring.TypeId));
                         if (effect.appliesTo.Count == 0)
                         {
                             effects.Add(new UpgradeEffect { Modifier = modifier });

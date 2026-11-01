@@ -15,7 +15,7 @@ namespace HyperRTS.Network.Scenery
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct SceneryReceiveSystem : ISystem
     {
-        private EntityQuery _rpcs;
+        private RpcInbox<SceneryRpc> _inbox;
         private EntityQuery _scenery;
         private SceneryWriter _writer;
         private NativeHashMap<ulong, Entity> _index;
@@ -27,7 +27,7 @@ namespace HyperRTS.Network.Scenery
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _rpcs = SystemAPI.QueryBuilder().WithAll<SceneryRpc, ReceiveRpcCommandRequest>().Build();
+            _inbox = new RpcInbox<SceneryRpc>(ref state);
             _scenery = SystemAPI.QueryBuilder().WithAll<SceneryId>().WithNone<GhostInstance>().Build();
             _writer = new SceneryWriter(ref state);
             _index = new NativeHashMap<ulong, Entity>(1024, Allocator.Persistent);
@@ -44,11 +44,13 @@ namespace HyperRTS.Network.Scenery
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (_rpcs.IsEmpty && _waiting.IsEmpty)
+            if (_inbox.IsEmpty && _waiting.IsEmpty)
             {
                 return;
             }
 
+            // Taking destroys entities, so it comes before the writer's lookups are updated.
+            var rpcs = _inbox.Take(state.EntityManager);
             var loaded = Index(ref state);
             state.CompleteDependency();
             _writer.Update(ref state);
@@ -59,16 +61,14 @@ namespace HyperRTS.Network.Scenery
                 ApplyWaiting(ecb);
             }
 
-            foreach (var rpc in SystemAPI.Query<RefRO<SceneryRpc>>().WithAll<ReceiveRpcCommandRequest>())
+            foreach (var rpc in rpcs)
             {
-                var changes = rpc.ValueRO.Changes;
+                var changes = rpc.Changes;
                 for (var i = 0; i < changes.Length; i++)
                 {
-                    Apply(changes[i], rpc.ValueRO.Witnessed, ecb);
+                    Apply(changes[i], rpc.Witnessed, ecb);
                 }
             }
-
-            state.EntityManager.DestroyEntity(_rpcs);
         }
 
         /// <summary>True when scenery streamed in since the last update.</summary>

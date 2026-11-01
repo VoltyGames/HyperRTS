@@ -17,8 +17,7 @@ namespace HyperRTS.Presentation.HUD
     [RequireComponent(typeof(HUDController))]
     public class SelectionDragBoxUI : PanelContent
     {
-        private readonly LiveQuery _dragQuery = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<SelectionDragState>()));
+        private readonly LiveSingleton<SelectionDragState> _drag = new();
 
         // The box sits beside hud-root, so it takes the HUD sheets itself and a game theme restyles it.
         protected override VisualElement Build()
@@ -56,7 +55,7 @@ namespace HyperRTS.Presentation.HUD
         {
             state = default;
             return DefaultWorld.TryGetEntityManager(out var entityManager)
-                && _dragQuery.In(entityManager).TryGetSingleton(out state);
+                && _drag.TryGet(entityManager, out state);
         }
 
         // Input reports bottom-left screen pixels; panels are top-left and may be scaled.

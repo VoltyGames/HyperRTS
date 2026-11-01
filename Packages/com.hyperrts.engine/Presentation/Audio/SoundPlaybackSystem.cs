@@ -68,8 +68,7 @@ namespace HyperRTS.Presentation.Audio
                 return;
             }
 
-            var clip = cue.clips[Random.Range(0, cue.clips.Length)];
-            var pitch = Random.Range(cue.pitch.x, cue.pitch.y);
+            cue.Pick(out var clip, out var pitch);
             if (clip == null || pitch <= 0f)
             {
                 return;

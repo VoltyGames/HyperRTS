@@ -101,6 +101,7 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   world for a joining player.
 - A client system that mirrors a remote server, such as sending commands or receiving cues, carries
   `[RemoteClientOnly]`. Senders skip connections without `NetworkStreamConnection`, which is the host's own player.
+  Receive RPCs through `RpcInbox<T>` and send them with `Rpc.Send`.
 - Systems default to the server and local worlds. Client systems opt in with
   `[WorldSystemFilter(SimulationWorlds.Presented)]`; those under `PresentationSystemGroup` already default to the
   presented worlds. A component the HUD reads needs `[GhostField]`s.

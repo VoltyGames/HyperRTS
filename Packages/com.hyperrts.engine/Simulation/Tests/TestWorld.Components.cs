@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
@@ -33,6 +34,20 @@ namespace HyperRTS.Simulation.Tests
 
         public DynamicBuffer<T> Buffer<T>(Entity entity) where T : unmanaged, IBufferElementData =>
             EntityManager.GetBuffer<T>(entity);
+
+        /// <summary>Adds the ability and its cooldown, creating both buffers on first use.</summary>
+        public Entity GiveAbility(Entity entity, Ability ability, float cooldownRemaining = 0f)
+        {
+            if (!EntityManager.HasBuffer<Ability>(entity))
+            {
+                EntityManager.AddBuffer<Ability>(entity);
+                EntityManager.AddBuffer<AbilityState>(entity);
+            }
+
+            Buffer<Ability>(entity).Add(ability);
+            Buffer<AbilityState>(entity).Add(new AbilityState { Id = ability.Id, CooldownRemaining = cooldownRemaining });
+            return entity;
+        }
 
         public void SetEnabled<T>(Entity entity, bool enabled) where T : unmanaged, IComponentData, IEnableableComponent =>
             EntityManager.SetComponentEnabled<T>(entity, enabled);

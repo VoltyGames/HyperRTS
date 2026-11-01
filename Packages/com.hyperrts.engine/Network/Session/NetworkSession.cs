@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using HyperRTS.Network.Players;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Netcode;
 using Unity.Networking.Transport;
@@ -235,10 +236,18 @@ namespace HyperRTS.Network.Session
                 return;
             }
 
-            using var granted = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFaction>());
-            if (granted.TryGetSingleton(out LocalFaction faction))
+            using var seated = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalPlayer>(),
+                ComponentType.ReadOnly<Player>());
+            if (seated.TryGetSingleton(out Player player))
             {
-                Preference = JoinPreference.Rejoining(faction);
+                Preference = JoinPreference.Rejoining(player.Faction);
+                return;
+            }
+
+            using var watching = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalObserver>());
+            if (!watching.IsEmpty)
+            {
+                Preference = JoinPreference.Rejoining(Faction.Neutral);
                 return;
             }
 

@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             World.Run(2.1f);
             Assert.AreEqual(0, Statuses(target).Length);
-            Assert.AreEqual(0, World.Buffer<DamageTakenModifier>(target).Length);
+            Assert.AreEqual(0, World.Buffer<StatModifier>(target).Length);
             Hit(target, _precision, 10f);
             Assert.AreEqual(67f, World.GetHealth(target), 1e-3f, "expired");
         }
@@ -156,7 +156,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Run(1f);
             Assert.AreEqual(1, Statuses(target).Length, "outlasts the first application");
             Assert.AreEqual(1, Statuses(target)[0].Stacks);
-            Assert.AreEqual(1, World.Buffer<DamageTakenModifier>(target).Length);
+            Assert.AreEqual(1, World.Buffer<StatModifier>(target).Length);
 
             World.Run(1.2f);
             Assert.AreEqual(0, Statuses(target).Length);
@@ -173,7 +173,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             }
 
             Assert.AreEqual(2, Statuses(target)[0].Stacks);
-            var modifiers = World.Buffer<DamageTakenModifier>(target);
+            var modifiers = World.Buffer<StatModifier>(target);
             Assert.AreEqual(1, modifiers.Length);
             Assert.AreEqual(0.6f, modifiers[0].Percent, 1e-5f);
         }
@@ -226,7 +226,7 @@ namespace HyperRTS.Simulation.Tests.Combat
                 Cooldown = 30f,
                 StatusEffect = marked,
             };
-            World.EntityManager.AddBuffer<Ability>(World.Player(1)).Add(ability);
+            World.GiveAbility(World.Player(1), ability);
             var enemy = World.SpawnUnit(2, new float3(0f, 0f, 20f), speed: 0f);
 
             World.Command(1, new PlayerCommand { Type = CommandType.UsePower, Target = enemy, Argument = ability.Id });
@@ -247,20 +247,18 @@ namespace HyperRTS.Simulation.Tests.Combat
             FriendlyFire = friendlyFire,
         };
 
-        private Entity Effect(string name, StatusEffectDefinition definition, StatBonus[] bonuses = null,
-            TypedDamageBonus[] damageBonuses = null)
+        private Entity Effect(string name, StatusEffectDefinition definition, StatBonus[] bonuses = null)
         {
             var entity = World.EntityManager.CreateEntity();
             var writer = World.Writer(entity);
             var info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name };
-            StatusEffectAuthoring.Add(writer, info, definition, bonuses ?? new StatBonus[0],
-                damageBonuses ?? new TypedDamageBonus[0]);
+            StatusEffectAuthoring.Add(writer, info, definition, bonuses ?? new StatBonus[0]);
             return World.MakePrefab(entity);
         }
 
         private Entity Marked(float duration, StatusStackRule rule = StatusStackRule.Refresh, int maxStacks = 1) =>
             Effect("Marked", new StatusEffectDefinition { Duration = duration, Rule = rule, MaxStacks = maxStacks },
-                damageBonuses: new[] { new TypedDamageBonus { damageType = _precision, percent = 0.3f } });
+                new[] { new StatBonus { stat = Stat.DamageTaken, percent = 0.3f, damageType = _precision } });
 
         private void Apply(Entity target, Entity effect, Entity source = default, byte sourceFaction = 0)
         {

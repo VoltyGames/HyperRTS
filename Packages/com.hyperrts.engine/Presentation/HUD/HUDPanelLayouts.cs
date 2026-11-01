@@ -4,25 +4,17 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>The HUD tree and the UXML shells and row templates of the engine's HUD panels, handed to each panel by the HUD.</summary>
+    /// <summary>The HUD tree (its panel shells are slots in it) and the row templates the HUD's panels clone.</summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Rig + "HUD Panel Layouts", fileName = "HUDPanelLayouts")]
     public sealed class HUDPanelLayouts : ScriptableObject
     {
         [SerializeField]
-        [Tooltip("HUD tree (HUD.uxml): hud-root and the named slots panels go in, such as bottom.")]
+        [Tooltip("HUD tree (HUD.uxml): hud-root with a template instance per panel shell, in the order panels stack.")]
         private VisualTreeAsset root;
-
-        [SerializeField]
-        [Tooltip("Top bar shell (ResourceBar.uxml).")]
-        private VisualTreeAsset resourceBar;
 
         [SerializeField]
         [Tooltip("One stockpile entry in the top bar (ResourceBarEntry.uxml).")]
         private VisualTreeAsset resourceBarEntry;
-
-        [SerializeField]
-        [Tooltip("Selection panel shell (SelectionPanel.uxml).")]
-        private VisualTreeAsset selectionPanel;
 
         [SerializeField]
         [Tooltip("One entity type tile in a group selection (SelectionPanelGroup.uxml).")]
@@ -33,16 +25,8 @@ namespace HyperRTS.Presentation.HUD
         private VisualTreeAsset productionQueueViewSlot;
 
         [SerializeField]
-        [Tooltip("Command card shell (CommandCard.uxml).")]
-        private VisualTreeAsset commandCard;
-
-        [SerializeField]
-        [Tooltip("Victory and defeat banner (GameOverBanner.uxml).")]
-        private VisualTreeAsset gameOverBanner;
-
-        [SerializeField]
-        [Tooltip("Minimap shell with its fog, blip and view layers (Minimap.uxml).")]
-        private VisualTreeAsset minimap;
+        [Tooltip("Sweep, badges and cost strip of a build card (CommandButtonDetails.uxml).")]
+        private VisualTreeAsset commandButtonDetails;
 
         [SerializeField]
         [Tooltip("Drag-box marquee and its corner accents (SelectionDragBoxUI.uxml).")]
@@ -50,21 +34,13 @@ namespace HyperRTS.Presentation.HUD
 
         public VisualTreeAsset Root => root;
 
-        public VisualTreeAsset ResourceBar => resourceBar;
-
         public VisualTreeAsset ResourceBarEntry => resourceBarEntry;
-
-        public VisualTreeAsset SelectionPanel => selectionPanel;
 
         public VisualTreeAsset SelectionPanelGroup => selectionPanelGroup;
 
         public VisualTreeAsset ProductionQueueViewSlot => productionQueueViewSlot;
 
-        public VisualTreeAsset CommandCard => commandCard;
-
-        public VisualTreeAsset GameOverBanner => gameOverBanner;
-
-        public VisualTreeAsset Minimap => minimap;
+        public VisualTreeAsset CommandButtonDetails => commandButtonDetails;
 
         public VisualTreeAsset SelectionDragBoxUI => selectionDragBoxUI;
     }

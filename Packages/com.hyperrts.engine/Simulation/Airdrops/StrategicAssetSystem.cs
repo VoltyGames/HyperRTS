@@ -43,20 +43,23 @@ namespace HyperRTS.Simulation.Airdrops
                 charge.ValueRW = default;
             }
 
-            foreach (var (asset, abilities, faction) in SystemAPI
-                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, RefRO<Faction>>().WithNone<Dead>())
+            foreach (var (asset, abilities, states, faction) in SystemAPI
+                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, DynamicBuffer<AbilityState>, RefRO<Faction>>()
+                         .WithNone<Dead>())
             {
-                ref var ability = ref abilities.ElementAt(AbilityRules.FindAbility(abilities, asset.ValueRO.AbilityId));
+                var id = asset.ValueRO.AbilityId;
+                var ability = abilities[AbilityRules.FindAbility(abilities, id)];
+                ref var cooldown = ref states.ElementAt(AbilityRules.FindState(states, id));
                 var owner = faction.ValueRO.Value;
                 if (!enabled || owner != asset.ValueRO.Owner)
                 {
-                    ability.CooldownRemaining = ability.Cooldown;
+                    cooldown.CooldownRemaining = ability.Cooldown;
                     asset.ValueRW.Owner = owner;
                 }
 
                 if (enabled && owner != Faction.Neutral)
                 {
-                    Publish(ref state, players[owner], ability);
+                    Publish(ref state, players[owner], ability, cooldown);
                 }
             }
 
@@ -64,10 +67,10 @@ namespace HyperRTS.Simulation.Airdrops
         }
 
         /// <summary>A player with several assets shows the one nearest its charge.</summary>
-        private void Publish(ref SystemState state, Entity player, in Ability ability)
+        private void Publish(ref SystemState state, Entity player, in Ability ability, in AbilityState cooldown)
         {
             var charge = SystemAPI.GetComponentRW<StrategicCharge>(player);
-            var remaining = math.max(0f, ability.CooldownRemaining);
+            var remaining = math.max(0f, cooldown.CooldownRemaining);
             if (charge.ValueRO.HasAsset && charge.ValueRO.Remaining <= remaining)
             {
                 return;

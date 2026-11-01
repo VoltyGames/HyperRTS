@@ -8,7 +8,7 @@ simulation, so two clients may look slightly different.
 ## Interaction
 
 UI state that input, the HUD and overlays share, created once per presented world. It lives in `Presentation/Interaction/`.
-`DefaultWorld` and `LiveQuery` (in `Presentation/Common/`) give MonoBehaviours the presented world and a query that survives world swaps.
+`DefaultWorld`, `LiveQuery` and `LiveSingleton<T>` (in `Presentation/Common/`) give MonoBehaviours the presented world, a query that survives world swaps and a singleton read (`TryGet`) and write (`Set`) that does the same. `MatchView` owns the placement, pending command and command page. A new HUD-to-input channel is a struct, one line in `ClientSingletonSystem` and its readers.
 
 | Singleton | Role |
 | --- | --- |
@@ -28,6 +28,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | --- | --- |
 | `RTSInputActions` | The Selection, Commands and Camera action maps. [Bindings](../getting-started.md#play) |
 | `InputActionsProvider` | The one shared actions instance, with `Suspend` and `Resume` |
+| `InputMapSystem` | Base of the systems below: enables its input map while it runs |
 | `SelectionInputSystem` | Mouse gestures to `SelectionInput` |
 | `CommandInputSystem` | Right-click, hotkeys and targeted commands to `PlayerCommand` |
 | `PlacementInputSystem` | Moves and [turns](economy.md#facing) the placement ghost through `PlacementRotation` (drag, hold or tap R, Shift to snap) and confirms it on release, or drags and releases a [line](economy.md#line-placement) |
@@ -57,11 +58,13 @@ at the `Rendering/` root.
 
 ### HUD
 
-`HUD.prefab` holds a UI Toolkit HUD. Its `HUDPanelLayouts` asset gathers the HUD tree (`HUD.uxml`), each panel's
-shell and row templates (UXML beside each script) and the drag box. `HUDController` clones the tree, places its
-panels in the tree's named slots, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks, hands the asset
-to every panel and keeps it in sync with the simulation. Code fills in only per-frame data. Games add or replace panels by overriding
-`CreatePanels`.
+`HUD.prefab` holds a UI Toolkit HUD. Its `HUDPanelLayouts` asset gathers the HUD tree (`HUD.uxml`), the row templates
+(UXML beside each script), the build card details (`CommandButtonDetails.uxml`) and the drag box. `HUD.uxml` holds each
+panel shell as a template instance in stacking order. `HUDController` clones the tree, unwraps the instances, hands each
+shell to its panel, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks and keeps it in sync with the
+simulation. Code fills in only per-frame data. Games add or replace panels by overriding `CreatePanels` (`Adopt` for a
+shell already in the tree, `Add` for a new one). `HUDContext` re-reads the selection and the purchase buttons only when
+a `ChangeWatch` sees one of their components written.
 
 `HUD/` holds the controller, the `HUD*` building blocks and the sheets. `Commands/` (the card, its buttons and the
 `ICommandSource`s), `Map/` and `Panels/` (resource bar, selection, production queue) each have their own namespace
@@ -69,9 +72,9 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 
 | Type | Role |
 | --- | --- |
-| Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner`, each built from a `HUDPanelLayouts`; `LineCost` drives the `line-cost` row in `HUD.uxml` |
+| Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner`, each built from its shell in `HUD.uxml`; `LineCost` drives the `line-cost` row in `HUD.uxml` |
 | Elements | `HUDIcon`, `HUDBar`, `CostRow`, `CommandButton`, `HUDTooltip`, `HUDSweep`, `HUDGlyph`, `HUDFade`: UXML elements filled through `Bind` or properties |
-| `ICommandSource` | Adds command-card entries: purchases, abilities, stances, unit actions. Each has a slot and hotkey |
+| `ICommandSource` | Adds command-card entries: purchases, abilities, stances and `PredicateCommand`s (return, unload, deploy, pack up, sell: a key, command and test per owned entity). Each has a slot and hotkey |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
 | `OverlayRenderer` | Instanced ground markers, health bars, placement footprint outline with blocked cells, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |
 | `PlacementGhosts` | The placed building's real model as visual-only copies (`VisualPrefab`) in the `HyperRTS/Placement Ghost` material, tinted valid or invalid per entity, one per spot or line segment |
@@ -124,7 +127,7 @@ a placement or targeted order.
 holding a [strategic asset](support.md#strategic-assets): the name and `m:ss` to the charge, or `hud.strategic-ready`,
 in the owner's colour. Observers see it too.
 
-The minimap shows the baked map image, local fog, unit and structure markers and the camera view.
+The minimap shows the baked map image, local fog, unit and structure markers and the camera view. Their colours, line widths, marker radii and fog alphas are `--minimap-*` custom properties in `HUD.uss`, which a theme overrides; the view outline repaints only when its corners move.
 
 ### Cursors
 

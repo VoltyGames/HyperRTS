@@ -16,9 +16,6 @@ namespace HyperRTS.Presentation.HUD.Commands
     {
         private static readonly Vector2 Offset = new(16f, -8f);
 
-        private readonly LiveQuery _placement = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementSegment>()));
-
         private readonly CostRow _costs;
         private Entity _prefab;
         private int _segments;
@@ -35,7 +32,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         public override void Refresh(HUDContext context)
         {
             var placement = context.Placement;
-            var segments = IsDraggingLine(context.EntityManager, placement) ? CountValid(context.EntityManager) : 0;
+            var segments = IsDraggingLine(context.EntityManager, placement) ? CountValid(context) : 0;
             Root.SetHidden(segments == 0);
             if (segments == 0)
             {
@@ -66,10 +63,10 @@ namespace HyperRTS.Presentation.HUD.Commands
             return entityManager.HasComponent<LinePlacement>(placement.Prefab);
         }
 
-        private int CountValid(EntityManager entityManager)
+        private static int CountValid(HUDContext context)
         {
-            var placement = _placement.In(entityManager).GetSingletonEntity();
-            return PlacementSegment.CountValid(entityManager.GetBuffer<PlacementSegment>(placement, true));
+            var segments = context.EntityManager.GetBuffer<PlacementSegment>(context.View.PlacementEntity, true);
+            return PlacementSegment.CountValid(segments);
         }
     }
 }

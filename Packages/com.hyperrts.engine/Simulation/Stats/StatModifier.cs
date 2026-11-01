@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using UnityEngine;
 
@@ -14,6 +16,10 @@ namespace HyperRTS.Simulation.Stats
         public Stat Stat;
         public float Add;
         public float Percent;
+
+        /// <summary>Limits a <see cref="Stats.Stat.DamageTaken"/> modifier to hits of this type; unset for every hit.</summary>
+        public UnityObjectRef<DamageType> DamageType;
+
         public StatSource Source;
     }
 
@@ -30,7 +36,29 @@ namespace HyperRTS.Simulation.Stats
         [Tooltip("Fraction added on top: 0.25 = +25%, -0.5 = half. Percents from every source add up.")]
         public float percent;
 
-        public readonly StatModifier ToModifier(StatSource source) =>
-            new() { Stat = stat, Add = add, Percent = percent, Source = source };
+        [Tooltip("Damage Taken only: limits the bonus to hits of this damage type. Leave empty for every hit.")]
+        public DamageType damageType;
+
+        /// <summary>One modifier per bonus, all from <paramref name="source"/>.</summary>
+        public static List<StatModifier> ToModifiers(IReadOnlyList<StatBonus> bonuses, StatSource source)
+        {
+            var modifiers = new List<StatModifier>(bonuses.Count);
+            foreach (var bonus in bonuses)
+            {
+                if (bonus.damageType != null && bonus.stat != Stat.DamageTaken)
+                {
+                    throw new InvalidOperationException(
+                        $"A {bonus.stat} bonus names damage type '{bonus.damageType.name}'; only Damage Taken filters by type.");
+                }
+
+                modifiers.Add(new StatModifier
+                {
+                    Stat = bonus.stat, Add = bonus.add, Percent = bonus.percent, DamageType = bonus.damageType,
+                    Source = source,
+                });
+            }
+
+            return modifiers;
+        }
     }
 }

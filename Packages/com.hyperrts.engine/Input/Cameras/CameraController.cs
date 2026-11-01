@@ -80,14 +80,9 @@ namespace HyperRTS.Input.Cameras
         private bool _homeDone;
         private float _homeDeadline = float.NaN;
 
-        private readonly LiveQuery _map = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>()));
-
-        private readonly LiveQuery _focusRequest = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadWrite<CameraFocusRequest>()));
-
-        private readonly LiveQuery _scrollEdge = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadWrite<ScrollEdge>()));
+        private readonly LiveSingleton<MapSettings> _map = new();
+        private readonly LiveSingleton<CameraFocusRequest> _focusRequest = new();
+        private readonly LiveSingleton<ScrollEdge> _scrollEdge = new();
 
         private RTSInputActions _actions;
         private float _yaw;
@@ -195,9 +190,8 @@ namespace HyperRTS.Input.Cameras
         private Vector2 EdgeDirection(bool pointerLive)
         {
             var hasWorld = DefaultWorld.TryGetEntityManager(out var entityManager);
-            var singleton = Entity.Null;
-            var shared = hasWorld && _scrollEdge.In(entityManager).TryGetSingletonEntity<ScrollEdge>(out singleton);
-            var state = shared ? entityManager.GetComponentData<ScrollEdge>(singleton) : default;
+            var state = default(ScrollEdge);
+            var shared = hasWorld && _scrollEdge.TryGet(entityManager, out state);
             state.Direction = int2.zero;
             var scrolls = pointerLive && edgeScrolling && Application.isFocused;
             if (scrolls && !state.Paused)
@@ -208,7 +202,7 @@ namespace HyperRTS.Input.Cameras
 
             if (shared)
             {
-                entityManager.SetComponentData(singleton, state);
+                _scrollEdge.Set(entityManager, state);
             }
 
             return new Vector2(state.Direction.x, state.Direction.y);
@@ -243,7 +237,7 @@ namespace HyperRTS.Input.Cameras
                 return point;
             }
 
-            return _map.In(entityManager).TryGetSingleton(out MapSettings map) ? (Vector3)map.Clamp(point) : point;
+            return _map.TryGet(entityManager, out var map) ? (Vector3)map.Clamp(point) : point;
         }
 
         /// <summary>
@@ -283,13 +277,12 @@ namespace HyperRTS.Input.Cameras
                 return false;
             }
 
-            var query = _focusRequest.In(entityManager);
-            if (!query.TryGetSingleton(out CameraFocusRequest request) || !request.Pending)
+            if (!_focusRequest.TryGet(entityManager, out var request) || !request.Pending)
             {
                 return false;
             }
 
-            query.SetSingleton(new CameraFocusRequest());
+            _focusRequest.Set(entityManager, new CameraFocusRequest());
             point = request.Point;
             return true;
         }

@@ -68,8 +68,9 @@ namespace HyperRTS.Simulation.Vision
             var frame = Fog.Frame;
             var end = origin.xy + reach;
             var length = math.length(reach);
-            // A line between two points on the grid never leaves it.
-            var onGrid = frame.Contains(frame.Cell(end));
+            // A line between two points on the grid never leaves it, but a viewer past the map edge starts off it.
+            var fromGrid = frame.Contains(frame.Cell(origin.xy));
+            var onGrid = fromGrid && frame.Contains(frame.Cell(end));
             var horizon = float.NegativeInfinity;
             var cover = 0f;
             var ray = new GridRay(frame, origin.xy, end);
@@ -79,7 +80,13 @@ namespace HyperRTS.Simulation.Vision
             {
                 if (!onGrid && !frame.Contains(ray.Cell))
                 {
-                    break;
+                    // The grid is convex: a ray that left it never comes back, one from outside may still enter.
+                    if (fromGrid)
+                    {
+                        break;
+                    }
+
+                    continue;
                 }
 
                 var point = frame.Center(ray.Cell);

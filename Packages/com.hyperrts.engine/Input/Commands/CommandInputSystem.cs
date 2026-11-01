@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Selection;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace HyperRTS.Input.Commands
 {
@@ -15,7 +16,7 @@ namespace HyperRTS.Input.Commands
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(SelectionSystem))]
-    public partial class CommandInputSystem : SystemBase
+    public partial class CommandInputSystem : InputMapSystem
     {
         private RTSInputActions _actions;
         private WorldPointer _pointer;
@@ -30,10 +31,7 @@ namespace HyperRTS.Input.Commands
             RequireForUpdate<LocalPlayer>();
         }
 
-        // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
-        protected override void OnStartRunning() => InputActionsProvider.Enable(_actions.Commands);
-
-        protected override void OnStopRunning() => InputActionsProvider.Disable(_actions.Commands);
+        protected override InputActionMap Map => _actions.Commands;
 
         protected override void OnUpdate()
         {

@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var caster = Voiced(World.SpawnUnit(1, float3.zero), CueSlot.Ability, CueSlot.AbilityVoice);
             World.SpawnUnit(2, new float3(3f, 0f, 0f), speed: 0f);
             var id = EntityInfo.TypeIdFromName("Grenade");
-            World.EntityManager.AddBuffer<Ability>(caster).Add(new Ability
+            World.GiveAbility(caster, new Ability
             {
                 Id = id, Name = "Grenade", Target = AbilityTarget.Point, Filter = AbilityTargetFilter.Hostile,
                 Range = 5f, Cooldown = 20f, Damage = new DamageProfile { Amount = 10f, EdgeFactor = 1f },

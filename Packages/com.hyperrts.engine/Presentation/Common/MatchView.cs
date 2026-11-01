@@ -30,9 +30,9 @@ namespace HyperRTS.Presentation.Common
         private EntityQuery _relations;
         private EntityQuery _map;
         private EntityQuery _match;
-        private EntityQuery _placement;
-        private EntityQuery _pending;
-        private EntityQuery _commandPage;
+        private readonly LiveSingleton<PlacementState> _placement = new();
+        private readonly LiveSingleton<PendingCommand> _pending = new();
+        private readonly LiveSingleton<CommandCardPage> _commandPage = new();
 
         public EntityManager EntityManager { get; private set; }
         public bool IsReady { get; private set; }
@@ -102,6 +102,24 @@ namespace HyperRTS.Presentation.Common
         /// <summary>Owner colour in sRGB, ready for UI and material property blocks.</summary>
         public Color GetColor(byte faction) => _factionColors[faction];
 
+        /// <summary>The building being placed; inactive without the singleton.</summary>
+        public PlacementState Placement => _placement.TryGet(EntityManager, out var placement) ? placement : default;
+
+        /// <summary>The entity holding the placement and its segments.</summary>
+        public Entity PlacementEntity => _placement.TryGetEntity(EntityManager, out var entity) ? entity : Entity.Null;
+
+        public PendingCommand Pending => _pending.TryGet(EntityManager, out var pending) ? pending : default;
+
+        /// <summary>The command card page that shows: 0 for the first, 1 for a builder's advanced options.</summary>
+        public int CommandPage => _commandPage.TryGet(EntityManager, out var page) ? page.Page : 0;
+
+        // The singletons come from ClientSingletonSystem, so a world without it (headless) ignores these writes.
+        public void SetPlacement(in PlacementState placement) => Write(_placement, placement);
+
+        public void SetPending(in PendingCommand pending) => Write(_pending, pending);
+
+        public void SetCommandPage(int page) => Write(_commandPage, new CommandCardPage { Page = (byte)page });
+
         public bool TryGetMatch(out MatchState match) => _match.TryGetSingleton(out match);
 
         public bool IsLocalDefeated() => HasLocalPlayer && EntityManager.HasEnabled<Defeated>(LocalPlayer);
@@ -113,16 +131,16 @@ namespace HyperRTS.Presentation.Common
         /// </summary>
         public bool CancelInteraction()
         {
-            var placing = _placement.TryGetSingleton(out PlacementState placement) && placement.Active;
-            var targeting = _pending.TryGetSingleton(out PendingCommand pending) && pending.Type != CommandType.None;
+            var placing = Placement.Active;
+            var targeting = Pending.Type != CommandType.None;
             if (placing)
             {
-                _placement.SetSingleton(new PlacementState());
+                SetPlacement(new PlacementState());
             }
 
             if (targeting)
             {
-                _pending.SetSingleton(new PendingCommand());
+                SetPending(new PendingCommand());
             }
 
             if (placing || targeting)
@@ -130,10 +148,10 @@ namespace HyperRTS.Presentation.Common
                 return true;
             }
 
-            var paged = _commandPage.TryGetSingleton(out CommandCardPage page) && page.Page > 0;
+            var paged = CommandPage > 0;
             if (paged)
             {
-                _commandPage.SetSingleton(new CommandCardPage());
+                SetCommandPage(0);
             }
 
             return paged;
@@ -150,9 +168,14 @@ namespace HyperRTS.Presentation.Common
             _relations = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
             _map = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MapSettings>());
             _match = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
-            _placement = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PlacementState>());
-            _pending = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<PendingCommand>());
-            _commandPage = EntityManager.CreateEntityQuery(ComponentType.ReadWrite<CommandCardPage>());
+        }
+
+        private void Write<T>(LiveSingleton<T> singleton, in T value) where T : unmanaged, IComponentData
+        {
+            if (IsLive)
+            {
+                singleton.Set(EntityManager, value);
+            }
         }
 
         private void RefreshColors()

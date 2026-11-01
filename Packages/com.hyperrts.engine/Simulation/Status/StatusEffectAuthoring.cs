@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Stats;
 using System.Collections.Generic;
@@ -11,8 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Status
 {
     /// <summary>
-    /// A timed status effect: stat bonuses, extra damage taken from chosen damage types and damage over time. Put it
-    /// on its own prefab and reference that from an ability or game code.
+    /// A timed status effect: stat bonuses (Damage Taken ones may name a damage type) and damage over time. Put it on
+    /// its own prefab and reference that from an ability or game code.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Status Effect")]
     [Icon(HyperRTSIcons.Combat)]
@@ -40,9 +39,6 @@ namespace HyperRTS.Simulation.Status
         [Tooltip("Stat bonuses per stack.")]
         public List<StatBonus> bonuses = new();
 
-        [Tooltip("Extra damage taken per stack from the listed damage types.")]
-        public List<TypedDamageBonus> damageBonuses = new();
-
         [Tooltip("Damage per second per stack, credited to whoever applied the effect.")]
         [Min(0f)]
         public float damagePerSecond;
@@ -52,24 +48,15 @@ namespace HyperRTS.Simulation.Status
 
         public int TypeId => EntityInfo.TypeIdFromName(displayName);
 
-        // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
         public static void Add(EntityWriter writer, in EntityInfo info, in StatusEffectDefinition definition,
-            IReadOnlyList<StatBonus> bonuses, IReadOnlyList<TypedDamageBonus> damageBonuses)
+            IReadOnlyList<StatBonus> bonuses)
         {
-            var source = StatSource.Status(info.TypeId);
             writer.Add(info);
             writer.Add(definition);
-
-            var stats = writer.AddBuffer<StatusStatBonus>();
-            foreach (var bonus in bonuses)
+            var granted = writer.AddBuffer<GrantedModifier>();
+            foreach (var modifier in StatBonus.ToModifiers(bonuses, StatSource.Status(info.TypeId)))
             {
-                stats.Add(new StatusStatBonus { Modifier = bonus.ToModifier(source) });
-            }
-
-            var damage = writer.AddBuffer<StatusDamageBonus>();
-            foreach (var bonus in damageBonuses)
-            {
-                damage.Add(new StatusDamageBonus { Modifier = bonus.ToModifier(source) });
+                granted.Add(new GrantedModifier { Modifier = modifier });
             }
         }
 
@@ -88,7 +75,7 @@ namespace HyperRTS.Simulation.Status
                     Rule = authoring.stackRule,
                     DamagePerSecond = authoring.damagePerSecond,
                     DamageType = authoring.damageType,
-                }, authoring.bonuses, authoring.damageBonuses);
+                }, authoring.bonuses);
             }
         }
     }

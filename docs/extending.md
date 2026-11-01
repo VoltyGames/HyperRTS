@@ -31,6 +31,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | Aura effects | Read the entity's `AuraPresence` |
 | Disable an entity | Set a bit from `OfflineReason.Custom` up in `Offline.Reasons`. Units need `Offline` baked, disabled |
 | Change a stat | Add a `StatModifier`. On the player entity it changes player-wide stats such as income |
+| A new stat | See [a new stat](#a-new-stat) |
 | A sound or effect | `CueWriter.Play` before the lifecycle phase ends |
 | Spawn from code | `ecb.Instantiate`. `PrefabRegistry` finds prefabs by `TypeId` |
 
@@ -43,6 +44,18 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, handing it a `MoveControl` built
    from the job's `MoveDestination` and `Arrival`, or set `MoveDestination` directly.
 4. Disable `ActiveOrder` when the order is done.
+
+### A new stat
+
+1. Pick a `Stat` value from `GameFirst` (128) up in your own code, such as `const Stat Jamming = (Stat)128`.
+2. Mark the float field it drives with `[StatField(Jamming)]` on your component. The component must sit on a unit or
+   building when it spawns: `StatBaseSystem` records the field as the base then, and `StatSystem` rewrites it whenever
+   the entity's modifiers change. One field per stat; a second, or a field that is not a float, throws on startup.
+3. Grant it like any stat: a `StatBonus` on an upgrade, veterancy rank, aura or status effect, or a `StatModifier`
+   from code.
+
+A stat read at the moment of use instead of stored, like `Income` or `DamageTaken`, needs no field: evaluate it where
+it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
 
 ## Mapping a Generals-style design
 
@@ -88,7 +101,7 @@ A game shell drives a match through these calls:
 | Host or join from a menu | `NetworkSession.StartHost` or `StartClient`, then `LoadScene` on every peer |
 | Loading and connection state | `NetworkSession.SceneLoad`, `Status`, `DisconnectReason` |
 | Read the match | `MatchView.TryGetDefault` |
-| Command card buttons | An `ICommandSource` passed to `CommandCard` |
+| Command card buttons | An `ICommandSource` passed to `CommandCard`; a `PredicateCommand` for a button shown when some owned entity passes a test |
 | Pause and speed | `LocalGameSpeed.SetScale` |
 | Own the Escape key | `InputActionsProvider.FrontEndOwnsCancel` and `MatchView.CancelInteraction` |
 | Block gameplay keys | `InputActionsProvider.Suspend` and `Resume` |

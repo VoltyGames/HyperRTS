@@ -8,8 +8,8 @@ namespace HyperRTS.Presentation.HUD
         private readonly Label _title;
         private MatchOutcome _shown;
 
-        public GameOverBanner(HUDPanelLayouts layouts)
-            : base(layouts.GameOverBanner)
+        public GameOverBanner(VisualElement root)
+            : base(root)
         {
             _title = Root.Require<Label>("title");
         }

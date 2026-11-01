@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         private float _shownCurrent = float.NaN;
         private float _shownMax = float.NaN;
 
-        public SelectionPanel(HUDPanelLayouts layouts) : base(layouts.SelectionPanel)
+        public SelectionPanel(VisualElement root, HUDPanelLayouts layouts) : base(root)
         {
             _groupTemplate = layouts.SelectionPanelGroup;
             _single = Root.Require<VisualElement>("single");

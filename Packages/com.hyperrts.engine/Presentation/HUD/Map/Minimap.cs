@@ -38,10 +38,7 @@ namespace HyperRTS.Presentation.HUD.Map
             ComponentType.ReadOnly<ResourceNode>(),
             ComponentType.ReadOnly<LocalToWorld>()));
 
-        private readonly LiveQuery _terrain = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainHeight>()));
-
-        private static readonly Color Outline = new(0f, 0f, 0f, 0.7f);
+        private readonly LiveSingleton<TerrainHeight> _terrain = new();
 
         private readonly List<(Vector2 Point, Color Color, float Radius, bool Square)> _markers = new();
         private readonly Vector2[] _view = new Vector2[4];
@@ -49,13 +46,14 @@ namespace HyperRTS.Presentation.HUD.Map
         private readonly VisualElement _markerLayer;
         private readonly VisualElement _viewLayer;
         private readonly MinimapFog _fog;
+        private readonly MinimapStyle _style;
         private bool _imageSearched;
         private HUDContext _context;
         private MapSettings _map;
         private bool _hasMap;
         private float _nextMarkerTime;
 
-        public Minimap(HUDPanelLayouts layouts) : base(layouts.Minimap)
+        public Minimap(VisualElement root) : base(root)
         {
             _canvas = Root.Require<VisualElement>("canvas");
             _fog = new MinimapFog(Root.Require<VisualElement>("fog"));
@@ -66,6 +64,7 @@ namespace HyperRTS.Presentation.HUD.Map
             _canvas.RegisterCallback<PointerUpEvent>(OnPointerUp);
             _viewLayer = Root.Require<VisualElement>("view");
             _viewLayer.generateVisualContent += PaintView;
+            _style = new MinimapStyle(_viewLayer, _markerLayer);
         }
 
         public override bool NeedsPlayer => false;
@@ -85,9 +84,9 @@ namespace HyperRTS.Presentation.HUD.Map
             else
             {
                 _imageSearched = false;
+                _viewLayer.MarkDirtyRepaint();
             }
 
-            _viewLayer.MarkDirtyRepaint();
 
             // Repainting re-tessellates every marker, so markers refresh at a fixed rate while the view rect stays live.
             if (Time.unscaledTime < _nextMarkerTime)
@@ -100,8 +99,8 @@ namespace HyperRTS.Presentation.HUD.Map
             if (_hasMap)
             {
                 GatherNodes(context.EntityManager);
-                GatherEntities(view, _units, 2.2f, false);
-                GatherEntities(view, _structures, 3.2f, true);
+                GatherEntities(view, _units, _style.UnitRadius, false);
+                GatherEntities(view, _structures, _style.StructureRadius, true);
                 GatherMemories(view);
             }
 
@@ -140,7 +139,7 @@ namespace HyperRTS.Presentation.HUD.Map
             for (var i = 0; i < nodes.Length; i++)
             {
                 var type = nodes[i].Type.Value;
-                AddMarker(transforms[i].Position.xz, type != null ? type.color : Color.white, 2.4f, true);
+                AddMarker(transforms[i].Position.xz, type != null ? type.color : Color.white, _style.NodeRadius, true);
             }
         }
 
@@ -162,14 +161,15 @@ namespace HyperRTS.Presentation.HUD.Map
             {
                 var color = view.GetColor(memory.State.Faction);
                 var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
-                AddMarker(memory.State.Transform.Position.xz, shaded, 3.2f, true);
+                AddMarker(memory.State.Transform.Position.xz, shaded, _style.StructureRadius, true);
             }
         }
 
         private void GatherCameraView(EntityManager entityManager)
         {
             var camera = Camera.main;
-            _terrain.In(entityManager).TryGetSingleton(out TerrainHeight terrain);
+            _terrain.TryGet(entityManager, out var terrain);
+            var moved = false;
             for (var i = 0; i < _view.Length; i++)
             {
                 var ground = float3.zero;
@@ -180,7 +180,14 @@ namespace HyperRTS.Presentation.HUD.Map
                     ground = ViewGround.Reach(terrain, ray.origin, ray.direction, MaxViewDistance);
                 }
 
-                _view[i] = MinimapMath.WorldToMinimap(ground.xz, _map.Min, _map.Size);
+                var point = MinimapMath.WorldToMinimap(ground.xz, _map.Min, _map.Size);
+                moved |= point != _view[i];
+                _view[i] = point;
+            }
+
+            if (moved)
+            {
+                _viewLayer.MarkDirtyRepaint();
             }
         }
 
@@ -196,8 +203,8 @@ namespace HyperRTS.Presentation.HUD.Map
 
             var size = _markerLayer.contentRect.size;
             var painter = context.painter2D;
-            painter.strokeColor = Outline;
-            painter.lineWidth = 1f;
+            painter.strokeColor = _style.OutlineColor;
+            painter.lineWidth = _style.OutlineWidth;
             foreach (var (point, color, radius, square) in _markers)
             {
                 var center = Vector2.Scale(point, size);
@@ -230,8 +237,8 @@ namespace HyperRTS.Presentation.HUD.Map
 
             var size = _viewLayer.contentRect.size;
             var painter = context.painter2D;
-            painter.strokeColor = new Color(1f, 1f, 1f, 0.85f);
-            painter.lineWidth = 1.5f;
+            painter.strokeColor = _style.ViewColor;
+            painter.lineWidth = _style.ViewWidth;
             painter.BeginPath();
             painter.MoveTo(Vector2.Scale(_view[0], size));
             for (var i = 1; i < _view.Length; i++)

@@ -13,31 +13,28 @@ namespace HyperRTS.Presentation.HUD.Map
     /// </summary>
     internal sealed class MinimapFog
     {
-        private const byte ExploredAlpha = 110;
-        private const byte UnexploredAlpha = 215;
-
-        private readonly LiveQuery _fogQuery = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogOfWar>()));
-
-        private readonly LiveQuery _localView = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFogView>()));
+        private readonly CustomStyleProperty<float> _exploredAlpha = new("--minimap-explored-alpha");
+        private readonly CustomStyleProperty<float> _unexploredAlpha = new("--minimap-unexplored-alpha");
+        private readonly LiveSingleton<FogOfWar> _fogGrid = new();
+        private readonly LiveSingleton<LocalFogView> _localView = new();
 
         private readonly VisualElement _layer;
         private Texture2D _texture;
         private int _version = -1;
+        private byte _explored;
+        private byte _unexplored;
 
         public MinimapFog(VisualElement layer)
         {
             _layer = layer;
-            _layer.style.unityBackgroundImageTintColor = Color.black;
+            _layer.RegisterCallback<CustomStyleResolvedEvent>(OnStyleResolved);
             _layer.RegisterCallback<DetachFromPanelEvent>(_ => Release());
         }
 
         public void Refresh(EntityManager entityManager)
         {
-            var hasView = _localView.In(entityManager).TryGetSingleton(out LocalFogView view);
-            var query = _fogQuery.In(entityManager);
-            if (!hasView || !view.Active || !query.TryGetSingleton(out FogOfWar fog))
+            var hasView = _localView.TryGet(entityManager, out var view);
+            if (!hasView || !view.Active || !_fogGrid.TryGet(entityManager, out var fog))
             {
                 _layer.SetHidden(true);
                 return;
@@ -49,7 +46,7 @@ namespace HyperRTS.Presentation.HUD.Map
                 return;
             }
 
-            query.CompleteDependency();
+            _fogGrid.Complete(entityManager);
             if (_texture == null || _texture.width != fog.Frame.Size.x || _texture.height != fog.Frame.Size.y)
             {
                 Object.Destroy(_texture);
@@ -63,10 +60,19 @@ namespace HyperRTS.Presentation.HUD.Map
                 _layer.style.backgroundImage = new StyleBackground(_texture);
             }
 
-            FogTexels.Fill(fog, view.Team, ExploredAlpha, UnexploredAlpha,
+            FogTexels.Fill(fog, view.Team, _explored, _unexplored,
                 _texture.GetPixelData<byte>(0));
             _texture.Apply(false);
             _version = view.Version;
+        }
+
+        private void OnStyleResolved(CustomStyleResolvedEvent evt)
+        {
+            evt.customStyle.TryGetValue(_exploredAlpha, out var explored);
+            evt.customStyle.TryGetValue(_unexploredAlpha, out var unexplored);
+            _explored = (byte)Mathf.RoundToInt(explored * 255f);
+            _unexplored = (byte)Mathf.RoundToInt(unexplored * 255f);
+            _version = -1;
         }
 
         private void Release()

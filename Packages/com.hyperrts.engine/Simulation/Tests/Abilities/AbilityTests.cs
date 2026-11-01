@@ -29,18 +29,10 @@ namespace HyperRTS.Simulation.Tests.Abilities
             Damage = new DamageProfile { Amount = damage, Radius = radius, EdgeFactor = 1f },
         };
 
-        private Entity Give(Entity entity, Ability ability)
-        {
-            if (!World.EntityManager.HasBuffer<Ability>(entity))
-            {
-                World.EntityManager.AddBuffer<Ability>(entity);
-            }
+        private Entity Give(Entity entity, Ability ability, float cooldownRemaining = 0f) =>
+            World.GiveAbility(entity, ability, cooldownRemaining);
 
-            World.Buffer<Ability>(entity).Add(ability);
-            return entity;
-        }
-
-        private Ability GetAbility(Entity entity) => World.Buffer<Ability>(entity)[0];
+        private float Cooldown(Entity entity) => World.Buffer<AbilityState>(entity)[0].CooldownRemaining;
 
         private DynamicBuffer<AbilityActivation> Events()
         {
@@ -65,7 +57,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
             Assert.AreEqual(50f, World.Get<Health>(a).Current, 1e-3f);
             Assert.AreEqual(50f, World.Get<Health>(b).Current, 1e-3f, "splash");
             Assert.Less(World.Get<LocalTransform>(soldier).Position.x, 11f, "stopped once in range");
-            Assert.Greater(GetAbility(soldier).CooldownRemaining, 10f);
+            Assert.Greater(Cooldown(soldier), 10f);
             Assert.IsFalse(World.IsEnabled<ActiveOrder>(soldier));
 
             World.Command(1, command);
@@ -79,8 +71,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
             var beacon = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var strike = Spec("Strike", AbilityTarget.Point, 0f, 2f);
             strike.SpawnPrefab = beacon;
-            strike.CooldownRemaining = 2f;
-            var silo = Give(World.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), strike);
+            var silo = Give(World.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), strike, 2f);
             var command = new PlayerCommand
             {
                 Type = CommandType.UseAbility, Unit = silo, Position = new float3(60f, 0f, 60f), Argument = strike.Id,
@@ -125,7 +116,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
             World.Tick();
 
             Assert.AreEqual(70f, World.Get<Health>(enemy).Current, 1e-3f);
-            Assert.AreEqual(60f, GetAbility(World.Player(1)).CooldownRemaining, 0.1f);
+            Assert.AreEqual(60f, Cooldown(World.Player(1)), 0.1f);
         }
 
         [Test]
@@ -148,7 +139,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
                     Type = CommandType.UsePower, Target = target, Argument = snipe.Id,
                 });
                 World.Tick();
-                Assert.AreEqual(0f, GetAbility(World.Player(1)).CooldownRemaining, "never fired");
+                Assert.AreEqual(0f, Cooldown(World.Player(1)), "never fired");
             }
 
             World.Command(1, new PlayerCommand { Type = CommandType.UsePower, Target = visible, Argument = snipe.Id });

@@ -37,7 +37,7 @@ namespace HyperRTS.Presentation.Audio
             source.Stop();
             source.clip = clip;
             source.pitch = pitch;
-            source.volume = Random.Range(cue.volume.x, cue.volume.y);
+            source.volume = cue.PickVolume();
             source.priority = cue.priority;
             source.outputAudioMixerGroup = cue.mixerGroup;
             source.spatialBlend = cue.spatial ? 1f : 0f;

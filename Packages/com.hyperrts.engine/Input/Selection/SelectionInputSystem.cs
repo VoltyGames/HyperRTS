@@ -14,7 +14,7 @@ namespace HyperRTS.Input.Selection
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateBefore(typeof(SelectionSystem))]
-    public partial class SelectionInputSystem : SystemBase
+    public partial class SelectionInputSystem : InputMapSystem
     {
         private const float DragThresholdPixels = 6f;
         private const float DoubleClickSeconds = 0.3f;
@@ -44,10 +44,7 @@ namespace HyperRTS.Input.Selection
             RequireForUpdate<PointerState>();
         }
 
-        // Not in OnCreate: without domain reload the Input System wipes action states after the world is created.
-        protected override void OnStartRunning() => InputActionsProvider.Enable(_actions.Selection);
-
-        protected override void OnStopRunning() => InputActionsProvider.Disable(_actions.Selection);
+        protected override InputActionMap Map => _actions.Selection;
 
         protected override void OnUpdate()
         {

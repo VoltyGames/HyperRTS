@@ -147,7 +147,7 @@ namespace HyperRTS.Network.Scenery
                 {
                     if (SystemAPI.HasComponent<ScenerySynced>(connection))
                     {
-                        FactionConnections.Send(ecb, connection, seen);
+                        Rpc.Send(ecb, connection, seen);
                         continue;
                     }
 
@@ -156,7 +156,7 @@ namespace HyperRTS.Network.Scenery
                     known.Clear();
                     _tracker.Known(team, changes);
                     SceneryRpc.Fill(changes, false, known);
-                    FactionConnections.Send(ecb, connection, known);
+                    Rpc.Send(ecb, connection, known);
                     ecb.AddComponent<ScenerySynced>(connection);
                 }
             }

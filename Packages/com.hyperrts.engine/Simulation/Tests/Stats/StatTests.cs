@@ -19,6 +19,13 @@ namespace HyperRTS.Simulation.Tests.Stats
     {
         private ResourceType _supplies;
 
+        /// <summary>A game's own component; its stat field sits after another field.</summary>
+        public struct Jamming : IComponentData
+        {
+            public int Channels;
+            [StatField(Stat.GameFirst)] public float Strength;
+        }
+
         [SetUp]
         public void Prepare()
         {
@@ -59,6 +66,27 @@ namespace HyperRTS.Simulation.Tests.Stats
             World.Tick();
 
             Assert.AreEqual(6f, World.Get<MovementSpeed>(unit).Value, 1e-3f);
+        }
+
+        [Test]
+        public void StatField_DrivesAGameDefinedStat()
+        {
+            var unit = World.SpawnUnit(1, float3.zero);
+            World.EntityManager.AddComponentData(unit, new Jamming { Channels = 3, Strength = 10f });
+            World.Buffer<StatModifier>(unit).Add(new StatModifier
+            {
+                Stat = Stat.GameFirst, Percent = 0.5f, Source = StatSource.Upgrade(7),
+            });
+
+            World.Tick();
+
+            Assert.AreEqual(15f, World.Get<Jamming>(unit).Strength, 1e-4f);
+            Assert.AreEqual(3, World.Get<Jamming>(unit).Channels, "other fields are untouched");
+
+            StatMath.RemoveSource(World.Buffer<StatModifier>(unit), StatSource.Upgrade(7));
+            World.Tick();
+
+            Assert.AreEqual(10f, World.Get<Jamming>(unit).Strength, 1e-4f);
         }
 
         [TestCase(0f, 1f, 0.25f, TestName = "FireRate +100% halves the cooldown")]

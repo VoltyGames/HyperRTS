@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
@@ -17,8 +16,8 @@ namespace HyperRTS.Simulation.Status
     }
 
     /// <summary>
-    /// A status effect prefab's rules; its type id is the prefab's <c>EntityInfo.TypeId</c>. Bonuses are in
-    /// <see cref="StatusStatBonus"/> and <see cref="StatusDamageBonus"/>, and scale with stacks.
+    /// A status effect prefab's rules; its type id is the prefab's <c>EntityInfo.TypeId</c>. Its bonuses are its
+    /// <see cref="GrantedModifier"/>s, one copy per stack.
     /// </summary>
     public struct StatusEffectDefinition : IComponentData
     {
@@ -34,19 +33,5 @@ namespace HyperRTS.Simulation.Status
         /// <summary>The stack count after applying the effect again on top of <paramref name="stacks"/>.</summary>
         public readonly int NextStacks(int stacks) =>
             Rule == StatusStackRule.AddStack ? math.min(MaxStacks, stacks + 1) : 1;
-    }
-
-    /// <summary>A stat modifier one stack grants, with the effect as its source.</summary>
-    [InternalBufferCapacity(1)]
-    public struct StatusStatBonus : IBufferElementData
-    {
-        public StatModifier Modifier;
-    }
-
-    /// <summary>A damage-type-filtered damage-taken modifier one stack grants, with the effect as its source.</summary>
-    [InternalBufferCapacity(1)]
-    public struct StatusDamageBonus : IBufferElementData
-    {
-        public DamageTakenModifier Modifier;
     }
 }

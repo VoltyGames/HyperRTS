@@ -23,14 +23,28 @@ namespace HyperRTS.Simulation.Abilities
             return -1;
         }
 
+        /// <summary>Index of the cooldown for the ability id, or -1 when the entity has none yet.</summary>
+        public static int FindState(DynamicBuffer<AbilityState> states, int id)
+        {
+            for (var i = 0; i < states.Length; i++)
+            {
+                if (states[i].Id == id)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         /// <summary>A caster that isn't <see cref="Offline"/>; the AI and player commands both cast only from these.</summary>
         public static bool CanCast(EntityManager entityManager, Entity caster) => !entityManager.HasEnabled<Offline>(caster);
 
         /// <summary>Ready, its required building owned and aimed at a valid target; checked on issue and firing.</summary>
-        public static bool IsUsable(in Ability ability, Entity target, byte faction, in CompletedBuildings completed,
+        public static bool IsUsable(in Ability ability, in AbilityState state, Entity target, byte faction, in CompletedBuildings completed,
             in TargetLookup targets, in ComponentLookup<Faction> factions, in FactionRelations relations)
         {
-            if (!ability.IsReady)
+            if (!state.IsReady)
             {
                 return false;
             }

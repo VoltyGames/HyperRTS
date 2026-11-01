@@ -18,9 +18,6 @@ namespace HyperRTS.Presentation.Overlays
     /// </summary>
     public sealed class PlacementGhosts : IDisposable
     {
-        private readonly LiveQuery _placement = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<PlacementState>()));
-
         private readonly Material _material;
         private readonly List<Entity> _ghosts = new();
         private readonly List<(BuildingSpot Spot, bool Valid)> _spots = new();
@@ -35,15 +32,16 @@ namespace HyperRTS.Presentation.Overlays
         }
 
         /// <summary>Matches the ghosts to this frame's placement: one per spot, gone once placement ends.</summary>
-        public void Update(EntityManager entityManager, OverlayStyle style)
+        public void Update(MatchView view, OverlayStyle style)
         {
+            var entityManager = view.EntityManager;
             if (entityManager.World != _world)
             {
                 Forget();
                 _world = entityManager.World;
             }
 
-            var source = ReadSpots(entityManager);
+            var source = ReadSpots(view);
             if (source == Entity.Null)
             {
                 Clear(entityManager);
@@ -95,11 +93,12 @@ namespace HyperRTS.Presentation.Overlays
         }
 
         /// <summary>Fills this frame's spots and returns the prefab being placed.</summary>
-        private Entity ReadSpots(EntityManager entityManager)
+        private Entity ReadSpots(MatchView view)
         {
+            var entityManager = view.EntityManager;
             _spots.Clear();
-            var query = _placement.In(entityManager);
-            var placing = query.TryGetSingleton(out PlacementState state) && state.Active;
+            var state = view.Placement;
+            var placing = state.Active;
             if (!placing || state.Prefab == Entity.Null)
             {
                 return Entity.Null;
@@ -107,7 +106,7 @@ namespace HyperRTS.Presentation.Overlays
 
             if (entityManager.HasComponent<LinePlacement>(state.Prefab))
             {
-                var segments = entityManager.GetBuffer<PlacementSegment>(query.GetSingletonEntity(), true);
+                var segments = entityManager.GetBuffer<PlacementSegment>(view.PlacementEntity, true);
                 foreach (var segment in segments)
                 {
                     _spots.Add((segment.Spot, segment.Valid));

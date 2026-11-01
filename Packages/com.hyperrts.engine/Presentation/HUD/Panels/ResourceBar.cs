@@ -26,7 +26,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         private Population _shownPopulation = new() { Used = -1 };
         private PowerGrid _shownPower = new() { Produced = -1f };
 
-        public ResourceBar(HUDPanelLayouts layouts) : base(layouts.ResourceBar)
+        public ResourceBar(VisualElement root, HUDPanelLayouts layouts) : base(root)
         {
             _entryTemplate = layouts.ResourceBarEntry;
             _resources = Root.Require<VisualElement>("resources");

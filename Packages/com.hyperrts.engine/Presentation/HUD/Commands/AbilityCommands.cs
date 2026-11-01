@@ -117,17 +117,17 @@ namespace HyperRTS.Presentation.HUD.Commands
         /// <summary>Lowers each matching entry's cooldown to this holder's, if it is sooner.</summary>
         private void Consider(EntityManager entityManager, Entity holder, bool isPower)
         {
-            if (!entityManager.Exists(holder) || !entityManager.HasBuffer<Ability>(holder))
+            if (!entityManager.Exists(holder) || !entityManager.HasBuffer<AbilityState>(holder))
             {
                 return;
             }
 
-            foreach (var ability in entityManager.GetBuffer<Ability>(holder, true))
+            foreach (var cooldown in entityManager.GetBuffer<AbilityState>(holder, true))
             {
-                var entry = Find(ability.Id, isPower);
+                var entry = Find(cooldown.Id, isPower);
                 if (entry != null)
                 {
-                    entry.Remaining = math.min(entry.Remaining, math.max(0f, ability.CooldownRemaining));
+                    entry.Remaining = math.min(entry.Remaining, math.max(0f, cooldown.CooldownRemaining));
                 }
             }
         }

@@ -47,11 +47,8 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.ReadOnly<BuildingTag>(),
             ComponentType.Exclude<FogHidden>()));
 
-        private readonly LiveQuery _fogGrid = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogOfWar>()));
-
-        private readonly LiveQuery _fogView = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalFogView>()));
+        private readonly LiveSingleton<FogOfWar> _fogGrid = new();
+        private readonly LiveSingleton<LocalFogView> _fogView = new();
 
         private readonly InstanceBatch _dialBacks;
         private readonly InstanceBatch _dialTrack;
@@ -245,10 +242,9 @@ namespace HyperRTS.Presentation.Overlays
         // Only once a building needs it: simulation jobs write the grid, so reading it completes them.
         private void ReadFog(EntityManager entityManager)
         {
-            _fogView.In(entityManager).TryGetSingleton(out _view);
-            var grid = _fogGrid.In(entityManager);
-            grid.CompleteDependency();
-            grid.TryGetSingleton(out _fog);
+            _fogView.TryGet(entityManager, out _view);
+            _fogGrid.Complete(entityManager);
+            _fogGrid.TryGet(entityManager, out _fog);
             _fogRead = true;
         }
     }

@@ -1,45 +1,41 @@
 using HyperRTS.Simulation.Combat.Damage;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>
-    /// A cooldown ability on a unit, building or player entity (support power). Built-in effects are optional: a
-    /// prefab spawned at the target, damage (negative heals) around it and a status effect on an entity target. Every
-    /// use is published as an <see cref="AbilityActivation"/> for game systems. Only the id and cooldown replicate and
-    /// clients bake the rest, so the buffer must keep its baked length and order.
+    /// The fixed definition of a cooldown ability on a unit, building or player entity (support power). Built-in
+    /// effects are optional: a prefab spawned at the target, damage (negative heals) around it and a status effect on
+    /// an entity target. Every use is published as an <see cref="AbilityActivation"/> for game systems. It never
+    /// changes and doesn't replicate: clients bake it from the same prefab, and the running cooldown is the
+    /// replicated <see cref="AbilityState"/> with the same id.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct Ability : IBufferElementData
     {
         /// <summary>Hash of the name; commands and events refer to it.</summary>
-        [GhostField] public int Id;
+        public int Id;
 
-        [GhostField(SendData = false)] public FixedString32Bytes Name;
-        [GhostField(SendData = false)] public UnityObjectRef<Texture2D> Icon;
-        [GhostField(SendData = false)] public AbilityTarget Target;
-        [GhostField(SendData = false)] public AbilityTargetFilter Filter;
+        public FixedString32Bytes Name;
+        public UnityObjectRef<Texture2D> Icon;
+        public AbilityTarget Target;
+        public AbilityTargetFilter Filter;
 
         /// <summary>Edge-to-edge cast range; 0 is unlimited.</summary>
-        [GhostField(SendData = false)] public float Range;
+        public float Range;
 
-        [GhostField(SendData = false)] public float Cooldown;
-        /// <summary>Replicated to a tenth of a second, enough for the HUD.</summary>
-        [GhostField(Quantization = 10)] public float CooldownRemaining;
+        public float Cooldown;
 
         /// <summary>Building type the owner must have completed; 0 for none.</summary>
-        [GhostField(SendData = false)] public int RequiredTypeId;
+        public int RequiredTypeId;
 
-        [GhostField(SendData = false)] public Entity SpawnPrefab;
+        public Entity SpawnPrefab;
         /// <summary>Dealt round the target when its amount is set.</summary>
-        [GhostField(SendData = false)] public DamageProfile Damage;
+        public DamageProfile Damage;
 
         /// <summary>Status effect prefab applied to an entity target; <c>Entity.Null</c> for none.</summary>
-        [GhostField(SendData = false)] public Entity StatusEffect;
-
-        public readonly bool IsReady => CooldownRemaining <= 0f;
+        public Entity StatusEffect;
     }
 }

@@ -1,8 +1,19 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:Template name="Minimap" src="Map/Minimap.uxml" />
+  <ui:Template name="SelectionPanel" src="Panels/SelectionPanel.uxml" />
+  <ui:Template name="CommandCard" src="Commands/CommandCard.uxml" />
+  <ui:Template name="ResourceBar" src="Panels/ResourceBar.uxml" />
+  <ui:Template name="GameOverBanner" src="GameOverBanner.uxml" />
   <ui:VisualElement name="hud" class="hud-root" picking-mode="Ignore">
-    <ui:VisualElement name="bottom" class="hud-bottom" picking-mode="Ignore" />
-    <ui:VisualElement name="strategic-countdowns" class="hud-countdowns" picking-mode="Ignore" />
+    <ui:VisualElement name="bottom" class="hud-bottom" picking-mode="Ignore">
+      <ui:Instance template="Minimap" name="minimap" />
+      <ui:Instance template="SelectionPanel" name="selection" />
+      <ui:Instance template="CommandCard" name="commands" />
+    </ui:VisualElement>
+    <ui:Instance template="ResourceBar" name="top-bar" />
+    <ui:Instance template="GameOverBanner" name="game-over" />
     <HyperRTS.Presentation.HUD.Commands.CostRow name="line-cost" class="hud-line-cost" picking-mode="Ignore" />
     <ui:Label name="placement-hint" class="hud-placement-hint" picking-mode="Ignore" />
+    <ui:VisualElement name="strategic-countdowns" class="hud-countdowns" picking-mode="Ignore" />
   </ui:VisualElement>
 </ui:UXML>

@@ -88,7 +88,7 @@ namespace HyperRTS.Presentation.Overlays
             _units.Gather(view, style, HealthBars, Time.unscaledTime);
             _buildings.Gather(view, style, camera);
             _commands.Gather(view);
-            _ghosts.Update(view.EntityManager, style);
+            _ghosts.Update(view, style);
             _units.Draw(style, UIScale, gameObject.layer);
             _buildings.Draw(_materials, view, style, gameObject.layer);
             _commands.Draw(_materials, style, gameObject.layer);

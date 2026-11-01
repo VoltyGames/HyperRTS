@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Stats;
@@ -34,7 +33,6 @@ namespace HyperRTS.Simulation.GameEntities
             writer.AddBuffer<StatModifier>();
             writer.AddBuffer<AuraPresence>();
             writer.AddBuffer<ActiveStatus>();
-            writer.AddBuffer<DamageTakenModifier>();
             writer.Add(new AppliedUpgrades { Faction = spec.Owner });
             VisionSetup.AddVision(writer, spec.VisionRange, spec.EyeHeight);
             writer.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });

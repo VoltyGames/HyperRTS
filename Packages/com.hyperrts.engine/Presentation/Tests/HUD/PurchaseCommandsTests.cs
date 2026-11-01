@@ -106,7 +106,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             var second = Queue(SpawnProducer(tank, jeep), 5f, tank);
             Refresh();
 
-            var source = new PurchaseCommands();
+            var source = new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails);
             var entries = new List<CommandEntry>();
             source.Build(_context, new[] { first, second }, entries);
             source.Refresh(_context);
@@ -130,7 +130,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             EntityManager.SetComponentEnabled<Offline>(producer, true);
             Refresh();
 
-            var source = new PurchaseCommands();
+            var source = new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails);
             var entries = new List<CommandEntry>();
             source.Build(_context, new[] { producer }, entries);
             source.Refresh(_context);
@@ -162,7 +162,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             Refresh();
 
             var entries = new List<CommandEntry>();
-            new PurchaseCommands().Build(_context, new[] { builder }, entries);
+            new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails).Build(_context, new[] { builder }, entries);
             var tooltip = new HUDTooltip();
             Assert.IsTrue(entries.Single().Button.Describe(tooltip));
 
@@ -181,7 +181,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             Refresh();
 
             var entries = new List<CommandEntry>();
-            new PurchaseCommands().Build(_context, new[] { first, second }, entries);
+            new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails).Build(_context, new[] { first, second }, entries);
 
             CollectionAssert.AreEqual(new[] { 0, 1 }, entries.Select(entry => entry.Page));
         }

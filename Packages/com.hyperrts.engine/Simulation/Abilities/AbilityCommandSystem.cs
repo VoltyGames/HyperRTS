@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Abilities
         public void OnCreate(ref SystemState state)
         {
             EventQueues.Create<AbilityEvents>(ref state, typeof(AbilityActivation));
-            var selected = SystemAPI.QueryBuilder().WithAll<Ability, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Ability, AbilityState, Selected, Faction>().WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, TypeSet.Range(CommandType.UseAbility, CommandType.UsePower),
                 selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
@@ -130,15 +130,25 @@ namespace HyperRTS.Simulation.Abilities
 
             var abilities = SystemAPI.GetBuffer<Ability>(caster);
             var index = AbilityRules.FindAbility(abilities, command.Argument);
-            return index >= 0 && IsUsable(ref state, abilities[index], faction, command, context) ? index : -1;
+            if (index < 0)
+            {
+                return -1;
+            }
+
+            var states = SystemAPI.GetBuffer<AbilityState>(caster);
+            var stateIndex = AbilityRules.FindState(states, command.Argument);
+            return stateIndex >= 0 && IsUsable(ref state, abilities[index], states[stateIndex], faction, command, context)
+                ? index
+                : -1;
         }
 
         /// <summary>A caster that is finished and powered.</summary>
         private bool CanCast(ref SystemState state, Entity caster) =>
             SystemAPI.HasBuffer<Ability>(caster) && AbilityRules.CanCast(state.EntityManager, caster);
 
-        private bool IsUsable(ref SystemState state, in Ability ability, byte faction, in PlayerCommand command, in Context context) =>
-            AbilityRules.IsUsable(ability, command.Target, faction, context.Completed, _targets, SystemAPI.GetComponentLookup<Faction>(true),
+        private bool IsUsable(ref SystemState state, in Ability ability, in AbilityState abilityState, byte faction,
+            in PlayerCommand command, in Context context) =>
+            AbilityRules.IsUsable(ability, abilityState, command.Target, faction, context.Completed, _targets, SystemAPI.GetComponentLookup<Faction>(true),
                 context.Relations);
 
         private void Cast(ref SystemState state, Entity caster, int index, byte faction, in PlayerCommand command,
@@ -161,7 +171,9 @@ namespace HyperRTS.Simulation.Abilities
             var aim = AbilityRules.Aim(ability, from, command.Target, command.Position, _targets);
             if (AbilityRules.InRange(ability, caster, from, command.Target, aim, _targets))
             {
-                _caster.Cast(ref abilities.ElementAt(index), caster, faction, command.Target, aim, context.Ecb);
+                var states = SystemAPI.GetBuffer<AbilityState>(caster);
+                var cooldown = AbilityRules.FindState(states, ability.Id);
+                _caster.Cast(ability, ref states.ElementAt(cooldown), caster, faction, command.Target, aim, context.Ecb);
             }
         }
 
@@ -174,14 +186,17 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var abilities = SystemAPI.GetBuffer<Ability>(player);
+            var states = SystemAPI.GetBuffer<AbilityState>(player);
             var index = AbilityRules.FindAbility(abilities, command.Argument);
-            if (index < 0 || !IsUsable(ref state, abilities[index], faction, command, context))
+            var stateIndex = AbilityRules.FindState(states, command.Argument);
+            if (index < 0 || stateIndex < 0 ||
+                !IsUsable(ref state, abilities[index], states[stateIndex], faction, command, context))
             {
                 return;
             }
 
             var aim = AbilityRules.Aim(abilities[index], command.Position, command.Target, command.Position, _targets);
-            _caster.Cast(ref abilities.ElementAt(index), player, faction, command.Target, aim, context.Ecb);
+            _caster.Cast(abilities[index], ref states.ElementAt(stateIndex), player, faction, command.Target, aim, context.Ecb);
         }
     }
 }

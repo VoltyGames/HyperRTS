@@ -1,4 +1,5 @@
-﻿using HyperRTS.Simulation.AI;
+﻿using HyperRTS.Network.Common;
+using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
@@ -8,14 +9,21 @@ namespace HyperRTS.Network.Players
 {
     /// <summary>
     /// Binds joining connections to human slots (observers when none is left or they asked to watch) and frees the
-    /// slot of a dropped connection, keeping it for its owner's token so only the owner can reconnect to it. A host's
-    /// own <see cref="LocalConnection"/> joins here too, and its reply reaches the same world.
+    /// slot of a dropped connection, keeping it for its owner's token so only the owner can reconnect to it. A seat
+    /// sets the player ghost's <see cref="GhostOwner"/>; an observer gets <see cref="ObserverAccepted"/>. A host's
+    /// own <see cref="LocalConnection"/> joins here too.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct ServerJoinSystem : ISystem
     {
-        public void OnCreate(ref SystemState state) => state.RequireForUpdate<NetworkStreamDriver>();
+        private RpcInbox<JoinRequest> _requests;
+
+        public void OnCreate(ref SystemState state)
+        {
+            _requests = new RpcInbox<JoinRequest>(ref state);
+            state.RequireForUpdate<NetworkStreamDriver>();
+        }
 
         public void OnUpdate(ref SystemState state)
         {
@@ -28,12 +36,10 @@ namespace HyperRTS.Network.Players
             }
 
             JoinHost(ref state);
-            var requests = SystemAPI.QueryBuilder().WithAll<JoinRequest, ReceiveRpcCommandRequest>().Build();
-            foreach (var request in requests.ToEntityArray(Allocator.Temp))
+            var requests = _requests.Take(state.EntityManager, out var senders);
+            for (var i = 0; i < requests.Length; i++)
             {
-                var connection = state.EntityManager.GetComponentData<ReceiveRpcCommandRequest>(request).SourceConnection;
-                Join(ref state, connection, state.EntityManager.GetComponentData<JoinRequest>(request));
-                state.EntityManager.DestroyEntity(request);
+                Join(ref state, senders[i], requests[i]);
             }
         }
 
@@ -62,17 +68,16 @@ namespace HyperRTS.Network.Players
 
             var networkId = entityManager.GetComponentData<NetworkId>(connection).Value;
             var slot = wanted.Observe ? Entity.Null : Claim(ref state, wanted, networkId);
-            byte faction = 0;
             if (slot != Entity.Null)
             {
                 entityManager.AddComponentData(connection, new ConnectionPlayer { Player = slot });
-                faction = entityManager.GetComponentData<Player>(slot).Faction;
+            }
+            else
+            {
+                Rpc.Send(entityManager, connection, new ObserverAccepted());
             }
 
             entityManager.AddComponent<NetworkStreamInGame>(connection);
-            var reply = entityManager.CreateEntity();
-            entityManager.AddComponentData(reply, new JoinAccepted { Faction = faction });
-            entityManager.AddComponentData(reply, new SendRpcCommandRequest { TargetConnection = connection });
         }
 
         /// <summary>Binds the slot <see cref="SlotClaim"/> picks; Entity.Null makes the sender an observer.</summary>
@@ -80,14 +85,15 @@ namespace HyperRTS.Network.Players
         {
             var entities = new NativeList<Entity>(Allocator.Temp);
             var slots = new NativeList<SlotClaim.Slot>(Allocator.Temp);
-            foreach (var (player, connection, entity) in SystemAPI.Query<RefRO<Player>, RefRO<PlayerConnection>>()
-                         .WithNone<AIPlayer>().WithEntityAccess())
+            foreach (var (player, connection, owner, entity) in SystemAPI
+                         .Query<RefRO<Player>, RefRO<PlayerConnection>, RefRO<GhostOwner>>().WithNone<AIPlayer>()
+                         .WithEntityAccess())
             {
                 entities.Add(entity);
                 slots.Add(new SlotClaim.Slot
                 {
                     Faction = player.ValueRO.Faction,
-                    NetworkId = connection.ValueRO.NetworkId,
+                    NetworkId = owner.ValueRO.NetworkId,
                     Token = connection.ValueRO.Token,
                 });
             }
@@ -100,7 +106,11 @@ namespace HyperRTS.Network.Players
 
             var slot = entities[index];
             DisconnectStale(ref state, slots[index].NetworkId);
-            SystemAPI.SetComponent(slot, new PlayerConnection { NetworkId = networkId, Token = wanted.Token });
+            SystemAPI.SetComponent(slot, new GhostOwner { NetworkId = networkId });
+            SystemAPI.SetComponent(slot, new PlayerConnection { Token = wanted.Token });
+
+            // A selection the old connection sent means nothing to the new client.
+            SystemAPI.GetBuffer<PlayerSelection>(slot).Clear();
             return slot;
         }
 
@@ -142,11 +152,11 @@ namespace HyperRTS.Network.Players
                     continue;
                 }
 
-                foreach (var connection in SystemAPI.Query<RefRW<PlayerConnection>>())
+                foreach (var owner in SystemAPI.Query<RefRW<GhostOwner>>().WithAll<Player, PlayerConnection>())
                 {
-                    if (connection.ValueRO.NetworkId == evt.Id.Value)
+                    if (owner.ValueRO.NetworkId == evt.Id.Value)
                     {
-                        connection.ValueRW.NetworkId = 0;
+                        owner.ValueRW.NetworkId = 0;
                     }
                 }
             }

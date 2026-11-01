@@ -22,8 +22,7 @@ namespace HyperRTS.Presentation.Audio
         [Tooltip("Camera to follow; empty uses the main camera.")]
         public Camera view;
 
-        private readonly LiveQuery _terrain = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<TerrainHeight>()));
+        private readonly LiveSingleton<TerrainHeight> _terrain = new();
 
         private void LateUpdate()
         {
@@ -51,7 +50,7 @@ namespace HyperRTS.Presentation.Audio
                 return default;
             }
 
-            _terrain.In(entityManager).TryGetSingleton(out TerrainHeight terrain);
+            _terrain.TryGet(entityManager, out var terrain);
             return terrain;
         }
     }

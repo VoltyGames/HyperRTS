@@ -39,11 +39,9 @@ namespace HyperRTS.Simulation.Status
                 Now = now,
                 Definitions = SystemAPI.GetComponentLookup<StatusEffectDefinition>(true),
                 Infos = SystemAPI.GetComponentLookup<EntityInfo>(true),
-                StatBonuses = SystemAPI.GetBufferLookup<StatusStatBonus>(true),
-                DamageBonuses = SystemAPI.GetBufferLookup<StatusDamageBonus>(true),
+                Bonuses = SystemAPI.GetBufferLookup<GrantedModifier>(true),
                 Statuses = SystemAPI.GetBufferLookup<ActiveStatus>(false),
                 Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
-                TypedModifiers = SystemAPI.GetBufferLookup<DamageTakenModifier>(false),
             }.Schedule();
 
             new TickJob
@@ -52,7 +50,6 @@ namespace HyperRTS.Simulation.Status
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Definitions = SystemAPI.GetComponentLookup<StatusEffectDefinition>(true),
                 Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
-                TypedModifiers = SystemAPI.GetBufferLookup<DamageTakenModifier>(false),
                 Damage = _damage,
             }.Schedule();
         }
@@ -64,11 +61,9 @@ namespace HyperRTS.Simulation.Status
             public float Now;
             [ReadOnly] public ComponentLookup<StatusEffectDefinition> Definitions;
             [ReadOnly] public ComponentLookup<EntityInfo> Infos;
-            [ReadOnly] public BufferLookup<StatusStatBonus> StatBonuses;
-            [ReadOnly] public BufferLookup<StatusDamageBonus> DamageBonuses;
+            [ReadOnly] public BufferLookup<GrantedModifier> Bonuses;
             public BufferLookup<ActiveStatus> Statuses;
             public BufferLookup<StatModifier> Modifiers;
-            public BufferLookup<DamageTakenModifier> TypedModifiers;
 
             private void Execute(DynamicBuffer<StatusRequest> requests)
             {
@@ -112,26 +107,14 @@ namespace HyperRTS.Simulation.Status
             /// <summary>Replaces the effect's bonuses on <paramref name="target"/> with one copy per stack.</summary>
             private void Grant(Entity target, Entity definition, StatSource source, int stacks)
             {
-                RemoveSource(ref Modifiers, ref TypedModifiers, target, source);
-                if (Modifiers.TryGetBuffer(target, out var modifiers))
+                var modifiers = Modifiers[target];
+                StatMath.RemoveSource(modifiers, source);
+                foreach (var bonus in Bonuses[definition])
                 {
-                    foreach (var bonus in StatBonuses[definition])
-                    {
-                        var modifier = bonus.Modifier;
-                        modifier.Add *= stacks;
-                        modifier.Percent *= stacks;
-                        modifiers.Add(modifier);
-                    }
-                }
-
-                if (TypedModifiers.TryGetBuffer(target, out var typed))
-                {
-                    foreach (var bonus in DamageBonuses[definition])
-                    {
-                        var modifier = bonus.Modifier;
-                        modifier.Percent *= stacks;
-                        typed.Add(modifier);
-                    }
+                    var modifier = bonus.Modifier;
+                    modifier.Add *= stacks;
+                    modifier.Percent *= stacks;
+                    modifiers.Add(modifier);
                 }
             }
 
@@ -158,7 +141,6 @@ namespace HyperRTS.Simulation.Status
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<StatusEffectDefinition> Definitions;
             public BufferLookup<StatModifier> Modifiers;
-            public BufferLookup<DamageTakenModifier> TypedModifiers;
             public EventWriter<DamageEvent> Damage;
 
             private void Execute(Entity entity, DynamicBuffer<ActiveStatus> statuses, in LocalTransform transform)
@@ -168,7 +150,7 @@ namespace HyperRTS.Simulation.Status
                     var status = statuses[i];
                     if (Now >= status.EndsAt)
                     {
-                        RemoveSource(ref Modifiers, ref TypedModifiers, entity, StatSource.Status(status.TypeId));
+                        StatMath.RemoveSource(Modifiers[entity], StatSource.Status(status.TypeId));
                         statuses.RemoveAt(i);
                         continue;
                     }
@@ -182,20 +164,6 @@ namespace HyperRTS.Simulation.Status
                             definition.DamageType));
                     }
                 }
-            }
-        }
-
-        private static void RemoveSource(ref BufferLookup<StatModifier> modifiers,
-            ref BufferLookup<DamageTakenModifier> typedModifiers, Entity entity, StatSource source)
-        {
-            if (modifiers.TryGetBuffer(entity, out var stats))
-            {
-                StatMath.RemoveSource(stats, source);
-            }
-
-            if (typedModifiers.TryGetBuffer(entity, out var typed))
-            {
-                DamageTakenModifier.RemoveSource(typed, source);
             }
         }
     }

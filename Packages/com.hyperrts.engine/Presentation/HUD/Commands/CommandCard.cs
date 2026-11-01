@@ -1,5 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Transport;
 using Unity.Entities;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
@@ -29,11 +34,16 @@ namespace HyperRTS.Presentation.HUD.Commands
         private bool _turnBack;
 
         /// <summary>The engine's sources, then <paramref name="extra"/>.</summary>
-        public CommandCard(HUDPanelLayouts layouts, params ICommandSource[] extra) : base(layouts.CommandCard)
+        public CommandCard(VisualElement root, HUDPanelLayouts layouts, params ICommandSource[] extra) : base(root)
         {
             _sources = new List<ICommandSource>
             {
-                new PurchaseCommands(), new AbilityCommands(), new StanceCommands(), new UnitActionCommands(),
+                new PurchaseCommands(layouts.CommandButtonDetails), new AbilityCommands(), new StanceCommands(),
+                new PredicateCommand("command.return", CommandType.ReturnToBase, 0, (em, e) => em.HasComponent<HomePad>(e)),
+                new PredicateCommand("command.unload", CommandType.Unload, -1, (em, e) => em.HasComponent<Container>(e)),
+                new PredicateCommand("command.deploy", CommandType.Deploy, 0, (em, e) => em.HasComponent<Deployable>(e)),
+                new PredicateCommand("command.pack-up", CommandType.PackUp, 0, (em, e) => em.HasComponent<Deployable>(e)),
+                new PredicateCommand("command.sell", CommandType.Sell, 0, BuildingRules.IsSellable),
             };
             _sources.AddRange(extra);
             Root.RegisterCallback<PointerDownEvent>(OnPointerDown, TrickleDown.TrickleDown);

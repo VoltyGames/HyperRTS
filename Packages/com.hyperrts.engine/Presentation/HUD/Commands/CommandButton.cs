@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -85,37 +86,31 @@ namespace HyperRTS.Presentation.HUD.Commands
             return this;
         }
 
-        /// <summary>A build, train or research card; the caller sets its <see cref="Description"/>.</summary>
-        public CommandButton BindPrefab(EntityManager entityManager, Entity prefab, Action onClick)
+        /// <summary>
+        /// A build, train or research card, with the sweep, badges and cost strip of <paramref name="details"/>
+        /// (CommandButtonDetails.uxml); the caller sets its <see cref="Description"/>.
+        /// </summary>
+        public CommandButton BindPrefab(EntityManager entityManager, Entity prefab, VisualTreeAsset details,
+            Action onClick)
         {
             _onClick = onClick;
             AddPicture(entityManager.GetComponentData<EntityInfo>(prefab).Icon.Value,
                 HUDText.EntityName(entityManager, prefab));
-            _sweep = new HUDSweep();
-            _sweep.AddToClassList("hud-command__sweep");
-            Add(_sweep);
-            var badges = new VisualElement { pickingMode = PickingMode.Ignore };
-            badges.AddToClassList("hud-command__badges");
-            Add(badges);
-            var padlock = new HUDGlyph(HUDGlyphShape.Padlock);
-            padlock.AddToClassList("hud-command__lock");
-            badges.Add(padlock);
-            _count = HUDElements.Text("", "hud-command__count", badges);
-            _unpowered = new HUDGlyph(HUDGlyphShape.Lightning);
-            _unpowered.AddToClassList("hud-command__unpowered");
-            badges.Add(_unpowered);
+            var tree = details.Instantiate();
+            _sweep = tree.Require<HUDSweep>("sweep");
+            _count = tree.Require<Label>("count");
+            _unpowered = tree.Require<HUDGlyph>("unpowered");
+            _costs = tree.Require<CostRow>("costs");
+            _limit = tree.Require<Label>("limit");
+            foreach (var child in tree.Children().ToList())
+            {
+                Add(child);
+            }
 
-            var strip = new HUDFade();
-            strip.AddToClassList("hud-command__strip");
-            Add(strip);
-            _costs = new CostRow { pickingMode = PickingMode.Ignore };
             if (entityManager.HasBuffer<ResourceCost>(prefab))
             {
                 _costs.Bind(entityManager.GetBuffer<ResourceCost>(prefab, true));
             }
-
-            strip.Add(_costs);
-            _limit = HUDElements.Text("", "hud-command__limit", strip);
 
             ShowQueue(new QueuedOption(0, QueuedOption.Idle));
             ShowUnpowered(false);

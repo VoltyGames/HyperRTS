@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Commands
@@ -22,6 +23,15 @@ namespace HyperRTS.Presentation.HUD.Commands
         private readonly HashSet<Entity> _unpowered = new();
         private readonly Dictionary<Entity, QueuedOption> _queued = new();
 
+        private readonly VisualTreeAsset _details;
+        private bool _fresh;
+
+        /// <param name="details">Each build card's sweep, badges and cost strip (CommandButtonDetails.uxml).</param>
+        public PurchaseCommands(VisualTreeAsset details)
+        {
+            _details = details;
+        }
+
         private static QueuedOption Idle => new(0, QueuedOption.Idle);
 
         public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
@@ -29,6 +39,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             _options.Clear();
             _producers.Clear();
             _offers.Clear();
+            _fresh = true;
             var builds = new List<Entity>();
             var advancedBuilds = new List<Entity>();
             var products = new List<Entity>();
@@ -58,11 +69,12 @@ namespace HyperRTS.Presentation.HUD.Commands
 
         public void Refresh(HUDContext context)
         {
-            if (_options.Count == 0)
+            if (_options.Count == 0 || !(_fresh || context.PurchasesChanged))
             {
                 return;
             }
 
+            _fresh = false;
             ReadProducers(context);
             var entityManager = context.EntityManager;
             var buyer = context.SnapshotBuyer();
@@ -130,7 +142,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         private CommandEntry Add(HUDContext context, List<CommandEntry> entries, Entity prefab,
             List<Entity> producers, System.Action invoke)
         {
-            var button = new CommandButton().BindPrefab(context.EntityManager, prefab, invoke);
+            var button = new CommandButton().BindPrefab(context.EntityManager, prefab, _details, invoke);
             button.Description = tooltip => Describe(context, prefab, tooltip);
             _options.Add(new Option(button, prefab, producers));
             var entry = new CommandEntry(button, invoke);

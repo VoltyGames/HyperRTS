@@ -50,10 +50,10 @@ namespace HyperRTS.Simulation.Auras
             IReadOnlyList<StatModifier> bonuses)
         {
             writer.Add(aura);
-            var buffer = writer.AddBuffer<AuraBonus>();
+            var buffer = writer.AddBuffer<GrantedModifier>();
             foreach (var bonus in bonuses)
             {
-                buffer.Add(new AuraBonus { Modifier = bonus });
+                buffer.Add(new GrantedModifier { Modifier = bonus });
             }
         }
 
@@ -61,12 +61,7 @@ namespace HyperRTS.Simulation.Auras
         {
             public override void Bake(AuraAuthoring authoring)
             {
-                var modifiers = new List<StatModifier>();
-                foreach (var bonus in authoring.bonuses)
-                {
-                    modifiers.Add(bonus.ToModifier(StatSource.Aura(authoring.AuraId)));
-                }
-
+                var modifiers = StatBonus.ToModifiers(authoring.bonuses, StatSource.Aura(authoring.AuraId));
                 var writer = this.Writer();
                 AuraAuthoring.AddAura(writer, new Aura
                 {

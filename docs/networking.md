@@ -145,7 +145,9 @@ holds.
 2. The server picks a slot: the one this token owns, else the preferred slot if never claimed, else the first
    never-claimed human slot. With none left, or if the client asked to observe, it joins as an observer. Observers
    have faction 0 and see everything.
-3. The client marks that slot's player ghost as `LocalPlayer`, so input and HUD work unchanged.
+3. The server sets the slot's player ghost's `GhostOwner` to the connection, and Netcode enables
+   `GhostOwnerIsLocal` on that client, which tags the ghost `LocalPlayer`, so input and HUD work unchanged. An
+   observer owns no ghost, so the server answers it with `ObserverAccepted` and the client makes a `LocalObserver`.
 
 **Identity.** `NetworkSession.Token` is a random number made once per process. The server stores it with the slot
 the client claims. When the connection drops, the slot keeps the token and waits for its owner, with its units idle.
@@ -198,14 +200,34 @@ Measured on a 400 m map, a server and a client world in the Editor, with 500 tan
 | 500 tanks in combat, fog on or off | 20 Hz | peak 316 kbps | 18 ticks max |
 
 At 20 Hz a client needs about 0.3 Mbps in a large battle, so a player hosting a 4v4 uploads about 2.2 Mbps. Combat
-adds about 80 kbps of cues on top of the capped snapshots.
+adds about 80 kbps of cues on top of the capped snapshots. Commands no longer carry their units: a group goes once
+as a selection, about 8 bytes a unit, and every command after it is a few dozen bytes.
+
+Fog relevancy runs as a parallel Burst job over ghosts and viewing connections every tick, under the profiler marker
+`FogRelevancySystem.Hide`.
 
 ## Commands
 
-Clients never run a `PlayerCommand`. They send it to the server as an RPC with the target and the units it
-addresses, up to 127. A unit that despawned meanwhile arrives as `Entity.Null`, never as a different unit. The
-server keeps only units the sender owns and writes the command to the sender's player entity in arrival order.
-Cost, prerequisites and cooldowns are checked by the same systems as in single player.
+Clients never run a `PlayerCommand`. They send it to the server as a `CommandRpc` with its target and, for a single
+unit or producer, that unit. A command for a group addresses the selection the client sent before it:
+
+- `CommandSendSystem` sends the group as `SelectionRpc`s only when it differs from the last one sent, 127 units an
+  RPC: the first replaces the server's copy, the rest append, so any number of units fits.
+- The server keeps each remote player's selection in its `PlayerSelection` buffer, with only the units it owns, and
+  lists it as the command's group. A seat taken by a new connection starts with an empty selection.
+- Netcode serializes each RPC type in its own system, so a command waits one tick behind a new selection, and each
+  carries the selection's version for the server to match them in the same tick.
+
+A unit that despawned meanwhile arrives as `Entity.Null`, never as a different unit. The server writes commands to
+the sender's player entity in arrival order. Cost, prerequisites and cooldowns are checked by the same systems as in
+single player.
+
+Receivers take RPCs through `RpcInbox<T>`, which destroys their request entities, and senders queue them with
+`Rpc.Send`; `Entity.Null` there means every remote connection.
+
+Every RPC rides Netcode's one reliable ordered pipeline. Its out-of-band pipeline would keep cues and scenery from
+delaying commands, but Netcode 7.1's source generator makes no serializer for an `IOutOfBandRpcCommand`, so it waits
+for a version that does.
 
 ## Fog of war
 

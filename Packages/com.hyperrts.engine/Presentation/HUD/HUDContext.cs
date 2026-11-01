@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
@@ -25,13 +24,24 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveQuery _completed = new(entityManager =>
             CompletedBuildings.Query(Allocator.Temp).Build(entityManager));
 
-        private readonly LiveQuery _pointer = Singleton<PointerState>();
-        private readonly LiveQuery _pending = Singleton<PendingCommand>();
-        private readonly LiveQuery _placement = Singleton<PlacementState>();
-        private readonly LiveQuery _cameraFocus = Singleton<CameraFocusRequest>();
-        private readonly LiveQuery _hotkeys = Singleton<HotkeyPresses>();
-        private readonly LiveQuery _commandPage = Singleton<CommandCardPage>();
-        private readonly LiveQuery _registry = Singleton<PrefabRegistry>();
+        private readonly LiveSingleton<PointerState> _pointer = new();
+        private readonly LiveSingleton<CameraFocusRequest> _cameraFocus = new();
+        private readonly LiveSingleton<HotkeyPresses> _hotkeys = new();
+        private readonly LiveSingleton<PrefabRegistry> _registry = new();
+
+        private readonly ChangeWatch _selection = new(() => new[]
+        {
+            ComponentType.ReadOnly<Selected>(), ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<ConstructionProgress>(), ComponentType.ReadOnly<FogHidden>(),
+        });
+
+        private readonly ChangeWatch _purchases = new(() => new[]
+        {
+            ComponentType.ReadOnly<ResourceStock>(), ComponentType.ReadOnly<ProductionQueueItem>(),
+            ComponentType.ReadOnly<Producer>(), ComponentType.ReadOnly<Offline>(),
+            ComponentType.ReadOnly<CompletedResearch>(), ComponentType.ReadOnly<ConstructionProgress>(),
+            ComponentType.ReadOnly<BuildingTag>(), ComponentType.ReadOnly<Dead>(), ComponentType.ReadOnly<Faction>(),
+        });
 
         private readonly LiveQuery _queues = new(entityManager =>
             ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager));
@@ -50,19 +60,36 @@ namespace HyperRTS.Presentation.HUD
         /// </summary>
         public int SelectionHash { get; private set; }
 
+        /// <summary>True when a stock, queue, building, research or power change may alter a purchase button.</summary>
+        public bool PurchasesChanged { get; private set; }
+
         public EntityManager EntityManager => View.EntityManager;
 
         /// <summary>Reads this frame's selection through <paramref name="view"/>; false until it is ready.</summary>
         public bool Refresh(MatchView view)
         {
             View = view;
-            Selected.Clear();
-            SelectionHash = 0;
             if (!view.IsReady)
             {
+                Selected.Clear();
+                SelectionHash = 0;
+                PurchasesChanged = true;
+                _selection.Forget();
                 return false;
             }
 
+            PurchasesChanged = _purchases.Moved(EntityManager);
+            if (_selection.Moved(EntityManager))
+            {
+                ReadSelection();
+            }
+
+            return true;
+        }
+
+        private void ReadSelection()
+        {
+            Selected.Clear();
             using var entities = _selected.In(EntityManager).ToEntityArray(Allocator.Temp);
             var hash = entities.Length;
             foreach (var entity in entities)
@@ -72,7 +99,6 @@ namespace HyperRTS.Presentation.HUD
             }
 
             SelectionHash = hash;
-            return true;
         }
 
         public bool IsOwned(Entity entity) =>
@@ -88,19 +114,13 @@ namespace HyperRTS.Presentation.HUD
                 EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true));
 
         /// <summary>The letters and digits pressed last frame while gameplay input was live; none without the singleton.</summary>
-        public HotkeyPresses Hotkeys =>
-            _hotkeys.In(EntityManager).TryGetSingleton(out HotkeyPresses presses) ? presses : default;
+        public HotkeyPresses Hotkeys => _hotkeys.TryGet(EntityManager, out var presses) ? presses : default;
 
-        /// <summary>The building being placed; inactive without the singleton.</summary>
-        public PlacementState Placement =>
-            _placement.In(EntityManager).TryGetSingleton(out PlacementState placement) ? placement : default;
+        public PlacementState Placement => View.Placement;
 
-        /// <summary>The command card page that shows: 0 for the first, 1 for a builder's advanced options.</summary>
-        public int CommandPage =>
-            _commandPage.In(EntityManager).TryGetSingleton(out CommandCardPage page) ? page.Page : 0;
+        public int CommandPage => View.CommandPage;
 
-        public void ShowCommandPage(int page) =>
-            Write(_commandPage, new CommandCardPage { Page = (byte)page });
+        public void ShowCommandPage(int page) => View.SetCommandPage(page);
 
         public PurchaseRefusal FindRefusal(Entity prefab, in Buyer buyer) =>
             PurchaseRules.FindRefusal(EntityManager, prefab, buyer, Stock.AsNativeArray());
@@ -108,7 +128,7 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>Adds the prefabs of <paramref name="prefab"/>'s unmet prerequisites to <paramref name="missing"/>.</summary>
         public void FindMissingPrerequisites(Entity prefab, in Buyer buyer, List<Entity> missing)
         {
-            if (!_registry.In(EntityManager).TryGetSingleton(out PrefabRegistry registry))
+            if (!_registry.TryGet(EntityManager, out var registry))
             {
                 return;
             }
@@ -141,7 +161,7 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>Starts targeting a command; the input layer issues it on the next world click.</summary>
         public void BeginTargeting(CommandType type, int argument) =>
-            Write(_pending, new PendingCommand { Type = type, Argument = argument });
+            View.SetPending(new PendingCommand { Type = type, Argument = argument });
 
         public void Issue(PlayerCommand command)
         {
@@ -153,7 +173,7 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>Hands the building to the input layer, which moves the ghost and confirms placement.</summary>
         public void StartPlacement(Entity prefab) =>
-            Write(_placement, new PlacementState { Active = true, Prefab = prefab });
+            View.SetPlacement(new PlacementState { Active = true, Prefab = prefab });
 
         /// <summary>Asks the camera to centre on a ground point.</summary>
         public void FocusCamera(float3 point) =>
@@ -166,29 +186,18 @@ namespace HyperRTS.Presentation.HUD
                 return;
             }
 
-            var query = _pointer.In(EntityManager);
-            var changed = query.TryGetSingleton(out PointerState pointer) && pointer.OverUI != over;
+            var changed = _pointer.TryGet(EntityManager, out var pointer) && pointer.OverUI != over;
             if (changed)
             {
-                query.SetSingleton(new PointerState { OverUI = over });
+                _pointer.Set(EntityManager, new PointerState { OverUI = over });
             }
         }
 
-        private static LiveQuery Singleton<T>() where T : unmanaged, IComponentData =>
-            new(entityManager => entityManager.CreateEntityQuery(ComponentType.ReadWrite<T>()));
-
-        // The singletons come from ClientSingletonSystem, so a world without it (headless) simply ignores the HUD.
-        private void Write<T>(LiveQuery singleton, T value) where T : unmanaged, IComponentData
+        private void Write<T>(LiveSingleton<T> singleton, T value) where T : unmanaged, IComponentData
         {
-            if (!View.IsLive)
+            if (View.IsLive)
             {
-                return;
-            }
-
-            var query = singleton.In(EntityManager);
-            if (query.HasSingleton<T>())
-            {
-                query.SetSingleton(value);
+                singleton.Set(EntityManager, value);
             }
         }
 

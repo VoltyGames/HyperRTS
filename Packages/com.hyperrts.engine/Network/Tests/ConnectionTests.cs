@@ -119,12 +119,12 @@ namespace HyperRTS.Network.Tests
             Assert.IsTrue(combat.Enabled);
         }
 
-        private static NativeArray<PlayerConnection> Humans(params int[] networkIds)
+        private static NativeArray<GhostOwner> Humans(params int[] networkIds)
         {
-            var humans = new NativeArray<PlayerConnection>(networkIds.Length, Allocator.Temp);
+            var humans = new NativeArray<GhostOwner>(networkIds.Length, Allocator.Temp);
             for (var i = 0; i < networkIds.Length; i++)
             {
-                humans[i] = new PlayerConnection { NetworkId = networkIds[i] };
+                humans[i] = new GhostOwner { NetworkId = networkIds[i] };
             }
 
             return humans;
@@ -172,7 +172,7 @@ namespace HyperRTS.Network.Tests
         [TestCase((byte)2, false, TestName = "PlayerRejoinsForItsSlot")]
         public void Rejoining_KeepsTheGrantedSeat(byte granted, bool observe)
         {
-            var rejoin = JoinPreference.Rejoining(new LocalFaction { Value = granted });
+            var rejoin = JoinPreference.Rejoining(granted);
             Assert.AreEqual(granted, rejoin.Faction);
             Assert.AreEqual(observe, rejoin.Observe);
         }
