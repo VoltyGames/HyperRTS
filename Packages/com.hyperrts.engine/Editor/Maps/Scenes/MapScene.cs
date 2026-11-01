@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Scenes;
 using HyperRTS.Simulation.Common;
 using System.IO;
 using System.Linq;

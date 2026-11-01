@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Tools;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
@@ -24,7 +23,6 @@ namespace HyperRTS.Editor.Tests.Validation
         {
             [typeof(ContactShadowsRule)] = "Fires only when the project's active URP renderer lacks the features.",
             [typeof(UnitSilhouetteRule)] = "Fires only on the project's renderer assets and rendering layer names.",
-            [typeof(MapSpecRule)] = "Needs a saved map scene in a Generated folder beside a spec asset.",
         };
 
         private Scene _scene;

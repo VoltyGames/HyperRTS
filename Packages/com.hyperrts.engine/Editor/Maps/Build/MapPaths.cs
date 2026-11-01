@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Scenes;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using System.IO;

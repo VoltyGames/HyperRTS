@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,7 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
-using HyperRTS.Editor.Maps.Rules;
+using HyperRTS.Editor.Maps.Checks;
 using Unity.Mathematics;
 using UnityEngine;
 

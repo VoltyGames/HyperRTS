@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Placement;
-using HyperRTS.Editor.Maps.Rules;
+using HyperRTS.Editor.Maps.Checks;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Report

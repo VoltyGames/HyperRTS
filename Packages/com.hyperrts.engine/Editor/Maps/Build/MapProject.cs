@@ -3,7 +3,7 @@ using System.IO;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Editor.Maps.Rules;
+using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 

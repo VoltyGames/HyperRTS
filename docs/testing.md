@@ -1,7 +1,8 @@
 # Testing
 
 The engine's tests are EditMode tests in `HyperRTS.Simulation.Tests`, `HyperRTS.Network.Tests`,
-`HyperRTS.Presentation.Tests` and `HyperRTS.Editor.Tests`. Run them from **Window ▸ General ▸ Test Runner**.
+`HyperRTS.Presentation.Tests`, `HyperRTS.Editor.Tests` and
+`HyperRTS.Editor.Maps.Tests`. Run them from **Window ▸ General ▸ Test Runner**.
 
 ## TestWorld
 

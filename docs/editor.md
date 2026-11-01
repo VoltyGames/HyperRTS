@@ -38,7 +38,7 @@ the window on a page.
 
 Each Tools window action an agent needs is also a command of the `com.unity.pipeline` package, run from any shell
 with `unity command <name> [args]` while the Editor is open. A command is a thin `[CliCommand]` wrapper in an
-`Editor/Commands/` folder: the work lives in a method on the type that owns it, and the Tools window button and the
+`Editor/Commands/` folder (the map commands sit in `Editor/Maps/Tools/`): the work lives in a method on the type that owns it, and the Tools window button and the
 command both call that method. Long commands run as detached jobs (`unity command --detach`).
 
 | Command | Calls | Returns |
@@ -198,6 +198,7 @@ as `3E 12W`.
 
 ## Scenes from code
 
+`Editor/Scenes/` holds the scene builder, spec and wizard.
 `RTSSceneBuilder` builds a playable scene and its `<Scene>_Entities.unity` SubScene.
 
 ```csharp

@@ -1,7 +1,8 @@
 # Map tools
 
 [Modules](../modules.md) ▸ Map tools: the code behind the map builder, Map Editor and map library, in
-`Editor/Maps/` under `HyperRTS.Editor.Maps.<Folder>`. For how to use them, see [maps](../maps.md).
+`Editor/Maps/`, its own assembly `HyperRTS.Editor.Maps` (tests in `Editor/Maps/Tests/`), under
+`HyperRTS.Editor.Maps.<Folder>`. For how to use them, see [maps](../maps.md).
 
 ## Pipeline
 
@@ -26,14 +27,14 @@ The folders below follow the pipeline, from the data a build reads to what it wr
 | `Spec/` | `MapSpec` and one class per feature. `MapSpecJson` reads and writes it in `JsonFormat` (`Editor/Common/`), the layout specs and effect recipes are saved in |
 | `Climate/` | Climate library items: the climate, its surfaces, layers, trees, plants, row crops, road classes, decals and its belt, farmland, woodland and war kits |
 | `Palette/` | The palette: props, sides and their start kits, settlement kits |
-| `Rules/` | The rules: thresholds per mode and the props a surface should carry |
 | `Library/` | `MapLibrary`, the `MapLibraryItem` base, `MapKeys`, `MapClimateAssembly`, the `[MapKey]` attribute and its dropdown, `MapLibraryRule` |
 
 ## Lay
 
 | Folder | Holds |
 | --- | --- |
-| `Checks/` | `MapAssetCheck`, `MapSpecCheck`, `MapKeyCheck`, and `MapRoadChecks` after a build |
+| `Checks/` | `MapAssetCheck`, `MapSpecCheck`, `MapKeyCheck`, and `MapRoadChecks` after a build; `MapSpecRule`; `MapRules`, the thresholds per mode and the props a surface should carry, which the checks, report and nav grid measure against |
+| `Common/` | `MapIssues` and `MapIssueFeature`, `MapRandom` and its channels |
 | `Refine/` | `MapRefiner`: river meanders, road curves and joins, ravine gullies |
 | `Layout/` | `MapSymmetry`, the sector's copies and how they number slots; `MapExpander` copies the sector into a `MapLayout` |
 | `Geometry/` | `MapShapes` for rivers, roads, ravines and crossings in map space, plus curves and noise |
@@ -74,7 +75,7 @@ Inside the playable area, trees with entity versions become placements. The rest
 | Folder | Holds |
 | --- | --- |
 | `Designer/` | **HyperRTS ▸ Map Editor**. `MapSpecDocument` (a `JsonDocument`) holds the open spec in a hidden ScriptableObject for Undo and property fields, saves each edit through `JsonChanges` and reloads on import; the canvas tools (`IMapTool`) edit through `MapFeatureEdits` |
-| `Tools/` | The **Tools ▸ Maps** page, `MapBuildRunner`, `MapCommandLine`, `MapKeyReference`, `MapSpecRule` |
+| `Tools/` | The **Tools ▸ Maps** page, `MapBuildRunner`, `MapCommandLine`, `MapKeyReference`, `MapCommands` |
 
 ## Extending
 

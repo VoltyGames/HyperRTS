@@ -346,7 +346,7 @@ that names no item and a link to an asset that no longer exists, on the Validate
 
 ### Adding an item type
 
-1. Add a class in `Climate/`, `Palette/` or `Rules/` that derives from `MapLibraryItem`, with
+1. Add a class in `Climate/`, `Palette/` or `Checks/` that derives from `MapLibraryItem`, with
    `[MapLibraryItem("<type>")]` and a `[CreateAssetMenu]` under `HyperRTSMenu.MapLibrary`, and add it to
    `MapLibrary`'s type list. Override `Load` to fill fields it derives from its data.
 2. Hook it into builds through `MapClimateAssembly` or `MapLibrary.Palette`.

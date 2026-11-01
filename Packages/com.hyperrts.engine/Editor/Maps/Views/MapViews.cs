@@ -5,7 +5,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Report;
-using HyperRTS.Editor.Maps.Rules;
+using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Input.Cameras;
 using UnityEditor.SceneManagement;
 using UnityEngine;

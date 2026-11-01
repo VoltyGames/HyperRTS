@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Linq;
 using HyperRTS.Editor.Maps.Climate;

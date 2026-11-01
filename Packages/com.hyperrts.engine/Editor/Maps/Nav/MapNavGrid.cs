@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Maps.Rules;
+using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;

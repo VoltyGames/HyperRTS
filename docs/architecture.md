@@ -12,7 +12,8 @@ The simulation has no rendering, input or UI, so it runs on a dedicated server a
 | `HyperRTS.Network` | Sessions, join, command RPCs, replication, fog relevancy |
 | `HyperRTS.Presentation` | HUD, overlays, fog rendering, team colours, audio. |
 | `HyperRTS.Input` | Camera and input, turned into `PlayerCommand`s |
-| `HyperRTS.Editor` | Tools window, inspectors, validation, debug tools, Map Editor |
+| `HyperRTS.Editor` | Tools window, inspectors, validation, debug tools, scene builder |
+| `HyperRTS.Editor.Maps` | Map Editor and the map build pipeline; builds on `HyperRTS.Editor` |
 
 `Network` and `Presentation` build on `Simulation`. `Input` builds on `Presentation`. `Editor` and the tests sit on
 top. A server build leaves out client systems by world filter, not by assembly.

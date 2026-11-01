@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;

@@ -1,4 +1,5 @@
 using System.Linq;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 

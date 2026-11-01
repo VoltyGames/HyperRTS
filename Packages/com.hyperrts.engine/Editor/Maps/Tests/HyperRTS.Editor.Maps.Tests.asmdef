@@ -1,0 +1,32 @@
+{
+    "name": "HyperRTS.Editor.Maps.Tests",
+    "rootNamespace": "HyperRTS.Editor.Maps.Tests",
+    "references": [
+        "HyperRTS.Simulation",
+        "HyperRTS.Presentation",
+        "HyperRTS.Presentation.Tests",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "HyperRTS.Editor",
+        "HyperRTS.Editor.Maps",
+        "HyperRTS.Editor.Tests",
+        "Unity.Mathematics",
+        "Unity.Scenes",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

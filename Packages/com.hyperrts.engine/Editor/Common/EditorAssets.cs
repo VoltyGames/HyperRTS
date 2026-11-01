@@ -3,12 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
+
+[assembly: InternalsVisibleTo("HyperRTS.Editor.Maps")]
 
 namespace HyperRTS.Editor.Common
 {

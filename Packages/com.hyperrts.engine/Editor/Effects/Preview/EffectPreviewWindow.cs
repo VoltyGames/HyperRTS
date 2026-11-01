@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.HUD;

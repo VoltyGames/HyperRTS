@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Report;
 using UnityEngine;
 

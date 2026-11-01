@@ -1,10 +1,11 @@
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Simulation.Common;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Editor.Maps.Rules;
+using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 

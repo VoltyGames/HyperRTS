@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Nav;
 using Unity.Mathematics;
 using UnityEngine;

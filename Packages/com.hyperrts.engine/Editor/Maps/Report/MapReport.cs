@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 

@@ -1,0 +1,29 @@
+{
+    "name": "HyperRTS.Editor.Maps",
+    "rootNamespace": "HyperRTS.Editor.Maps",
+    "references": [
+        "HyperRTS.Editor",
+        "HyperRTS.Simulation",
+        "HyperRTS.Input",
+        "HyperRTS.Presentation",
+        "Unity.Collections",
+        "Unity.Entities",
+        "Unity.Entities.Graphics",
+        "Unity.Mathematics",
+        "Unity.Pipeline.Attributes",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.Scenes",
+        "Unity.Transforms"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
