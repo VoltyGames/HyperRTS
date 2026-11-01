@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation.Rules;
 using Unity.Scripting.LifecycleManagement;
+using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Validation
@@ -14,6 +15,10 @@ namespace HyperRTS.Editor.Validation
     /// </summary>
     public static class ProjectValidator
     {
+        /// <summary>Session keys for the error and warning counts of the last full run, read by the Tools window badge.</summary>
+        public const string ErrorsKey = "HyperRTS.Validate.Errors";
+        public const string WarningsKey = "HyperRTS.Validate.Warnings";
+
         [NoAutoStaticsCleanup]
         private static readonly IAuthoringRule[] ComponentRules = TypeDiscovery.Instances<IAuthoringRule>();
         [NoAutoStaticsCleanup]
@@ -59,6 +64,8 @@ namespace HyperRTS.Editor.Validation
             }
 
             issues.AddRange(OpenScenes());
+            SessionState.SetInt(ErrorsKey, issues.FindAll(issue => issue.Severity == MessageType.Error).Count);
+            SessionState.SetInt(WarningsKey, issues.FindAll(issue => issue.Severity == MessageType.Warning).Count);
             return issues;
         }
 

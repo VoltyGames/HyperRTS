@@ -2,5 +2,7 @@
   <Style src="../Common/HyperRTSEditor.uss" />
   <Style src="GeneratePage.uss" />
   <ui:Button name="run-all" class="hrts-generate__run-all" text="Run all" />
-  <ui:VisualElement name="groups" />
+  <ui:ScrollView class="hrts-fill">
+    <ui:VisualElement name="groups" />
+  </ui:ScrollView>
 </ui:UXML>

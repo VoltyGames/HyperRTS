@@ -21,14 +21,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
     [UpdateAfter(typeof(AttackOrderSystem))]
     public partial struct TargetAcquisitionSystem : ISystem
     {
-        /// <summary>Each weapon scans every Nth frame, spreading the spatial queries over frames.</summary>
-        public const int ScanInterval = 4;
-
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
         private ComponentLookup<ActiveOrder> _orders;
         private ComponentLookup<Ammo> _ammo;
-        private uint _frame;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -40,6 +36,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<FogOfWar>();
+            state.RequireForUpdate<SimulationFrame>();
         }
 
         [BurstCompile]
@@ -48,7 +45,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _targets.Update(ref state, _fogQuery);
             _orders.Update(ref state);
             _ammo.Update(ref state);
-            _frame++;
 
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
 
@@ -60,7 +56,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 Orders = _orders,
                 Traits = traits,
                 AmmoLookup = _ammo,
-                Slot = (int)(_frame % ScanInterval),
+                Slot = new ScanSlot(SystemAPI.GetSingleton<SimulationFrame>()),
             }.ScheduleParallel();
         }
 
@@ -75,13 +71,12 @@ namespace HyperRTS.Simulation.Combat.Targeting
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
             [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
-            public int Slot;
+            public ScanSlot Slot;
 
             private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in CombatStance stance,
                 in VisionRange vision, in Faction faction, ref AttackTarget attack, EnabledRefRW<AttackTarget> attacking)
             {
-                var scanning = entity.Index % ScanInterval == Slot;
-                if (!scanning || attacking.ValueRO || stance.Value == Stance.Passive)
+                if (!Slot.Owns(entity) ||attacking.ValueRO || stance.Value == Stance.Passive)
                 {
                     return;
                 }

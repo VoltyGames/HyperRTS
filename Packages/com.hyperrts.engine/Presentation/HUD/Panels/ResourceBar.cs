@@ -90,7 +90,11 @@ namespace HyperRTS.Presentation.HUD.Panels
                 label.SetHidden(hasIcon);
 
                 var amount = entry.Require<Label>("amount");
-                amount.style.color = type.color;
+                if (type.TryGetAmountTint(out var tint))
+                {
+                    amount.style.color = tint;
+                }
+
                 _amounts.Add(amount);
                 _shown.Add(int.MinValue);
             }

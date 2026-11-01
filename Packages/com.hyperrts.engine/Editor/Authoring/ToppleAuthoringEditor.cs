@@ -33,9 +33,8 @@ namespace HyperRTS.Editor.Authoring
             _error.SetHidden(true);
             try
             {
-                Undo.RecordObject(topple, "Measure Topple");
-                ToppleMeasure.Measure(topple, (Material)_trunkMaterial.value);
-                EditorUtility.SetDirty(topple);
+                EditorUndo.Record(topple, "Measure Topple",
+                    () => ToppleMeasure.Measure(topple, (Material)_trunkMaterial.value));
             }
             catch (System.InvalidOperationException problem)
             {

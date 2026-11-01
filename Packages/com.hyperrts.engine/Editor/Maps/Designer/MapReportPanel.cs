@@ -68,8 +68,8 @@ namespace HyperRTS.Editor.Maps.Designer
         public void Bind(MapSpecDocument document)
         {
             _document = document;
-            _preview = Current(MapReport.LoadPreview(_document.Spec.name));
-            _build = Current(MapReport.Load(_document.Spec.name));
+            _preview = RequireFeatures(MapReport.LoadPreview(_document.Spec.name), _document.Spec.name);
+            _build = RequireFeatures(MapReport.Load(_document.Spec.name), _document.Spec.name);
             _issues = Newest(_preview, _build);
             Refresh();
         }
@@ -88,17 +88,16 @@ namespace HyperRTS.Editor.Maps.Designer
             Refresh();
         }
 
-        /// <summary>A report written before issues named their features is stale: it is left out until rebuilt.</summary>
-        private static MapReport Current(MapReport report)
+        private static MapReport RequireFeatures(MapReport report, string map)
         {
-            if (report == null)
+            if (report != null && (report.errorFeatures.Count != report.errors.Count ||
+                                   report.warningFeatures.Count != report.warnings.Count))
             {
-                return null;
+                throw new InvalidOperationException(
+                    $"The report of map '{map}' lacks the feature of some issues (errorFeatures or warningFeatures). Preview or build the map again.");
             }
 
-            var errorsLinked = report.errorFeatures.Count == report.errors.Count;
-            var warningsLinked = report.warningFeatures.Count == report.warnings.Count;
-            return errorsLinked && warningsLinked ? report : null;
+            return report;
         }
 
         /// <summary>The later of two reports; their <c>built</c> stamps sort as text.</summary>

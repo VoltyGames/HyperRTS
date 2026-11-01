@@ -51,8 +51,11 @@ namespace HyperRTS.Presentation.HUD.Commands
         // Inline resource colours would beat the sheet, so a short row clears them.
         private void Paint(Label amount, ResourceType type)
         {
-            var colored = type != null && !_short;
-            amount.style.color = colored ? new StyleColor(type.color) : new StyleColor(StyleKeyword.Null);
+            amount.style.color = new StyleColor(StyleKeyword.Null);
+            if (type != null && !_short && type.TryGetAmountTint(out var tint))
+            {
+                amount.style.color = tint;
+            }
         }
     }
 }

@@ -15,3 +15,4 @@ MonoBehaviour:
   displayName: Supplies
   icon: {fileID: 0}
   color: {r: 1, g: 0.78, b: 0.2, a: 1}
+  tintAmounts: 1

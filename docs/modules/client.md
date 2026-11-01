@@ -358,9 +358,10 @@ material needs GPU instancing on, which the set checks at bake.
 
 A piece at rest moves to `LastingDebris` and stays for the match. `LastingDebris.CapAt` sets the cap: 20,000
 pieces on High, 8,000 on Medium and none on Low. Past the cap the oldest piece sinks into the ground over 5 s and its
-slot is reused; up to 512 sink at once. `LastingDebrisDraws` draws the layer through a `BatchRendererGroup`, one
-indirect draw per mesh and material, from GPU buffers written only when a piece settles, sinks or goes, so pieces at
-rest cost no CPU. It reads the matrices through the material's DOTS instancing path, so debris materials use a
+slot is reused; up to 512 sink at once. `LastingDebrisDraws` draws the layer through a `BatchRendererGroup` from GPU
+buffers written only when a piece settles, sinks or goes. In each view `LastingDebrisCulling`, a Burst job, tests every
+piece's bounding sphere against each split's planes (the camera, or every shadow cascade), so pieces off screen and
+outside a cascade are not drawn; a run of one mesh's pieces that share the same splits is one draw. It reads the matrices through the material's DOTS instancing path, so debris materials use a
 shader with DOTS instancing, such as `LitTeam`. Changing effect detail starts the layer over at the new cap. Fogged
 pieces draw as flying ones do.
 

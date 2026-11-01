@@ -20,13 +20,19 @@ namespace HyperRTS.Editor.Authoring
         private void Fill()
         {
             var rig = (MotionRigAuthoring)target;
-            var filled = rig.GetComponents<AuthoringBehaviour>();
-            Undo.RecordObjects(filled, "Fill Motion Rig");
-            rig.FillFromModel();
-            foreach (var authoring in filled)
+            RecordThenFill(rig, rig.GetComponents<AuthoringBehaviour>(), 0);
+        }
+
+        // Nests one Record per component so each is captured before the fill changes it.
+        private static void RecordThenFill(MotionRigAuthoring rig, AuthoringBehaviour[] filled, int index)
+        {
+            if (index == filled.Length)
             {
-                EditorUtility.SetDirty(authoring);
+                rig.FillFromModel();
+                return;
             }
+
+            EditorUndo.Record(filled[index], "Fill Motion Rig", () => RecordThenFill(rig, filled, index + 1));
         }
     }
 }

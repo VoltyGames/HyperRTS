@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -10,8 +9,9 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Draws <see cref="LastingDebris"/> through a BatchRendererGroup with indirect draws, one per mesh and material,
-    /// reading each piece's matrices from a GPU buffer written only when a piece settles, sinks or goes.
+    /// Draws <see cref="LastingDebris"/> through a BatchRendererGroup, culled per piece in each view by
+    /// <see cref="LastingDebrisCulling"/>, reading each piece's matrices from a GPU buffer written only when a piece
+    /// settles, sinks or goes.
     /// </summary>
     internal sealed class LastingDebrisDraws : IDisposable
     {
@@ -23,19 +23,27 @@ namespace HyperRTS.Presentation.Destruction
         private static readonly int ObjectToWorldId = Shader.PropertyToID("unity_ObjectToWorld");
         private static readonly int WorldToObjectId = Shader.PropertyToID("unity_WorldToObject");
 
+        private static readonly BatchFilterSettings Filter = new()
+        {
+            renderingLayerMask = 1,
+            motionMode = MotionVectorGenerationMode.Camera,
+            shadowCastingMode = ShadowCastingMode.On,
+            receiveShadows = true,
+        };
+
         private readonly int _capacity;
         private readonly BatchRendererGroup _group;
         private readonly GraphicsBuffer _instances;
         private readonly BatchID _batch;
         private readonly float3x4[] _objectToWorld;
         private readonly float3x4[] _worldToObject;
-        private readonly List<LastingDebrisBatch> _batches = new();
+        private readonly Dictionary<(Mesh, Material), int> _batchIndex = new();
         private readonly int[] _batchOf;
         private readonly int[] _listIndex;
-        private GraphicsBuffer _visible;
-        private GraphicsBuffer _commands;
-        private GraphicsBuffer.IndirectDrawIndexedArgs[] _commandData;
-        private bool _commandsChanged;
+        private NativeList<LastingDebrisBatch> _batches = new(Allocator.Persistent);
+        private NativeList<int> _members = new(Allocator.Persistent);
+        private NativeArray<float4> _bounds;
+        private JobHandle _culling;
         private int _changedFirst = int.MaxValue;
         private int _changedLast = -1;
 
@@ -46,7 +54,10 @@ namespace HyperRTS.Presentation.Destruction
             _worldToObject = new float3x4[capacity];
             _batchOf = new int[capacity];
             _listIndex = new int[capacity];
+            _bounds = new NativeArray<float4>(capacity, Allocator.Persistent);
             _group = new BatchRendererGroup(Cull, IntPtr.Zero);
+
+            // Unity culls the whole group against these bounds before the callback, and pieces lie anywhere on the map.
             _group.SetGlobalBounds(new Bounds(Vector3.zero, Vector3.one * 100000f));
             var bytes = (HeaderMatrices + 2 * capacity) * MatrixSize;
             _instances = new GraphicsBuffer(GraphicsBuffer.Target.Raw, bytes / sizeof(int), sizeof(int));
@@ -59,61 +70,54 @@ namespace HyperRTS.Presentation.Destruction
 
         public void Place(int slot, Mesh mesh, Material material, float4x4 matrix)
         {
-            Write(slot, matrix);
+            _culling.Complete();
             var batch = BatchIndex(mesh, material);
+            ref var entry = ref _batches.ElementAt(batch);
+            _members[batch * _capacity + entry.Count] = slot;
+            _listIndex[slot] = entry.Count++;
             _batchOf[slot] = batch;
-            _listIndex[slot] = _batches[batch].Add(slot);
-            _commandsChanged = true;
+            Write(slot, matrix);
         }
 
-        public void Move(int slot, float4x4 matrix) => Write(slot, matrix);
+        public void Move(int slot, float4x4 matrix)
+        {
+            _culling.Complete();
+            Write(slot, matrix);
+        }
 
+        // The batch's last slot fills the gap, so its list stays packed.
         public void Remove(int slot)
         {
-            var moved = _batches[_batchOf[slot]].Remove(_listIndex[slot]);
+            _culling.Complete();
+            var batch = _batchOf[slot];
+            ref var entry = ref _batches.ElementAt(batch);
+            var moved = _members[batch * _capacity + --entry.Count];
+            _members[batch * _capacity + _listIndex[slot]] = moved;
             _listIndex[moved] = _listIndex[slot];
-            _commandsChanged = true;
         }
 
         /// <summary>Writes this frame's changes to the GPU; nothing when no piece settled, sank or went.</summary>
         public void Upload()
         {
-            if (_changedLast >= 0)
+            if (_changedLast < 0)
             {
-                var count = _changedLast - _changedFirst + 1;
-                _instances.SetData(_objectToWorld, _changedFirst, HeaderMatrices + _changedFirst, count);
-                _instances.SetData(_worldToObject, _changedFirst, HeaderMatrices + _capacity + _changedFirst, count);
-                (_changedFirst, _changedLast) = (int.MaxValue, -1);
+                return;
             }
 
-            for (var index = 0; index < _batches.Count; index++)
-            {
-                var batch = _batches[index];
-                if (batch.Changed)
-                {
-                    _visible.SetData(batch.Slots, 0, index * _capacity, batch.Count);
-                    batch.Changed = false;
-                }
-            }
-
-            if (_commandsChanged)
-            {
-                for (var index = 0; index < _batches.Count; index++)
-                {
-                    _commandData[index] = _batches[index].Command;
-                }
-
-                _commands.SetData(_commandData);
-                _commandsChanged = false;
-            }
+            var count = _changedLast - _changedFirst + 1;
+            _instances.SetData(_objectToWorld, _changedFirst, HeaderMatrices + _changedFirst, count);
+            _instances.SetData(_worldToObject, _changedFirst, HeaderMatrices + _capacity + _changedFirst, count);
+            (_changedFirst, _changedLast) = (int.MaxValue, -1);
         }
 
         public void Dispose()
         {
+            _culling.Complete();
             _group.Dispose();
             _instances.Release();
-            _visible?.Release();
-            _commands?.Release();
+            _batches.Dispose();
+            _members.Dispose();
+            _bounds.Dispose();
         }
 
         private static uint PerInstance(int matrix) => 0x80000000u | (uint)(matrix * MatrixSize);
@@ -122,6 +126,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             _objectToWorld[slot] = Packed(matrix);
             _worldToObject[slot] = Packed(math.inverse(matrix));
+            _bounds[slot] = _batches[_batchOf[slot]].Sphere(matrix);
             _changedFirst = math.min(_changedFirst, slot);
             _changedLast = math.max(_changedLast, slot);
         }
@@ -130,94 +135,58 @@ namespace HyperRTS.Presentation.Destruction
 
         private int BatchIndex(Mesh mesh, Material material)
         {
-            for (var index = 0; index < _batches.Count; index++)
+            if (_batchIndex.TryGetValue((mesh, material), out var index))
             {
-                if (_batches[index].Draws(mesh, material))
-                {
-                    return index;
-                }
+                return index;
             }
 
-            _batches.Add(new LastingDebrisBatch(mesh, material, _group.RegisterMesh(mesh), _group.RegisterMaterial(material), _capacity));
-            GrowCommandBuffers();
-            return _batches.Count - 1;
+            index = _batches.Length;
+            _batchIndex.Add((mesh, material), index);
+            _batches.Add(new LastingDebrisBatch
+            {
+                MeshID = _group.RegisterMesh(mesh),
+                MaterialID = _group.RegisterMaterial(material),
+                MeshBounds = mesh.bounds,
+            });
+            _members.Resize(_batches.Length * _capacity, NativeArrayOptions.UninitializedMemory);
+            return index;
         }
 
-        // A new batch needs its own room in the slot list and its own command, so every list is written again.
-        private void GrowCommandBuffers()
+        private JobHandle Cull(BatchRendererGroup group, BatchCullingContext context, BatchCullingOutput output, IntPtr user)
         {
-            _visible?.Release();
-            _commands?.Release();
-            _visible = new GraphicsBuffer(GraphicsBuffer.Target.Raw, _batches.Count * _capacity, sizeof(uint));
-            _commands = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, _batches.Count,
-                GraphicsBuffer.IndirectDrawIndexedArgs.size);
-            _commandData = new GraphicsBuffer.IndirectDrawIndexedArgs[_batches.Count];
-            foreach (var batch in _batches)
-            {
-                batch.Changed = true;
-            }
-        }
-
-        private unsafe JobHandle Cull(BatchRendererGroup group, BatchCullingContext context, BatchCullingOutput output, IntPtr user)
-        {
-            var drawn = 0;
-            foreach (var batch in _batches)
-            {
-                drawn += batch.Count > 0 ? 1 : 0;
-            }
-
-            if (drawn == 0)
+            if (!AnyPlaced())
             {
                 return default;
             }
 
-            var commands = Allocate<BatchDrawCommandIndirect>(drawn);
-            var next = 0;
-            for (var index = 0; index < _batches.Count; index++)
+            var job = new LastingDebrisCulling
             {
-                if (_batches[index].Count > 0)
+                Batches = _batches.AsArray(),
+                Members = _members.AsArray(),
+                Bounds = _bounds,
+                Planes = context.cullingPlanes.Reinterpret<float4>(),
+                Splits = context.cullingSplits,
+                Capacity = _capacity,
+                Batch = _batch,
+                Filter = Filter,
+                Output = output.drawCommands,
+            };
+            var handle = job.Schedule();
+            _culling = JobHandle.CombineDependencies(_culling, handle);
+            return handle;
+        }
+
+        private bool AnyPlaced()
+        {
+            foreach (var batch in _batches)
+            {
+                if (batch.Count > 0)
                 {
-                    commands[next++] = DrawCommand(index);
+                    return true;
                 }
             }
 
-            var range = Allocate<BatchDrawRange>(1);
-            range[0] = new BatchDrawRange
-            {
-                drawCommandsType = BatchDrawCommandType.Indirect,
-                drawCommandsCount = (uint)drawn,
-                filterSettings = new BatchFilterSettings
-                {
-                    renderingLayerMask = 1,
-                    motionMode = MotionVectorGenerationMode.Camera,
-                    shadowCastingMode = ShadowCastingMode.On,
-                    receiveShadows = true,
-                },
-            };
-            output.drawCommands[0] = new BatchCullingOutputDrawCommands
-            {
-                indirectDrawCommands = commands,
-                indirectDrawCommandCount = drawn,
-                drawRanges = range,
-                drawRangeCount = 1,
-            };
-            return default;
+            return false;
         }
-
-        private BatchDrawCommandIndirect DrawCommand(int index) => new()
-        {
-            visibleOffset = (uint)(index * _capacity),
-            batchID = _batch,
-            materialID = _batches[index].MaterialID,
-            meshID = _batches[index].MeshID,
-            topology = MeshTopology.Triangles,
-            splitVisibilityMask = 0xff,
-            visibleInstancesBufferHandle = _visible.bufferHandle,
-            indirectArgsBufferHandle = _commands.bufferHandle,
-            indirectArgsBufferOffset = (uint)(index * GraphicsBuffer.IndirectDrawIndexedArgs.size),
-        };
-
-        private static unsafe T* Allocate<T>(int count) where T : unmanaged =>
-            (T*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<T>() * count, UnsafeUtility.AlignOf<T>(), Allocator.TempJob);
     }
 }

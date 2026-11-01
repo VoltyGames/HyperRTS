@@ -9,18 +9,14 @@ namespace HyperRTS.Editor.Effects
 {
     /// <summary>
     /// The Inspector of a selected <c>.effect.json</c>: its layers as property fields, with curves, HDR colour pickers
-    /// and asset pickers, each change saved to the recipe at once. Any other text asset keeps Unity's own inspector.
+    /// and asset pickers, each change saved to the recipe at once. Any other text asset shows its text read-only.
     /// </summary>
     [CustomEditor(typeof(TextAsset))]
     public sealed class EffectRecipeInspector : UnityEditor.Editor
     {
         private const string LayersPath = EffectRecipeDocument.RecipeField + "." + nameof(EffectGraphSpec.layers);
 
-        // Unity's text asset inspector is internal, so it is found by name.
-        private static readonly Type TextInspector = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.TextAssetInspector");
-
         private EffectRecipeDocument _document;
-        private UnityEditor.Editor _text;
 
         private string RecipePath => targets.Length == 1 ? AssetDatabase.GetAssetPath(target) : null;
 
@@ -29,7 +25,7 @@ namespace HyperRTS.Editor.Effects
             var path = RecipePath;
             if (path == null || !EffectGraphSpec.IsRecipe(path))
             {
-                return null;
+                return TextView();
             }
 
             var root = new VisualElement();
@@ -65,30 +61,19 @@ namespace HyperRTS.Editor.Effects
             return root;
         }
 
-        public override void OnInspectorGUI()
-        {
-            if (_text == null && TextInspector != null)
-            {
-                _text = CreateEditor(targets, TextInspector);
-            }
-
-            if (_text != null)
-            {
-                _text.OnInspectorGUI();
-            }
-        }
-
         private void OnDisable()
         {
             if (_document != null)
             {
                 DestroyImmediate(_document);
             }
+        }
 
-            if (_text != null)
-            {
-                DestroyImmediate(_text);
-            }
+        // Any other text asset shows its text read-only.
+        private VisualElement TextView()
+        {
+            var text = target as TextAsset;
+            return new TextField { value = text == null ? string.Empty : text.text, multiline = true, isReadOnly = true };
         }
 
         private static void ShowProblem(HelpBox box, string path)

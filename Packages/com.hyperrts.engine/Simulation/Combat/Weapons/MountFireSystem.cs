@@ -26,7 +26,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
         private TargetLookup _targets;
         private EntityQuery _fogQuery;
         private Shooter _shots;
-        private uint _frame;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -37,6 +36,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<FogOfWar>();
+            state.RequireForUpdate<SimulationFrame>();
             state.RequireForUpdate<DamageQueue>();
             state.RequireForUpdate<CueQueue>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -46,14 +46,13 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state, _fogQuery);
-            _frame++;
 
             new AimJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Targets = _targets,
-                Slot = (int)(_frame % TargetAcquisitionSystem.ScanInterval),
+                Slot = new ScanSlot(SystemAPI.GetSingleton<SimulationFrame>()),
             }.ScheduleParallel();
 
             _shots.Update(ref state, SystemAPI.GetSingletonEntity<DamageQueue>(),
@@ -74,15 +73,14 @@ namespace HyperRTS.Simulation.Combat.Weapons
             [ReadOnly] public SpatialIndex Index;
             public FactionRelations Relations;
             public TargetLookup Targets;
-            public int Slot;
+            public ScanSlot Slot;
 
             private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in LocalTransform transform,
                 in AttackTarget attack, EnabledRefRO<AttackTarget> attacking, in CombatStance stance,
                 in Faction faction)
             {
                 var shared = attacking.ValueRO ? attack.Value : Entity.Null;
-                var onSlot = entity.Index % TargetAcquisitionSystem.ScanInterval == Slot;
-                var scanning = onSlot && stance.Value != Stance.Passive;
+                var scanning = Slot.Owns(entity) && stance.Value != Stance.Passive;
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];

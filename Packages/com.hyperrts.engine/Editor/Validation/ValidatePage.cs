@@ -31,8 +31,8 @@ namespace HyperRTS.Editor.Validation
         {
             get
             {
-                var errors = Count(MessageType.Error);
-                var warnings = Count(MessageType.Warning);
+                var errors = SessionState.GetInt(ProjectValidator.ErrorsKey, 0);
+                var warnings = SessionState.GetInt(ProjectValidator.WarningsKey, 0);
                 if (errors == 0 && warnings == 0)
                 {
                     return null;

@@ -18,6 +18,16 @@ namespace HyperRTS.Simulation.Resources
         [Tooltip("Accent colour for HUD text and minimap nodes.")]
         public Color color = new(1f, 0.8f, 0.25f);
 
+        [Tooltip("Colour stockpile and cost amounts with this resource's colour; off leaves them to the HUD theme.")]
+        public bool tintAmounts;
+
+        /// <summary>False when the HUD theme colours amounts, so callers leave their inline colour unset.</summary>
+        public bool TryGetAmountTint(out Color tint)
+        {
+            tint = color;
+            return tintAmounts;
+        }
+
         /// <summary>Stable across processes, unlike the asset's instance id, so the network can refer to it.</summary>
         public int Id => EntityInfo.TypeIdFromName(name);
     }
