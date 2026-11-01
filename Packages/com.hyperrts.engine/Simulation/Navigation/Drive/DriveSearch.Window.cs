@@ -18,21 +18,21 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var grid = _hull.Access.Grid;
             var span = math.abs(to - from);
             var margin = math.min(_hull.CurveRadius * 2f + _hull.HullLength, (MaxWindow - span) * 0.5f);
-            var first = grid.Frame.Cell(math.min(from, to) - margin);
-            _window = new CellRect(first, (int2)math.ceil((span + margin * 2f) / grid.Frame.CellSize) + 1);
-            var halo = (int)math.ceil((_hull.HullLength * 0.5f + DriveHull.Clearance) / grid.Frame.CellSize) + 2;
+            var first = grid.Grid.Cell(math.min(from, to) - margin);
+            _window = new CellRect(first, (int2)math.ceil((span + margin * 2f) / grid.Grid.CellSize) + 1);
+            var halo = (int)math.ceil((_hull.HullLength * 0.5f + DriveHull.Clearance) / grid.Grid.CellSize) + 2;
             _walls.Fill(_hull.Access, first - halo, first + _window.Cells + halo);
-            _guide.Build(_walls, _window, _goal);
+            _heuristic.Build(_walls, _window, _goal);
         }
 
         // Ground is open where the hull centre has half a hull and a metre of room to walls.
         private readonly bool IsOpen(in AxlePose pose) =>
-            _walls.At(_hull.Access.Grid.Frame.Cell(_hull.Chassis.Center(pose))) >= _hull.HullLength * 0.5f + 1f;
+            _walls.At(_hull.Access.Grid.Grid.Cell(_hull.Chassis.Center(pose))) >= _hull.HullLength * 0.5f + 1f;
 
         // The cell and heading bin in the window, or -1 outside it.
         private readonly int Key(in AxlePose pose)
         {
-            var cell = _hull.Access.Grid.Frame.Cell(pose.Position);
+            var cell = _hull.Access.Grid.Grid.Cell(pose.Position);
             var index = _window.Index(cell);
             if (index < 0)
             {
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         // The guide, and for a pose goal no less than the forward curve, which keeps open-ground plans smooth.
         private readonly float Guide(in AxlePose pose)
         {
-            var guide = _guide.Cost(_hull.Chassis.Center(pose), pose.Facing);
+            var guide = _heuristic.Cost(_hull.Chassis.Center(pose), pose.Facing);
             if (!_goal.HasFacing || !DriveCurve.TryFit(pose, _goalPose, _hull.CurveRadius, out var curve))
             {
                 return guide;

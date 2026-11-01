@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
 
         public List<MapWarCrater> Craters { get; } = new();
 
-        public List<MapBurntPatch> Burns { get; } = new();
+        public List<MapBurntGround> Burns { get; } = new();
 
         public void Dig(MapWarCrater crater, MapHeights heights)
         {

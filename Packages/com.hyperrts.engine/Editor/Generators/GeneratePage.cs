@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Generators
             var rowTemplate = Layout("Row");
             foreach (var group in GeneratorRunner.All().GroupBy(generator => generator.Group))
             {
-                var section = new Section { Title = group.Key };
+                var section = new TitledSection { Title = group.Key };
                 foreach (var generator in group)
                 {
                     section.Add(Row(rowTemplate, generator, log, root));

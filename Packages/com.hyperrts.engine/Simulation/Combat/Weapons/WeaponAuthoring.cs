@@ -115,7 +115,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     var required = slot.requires != null ? slot.requires.TypeId : 0;
                     var weapon = slot.stats.Bake(this, authoring.transform, muzzles);
                     var ammo = Ammo.Create(slot.rounds, slot.reloadTime, slot.refill);
-                    mounts.Add(WeaponMount.Extra(weapon, ammo, required, slot.independent));
+                    mounts.Add(WeaponMount.CreateExtra(weapon, ammo, required, slot.independent));
                 }
             }
         }

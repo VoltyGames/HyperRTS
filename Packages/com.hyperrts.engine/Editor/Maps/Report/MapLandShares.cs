@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Report
 {
     /// <summary>How a map's land is used and what stands on it, as the report stores it.</summary>
     [Serializable]
-    public sealed class MapLandFigures
+    public sealed class MapLandShares
     {
         /// <summary>Share of the playable area per land kind, largest first.</summary>
         public List<MapLandShare> shares = new();
@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Props per hectare of each surface.</summary>
         public List<MapSurfaceProps> props = new();
 
-        public static MapLandFigures Measure(MapGeneration generation)
+        public static MapLandShares Measure(MapGeneration generation)
         {
             var (land, placements) = (generation.Land, generation.Placements.All);
             var counts = new Dictionary<MapLandKind, int>();
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Report
                 }
             });
 
-            return new MapLandFigures
+            return new MapLandShares
             {
                 shares = counts.OrderByDescending(c => c.Value)
                     .Select(c => new MapLandShare { kind = c.Key.ToString(), share = (float)c.Value / total }).ToList(),

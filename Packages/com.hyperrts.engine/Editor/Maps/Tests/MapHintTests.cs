@@ -50,10 +50,10 @@ namespace HyperRTS.Editor.Maps.Tests
 
         private static MapNavGrid Field(Func<float2, bool> blocked)
         {
-            var grid = NavGrid.Create(new GridFrame(new float2(-100f, -40f), 1f, new int2(200, 80)), default, 0f);
+            var grid = NavGrid.Create(new CellGrid(new float2(-100f, -40f), 1f, new int2(200, 80)), default, 0f);
             for (var i = 0; i < grid.Cells.Length; i++)
             {
-                var center = grid.Frame.Center(grid.Frame.Cell(i));
+                var center = grid.Grid.Center(grid.Grid.Cell(i));
                 grid.Cells[i] = (byte)(blocked(center) ? NavSurface.Blocked : NavSurface.Land);
             }
 

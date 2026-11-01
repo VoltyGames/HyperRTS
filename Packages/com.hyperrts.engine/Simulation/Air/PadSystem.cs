@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Air
             {
                 for (var i = 0; i < pads.Length; i++)
                 {
-                    pads.ElementAt(i).Lease.Expire();
+                    pads.ElementAt(i).Reservation.Expire();
                 }
             }
         }
@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Air
                     return false;
                 }
 
-                return pads.ElementAt(home.Pad).Lease.TryHold(aircraft);
+                return pads.ElementAt(home.Pad).Reservation.TryReserve(aircraft);
             }
 
             /// <summary>Moves the aircraft's home to a free pad of its kind at the airfield; the old pad frees next frame.</summary>
@@ -151,7 +151,7 @@ namespace HyperRTS.Simulation.Air
                     return;
                 }
 
-                pads.ElementAt(free).Lease.Hold(aircraft);
+                pads.ElementAt(free).Reservation.Reserve(aircraft);
                 home = home.ToPad(airfield, free);
             }
         }

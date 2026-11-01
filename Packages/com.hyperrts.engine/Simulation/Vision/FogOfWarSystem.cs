@@ -12,8 +12,8 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> (again when the map's area changes) and
-    /// restamps it a few times per second: viewers whose sight changed draw their <see cref="SightPatch"/> again in
-    /// parallel, each team's planes are rebuilt from its patches, and detection is stamped. With fog disabled the grid
+    /// restamps it a few times per second: viewers whose sight changed draw their <see cref="SightArea"/> again in
+    /// parallel, each team's planes are rebuilt from its areas, and detection is stamped. With fog disabled the grid
     /// stays fully visible, but detection and the close layer still run.
     /// </summary>
     [BurstCompile]
@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Vision
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _viewers = SystemAPI.QueryBuilder().WithAll<SightPatch, SightPatchBits, VisionRange, Faction, LocalTransform>()
+            _viewers = SystemAPI.QueryBuilder().WithAll<SightArea, SightAreaBits, VisionRange, Faction, LocalTransform>()
                 .Build();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.Vision
             // Stealth and concealment apply with fog off too, so detection and the close layer are stamped either way.
             state.Dependency = ClearJob<ulong>.Schedule(fog.Detected, state.Dependency);
             new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
-            DrawPatches(ref state, fog, relations, settings);
+            DrawSightAreas(ref state, fog, relations, settings);
             Merge(ref state, fog);
             state.Dependency = settings.FogOfWar
                 ? new ExploreJob { VisibleTall = fog.VisibleTall, Explored = fog.Explored }
@@ -79,14 +79,14 @@ namespace HyperRTS.Simulation.Vision
                     .Schedule(fog.Visible.Length, 4096, state.Dependency);
         }
 
-        private void DrawPatches(ref SystemState state, in FogOfWar fog, in FactionRelations relations,
+        private void DrawSightAreas(ref SystemState state, in FogOfWar fog, in FactionRelations relations,
             in MapSettings settings)
         {
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             SystemAPI.TryGetSingleton<HighGround>(out var highGround);
             SystemAPI.TryGetSingleton<SightRules>(out var rules);
             var blockers = SystemAPI.GetSingletonRW<SightBlockers>().ValueRO;
-            state.Dependency = new SightPatchJob
+            state.Dependency = new SightAreaJob
             {
                 Fog = fog,
                 Relations = relations,
@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Vision
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
             }.ScheduleParallel(_viewers, state.Dependency);
 
-            // Every patch has now drawn round what changed.
+            // Every area has now drawn round what changed.
             state.Dependency = ClearJob<byte>.Schedule(blockers.DirtyTiles, state.Dependency);
         }
 
@@ -113,8 +113,8 @@ namespace HyperRTS.Simulation.Vision
             {
                 Fog = fog,
                 Viewers = viewers.AsDeferredJobArray(),
-                Patches = SystemAPI.GetComponentLookup<SightPatch>(true),
-                Bits = SystemAPI.GetBufferLookup<SightPatchBits>(true),
+                Areas = SystemAPI.GetComponentLookup<SightArea>(true),
+                Bits = SystemAPI.GetBufferLookup<SightAreaBits>(true),
             }.Schedule(FogMergeJob.Bands(fog), 1, listed);
             viewers.Dispose(state.Dependency);
         }
@@ -130,7 +130,7 @@ namespace HyperRTS.Simulation.Vision
             }
 
             _builtMap = settings;
-            var grid = FogOfWar.Create(settings.FogFrame(), Allocator.Persistent);
+            var grid = FogOfWar.Create(settings.FogGrid(), Allocator.Persistent);
             grid.Generation = 1;
             if (!exists)
             {

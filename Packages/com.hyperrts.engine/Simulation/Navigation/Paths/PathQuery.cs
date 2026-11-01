@@ -59,8 +59,8 @@ namespace HyperRTS.Simulation.Navigation.Paths
             var anchor = Origin;
             for (var i = 1; i < cells.Length - 1; i++)
             {
-                var point = access.Grid.Frame.CenterPoint(cells[i]);
-                var next = i + 1 == cells.Length - 1 ? End : access.Grid.Frame.CenterPoint(cells[i + 1]);
+                var point = access.Grid.Grid.CenterPoint(cells[i]);
+                var next = i + 1 == cells.Length - 1 ? End : access.Grid.Grid.CenterPoint(cells[i + 1]);
                 if (!access.HasLineOfSight(anchor, next))
                 {
                     points.Add(point);

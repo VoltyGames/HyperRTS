@@ -21,20 +21,20 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         protected ScatterComputeInputs(ComputeShader compute, string growKernel, Terrain terrain, int items, int stride)
         {
             Compute = compute;
-            Grow = compute.FindKernel(growKernel);
-            Count = compute.FindKernel(nameof(Count));
+            GrowKernel = compute.FindKernel(growKernel);
+            CountKernel = compute.FindKernel("Count");
             Items = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, items), stride);
             compute.SetFloat(TileSizeId, ScatterTiles.Size);
-            _heights = new TerrainHeightInput(compute, Grow, terrain);
+            _heights = new TerrainHeightInput(compute, GrowKernel, terrain);
         }
 
         public ComputeShader Compute { get; }
 
         /// <summary>The kernel that grows instances into the slots.</summary>
-        public int Grow { get; }
+        public int GrowKernel { get; }
 
         /// <summary>The kernel that turns the grown instances into draw args.</summary>
-        public int Count { get; }
+        public int CountKernel { get; }
 
         /// <summary>Whether a map rebuild changed the items, the subclass's own inputs or the heightmap.</summary>
         public bool Stale => Items.count != Mathf.Max(1, ItemCount) || OwnInputsStale || _heights.Stale;
@@ -51,9 +51,9 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         public void SetCamera(Vector3 position, ScatterSettings settings)
         {
             Compute.SetVector(CameraId, new Vector4(position.x, position.y, position.z, settings.Distance));
-            BuildingFootprintMask.Bind(Compute, Grow);
-            CraterTerrain.BindCraters(Compute, Grow);
-            TrampleSurfaces.RemainsGlobal.Bind(Compute, Grow);
+            BuildingFootprintMask.Bind(Compute, GrowKernel);
+            CraterTerrain.BindCraters(Compute, GrowKernel);
+            TrampleSurfaces.RemainsGlobal.Bind(Compute, GrowKernel);
             BindCamera(settings);
         }
 

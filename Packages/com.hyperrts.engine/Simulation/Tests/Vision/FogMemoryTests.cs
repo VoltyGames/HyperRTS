@@ -168,16 +168,16 @@ namespace HyperRTS.Simulation.Tests.Vision
             }
         }
 
-        private LastSeen SingleMemory()
+        private FogMemory SingleMemory()
         {
-            using var query = World.Query(typeof(LastSeen));
+            using var query = World.Query(typeof(FogMemory));
             Assert.AreEqual(1, query.CalculateEntityCount());
-            return query.GetSingleton<LastSeen>();
+            return query.GetSingleton<FogMemory>();
         }
 
         private static int CountMemories(TestWorld world)
         {
-            using var query = world.Query(typeof(LastSeen));
+            using var query = world.Query(typeof(FogMemory));
             return query.CalculateEntityCount();
         }
     }

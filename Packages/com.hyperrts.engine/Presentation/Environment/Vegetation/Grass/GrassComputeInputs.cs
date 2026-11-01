@@ -24,8 +24,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             _field = field;
             _coverage = field.coverage;
             Items.SetData(field.GpuPlants());
-            compute.SetBuffer(Grow, PlantsId, Items);
-            compute.SetTexture(Grow, CoverageId, _coverage);
+            compute.SetBuffer(GrowKernel, PlantsId, Items);
+            compute.SetTexture(GrowKernel, CoverageId, _coverage);
             var area = field.area;
             compute.SetVector(CoverageAreaId, TerrainHeightInput.Rect(new float2(area.xMin, area.yMin), new float2(area.width, area.height)));
             compute.SetVector(ThinningId, GrassBands.Thinning);
@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         protected override void BindCamera(ScatterSettings settings)
         {
             Compute.SetVector(ShapingId, new Vector4(settings.Density, settings.ShadowDistance, GrassBands.KeepEdge, 0f));
-            GroundColor.Bind(Compute, Grow);
+            GroundColor.Bind(Compute, GrowKernel);
         }
     }
 }

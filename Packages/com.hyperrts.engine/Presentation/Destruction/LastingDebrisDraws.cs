@@ -11,7 +11,7 @@ namespace HyperRTS.Presentation.Destruction
     /// <summary>
     /// Draws <see cref="LastingDebris"/> through a BatchRendererGroup, culled per piece in each view by
     /// <see cref="LastingDebrisCulling"/>, reading each piece's matrices from a GPU buffer written only when a piece
-    /// settles, sinks or goes.
+    /// settles, buries or goes.
     /// </summary>
     internal sealed class LastingDebrisDraws : IDisposable
     {

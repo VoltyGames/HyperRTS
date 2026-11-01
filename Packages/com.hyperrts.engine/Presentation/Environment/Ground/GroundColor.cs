@@ -16,7 +16,7 @@ namespace HyperRTS.Presentation.Environment.Ground
     [DisallowMultipleComponent]
     public sealed class GroundColor : PresentationBehaviour
     {
-        private static readonly WorldGridGlobal Global = new("_HyperRTSGroundColor", "_HyperRTSGroundRect");
+        private static readonly MapTextureGlobal Global = new("_HyperRTSGroundColor", "_HyperRTSGroundRect");
 
         // Grass.compute's own names for the copy.
         private static readonly int KernelPictureId = Shader.PropertyToID("_Ground");

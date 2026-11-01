@@ -2,7 +2,7 @@
   <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
   <HyperRTS.Editor.Hub.PageShell name="shell" empty-text="Enter Play mode to use cheats, networking and recording.">
     <ui:Instance template="CheatsSection" name="cheats" />
-    <HyperRTS.Editor.Common.Section title="Network">
+    <HyperRTS.Editor.Common.TitledSection title="Network">
       <ui:VisualElement class="hrts-buttons">
         <ui:Button name="host" text="Host" />
         <ui:Button name="join" text="Join Localhost" />
@@ -10,8 +10,8 @@
         <ui:Button name="stop" text="Stop" />
       </ui:VisualElement>
       <ui:Label name="traffic" class="hrts-note" />
-    </HyperRTS.Editor.Common.Section>
-    <HyperRTS.Editor.Common.Section title="Bot matches">
+    </HyperRTS.Editor.Common.TitledSection>
+    <HyperRTS.Editor.Common.TitledSection title="Bot matches">
       <uie:PropertyField binding-path="bots.matches" label="Matches" />
       <uie:PropertyField binding-path="bots.players" label="Players" />
       <uie:PropertyField binding-path="bots.difficulty" label="Difficulty" />
@@ -22,12 +22,12 @@
         <ui:Button name="stop-bots" text="Stop" />
       </ui:VisualElement>
       <ui:Label name="bot-status" class="hrts-note" />
-    </HyperRTS.Editor.Common.Section>
-    <HyperRTS.Editor.Common.Section title="Replays">
+    </HyperRTS.Editor.Common.TitledSection>
+    <HyperRTS.Editor.Common.TitledSection title="Replays">
       <ui:VisualElement class="hrts-buttons">
         <ui:Button name="save" text="Save Recording..." />
         <ui:Button name="play" text="Play Replay..." />
       </ui:VisualElement>
-    </HyperRTS.Editor.Common.Section>
+    </HyperRTS.Editor.Common.TitledSection>
   </HyperRTS.Editor.Hub.PageShell>
 </ui:UXML>

@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         private float GroundField(float x, float z)
         {
             var grid = World.Grid();
-            return Infantry.Access(grid).Distance(grid.Frame.Cell(new float3(x, 0f, z)));
+            return Infantry.Access(grid).Distance(grid.Grid.Cell(new float3(x, 0f, z)));
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             var grid = World.Grid();
             var south = new float3(0.5f, 0f, -10f);
             var north = new float3(0.5f, 0f, 10f);
-            Assert.IsTrue(exact.Access(grid).IsOpen(grid.Frame.Cell(new float3(0.5f, 0f, 0.5f))), "the gap's middle");
+            Assert.IsTrue(exact.Access(grid).IsOpen(grid.Grid.Cell(new float3(0.5f, 0f, 0.5f))), "the gap's middle");
             Assert.IsTrue(grid.IsReachable(exact, south, north), "through the gap");
             Assert.IsFalse(grid.IsReachable(wider, south, north), "a hair wider can't pass");
         }
@@ -203,8 +203,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             var toFlood = new Dictionary<int, int>();
             for (var i = 0; i < flood.Length; i++)
             {
-                var region = access.Region(grid.Frame.Cell(i));
-                Assert.AreEqual(flood[i] == 0, region == 0, $"{what}: cell {grid.Frame.Cell(i)} open");
+                var region = access.Region(grid.Grid.Cell(i));
+                Assert.AreEqual(flood[i] == 0, region == 0, $"{what}: cell {grid.Grid.Cell(i)} open");
                 if (flood[i] == 0)
                 {
                     continue;
@@ -212,12 +212,12 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
 
                 if (toRegion.TryGetValue(flood[i], out var known))
                 {
-                    Assert.AreEqual(known, region, $"{what}: one flood area, one region, at {grid.Frame.Cell(i)}");
+                    Assert.AreEqual(known, region, $"{what}: one flood area, one region, at {grid.Grid.Cell(i)}");
                 }
 
                 if (toFlood.TryGetValue(region, out var area))
                 {
-                    Assert.AreEqual(area, flood[i], $"{what}: one region, one flood area, at {grid.Frame.Cell(i)}");
+                    Assert.AreEqual(area, flood[i], $"{what}: one region, one flood area, at {grid.Grid.Cell(i)}");
                 }
 
                 toRegion[flood[i]] = region;
@@ -235,22 +235,22 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             var label = 0;
             for (var i = 0; i < labels.Length; i++)
             {
-                if (labels[i] != 0 || !access.IsOpen(grid.Frame.Cell(i)))
+                if (labels[i] != 0 || !access.IsOpen(grid.Grid.Cell(i)))
                 {
                     continue;
                 }
 
                 labels[i] = ++label;
-                stack.Push(grid.Frame.Cell(i));
+                stack.Push(grid.Grid.Cell(i));
                 while (stack.Count > 0)
                 {
                     var cell = stack.Pop();
                     foreach (var step in new[] { new int2(1, 0), new int2(-1, 0), new int2(0, 1), new int2(0, -1) })
                     {
                         var next = cell + step;
-                        if (access.IsOpen(next) && labels[grid.Frame.Index(next)] == 0)
+                        if (access.IsOpen(next) && labels[grid.Grid.Index(next)] == 0)
                         {
-                            labels[grid.Frame.Index(next)] = label;
+                            labels[grid.Grid.Index(next)] = label;
                             stack.Push(next);
                         }
                     }
@@ -285,7 +285,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         private void AssertMatchesWholeBuild(string when)
         {
             var grid = World.Grid();
-            var whole = NavGrid.Create(grid.Frame, grid.Terrain, grid.WaterLevel);
+            var whole = NavGrid.Create(grid.Grid, grid.Terrain, grid.WaterLevel);
             try
             {
                 whole.Cells.CopyFrom(grid.Cells);

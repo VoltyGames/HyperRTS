@@ -49,8 +49,8 @@ namespace HyperRTS.Editor.Maps.Nav
             var terrain = TerrainHeightAuthoring.Sample(terrainData, terrainOrigin, Allocator.Persistent);
             var cellSize = rules.navCellSize;
             var size = math.max(1, (int2)math.ceil(new float2(bounds.width, bounds.height) / cellSize));
-            var frame = new GridFrame(new float2(bounds.xMin, bounds.yMin), cellSize, size);
-            var grid = NavGrid.Create(frame, terrain, waterLevel);
+            var cellGrid = new CellGrid(new float2(bounds.xMin, bounds.yMin), cellSize, size);
+            var grid = NavGrid.Create(cellGrid, terrain, waterLevel);
 
             var gradient = NavGround.MaxGradient(rules.maxSlope);
             for (var i = 0; i < grid.Cells.Length; i++)
@@ -72,13 +72,13 @@ namespace HyperRTS.Editor.Maps.Nav
 
         public bool IsWalkable(int2 cell) => Grid.IsWalkable(cell);
 
-        public float3 Center(int2 cell) => Grid.Frame.CenterPoint(cell);
+        public float3 Center(int2 cell) => Grid.Grid.CenterPoint(cell);
 
-        public int2 Cell(Vector2 point) => Grid.Frame.Cell(new float2(point.x, point.y));
+        public int2 Cell(Vector2 point) => Grid.Grid.Cell(new float2(point.x, point.y));
 
         /// <summary>The walkable cell nearest a point, searching up to <paramref name="radius"/> metres out.</summary>
         public bool TryFindWalkable(Vector2 point, float radius, out int2 cell) =>
-            Access.TryFindNearest(Cell(point), Mathf.CeilToInt(radius / Grid.Frame.CellSize), out cell);
+            Access.TryFindNearest(Cell(point), Mathf.CeilToInt(radius / Grid.Grid.CellSize), out cell);
 
         /// <summary>
         /// Whether any cell within <paramref name="radius"/> metres of a point is walkable and in <paramref name="reachable"/>
@@ -87,18 +87,18 @@ namespace HyperRTS.Editor.Maps.Nav
         public bool AnyReachable(Vector2 point, float radius, bool[] reachable)
         {
             var centre = Cell(point);
-            var reach = Mathf.CeilToInt(radius / Grid.Frame.CellSize);
+            var reach = Mathf.CeilToInt(radius / Grid.Grid.CellSize);
             for (var y = -reach; y <= reach; y++)
             {
                 for (var x = -reach; x <= reach; x++)
                 {
                     var cell = centre + new int2(x, y);
-                    if (math.length(new float2(x, y)) > reach || !Grid.Frame.Contains(cell))
+                    if (math.length(new float2(x, y)) > reach || !Grid.Grid.Contains(cell))
                     {
                         continue;
                     }
 
-                    if (IsWalkable(cell) && reachable[Grid.Frame.Index(cell)])
+                    if (IsWalkable(cell) && reachable[Grid.Grid.Index(cell)])
                     {
                         return true;
                     }
@@ -119,7 +119,7 @@ namespace HyperRTS.Editor.Maps.Nav
                 var distance = new float[Grid.Cells.Length];
                 for (var i = 0; i < distance.Length; i++)
                 {
-                    distance[i] = field.Cost(Grid.Frame.Cell(i)) * Grid.Frame.CellSize;
+                    distance[i] = field.Cost(Grid.Grid.Cell(i)) * Grid.Grid.CellSize;
                 }
 
                 return distance;
@@ -133,7 +133,7 @@ namespace HyperRTS.Editor.Maps.Nav
         /// <summary>A copy with its own cells and access, for searches that close cells; the caller disposes it.</summary>
         internal NavGrid Copy()
         {
-            var copy = NavGrid.Create(Grid.Frame, Grid.Terrain, Grid.WaterLevel);
+            var copy = NavGrid.Create(Grid.Grid, Grid.Terrain, Grid.WaterLevel);
             copy.Cells.CopyFrom(Grid.Cells);
             copy.Scenery.CopyFrom(Grid.Scenery);
             copy.Classes.Register(ToolsClass);

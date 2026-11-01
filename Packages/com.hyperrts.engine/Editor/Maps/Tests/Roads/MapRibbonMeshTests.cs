@@ -227,7 +227,7 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
                 points = new List<MapPoint> { new(-110f, RiverZ), new(110f, RiverZ) }, width = 10f, valleyWidth = 30f,
                 crossings = new List<MapCrossingSpec> { new() { along = 0.5f, kind = MapCrossingSpec.Ford } },
             });
-            var layout = MapExpander.Expand(spec, new MapIssues());
+            var layout = MapSymmetryCopier.Expand(spec, new MapIssues());
             var climate = MapFixture.Item<MapClimate>("Climate", i => { i.fordShallowsWidth = 6f; i.fordRapidsLength = 10f; });
             var shapes = new MapShapes(layout, MapFixture.Item<MapPalette>("Palette"), climate);
             Assert.IsNotEmpty(shapes.Crossings);

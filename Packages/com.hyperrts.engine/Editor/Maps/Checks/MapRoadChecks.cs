@@ -59,7 +59,7 @@ namespace HyperRTS.Editor.Maps.Checks
             var where = Vector2.zero;
             for (var i = 1; i + 1 < points.Count; i++)
             {
-                var radius = MapFillet.Circumradius(points[i - 1], points[i], points[i + 1]);
+                var radius = MapCornerRounding.Circumradius(points[i - 1], points[i], points[i + 1]);
                 if (radius < tightest)
                 {
                     tightest = radius;

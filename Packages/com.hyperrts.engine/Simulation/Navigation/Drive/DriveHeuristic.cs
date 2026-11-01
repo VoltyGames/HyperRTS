@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
     /// A <see cref="DriveSearch"/>'s heuristic: the cost from each cell of its window to the goal for a disc the hull's
     /// width.
     /// </summary>
-    internal struct DriveGuide : IDisposable, IReverseGraph
+    internal struct DriveHeuristic : IDisposable, IReverseGraph
     {
         // Turning where walls crowd the hull takes shuffles, so the guide charges the turn's arc many times over.
         private const float CrowdedTurnArcs = 16f;
@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private CellRect _window;
         private float2 _goal;
 
-        public DriveGuide(int capacity, Allocator allocator)
+        public DriveHeuristic(int capacity, Allocator allocator)
         {
             _access = default;
             _turnRadius = 0f;
@@ -73,7 +73,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             _goal = goal.Center;
             var count = window.Count;
             // Every step costs at least a cell.
-            _search.Reset(count, _access.Grid.Frame.CellSize);
+            _search.Reset(count, _access.Grid.Grid.CellSize);
             _ways.Resize(count);
             for (var i = 0; i < count; i++)
             {
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         /// </summary>
         public readonly float Cost(float2 point, float2 facing)
         {
-            var cell = _access.Grid.Frame.Cell(point);
+            var cell = _access.Grid.Grid.Cell(point);
             var index = _window.Index(cell);
             var cost = index < 0 ? float.PositiveInfinity : _search.Costs[index];
             if (cost == float.PositiveInfinity)
@@ -123,7 +123,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         {
             var side = Planar.Left(goal.Facing);
             var middle = goal.Center + goal.Facing * FrontAhead;
-            var halfCell = _access.Grid.Frame.CellSize * 0.5f;
+            var halfCell = _access.Grid.Grid.CellSize * 0.5f;
             var reach = (int)math.ceil(_hullLength * FrontHulls / halfCell);
             var left = Wall(middle, side, reach, halfCell);
             var right = Wall(middle, -side, reach, halfCell);
@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private readonly int Wall(float2 from, float2 way, int reach, float halfCell)
         {
             var length = reach * halfCell;
-            var ray = new GridRay(_access.Grid.Frame, from, from + way * length);
+            var ray = new GridRay(_access.Grid.Grid, from, from + way * length);
             while (ray.MoveNext())
             {
                 if (!IsOpen(ray.Cell))
@@ -153,7 +153,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
         private void Close(float2 point)
         {
-            var index = _window.Index(_access.Grid.Frame.Cell(point));
+            var index = _window.Index(_access.Grid.Grid.Cell(point));
             if (index >= 0)
             {
                 _search.Settled[index] = true;
@@ -163,7 +163,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         // The goal's cell and its open neighbours, leaving the way a pose goal faces.
         private void Seed(float2 facing)
         {
-            var goal = _access.Grid.Frame.Cell(_goal);
+            var goal = _access.Grid.Grid.Cell(_goal);
             foreach (var cell in new CellRange(goal - 1, goal + 1))
             {
                 var index = _window.Index(cell);
@@ -182,7 +182,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var cell = _window.Cell(index);
             var crowded = Crowding(cell);
             var leaving = _ways[index];
-            foreach (var offset in new Neighbours())
+            foreach (var offset in new NeighbourOffsets())
             {
                 var at = _window.Index(cell + offset);
                 if (at < 0 || search.Settled[at] || !CanStep(cell, offset))
@@ -192,7 +192,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
                 var step = GridAStar.StepCost(int2.zero, offset);
                 var way = -(float2)offset / step;
-                var cost = search.Costs[index] + step * _access.Grid.Frame.CellSize + Turn(way, leaving) * crowded;
+                var cost = search.Costs[index] + step * _access.Grid.Grid.CellSize + Turn(way, leaving) * crowded;
                 if (search.Offer(at, cost))
                 {
                     _ways[at] = way;
@@ -200,7 +200,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             }
         }
 
-        // Reads the window, not a CellBlock: this runs per relaxed cell. A diagonal never cuts a corner.
+        // Reads the window, not a CellNeighbourhood: this runs per relaxed cell. A diagonal never cuts a corner.
         private readonly bool CanStep(int2 cell, int2 offset) =>
             offset.x == 0 || offset.y == 0 ||
             (IsOpen(cell + new int2(offset.x, 0)) && IsOpen(cell + new int2(0, offset.y)));

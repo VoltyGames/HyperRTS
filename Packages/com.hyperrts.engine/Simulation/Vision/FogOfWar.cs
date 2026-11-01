@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Cells within the reveal distance of a team's ground units, where its concealed enemies show.</summary>
         public NativeArray<ulong> Close;
 
-        public GridFrame Frame;
+        public CellGrid Grid;
 
         /// <summary>64-bit words in one row of a team's plane.</summary>
         public int RowWords;
@@ -33,18 +33,18 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Bumped whenever the grid is restamped, so renderers upload only on change.</summary>
         public int Version;
 
-        /// <summary>Bumped whenever the grid is built anew, so every viewer's <see cref="SightPatch"/> is drawn again.</summary>
+        /// <summary>Bumped whenever the grid is built anew, so every viewer's <see cref="SightArea"/> is drawn again.</summary>
         public int Generation;
 
         public readonly bool IsCreated => Visible.IsCreated;
 
-        public readonly int PlaneWords => RowWords * Frame.Size.y;
+        public readonly int PlaneWords => RowWords * Grid.Size.y;
 
         /// <summary>An empty grid with a plane for every team in each layer.</summary>
-        public static FogOfWar Create(in GridFrame frame, Allocator allocator)
+        public static FogOfWar Create(in CellGrid grid, Allocator allocator)
         {
-            var rowWords = (frame.Size.x + 63) >> 6;
-            var words = rowWords * frame.Size.y * FactionRelations.MaxTeams;
+            var rowWords = (grid.Size.x + 63) >> 6;
+            var words = rowWords * grid.Size.y * FactionRelations.MaxTeams;
             return new FogOfWar
             {
                 Visible = new NativeArray<ulong>(words, allocator),
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Vision
                 Explored = new NativeArray<ulong>(words, allocator),
                 Detected = new NativeArray<ulong>(words, allocator),
                 Close = new NativeArray<ulong>(words, allocator),
-                Frame = frame,
+                Grid = grid,
                 RowWords = rowWords,
                 Version = 1,
             };
@@ -120,7 +120,7 @@ namespace HyperRTS.Simulation.Vision
                 x = 0;
             }
 
-            var room = Frame.Size.x - x;
+            var room = Grid.Size.x - x;
             if (bits == 0ul || room <= 0)
             {
                 return;
@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Sets the team's bit in every cell whose center lies within the flat circle.</summary>
         public readonly void StampCircle(NativeArray<ulong> plane, float3 center, float radius, byte team)
         {
-            foreach (var cell in Frame.CellsInCircle(center.xz, radius))
+            foreach (var cell in Grid.CellsInCircle(center.xz, radius))
             {
                 Set(plane, cell, team);
             }
@@ -152,8 +152,8 @@ namespace HyperRTS.Simulation.Vision
 
         private readonly bool Test(NativeArray<ulong> plane, float3 position, byte team)
         {
-            var cell = Frame.Cell(position);
-            return Frame.Contains(cell) && Has(plane, cell, team);
+            var cell = Grid.Cell(position);
+            return Grid.Contains(cell) && Has(plane, cell, team);
         }
     }
 }

@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>Height ships ride at; terrain below it is water.</summary>
         public float WaterLevel;
 
-        public GridFrame Frame;
+        public CellGrid Grid;
 
         /// <summary>
         /// Bumped whenever cells close or open, so paths near the <see cref="Changes"/> revalidate; scenery changes
@@ -53,10 +53,10 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public readonly bool IsCreated => Cells.IsCreated;
 
         /// <summary>A blank grid with no movement classes yet; the caller fills the cells and disposes it.</summary>
-        public static NavGrid Create(in GridFrame frame, in TerrainHeight terrain, float waterLevel)
+        public static NavGrid Create(in CellGrid grid, in TerrainHeight terrain, float waterLevel)
         {
-            var count = frame.Count;
-            var field = NavField.Create(frame, 0, Allocator.Persistent);
+            var count = grid.Count;
+            var field = NavField.Create(grid, 0, Allocator.Persistent);
             return new NavGrid
             {
                 Cells = new NativeArray<byte>(count, Allocator.Persistent),
@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 Changes = NavChanges.Create(count, Allocator.Persistent),
                 Terrain = terrain,
                 WaterLevel = waterLevel,
-                Frame = frame,
+                Grid = grid,
             };
         }
 
@@ -86,23 +86,23 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>The distance from segment ab to the cell's square.</summary>
         public readonly float CellGap(int2 cell, float2 a, float2 b)
         {
-            var low = Frame.Corner(cell);
-            return Planar.SegmentRectDistance(a, b, low, low + Frame.CellSize);
+            var low = Grid.Corner(cell);
+            return Planar.SegmentRectDistance(a, b, low, low + Grid.CellSize);
         }
 
         public readonly NavSurface Surface(int2 cell) =>
-            Frame.Contains(cell) ? (NavSurface)Cells[Frame.Index(cell)] : NavSurface.Blocked;
+            Grid.Contains(cell) ? (NavSurface)Cells[Grid.Index(cell)] : NavSurface.Blocked;
 
         public readonly bool IsWalkable(int2 cell, NavLayer layer = NavLayer.Ground) =>
             IsOpen(cell, NavLayers.Surfaces(layer));
 
         public readonly bool IsWalkable(float3 position, NavLayer layer = NavLayer.Ground) =>
-            IsWalkable(Frame.Cell(position), layer);
+            IsWalkable(Grid.Cell(position), layer);
 
         /// <summary>The visible top: a deck, else the water surface over submerged ground, else the ground.</summary>
         public readonly float SurfaceHeight(float3 position)
         {
-            var index = Frame.Index(Frame.Clamp(Frame.Cell(position)));
+            var index = Grid.Index(Grid.Clamp(Grid.Cell(position)));
             var surface = (NavSurface)Cells[index];
             if ((surface & NavSurface.Deck) != 0)
             {
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public readonly CellRange CellsUnder(float3 center, float2 size)
         {
             var half = new float3(size.x * 0.5f, 0f, size.y * 0.5f);
-            return Frame.Cells(Frame.Cell(center - half), Frame.Cell(center + half - 0.001f));
+            return Grid.Cells(Grid.Cell(center - half), Grid.Cell(center + half - 0.001f));
         }
 
         /// <summary>The cells under a turned box's world-axis bounds; test each with <see cref="InBox"/>.</summary>
@@ -130,7 +130,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
         /// <summary>Whether a cell under the box's bounds is covered: any overlap with the turned box counts.</summary>
         public readonly bool InBox(in NavBox box, int2 cell) =>
-            box.IsAxisAligned || box.Contains(Frame.Center(cell), Frame.CellSize * 0.5f);
+            box.IsAxisAligned || box.Contains(Grid.Center(cell), Grid.CellSize * 0.5f);
 
         /// <summary>
         /// Whether an agent could path between two points: they share a region, scenery aside. A closed start counts
@@ -149,7 +149,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 return false;
             }
 
-            if (!access.TryFindStart(Frame.Cell(from), from, to, out var start))
+            if (!access.TryFindStart(Grid.Cell(from), from, to, out var start))
             {
                 return false;
             }
@@ -163,13 +163,13 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// </summary>
         public readonly NavSurface GroundSurface(int index, bool flood, float maxGradient)
         {
-            var center = Frame.Center(Frame.Cell(index));
+            var center = Grid.Center(Grid.Cell(index));
             if (flood && Terrain.Height(center) < WaterLevel)
             {
                 return NavSurface.Water;
             }
 
-            var cellSize = Frame.CellSize;
+            var cellSize = Grid.CellSize;
             var half = cellSize * 0.5f;
             var dx = Terrain.Height(center + new float2(half, 0f)) - Terrain.Height(center - new float2(half, 0f));
             var dz = Terrain.Height(center + new float2(0f, half)) - Terrain.Height(center - new float2(0f, half));
@@ -189,7 +189,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
                     continue;
                 }
 
-                var index = Frame.Index(cell);
+                var index = Grid.Index(cell);
                 Cells[index] = (byte)NavGround.Stamp(kind, (NavSurface)Cells[index]);
                 if (kind == NavAreaKind.Deck)
                 {
@@ -249,6 +249,6 @@ namespace HyperRTS.Simulation.Navigation.Grid
         }
 
         internal readonly bool IsOpen(int2 cell, NavSurface surfaces) =>
-            Frame.Contains(cell) && ((NavSurface)Cells[Frame.Index(cell)] & surfaces) != 0;
+            Grid.Contains(cell) && ((NavSurface)Cells[Grid.Index(cell)] & surfaces) != 0;
     }
 }

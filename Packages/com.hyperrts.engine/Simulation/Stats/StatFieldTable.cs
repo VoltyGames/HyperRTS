@@ -14,31 +14,19 @@ namespace HyperRTS.Simulation.Stats
         public int Index;
     }
 
-    /// <summary>A component with stat fields and its run of <see cref="StatBindings.Fields"/>.</summary>
-    public struct StatBinding
-    {
-        public ComponentType Component;
-
-        /// <summary>The component's size in floats.</summary>
-        public int Floats;
-
-        public int First;
-        public int Count;
-    }
-
     /// <summary>
     /// Every field marked with <see cref="StatFieldAttribute"/>, grouped by component, so the stat jobs read and write
     /// them without knowing the component types.
     /// </summary>
-    public struct StatBindings : IDisposable
+    public struct StatFieldTable : IDisposable
     {
-        public NativeArray<StatBinding> Components;
+        public NativeArray<StatComponent> Components;
         public NativeArray<StatField> Fields;
 
         /// <summary>Collects the marked fields; throws when one is not a float or a stat has two fields.</summary>
-        public static StatBindings Find(Allocator allocator)
+        public static StatFieldTable Find(Allocator allocator)
         {
-            var components = new List<StatBinding>();
+            var components = new List<StatComponent>();
             var fields = new List<StatField>();
             var bound = new HashSet<Stat>();
             foreach (var (component, field, stat) in StatFieldAttribute.Marked)
@@ -47,7 +35,7 @@ namespace HyperRTS.Simulation.Stats
                 var type = TypeManager.GetTypeIndex(component);
                 if (components.Count == 0 || components[^1].Component.TypeIndex != type)
                 {
-                    components.Add(new StatBinding
+                    components.Add(new StatComponent
                     {
                         Component = ComponentType.FromTypeIndex(type),
                         Floats = TypeManager.GetTypeInfo(type).TypeSize / sizeof(float),
@@ -55,22 +43,22 @@ namespace HyperRTS.Simulation.Stats
                     });
                 }
 
-                var binding = components[^1];
-                binding.Count++;
-                components[^1] = binding;
+                var statComponent = components[^1];
+                statComponent.Count++;
+                components[^1] = statComponent;
                 fields.Add(new StatField { Stat = stat, Index = UnsafeUtility.GetFieldOffset(field) / sizeof(float) });
             }
 
-            return new StatBindings
+            return new StatFieldTable
             {
-                Components = new NativeArray<StatBinding>(components.ToArray(), allocator),
+                Components = new NativeArray<StatComponent>(components.ToArray(), allocator),
                 Fields = new NativeArray<StatField>(fields.ToArray(), allocator),
             };
         }
 
-        /// <summary>The stat fields of <paramref name="binding"/>.</summary>
-        public readonly NativeArray<StatField> FieldsFor(in StatBinding binding) =>
-            Fields.GetSubArray(binding.First, binding.Count);
+        /// <summary>The stat fields of <paramref name="statComponent"/>.</summary>
+        public readonly NativeArray<StatField> FieldsFor(in StatComponent statComponent) =>
+            Fields.GetSubArray(statComponent.First, statComponent.Count);
 
         public void Dispose()
         {

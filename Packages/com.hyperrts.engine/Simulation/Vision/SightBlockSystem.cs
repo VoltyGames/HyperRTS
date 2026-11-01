@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.Vision
 
             ref var blockers = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
             // Crop cover stays, flattened lanes and all.
-            state.Dependency = new KeepJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
+            state.Dependency = new SavePreviousJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
             state.Dependency = new ClearBlocksJob { Cells = blockers.Cells }
                 .Schedule(blockers.Cells.Length, 4096, state.Dependency);
             state.Dependency = ClearJob<Entity>.Schedule(blockers.Owner, state.Dependency);

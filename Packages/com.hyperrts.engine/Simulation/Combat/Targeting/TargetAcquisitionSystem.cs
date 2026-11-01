@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 Targets = _targets,
                 Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Traits = traits,
-                Slot = new ScanSlot(SystemAPI.GetSingleton<SimulationFrame>()),
+                Scans = new ScanSchedule(SystemAPI.GetSingleton<SimulationFrame>()),
             }.ScheduleParallel();
         }
 
@@ -63,13 +63,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
-            public ScanSlot Slot;
+            public ScanSchedule Scans;
 
             private void Execute(Entity entity, in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts,
                 in CombatStance stance, in VisionRange vision, in Faction faction, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking)
             {
-                if (!Slot.Owns(entity) || attacking.ValueRO || stance.Value == Stance.Passive)
+                if (!Scans.IsDue(entity) || attacking.ValueRO || stance.Value == Stance.Passive)
                 {
                     return;
                 }

@@ -149,7 +149,7 @@ namespace HyperRTS.Presentation.Tests.Flags
             relations.SetTeam(2, 2);
             _em.CreateSingleton(relations);
             _em.CreateSingleton(new LocalFogView { Viewer = 1, Team = 1, Active = true });
-            _em.CreateSingleton(FogOfWar.Create(new GridFrame(float2.zero, 1f, new int2(1, 1)), Allocator.Persistent));
+            _em.CreateSingleton(FogOfWar.Create(new CellGrid(float2.zero, 1f, new int2(1, 1)), Allocator.Persistent));
         }
 
         private void Run() => _flags.Update(_world.Unmanaged);

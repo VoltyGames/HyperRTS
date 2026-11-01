@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
         public float3 Exit;
 
         /// <summary>The occupant renews it every frame; <see cref="DockSystem"/> frees a bay nobody renewed.</summary>
-        public Lease Lease;
+        public Reservation Reservation;
 
         /// <summary>Places in line taken last frame, bit n for place n + 1.</summary>
         public uint Line;
@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
         /// <summary>Places taken so far this frame, rolled into <see cref="Line"/> by <see cref="DockSystem"/>.</summary>
         public uint NextLine;
 
-        public readonly bool IsFree => Lease.IsFree;
+        public readonly bool IsFree => Reservation.IsFree;
 
         public readonly BayPose WorldPose(in LocalTransform dock)
         {
@@ -79,23 +79,23 @@ namespace HyperRTS.Simulation.Navigation.Docks
         /// Drives a vehicle along the run-in until it stands at the stop. A drive that gave up short of the stop is
         /// stuck; one that ended off the stop's pose plans the rest from where it is.
         /// </summary>
-        public WalkUp Approach(MoveControl move, float2 unit, float2 facing)
+        public ApproachState Approach(MoveControl move, float2 unit, float2 facing)
         {
             if (IsAtStop(unit, facing))
             {
                 move.Stop();
-                return WalkUp.Reached;
+                return ApproachState.Reached;
             }
 
             var isGoalStop = math.distancesq(move.Destination.ValueRO.Value.xz, Stop.xz) < 0.01f;
             if (isGoalStop && move.GaveUp)
             {
-                return WalkUp.Stuck;
+                return ApproachState.Stuck;
             }
 
             move.ToPose(Stop, Facing, RunIn);
             move.Arrived.ValueRW = false;
-            return WalkUp.Walking;
+            return ApproachState.Walking;
         }
 
         /// <summary>Parks a vehicle at its place in the line, facing the bay, and keeps it there.</summary>
@@ -150,7 +150,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
 
         public BayPose Pose(Entity dock, int bay) => _bays[dock][bay].WorldPose(_transforms[dock]);
 
-        public Entity Occupant(Entity dock, int bay) => _bays[dock][bay].Lease.Holder;
+        public Entity Occupant(Entity dock, int bay) => _bays[dock][bay].Reservation.Holder;
 
         /// <summary>
         /// Claims the free bay nearest the unit that nobody waits for ahead of it: one with no line, or the bay it
@@ -174,19 +174,19 @@ namespace HyperRTS.Simulation.Navigation.Docks
             claimed = closest.Index;
             if (closest.Found)
             {
-                Hold(dock, claimed, unit);
+                Reserve(dock, claimed, unit);
             }
 
             return closest.Found;
         }
 
         /// <summary>Keeps the bay the unit's for another frame.</summary>
-        public void Hold(Entity dock, int bay, Entity unit)
+        public void Reserve(Entity dock, int bay, Entity unit)
         {
-            _bays[dock].ElementAt(bay).Lease.Hold(unit);
+            _bays[dock].ElementAt(bay).Reservation.Reserve(unit);
         }
 
-        public void Free(Entity dock, int bay, Entity unit) => _bays[dock].ElementAt(bay).Lease.Release(unit);
+        public void Free(Entity dock, int bay, Entity unit) => _bays[dock].ElementAt(bay).Reservation.Release(unit);
 
         /// <summary>
         /// The unit's place in line this frame: its old one moved up past places left empty, or for a newcomer

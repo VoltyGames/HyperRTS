@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Navigation.Agents
             var direction = math.normalizesafe(slope);
             if (direction.Equals(float2.zero) && IsInWall(center, out var open))
             {
-                direction = math.normalizesafe(Access.Grid.Frame.Center(open) - center);
+                direction = math.normalizesafe(Access.Grid.Grid.Center(open) - center);
             }
 
             return direction * math.min(maxStep, depth + NavTolerances.WallOverlap);
@@ -113,7 +113,7 @@ namespace HyperRTS.Simulation.Navigation.Agents
                 return false;
             }
 
-            return Access.TryFindNearest(Access.Grid.Frame.Cell(center), GridPathfinder.NearestSearchRadius, out open);
+            return Access.TryFindNearest(Access.Grid.Grid.Cell(center), GridPathfinder.NearestSearchRadius, out open);
         }
 
         /// <summary>

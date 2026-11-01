@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Tests.Resources
 
         private bool HasDelivered(Entity unit) => World.Get<Harvester>(unit).CargoAmount == 0;
 
-        private Entity Occupant(Entity depot, int bay) => World.Buffer<DockBay>(depot)[bay].Lease.Holder;
+        private Entity Occupant(Entity depot, int bay) => World.Buffer<DockBay>(depot)[bay].Reservation.Holder;
 
         [Test]
         public void ThreeTrucks_ShareTwoBays_TheThirdWaitsInLine_AndAllDeliverWithoutOverlapping()

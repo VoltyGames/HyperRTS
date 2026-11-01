@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Tests
             };
             Aim(ref weapon, 360f);
             var ammo = Ammo.Create(rounds, reloadTime, refill);
-            world.Buffer<WeaponMount>(entity).Add(WeaponMount.Extra(weapon, ammo, requiredResearchTypeId, independent));
+            world.Buffer<WeaponMount>(entity).Add(WeaponMount.CreateExtra(weapon, ammo, requiredResearchTypeId, independent));
             world.Buffer<WeaponPose>(entity).Add(default);
             return entity;
         }

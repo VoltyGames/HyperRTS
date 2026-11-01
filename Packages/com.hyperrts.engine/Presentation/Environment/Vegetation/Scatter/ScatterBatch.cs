@@ -19,8 +19,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private protected ScatterBatch(ScatterComputeInputs kernels, Mesh[] meshes, int minInstances)
         {
             Compute = kernels.Compute;
-            GrowKernel = kernels.Grow;
-            CountKernel = kernels.Count;
+            GrowKernel = kernels.GrowKernel;
+            CountKernel = kernels.CountKernel;
             Meshes = meshes;
             Blocks = new MaterialPropertyBlock[meshes.Length];
             for (var slot = 0; slot < meshes.Length; slot++)

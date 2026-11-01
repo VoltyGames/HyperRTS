@@ -18,10 +18,10 @@ namespace HyperRTS.Presentation.Environment.Trampling
         private const string RectName = "_HyperRTSTrampleRect";
 
         // The four maps share one rect.
-        public static readonly WorldGridGlobal TrampleGlobal = new("_HyperRTSTrample", RectName);
-        public static readonly WorldGridGlobal TracksGlobal = new("_HyperRTSTracks", RectName);
-        public static readonly WorldGridGlobal WakeGlobal = new("_HyperRTSWake", RectName);
-        public static readonly WorldGridGlobal RemainsGlobal = new("_HyperRTSRemains", RectName);
+        public static readonly MapTextureGlobal TrampleGlobal = new("_HyperRTSTrample", RectName);
+        public static readonly MapTextureGlobal TracksGlobal = new("_HyperRTSTracks", RectName);
+        public static readonly MapTextureGlobal WakeGlobal = new("_HyperRTSWake", RectName);
+        public static readonly MapTextureGlobal RemainsGlobal = new("_HyperRTSRemains", RectName);
         public static readonly int TracksTexelId = Shader.PropertyToID("_HyperRTSTracksTexel");
 
         /// <summary>No direction, standing plants.</summary>

@@ -22,13 +22,13 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [ReadOnly] public SpatialIndex Index;
         public FactionRelations Relations;
         public TargetLookup Targets;
-        public ScanSlot Slot;
+        public ScanSchedule Scans;
 
         private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in LocalTransform transform,
             in AttackTarget attack, EnabledRefRO<AttackTarget> attacking, in CombatStance stance, in Faction faction)
         {
             var shared = attacking.ValueRO ? attack.Value : Entity.Null;
-            var scanning = Slot.Owns(entity) && stance.Value != Stance.Passive;
+            var scanning = Scans.IsDue(entity) && stance.Value != Stance.Passive;
             for (var i = 0; i < mounts.Length; i++)
             {
                 var mount = mounts[i];

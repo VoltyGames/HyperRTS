@@ -106,7 +106,7 @@ namespace HyperRTS.Editor.Maps.Hints
         /// <summary>Metres of walkable ground from a point along a direction, up to <paramref name="limit"/>.</summary>
         private static float OpenReach(MapNavGrid nav, Vector2 point, Vector2 direction, float limit)
         {
-            var step = nav.Grid.Frame.CellSize;
+            var step = nav.Grid.Grid.CellSize;
             var reach = 0f;
             while (reach < limit && nav.IsWalkable(nav.Cell(point + direction * (reach + step))))
             {

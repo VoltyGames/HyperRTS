@@ -126,7 +126,7 @@ namespace HyperRTS.Simulation.Transport
             var layer = NavAgent.GetLayer(_agents, unit);
             if (TryFindStand(unit, grid, position, out var cell))
             {
-                position.xz = grid.Frame.Center(cell);
+                position.xz = grid.Grid.Center(cell);
             }
 
             position.y = grid.HeightFor(position, layer);
@@ -138,7 +138,7 @@ namespace HyperRTS.Simulation.Transport
         {
             cell = default;
             return _agents.TryGetComponent(unit, out var agent) && agent.TryAccess(grid, out var access) &&
-                   access.TryFindNearest(grid.Frame.Cell(position), WalkableSearchRings, out cell);
+                   access.TryFindNearest(grid.Grid.Cell(position), WalkableSearchRings, out cell);
         }
     }
 }

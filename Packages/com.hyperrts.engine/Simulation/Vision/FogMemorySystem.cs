@@ -9,7 +9,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Keeps a <see cref="LastSeen"/> memory of each enemy <see cref="RememberedInFog"/> root the local player saw and lost
+    /// Keeps a <see cref="FogMemory"/> memory of each enemy <see cref="RememberedInFog"/> root the local player saw and lost
     /// in the fog, until he sees it alive again or finds its place empty. Cleared on reveal-all, fog off or a viewer
     /// change.
     /// </summary>
@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Drops every memory and latest, for a view that no longer hides anything or belongs to someone else.</summary>
         public static void Forget(EntityManager entityManager)
         {
-            using var memories = new EntityQueryBuilder(Allocator.Temp).WithAll<LastSeen>().Build(entityManager);
+            using var memories = new EntityQueryBuilder(Allocator.Temp).WithAll<FogMemory>().Build(entityManager);
             entityManager.DestroyEntity(memories);
             using var latest = new EntityQueryBuilder(Allocator.Temp).WithAll<LatestSeen>().Build(entityManager);
             entityManager.RemoveComponent<LatestSeen>(latest);
@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Vision
             public void Remember(in SeenState record)
             {
                 var memory = Commands.CreateEntity();
-                Commands.AddComponent(memory, new LastSeen { State = record });
+                Commands.AddComponent(memory, new FogMemory { State = record });
             }
         }
 
@@ -204,7 +204,7 @@ namespace HyperRTS.Simulation.Vision
             [ReadOnly] public NativeHashSet<FogMemoryKey> Seen;
             public float DeltaTime;
 
-            private void Execute(Entity entity, ref LastSeen memory)
+            private void Execute(Entity entity, ref FogMemory memory)
             {
                 if (Seen.Contains(memory.State.Key))
                 {

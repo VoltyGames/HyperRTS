@@ -12,15 +12,15 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Draws each viewer's <see cref="SightPatch"/> again when its place, eye, reach or team changed, a grid was built
+    /// Draws each viewer's <see cref="SightArea"/> again when its place, eye, reach or team changed, a grid was built
     /// anew or blockers changed round it: sight occluded by terrain and <see cref="SightBlockers"/>, reaching further
     /// from <see cref="HighGround"/>, and the close layer round ground units. A passenger inside a container with a
-    /// <see cref="PassengerEye"/> sees from above its roof. Each viewer writes only its own patch, so it runs in parallel.
+    /// <see cref="PassengerEye"/> sees from above its roof. Each viewer writes only its own area, so it runs in parallel.
     /// </summary>
     [BurstCompile]
-    internal partial struct SightPatchJob : IJobEntity
+    internal partial struct SightAreaJob : IJobEntity
     {
-        private static readonly ProfilerMarker DrawMarker = new("SightPatchJob.Draw");
+        private static readonly ProfilerMarker DrawMarker = new("SightAreaJob.Draw");
 
         [ReadOnly] public FogOfWar Fog;
         public FactionRelations Relations;
@@ -35,13 +35,13 @@ namespace HyperRTS.Simulation.Vision
         [ReadOnly] public ComponentLookup<NavAgent> Agents;
         [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
 
-        private void Execute(Entity entity, ref SightPatch patch, DynamicBuffer<SightPatchBits> bits,
+        private void Execute(Entity entity, ref SightArea area, DynamicBuffer<SightAreaBits> bits,
             in VisionRange vision, in Faction faction)
         {
             var team = Relations.GetTeam(faction.Value);
             if (vision.Value <= 0f || !FogOfWar.Stamps(team))
             {
-                patch = new SightPatch { Radius = -1 };
+                area = new SightArea { Radius = -1 };
                 bits.Clear();
                 return;
             }
@@ -51,24 +51,24 @@ namespace HyperRTS.Simulation.Vision
             var eye = Eye(entity, position, vision, ref sight);
             var wanted = Wanted(entity, position, eye, vision.Value * HighGround.SightScale(position), team);
             var dirty = Blockers.IsDirty(wanted.Origin, wanted.Origin + wanted.Width - 1);
-            if (wanted.Matches(patch) && !dirty)
+            if (wanted.Matches(area) && !dirty)
             {
                 return;
             }
 
             using var marker = DrawMarker.Auto();
-            patch = wanted;
-            bits.ResizeUninitialized(patch.Words);
+            area = wanted;
+            bits.ResizeUninitialized(area.Words);
             var words = bits.Reinterpret<ulong>().AsNativeArray();
             for (var i = 0; i < words.Length; i++)
             {
                 words[i] = 0ul;
             }
 
-            sight.Patch = patch;
+            sight.Area = area;
             sight.Bits = words;
-            sight.Draw(position, eye, patch.Range);
-            DrawClose(position, patch, words);
+            sight.Draw(position, eye, area.Range);
+            DrawClose(position, area, words);
         }
 
         /// <summary>The viewer's eye height; a viewer's own block, or the one it is inside, hides nothing from it.</summary>
@@ -91,15 +91,15 @@ namespace HyperRTS.Simulation.Vision
             return math.max(eye, block.Top(transform) + passenger.AboveTop);
         }
 
-        private readonly SightPatch Wanted(Entity entity, float3 position, float eye, float range, byte team)
+        private readonly SightArea Wanted(Entity entity, float3 position, float eye, float range, byte team)
         {
             // Aircraft and passengers spot nothing up close.
             var airborne = Agents.TryGetComponent(entity, out var agent) && agent.Layer == NavLayer.Air;
             var close = airborne || IsInside(entity, out _) ? 0f : RevealDistance;
-            return new SightPatch
+            return new SightArea
             {
-                Center = Fog.Frame.Cell(position),
-                Radius = (int)math.ceil(math.max(range, close) / Fog.Frame.CellSize),
+                Center = Fog.Grid.Cell(position),
+                Radius = (int)math.ceil(math.max(range, close) / Fog.Grid.CellSize),
                 Eye = eye,
                 Range = range,
                 CloseRange = close,
@@ -109,11 +109,11 @@ namespace HyperRTS.Simulation.Vision
             };
         }
 
-        private readonly void DrawClose(float3 position, in SightPatch patch, NativeArray<ulong> words)
+        private readonly void DrawClose(float3 position, in SightArea area, NativeArray<ulong> words)
         {
-            foreach (var cell in Fog.Frame.CellsInCircle(position.xz, patch.CloseRange))
+            foreach (var cell in Fog.Grid.CellsInCircle(position.xz, area.CloseRange))
             {
-                patch.Set(words, SightPatch.Close, cell);
+                area.Set(words, SightArea.Close, cell);
             }
         }
 

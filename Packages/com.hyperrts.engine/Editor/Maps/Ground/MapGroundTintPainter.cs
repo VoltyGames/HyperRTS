@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var size = Size(area);
             var tint = new MapGroundTint(layout, land, edges, shapes, heights, strength);
             var pixels = new Color[size * size];
-            MapRows.For(size, y =>
+            MapParallel.ForRows(size, y =>
             {
                 for (var x = 0; x < size; x++)
                 {

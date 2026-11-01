@@ -8,13 +8,13 @@ namespace HyperRTS.Editor.Maps.Common
     /// Runs the rows of a per-texel painter on worker threads. Each row must write only its own texels and read
     /// nothing another row writes, so the output is the same in any order.
     /// </summary>
-    public static partial class MapRows
+    public static partial class MapParallel
     {
         /// <summary>Runs the rows in order on this thread, for tests that compare the threaded output with it.</summary>
         [AutoStaticsCleanup]
         public static bool Serial;
 
-        public static void For(int rows, Action<int> row)
+        public static void ForRows(int rows, Action<int> row)
         {
             if (Serial)
             {
@@ -29,8 +29,8 @@ namespace HyperRTS.Editor.Maps.Common
             Parallel.For(0, rows, row);
         }
 
-        /// <summary><see cref="For(int, Action{int})"/> with scratch made once per worker thread.</summary>
-        public static void For<T>(int rows, Func<T> scratch, Action<int, T> row)
+        /// <summary><see cref="ForRows(int, Action{int})"/> with scratch made once per worker thread.</summary>
+        public static void ForRows<T>(int rows, Func<T> scratch, Action<int, T> row)
         {
             if (Serial)
             {

@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
     /// </summary>
     public sealed partial class BuildingFootprintMask : IDisposable
     {
-        private static readonly WorldGridGlobal Global = new("_HyperRTSFootprints", "_HyperRTSFootprintRect");
+        private static readonly MapTextureGlobal Global = new("_HyperRTSFootprints", "_HyperRTSFootprintRect");
 
         // Cells within half a cell of a wall count, so plants at its foot stay hidden too.
         private const float Inset = 0.5f;
@@ -25,14 +25,14 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private readonly Texture2D _texture;
         private readonly byte[] _cells;
         private readonly MapSettings _map;
-        private readonly GridFrame _frame;
+        private readonly CellGrid _grid;
 
         public BuildingFootprintMask(in MapSettings map)
         {
             _map = map;
-            _frame = map.NavFrame();
-            _cells = new byte[_frame.Count];
-            _texture = new Texture2D(_frame.Size.x, _frame.Size.y, TextureFormat.R8, false, true)
+            _grid = map.NavGrid();
+            _cells = new byte[_grid.Count];
+            _texture = new Texture2D(_grid.Size.x, _grid.Size.y, TextureFormat.R8, false, true)
             {
                 name = "HyperRTS Building Footprints",
                 hideFlags = HideFlags.DontSave,
@@ -58,14 +58,14 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
             _texture.SetPixelData(_cells, 0);
             _texture.Apply(false);
-            Global.Publish(_texture, TerrainHeightInput.Rect(_frame.Min, (float2)_frame.Size * _frame.CellSize));
+            Global.Publish(_texture, TerrainHeightInput.Rect(_grid.Min, (float2)_grid.Size * _grid.CellSize));
             Version++;
         }
 
         public bool IsMarked(float2 position)
         {
-            var cell = _frame.Cell(position);
-            return _frame.Contains(cell) && _cells[_frame.Index(cell)] != 0;
+            var cell = _grid.Cell(position);
+            return _grid.Contains(cell) && _cells[_grid.Index(cell)] != 0;
         }
 
         public void Dispose()
@@ -80,13 +80,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         private void Stamp(in NavBox box)
         {
-            var inset = _frame.CellSize * Inset;
+            var inset = _grid.CellSize * Inset;
             var reach = box.Extents + inset;
-            foreach (var cell in _frame.Cells(_frame.Cell(box.Center - reach), _frame.Cell(box.Center + reach)))
+            foreach (var cell in _grid.Cells(_grid.Cell(box.Center - reach), _grid.Cell(box.Center + reach)))
             {
-                if (box.Gap(_frame.Center(cell)) <= inset)
+                if (box.Gap(_grid.Center(cell)) <= inset)
                 {
-                    _cells[_frame.Index(cell)] = byte.MaxValue;
+                    _cells[_grid.Index(cell)] = byte.MaxValue;
                 }
             }
         }

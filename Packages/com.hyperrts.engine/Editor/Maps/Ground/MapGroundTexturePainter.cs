@@ -66,7 +66,7 @@ namespace HyperRTS.Editor.Maps.Ground
         {
             var textureWeights = new MapTextureWeights(resolution, climate.layers.Count);
             var painter = new MapGroundTexturePainter(layout, edges, heights, climate, resolution);
-            MapRows.For(resolution, () => new float[climate.layers.Count], (z, weights) => painter.Row(textureWeights, z, weights));
+            MapParallel.ForRows(resolution, () => new float[climate.layers.Count], (z, weights) => painter.Row(textureWeights, z, weights));
             return textureWeights;
         }
 

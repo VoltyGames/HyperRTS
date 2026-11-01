@@ -113,7 +113,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
 
             World.Run(Charge + 1f);
 
-            Assert.AreEqual(Charge, World.Buffer<AbilityState>(_asset)[0].CooldownRemaining, 0.01f);
+            Assert.AreEqual(Charge, World.Buffer<AbilityCooldown>(_asset)[0].Remaining, 0.01f);
             Assert.IsFalse(ReadCharge(1).HasAsset);
         }
 

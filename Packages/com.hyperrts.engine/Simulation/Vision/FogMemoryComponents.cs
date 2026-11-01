@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Vision
     }
 
     /// <summary>A remembered building: drawn and shown on the minimap until the player sees its place again.</summary>
-    public struct LastSeen : IComponentData
+    public struct FogMemory : IComponentData
     {
         public SeenState State;
 

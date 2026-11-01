@@ -24,13 +24,13 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly Label _source;
         private readonly Label _empty;
         private readonly VisualElement _report;
-        private readonly Section _issuesSection;
+        private readonly TitledSection _issuesSection;
         private readonly VisualElement _issueRows;
         private readonly Label _noIssues;
         private readonly VisualElement _landSection;
-        private readonly FigureList _landFigures;
+        private readonly ValueList _landFigures;
         private readonly VisualElement _metricsSection;
-        private readonly FigureList _metricFigures;
+        private readonly ValueList _metricFigures;
         private readonly Button _openScene;
         private readonly Button _recapture;
 
@@ -46,13 +46,13 @@ namespace HyperRTS.Editor.Maps.Designer
             _source = this.Require<Label>("source");
             _empty = this.Require<Label>("empty");
             _report = this.Require<VisualElement>("report");
-            _issuesSection = this.Require<Section>("issues");
+            _issuesSection = this.Require<TitledSection>("issues");
             _issueRows = this.Require<VisualElement>("issue-rows");
             _noIssues = this.Require<Label>("no-issues");
             _landSection = this.Require<VisualElement>("land");
-            _landFigures = this.Require<FigureList>("land-figures");
+            _landFigures = this.Require<ValueList>("land-figures");
             _metricsSection = this.Require<VisualElement>("metrics");
-            _metricFigures = this.Require<FigureList>("metric-figures");
+            _metricFigures = this.Require<ValueList>("metric-figures");
             _openScene = this.Require<Button>("open-scene");
             _openScene.clicked += OpenScene;
             _recapture = this.Require<Button>("recapture");
@@ -173,7 +173,7 @@ namespace HyperRTS.Editor.Maps.Designer
         }
 
         /// <summary>Land use shares and what stands on the land, from a preview or a build.</summary>
-        private void ShowLand(MapLandFigures land)
+        private void ShowLand(MapLandShares land)
         {
             var figures = land.shares.ConvertAll(share => (share.kind, Percent(share.share)));
             figures.Add(("Fields", Count(land.fields)));

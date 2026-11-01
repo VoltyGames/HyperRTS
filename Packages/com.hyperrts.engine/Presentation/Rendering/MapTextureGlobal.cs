@@ -7,12 +7,12 @@ namespace HyperRTS.Presentation.Rendering
     /// A world-aligned texture shader global and the rect global that places it over the map. Shaders read a zero rect
     /// as nothing published.
     /// </summary>
-    public readonly struct WorldGridGlobal
+    public readonly struct MapTextureGlobal
     {
         public readonly int TextureId;
         public readonly int RectId;
 
-        public WorldGridGlobal(string texture, string rect)
+        public MapTextureGlobal(string texture, string rect)
         {
             TextureId = Shader.PropertyToID(texture);
             RectId = Shader.PropertyToID(rect);

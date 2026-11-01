@@ -36,10 +36,10 @@ namespace HyperRTS.Simulation.Abilities
             _status.Update(ref state);
         }
 
-        public void Cast(in Ability ability, ref AbilityState state, Entity caster, byte faction, Entity target, float3 position,
+        public void Cast(in Ability ability, ref AbilityCooldown state, Entity caster, byte faction, Entity target, float3 position,
             EntityCommandBuffer ecb)
         {
-            state.CooldownRemaining = ability.Cooldown;
+            state.Remaining = ability.Cooldown;
             _events.Add(new AbilityActivation
             {
                 Caster = caster, Faction = faction, AbilityId = ability.Id, Target = target, Position = position,

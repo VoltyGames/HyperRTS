@@ -22,8 +22,8 @@ namespace HyperRTS.Editor.Maps.Ground
         private readonly MapEdgeWander _wander;
         private readonly MapEdgeNeighbours _neighbours;
         private readonly MapClimateSurface[] _surfaces;
-        private readonly MapField<float> _width;
-        private readonly MapField<float> _wanderAmount;
+        private readonly MapValues<float> _width;
+        private readonly MapValues<float> _wanderAmount;
 
         public MapEdgeField(MapLayout layout, MapLand land, MapClimate climate)
         {
@@ -63,9 +63,9 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Per cell, the crisper of the two sides' values, blurred so it changes smoothly.</summary>
-        private MapField<float> Style(System.Func<MapClimateSurface, float> value)
+        private MapValues<float> Style(System.Func<MapClimateSurface, float> value)
         {
-            var cells = new MapField<float>(_land.Grid);
+            var cells = new MapValues<float>(_land.Grid);
             for (var z = 0; z < _land.Height; z++)
             {
                 for (var x = 0; x < _land.Width; x++)

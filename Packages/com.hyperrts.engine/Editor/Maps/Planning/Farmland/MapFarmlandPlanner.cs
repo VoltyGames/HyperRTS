@@ -148,7 +148,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         }
 
         /// <summary>Whether the field ends within <paramref name="reach"/> along the rows, in a stretch long enough to turn.</summary>
-        private bool IsFieldEnd(MapField<int> fields, MapFieldGrid grid, Vector2 sector, int copy, int field, float reach)
+        private bool IsFieldEnd(MapValues<int> fields, MapFieldGrid grid, Vector2 sector, int copy, int field, float reach)
         {
             var transform = Symmetry.Copies[copy];
             var ahead = Run(fields, transform, sector, grid.Forward, field, HeadlandBody * reach);
@@ -157,7 +157,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         }
 
         /// <summary>Metres of field ahead along <paramref name="way"/>, up to <paramref name="limit"/>.</summary>
-        private float Run(MapField<int> fields, MapTransform transform, Vector2 sector, Vector2 way, int field, float limit)
+        private float Run(MapValues<int> fields, MapTransform transform, Vector2 sector, Vector2 way, int field, float limit)
         {
             var step = SampleStep;
             while (step <= limit && InField(fields, transform.Apply(sector + way * step), field))
@@ -168,13 +168,13 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             return step;
         }
 
-        private bool InField(MapField<int> fields, Vector2 point, int field) =>
+        private bool InField(MapValues<int> fields, Vector2 point, int field) =>
             Land.TryCell(point, out var x, out var z) && fields[x, z] == field;
 
         /// <summary>The field key of every free farmland cell, <see cref="NoField"/> elsewhere.</summary>
-        private MapField<int> Assign(MapFieldGrid grid, List<Vector2> polygon)
+        private MapValues<int> Assign(MapFieldGrid grid, List<Vector2> polygon)
         {
-            var fields = new MapField<int>(Land.Grid);
+            var fields = new MapValues<int>(Land.Grid);
             Land.ForEach((x, z, p) =>
             {
                 var i = fields.Grid.Index(x, z);

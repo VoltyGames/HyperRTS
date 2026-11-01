@@ -6,13 +6,13 @@ namespace HyperRTS.Simulation.Common
     /// The layout of a grid of square cells over the map: <see cref="Size"/> cells from the south-west corner
     /// <see cref="Min"/>, each <see cref="CellSize"/> metres across, counted along x then z.
     /// </summary>
-    public readonly struct GridFrame
+    public readonly struct CellGrid
     {
         public readonly float2 Min;
         public readonly float CellSize;
         public readonly int2 Size;
 
-        public GridFrame(float2 min, float cellSize, int2 size)
+        public CellGrid(float2 min, float cellSize, int2 size)
         {
             Min = min;
             CellSize = cellSize;

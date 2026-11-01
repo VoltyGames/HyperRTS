@@ -24,8 +24,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             Items.SetData(fields.fields);
             var ids = _ids = fields.fieldIds;
             var area = fields.area;
-            compute.SetBuffer(Grow, FieldsId, Items);
-            compute.SetTexture(Grow, FieldIdsId, ids);
+            compute.SetBuffer(GrowKernel, FieldsId, Items);
+            compute.SetTexture(GrowKernel, FieldIdsId, ids);
             compute.SetVector(FieldAreaId, new Vector4(area.xMin, area.yMin, ids.width / area.width, ids.height / area.height));
             compute.SetVector(FieldTexelsId, new Vector4(ids.width, ids.height, 0f, 0f));
         }
@@ -38,7 +38,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         protected override void BindCamera(ScatterSettings settings)
         {
             Compute.SetFloat(DensityId, settings.Density);
-            TrampleSurfaces.TrampleGlobal.Bind(Compute, Grow);
+            TrampleSurfaces.TrampleGlobal.Bind(Compute, GrowKernel);
         }
     }
 }

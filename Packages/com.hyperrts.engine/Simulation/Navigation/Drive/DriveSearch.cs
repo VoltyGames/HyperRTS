@@ -11,7 +11,7 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation.Drive
 {
     /// <summary>
-    /// Hybrid A* over the rear axle's pose, led by a <see cref="DriveGuide"/>, for a stretch of path the chassis can't
+    /// Hybrid A* over the rear axle's pose, led by a <see cref="DriveHeuristic"/>, for a stretch of path the chassis can't
     /// drive as drawn. It gives the hull centre's waypoints, each <see cref="PathWaypoint.Tight"/>.
     /// </summary>
     public partial struct DriveSearch : IDisposable
@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         // The best node found so far for each cell and heading bin.
         private UnsafeHashMap<int, int> _visited;
         private FieldWindow _walls;
-        private DriveGuide _guide;
+        private DriveHeuristic _heuristic;
         private DriveGoal _goal;
         private AxlePose _goalPose;
         private CellRect _window;
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             _window = default;
             _height = 0f;
             Expansions = 0;
-            _guide = new DriveGuide(16384, allocator);
+            _heuristic = new DriveHeuristic(16384, allocator);
         }
 
         /// <summary>Searches for <paramref name="agent"/> from now on; its moves follow its chassis.</summary>
@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         {
             _hull = new DriveHull(access, agent);
             _moves.Clear();
-            _guide.SetAgent(access, _hull.CurveRadius, _hull.HullLength);
+            _heuristic.SetAgent(access, _hull.CurveRadius, _hull.HullLength);
         }
 
         public readonly bool IsCreated => _nodes.IsCreated;
@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             _open.Dispose();
             _visited.Dispose();
             _walls.Dispose();
-            _guide.Dispose();
+            _heuristic.Dispose();
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private readonly bool Fits(float2 from, float2 to)
         {
             var grid = _hull.Access.Grid;
-            var onGrid = grid.Frame.Contains(grid.Frame.Cell(from)) && grid.Frame.Contains(grid.Frame.Cell(to));
+            var onGrid = grid.Grid.Contains(grid.Grid.Cell(from)) && grid.Grid.Contains(grid.Grid.Cell(to));
             return onGrid && math.all(math.abs(to - from) <= MaxWindow);
         }
 

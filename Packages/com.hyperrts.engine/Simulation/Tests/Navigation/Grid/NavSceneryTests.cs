@@ -80,7 +80,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
                 var position = World.GetPosition(unit);
                 widest = math.max(widest, math.abs(position.z - 0.5f));
                 var grid = World.Grid();
-                var scenery = grid.Scenery[grid.Frame.Index(grid.Frame.Cell(position))];
+                var scenery = grid.Scenery[grid.Grid.Index(grid.Grid.Cell(position))];
                 Assert.IsTrue(mayEnterTrees || scenery == 0, $"drove into a tree at {position}");
             }
 
@@ -94,8 +94,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             PlantTreeLine();
             var grid = World.Grid();
 
-            Assert.AreEqual(TreeCrush, grid.Scenery[grid.Frame.Index(grid.Frame.Cell(new float3(0.5f, 0f, 3.5f)))]);
-            Assert.AreEqual(0, grid.Scenery[grid.Frame.Index(grid.Frame.Cell(new float3(1.5f, 0f, 3.5f)))]);
+            Assert.AreEqual(TreeCrush, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(0.5f, 0f, 3.5f)))]);
+            Assert.AreEqual(0, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(1.5f, 0f, 3.5f)))]);
             Assert.IsTrue(grid.IsWalkable(new float3(0.5f, 0f, 3.5f)), "scenery leaves the cell open to the layer");
         }
 

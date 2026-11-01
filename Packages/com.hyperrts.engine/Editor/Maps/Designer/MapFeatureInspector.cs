@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Designer
     public sealed partial class MapFeatureInspector : VisualElement
     {
         private readonly Label _none;
-        private readonly Section _details;
+        private readonly TitledSection _details;
         private readonly Label _path;
         private readonly VisualElement _fields;
         private MapSpecDocument _document;
@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Designer
         {
             EditorAssets.Layout(typeof(MapFeatureInspector)).CloneTree(this);
             _none = this.Require<Label>("none");
-            _details = this.Require<Section>("details");
+            _details = this.Require<TitledSection>("details");
             _path = this.Require<Label>("path");
             _fields = this.Require<VisualElement>("fields");
             // Raised by a field the user changed, never by the binding catching up with an undo or a reload.

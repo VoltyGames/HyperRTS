@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Abilities
     /// effects are optional: a prefab spawned at the target, damage (negative heals) around it and a status effect on
     /// an entity target. Every use is published as an <see cref="AbilityActivation"/> for game systems. It never
     /// changes and doesn't replicate: clients bake it from the same prefab, and the running cooldown is the
-    /// replicated <see cref="AbilityState"/> with the same id.
+    /// replicated <see cref="AbilityCooldown"/> with the same id.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct Ability : IBufferElementData

@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Ground
     {
         public MapCropBake(MapGrid grid)
         {
-            Ids = new MapField<int>(grid);
+            Ids = new MapValues<int>(grid);
         }
 
         /// <summary>World XZ rectangle the cells cover, one metre each.</summary>
@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Ground
         public int Height => Ids.Grid.Height;
 
         /// <summary>Field index plus one per cell. 0 means no crop.</summary>
-        public MapField<int> Ids { get; }
+        public MapValues<int> Ids { get; }
 
         public List<RowCrop> Crops { get; } = new();
 

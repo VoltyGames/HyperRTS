@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             starts.Resize(2, NativeArrayOptions.ClearMemory);
             state.EntityManager.CreateSingleton(new SpatialIndex
             {
-                Frame = new GridFrame(float2.zero, CellSize, new int2(1)),
+                Grid = new CellGrid(float2.zero, CellSize, new int2(1)),
                 CellStarts = starts,
                 Entries = new NativeList<SpatialEntry>(1024, Allocator.Persistent),
                 Oversized = new NativeList<SpatialEntry>(16, Allocator.Persistent),
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         {
             ref var index = ref SystemAPI.GetSingletonRW<SpatialIndex>().ValueRW;
             var map = SystemAPI.GetSingleton<MapSettings>();
-            index.Frame = new GridFrame(map.Min, CellSize, math.max(1, (int2)math.ceil(map.Size / CellSize)));
+            index.Grid = new CellGrid(map.Min, CellSize, math.max(1, (int2)math.ceil(map.Size / CellSize)));
             // Unfiltered: an upper bound is enough and doesn't wait on jobs toggling Dead or Inside.
             var count = _indexed.CalculateEntityCountWithoutFiltering();
             if (_snapshots.Length < count)

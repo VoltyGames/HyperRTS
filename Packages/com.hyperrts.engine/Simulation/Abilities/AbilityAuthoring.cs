@@ -72,14 +72,14 @@ namespace HyperRTS.Simulation.Abilities
             public override void Bake(AbilityAuthoring authoring)
             {
                 var abilities = new List<Ability>();
-                var states = new List<AbilityState>();
+                var states = new List<AbilityCooldown>();
                 foreach (var entry in authoring.abilities)
                 {
                     var ability = BakeEntry(entry);
                     abilities.Add(ability);
-                    states.Add(new AbilityState
+                    states.Add(new AbilityCooldown
                     {
-                        Id = ability.Id, CooldownRemaining = entry.startsOnCooldown ? entry.cooldown : 0f,
+                        Id = ability.Id, Remaining = entry.startsOnCooldown ? entry.cooldown : 0f,
                     });
                 }
 

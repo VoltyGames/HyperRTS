@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.Environment.Fire
             new(1, 0), new(-1, 0), new(0, 1), new(0, -1), new(1, 1), new(1, -1), new(-1, 1), new(-1, -1),
         };
 
-        private readonly GridFrame _grid;
+        private readonly CellGrid _grid;
         private readonly float2 _burnSeconds;
         private readonly float2 _reach;
         private readonly FieldCell[] _cells;
@@ -64,7 +64,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         /// </summary>
         public FieldFires(float2 min, int2 size, float2 burnSeconds, float2 reach)
         {
-            _grid = new GridFrame(min, CellSize, size);
+            _grid = new CellGrid(min, CellSize, size);
             _burnSeconds = burnSeconds;
             _reach = reach;
             _cells = new FieldCell[size.x * size.y];

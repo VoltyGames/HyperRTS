@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var cell = area.size / resolution;
             var rowLines = new MapRowLines(layout.Symmetry, edges, cell.x);
             var water = layout.Terrain.waterLevel;
-            MapRows.For(resolution, z =>
+            MapParallel.ForRows(resolution, z =>
             {
                 for (var x = 0; x < resolution; x++)
                 {

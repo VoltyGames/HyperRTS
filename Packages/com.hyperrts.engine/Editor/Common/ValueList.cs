@@ -6,9 +6,9 @@ namespace HyperRTS.Editor.Common
 {
     /// <summary>Named figures in two columns, such as a report's land shares and counts.</summary>
     [UxmlElement]
-    public sealed partial class FigureList : VisualElement
+    public sealed partial class ValueList : VisualElement
     {
-        private readonly VisualTreeAsset _row = EditorAssets.Layout(typeof(FigureList), "Row");
+        private readonly VisualTreeAsset _row = EditorAssets.Layout(typeof(ValueList), "Row");
 
         public void Set(IEnumerable<(string Name, string Value)> figures)
         {

@@ -44,16 +44,16 @@ namespace HyperRTS.Simulation.Airdrops
             }
 
             foreach (var (asset, abilities, states, faction) in SystemAPI
-                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, DynamicBuffer<AbilityState>, RefRO<Faction>>()
+                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>, RefRO<Faction>>()
                          .WithNone<Dead>())
             {
                 var id = asset.ValueRO.AbilityId;
                 var ability = abilities[AbilityRules.FindAbility(abilities, id)];
-                ref var cooldown = ref states.ElementAt(AbilityRules.FindState(states, id));
+                ref var cooldown = ref states.ElementAt(AbilityRules.FindCooldown(states, id));
                 var owner = faction.ValueRO.Value;
                 if (!enabled || owner != asset.ValueRO.Owner)
                 {
-                    cooldown.CooldownRemaining = ability.Cooldown;
+                    cooldown.Remaining = ability.Cooldown;
                     asset.ValueRW.Owner = owner;
                 }
 
@@ -67,10 +67,10 @@ namespace HyperRTS.Simulation.Airdrops
         }
 
         /// <summary>A player with several assets shows the one nearest its charge.</summary>
-        private void Publish(ref SystemState state, Entity player, in Ability ability, in AbilityState cooldown)
+        private void Publish(ref SystemState state, Entity player, in Ability ability, in AbilityCooldown cooldown)
         {
             var charge = SystemAPI.GetComponentRW<StrategicCharge>(player);
-            var remaining = math.max(0f, cooldown.CooldownRemaining);
+            var remaining = math.max(0f, cooldown.Remaining);
             if (charge.ValueRO.HasAsset && charge.ValueRO.Remaining <= remaining)
             {
                 return;

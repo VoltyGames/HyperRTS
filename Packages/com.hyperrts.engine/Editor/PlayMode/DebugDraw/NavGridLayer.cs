@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            texture.Paint(grid.Frame, new Colors
+            texture.Paint(grid.Grid, new Colors
             {
                 Cells = grid.Cells,
                 Blocked = Tint(NavColors.Blocked),

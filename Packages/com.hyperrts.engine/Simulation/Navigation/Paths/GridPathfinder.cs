@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
         public static PathQuery Prepare(in NavAccess access, float3 start, float3 goal)
         {
             var grid = access.Grid;
-            var startCell = grid.Frame.Cell(start);
+            var startCell = grid.Grid.Cell(start);
             if (!access.TryFindStart(startCell, start, goal, out var from))
             {
                 return new PathQuery { Route = PathRoute.Straight, Origin = start, End = goal };
@@ -32,10 +32,10 @@ namespace HyperRTS.Simulation.Navigation.Paths
             var query = new PathQuery { From = from, Origin = start, StepsOut = !from.Equals(startCell) };
             if (query.StepsOut)
             {
-                query.Origin = grid.Frame.CenterPoint(from);
+                query.Origin = grid.Grid.CenterPoint(from);
             }
 
-            var goalCell = grid.Frame.Cell(goal);
+            var goalCell = grid.Grid.Cell(goal);
             if (!access.TryFindNearest(goalCell, ReachableSearchRadius, access.Region(from), out var to))
             {
                 query.Route = PathRoute.Stay;
@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
             query.To = to;
             query.Exact = to.Equals(goalCell);
-            query.End = query.Exact ? goal : grid.Frame.CenterPoint(to);
+            query.End = query.Exact ? goal : grid.Grid.CenterPoint(to);
             var straight = from.Equals(to) || access.HasLineOfSight(query.Origin, query.End);
             query.Route = straight ? PathRoute.Straight : PathRoute.Search;
             return query;

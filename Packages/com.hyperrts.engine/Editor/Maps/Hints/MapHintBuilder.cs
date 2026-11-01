@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Maps.Hints
                     return null;
                 }
 
-                bases.Add(new MapHintSlot(spawn, cell, input.Nav.Grid.Frame.Index(cell), input.Nav.WalkDistances(cell)));
+                bases.Add(new MapHintSlot(spawn, cell, input.Nav.Grid.Grid.Index(cell), input.Nav.WalkDistances(cell)));
             }
 
             return bases;
@@ -75,7 +75,7 @@ namespace HyperRTS.Editor.Maps.Hints
                     continue;
                 }
 
-                var walk = origin.Walk[input.Nav.Grid.Frame.Index(cell)];
+                var walk = origin.Walk[input.Nav.Grid.Grid.Index(cell)];
                 if (float.IsInfinity(walk))
                 {
                     continue;

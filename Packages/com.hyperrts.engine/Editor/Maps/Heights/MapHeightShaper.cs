@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Heights
             var heights = new MapHeights(terrain.resolution, layout.TerrainBounds);
             var relief = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.Relief);
             var edgeWander = shapes.EdgeWander;
-            MapRows.For(heights.Resolution, z =>
+            MapParallel.ForRows(heights.Resolution, z =>
             {
                 for (var x = 0; x < heights.Resolution; x++)
                 {

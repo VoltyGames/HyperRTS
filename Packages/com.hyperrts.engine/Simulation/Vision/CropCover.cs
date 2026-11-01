@@ -23,18 +23,18 @@ namespace HyperRTS.Simulation.Vision
                 tops[i] = top[i];
             }
 
-            root.Frame = new GridFrame(min, spacing, size);
+            root.Grid = new CellGrid(min, spacing, size);
             var blob = builder.CreateBlobAssetReference<CropCoverBlob>(allocator);
             builder.Dispose();
             return new CropCover { Blob = blob };
         }
     }
 
-    /// <summary>Row-major cells on a <see cref="GridFrame"/> from the map's south-west corner.</summary>
+    /// <summary>Row-major cells on a <see cref="CellGrid"/> from the map's south-west corner.</summary>
     public struct CropCoverBlob
     {
         public BlobArray<byte> Density;
         public BlobArray<byte> Top;
-        public GridFrame Frame;
+        public CellGrid Grid;
     }
 }

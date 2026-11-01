@@ -19,18 +19,18 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            texture.Paint(grid.Frame, new Colors { Sectors = grid.Sectors, Frame = grid.Frame });
+            texture.Paint(grid.Grid, new Colors { Sectors = grid.Sectors, Grid = grid.Grid });
             return true;
         }
 
         private struct Colors : ICellColors
         {
             public NavSectors Sectors;
-            public GridFrame Frame;
+            public CellGrid Grid;
 
             public Color32 At(int index)
             {
-                var cell = Frame.Cell(index);
+                var cell = Grid.Cell(index);
                 var region = Sectors.Region(0, cell);
                 var edge = region != Sectors.Region(0, cell + new int2(1, 0)) || region != Sectors.Region(0, cell + new int2(0, 1));
                 return edge && region != 0 ? new Color32(255, 255, 255, 160) : CellTexture.Hashed(region);

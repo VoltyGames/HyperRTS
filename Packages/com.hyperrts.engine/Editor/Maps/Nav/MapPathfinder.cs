@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.Maps.Nav
                 length += i > 0 ? GridAStar.StepCost(cells[i - 1], cells[i]) : 0f;
             }
 
-            return new MapPath(path, length * grid.Frame.CellSize, expansions);
+            return new MapPath(path, length * grid.Grid.CellSize, expansions);
         }
     }
 }

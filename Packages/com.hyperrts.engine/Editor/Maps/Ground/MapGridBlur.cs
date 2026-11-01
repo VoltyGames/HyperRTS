@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Ground
     /// <summary>Box blur of a map field with clamped borders, run across then along.</summary>
     public static class MapGridBlur
     {
-        public static MapField<float> Box(MapField<float> field, int radius)
+        public static MapValues<float> Box(MapValues<float> field, int radius)
         {
             var grid = field.Grid;
             var across = new float[grid.Count];
@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 Line(field.Values, across, grid.Index(0, z), 1, grid.Width, radius);
             }
 
-            var along = new MapField<float>(grid);
+            var along = new MapValues<float>(grid);
             for (var x = 0; x < grid.Width; x++)
             {
                 Line(across, along.Values, x, grid.Width, grid.Height, radius);

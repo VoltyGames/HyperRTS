@@ -120,7 +120,7 @@ namespace HyperRTS.Editor.Maps.Tests
         public static MapLayout Layout(MapSpec spec)
         {
             var issues = new MapIssues();
-            var layout = MapExpander.Expand(spec, issues);
+            var layout = MapSymmetryCopier.Expand(spec, issues);
             Assert.IsFalse(issues.HasErrors, issues.ToString());
             return layout;
         }
@@ -150,7 +150,7 @@ namespace HyperRTS.Editor.Maps.Tests
             var tightest = float.PositiveInfinity;
             for (var i = 1; i + 1 < line.Count; i++)
             {
-                tightest = Mathf.Min(tightest, MapFillet.Circumradius(line[i - 1], line[i], line[i + 1]));
+                tightest = Mathf.Min(tightest, MapCornerRounding.Circumradius(line[i - 1], line[i], line[i + 1]));
             }
 
             return tightest;

@@ -57,7 +57,7 @@ namespace HyperRTS.Editor.Maps.Build
             Texture2D image = null;
             if (generation != null)
             {
-                report.land = MapLandFigures.Measure(generation);
+                report.land = MapLandShares.Measure(generation);
                 report.stages.AddRange(generation.Timer.Stages);
                 image = MapReportImage.DrawLand(generation);
             }

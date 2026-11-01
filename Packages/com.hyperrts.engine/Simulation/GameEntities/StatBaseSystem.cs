@@ -16,20 +16,20 @@ namespace HyperRTS.Simulation.GameEntities
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial struct StatBaseSystem : ISystem
     {
-        private StatBindings _bindings;
+        private StatFieldTable _table;
         private NativeArray<EntityQuery> _queries;
 
         public void OnCreate(ref SystemState state)
         {
-            _bindings = StatBindings.Find(Allocator.Persistent);
-            _queries = new NativeArray<EntityQuery>(_bindings.Components.Length, Allocator.Persistent);
+            _table = StatFieldTable.Find(Allocator.Persistent);
+            _queries = new NativeArray<EntityQuery>(_table.Components.Length, Allocator.Persistent);
             for (var i = 0; i < _queries.Length; i++)
             {
                 _queries[i] = state.GetEntityQuery(new EntityQueryDesc
                 {
                     All = new[]
                     {
-                        ComponentType.ReadOnly(_bindings.Components[i].Component.TypeIndex),
+                        ComponentType.ReadOnly(_table.Components[i].Component.TypeIndex),
                         ComponentType.ReadWrite<BaseStat>(), ComponentType.ReadOnly<StatBasesPending>(),
                     },
                 });
@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.GameEntities
 
         public void OnDestroy(ref SystemState state)
         {
-            _bindings.Dispose();
+            _table.Dispose();
             _queries.Dispose();
         }
 
@@ -47,13 +47,13 @@ namespace HyperRTS.Simulation.GameEntities
         {
             for (var i = 0; i < _queries.Length; i++)
             {
-                var binding = _bindings.Components[i];
+                var statComponent = _table.Components[i];
                 state.Dependency = new FieldJob
                 {
                     Component = state.GetDynamicComponentTypeHandle(
-                        ComponentType.ReadOnly(binding.Component.TypeIndex)),
-                    Floats = binding.Floats,
-                    Fields = _bindings.FieldsFor(binding),
+                        ComponentType.ReadOnly(statComponent.Component.TypeIndex)),
+                    Floats = statComponent.Floats,
+                    Fields = _table.FieldsFor(statComponent),
                     Bases = SystemAPI.GetBufferTypeHandle<BaseStat>(false),
                 }.ScheduleParallel(_queries[i], state.Dependency);
             }

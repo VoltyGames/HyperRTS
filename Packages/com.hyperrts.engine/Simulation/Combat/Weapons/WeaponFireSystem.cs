@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 Targets = _targets,
-                Slot = new ScanSlot(SystemAPI.GetSingleton<SimulationFrame>()),
+                Scans = new ScanSchedule(SystemAPI.GetSingleton<SimulationFrame>()),
             }.ScheduleParallel();
 
             _shots.Update(ref state, SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()

@@ -221,9 +221,9 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// </summary>
         private void BuildGrid(ref SystemState state, in MapSettings map, in TerrainHeight terrain)
         {
-            var frame = map.NavFrame();
-            var count = frame.Count;
-            var grid = NavGrid.Create(frame, terrain, map.WaterLevel);
+            var cellGrid = map.NavGrid();
+            var count = cellGrid.Count;
+            var grid = NavGrid.Create(cellGrid, terrain, map.WaterLevel);
             ReplaceGrid(ref state, ref grid);
 
             if (_base.IsCreated)

@@ -17,12 +17,12 @@ namespace HyperRTS.Editor.Maps.Land
         /// <summary>The region index of a cell nothing has claimed.</summary>
         public const int Unclaimed = 0;
 
-        private readonly MapField<ushort> _cells;
+        private readonly MapValues<ushort> _cells;
         private readonly List<MapLandRegion> _regions = new() { null };
 
         public MapLand(Rect bounds)
         {
-            _cells = new MapField<ushort>(MapGrid.Centres(bounds, CellSize));
+            _cells = new MapValues<ushort>(MapGrid.Centres(bounds, CellSize));
         }
 
         public MapGrid Grid => _cells.Grid;
@@ -82,7 +82,7 @@ namespace HyperRTS.Editor.Maps.Land
         public bool TryCell(Vector2 point, out int x, out int z) => _cells.Grid.TryCell(point, out x, out z);
 
         /// <summary>Cells from every cell to the nearest cell of another region (0 on a region's edge).</summary>
-        public MapField<float> RegionEdgeDistance() => MapLandDistance.ToRegionEdge(_cells);
+        public MapValues<float> RegionEdgeDistance() => MapLandDistance.ToRegionEdge(_cells);
 
         /// <summary>Claims every free cell in an area whose centre passes the test; returns how many it took.</summary>
         public int ClaimWhere(Rect area, int region, Func<Vector2, bool> inside)

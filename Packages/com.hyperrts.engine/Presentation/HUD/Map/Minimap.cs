@@ -32,7 +32,7 @@ namespace HyperRTS.Presentation.HUD.Map
         private readonly LiveQuery _structures = Markers(ComponentType.ReadOnly<NavObstacle>());
 
         private readonly LiveQuery _memories = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<LastSeen>()));
+            entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogMemory>()));
 
         private readonly LiveQuery _nodes = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<ResourceNode>(),
@@ -156,7 +156,7 @@ namespace HyperRTS.Presentation.HUD.Map
 
         private void GatherMemories(MatchView view)
         {
-            using var memories = _memories.In(view.EntityManager).ToComponentDataArray<LastSeen>(Allocator.Temp);
+            using var memories = _memories.In(view.EntityManager).ToComponentDataArray<FogMemory>(Allocator.Temp);
             foreach (var memory in memories)
             {
                 var color = view.GetColor(memory.State.Faction);

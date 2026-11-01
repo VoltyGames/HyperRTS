@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Fog
 {
-    /// <summary>Draws each <see cref="LastSeen"/> memory as a team-coloured, visual-only copy of its building.</summary>
+    /// <summary>Draws each <see cref="FogMemory"/> memory as a team-coloured, visual-only copy of its building.</summary>
     // Main thread: copies are rare, and building a type's visual prefab reads component types through reflection.
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -24,8 +24,8 @@ namespace HyperRTS.Presentation.Fog
         public void OnCreate(ref SystemState state)
         {
             _visualPrefabs = new NativeHashMap<Entity, Entity>(16, Allocator.Persistent);
-            _undrawn = SystemAPI.QueryBuilder().WithAll<LastSeen>().WithNone<FogMemoryVisual>().Build();
-            _forgotten = SystemAPI.QueryBuilder().WithAll<FogMemoryVisual>().WithNone<LastSeen>().Build();
+            _undrawn = SystemAPI.QueryBuilder().WithAll<FogMemory>().WithNone<FogMemoryVisual>().Build();
+            _forgotten = SystemAPI.QueryBuilder().WithAll<FogMemoryVisual>().WithNone<FogMemory>().Build();
         }
 
         public void OnDestroy(ref SystemState state) => _visualPrefabs.Dispose();
@@ -58,7 +58,7 @@ namespace HyperRTS.Presentation.Fog
             using var memories = _undrawn.ToEntityArray(Allocator.Temp);
             foreach (var memory in memories)
             {
-                var record = entityManager.GetComponentData<LastSeen>(memory).State;
+                var record = entityManager.GetComponentData<FogMemory>(memory).State;
                 entityManager.AddComponentData(memory, new FogMemoryVisual { Root = Draw(entityManager, registry, record) });
             }
         }

@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <ui:Label name="none" class="hrts-note" text="Select a feature on the map or in the list." />
-  <HyperRTS.Editor.Common.Section name="details" class="hrts-map-inspector__details">
+  <HyperRTS.Editor.Common.TitledSection name="details" class="hrts-map-inspector__details">
     <ui:Label name="path" selectable="true" />
     <ui:ScrollView name="fields" class="hrts-map-inspector__fields" />
-  </HyperRTS.Editor.Common.Section>
+  </HyperRTS.Editor.Common.TitledSection>
 </ui:UXML>

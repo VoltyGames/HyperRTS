@@ -17,9 +17,9 @@ The base tier: ownership, identity, health and shared helpers.
 | `PlayerSide` | The game's army or nation id. Picks the player's start kit and AI build order |
 | `LocalPlayer`, `Defeated` | The player this client controls. Enabled once a player loses |
 | `PlayerStats` | Replicated totals: trained, built, delivered, lost, destroyed |
-| `MapSettings` | Singleton: playable bounds, cell sizes, water level, max slope. `FogFrame` lays out the fog grid |
-| `GridFrame` | The layout every map grid shares: `Min`, `CellSize`, `Size`, with `Cell`, `Center`, `Index`, `Contains` and `Clamp`. Heightfields keep samples at `Corner`s |
-| `CellRange`, `CellCircle`, `Neighbours` | Struct enumerators over a box of cells, the cells whose centre lies in a circle, and a cell's eight neighbours, for Burst `foreach` loops |
+| `MapSettings` | Singleton: playable bounds, cell sizes, water level, max slope. `FogGrid` lays out the fog grid |
+| `CellGrid` | The layout every map grid shares: `Min`, `CellSize`, `Size`, with `Cell`, `Center`, `Index`, `Contains` and `Clamp`. Heightfields keep samples at `Corner`s |
+| `CellRange`, `CellCircle`, `NeighbourOffsets` | Struct enumerators over a box of cells, the cells whose centre lies in a circle, and a cell's eight neighbours, for Burst `foreach` loops |
 | `GridRay` | The cells a straight line crosses, in order, with the share of the line where it enters and leaves each (Amanatides and Woo) |
 | `ClearJob<T>` | Clears a native array in parallel; each element type it runs on is registered in its file |
 | `UnitTag`, `BuildingTag` | A movable unit. A static structure |
@@ -42,7 +42,7 @@ An entity's type id is a hash of its display name, so two prefab types must not 
 
 The base tier: live stats with modifiers, in `Simulation/Stats/`. `Stat`, `StatModifier`, `StatSource` and `StatMath`
 define the value formula, and `BaseStat` holds a stat's unmodified value. `StatFieldAttribute` marks the component
-field a stat drives, and `StatBindings` collects those fields for the recompute in [Combat](combat.md#stats).
+field a stat drives, and `StatFieldTable` collects those fields for the recompute in [Combat](combat.md#stats).
 
 ## GameEntities
 

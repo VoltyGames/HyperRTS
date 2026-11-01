@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <HyperRTS.Editor.Common.Section title="Cheats">
+  <HyperRTS.Editor.Common.TitledSection title="Cheats">
     <ui:HelpBox name="status" class="hrts-note" message-type="Info" />
     <ui:VisualElement name="controls">
       <ui:DropdownField name="player" label="Player" />
@@ -22,5 +22,5 @@
       </ui:VisualElement>
       <ui:Slider name="speed" label="Game speed" low-value="0" high-value="4" show-input-field="true" />
     </ui:VisualElement>
-  </HyperRTS.Editor.Common.Section>
+  </HyperRTS.Editor.Common.TitledSection>
 </ui:UXML>

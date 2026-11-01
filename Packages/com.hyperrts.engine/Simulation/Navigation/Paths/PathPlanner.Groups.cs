@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             if (members.Length >= GroupFields.MinMembers)
             {
                 var region = access.Region(Query(first, access).From);
-                var center = _grid.Frame.Cell(centroid / members.Length);
+                var center = _grid.Grid.Cell(centroid / members.Length);
                 if (access.TryFindNearest(center, GridPathfinder.ReachableSearchRadius, region, out var goal))
                 {
                     cost = Join(key, access, members, region, goal);
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         private float Join(int2 key, in NavAccess access, NativeList<int> members, int region, int2 goal)
         {
-            var anchor = _grid.Frame.CenterPoint(goal);
+            var anchor = _grid.Grid.CenterPoint(goal);
             var joiners = new NativeList<int2>(members.Length, Allocator.Temp);
             var radius = 0f;
             foreach (var member in members)

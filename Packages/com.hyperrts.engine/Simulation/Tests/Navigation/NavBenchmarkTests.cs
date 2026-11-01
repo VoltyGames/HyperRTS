@@ -105,7 +105,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var full = BenchmarkKit.Median("FullBuild", _world.UpdateSystem<NavFieldSystem>, () =>
             {
                 var grid = _world.Grid();
-                grid.Field.MarkDirty(int2.zero, grid.Frame.Size - 1);
+                grid.Field.MarkDirty(int2.zero, grid.Grid.Size - 1);
             }, null, "NavFieldSystem.Rebuild", "NavSectors.Relabel", "NavSectors.Connect", "FlowField.Build");
 
             var random = new Random(5);

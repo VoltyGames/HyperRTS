@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         /// <summary>The thickest haze, in multiples of the weather's own fog density.</summary>
         public const float Most = 4f;
 
-        private readonly GridFrame _grid;
+        private readonly CellGrid _grid;
         private readonly int2 _roll;
         private NativeArray<float> _amounts;
         private NativeArray<float> _drifted;
@@ -36,7 +36,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         {
             Side = side;
             CellSize = side / Cells;
-            _grid = new GridFrame(min, CellSize, new int2(Cells, Cells));
+            _grid = new CellGrid(min, CellSize, new int2(Cells, Cells));
             // The fog samples the texture from world zero, repeating every side, so the map's cells shift round it.
             _roll = (int2)math.round(min / CellSize);
             _amounts = new NativeArray<float>(Cells * Cells, Allocator.Persistent);

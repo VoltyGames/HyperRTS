@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Vision
     {
         /// <summary>Keeps the last stamp to compare with before blocks stamp again.</summary>
         [BurstCompile]
-        private struct KeepJob : IJob
+        private struct SavePreviousJob : IJob
         {
             [ReadOnly] public SightBlockers Blockers;
             public NativeArray<SightCell> Previous;
@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Vision
                 {
                     if (Blockers.Cells[i].BlocksUnlike(Previous[i]))
                     {
-                        Blockers.MarkDirty(Blockers.Frame.Cell(i));
+                        Blockers.MarkDirty(Blockers.Grid.Cell(i));
                     }
                 }
             }
@@ -60,9 +60,9 @@ namespace HyperRTS.Simulation.Vision
 
             public void Execute(int index)
             {
-                var frame = Blockers.Frame;
+                var grid = Blockers.Grid;
                 var cell = Blockers.Cells[index];
-                cell.Ground = Terrain.Height(frame.Center(frame.Cell(index)));
+                cell.Ground = Terrain.Height(grid.Center(grid.Cell(index)));
                 Blockers.Cells[index] = cell;
             }
         }
@@ -94,13 +94,13 @@ namespace HyperRTS.Simulation.Vision
             public void Execute()
             {
                 ref var crops = ref Crops.Blob.Value;
-                var fog = Blockers.Frame;
+                var fog = Blockers.Grid;
                 var cells = Blockers.Cells;
                 var sums = new NativeArray<int>(cells.Length, Allocator.Temp);
-                foreach (var crop in crops.Frame.Cells(int2.zero, crops.Frame.Size - 1))
+                foreach (var crop in crops.Grid.Cells(int2.zero, crops.Grid.Size - 1))
                 {
-                    var index = crops.Frame.Index(crop);
-                    var cell = fog.Cell(crops.Frame.Center(crop));
+                    var index = crops.Grid.Index(crop);
+                    var cell = fog.Cell(crops.Grid.Center(crop));
                     if (crops.Density[index] == 0 || !fog.Contains(cell))
                     {
                         continue;
@@ -113,7 +113,7 @@ namespace HyperRTS.Simulation.Vision
                     cells[target] = sight;
                 }
 
-                var perCell = math.max(1f, math.square(fog.CellSize / crops.Frame.CellSize));
+                var perCell = math.max(1f, math.square(fog.CellSize / crops.Grid.CellSize));
                 for (var i = 0; i < sums.Length; i++)
                 {
                     var sight = cells[i];

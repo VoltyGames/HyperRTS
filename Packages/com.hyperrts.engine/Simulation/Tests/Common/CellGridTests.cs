@@ -6,14 +6,14 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Tests.Common
 {
     /// <summary>Grid edge cases: rays along a cell border and through corners, and cell sets at the grid's edge.</summary>
-    public class GridFrameTests
+    public class CellGridTests
     {
-        private static readonly GridFrame Frame = new(new float2(-4f, -4f), 2f, new int2(4, 4));
+        private static readonly CellGrid Grid = new(new float2(-4f, -4f), 2f, new int2(4, 4));
 
         private static List<(int2 Cell, float Entry, float Exit, bool Corner)> Walk(float2 from, float2 to)
         {
             var crossed = new List<(int2, float, float, bool)>();
-            var ray = new GridRay(Frame, from, to);
+            var ray = new GridRay(Grid, from, to);
             while (ray.MoveNext())
             {
                 crossed.Add((ray.Cell, ray.Entry, ray.Exit, ray.CrossedCorner));
@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Tests.Common
         public void Cells_OffTheGridEdge_AreDropped()
         {
             var circle = new List<int2>();
-            foreach (var cell in Frame.CellsInCircle(new float2(-4f, -4f), 2.5f))
+            foreach (var cell in Grid.CellsInCircle(new float2(-4f, -4f), 2.5f))
             {
                 circle.Add(cell);
             }
@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Tests.Common
             CollectionAssert.AreEqual(new[] { new int2(0, 0) }, circle, "only centres within the radius count");
 
             var offsets = new List<int2>();
-            foreach (var offset in new Neighbours())
+            foreach (var offset in new NeighbourOffsets())
             {
                 offsets.Add(offset);
             }

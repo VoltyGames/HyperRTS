@@ -9,10 +9,10 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
-    /// <summary>A selected unit's sight patch: green where it sees the ground, blue where only a tall target shows, yellow within close range.</summary>
-    public sealed class SightPatchLayer : CellTextureLayer
+    /// <summary>A selected unit's sight area: green where it sees the ground, blue where only a tall target shows, yellow within close range.</summary>
+    public sealed class SightAreaLayer : CellTextureLayer
     {
-        public override string Label => "Sight patch (selected unit)";
+        public override string Label => "Sight area (selected unit)";
 
         // Selection only exists in the world the player looks at.
         public override WorldSystemFilterFlags Source => SimulationWorlds.Presented;
@@ -24,48 +24,48 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            using var query = entityManager.CreateEntityQuery(typeof(SightPatch), typeof(SightPatchBits), typeof(Selected));
+            using var query = entityManager.CreateEntityQuery(typeof(SightArea), typeof(SightAreaBits), typeof(Selected));
             using var units = query.ToEntityArray(Allocator.Temp);
             if (units.Length == 0)
             {
                 return false;
             }
 
-            var patch = entityManager.GetComponentData<SightPatch>(units[0]);
-            if (patch.Radius < 0)
+            var area = entityManager.GetComponentData<SightArea>(units[0]);
+            if (area.Radius < 0)
             {
                 return false;
             }
 
-            var frame = new GridFrame(fog.Frame.Min + (float2)patch.Origin * fog.Frame.CellSize, fog.Frame.CellSize, new int2(patch.Width));
-            var bits = entityManager.GetBuffer<SightPatchBits>(units[0], true).Reinterpret<ulong>().AsNativeArray();
-            texture.Paint(frame, new Colors { Patch = patch, Bits = bits });
+            var grid = new CellGrid(fog.Grid.Min + (float2)area.Origin * fog.Grid.CellSize, fog.Grid.CellSize, new int2(area.Width));
+            var bits = entityManager.GetBuffer<SightAreaBits>(units[0], true).Reinterpret<ulong>().AsNativeArray();
+            texture.Paint(grid, new Colors { Area = area, Bits = bits });
             return true;
         }
 
         private struct Colors : ICellColors
         {
-            public SightPatch Patch;
+            public SightArea Area;
             [ReadOnly] public NativeArray<ulong> Bits;
 
             public Color32 At(int index)
             {
-                var x = index % Patch.Width;
-                var y = index / Patch.Width;
-                if (Has(SightPatch.Ground, x, y))
+                var x = index % Area.Width;
+                var y = index / Area.Width;
+                if (Has(SightArea.Ground, x, y))
                 {
                     return new Color32(77, 255, 102, 110);
                 }
 
-                if (Has(SightPatch.Tall, x, y))
+                if (Has(SightArea.Tall, x, y))
                 {
                     return new Color32(80, 170, 255, 110);
                 }
 
-                return Has(SightPatch.Close, x, y) ? new Color32(255, 220, 60, 90) : default;
+                return Has(SightArea.Close, x, y) ? new Color32(255, 220, 60, 90) : default;
             }
 
-            private bool Has(int layer, int x, int y) => (Bits[Patch.Word(layer, y, x >> 6)] & (1ul << (x & 63))) != 0;
+            private bool Has(int layer, int x, int y) => (Bits[Area.Word(layer, y, x >> 6)] & (1ul << (x & 63))) != 0;
         }
     }
 }

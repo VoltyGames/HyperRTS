@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public float2 Normal(float2 position) => Grid.Field.Normal(_slot, position);
 
         /// <summary>Whether the class may stand on the cell's centre.</summary>
-        public bool IsOpen(int2 cell) => Grid.Frame.Contains(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
+        public bool IsOpen(int2 cell) => Grid.Grid.Contains(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
 
         /// <summary>The connected region of a cell for this class; 0 when closed or off the grid.</summary>
         public int Region(int2 cell) => Grid.Sectors.Region(ClassIndex, cell);
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public bool TryFindStart(int2 startCell, float3 start, float3 goal, out int2 from)
         {
             var rings = GridPathfinder.NearestSearchRadius;
-            startCell = Grid.Frame.Clamp(startCell);
+            startCell = Grid.Grid.Clamp(startCell);
             if (IsOpen(startCell))
             {
                 from = startCell;
@@ -126,14 +126,14 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>The region of the open cell nearest <paramref name="point"/>; 0 when none is near.</summary>
         public int NearestRegion(float3 point)
         {
-            var cell = Grid.Frame.Cell(point);
+            var cell = Grid.Grid.Cell(point);
             return TryFindNearest(cell, GridPathfinder.NearestSearchRadius, out var open) ? Region(open) : 0;
         }
 
         // Ring search; with a clearance, a cell also needs a straight line to it from the origin that keeps it.
         private bool TryFindNearest(int2 cell, int rings, in NearestFilter filter, out int2 found)
         {
-            cell = Grid.Frame.Clamp(cell);
+            cell = Grid.Grid.Clamp(cell);
             found = cell;
             if (IsCandidate(filter, cell))
             {
@@ -166,7 +166,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>The same walk, each cell reading at least <paramref name="clearance"/> from walls.</summary>
         public bool HasLineOfSight(float3 from, float3 to, float clearance)
         {
-            var ray = new GridRay(Grid.Frame, from.xz, to.xz);
+            var ray = new GridRay(Grid.Grid, from.xz, to.xz);
             ray.MoveNext();
             var clear = IsClear(ray.Cell, clearance);
             while (clear && ray.MoveNext())
@@ -202,7 +202,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
             }
 
             return filter.Clearance == AnyClearance ||
-                   HasLineOfSight(filter.Origin, Grid.Frame.CenterPoint(cell), filter.Clearance);
+                   HasLineOfSight(filter.Origin, Grid.Grid.CenterPoint(cell), filter.Clearance);
         }
 
         // Which cells a ring search keeps: open ones in the region, and with a clearance only those a straight line
@@ -223,6 +223,6 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
         private bool IsOpenIn(int region, int2 cell) => (region == AnyRegion || Region(cell) == region) && IsOpen(cell);
 
-        private bool IsClear(int2 cell, float clearance) => Grid.Frame.Contains(cell) && Distance(cell) >= clearance;
+        private bool IsClear(int2 cell, float clearance) => Grid.Grid.Contains(cell) && Distance(cell) >= clearance;
     }
 }

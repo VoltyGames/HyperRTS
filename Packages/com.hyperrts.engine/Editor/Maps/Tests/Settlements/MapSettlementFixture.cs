@@ -100,7 +100,7 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             }
 
             var issues = new MapIssues();
-            var layout = MapExpander.Expand(spec, issues);
+            var layout = MapSymmetryCopier.Expand(spec, issues);
             Palette = MakePalette(edit);
             var climate = MakeClimate();
             var shapes = new MapShapes(layout, Palette, climate);

@@ -94,8 +94,8 @@ namespace HyperRTS.Simulation.Navigation.Fields
             var here = Cost(cell);
             var bestCost = float.PositiveInfinity;
             best = cell;
-            var block = new CellBlock(access, cell);
-            foreach (var offset in new Neighbours())
+            var block = new CellNeighbourhood(access, cell);
+            foreach (var offset in new NeighbourOffsets())
             {
                 var next = cell + offset;
                 var cost = Cost(next);
@@ -125,8 +125,8 @@ namespace HyperRTS.Simulation.Navigation.Fields
             {
                 var cell = Corridor.Cell(index);
                 var cost = search.Costs[index];
-                var block = new CellBlock(Access, cell);
-                foreach (var offset in new Neighbours())
+                var block = new CellNeighbourhood(Access, cell);
+                foreach (var offset in new NeighbourOffsets())
                 {
                     var at = Corridor.Index(index, cell, offset);
                     if (at >= 0 && block.CanStepIn(offset))

@@ -80,7 +80,7 @@ namespace HyperRTS.Editor.Maps.Hints
             var next = Spacing;
             for (var i = 1; i < path.Cells.Count; i++)
             {
-                travelled += math.distance(path.Cells[i - 1], path.Cells[i]) * nav.Grid.Frame.CellSize;
+                travelled += math.distance(path.Cells[i - 1], path.Cells[i]) * nav.Grid.Grid.CellSize;
                 if (travelled < next)
                 {
                     continue;

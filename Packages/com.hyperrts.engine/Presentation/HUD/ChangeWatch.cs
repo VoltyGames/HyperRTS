@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.HUD
         private ComponentType[] Types => _resolved ??= _types();
 
         /// <summary>True on the first look in a world and whenever something watched changed since the last one.</summary>
-        public bool Moved(EntityManager entityManager)
+        public bool Changed(EntityManager entityManager)
         {
             var first = entityManager.World != _world;
             var query = _query.In(entityManager);

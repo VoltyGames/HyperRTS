@@ -13,10 +13,10 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         /// <summary>
         /// For every cell, its piece's cell count and its piece's largest <paramref name="edge"/> distance (0 off fields).
         /// </summary>
-        public static (MapField<int> Sizes, MapField<float> Reach) Measure(MapField<int> fields, MapField<float> edge)
+        public static (MapValues<int> Sizes, MapValues<float> Reach) Measure(MapValues<int> fields, MapValues<float> edge)
         {
-            var sizes = new MapField<int>(fields.Grid);
-            var reach = new MapField<float>(fields.Grid);
+            var sizes = new MapValues<int>(fields.Grid);
+            var reach = new MapValues<float>(fields.Grid);
             var piece = new List<int>();
             var queue = new Queue<int>();
             for (var start = 0; start < fields.Grid.Count; start++)
@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             return (sizes, reach);
         }
 
-        private static void Flood(MapField<int> fields, int start, int[] sizes, List<int> piece, Queue<int> queue)
+        private static void Flood(MapValues<int> fields, int start, int[] sizes, List<int> piece, Queue<int> queue)
         {
             var grid = fields.Grid;
             var width = grid.Width;
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             {
                 var cell = queue.Dequeue();
                 piece.Add(cell);
-                var at = grid.Frame.Cell(cell);
+                var at = grid.Cells.Cell(cell);
                 Visit(fields, sizes, queue, field, at.x > 0 ? cell - 1 : -1);
                 Visit(fields, sizes, queue, field, at.x < width - 1 ? cell + 1 : -1);
                 Visit(fields, sizes, queue, field, at.y > 0 ? cell - width : -1);
@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
             }
         }
 
-        private static void Visit(MapField<int> fields, int[] sizes, Queue<int> queue, int field, int cell)
+        private static void Visit(MapValues<int> fields, int[] sizes, Queue<int> queue, int field, int cell)
         {
             if (cell < 0 || sizes[cell] != 0 || fields[cell] != field)
             {

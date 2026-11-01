@@ -14,15 +14,15 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Metres each cell's ground stands above the mean within <see cref="SightRules.Radius"/>.</summary>
         public NativeArray<float> Rise;
 
-        public GridFrame Frame;
+        public CellGrid Grid;
         public SightRules Rules;
 
         public readonly bool IsCreated => Rise.IsCreated;
 
         public readonly float RiseAt(float3 position)
         {
-            var cell = Frame.Cell(position);
-            return Frame.Contains(cell) ? Rise[Frame.Index(cell)] : 0f;
+            var cell = Grid.Cell(position);
+            return Grid.Contains(cell) ? Rise[Grid.Index(cell)] : 0f;
         }
 
         /// <summary>What a viewer's sight range is multiplied by there; 1 off high ground or without a grid.</summary>

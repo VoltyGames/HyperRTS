@@ -127,8 +127,8 @@ namespace HyperRTS.Simulation.Navigation.Paths
         {
             var cell = _corridor.Cell(parent);
             var cost = _costs[parent];
-            var block = new CellBlock(access, cell);
-            foreach (var offset in new Neighbours())
+            var block = new CellNeighbourhood(access, cell);
+            foreach (var offset in new NeighbourOffsets())
             {
                 var index = _corridor.Index(parent, cell, offset);
                 if (index < 0 || _marks[index] == Closed || !block.CanStepOut(offset))

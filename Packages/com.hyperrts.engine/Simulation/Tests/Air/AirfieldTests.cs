@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Tests.Air
 
             Assert.AreEqual(80f, World.GetHealth(tank), "two rounds, then it held fire");
             Assert.Less(math.distance(World.GetPosition(aircraft).xz, Pad.xz), 0.6f, "back on its pad");
-            Assert.AreEqual(aircraft, World.Buffer<LandingPad>(airfield)[0].Lease.Holder);
+            Assert.AreEqual(aircraft, World.Buffer<LandingPad>(airfield)[0].Reservation.Holder);
 
             World.Run(1.5f);
             Assert.AreEqual(0f, World.GetPosition(aircraft).y, 1e-3f, "landed");
@@ -158,7 +158,7 @@ namespace HyperRTS.Simulation.Tests.Air
             Assert.IsTrue(World.RunUntil(() => World.IsEnabled<Docked>(aircraft), 6f), "docks");
 
             Assert.AreEqual(second, World.Get<HomePad>(aircraft).Airfield);
-            Assert.AreEqual(aircraft, World.Buffer<LandingPad>(second)[0].Lease.Holder);
+            Assert.AreEqual(aircraft, World.Buffer<LandingPad>(second)[0].Reservation.Holder);
             Assert.Less(math.distance(World.GetPosition(aircraft).xz, new float2(25f, 0f)), 0.6f);
         }
 
@@ -169,12 +169,12 @@ namespace HyperRTS.Simulation.Tests.Air
             var aircraft = World.AddPadUser(World.SpawnAircraft(1, Pad));
             World.Set(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
             World.Run(0.5f);
-            Assert.AreEqual(aircraft, World.Buffer<LandingPad>(airfield)[0].Lease.Holder);
+            Assert.AreEqual(aircraft, World.Buffer<LandingPad>(airfield)[0].Reservation.Holder);
 
             World.EntityManager.DestroyEntity(aircraft);
             World.Run(0.5f);
 
-            Assert.IsTrue(World.Buffer<LandingPad>(airfield)[0].Lease.IsFree);
+            Assert.IsTrue(World.Buffer<LandingPad>(airfield)[0].Reservation.IsFree);
         }
 
         /// <summary>An aircraft with an unlimited gun and a two-round missile mount, and a tank to shoot.</summary>

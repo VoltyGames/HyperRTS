@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
         private Entity Give(Entity entity, Ability ability, float cooldownRemaining = 0f) =>
             World.GiveAbility(entity, ability, cooldownRemaining);
 
-        private float Cooldown(Entity entity) => World.Buffer<AbilityState>(entity)[0].CooldownRemaining;
+        private float Cooldown(Entity entity) => World.Buffer<AbilityCooldown>(entity)[0].Remaining;
 
         private DynamicBuffer<AbilityActivation> Events()
         {

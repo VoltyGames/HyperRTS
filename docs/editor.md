@@ -165,7 +165,7 @@ sheet of its own adds it in its constructor with `EditorAssets.Sheet(name)`, as 
 shared sheet holds the layout classes and the colour tokens the feature sheets use: `--hrts-border` and
 `--hrts-dim-text` alias Unity's editor theme variables, so the light skin follows, and `--hrts-error`,
 `--hrts-warning` and `--hrts-note` read on both skins. Lists and trees use Unity's own selection colour. The shared
-controls are `Section` (a titled block, `title="Bot matches"`), `FigureList` (name and value rows, filled with
+controls are `Section` (a titled block, `title="Bot matches"`), `ValueList` (name and value rows, filled with
 `Set`) and `PageShell`. `EditorAssets.Layout(type, part)` finds
 `<Type><part>.uxml` in the type's package, caches it and throws when it is missing. Rows built from data clone a row
 template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
@@ -254,7 +254,7 @@ The **HyperRTS Debug** overlay in the Scene view toggles these layers; each is a
 | Sectors | Connected regions of the first movement class, white where a region ends |
 | Flow field | Cost to the goal of the latest group field, as repeating bands |
 | Fog | Cells the local team sees |
-| Sight patch | The selected unit's sight: ground, tall-only and close cells |
+| Sight area | The selected unit's sight: ground, tall-only and close cells |
 | Sight blockers | Solid, porous or crop, and other concealing cells |
 | High ground | Rise above the surrounding ground, scaled by the sight bonus |
 | Spatial cells | Spatial index cells holding an entity |
@@ -264,7 +264,7 @@ The pathfinder totals (`PathStats`) cover all units, not the selected one. AI la
 thinks next and its attack wave size.
 
 To add a grid view, subclass `CellTextureLayer` and implement `Paint`: give `CellTexture.Paint` the grid's
-`GridFrame` and a struct implementing `ICellColors`, which maps a cell index to a `Color32` from the world's native
+`CellGrid` and a struct implementing `ICellColors`, which maps a cell index to a `Color32` from the world's native
 arrays. A Burst job fills one texture, which is drawn as a single quad, so a layer costs one upload per repaint
 whatever the grid size. For anything else subclass `DebugLayer`. Layers read the authoritative world unless they
 override `Source`.

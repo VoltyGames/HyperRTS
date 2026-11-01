@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Resources
         {
             // A vehicle drives into a bay of the target's dock, waiting in line while every bay is taken, and first
             // finishes leaving the bay it worked at; anything else walks to the edge.
-            private WalkUp Arrive(Entity target, Entity entity, ref HarvestState harvest, MoveControl move,
+            private ApproachState Arrive(Entity target, Entity entity, ref HarvestState harvest, MoveControl move,
                 in LocalTransform transform, in NavAgent agent)
             {
                 if (IsLeaving(target, entity, ref harvest, ref move.Destination.ValueRW, transform, agent))
@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Resources
                     Reach.Approach(target, transform, agent, move);
                     move.Destination.ValueRW.ExitRun =
                         Bays.Pose(harvest.Dock, harvest.Bay).ExitRun(transform.Position.xz);
-                    return WalkUp.Walking;
+                    return ApproachState.Walking;
                 }
 
                 if (!agent.UsesBays || !Bays.Has(target))
@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Resources
                 if (!HoldsBay(target, entity, ref harvest, transform))
                 {
                     WaitInLine(target, ref harvest, move, transform, agent);
-                    return WalkUp.Walking;
+                    return ApproachState.Walking;
                 }
 
                 var facing = math.normalizesafe(transform.Forward().xz);
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Resources
                 var holds = harvest.Place == 0 && Bays.Has(dock) && Bays.Occupant(dock, harvest.Bay) == entity;
                 if (holds && !Bays.Pose(dock, harvest.Bay).IsClear(transform.Position.xz, agent.HalfLength * 2f))
                 {
-                    Bays.Hold(dock, harvest.Bay, entity);
+                    Bays.Reserve(dock, harvest.Bay, entity);
                     return true;
                 }
 
@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Resources
                 var waits = harvest.Dock == dock && harvest.Place > 0;
                 if (harvest.Dock == dock && !waits && Bays.Occupant(dock, harvest.Bay) == entity)
                 {
-                    Bays.Hold(dock, harvest.Bay, entity);
+                    Bays.Reserve(dock, harvest.Bay, entity);
                     return true;
                 }
 

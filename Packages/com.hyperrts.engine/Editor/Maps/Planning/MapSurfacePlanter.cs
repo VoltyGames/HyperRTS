@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Planning
 
         // Metres between a prop's footprint and the centre of the nearest tree, so props fit between wood trees.
         private const float TreeClearance = 0.5f;
-        private MapField<float> _edges;
+        private MapValues<float> _edges;
 
         public MapSurfacePlanter(MapPlanContext context) : base(context)
         {

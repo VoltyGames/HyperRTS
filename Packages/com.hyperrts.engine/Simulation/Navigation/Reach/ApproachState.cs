@@ -1,7 +1,7 @@
 namespace HyperRTS.Simulation.Navigation.Reach
 {
     /// <summary>Where a walk up to a target stands this frame.</summary>
-    public enum WalkUp : byte
+    public enum ApproachState : byte
     {
         Walking = 0,
         Reached = 1,

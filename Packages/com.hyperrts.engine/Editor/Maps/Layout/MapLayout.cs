@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Layout
 {
-    /// <summary>The whole map after <see cref="MapExpander"/> copied the authored sector: every feature in map space.</summary>
+    /// <summary>The whole map after <see cref="MapSymmetryCopier"/> copied the authored sector: every feature in map space.</summary>
     public sealed class MapLayout
     {
         public MapLayout(MapSpec spec, MapSymmetry symmetry)

@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             public void Execute()
             {
                 using var marker = SortMarker.Auto();
-                var cells = Index.Frame.Count;
+                var cells = Index.Grid.Count;
                 var starts = Index.CellStarts;
                 starts.Resize(cells + 1, NativeArrayOptions.UninitializedMemory);
                 for (var i = 0; i <= cells; i++)
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             // head-on crowd scenarios settle in; the old hash order differed from run to run.
             private void Scatter(NativeList<int> starts)
             {
-                var cells = Index.Frame.Count;
+                var cells = Index.Grid.Count;
                 Index.Entries.ResizeUninitialized(starts[cells]);
                 for (var i = Snapshots.Length - 1; i >= 0; i--)
                 {

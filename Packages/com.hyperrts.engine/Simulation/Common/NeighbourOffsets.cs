@@ -3,7 +3,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>The offsets to a cell's eight neighbours, row by row from the one below-left.</summary>
-    public readonly struct Neighbours
+    public readonly struct NeighbourOffsets
     {
         public Enumerator GetEnumerator() => default;
 

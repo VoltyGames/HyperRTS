@@ -46,7 +46,7 @@ relations and colours.
 `Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Trampling`,
 `Fire`, `Weather` (atmosphere, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`, `RowCrops`,
 `Scatter`, `Shading`) and `Ambient`. `EdgeNoise.png`, which several of them share, stays at the top; their cell grids
-are the simulation's `GridFrame`.
+are the simulation's `CellGrid`.
 `Quality/` holds the knobs the game sets from its graphics options.
 `Effects/` is split into `Rig` (the rig component, its graphs, pools and playback), `Streams` (graph streams, trails,
 dust and rotor wash, and loop effects), `Lights` (effect and loop lights, smoke shadows) and `Shaders` (the Custom HLSL
@@ -330,7 +330,7 @@ fogged ground loses `desaturation` of its colour and darkens toward the fog colo
 they stand while health bars, markers and the placement ghost stay clear. Transparents only darken.
 
 While the Selection map's `SightShape` key (Alt) is held, `SightShapeView` is shown and `SightShape` paints the
-ground the selected units see, from their `SightPatch`es, into a mask the fog pass outlines in `sightShapeColor`. Water and effect
+ground the selected units see, from their `SightArea`es, into a mask the fog pass outlines in `sightShapeColor`. Water and effect
 graphs apply it themselves through `SceneFog.hlsl` and `GraphFogOfWar.hlsl`. Map buildings stay visible, but their flags, dials and
 pips hide under the local fog.
 
@@ -361,9 +361,9 @@ place fly the same on every client. Flying pieces draw in one instanced call per
 material needs GPU instancing on, which the set checks at bake.
 
 A piece at rest moves to `LastingDebris` and stays for the match. `LastingDebris.CapAt` sets the cap: 20,000
-pieces on High, 8,000 on Medium and none on Low. Past the cap the oldest piece sinks into the ground over 5 s and its
-slot is reused; up to 512 sink at once. `LastingDebrisDraws` draws the layer through a `BatchRendererGroup` from GPU
-buffers written only when a piece settles, sinks or goes. In each view `LastingDebrisCulling`, a Burst job, tests every
+pieces on High, 8,000 on Medium and none on Low. Past the cap the oldest piece buries into the ground over 5 s and its
+slot is reused; up to 512 bury at once. `LastingDebrisDraws` draws the layer through a `BatchRendererGroup` from GPU
+buffers written only when a piece settles, buries or goes. In each view `LastingDebrisCulling`, a Burst job, tests every
 piece's bounding sphere against each split's planes (the camera, or every shadow cascade), so pieces off screen and
 outside a cascade are not drawn; a run of one mesh's pieces that share the same splits is one draw. It reads the matrices through the material's DOTS instancing path, so debris materials use a
 shader with DOTS instancing, such as `LitTeam`. Changing effect detail starts the layer over at the new cap. Fogged
@@ -594,7 +594,7 @@ redone whenever a building appears, goes or moves, before that frame's ignitions
 
 `BuildingFootprintSystem` draws every building's turned obstacle box into an R8 mask over the map at nav-cell
 resolution and publishes it as `_HyperRTSFootprints`, with `_HyperRTSFootprintRect` (zero without a map). Like the
-ground picture, the trample maps, the undented heights and the fog grid, it goes through a `WorldGridGlobal`: a
+ground picture, the trample maps, the undented heights and the fog grid, it goes through a `MapTextureGlobal`: a
 texture global and its rect, cleared to black and a zero rect, which shaders read as nothing published. Cells
 within half a cell of a wall count too. Grass and row crops skip plants where it is set, whatever the
 trample-map quality, through `BuildingFootprints.hlsl`. It redraws only when buildings appear or go and their

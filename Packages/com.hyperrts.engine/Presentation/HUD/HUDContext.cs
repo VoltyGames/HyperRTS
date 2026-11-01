@@ -78,8 +78,8 @@ namespace HyperRTS.Presentation.HUD
                 return false;
             }
 
-            PurchasesChanged = _purchases.Moved(EntityManager);
-            if (_selection.Moved(EntityManager))
+            PurchasesChanged = _purchases.Changed(EntityManager);
+            if (_selection.Changed(EntityManager))
             {
                 ReadSelection();
             }

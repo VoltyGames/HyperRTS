@@ -236,7 +236,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             }
 
             // A change past the wall margin can neither block a leg nor make another way cheaper.
-            var margin = math.max(agent.Radius * 2f, agent.WallMargin) + grid.Frame.CellSize;
+            var margin = math.max(agent.Radius * 2f, agent.WallMargin) + grid.Grid.CellSize;
             var from = position.xz;
             for (var i = 0; i < waypoints.Length; i++)
             {
@@ -267,7 +267,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
             var last = waypoints[waypoints.Length - 1];
             var distanceSq = math.distancesq(last.Position.xz, goal.xz);
-            if (distanceSq <= 1e-6f || distanceSq > grid.Frame.CellSize * grid.Frame.CellSize)
+            if (distanceSq <= 1e-6f || distanceSq > grid.Grid.CellSize * grid.Grid.CellSize)
             {
                 return true;
             }

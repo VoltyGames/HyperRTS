@@ -28,18 +28,18 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            texture.Paint(grid.Frame, new Colors { Field = fields[fields.Length - 1].Field, Frame = grid.Frame });
+            texture.Paint(grid.Grid, new Colors { Field = fields[fields.Length - 1].Field, Grid = grid.Grid });
             return true;
         }
 
         private struct Colors : ICellColors
         {
             public FlowField Field;
-            public GridFrame Frame;
+            public CellGrid Grid;
 
             public Color32 At(int index)
             {
-                var cost = Field.Cost(Frame.Cell(index));
+                var cost = Field.Cost(Grid.Cell(index));
                 return cost < float.PositiveInfinity ? CellTexture.Heat(math.frac(cost / Band)) : default;
             }
         }

@@ -71,14 +71,14 @@ namespace HyperRTS.Simulation.Abilities
         {
             public float DeltaTime;
 
-            private void Execute(DynamicBuffer<AbilityState> states)
+            private void Execute(DynamicBuffer<AbilityCooldown> states)
             {
                 for (var i = 0; i < states.Length; i++)
                 {
                     ref var state = ref states.ElementAt(i);
-                    if (state.CooldownRemaining > 0f)
+                    if (state.Remaining > 0f)
                     {
-                        state.CooldownRemaining -= DeltaTime;
+                        state.Remaining -= DeltaTime;
                     }
                 }
             }
@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Abilities
             public EntityCommandBuffer Ecb;
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                DynamicBuffer<Ability> abilities, DynamicBuffer<AbilityState> states, ref MoveDestination destination,
+                DynamicBuffer<Ability> abilities, DynamicBuffer<AbilityCooldown> states, ref MoveDestination destination,
                 EnabledRefRW<MoveDestination> moving, in LocalTransform transform)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.UseAbility)
@@ -109,7 +109,7 @@ namespace HyperRTS.Simulation.Abilities
                 var faction = Factions[entity].Value;
                 var index = AbilityRules.FindAbility(abilities, order.Value.Argument);
                 var target = order.Value.Target;
-                var stateIndex = index < 0 ? -1 : AbilityRules.FindState(states, abilities[index].Id);
+                var stateIndex = index < 0 ? -1 : AbilityRules.FindCooldown(states, abilities[index].Id);
                 if (stateIndex < 0 || !IsUsable(abilities[index], states[stateIndex], target, faction))
                 {
                     ActiveOrder.Finish(busy, moving);
@@ -127,7 +127,7 @@ namespace HyperRTS.Simulation.Abilities
                 Caster.Cast(abilities[index], ref states.ElementAt(stateIndex), entity, faction, target, aim, Ecb);
             }
 
-            private bool IsUsable(in Ability ability, in AbilityState state, Entity target, byte faction) =>
+            private bool IsUsable(in Ability ability, in AbilityCooldown state, Entity target, byte faction) =>
                 AbilityRules.IsUsable(ability, state, target, faction, Completed, Targets, Factions, Relations);
         }
     }

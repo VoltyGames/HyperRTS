@@ -14,14 +14,14 @@ namespace HyperRTS.Editor.Maps.Checks
     /// Checks every <see cref="MapKeyAttribute"/> field of a spec against the climate or palette it is built with,
     /// naming the bad key by its JSON path (<c>belts[1].kind 'Hedge' is not a belt in climate 'Steppe'</c>).
     /// </summary>
-    public sealed class MapSpecKeys : MapKeyCheck
+    public sealed class MapSpecKeyCheck : MapKeyCheck
     {
-        private MapSpecKeys(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
+        private MapSpecKeyCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
         {
         }
 
         public static void Check(MapSpec spec, MapClimate climate, MapPalette palette, MapIssues issues) =>
-            MapLibraryFields.Walk(spec, new MapSpecKeys(climate, palette, issues).Key);
+            MapLibraryFields.Walk(spec, new MapSpecKeyCheck(climate, palette, issues).Key);
 
         private void Key(FieldInfo field, string path, string key)
         {

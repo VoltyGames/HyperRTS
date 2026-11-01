@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Presentation.Fog
 {
     /// <summary>
-    /// Paints the ground the local player's selected units see, from their <see cref="SightPatch"/>es, into a mask the
+    /// Paints the ground the local player's selected units see, from their <see cref="SightArea"/>s, into a mask the
     /// fog pass outlines while <see cref="SightShapeView"/> is shown.
     /// </summary>
     public sealed class SightShape : IDisposable
@@ -24,8 +24,8 @@ namespace HyperRTS.Presentation.Fog
 
         private readonly LiveSingleton<SightShapeView> _view = new();
         private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<Selected>(), ComponentType.ReadOnly<SightPatch>(),
-            ComponentType.ReadOnly<SightPatchBits>(), ComponentType.ReadOnly<Faction>()));
+            ComponentType.ReadOnly<Selected>(), ComponentType.ReadOnly<SightArea>(),
+            ComponentType.ReadOnly<SightAreaBits>(), ComponentType.ReadOnly<Faction>()));
         private Texture2D _mask;
 
         /// <summary>Paints and publishes the outline, or hides it when not shown.</summary>
@@ -62,10 +62,10 @@ namespace HyperRTS.Presentation.Fog
 
         private void Paint(EntityManager entityManager, in FogOfWar fog, byte viewer)
         {
-            if (_mask == null || _mask.width != fog.Frame.Size.x || _mask.height != fog.Frame.Size.y)
+            if (_mask == null || _mask.width != fog.Grid.Size.x || _mask.height != fog.Grid.Size.y)
             {
                 DestroyMask();
-                _mask = new Texture2D(fog.Frame.Size.x, fog.Frame.Size.y, TextureFormat.R8, false, true)
+                _mask = new Texture2D(fog.Grid.Size.x, fog.Grid.Size.y, TextureFormat.R8, false, true)
                 {
                     name = "Sight Shape",
                     filterMode = FilterMode.Bilinear,
@@ -81,14 +81,14 @@ namespace HyperRTS.Presentation.Fog
             using var units = query.ToEntityArray(Allocator.Temp);
             foreach (var unit in units)
             {
-                var patch = entityManager.GetComponentData<SightPatch>(unit);
-                if (entityManager.GetComponentData<Faction>(unit).Value != viewer || patch.Radius < 0)
+                var area = entityManager.GetComponentData<SightArea>(unit);
+                if (entityManager.GetComponentData<Faction>(unit).Value != viewer || area.Radius < 0)
                 {
                     continue;
                 }
 
-                var words = entityManager.GetBuffer<SightPatchBits>(unit, true).Reinterpret<ulong>().AsNativeArray();
-                new PaintJob { Pixels = pixels, Words = words, Patch = patch, Size = fog.Frame.Size }.Run();
+                var words = entityManager.GetBuffer<SightAreaBits>(unit, true).Reinterpret<ulong>().AsNativeArray();
+                new PaintJob { Pixels = pixels, Words = words, Area = area, Size = fog.Grid.Size }.Run();
             }
 
             _mask.Apply(false);
@@ -113,17 +113,17 @@ namespace HyperRTS.Presentation.Fog
         {
             public NativeArray<byte> Pixels;
             [ReadOnly] public NativeArray<ulong> Words;
-            public SightPatch Patch;
+            public SightArea Area;
             public int2 Size;
 
             public void Execute()
             {
-                for (var row = 0; row < Patch.Width; row++)
+                for (var row = 0; row < Area.Width; row++)
                 {
-                    for (var column = 0; column < Patch.Width; column++)
+                    for (var column = 0; column < Area.Width; column++)
                     {
-                        var cell = Patch.Origin + new int2(column, row);
-                        var word = Words[Patch.Word(SightPatch.Ground, row, column >> 6)];
+                        var cell = Area.Origin + new int2(column, row);
+                        var word = Words[Area.Word(SightArea.Ground, row, column >> 6)];
                         var inside = math.all(cell >= 0 & cell < Size);
                         if (inside && (word & (1ul << (column & 63))) != 0)
                         {

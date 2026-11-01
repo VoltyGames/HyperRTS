@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            texture.Paint(blockers.Frame, new Colors { Cells = blockers.Cells });
+            texture.Paint(blockers.Grid, new Colors { Cells = blockers.Cells });
             return true;
         }
 

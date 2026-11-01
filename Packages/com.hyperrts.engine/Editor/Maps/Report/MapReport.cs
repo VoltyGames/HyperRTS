@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Report
         public List<MapIssueFeature> warningFeatures = new();
 
         public MapMetrics metrics;
-        public MapLandFigures land;
+        public MapLandShares land;
 
         /// <summary>Milliseconds per build stage, so a slow painter shows.</summary>
         public List<MapStageTime> stages = new();

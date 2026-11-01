@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.Environment.Ground
         private static readonly int DepthScaleId = Shader.PropertyToID("_DepthScale");
 
         /// <summary>The heights from before any crater, which sinking shaders measure an object's height above.</summary>
-        public static readonly WorldGridGlobal Undented = new("_HyperRTSUndentedHeights", "_HyperRTSUndentedArea");
+        public static readonly MapTextureGlobal Undented = new("_HyperRTSUndentedHeights", "_HyperRTSUndentedArea");
         public static readonly int UndentedScaleId = Shader.PropertyToID("_HyperRTSUndentedScale");
 
         private readonly TerrainData _data;

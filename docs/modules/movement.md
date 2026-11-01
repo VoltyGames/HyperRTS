@@ -90,7 +90,7 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
 - The extra cell stays: a footprint closes every cell it overlaps, and a rotated one's closed cells are no box, so
   one cell bounds them without asking the grid.
 - A walk-up whose move locomotion ends by itself short of the target, given up or at the end of a path that can't
-  get there, is `WalkUp.Stuck`, and build, repair, capture, board and gather finish their order. A target that moved
+  get there, is `ApproachState.Stuck`, and build, repair, capture, board and gather finish their order. A target that moved
   off is walked to again. A new order clears the last one's `Arrival`.
 - `SpatialIndex` answers fast range queries over living entities: a grid of 8 m cells over the map, rebuilt each
   frame by a parallel snapshot and a counting sort, so a query scans each row of cells as one run and meets
@@ -127,7 +127,7 @@ stretch past it as drawn (`PathState.PartlyPlanned`), planned once its planned p
   the step to it, may overlap walls only while the overlap shrinks, so a wedged start plans its way out. Steps cost
   their length times the wall-margin cell cost, twice in reverse, plus two hull lengths per gear change and a little
   per change of steer.
-- **Guide.** A `DriveGuide` gives each window cell its cost to the goal for a disc the hull's width, by the same
+- **Guide.** A `DriveHeuristic` gives each window cell its cost to the goal for a disc the hull's width, by the same
   `ReverseDijkstra` as flow fields, whose queue is buckets half the cheapest step wide. A turn where walls crowd the
   hull (within a turn radius of them) costs its arc up to 16 times over, so the guide prefers routes the hull can turn
   on, and a pose facing off the way its cell's route leaves pays a quarter of that turn. A pose goal in a lane, walls on
@@ -186,7 +186,7 @@ ignore each other, aircraft included. The same query feeds the overlap fallback,
 along the line between their closest points, half each, until the larger of their two spacings lies between them
 (0.6 m by default, less for infantry). The push only moves spacing about; hulls never meet. Each unit's whole move
 (step, push and way out of walls) closes on each neighbour by at most half the room between their hulls
-(`HullRoom`), so a pair can't meet however the pushes of a packed queue add up. Two parked units, and a mover
+(`HullClearance`), so a pair can't meet however the pushes of a packed queue add up. Two parked units, and a mover
 against an idle ally that gives way, keep the soft push alone, so a packed crowd still flows. A move a wall's slide
 turns back into a neighbour stands. Each formation slot is
 sized by its own unit's footprint, so a tank column doesn't pile up nose to tail and infantry beside it stay close.

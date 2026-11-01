@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
 {
     /// <summary>
     /// Client debris: the bounce integrator, the flying pool's reuse of old pieces, the lasting layer with its cap and
-    /// sinking of the oldest, the instancing check and the quality gate.
+    /// burying of the oldest, the instancing check and the quality gate.
     /// </summary>
     public class DebrisTests
     {
@@ -109,25 +109,25 @@ namespace HyperRTS.Presentation.Tests.Destruction
             }
 
             Assert.AreEqual(2, _lasting.Standing, "the cap holds");
-            Assert.AreEqual(1, _lasting.Sinking);
-            Assert.IsTrue(_lasting.Piece(0).Sinking, "the oldest sinks");
+            Assert.AreEqual(1, _lasting.Burying);
+            Assert.IsTrue(_lasting.Piece(0).Burying, "the oldest buries");
 
-            _lasting.Step(LastingDebris.SinkTime);
-            Assert.AreEqual(0, _lasting.Sinking, "a sunk piece frees its slot");
+            _lasting.Step(LastingDebris.BuryTime);
+            Assert.AreEqual(0, _lasting.Burying, "a buried piece frees its slot");
 
             _lasting.Add(_set, Settled(3));
-            Assert.AreEqual(3f, _lasting.Piece(0).Position.x, "the sunk piece's slot is reused");
+            Assert.AreEqual(3f, _lasting.Piece(0).Position.x, "the buried piece's slot is reused");
             Assert.AreEqual(2, _lasting.Standing);
         }
 
         [Test]
-        public void SinkingPiece_GoesUnderTheGround_OverTheSinkTime()
+        public void BuryingPiece_GoesUnderTheGround_OverTheBuryTime()
         {
-            var piece = new LastingPiece { Rotation = quaternion.identity, Size = 1f, Depth = 0.4f, Sinking = true };
+            var piece = new LastingPiece { Rotation = quaternion.identity, Size = 1f, Depth = 0.4f, Burying = true };
 
-            Assert.AreEqual(-0.2f, piece.Matrix(LastingDebris.SinkTime / 2f).c3.y, 1e-4f);
-            Assert.IsFalse(piece.Sunk(LastingDebris.SinkTime / 2f));
-            Assert.IsTrue(piece.Sunk(LastingDebris.SinkTime));
+            Assert.AreEqual(-0.2f, piece.Matrix(LastingDebris.BuryTime / 2f).c3.y, 1e-4f);
+            Assert.IsFalse(piece.Buried(LastingDebris.BuryTime / 2f));
+            Assert.IsTrue(piece.Buried(LastingDebris.BuryTime));
         }
 
         [Test]

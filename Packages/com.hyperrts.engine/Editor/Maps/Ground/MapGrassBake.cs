@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Maps.Ground
         public void ThinByLayers(MapTextureWeights textureWeights, float[] keep)
         {
             var size = textureWeights.Resolution;
-            MapRows.For(Resolution, z =>
+            MapParallel.ForRows(Resolution, z =>
             {
                 var tz = Mathf.Min(size - 1, z * size / Resolution);
                 for (var x = 0; x < Resolution; x++)

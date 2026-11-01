@@ -171,8 +171,8 @@ namespace HyperRTS.Network.Scenery
             }
 
             // Scenery past the fog grid's edge uses the edge cell; buildings and bridges are seen as tall.
-            var cell = fog.Frame.Clamp(fog.Frame.Cell(position));
-            return fog.IsVisible(fog.Frame.CenterPoint(cell), (byte)team, true);
+            var cell = fog.Grid.Clamp(fog.Grid.Cell(position));
+            return fog.IsVisible(fog.Grid.CenterPoint(cell), (byte)team, true);
         }
 
         /// <summary>A change code and broken mask as one team last saw them.</summary>

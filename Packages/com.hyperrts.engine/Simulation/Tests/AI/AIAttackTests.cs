@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Tests.AI
 
             Assert.AreEqual(70f, World.Get<Health>(near).Current, 1e-3f, "the enemy in range was hit");
             Assert.AreEqual(100f, World.Get<Health>(far).Current, 1e-3f, "the one out of range was not");
-            Assert.Greater(World.Buffer<AbilityState>(caster)[0].CooldownRemaining, 0f);
+            Assert.Greater(World.Buffer<AbilityCooldown>(caster)[0].Remaining, 0f);
         }
 
         [Test]

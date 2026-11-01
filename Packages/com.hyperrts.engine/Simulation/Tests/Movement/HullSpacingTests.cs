@@ -185,13 +185,13 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void HullRoom_CutsAMoveTowardANeighbourToHalfTheRoom_AndKeepsOneAwayOrAlongIt()
         {
-            var room = default(HullRoom);
+            var room = default(HullClearance);
             room.Add(new float2(-1f, 0f), 0.4f);
             var move = room.Within(new float2(0.5f, 0.1f));
             Assert.AreEqual(0.2f, move.x, 1e-5f);
             Assert.AreEqual(0.1f, move.y, 1e-5f, "the move along the neighbour stands");
 
-            var touching = default(HullRoom);
+            var touching = default(HullClearance);
             touching.Add(new float2(-1f, 0f), 0f);
             Assert.AreEqual(new float2(-0.3f, 0.2f), touching.Within(new float2(-0.3f, 0.2f)), "away or along");
         }
@@ -199,7 +199,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void HullRoom_SqueezedBetweenTwoTouchingNeighbours_SlidesOutSideways()
         {
-            var room = default(HullRoom);
+            var room = default(HullClearance);
             room.Add(new float2(-1f, 0f), 0f);
             room.Add(new float2(1f, 0f), 0f);
             var move = room.Within(new float2(0.15f, 0.05f));
@@ -210,7 +210,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void HullRoom_AlreadyOverlapping_MayNotCloseFurther()
         {
-            var room = default(HullRoom);
+            var room = default(HullClearance);
             room.Add(new float2(0f, 1f), -0.2f);
             Assert.IsFalse(room.Keeps(new float2(0f, -0.01f)));
             Assert.IsTrue(room.Keeps(new float2(0.1f, 0f)));
@@ -219,7 +219,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void HullRoom_InACornerNoCutFits_Stands()
         {
-            var room = default(HullRoom);
+            var room = default(HullClearance);
             room.Add(math.normalize(new float2(-1f, 1f)), 0f);
             room.Add(math.normalize(new float2(-1f, -1f)), 0f);
             var move = room.Within(new float2(0.2f, 0f));

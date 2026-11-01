@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         private readonly float[] _walked;
         private readonly float[] _lengths;
-        private readonly GridFrame _frame;
+        private readonly CellGrid _grid;
         private readonly int[] _cellStarts;
         private readonly int[] _cellSegments;
 
@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Maps.Geometry
             _walked = new float[segments];
             _lengths = new float[segments];
             Length = Measure();
-            _frame = Frame(segments);
+            _grid = CreateGrid(segments);
             (_cellStarts, _cellSegments) = SortIntoCells(segments);
         }
 
@@ -66,14 +66,14 @@ namespace HyperRTS.Editor.Maps.Geometry
             }
 
             var closest = new Closest { Distance = float.MaxValue, Segment = -1 };
-            var center = _frame.Cell((float2)point);
-            var rings = math.cmax(math.max(center, _frame.Size - 1 - center));
+            var center = _grid.Cell((float2)point);
+            var rings = math.cmax(math.max(center, _grid.Size - 1 - center));
             for (var ring = 0; ring <= rings; ring++)
             {
                 SearchRing(point, center, ring, ref closest);
 
                 // Segments not yet tested lie at least a ring away; the spare ring absorbs rounding, so ties stay found.
-                if (closest.Distance < (ring - 1) * _frame.CellSize)
+                if (closest.Distance < (ring - 1) * _grid.CellSize)
                 {
                     break;
                 }
@@ -101,14 +101,14 @@ namespace HyperRTS.Editor.Maps.Geometry
             return walked;
         }
 
-        private GridFrame Frame(int segments)
+        private CellGrid CreateGrid(int segments)
         {
             var box = MapGeometry.Bounds(Points);
             var extent = math.cmax((float2)box.size);
             var average = segments > 0 ? Length / segments : 0f;
             var cellSize = math.max(average, math.max(extent / MaxCellsAcross, MinCellSize));
             var size = math.max((int2)math.ceil((float2)box.size / cellSize), 1);
-            return new GridFrame(box.min, cellSize, size);
+            return new CellGrid(box.min, cellSize, size);
         }
 
         private (int[] Starts, int[] Segments) SortIntoCells(int segments)
@@ -119,13 +119,13 @@ namespace HyperRTS.Editor.Maps.Geometry
                 AddCrossedCells(segment, entries);
             }
 
-            var starts = new int[_frame.Count + 1];
+            var starts = new int[_grid.Count + 1];
             foreach (var entry in entries)
             {
                 starts[entry.x + 1]++;
             }
 
-            for (var i = 0; i < _frame.Count; i++)
+            for (var i = 0; i < _grid.Count; i++)
             {
                 starts[i + 1] += starts[i];
             }
@@ -144,13 +144,13 @@ namespace HyperRTS.Editor.Maps.Geometry
         {
             var a = Points[segment];
             var b = Points[segment + 1];
-            var cells = _frame.Cells(_frame.Cell((float2)Vector2.Min(a, b)), _frame.Cell((float2)Vector2.Max(a, b)));
+            var cells = _grid.Cells(_grid.Cell((float2)Vector2.Min(a, b)), _grid.Cell((float2)Vector2.Max(a, b)));
             foreach (var cell in cells)
             {
-                var center = (Vector2)_frame.Center(cell);
-                if (MapGeometry.DistanceToSegment(a, b, center) <= _frame.CellSize * CellReach)
+                var center = (Vector2)_grid.Center(cell);
+                if (MapGeometry.DistanceToSegment(a, b, center) <= _grid.CellSize * CellReach)
                 {
-                    entries.Add(new int2(_frame.Index(cell), segment));
+                    entries.Add(new int2(_grid.Index(cell), segment));
                 }
             }
         }
@@ -159,12 +159,12 @@ namespace HyperRTS.Editor.Maps.Geometry
         {
             var min = center - ring;
             var max = center + ring;
-            var rows = math.clamp(new int2(min.y, max.y), 0, _frame.Size.y - 1);
+            var rows = math.clamp(new int2(min.y, max.y), 0, _grid.Size.y - 1);
             for (var z = rows.x; z <= rows.y; z++)
             {
                 if (z == min.y || z == max.y)
                 {
-                    var columns = math.clamp(new int2(min.x, max.x), 0, _frame.Size.x - 1);
+                    var columns = math.clamp(new int2(min.x, max.x), 0, _grid.Size.x - 1);
                     for (var x = columns.x; x <= columns.y; x++)
                     {
                         SearchCell(point, new int2(x, z), ref closest);
@@ -180,12 +180,12 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         private void SearchCell(Vector2 point, int2 cell, ref Closest closest)
         {
-            if (!_frame.Contains(cell))
+            if (!_grid.Contains(cell))
             {
                 return;
             }
 
-            var index = _frame.Index(cell);
+            var index = _grid.Index(cell);
             for (var i = _cellStarts[index]; i < _cellStarts[index + 1]; i++)
             {
                 var segment = _cellSegments[i];

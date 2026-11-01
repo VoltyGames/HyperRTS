@@ -14,8 +14,8 @@ namespace HyperRTS.Simulation.Cues.Surfaces
         public readonly SurfaceMaterial At(float2 position)
         {
             ref var map = ref Blob.Value;
-            var cell = map.Frame.Cell(position);
-            return map.Frame.Contains(cell) ? (SurfaceMaterial)map.Cells[map.Frame.Index(cell)] : SurfaceMaterial.None;
+            var cell = map.Grid.Cell(position);
+            return map.Grid.Contains(cell) ? (SurfaceMaterial)map.Cells[map.Grid.Index(cell)] : SurfaceMaterial.None;
         }
 
         public static GroundMaterials Create(NativeArray<byte> cells, int2 size, float2 min, float spacing,
@@ -29,17 +29,17 @@ namespace HyperRTS.Simulation.Cues.Surfaces
                 stored[i] = cells[i];
             }
 
-            root.Frame = new GridFrame(min, spacing, size);
+            root.Grid = new CellGrid(min, spacing, size);
             var blob = builder.CreateBlobAssetReference<GroundMaterialsBlob>(allocator);
             builder.Dispose();
             return new GroundMaterials { Blob = blob };
         }
     }
 
-    /// <summary>Row-major cells on a <see cref="GridFrame"/> from the map's south-west corner.</summary>
+    /// <summary>Row-major cells on a <see cref="CellGrid"/> from the map's south-west corner.</summary>
     public struct GroundMaterialsBlob
     {
         public BlobArray<byte> Cells;
-        public GridFrame Frame;
+        public CellGrid Grid;
     }
 }

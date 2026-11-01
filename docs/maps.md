@@ -255,7 +255,7 @@ so map captures show Ultra.
 ### Checks and measures
 
 Checks run before anything is refined. `MapAssetCheck` covers the climate and palette, and `MapSpecCheck` covers
-the spec. `MapSpecKeys` walks every `[MapKey]` field of the spec and checks it against the climate and palette the
+the spec. `MapSpecKeyCheck` walks every `[MapKey]` field of the spec and checks it against the climate and palette the
 map builds with, naming the key by its path: `belts[1].kind 'Hedge' is not a belt in climate 'Steppe'`. Settings that only work in some
 places, such as a prop's `besideRoad`, are rejected elsewhere. After the checks, lookups throw, so a missed key
 fails loudly. Once props are placed, `MapPlacements.CheckEntities` makes every prop in the play area an entity: a
@@ -386,6 +386,6 @@ Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a cr
 4. Slot the pass into `MapLandPlanner.Plan` at its priority.
 5. Add a spec class in `Spec/` that derives from `MapFeatureSpec`, implements `IMapPoint` or `IMapLine` and
    carries `[MapFeature(name, order, colour)]`, with `[MapKey]` on its keys. Add its list to `MapSpec` and to
-   `MapLayout`, and one `Points` or `Lines` call in `MapExpander`. `MapSpecKeys` checks its keys, the Map Editor
+   `MapLayout`, and one `Points` or `Lines` call in `MapSymmetryCopier`. `MapSpecKeyCheck` checks its keys, the Map Editor
    lists and draws it from the attribute, and the schema picks it up on the next generator run.
 6. Write EditMode tests: the planner's output on a small layout, and a bad key failing loudly.

@@ -33,11 +33,11 @@ The folders below follow the pipeline, from the data a build reads to what it wr
 
 | Folder | Holds |
 | --- | --- |
-| `Checks/` | `MapAssetCheck`, `MapSpecCheck`, `MapSpecKeys` (every `[MapKey]` field of a spec), `MapKeyCheck`, and `MapRoadChecks` after a build; `MapSpecRule`; `MapRules`, the thresholds per mode and the props a surface should carry, which the checks, report and nav grid measure against |
-| `Common/` | `MapIssues` and `MapIssueFeature`, `MapRandom` and its channels, and `MapRows`, which runs a per-texel painter's rows on worker threads (each row writes only its own texels, so the output matches a serial run to the bit; `MapRowsTests` checks it) |
+| `Checks/` | `MapAssetCheck`, `MapSpecCheck`, `MapSpecKeyCheck` (every `[MapKey]` field of a spec), `MapKeyCheck`, and `MapRoadChecks` after a build; `MapSpecRule`; `MapRules`, the thresholds per mode and the props a surface should carry, which the checks, report and nav grid measure against |
+| `Common/` | `MapIssues` and `MapIssueFeature`, `MapRandom` and its channels, and `MapParallel`, which runs a per-texel painter's rows on worker threads (each row writes only its own texels, so the output matches a serial run to the bit; `MapParallelTests` checks it) |
 | `Refine/` | `MapRefiner`: river meanders, road curves and joins, ravine gullies |
-| `Layout/` | `MapSymmetry`, the sector's copies and how they number slots; `MapExpander` copies the sector into a `MapLayout` |
-| `Geometry/` | `MapShapes` for rivers, roads, ravines and crossings in map space, plus curves and noise. `MapGrid` lays every map grid on a `GridFrame`, with samples on cell corners (heights) or cell centres (land, drainage); `MapField<T>` holds a value per sample and `MapBilinear` blends the four round a point |
+| `Layout/` | `MapSymmetry`, the sector's copies and how they number slots; `MapSymmetryCopier` copies the sector into a `MapLayout` |
+| `Geometry/` | `MapShapes` for rivers, roads, ravines and crossings in map space, plus curves and noise. `MapGrid` lays every map grid on a `CellGrid`, with samples on cell corners (heights) or cell centres (land, drainage); `MapValues<T>` holds a value per sample and `MapBilinear` blends the four round a point |
 
 ## Plan
 

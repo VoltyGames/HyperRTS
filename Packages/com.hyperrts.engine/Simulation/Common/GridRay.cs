@@ -3,7 +3,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>
-    /// Walks the cells a straight line crosses on a <see cref="GridFrame"/>, in order and on or off the grid (Amanatides
+    /// Walks the cells a straight line crosses on a <see cref="CellGrid"/>, in order and on or off the grid (Amanatides
     /// and Woo). Each cell comes with the shares of the line, 0 at the start and 1 at the end, where it enters and
     /// leaves; a line through a corner steps diagonally, skipping the two cells beside it.
     /// </summary>
@@ -16,10 +16,10 @@ namespace HyperRTS.Simulation.Common
         private int2 _cell;
         private bool _started;
 
-        public GridRay(in GridFrame frame, float2 from, float2 to)
+        public GridRay(in CellGrid grid, float2 from, float2 to)
         {
-            var start = frame.Local(from);
-            var delta = frame.Local(to) - start;
+            var start = grid.Local(from);
+            var delta = grid.Local(to) - start;
             _cell = (int2)math.floor(start);
             _crossings = math.csum(math.abs((int2)math.floor(start + delta) - _cell));
             _step = (int2)math.sign(delta);

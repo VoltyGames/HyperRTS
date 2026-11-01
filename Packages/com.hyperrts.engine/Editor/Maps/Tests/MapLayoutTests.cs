@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Maps.Tests
             var spec = Spec("2v2", MapSymmetry.Rotate180, new MapPoint(-40f, -80f), new MapPoint(40f, -80f));
             var issues = new MapIssues();
 
-            var layout = MapExpander.Expand(spec, issues);
+            var layout = MapSymmetryCopier.Expand(spec, issues);
 
             Assert.IsFalse(issues.HasErrors, issues.ToString());
             Assert.AreEqual(new[] { 1, 2, 3, 4 }, layout.Spawns.Select(s => s.Slot).ToArray());
@@ -39,8 +39,8 @@ namespace HyperRTS.Editor.Maps.Tests
         [Test]
         public void FreeForAll_GivesEverySlotItsOwnTeam()
         {
-            var spec = Spec(MapExpander.FreeForAll, "rotate-4", new MapPoint(70f, 20f));
-            var layout = MapExpander.Expand(spec, new MapIssues());
+            var spec = Spec(MapSymmetryCopier.FreeForAll, "rotate-4", new MapPoint(70f, 20f));
+            var layout = MapSymmetryCopier.Expand(spec, new MapIssues());
 
             Assert.AreEqual(new[] { 1, 2, 3, 4 }, layout.Spawns.Select(s => s.Team).ToArray());
             Assert.AreEqual(-20f, layout.Spawns[1].Position.x, 1e-4f, "a quarter turn counter-clockwise");
@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.Maps.Tests
         {
             var spec = Spec("1v1", MapSymmetry.MirrorXName, new MapPoint(-60f, 0f));
             spec.spawns[0].yaw = 70f;
-            var layout = MapExpander.Expand(spec, new MapIssues());
+            var layout = MapSymmetryCopier.Expand(spec, new MapIssues());
 
             Assert.AreEqual(290f, layout.Spawns[1].Yaw, 1e-3f);
         }
@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Maps.Tests
             spec.props.Add(new MapPropSpec { pos = new MapPoint(5f, -5f), kind = "Derrick", shared = true });
             var issues = new MapIssues();
 
-            var layout = MapExpander.Expand(spec, issues);
+            var layout = MapSymmetryCopier.Expand(spec, issues);
 
             Assert.AreEqual(1, issues.Errors.Count(e => e.Message.Contains("shared but not symmetric")), "only the off-centre one");
             Assert.AreEqual(2, layout.Props.Count, "each shared prop is placed once");
@@ -81,7 +81,7 @@ namespace HyperRTS.Editor.Maps.Tests
                 crossings = new List<MapCrossingSpec> { new() { along = 0.25f, kind = MapCrossingSpec.Ford } },
             });
 
-            var layout = MapExpander.Expand(spec, new MapIssues());
+            var layout = MapSymmetryCopier.Expand(spec, new MapIssues());
 
             var copy = layout.Rivers[1].Placed;
             Assert.AreEqual(new MapPoint(0f, 0f), copy.points[0], "the copy starts where the authored river ends");
@@ -96,7 +96,7 @@ namespace HyperRTS.Editor.Maps.Tests
             spec.props.Add(new MapPropSpec { pos = new MapPoint(10f, 30f), kind = "Derrick" });
             var issues = new MapIssues();
 
-            MapExpander.Expand(spec, issues);
+            MapSymmetryCopier.Expand(spec, issues);
 
             var error = issues.Errors.FirstOrDefault(e => e.Message.Contains("outside the authored sector"));
             Assert.IsNotNull(error.Message, issues.ToString());

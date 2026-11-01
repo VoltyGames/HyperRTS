@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Air
         public PadKind Kind;
 
         /// <summary>Held by the aircraft based here, which renews it every frame; free when it dies or leaves.</summary>
-        public Lease Lease;
+        public Reservation Reservation;
 
         /// <summary>An Any pad takes every aircraft, and an Any aircraft lands on every pad.</summary>
         public readonly bool Accepts(PadKind aircraft) => Kind == PadKind.Any || aircraft == PadKind.Any || Kind == aircraft;
@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Air
         {
             for (var i = 0; i < pads.Length; i++)
             {
-                if (pads[i].Lease.IsFree &&pads[i].Accepts(aircraft))
+                if (pads[i].Reservation.IsFree &&pads[i].Accepts(aircraft))
                 {
                     return i;
                 }

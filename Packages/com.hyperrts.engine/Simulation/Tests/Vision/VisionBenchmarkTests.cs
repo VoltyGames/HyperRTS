@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.Tests.Vision
                 {
                     _world.SetEnabled<SightBlock>(houses[next++], false);
                     AdvanceTime();
-                }, null, "SightBlockSystem.Stamp", "SightPatchJob.Draw", "FogMergeJob.Merge");
+                }, null, "SightBlockSystem.Stamp", "SightAreaJob.Draw", "FogMergeJob.Merge");
 
             TestContext.WriteLine($"a section a second: restamp and fog median {median:F3} ms");
             Assert.Less(median, 2.6, $"median {median:F3} ms, under twice 0.1 ms of blockers and 1.2 ms of fog");
@@ -132,7 +132,7 @@ namespace HyperRTS.Simulation.Tests.Vision
             {
                 change();
                 AdvanceTime();
-            }, null, "SightPatchJob.Draw", "FogMergeJob.Merge");
+            }, null, "SightAreaJob.Draw", "FogMergeJob.Merge");
         }
 
         private void Run()

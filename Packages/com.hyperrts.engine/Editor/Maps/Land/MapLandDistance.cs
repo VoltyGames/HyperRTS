@@ -14,9 +14,9 @@ namespace HyperRTS.Editor.Maps.Land
         private const float Diagonal = 1.4142f;
 
         /// <summary>Distance in cells from every cell to the nearest cell where <paramref name="seed"/> holds.</summary>
-        public static MapField<float> To(MapGrid grid, Func<int, int, bool> seed)
+        public static MapValues<float> To(MapGrid grid, Func<int, int, bool> seed)
         {
-            var field = new MapField<float>(grid);
+            var field = new MapValues<float>(grid);
             var distance = field.Values;
             for (var z = 0; z < grid.Height; z++)
             {
@@ -31,10 +31,10 @@ namespace HyperRTS.Editor.Maps.Land
         }
 
         /// <summary>Distance from every cell to the nearest cell of another region (0 on a region's edge).</summary>
-        public static MapField<float> ToRegionEdge<T>(MapField<T> region) where T : unmanaged, IEquatable<T> =>
+        public static MapValues<float> ToRegionEdge<T>(MapValues<T> region) where T : unmanaged, IEquatable<T> =>
             To(region.Grid, (x, z) => IsEdge(region, x, z));
 
-        private static bool IsEdge<T>(MapField<T> region, int x, int z) where T : unmanaged, IEquatable<T>
+        private static bool IsEdge<T>(MapValues<T> region, int x, int z) where T : unmanaged, IEquatable<T>
         {
             var grid = region.Grid;
             var own = region[x, z];

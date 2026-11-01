@@ -268,7 +268,7 @@ A self-targeted ability fires on every ready caster. An aimed one walks the near
 powers are `Ability` entries on the player entity.
 
 `Ability` is the fixed definition and never replicates: clients bake it from the same prefab. The running cooldown is
-a separate `AbilityState { Id, CooldownRemaining }` buffer, the only replicated part, matched to its definition by id,
+a separate `AbilityCooldown { Id, Remaining }` buffer, the only replicated part, matched to its definition by id,
 so neither buffer's order matters. Both buffers are baked together.
 
 A smoke screen is an ability whose spawned prefab carries a dense porous `SightBlock` and a `Decay`: it blocks
@@ -305,10 +305,10 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 - Vision updates 10 times a second. Hills and sight blocks cast shadows. `FogOfWar.Visible` holds the cells
   whose ground is seen at 1 m, for infantry; `VisibleTall` those seen at 3 m, for a `TallTarget`. Explored cells
   follow the tall layer. `CanSee` and `IsHiddenFrom` take the target's layer.
-- Each layer is one bit plane per team in 64-bit words. Every viewer keeps its sight in a `SightPatch` (made by
+- Each layer is one bit plane per team in 64-bit words. Every viewer keeps its sight in a `SightArea` (made by
   `VisionSetup`), drawn again in parallel only when it moves to another cell, its eye, reach or team changes, a grid
   is built anew or `SightBlockers.DirtyTiles` marks a change round it. `FogMergeJob` rebuilds the planes from the
-  patches in bands of rows. Sight lines read each cell once, as a `SightCell` packing its cached ground with its
+  areas in bands of rows. Sight lines read each cell once, as a `SightCell` packing its cached ground with its
   blocker heights and densities; the blocker owner sits apart, read only when a shot is blocked.
 - `HighGroundSystem` measures each fog cell's ground against the mean within `SightRules.Radius` (50 m) when
   the map or terrain loads. A viewer on high ground sees `SightPerMetre` further per metre of rise, up to

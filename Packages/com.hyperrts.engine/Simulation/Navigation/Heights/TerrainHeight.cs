@@ -24,11 +24,11 @@ namespace HyperRTS.Simulation.Navigation.Heights
             }
 
             ref var field = ref Blob.Value;
-            var size = field.Frame.Size;
-            var local = math.clamp(field.Frame.Local(position), 0f, size - 1);
+            var size = field.Grid.Size;
+            var local = math.clamp(field.Grid.Local(position), 0f, size - 1);
             var cell = math.min((int2)local, size - 2);
             var t = local - cell;
-            var row = field.Frame.Index(cell);
+            var row = field.Grid.Index(cell);
             var bottom = math.lerp(field.Heights[row], field.Heights[row + 1], t.x);
             var top = math.lerp(field.Heights[row + size.x], field.Heights[row + size.x + 1], t.x);
             return math.lerp(bottom, top, t.y);
@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Navigation.Heights
             }
 
             var end = origin + direction * maxDistance;
-            var ray = new GridRay(Blob.Value.Frame, origin.xz, end.xz);
+            var ray = new GridRay(Blob.Value.Grid, origin.xz, end.xz);
             while (ray.MoveNext())
             {
                 if (IsBelow(math.lerp(origin, end, ray.Exit)))
@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Navigation.Heights
                 samples[i] = heights[i];
             }
 
-            root.Frame = new GridFrame(min, spacing, size);
+            root.Grid = new CellGrid(min, spacing, size);
             var blob = builder.CreateBlobAssetReference<HeightfieldBlob>(allocator);
             builder.Dispose();
             return new TerrainHeight { Blob = blob };

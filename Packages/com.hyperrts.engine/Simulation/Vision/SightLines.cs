@@ -6,7 +6,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Draws a viewer's <see cref="SightPatch"/>: a vision circle that terrain and blockers can occlude. Rays fanned
+    /// Draws a viewer's <see cref="SightArea"/>: a vision circle that terrain and blockers can occlude. Rays fanned
     /// round the viewer walk outward through each cell they cross, keeping the steepest sight line so far, and a cell
     /// is seen only when nothing nearer rises above it. Woods, crops and smoke the eye is below take a share of sight
     /// per metre crossed, and a ray stops once they have taken it all. Neighbouring rays stay closer than a cell is wide
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Vision
         // Neighbouring rays' gap at their far end, as a share of a cell's width across them.
         private const float RayGap = 0.9f;
 
-        /// <summary>The grid the patch lies on; only its layout is read.</summary>
+        /// <summary>The grid the area lies on; only its layout is read.</summary>
         public FogOfWar Fog;
 
         /// <summary>Ground and blockers on the fog grid.</summary>
@@ -40,15 +40,15 @@ namespace HyperRTS.Simulation.Vision
 
         public bool HasOwn;
 
-        public SightPatch Patch;
+        public SightArea Area;
         public NativeArray<ulong> Bits;
 
         /// <summary>Draws from an eye <paramref name="eye"/> metres up, over the viewer's position.</summary>
         public void Draw(float3 position, float eye, float range)
         {
-            var cellSize = Fog.Frame.CellSize;
+            var cellSize = Fog.Grid.CellSize;
             var origin = new float3(position.xz, eye);
-            Mark(Fog.Frame.Cell(position), true);
+            Mark(Fog.Grid.Cell(position), true);
 
             // Rays reach the far corner of every cell whose centre is in range.
             var length = range + cellSize * 0.5f * math.SQRT2;
@@ -65,20 +65,20 @@ namespace HyperRTS.Simulation.Vision
         // origin: viewer XZ in .xy and eye height in .z.
         private void Cast(float3 origin, float2 reach, float range)
         {
-            var frame = Fog.Frame;
+            var grid = Fog.Grid;
             var end = origin.xy + reach;
             var length = math.length(reach);
             // A line between two points on the grid never leaves it, but a viewer past the map edge starts off it.
-            var fromGrid = frame.Contains(frame.Cell(origin.xy));
-            var onGrid = fromGrid && frame.Contains(frame.Cell(end));
+            var fromGrid = grid.Contains(grid.Cell(origin.xy));
+            var onGrid = fromGrid && grid.Contains(grid.Cell(end));
             var horizon = float.NegativeInfinity;
             var cover = 0f;
-            var ray = new GridRay(frame, origin.xy, end);
+            var ray = new GridRay(grid, origin.xy, end);
             // The viewer's own cell is drawn already.
             ray.MoveNext();
             while (ray.MoveNext())
             {
-                if (!onGrid && !frame.Contains(ray.Cell))
+                if (!onGrid && !grid.Contains(ray.Cell))
                 {
                     // The grid is convex: a ray that left it never comes back, one from outside may still enter.
                     if (fromGrid)
@@ -89,9 +89,9 @@ namespace HyperRTS.Simulation.Vision
                     continue;
                 }
 
-                var point = frame.Center(ray.Cell);
+                var point = grid.Center(ray.Cell);
                 var distance = math.max(math.distance(point, origin.xy), 1e-3f);
-                var cell = Blockers.Cells[frame.Index(ray.Cell)];
+                var cell = Blockers.Cells[grid.Index(ray.Cell)];
                 var ground = Surface(cell, point) - origin.z;
                 // A cell just out of range still hides what lies behind it.
                 if (distance <= range && (ground + TallTargetHeight) / distance >= horizon)
@@ -123,15 +123,15 @@ namespace HyperRTS.Simulation.Vision
         }
 
         // Blocks raise every cell they touch, so the own block reaches cells whose centre lies just outside it.
-        private readonly bool IsOwn(float2 point) => HasOwn && Own.Contains(point, Fog.Frame.CellSize * 0.5f * math.SQRT2);
+        private readonly bool IsOwn(float2 point) => HasOwn && Own.Contains(point, Fog.Grid.CellSize * 0.5f * math.SQRT2);
 
         /// <summary>Marks the cell seen for tall targets, and for every target when <paramref name="ground"/>.</summary>
         private readonly void Mark(int2 cell, bool ground)
         {
-            Patch.Set(Bits, SightPatch.Tall, cell);
+            Area.Set(Bits, SightArea.Tall, cell);
             if (ground)
             {
-                Patch.Set(Bits, SightPatch.Ground, cell);
+                Area.Set(Bits, SightArea.Ground, cell);
             }
         }
     }

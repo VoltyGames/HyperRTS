@@ -7,11 +7,11 @@ namespace HyperRTS.Editor.Maps.Geometry
 {
     /// <summary>
     /// A grid of samples over a map rectangle, row by row from the south-west: on cell corners spanning the bounds
-    /// (heights) or at cell centres (land). <see cref="Frame"/> counts the samples, one unit each.
+    /// (heights) or at cell centres (land). <see cref="Cells"/> counts the samples, one unit each.
     /// </summary>
     public readonly struct MapGrid
     {
-        public readonly GridFrame Frame;
+        public readonly CellGrid Cells;
         public readonly Rect Bounds;
 
         /// <summary>Metres between samples per axis: a heightmap stretches on a map that isn't square.</summary>
@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         private MapGrid(Rect bounds, Vector2 spacing, int2 size, bool atCorners)
         {
-            Frame = new GridFrame(float2.zero, 1f, size);
+            Cells = new CellGrid(float2.zero, 1f, size);
             Bounds = bounds;
             Spacing = spacing;
             AtCorners = atCorners;
@@ -35,15 +35,15 @@ namespace HyperRTS.Editor.Maps.Geometry
         public static MapGrid Centres(Rect bounds, float cellSize) => new(bounds, new Vector2(cellSize, cellSize),
             new int2(Mathf.CeilToInt(bounds.width / cellSize), Mathf.CeilToInt(bounds.height / cellSize)), false);
 
-        public int Width => Frame.Size.x;
+        public int Width => Cells.Size.x;
 
-        public int Height => Frame.Size.y;
+        public int Height => Cells.Size.y;
 
-        public int Count => Frame.Count;
+        public int Count => Cells.Count;
 
-        public int Index(int x, int z) => Frame.Index(new int2(x, z));
+        public int Index(int x, int z) => Cells.Index(new int2(x, z));
 
-        public bool Contains(int x, int z) => Frame.Contains(new int2(x, z));
+        public bool Contains(int x, int z) => Cells.Contains(new int2(x, z));
 
         public Vector2 Position(int x, int z) => AtCorners
             ? Bounds.min + Vector2.Scale(new Vector2(x, z), Spacing)
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         public Vector2 Position(int index)
         {
-            var cell = Frame.Cell(index);
+            var cell = Cells.Cell(index);
             return Position(cell.x, cell.y);
         }
 

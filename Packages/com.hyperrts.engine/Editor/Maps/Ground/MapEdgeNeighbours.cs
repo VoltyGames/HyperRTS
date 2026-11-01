@@ -9,14 +9,14 @@ namespace HyperRTS.Editor.Maps.Ground
     /// </summary>
     public sealed class MapEdgeNeighbours
     {
-        private readonly MapField<int> _own;
+        private readonly MapValues<int> _own;
 
         public MapEdgeNeighbours(MapLand land)
         {
             var grid = land.Grid;
-            Distance = new MapField<float>(grid);
-            Other = new MapField<int>(grid);
-            _own = new MapField<int>(grid);
+            Distance = new MapValues<float>(grid);
+            Other = new MapValues<int>(grid);
+            _own = new MapValues<int>(grid);
             for (var z = 0; z < grid.Height; z++)
             {
                 for (var x = 0; x < grid.Width; x++)
@@ -29,10 +29,10 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Cells to the nearest cell of another region; 0 where a cell touches one.</summary>
-        public MapField<float> Distance { get; }
+        public MapValues<float> Distance { get; }
 
         /// <summary>The region of that nearest other cell; the cell's own region on land of one region only.</summary>
-        public MapField<int> Other { get; }
+        public MapValues<int> Other { get; }
 
         private void Seed(MapLand land, int x, int z)
         {

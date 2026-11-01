@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            texture.Paint(grid.Frame, new Colors { Distances = grid.Field.Distances });
+            texture.Paint(grid.Grid, new Colors { Distances = grid.Field.Distances });
             return true;
         }
 

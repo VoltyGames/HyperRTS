@@ -213,14 +213,14 @@ namespace HyperRTS.Editor.Maps.Report
         {
             var open = 0;
             var total = 0;
-            var reach = Mathf.CeilToInt(radius / _nav.Grid.Frame.CellSize);
+            var reach = Mathf.CeilToInt(radius / _nav.Grid.Grid.CellSize);
             var middle = _nav.Cell(center);
             for (var y = -reach; y <= reach; y++)
             {
                 for (var x = -reach; x <= reach; x++)
                 {
                     var cell = middle + new int2(x, y);
-                    if (math.length(new float2(x, y)) * _nav.Grid.Frame.CellSize > radius || !_nav.Grid.Frame.Contains(cell))
+                    if (math.length(new float2(x, y)) * _nav.Grid.Grid.CellSize > radius || !_nav.Grid.Grid.Contains(cell))
                     {
                         continue;
                     }

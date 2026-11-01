@@ -22,12 +22,12 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            texture.Paint(fog.Frame, new Colors
+            texture.Paint(fog.Grid, new Colors
             {
                 Visible = fog.Visible,
                 PlaneStart = local.Team * fog.PlaneWords,
                 RowWords = fog.RowWords,
-                Width = fog.Frame.Size.x,
+                Width = fog.Grid.Size.x,
             });
             return true;
         }

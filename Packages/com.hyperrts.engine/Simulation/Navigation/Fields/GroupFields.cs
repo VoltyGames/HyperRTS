@@ -51,10 +51,10 @@ namespace HyperRTS.Simulation.Navigation.Fields
             if (traced)
             {
                 var leave = cells.Length - 1;
-                var area = Radius + access.Grid.Frame.CellSize;
+                var area = Radius + access.Grid.Grid.CellSize;
                 for (var i = cells.Length - 1; i >= 0; i--)
                 {
-                    var center = access.Grid.Frame.CenterPoint(cells[i]);
+                    var center = access.Grid.Grid.CenterPoint(cells[i]);
                     if (math.distance(center.xz, Anchor.xz) > area)
                     {
                         break;

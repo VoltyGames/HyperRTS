@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                 return false;
             }
 
-            texture.Paint(high.Frame, new Colors { Rise = high.Rise, PerMetre = high.Rules.SightPerMetre, MaxSight = high.Rules.MaxSight });
+            texture.Paint(high.Grid, new Colors { Rise = high.Rise, PerMetre = high.Rules.SightPerMetre, MaxSight = high.Rules.MaxSight });
             return true;
         }
 

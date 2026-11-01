@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Fog
     [DisallowMultipleComponent]
     public partial class FogOfWarRenderer : PresentationBehaviour
     {
-        private static readonly WorldGridGlobal Global = new("_HyperRTSFogOfWar", "_HyperRTSFogOfWarRect");
+        private static readonly MapTextureGlobal Global = new("_HyperRTSFogOfWar", "_HyperRTSFogOfWarRect");
         private static readonly int ColorId = Shader.PropertyToID("_HyperRTSFogOfWarColor");
         private static readonly int BorderId = Shader.PropertyToID("_HyperRTSFogOfWarBorder");
         private static readonly int LookId = Shader.PropertyToID("_HyperRTSFogOfWarLook");
@@ -122,18 +122,18 @@ namespace HyperRTS.Presentation.Fog
         /// <summary>Fills the target from the latest stamp; a new grid shows it at once rather than fading in.</summary>
         private void Retarget(in FogOfWar fog, in LocalFogView view)
         {
-            var created = _texture == null || _texture.width != fog.Frame.Size.x || _texture.height != fog.Frame.Size.y;
+            var created = _texture == null || _texture.width != fog.Grid.Size.x || _texture.height != fog.Grid.Size.y;
             if (created)
             {
                 DestroyTexture();
-                _texture = new Texture2D(fog.Frame.Size.x, fog.Frame.Size.y, TextureFormat.R8, false, true)
+                _texture = new Texture2D(fog.Grid.Size.x, fog.Grid.Size.y, TextureFormat.R8, false, true)
                 {
                     name = "Fog Of War",
                     filterMode = FilterMode.Bilinear,
                     wrapMode = TextureWrapMode.Clamp,
                     hideFlags = HideFlags.DontSave,
                 };
-                _target = new NativeArray<byte>(fog.Frame.Size.x * fog.Frame.Size.y, Allocator.Persistent);
+                _target = new NativeArray<byte>(fog.Grid.Size.x * fog.Grid.Size.y, Allocator.Persistent);
             }
 
             FogTexels.Fill(fog, view.Team, ToByte(exploredOpacity), ToByte(unexploredOpacity), _target);
@@ -150,9 +150,9 @@ namespace HyperRTS.Presentation.Fog
         private void Publish(in FogOfWar fog)
         {
             // Unlike the ground maps, the fog rect holds the size, not its inverse.
-            Global.Publish(_texture, new float4(fog.Frame.Min, (float2)fog.Frame.Size * fog.Frame.CellSize));
+            Global.Publish(_texture, new float4(fog.Grid.Min, (float2)fog.Grid.Size * fog.Grid.CellSize));
             Shader.SetGlobalColor(ColorId, color);
-            Shader.SetGlobalVector(BorderId, new Vector4(borderOpacity, borderFade, 1f / fog.Frame.Size.x, 1f / fog.Frame.Size.y));
+            Shader.SetGlobalVector(BorderId, new Vector4(borderOpacity, borderFade, 1f / fog.Grid.Size.x, 1f / fog.Grid.Size.y));
             Shader.SetGlobalVector(LookId, new Vector4(desaturation, 0f, 0f, 0f));
         }
 

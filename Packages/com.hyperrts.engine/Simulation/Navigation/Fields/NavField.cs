@@ -22,25 +22,25 @@ namespace HyperRTS.Simulation.Navigation.Fields
         /// <summary>Sectors whose window changed since their last rebuild, marked by <see cref="NavGridSystem"/>.</summary>
         public NativeArray<bool> DirtySectors;
 
-        public GridFrame Frame;
+        public CellGrid Grid;
 
         public SectorLayout Layout;
 
         /// <summary>Cells round a sector that can bring a wall within <see cref="MaxDistance"/> of it.</summary>
         public int ReachCells;
 
-        public static NavField Create(in GridFrame frame, int keys, Allocator allocator)
+        public static NavField Create(in CellGrid grid, int keys, Allocator allocator)
         {
-            var layout = SectorLayout.Covering(frame.Size);
+            var layout = SectorLayout.Covering(grid.Size);
             var field = new NavField
             {
-                Distances = new NativeArray<float>(keys * frame.Count, allocator),
+                Distances = new NativeArray<float>(keys * grid.Count, allocator),
                 DirtySectors = new NativeArray<bool>(layout.Total, allocator),
-                Frame = frame,
+                Grid = grid,
                 Layout = layout,
-                ReachCells = (int)math.ceil(MaxDistance / frame.CellSize + 0.5f),
+                ReachCells = (int)math.ceil(MaxDistance / grid.CellSize + 0.5f),
             };
-            field.MarkDirty(int2.zero, frame.Size - 1);
+            field.MarkDirty(int2.zero, grid.Size - 1);
             return field;
         }
 
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
             DirtySectors.Dispose();
         }
 
-        public readonly int CellCount => Frame.Count;
+        public readonly int CellCount => Grid.Count;
 
         /// <summary>Field slots allocated; a new key needs <see cref="Grow"/> and a full build.</summary>
         public readonly int SlotCount => Distances.Length / CellCount;
@@ -61,12 +61,12 @@ namespace HyperRTS.Simulation.Navigation.Fields
         /// <summary>The value at a cell centre; a closed half cell off the map.</summary>
         public readonly float At(int slot, int2 cell)
         {
-            if (!Frame.Contains(cell))
+            if (!Grid.Contains(cell))
             {
-                return Frame.CellSize * -0.5f;
+                return Grid.CellSize * -0.5f;
             }
 
-            return Distances[slot * CellCount + Frame.Index(cell)];
+            return Distances[slot * CellCount + Grid.Index(cell)];
         }
 
         /// <summary>Whether a cell centre keeps <paramref name="radius"/> from walls, less the shared skin.</summary>
@@ -75,13 +75,13 @@ namespace HyperRTS.Simulation.Navigation.Fields
 
         /// <summary>Bilinear between the four nearest cell centres.</summary>
         public readonly float Sample(int slot, float2 position) =>
-            Bilinear(new SlotValues(this, slot), Frame, position);
+            Bilinear(new SlotValues(this, slot), Grid, position);
 
-        /// <summary>Bilinear between the four cell centres of a frame nearest a point.</summary>
-        internal static float Bilinear<T>(in T values, in GridFrame frame, float2 position)
+        /// <summary>Bilinear between the four cell centres of a grid nearest a point.</summary>
+        internal static float Bilinear<T>(in T values, in CellGrid grid, float2 position)
             where T : struct, ICellValues
         {
-            var p = frame.Local(position) - 0.5f;
+            var p = grid.Local(position) - 0.5f;
             var cell = (int2)math.floor(p);
             var t = p - cell;
             var low = math.lerp(values.At(cell), values.At(cell + new int2(1, 0)), t.x);
@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
         public readonly float2 Normal(int slot, float2 position)
         {
             // Central differences half a cell out, so the slope is even on both sides of a cell row.
-            var h = Frame.CellSize * 0.5f;
+            var h = Grid.CellSize * 0.5f;
             var dx = Sample(slot, position + new float2(h, 0f)) - Sample(slot, position - new float2(h, 0f));
             var dz = Sample(slot, position + new float2(0f, h)) - Sample(slot, position - new float2(0f, h));
             return math.normalizesafe(new float2(dx, dz));
@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
             {
                 if (current[i] != previous[i])
                 {
-                    var cell = Frame.Cell(i);
+                    var cell = Grid.Cell(i);
                     MarkDirty(cell, cell);
                     previous[i] = current[i];
                 }
@@ -145,8 +145,8 @@ namespace HyperRTS.Simulation.Navigation.Fields
             for (var i = 0; i < transform.Closed.Length; i++)
             {
                 var cell = origin + new int2(i % side, i / side);
-                var index = Frame.Index(cell);
-                transform.Closed[i] = !Frame.Contains(cell) || key.Blocks((NavSurface)cells[index], scenery[index]);
+                var index = Grid.Index(cell);
+                transform.Closed[i] = !Grid.Contains(cell) || key.Blocks((NavSurface)cells[index], scenery[index]);
             }
 
             transform.Solve(true);
@@ -159,7 +159,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
         private void Write(int slot, int2 first, in DistanceTransform transform, bool open)
         {
             var origin = first - ReachCells;
-            foreach (var cell in Frame.Cells(first, first + SectorCells - 1))
+            foreach (var cell in Grid.Cells(first, first + SectorCells - 1))
             {
                 var window = (cell.y - origin.y) * transform.Side + (cell.x - origin.x);
                 if (transform.Closed[window] == open)
@@ -167,8 +167,8 @@ namespace HyperRTS.Simulation.Navigation.Fields
                     continue;
                 }
 
-                var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * Frame.CellSize, MaxDistance);
-                Distances[slot * CellCount + Frame.Index(cell)] = open ? edge : -edge;
+                var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * Grid.CellSize, MaxDistance);
+                Distances[slot * CellCount + Grid.Index(cell)] = open ? edge : -edge;
             }
         }
 

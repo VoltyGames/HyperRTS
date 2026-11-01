@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.AI
             _sites = SystemAPI.QueryBuilder().WithAll<BuildingTag, ConstructionProgress, Faction, LocalTransform>()
                 .WithNone<Dead>().Build();
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
-            _casters = SystemAPI.QueryBuilder().WithAll<Ability, AbilityState, Faction, LocalTransform>().WithNone<Dead>().Build();
+            _casters = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Faction, LocalTransform>().WithNone<Dead>().Build();
             _owned = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);

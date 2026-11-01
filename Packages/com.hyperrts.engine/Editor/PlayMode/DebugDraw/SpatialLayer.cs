@@ -12,12 +12,12 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
 
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {
-            if (!TryGetSingleton(entityManager, out SpatialIndex index) || index.CellStarts.Length <= index.Frame.Count)
+            if (!TryGetSingleton(entityManager, out SpatialIndex index) || index.CellStarts.Length <= index.Grid.Count)
             {
                 return false;
             }
 
-            texture.Paint(index.Frame, new Colors { Starts = index.CellStarts.AsArray() });
+            texture.Paint(index.Grid, new Colors { Starts = index.CellStarts.AsArray() });
             return true;
         }
 

@@ -7,18 +7,18 @@ namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
     /// Settled debris kept for the match and drawn from the GPU, up to <see cref="Cap"/> pieces. Past the cap the
-    /// oldest piece sinks into the ground over <see cref="SinkTime"/> and its slot is reused.
+    /// oldest piece buries into the ground over <see cref="BuryTime"/> and its slot is reused.
     /// </summary>
     public sealed class LastingDebris : IDisposable
     {
-        public const float SinkTime = 5f;
+        public const float BuryTime = 5f;
 
-        /// <summary>Pieces that may sink at once; past it the oldest sinking piece goes at once.</summary>
-        public const int SinkRoom = 512;
+        /// <summary>Pieces that may bury at once; past it the oldest burying piece goes at once.</summary>
+        public const int BuryRoom = 512;
 
         private readonly LastingPiece[] _pieces;
         private readonly Queue<int> _standing;
-        private readonly Queue<int> _sinking;
+        private readonly Queue<int> _burying;
         private readonly Stack<int> _free;
         private readonly LastingDebrisDraws _draws;
         private float _clock;
@@ -34,10 +34,10 @@ namespace HyperRTS.Presentation.Destruction
         public LastingDebris(int cap)
         {
             Cap = cap;
-            var capacity = cap == 0 ? 0 : cap + SinkRoom;
+            var capacity = cap == 0 ? 0 : cap + BuryRoom;
             _pieces = new LastingPiece[capacity];
             _standing = new Queue<int>(cap);
-            _sinking = new Queue<int>(SinkRoom);
+            _burying = new Queue<int>(BuryRoom);
             _free = new Stack<int>(capacity);
             for (var slot = capacity - 1; slot >= 0; slot--)
             {
@@ -52,7 +52,7 @@ namespace HyperRTS.Presentation.Destruction
 
         public int Standing => _standing.Count;
 
-        public int Sinking => _sinking.Count;
+        public int Burying => _burying.Count;
 
         public LastingPiece Piece(int slot) => _pieces[slot];
 
@@ -74,12 +74,12 @@ namespace HyperRTS.Presentation.Destruction
         public void Step(float deltaTime)
         {
             _clock += deltaTime;
-            while (_sinking.Count > 0 && _pieces[_sinking.Peek()].Sunk(_clock))
+            while (_burying.Count > 0 && _pieces[_burying.Peek()].Buried(_clock))
             {
-                Free(_sinking.Dequeue());
+                Free(_burying.Dequeue());
             }
 
-            foreach (var slot in _sinking)
+            foreach (var slot in _burying)
             {
                 _draws.Move(slot, _pieces[slot].Matrix(_clock));
             }
@@ -91,15 +91,15 @@ namespace HyperRTS.Presentation.Destruction
 
         private void StartSinking()
         {
-            if (Sinking == SinkRoom)
+            if (Burying == BuryRoom)
             {
-                Free(_sinking.Dequeue());
+                Free(_burying.Dequeue());
             }
 
             var oldest = _standing.Dequeue();
-            _pieces[oldest].Sinking = true;
-            _pieces[oldest].SinkStart = _clock;
-            _sinking.Enqueue(oldest);
+            _pieces[oldest].Burying = true;
+            _pieces[oldest].BuryStart = _clock;
+            _burying.Enqueue(oldest);
         }
 
         private void Free(int slot)

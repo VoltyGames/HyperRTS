@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
     public struct SpatialIndex : IComponentData
     {
         /// <summary>The map in <see cref="SpatialIndexSystem.CellSize"/> cells; entries off it file under the nearest edge cell.</summary>
-        public GridFrame Frame;
+        public CellGrid Grid;
 
         /// <summary>Where each cell's run in <see cref="Entries"/> starts, and one past the last cell, where they end.</summary>
         public NativeList<int> CellStarts;
@@ -27,10 +27,10 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// </summary>
         public NativeList<SpatialEntry> Oversized;
 
-        public readonly float CellSize => Frame.CellSize;
+        public readonly float CellSize => Grid.CellSize;
 
         /// <summary>The cell an entry at the position files under, clamped onto the map.</summary>
-        public readonly int CellIndex(float3 position) => Frame.Index(Frame.Clamp(Frame.Cell(position)));
+        public readonly int CellIndex(float3 position) => Grid.Index(Grid.Clamp(Grid.Cell(position)));
 
         /// <summary>How many entries the cell holds.</summary>
         public readonly int CountIn(int cell) => CellStarts[cell + 1] - CellStarts[cell];
@@ -48,13 +48,13 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             where T : struct, ISpatialVisitor
         {
             var search = radius + CellSize;
-            var min = Frame.Clamp(Frame.Cell(center.xz - search));
-            var max = Frame.Clamp(Frame.Cell(center.xz + search));
+            var min = Grid.Clamp(Grid.Cell(center.xz - search));
+            var max = Grid.Clamp(Grid.Cell(center.xz + search));
             // A row's cells sit side by side, so their entries form one run.
             for (var y = min.y; y <= max.y; y++)
             {
-                var end = CellStarts[Frame.Index(new int2(max.x, y)) + 1];
-                for (var i = CellStarts[Frame.Index(new int2(min.x, y))]; i < end; i++)
+                var end = CellStarts[Grid.Index(new int2(max.x, y)) + 1];
+                for (var i = CellStarts[Grid.Index(new int2(min.x, y))]; i < end; i++)
                 {
                     VisitIfOverlapping(Entries[i], center, radius, hulls, ref visitor);
                 }

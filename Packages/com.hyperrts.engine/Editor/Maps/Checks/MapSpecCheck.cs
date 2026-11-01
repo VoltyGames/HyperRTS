@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
     /// Checks a spec before it is refined: its size, terrain and amounts are sane and every kind it names is in the
-    /// climate, the palette (through <see cref="MapSpecKeys"/>) or the rules. Where features lie (sector, bounds,
+    /// climate, the palette (through <see cref="MapSpecKeyCheck"/>) or the rules. Where features lie (sector, bounds,
     /// symmetry) is the expander's to check.
     /// </summary>
     public sealed class MapSpecCheck : MapKeyCheck
@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Maps.Checks
         private void Run()
         {
             Header();
-            MapSpecKeys.Check(_spec, Climate, Palette, Issues);
+            MapSpecKeyCheck.Check(_spec, Climate, Palette, Issues);
             Require(MapKeys.Contains(_rules.modes, _spec.mode), $"The map rules have no thresholds for mode '{_spec.mode}'.");
             Each(_spec.resources, nameof(MapSpec.resources), "Resource", (resource, name) =>
                 Require(resource.amount > 0, $"{name} ('{resource.kind}') needs an amount above 0."));
@@ -100,7 +100,7 @@ namespace HyperRTS.Editor.Maps.Checks
                 return;
             }
 
-            // MapSpecKeys reports a prop that isn't in the palette.
+            // MapSpecKeyCheck reports a prop that isn't in the palette.
             if (!MapKeys.Contains(Palette.entries, crossing.prop))
             {
                 return;

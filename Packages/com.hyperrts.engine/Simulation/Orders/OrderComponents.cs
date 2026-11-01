@@ -17,14 +17,14 @@ namespace HyperRTS.Simulation.Orders
         }
 
         /// <summary>True until the walk reaches its target; a stuck walk also finishes the order.</summary>
-        public static bool StopsShort(WalkUp walk, EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving)
+        public static bool StopsShort(ApproachState walk, EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving)
         {
-            if (walk == WalkUp.Stuck)
+            if (walk == ApproachState.Stuck)
             {
                 Finish(busy, moving);
             }
 
-            return walk != WalkUp.Reached;
+            return walk != ApproachState.Reached;
         }
     }
 

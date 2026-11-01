@@ -47,10 +47,10 @@ namespace HyperRTS.Presentation.HUD.Map
             }
 
             _fogGrid.Complete(entityManager);
-            if (_texture == null || _texture.width != fog.Frame.Size.x || _texture.height != fog.Frame.Size.y)
+            if (_texture == null || _texture.width != fog.Grid.Size.x || _texture.height != fog.Grid.Size.y)
             {
                 Object.Destroy(_texture);
-                _texture = new Texture2D(fog.Frame.Size.x, fog.Frame.Size.y, TextureFormat.Alpha8, false, true)
+                _texture = new Texture2D(fog.Grid.Size.x, fog.Grid.Size.y, TextureFormat.Alpha8, false, true)
                 {
                     name = "Minimap Fog",
                     filterMode = FilterMode.Bilinear,

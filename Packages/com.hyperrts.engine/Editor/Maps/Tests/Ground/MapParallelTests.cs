@@ -10,7 +10,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Tests.Ground
 {
     /// <summary>The painters write the same heights, texture weights and grass on worker threads as in order.</summary>
-    public class MapRowsTests
+    public class MapParallelTests
     {
         private const int Resolution = 128;
 
@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
 
         private static (MapHeights, MapTextureWeights, MapGrassBake) Paint(bool serial)
         {
-            MapRows.Serial = serial;
+            MapParallel.Serial = serial;
             try
             {
                 var spec = MapFixture.Spec();
@@ -69,7 +69,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             }
             finally
             {
-                MapRows.Serial = false;
+                MapParallel.Serial = false;
             }
         }
 

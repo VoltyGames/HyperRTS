@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Rebuilds one band of <see cref="BandRows"/> grid rows of every team's visible, tall and close planes from the
-    /// viewers' <see cref="SightPatch"/>es, a word at a time. Bands run in parallel: each writes only its own rows.
+    /// viewers' <see cref="SightArea"/>s, a word at a time. Bands run in parallel: each writes only its own rows.
     /// </summary>
     [BurstCompile]
     internal struct FogMergeJob : IJobParallelFor
@@ -21,25 +21,25 @@ namespace HyperRTS.Simulation.Vision
 
         [NativeDisableParallelForRestriction] public FogOfWar Fog;
         [ReadOnly] public NativeArray<Entity> Viewers;
-        [ReadOnly] public ComponentLookup<SightPatch> Patches;
-        [ReadOnly] public BufferLookup<SightPatchBits> Bits;
+        [ReadOnly] public ComponentLookup<SightArea> Areas;
+        [ReadOnly] public BufferLookup<SightAreaBits> Bits;
 
-        public static int Bands(in FogOfWar fog) => (fog.Frame.Size.y + BandRows - 1) / BandRows;
+        public static int Bands(in FogOfWar fog) => (fog.Grid.Size.y + BandRows - 1) / BandRows;
 
         public void Execute(int band)
         {
             using var marker = MergeMarker.Auto();
             var low = band * BandRows;
-            var high = math.min(low + BandRows, Fog.Frame.Size.y);
+            var high = math.min(low + BandRows, Fog.Grid.Size.y);
             Clear(Fog.Visible, low, high);
             Clear(Fog.VisibleTall, low, high);
             Clear(Fog.Close, low, high);
             foreach (var viewer in Viewers)
             {
-                var patch = Patches[viewer];
-                var first = math.max(low, patch.Origin.y);
-                var last = math.min(high, patch.Origin.y + patch.Width);
-                if (patch.Radius < 0 || first >= last)
+                var area = Areas[viewer];
+                var first = math.max(low, area.Origin.y);
+                var last = math.min(high, area.Origin.y + area.Width);
+                if (area.Radius < 0 || first >= last)
                 {
                     continue;
                 }
@@ -47,19 +47,19 @@ namespace HyperRTS.Simulation.Vision
                 var words = Bits[viewer].Reinterpret<ulong>().AsNativeArray();
                 for (var y = first; y < last; y++)
                 {
-                    Or(Fog.Visible, patch, words, SightPatch.Ground, y);
-                    Or(Fog.VisibleTall, patch, words, SightPatch.Tall, y);
-                    Or(Fog.Close, patch, words, SightPatch.Close, y);
+                    Or(Fog.Visible, area, words, SightArea.Ground, y);
+                    Or(Fog.VisibleTall, area, words, SightArea.Tall, y);
+                    Or(Fog.Close, area, words, SightArea.Close, y);
                 }
             }
         }
 
-        private readonly void Or(NativeArray<ulong> plane, in SightPatch patch, NativeArray<ulong> words, int layer, int y)
+        private readonly void Or(NativeArray<ulong> plane, in SightArea area, NativeArray<ulong> words, int layer, int y)
         {
-            var row = y - patch.Origin.y;
-            for (var word = 0; word < patch.RowWords; word++)
+            var row = y - area.Origin.y;
+            for (var word = 0; word < area.RowWords; word++)
             {
-                Fog.Or(plane, patch.Team, y, patch.Origin.x + word * 64, words[patch.Word(layer, row, word)]);
+                Fog.Or(plane, area.Team, y, area.Origin.x + word * 64, words[area.Word(layer, row, word)]);
             }
         }
 

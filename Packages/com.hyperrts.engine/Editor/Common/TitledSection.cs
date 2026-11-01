@@ -4,11 +4,11 @@ namespace HyperRTS.Editor.Common
 {
     /// <summary>A titled block of editor controls; its children follow the title.</summary>
     [UxmlElement]
-    public sealed partial class Section : VisualElement
+    public sealed partial class TitledSection : VisualElement
     {
         private readonly Label _title = new();
 
-        public Section()
+        public TitledSection()
         {
             AddToClassList("hrts-section");
             _title.AddToClassList("hrts-section__title");

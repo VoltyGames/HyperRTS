@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
         private float _hectares;
 
         /// <summary>Distance in cells from every land cell to the nearest belt or wood.</summary>
-        private MapField<float> _cover;
+        private MapValues<float> _cover;
 
         public MapWarScarsPlanner(MapPlanContext context) : base(context)
         {
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
             PlaceWrecks();
             DigTrenches();
             DigCraters();
-            BurnPatches();
+            BurnGround();
         }
 
         /// <summary>Sector cells of fields, margins and meadows without row crops, which would stand through a scar.</summary>
@@ -247,7 +247,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
             }
         }
 
-        private void BurnPatches()
+        private void BurnGround()
         {
             var random = Context.Random(MapRandomChannel.WarScars, BurnStream);
             var wanted = random.Count(_density.burnsPerHectare * _hectares);
@@ -255,7 +255,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
             for (var attempt = 0; attempt < wanted * Attempts && burnt < wanted; attempt++)
             {
                 var spot = RandomSpot(_open, random);
-                var patch = new MapBurntPatch(spot, random.Range(_kit.burntRadius.x, _kit.burntRadius.y));
+                var patch = new MapBurntGround(spot, random.Range(_kit.burntRadius.x, _kit.burntRadius.y));
                 if (!InSector(spot, patch.Reach) || !Clearance.IsOpenGround(spot, patch.Radius * 0.5f))
                 {
                     continue;
@@ -263,7 +263,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
 
                 foreach (var copy in Symmetry.Copies)
                 {
-                    Context.WarScars.Burns.Add(new MapBurntPatch(copy.Apply(spot), patch.Radius));
+                    Context.WarScars.Burns.Add(new MapBurntGround(copy.Apply(spot), patch.Radius));
                 }
 
                 burnt++;

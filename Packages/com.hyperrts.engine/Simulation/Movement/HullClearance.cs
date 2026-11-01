@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Movement
     /// The room between one unit's hull and its nearest neighbours'. Each unit of a pair may close at most half of it
     /// in a frame, so the pair never meets however the crowd's pushes add up, and neither needs the other's move.
     /// </summary>
-    public struct HullRoom
+    public struct HullClearance
     {
         // A corner of half-planes that three projection passes can't settle stands still, which always fits.
         private const int Passes = 3;

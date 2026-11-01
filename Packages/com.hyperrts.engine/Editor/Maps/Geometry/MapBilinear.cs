@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         /// <summary>The sample nearest the point.</summary>
         public (int X, int Z) Nearest => (Fx < 0.5f ? X0 : X1, Fz < 0.5f ? Z0 : Z1);
 
-        public float Blend(MapField<float> field) =>
+        public float Blend(MapValues<float> field) =>
             Blend(field[X0, Z0], field[X1, Z0], field[X0, Z1], field[X1, Z1]);
 
         public float Blend(float near0, float near1, float far0, float far1) =>

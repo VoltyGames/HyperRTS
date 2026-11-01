@@ -12,7 +12,7 @@
     --hud-inset: 8px;
     --hud-panel-padding: 8px;
     --hud-minimap-size: 208px;
-    --hud-console-height: 246px;
+    --hud-bottom-height: 246px;
     --hud-icon-size: 72px;
     --hud-slot-size: 48px;
     --hud-group-size: 52px;

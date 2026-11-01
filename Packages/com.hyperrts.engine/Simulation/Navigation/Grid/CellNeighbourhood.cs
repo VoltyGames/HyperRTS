@@ -6,14 +6,14 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation.Grid
 {
     /// <summary>The field round one cell, read once, so a search tests steps to its eight neighbours from it.</summary>
-    public struct CellBlock
+    public struct CellNeighbourhood
     {
         // Row by row from the cell below-left; the centre is 4.
         private FixedList64Bytes<float> _distances;
         private readonly float _open;
         private readonly float _wallMargin;
 
-        public CellBlock(in NavAccess access, int2 cell)
+        public CellNeighbourhood(in NavAccess access, int2 cell)
         {
             _distances = new FixedList64Bytes<float>();
             foreach (var near in new CellRange(cell - 1, cell + 1))

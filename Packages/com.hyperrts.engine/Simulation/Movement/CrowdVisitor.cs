@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Movement
         public bool ReachedGroup;
 
         private FixedList512Bytes<AvoidanceNeighbour> _neighbours;
-        private HullRoom _room;
+        private HullClearance _room;
 
         public CrowdVisitor(Entity self, float2 position, float2 facing, in NavAgent agent, byte faction, bool moving,
             in MoveDestination destination, in GivingWay rule)
@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Movement
             }
         }
 
-        /// <summary>The move cut so no neighbour's hull is met; see <see cref="HullRoom"/>.</summary>
+        /// <summary>The move cut so no neighbour's hull is met; see <see cref="HullClearance"/>.</summary>
         public readonly float2 Within(float2 move) => _room.Within(move);
 
         /// <summary>Whether the move meets no neighbour's hull.</summary>

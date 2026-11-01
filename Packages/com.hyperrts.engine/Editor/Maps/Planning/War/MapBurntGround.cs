@@ -4,7 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.War
 {
     /// <summary>A patch of old burnt ground with a ragged edge, in map space.</summary>
-    public readonly struct MapBurntPatch
+    public readonly struct MapBurntGround
     {
         /// <summary>How far the edge strays in and out, as a share of the radius per unit of noise.</summary>
         private const float EdgeWander = 1.5f;
@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Planning.War
         /// <summary>Metres over which the burn fades into the ground round it.</summary>
         private const float EdgeSoftness = 3f;
 
-        public MapBurntPatch(Vector2 center, float radius)
+        public MapBurntGround(Vector2 center, float radius)
         {
             Center = center;
             Radius = radius;

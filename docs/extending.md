@@ -83,7 +83,7 @@ it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
   `.hud-root`. Assign your own sheet as `HUDController.themeSheet`: it imports the engine `HUDTheme.uss` and overrides
   the properties it wants on `.hud-root`, plus any rule of its own.
   - Layout, in `HUD.uss`: `--hud-inset` (edge gap of the top bar and bottom row), `--hud-panel-padding`,
-    `--hud-minimap-size`, `--hud-console-height` (command card height), `--hud-icon-size` (selected unit icon),
+    `--hud-minimap-size`, `--hud-bottom-height` (command card height), `--hud-icon-size` (selected unit icon),
     `--hud-slot-size` (queue slot), `--hud-group-size` (group tile), `--hud-resource-icon-size`, `--hud-resource-gap`.
   - Text and lines: `--hud-text`, `--hud-text-muted`, `--hud-resource-amount` (resource amount colour), `--hud-line`
     (panel border), `--hud-line-strong` (slot and tooltip border).

@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Geometry
     /// leaves, so a corner between short segments gets a tighter arc than asked for rather than overlapping its
     /// neighbours; the end points stay where they are.
     /// </summary>
-    public static class MapFillet
+    public static class MapCornerRounding
     {
         private const float StraightDegrees = 1f;
         private const float HairpinDegrees = 2f;

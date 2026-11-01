@@ -41,13 +41,13 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>Records the box round every cell that differs from <see cref="Previous"/> as this version.</summary>
         public void Record(in NavGrid grid)
         {
-            var min = grid.Frame.Size;
+            var min = grid.Grid.Size;
             var max = new int2(-1);
             for (var i = 0; i < grid.Cells.Length; i++)
             {
                 if (Previous[i] != grid.Cells[i])
                 {
-                    var cell = grid.Frame.Cell(i);
+                    var cell = grid.Grid.Cell(i);
                     min = math.min(min, cell);
                     max = math.max(max, cell);
                 }
@@ -67,8 +67,8 @@ namespace HyperRTS.Simulation.Navigation.Grid
                     continue;
                 }
 
-                var low = grid.Frame.Min + (float2)area.xy * grid.Frame.CellSize;
-                var high = grid.Frame.Min + (float2)(area.zw + 1) * grid.Frame.CellSize;
+                var low = grid.Grid.Min + (float2)area.xy * grid.Grid.CellSize;
+                var high = grid.Grid.Min + (float2)(area.zw + 1) * grid.Grid.CellSize;
                 if (Planar.SegmentRectDistance(from, to, low, high) <= margin)
                 {
                     return true;

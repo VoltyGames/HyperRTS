@@ -137,13 +137,13 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             private void Execute(in Destructible destructible, in LocalTransform transform)
             {
-                var cell = Grid.Frame.Cell(transform.Position);
-                if (destructible.Crush <= 0 || !Grid.Frame.Contains(cell))
+                var cell = Grid.Grid.Cell(transform.Position);
+                if (destructible.Crush <= 0 || !Grid.Grid.Contains(cell))
                 {
                     return;
                 }
 
-                var index = Grid.Frame.Index(cell);
+                var index = Grid.Grid.Index(cell);
                 var rating = math.min(destructible.Crush, NavAccess.AllScenery - 1);
                 Grid.Scenery[index] = (byte)math.max((int)Grid.Scenery[index], rating);
             }

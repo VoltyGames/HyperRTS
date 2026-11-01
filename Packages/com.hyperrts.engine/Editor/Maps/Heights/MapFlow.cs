@@ -21,12 +21,12 @@ namespace HyperRTS.Editor.Maps.Heights
             { (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1) };
 
         private readonly MapSymmetry _symmetry;
-        private readonly MapField<float> _strength;
+        private readonly MapValues<float> _strength;
 
         public MapFlow(MapSymmetry symmetry, MapHeights heights)
         {
             _symmetry = symmetry;
-            _strength = new MapField<float>(MapGrid.Centres(heights.Bounds, CellSize));
+            _strength = new MapValues<float>(MapGrid.Centres(heights.Bounds, CellSize));
             var ground = new float[_strength.Grid.Count];
             for (var i = 0; i < ground.Length; i++)
             {
@@ -72,7 +72,7 @@ namespace HyperRTS.Editor.Maps.Heights
         private int Steepest(float[] ground, int cell)
         {
             var grid = _strength.Grid;
-            var at = grid.Frame.Cell(cell);
+            var at = grid.Cells.Cell(cell);
             var (best, drop) = (-1, 0f);
             foreach (var (dx, dz) in Neighbours)
             {

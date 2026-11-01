@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
 
         private Texture2D _texture;
         private Material _material;
-        private GridFrame _frame;
+        private CellGrid _grid;
 
         /// <summary>Blue to red as <paramref name="t"/> runs from 0 to 1, see-through.</summary>
         public static Color32 Heat(float t)
@@ -42,20 +42,20 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
             return new Color32((byte)(bits & 255), (byte)((bits >> 8) & 255), (byte)((bits >> 16) & 255), 110);
         }
 
-        /// <summary>Fills the texture from <paramref name="colors"/> over <paramref name="frame"/> and uploads it.</summary>
-        public void Paint<T>(in GridFrame frame, in T colors) where T : struct, ICellColors
+        /// <summary>Fills the texture from <paramref name="colors"/> over <paramref name="grid"/> and uploads it.</summary>
+        public void Paint<T>(in CellGrid grid, in T colors) where T : struct, ICellColors
         {
-            Prepare(frame);
+            Prepare(grid);
             var job = new PaintJob<T> { Colors = colors, Pixels = _texture.GetRawTextureData<Color32>() };
-            job.Run(frame.Count);
+            job.Run(grid.Count);
             _texture.Apply(false);
         }
 
         /// <summary>Draws the painted cells as one quad over the grid.</summary>
         public void Draw()
         {
-            var min = _frame.Min;
-            var max = min + (float2)_frame.Size * _frame.CellSize;
+            var min = _grid.Min;
+            var max = min + (float2)_grid.Size * _grid.CellSize;
             _material.SetPass(0);
             GL.Begin(GL.QUADS);
             GL.TexCoord2(0f, 0f);
@@ -69,19 +69,19 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
             GL.End();
         }
 
-        private void Prepare(in GridFrame frame)
+        private void Prepare(in CellGrid grid)
         {
-            _frame = frame;
+            _grid = grid;
             if (_material == null)
             {
                 _material = new Material(Shader.Find("Hidden/HyperRTS/DebugCells")) { hideFlags = HideFlags.HideAndDontSave };
                 AssemblyReloadEvents.beforeAssemblyReload += Destroy;
             }
 
-            if (_texture == null || _texture.width != frame.Size.x || _texture.height != frame.Size.y)
+            if (_texture == null || _texture.width != grid.Size.x || _texture.height != grid.Size.y)
             {
                 Object.DestroyImmediate(_texture);
-                _texture = new Texture2D(frame.Size.x, frame.Size.y, TextureFormat.RGBA32, false)
+                _texture = new Texture2D(grid.Size.x, grid.Size.y, TextureFormat.RGBA32, false)
                 {
                     filterMode = FilterMode.Point,
                     wrapMode = TextureWrapMode.Clamp,

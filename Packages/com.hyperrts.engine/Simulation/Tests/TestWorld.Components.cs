@@ -41,11 +41,11 @@ namespace HyperRTS.Simulation.Tests
             if (!EntityManager.HasBuffer<Ability>(entity))
             {
                 EntityManager.AddBuffer<Ability>(entity);
-                EntityManager.AddBuffer<AbilityState>(entity);
+                EntityManager.AddBuffer<AbilityCooldown>(entity);
             }
 
             Buffer<Ability>(entity).Add(ability);
-            Buffer<AbilityState>(entity).Add(new AbilityState { Id = ability.Id, CooldownRemaining = cooldownRemaining });
+            Buffer<AbilityCooldown>(entity).Add(new AbilityCooldown { Id = ability.Id, Remaining = cooldownRemaining });
             return entity;
         }
 

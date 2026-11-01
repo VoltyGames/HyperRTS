@@ -60,14 +60,14 @@ namespace HyperRTS.Simulation.Navigation.Reach
         /// Walks the unit toward the target's nearest edge until in reach, then stops it. A walk that locomotion ended
         /// by itself short of a goal still by the target is stuck.
         /// </summary>
-        public WalkUp Approach(Entity target, in LocalTransform unit, in NavAgent agent, MoveControl move)
+        public ApproachState Approach(Entity target, in LocalTransform unit, in NavAgent agent, MoveControl move)
         {
             var footprint = Footprint(target);
             var position = unit.Position;
             if (InReach(footprint, position.xz, agent.SegmentAxis(unit.Rotation), agent.Radius, _navCellSize))
             {
                 move.Stop();
-                return WalkUp.Reached;
+                return ApproachState.Reached;
             }
 
             // A goal already by the target stays put, so the path isn't restarted as the nearest edge slides.
@@ -75,18 +75,18 @@ namespace HyperRTS.Simulation.Navigation.Reach
             var isGoalByTarget = footprint.Gap(goal, goal) <= Reach(agent.Radius, _navCellSize);
             if (isGoalByTarget && move.Arrived.ValueRO && !move.Moving.ValueRO)
             {
-                return WalkUp.Stuck;
+                return ApproachState.Stuck;
             }
 
             if (isGoalByTarget && move.Moving.ValueRO)
             {
-                return WalkUp.Walking;
+                return ApproachState.Walking;
             }
 
             var edge = footprint.EdgePoint(position.xz, agent.Radius + Slack * 0.5f);
             move.Destination.ValueRW.MoveTo(move.Moving, new float3(edge.x, position.y, edge.y));
             move.Arrived.ValueRW = false;
-            return WalkUp.Walking;
+            return ApproachState.Walking;
         }
 
         /// <summary>

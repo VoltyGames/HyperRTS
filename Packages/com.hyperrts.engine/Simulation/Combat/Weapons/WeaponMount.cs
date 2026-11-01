@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         };
 
         /// <summary>An extra weapon aims with its own pose, never the hull, so it fires once that pose is on target.</summary>
-        public static WeaponMount Extra(Weapon weapon, in Ammo ammo, int requiredResearchTypeId, bool independent)
+        public static WeaponMount CreateExtra(Weapon weapon, in Ammo ammo, int requiredResearchTypeId, bool independent)
         {
             weapon.Aim.Turreted = true;
             var mount = Create(weapon, ammo);

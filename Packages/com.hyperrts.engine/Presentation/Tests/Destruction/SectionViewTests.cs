@@ -212,7 +212,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             relations.SetTeam(2, 2);
             _em.CreateSingleton(relations);
             _em.CreateSingleton(new LocalFogView { Viewer = 1, Team = 1, Active = true });
-            var fog = FogOfWar.Create(new GridFrame(float2.zero, 10f, new int2(2, 1)), Allocator.Persistent);
+            var fog = FogOfWar.Create(new CellGrid(float2.zero, 10f, new int2(2, 1)), Allocator.Persistent);
             fog.Set(fog.Visible, int2.zero, 1);
             fog.Set(fog.VisibleTall, int2.zero, 1);
             _em.CreateSingleton(fog);

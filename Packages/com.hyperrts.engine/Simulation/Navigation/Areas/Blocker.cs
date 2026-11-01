@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
             {
                 if (grid.CellGap(cell, center - axis, center + axis) < Radius)
                 {
-                    var index = grid.Frame.Index(cell);
+                    var index = grid.Grid.Index(cell);
                     grid.Cells[index] = (byte)((NavSurface)grid.Cells[index] & ~NavSurface.Land);
                 }
             }

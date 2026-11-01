@@ -80,7 +80,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             var field = new GroupField
             {
                 Key = new int2(Group, access.ClassIndex), Field = new FlowField(corridor, query.To, Allocator.Persistent),
-                Anchor = grid.Frame.CenterPoint(query.To), WallMargin = agent.WallMargin,
+                Anchor = grid.Grid.CenterPoint(query.To), WallMargin = agent.WallMargin,
             };
             field.Field.Build(access);
             Assert.IsTrue(field.Trace(grid, query, points), "the start is in the field's reach");

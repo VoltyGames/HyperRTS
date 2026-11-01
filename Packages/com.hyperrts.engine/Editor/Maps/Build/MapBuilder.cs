@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Maps.Build
             var measurer = MapMeasurer.Measure(generation, nav, issues);
             MapHintWriter.Write(scene, generation, nav, issues);
             var report = MapReport.Create(generation.Project.Spec, issues, measurer.Metrics);
-            report.land = MapLandFigures.Measure(generation);
+            report.land = MapLandShares.Measure(generation);
             report.stages.AddRange(generation.Timer.Stages);
             report.Write(MapReportImage.Draw(generation, nav, measurer.Paths));
             return report;

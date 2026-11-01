@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Layout
     /// Copies a checked spec's sector by the symmetry: features outside the sector, shared features off the axis
     /// and anything outside the map are errors.
     /// </summary>
-    public sealed class MapExpander
+    public sealed class MapSymmetryCopier
     {
         public const int MaxPlayers = 8;
         public const string FreeForAll = "ffa";
@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Maps.Layout
         private readonly MapLayout _layout;
         private readonly MapIssues _issues;
 
-        private MapExpander(MapLayout layout, MapIssues issues)
+        private MapSymmetryCopier(MapLayout layout, MapIssues issues)
         {
             _layout = layout;
             _issues = issues;
@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Layout
         public static MapLayout Expand(MapSpec spec, MapIssues issues)
         {
             var layout = new MapLayout(spec, MapSymmetry.Parse(spec.symmetry));
-            var expander = new MapExpander(layout, issues);
+            var expander = new MapSymmetryCopier(layout, issues);
             expander.AddSpawns();
             layout.Resources = expander.Points(spec.resources, nameof(MapSpec.resources));
             layout.Props = expander.Points(spec.props, nameof(MapSpec.props));

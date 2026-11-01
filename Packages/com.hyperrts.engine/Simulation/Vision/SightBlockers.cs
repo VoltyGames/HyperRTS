@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Vision
 
         public int2 Tiles;
 
-        public GridFrame Frame;
+        public CellGrid Grid;
 
         /// <summary>Bumped whenever the grid is built anew, so every viewer's sight is drawn again.</summary>
         public int Generation;
@@ -42,16 +42,16 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>An empty grid laid out as the map's fog grid.</summary>
         public static SightBlockers Create(in MapSettings map, Allocator allocator)
         {
-            var frame = map.FogFrame();
-            var count = frame.Count;
-            var tiles = (frame.Size + TileCells - 1) / TileCells;
+            var grid = map.FogGrid();
+            var count = grid.Count;
+            var tiles = (grid.Size + TileCells - 1) / TileCells;
             return new SightBlockers
             {
                 DirtyTiles = new NativeArray<byte>(tiles.x * tiles.y, allocator),
                 Tiles = tiles,
                 Cells = new NativeArray<SightCell>(count, allocator),
                 Owner = new NativeArray<Entity>(count, allocator),
-                Frame = frame,
+                Grid = grid,
             };
         }
 
@@ -69,15 +69,15 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool TryFindObstruction(float3 from, float3 to, Entity shooter, Entity target,
             out float3 contact, out Entity obstacle)
         {
-            var ray = new GridRay(Frame, from.xz, to.xz);
+            var ray = new GridRay(Grid, from.xz, to.xz);
             while (ray.MoveNext())
             {
-                if (!Frame.Contains(ray.Cell))
+                if (!Grid.Contains(ray.Cell))
                 {
                     continue;
                 }
 
-                var index = Frame.Index(ray.Cell);
+                var index = Grid.Index(ray.Cell);
                 obstacle = Owner[index];
                 var own = obstacle != Entity.Null && (obstacle == shooter || obstacle == target);
                 // Shooter and target stand on their own ground, which their cell's one height only roughs out.
@@ -105,12 +105,12 @@ namespace HyperRTS.Simulation.Vision
         {
             var length = math.distance(from.xz, to.xz);
             var haze = 0f;
-            var ray = new GridRay(Frame, from.xz, to.xz);
+            var ray = new GridRay(Grid, from.xz, to.xz);
             while (ray.MoveNext())
             {
-                if (Frame.Contains(ray.Cell))
+                if (Grid.Contains(ray.Cell))
                 {
-                    var cell = Cells[Frame.Index(ray.Cell)];
+                    var cell = Cells[Grid.Index(ray.Cell)];
                     var middle = math.lerp(from.y, to.y, (ray.Entry + ray.Exit) * 0.5f);
                     haze += cell.Loss(middle - cell.Ground, (ray.Exit - ray.Entry) * length);
                 }
@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool IsDirty(int2 min, int2 max)
         {
             var low = math.max(min, 0) / TileCells;
-            var high = math.min(max, Frame.Size - 1) / TileCells;
+            var high = math.min(max, Grid.Size - 1) / TileCells;
             for (var y = low.y; y <= high.y; y++)
             {
                 for (var x = low.x; x <= high.x; x++)
@@ -142,8 +142,8 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly bool IsConcealing(float3 position)
         {
-            var cell = Frame.Cell(position);
-            return Frame.Contains(cell) && Cells[Frame.Index(cell)].IsConcealing;
+            var cell = Grid.Cell(position);
+            return Grid.Contains(cell) && Cells[Grid.Index(cell)].IsConcealing;
         }
 
         /// <summary>Raises every cell the block touches to its tops and densities, rounded up to a step.</summary>
@@ -152,14 +152,14 @@ namespace HyperRTS.Simulation.Vision
             var box = block.Box(transform);
             foreach (var cell in CellsUnder(box))
             {
-                var center = Frame.Center(cell);
+                var center = Grid.Center(cell);
                 if (!Touches(box, center))
                 {
                     continue;
                 }
 
                 var footing = transform.Position.y - terrain.Height(center);
-                var index = Frame.Index(cell);
+                var index = Grid.Index(cell);
                 var sight = Cells[index];
                 var solid = sight.Solid;
                 Raise(ref sight.Solid, (footing + block.Height) / Step, block.Height > 0f);
@@ -180,9 +180,9 @@ namespace HyperRTS.Simulation.Vision
         {
             foreach (var cell in CellsUnder(box))
             {
-                var index = Frame.Index(cell);
+                var index = Grid.Index(cell);
                 var sight = Cells[index];
-                if (sight.Crop != 0 && Touches(box, Frame.Center(cell)))
+                if (sight.Crop != 0 && Touches(box, Grid.Center(cell)))
                 {
                     sight.Crop = 0;
                     Cells[index] = sight;
@@ -192,7 +192,7 @@ namespace HyperRTS.Simulation.Vision
         }
 
         private readonly CellRange CellsUnder(in NavBox box) =>
-            Frame.Cells(Frame.Cell(box.Center - box.Extents), Frame.Cell(box.Center + box.Extents));
+            Grid.Cells(Grid.Cell(box.Center - box.Extents), Grid.Cell(box.Center + box.Extents));
 
         // The line is lowest at one end of its crossing, so it meets the top there or where it sinks below it.
         private static bool TryFindContact(float3 entry, float3 exit, float top, out float3 contact)
@@ -216,7 +216,7 @@ namespace HyperRTS.Simulation.Vision
         // Thin walls and fences block every cell they cross, not only the ones whose centre they cover.
         private readonly bool Touches(in NavBox box, float2 center) =>
             box.Overlaps(new NavBox(new float3(center.x, 0f, center.y), quaternion.identity,
-                new float2(Frame.CellSize)));
+                new float2(Grid.CellSize)));
 
         private static void Raise(ref byte layer, float steps, bool applies)
         {

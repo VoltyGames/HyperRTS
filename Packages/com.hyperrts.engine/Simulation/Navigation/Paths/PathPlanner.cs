@@ -90,14 +90,14 @@ namespace HyperRTS.Simulation.Navigation.Paths
             if (query.Route != PathRoute.Search)
             {
                 Add(new PathTask { Request = index, Kind = PathTaskKind.Direct, Field = -1 });
-                return math.distance(query.Origin.xz, query.End.xz) / _grid.Frame.CellSize + 1f;
+                return math.distance(query.Origin.xz, query.End.xz) / _grid.Grid.CellSize + 1f;
             }
 
             var opened = 0f;
             if (request.Group != 0)
             {
                 var key = new int2(request.Group, access.ClassIndex);
-                var field = _fields.Find(key, query, _grid.Frame.CellSize);
+                var field = _fields.Find(key, query, _grid.Grid.CellSize);
                 if (field >= 0)
                 {
                     _fields.MarkUsed(field, _now);
@@ -153,7 +153,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
         {
             Add(new PathTask { Request = index, Kind = PathTaskKind.Trace, Field = field });
             var query = _queries[index];
-            return math.distance(query.Origin.xz, query.End.xz) / _grid.Frame.CellSize * TraceCostPerCell;
+            return math.distance(query.Origin.xz, query.End.xz) / _grid.Grid.CellSize * TraceCostPerCell;
         }
 
         // Serves the request with its prepared query.

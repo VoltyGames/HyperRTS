@@ -6,11 +6,11 @@ namespace HyperRTS.Editor.Maps.Heights
     /// <summary>World ground heights (metres) on a square grid of samples covering the map, row by row from the south.</summary>
     public sealed class MapHeights
     {
-        private readonly MapField<float> _samples;
+        private readonly MapValues<float> _samples;
 
         public MapHeights(int resolution, Rect bounds)
         {
-            _samples = new MapField<float>(MapGrid.Corners(bounds, resolution));
+            _samples = new MapValues<float>(MapGrid.Corners(bounds, resolution));
         }
 
         public int Resolution => _samples.Grid.Width;

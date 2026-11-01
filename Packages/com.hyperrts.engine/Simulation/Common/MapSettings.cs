@@ -40,17 +40,17 @@ namespace HyperRTS.Simulation.Common
         public readonly bool SameFogGrid(in MapSettings other) => SameArea(other) && FogCellSize == other.FogCellSize;
 
         /// <summary>The nav grid's layout.</summary>
-        public readonly GridFrame NavFrame()
+        public readonly CellGrid NavGrid()
         {
             var cellSize = math.max(0.1f, NavCellSize);
-            return new GridFrame(Min, cellSize, math.max(1, (int2)math.ceil(Size / cellSize)));
+            return new CellGrid(Min, cellSize, math.max(1, (int2)math.ceil(Size / cellSize)));
         }
 
         /// <summary>The fog grid's layout; every grid on it is laid out the same.</summary>
-        public readonly GridFrame FogFrame()
+        public readonly CellGrid FogGrid()
         {
             var cellSize = math.max(FogCellSize, 0.1f);
-            return new GridFrame(Min, cellSize, math.max((int2)math.ceil(Size / cellSize), 1));
+            return new CellGrid(Min, cellSize, math.max((int2)math.ceil(Size / cellSize), 1));
         }
 
         public readonly bool Contains(float3 position) =>

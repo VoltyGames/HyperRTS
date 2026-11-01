@@ -22,20 +22,20 @@ namespace HyperRTS.Simulation.GameEntities
         /// <summary>Floor on the fire-rate multiplier, keeping the cooldown finite under heavy slows.</summary>
         public const float MinFireRate = 0.01f;
 
-        private StatBindings _bindings;
+        private StatFieldTable _table;
         private NativeArray<EntityQuery> _queries;
 
         public void OnCreate(ref SystemState state)
         {
-            _bindings = StatBindings.Find(Allocator.Persistent);
-            _queries = new NativeArray<EntityQuery>(_bindings.Components.Length, Allocator.Persistent);
+            _table = StatFieldTable.Find(Allocator.Persistent);
+            _queries = new NativeArray<EntityQuery>(_table.Components.Length, Allocator.Persistent);
             for (var i = 0; i < _queries.Length; i++)
             {
                 var query = state.GetEntityQuery(new EntityQueryDesc
                 {
                     All = new[]
                     {
-                        _bindings.Components[i].Component, ComponentType.ReadOnly<StatModifier>(),
+                        _table.Components[i].Component, ComponentType.ReadOnly<StatModifier>(),
                         ComponentType.ReadOnly<BaseStat>(),
                     },
                     Disabled = new[] { ComponentType.ReadOnly<StatBasesPending>() },
@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.GameEntities
 
         public void OnDestroy(ref SystemState state)
         {
-            _bindings.Dispose();
+            _table.Dispose();
             _queries.Dispose();
         }
 
@@ -58,12 +58,12 @@ namespace HyperRTS.Simulation.GameEntities
             new WeaponJob().ScheduleParallel();
             for (var i = 0; i < _queries.Length; i++)
             {
-                var binding = _bindings.Components[i];
+                var statComponent = _table.Components[i];
                 state.Dependency = new FieldJob
                 {
-                    Component = state.GetDynamicComponentTypeHandle(binding.Component),
-                    Floats = binding.Floats,
-                    Fields = _bindings.FieldsFor(binding),
+                    Component = state.GetDynamicComponentTypeHandle(statComponent.Component),
+                    Floats = statComponent.Floats,
+                    Fields = _table.FieldsFor(statComponent),
                     Modifiers = SystemAPI.GetBufferTypeHandle<StatModifier>(true),
                     Bases = SystemAPI.GetBufferTypeHandle<BaseStat>(true),
                 }.ScheduleParallel(_queries[i], state.Dependency);
