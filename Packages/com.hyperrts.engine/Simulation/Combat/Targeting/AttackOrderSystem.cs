@@ -35,7 +35,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
             new AttackOrderJob
             {
                 Targets = _targets,
-                AmmoLookup = SystemAPI.GetComponentLookup<Ammo>(true),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
             }.ScheduleParallel();
         }
@@ -46,10 +45,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
         {
             public TargetLookup Targets;
             public FactionRelations Relations;
-            [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> hasOrder, ref AttackTarget attack,
-                EnabledRefRW<AttackTarget> attacking, in Faction faction, in Weapon weapon)
+                EnabledRefRW<AttackTarget> attacking, in Faction faction, in DynamicBuffer<WeaponMount> mounts)
             {
                 if (order.Value.Type != OrderType.Attack)
                 {
@@ -57,8 +55,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 }
 
                 var target = order.Value.Target;
-                var valid = Targets.IsAttackable(target, faction.Value, Relations, weapon.Targets);
-                if (!valid || Ammo.IsEmpty(AmmoLookup, entity))
+                var primary = mounts[0];
+                var valid = Targets.IsAttackable(target, faction.Value, Relations, primary.Weapon.Targets);
+                if (!valid || primary.Ammo.Empty)
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.
                     hasOrder.ValueRW = false;

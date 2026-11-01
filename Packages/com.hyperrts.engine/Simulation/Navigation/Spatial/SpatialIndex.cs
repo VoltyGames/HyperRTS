@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -41,23 +42,17 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             where T : struct, ISpatialVisitor
         {
             var search = radius + CellSize;
-            var min = CellAt(center - search);
-            var max = CellAt(center + search);
-
-            for (var y = min.y; y <= max.y; y++)
+            foreach (var cell in new CellRange(CellAt(center - search), CellAt(center + search)))
             {
-                for (var x = min.x; x <= max.x; x++)
+                if (!Cells.TryGetFirstValue(Key(cell), out var entry, out var iterator))
                 {
-                    if (!Cells.TryGetFirstValue(Key(new int2(x, y)), out var entry, out var iterator))
-                    {
-                        continue;
-                    }
-
-                    do
-                    {
-                        VisitIfOverlapping(entry, center, radius, hulls, ref visitor);
-                    } while (Cells.TryGetNextValue(out entry, ref iterator));
+                    continue;
                 }
+
+                do
+                {
+                    VisitIfOverlapping(entry, center, radius, hulls, ref visitor);
+                } while (Cells.TryGetNextValue(out entry, ref iterator));
             }
 
             foreach (var entry in Oversized)

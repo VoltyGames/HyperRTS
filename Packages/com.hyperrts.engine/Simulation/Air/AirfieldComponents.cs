@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
@@ -12,8 +13,8 @@ namespace HyperRTS.Simulation.Air
 
         public PadKind Kind;
 
-        /// <summary>The aircraft based here; <c>Entity.Null</c> while the pad is free.</summary>
-        public Entity Aircraft;
+        /// <summary>Held by the aircraft based here, which renews it every frame; free when it dies or leaves.</summary>
+        public Lease Lease;
 
         /// <summary>An Any pad takes every aircraft, and an Any aircraft lands on every pad.</summary>
         public readonly bool Accepts(PadKind aircraft) => Kind == PadKind.Any || aircraft == PadKind.Any || Kind == aircraft;
@@ -23,7 +24,7 @@ namespace HyperRTS.Simulation.Air
         {
             for (var i = 0; i < pads.Length; i++)
             {
-                if (pads[i].Aircraft == Entity.Null && pads[i].Accepts(aircraft))
+                if (pads[i].Lease.IsFree &&pads[i].Accepts(aircraft))
                 {
                     return i;
                 }

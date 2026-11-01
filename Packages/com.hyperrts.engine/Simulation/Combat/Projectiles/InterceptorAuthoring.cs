@@ -10,8 +10,9 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Combat.Projectiles
 {
     /// <summary>
-    /// Lets a building or unit shoot down hostile projectiles in flight. It plays its Fire cue at the pose index after
-    /// the weapons and its Impact cue as the airburst where a projectile dies. Drones are units, so it ignores them.
+    /// Lets a building or unit shoot down hostile projectiles in flight. It aims and fires the weapon mount after the
+    /// unit's weapons, plays its Fire cue at that index and its Impact cue as the airburst where a projectile dies.
+    /// Drones are units, so it ignores them.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Interceptor")]
     [Icon(HyperRTSIcons.Combat)]
@@ -70,58 +71,67 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         [Min(0)]
         public int rounds;
 
-        [Tooltip("Seconds per round refilled while online.")]
+        [Tooltip("Seconds per round refilled.")]
         [Min(0.05f)]
         [ShowIf(nameof(rounds))]
         public float reloadTime = 10f;
 
-        /// <summary>Its index in the pose buffer: after the primary and extra weapons, or 0 without a weapon.</summary>
-        public int Pose => TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponPoses : 0;
+        /// <summary>Its mount and pose index: after the primary and extra weapons, or 0 without a weapon.</summary>
+        public int Mount => TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponCount : 0;
 
-        /// <summary>Without a weapon, at pose 0, it brings the pose buffer; a weapon's baker sizes it otherwise.</summary>
-        public static void Add(EntityWriter writer, in Interceptor interceptor)
+        /// <summary>An interceptor without a weapon, which brings the mount and pose buffers a weapon's baker adds otherwise.</summary>
+        public static void Add(EntityWriter writer, in Interceptor interceptor, in WeaponMount mount)
         {
             writer.Add(interceptor);
-            if (interceptor.Pose == 0)
-            {
-                writer.AddBuffer<WeaponPose>().Resize(1, NativeArrayOptions.ClearMemory);
-            }
+            writer.AddBuffer<WeaponMount>().Add(mount);
+            writer.AddBuffer<WeaponPose>().Resize(1, NativeArrayOptions.ClearMemory);
         }
 
-        /// <summary>The baked interceptor, with its muzzle and pivots relative to <paramref name="root"/>.</summary>
-        public Interceptor Bake(IBaker baker, Transform root)
+        public Interceptor Bake() => new()
         {
-            var aim = new WeaponAim
+            Radius = radius,
+            KillChance = killChance,
+            Kinds = kinds,
+            Mount = (byte)Mount,
+        };
+
+        /// <summary>The weapon it aims and fires with, its muzzle and pivots relative to <paramref name="root"/>.</summary>
+        public WeaponMount BakeMount(IBaker baker, Transform root)
+        {
+            var weapon = new Weapon
             {
-                Turreted = true,
-                TraverseRate = math.radians(aimSpeed),
-                ElevationRate = math.radians(aimSpeed),
-                MinPitch = math.radians(minElevation),
-                MaxPitch = math.radians(maxElevation),
-                AimTolerance = math.radians(aimTolerance),
-            };
-            aim.BakeSockets(baker, root, muzzle, turret, barrel);
-            return new Interceptor
-            {
-                Radius = radius,
-                KillChance = killChance,
-                Kinds = kinds,
-                Aim = aim,
                 Cooldown = 1f / engagementsPerSecond,
+                SalvoSize = 1,
                 NeedsDeploy = needsDeploy,
-                Pose = (byte)Pose,
-                Ammo = Ammo.Create(rounds, reloadTime, AmmoRefill.Round),
+                Aim = new WeaponAim
+                {
+                    Turreted = true,
+                    TraverseRate = math.radians(aimSpeed),
+                    ElevationRate = math.radians(aimSpeed),
+                    MinPitch = math.radians(minElevation),
+                    MaxPitch = math.radians(maxElevation),
+                    AimTolerance = math.radians(aimTolerance),
+                },
             };
+            weapon.Aim.BakeSockets(baker, root, muzzle, turret, barrel);
+            var mount = WeaponMount.Create(weapon, Ammo.Create(rounds, reloadTime, AmmoRefill.Round));
+            mount.Intercepts = true;
+            return mount;
         }
 
         public class Baker : Baker<InterceptorAuthoring>
         {
             public override void Bake(InterceptorAuthoring authoring)
             {
-                // Registers the dependency, so adding or removing a weapon rebakes the pose index.
-                GetComponent<WeaponAuthoring>();
                 var writer = this.Writer();
-                Add(writer, authoring.Bake(this, authoring.transform));
+                // A weapon's baker adds this mount after its own; the lookup also rebakes when one is added or removed.
+                if (GetComponent<WeaponAuthoring>() != null)
+                {
+                    writer.Add(authoring.Bake());
+                    return;
+                }
+
+                Add(writer, authoring.Bake(), authoring.BakeMount(this, authoring.transform));
             }
         }
     }

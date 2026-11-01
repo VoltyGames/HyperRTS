@@ -236,7 +236,7 @@ namespace HyperRTS.Presentation.Environment.Trampling
         // The height checks leave out aircraft and units on bridges.
         private static bool InWater(in NavGrid grid, float3 position)
         {
-            var water = (grid.Surface(grid.WorldToCell(position)) & NavSurface.Water) != 0;
+            var water = (grid.Surface(grid.Frame.Cell(position)) & NavSurface.Water) != 0;
             return water && grid.Terrain.Height(position.xz) < grid.WaterLevel &&
                    position.y <= grid.WaterLevel + MaxGroundGap;
         }

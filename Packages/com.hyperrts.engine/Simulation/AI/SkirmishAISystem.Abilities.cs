@@ -77,7 +77,7 @@ namespace HyperRTS.Simulation.AI
 
             if (ability.Target == AbilityTarget.None)
             {
-                var range = math.max(ability.Radius, SystemAPI.GetComponent<AIPlayer>(turn.Player).SelfAbilityTriggerRange);
+                var range = math.max(ability.Damage.Radius, SystemAPI.GetComponent<AIPlayer>(turn.Player).SelfAbilityTriggerRange);
                 return HostileWithin(faction, from, range, snapshot);
             }
 
@@ -131,7 +131,7 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            var supportive = ability.Filter == AbilityTargetFilter.Allied || ability.Damage < 0f;
+            var supportive = ability.Filter == AbilityTargetFilter.Allied || ability.Damage.Amount < 0f;
             if (!supportive)
             {
                 return _targetLookup.IsValidTarget(entity, faction, snapshot.Relations);

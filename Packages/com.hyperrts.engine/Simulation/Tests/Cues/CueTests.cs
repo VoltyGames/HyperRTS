@@ -125,10 +125,10 @@ namespace HyperRTS.Simulation.Tests.Cues
         {
             var tank = World.AddWeapon(World.SpawnUnit(1, float3.zero, name: "Tank"), range: 10f,
                 turreted: true);
-            var weapon = World.Get<Weapon>(tank);
+            var weapon = World.Primary(tank);
             weapon.Aim.HasMuzzle = true;
             weapon.Aim.Muzzle = new float3(0f, 1f, 2f);
-            World.Set(tank, weapon);
+            World.SetPrimary(tank, weapon);
             Rigged(tank, CueSlot.Fire, weapon.Aim.Muzzle);
             World.SpawnUnit(2, new float3(8f, 0f, 0f), maxHealth: 1000f);
 

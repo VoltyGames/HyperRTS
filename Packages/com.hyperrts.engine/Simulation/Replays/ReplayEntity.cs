@@ -1,10 +1,12 @@
 using HyperRTS.Simulation.Common;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Replays
 {
     /// <summary>One entity's quantized state in a replay sample; quantized, idle entities compare equal.</summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ReplayEntity
     {
         /// <summary><see cref="Progress"/> of an entity that isn't under construction.</summary>

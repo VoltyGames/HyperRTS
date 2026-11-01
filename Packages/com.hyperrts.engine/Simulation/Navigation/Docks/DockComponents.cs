@@ -22,10 +22,8 @@ namespace HyperRTS.Simulation.Navigation.Docks
         /// <summary>Where the straight run out of the bay ends.</summary>
         public float3 Exit;
 
-        public Entity Occupant;
-
-        /// <summary>The occupant claimed it since <see cref="DockSystem"/> last ran; a bay nobody claims frees.</summary>
-        public bool Claimed;
+        /// <summary>The occupant renews it every frame; <see cref="DockSystem"/> frees a bay nobody renewed.</summary>
+        public Lease Lease;
 
         /// <summary>Places in line taken last frame, bit n for place n + 1.</summary>
         public uint Line;
@@ -33,7 +31,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
         /// <summary>Places taken so far this frame, rolled into <see cref="Line"/> by <see cref="DockSystem"/>.</summary>
         public uint NextLine;
 
-        public readonly bool IsFree => Occupant == Entity.Null;
+        public readonly bool IsFree => Lease.IsFree;
 
         public readonly BayPose WorldPose(in LocalTransform dock)
         {
@@ -152,7 +150,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
 
         public BayPose Pose(Entity dock, int bay) => _bays[dock][bay].WorldPose(_transforms[dock]);
 
-        public Entity Occupant(Entity dock, int bay) => _bays[dock][bay].Occupant;
+        public Entity Occupant(Entity dock, int bay) => _bays[dock][bay].Lease.Holder;
 
         /// <summary>
         /// Claims the free bay nearest the unit that nobody waits for ahead of it: one with no line, or the bay it
@@ -185,20 +183,10 @@ namespace HyperRTS.Simulation.Navigation.Docks
         /// <summary>Keeps the bay the unit's for another frame.</summary>
         public void Hold(Entity dock, int bay, Entity unit)
         {
-            ref var held = ref _bays[dock].ElementAt(bay);
-            held.Occupant = unit;
-            held.Claimed = true;
+            _bays[dock].ElementAt(bay).Lease.Hold(unit);
         }
 
-        public void Free(Entity dock, int bay, Entity unit)
-        {
-            ref var held = ref _bays[dock].ElementAt(bay);
-            if (held.Occupant == unit)
-            {
-                held.Occupant = Entity.Null;
-                held.Claimed = false;
-            }
-        }
+        public void Free(Entity dock, int bay, Entity unit) => _bays[dock].ElementAt(bay).Lease.Release(unit);
 
         /// <summary>
         /// The unit's place in line this frame: its old one moved up past places left empty, or for a newcomer

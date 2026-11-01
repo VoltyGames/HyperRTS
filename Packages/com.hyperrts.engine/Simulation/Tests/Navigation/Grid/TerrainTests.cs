@@ -144,7 +144,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             var plain = World.Fog();
             for (var i = 0; i < plain.Visible.Length; i++)
             {
-                Assert.AreEqual(plain.Visible[i], occluded.Visible[i], $"cell {plain.Cell(i)}");
+                Assert.AreEqual(plain.Visible[i], occluded.Visible[i], $"cell {plain.Frame.Cell(i)}");
             }
         }
     }

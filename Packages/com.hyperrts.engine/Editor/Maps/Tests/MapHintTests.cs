@@ -6,6 +6,7 @@ using HyperRTS.Editor.Maps.Hints;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Simulation.AI;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Grid;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -49,12 +50,10 @@ namespace HyperRTS.Editor.Maps.Tests
 
         private static MapNavGrid Field(Func<float2, bool> blocked)
         {
-            var size = new int2(200, 80);
-            var min = new float2(-100f, -40f);
-            var grid = NavGrid.Create(size, min, 1f, default, 0f);
+            var grid = NavGrid.Create(new GridFrame(new float2(-100f, -40f), 1f, new int2(200, 80)), default, 0f);
             for (var i = 0; i < grid.Cells.Length; i++)
             {
-                var center = min + new float2(i % size.x, i / size.x) + 0.5f;
+                var center = grid.Frame.Center(grid.Frame.Cell(i));
                 grid.Cells[i] = (byte)(blocked(center) ? NavSurface.Blocked : NavSurface.Land);
             }
 

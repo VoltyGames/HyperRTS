@@ -128,7 +128,7 @@ namespace HyperRTS.Presentation.Tests.Fog
         public void Texels_ClearWhenVisible_DimWhenExplored_DarkOtherwise()
         {
             const byte team = 2;
-            var fog = FogOfWar.Create(new int2(4, 1), float2.zero, 1f, Allocator.TempJob);
+            var fog = FogOfWar.Create(new GridFrame(float2.zero, 1f, new int2(4, 1)), Allocator.TempJob);
             using var output = new NativeArray<byte>(4, Allocator.TempJob);
             fog.Set(fog.Visible, new int2(0, 0), team);
             fog.Set(fog.Explored, new int2(0, 0), team);

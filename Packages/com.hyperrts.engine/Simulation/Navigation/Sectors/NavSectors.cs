@@ -130,7 +130,7 @@ namespace HyperRTS.Simulation.Navigation.Sectors
             for (var local = 0; local < Area; local++)
             {
                 var cell = Layout.Cell(sector, local);
-                var open = math.all(cell < field.Size) && field.IsOpen(slot, cell, radius);
+                var open = math.all(cell < field.Frame.Size) && field.IsOpen(slot, cell, radius);
                 Labels[offset + local] = open ? Unlabelled : (byte)0;
             }
 

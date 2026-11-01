@@ -68,8 +68,7 @@ namespace HyperRTS.Simulation.Vision
             fog.Version++;
 
             // Stealth and concealment apply with fog off too, so detection and the close layer are stamped either way.
-            state.Dependency = new ClearWordsJob { Words = fog.Detected }
-                .Schedule(fog.Detected.Length, 4096, state.Dependency);
+            state.Dependency = ClearJob<ulong>.Schedule(fog.Detected, state.Dependency);
             new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
             DrawPatches(ref state, fog, relations, settings);
             Merge(ref state, fog);
@@ -104,7 +103,7 @@ namespace HyperRTS.Simulation.Vision
             }.ScheduleParallel(_viewers, state.Dependency);
 
             // Every patch has now drawn round what changed.
-            state.Dependency = new ClearBytesJob { Bytes = blockers.DirtyTiles }.Schedule(state.Dependency);
+            state.Dependency = ClearJob<byte>.Schedule(blockers.DirtyTiles, state.Dependency);
         }
 
         private void Merge(ref SystemState state, in FogOfWar fog)
@@ -131,8 +130,7 @@ namespace HyperRTS.Simulation.Vision
             }
 
             _builtMap = settings;
-            settings.FogLayout(out var size, out var cellSize);
-            var grid = FogOfWar.Create(size, settings.Min, cellSize, Allocator.Persistent);
+            var grid = FogOfWar.Create(settings.FogFrame(), Allocator.Persistent);
             grid.Generation = 1;
             if (!exists)
             {
@@ -171,28 +169,6 @@ namespace HyperRTS.Simulation.Vision
             public NativeArray<ulong> Explored;
 
             public void Execute(int index) => Explored[index] |= VisibleTall[index];
-        }
-
-        [BurstCompile]
-        private struct ClearWordsJob : IJobParallelFor
-        {
-            public NativeArray<ulong> Words;
-
-            public void Execute(int index) => Words[index] = 0ul;
-        }
-
-        [BurstCompile]
-        private struct ClearBytesJob : IJob
-        {
-            public NativeArray<byte> Bytes;
-
-            public void Execute()
-            {
-                for (var i = 0; i < Bytes.Length; i++)
-                {
-                    Bytes[i] = 0;
-                }
-            }
         }
     }
 }

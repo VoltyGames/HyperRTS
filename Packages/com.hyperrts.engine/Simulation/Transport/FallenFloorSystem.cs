@@ -70,11 +70,8 @@ namespace HyperRTS.Simulation.Transport
                     }
 
                     var unit = cargo[i].Unit;
-                    Damage.Add(new DamageEvent
-                    {
-                        Target = unit, Source = attacker.Source, SourceFaction = attacker.Faction,
-                        Amount = FallHit * Exit.MaxHealth(unit),
-                    });
+                    Damage.Add(DamageEvent.Direct(unit, Exit.Position(entity), attacker.Source, attacker.Faction,
+                        FallHit * Exit.MaxHealth(unit)));
                     Exit.Unload(entity, cargo, i, Grid);
                 }
 

@@ -40,6 +40,24 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>Layers the splash reaches: the weapon's targets, else the surface only.</summary>
         public WeaponTargets Reach;
 
+        /// <summary>A plain hit or heal on <paramref name="target"/> alone, untyped and without splash.</summary>
+        public static DamageEvent Direct(Entity target, float3 position, Entity source, byte faction, float amount) =>
+            OverTime(target, position, position, source, faction, amount, default);
+
+        /// <summary>A typed hit on <paramref name="target"/> alone, such as one tick of damage over time; no splash or garrison share.</summary>
+        public static DamageEvent OverTime(Entity target, float3 position, float3 origin, Entity source, byte faction,
+            float amount, UnityObjectRef<DamageType> type) => new()
+        {
+            Target = target,
+            Position = position,
+            Origin = origin,
+            Source = source,
+            SourceFaction = faction,
+            Amount = amount,
+            Type = type,
+            EdgeFactor = 1f,
+        };
+
         /// <summary>Linear falloff from full damage at the centre to <see cref="EdgeFactor"/> at <see cref="Radius"/>.</summary>
         public readonly float SplashFactor(float gap) =>
             math.lerp(1f, EdgeFactor, math.saturate(gap / math.max(Radius, 1e-4f)));

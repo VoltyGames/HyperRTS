@@ -147,23 +147,23 @@ namespace HyperRTS.Presentation.Overlays
         private void AddBlockedCells(in BuildingSpot spot, in NavGrid grid)
         {
             var box = spot.Box;
-            var size = new Vector3(grid.CellSize, 1f, grid.CellSize);
-            grid.GetBoxArea(box, out var min, out var max);
-            for (var y = min.y; y <= max.y; y++)
+            var size = new Vector3(grid.Frame.CellSize, 1f, grid.Frame.CellSize);
+            foreach (var cell in grid.CellsUnder(box))
             {
-                for (var x = min.x; x <= max.x && _blockedCount < MaxBlockedCells; x++)
+                if (_blockedCount >= MaxBlockedCells)
                 {
-                    var cell = new int2(x, y);
-                    if (!grid.InBox(box, cell) || !spot.Forbids(grid.Surface(cell)))
-                    {
-                        continue;
-                    }
-
-                    var center = grid.CellCenter(cell);
-                    center.y = grid.SurfaceHeight(center) + Lift;
-                    _blockedCells.Add(Matrix4x4.TRS(center, Quaternion.identity, size));
-                    _blockedCount++;
+                    return;
                 }
+
+                if (!grid.InBox(box, cell) || !spot.Forbids(grid.Surface(cell)))
+                {
+                    continue;
+                }
+
+                var center = grid.Frame.CenterPoint(cell);
+                center.y = grid.SurfaceHeight(center) + Lift;
+                _blockedCells.Add(Matrix4x4.TRS(center, Quaternion.identity, size));
+                _blockedCount++;
             }
         }
 

@@ -77,7 +77,13 @@ namespace HyperRTS.Simulation.Vision
             }
 
             ref var blockers = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
-            state.Dependency = new ClearJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
+            // Crop cover stays, flattened lanes and all.
+            state.Dependency = new KeepJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
+            state.Dependency = ClearJob<byte>.Schedule(blockers.Solid, state.Dependency);
+            state.Dependency = ClearJob<Entity>.Schedule(blockers.Owner, state.Dependency);
+            state.Dependency = ClearJob<byte>.Schedule(blockers.Porous, state.Dependency);
+            state.Dependency = ClearJob<byte>.Schedule(blockers.PorousTop, state.Dependency);
+            state.Dependency = ClearJob<byte>.Schedule(blockers.Conceals, state.Dependency);
             state.Dependency = new StampJob { Blockers = blockers, Terrain = terrain }
                 .Schedule(_blocks, state.Dependency);
             state.Dependency = new DiffJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);

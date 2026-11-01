@@ -49,7 +49,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 Targets = _targets,
                 Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Traits = traits,
-                AmmoLookup = SystemAPI.GetComponentLookup<Ammo>(true),
                 Slot = new ScanSlot(SystemAPI.GetSingleton<SimulationFrame>()),
             }.ScheduleParallel();
         }
@@ -64,22 +63,24 @@ namespace HyperRTS.Simulation.Combat.Targeting
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
-            [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
             public ScanSlot Slot;
 
-            private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in CombatStance stance,
-                in VisionRange vision, in Faction faction, ref AttackTarget attack, EnabledRefRW<AttackTarget> attacking)
+            private void Execute(Entity entity, in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts,
+                in CombatStance stance, in VisionRange vision, in Faction faction, ref AttackTarget attack,
+                EnabledRefRW<AttackTarget> attacking)
             {
-                if (!Slot.Owns(entity) ||attacking.ValueRO || stance.Value == Stance.Passive)
+                if (!Slot.Owns(entity) || attacking.ValueRO || stance.Value == Stance.Passive)
                 {
                     return;
                 }
 
-                if (!MayAutoAcquire(entity))
+                var primary = mounts[0];
+                if (primary.Ammo.Empty || !MayAutoAcquire(entity))
                 {
                     return;
                 }
 
+                var weapon = primary.Weapon;
                 var holding = stance.Value == Stance.HoldPosition;
                 var range = holding ? Targets.ScanReach(entity, weapon) : weapon.ScanRange(vision.Value);
                 var radius = Targets.Radius(entity);
@@ -96,11 +97,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
             private bool MayAutoAcquire(Entity entity)
             {
-                if (Ammo.IsEmpty(AmmoLookup, entity))
-                {
-                    return false;
-                }
-
                 if (!Orders.HasEnabled(entity))
                 {
                     return true;

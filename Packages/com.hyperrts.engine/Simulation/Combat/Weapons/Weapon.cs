@@ -1,24 +1,18 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Projectiles;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Entities;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
-    /// <summary>Attack stats; range is measured edge to edge between footprints.</summary>
-    public struct Weapon : IComponentData
+    /// <summary>One weapon's attack stats, held by its <see cref="WeaponMount"/>; range is measured edge to edge between footprints.</summary>
+    public struct Weapon
     {
         public float Range;
-        public float Damage;
+        public DamageProfile Damage;
         public float Cooldown;
         public float CooldownRemaining;
-        public UnityObjectRef<DamageType> DamageType;
-        public float GarrisonFactor;
-        public float SplashRadius;
-        public float SplashEdgeFactor;
-        public bool FriendlyFire;
         public Entity ProjectilePrefab;
         public float ProjectileSpeed;
 
@@ -74,23 +68,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>How far it looks for targets: <see cref="AcquireRange"/>, else <paramref name="visionRange"/>, never under <see cref="Range"/>.</summary>
         public readonly float ScanRange(float visionRange) =>
             math.max(AcquireRange > 0f ? AcquireRange : visionRange, Range);
-
-        /// <summary>The hit it deals: full damage to the target plus its splash, if any.</summary>
-        public readonly DamageEvent Hit(Entity source, byte faction, float3 origin, Entity target, float3 position) => new()
-        {
-            Target = target,
-            Position = position,
-            Origin = origin,
-            Source = source,
-            SourceFaction = faction,
-            Amount = Damage,
-            Type = DamageType,
-            GarrisonFactor = GarrisonFactor,
-            Radius = SplashRadius,
-            EdgeFactor = SplashEdgeFactor,
-            FriendlyFire = FriendlyFire,
-            Reach = Targets,
-        };
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 

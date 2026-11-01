@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Cues.Surfaces;
-using System.IO;
+using System.Runtime.InteropServices;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using Unity.Mathematics;
@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Cues
     /// One <see cref="CueEvent"/> in 18 bytes, for the network and replays; positions and radii in
     /// <see cref="QuantizedPosition"/> steps.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PackedCue
     {
         private const float PitchSteps = 127f;
@@ -80,35 +81,5 @@ namespace HyperRTS.Simulation.Cues
                 Material = impact ? (SurfaceMaterial)Detail : default,
             };
         }
-
-        public readonly void Write(BinaryWriter writer)
-        {
-            writer.Write(TypeId);
-            writer.Write(X);
-            writer.Write(Y);
-            writer.Write(Z);
-            writer.Write(Radius);
-            writer.Write(Slot);
-            writer.Write(Faction);
-            writer.Write(Yaw);
-            writer.Write(Pitch);
-            writer.Write(SurfaceCover);
-            writer.Write(Detail);
-        }
-
-        public static PackedCue Read(BinaryReader reader) => new()
-        {
-            TypeId = reader.ReadInt32(),
-            X = reader.ReadInt16(),
-            Y = reader.ReadInt16(),
-            Z = reader.ReadInt16(),
-            Radius = reader.ReadUInt16(),
-            Slot = reader.ReadByte(),
-            Faction = reader.ReadByte(),
-            Yaw = reader.ReadByte(),
-            Pitch = reader.ReadByte(),
-            SurfaceCover = reader.ReadByte(),
-            Detail = reader.ReadByte(),
-        };
     }
 }

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -13,17 +14,15 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Metres each cell's ground stands above the mean within <see cref="SightRules.Radius"/>.</summary>
         public NativeArray<float> Rise;
 
-        public int2 Size;
-        public float2 Min;
-        public float CellSize;
+        public GridFrame Frame;
         public SightRules Rules;
 
         public readonly bool IsCreated => Rise.IsCreated;
 
         public readonly float RiseAt(float3 position)
         {
-            var cell = (int2)math.floor((position.xz - Min) / CellSize);
-            return math.all(cell >= 0 & cell < Size) ? Rise[cell.y * Size.x + cell.x] : 0f;
+            var cell = Frame.Cell(position);
+            return Frame.Contains(cell) ? Rise[Frame.Index(cell)] : 0f;
         }
 
         /// <summary>What a viewer's sight range is multiplied by there; 1 off high ground or without a grid.</summary>

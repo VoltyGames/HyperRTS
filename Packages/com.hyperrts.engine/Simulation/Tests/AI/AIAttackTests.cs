@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.AI;
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
@@ -65,8 +66,8 @@ namespace HyperRTS.Simulation.Tests.AI
             {
                 squad[i] = World.SpawnUnit(2, new float3(i * 3f, 0f, 0f));
                 var writer = World.Writer(squad[i]);
-                WeaponSetup.Add(writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f }, Stance.Aggressive,
-                    float3.zero, 0);
+                var weapon = new Weapon { Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f };
+                WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, Stance.Aggressive, float3.zero);
             }
 
             World.SpawnBuilding(1, new float3(60f, 0f, 0f), new float2(4f, 4f));
@@ -156,8 +157,11 @@ namespace HyperRTS.Simulation.Tests.AI
             World.SetBuildTime(soldier, 0.5f);
             World.SetCost(soldier, _supplies, 10);
             var writer = World.Writer(soldier);
-            var weapon = new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f, LeashFactor = 1.5f };
-            WeaponSetup.Add(writer, weapon, Stance.Aggressive, float3.zero, 0);
+            var weapon = new Weapon
+            {
+                Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f, LeashFactor = 1.5f,
+            };
+            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, Stance.Aggressive, float3.zero);
             World.MakeProducer(World.SpawnBuilding(2, at, new float2(4f, 4f)), new float3(0f, 0f, -4f), soldier);
             World.SpawnProvider(2, at + new float3(-20f, 0f, 0f), 10);
             World.AddResources(2, _supplies, 100);
@@ -166,7 +170,7 @@ namespace HyperRTS.Simulation.Tests.AI
         private int AttackMovingTo(float3 goal)
         {
             var count = 0;
-            foreach (var unit in World.All<Weapon>())
+            foreach (var unit in World.All<CombatStance>())
             {
                 var order = World.Get<ActiveOrder>(unit).Value;
                 var attackMoving = World.IsEnabled<ActiveOrder>(unit) && order.Type == OrderType.AttackMove;
@@ -185,8 +189,8 @@ namespace HyperRTS.Simulation.Tests.AI
             World.EntityManager.AddBuffer<Ability>(entity).Add(new Ability
             {
                 Id = EntityInfo.TypeIdFromName(name), Name = name, Target = target,
-                Filter = AbilityTargetFilter.Hostile, Range = range, Cooldown = 30f, Damage = damage,
-                Radius = radius,
+                Filter = AbilityTargetFilter.Hostile, Range = range, Cooldown = 30f,
+                Damage = new DamageProfile { Amount = damage, Radius = radius, EdgeFactor = 1f },
             });
             return entity;
         }

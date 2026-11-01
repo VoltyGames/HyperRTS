@@ -67,11 +67,11 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             var unit = _world.SpawnUnit(1, start, radius: DozerRadius);
             _world.Tick();
             var access = Access(unit);
-            Assert.IsFalse(access.IsOpen(_world.Grid().WorldToCell(start)), "the unit stands in a blocked cell");
+            Assert.IsFalse(access.IsOpen(_world.Grid().Frame.Cell(start)), "the unit stands in a blocked cell");
 
             var query = GridPathfinder.Prepare(access, start, new float3(0f, 0f, 30f));
 
-            Assert.Less(_world.Grid().CellCenter(query.From).z, 8f, "the path starts on the near bank");
+            Assert.Less(_world.Grid().Frame.CenterPoint(query.From).z, 8f, "the path starts on the near bank");
             Assert.Less(query.End.z, 8f, "with no bridge, the goal snaps to the near bank too");
         }
 

@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         /// <summary>The thickest haze, in multiples of the weather's own fog density.</summary>
         public const float Most = 4f;
 
-        private readonly GridArea _grid;
+        private readonly GridFrame _grid;
         private readonly int2 _roll;
         private NativeArray<float> _amounts;
         private NativeArray<float> _drifted;
@@ -36,7 +36,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         {
             Side = side;
             CellSize = side / Cells;
-            _grid = new GridArea(min, CellSize, new int2(Cells, Cells));
+            _grid = new GridFrame(min, CellSize, new int2(Cells, Cells));
             // The fog samples the texture from world zero, repeating every side, so the map's cells shift round it.
             _roll = (int2)math.round(min / CellSize);
             _amounts = new NativeArray<float>(Cells * Cells, Allocator.Persistent);
@@ -63,22 +63,17 @@ namespace HyperRTS.Presentation.Environment.Weather
         public void Add(float2 position, float radius, float amount)
         {
             var reach = math.max(radius, CellSize);
-            var low = math.max(_grid.Cell(position - reach), 0);
-            var high = math.min(_grid.Cell(position + reach), Cells - 1);
-            for (var z = low.y; z <= high.y; z++)
+            foreach (var cell in _grid.Cells(_grid.Cell(position - reach), _grid.Cell(position + reach)))
             {
-                for (var x = low.x; x <= high.x; x++)
+                var offset = _grid.Center(cell) - position;
+                var falloff = 1f - math.lengthsq(offset) / (reach * reach);
+                if (falloff <= 0f)
                 {
-                    var offset = _grid.Centre(new int2(x, z)) - position;
-                    var falloff = 1f - math.lengthsq(offset) / (reach * reach);
-                    if (falloff <= 0f)
-                    {
-                        continue;
-                    }
-
-                    var index = _grid.Index(new int2(x, z));
-                    _amounts[index] = math.min(_amounts[index] + amount * falloff, Most);
+                    continue;
                 }
+
+                var index = _grid.Index(cell);
+                _amounts[index] = math.min(_amounts[index] + amount * falloff, Most);
             }
         }
 
@@ -86,7 +81,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         public float Amount(float2 position)
         {
             var cell = _grid.Cell(position);
-            return _grid.Inside(cell) ? _amounts[_grid.Index(cell)] : 0f;
+            return _grid.Contains(cell) ? _amounts[_grid.Index(cell)] : 0f;
         }
 
         /// <summary>All the haze on the grid, in cell units.</summary>

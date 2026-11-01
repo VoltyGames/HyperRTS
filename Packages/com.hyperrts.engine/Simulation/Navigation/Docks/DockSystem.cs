@@ -27,12 +27,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
                 for (var i = 0; i < bays.Length; i++)
                 {
                     ref var bay = ref bays.ElementAt(i);
-                    if (!bay.Claimed)
-                    {
-                        bay.Occupant = Entity.Null;
-                    }
-
-                    bay.Claimed = false;
+                    bay.Lease.Expire();
                     bay.Line = bay.NextLine;
                     bay.NextLine = 0u;
                 }

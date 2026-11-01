@@ -98,8 +98,8 @@ namespace HyperRTS.Simulation.Vision
             var close = airborne || IsInside(entity, out _) ? 0f : RevealDistance;
             return new SightPatch
             {
-                Center = Fog.WorldToCell(position),
-                Radius = (int)math.ceil(math.max(range, close) / Fog.CellSize),
+                Center = Fog.Frame.Cell(position),
+                Radius = (int)math.ceil(math.max(range, close) / Fog.Frame.CellSize),
                 Eye = eye,
                 Range = range,
                 CloseRange = close,
@@ -111,19 +111,9 @@ namespace HyperRTS.Simulation.Vision
 
         private readonly void DrawClose(float3 position, in SightPatch patch, NativeArray<ulong> words)
         {
-            var radiusSq = patch.CloseRange * patch.CloseRange;
-            var reach = (int)math.ceil(patch.CloseRange / Fog.CellSize);
-            for (var y = -reach; y <= reach; y++)
+            foreach (var cell in Fog.Frame.CellsInCircle(position.xz, patch.CloseRange))
             {
-                for (var x = -reach; x <= reach; x++)
-                {
-                    var cell = patch.Center + new int2(x, y);
-                    var center = Fog.Min + ((float2)cell + 0.5f) * Fog.CellSize;
-                    if (math.distancesq(center, position.xz) <= radiusSq)
-                    {
-                        patch.Set(words, SightPatch.Close, cell);
-                    }
-                }
+                patch.Set(words, SightPatch.Close, cell);
             }
         }
 

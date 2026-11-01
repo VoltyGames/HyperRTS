@@ -50,10 +50,10 @@ namespace HyperRTS.Presentation.HUD.Map
             }
 
             query.CompleteDependency();
-            if (_texture == null || _texture.width != fog.Size.x || _texture.height != fog.Size.y)
+            if (_texture == null || _texture.width != fog.Frame.Size.x || _texture.height != fog.Frame.Size.y)
             {
                 Object.Destroy(_texture);
-                _texture = new Texture2D(fog.Size.x, fog.Size.y, TextureFormat.Alpha8, false, true)
+                _texture = new Texture2D(fog.Frame.Size.x, fog.Frame.Size.y, TextureFormat.Alpha8, false, true)
                 {
                     name = "Minimap Fog",
                     filterMode = FilterMode.Bilinear,

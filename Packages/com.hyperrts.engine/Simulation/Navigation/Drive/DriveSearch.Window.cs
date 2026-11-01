@@ -18,21 +18,21 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var grid = _hull.Access.Grid;
             var span = math.abs(to - from);
             var margin = math.min(_hull.CurveRadius * 2f + _hull.HullLength, (MaxWindow - span) * 0.5f);
-            var first = grid.WorldToCell(math.min(from, to) - margin);
-            _window = new CellRect(first, (int2)math.ceil((span + margin * 2f) / grid.CellSize) + 1);
-            var halo = (int)math.ceil((_hull.HullLength * 0.5f + DriveHull.Clearance) / grid.CellSize) + 2;
+            var first = grid.Frame.Cell(math.min(from, to) - margin);
+            _window = new CellRect(first, (int2)math.ceil((span + margin * 2f) / grid.Frame.CellSize) + 1);
+            var halo = (int)math.ceil((_hull.HullLength * 0.5f + DriveHull.Clearance) / grid.Frame.CellSize) + 2;
             _walls.Fill(_hull.Access, first - halo, first + _window.Cells + halo);
             _guide.Build(_walls, _window, _goal);
         }
 
         // Ground is open where the hull centre has half a hull and a metre of room to walls.
         private readonly bool IsOpen(in AxlePose pose) =>
-            _walls.At(_hull.Access.Grid.WorldToCell(_hull.Chassis.Center(pose))) >= _hull.HullLength * 0.5f + 1f;
+            _walls.At(_hull.Access.Grid.Frame.Cell(_hull.Chassis.Center(pose))) >= _hull.HullLength * 0.5f + 1f;
 
         // The cell and heading bin in the window, or -1 outside it.
         private readonly int Key(in AxlePose pose)
         {
-            var cell = _hull.Access.Grid.WorldToCell(pose.Position);
+            var cell = _hull.Access.Grid.Frame.Cell(pose.Position);
             var index = _window.Index(cell);
             if (index < 0)
             {

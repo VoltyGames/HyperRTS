@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
@@ -21,29 +22,25 @@ namespace HyperRTS.Simulation.Navigation.Fields
         /// <summary>Sectors whose window changed since their last rebuild, marked by <see cref="NavGridSystem"/>.</summary>
         public NativeArray<bool> DirtySectors;
 
-        public int2 Size;
-        public float2 Min;
-        public float CellSize;
+        public GridFrame Frame;
 
         public SectorLayout Layout;
 
         /// <summary>Cells round a sector that can bring a wall within <see cref="MaxDistance"/> of it.</summary>
         public int ReachCells;
 
-        public static NavField Create(int2 size, float2 min, float cellSize, int keys, Allocator allocator)
+        public static NavField Create(in GridFrame frame, int keys, Allocator allocator)
         {
-            var layout = SectorLayout.Covering(size);
+            var layout = SectorLayout.Covering(frame.Size);
             var field = new NavField
             {
-                Distances = new NativeArray<float>(keys * size.x * size.y, allocator),
+                Distances = new NativeArray<float>(keys * frame.Count, allocator),
                 DirtySectors = new NativeArray<bool>(layout.Total, allocator),
-                Size = size,
-                Min = min,
-                CellSize = cellSize,
+                Frame = frame,
                 Layout = layout,
-                ReachCells = (int)math.ceil(MaxDistance / cellSize + 0.5f),
+                ReachCells = (int)math.ceil(MaxDistance / frame.CellSize + 0.5f),
             };
-            field.MarkDirty(int2.zero, size - 1);
+            field.MarkDirty(int2.zero, frame.Size - 1);
             return field;
         }
 
@@ -53,7 +50,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
             DirtySectors.Dispose();
         }
 
-        public readonly int CellCount => Size.x * Size.y;
+        public readonly int CellCount => Frame.Count;
 
         /// <summary>Field slots allocated; a new key needs <see cref="Grow"/> and a full build.</summary>
         public readonly int SlotCount => Distances.Length / CellCount;
@@ -64,12 +61,12 @@ namespace HyperRTS.Simulation.Navigation.Fields
         /// <summary>The value at a cell centre; a closed half cell off the map.</summary>
         public readonly float At(int slot, int2 cell)
         {
-            if (math.any(cell < 0 | cell >= Size))
+            if (!Frame.Contains(cell))
             {
-                return CellSize * -0.5f;
+                return Frame.CellSize * -0.5f;
             }
 
-            return Distances[slot * CellCount + cell.y * Size.x + cell.x];
+            return Distances[slot * CellCount + Frame.Index(cell)];
         }
 
         /// <summary>Whether a cell centre keeps <paramref name="radius"/> from walls, less the shared skin.</summary>
@@ -78,13 +75,13 @@ namespace HyperRTS.Simulation.Navigation.Fields
 
         /// <summary>Bilinear between the four nearest cell centres.</summary>
         public readonly float Sample(int slot, float2 position) =>
-            Bilinear(new SlotValues(this, slot), Min, CellSize, position);
+            Bilinear(new SlotValues(this, slot), Frame, position);
 
-        /// <summary>Bilinear between the four cell centres nearest a point, for cells starting at <paramref name="origin"/>.</summary>
-        internal static float Bilinear<T>(in T values, float2 origin, float cellSize, float2 position)
+        /// <summary>Bilinear between the four cell centres of a frame nearest a point.</summary>
+        internal static float Bilinear<T>(in T values, in GridFrame frame, float2 position)
             where T : struct, ICellValues
         {
-            var p = (position - origin) / cellSize - 0.5f;
+            var p = frame.Local(position) - 0.5f;
             var cell = (int2)math.floor(p);
             var t = p - cell;
             var low = math.lerp(values.At(cell), values.At(cell + new int2(1, 0)), t.x);
@@ -96,7 +93,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
         public readonly float2 Normal(int slot, float2 position)
         {
             // Central differences half a cell out, so the slope is even on both sides of a cell row.
-            var h = CellSize * 0.5f;
+            var h = Frame.CellSize * 0.5f;
             var dx = Sample(slot, position + new float2(h, 0f)) - Sample(slot, position - new float2(h, 0f));
             var dz = Sample(slot, position + new float2(0f, h)) - Sample(slot, position - new float2(0f, h));
             return math.normalizesafe(new float2(dx, dz));
@@ -106,12 +103,9 @@ namespace HyperRTS.Simulation.Navigation.Fields
         public void MarkDirty(int2 min, int2 max)
         {
             Layout.Range(min, max, ReachCells, out var low, out var high);
-            for (var y = low.y; y <= high.y; y++)
+            foreach (var sector in new CellRange(low, high))
             {
-                for (var x = low.x; x <= high.x; x++)
-                {
-                    DirtySectors[y * Layout.Count.x + x] = true;
-                }
+                DirtySectors[sector.y * Layout.Count.x + sector.x] = true;
             }
         }
 
@@ -122,7 +116,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
             {
                 if (current[i] != previous[i])
                 {
-                    var cell = new int2(i % Size.x, i / Size.x);
+                    var cell = Frame.Cell(i);
                     MarkDirty(cell, cell);
                     previous[i] = current[i];
                 }
@@ -151,9 +145,8 @@ namespace HyperRTS.Simulation.Navigation.Fields
             for (var i = 0; i < transform.Closed.Length; i++)
             {
                 var cell = origin + new int2(i % side, i / side);
-                var outside = math.any(cell < 0 | cell >= Size);
-                var index = cell.y * Size.x + cell.x;
-                transform.Closed[i] = outside || key.Blocks((NavSurface)cells[index], scenery[index]);
+                var index = Frame.Index(cell);
+                transform.Closed[i] = !Frame.Contains(cell) || key.Blocks((NavSurface)cells[index], scenery[index]);
             }
 
             transform.Solve(true);
@@ -166,20 +159,16 @@ namespace HyperRTS.Simulation.Navigation.Fields
         private void Write(int slot, int2 first, in DistanceTransform transform, bool open)
         {
             var origin = first - ReachCells;
-            var last = math.min(first + SectorCells, Size) - 1;
-            for (var y = first.y; y <= last.y; y++)
+            foreach (var cell in Frame.Cells(first, first + SectorCells - 1))
             {
-                for (var x = first.x; x <= last.x; x++)
+                var window = (cell.y - origin.y) * transform.Side + (cell.x - origin.x);
+                if (transform.Closed[window] == open)
                 {
-                    var window = (y - origin.y) * transform.Side + (x - origin.x);
-                    if (transform.Closed[window] == open)
-                    {
-                        continue;
-                    }
-
-                    var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * CellSize, MaxDistance);
-                    Distances[slot * CellCount + y * Size.x + x] = open ? edge : -edge;
+                    continue;
                 }
+
+                var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * Frame.CellSize, MaxDistance);
+                Distances[slot * CellCount + Frame.Index(cell)] = open ? edge : -edge;
             }
         }
 

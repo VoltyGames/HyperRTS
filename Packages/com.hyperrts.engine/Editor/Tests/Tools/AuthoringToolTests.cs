@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Stats;
@@ -33,13 +34,13 @@ namespace HyperRTS.Editor.Tests.Tools
             var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
             var serialized = new SerializedObject(weapon);
             bool IsMet(string field) => ConditionalFields.IsMet(serialized.FindProperty(Stat(field)));
-            Assert.IsFalse(IsMet(nameof(WeaponStats.splashRadius)));
+            Assert.IsFalse(IsMet(Hit(nameof(DamageSettings.radius))));
             Assert.IsFalse(IsMet(nameof(WeaponStats.projectilePrefab)));
 
-            weapon.stats.splashRadius = 2f;
+            weapon.stats.hit.radius = 2f;
             weapon.stats.projectilePrefab = weapon.gameObject;
             serialized.Update();
-            Assert.IsTrue(IsMet(nameof(WeaponStats.splashRadius)));
+            Assert.IsTrue(IsMet(Hit(nameof(DamageSettings.radius))));
             Assert.IsTrue(IsMet(nameof(WeaponStats.projectilePrefab)));
             Assert.Throws<ArgumentException>(() => IsMet(nameof(WeaponStats.targets)));
         }
@@ -47,7 +48,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void ShowIfReadsSiblingsInsideNestedStats() =>
             CollectionAssert.Contains(ConditionalFields.Conditions(typeof(WeaponAuthoring)).ToList(),
-                (Stat(nameof(WeaponStats.splashEdgeDamage)), Stat(nameof(WeaponStats.splashRadius))));
+                (Stat(Hit(nameof(DamageSettings.edgeFactor))), Stat(Hit(nameof(DamageSettings.radius)))));
 
         [Test]
         public void SummariesListRoleModulesDamageCostAndTime()
@@ -173,6 +174,8 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         private static string Stat(string field) => $"{nameof(WeaponAuthoring.stats)}.{field}";
+
+        private static string Hit(string field) => $"{nameof(WeaponStats.hit)}.{field}";
 
         /// <summary>A tree whose remains model is the standing one shifted by <paramref name="remainsOffset"/>.</summary>
         private (ToppleAuthoring Topple, Material Bark) Tree(Vector3 remainsOffset)

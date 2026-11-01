@@ -146,7 +146,7 @@ namespace HyperRTS.Presentation.Tests.Animation
 
             rig.FillFromModel();
 
-            Assert.AreEqual(1, interceptor.Pose);
+            Assert.AreEqual(1, interceptor.Mount);
             Assert.AreEqual(1, rig.elevations.Single(slot => slot.part == launcher).weapon, "the launcher follows it");
             Assert.AreEqual((turret, launcher), (interceptor.turret, interceptor.barrel));
             Assert.IsNull(rig.tiltRoot);

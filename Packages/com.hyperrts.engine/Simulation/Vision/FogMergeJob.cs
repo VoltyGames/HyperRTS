@@ -24,13 +24,13 @@ namespace HyperRTS.Simulation.Vision
         [ReadOnly] public ComponentLookup<SightPatch> Patches;
         [ReadOnly] public BufferLookup<SightPatchBits> Bits;
 
-        public static int Bands(in FogOfWar fog) => (fog.Size.y + BandRows - 1) / BandRows;
+        public static int Bands(in FogOfWar fog) => (fog.Frame.Size.y + BandRows - 1) / BandRows;
 
         public void Execute(int band)
         {
             using var marker = MergeMarker.Auto();
             var low = band * BandRows;
-            var high = math.min(low + BandRows, Fog.Size.y);
+            var high = math.min(low + BandRows, Fog.Frame.Size.y);
             Clear(Fog.Visible, low, high);
             Clear(Fog.VisibleTall, low, high);
             Clear(Fog.Close, low, high);

@@ -61,9 +61,10 @@ namespace HyperRTS.Simulation.AI
         private float3 GatherWave(ref SystemState state, byte faction, in AIGroup army, NativeList<int> wave)
         {
             var sum = float3.zero;
+            var mounts = SystemAPI.GetBufferLookup<WeaponMount>(true);
             for (var i = 0; i < army.Length; i++)
             {
-                var targets = SystemAPI.GetComponent<Weapon>(army.Entities[i]).Targets;
+                var targets = mounts[army.Entities[i]][0].Weapon.Targets;
                 if (army.IsOwnedBy(i, faction) && Weapon.CanHit(targets, NavLayer.Ground))
                 {
                     wave.Add(i);

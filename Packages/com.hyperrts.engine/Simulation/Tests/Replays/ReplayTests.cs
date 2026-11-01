@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -90,6 +92,20 @@ namespace HyperRTS.Simulation.Tests.Replays
 
             var last = Array.FindLast(replay.Frames, frame => frame.Keyframe);
             Assert.AreEqual(3, last.EntityCount, "a later keyframe holds the living: mover, idle and tank");
+        }
+
+        [Test]
+        public void SameState_SeesEveryFieldButTheKey_AndFilesStoreEntitiesIn19Bytes()
+        {
+            Assert.AreEqual(19, UnsafeUtility.SizeOf<ReplayEntity>());
+
+            foreach (var field in typeof(ReplayEntity).GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                object changed = default(ReplayEntity);
+                field.SetValue(changed, Convert.ChangeType(1, field.FieldType));
+                var differs = !default(ReplayEntity).SameState((ReplayEntity)changed);
+                Assert.AreEqual(field.Name != nameof(ReplayEntity.Key), differs, field.Name);
+            }
         }
 
         [Test]

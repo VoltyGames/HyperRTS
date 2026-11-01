@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
     /// Where one weapon points and how often it fired, replicated so clients can turn turrets and play recoil. The
-    /// primary is index 0 and mount i is at <see cref="WeaponMount.Pose"/>; the buffer keeps its baked length.
+    /// index is the <see cref="WeaponMount"/>'s, the primary first; the buffer keeps its baked length.
     /// </summary>
     [InternalBufferCapacity(1)]
     public struct WeaponPose : IBufferElementData

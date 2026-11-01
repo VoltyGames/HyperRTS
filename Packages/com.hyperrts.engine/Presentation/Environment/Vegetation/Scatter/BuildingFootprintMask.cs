@@ -25,14 +25,14 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private readonly Texture2D _texture;
         private readonly byte[] _cells;
         private readonly MapSettings _map;
-        private readonly int2 _size;
+        private readonly GridFrame _frame;
 
         public BuildingFootprintMask(in MapSettings map)
         {
             _map = map;
-            _size = math.max(1, (int2)math.ceil(map.Size / map.NavCellSize));
-            _cells = new byte[_size.x * _size.y];
-            _texture = new Texture2D(_size.x, _size.y, TextureFormat.R8, false, true)
+            _frame = map.NavFrame();
+            _cells = new byte[_frame.Count];
+            _texture = new Texture2D(_frame.Size.x, _frame.Size.y, TextureFormat.R8, false, true)
             {
                 name = "HyperRTS Building Footprints",
                 hideFlags = HideFlags.DontSave,
@@ -59,15 +59,14 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             _texture.SetPixelData(_cells, 0);
             _texture.Apply(false);
             Shader.SetGlobalTexture(TextureId, _texture);
-            Shader.SetGlobalVector(RectId, TerrainHeightInput.Rect(_map.Min, (float2)_size * _map.NavCellSize));
+            Shader.SetGlobalVector(RectId, TerrainHeightInput.Rect(_frame.Min, (float2)_frame.Size * _frame.CellSize));
             Version++;
         }
 
         public bool IsMarked(float2 position)
         {
-            var cell = (int2)math.floor((position - _map.Min) / _map.NavCellSize);
-            var inside = math.all(cell >= 0 & cell < _size);
-            return inside && _cells[cell.y * _size.x + cell.x] != 0;
+            var cell = _frame.Cell(position);
+            return _frame.Contains(cell) && _cells[_frame.Index(cell)] != 0;
         }
 
         /// <summary>No mask: shaders read a zero rect as no buildings.</summary>
@@ -91,19 +90,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         private void Stamp(in NavBox box)
         {
-            var cellSize = _map.NavCellSize;
-            var reach = box.Extents + cellSize * Inset;
-            var low = math.max(0, (int2)math.floor((box.Center - reach - _map.Min) / cellSize));
-            var high = math.min(_size - 1, (int2)math.floor((box.Center + reach - _map.Min) / cellSize));
-            for (var z = low.y; z <= high.y; z++)
+            var inset = _frame.CellSize * Inset;
+            var reach = box.Extents + inset;
+            foreach (var cell in _frame.Cells(_frame.Cell(box.Center - reach), _frame.Cell(box.Center + reach)))
             {
-                for (var x = low.x; x <= high.x; x++)
+                if (box.Gap(_frame.Center(cell)) <= inset)
                 {
-                    var center = _map.Min + (new float2(x, z) + 0.5f) * cellSize;
-                    if (box.Gap(center) <= cellSize * Inset)
-                    {
-                        _cells[z * _size.x + x] = byte.MaxValue;
-                    }
+                    _cells[_frame.Index(cell)] = byte.MaxValue;
                 }
             }
         }

@@ -73,10 +73,10 @@ namespace HyperRTS.Presentation.Animation
             {
                 if (TryGetComponent<InterceptorAuthoring>(out var interceptor))
                 {
-                    return interceptor.Pose + 1;
+                    return interceptor.Mount + 1;
                 }
 
-                return TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponPoses : 0;
+                return TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponCount : 0;
             }
         }
 

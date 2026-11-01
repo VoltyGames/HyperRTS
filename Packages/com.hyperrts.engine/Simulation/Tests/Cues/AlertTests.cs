@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             World.EntityManager.AddBuffer<Ability>(caster).Add(new Ability
             {
                 Id = id, Name = "Grenade", Target = AbilityTarget.Point, Filter = AbilityTargetFilter.Hostile,
-                Range = 5f, Cooldown = 20f, Damage = 10f,
+                Range = 5f, Cooldown = 20f, Damage = new DamageProfile { Amount = 10f, EdgeFactor = 1f },
             });
             World.Command(1, new PlayerCommand
             {

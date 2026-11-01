@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -57,7 +58,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public float2 Normal(float2 position) => Grid.Field.Normal(_slot, position);
 
         /// <summary>Whether the class may stand on the cell's centre.</summary>
-        public bool IsOpen(int2 cell) => Grid.InBounds(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
+        public bool IsOpen(int2 cell) => Grid.Frame.Contains(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
 
         /// <summary>The connected region of a cell for this class; 0 when closed or off the grid.</summary>
         public int Region(int2 cell) => Grid.Sectors.Region(ClassIndex, cell);
@@ -95,7 +96,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public bool TryFindStart(int2 startCell, float3 start, float3 goal, out int2 from)
         {
             var rings = GridPathfinder.NearestSearchRadius;
-            startCell = math.clamp(startCell, 0, Grid.Size - 1);
+            startCell = Grid.Frame.Clamp(startCell);
             if (IsOpen(startCell))
             {
                 from = startCell;
@@ -125,14 +126,14 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>The region of the open cell nearest <paramref name="point"/>; 0 when none is near.</summary>
         public int NearestRegion(float3 point)
         {
-            var cell = Grid.WorldToCell(point);
+            var cell = Grid.Frame.Cell(point);
             return TryFindNearest(cell, GridPathfinder.NearestSearchRadius, out var open) ? Region(open) : 0;
         }
 
         // Ring search; with a clearance, a cell also needs a straight line to it from the origin that keeps it.
         private bool TryFindNearest(int2 cell, int rings, in NearestFilter filter, out int2 found)
         {
-            cell = math.clamp(cell, 0, Grid.Size - 1);
+            cell = Grid.Frame.Clamp(cell);
             found = cell;
             if (IsCandidate(filter, cell))
             {
@@ -165,31 +166,19 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>The same walk, each cell reading at least <paramref name="clearance"/> from walls.</summary>
         public bool HasLineOfSight(float3 from, float3 to, float clearance)
         {
-            var start = (from.xz - Grid.Min) / Grid.CellSize;
-            var delta = (to.xz - Grid.Min) / Grid.CellSize - start;
-            var cell = (int2)math.floor(start);
-            var crossings = math.csum(math.abs((int2)math.floor(start + delta) - cell));
-            var step = (int2)math.sign(delta);
-
-            // Amanatides and Woo: the line's parameter per cell crossed, and where it next crosses each axis.
-            var still = delta == 0f;
-            var span = math.select(1f / math.abs(delta), float.PositiveInfinity, still);
-            var toEdge = math.select((float2)cell + 1f - start, start - cell, delta < 0f);
-            var next = math.select(toEdge * span, float.PositiveInfinity, still);
-            var clear = IsClear(cell, clearance);
-            for (var i = 0; clear && i < crossings; i++)
+            var ray = new GridRay(Grid.Frame, from.xz, to.xz);
+            ray.MoveNext();
+            var clear = IsClear(ray.Cell, clearance);
+            while (clear && ray.MoveNext())
             {
-                var axis = new bool2(next.x <= next.y, next.y <= next.x);
-                if (math.all(axis))
+                if (ray.CrossedCorner)
                 {
-                    var sides = IsClear(cell + new int2(step.x, 0), clearance);
-                    clear = sides && IsClear(cell + new int2(0, step.y), clearance);
-                    i++;
+                    var before = ray.Cell - ray.Step;
+                    var sides = IsClear(before + new int2(ray.Step.x, 0), clearance);
+                    clear = sides && IsClear(before + new int2(0, ray.Step.y), clearance);
                 }
 
-                cell += math.select(int2.zero, step, axis);
-                next += math.select(float2.zero, span, axis);
-                clear = clear && IsClear(cell, clearance);
+                clear = clear && IsClear(ray.Cell, clearance);
             }
 
             return clear;
@@ -213,7 +202,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
             }
 
             return filter.Clearance == AnyClearance ||
-                   HasLineOfSight(filter.Origin, Grid.CellCenter(cell), filter.Clearance);
+                   HasLineOfSight(filter.Origin, Grid.Frame.CenterPoint(cell), filter.Clearance);
         }
 
         // Which cells a ring search keeps: open ones in the region, and with a clearance only those a straight line
@@ -234,6 +223,6 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
         private bool IsOpenIn(int region, int2 cell) => (region == AnyRegion || Region(cell) == region) && IsOpen(cell);
 
-        private bool IsClear(int2 cell, float clearance) => Grid.InBounds(cell) && Distance(cell) >= clearance;
+        private bool IsClear(int2 cell, float clearance) => Grid.Frame.Contains(cell) && Distance(cell) >= clearance;
     }
 }

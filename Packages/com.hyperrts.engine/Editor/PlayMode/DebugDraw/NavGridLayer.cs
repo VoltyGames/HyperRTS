@@ -29,13 +29,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
         private static void DrawCells(in NavGrid grid, Func<NavSurface, bool> include, Color color)
         {
             BeginCells(new Color(color.r, color.g, color.b, Alpha));
-            for (var y = 0; y < grid.Size.y; y++)
+            for (var y = 0; y < grid.Frame.Size.y; y++)
             {
-                for (var x = 0; x < grid.Size.x; x++)
+                for (var x = 0; x < grid.Frame.Size.x; x++)
                 {
                     if (include(grid.Surface(new int2(x, y))))
                     {
-                        Cell(grid.Min + new float2(x, y) * grid.CellSize, grid.CellSize);
+                        Cell(grid.Frame.Min + new float2(x, y) * grid.Frame.CellSize, grid.Frame.CellSize);
                     }
                 }
             }

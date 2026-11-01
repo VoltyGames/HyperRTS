@@ -1,4 +1,5 @@
 using HyperRTS.Network.Scenery;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;
@@ -16,7 +17,7 @@ namespace HyperRTS.Network.Tests
         public void MaskChange_ReachesATeamOnlyOnceItSeesTheSpot()
         {
             using var tracker = new SceneryTracker(Allocator.Temp);
-            var fog = FogOfWar.Create(new int2(1, 1), new float2(-10f, -10f), 20f, Allocator.Temp);
+            var fog = FogOfWar.Create(new GridFrame(new float2(-10f, -10f), 20f, new int2(1, 1)), Allocator.Temp);
             var sightings = new NativeList<ScenerySighting>(Allocator.Temp);
             tracker.Register(Id, float3.zero);
 

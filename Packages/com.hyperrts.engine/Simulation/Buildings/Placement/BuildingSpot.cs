@@ -91,28 +91,23 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 return false;
             }
 
-            grid.GetBoxArea(box, out var min, out var max);
             var land = false;
             var water = false;
-            for (var y = min.y; y <= max.y; y++)
+            foreach (var cell in grid.CellsUnder(box))
             {
-                for (var x = min.x; x <= max.x; x++)
+                if (!grid.InBox(box, cell))
                 {
-                    var cell = new int2(x, y);
-                    if (!grid.InBox(box, cell))
-                    {
-                        continue;
-                    }
-
-                    var surface = grid.Surface(cell);
-                    if (Forbids(surface))
-                    {
-                        return false;
-                    }
-
-                    land |= surface == NavSurface.Land;
-                    water |= surface == NavSurface.Water;
+                    continue;
                 }
+
+                var surface = grid.Surface(cell);
+                if (Forbids(surface))
+                {
+                    return false;
+                }
+
+                land |= surface == NavSurface.Land;
+                water |= surface == NavSurface.Water;
             }
 
             return Surface != PlacementSurface.Shoreline || (land && water);

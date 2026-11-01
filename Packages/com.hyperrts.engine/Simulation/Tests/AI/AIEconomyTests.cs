@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
@@ -85,8 +86,11 @@ namespace HyperRTS.Simulation.Tests.AI
         {
             var soldier = UnitPrefab("Soldier", 10, 30f);
             var writer = World.Writer(soldier);
-            WeaponSetup.Add(writer, new Weapon { Range = 2f, Damage = 1f, Cooldown = 1f, LeashFactor = 1.5f },
-                Stance.Aggressive, float3.zero, 0);
+            var weapon = new Weapon
+            {
+                Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f, LeashFactor = 1.5f,
+            };
+            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, Stance.Aggressive, float3.zero);
             var tank = UnitPrefab("Tank", 15, 30f);
             var first = World.MakeProducer(World.SpawnBuilding(2, float3.zero, new float2(4f, 4f)),
                 new float3(0f, 0f, -4f), soldier, tank);

@@ -1,6 +1,5 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Stats;
@@ -26,7 +25,6 @@ namespace HyperRTS.Simulation.GameEntities
         {
             new RecordJob
             {
-                Weapons = SystemAPI.GetComponentLookup<Weapon>(true),
                 Speeds = SystemAPI.GetComponentLookup<MovementSpeed>(true),
                 Visions = SystemAPI.GetComponentLookup<VisionRange>(true),
                 Builders = SystemAPI.GetComponentLookup<Builder>(true),
@@ -37,7 +35,6 @@ namespace HyperRTS.Simulation.GameEntities
         [BurstCompile]
         private partial struct RecordJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<Weapon> Weapons;
             [ReadOnly] public ComponentLookup<MovementSpeed> Speeds;
             [ReadOnly] public ComponentLookup<VisionRange> Visions;
             [ReadOnly] public ComponentLookup<Builder> Builders;
@@ -49,13 +46,6 @@ namespace HyperRTS.Simulation.GameEntities
             {
                 bases.Clear();
                 Record(bases, Stat.MaxHealth, health.Max);
-                if (Weapons.TryGetComponent(entity, out var weapon))
-                {
-                    Record(bases, Stat.Damage, weapon.Damage);
-                    Record(bases, Stat.Range, weapon.Range);
-                    Record(bases, Stat.FireRate, weapon.Cooldown);
-                }
-
                 if (Speeds.TryGetComponent(entity, out var speed))
                 {
                     Record(bases, Stat.MoveSpeed, speed.Value);

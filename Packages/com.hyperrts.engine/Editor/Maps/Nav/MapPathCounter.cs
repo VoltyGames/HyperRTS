@@ -17,8 +17,8 @@ namespace HyperRTS.Editor.Maps.Nav
             // Corridors close cells of a copy, so the map's own grid stays as built.
             var grid = nav.Copy();
             var paths = new List<MapPath>();
-            var corridor = (int)math.ceil(corridorWidth * 0.5f / grid.CellSize);
-            var keepOpen = baseRadius / grid.CellSize;
+            var corridor = (int)math.ceil(corridorWidth * 0.5f / grid.Frame.CellSize);
+            var keepOpen = baseRadius / grid.Frame.CellSize;
             try
             {
                 while (paths.Count < max)
@@ -59,10 +59,10 @@ namespace HyperRTS.Editor.Maps.Nav
             var reached = new bool[grid.Cells.Length];
             for (var i = 0; i < reached.Length; i++)
             {
-                reached[i] = region != 0 && access.Region(grid.Cell(i)) == region;
+                reached[i] = region != 0 && access.Region(grid.Frame.Cell(i)) == region;
             }
 
-            reached[grid.Index(start)] = true;
+            reached[grid.Frame.Index(start)] = true;
             return reached;
         }
 
@@ -73,9 +73,9 @@ namespace HyperRTS.Editor.Maps.Nav
                 for (var x = -radius; x <= radius; x++)
                 {
                     var cell = center + new int2(x, y);
-                    if (x * x + y * y <= radius * radius && grid.InBounds(cell))
+                    if (x * x + y * y <= radius * radius && grid.Frame.Contains(cell))
                     {
-                        grid.Cells[grid.Index(cell)] = (byte)NavSurface.Blocked;
+                        grid.Cells[grid.Frame.Index(cell)] = (byte)NavSurface.Blocked;
                     }
                 }
             }

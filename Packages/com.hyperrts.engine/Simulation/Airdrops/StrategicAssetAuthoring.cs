@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
@@ -43,20 +44,8 @@ namespace HyperRTS.Simulation.Airdrops
         [Min(1)]
         public int count = 8;
 
-        [Tooltip("Damage each bomb deals at its centre.")]
-        [Min(0f)]
-        public float damage = 800f;
-
-        [Tooltip("Splash radius of each bomb.")]
-        [Min(0f)]
-        public float radius = 6f;
-
-        [Tooltip("Share of the damage dealt at the splash edge.")]
-        [Range(0f, 1f)]
-        public float edgeFactor = 0.5f;
-
-        [Tooltip("Damage type that armor scales.")]
-        public DamageType damageType;
+        [Tooltip("What each bomb deals at its centre and round it.")]
+        public DamageSettings hit = new() { damage = 800f, radius = 6f };
 
         [Tooltip("Metres per second each bomb falls toward its aim.")]
         [Min(1f)]
@@ -91,11 +80,7 @@ namespace HyperRTS.Simulation.Airdrops
                     {
                         Prefab = GetEntity(authoring.bomb, TransformUsageFlags.Dynamic),
                         Count = authoring.count,
-                        Damage = authoring.damage,
-                        Radius = authoring.radius,
-                        EdgeFactor = authoring.edgeFactor,
-                        DamageType = authoring.damageType,
-                        GarrisonFactor = DamageType.Garrison(authoring.damageType),
+                        Damage = authoring.hit.Bake(),
                         Speed = authoring.speed,
                         ZoneRadius = authoring.zoneRadius,
                         MaxReduction = authoring.maxReduction,

@@ -70,8 +70,8 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
   a grid change reaches its corridor, within a second of no moving unit using it, or after 30 s idle. Over 60,000
   cells, members split by start sector into several fields. A member alone, or one whose slot lies out of sight of the centre or
   over 48 m from it, searches by itself, as do chases and walk-ups.
-- Smoothing and corner skipping use line of sight, which walks every cell the line crosses (Amanatides and Woo) and
-  needs each open.
+- Smoothing and corner skipping use line of sight, which walks every cell the line crosses (`GridRay`, Amanatides and
+  Woo) and needs each open; through a corner, both cells beside it too.
 - Movement holds the whole capsule off walls (`NavCapsule`). Its depth sums how far points half a radius apart
   along its core sink below the radius in the field. A unit already overlapping may move or turn as long as the
   depth doesn't grow, so it can always drive or back off. A move into a wall slides along it, round the field's
@@ -301,8 +301,8 @@ shrinks. A `Decay` wreck stops blocking once it starts to be buried, and its cel
 `releasePoint`, a child such as a ramp or bomb bay, is where airdrop crates and strike bombs leave it.
 `AirfieldAuthoring` gives a building landing pads, one aircraft each, each a `PadKind`: `Helipad`, `Shelter` or
 `Any`. `FlightAuthoring.padKind` says which pads an aircraft takes, and `Any` on either side matches every kind. An
-airfield only builds a pad-using aircraft when a pad of its kind is free, and Return to Base only claims one. An aircraft flies home once every weapon with limited rounds (its `Ammo` and mounts with
-rounds) is empty, so a gunship with an unlimited gun still returns when its missiles are spent. It is sent home
+airfield only builds a pad-using aircraft when a pad of its kind is free, and Return to Base only claims one. An aircraft flies home once every weapon with limited rounds (an `AmmoAuthoring` primary and
+extra weapons with rounds) is empty, so a gunship with an unlimited gun still returns when its missiles are spent. It is sent home
 once, so a player order given after that holds. It reloads while docked. Its remains fall to the ground under gravity. Fuel is left to game code.
 
 ## Transport

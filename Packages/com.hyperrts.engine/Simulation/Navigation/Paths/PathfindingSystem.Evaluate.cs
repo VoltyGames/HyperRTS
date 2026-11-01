@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 }
 
                 var goal = destination.Value;
-                var goalFar = math.distancesq(path.Goal.xz, goal.xz) > Grid.CellSize * Grid.CellSize;
+                var goalFar = math.distancesq(path.Goal.xz, goal.xz) > Grid.Frame.CellSize * Grid.Frame.CellSize;
                 if (path.Status == PathStatus.Ready && path.GridVersion != Grid.Version &&
                     !path.IsNearChange(Grid, waypoints, transform.Position, agent))
                 {

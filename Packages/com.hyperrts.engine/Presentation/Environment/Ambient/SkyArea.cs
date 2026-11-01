@@ -19,10 +19,10 @@ namespace HyperRTS.Presentation.Environment.Ambient
                 throw new ArgumentException("SkyArea needs a baked TerrainHeight.", nameof(terrain));
             }
 
-            ref var field = ref terrain.Blob.Value;
+            var frame = terrain.Blob.Value.Frame;
             Terrain = terrain;
-            Min = field.Min;
-            Max = field.Min + (float2)(field.Size - 1) * field.Spacing;
+            Min = frame.Min;
+            Max = frame.Corner(frame.Size - 1);
         }
 
         public float Ground(float2 position) => Terrain.Height(position);

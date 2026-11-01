@@ -91,9 +91,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Simulation::HyperRTS.Simulation.Combat.WeaponAuthoring
   stats:
-    damage: 40
+    hit:
+      damage: 40
+      damageType: {fileID: 11400000, guid: d304c0168082f434cacb505892279d33, type: 2}
+      radius: 0
+      edgeFactor: 0.5
+      friendlyFire: 0
     cooldown: 2
-    damageType: {fileID: 11400000, guid: d304c0168082f434cacb505892279d33, type: 2}
     projectilePrefab: {fileID: 1510177141129425373, guid: c3e6322750073f34aaa3506a06606958, type: 3}
     projectileSpeed: 30
     range: 12

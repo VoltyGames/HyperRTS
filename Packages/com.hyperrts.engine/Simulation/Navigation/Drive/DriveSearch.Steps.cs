@@ -153,7 +153,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var change = node.Gear != 0 && node.Gear != gear ? GearChangeHulls * _hull.HullLength : 0f;
 
             var access = _hull.Access;
-            var cell = access.Grid.WorldToCell(_hull.Chassis.Center(end));
+            var cell = access.Grid.Frame.Cell(_hull.Chassis.Center(end));
             var wall = NavAccess.CellCost(_walls.At(cell), access.WallMargin);
             var cost = move.Length * wall * (gear < 0 ? ReverseCost : 1f) + change;
             return cost + SteerCost * math.abs(move.Curvature - node.Curvature) / _hull.MostCurvature;

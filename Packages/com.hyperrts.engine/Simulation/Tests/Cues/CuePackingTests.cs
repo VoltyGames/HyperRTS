@@ -1,10 +1,10 @@
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Surfaces;
-using System.IO;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests.Cues
@@ -75,21 +75,9 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         [Test]
-        public void WriteRead_RoundTripsIn18Bytes()
+        public void PackedCue_IsExactly18Bytes_AsReplayFilesStoreIt()
         {
-            var packed = PackedCue.Pack(new CueEvent
-            {
-                TypeId = 77, Slot = CueSlot.Death, Faction = 2, Position = new float3(-3f, 1f, 9f), Radius = 4f,
-                Direction = new float3(0f, 0f, 1f), Surface = ImpactSurface.Water, Material = SurfaceMaterial.Water,
-            });
-            using var stream = new MemoryStream();
-            using var writer = new BinaryWriter(stream);
-
-            packed.Write(writer);
-            stream.Position = 0;
-
-            Assert.AreEqual(18, stream.Length);
-            Assert.AreEqual(packed, PackedCue.Read(new BinaryReader(stream)));
+            Assert.AreEqual(18, UnsafeUtility.SizeOf<PackedCue>());
         }
     }
 }

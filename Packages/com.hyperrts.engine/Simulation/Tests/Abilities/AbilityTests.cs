@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
@@ -25,8 +26,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
             Filter = AbilityTargetFilter.Hostile,
             Range = range,
             Cooldown = cooldown,
-            Damage = damage,
-            Radius = radius,
+            Damage = new DamageProfile { Amount = damage, Radius = radius, EdgeFactor = 1f },
         };
 
         private Entity Give(Entity entity, Ability ability)

@@ -193,25 +193,18 @@ namespace HyperRTS.Simulation.Auras
             private void Tick(Entity entity, in AuraPresence item)
             {
                 var aura = Auras[item.Source];
-                var hit = new DamageEvent
-                {
-                    Target = entity,
-                    Origin = Transforms[item.Source].Position,
-                    Source = item.Source,
-                    SourceFaction = item.SourceFaction,
-                    Type = aura.DamageType,
-                };
-
+                var position = Transforms[entity].Position;
+                var origin = Transforms[item.Source].Position;
                 if (aura.HealPerSecond > 0f)
                 {
-                    hit.Amount = -aura.HealPerSecond * Interval;
-                    Damage.Add(hit);
+                    Damage.Add(DamageEvent.OverTime(entity, position, origin, item.Source, item.SourceFaction,
+                        -aura.HealPerSecond * Interval, aura.DamageType));
                 }
 
                 if (aura.DamagePerSecond > 0f)
                 {
-                    hit.Amount = aura.DamagePerSecond * Interval;
-                    Damage.Add(hit);
+                    Damage.Add(DamageEvent.OverTime(entity, position, origin, item.Source, item.SourceFaction,
+                        aura.DamagePerSecond * Interval, aura.DamageType));
                 }
             }
         }

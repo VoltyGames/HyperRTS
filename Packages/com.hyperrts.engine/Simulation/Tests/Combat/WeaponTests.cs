@@ -158,14 +158,13 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void MagazineRefill_ReloadsAGroundUnitInTheField()
         {
             var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 0.5f);
-            var writer = World.Writer(gun);
-            WeaponSetup.AddAmmo(writer, 2, 3f, AmmoRefill.Magazine);
+            World.SetAmmo(gun, 2, 3f, AmmoRefill.Magazine);
             var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
-            Assert.IsTrue(World.RunUntil(() => World.Get<Ammo>(gun).Current == 0, 2f), "fires the magazine");
+            Assert.IsTrue(World.RunUntil(() => World.PrimaryAmmo(gun).Current == 0, 2f), "fires the magazine");
             Assert.AreEqual(80f, World.GetHealth(enemy));
             World.Run(2.5f);
-            Assert.AreEqual(0, World.Get<Ammo>(gun).Current, "a full reload time");
+            Assert.AreEqual(0, World.PrimaryAmmo(gun).Current, "a full reload time");
             Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) <= 70f, 1.5f), "fires again once refilled");
         }
 
@@ -215,7 +214,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Kill(enemy);
             World.Run(0.2f);
 
-            var weapon = World.Get<Weapon>(gun);
+            var weapon = World.Primary(gun);
             Assert.AreEqual(0, weapon.SalvoShot);
             Assert.Greater(weapon.CooldownRemaining, 0.5f, $"the full cooldown runs, not the interval: {weapon.CooldownRemaining}");
         }
@@ -240,9 +239,9 @@ namespace HyperRTS.Simulation.Tests.Combat
                 projectile: World.ProjectilePrefab());
             World.SetSalvo(gun, 4, 0.2f);
             World.SetMuzzles(gun, new float3(-1f, 1f, 0f), new float3(0f, 1f, 0f), new float3(1f, 1f, 0f));
-            var weapon = World.Get<Weapon>(gun);
+            var weapon = World.Primary(gun);
             weapon.ProjectileSpeed = 0.5f;
-            World.Set(gun, weapon);
+            World.SetPrimary(gun, weapon);
             World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
             var starts = LaunchedFrom(1.5f);

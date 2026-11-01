@@ -29,16 +29,12 @@ namespace HyperRTS.Simulation.Navigation.Areas
             var center = transform.Position.xz;
             var axis = SegmentAxis(transform.Rotation);
             var reach = math.abs(axis) + Radius;
-            grid.GetClampedArea(transform.Position, reach * 2f, out var min, out var max);
-            for (var y = min.y; y <= max.y; y++)
+            foreach (var cell in grid.CellsUnder(transform.Position, reach * 2f))
             {
-                for (var x = min.x; x <= max.x; x++)
+                if (grid.CellGap(cell, center - axis, center + axis) < Radius)
                 {
-                    if (grid.CellGap(new int2(x, y), center - axis, center + axis) < Radius)
-                    {
-                        var index = grid.Index(new int2(x, y));
-                        grid.Cells[index] = (byte)((NavSurface)grid.Cells[index] & ~NavSurface.Land);
-                    }
+                    var index = grid.Frame.Index(cell);
+                    grid.Cells[index] = (byte)((NavSurface)grid.Cells[index] & ~NavSurface.Land);
                 }
             }
         }

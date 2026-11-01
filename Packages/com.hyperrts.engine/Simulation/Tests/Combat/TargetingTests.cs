@@ -141,9 +141,9 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void DefensiveLeash_ScalesWithTheWeaponsLeashFactor(float leashFactor, bool keeps)
         {
             var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), Stance.Defensive, range: 2f);
-            var weapon = World.Get<Weapon>(soldier);
+            var weapon = World.Primary(soldier);
             weapon.LeashFactor = leashFactor;
-            World.Set(soldier, weapon);
+            World.SetPrimary(soldier, weapon);
             var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f), speed: 0f);
             World.Tick();
 

@@ -1,14 +1,14 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Heights
 {
-    /// <summary>Immutable grid of ground heights: row-major samples at <c>Min + (x, y) * Spacing</c>.</summary>
+    /// <summary>Immutable grid of ground heights: row-major samples at the corners, <see cref="GridFrame.Corner"/>.</summary>
     public struct HeightfieldBlob
     {
         public BlobArray<float> Heights;
-        public int2 Size;
-        public float2 Min;
-        public float Spacing;
+
+        /// <summary>Counts samples, not the cells between them; its cell size is the sample spacing.</summary>
+        public GridFrame Frame;
     }
 }

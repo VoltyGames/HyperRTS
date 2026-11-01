@@ -25,9 +25,7 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Cells within the reveal distance of a team's ground units, where its concealed enemies show.</summary>
         public NativeArray<ulong> Close;
 
-        public int2 Size;
-        public float2 Min;
-        public float CellSize;
+        public GridFrame Frame;
 
         /// <summary>64-bit words in one row of a team's plane.</summary>
         public int RowWords;
@@ -40,13 +38,13 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly bool IsCreated => Visible.IsCreated;
 
-        public readonly int PlaneWords => RowWords * Size.y;
+        public readonly int PlaneWords => RowWords * Frame.Size.y;
 
         /// <summary>An empty grid with a plane for every team in each layer.</summary>
-        public static FogOfWar Create(int2 size, float2 min, float cellSize, Allocator allocator)
+        public static FogOfWar Create(in GridFrame frame, Allocator allocator)
         {
-            var rowWords = (size.x + 63) >> 6;
-            var words = rowWords * size.y * FactionRelations.MaxTeams;
+            var rowWords = (frame.Size.x + 63) >> 6;
+            var words = rowWords * frame.Size.y * FactionRelations.MaxTeams;
             return new FogOfWar
             {
                 Visible = new NativeArray<ulong>(words, allocator),
@@ -54,9 +52,7 @@ namespace HyperRTS.Simulation.Vision
                 Explored = new NativeArray<ulong>(words, allocator),
                 Detected = new NativeArray<ulong>(words, allocator),
                 Close = new NativeArray<ulong>(words, allocator),
-                Size = size,
-                Min = min,
-                CellSize = cellSize,
+                Frame = frame,
                 RowWords = rowWords,
                 Version = 1,
             };
@@ -69,20 +65,6 @@ namespace HyperRTS.Simulation.Vision
             Explored.Dispose();
             Detected.Dispose();
             Close.Dispose();
-        }
-
-        public readonly int2 WorldToCell(float3 position) => (int2)math.floor((position.xz - Min) / CellSize);
-
-        public readonly bool InBounds(int2 cell) => math.all(cell >= 0 & cell < Size);
-
-        public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
-
-        public readonly int2 Cell(int index) => new(index % Size.x, index / Size.x);
-
-        public readonly float3 CellCenter(int2 cell)
-        {
-            var center = Min + ((float2)cell + 0.5f) * CellSize;
-            return new float3(center.x, 0f, center.y);
         }
 
         /// <summary>Whether the team sees a target there, judged at a tall target's height when <paramref name="tall"/>.</summary>
@@ -138,7 +120,7 @@ namespace HyperRTS.Simulation.Vision
                 x = 0;
             }
 
-            var room = Size.x - x;
+            var room = Frame.Size.x - x;
             if (bits == 0ul || room <= 0)
             {
                 return;
@@ -157,19 +139,9 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Sets the team's bit in every cell whose center lies within the flat circle.</summary>
         public readonly void StampCircle(NativeArray<ulong> plane, float3 center, float radius, byte team)
         {
-            var radiusSq = radius * radius;
-            var min = math.max(WorldToCell(center - radius), 0);
-            var max = math.min(WorldToCell(center + radius), Size - 1);
-            for (var y = min.y; y <= max.y; y++)
+            foreach (var cell in Frame.CellsInCircle(center.xz, radius))
             {
-                for (var x = min.x; x <= max.x; x++)
-                {
-                    var cellCenter = Min + (new float2(x, y) + 0.5f) * CellSize;
-                    if (math.distancesq(cellCenter, center.xz) <= radiusSq)
-                    {
-                        Set(plane, new int2(x, y), team);
-                    }
-                }
+                Set(plane, cell, team);
             }
         }
 
@@ -180,8 +152,8 @@ namespace HyperRTS.Simulation.Vision
 
         private readonly bool Test(NativeArray<ulong> plane, float3 position, byte team)
         {
-            var cell = WorldToCell(position);
-            return InBounds(cell) && Has(plane, cell, team);
+            var cell = Frame.Cell(position);
+            return Frame.Contains(cell) && Has(plane, cell, team);
         }
     }
 }

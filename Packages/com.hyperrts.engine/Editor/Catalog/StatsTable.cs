@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Stats;
 using System;
@@ -27,7 +28,7 @@ namespace HyperRTS.Editor.Catalog
             ("Build s", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.buildTime)),
             ("Vision", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.visionRange)),
             ("Speed", typeof(UnitAuthoring), nameof(UnitAuthoring.moveSpeed)),
-            ("Damage", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.damage))),
+            ("Damage", typeof(WeaponAuthoring), Stat($"{nameof(WeaponStats.hit)}.{nameof(DamageSettings.damage)}")),
             ("Cooldown", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.cooldown))),
             ("Range", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.range))),
         };

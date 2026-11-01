@@ -23,11 +23,11 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
             }
 
             BeginCells(new Color(0.3f, 1f, 0.4f, 0.2f));
-            for (var i = 0; i < fog.Size.x * fog.Size.y; i++)
+            for (var i = 0; i < fog.Frame.Size.x * fog.Frame.Size.y; i++)
             {
-                if (fog.Has(fog.Visible, fog.Cell(i), local.Team))
+                if (fog.Has(fog.Visible, fog.Frame.Cell(i), local.Team))
                 {
-                    Cell(fog.Min + (float2)fog.Cell(i) * fog.CellSize, fog.CellSize);
+                    Cell(fog.Frame.Min + (float2)fog.Frame.Cell(i) * fog.Frame.CellSize, fog.Frame.CellSize);
                 }
             }
 

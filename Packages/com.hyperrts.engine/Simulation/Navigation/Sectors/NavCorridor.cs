@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System;
 using HyperRTS.Simulation.Navigation.Fields;
 using Unity.Collections;
@@ -68,14 +69,9 @@ namespace HyperRTS.Simulation.Navigation.Sectors
         public void AddWithRing(int sector)
         {
             var at = _layout.Coordinates(sector);
-            var low = math.max(at - 1, 0);
-            var high = math.min(at + 1, _layout.Count - 1);
-            for (var y = low.y; y <= high.y; y++)
+            foreach (var near in new CellRange(math.max(at - 1, 0), math.min(at + 1, _layout.Count - 1)))
             {
-                for (var x = low.x; x <= high.x; x++)
-                {
-                    Add(y * _layout.Count.x + x);
-                }
+                Add(near.y * _layout.Count.x + near.x);
             }
         }
 
@@ -122,14 +118,11 @@ namespace HyperRTS.Simulation.Navigation.Sectors
         public readonly bool Touches(int2 min, int2 max, int halo)
         {
             _layout.Range(min, max, halo, out var low, out var high);
-            for (var y = low.y; y <= high.y; y++)
+            foreach (var sector in new CellRange(low, high))
             {
-                for (var x = low.x; x <= high.x; x++)
+                if (_slots[sector.y * _layout.Count.x + sector.x] >= 0)
                 {
-                    if (_slots[y * _layout.Count.x + x] >= 0)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 

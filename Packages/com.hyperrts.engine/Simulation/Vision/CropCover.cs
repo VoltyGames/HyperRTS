@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -22,22 +23,18 @@ namespace HyperRTS.Simulation.Vision
                 tops[i] = top[i];
             }
 
-            root.Size = size;
-            root.Min = min;
-            root.Spacing = spacing;
+            root.Frame = new GridFrame(min, spacing, size);
             var blob = builder.CreateBlobAssetReference<CropCoverBlob>(allocator);
             builder.Dispose();
             return new CropCover { Blob = blob };
         }
     }
 
-    /// <summary>Row-major cells from <see cref="Min"/> (the map's south-west corner), <see cref="Spacing"/> metres apart.</summary>
+    /// <summary>Row-major cells on a <see cref="GridFrame"/> from the map's south-west corner.</summary>
     public struct CropCoverBlob
     {
         public BlobArray<byte> Density;
         public BlobArray<byte> Top;
-        public int2 Size;
-        public float2 Min;
-        public float Spacing;
+        public GridFrame Frame;
     }
 }

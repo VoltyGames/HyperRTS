@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Status;
@@ -55,18 +56,8 @@ namespace HyperRTS.Simulation.Abilities
             [Tooltip("Prefab spawned at the target (mine, beacon, incoming aircraft), owned by the caster's player.")]
             public GameObject spawnPrefab;
 
-            [Tooltip("Damage dealt around the target; negative heals.")]
-            public float damage;
-
-            [Tooltip("Radius of the damage; 0 hits only an entity target.")]
-            [Min(0f)]
-            public float radius;
-
-            [Tooltip("Damage type that armor scales.")]
-            public DamageType damageType;
-
-            [Tooltip("The damage also hurts the caster's allies.")]
-            public bool friendlyFire = true;
+            [Tooltip("Damage dealt around the target, 0 for none; negative heals.")]
+            public DamageSettings hit = new() { damage = 0f, edgeFactor = 1f, friendlyFire = true };
 
             [Tooltip("Status effect prefab applied to an entity target.")]
             public StatusEffectAuthoring statusEffect;
@@ -112,11 +103,7 @@ namespace HyperRTS.Simulation.Abilities
                     SpawnPrefab = entry.spawnPrefab != null
                         ? GetEntity(entry.spawnPrefab, TransformUsageFlags.Dynamic)
                         : Entity.Null,
-                    Damage = entry.damage,
-                    Radius = entry.radius,
-                    DamageType = entry.damageType,
-                    GarrisonFactor = DamageType.Garrison(entry.damageType),
-                    FriendlyFire = entry.friendlyFire,
+                    Damage = entry.hit.Bake(),
                     StatusEffect = entry.statusEffect != null
                         ? GetEntity(entry.statusEffect, TransformUsageFlags.None)
                         : Entity.Null,

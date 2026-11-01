@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Status;
 using Unity.Collections;
@@ -57,22 +58,11 @@ namespace HyperRTS.Simulation.Abilities
                 });
             }
 
-            if (ability.Damage != 0f)
+            if (ability.Damage.Amount != 0f)
             {
-                _damage.Add(new DamageEvent
-                {
-                    Target = ability.Target == AbilityTarget.Entity ? target : Entity.Null,
-                    Position = position,
-                    Origin = _transforms.TryGetComponent(caster, out var from) ? from.Position : position,
-                    Source = caster,
-                    SourceFaction = faction,
-                    Amount = ability.Damage,
-                    Type = ability.DamageType,
-                    GarrisonFactor = ability.GarrisonFactor,
-                    Radius = ability.Radius,
-                    EdgeFactor = 1f,
-                    FriendlyFire = ability.FriendlyFire,
-                });
+                var struck = ability.Target == AbilityTarget.Entity ? target : Entity.Null;
+                var origin = _transforms.TryGetComponent(caster, out var from) ? from.Position : position;
+                _damage.Add(ability.Damage.Hit(caster, faction, origin, struck, position, WeaponTargets.Surface));
             }
         }
     }

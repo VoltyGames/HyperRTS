@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Fire;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Vision;
@@ -159,7 +160,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Fire
         public void Fires_ShowOnlyOnGroundTheLocalPlayerSees()
         {
             // Two 10 m fog cells; team 1 sees only the west one.
-            var fog = FogOfWar.Create(new int2(2, 1), float2.zero, 10f, Allocator.Temp);
+            var fog = FogOfWar.Create(new GridFrame(float2.zero, 10f, new int2(2, 1)), Allocator.Temp);
             fog.Set(fog.Visible, int2.zero, 1);
             var view = new LocalFogView { Viewer = 1, Team = 1, Active = true };
             try

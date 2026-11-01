@@ -52,8 +52,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Traits = traits,
                 Moves = _moves,
-                AmmoLookup = SystemAPI.GetComponentLookup<Ammo>(true),
-                Mounts = SystemAPI.GetBufferLookup<WeaponMount>(true),
             }.ScheduleParallel();
         }
 
@@ -65,13 +63,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
             public FactionRelations Relations;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
-            [ReadOnly] public ComponentLookup<Ammo> AmmoLookup;
-            [ReadOnly] public BufferLookup<WeaponMount> Mounts;
             public MoveLookup Moves;
 
-            private void Execute(Entity entity, in LocalTransform transform, in Weapon weapon, in VisionRange vision,
-                in Faction faction, ref CombatStance stance, ref AttackTarget attack, EnabledRefRW<AttackTarget> attacking)
+            private void Execute(Entity entity, in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts,
+                in VisionRange vision, in Faction faction, ref CombatStance stance, ref AttackTarget attack,
+                EnabledRefRW<AttackTarget> attacking)
             {
+                var primary = mounts[0];
+                var weapon = primary.Weapon;
                 var order = CurrentOrder(entity);
                 if (!attacking.ValueRO)
                 {
@@ -88,14 +87,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                if (Loses(entity, weapon, faction, target, ordered))
+                if (Loses(primary, faction, target, ordered))
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
                 }
 
                 attack.Reach = Targets.Reach(entity, transform.Position, weapon, target);
-                var reach = Reach(entity, transform.Position, weapon, target, attack.Reach, out var floor);
+                var reach = Reach(entity, transform.Position, mounts, target, attack.Reach, out var floor);
 
                 var gap = Targets.Gap(entity, transform.Position, target);
                 if (!ordered && ShouldLeash(entity, transform.Position, weapon, vision, stance, target, gap, reach))
@@ -147,18 +146,19 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             /// <summary>Gone, hidden, out of the weapon's reach or out of ammo.</summary>
-            private bool Loses(Entity entity, in Weapon weapon, in Faction faction, Entity target, bool ordered)
+            private bool Loses(in WeaponMount primary, in Faction faction, Entity target, bool ordered)
             {
                 // Only orders point units at scenery, so an ordered target need only be attackable.
+                var targets = primary.Weapon.Targets;
                 var keep = ordered
-                    ? Targets.IsAttackable(target, faction.Value, Relations, weapon.Targets)
-                    : Targets.IsValidTarget(target, faction.Value, Relations, weapon.Targets);
+                    ? Targets.IsAttackable(target, faction.Value, Relations, targets)
+                    : Targets.IsValidTarget(target, faction.Value, Relations, targets);
                 if (!keep)
                 {
                     return true;
                 }
 
-                return Ammo.IsEmpty(AmmoLookup, entity);
+                return primary.Ammo.Empty;
             }
 
             /// <summary><paramref name="gap"/> is the edge distance from <paramref name="position"/>.</summary>
@@ -176,16 +176,12 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 return Targets.Gap(entity, origin, target) > leash;
             }
 
-            /// <summary>Longest range and shortest minimum of the primary and the ready shared-target mounts that can hit it.</summary>
-            private float Reach(Entity entity, float3 position, in Weapon weapon, Entity target, float reach,
-                out float floor)
+            /// <summary>Longest range and shortest minimum of the primary and the ready shared-target weapons that can hit it.</summary>
+            private float Reach(Entity entity, float3 position, in DynamicBuffer<WeaponMount> mounts, Entity target,
+                float reach, out float floor)
             {
-                floor = weapon.MinRange;
-                if (Mounts.TryGetBuffer(entity, out var mounts))
-                {
-                    WeaponMount.ExtendReach(mounts, Targets, entity, position, target, ref reach, ref floor);
-                }
-
+                floor = mounts[0].Weapon.MinRange;
+                WeaponMount.ExtendReach(mounts, Targets, entity, position, target, ref reach, ref floor);
                 return reach;
             }
 

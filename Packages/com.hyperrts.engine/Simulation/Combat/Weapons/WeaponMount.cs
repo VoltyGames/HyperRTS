@@ -5,10 +5,11 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// An extra weapon beside the primary <see cref="Weapon"/>, which stays the unit's engagement profile. Server only:
-    /// mounts fire at the shared <c>AttackTarget</c> when they can, or pick their own if independent.
+    /// One weapon of an entity, at the same index as its <see cref="WeaponPose"/> and its fire cue's variant. An armed
+    /// entity's primary is index 0 and sets how it engages; extra weapons follow it, and an interceptor comes last.
+    /// Server only: one capacity keeps a single-weapon unit's buffer in its chunk.
     /// </summary>
-    [InternalBufferCapacity(0)]
+    [InternalBufferCapacity(1)]
     public struct WeaponMount : IBufferElementData
     {
         /// <summary>Live stats; <c>StatSystem</c> rewrites damage, range and cooldown from the bases.</summary>
@@ -18,7 +19,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public float BaseRange;
         public float BaseCooldown;
 
-        /// <summary>What the mount shoots this frame; <c>Entity.Null</c> while it holds fire.</summary>
+        /// <summary>What it shoots this frame; <c>Entity.Null</c> while it holds fire.</summary>
         public Entity Target;
 
         public Ammo Ammo;
@@ -29,45 +30,90 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Set by the upgrades module once the owner has the required research.</summary>
         public bool Unlocked;
 
-        /// <summary>Index into the pose buffer, and the fire cue's variant; the primary is 0, mounts 1 up.</summary>
-        public byte Pose;
-
-        /// <summary>May pick its own target when it can't hit the shared one.</summary>
+        /// <summary>An extra weapon that may pick its own target when it can't hit the shared one.</summary>
         public bool Independent;
 
-        public static WeaponMount Create(in Weapon weapon, in Ammo ammo, int requiredResearchTypeId, byte pose,
-            bool independent) => new()
+        /// <summary>Aims and fires for the entity's <c>Interceptor</c>, never at units.</summary>
+        public bool Intercepts;
+
+        public static WeaponMount Create(in Weapon weapon, in Ammo ammo) => new()
         {
-            Weapon = Turned(weapon),
-            BaseDamage = weapon.Damage,
+            Weapon = weapon,
+            BaseDamage = weapon.Damage.Amount,
             BaseRange = weapon.Range,
             BaseCooldown = weapon.Cooldown,
             Ammo = ammo,
-            RequiredResearchTypeId = requiredResearchTypeId,
-            Pose = pose,
-            Independent = independent,
         };
 
-        /// <summary>A mount aims with its own pose, never the hull, so it fires once that pose is on target.</summary>
-        private static Weapon Turned(Weapon weapon)
+        /// <summary>An extra weapon aims with its own pose, never the hull, so it fires once that pose is on target.</summary>
+        public static WeaponMount Extra(Weapon weapon, in Ammo ammo, int requiredResearchTypeId, bool independent)
         {
             weapon.Aim.Turreted = true;
-            return weapon;
+            var mount = Create(weapon, ammo);
+            mount.RequiredResearchTypeId = requiredResearchTypeId;
+            mount.Independent = independent;
+            return mount;
         }
 
         public bool Enabled => RequiredResearchTypeId == 0 || Unlocked;
 
-        /// <summary>A usable mount that runs dry and needs reloading.</summary>
+        /// <summary>A usable weapon that runs dry and needs reloading.</summary>
         public bool IsLimited => Enabled && Ammo.Limited;
 
         public bool Ready => Enabled && !Ammo.Empty;
 
-        /// <summary>Widens <paramref name="reach"/> and lowers <paramref name="floor"/> to every mount that joins the attack on <paramref name="target"/>.</summary>
+        /// <summary>The primary, which orders, engagement and the AI read; false for an interceptor alone.</summary>
+        public static bool TryGetPrimary(DynamicBuffer<WeaponMount> mounts, out Weapon weapon)
+        {
+            var armed = mounts.Length > 0 && !mounts[0].Intercepts;
+            weapon = armed ? mounts[0].Weapon : default;
+            return armed;
+        }
+
+        /// <summary>Reloads the rounds that refill docked, or those that refill anywhere when <paramref name="docked"/> is false.</summary>
+        public static void Reload(DynamicBuffer<WeaponMount> mounts, float deltaTime, bool docked)
+        {
+            for (var i = 0; i < mounts.Length; i++)
+            {
+                var mount = mounts[i];
+                var refillsDocked = mount.Ammo.Refill == AmmoRefill.Docked;
+                if (refillsDocked == docked)
+                {
+                    mount.Ammo.Reload(deltaTime);
+                    mounts[i] = mount;
+                }
+            }
+        }
+
+        /// <summary>Every usable weapon with limited rounds is empty, and there is at least one.</summary>
+        public static bool IsSpent(DynamicBuffer<WeaponMount> mounts)
+        {
+            var limited = false;
+            foreach (var mount in mounts)
+            {
+                if (!mount.IsLimited)
+                {
+                    continue;
+                }
+
+                if (!mount.Ammo.Empty)
+                {
+                    return false;
+                }
+
+                limited = true;
+            }
+
+            return limited;
+        }
+
+        /// <summary>Widens <paramref name="reach"/> and lowers <paramref name="floor"/> to every extra weapon that joins the attack on <paramref name="target"/>.</summary>
         public static void ExtendReach(DynamicBuffer<WeaponMount> mounts, in TargetLookup targets, Entity shooter,
             float3 position, Entity target, ref float reach, ref float floor)
         {
-            foreach (var mount in mounts)
+            for (var i = 1; i < mounts.Length; i++)
             {
+                var mount = mounts[i];
                 if (mount.JoinsAttack(targets, target))
                 {
                     reach = math.max(reach, targets.Reach(shooter, position, mount.Weapon, target));
@@ -76,10 +122,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
         }
 
-        /// <summary>A ready mount that shares the unit's target and can hurt it.</summary>
+        /// <summary>A ready weapon that shares the unit's target and can hurt it.</summary>
         private bool JoinsAttack(in TargetLookup targets, Entity target)
         {
-            if (Independent || !Ready)
+            if (Independent || Intercepts || !Ready)
             {
                 return false;
             }

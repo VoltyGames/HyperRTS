@@ -1,13 +1,10 @@
-using Unity.Entities;
-using Unity.Netcode;
-
 namespace HyperRTS.Simulation.Combat.Weapons
 {
-    /// <summary>Rounds left in the weapon; <see cref="Refill"/> says where and how they come back.</summary>
-    public struct Ammo : IComponentData
+    /// <summary>Rounds left in a <see cref="WeaponMount"/>; <see cref="Refill"/> says where and how they come back.</summary>
+    public struct Ammo
     {
-        [GhostField] public int Max;
-        [GhostField] public int Current;
+        public int Max;
+        public int Current;
         public float ReloadTime;
         public float ReloadElapsed;
         public AmmoRefill Refill;
@@ -61,10 +58,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
             ReloadElapsed -= ReloadTime;
             Current++;
         }
-
-        /// <summary>Weapons without ammo never run dry.</summary>
-        public static bool IsEmpty(in ComponentLookup<Ammo> lookup, Entity entity) =>
-            lookup.TryGetComponent(entity, out var ammo) && ammo.Empty;
 
         private bool CanReload() => Current < Max && (Refill != AmmoRefill.Magazine || Current <= 0);
     }

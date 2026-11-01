@@ -63,9 +63,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>
-        /// The fire step both the primary and the mounts take: deployed if it must be, off cooldown, a turret on target,
-        /// restart the cooldown or step the
-        /// salvo, and fire from the next muzzle.
+        /// The fire step every weapon takes: deployed if it must be, off cooldown, a turret on target, restart the
+        /// cooldown or step the salvo, and fire from the next muzzle.
         /// </summary>
         public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction)
         {
@@ -136,7 +135,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             if (weapon.ProjectilePrefab == Entity.Null)
             {
                 var origin = shot.Aim.HitOrigin(place, fired);
-                var hit = weapon.Hit(shooter, faction, origin, target, targetPosition);
+                var hit = weapon.Damage.Hit(shooter, faction, origin, target, targetPosition, weapon.Targets);
                 _damage.Add(hit);
                 var along = math.normalizesafe(targetPosition - origin, place.Forward());
                 hit.AddImpact(ref _cues, _cues.TypeIdFor(shooter, CueSlot.Impact), along);
@@ -217,7 +216,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 Speed = weapon.ProjectileSpeed,
                 Height = weapon.Aim.ProjectileHeight,
                 ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
-                Hit = weapon.Hit(shooter, faction, origin, locked ? target : Entity.Null, aim),
+                Hit = weapon.Damage.Hit(shooter, faction, origin, locked ? target : Entity.Null, aim, weapon.Targets),
                 Trajectory = weapon.Aim.Trajectory,
                 Kind = weapon.ProjectileKind,
                 Start = origin,

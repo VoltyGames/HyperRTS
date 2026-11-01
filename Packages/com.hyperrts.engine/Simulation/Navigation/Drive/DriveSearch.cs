@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private readonly bool Fits(float2 from, float2 to)
         {
             var grid = _hull.Access.Grid;
-            var onGrid = grid.InBounds(grid.WorldToCell(from)) && grid.InBounds(grid.WorldToCell(to));
+            var onGrid = grid.Frame.Contains(grid.Frame.Cell(from)) && grid.Frame.Contains(grid.Frame.Cell(to));
             return onGrid && math.all(math.abs(to - from) <= MaxWindow);
         }
 

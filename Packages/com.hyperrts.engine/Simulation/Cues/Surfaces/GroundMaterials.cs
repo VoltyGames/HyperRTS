@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -13,9 +14,8 @@ namespace HyperRTS.Simulation.Cues.Surfaces
         public readonly SurfaceMaterial At(float2 position)
         {
             ref var map = ref Blob.Value;
-            var cell = (int2)math.floor((position - map.Min) / map.Spacing);
-            var outside = math.any(cell < 0) || math.any(cell >= map.Size);
-            return outside ? SurfaceMaterial.None : (SurfaceMaterial)map.Cells[cell.y * map.Size.x + cell.x];
+            var cell = map.Frame.Cell(position);
+            return map.Frame.Contains(cell) ? (SurfaceMaterial)map.Cells[map.Frame.Index(cell)] : SurfaceMaterial.None;
         }
 
         public static GroundMaterials Create(NativeArray<byte> cells, int2 size, float2 min, float spacing,
@@ -29,21 +29,17 @@ namespace HyperRTS.Simulation.Cues.Surfaces
                 stored[i] = cells[i];
             }
 
-            root.Size = size;
-            root.Min = min;
-            root.Spacing = spacing;
+            root.Frame = new GridFrame(min, spacing, size);
             var blob = builder.CreateBlobAssetReference<GroundMaterialsBlob>(allocator);
             builder.Dispose();
             return new GroundMaterials { Blob = blob };
         }
     }
 
-    /// <summary>Row-major cells from <see cref="Min"/> (the map's south-west corner), <see cref="Spacing"/> metres apart.</summary>
+    /// <summary>Row-major cells on a <see cref="GridFrame"/> from the map's south-west corner.</summary>
     public struct GroundMaterialsBlob
     {
         public BlobArray<byte> Cells;
-        public int2 Size;
-        public float2 Min;
-        public float Spacing;
+        public GridFrame Frame;
     }
 }

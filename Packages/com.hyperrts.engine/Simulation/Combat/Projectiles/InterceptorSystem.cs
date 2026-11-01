@@ -11,7 +11,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Projectiles
 {
     /// <summary>
-    /// Turns each <see cref="Interceptor"/>'s pose toward the nearest hostile projectile of a kind it engages, or
+    /// Turns the pose of each <see cref="Interceptor"/>'s mount toward the nearest hostile projectile of a kind it engages, or
     /// failing one in range toward the nearest inbound on its radius, and, once on a target in range, engages it: a Fire
     /// cue toward it and a kill roll that marks it <see cref="Projectile.Intercepted"/>, destroys it and plays the
     /// Impact cue where it dies. Offline interceptors, and those waiting for their unit to deploy, do nothing.
@@ -100,29 +100,33 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             public CueWriter Cues;
             public EntityCommandBuffer Ecb;
 
-            private void Execute(Entity entity, ref Interceptor interceptor, DynamicBuffer<WeaponPose> poses,
-                in LocalTransform place, in Faction faction)
+            private void Execute(Entity entity, ref Interceptor interceptor, DynamicBuffer<WeaponMount> mounts,
+                DynamicBuffer<WeaponPose> poses, in LocalTransform place, in Faction faction)
             {
-                interceptor.Tick(DeltaTime);
+                var mount = mounts[interceptor.Mount];
+                mount.Weapon.Tick(DeltaTime);
                 var inRange = false;
-                var held = Deployable.Holds(Deployables, entity, interceptor.NeedsDeploy);
+                var held = Deployable.Holds(Deployables, entity, mount.Weapon.NeedsDeploy);
                 var target = held ? -1 : Nearest(interceptor, place.Position, faction.Value, out inRange);
-                var pose = poses[interceptor.Pose];
+                var pose = poses[interceptor.Mount];
+                var aim = mount.Weapon.Aim;
                 // Idle, it turns back to straight ahead and level.
                 var angles = float2.zero;
                 if (target >= 0)
                 {
-                    angles = interceptor.Aim.Angles(place, pose, Candidates[target].Position);
+                    angles = aim.Angles(place, pose, Candidates[target].Position);
                 }
 
-                interceptor.Aim.Turn(ref pose, angles, DeltaTime);
-                if (inRange && interceptor.Ready && interceptor.Aim.Aligned(pose, angles))
+                aim.Turn(ref pose, angles, DeltaTime);
+                var ready = mount.Ready && !mount.Weapon.CoolingDown;
+                if (inRange && ready && aim.Aligned(pose, angles))
                 {
                     pose.CountShot();
-                    Engage(entity, ref interceptor, place, pose, faction.Value, target);
+                    Engage(entity, ref interceptor, ref mount, place, pose, faction.Value, target);
                 }
 
-                poses[interceptor.Pose] = pose;
+                poses[interceptor.Mount] = pose;
+                mounts[interceptor.Mount] = mount;
             }
 
             // A shot aimed inside the radius is tracked before it arrives, so the turret is on it as it enters.
@@ -161,13 +165,14 @@ namespace HyperRTS.Simulation.Combat.Projectiles
                 return Relations.IsHostile(faction, shot.Faction);
             }
 
-            private void Engage(Entity entity, ref Interceptor interceptor, in LocalTransform place,
-                in WeaponPose pose, byte faction, int index)
+            private void Engage(Entity entity, ref Interceptor interceptor, ref WeaponMount mount,
+                in LocalTransform place, in WeaponPose pose, byte faction, int index)
             {
                 var shot = Candidates[index];
-                var toward = math.normalizesafe(shot.Position - interceptor.Aim.LaunchPoint(place, pose), place.Forward());
-                interceptor.Aim.PlayFire(ref Cues, entity, place, pose, toward, faction, interceptor.Pose);
-                if (!interceptor.Engage(entity, shot.Entity))
+                var aim = mount.Weapon.Aim;
+                var toward = math.normalizesafe(shot.Position - aim.LaunchPoint(place, pose), place.Forward());
+                aim.PlayFire(ref Cues, entity, place, pose, toward, faction, interceptor.Mount);
+                if (!interceptor.Engage(ref mount, entity, shot.Entity))
                 {
                     return;
                 }

@@ -105,24 +105,17 @@ namespace HyperRTS.Simulation.Airdrops
                 {
                     Speed = load.Speed,
                     ImpactTypeId = impact,
-                    Hit = load.Hit(bomber, faction, origin, target, aim),
+                    Hit = load.Damage.Hit(bomber, faction, origin, target, aim, WeaponTargets.Surface),
                     Trajectory = Trajectory.Direct,
                     Start = origin,
                 });
             }
         }
 
-        /// <summary>Enemy anti-air weapons, mounts included, that are working and reach the target point.</summary>
+        /// <summary>Enemy anti-air weapons that are working and reach the target point; interceptors don't count.</summary>
         private int Defences(ref SystemState state, float3 point, byte faction, in FactionRelations relations)
         {
             var count = 0;
-            foreach (var (weapon, transform, owner) in SystemAPI
-                         .Query<RefRO<Weapon>, RefRO<LocalTransform>, RefRO<Faction>>().WithNone<Dead, Offline>())
-            {
-                var hostile = relations.IsHostile(faction, owner.ValueRO.Value);
-                count += hostile && Covers(weapon.ValueRO, transform.ValueRO.Position, point) ? 1 : 0;
-            }
-
             foreach (var (mounts, transform, owner) in SystemAPI
                          .Query<DynamicBuffer<WeaponMount>, RefRO<LocalTransform>, RefRO<Faction>>()
                          .WithNone<Dead, Offline>())
@@ -134,15 +127,22 @@ namespace HyperRTS.Simulation.Airdrops
 
                 foreach (var mount in mounts)
                 {
-                    count += Covers(mount.Weapon, transform.ValueRO.Position, point) ? 1 : 0;
+                    count += Covers(mount, transform.ValueRO.Position, point) ? 1 : 0;
                 }
             }
 
             return count;
         }
 
-        private static bool Covers(in Weapon weapon, float3 from, float3 point) =>
-            Weapon.CanHit(weapon.Targets, NavLayer.Air) && weapon.Reaches(math.distance(from.xz, point.xz));
+        private static bool Covers(in WeaponMount mount, float3 from, float3 point)
+        {
+            if (mount.Intercepts || !Weapon.CanHit(mount.Weapon.Targets, NavLayer.Air))
+            {
+                return false;
+            }
+
+            return mount.Weapon.Reaches(math.distance(from.xz, point.xz));
+        }
 
         /// <summary>Enemy structures in the zone, nearest the aim point first.</summary>
         private NativeList<NearStructure> Structures(ref SystemState state, float3 point, float radius, byte faction,

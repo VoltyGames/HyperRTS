@@ -58,6 +58,8 @@ namespace HyperRTS.Simulation.Transport
         /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
         public bool IsAlive(Entity container) => Health.IsAlive(_health, container);
 
+        public float3 Position(Entity entity) => _transforms[entity].Position;
+
         public float MaxHealth(Entity unit) => _health.TryGetComponent(unit, out var health) ? health.Max : 0f;
 
         public LastAttacker Attacker(Entity container) =>
@@ -124,7 +126,7 @@ namespace HyperRTS.Simulation.Transport
             var layer = NavAgent.GetLayer(_agents, unit);
             if (TryFindStand(unit, grid, position, out var cell))
             {
-                position.xz = grid.CellCenter(cell).xz;
+                position.xz = grid.Frame.Center(cell);
             }
 
             position.y = grid.HeightFor(position, layer);
@@ -136,7 +138,7 @@ namespace HyperRTS.Simulation.Transport
         {
             cell = default;
             return _agents.TryGetComponent(unit, out var agent) && agent.TryAccess(grid, out var access) &&
-                   access.TryFindNearest(grid.WorldToCell(position), WalkableSearchRings, out cell);
+                   access.TryFindNearest(grid.Frame.Cell(position), WalkableSearchRings, out cell);
         }
     }
 }

@@ -94,9 +94,9 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void Launch_GivesTheProjectileItsWeaponsKind()
         {
             var gun = SpawnShooter(Trajectory.Rocket, range: 8f);
-            var weapon = World.Get<Weapon>(gun);
+            var weapon = World.Primary(gun);
             weapon.ProjectileKind = ProjectileKind.Rocket;
-            World.Set(gun, weapon);
+            World.SetPrimary(gun, weapon);
             World.SpawnUnit(2, new float3(7f, 0f, 0f));
 
             using var projectiles = World.Query(typeof(Projectile));
@@ -191,8 +191,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var tower = Site();
             World.AddWeapon(tower, range: 6f, cooldown: 100f, turreted: true);
-            World.Buffer<WeaponPose>(tower).Add(default);
-            Defence(tower, killChance: 0f, pose: 1);
+            Defence(tower, killChance: 0f);
             World.SpawnUnit(2, new float3(4f, 0f, 0f));
             Shot(new float3(-6f, 4f, 0f));
 
@@ -234,15 +233,14 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         private Entity Site() => World.SpawnBuilding(1, float3.zero, new float2(2f, 2f));
 
+        /// <summary>An interceptor alone, or after the entity's weapons as the bakers lay it out.</summary>
         private Entity Defence(Entity entity, float interval = 0.2f, float killChance = 1f, int rounds = 0,
-            float reloadTime = 1f, byte pose = 0)
+            float reloadTime = 1f)
         {
-            var interceptor = new Interceptor
+            var weapon = new Weapon
             {
-                Radius = 20f,
-                KillChance = killChance,
-                Kinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile,
                 Cooldown = interval,
+                SalvoSize = 1,
                 Aim = new WeaponAim
                 {
                     Turreted = true,
@@ -252,11 +250,27 @@ namespace HyperRTS.Simulation.Tests.Combat
                     MaxPitch = math.radians(85f),
                     AimTolerance = math.radians(2f),
                 },
-                Pose = pose,
-                Ammo = Ammo.Create(rounds, reloadTime, AmmoRefill.Round),
+            };
+            var mount = WeaponMount.Create(weapon, Ammo.Create(rounds, reloadTime, AmmoRefill.Round));
+            mount.Intercepts = true;
+            var interceptor = new Interceptor
+            {
+                Radius = 20f,
+                KillChance = killChance,
+                Kinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile,
             };
             var writer = World.Writer(entity);
-            InterceptorAuthoring.Add(writer, interceptor);
+            if (!World.EntityManager.HasComponent<WeaponMount>(entity))
+            {
+                InterceptorAuthoring.Add(writer, interceptor, mount);
+                return entity;
+            }
+
+            var mounts = World.Buffer<WeaponMount>(entity);
+            interceptor.Mount = (byte)mounts.Length;
+            mounts.Add(mount);
+            World.Buffer<WeaponPose>(entity).Add(default);
+            writer.Add(interceptor);
             return entity;
         }
 

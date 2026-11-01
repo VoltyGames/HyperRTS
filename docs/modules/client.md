@@ -44,7 +44,8 @@ relations and colours.
 
 `Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Trampling`,
 `Fire`, `Weather` (atmosphere, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`, `RowCrops`,
-`Scatter`, `Shading`) and `Ambient`. `GridArea` and `EdgeNoise.png`, which several of them share, stay at the top.
+`Scatter`, `Shading`) and `Ambient`. `EdgeNoise.png`, which several of them share, stays at the top; their cell grids
+are the simulation's `GridFrame`.
 `Quality/` holds the knobs the game sets from its graphics options.
 `Effects/` is split into `Rig` (the rig component, its graphs, pools and playback), `Streams` (graph streams, trails,
 dust and rotor wash, and loop effects), `Lights` (effect and loop lights, smoke shadows) and `Shaders` (the Custom HLSL

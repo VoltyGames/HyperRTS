@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Airdrops;
@@ -50,8 +51,8 @@ namespace HyperRTS.Simulation.Tests.Airdrops
                 RevealSeconds = 1f,
                 Bombs = new BombLoad
                 {
-                    Prefab = World.ProjectilePrefab(), Count = Bombs, Damage = 100f, Radius = 3f, EdgeFactor = 0.5f,
-                    Speed = 60f, ZoneRadius = 20f, MaxReduction = 0.5f,
+                    Prefab = World.ProjectilePrefab(), Count = Bombs,
+                    Damage = new DamageProfile { Amount = 100f, Radius = 3f, EdgeFactor = 0.5f }, Speed = 60f, ZoneRadius = 20f, MaxReduction = 0.5f,
                 },
             });
         }

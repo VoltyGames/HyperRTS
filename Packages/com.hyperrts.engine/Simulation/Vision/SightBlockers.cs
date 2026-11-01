@@ -45,9 +45,7 @@ namespace HyperRTS.Simulation.Vision
 
         public int2 Tiles;
 
-        public int2 Size;
-        public float2 Min;
-        public float CellSize;
+        public GridFrame Frame;
 
         /// <summary>Bumped whenever the grid is built anew, so every viewer's sight is drawn again.</summary>
         public int Generation;
@@ -57,9 +55,9 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>An empty grid laid out as the map's fog grid.</summary>
         public static SightBlockers Create(in MapSettings map, Allocator allocator)
         {
-            map.FogLayout(out var size, out var cellSize);
-            var count = size.x * size.y;
-            var tiles = (size + TileCells - 1) / TileCells;
+            var frame = map.FogFrame();
+            var count = frame.Count;
+            var tiles = (frame.Size + TileCells - 1) / TileCells;
             return new SightBlockers
             {
                 DirtyTiles = new NativeArray<byte>(tiles.x * tiles.y, allocator),
@@ -72,9 +70,7 @@ namespace HyperRTS.Simulation.Vision
                 Crop = new NativeArray<byte>(count, allocator),
                 CropTop = new NativeArray<byte>(count, allocator),
                 Conceals = new NativeArray<byte>(count, allocator),
-                Size = size,
-                Min = map.Min,
-                CellSize = cellSize,
+                Frame = frame,
             };
         }
 
@@ -98,20 +94,26 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool TryFindObstruction(float3 from, float3 to, Entity shooter, Entity target,
             out float3 contact, out Entity obstacle)
         {
-            var samples = (int)math.ceil(math.distance(from.xz, to.xz) / (CellSize * 0.5f));
-            for (var i = 1; i < samples; i++)
+            var ray = new GridRay(Frame, from.xz, to.xz);
+            while (ray.MoveNext())
             {
-                contact = math.lerp(from, to, (float)i / samples);
-                var cell = (int2)math.floor((contact.xz - Min) / CellSize);
-                if (!InBounds(cell))
+                if (!Frame.Contains(ray.Cell))
                 {
                     continue;
                 }
 
-                var index = Index(cell);
+                var index = Frame.Index(ray.Cell);
                 obstacle = Owner[index];
                 var own = obstacle != Entity.Null && (obstacle == shooter || obstacle == target);
-                if (!own && contact.y < Ground[index] + SolidHeight(index))
+                // Shooter and target stand on their own ground, which their cell's one height only roughs out.
+                var end = ray.Entry == 0f || ray.Exit >= 1f;
+                if (end && Solid[index] == 0)
+                {
+                    continue;
+                }
+
+                if (!own && TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit),
+                        Ground[index] + SolidHeight(index), out contact))
                 {
                     return true;
                 }
@@ -125,16 +127,16 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Share of sight the porous cover along the line takes, such as smoke between a missile and its target.</summary>
         public readonly float Haze(float3 from, float3 to)
         {
-            var samples = (int)math.ceil(math.distance(from.xz, to.xz) / (CellSize * 0.5f));
-            var length = math.distance(from.xz, to.xz) / math.max(samples, 1);
+            var length = math.distance(from.xz, to.xz);
             var haze = 0f;
-            for (var i = 1; i < samples; i++)
+            var ray = new GridRay(Frame, from.xz, to.xz);
+            while (ray.MoveNext())
             {
-                var point = math.lerp(from, to, (float)i / samples);
-                var cell = (int2)math.floor((point.xz - Min) / CellSize);
-                if (InBounds(cell))
+                if (Frame.Contains(ray.Cell))
                 {
-                    haze += Loss(Index(cell), point.y - Ground[Index(cell)], length);
+                    var index = Frame.Index(ray.Cell);
+                    var middle = math.lerp(from.y, to.y, (ray.Entry + ray.Exit) * 0.5f);
+                    haze += Loss(index, middle - Ground[index], (ray.Exit - ray.Entry) * length);
                 }
             }
 
@@ -147,7 +149,7 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool IsDirty(int2 min, int2 max)
         {
             var low = math.max(min, 0) / TileCells;
-            var high = math.min(max, Size - 1) / TileCells;
+            var high = math.min(max, Frame.Size - 1) / TileCells;
             for (var y = low.y; y <= high.y; y++)
             {
                 for (var x = low.x; x <= high.x; x++)
@@ -176,73 +178,77 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly bool IsConcealing(float3 position)
         {
-            var cell = (int2)math.floor((position.xz - Min) / CellSize);
-            return InBounds(cell) && IsConcealing(Index(cell));
+            var cell = Frame.Cell(position);
+            return Frame.Contains(cell) && IsConcealing(Frame.Index(cell));
         }
-
-        public readonly bool InBounds(int2 cell) => math.all(cell >= 0 & cell < Size);
-
-        public readonly int Index(int2 cell) => cell.y * Size.x + cell.x;
 
         /// <summary>Raises every cell the block touches to its tops and densities, rounded up to a step.</summary>
         public void Stamp(Entity entity, in SightBlock block, in LocalTransform transform, in TerrainHeight terrain)
         {
             var box = block.Box(transform);
-            GetCells(box, out var min, out var max);
-            for (var y = min.y; y <= max.y; y++)
+            foreach (var cell in CellsUnder(box))
             {
-                for (var x = min.x; x <= max.x; x++)
+                var center = Frame.Center(cell);
+                if (!Touches(box, center))
                 {
-                    var center = Min + (new float2(x, y) + 0.5f) * CellSize;
-                    if (!Touches(box, center))
-                    {
-                        continue;
-                    }
-
-                    var footing = transform.Position.y - terrain.Height(center);
-                    var index = Index(new int2(x, y));
-                    var solid = Solid[index];
-                    Raise(Solid, index, (footing + block.Height) / Step, block.Height > 0f);
-                    if (Solid[index] > solid)
-                    {
-                        Owner[index] = entity;
-                    }
-
-                    Raise(PorousTop, index, (footing + block.PorousTop) / Step, block.Density > 0f);
-                    Raise(Porous, index, block.Density / DensityStep, block.Density > 0f);
-                    Raise(Conceals, index, 1f, block.Conceals);
+                    continue;
                 }
+
+                var footing = transform.Position.y - terrain.Height(center);
+                var index = Frame.Index(cell);
+                var solid = Solid[index];
+                Raise(Solid, index, (footing + block.Height) / Step, block.Height > 0f);
+                if (Solid[index] > solid)
+                {
+                    Owner[index] = entity;
+                }
+
+                Raise(PorousTop, index, (footing + block.PorousTop) / Step, block.Density > 0f);
+                Raise(Porous, index, block.Density / DensityStep, block.Density > 0f);
+                Raise(Conceals, index, 1f, block.Conceals);
             }
         }
 
         /// <summary>Clears the crop cover on every cell the box touches.</summary>
         public void Flatten(in NavBox box)
         {
-            GetCells(box, out var min, out var max);
-            for (var y = min.y; y <= max.y; y++)
+            foreach (var cell in CellsUnder(box))
             {
-                for (var x = min.x; x <= max.x; x++)
+                var index = Frame.Index(cell);
+                if (Crop[index] != 0 && Touches(box, Frame.Center(cell)))
                 {
-                    var index = Index(new int2(x, y));
-                    if (Crop[index] != 0 && Touches(box, Min + (new float2(x, y) + 0.5f) * CellSize))
-                    {
-                        Crop[index] = 0;
-                        MarkDirty(new int2(x, y));
-                    }
+                    Crop[index] = 0;
+                    MarkDirty(cell);
                 }
             }
         }
 
-        private readonly void GetCells(in NavBox box, out int2 min, out int2 max)
+        private readonly CellRange CellsUnder(in NavBox box) =>
+            Frame.Cells(Frame.Cell(box.Center - box.Extents), Frame.Cell(box.Center + box.Extents));
+
+        // The line is lowest at one end of its crossing, so it meets the top there or where it sinks below it.
+        private static bool TryFindContact(float3 entry, float3 exit, float top, out float3 contact)
         {
-            var extents = box.Extents;
-            min = math.max((int2)math.floor((box.Center - extents - Min) / CellSize), 0);
-            max = math.min((int2)math.floor((box.Center + extents - Min) / CellSize), Size - 1);
+            if (entry.y < top)
+            {
+                contact = entry;
+                return true;
+            }
+
+            if (exit.y >= top)
+            {
+                contact = exit;
+                return false;
+            }
+
+            contact = math.lerp(entry, exit, (entry.y - top) / (entry.y - exit.y));
+            return true;
         }
 
         // Thin walls and fences block every cell they cross, not only the ones whose centre they cover.
         private readonly bool Touches(in NavBox box, float2 center) =>
-            box.Overlaps(new NavBox(new float3(center.x, 0f, center.y), quaternion.identity, new float2(CellSize)));
+            box.Overlaps(new NavBox(new float3(center.x, 0f, center.y), quaternion.identity,
+                new float2(Frame.CellSize)));
 
         private static void Raise(NativeArray<byte> cells, int index, float steps, bool applies)
         {

@@ -129,14 +129,6 @@ namespace HyperRTS.Simulation.Navigation.Grid
             public void Execute() => Field.MarkChanges(Scenery, Previous);
         }
 
-        [BurstCompile]
-        private struct ClearSceneryJob : IJobParallelFor
-        {
-            public NativeArray<byte> Scenery;
-
-            public void Execute(int index) => Scenery[index] = 0;
-        }
-
         /// <summary>Single-threaded: scenery sharing a cell keeps the sturdiest rating. Each piece fills its own cell.</summary>
         [BurstCompile]
         private partial struct SceneryJob : IJobEntity
@@ -145,13 +137,13 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             private void Execute(in Destructible destructible, in LocalTransform transform)
             {
-                var cell = Grid.WorldToCell(transform.Position);
-                if (destructible.Crush <= 0 || !Grid.InBounds(cell))
+                var cell = Grid.Frame.Cell(transform.Position);
+                if (destructible.Crush <= 0 || !Grid.Frame.Contains(cell))
                 {
                     return;
                 }
 
-                var index = Grid.Index(cell);
+                var index = Grid.Frame.Index(cell);
                 var rating = math.min(destructible.Crush, NavAccess.AllScenery - 1);
                 Grid.Scenery[index] = (byte)math.max((int)Grid.Scenery[index], rating);
             }

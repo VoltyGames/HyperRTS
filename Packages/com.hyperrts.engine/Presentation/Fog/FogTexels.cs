@@ -33,11 +33,11 @@ namespace HyperRTS.Presentation.Fog
 
             public void Execute()
             {
-                for (var y = 0; y < Fog.Size.y; y++)
+                for (var y = 0; y < Fog.Frame.Size.y; y++)
                 {
-                    for (var x = 0; x < Fog.Size.x; x++)
+                    for (var x = 0; x < Fog.Frame.Size.x; x++)
                     {
-                        Output[y * Fog.Size.x + x] = Alpha(new int2(x, y));
+                        Output[y * Fog.Frame.Size.x + x] = Alpha(new int2(x, y));
                     }
                 }
             }

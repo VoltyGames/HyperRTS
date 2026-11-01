@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -15,12 +16,9 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public CellBlock(in NavAccess access, int2 cell)
         {
             _distances = new FixedList64Bytes<float>();
-            for (var dy = -1; dy <= 1; dy++)
+            foreach (var near in new CellRange(cell - 1, cell + 1))
             {
-                for (var dx = -1; dx <= 1; dx++)
-                {
-                    _distances.Add(access.Distance(cell + new int2(dx, dy)));
-                }
+                _distances.Add(access.Distance(near));
             }
 
             _open = access.OpenDistance;

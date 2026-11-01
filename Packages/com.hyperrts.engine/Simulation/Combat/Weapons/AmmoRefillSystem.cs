@@ -5,10 +5,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
-    /// <summary>
-    /// Reloads <see cref="Ammo"/> and <see cref="WeaponMount"/>s that refill anywhere, by the round or by the
-    /// magazine. Docked refills are the air module's.
-    /// </summary>
+    /// <summary>Reloads the <see cref="WeaponMount"/>s that refill anywhere, by the round or by the magazine. Docked refills are the air module's.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
     [UpdateBefore(typeof(WeaponFireSystem))]
@@ -17,44 +14,16 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var deltaTime = SystemAPI.Time.DeltaTime;
-            new AmmoJob { DeltaTime = deltaTime }.ScheduleParallel();
-            new MountJob { DeltaTime = deltaTime }.ScheduleParallel();
+            new ReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }
 
         [BurstCompile]
         [WithNone(typeof(Dead))]
-        private partial struct AmmoJob : IJobEntity
+        private partial struct ReloadJob : IJobEntity
         {
             public float DeltaTime;
 
-            private void Execute(ref Ammo ammo)
-            {
-                if (ammo.Refill != AmmoRefill.Docked)
-                {
-                    ammo.Reload(DeltaTime);
-                }
-            }
-        }
-
-        [BurstCompile]
-        [WithNone(typeof(Dead))]
-        private partial struct MountJob : IJobEntity
-        {
-            public float DeltaTime;
-
-            private void Execute(DynamicBuffer<WeaponMount> mounts)
-            {
-                for (var i = 0; i < mounts.Length; i++)
-                {
-                    var mount = mounts[i];
-                    if (mount.Ammo.Refill != AmmoRefill.Docked)
-                    {
-                        mount.Ammo.Reload(DeltaTime);
-                        mounts[i] = mount;
-                    }
-                }
-            }
+            private void Execute(DynamicBuffer<WeaponMount> mounts) => WeaponMount.Reload(mounts, DeltaTime, docked: false);
         }
     }
 }

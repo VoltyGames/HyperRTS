@@ -63,10 +63,10 @@ namespace HyperRTS.Presentation.Fog
 
         private void Paint(EntityManager entityManager, in FogOfWar fog, byte viewer)
         {
-            if (_mask == null || _mask.width != fog.Size.x || _mask.height != fog.Size.y)
+            if (_mask == null || _mask.width != fog.Frame.Size.x || _mask.height != fog.Frame.Size.y)
             {
                 DestroyMask();
-                _mask = new Texture2D(fog.Size.x, fog.Size.y, TextureFormat.R8, false, true)
+                _mask = new Texture2D(fog.Frame.Size.x, fog.Frame.Size.y, TextureFormat.R8, false, true)
                 {
                     name = "Sight Shape",
                     filterMode = FilterMode.Bilinear,
@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.Fog
                 }
 
                 var words = entityManager.GetBuffer<SightPatchBits>(unit, true).Reinterpret<ulong>().AsNativeArray();
-                new PaintJob { Pixels = pixels, Words = words, Patch = patch, Size = fog.Size }.Run();
+                new PaintJob { Pixels = pixels, Words = words, Patch = patch, Size = fog.Frame.Size }.Run();
             }
 
             _mask.Apply(false);

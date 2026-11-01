@@ -103,8 +103,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             if (restampScenery)
             {
-                state.Dependency = new ClearSceneryJob { Scenery = grid.Scenery }
-                    .Schedule(grid.Scenery.Length, 4096, state.Dependency);
+                state.Dependency = ClearJob<byte>.Schedule(grid.Scenery, state.Dependency);
                 state.Dependency = new SceneryJob { Grid = grid }.Schedule(_scenery, state.Dependency);
                 state.Dependency = new SceneryDiffJob
                 {
@@ -222,10 +221,9 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// </summary>
         private void BuildGrid(ref SystemState state, in MapSettings map, in TerrainHeight terrain)
         {
-            var cellSize = math.max(0.1f, map.NavCellSize);
-            var size = math.max(1, (int2)math.ceil(map.Size / cellSize));
-            var count = size.x * size.y;
-            var grid = NavGrid.Create(size, map.Min, cellSize, terrain, map.WaterLevel);
+            var frame = map.NavFrame();
+            var count = frame.Count;
+            var grid = NavGrid.Create(frame, terrain, map.WaterLevel);
             ReplaceGrid(ref state, ref grid);
 
             if (_base.IsCreated)

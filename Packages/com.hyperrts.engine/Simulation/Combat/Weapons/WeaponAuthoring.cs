@@ -48,8 +48,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>A building never turns, so its weapon always aims a turret.</summary>
         public bool AimsTurret => turreted || TryGetComponent<BuildingAuthoring>(out _);
 
-        /// <summary>Pose buffer slots the primary and extra weapons take; an interceptor's pose follows them.</summary>
-        public int WeaponPoses => 1 + extraWeapons.Count;
+        /// <summary>Weapon mounts the primary and extra weapons take; an interceptor's mount follows them.</summary>
+        public int WeaponCount => 1 + extraWeapons.Count;
 
         /// <summary>An extra weapon: its own stats plus its targeting, ammo and unlock.</summary>
         [Serializable]
@@ -80,33 +80,33 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             public override void Bake(WeaponAuthoring authoring)
             {
-                var entity = GetEntity(TransformUsageFlags.Dynamic);
                 var muzzles = new List<WeaponMuzzle>();
                 var weapon = authoring.stats.Bake(this, authoring.transform, muzzles);
                 weapon.AcquireRange = authoring.acquireRange;
                 weapon.LeashFactor = authoring.leashFactor;
                 weapon.Aim.Turreted = authoring.AimsTurret;
 
-                var writer = this.Writer(entity);
-                var poses = authoring.WeaponPoses + (GetComponent<InterceptorAuthoring>() != null ? 1 : 0);
-                WeaponSetup.Add(writer, weapon, authoring.stance, authoring.transform.position, poses - 1);
-                if (authoring.extraWeapons.Count > 0)
+                var ammo = GetComponent<AmmoAuthoring>();
+                var mounts = new List<WeaponMount> { WeaponMount.Create(weapon, ammo != null ? ammo.Bake() : default) };
+                AddExtras(authoring, mounts, muzzles);
+                var interceptor = GetComponent<InterceptorAuthoring>();
+                if (interceptor != null)
                 {
-                    WeaponSetup.AddMounts(writer, BakeMounts(authoring, muzzles));
+                    mounts.Add(interceptor.BakeMount(this, authoring.transform));
                 }
 
+                var writer = this.Writer();
+                WeaponSetup.Add(writer, mounts, authoring.stance, authoring.transform.position);
                 if (muzzles.Count > 0)
                 {
                     WeaponSetup.AddMuzzles(writer, muzzles);
                 }
             }
 
-            private List<WeaponMount> BakeMounts(WeaponAuthoring authoring, List<WeaponMuzzle> muzzles)
+            private void AddExtras(WeaponAuthoring authoring, List<WeaponMount> mounts, List<WeaponMuzzle> muzzles)
             {
-                var mounts = new List<WeaponMount>();
-                for (var i = 0; i < authoring.extraWeapons.Count; i++)
+                foreach (var slot in authoring.extraWeapons)
                 {
-                    var slot = authoring.extraWeapons[i];
                     if (slot.requires != null)
                     {
                         DependsOn(slot.requires);
@@ -114,11 +114,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
                     var required = slot.requires != null ? slot.requires.TypeId : 0;
                     var weapon = slot.stats.Bake(this, authoring.transform, muzzles);
-                    mounts.Add(WeaponMount.Create(weapon, Ammo.Create(slot.rounds, slot.reloadTime, slot.refill),
-                        required, (byte)(i + 1), slot.independent));
+                    var ammo = Ammo.Create(slot.rounds, slot.reloadTime, slot.refill);
+                    mounts.Add(WeaponMount.Extra(weapon, ammo, required, slot.independent));
                 }
-
-                return mounts;
             }
         }
     }

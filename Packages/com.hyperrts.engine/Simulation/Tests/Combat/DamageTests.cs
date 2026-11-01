@@ -108,11 +108,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var gun = World.SpawnUnit(1, float3.zero);
             var writer = World.Writer(gun);
-            WeaponSetup.Add(writer, new Weapon
+            var weapon = new Weapon
             {
-                Range = 8f, Damage = 30f, Cooldown = 100f, SplashRadius = 3f, SplashEdgeFactor = 1f,
+                Range = 8f, Damage = new DamageProfile { Amount = 30f, Radius = 3f, EdgeFactor = 1f }, Cooldown = 100f,
                 LeashFactor = 1.5f,
-            }, Stance.Aggressive, float3.zero, 0);
+            };
+            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, Stance.Aggressive, float3.zero);
             var target = World.SpawnUnit(2, new float3(6f, 0f, 0f));
             var neighbour = World.SpawnUnit(2, new float3(6f, 0f, 1.5f));
             var aircraft = World.SpawnAircraft(2, new float3(6f, 0f, -1f));

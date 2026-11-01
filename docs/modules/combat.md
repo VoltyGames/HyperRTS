@@ -4,7 +4,7 @@
 
 ## Combat
 
-A unit with a `Weapon` picks the nearest hostile its team can see, closes to range and fires. A target in fog or
+An armed unit picks the nearest hostile its team can see, closes to range and fires. A target in fog or
 hidden by stealth is never auto-acquired, so long-range weapons need a spotter; explicit attack orders still reach
 past sight. Every hit goes through one damage
 queue, so armor, splash and kill credit apply to all of them.
@@ -18,35 +18,37 @@ namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, i
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Damage, damage type, cooldown, splash, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, salvo size and interval, spread. The primary and each extra weapon carry one |
-| `WeaponMount` | An extra weapon. Server only, rewritten by stats like the primary |
+| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, salvo size and interval, spread. The primary and each extra weapon carry one |
+| `WeaponMount` | One weapon: the primary at index 0, then the extra weapons, then an interceptor's. Server only; stats rewrite each from its own bases |
+| `DamageProfile` | What a hit deals: amount, damage type, garrison factor, splash radius and edge factor, friendly fire. Weapons, abilities and bombs carry one and build their hit with `Hit`; `DamageSettings` is its inspector block |
 | `AmmoAuthoring` | Rounds per load and how they refill: `Docked`, `Round` or `Magazine` |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
 | `DamageType` | In `Common`: a damage category that armor and section materials scale, and its `garrisonFactor`, the share that reaches a sheltered garrison ([Transport](movement.md#transport)) |
-| `DamageEvent` | A queued hit, appended through `EventWriter<DamageEvent>`. A negative amount heals |
+| `DamageEvent` | A queued hit, appended through `EventWriter<DamageEvent>`. A negative amount heals. `Direct` and `OverTime` build the hits that have no profile: repair, crushing, falling floors, auras and status damage |
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
 | `LastAttacker` | Who gets the kill credit |
 
 Idle units look for targets every 4th frame. `DamageSystem` applies all damage last in the combat phase, scaled by
 `DamageFactors` (armor by type and side, then damage taken), which `TargetLookup` also reads for `MinEffect`.
 
-The primary `Weapon` sets how a unit engages, and orders and the AI read only it. Extra weapons in
-`WeaponAuthoring.extraWeapons` become `WeaponMount`s that fire at the unit's target when they can hit it, and the
-unit closes to the longest reach among them. An independent mount picks its own target, such as a missile that
-engages aircraft while the gun shoots tanks. `MinEffect` skips targets whose armor blunts the damage, a mount may
-need research and carry rounds that refill while docked (an aircraft goes home when all its limited weapons are
-empty), and each fires its own Fire cue: the cue's variant is the weapon's pose index, 0 for the primary and 1 up
-for the mounts, which `mountFire` on the sound and effect authoring fills in order. A mount without an entry fires
-silently. `Shooter.TryFire` is the fire step both weapon kinds share.
+Every weapon is a `WeaponMount` in one buffer, at the index of its pose and its Fire cue's variant. The primary,
+index 0, sets how a unit engages, and orders and the AI read only it (`WeaponMount.TryGetPrimary`). Extra weapons in
+`WeaponAuthoring.extraWeapons` follow it and fire at the unit's target when they can hit it, and the unit closes to
+the longest reach among them. An independent one picks its own target, such as a missile that engages aircraft
+while the gun shoots tanks. `MinEffect` skips targets whose armor blunts the damage, an extra weapon may need
+research and carry rounds that refill while docked (an aircraft goes home when all its limited weapons are empty),
+and each fires its own Fire cue, which `mountFire` on the sound and effect authoring fills in order from index 1. One
+without an entry fires silently. `WeaponFireSystem` gives each weapon its target for the frame (`WeaponTargetJob`:
+the primary the attack target once it is in reach) and fires them all through `Shooter.TryFire`.
 
 Direct fire and rockets (`Weapon.NeedsLineOfFire`, any trajectory but ballistic) need a clear line from the
-shooter's eye to the target's top (`SightLines.TopOf`, 1 m, or 3 m for a `TallTarget`, as sight judges it), over the ground and solid sight blocks (`SightBlockers.TryFindObstruction`;
+shooter's eye to the target's top (`SightLines.TopOf`, 1 m, or 3 m for a `TallTarget`, as sight judges it), over the ground and solid sight blocks in every cell the line crosses (`SightBlockers.TryFindObstruction`;
 the shooter's own block, its garrison's and the target's don't count). Scans skip blocked targets. A weapon that
 hits at once waits for a clear line, so an ordered attack closes in until it has one. One that fires rounds
 (`FiresRounds`) shoots anyway, and `Shooter` turns the round onto the obstacle, hitting it where the line meets
-it. A round launched through porous cover that hides the target (`SightBlockers.Haze` of 1 or more, such as
-smoke) loses its lock and flies on to the aim point.
+it. A round launched through porous cover that hides the target (`SightBlockers.Haze` of 1 or more, summed over the
+length the line crosses in each cell, such as smoke) loses its lock and flies on to the aim point.
 
 `TargetLookup.Reach` is a weapon's range against one target. A passenger firing out of a container with a
 `PassengerRange` (`ContainerAuthoring.passengerRangeBonus`) reaches that share further. A direct-fire or rocket weapon
@@ -66,11 +68,11 @@ first muzzle. `spread` scatters each shot's aim point at random within that many
 and shot count. A ballistic shell keeps its target while it stays put; a homing shot with a spread gives up its lock
 and flies to its scattered point, so a rocket ripple covers an area. Missiles that must stay locked keep 0.
 
-Limited rounds (`AmmoAuthoring` for the primary, `rounds` on an extra weapon) refill by their `AmmoRefill`:
-`Docked` one round per `reloadTime` while docked at an airfield, `Round` one per `reloadTime` anywhere, and
-`Magazine` every round together `reloadTime` after the magazine runs empty. A part-empty magazine never reloads.
-`AmmoRefillSystem` reloads the last two. `WeaponMount` and `Interceptor` hold an `Ammo` of their own (max 0 never
-runs dry), so `Ammo.Reload` is the one reload rule.
+Limited rounds (`AmmoAuthoring` for the primary, `rounds` on an extra weapon or an interceptor) sit in each
+mount's `Ammo` (max 0 never runs dry) and refill by their `AmmoRefill`: `Docked` one round per `reloadTime` while
+docked at an airfield, `Round` one per `reloadTime` anywhere, and `Magazine` every round together `reloadTime`
+after the magazine runs empty. A part-empty magazine never reloads. `WeaponMount.Reload` is the one reload loop:
+`AmmoRefillSystem` runs it for the last two, and the air module's `AircraftReloadSystem` for docked aircraft.
 
 ### Deploying
 
@@ -113,11 +115,12 @@ interceptors ignore them.
 | `radius`, `kinds` | What it engages, measured from the pivot in 3D |
 | `engagementsPerSecond`, `killChance` | How often it engages, and the chance each engagement kills |
 | `muzzle`, `turret`, `barrel`, `aimSpeed`, elevation limits, `aimTolerance` | Aim, like a weapon's |
-| `rounds`, `reloadTime` | Optional stock, one round refilled per `reloadTime` while online (`AmmoRefill.Round`) |
+| `rounds`, `reloadTime` | Optional stock, one round refilled per `reloadTime` (`AmmoRefill.Round`) |
 
-`InterceptorSystem` runs after the weapons and before `ProjectileSystem`. Its `WeaponPose` sits after the weapons
-(index 0 on an entity with no weapon), so a `MotionRigAuthoring` turret or launcher follows it, and it engages once
-that pose is within `aimTolerance`. Each engagement plays its Fire cue toward the target, with the pose index as the
+`InterceptorSystem` runs after the weapons and before `ProjectileSystem`. Its aim, cooldown, rounds and
+`needsDeploy` bake into a `WeaponMount` marked `Intercepts` after the weapons (index 0 on an entity with no weapon),
+which `Interceptor.Mount` names and the fire path leaves alone. Its `WeaponPose` sits at that index, so a
+`MotionRigAuthoring` turret or launcher follows it, and it engages once that pose is within `aimTolerance`. Each engagement plays its Fire cue toward the target, with the pose index as the
 variant, for the tracer burst. A kill marks the projectile `Intercepted`, so it stops flying and never lands, and
 plays the interceptor's Impact cue where it died as the airburst, classed as an `Air` surface. A miss lets it fly on.
 A shot aimed inside the radius is tracked before it enters, so the turret is on it as it arrives, but only one
@@ -299,9 +302,10 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
   `MaxSight`.
 - `SightBlockSystem` stamps every enabled block onto the fog grid (`SightBlockers`) when one is added, removed,
   moved, turned off or changed. Remains turn theirs off as they are buried.
-- Woods, crops and smoke the eye is below take their density of sight per metre crossed; a ray stops once they have
-  taken it all, so about 10 m of woods hides what lies beyond and a viewer above the canopy sees over. Crushers
-  flatten crop cover under their hull (`CropFlattenSystem`), in every world so clients' fog matches.
+- Sight rays fan round the viewer, closer than a cell is wide, and walk every cell they cross (`GridRay`). Woods,
+  crops and smoke the eye is below take their density of sight per metre the ray crosses in each cell; a ray stops
+  once they have taken it all, so about 10 m of woods hides what lies beyond and a viewer above the canopy sees over.
+  Crushers flatten crop cover under their hull (`CropFlattenSystem`), in every world so clients' fog matches.
 - `FogOfWar.Close` holds the cells within `RevealDistance` of a team's ground units; aircraft and passengers add
   none. A `Cover` (none, `Concealed`, `Stealthed`) goes with every visibility check: stealth shows only to detectors,
   concealment also to close ground units. Woods, crops and blocks with `conceals` conceal. A cue carries its

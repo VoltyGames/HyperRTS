@@ -194,8 +194,8 @@ namespace HyperRTS.Presentation.Animation
                 return;
             }
 
-            interceptor.barrel = Barrel(interceptor.Pose, raised);
-            interceptor.turret = Turret(interceptor.Pose, interceptor.barrel);
+            interceptor.barrel = Barrel(interceptor.Mount, raised);
+            interceptor.turret = Turret(interceptor.Mount, interceptor.barrel);
         }
 
         // Without a barrel slot of its own, a weapon fires from the launcher its Machine raises.

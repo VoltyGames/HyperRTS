@@ -101,14 +101,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                     return;
                 }
 
-                Damage.Add(new DamageEvent
-                {
-                    Target = victim,
-                    Position = Position,
-                    Origin = Position,
-                    Source = Crusher,
-                    Amount = Lethal,
-                });
+                Damage.Add(DamageEvent.Direct(victim, Position, Crusher, 0, Lethal));
             }
 
             private readonly bool Underneath(in SpatialEntry entry) =>

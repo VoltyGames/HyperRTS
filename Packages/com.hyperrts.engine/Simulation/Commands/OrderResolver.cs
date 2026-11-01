@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Commands
     {
         private ComponentLookup<Faction> _factions;
         private TargetLookup _targets;
-        private ComponentLookup<Weapon> _weapons;
+        private BufferLookup<WeaponMount> _mounts;
         private ComponentLookup<Harvester> _harvesters;
         private ComponentLookup<ResourceNode> _nodes;
         private ComponentLookup<Builder> _builders;
@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Commands
         {
             _factions = state.GetComponentLookup<Faction>(true);
             _targets = new TargetLookup(ref state);
-            _weapons = state.GetComponentLookup<Weapon>(true);
+            _mounts = state.GetBufferLookup<WeaponMount>(true);
             _harvesters = state.GetComponentLookup<Harvester>(true);
             _nodes = state.GetComponentLookup<ResourceNode>(true);
             _builders = state.GetComponentLookup<Builder>(true);
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Commands
         {
             _factions.Update(ref state);
             _targets.Update(ref state, fog);
-            _weapons.Update(ref state);
+            _mounts.Update(ref state);
             _harvesters.Update(ref state);
             _nodes.Update(ref state);
             _builders.Update(ref state);
@@ -120,7 +120,7 @@ namespace HyperRTS.Simulation.Commands
                 return OrderType.Attack;
             }
 
-            return _weapons.HasComponent(unit) ? OrderType.AttackMove : OrderType.Move;
+            return TryGetPrimary(unit, out _) ? OrderType.AttackMove : OrderType.Move;
         }
 
         private OrderType ResolveSmart(Entity unit, Entity target, in FactionRelations relations)
@@ -201,13 +201,19 @@ namespace HyperRTS.Simulation.Commands
         }
 
         private bool CanAttack(Entity unit, Entity target, in FactionRelations relations) =>
-            _weapons.TryGetComponent(unit, out var weapon) &&
+            TryGetPrimary(unit, out var weapon) &&
             _targets.IsValidTarget(target, _factions[unit].Value, relations, weapon.Targets);
 
         /// <summary>Explicit attack orders may also target destructible scenery; smart clicks never do.</summary>
         private bool CanForceAttack(Entity unit, Entity target, in FactionRelations relations) =>
-            _weapons.TryGetComponent(unit, out var weapon) &&
+            TryGetPrimary(unit, out var weapon) &&
             _targets.IsAttackable(target, _factions[unit].Value, relations, weapon.Targets);
+
+        private bool TryGetPrimary(Entity unit, out Weapon weapon)
+        {
+            weapon = default;
+            return _mounts.TryGetBuffer(unit, out var mounts) && WeaponMount.TryGetPrimary(mounts, out weapon);
+        }
 
         private bool CanGather(Entity unit, Entity target) =>
             _harvesters.HasComponent(unit) && _nodes.HasComponent(target);

@@ -50,8 +50,8 @@ namespace HyperRTS.Editor.Tests.Validation
             yield return Row<AbilityRule>("'Smoke'", f =>
             {
                 var abilities = f.Add<AbilityAuthoring>(EntityTemplates.CombatUnit());
-                abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", damage = 1f });
-                abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", damage = 1f });
+                abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
+                abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
                 return abilities;
             });
             yield return Row<AirdropReceiverRule>("no aircraft prefab", f =>

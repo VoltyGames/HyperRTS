@@ -217,7 +217,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
 
             var grid = World.Grid();
             Assert.IsTrue(grid.IsWalkable(wall), "the breach opens");
-            Assert.AreEqual(RubbleCrush, grid.Scenery[grid.Index(grid.WorldToCell(wall))], "rubble lies in it");
+            Assert.AreEqual(RubbleCrush, grid.Scenery[grid.Frame.Index(grid.Frame.Cell(wall))], "rubble lies in it");
             using var heaps = World.Query(typeof(SceneryId), typeof(Destructible))
                 .ToEntityArray(Allocator.Temp);
             Assert.AreEqual(1, heaps.Length, "one heap, at the broken wall's foot");

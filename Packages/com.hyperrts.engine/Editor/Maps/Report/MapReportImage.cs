@@ -155,7 +155,7 @@ namespace HyperRTS.Editor.Maps.Report
         private static Color Blocked(MapNavGrid nav, Vector2 p, Color color)
         {
             var cell = nav.Cell(p);
-            var blocked = nav.Grid.InBounds(cell) && nav.Grid.Cells[nav.Grid.Index(cell)] == (byte)NavSurface.Blocked;
+            var blocked = nav.Grid.Frame.Contains(cell) && nav.Grid.Cells[nav.Grid.Frame.Index(cell)] == (byte)NavSurface.Blocked;
             return blocked ? Color.Lerp(color, BlockedColor, 0.45f) : color;
         }
 

@@ -24,34 +24,21 @@ namespace HyperRTS.Simulation.Air
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-
-            new ReleaseJob { Homes = SystemAPI.GetComponentLookup<HomePad>(true) }.ScheduleParallel();
+            new ExpireJob().ScheduleParallel();
             var airfields = new Airfields { Pads = SystemAPI.GetBufferLookup<LandingPad>(false), Factions = SystemAPI.GetComponentLookup<Faction>(true), Sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true) };
             new HomeJob { Airfields = airfields }.Schedule();
             new ReturnJob { Airfields = airfields, Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true) }.Schedule();
         }
 
-        /// <summary>Frees pads whose aircraft is gone or now calls another pad home.</summary>
+        /// <summary>Frees pads whose aircraft did not renew them last frame, as when it died or rehomed.</summary>
         [BurstCompile]
-        private partial struct ReleaseJob : IJobEntity
+        private partial struct ExpireJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<HomePad> Homes;
-
-            private void Execute(Entity entity, DynamicBuffer<LandingPad> pads)
+            private void Execute(DynamicBuffer<LandingPad> pads)
             {
                 for (var i = 0; i < pads.Length; i++)
                 {
-                    ref var pad = ref pads.ElementAt(i);
-                    if (pad.Aircraft == Entity.Null)
-                    {
-                        continue;
-                    }
-
-                    var home = Homes.TryGetComponent(pad.Aircraft, out var found) ? found : default;
-                    if (home.Airfield != entity || home.Pad != i)
-                    {
-                        pad.Aircraft = Entity.Null;
-                    }
+                    pads.ElementAt(i).Lease.Expire();
                 }
             }
         }
@@ -146,13 +133,7 @@ namespace HyperRTS.Simulation.Air
                     return false;
                 }
 
-                ref var pad = ref pads.ElementAt(home.Pad);
-                if (pad.Aircraft == Entity.Null)
-                {
-                    pad.Aircraft = aircraft;
-                }
-
-                return pad.Aircraft == aircraft;
+                return pads.ElementAt(home.Pad).Lease.TryHold(aircraft);
             }
 
             /// <summary>Moves the aircraft's home to a free pad of its kind at the airfield; the old pad frees next frame.</summary>
@@ -170,7 +151,7 @@ namespace HyperRTS.Simulation.Air
                     return;
                 }
 
-                pads.ElementAt(free).Aircraft = aircraft;
+                pads.ElementAt(free).Lease.Hold(aircraft);
                 home = home.ToPad(airfield, free);
             }
         }

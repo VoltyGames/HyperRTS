@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Tests.Stats
 
             World.Tick();
 
-            Assert.AreEqual(expected, World.Get<Weapon>(soldier).Cooldown, 1e-5f);
+            Assert.AreEqual(expected, World.Primary(soldier).Cooldown, 1e-5f);
         }
 
         [Test]
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Tests.Stats
             World.Tick();
 
             var mount = World.Mount(gun);
-            Assert.AreEqual(50f, mount.Weapon.Damage, 1e-4f);
+            Assert.AreEqual(50f, mount.Weapon.Damage.Amount, 1e-4f);
             Assert.AreEqual(5f, mount.Weapon.Range, 1e-4f);
             Assert.AreEqual(2f, mount.Weapon.Cooldown, 1e-4f);
         }
@@ -107,7 +107,7 @@ namespace HyperRTS.Simulation.Tests.Stats
             var experience = World.Get<Experience>(veteran);
             Assert.AreEqual(10f, experience.Points, 1e-3f, "cost 100 times the match's 0.1");
             Assert.AreEqual(1, experience.Rank);
-            Assert.AreEqual(75f, World.Get<Weapon>(veteran).Damage, 1e-3f, "+50% damage at rank 1");
+            Assert.AreEqual(75f, World.Primary(veteran).Damage.Amount, 1e-3f, "+50% damage at rank 1");
         }
 
         [Test]

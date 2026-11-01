@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -13,12 +14,13 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// Ticks weapon cooldowns and fires at in-range targets: an instant <see cref="DamageEvent"/>, or a launched
-    /// <see cref="Projectile"/> when the weapon has a prefab. Unfinished and unpowered buildings stay silent, as do
-    /// weapons out of <see cref="Ammo"/> and undeployed <see cref="Weapon.NeedsDeploy"/> weapons. A salvo stops when its
-    /// target is lost, and a shot reveals a stealthed shooter for its <see cref="Stealth.RevealDuration"/>.
-    /// A unit without a turreted weapon turns its hull to the target through movement and fires once it faces it. A
-    /// turret fires once its pose is on target. Buildings never turn.
+    /// Aims and fires every <see cref="WeaponMount"/>: an instant <see cref="DamageEvent"/>, or a launched
+    /// <see cref="Projectile"/> when the weapon has a prefab. The primary shoots the <see cref="AttackTarget"/> once it
+    /// is in reach; an extra weapon shoots it when it can hit it, else, if independent, the nearest spotted hostile in
+    /// its own range. Offline shooters, weapons out of <see cref="Ammo"/> and undeployed
+    /// <see cref="Weapon.NeedsDeploy"/> weapons stay silent. A salvo stops when its target is lost, and a shot reveals
+    /// a stealthed shooter for its <see cref="Stealth.RevealDuration"/>. A unit's hull-fixed primary turns the hull to
+    /// the target through movement and fires once it faces it; a turret fires once its pose is on target.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -26,31 +28,47 @@ namespace HyperRTS.Simulation.Combat.Weapons
     [UpdateBefore(typeof(StealthSystem))]
     public partial struct WeaponFireSystem : ISystem
     {
+        private TargetLookup _targets;
+        private EntityQuery _fogQuery;
         private Shooter _shots;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _targets = new TargetLookup(ref state);
+            _fogQuery = TargetLookup.FogQuery(ref state);
             _shots = new Shooter(ref state);
+            state.RequireForUpdate<SpatialIndex>();
+            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<FogOfWar>();
+            state.RequireForUpdate<SimulationFrame>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _targets.Update(ref state, _fogQuery);
+
+            new WeaponTargetJob
+            {
+                Index = SystemAPI.GetSingleton<SpatialIndex>(),
+                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Targets = _targets,
+                Slot = new ScanSlot(SystemAPI.GetSingleton<SimulationFrame>()),
+            }.ScheduleParallel();
+
             _shots.Update(ref state, SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged));
 
             // Single-threaded: every shot appends to the one damage queue.
-            new FireJob
+            new ShotJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 Units = SystemAPI.GetComponentLookup<UnitTag>(true),
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 FacingGoals = SystemAPI.GetComponentLookup<FacingGoal>(false),
-                Ammos = SystemAPI.GetComponentLookup<Ammo>(false),
                 Shots = _shots,
             }.Schedule();
         }
@@ -58,46 +76,50 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [BurstCompile]
         [WithNone(typeof(Offline))]
         [WithPresent(typeof(AttackTarget))]
-        private partial struct FireJob : IJobEntity
+        private partial struct ShotJob : IJobEntity
         {
             public float DeltaTime;
-            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             public ComponentLookup<FacingGoal> FacingGoals;
-            public ComponentLookup<Ammo> Ammos;
             public Shooter Shots;
 
-            private void Execute(Entity entity, ref Weapon weapon, in AttackTarget attack,
-                EnabledRefRO<AttackTarget> attacking, in Faction faction)
+            private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in Faction faction)
             {
-                weapon.Tick(DeltaTime);
-
-                var target = attack.Value;
-                if (!InReach(weapon, attack, attacking.ValueRO) || !Health.IsAlive(HealthLookup, target))
+                for (var i = 0; i < mounts.Length; i++)
                 {
-                    weapon.EndSalvo();
-                    return;
+                    var mount = mounts[i];
+                    if (mount.Intercepts)
+                    {
+                        continue;
+                    }
+
+                    mount.Weapon.Tick(DeltaTime);
+                    if (mount.Target == Entity.Null)
+                    {
+                        mount.Weapon.EndSalvo();
+                    }
+                    else if (Faces(entity, mount) && Shots.TryFire(entity, ref mount.Weapon, (byte)i, mount.Target,
+                                 faction.Value))
+                    {
+                        mount.Ammo.Spend();
+                    }
+
+                    mounts[i] = mount;
+                }
+            }
+
+            /// <summary>A unit's hull-fixed weapon turns the hull; a garrisoned passenger fires out of any side without turning.</summary>
+            private bool Faces(Entity entity, in WeaponMount mount)
+            {
+                var turnsHull = Units.HasComponent(entity) && !mount.Weapon.Aim.Turreted;
+                if (!turnsHull || InsideLookup.HasEnabled(entity))
+                {
+                    return true;
                 }
 
-                // A garrisoned passenger fires out of any side of its building without turning.
-                var turnsHull = Units.HasComponent(entity) && !weapon.Aim.Turreted && !InsideLookup.HasEnabled(entity);
-                if (turnsHull && !Face(entity, Transforms[target].Position, weapon.Aim.AimTolerance))
-                {
-                    return;
-                }
-
-                var limited = Ammos.TryGetRefRW(entity, out var ammo);
-                if (limited && ammo.ValueRO.Empty)
-                {
-                    return;
-                }
-
-                if (Shots.TryFire(entity, ref weapon, 0, target, faction.Value) && limited)
-                {
-                    ammo.ValueRW.Spend();
-                }
+                return Face(entity, Transforms[mount.Target].Position, mount.Weapon.Aim.AimTolerance);
             }
 
             /// <summary>Turns the hull level toward the target; true once it faces it within <paramref name="tolerance"/>.</summary>
@@ -115,13 +137,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 FacingGoals.SetComponentEnabled(shooter, true);
                 var forward = math.normalizesafe(math.mul(transform.Rotation, math.forward()).xz);
                 return math.dot(forward, direction) >= math.cos(tolerance);
-            }
-
-            /// <summary>A longer-ranged mount can put the unit in range before the primary reaches.</summary>
-            private static bool InReach(in Weapon weapon, in AttackTarget attack, bool attacking)
-            {
-                var engaged = attacking && attack.InRange;
-                return engaged && attack.Gap >= weapon.MinRange && attack.Gap <= attack.Reach;
             }
         }
     }

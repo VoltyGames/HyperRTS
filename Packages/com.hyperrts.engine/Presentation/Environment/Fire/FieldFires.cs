@@ -47,7 +47,7 @@ namespace HyperRTS.Presentation.Environment.Fire
             new(1, 0), new(-1, 0), new(0, 1), new(0, -1), new(1, 1), new(1, -1), new(-1, 1), new(-1, -1),
         };
 
-        private readonly GridArea _grid;
+        private readonly GridFrame _grid;
         private readonly float2 _burnSeconds;
         private readonly float2 _reach;
         private readonly FieldCell[] _cells;
@@ -64,7 +64,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         /// </summary>
         public FieldFires(float2 min, int2 size, float2 burnSeconds, float2 reach)
         {
-            _grid = new GridArea(min, CellSize, size);
+            _grid = new GridFrame(min, CellSize, size);
             _burnSeconds = burnSeconds;
             _reach = reach;
             _cells = new FieldCell[size.x * size.y];
@@ -82,18 +82,12 @@ namespace HyperRTS.Presentation.Environment.Fire
         /// <summary>Makes the dry cells within <paramref name="radius"/> of <paramref name="centre"/> bare for good.</summary>
         public void MarkBare(float2 centre, float radius)
         {
-            var low = math.max(_grid.Cell(centre - radius), 0);
-            var high = math.min(_grid.Cell(centre + radius), Size - 1);
-            for (var z = low.y; z <= high.y; z++)
+            foreach (var cell in _grid.CellsInCircle(centre, radius))
             {
-                for (var x = low.x; x <= high.x; x++)
+                var index = _grid.Index(cell);
+                if (_cells[index] == FieldCell.Dry)
                 {
-                    var index = _grid.Index(new int2(x, z));
-                    var near = math.distancesq(_grid.Centre(new int2(x, z)), centre) <= radius * radius;
-                    if (near && _cells[index] == FieldCell.Dry)
-                    {
-                        _cells[index] = FieldCell.Bare;
-                    }
+                    _cells[index] = FieldCell.Bare;
                 }
             }
         }
@@ -102,16 +96,16 @@ namespace HyperRTS.Presentation.Environment.Fire
         public FieldCell At(float2 position)
         {
             var cell = _grid.Cell(position);
-            return _grid.Inside(cell) ? _cells[_grid.Index(cell)] : FieldCell.Bare;
+            return _grid.Contains(cell) ? _cells[_grid.Index(cell)] : FieldCell.Bare;
         }
 
-        public float2 Centre(int2 cell) => _grid.Centre(cell);
+        public float2 Centre(int2 cell) => _grid.Center(cell);
 
         /// <summary>Sets the dry cell under <paramref name="position"/> alight; false on any other cell.</summary>
         public bool TryIgnite(float2 position, uint seed)
         {
             var cell = _grid.Cell(position);
-            if (!_grid.Inside(cell) || _cells[_grid.Index(cell)] != FieldCell.Dry)
+            if (!_grid.Contains(cell) || _cells[_grid.Index(cell)] != FieldCell.Dry)
             {
                 return false;
             }
@@ -153,10 +147,10 @@ namespace HyperRTS.Presentation.Environment.Fire
             var across = (Size.x + ClusterCells - 1) / ClusterCells;
             foreach (var flame in _flames)
             {
-                var cell = _grid.FromIndex(flame.Cell);
+                var cell = _grid.Cell(flame.Cell);
                 var key = cell.x / ClusterCells + cell.y / ClusterCells * across;
                 _clusterSums.TryGetValue(key, out var sum);
-                _clusterSums[key] = sum + new float3(_grid.Centre(cell), 1f);
+                _clusterSums[key] = sum + new float3(_grid.Center(cell), 1f);
             }
 
             foreach (var (key, sum) in _clusterSums)
@@ -173,17 +167,14 @@ namespace HyperRTS.Presentation.Environment.Fire
             var dry = DryTexels(data, dryLayers);
             var origin = ((float3)terrain.GetPosition()).xz;
             var perMetre = resolution / ((float3)data.size).xz;
-            for (var z = 0; z < Size.y; z++)
+            foreach (var cell in _grid.Cells(int2.zero, Size - 1))
             {
-                for (var x = 0; x < Size.x; x++)
+                var centre = _grid.Center(cell);
+                var texel = (int2)math.floor((centre - origin) * perMetre);
+                var onTerrain = math.all(texel >= 0) && math.all(texel < resolution);
+                if (onTerrain && dry[texel.x + texel.y * resolution] && ground.At(centre) != SurfaceMaterial.Water)
                 {
-                    var centre = _grid.Centre(new int2(x, z));
-                    var texel = (int2)math.floor((centre - origin) * perMetre);
-                    var onTerrain = math.all(texel >= 0) && math.all(texel < resolution);
-                    if (onTerrain && dry[texel.x + texel.y * resolution] && ground.At(centre) != SurfaceMaterial.Water)
-                    {
-                        MarkDry(new int2(x, z));
-                    }
+                    MarkDry(cell);
                 }
             }
         }
@@ -254,7 +245,7 @@ namespace HyperRTS.Presentation.Environment.Fire
                 }
 
                 _cells[flame.Cell] = FieldCell.Burnt;
-                _burntOut.Add(_grid.Centre(_grid.FromIndex(flame.Cell)));
+                _burntOut.Add(_grid.Center(_grid.Cell(flame.Cell)));
                 _flames[i] = _flames[^1];
                 _flames.RemoveAt(_flames.Count - 1);
             }
@@ -266,12 +257,12 @@ namespace HyperRTS.Presentation.Environment.Fire
         // Lights some dry neighbours; false once none is left within reach, as cells never turn dry again.
         private bool Spread(in Flame flame)
         {
-            var cell = _grid.FromIndex(flame.Cell);
+            var cell = _grid.Cell(flame.Cell);
             var anyDry = false;
             for (var n = 0; n < Neighbours.Length; n++)
             {
                 var next = cell + Neighbours[n];
-                if (!_grid.Inside(next) || _cells[_grid.Index(next)] != FieldCell.Dry)
+                if (!_grid.Contains(next) || _cells[_grid.Index(next)] != FieldCell.Dry)
                 {
                     continue;
                 }

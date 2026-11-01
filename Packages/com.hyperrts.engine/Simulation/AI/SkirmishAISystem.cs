@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.AI
         {
             _idleHarvesters = SystemAPI.QueryBuilder().WithAll<Harvester, Faction, LocalTransform>()
                 .WithDisabled<ActiveOrder>().WithNone<Dead>().Build();
-            _idleArmy = SystemAPI.QueryBuilder().WithAll<Weapon, Faction, LocalTransform>()
+            _idleArmy = SystemAPI.QueryBuilder().WithAll<WeaponMount, CombatStance, Faction, LocalTransform>()
                 .WithDisabled<ActiveOrder>().WithNone<Harvester, Builder, Dead, AttackTarget>().Build();
             _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, Faction, LocalTransform>().Build();
             _producers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, ProductionQueueItem, Faction>()

@@ -1,8 +1,8 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -14,30 +14,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
     public class WeaponStats
     {
         [Header("Damage")]
-        [Tooltip("Damage per hit before armor.")]
-        [Min(0f)]
-        public float damage = 10f;
+        [Tooltip("What each hit deals, its damage type and its splash.")]
+        public DamageSettings hit = new();
 
         [Tooltip("Seconds between shots.")]
         [Min(0.05f)]
         public float cooldown = 1f;
-
-        [Tooltip("Optional damage category that armor can scale.")]
-        public DamageType damageType;
-
-        [Header("Splash")]
-        [Tooltip("Radius around the impact that also takes damage; 0 hits only the target.")]
-        [Min(0f)]
-        public float splashRadius;
-
-        [Tooltip("Fraction of the damage dealt at the splash edge (1 = no falloff).")]
-        [Range(0f, 1f)]
-        [ShowIf(nameof(splashRadius))]
-        public float splashEdgeDamage = 0.5f;
-
-        [Tooltip("Splash also hurts the shooter's own and allied units.")]
-        [ShowIf(nameof(splashRadius))]
-        public bool friendlyFire;
 
         [Header("Projectile")]
         [Tooltip("Optional projectile prefab; leave empty for instant hits.")]
@@ -132,7 +114,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public float spread;
 
         /// <summary>Damage per second before armor, with the cooldown floored at its minimum.</summary>
-        public float Dps => damage / Mathf.Max(cooldown, 0.05f);
+        public float Dps => hit.damage / Mathf.Max(cooldown, 0.05f);
 
         /// <summary>
         /// The baked weapon, with its muzzle sockets relative to <paramref name="root"/>. Several muzzles go on the end
@@ -143,13 +125,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             var weapon = new Weapon
             {
                 Range = range,
-                Damage = damage,
+                Damage = hit.Bake(),
                 Cooldown = cooldown,
-                DamageType = damageType,
-                GarrisonFactor = DamageType.Garrison(damageType),
-                SplashRadius = splashRadius,
-                SplashEdgeFactor = splashEdgeDamage,
-                FriendlyFire = friendlyFire,
                 ProjectilePrefab = projectilePrefab != null
                     ? baker.GetEntity(projectilePrefab, TransformUsageFlags.Dynamic)
                     : Entity.Null,

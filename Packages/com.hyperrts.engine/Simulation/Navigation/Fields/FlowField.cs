@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -84,23 +85,19 @@ namespace HyperRTS.Simulation.Navigation.Fields
             var cell = Corridor.Cell(index);
             var cost = _costs[index];
             var block = new CellBlock(access, cell);
-            for (var dy = -1; dy <= 1; dy++)
+            foreach (var offset in new Neighbours())
             {
-                for (var dx = -1; dx <= 1; dx++)
+                var at = Corridor.Index(index, cell, offset);
+                if (at < 0 || !block.CanStepIn(offset))
                 {
-                    var offset = new int2(dx, dy);
-                    var at = Corridor.Index(index, cell, offset);
-                    if ((dx == 0 && dy == 0) || at < 0 || !block.CanStepIn(offset))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    var next = cost + block.CostIn(offset);
-                    if (next < _costs[at])
-                    {
-                        _costs[at] = next;
-                        open.Push(at, next);
-                    }
+                var next = cost + block.CostIn(offset);
+                if (next < _costs[at])
+                {
+                    _costs[at] = next;
+                    open.Push(at, next);
                 }
             }
         }
@@ -139,24 +136,20 @@ namespace HyperRTS.Simulation.Navigation.Fields
             var bestCost = float.PositiveInfinity;
             best = cell;
             var block = new CellBlock(access, cell);
-            for (var dy = -1; dy <= 1; dy++)
+            foreach (var offset in new Neighbours())
             {
-                for (var dx = -1; dx <= 1; dx++)
+                var next = cell + offset;
+                var cost = Cost(next);
+                if (cost >= here || !block.CanStepOut(offset))
                 {
-                    var offset = new int2(dx, dy);
-                    var next = cell + offset;
-                    var cost = Cost(next);
-                    if ((dx == 0 && dy == 0) || cost >= here || !block.CanStepOut(offset))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    var total = cost + block.CostOut(offset);
-                    if (total < bestCost)
-                    {
-                        bestCost = total;
-                        best = next;
-                    }
+                var total = cost + block.CostOut(offset);
+                if (total < bestCost)
+                {
+                    bestCost = total;
+                    best = next;
                 }
             }
 

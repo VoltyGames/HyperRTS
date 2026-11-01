@@ -24,12 +24,11 @@ namespace HyperRTS.Simulation.Tests
             var weapon = new Weapon
             {
                 Range = range,
-                Damage = damage,
+                Damage = new DamageProfile { Amount = damage, Type = damageType },
                 Cooldown = cooldown,
                 ProjectilePrefab = projectile,
                 ProjectileSpeed = 10f,
                 LeashFactor = 1.5f,
-                DamageType = damageType,
                 Targets = targets,
                 MinRange = minRange,
                 Aim = new WeaponAim
@@ -42,7 +41,8 @@ namespace HyperRTS.Simulation.Tests
             };
             Aim(ref weapon, traverseSpeed);
             var writer = world.Writer(entity);
-            WeaponSetup.Add(writer, weapon, stance, world.Get<LocalTransform>(entity).Position, 0);
+            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, stance,
+                world.Get<LocalTransform>(entity).Position);
             return entity;
         }
 
@@ -55,38 +55,56 @@ namespace HyperRTS.Simulation.Tests
             var weapon = new Weapon
             {
                 Range = range,
-                Damage = damage,
+                Damage = new DamageProfile { Amount = damage, Type = damageType },
                 Cooldown = cooldown,
-                DamageType = damageType,
                 Targets = targets,
                 MinEffect = minEffect,
             };
             Aim(ref weapon, 360f);
-            var mount = WeaponMount.Create(weapon, Ammo.Create(rounds, reloadTime, refill), requiredResearchTypeId, 1,
-                independent);
-            var writer = world.Writer(entity);
-            WeaponSetup.AddMounts(writer, new[] { mount });
+            var ammo = Ammo.Create(rounds, reloadTime, refill);
+            world.Buffer<WeaponMount>(entity).Add(WeaponMount.Extra(weapon, ammo, requiredResearchTypeId, independent));
             world.Buffer<WeaponPose>(entity).Add(default);
             return entity;
         }
 
+        /// <summary>The primary weapon's live stats.</summary>
+        public static Weapon Primary(this TestWorld world, Entity entity) => world.Buffer<WeaponMount>(entity)[0].Weapon;
+
+        /// <summary>Replaces the primary's stats, and its stat bases with them.</summary>
+        public static void SetPrimary(this TestWorld world, Entity entity, in Weapon weapon)
+        {
+            var mounts = world.Buffer<WeaponMount>(entity);
+            mounts[0] = WeaponMount.Create(weapon, mounts[0].Ammo);
+        }
+
+        /// <summary>Limits the primary to <paramref name="rounds"/> shots, starting full.</summary>
+        public static void SetAmmo(this TestWorld world, Entity entity, int rounds, float reloadTime, AmmoRefill refill)
+        {
+            var mounts = world.Buffer<WeaponMount>(entity);
+            var primary = mounts[0];
+            primary.Ammo = Ammo.Create(rounds, reloadTime, refill);
+            mounts[0] = primary;
+        }
+
+        public static Ammo PrimaryAmmo(this TestWorld world, Entity entity) => world.Buffer<WeaponMount>(entity)[0].Ammo;
+
         /// <summary>Makes the primary fire salvos of <paramref name="size"/> shots, <paramref name="interval"/> seconds apart.</summary>
         public static void SetSalvo(this TestWorld world, Entity entity, int size, float interval)
         {
-            var weapon = world.Get<Weapon>(entity);
+            var weapon = world.Primary(entity);
             weapon.SalvoSize = size;
             weapon.SalvoInterval = interval;
-            world.Set(entity, weapon);
+            world.SetPrimary(entity, weapon);
         }
 
         /// <summary>Gives the primary a muzzle at each point, fired in turn.</summary>
         public static void SetMuzzles(this TestWorld world, Entity entity, params float3[] points)
         {
-            var weapon = world.Get<Weapon>(entity);
+            var weapon = world.Primary(entity);
             weapon.Aim.Muzzle = points[0];
             weapon.Aim.HasMuzzle = true;
             weapon.MuzzleCount = (byte)points.Length;
-            world.Set(entity, weapon);
+            world.SetPrimary(entity, weapon);
             var muzzles = new WeaponMuzzle[points.Length];
             for (var i = 0; i < points.Length; i++)
             {
@@ -103,9 +121,9 @@ namespace HyperRTS.Simulation.Tests
         {
             var writer = world.Writer(unit);
             DeployableAuthoring.Add(writer, deployTime, packUpTime);
-            var weapon = world.Get<Weapon>(unit);
+            var weapon = world.Primary(unit);
             weapon.NeedsDeploy = needsDeploy;
-            world.Set(unit, weapon);
+            world.SetPrimary(unit, weapon);
         }
 
         /// <summary>Quick turning, wide limits and a tight tolerance, so poses settle within a test's first second.</summary>
@@ -126,8 +144,9 @@ namespace HyperRTS.Simulation.Tests
             return world.MakePrefab(prefab);
         }
 
+        /// <summary>The first extra weapon.</summary>
         public static WeaponMount Mount(this TestWorld world, Entity entity) =>
-            world.Buffer<WeaponMount>(entity)[0];
+            world.Buffer<WeaponMount>(entity)[1];
 
         public static float GetHealth(this TestWorld world, Entity entity) => world.Get<Health>(entity).Current;
 

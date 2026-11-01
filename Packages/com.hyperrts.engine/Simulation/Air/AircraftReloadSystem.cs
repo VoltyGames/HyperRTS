@@ -9,10 +9,9 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// The reload cycle: aircraft whose limited weapons (<see cref="Ammo"/>, mounts with rounds) run empty get one
-    /// Return to Base order, which the player may override, and docked aircraft reload their
-    /// <see cref="AmmoRefill.Docked"/> weapons, each <see cref="WeaponMount"/> at its own pace. Games refuel and
-    /// repair docked aircraft the same way.
+    /// The reload cycle: aircraft whose limited weapons all run empty get one Return to Base order, which the player
+    /// may override, and docked aircraft reload their <see cref="AmmoRefill.Docked"/> weapons, each
+    /// <see cref="WeaponMount"/> at its own pace. Games refuel and repair docked aircraft the same way.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -32,9 +31,8 @@ namespace HyperRTS.Simulation.Air
         public void OnUpdate(ref SystemState state)
         {
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
-            new ReturnJob { Writer = _writer, Ammos = SystemAPI.GetComponentLookup<Ammo>(true), Mounts = SystemAPI.GetBufferLookup<WeaponMount>(true) }.Schedule();
+            new ReturnJob { Writer = _writer, Mounts = SystemAPI.GetBufferLookup<WeaponMount>(true) }.Schedule();
             new ReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
-            new MountReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }
 
         /// <summary>Single-threaded: the order writer's lookups aren't safe to share.</summary>
@@ -44,12 +42,12 @@ namespace HyperRTS.Simulation.Air
         private partial struct ReturnJob : IJobEntity
         {
             public OrderWriter Writer;
-            [ReadOnly] public ComponentLookup<Ammo> Ammos;
             [ReadOnly] public BufferLookup<WeaponMount> Mounts;
 
             private void Execute(Entity entity, ref HomePad home)
             {
-                if (!IsSpent(entity))
+                var spent = Mounts.TryGetBuffer(entity, out var mounts) && WeaponMount.IsSpent(mounts);
+                if (!spent)
                 {
                     home.Recalled = false;
                     return;
@@ -66,38 +64,6 @@ namespace HyperRTS.Simulation.Air
                     Writer.Issue(entity, new Order { Type = OrderType.ReturnToBase }, false);
                 }
             }
-
-            /// <summary>Every weapon with limited rounds is empty, and it has at least one.</summary>
-            private bool IsSpent(Entity entity)
-            {
-                var limited = Ammos.TryGetComponent(entity, out var ammo);
-                if (limited && ammo.Current > 0)
-                {
-                    return false;
-                }
-
-                if (!Mounts.TryGetBuffer(entity, out var mounts))
-                {
-                    return limited;
-                }
-
-                foreach (var mount in mounts)
-                {
-                    if (!mount.IsLimited)
-                    {
-                        continue;
-                    }
-
-                    if (!mount.Ammo.Empty)
-                    {
-                        return false;
-                    }
-
-                    limited = true;
-                }
-
-                return limited;
-            }
         }
 
         [BurstCompile]
@@ -106,33 +72,7 @@ namespace HyperRTS.Simulation.Air
         {
             public float DeltaTime;
 
-            private void Execute(ref Ammo ammo)
-            {
-                if (ammo.Refill == AmmoRefill.Docked)
-                {
-                    ammo.Reload(DeltaTime);
-                }
-            }
-        }
-
-        [BurstCompile]
-        [WithAll(typeof(Docked))]
-        private partial struct MountReloadJob : IJobEntity
-        {
-            public float DeltaTime;
-
-            private void Execute(DynamicBuffer<WeaponMount> mounts)
-            {
-                for (var i = 0; i < mounts.Length; i++)
-                {
-                    var mount = mounts[i];
-                    if (mount.Ammo.Refill == AmmoRefill.Docked)
-                    {
-                        mount.Ammo.Reload(DeltaTime);
-                        mounts[i] = mount;
-                    }
-                }
-            }
+            private void Execute(DynamicBuffer<WeaponMount> mounts) => WeaponMount.Reload(mounts, DeltaTime, docked: true);
         }
     }
 }

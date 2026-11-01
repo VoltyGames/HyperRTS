@@ -58,17 +58,15 @@ namespace HyperRTS.Simulation.Vision
             _builtMap = map;
             _builtTerrain = terrain;
             _builtRules = rules;
-            map.FogLayout(out var size, out var cellSize);
+            var frame = map.FogFrame();
             var ground = new HighGround
             {
-                Rise = new NativeArray<float>(size.x * size.y, Allocator.Persistent),
-                Size = size,
-                Min = map.Min,
-                CellSize = cellSize,
+                Rise = new NativeArray<float>(frame.Count, Allocator.Persistent),
+                Frame = frame,
                 Rules = rules,
             };
             Replace(ref state, ground, exists);
-            var radius = (int)math.round(rules.Radius / cellSize);
+            var radius = (int)math.round(rules.Radius / frame.CellSize);
             state.Dependency = new RiseJob { Ground = ground, Terrain = terrain, Radius = radius }
                 .Schedule(state.Dependency);
         }
@@ -101,33 +99,29 @@ namespace HyperRTS.Simulation.Vision
             public void Execute()
             {
                 using var marker = RiseMarker.Auto();
-                var size = Ground.Size;
+                var frame = Ground.Frame;
+                var size = frame.Size;
                 var sums = new NativeArray<double>((size.x + 1) * (size.y + 1), Allocator.Temp);
-                for (var y = 0; y < size.y; y++)
+                foreach (var cell in frame.Cells(int2.zero, size - 1))
                 {
-                    for (var x = 0; x < size.x; x++)
-                    {
-                        var height = Terrain.Height(Ground.Min + (new float2(x, y) + 0.5f) * Ground.CellSize);
-                        Ground.Rise[y * size.x + x] = height;
-                        sums[Sum(x + 1, y + 1)] = height + sums[Sum(x, y + 1)] + sums[Sum(x + 1, y)] - sums[Sum(x, y)];
-                    }
+                    var height = Terrain.Height(frame.Center(cell));
+                    Ground.Rise[frame.Index(cell)] = height;
+                    sums[Sum(cell + 1)] = height + sums[Sum(cell + new int2(0, 1))] + sums[Sum(cell + new int2(1, 0))] -
+                                          sums[Sum(cell)];
                 }
 
-                for (var y = 0; y < size.y; y++)
+                foreach (var cell in frame.Cells(int2.zero, size - 1))
                 {
-                    for (var x = 0; x < size.x; x++)
-                    {
-                        var low = math.max(new int2(x, y) - Radius, 0);
-                        var high = math.min(new int2(x, y) + Radius + 1, size);
-                        var total = sums[Sum(high.x, high.y)] - sums[Sum(low.x, high.y)] - sums[Sum(high.x, low.y)] +
-                                    sums[Sum(low.x, low.y)];
-                        var count = (high.x - low.x) * (high.y - low.y);
-                        Ground.Rise[y * size.x + x] -= (float)(total / count);
-                    }
+                    var low = math.max(cell - Radius, 0);
+                    var high = math.min(cell + Radius + 1, size);
+                    var total = sums[Sum(high)] - sums[Sum(new int2(low.x, high.y))] -
+                                sums[Sum(new int2(high.x, low.y))] + sums[Sum(low)];
+                    var count = (high.x - low.x) * (high.y - low.y);
+                    Ground.Rise[frame.Index(cell)] -= (float)(total / count);
                 }
             }
 
-            private readonly int Sum(int x, int y) => y * (Ground.Size.x + 1) + x;
+            private readonly int Sum(int2 corner) => corner.y * (Ground.Frame.Size.x + 1) + corner.x;
         }
     }
 }

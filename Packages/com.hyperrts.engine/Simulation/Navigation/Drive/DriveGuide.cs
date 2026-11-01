@@ -109,7 +109,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         /// </summary>
         public readonly float Cost(float2 point, float2 facing)
         {
-            var cell = _access.Grid.WorldToCell(point);
+            var cell = _access.Grid.Frame.Cell(point);
             var index = _window.Index(cell);
             var cost = index < 0 ? float.PositiveInfinity : _costs[index];
             if (cost == float.PositiveInfinity)
@@ -136,7 +136,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         {
             var side = Planar.Left(goal.Facing);
             var middle = goal.Center + goal.Facing * FrontAhead;
-            var halfCell = _access.Grid.CellSize * 0.5f;
+            var halfCell = _access.Grid.Frame.CellSize * 0.5f;
             var reach = (int)math.ceil(_hullLength * FrontHulls / halfCell);
             var left = Wall(middle, side, reach, halfCell);
             var right = Wall(middle, -side, reach, halfCell);
@@ -148,21 +148,25 @@ namespace HyperRTS.Simulation.Navigation.Drive
             }
         }
 
-        // Half cells from a point to the first wall that way, or past the reach.
+        // Half cells from a point to the first wall that way, or one past the reach.
         private readonly int Wall(float2 from, float2 way, int reach, float halfCell)
         {
-            var steps = 0;
-            while (steps <= reach && IsOpen(_access.Grid.WorldToCell(from + way * (steps * halfCell))))
+            var length = reach * halfCell;
+            var ray = new GridRay(_access.Grid.Frame, from, from + way * length);
+            while (ray.MoveNext())
             {
-                steps++;
+                if (!IsOpen(ray.Cell))
+                {
+                    return (int)math.ceil(ray.Entry * length / halfCell);
+                }
             }
 
-            return steps;
+            return reach + 1;
         }
 
         private void Close(float2 point)
         {
-            var index = _window.Index(_access.Grid.WorldToCell(point));
+            var index = _window.Index(_access.Grid.Frame.Cell(point));
             if (index >= 0)
             {
                 _settled[index] = true;
@@ -172,19 +176,16 @@ namespace HyperRTS.Simulation.Navigation.Drive
         // The goal's cell and its open neighbours, leaving the way a pose goal faces.
         private void Seed(float2 facing)
         {
-            var goal = _access.Grid.WorldToCell(_goal);
-            for (var dy = -1; dy <= 1; dy++)
+            var goal = _access.Grid.Frame.Cell(_goal);
+            foreach (var cell in new CellRange(goal - 1, goal + 1))
             {
-                for (var dx = -1; dx <= 1; dx++)
+                var index = _window.Index(cell);
+                var isGoal = cell.Equals(goal);
+                if (index >= 0 && (isGoal || !_settled[index]))
                 {
-                    var index = _window.Index(goal + new int2(dx, dy));
-                    var isGoal = dx == 0 && dy == 0;
-                    if (index >= 0 && (isGoal || !_settled[index]))
-                    {
-                        _costs[index] = 0f;
-                        _ways[index] = facing;
-                        Push(index, 0f);
-                    }
+                    _costs[index] = 0f;
+                    _ways[index] = facing;
+                    Push(index, 0f);
                 }
             }
         }
@@ -208,7 +209,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
         private void Push(int index, float cost)
         {
-            var bucket = (int)(cost / (_access.Grid.CellSize * 0.5f));
+            var bucket = (int)(cost / (_access.Grid.Frame.CellSize * 0.5f));
             while (_buckets.Length <= bucket)
             {
                 _buckets.Add(-1);
@@ -224,26 +225,22 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var cell = _window.Cell(index);
             var crowded = Crowding(cell);
             var leaving = _ways[index];
-            for (var dy = -1; dy <= 1; dy++)
+            foreach (var offset in new Neighbours())
             {
-                for (var dx = -1; dx <= 1; dx++)
+                var at = _window.Index(cell + offset);
+                if (at < 0 || _settled[at] || !CanStep(cell, offset))
                 {
-                    var offset = new int2(dx, dy);
-                    var at = _window.Index(cell + offset);
-                    if (at < 0 || _settled[at] || !CanStep(cell, offset))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    var step = GridAStar.StepCost(int2.zero, offset);
-                    var way = -(float2)offset / step;
-                    var cost = _costs[index] + step * _access.Grid.CellSize + Turn(way, leaving) * crowded;
-                    if (cost < _costs[at])
-                    {
-                        _costs[at] = cost;
-                        _ways[at] = way;
-                        Push(at, cost);
-                    }
+                var step = GridAStar.StepCost(int2.zero, offset);
+                var way = -(float2)offset / step;
+                var cost = _costs[index] + step * _access.Grid.Frame.CellSize + Turn(way, leaving) * crowded;
+                if (cost < _costs[at])
+                {
+                    _costs[at] = cost;
+                    _ways[at] = way;
+                    Push(at, cost);
                 }
             }
         }

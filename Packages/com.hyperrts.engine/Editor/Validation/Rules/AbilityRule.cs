@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 CheckPrefabReference(authoring, ability.spawnPrefab, $"'{ability.name}' spawn prefab", issues);
             }
 
-            if (authoring.abilities.Any(ability => ability.spawnPrefab == null && ability.damage == 0f))
+            if (authoring.abilities.Any(ability => ability.spawnPrefab == null && ability.hit.damage == 0f))
             {
                 issues.Info(authoring, "An ability without built-in effects only raises its event for game code.");
             }

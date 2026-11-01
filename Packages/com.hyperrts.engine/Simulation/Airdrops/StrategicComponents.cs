@@ -1,6 +1,4 @@
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
@@ -14,11 +12,10 @@ namespace HyperRTS.Simulation.Airdrops
         public Entity Prefab;
 
         public int Count;
-        public float Damage;
-        public float Radius;
-        public float EdgeFactor;
-        public UnityObjectRef<DamageType> DamageType;
-        public float GarrisonFactor;
+
+        /// <summary>Each bomb's hit; its splash reaches the surface only.</summary>
+        public DamageProfile Damage;
+
         public float Speed;
 
         /// <summary>Radius round the aim point whose enemy structures the bombs seek.</summary>
@@ -29,22 +26,6 @@ namespace HyperRTS.Simulation.Airdrops
 
         /// <summary>Bombs left once each of <paramref name="defences"/> removes one, never below the cap.</summary>
         public readonly int CountAfter(int defences) => Count - math.min(defences, (int)(Count * MaxReduction));
-
-        /// <summary>One bomb's hit; its splash reaches the surface only and spares allies.</summary>
-        public readonly DamageEvent Hit(Entity bomber, byte faction, float3 origin, Entity target, float3 aim) => new()
-        {
-            Target = target,
-            Position = aim,
-            Origin = origin,
-            Source = bomber,
-            SourceFaction = faction,
-            Amount = Damage,
-            Type = DamageType,
-            GarrisonFactor = GarrisonFactor,
-            Radius = Radius,
-            EdgeFactor = EdgeFactor,
-            Reach = WeaponTargets.Surface,
-        };
     }
 
     /// <summary>

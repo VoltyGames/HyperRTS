@@ -111,11 +111,11 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             /// <summary>A ford's deck lies under the water; a bridge's stands above it.</summary>
             private ImpactSurface SurfaceAt(float3 position)
             {
-                var cell = Grid.WorldToCell(position);
+                var cell = Grid.Frame.Cell(position);
                 var surface = Grid.Surface(cell);
                 if ((surface & NavSurface.Deck) != 0)
                 {
-                    var bridge = Grid.DeckHeights[Grid.Index(cell)] > Grid.WaterLevel;
+                    var bridge = Grid.DeckHeights[Grid.Frame.Index(cell)] > Grid.WaterLevel;
                     return bridge ? ImpactSurface.Structure : ImpactSurface.Water;
                 }
 

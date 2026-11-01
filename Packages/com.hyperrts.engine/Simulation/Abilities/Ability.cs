@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Combat.Damage;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
@@ -34,11 +34,8 @@ namespace HyperRTS.Simulation.Abilities
         [GhostField(SendData = false)] public int RequiredTypeId;
 
         [GhostField(SendData = false)] public Entity SpawnPrefab;
-        [GhostField(SendData = false)] public float Damage;
-        [GhostField(SendData = false)] public float Radius;
-        [GhostField(SendData = false)] public UnityObjectRef<DamageType> DamageType;
-        [GhostField(SendData = false)] public float GarrisonFactor;
-        [GhostField(SendData = false)] public bool FriendlyFire;
+        /// <summary>Dealt round the target when its amount is set.</summary>
+        [GhostField(SendData = false)] public DamageProfile Damage;
 
         /// <summary>Status effect prefab applied to an entity target; <c>Entity.Null</c> for none.</summary>
         [GhostField(SendData = false)] public Entity StatusEffect;

@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         /// <summary>The target's armor lets the weapon's damage type through at <see cref="Weapon.MinEffect"/> or more.</summary>
         public bool Affects(Entity target, in Weapon weapon) =>
-            weapon.MinEffect <= 0f || _damage.Armor(target, weapon.DamageType) >= weapon.MinEffect;
+            weapon.MinEffect <= 0f || _damage.Armor(target, weapon.Damage.Type) >= weapon.MinEffect;
 
         /// <summary>Stealthed or concealed from the team (see <see cref="FogOfWar.IsHiddenByCover"/>).</summary>
         public bool IsHiddenByCover(Entity target, byte team)

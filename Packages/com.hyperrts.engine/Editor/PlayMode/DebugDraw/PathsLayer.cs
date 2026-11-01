@@ -100,9 +100,10 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
                     Handles.DrawWireDisc(stop, Vector3.up, BayPose.StopReach);
                     Handles.color = Color.yellow;
                     Handles.DrawLine(stop, pose.Exit);
-                    if (entityManager.Exists(bay.Occupant) && entityManager.HasComponent<LocalTransform>(bay.Occupant))
+                    var occupant = bay.Lease.Holder;
+                    if (entityManager.Exists(occupant) && entityManager.HasComponent<LocalTransform>(occupant))
                     {
-                        Handles.DrawDottedLine(stop, entityManager.GetComponentData<LocalTransform>(bay.Occupant).Position, 4f);
+                        Handles.DrawDottedLine(stop, entityManager.GetComponentData<LocalTransform>(occupant).Position, 4f);
                     }
                 }
             }

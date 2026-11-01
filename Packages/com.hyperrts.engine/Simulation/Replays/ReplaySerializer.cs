@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Match;
 using Unity.Mathematics;
@@ -63,20 +64,9 @@ namespace HyperRTS.Simulation.Replays
                 writer.Write(frame.CueCount);
             }
 
-            foreach (var entity in replay.Entities)
-            {
-                WriteEntity(writer, entity);
-            }
-
-            foreach (var key in replay.Removed)
-            {
-                writer.Write(key);
-            }
-
-            foreach (var cue in replay.Cues)
-            {
-                cue.Write(writer);
-            }
+            WriteAll(writer, replay.Entities);
+            WriteAll(writer, replay.Removed);
+            WriteAll(writer, replay.Cues);
         }
 
         /// <summary>Throws <see cref="InvalidDataException"/> for files that aren't replays, are truncated or corrupt.</summary>
@@ -121,9 +111,9 @@ namespace HyperRTS.Simulation.Replays
             }
 
             replay.Frames = frames.ToArray();
-            replay.Entities = ReadAll(reader, (int)entities, ReadEntity);
-            replay.Removed = ReadAll(reader, (int)removed, r => r.ReadInt32());
-            replay.Cues = ReadAll(reader, (int)cues, PackedCue.Read);
+            replay.Entities = ReadAll<ReplayEntity>(reader, (int)entities);
+            replay.Removed = ReadAll<int>(reader, (int)removed);
+            replay.Cues = ReadAll<PackedCue>(reader, (int)cues);
         }
 
         private static int ReadCount(BinaryReader reader, string what)
@@ -147,12 +137,30 @@ namespace HyperRTS.Simulation.Replays
             return total;
         }
 
-        private static T[] ReadAll<T>(BinaryReader reader, int count, Func<BinaryReader, T> read)
+        // Packed structs go out as their raw bytes, so a new field changes the file without a second field list.
+        private static void WriteAll<T>(BinaryWriter writer, T[] items) where T : unmanaged =>
+            writer.Write(MemoryMarshal.AsBytes(items.AsSpan()));
+
+        private static T[] ReadAll<T>(BinaryReader reader, int count) where T : unmanaged
         {
             var items = new List<T>(Capacity(count));
-            for (var i = 0; i < count; i++)
+            var chunk = new T[Capacity(count)];
+            while (items.Count < count)
             {
-                items.Add(read(reader));
+                var length = Math.Min(count - items.Count, chunk.Length);
+                var bytes = MemoryMarshal.AsBytes(chunk.AsSpan(0, length));
+                while (bytes.Length > 0)
+                {
+                    var read = reader.Read(bytes);
+                    if (read == 0)
+                    {
+                        throw new EndOfStreamException();
+                    }
+
+                    bytes = bytes.Slice(read);
+                }
+
+                items.AddRange(new ArraySegment<T>(chunk, 0, length));
             }
 
             return items.ToArray();
@@ -229,31 +237,5 @@ namespace HyperRTS.Simulation.Replays
 
             return replay;
         }
-
-        private static void WriteEntity(BinaryWriter writer, in ReplayEntity entity)
-        {
-            writer.Write(entity.Key);
-            writer.Write(entity.TypeId);
-            writer.Write(entity.X);
-            writer.Write(entity.Y);
-            writer.Write(entity.Z);
-            writer.Write(entity.Yaw);
-            writer.Write(entity.Faction);
-            writer.Write(entity.Health);
-            writer.Write(entity.Progress);
-        }
-
-        private static ReplayEntity ReadEntity(BinaryReader reader) => new()
-        {
-            Key = reader.ReadInt32(),
-            TypeId = reader.ReadInt32(),
-            X = reader.ReadInt16(),
-            Y = reader.ReadInt16(),
-            Z = reader.ReadInt16(),
-            Yaw = reader.ReadUInt16(),
-            Faction = reader.ReadByte(),
-            Health = reader.ReadByte(),
-            Progress = reader.ReadByte(),
-        };
     }
 }

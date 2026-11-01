@@ -124,18 +124,18 @@ namespace HyperRTS.Presentation.Fog
         /// <summary>Fills the target from the latest stamp; a new grid shows it at once rather than fading in.</summary>
         private void Retarget(in FogOfWar fog, in LocalFogView view)
         {
-            var created = _texture == null || _texture.width != fog.Size.x || _texture.height != fog.Size.y;
+            var created = _texture == null || _texture.width != fog.Frame.Size.x || _texture.height != fog.Frame.Size.y;
             if (created)
             {
                 DestroyTexture();
-                _texture = new Texture2D(fog.Size.x, fog.Size.y, TextureFormat.R8, false, true)
+                _texture = new Texture2D(fog.Frame.Size.x, fog.Frame.Size.y, TextureFormat.R8, false, true)
                 {
                     name = "Fog Of War",
                     filterMode = FilterMode.Bilinear,
                     wrapMode = TextureWrapMode.Clamp,
                     hideFlags = HideFlags.DontSave,
                 };
-                _target = new NativeArray<byte>(fog.Size.x * fog.Size.y, Allocator.Persistent);
+                _target = new NativeArray<byte>(fog.Frame.Size.x * fog.Frame.Size.y, Allocator.Persistent);
             }
 
             FogTexels.Fill(fog, view.Team, ToByte(exploredOpacity), ToByte(unexploredOpacity), _target);
@@ -151,11 +151,11 @@ namespace HyperRTS.Presentation.Fog
 
         private void Publish(in FogOfWar fog)
         {
-            var area = new Vector2(fog.Size.x * fog.CellSize, fog.Size.y * fog.CellSize);
+            var area = new Vector2(fog.Frame.Size.x * fog.Frame.CellSize, fog.Frame.Size.y * fog.Frame.CellSize);
             Shader.SetGlobalTexture(TextureId, _texture);
-            Shader.SetGlobalVector(RectId, new Vector4(fog.Min.x, fog.Min.y, area.x, area.y));
+            Shader.SetGlobalVector(RectId, new Vector4(fog.Frame.Min.x, fog.Frame.Min.y, area.x, area.y));
             Shader.SetGlobalColor(ColorId, color);
-            Shader.SetGlobalVector(BorderId, new Vector4(borderOpacity, borderFade, 1f / fog.Size.x, 1f / fog.Size.y));
+            Shader.SetGlobalVector(BorderId, new Vector4(borderOpacity, borderFade, 1f / fog.Frame.Size.x, 1f / fog.Frame.Size.y));
             Shader.SetGlobalVector(LookId, new Vector4(desaturation, 0f, 0f, 0f));
         }
 

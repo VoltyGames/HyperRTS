@@ -98,14 +98,7 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var perSecond = PerSecond(target, builder);
-                Damage.Add(new DamageEvent
-                {
-                    Target = target,
-                    Position = position,
-                    Source = entity,
-                    SourceFaction = faction.Value,
-                    Amount = -DeltaTime * perSecond,
-                });
+                Damage.Add(DamageEvent.Direct(target, position, entity, faction.Value, -DeltaTime * perSecond));
             }
 
             /// <summary>A repairable building takes a fixed time per section; any other as long as it took to build.</summary>

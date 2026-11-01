@@ -1,12 +1,11 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common.Authoring;
-using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// Limited rounds for the weapon: each shot uses one and an empty weapon holds fire (an aircraft with a pad flies
+    /// Limited rounds for the primary weapon: each shot uses one and an empty weapon holds fire (an aircraft with a pad flies
     /// home). Rounds come back while docked, anywhere one at a time, or all at once after the magazine runs empty.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Ammo")]
@@ -27,13 +26,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Tooltip("Docked reloads by the round only at an airfield, Round reloads by the round anywhere, Magazine reloads every round at once once empty.")]
         public AmmoRefill refill;
 
-        public class Baker : Baker<AmmoAuthoring>
-        {
-            public override void Bake(AmmoAuthoring authoring)
-            {
-                var writer = this.Writer();
-                WeaponSetup.AddAmmo(writer, authoring.rounds, authoring.reloadTime, authoring.refill);
-            }
-        }
+        /// <summary>The primary's rounds, which the weapon's baker reads.</summary>
+        public Ammo Bake() => Ammo.Create(rounds, reloadTime, refill);
     }
 }

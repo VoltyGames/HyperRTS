@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Sectors;
@@ -127,27 +128,23 @@ namespace HyperRTS.Simulation.Navigation.Paths
             var cell = _corridor.Cell(parent);
             var cost = _costs[parent];
             var block = new CellBlock(access, cell);
-            for (var dy = -1; dy <= 1; dy++)
+            foreach (var offset in new Neighbours())
             {
-                for (var dx = -1; dx <= 1; dx++)
+                var index = _corridor.Index(parent, cell, offset);
+                if (index < 0 || _marks[index] == Closed || !block.CanStepOut(offset))
                 {
-                    var offset = new int2(dx, dy);
-                    var index = _corridor.Index(parent, cell, offset);
-                    if ((dx == 0 && dy == 0) || index < 0 || _marks[index] == Closed || !block.CanStepOut(offset))
-                    {
-                        continue;
-                    }
-
-                    var next = cell + offset;
-                    var nextCost = cost + block.CostOut(offset);
-                    if (_marks[index] == Reached && _costs[index] <= nextCost)
-                    {
-                        continue;
-                    }
-
-                    Reach(index, parent, nextCost);
-                    _open.Push(index, nextCost + Heuristic(next, _goal) * HeuristicWeight);
+                    continue;
                 }
+
+                var next = cell + offset;
+                var nextCost = cost + block.CostOut(offset);
+                if (_marks[index] == Reached && _costs[index] <= nextCost)
+                {
+                    continue;
+                }
+
+                Reach(index, parent, nextCost);
+                _open.Push(index, nextCost + Heuristic(next, _goal) * HeuristicWeight);
             }
         }
 
