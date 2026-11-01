@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation;
 using NUnit.Framework;
 using Unity.Entities;
@@ -169,7 +169,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var tree = _world.EntityManager.CreateEntity();
             _world.EntityManager.AddComponentData(tree, LocalTransform.FromPosition(position));
             var writer = new EntityManagerWriter(_world.EntityManager, tree);
-            DestructibleSetup.AddScenery(ref writer, 50f, crush, Entity.Null, float2.zero,
+            DestructibleAuthoring.AddScenery(ref writer, 50f, crush, Entity.Null, float2.zero,
                 SceneryId.At(position, quaternion.identity));
             return tree;
         }

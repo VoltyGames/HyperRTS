@@ -2,6 +2,7 @@ using HyperRTS.Network.Scenery;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
@@ -37,7 +38,8 @@ namespace HyperRTS.Simulation.Tests.Placement
             var entity = Manager.CreateEntity();
             Manager.AddComponentData(entity, LocalTransform.FromPosition(position));
             var writer = new EntityManagerWriter(Manager, entity);
-            DestructibleSetup.AddScenery(ref writer, 50f, 1, remains, block, SceneryId.At(position, quaternion.identity));
+            DestructibleAuthoring.AddScenery(ref writer, 50f, 1, remains, block,
+                SceneryId.At(position, quaternion.identity));
             return entity;
         }
 
@@ -95,7 +97,7 @@ namespace HyperRTS.Simulation.Tests.Placement
             foreach (var tree in new[] { overhanging, clear })
             {
                 var writer = new EntityManagerWriter(Manager, tree);
-                DestructibleSetup.AddTopple(ref writer, new float3(0f, 1f, 0f), 12f, 0f, 2.5f);
+                ToppleAuthoring.AddTopple(ref writer, new float3(0f, 1f, 0f), 12f, 0f, 2.5f);
             }
 
             _world.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);

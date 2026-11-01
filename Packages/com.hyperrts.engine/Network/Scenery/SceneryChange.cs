@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using Unity.Mathematics;
 
 namespace HyperRTS.Network.Scenery
@@ -26,7 +26,9 @@ namespace HyperRTS.Network.Scenery
         /// <summary>Removed with nothing left, as a building site does: the piece if it stands, else its remains.</summary>
         public bool Cleared;
 
-        /// <summary>A sectioned building's broken sections (<see cref="Sections.Broken"/>), 0 for other scenery.</summary>
+        /// <summary>
+        /// A sectioned building's broken sections (<see cref="SectionedBuilding.Broken"/>), 0 for other scenery.
+        /// </summary>
         public ulong Broken;
 
         public readonly float Fraction => State / (float)Intact;

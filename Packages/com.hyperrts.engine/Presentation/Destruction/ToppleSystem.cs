@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Rendering.Visibility;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;

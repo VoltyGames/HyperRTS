@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// A sectioned building anyone's builders rebuild for free, one section after another, even when every section
@@ -18,11 +18,12 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>Health per second a builder of <paramref name="rate"/> restores to the section a heal reaches next.</summary>
         public readonly float PerSecond(float rate, DynamicBuffer<Section> sections)
         {
-            var next = Sections.NextRepair(sections);
+            var next = SectionedBuilding.NextRepair(sections);
             return next < 0 ? 0f : rate * sections[next].MaxHealth / math.max(SectionTime, 1e-3f);
         }
 
         /// <summary>The building's health: its sections' total, but never less than <see cref="WreckHealth"/>.</summary>
-        public static float Health(DynamicBuffer<Section> sections) => math.max(WreckHealth, Sections.Total(sections));
+        public static float Health(DynamicBuffer<Section> sections) =>
+            math.max(WreckHealth, SectionedBuilding.Total(sections));
     }
 }

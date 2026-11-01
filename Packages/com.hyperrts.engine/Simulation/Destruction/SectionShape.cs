@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>The baked <see cref="Section"/>s of a <see cref="SectionsAuthoring"/>'s entries.</summary>
     public static class SectionShape

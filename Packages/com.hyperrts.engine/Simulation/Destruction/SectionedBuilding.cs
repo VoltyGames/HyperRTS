@@ -2,14 +2,14 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// A building made of <see cref="Section"/>s: hits land on the sections they reach, sections cut off from the
     /// ground fall, and the building's health is the sum of its sections'. Masks hold one bit per section. Only
     /// <see cref="Broken"/> reaches clients, as a ghost field on a ghost and through scenery changes on scenery.
     /// </summary>
-    public partial struct Sections : IComponentData
+    public partial struct SectionedBuilding : IComponentData
     {
         /// <summary>Seconds between one support level falling and the next.</summary>
         public const float FallDelay = 0.3f;
@@ -36,39 +36,6 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Heap left at the foot of a broken ground-floor outer wall; <c>Entity.Null</c> for none.</summary>
         public Entity Rubble;
-
-        /// <summary>
-        /// Deals <paramref name="hit"/> to the sections it reaches, each times <paramref name="scale"/> and its
-        /// material's factor, and returns the damage dealt. A direct hit lands in full on the first section the line
-        /// from <paramref name="origin"/> to <paramref name="position"/> enters (else the nearest), and its splash on
-        /// the rest; splash from a hit elsewhere reaches every section within its radius.
-        /// </summary>
-        public float Route(DynamicBuffer<Section> sections, DynamicBuffer<SectionFactor> factors, in DamageEvent hit,
-            float3 origin, float3 position, float scale, bool direct)
-        {
-            var entry = direct ? Entry(sections, origin, position) : -1;
-            var dealt = 0f;
-            for (var i = 0; i < sections.Length; i++)
-            {
-                var section = sections[i];
-                if (section.IsBroken)
-                {
-                    continue;
-                }
-
-                var gap = section.Gap(position);
-                if (i != entry && (hit.Radius <= 0f || gap > hit.Radius))
-                {
-                    continue;
-                }
-
-                var share = i == entry ? 1f : hit.SplashFactor(gap);
-                var amount = hit.Amount * share * scale * SectionFactor.Find(factors, section.Material, hit.Type);
-                dealt += Damage(sections, i, amount);
-            }
-
-            return dealt;
-        }
 
         /// <summary>Takes up to <paramref name="amount"/> from section <paramref name="index"/>, breaking it at 0.</summary>
         public float Damage(DynamicBuffer<Section> sections, int index, float amount)
@@ -196,7 +163,11 @@ namespace HyperRTS.Simulation.Combat
             return max > 0f ? health / max : 1f;
         }
 
-        private static int Entry(DynamicBuffer<Section> sections, float3 origin, float3 position)
+        /// <summary>
+        /// The first standing section the line from <paramref name="origin"/> to <paramref name="position"/> enters, else
+        /// the nearest.
+        /// </summary>
+        public static int Entry(DynamicBuffer<Section> sections, float3 origin, float3 position)
         {
             var entry = -1;
             var nearest = float.MaxValue;

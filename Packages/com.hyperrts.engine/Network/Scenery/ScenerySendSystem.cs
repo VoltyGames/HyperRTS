@@ -2,6 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -87,7 +88,7 @@ namespace HyperRTS.Network.Scenery
         private void Track(ref SystemState state, ushort teams)
         {
             var fallen = SystemAPI.GetComponentLookup<LethalHit>(true);
-            var buildings = SystemAPI.GetComponentLookup<Sections>(true);
+            var buildings = SystemAPI.GetComponentLookup<SectionedBuilding>(true);
             foreach (var (health, id, entity) in SystemAPI.Query<RefRO<Health>, RefRO<SceneryId>>()
                          .WithAll<LocalTransform>().WithNone<GhostInstance>().WithChangeFilter<Health>().WithEntityAccess())
             {

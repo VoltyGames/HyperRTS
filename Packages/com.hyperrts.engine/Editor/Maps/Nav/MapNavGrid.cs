@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
 using Unity.Collections;

@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>Scenery that falls away from its lethal hit, such as a tree.</summary>
     public struct Topple : IComponentData

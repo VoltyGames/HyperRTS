@@ -1,7 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Units;
 using Unity.Entities;

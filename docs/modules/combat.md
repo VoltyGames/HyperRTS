@@ -1,6 +1,6 @@
 # Combat modules
 
-[Modules](../modules.md) ▸ Combat, Veterancy, Upgrades, Auras, Abilities, Status, Vision
+[Modules](../modules.md) ▸ Combat, Destruction, Veterancy, Upgrades, Auras, Abilities, Status, Vision
 
 ## Combat
 
@@ -17,7 +17,7 @@ queue, so armor, splash and kill credit apply to all of them.
 | `AmmoAuthoring` | Rounds per load and how they refill: `Docked`, `Round` or `Magazine` |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
-| `DamageType` | A damage category that armor scales, and its `garrisonFactor`, the share that reaches a sheltered garrison ([Transport](movement.md#transport)) |
+| `DamageType` | In `Common`: a damage category that armor and section materials scale, and its `garrisonFactor`, the share that reaches a sheltered garrison ([Transport](movement.md#transport)) |
 | `DamageWriter` | Queues a hit. A negative amount heals |
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
 | `LastAttacker` | Who gets the kill credit |
@@ -103,18 +103,12 @@ A shot aimed inside the radius is tracked before it enters, so the turret is on 
 inside the radius is engaged. The roll is seeded by shooter, target and engagement count. An `Offline` or dead
 interceptor does nothing.
 
-### Destruction
+### Remains
 
 | Type | Role |
 | --- | --- |
-| `DestructibleAuthoring` | Scenery with health and remains. Only explicit attack orders target it |
 | `Crusher` | A vehicle that flattens destructible scenery it drives over |
 | `DamageStagesAuthoring` | Models swapped by health fraction |
-| `SectionsAuthoring` | A building made of sections that break on their own (below) |
-| `SectionMaterial` | What a section is made of, and a damage multiplier per `DamageType` |
-| `Repairable` | Set on `SectionsAuthoring`: builders rebuild the sections for free, and the building never dies (below) |
-| `ToppleAuthoring` | Scenery that falls away from the hit that killed it (read from its `LethalHit`) |
-| `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
 | `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` footprint block it until they go, and while they are buried leave a square scorched and churned scar on the interaction maps |
 | `DropRemains` | Remains that fall from where the entity died onto the nav grid surface: ground, water or deck. Aircraft get it with `Flight` |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
@@ -132,7 +126,23 @@ their cell like any remains with a `Blocker`, and `FallingRemains` settles them 
 ghost field set on spawn; `TurretTossSystem` flies the remains' models from the hull on an arc of `height` over
 `duration` seconds with spin, and skips a toss the local player cannot see. Remains without `Decay` stay for the match.
 
-#### Sections
+## Destruction
+
+Building sections and toppling scenery, beside `Presentation/Destruction`, which shows them
+([client](client.md#destruction)). Combat uses it, never the other way round: `DamageSystem` routes hits into
+sections through `SectionDamage` and fells `Topple` pieces away from their `LethalHit`. A building's
+`SectionedBuilding` holds its section masks.
+
+| Type | Role |
+| --- | --- |
+| `DestructibleAuthoring` | Scenery with health and remains. Only explicit attack orders target it |
+| `SectionsAuthoring` | A building made of sections that break on their own (below) |
+| `SectionMaterial` | What a section is made of, and a damage multiplier per `DamageType` |
+| `Repairable` | Set on `SectionsAuthoring`: builders rebuild the sections for free, and the building never dies (below) |
+| `ToppleAuthoring` | Scenery that falls away from the hit that killed it (read from its `LethalHit`) |
+| `StretchPartsAuthoring` | A prop the map builder stretches. Only the middle span scales |
+
+### Sections
 
 `SectionsAuthoring` splits a building into up to 64 `Section`s: wall panels, roof panels and floors, each a box in the
 building's space with a share of its health, a `SectionMaterial`, a floor, the sections it rests on, and whether it is
@@ -153,14 +163,14 @@ a new section's share is guessed as above. A section either has a broken model o
 the baker reads the sections' stored boxes and `clips`, never the file, so the prefab is the only bake input. Pieces
 without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how they show.
 
-- **Hits.** `DamageSystem` hands a hit on a sectioned building to `Sections.Route` through `SectionDamage`. A direct hit lands in full on the
+- **Hits.** `DamageSystem` hands a hit on a sectioned building to Combat's `SectionDamage.Route`. A direct hit lands in full on the
   first section the line from its origin to its point enters (else the nearest), and its splash on the others in
   reach. Splash from a hit elsewhere reaches every section within its radius with the usual falloff. Each section's
   material multiplies the damage after the building's own armor. A section at 0 health breaks and takes the next
   break order.
 - **Collapse.** `SectionCollapseSystem` floods the supports up from the anchored sections after each break. A section
   stands while any of its supports does, or only while all of them do when its `needsAllSupports` is ticked (a bridge
-  span, so it falls with either pier). Whatever no longer reaches the ground falls one support level every 0.3 s (`Sections.FallDelay`): first the sections whose
+  span, so it falls with either pier). Whatever no longer reaches the ground falls one support level every 0.3 s (`SectionedBuilding.FallDelay`): first the sections whose
   supports are all down, or all of them at once when they only hold each other up.
 - **Floors.** A section that falls marks its floor fallen in `IntactFloors`. A container gives each floor an even
   share of its slots, filled ground floor first; `FallenFloorSystem` hits the passengers of a fallen floor for 60 % of
@@ -181,7 +191,7 @@ without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how
   section stands and opens the cells to what lies below (water, for ships) while it is broken. A building with a
   deck closes no `NavObstaclePart`, since its piers stand under the roadway: the bake leaves `Section.Closes` off
   for all its sections, and on for every anchored section of any other building.
-- **Clients.** Only `Sections.Broken` reaches them, as a ghost field on a ghost building and in the scenery change of
+- **Clients.** Only `SectionedBuilding.Broken` reaches them, as a ghost field on a ghost building and in the scenery change of
   non-ghost scenery (see [networking](../networking.md)). `SectionViewSystem` shows each section's intact or broken
   model from it ([client](client.md#destruction)).
 

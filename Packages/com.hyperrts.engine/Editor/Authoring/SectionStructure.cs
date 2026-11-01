@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using Unity.Mathematics;
 using UnityEngine;
 

@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Common
 {
     /// <summary>A damage category (bullet, explosive, flame) that armor scales; leave unset for plain damage.</summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Combat + "Damage Type", fileName = "DamageType")]

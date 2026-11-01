@@ -4,7 +4,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>Stretches the parts of remains spawned from a stretched prop, once, so they match what stood there.</summary>
     [BurstCompile]

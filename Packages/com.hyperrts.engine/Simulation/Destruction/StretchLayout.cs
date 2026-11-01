@@ -2,7 +2,7 @@ using System;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// Rest pose of a prop's stretch parts in their shared parent's space: a start cap and an end cap along one axis

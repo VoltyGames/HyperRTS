@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>Adds a sectioned building's components: its sections, their nav parts and floors, and the materials.</summary>
     public static class SectionsSetup
@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Combat
             }
 
             writer.AddBuffer(factors);
-            writer.Add(new Sections { Rubble = rubble });
+            writer.Add(new SectionedBuilding { Rubble = rubble });
             writer.Add(new IntactFloors { Count = (byte)floors });
         }
 

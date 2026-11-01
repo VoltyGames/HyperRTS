@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     public partial class SectionsAuthoring
     {

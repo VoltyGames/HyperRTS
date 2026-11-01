@@ -1,13 +1,14 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// One part of a building that breaks on its own (a wall panel, a roof panel, a floor), as a box in the
-    /// building's space. Its index is its bit in the <see cref="Sections"/> masks.
+    /// building's space. Its index is its bit in the <see cref="SectionedBuilding"/> masks.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct Section : IBufferElementData

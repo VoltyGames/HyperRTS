@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// Parts of a prop still at rest pose, stretched by <see cref="StretchPartsSystem"/> once it gets a

@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -9,14 +10,14 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Hits and heals on a sectioned building, which spread over its <see cref="Section"/>s.</summary>
     public struct SectionDamage
     {
-        private ComponentLookup<Sections> _buildings;
+        private ComponentLookup<SectionedBuilding> _buildings;
         private BufferLookup<Section> _sections;
         [ReadOnly] private BufferLookup<SectionFactor> _factors;
         [ReadOnly] private ComponentLookup<Repairable> _repairables;
 
         public SectionDamage(ref SystemState state)
         {
-            _buildings = state.GetComponentLookup<Sections>();
+            _buildings = state.GetComponentLookup<SectionedBuilding>();
             _sections = state.GetBufferLookup<Section>();
             _factors = state.GetBufferLookup<SectionFactor>(true);
             _repairables = state.GetComponentLookup<Repairable>(true);
@@ -35,16 +36,44 @@ namespace HyperRTS.Simulation.Combat
         /// <summary>The share of the target still standing: its sections', else its health's.</summary>
         public float Intact(Entity target, in Health health) =>
             _sections.TryGetBuffer(target, out var sections)
-                ? Sections.Intact(sections)
+                ? SectionedBuilding.Intact(sections)
                 : health.Current / math.max(health.Max, 1e-4f);
 
-        /// <summary>The hit on the building's sections, in its space; returns the damage dealt.</summary>
+        /// <summary>
+        /// Deals the hit to the sections it reaches, each times <paramref name="scale"/> and its material's factor,
+        /// and returns the damage dealt. A direct hit lands in full on the first section the line from its origin to
+        /// its point enters (else the nearest), and its splash on the rest; splash from a hit elsewhere reaches every
+        /// section within its radius.
+        /// </summary>
         public float Route(Entity target, in LocalTransform transform, in DamageEvent hit, float scale)
         {
             var building = _buildings[target];
-            var dealt = building.Route(_sections[target], _factors[target], hit,
-                transform.InverseTransformPoint(hit.Origin), transform.InverseTransformPoint(hit.Position), scale,
-                target == hit.Target);
+            var sections = _sections[target];
+            var factors = _factors[target];
+            var position = transform.InverseTransformPoint(hit.Position);
+            var entry = target == hit.Target
+                ? SectionedBuilding.Entry(sections, transform.InverseTransformPoint(hit.Origin), position)
+                : -1;
+            var dealt = 0f;
+            for (var i = 0; i < sections.Length; i++)
+            {
+                var section = sections[i];
+                if (section.IsBroken)
+                {
+                    continue;
+                }
+
+                var gap = section.Gap(position);
+                if (i != entry && (hit.Radius <= 0f || gap > hit.Radius))
+                {
+                    continue;
+                }
+
+                var share = i == entry ? 1f : hit.SplashFactor(gap);
+                var amount = hit.Amount * share * scale * SectionFactor.Find(factors, section.Material, hit.Type);
+                dealt += building.Damage(sections, i, amount);
+            }
+
             _buildings[target] = building;
             return dealt;
         }

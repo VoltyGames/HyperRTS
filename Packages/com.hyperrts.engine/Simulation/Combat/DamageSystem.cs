@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation;
 using Unity.Burst;
 using Unity.Collections;
@@ -12,6 +13,7 @@ namespace HyperRTS.Simulation.Combat
     /// <summary>Resolves the frame's <see cref="DamageEvent"/>s in order. Heals skip every multiplier.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
+    [UpdateBefore(typeof(SectionCollapseSystem))]
     public partial struct DamageSystem : ISystem
     {
         private ComponentLookup<Health> _health;

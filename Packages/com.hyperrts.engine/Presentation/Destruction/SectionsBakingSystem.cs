@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;

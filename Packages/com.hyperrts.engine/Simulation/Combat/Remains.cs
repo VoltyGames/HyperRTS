@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;

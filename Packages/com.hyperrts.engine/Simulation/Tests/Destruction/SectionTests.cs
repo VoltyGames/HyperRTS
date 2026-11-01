@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
@@ -10,7 +11,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Tests.Combat
+namespace HyperRTS.Simulation.Tests.Destruction
 {
     /// <summary>
     /// Sectioned buildings: hits land on the section they reach, materials scale them, what loses its supports falls
@@ -86,7 +87,8 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         private Section SectionOf(Entity house, int index) => _world.EntityManager.GetBuffer<Section>(house)[index];
 
-        private bool IsBroken(Entity house, int index) => (_world.Get<Sections>(house).Broken & (1ul << index)) != 0;
+        private bool IsBroken(Entity house, int index) =>
+            (_world.Get<SectionedBuilding>(house).Broken & (1ul << index)) != 0;
 
         private void Shoot(Entity house, float3 from, float3 at, float amount, DamageType type = null, float radius = 0f) =>
             _world.QueueDamage(new DamageEvent
@@ -170,7 +172,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.IsTrue(IsBroken(house, Front));
             Assert.IsFalse(IsBroken(house, Upper), "it waits a support level's delay");
 
-            _world.Run(Sections.FallDelay + 0.2f);
+            _world.Run(SectionedBuilding.FallDelay + 0.2f);
 
             Assert.IsTrue(IsBroken(house, Upper));
             Assert.IsFalse(IsBroken(house, Roof), "the other walls still hold the roof");

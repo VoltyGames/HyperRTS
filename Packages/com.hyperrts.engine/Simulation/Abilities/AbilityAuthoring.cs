@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Status;

@@ -7,7 +7,7 @@ using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Rules;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
@@ -144,7 +145,7 @@ namespace HyperRTS.Simulation.Tests.Placement
             _world.EntityManager.AddComponentData(piece, pose);
             _world.EntityManager.AddComponentData(piece, new PostTransformMatrix { Value = stretch });
             var writer = new EntityManagerWriter(_world.EntityManager, piece);
-            DestructibleSetup.AddScenery(ref writer, 50f, 0, remains, float2.zero, SceneryId.At(pose.Position,
+            DestructibleAuthoring.AddScenery(ref writer, 50f, 0, remains, float2.zero, SceneryId.At(pose.Position,
                 pose.Rotation));
 
             _world.QueueDamage(new DamageEvent

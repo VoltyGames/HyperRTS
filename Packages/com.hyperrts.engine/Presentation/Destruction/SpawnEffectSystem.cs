@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;

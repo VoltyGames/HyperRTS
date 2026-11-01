@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Transport;

@@ -1,5 +1,5 @@
 using HyperRTS.Editor.Maps.Placement;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using UnityEditor;
 using UnityEngine;
 

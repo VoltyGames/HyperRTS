@@ -1,9 +1,9 @@
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Collections;
@@ -209,7 +209,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         {
             var house = _em.CreateEntity();
             _em.AddComponentData(house, new LocalToWorld { Value = float4x4.Translate(Origin) });
-            _em.AddComponentData(house, new Sections { Broken = broken });
+            _em.AddComponentData(house, new SectionedBuilding { Broken = broken });
             _em.AddComponentData(house, new ShownSections());
             _em.AddBuffer<Child>(house);
             var sides = new[]
@@ -273,7 +273,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         private void SetBroken(Entity house, ulong broken) =>
-            _em.SetComponentData(house, new Sections { Broken = broken });
+            _em.SetComponentData(house, new SectionedBuilding { Broken = broken });
 
         private bool Drawn(Entity model) => _em.IsComponentEnabled<MaterialMeshInfo>(model);
 

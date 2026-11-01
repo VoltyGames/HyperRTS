@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Tests.Combat
+namespace HyperRTS.Simulation.Tests.Destruction
 {
     /// <summary>
     /// A repairable bridge: its spans carry the deck, so a span that falls closes the crossing, and engineers rebuild

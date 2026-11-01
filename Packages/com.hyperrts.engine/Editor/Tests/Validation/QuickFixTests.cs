@@ -5,6 +5,7 @@ using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation;
 using HyperRTS.Simulation.Production;

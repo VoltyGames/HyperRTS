@@ -1,9 +1,9 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
-    public partial struct Sections
+    public partial struct SectionedBuilding
     {
         /// <summary>
         /// Rebuilds the latest broken section first, each coming back once full, then mends the standing ones.

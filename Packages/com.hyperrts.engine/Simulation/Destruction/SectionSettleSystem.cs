@@ -5,7 +5,7 @@ using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// Follows a building's broken mask in every world, whether its own damage broke the sections or the server's
@@ -17,17 +17,17 @@ namespace HyperRTS.Simulation.Combat
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct SectionSettleSystem : ISystem
     {
-        private ComponentLookup<Sections> _buildings;
+        private ComponentLookup<SectionedBuilding> _buildings;
         private BufferLookup<NavObstaclePart> _parts;
         private BufferLookup<NavAreaPart> _decks;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _buildings = state.GetComponentLookup<Sections>();
+            _buildings = state.GetComponentLookup<SectionedBuilding>();
             _parts = state.GetBufferLookup<NavObstaclePart>();
             _decks = state.GetBufferLookup<NavAreaPart>();
-            state.RequireForUpdate<Sections>();
+            state.RequireForUpdate<SectionedBuilding>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -49,11 +49,11 @@ namespace HyperRTS.Simulation.Combat
 
         /// <summary>Writes through lookups only on a change, so standing buildings keep their change versions.</summary>
         [BurstCompile]
-        [WithAll(typeof(Sections))]
+        [WithAll(typeof(SectionedBuilding))]
         private partial struct SettleJob : IJobEntity
         {
             public EntityCommandBuffer Ecb;
-            public ComponentLookup<Sections> Buildings;
+            public ComponentLookup<SectionedBuilding> Buildings;
             public BufferLookup<NavObstaclePart> Parts;
             public BufferLookup<NavAreaPart> Decks;
 

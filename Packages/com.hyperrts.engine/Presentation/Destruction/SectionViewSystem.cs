@@ -3,8 +3,8 @@ using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Rendering.Visibility;
-using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -57,7 +57,7 @@ namespace HyperRTS.Presentation.Destruction
             var impacts = SeenImpacts();
             var now = (float)SystemAPI.Time.ElapsedTime;
             foreach (var (building, sections, models, looks, shown, place, entity) in SystemAPI
-                         .Query<RefRO<Sections>, DynamicBuffer<Section>, DynamicBuffer<SectionModel>,
+                         .Query<RefRO<SectionedBuilding>, DynamicBuffer<Section>, DynamicBuffer<SectionModel>,
                              DynamicBuffer<SectionLook>, RefRW<ShownSections>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
                 var context = new Context
@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             var quiet = !shown.Seen;
             var changed = broken ^ shown.Broken;
-            var touched = quiet ? Sections.All(at.Models.Length) : changed;
+            var touched = quiet ? SectionedBuilding.All(at.Models.Length) : changed;
             touched |= quiet ? 0ul : Record(at, impacts, broken);
             touched |= Finished(at, shown.Breaking);
             touched |= quiet ? 0ul : Unpropped(at, changed, broken, shown.Breaking);

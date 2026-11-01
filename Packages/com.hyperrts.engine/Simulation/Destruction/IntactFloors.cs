@@ -1,9 +1,9 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
-    /// The floors of a building that still stand, a bit each, ground floor first. Combat marks the ones that fell;
+    /// The floors of a building that still stand, a bit each, ground floor first. A collapse marks the ones that fell;
     /// a container gives each floor an even share of its slots and empties a floor once it falls.
     /// </summary>
     public struct IntactFloors : IComponentData

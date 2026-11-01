@@ -1,16 +1,17 @@
 using System;
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>Destructible scenery that falls away from what killed it, such as a tree.</summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Topple")]
+    [AddComponentMenu(HyperRTSMenu.Destruction + "Topple")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [HelpURL(HyperRTSDocs.Destruction)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(DestructibleAuthoring), "a Destructible")]
     public class ToppleAuthoring : AuthoringBehaviour
@@ -20,6 +21,15 @@ namespace HyperRTS.Simulation.Combat
 
         [Tooltip("Heading in degrees from +Z toward +X that the canopy points in the remains model.")]
         public float lie;
+
+        /// <summary><paramref name="trunk"/> is a unit vector.</summary>
+        public static void AddTopple<TWriter>(ref TWriter writer, float3 trunk, float height, float lie,
+            float canopyRadius)
+            where TWriter : struct, IEntityWriter
+        {
+            writer.Add(new Topple { Trunk = trunk, Height = height, Lie = lie, CanopyRadius = canopyRadius });
+            writer.Add<LethalHit>();
+        }
 
         public class Baker : Baker<ToppleAuthoring>
         {
@@ -32,7 +42,7 @@ namespace HyperRTS.Simulation.Combat
 
                 var writer = new BakerWriter(this, GetEntity(TransformUsageFlags.Dynamic));
                 var trunk = math.normalize((float3)authoring.trunk);
-                DestructibleSetup.AddTopple(ref writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
+                AddTopple(ref writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
                     CanopyRadius(authoring.transform));
             }
 

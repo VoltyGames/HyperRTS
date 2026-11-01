@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Rendering.Visibility

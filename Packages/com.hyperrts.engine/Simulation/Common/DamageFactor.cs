@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Common
 {
     /// <summary>One damage type and how much of it a unit's armor or a building's section material takes.</summary>
     [Serializable]

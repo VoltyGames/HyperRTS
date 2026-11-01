@@ -1,5 +1,5 @@
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Placement

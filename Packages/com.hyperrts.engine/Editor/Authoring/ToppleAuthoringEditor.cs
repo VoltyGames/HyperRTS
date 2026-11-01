@@ -1,6 +1,6 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Combat;
+using HyperRTS.Simulation.Destruction;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;

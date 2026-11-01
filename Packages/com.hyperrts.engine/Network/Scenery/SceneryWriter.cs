@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
@@ -12,7 +13,7 @@ namespace HyperRTS.Network.Scenery
         private ComponentLookup<Health> _health;
         private ComponentLookup<ShownDamageStage> _shownStages;
         private ComponentLookup<ShownSections> _shownSections;
-        private ComponentLookup<Sections> _buildings;
+        private ComponentLookup<SectionedBuilding> _buildings;
         private BufferLookup<Section> _sections;
         private ComponentLookup<SpawnOnDeath> _remains;
         private ComponentLookup<SpawnEffect> _effects;
@@ -27,7 +28,7 @@ namespace HyperRTS.Network.Scenery
             _health = state.GetComponentLookup<Health>();
             _shownStages = state.GetComponentLookup<ShownDamageStage>();
             _shownSections = state.GetComponentLookup<ShownSections>();
-            _buildings = state.GetComponentLookup<Sections>();
+            _buildings = state.GetComponentLookup<SectionedBuilding>();
             _sections = state.GetBufferLookup<Section>();
             _remains = state.GetComponentLookup<SpawnOnDeath>(true);
             _effects = state.GetComponentLookup<SpawnEffect>(true);

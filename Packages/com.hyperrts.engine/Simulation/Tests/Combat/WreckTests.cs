@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Destruction;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
@@ -29,7 +30,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var ruin = _world.MakePrefab(_world.EntityManager.CreateEntity(typeof(LocalTransform)));
             var wreck = _world.EntityManager.CreateEntity(typeof(LocalTransform));
             var writer = new EntityManagerWriter(_world.EntityManager, wreck);
-            DestructibleSetup.AddScenery(ref writer, 300f, 0, ruin, float2.zero, default);
+            DestructibleAuthoring.AddScenery(ref writer, 300f, 0, ruin, float2.zero, default);
             var stages = _world.EntityManager.AddBuffer<DamageStage>(wreck);
             stages.Add(new DamageStage { Below = 1f });
             stages.Add(new DamageStage { Below = 0.5f });

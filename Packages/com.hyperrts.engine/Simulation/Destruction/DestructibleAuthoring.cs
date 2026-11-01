@@ -1,19 +1,22 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// Makes map scenery wreckable by anyone (fences, trees, wrecks, bridges). On a building or unit it only marks
     /// it destructible (its own health and death spawn apply); on its own it adds health, death and remains. Scenery
     /// placed in a SubScene is no ghost: multiplayer sends its state by <see cref="SceneryId"/>.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Destructible")]
+    [AddComponentMenu(HyperRTSMenu.Destruction + "Destructible")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [HelpURL(HyperRTSDocs.Destruction)]
     [DisallowMultipleComponent]
     public class DestructibleAuthoring : AuthoringBehaviour
     {
@@ -31,6 +34,28 @@ namespace HyperRTS.Simulation.Combat
         [Tooltip("Scenery only: area (X by Z) blocked for pathing; zero leaves it open (fences, small trees).")]
         public Vector2 block;
 
+        /// <summary>Adds the components of map scenery. A <paramref name="block"/> of zero leaves pathing open.</summary>
+        public static void AddScenery<TWriter>(ref TWriter writer, float maxHealth, int crush, Entity remains,
+            float2 block, SceneryId id) where TWriter : struct, IEntityWriter
+        {
+            writer.Add(new Health { Current = maxHealth, Max = maxHealth });
+            writer.Add(new Faction { Value = Faction.Neutral });
+            writer.Add<Dead>();
+            writer.SetEnabled<Dead>(false);
+            writer.Add<LastAttacker>();
+            writer.Add(new Destructible { Crush = crush });
+            writer.Add(id);
+            if (remains != Entity.Null)
+            {
+                writer.Add(new SpawnOnDeath { Prefab = remains });
+            }
+
+            if (math.all(block > 0f))
+            {
+                NavSetup.AddObstacle(ref writer, block);
+            }
+        }
+
         public class Baker : Baker<DestructibleAuthoring>
         {
             public override void Bake(DestructibleAuthoring authoring)
@@ -46,7 +71,7 @@ namespace HyperRTS.Simulation.Combat
                     ? GetEntity(authoring.remains, TransformUsageFlags.Dynamic)
                     : Entity.Null;
                 var place = GetComponent<Transform>();
-                DestructibleSetup.AddScenery(ref writer, authoring.maxHealth, authoring.crushedBy, remains,
+                AddScenery(ref writer, authoring.maxHealth, authoring.crushedBy, remains,
                     authoring.block, SceneryId.At(place.position, place.rotation));
             }
         }

@@ -7,15 +7,15 @@ using HyperRTS.Simulation.Navigation;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// Makes a building out of sections that break on their own: hits land where they hit, what loses its supports
     /// falls, broken ground-floor walls open paths and leave rubble, and the building's health is the sum of theirs.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Sections")]
+    [AddComponentMenu(HyperRTSMenu.Destruction + "Sections")]
     [Icon(HyperRTSIcons.Combat)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [HelpURL(HyperRTSDocs.Destruction)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Building")]
     public partial class SectionsAuthoring : AuthoringBehaviour

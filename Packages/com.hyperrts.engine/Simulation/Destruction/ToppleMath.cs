@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Combat
+namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>Servers and clients both derive the remains pose from one fall heading byte, so footprints match.</summary>
     public static class ToppleMath
