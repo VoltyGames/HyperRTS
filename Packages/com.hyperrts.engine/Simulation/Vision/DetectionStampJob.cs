@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
     /// Stamps every <see cref="Detector"/> into <see cref="FogOfWar.Detected"/> for its team. Single-threaded because
-    /// overlapping circles OR into the same cells. An <see cref="Offline"/> detector, such as a radar on low power,
+    /// overlapping circles OR into the same words. An <see cref="Offline"/> detector, such as a radar on low power,
     /// detects nothing.
     /// </summary>
     [BurstCompile]
@@ -19,12 +19,11 @@ namespace HyperRTS.Simulation.Vision
 
         private void Execute(in LocalTransform transform, in Detector detector, in Faction faction)
         {
-            if (detector.Radius <= 0f || !FogOfWar.TryGetTeamBit(Relations.GetTeam(faction.Value), out var bit))
+            var team = Relations.GetTeam(faction.Value);
+            if (detector.Radius > 0f && FogOfWar.Stamps(team))
             {
-                return;
+                Fog.StampCircle(Fog.Detected, transform.Position, detector.Radius, team);
             }
-
-            Fog.StampCircle(Fog.Detected, transform.Position, detector.Radius, bit);
         }
     }
 }

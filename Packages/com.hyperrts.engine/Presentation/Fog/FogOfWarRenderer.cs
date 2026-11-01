@@ -109,7 +109,7 @@ namespace HyperRTS.Presentation.Fog
                 };
             }
 
-            FogTexels.Fill(fog.Visible, fog.Explored, view.Team, ToByte(exploredOpacity), ToByte(unexploredOpacity),
+            FogTexels.Fill(fog, view.Team, ToByte(exploredOpacity), ToByte(unexploredOpacity),
                 _texture.GetPixelData<byte>(0));
             _texture.Apply(false);
             _version = view.Version;

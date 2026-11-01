@@ -45,7 +45,18 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [TearDown]
-        public void TearDown() => _kit.Dispose();
+        public void TearDown()
+        {
+            using (var grids = _em.CreateEntityQuery(typeof(FogOfWar)))
+            {
+                if (grids.TryGetSingleton(out FogOfWar fog))
+                {
+                    fog.Dispose();
+                }
+            }
+
+            _kit.Dispose();
+        }
 
         [Test]
         public void TheMaskDrivesTheViews()
@@ -201,9 +212,10 @@ namespace HyperRTS.Presentation.Tests.Destruction
             relations.SetTeam(2, 2);
             _em.CreateSingleton(relations);
             _em.CreateSingleton(new LocalFogView { Viewer = 1, Team = 1, Active = true });
-            var visible = new NativeArray<ushort>(2, Allocator.Persistent);
-            visible[0] = 1 << 1;
-            _em.CreateSingleton(new FogOfWar { Visible = visible, Size = new int2(2, 1), CellSize = 10f });
+            var fog = FogOfWar.Create(new int2(2, 1), float2.zero, 10f, Allocator.Persistent);
+            fog.Set(fog.Visible, int2.zero, 1);
+            fog.Set(fog.VisibleTall, int2.zero, 1);
+            _em.CreateSingleton(fog);
         }
 
         private Entity Building(ulong broken, bool withPieces, out SectionModel[] models)

@@ -30,6 +30,9 @@ namespace HyperRTS.Simulation.Vision
         private int _builtCount;
         private ulong _builtSignature;
 
+        // The last stamp's solid, porous and porous-top layers, to tell which tiles a restamp changed.
+        private NativeArray<byte> _previous;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -49,6 +52,11 @@ namespace HyperRTS.Simulation.Vision
             {
                 blockers.Dispose();
             }
+
+            if (_previous.IsCreated)
+            {
+                _previous.Dispose();
+            }
         }
 
         [BurstCompile]
@@ -67,9 +75,10 @@ namespace HyperRTS.Simulation.Vision
 
             ref var blockers = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
             blockers.Version++;
-            state.Dependency = new ClearJob { Blockers = blockers }.Schedule(state.Dependency);
+            state.Dependency = new ClearJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
             state.Dependency = new StampJob { Blockers = blockers, Terrain = terrain }
                 .Schedule(_blocks, state.Dependency);
+            state.Dependency = new DiffJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
         }
 
         // Blocks only differ after an add, removal or archetype change, a block turning on or off, or a write.
@@ -120,9 +129,15 @@ namespace HyperRTS.Simulation.Vision
                 state.CompleteDependency();
                 ref var current = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
                 grid.Version = current.Version;
+                grid.Generation = current.Generation + 1;
                 current.Dispose();
                 current = grid;
+                _previous.Dispose();
             }
+
+            _previous = new NativeArray<byte>(grid.Solid.Length * 3, Allocator.Persistent);
+            state.Dependency = new GroundJob { Blockers = grid, Terrain = terrain }
+                .Schedule(grid.Ground.Length, 1024, state.Dependency);
 
             if (crops.Blob.IsCreated)
             {

@@ -1,20 +1,21 @@
+using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Fog
 {
-    /// <summary>Converts fog-of-war team bitmasks into per-cell overlay opacity (0 = clear).</summary>
+    /// <summary>Converts a team's fog-of-war planes into per-cell overlay opacity (0 = clear), from the ground layer.</summary>
     public static class FogTexels
     {
-        public static void Fill(NativeArray<ushort> visible, NativeArray<ushort> explored, byte team,
-            byte exploredAlpha, byte unexploredAlpha, NativeArray<byte> output)
+        public static void Fill(in FogOfWar fog, byte team, byte exploredAlpha, byte unexploredAlpha,
+            NativeArray<byte> output)
         {
             new FillJob
             {
-                Visible = visible,
-                Explored = explored,
-                Mask = 1 << team,
+                Fog = fog,
+                Team = team,
                 ExploredAlpha = exploredAlpha,
                 UnexploredAlpha = unexploredAlpha,
                 Output = output,
@@ -24,29 +25,31 @@ namespace HyperRTS.Presentation.Fog
         [BurstCompile]
         private struct FillJob : IJob
         {
-            [ReadOnly] public NativeArray<ushort> Visible;
-            [ReadOnly] public NativeArray<ushort> Explored;
-            public int Mask;
+            [ReadOnly] public FogOfWar Fog;
+            public byte Team;
             public byte ExploredAlpha;
             public byte UnexploredAlpha;
             public NativeArray<byte> Output;
 
             public void Execute()
             {
-                for (var i = 0; i < Output.Length; i++)
+                for (var y = 0; y < Fog.Size.y; y++)
                 {
-                    Output[i] = Alpha(i);
+                    for (var x = 0; x < Fog.Size.x; x++)
+                    {
+                        Output[y * Fog.Size.x + x] = Alpha(new int2(x, y));
+                    }
                 }
             }
 
-            private byte Alpha(int i)
+            private readonly byte Alpha(int2 cell)
             {
-                if ((Visible[i] & Mask) != 0)
+                if (Fog.Has(Fog.Visible, cell, Team))
                 {
                     return 0;
                 }
 
-                return (Explored[i] & Mask) != 0 ? ExploredAlpha : UnexploredAlpha;
+                return Fog.Has(Fog.Explored, cell, Team) ? ExploredAlpha : UnexploredAlpha;
             }
         }
     }

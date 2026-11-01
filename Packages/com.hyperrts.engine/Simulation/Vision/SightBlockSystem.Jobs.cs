@@ -10,14 +10,19 @@ namespace HyperRTS.Simulation.Vision
 {
     public partial struct SightBlockSystem
     {
-        /// <summary>Clears what blocks stamp; crop cover stays, flattened lanes and all.</summary>
+        /// <summary>Keeps the last stamp to compare with, then clears what blocks stamp; crop cover stays, flattened lanes and all.</summary>
         [BurstCompile]
         private struct ClearJob : IJob
         {
             public SightBlockers Blockers;
+            public NativeArray<byte> Previous;
 
             public void Execute()
             {
+                var count = Blockers.Solid.Length;
+                NativeArray<byte>.Copy(Blockers.Solid, 0, Previous, 0, count);
+                NativeArray<byte>.Copy(Blockers.Porous, 0, Previous, count, count);
+                NativeArray<byte>.Copy(Blockers.PorousTop, 0, Previous, count * 2, count);
                 Clear(Blockers.Solid);
                 Clear(Blockers.Porous);
                 Clear(Blockers.PorousTop);
@@ -30,6 +35,41 @@ namespace HyperRTS.Simulation.Vision
                 {
                     cells[i] = 0;
                 }
+            }
+        }
+
+        /// <summary>Marks the tiles whose sight the restamp changed, so only viewers near them draw again.</summary>
+        [BurstCompile]
+        private struct DiffJob : IJob
+        {
+            public SightBlockers Blockers;
+            [ReadOnly] public NativeArray<byte> Previous;
+
+            public void Execute()
+            {
+                var count = Blockers.Solid.Length;
+                for (var i = 0; i < count; i++)
+                {
+                    var solid = Blockers.Solid[i] != Previous[i];
+                    var porous = Blockers.Porous[i] != Previous[count + i] || Blockers.PorousTop[i] != Previous[count * 2 + i];
+                    if (solid || porous)
+                    {
+                        Blockers.MarkDirty(new int2(i % Blockers.Size.x, i / Blockers.Size.x));
+                    }
+                }
+            }
+        }
+
+        [BurstCompile]
+        private struct GroundJob : IJobParallelFor
+        {
+            [NativeDisableParallelForRestriction] public SightBlockers Blockers;
+            public TerrainHeight Terrain;
+
+            public void Execute(int index)
+            {
+                var cell = new int2(index % Blockers.Size.x, index / Blockers.Size.x);
+                Blockers.Ground[index] = Terrain.Height(Blockers.Min + ((float2)cell + 0.5f) * Blockers.CellSize);
             }
         }
 

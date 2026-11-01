@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.GameEntities
             writer.AddBuffer<ActiveStatus>();
             writer.AddBuffer<DamageTakenModifier>();
             writer.Add(new AppliedUpgrades { Faction = spec.Owner });
-            writer.Add(new VisionRange { Value = spec.VisionRange, EyeHeight = spec.EyeHeight });
+            VisionSetup.AddVision(ref writer, spec.VisionRange, spec.EyeHeight);
             writer.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
             writer.AddBuffer(cost);
             writer.AddBuffer(prerequisites);

@@ -91,12 +91,16 @@ namespace HyperRTS.Presentation.Tests.Fog
         public void Texels_ClearWhenVisible_DimWhenExplored_DarkOtherwise()
         {
             const byte team = 2;
-            var mask = (ushort)(1 << team);
-            using var visible = new NativeArray<ushort>(new ushort[] { mask, 0, 0, 1 << 1 }, Allocator.TempJob);
-            using var explored = new NativeArray<ushort>(new ushort[] { mask, mask, 0, 1 << 1 }, Allocator.TempJob);
+            var fog = FogOfWar.Create(new int2(4, 1), float2.zero, 1f, Allocator.TempJob);
             using var output = new NativeArray<byte>(4, Allocator.TempJob);
+            fog.Set(fog.Visible, new int2(0, 0), team);
+            fog.Set(fog.Explored, new int2(0, 0), team);
+            fog.Set(fog.Explored, new int2(1, 0), team);
+            fog.Set(fog.Visible, new int2(3, 0), 1);
+            fog.Set(fog.Explored, new int2(3, 0), 1);
 
-            FogTexels.Fill(visible, explored, team, 128, 217, output);
+            FogTexels.Fill(fog, team, 128, 217, output);
+            fog.Dispose();
 
             CollectionAssert.AreEqual(new byte[] { 0, 128, 217, 217 }, output.ToArray());
         }

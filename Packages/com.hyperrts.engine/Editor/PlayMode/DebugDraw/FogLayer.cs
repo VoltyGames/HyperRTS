@@ -23,9 +23,9 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
             }
 
             BeginCells(new Color(0.3f, 1f, 0.4f, 0.2f));
-            for (var i = 0; i < fog.Visible.Length; i++)
+            for (var i = 0; i < fog.Size.x * fog.Size.y; i++)
             {
-                if (FogOfWar.HasTeam(fog.Visible[i], local.Team))
+                if (fog.Has(fog.Visible, fog.Cell(i), local.Team))
                 {
                     Cell(fog.Min + (float2)fog.Cell(i) * fog.CellSize, fog.CellSize);
                 }

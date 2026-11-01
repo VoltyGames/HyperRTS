@@ -6,31 +6,70 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>
-    /// Singleton fog-of-war grid over the map. Each cell holds one bit per team (bit n = team n) for what is
-    /// visible right now, at ground height and at the height of a <see cref="TallTarget"/>, what has ever been seen and
-    /// what a detector covers. With fog disabled every cell is visible to everyone, but stealth still needs detection.
+    /// Singleton fog-of-war grid over the map, as one bit plane per team for each layer: what is visible right now, at
+    /// ground height and at the height of a <see cref="TallTarget"/>, what has ever been seen, what a detector covers
+    /// and what a ground unit is close to. With fog disabled every cell is visible to everyone, but stealth and
+    /// concealment still need detection.
     /// </summary>
     public struct FogOfWar : IComponentData
     {
         /// <summary>Cells whose ground is in sight, so infantry there are seen.</summary>
-        public NativeArray<ushort> Visible;
+        public NativeArray<ulong> Visible;
 
         /// <summary>Cells where a tall target is in sight; every visible cell is in it too.</summary>
-        public NativeArray<ushort> VisibleTall;
+        public NativeArray<ulong> VisibleTall;
 
-        public NativeArray<ushort> Explored;
-        public NativeArray<ushort> Detected;
+        public NativeArray<ulong> Explored;
+        public NativeArray<ulong> Detected;
 
         /// <summary>Cells within the reveal distance of a team's ground units, where its concealed enemies show.</summary>
-        public NativeArray<ushort> Close;
+        public NativeArray<ulong> Close;
+
         public int2 Size;
         public float2 Min;
         public float CellSize;
 
+        /// <summary>64-bit words in one row of a team's plane.</summary>
+        public int RowWords;
+
         /// <summary>Bumped whenever the grid is restamped, so renderers upload only on change.</summary>
         public int Version;
 
+        /// <summary>Bumped whenever the grid is built anew, so every viewer's <see cref="SightPatch"/> is drawn again.</summary>
+        public int Generation;
+
         public readonly bool IsCreated => Visible.IsCreated;
+
+        public readonly int PlaneWords => RowWords * Size.y;
+
+        /// <summary>An empty grid with a plane for every team in each layer.</summary>
+        public static FogOfWar Create(int2 size, float2 min, float cellSize, Allocator allocator)
+        {
+            var rowWords = (size.x + 63) >> 6;
+            var words = rowWords * size.y * FactionRelations.MaxTeams;
+            return new FogOfWar
+            {
+                Visible = new NativeArray<ulong>(words, allocator),
+                VisibleTall = new NativeArray<ulong>(words, allocator),
+                Explored = new NativeArray<ulong>(words, allocator),
+                Detected = new NativeArray<ulong>(words, allocator),
+                Close = new NativeArray<ulong>(words, allocator),
+                Size = size,
+                Min = min,
+                CellSize = cellSize,
+                RowWords = rowWords,
+                Version = 1,
+            };
+        }
+
+        public readonly void Dispose()
+        {
+            Visible.Dispose();
+            VisibleTall.Dispose();
+            Explored.Dispose();
+            Detected.Dispose();
+            Close.Dispose();
+        }
 
         public readonly int2 WorldToCell(float3 position) => (int2)math.floor((position.xz - Min) / CellSize);
 
@@ -80,19 +119,47 @@ namespace HyperRTS.Simulation.Vision
             relations.IsHostile(viewerFaction, faction) &&
             !CanSee(relations.GetTeam(viewerFaction), position, cover, tall);
 
-        private readonly bool Test(NativeArray<ushort> cells, float3 position, byte team)
+        /// <summary>Whether the team's bit is set for the cell in one of the layers.</summary>
+        public readonly bool Has(NativeArray<ulong> plane, int2 cell, byte team) =>
+            (plane[Word(cell, team)] & (1ul << (cell.x & 63))) != 0;
+
+        public readonly void Set(NativeArray<ulong> plane, int2 cell, byte team)
         {
-            var cell = WorldToCell(position);
-            return InBounds(cell) && HasTeam(cells[Index(cell)], team);
+            var word = Word(cell, team);
+            plane[word] |= 1ul << (cell.x & 63);
         }
 
-        /// <summary>ORs <paramref name="bit"/> into every cell whose center lies within the flat circle.</summary>
-        public readonly void StampCircle(NativeArray<ushort> cells, float3 center, float radius, ushort bit)
+        /// <summary>ORs 64 cells' bits starting at <paramref name="x"/> into a row, dropping those off the grid.</summary>
+        public readonly void Or(NativeArray<ulong> plane, byte team, int row, int x, ulong bits)
+        {
+            if (x < 0)
+            {
+                bits = x <= -64 ? 0ul : bits >> -x;
+                x = 0;
+            }
+
+            var room = Size.x - x;
+            if (bits == 0ul || room <= 0)
+            {
+                return;
+            }
+
+            bits &= room >= 64 ? ulong.MaxValue : (1ul << room) - 1ul;
+            var word = team * PlaneWords + row * RowWords + (x >> 6);
+            var shift = x & 63;
+            plane[word] |= bits << shift;
+            if (shift != 0 && (x >> 6) + 1 < RowWords)
+            {
+                plane[word + 1] |= bits >> (64 - shift);
+            }
+        }
+
+        /// <summary>Sets the team's bit in every cell whose center lies within the flat circle.</summary>
+        public readonly void StampCircle(NativeArray<ulong> plane, float3 center, float radius, byte team)
         {
             var radiusSq = radius * radius;
             var min = math.max(WorldToCell(center - radius), 0);
             var max = math.min(WorldToCell(center + radius), Size - 1);
-
             for (var y = min.y; y <= max.y; y++)
             {
                 for (var x = min.x; x <= max.x; x++)
@@ -100,24 +167,21 @@ namespace HyperRTS.Simulation.Vision
                     var cellCenter = Min + (new float2(x, y) + 0.5f) * CellSize;
                     if (math.distancesq(cellCenter, center.xz) <= radiusSq)
                     {
-                        var index = Index(new int2(x, y));
-                        cells[index] = (ushort)(cells[index] | bit);
+                        Set(plane, new int2(x, y), team);
                     }
                 }
             }
         }
 
-        /// <summary>Whether a <see cref="Visible"/> or <see cref="Explored"/> cell has the team's bit set.</summary>
-        public static bool HasTeam(ushort cell, byte team) => (cell & (1 << team)) != 0;
+        /// <summary>Whether a team stamps the grid: neutral never does. Baking and match setup reject teams past the planes.</summary>
+        public static bool Stamps(byte team) => team != 0 && team < FactionRelations.MaxTeams;
 
-        /// <summary>
-        /// The team's cell bit; false for neutral, which never stamps. Teams fit the cell: baking and match setup reject
-        /// any past <see cref="FactionRelations.MaxTeams"/>.
-        /// </summary>
-        public static bool TryGetTeamBit(byte team, out ushort bit)
+        private readonly int Word(int2 cell, byte team) => team * PlaneWords + cell.y * RowWords + (cell.x >> 6);
+
+        private readonly bool Test(NativeArray<ulong> plane, float3 position, byte team)
         {
-            bit = (ushort)(1 << team);
-            return team != 0;
+            var cell = WorldToCell(position);
+            return InBounds(cell) && Has(plane, cell, team);
         }
     }
 }

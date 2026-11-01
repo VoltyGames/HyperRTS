@@ -16,11 +16,7 @@ namespace HyperRTS.Network.Tests
         public void MaskChange_ReachesATeamOnlyOnceItSeesTheSpot()
         {
             using var tracker = new SceneryTracker(Allocator.Temp);
-            using var visible = new NativeArray<ushort>(1, Allocator.Temp);
-            var fog = new FogOfWar
-            {
-                Visible = visible, VisibleTall = visible, Size = new int2(1, 1), Min = new float2(-10f, -10f), CellSize = 20f,
-            };
+            var fog = FogOfWar.Create(new int2(1, 1), new float2(-10f, -10f), 20f, Allocator.Temp);
             var sightings = new NativeList<ScenerySighting>(Allocator.Temp);
             tracker.Register(Id, float3.zero);
 
@@ -28,9 +24,9 @@ namespace HyperRTS.Network.Tests
             tracker.Reveal(fog, true, 1, sightings);
             Assert.IsEmpty(sightings.AsArray().ToArray(), "unseen, so unheard");
 
-            var seen = fog.VisibleTall;
-            seen[0] = 1 << Team;
+            fog.Set(fog.VisibleTall, int2.zero, Team);
             tracker.Reveal(fog, true, 2, sightings);
+            fog.Dispose();
 
             Assert.AreEqual(1, sightings.Length);
             Assert.AreEqual(0b101ul, sightings[0].Change.Broken);

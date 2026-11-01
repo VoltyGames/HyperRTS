@@ -63,7 +63,7 @@ namespace HyperRTS.Presentation.HUD.Map
                 _layer.style.backgroundImage = new StyleBackground(_texture);
             }
 
-            FogTexels.Fill(fog.Visible, fog.Explored, view.Team, ExploredAlpha, UnexploredAlpha,
+            FogTexels.Fill(fog, view.Team, ExploredAlpha, UnexploredAlpha,
                 _texture.GetPixelData<byte>(0));
             _texture.Apply(false);
             _version = view.Version;

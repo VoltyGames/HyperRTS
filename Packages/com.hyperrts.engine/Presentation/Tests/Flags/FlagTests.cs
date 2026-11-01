@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Tests.Flags
             {
                 if (grids.TryGetSingleton(out FogOfWar fog))
                 {
-                    fog.Visible.Dispose();
+                    fog.Dispose();
                 }
             }
 
@@ -149,9 +149,7 @@ namespace HyperRTS.Presentation.Tests.Flags
             relations.SetTeam(2, 2);
             _em.CreateSingleton(relations);
             _em.CreateSingleton(new LocalFogView { Viewer = 1, Team = 1, Active = true });
-            var visible = new NativeArray<ushort>(1, Allocator.Persistent);
-            // One array for both layers: the cell is either seen or not.
-            _em.CreateSingleton(new FogOfWar { Visible = visible, VisibleTall = visible, Size = new int2(1, 1), CellSize = 1f });
+            _em.CreateSingleton(FogOfWar.Create(new int2(1, 1), float2.zero, 1f, Allocator.Persistent));
         }
 
         private void Run() => _flags.Update(_world.Unmanaged);

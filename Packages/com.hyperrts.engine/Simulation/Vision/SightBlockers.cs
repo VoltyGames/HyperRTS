@@ -18,6 +18,12 @@ namespace HyperRTS.Simulation.Vision
         public const float Step = 0.25f;
         public const float DensityStep = 1f / 250f;
 
+        /// <summary>Cells across a square of <see cref="DirtyTiles"/>.</summary>
+        public const int TileCells = 8;
+
+        /// <summary>Terrain height at each cell's centre, so sight lines needn't sample the heightfield.</summary>
+        public NativeArray<float> Ground;
+
         public NativeArray<byte> Solid;
         public NativeArray<byte> Porous;
         public NativeArray<byte> PorousTop;
@@ -30,12 +36,20 @@ namespace HyperRTS.Simulation.Vision
         /// <summary>Cells a block conceals on, such as ruins and trenches; woods and crops conceal too.</summary>
         public NativeArray<byte> Conceals;
 
+        /// <summary>Squares of <see cref="TileCells"/> cells whose sight changed since the fog last drew round them.</summary>
+        public NativeArray<byte> DirtyTiles;
+
+        public int2 Tiles;
+
         public int2 Size;
         public float2 Min;
         public float CellSize;
 
         /// <summary>Bumped whenever the blocks are restamped.</summary>
         public int Version;
+
+        /// <summary>Bumped whenever the grid is built anew, so every viewer's sight is drawn again.</summary>
+        public int Generation;
 
         public readonly bool IsCreated => Solid.IsCreated;
 
@@ -44,8 +58,12 @@ namespace HyperRTS.Simulation.Vision
         {
             map.FogLayout(out var size, out var cellSize);
             var count = size.x * size.y;
+            var tiles = (size + TileCells - 1) / TileCells;
             return new SightBlockers
             {
+                DirtyTiles = new NativeArray<byte>(tiles.x * tiles.y, allocator),
+                Tiles = tiles,
+                Ground = new NativeArray<float>(count, allocator),
                 Solid = new NativeArray<byte>(count, allocator),
                 Porous = new NativeArray<byte>(count, allocator),
                 PorousTop = new NativeArray<byte>(count, allocator),
@@ -60,12 +78,35 @@ namespace HyperRTS.Simulation.Vision
 
         public readonly void Dispose()
         {
+            Ground.Dispose();
             Solid.Dispose();
             Porous.Dispose();
             PorousTop.Dispose();
             Crop.Dispose();
             CropTop.Dispose();
             Conceals.Dispose();
+            DirtyTiles.Dispose();
+        }
+
+        public void MarkDirty(int2 cell) => DirtyTiles[cell.y / TileCells * Tiles.x + cell.x / TileCells] = 1;
+
+        /// <summary>Whether sight changed anywhere in the cells from <paramref name="min"/> to <paramref name="max"/>.</summary>
+        public readonly bool IsDirty(int2 min, int2 max)
+        {
+            var low = math.max(min, 0) / TileCells;
+            var high = math.min(max, Size - 1) / TileCells;
+            for (var y = low.y; y <= high.y; y++)
+            {
+                for (var x = low.x; x <= high.x; x++)
+                {
+                    if (DirtyTiles[y * Tiles.x + x] != 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public readonly float SolidHeight(int index) => Solid[index] * Step;
@@ -124,9 +165,10 @@ namespace HyperRTS.Simulation.Vision
                 for (var x = min.x; x <= max.x; x++)
                 {
                     var index = Index(new int2(x, y));
-                    if (Touches(box, Min + (new float2(x, y) + 0.5f) * CellSize))
+                    if (Crop[index] != 0 && Touches(box, Min + (new float2(x, y) + 0.5f) * CellSize))
                     {
                         Crop[index] = 0;
+                        MarkDirty(new int2(x, y));
                     }
                 }
             }

@@ -159,9 +159,8 @@ namespace HyperRTS.Presentation.Tests.Environment.Fire
         public void Fires_ShowOnlyOnGroundTheLocalPlayerSees()
         {
             // Two 10 m fog cells; team 1 sees only the west one.
-            var visible = new NativeArray<ushort>(2, Allocator.Temp);
-            visible[0] = 1 << 1;
-            var fog = new FogOfWar { Visible = visible, Size = new int2(2, 1), CellSize = 10f };
+            var fog = FogOfWar.Create(new int2(2, 1), float2.zero, 10f, Allocator.Temp);
+            fog.Set(fog.Visible, int2.zero, 1);
             var view = new LocalFogView { Viewer = 1, Team = 1, Active = true };
             try
             {
@@ -172,7 +171,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Fire
             }
             finally
             {
-                visible.Dispose();
+                fog.Dispose();
             }
         }
 
