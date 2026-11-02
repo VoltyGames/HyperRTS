@@ -36,10 +36,6 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         private const string HorizonGroundShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonGround.shader";
 
-
-        /// <summary>Horizon fields are this many times the kit's, as they are only seen far off.</summary>
-        private const float HorizonFieldScale = 1.6f;
-
         /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
             TerrainData data)
@@ -126,7 +122,7 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         /// <summary>
         /// The farmland round the map out to the spec's <c>horizonWidth</c>: the first farmland's kit (or the climate's
-        /// first) in larger fields at the farmland's angle.
+        /// first) in fields of the kit's size at the farmland's angle, so the ring carries the map's own grid on.
         /// </summary>
         private static void CreateHorizon(MapScene scene, MapGeneration generation, Terrain terrain)
         {
@@ -154,7 +150,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             };
             horizon.fields = new HorizonFields
             {
-                size = kit.fieldSize * HorizonFieldScale,
+                size = kit.fieldSize,
                 angle = farmland?.angle ?? 0f,
                 marginWidth = kit.marginWidth,
                 marginLayer = climate.SurfaceLayer(kit.marginSurface),
