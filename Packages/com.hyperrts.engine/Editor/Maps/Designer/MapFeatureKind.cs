@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
@@ -129,7 +130,7 @@ namespace HyperRTS.Editor.Maps.Designer
             foreach (var field in ElementType.GetFields(Public))
             {
                 var type = field.FieldType;
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+                if (UnitySerialization.ItemType(type) != null)
                 {
                     field.SetValue(element, Activator.CreateInstance(type));
                 }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Reflection;
-using UnityEngine;
+using HyperRTS.Editor.Common;
 
 namespace HyperRTS.Editor.Maps.Library
 {
@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Library
         {
             foreach (var field in target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                if (!IsSerialized(field))
+                if (!UnitySerialization.IsSerialized(field))
                 {
                     continue;
                 }
@@ -50,16 +50,6 @@ namespace HyperRTS.Editor.Maps.Library
             {
                 Walk(value, path, visit);
             }
-        }
-
-        private static bool IsSerialized(FieldInfo field)
-        {
-            if (field.IsDefined(typeof(NonSerializedAttribute)))
-            {
-                return false;
-            }
-
-            return field.IsPublic || field.IsDefined(typeof(SerializeField));
         }
 
         private static bool IsNested(Type type)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using HyperRTS.Editor.Common;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -11,7 +12,7 @@ namespace HyperRTS.Editor.Validation.Rules
     /// A serialized type's fields that carry check attributes, and the nested blocks and lists that hold more.
     /// Rules ask on every component each inspector layout, so each type is reflected once.
     /// </summary>
-    internal sealed partial class CheckedFields
+    internal sealed class CheckedFields
     {
         private const BindingFlags Declared =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
@@ -46,12 +47,12 @@ namespace HyperRTS.Editor.Validation.Rules
 
         private void Collect(FieldInfo field)
         {
-            if (!IsSerialized(field))
+            if (!UnitySerialization.IsSerialized(field))
             {
                 return;
             }
 
-            var element = ElementType(field.FieldType);
+            var element = UnitySerialization.ItemType(field.FieldType) ?? field.FieldType;
             var check = new CheckedField(field, element);
             if (check.HasChecks)
             {
@@ -68,27 +69,6 @@ namespace HyperRTS.Editor.Validation.Rules
             {
                 Nested.Add((field, inner));
             }
-        }
-
-        private static bool IsSerialized(FieldInfo field)
-        {
-            if (field.IsInitOnly || field.IsNotSerialized)
-            {
-                return false;
-            }
-
-            return field.IsPublic || field.IsDefined(typeof(SerializeField));
-        }
-
-        private static Type ElementType(Type type)
-        {
-            if (type.IsArray)
-            {
-                return type.GetElementType();
-            }
-
-            var isList = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
-            return isList ? type.GetGenericArguments()[0] : type;
         }
 
         private static bool CanNest(Type type)

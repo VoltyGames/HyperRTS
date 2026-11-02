@@ -126,14 +126,11 @@ namespace HyperRTS.Simulation.Vision
         {
             var low = math.max(min, 0) / TileCells;
             var high = math.min(max, Grid.Size - 1) / TileCells;
-            for (var y = low.y; y <= high.y; y++)
+            foreach (var tile in new CellRange(low, high))
             {
-                for (var x = low.x; x <= high.x; x++)
+                if (DirtyTiles[tile.y * Tiles.x + tile.x] != 0)
                 {
-                    if (DirtyTiles[y * Tiles.x + x] != 0)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 

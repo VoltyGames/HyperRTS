@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Production;
@@ -39,9 +38,10 @@ namespace HyperRTS.Editor.Authoring
         private Type OptionType()
         {
             var type = fieldInfo.FieldType;
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+            var item = UnitySerialization.ItemType(type);
+            if (item != null)
             {
-                return type.GetGenericArguments()[0];
+                return item;
             }
 
             if (typeof(ProducibleAuthoring).IsAssignableFrom(type))

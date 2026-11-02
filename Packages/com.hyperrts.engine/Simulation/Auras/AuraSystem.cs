@@ -77,13 +77,11 @@ namespace HyperRTS.Simulation.Auras
         /// </summary>
         private bool IsDue(float deltaTime)
         {
-            _elapsed += deltaTime;
-            if (_elapsed < Interval)
+            if (IntervalTimer.Advance(ref _elapsed, Interval, deltaTime) == 0)
             {
                 return false;
             }
 
-            _elapsed -= Interval;
             var hasAuras = !_auraQuery.IsEmptyIgnoreFilter;
             var due = hasAuras || _hadAuras;
             _hadAuras = hasAuras;

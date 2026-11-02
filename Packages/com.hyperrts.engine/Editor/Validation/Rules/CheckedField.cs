@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Validation.Rules
             PrefabAsset = field.GetCustomAttribute<PrefabAssetAttribute>();
             GhostPrefab = field.GetCustomAttribute<GhostPrefabAttribute>();
             NoEmptyEntries = field.GetCustomAttribute<NoEmptyEntriesAttribute>();
-            Key = FindKey(field, element);
+            Key = NoEmptyEntries == null ? null : FindKey(field, element, NoEmptyEntries.Key);
             EmptyEntries = Key == null ? "empty entries" : $"entries with no {Lower(Key.Name)}";
         }
 
@@ -45,15 +45,8 @@ namespace HyperRTS.Editor.Validation.Rules
 
         private static string Lower(string fieldName) => ObjectNames.NicifyVariableName(fieldName).ToLowerInvariant();
 
-        private static FieldInfo FindKey(FieldInfo field, Type element)
+        private static FieldInfo FindKey(FieldInfo field, Type element, string key)
         {
-            var noEmpty = field.GetCustomAttribute<NoEmptyEntriesAttribute>();
-            if (noEmpty == null)
-            {
-                return null;
-            }
-
-            var key = noEmpty.Key;
             if (key == null)
             {
                 return typeof(Object).IsAssignableFrom(element) ? null : throw new InvalidOperationException(

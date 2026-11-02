@@ -177,7 +177,7 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>Asks the camera to centre on a ground point.</summary>
         public void FocusCamera(float3 point) =>
-            Write(_cameraFocus, new CameraFocusRequest { Pending = true, Point = point });
+            View.Write(_cameraFocus, new CameraFocusRequest { Pending = true, Point = point });
 
         public void SetPointerOverUI(bool over)
         {
@@ -190,14 +190,6 @@ namespace HyperRTS.Presentation.HUD
             if (changed)
             {
                 _pointer.Set(EntityManager, new PointerState { OverUI = over });
-            }
-        }
-
-        private void Write<T>(LiveSingleton<T> singleton, T value) where T : unmanaged, IComponentData
-        {
-            if (View.IsLive)
-            {
-                singleton.Set(EntityManager, value);
             }
         }
 

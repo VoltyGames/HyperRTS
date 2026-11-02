@@ -170,7 +170,8 @@ namespace HyperRTS.Presentation.Common
             _match = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MatchState>());
         }
 
-        private void Write<T>(LiveSingleton<T> singleton, in T value) where T : unmanaged, IComponentData
+        /// <summary>Sets the singleton while the view is live; a dead view drops the write.</summary>
+        public void Write<T>(LiveSingleton<T> singleton, in T value) where T : unmanaged, IComponentData
         {
             if (IsLive)
             {

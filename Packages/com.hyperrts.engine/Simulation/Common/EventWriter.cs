@@ -19,11 +19,17 @@ namespace HyperRTS.Simulation.Common
             state.RequireForUpdate<T>();
         }
 
-        /// <summary>Call each update before scheduling. Jobs copy the writer, so it can't hold the queue's query.</summary>
+        /// <summary>
+        /// Call each update before scheduling. Jobs copy the writer, so it can't hold the queue's query; the queue
+        /// entity lives as long as the world, so it is found once.
+        /// </summary>
         public void Update(ref SystemState state)
         {
             _events.Update(ref state);
-            _queue = new EntityQueryBuilder(Allocator.Temp).WithAll<T>().Build(ref state).GetSingletonEntity();
+            if (_queue == Entity.Null)
+            {
+                _queue = new EntityQueryBuilder(Allocator.Temp).WithAll<T>().Build(ref state).GetSingletonEntity();
+            }
         }
 
         public void Add(in T item) => _events[_queue].Add(item);

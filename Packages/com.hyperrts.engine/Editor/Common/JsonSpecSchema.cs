@@ -107,9 +107,10 @@ namespace HyperRTS.Editor.Common
                 return new JObject { ["type"] = "string" };
             }
 
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+            var item = UnitySerialization.ItemType(type);
+            if (item != null)
             {
-                return new JObject { ["type"] = "array", ["items"] = Value(type.GetGenericArguments()[0]) };
+                return new JObject { ["type"] = "array", ["items"] = Value(item) };
             }
 
             return Reference(type);
@@ -142,17 +143,7 @@ namespace HyperRTS.Editor.Common
             }
 
             const BindingFlags declared = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
-            return chain.SelectMany(at => at.GetFields(declared)).Where(IsSerialized);
-        }
-
-        private static bool IsSerialized(FieldInfo field)
-        {
-            if (field.IsDefined(typeof(NonSerializedAttribute)))
-            {
-                return false;
-            }
-
-            return field.IsPublic || field.IsDefined(typeof(SerializeField));
+            return chain.SelectMany(at => at.GetFields(declared)).Where(UnitySerialization.IsSerialized);
         }
     }
 }

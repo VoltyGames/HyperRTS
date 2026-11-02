@@ -75,7 +75,7 @@ namespace HyperRTS.Presentation.Fog
             }
 
             var pixels = _mask.GetPixelData<byte>(0);
-            new ClearJob { Pixels = pixels }.Run();
+            ClearJob<byte>.Schedule(pixels, default).Complete();
             var query = _selected.In(entityManager);
             query.CompleteDependency();
             using var units = query.ToEntityArray(Allocator.Temp);
@@ -92,20 +92,6 @@ namespace HyperRTS.Presentation.Fog
             }
 
             _mask.Apply(false);
-        }
-
-        [BurstCompile]
-        private struct ClearJob : IJob
-        {
-            public NativeArray<byte> Pixels;
-
-            public void Execute()
-            {
-                for (var i = 0; i < Pixels.Length; i++)
-                {
-                    Pixels[i] = 0;
-                }
-            }
         }
 
         [BurstCompile]

@@ -41,8 +41,7 @@ namespace HyperRTS.Editor.Maps.Spec
             foreach (var field in typeof(MapSpec).GetFields())
             {
                 var type = field.FieldType;
-                var list = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
-                var entry = list ? type.GetGenericArguments()[0] : null;
+                var entry = UnitySerialization.ItemType(type);
                 if (entry != null && entry.IsClass && entry != typeof(string))
                 {
                     // Through the same layout as a written spec, so 20.0 compares equal to the file's 20.

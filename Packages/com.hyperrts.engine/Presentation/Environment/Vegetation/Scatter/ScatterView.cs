@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Fire;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
-using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -22,8 +21,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private int _footprints;
         private int _burntCells;
         private bool _grown;
-        private World _world;
-        private EntityQuery _burnt;
+        private readonly LiveSingleton<FieldFireState> _burnt = new();
 
         /// <summary>Whether the plants already hold this view: same spot, settings and visible tiles, no new buildings or ash.</summary>
         public bool Holds(Vector3 position, ScatterSettings settings, List<int> tiles)
@@ -57,14 +55,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
                 return 0;
             }
 
-            var manager = view.EntityManager;
-            if (_world != manager.World)
-            {
-                _world = manager.World;
-                _burnt = manager.CreateEntityQuery(ComponentType.ReadOnly<FieldFireState>());
-            }
-
-            return _burnt.TryGetSingleton(out FieldFireState state) ? state.BurntCells : 0;
+            return _burnt.TryGet(view.EntityManager, out var state) ? state.BurntCells : 0;
         }
 
         private bool SameTiles(List<int> tiles)

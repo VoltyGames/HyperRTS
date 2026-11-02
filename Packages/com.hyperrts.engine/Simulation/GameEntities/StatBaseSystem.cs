@@ -18,9 +18,11 @@ namespace HyperRTS.Simulation.GameEntities
     {
         private StatFieldTable _table;
         private NativeArray<EntityQuery> _queries;
+        private EntityQuery _pending;
 
         public void OnCreate(ref SystemState state)
         {
+            _pending = SystemAPI.QueryBuilder().WithAll<StatBasesPending>().Build();
             _table = StatFieldTable.Find(Allocator.Persistent);
             _queries = new NativeArray<EntityQuery>(_table.Components.Length, Allocator.Persistent);
             for (var i = 0; i < _queries.Length; i++)
@@ -45,6 +47,11 @@ namespace HyperRTS.Simulation.GameEntities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (_pending.IsEmpty)
+            {
+                return;
+            }
+
             for (var i = 0; i < _queries.Length; i++)
             {
                 var statComponent = _table.Components[i];

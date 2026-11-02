@@ -33,12 +33,9 @@ namespace HyperRTS.Presentation.Fog
 
             public void Execute()
             {
-                for (var y = 0; y < Fog.Grid.Size.y; y++)
+                foreach (var cell in Fog.Grid.Cells(int2.zero, Fog.Grid.Size - 1))
                 {
-                    for (var x = 0; x < Fog.Grid.Size.x; x++)
-                    {
-                        Output[y * Fog.Grid.Size.x + x] = Alpha(new int2(x, y));
-                    }
+                    Output[Fog.Grid.Index(cell)] = Alpha(cell);
                 }
             }
 
