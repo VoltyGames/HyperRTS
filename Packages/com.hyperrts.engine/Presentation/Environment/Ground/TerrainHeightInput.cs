@@ -16,14 +16,19 @@ namespace HyperRTS.Presentation.Environment.Ground
         private readonly Terrain _terrain;
         private readonly Texture _heights;
 
-        /// <summary><c>_HeightScale</c> is base height, metres per unit, texels across.</summary>
-        public TerrainHeightInput(ComputeShader compute, int kernel, Terrain terrain)
+        /// <summary>Remembers the terrain's heightmap; <see cref="Bind"/> hands it to a kernel.</summary>
+        public TerrainHeightInput(Terrain terrain)
         {
             _terrain = terrain;
             _heights = terrain.terrainData.heightmapTexture;
+        }
+
+        /// <summary>Binds the heightmap to a scatter kernel. <c>_HeightScale</c> is base height, metres per unit, texels across.</summary>
+        public void Bind(ComputeShader compute, int kernel)
+        {
             compute.SetTexture(kernel, HeightId, _heights);
-            compute.SetVector(HeightAreaId, Area(terrain));
-            compute.SetVector(HeightScaleId, Scale(terrain));
+            compute.SetVector(HeightAreaId, Area(_terrain));
+            compute.SetVector(HeightScaleId, Scale(_terrain));
         }
 
         /// <summary>The same inputs on a material, for shaders that drape geometry on the ground.</summary>

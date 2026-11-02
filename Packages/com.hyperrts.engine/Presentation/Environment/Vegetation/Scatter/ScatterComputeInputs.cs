@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
     /// <summary>
     /// A scatter compute shader's grow and count kernels and what every grow kernel reads: the uploaded items, the tile
     /// size, the heightmap, and each camera's view with the building mask, crater depth and ash. Subclasses add their
-    /// own inputs.
+    /// own inputs. Everything is bound before each dispatch, as reimporting the shader drops its bindings.
     /// </summary>
     internal abstract class ScatterComputeInputs : IDisposable
     {
@@ -17,15 +17,14 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         private readonly TerrainHeightInput _heights;
 
-        /// <summary>Finds the kernels and binds what stays fixed while the map is open.</summary>
+        /// <summary>Finds the kernels and makes the items buffer, which the subclass fills.</summary>
         protected ScatterComputeInputs(ComputeShader compute, string growKernel, Terrain terrain, int items, int stride)
         {
             Compute = compute;
             GrowKernel = compute.FindKernel(growKernel);
             CountKernel = compute.FindKernel("Count");
             Items = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, items), stride);
-            compute.SetFloat(TileSizeId, ScatterTiles.Size);
-            _heights = new TerrainHeightInput(compute, GrowKernel, terrain);
+            _heights = new TerrainHeightInput(terrain);
         }
 
         public ComputeShader Compute { get; }
@@ -47,9 +46,11 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         protected abstract bool OwnInputsStale { get; }
 
-        /// <summary>Binds one camera's view, the shared maps and the subclass's per-camera inputs.</summary>
+        /// <summary>Binds one camera's view, the map's inputs and the subclass's.</summary>
         public void SetCamera(Vector3 position, ScatterSettings settings)
         {
+            Compute.SetFloat(TileSizeId, ScatterTiles.Size);
+            _heights.Bind(Compute, GrowKernel);
             Compute.SetVector(CameraId, new Vector4(position.x, position.y, position.z, settings.Distance));
             BuildingFootprintMask.Bind(Compute, GrowKernel);
             CraterTerrain.BindCraters(Compute, GrowKernel);
@@ -57,6 +58,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             BindCamera(settings);
         }
 
+        /// <summary>Binds the subclass's items, maps and quality knobs.</summary>
         protected abstract void BindCamera(ScatterSettings settings);
 
         public void Dispose() => Items.Release();

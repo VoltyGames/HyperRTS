@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         /// <summary>Share of plants left at the draw distance.</summary>
         public const float FarKeep = 0.3f;
 
-        /// <summary>The tallest patch of Grass.compute's patch scale (<c>lerp(0.85, 1.15, noise)</c>), the height a culling box must allow for.</summary>
+        /// <summary>The tallest of Grass.compute's patch scales, which swing as far below 1, for the culling boxes.</summary>
         public const float TallestPatch = 1.15f;
 
         /// <summary>The most a far plant grows to cover for the thinned ones round it.</summary>

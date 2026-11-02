@@ -29,10 +29,11 @@ void ApplyWetness(inout TerrainSurface surface, half dampness, half rut, float2 
     }
 
     // Grass sheds rain, so it darkens and pools less.
-    half rain = _HyperRTSWetness * lerp(1.0, _GrassWetness, surface.grass);
+    half shed = lerp(1.0, _GrassWetness, surface.grass);
     // Rain has its own, less glossy wetting: from the camera's pitch a glossy field mirrors the sky and turns grey.
-    Wet(surface.albedo, surface.smoothness, surface.normalTS, max(rain - dampness, 0.0), _RainDarkening, _RainSmoothness);
-    half collect = PuddleCollect(surface, dampness, rut, st, dx, dy) * (1.0 - 0.6 * surface.grass);
+    Wet(surface.albedo, surface.smoothness, surface.normalTS, max(_HyperRTSWetness * shed - dampness, 0.0),
+        _RainDarkening, _RainSmoothness);
+    half collect = PuddleCollect(surface, dampness, rut, st, dx, dy) * shed;
     half cover = PuddleCover(collect, _PuddleCoverage);
     Puddle(surface.albedo, surface.smoothness, surface.normalTS, cover, _PuddleSmoothness);
     surface.occlusion = lerp(surface.occlusion, 1.0, cover * 0.5);

@@ -62,7 +62,7 @@ float4 _CoverageArea; // x min, z min, 1 / width, 1 / depth
 float4 _GroundArea;   // the same for the ground picture; zero without one
 float4 _Camera;       // xyz position, w draw distance
 float4 _Thinning;     // GrassBands: thinning start share, keep at the draw distance, most growth, fade share
-float4 _Shaping;      // x quality density, y shadow distance, z keep edge
+float4 _Shaping;      // x quality density, y shadow distance, z keep edge, w how far patches swing from 1
 
 float Coverage(float2 xz, int layer)
 {
@@ -165,8 +165,7 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     float shrink = saturate((keep - pick) / _Shaping.z);
     float grow = min(rsqrt(raw), _Thinning.z);
     float fade = saturate((_Camera.w - range) / (_Thinning.w * _Camera.w));
-    // The 1.15 is GrassBands.TallestPatch, which sizes the tile culling boxes.
-    float patch = lerp(0.85, 1.15, Noise(plant.seed, PATCH_SALT, xz / PATCH_SIZE));
+    float patch = 1.0 + (Noise(plant.seed, PATCH_SALT, xz / PATCH_SIZE) * 2.0 - 1.0) * _Shaping.w;
     float sparse = lerp(0.7, 1.0, saturate(painted * 1.5));
     float size = Channel(hash, CHANNEL_SIZE);
     float scale = shrink * grow * fade * patch * sparse;

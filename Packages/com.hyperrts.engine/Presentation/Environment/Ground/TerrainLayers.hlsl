@@ -111,8 +111,11 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
 
 half LayerWeight(half4 control0, half4 control1, half4 control2, half4 control3, uint layer)
 {
-    half4 control = layer < 4 ? control0 : layer < 8 ? control1 : layer < 12 ? control2 : control3;
-    return control[layer & 3];
+    // Masks rather than an indexed array, which would spill to scratch memory inside the layer loop.
+    half4 lane = (half4)(uint4(0u, 1u, 2u, 3u) == (layer & 3u));
+    half4 alphamap = (half4)(uint4(0u, 1u, 2u, 3u) == (layer >> 2));
+    half4 weights = half4(dot(control0, lane), dot(control1, lane), dot(control2, lane), dot(control3, lane));
+    return dot(weights, alphamap);
 }
 
 // relief scales the layers' normal detail, which softens with distance so far ground keeps its colour, not its bumps.

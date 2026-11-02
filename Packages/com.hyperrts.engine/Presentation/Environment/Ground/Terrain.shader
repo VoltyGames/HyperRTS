@@ -79,7 +79,7 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _RemainsAshMask ("Remains Ash Mask (G occlusion, A smoothness)", 2D) = "white" {}
         _RemainsAshTile ("Remains Ash Tile (m)", Float) = 3
         _RemainsAshSmoothness ("Remains Ash Smoothness (x mask A)", Range(0, 1)) = 0.3
-        _RemainsCharColor ("Remains Char Colour (heavy ash)", Color) = (0.03, 0.027, 0.024, 1)
+        _RemainsCharColor ("Char Colour (burnt fields and scorch)", Color) = (0.03, 0.027, 0.024, 1)
         _RemainsCharStreaks ("Remains Char Ash Smudges (threshold below 1)", Range(0, 1)) = 0.38
         [NoScaleOffset] _RemainsMudAlbedo ("Remains Mud Albedo", 2D) = "grey" {}
         [NoScaleOffset][Normal] _RemainsMudNormal ("Remains Mud Normal", 2D) = "bump" {}
