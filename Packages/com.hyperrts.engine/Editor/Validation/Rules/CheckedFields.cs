@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Validation.Rules
     /// A serialized type's fields that carry check attributes, and the nested blocks and lists that hold more.
     /// Rules ask on every component each inspector layout, so each type is reflected once.
     /// </summary>
-    internal sealed class CheckedFields
+    internal sealed partial class CheckedFields
     {
         private const BindingFlags Declared =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
