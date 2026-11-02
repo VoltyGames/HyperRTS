@@ -216,7 +216,8 @@ once however many rules ask for it; tests build a set from assets made in memory
 The same rules run in the inspector, on the **Validate** page, in the console on entering Play mode, from the
 `validate` [command](#commands), and in the `ValidationTests.ProjectHasNoValidationErrors` test. Prefab and asset
 rules run only in the full pass, after the component rules. The prefab and asset sets are kept between passes until
-the next import, delete or move. A quick fix is one undo step. Closed SubScenes are not checked.
+the next import, delete or move. An error or a warning can carry a quick fix, which is one undo step. Closed SubScenes
+are not checked.
 
 The Validate page groups the issues by rule, errors first, then by asset. **Selection only** shows just the issues
 on the selected objects, their children and their prefab assets. Its sidebar badge counts errors and warnings, such

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
@@ -13,6 +14,7 @@ namespace HyperRTS.Editor.Maps.Designer
     [UxmlElement]
     public sealed partial class MapToolStrip : VisualElement
     {
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<MapToolMode, string> Tips = new()
         {
             [MapToolMode.Select] = MapSelectTool.Help,

@@ -13,12 +13,14 @@ using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Spec;
 using NUnit.Framework;
 using UnityEngine;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Maps.Tests
 {
     /// <summary>Specs, climates and plan contexts the map tests share.</summary>
     internal static class MapFixture
     {
+        [NoAutoStaticsCleanup]
         private static readonly List<UnityEngine.Object> Made = new();
 
         /// <summary>A 240 m rotate-180 map: the authored sector is z at or under 0, the playable edge is at 120.</summary>

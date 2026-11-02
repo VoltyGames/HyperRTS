@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Common
 {
@@ -11,6 +12,7 @@ namespace HyperRTS.Editor.Common
     /// </summary>
     public static class JsonChanges
     {
+        [NoAutoStaticsCleanup]
         private static readonly IReadOnlyDictionary<string, JToken> NoDefaults = new Dictionary<string, JToken>();
 
         /// <summary>

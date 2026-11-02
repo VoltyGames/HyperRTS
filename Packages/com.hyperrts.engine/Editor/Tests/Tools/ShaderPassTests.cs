@@ -6,6 +6,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Tests.Tools
 {
@@ -19,6 +20,7 @@ namespace HyperRTS.Editor.Tests.Tools
         private const string Package = "Packages/com.hyperrts.engine";
 
         // Unlit, or drawn indirectly where GI never renders them.
+        [NoAutoStaticsCleanup]
         private static readonly HashSet<string> WithoutMeta = new()
         {
             "Hidden/HyperRTS/FoliageGrass",
