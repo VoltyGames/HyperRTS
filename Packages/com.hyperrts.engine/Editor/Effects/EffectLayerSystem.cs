@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Effects
                 throw new InvalidOperationException($"HyperRTS: layer '{_layer.name}' needs a capacity.");
             }
 
-            if (_layer.Kind == EffectLayerKind.Strip && !_layer.Streams)
+            if (_layer.kind == EffectLayerKind.Strip && !_layer.Streams)
             {
                 throw new InvalidOperationException($"HyperRTS: strip layer '{_layer.name}' needs a rate, since each stream draws one ribbon.");
             }
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Effects
             var initialize = _graph.Context("VFXBasicInitialize", new Vector2(_x, 100f));
             _emission.Start(initialize, parentUpdate);
             _graph.Particles(initialize, (uint)_layer.capacity);
-            if (_layer.Kind == EffectLayerKind.Strip)
+            if (_layer.kind == EffectLayerKind.Strip)
             {
                 _graph.Strip(initialize, (uint)_layer.capacity);
             }
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Effects
             var update = _graph.Context("VFXBasicUpdate", new Vector2(_x, 700f));
             _graph.Flow(initialize, update);
             Update(update);
-            if (_layer.Kind != EffectLayerKind.Source)
+            if (_layer.kind != EffectLayerKind.Source)
             {
                 new EffectLayerOutput(_graph, _layer, new Vector2(_x, 1100f)).Write(update);
             }
@@ -69,7 +69,7 @@ namespace HyperRTS.Editor.Effects
             }
 
             PickColor(initialize);
-            if (_layer.Kind == EffectLayerKind.Debris)
+            if (_layer.kind == EffectLayerKind.Debris)
             {
                 PickPerAxis(initialize, "angle", new FloatRange(0f, 360f));
                 PickPerAxis(initialize, "angularVelocity", _layer.spin);
@@ -133,9 +133,9 @@ namespace HyperRTS.Editor.Effects
             Wander(update);
 
             // Children and Shader Graphs read the stored alpha and frame, which an output's curve never writes back.
-            if (_layer.KeepsAlpha && _layer.alphaOverLife.Count > 0)
+            if (_layer.KeepsAlpha && _layer.alphaOverLife.length > 0)
             {
-                StoreOverLife(update, "alpha", _layer.AlphaCurve());
+                StoreOverLife(update, "alpha", _layer.alphaOverLife);
             }
 
             if (_layer.DrawsShaderGraph && _layer.flipbook.PlaysOverLife)
@@ -262,7 +262,7 @@ namespace HyperRTS.Editor.Effects
         // Truncating a uniform pick over 0 to count gives each mesh an even share.
         private void PickMesh(object context)
         {
-            if (_layer.meshNames.Count < 2)
+            if (_layer.meshes.Count < 2)
             {
                 return;
             }
@@ -271,7 +271,7 @@ namespace HyperRTS.Editor.Effects
             _graph.Set(block, "attribute", "meshIndex");
             _graph.Set(block, "Random", "Uniform");
             _graph.Slot(block, "A", 0u);
-            _graph.Slot(block, "B", (uint)_layer.meshNames.Count);
+            _graph.Slot(block, "B", (uint)_layer.meshes.Count);
         }
 
         private void Values(object block, bool constant, object min, object max)

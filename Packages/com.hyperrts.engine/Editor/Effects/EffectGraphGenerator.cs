@@ -2,7 +2,7 @@ using HyperRTS.Editor.Generators;
 
 namespace HyperRTS.Editor.Effects
 {
-    /// <summary>Rebuilds every VFX Graph rig from its <c>*.effect.json</c>.</summary>
+    /// <summary>Rebuilds every VFX Graph rig from its <see cref="EffectRecipe"/>.</summary>
     public sealed class EffectGraphGenerator : Generator
     {
         public override string Name => "Effect graphs";
@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Effects
 
         public override string Description => "The VFX Graph rigs, compiled from their recipes.";
 
-        public override string Sources => "Every <Graph>.effect.json";
+        public override string Sources => "Every <Graph>.effect.asset";
 
         public override string Outputs => "The <Graph>.vfx beside each recipe";
 

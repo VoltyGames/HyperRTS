@@ -50,12 +50,12 @@ command both call that method. Long commands run as detached jobs (`unity comman
 | `map_preview <map>` | `MapPreview.Run` | Issues, land shares, counts, the preview report and image paths |
 | `map_build [map]` | `MapBuildRunner.Build` or `BuildAll` | One summary per map built: rush times, paths and issues, the report, image and views paths |
 | `map_capture <map>` | `MapViewCapture.Capture` | The view image paths |
-| `effect_build [spec]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
+| `effect_build [recipe]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
 | `effect_capture <rig> [times] [distance]` | `EffectCapture.Capture` | The PNG paths, one for each time |
 | `generate [name] [--list true]` | `GeneratorRunner.Run` or `RunAll` | Each generator run (or, with `list`, every one) with its sources, outputs and last run |
 | `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's rule, severity, message, asset path and fix label |
 
-`<map>` is a map name or its spec path (`map_build` with none builds every map), and `[spec]` a graph name or its `.effect.json` path; an unknown one fails,
+`<map>` is a map name or its spec path (`map_build` with none builds every map), and `[recipe]` a graph name or its `.effect.asset` path; an unknown one fails,
 naming it. `effect_capture` renders a rig in `Logs/EffectCaptures/<Rig>/` at seconds after its burst (default
 `0.1,0.3,0.6,1.2,2.5`), from 24 m unless `distance` says otherwise; graphs only run on the Editor's frames, which
 stop while it is in the background, so it fails after 45 s without one. The commands carry the tags `hyperrts/maps`,
@@ -88,13 +88,14 @@ the package, so they only show when it is embedded or local.
 
 ## Effect graphs
 
-An effect's VFX graph is generated from its `<Graph>.effect.json` recipe. Build one from **Assets ▸ HyperRTS ▸ Build
+An effect's VFX graph is generated from its `<Graph>.effect.asset` recipe, an `EffectRecipe` ScriptableObject made
+with **Assets ▸ Create ▸ HyperRTS ▸ Effects ▸ Effect Recipe**. Build one from **Assets ▸ HyperRTS ▸ Build
 Effect Graph** on the selected recipe, every graph from **Build All Effect Graphs**, the **Effect graphs**
 [generator](#generators), the recipe inspector's **Build graph** or the `effect_build` [command](#commands). A build
 is in place: the graph keeps its GUID, so prefabs keep their reference. The `EffectRecipeRule` [rule](#validation)
-reports a recipe that doesn't read, an asset path that loads nothing of the type its field needs (naming the layer and
-field), and a graph that is missing or older than its recipe, on the Validate page as soon as the asset moves. Paths
-stay paths: nothing rewrites them when an asset moves. The recipe format and the builder are in
+reports a recipe without layers, a link to a deleted texture or mesh (`BrokenLinks`, naming the field), a debris
+layer without 1 to 4 meshes, and a graph that is missing or older than its recipe. Textures and meshes are object
+references, so a moved asset stays linked. The recipe format and the builder are in
 [client](modules/client.md#effects).
 
 ## Creation menus
@@ -171,15 +172,13 @@ controls are `Section` (a titled block, `title="Bot matches"`), `ValueList` (nam
 template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
 `HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
 
-A selected `.effect.json` opens in `EffectRecipeInspector`: its layers as property fields, curves for the
-`[LifeCurve]` key lists, HDR pickers for colours and object pickers for the `[EffectAsset]` paths, each change saved
-at once, and **Build graph**. Any other text asset keeps Unity's inspector.
+An effect recipe's `EffectRecipeInspector` adds **Build graph** and the graph's state above the layers.
 
 To edit a JSON file in an inspector or window, derive from `JsonDocument`: a hidden ScriptableObject that holds the
 parsed value for Undo and property fields. Override `Read`, `Write`, `WriteOver` (the edit written over the file's
 text, changing only what differs, as `JsonChanges` does) and `Canonical`. Edit through `Serialized` and `Apply`,
 or `Record` for code; each finished edit saves, an undo saves the file back, and an outside write reloads it.
-`MapSpecDocument` and `EffectRecipeDocument` are the two.
+`MapSpecDocument` is the one.
 
 ## Editor state
 

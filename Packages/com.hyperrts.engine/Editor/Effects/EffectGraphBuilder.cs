@@ -10,32 +10,36 @@ using UnityEngine;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// Writes a rig's VFX Graph from its <see cref="EffectGraphSpec"/>: the Burst event, the Density property, the
+    /// Writes a rig's VFX Graph from its <see cref="EffectRecipe"/>: the Burst event, the Density property, the
     /// stream events and properties when a layer has a rate, and one system per layer, each placed where its spawn
     /// came from, thinned by Density and shaded by the fog of war. The graph is generated output, stamped with its
-    /// spec so a stale one is found.
+    /// recipe so a stale one is found.
     /// </summary>
     public static class EffectGraphBuilder
     {
         private const string BuildMenu = "Assets/HyperRTS/Build Effect Graph";
         private const string BuildAllMenu = "Assets/HyperRTS/Build All Effect Graphs";
 
-        /// <summary>Builds the graph beside the spec at <paramref name="jsonPath"/>.</summary>
-        public static void Build(string jsonPath)
+        /// <summary>Builds the graph beside the recipe at <paramref name="recipePath"/>.</summary>
+        public static void Build(string recipePath)
         {
-            var spec = EffectGraphSpec.Parse(File.ReadAllText(jsonPath), jsonPath);
-            Build(spec, EffectGraphSpec.GraphPath(jsonPath), EffectGraphSpec.Stamp(jsonPath));
+            Build(Load(recipePath), EffectRecipe.GraphPath(recipePath), EffectRecipe.Stamp(recipePath));
         }
 
-        /// <summary>Builds <paramref name="spec"/> into the graph at <paramref name="graphPath"/>, stamped with <paramref name="stamp"/>.</summary>
-        public static void Build(EffectGraphSpec spec, string graphPath, string stamp)
+        /// <summary>Builds <paramref name="recipe"/> into the graph at <paramref name="graphPath"/>, stamped with <paramref name="stamp"/>.</summary>
+        public static void Build(EffectRecipe recipe, string graphPath, string stamp)
         {
-            var graph = GraphModel.Open(graphPath);
-            var inputs = new EffectGraphInputs(graph, spec.layers.Any(layer => layer.Streams));
-            var updates = new Dictionary<string, object>();
-            for (var i = 0; i < spec.layers.Count; i++)
+            if (recipe.layers.Count == 0)
             {
-                var layer = spec.layers[i];
+                throw new InvalidOperationException($"HyperRTS: effect recipe '{recipe.name}' has no layers.");
+            }
+
+            var graph = GraphModel.Open(graphPath);
+            var inputs = new EffectGraphInputs(graph, recipe.layers.Any(layer => layer.Streams));
+            var updates = new Dictionary<string, object>();
+            for (var i = 0; i < recipe.layers.Count; i++)
+            {
+                var layer = recipe.layers[i];
                 var system = new EffectLayerSystem(graph, layer, i * 520f, inputs);
                 updates[layer.name] = system.Write(layer.HasParent ? ParentUpdate(updates, layer) : null);
             }
@@ -48,40 +52,43 @@ namespace HyperRTS.Editor.Effects
                 ? update
                 : throw new InvalidOperationException($"HyperRTS: layer '{layer.name}' names parent '{layer.parent}', which no earlier layer is.");
 
-        /// <summary>Builds every effect graph spec in the project, one graph at a time.</summary>
+        /// <summary>Builds every effect recipe in the project, one graph at a time.</summary>
         public static void BuildAll()
         {
-            foreach (var path in SpecPaths())
+            foreach (var path in RecipePaths())
             {
                 Build(path);
             }
         }
 
-        /// <summary>Every <c>*.effect.json</c> in the project, the engine's included.</summary>
-        public static IEnumerable<string> SpecPaths() =>
-            AssetDatabase.FindAssets("effect t:TextAsset").Select(AssetDatabase.GUIDToAssetPath)
-                .Where(path => path.EndsWith(EffectGraphSpec.Extension, StringComparison.Ordinal)).Distinct().OrderBy(path => path);
+        /// <summary>Every effect recipe in the project, the engine's included.</summary>
+        public static IEnumerable<string> RecipePaths() =>
+            AssetDatabase.FindAssets("t:" + nameof(EffectRecipe)).Select(AssetDatabase.GUIDToAssetPath).Distinct().OrderBy(path => path);
 
-        /// <summary>The spec for a graph name (<c>FX_Smoke_01</c>) or spec path; throws naming the graph when there is none.</summary>
-        public static string FindSpec(string graph)
+        /// <summary>The recipe for a graph name (<c>FX_Smoke_01</c>) or recipe path; throws naming the graph when there is none.</summary>
+        public static string FindRecipe(string graph)
         {
             var normalized = graph.Replace('\\', '/');
-            return SpecPaths().FirstOrDefault(path => path == normalized || Path.GetFileName(path) == normalized + EffectGraphSpec.Extension)
-                ?? throw new ArgumentException($"HyperRTS: no effect graph spec is named '{graph}'.");
+            return RecipePaths().FirstOrDefault(path => path == normalized || Path.GetFileName(path) == normalized + EffectRecipe.Extension)
+                ?? throw new ArgumentException($"HyperRTS: no effect recipe is named '{graph}'.");
         }
 
-        /// <summary>What is wrong with the graph of the spec at <paramref name="jsonPath"/>, null when it is current.</summary>
-        public static string Problem(string jsonPath)
+        /// <summary>What is wrong with the graph of the recipe at <paramref name="recipePath"/>, null when it is current.</summary>
+        public static string Problem(string recipePath)
         {
-            var graphPath = EffectGraphSpec.GraphPath(jsonPath);
+            var graphPath = EffectRecipe.GraphPath(recipePath);
             var importer = AssetImporter.GetAtPath(graphPath);
             if (importer == null)
             {
-                return $"{jsonPath} has no graph {graphPath}; build it";
+                return $"{recipePath} has no graph {graphPath}; build it";
             }
 
-            return importer.userData == EffectGraphSpec.Stamp(jsonPath) ? null : $"{graphPath} is older than {jsonPath}; rebuild it";
+            return importer.userData == EffectRecipe.Stamp(recipePath) ? null : $"{graphPath} is older than {recipePath}; rebuild it";
         }
+
+        private static EffectRecipe Load(string recipePath) =>
+            AssetDatabase.LoadAssetAtPath<EffectRecipe>(recipePath)
+            ?? throw new ArgumentException($"HyperRTS: {recipePath} is no effect recipe.");
 
         /// <summary>
         /// The compile errors of a built graph's compute shaders and of every output pass's default variant for
@@ -127,19 +134,19 @@ namespace HyperRTS.Editor.Effects
         [MenuItem(BuildMenu)]
         private static void BuildSelected()
         {
-            foreach (var path in SelectedSpecs())
+            foreach (var path in SelectedRecipes())
             {
                 Build(path);
             }
         }
 
         [MenuItem(BuildMenu, true)]
-        private static bool CanBuildSelected() => SelectedSpecs().Any();
+        private static bool CanBuildSelected() => SelectedRecipes().Any();
 
         [MenuItem(BuildAllMenu)]
         private static void BuildEvery() => BuildAll();
 
-        private static IEnumerable<string> SelectedSpecs() =>
-            Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Where(path => path.EndsWith(EffectGraphSpec.Extension, StringComparison.Ordinal));
+        private static IEnumerable<string> SelectedRecipes() =>
+            Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Where(EffectRecipe.IsRecipe);
     }
 }

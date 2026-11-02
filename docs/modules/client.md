@@ -700,10 +700,10 @@ first frame after the copy has run it sends `Play`. When `EffectStreams` drops a
 copy gets `Stop` and returns to the pool once `HasAnySystemAwake` says its particles are gone, so stopping fades
 rather than cuts.
 
-Graphs are generated from a `<Graph>.effect.json` beside them by `EffectGraphBuilder` (Editor/Effects): a list of
+Graphs are generated from a `<Graph>.effect.asset` recipe beside them by `EffectGraphBuilder` (Editor/Effects): a list of
 layers, each one system of a kind (`glow`, `puff`, `sixway`, `ring`, `debris`, `spark`, `strip`, `distort`,
-`source`) with plain fields for its bursts or rates, start ranges, shape, forces, wind, curves over life and assets by
-path or GUID. `EffectGraphInputs` holds the events and properties every system reads, and `EffectLayerEmission`
+`source`) with plain fields for its bursts or rates, start ranges, shape, forces, wind, curves over life and its
+textures and meshes. `EffectGraphInputs` holds the events and properties every system reads, and `EffectLayerEmission`
 writes what spawns a layer and where it lands: bursts on `Burst` at Place At Burst, a Constant Spawn Rate between
 `Play` and `Stop` at Place Along Path (`GraphStreamPose.hlsl`), or a GPU event from a parent layer's particles
 (Trigger Event over time) at their position. Every layer gets Emit From Shape (`GraphEmitShape.hlsl`, which also

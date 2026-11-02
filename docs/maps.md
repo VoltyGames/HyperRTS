@@ -370,7 +370,7 @@ that names no item and a link to an asset that no longer exists, on the Validate
 | `MapPreview.Run`, `MapBuilder.Build`, `MapViewCapture.Capture` | The same from editor code |
 | `MapBuildRunner.Build(spec)`, `.BuildAll()` | Builds as the editor does, saving and reopening scenes; with `ask: false` unsaved scenes throw instead |
 | `MapKeyReference.Write(path, MapLibrary.Load())` | Writes a Markdown list of every `kind` a spec may name |
-| `MapSpecSchema.Write(path, MapLibrary.Load())`, `EffectGraphSpec.Schema()` | The JSON Schemas of `.map.json` and `.effect.json`, built from the spec classes by `JsonSpecSchema`; `[MapKey]` fields list the library's keys |
+| `MapSpecSchema.Write(path, MapLibrary.Load())` | The JSON Schema of `.map.json`, built from the spec classes by `JsonSpecSchema`; `[MapKey]` fields list the library's keys |
 | `MapPaths.Find(map)` | The spec for a map name or spec path, as the commands take it |
 
 Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a crash or a missing `-map`. Add

@@ -72,19 +72,11 @@ namespace HyperRTS.Editor.Maps.Library
             issues.Error(item, $"{item.name}: {field.Name} names {types} '{text}', which is not in the map library.");
         }
 
-        // A link to a deleted or moved-away asset keeps its id but loads as null.
         private static void CheckLinks(MapLibraryItem item, ValidationIssues issues)
         {
-            var property = new SerializedObject(item).GetIterator();
-            while (property.Next(true))
+            foreach (var path in BrokenLinks.Find(item))
             {
-                var broken = property.propertyType == SerializedPropertyType.ObjectReference
-                             && property.objectReferenceValue == null
-                             && property.objectReferenceEntityIdValue != EntityId.None;
-                if (broken)
-                {
-                    issues.Error(item, $"{item.name}: {property.propertyPath} links an asset that no longer exists.");
-                }
+                issues.Error(item, $"{item.name}: {path} links an asset that no longer exists.");
             }
         }
     }

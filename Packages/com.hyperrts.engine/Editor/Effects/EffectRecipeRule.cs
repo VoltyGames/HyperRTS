@@ -1,21 +1,19 @@
 using System;
-using System.IO;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
 using UnityEditor;
-using UnityEngine;
 
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// Every effect recipe reads, every asset it names loads as the type its layer needs, and its graph was built from
-    /// its current text, so a moved texture shows on the Validate page rather than when the next build throws.
+    /// Every effect recipe has layers, no reference to a deleted asset, meshes its debris layers can use, and a graph
+    /// built from its current state, so a broken recipe shows on the Validate page rather than when the next build throws.
     /// </summary>
     public sealed class EffectRecipeRule : IAssetRule
     {
         public void Check(AssetSet assets, ValidationIssues issues)
         {
-            foreach (var path in EffectGraphBuilder.SpecPaths())
+            foreach (var path in EffectGraphBuilder.RecipePaths())
             {
                 Check(path, issues);
             }
@@ -24,25 +22,21 @@ namespace HyperRTS.Editor.Effects
         /// <summary>Checks the recipe at <paramref name="path"/>.</summary>
         public static void Check(string path, ValidationIssues issues)
         {
-            var recipe = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
-            EffectGraphSpec spec;
-            try
+            var recipe = AssetDatabase.LoadAssetAtPath<EffectRecipe>(path);
+            if (recipe.layers.Count == 0)
             {
-                spec = EffectGraphSpec.Parse(File.ReadAllText(path), path);
-            }
-            catch (Exception exception) when (exception is InvalidOperationException or FormatException)
-            {
-                issues.Error(recipe, Plain(exception));
+                issues.Error(recipe, "The recipe has no layers.");
                 return;
             }
 
-            foreach (var layer in spec.layers)
+            foreach (var link in BrokenLinks.Find(recipe))
             {
-                CheckTexture(recipe, layer, layer.texture, nameof(EffectLayer.texture), issues);
-                CheckTexture(recipe, layer, layer.negativeTexture, nameof(EffectLayer.negativeTexture), issues);
-                CheckTexture(recipe, layer, layer.motionTexture, nameof(EffectLayer.motionTexture), issues);
-                CheckTexture(recipe, layer, layer.emissionRamp, nameof(EffectLayer.emissionRamp), issues);
-                if (!string.IsNullOrEmpty(layer.mesh))
+                issues.Error(recipe, $"{link} names a deleted asset.");
+            }
+
+            foreach (var layer in recipe.layers)
+            {
+                if (layer.kind == EffectLayerKind.Debris)
                 {
                     Report(recipe, () => layer.Meshes(), issues);
                 }
@@ -55,26 +49,16 @@ namespace HyperRTS.Editor.Effects
             }
         }
 
-        private static void CheckTexture(TextAsset recipe, EffectLayer layer, string reference, string field, ValidationIssues issues)
-        {
-            if (!string.IsNullOrEmpty(reference))
-            {
-                Report(recipe, () => layer.Load<Texture2D>(reference, field), issues);
-            }
-        }
-
-        private static string Plain(Exception exception) => exception.Message.Replace("HyperRTS: ", string.Empty);
-
-        // The layer's own loaders throw naming the layer, field and reference, as a build would.
-        private static void Report(TextAsset recipe, Action load, ValidationIssues issues)
+        // The layer's own checks throw naming the layer and field, as a build would.
+        private static void Report(EffectRecipe recipe, Action check, ValidationIssues issues)
         {
             try
             {
-                load();
+                check();
             }
             catch (InvalidOperationException exception)
             {
-                issues.Error(recipe, Plain(exception));
+                issues.Error(recipe, exception.Message.Replace("HyperRTS: ", string.Empty));
             }
         }
     }

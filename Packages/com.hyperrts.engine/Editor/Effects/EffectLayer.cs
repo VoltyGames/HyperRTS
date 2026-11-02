@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -11,13 +10,13 @@ namespace HyperRTS.Editor.Effects
     /// <summary>
     /// One layer of an effect graph, one VFX system: its bursts, how particles start and move, and how they draw.
     /// Offsets, speeds and sizes are in rig space (+Y up, metres, unscaled), angles in degrees and colours as the
-    /// colour picker shows them. Assets are named by path or GUID.
+    /// colour picker shows them. Life curves run over a particle's life from 0 to 1.
     /// </summary>
     [Serializable]
     public sealed class EffectLayer
     {
         public string name;
-        public string kind;
+        public EffectLayerKind kind;
         public int capacity;
         public List<EffectBurst> bursts = new();
         public float rate;
@@ -33,7 +32,8 @@ namespace HyperRTS.Editor.Effects
         public FloatRange spin;
 
         public Vector3 origin;
-        public string shape;
+        [Tooltip("Where particles start. Rings ignore it: they always fly out along the ground.")]
+        public EmitShape shape;
         public float radius;
         public bool rim;
         public float spread;
@@ -48,27 +48,27 @@ namespace HyperRTS.Editor.Effects
         public EffectNoise noise;
         public FloatRange orbit;
 
-        [LifeCurve] public List<CurveKey> sizeOverLife = new();
+        public AnimationCurve sizeOverLife = new();
         public List<ColorKey> colorOverLife = new();
-        [LifeCurve] public List<CurveKey> alphaOverLife = new();
+        public AnimationCurve alphaOverLife = new();
 
-        [EffectAsset(typeof(Texture2D))] public string texture;
+        public Texture2D texture;
         public float softness;
         public bool upright;
         public float pivot;
         public Flipbook flipbook;
 
-        [EffectAsset(typeof(Texture2D))] public string negativeTexture;
-        [EffectAsset(typeof(Texture2D))] public string motionTexture;
+        public Texture2D negativeTexture;
+        public Texture2D motionTexture;
         public float opacity;
         public float ambient;
-        [EffectAsset(typeof(Texture2D))] public string emissionRamp;
+        public Texture2D emissionRamp;
         [ColorUsage(true, true)] public Color emissionColor;
-        [LifeCurve] public List<CurveKey> heatOverLife = new();
-        [LifeCurve] public List<CurveKey> minHeatOverLife = new();
+        public AnimationCurve heatOverLife = new();
+        public AnimationCurve minHeatOverLife = new();
 
-        [EffectAsset(typeof(GameObject))] public string mesh;
-        public List<string> meshNames = new();
+        [Tooltip("The chunks a debris layer draws, 1 to 4 meshes.")]
+        public List<Mesh> meshes = new();
         public float metallic;
         public float smoothness;
         public bool ground;
@@ -82,21 +82,8 @@ namespace HyperRTS.Editor.Effects
         public float distortion;
         public Vector2 scroll;
 
-        public EffectLayerKind Kind => Parse<EffectLayerKind>(kind, "kind");
-
-        /// <summary>The layer's shape; a ring always flies out along the ground, so it names none.</summary>
-        public EmitShape Shape
-        {
-            get
-            {
-                if (Kind != EffectLayerKind.Ring)
-                {
-                    return Parse<EmitShape>(shape, "shape");
-                }
-
-                return string.IsNullOrEmpty(shape) ? EmitShape.Ring : throw new InvalidOperationException($"HyperRTS: ring layer '{name}' takes no shape.");
-            }
-        }
+        /// <summary>The layer's shape; a ring always flies out along the ground.</summary>
+        public EmitShape Shape => kind == EffectLayerKind.Ring ? EmitShape.Ring : shape;
 
         /// <summary>Which way the shape faces in rig space, +Y unless set.</summary>
         public Vector3 ShapeAxis => axis == Vector3.zero ? Vector3.up : axis.normalized;
@@ -104,7 +91,7 @@ namespace HyperRTS.Editor.Effects
         /// <summary>The shape's per-axis scale of start offsets, in shape space before it turns onto the axis.</summary>
         public Vector3 ShapeScale => shapeScale == Vector3.zero ? Vector3.one : shapeScale;
 
-        public bool Glows => Kind is EffectLayerKind.Glow or EffectLayerKind.Spark;
+        public bool Glows => kind is EffectLayerKind.Glow or EffectLayerKind.Spark;
 
         /// <summary>Emits by rate while a stream plays, rather than on the Burst event.</summary>
         public bool Streams => !HasParent && (rate > 0f || ratePerMetre > 0f);
@@ -113,18 +100,10 @@ namespace HyperRTS.Editor.Effects
         public bool HasParent => !string.IsNullOrEmpty(parent);
 
         /// <summary>Kinds drawn through one of the engine's Shader Graphs rather than a built-in VFX output.</summary>
-        public bool DrawsShaderGraph => Kind is EffectLayerKind.Distort or EffectLayerKind.SixWay or EffectLayerKind.Ring;
+        public bool DrawsShaderGraph => kind is EffectLayerKind.Distort or EffectLayerKind.SixWay or EffectLayerKind.Ring;
 
         /// <summary>Kinds whose alpha must be stored per particle, read by children or a Shader Graph, not only drawn.</summary>
-        public bool KeepsAlpha => Kind == EffectLayerKind.Source || DrawsShaderGraph;
-
-        public AnimationCurve SizeCurve() => Curve(sizeOverLife);
-
-        public AnimationCurve HeatCurve() => Curve(heatOverLife);
-
-        public AnimationCurve MinHeatCurve() => Curve(minHeatOverLife);
-
-        public AnimationCurve AlphaCurve() => Curve(alphaOverLife);
+        public bool KeepsAlpha => kind == EffectLayerKind.Source || DrawsShaderGraph;
 
         /// <summary>The frames a random-frame particle picks from: from and to as shares of the sheet.</summary>
         public FloatRange RandomFrames()
@@ -142,60 +121,33 @@ namespace HyperRTS.Editor.Effects
             return AnimationCurve.Linear(0f, Mathf.Min(flipbook.from * flipbook.Frames, last), 1f, Mathf.Min(flipbook.to * flipbook.Frames, last));
         }
 
-        public T Load<T>(string reference, string field) where T : Object
-        {
-            var path = Regex.IsMatch(reference ?? "", "^[0-9a-f]{32}$") ? AssetDatabase.GUIDToAssetPath(reference) : reference;
-            var asset = string.IsNullOrEmpty(path) ? null : AssetDatabase.LoadAssetAtPath<T>(path);
-            if (asset == null)
-            {
-                throw new InvalidOperationException($"HyperRTS: layer '{name}' {field} '{reference}' is no {typeof(T).Name}.");
-            }
+        /// <summary><paramref name="asset"/>, which the layer's kind needs; throws naming the field when it is empty.</summary>
+        public T Required<T>(T asset, string field) where T : Object =>
+            asset != null ? asset : throw new InvalidOperationException($"HyperRTS: {kind} layer '{name}' needs a {field}.");
 
-            return asset;
-        }
-
-        /// <summary>The meshes named in meshNames from the mesh file, or its only mesh; a mesh output takes up to 4.</summary>
+        /// <summary>The layer's meshes, which a mesh output takes 1 to 4 of; throws naming the layer otherwise.</summary>
         public Mesh[] Meshes()
         {
-            var all = AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(Load<Object>(mesh, "mesh"))).OfType<Mesh>().ToArray();
-            if (meshNames.Count == 0)
+            if (meshes.Count is 0 or > 4 || meshes.Contains(null))
             {
-                return all.Length == 1 ? all : throw new InvalidOperationException($"HyperRTS: layer '{name}' mesh '{mesh}' holds {all.Length} meshes; list meshNames.");
+                throw new InvalidOperationException($"HyperRTS: {kind} layer '{name}' needs 1 to 4 meshes, all set.");
             }
 
-            if (meshNames.Count > 4)
-            {
-                throw new InvalidOperationException($"HyperRTS: layer '{name}' lists {meshNames.Count} meshNames, more than 4.");
-            }
-
-            return meshNames.Select(wanted => all.FirstOrDefault(m => m.name == wanted)
-                ?? throw new InvalidOperationException($"HyperRTS: layer '{name}' mesh '{mesh}' has no {wanted}.")).ToArray();
+            return meshes.ToArray();
         }
 
-        private static AnimationCurve Curve(List<CurveKey> keys) => new(keys.Select(k => new Keyframe(k.time, k.value)).ToArray());
-
-        private Gradient Gradient(List<ColorKey> colors, List<CurveKey> alphas)
+        private Gradient Gradient(List<ColorKey> colors, AnimationCurve alphas)
         {
-            if (colors.Count > 8 || alphas.Count > 8)
+            if (colors.Count > 8 || alphas.length > 8)
             {
                 throw new InvalidOperationException($"HyperRTS: layer '{name}' has a gradient of more than 8 keys.");
             }
 
             var gradient = new Gradient();
             var colorKeys = colors.Count == 0 ? new[] { new GradientColorKey(Color.white, 0f) } : colors.Select(k => new GradientColorKey(k.color.linear, k.time)).ToArray();
-            var alphaKeys = alphas.Count == 0 ? new[] { new GradientAlphaKey(1f, 0f) } : alphas.Select(k => new GradientAlphaKey(k.value, k.time)).ToArray();
+            var alphaKeys = alphas.length == 0 ? new[] { new GradientAlphaKey(1f, 0f) } : alphas.keys.Select(k => new GradientAlphaKey(k.value, k.time)).ToArray();
             gradient.SetKeys(colorKeys, alphaKeys);
             return gradient;
-        }
-
-        private T Parse<T>(string text, string field) where T : struct, Enum
-        {
-            if (Enum.TryParse(text, true, out T value) && !int.TryParse(text, out _))
-            {
-                return value;
-            }
-
-            throw new InvalidOperationException($"HyperRTS: layer '{name}' has {field} '{text}', not one of {string.Join(", ", Enum.GetNames(typeof(T)))}.");
         }
     }
 }

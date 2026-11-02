@@ -143,7 +143,7 @@ namespace HyperRTS.Editor.Effects.Preview
                     continue;
                 }
 
-                var recipe = Path.ChangeExtension(graph, null) + EffectGraphSpec.Extension;
+                var recipe = Path.ChangeExtension(graph, null) + EffectRecipe.Extension;
                 if (File.Exists(recipe))
                 {
                     yield return recipe;

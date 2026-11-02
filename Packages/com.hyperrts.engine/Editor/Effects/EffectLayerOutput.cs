@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Effects
 
             var output = Output();
             _graph.Flow(update, output);
-            switch (_layer.Kind)
+            switch (_layer.kind)
             {
                 case EffectLayerKind.Glow:
                     Glow(output);
@@ -89,14 +89,14 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
         }
 
-        private object Output() => _layer.Kind switch
+        private object Output() => _layer.kind switch
         {
             EffectLayerKind.Distort => _graph.ShaderGraphOutput(DistortShader, DistortQueueOffset, _at),
             EffectLayerKind.SixWay or EffectLayerKind.Ring => _graph.ShaderGraphOutput(SixWayShader, 0, _at),
             _ => _graph.Context(Context(), _at),
         };
 
-        private string Context() => _layer.Kind switch
+        private string Context() => _layer.kind switch
         {
             EffectLayerKind.Glow or EffectLayerKind.Spark => "VFXPlanarPrimitiveOutput",
             EffectLayerKind.Debris => "VFXURPLitMeshOutput",
@@ -108,7 +108,7 @@ namespace HyperRTS.Editor.Effects
         {
             _graph.Set(output, "blendMode", "Additive");
             Flipbook(output);
-            _graph.Slot(output, "mainTexture", _layer.Load<Texture2D>(_layer.texture, "texture"));
+            _graph.Slot(output, "mainTexture", _layer.Required(_layer.texture, nameof(EffectLayer.texture)));
         }
 
         // Unshadowed: a puff at ground level would take the grass's shadows.
@@ -118,7 +118,7 @@ namespace HyperRTS.Editor.Effects
             _graph.Set(output, "receiveShadows", false);
             _graph.Set(output, "useBaseColorMap", "ColorAndAlpha");
             Flipbook(output);
-            _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+            _graph.Slot(output, "baseColorMap", _layer.Required(_layer.texture, nameof(EffectLayer.texture)));
         }
 
         // The Shader Graph lights, fogs and glows from the stored colour, alpha and frame.
@@ -129,13 +129,13 @@ namespace HyperRTS.Editor.Effects
                 throw new InvalidOperationException($"HyperRTS: {_layer.kind} layer '{_layer.name}' needs an opacity and an ambient, as its six-way material's Density and Ambient Strength.");
             }
 
-            _graph.Slot(output, "PositiveMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
-            _graph.Slot(output, "NegativeMap", _layer.Load<Texture2D>(_layer.negativeTexture, "negativeTexture"));
-            _graph.Slot(output, "MotionMap", _layer.Load<Texture2D>(_layer.motionTexture, "motionTexture"));
+            _graph.Slot(output, "PositiveMap", _layer.Required(_layer.texture, nameof(EffectLayer.texture)));
+            _graph.Slot(output, "NegativeMap", _layer.Required(_layer.negativeTexture, nameof(EffectLayer.negativeTexture)));
+            _graph.Slot(output, "MotionMap", _layer.Required(_layer.motionTexture, nameof(EffectLayer.motionTexture)));
             _graph.Slot(output, "Opacity", _layer.opacity);
             _graph.Slot(output, "AmbientStrength", _layer.ambient);
             _graph.Slot(output, "SoftDistance", _layer.softness);
-            if (!string.IsNullOrEmpty(_layer.emissionRamp))
+            if (_layer.emissionRamp != null)
             {
                 SixWayGlow(output);
             }
@@ -155,15 +155,15 @@ namespace HyperRTS.Editor.Effects
         {
             // HDR emission as the colour picker stores it, not turned linear, matched in Play.
             var color = _layer.emissionColor;
-            _graph.Slot(output, "EmissionRamp", _layer.Load<Texture2D>(_layer.emissionRamp, "emissionRamp"));
+            _graph.Slot(output, "EmissionRamp", _layer.Required(_layer.emissionRamp, nameof(EffectLayer.emissionRamp)));
             _graph.Slot(output, "EmissionColor", new Vector3(color.r, color.g, color.b));
             var age = _graph.Operator("AgeOverLifetime", _at + new Vector2(-780f, 200f));
-            var heat = HeatAtAge(_layer.HeatCurve(), age, 200f);
-            if (_layer.minHeatOverLife.Count > 0)
+            var heat = HeatAtAge(_layer.heatOverLife, age, 200f);
+            if (_layer.minHeatOverLife.length > 0)
             {
                 // Each particle keeps one pick between the curves, so tongues differ in heat.
                 var pick = _graph.Operator("UnityEditor.VFX.Operator.Lerp", _at + new Vector2(-300f, 200f));
-                _graph.Link(HeatAtAge(_layer.MinHeatCurve(), age, 300f), pick, "x");
+                _graph.Link(HeatAtAge(_layer.minHeatOverLife, age, 300f), pick, "x");
                 _graph.Link(heat, pick, "y");
                 _graph.Link(_graph.Operator("UnityEditor.VFX.Operator.Random", _at + new Vector2(-520f, 400f)), pick, "s");
                 heat = pick;
@@ -183,12 +183,12 @@ namespace HyperRTS.Editor.Effects
         private void Debris(object output)
         {
             // Chunks draw with their colour, tinted by the texture when set; a base colour map left empty reads as clear.
-            var textured = !string.IsNullOrEmpty(_layer.texture);
+            var textured = _layer.texture != null;
             _graph.Set(output, "blendMode", "Opaque");
             _graph.Set(output, "useBaseColorMap", textured ? "Color" : "None");
             if (textured)
             {
-                _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+                _graph.Slot(output, "baseColorMap", _layer.Required(_layer.texture, nameof(EffectLayer.texture)));
             }
 
             _graph.Set(output, "castShadows", true);
@@ -214,13 +214,13 @@ namespace HyperRTS.Editor.Effects
         {
             _graph.Set(output, "blendMode", "Alpha");
             _graph.Set(output, "useBaseColorMap", "ColorAndAlpha");
-            _graph.Slot(output, "baseColorMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+            _graph.Slot(output, "baseColorMap", _layer.Required(_layer.texture, nameof(EffectLayer.texture)));
         }
 
         // The Shader Graph reads the stored alpha as its bend and does the fog of war per pixel.
         private void Distort(object output)
         {
-            _graph.Slot(output, "NormalMap", _layer.Load<Texture2D>(_layer.texture, "texture"));
+            _graph.Slot(output, "NormalMap", _layer.Required(_layer.texture, nameof(EffectLayer.texture)));
             _graph.Slot(output, "Strength", _layer.distortion);
             _graph.Slot(output, "Scroll", _layer.scroll);
             _graph.Slot(output, "SoftFade", _layer.softness);
@@ -241,26 +241,26 @@ namespace HyperRTS.Editor.Effects
                 return;
             }
 
-            var motion = !string.IsNullOrEmpty(_layer.motionTexture);
+            var motion = _layer.motionTexture != null;
             _graph.Set(output, "uvMode", "Flipbook");
             _graph.Set(output, "flipbookBlendFrames", !_layer.flipbook.random);
             _graph.Set(output, "flipbookMotionVectors", motion);
             _graph.Slot(output, "flipBookSize", new Vector2(_layer.flipbook.columns, _layer.flipbook.rows));
             if (motion)
             {
-                _graph.Slot(output, "motionVectorMap", _layer.Load<Texture2D>(_layer.motionTexture, "motionTexture"));
+                _graph.Slot(output, "motionVectorMap", _layer.Required(_layer.motionTexture, nameof(EffectLayer.motionTexture)));
                 _graph.Slot(output, "motionVectorScale", _layer.flipbook.columns * MotionSheetShare);
             }
         }
 
         private void OverLife(object output)
         {
-            if (_layer.sizeOverLife.Count > 0)
+            if (_layer.sizeOverLife.length > 0)
             {
-                Curve(output, "size", _layer.SizeCurve(), "Multiply");
+                Curve(output, "size", _layer.sizeOverLife, "Multiply");
             }
 
-            if (_layer.colorOverLife.Count > 0 || (_layer.alphaOverLife.Count > 0 && !_layer.KeepsAlpha))
+            if (_layer.colorOverLife.Count > 0 || (_layer.alphaOverLife.length > 0 && !_layer.KeepsAlpha))
             {
                 Curve(output, "color", _layer.LifeGradient(), "Multiply");
             }
@@ -270,7 +270,7 @@ namespace HyperRTS.Editor.Effects
                 Curve(output, "texIndex", _layer.FrameCurve(), "Overwrite");
             }
 
-            if (_layer.Kind == EffectLayerKind.Spark)
+            if (_layer.kind == EffectLayerKind.Spark)
             {
                 var stretch = _graph.Hlsl(output, "Stretch Along Velocity", EffectLayerSystem.Includes + "GraphStretch.hlsl");
                 _graph.Slot(stretch, "sizeLength", _layer.length);
