@@ -18,6 +18,7 @@ Shader "HyperRTS/RowCrop"
         _CanopyShade ("Canopy Shade At The Roots", Range(0, 1)) = 0.6
         _ScreenOcclusion ("Screen Occlusion", Range(0, 1)) = 0.2
         _WindSheen ("Wind Sheen (gusts brighten the tops)", Range(0, 0.5)) = 0
+        _MipBias ("Texture Mip Bias (negative sharpens)", Range(-1, 0)) = 0
     }
 
     SubShader

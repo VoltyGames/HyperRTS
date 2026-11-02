@@ -7,6 +7,9 @@
 
 #define TRAMPLE_MAX_BEND 1.4
 #define CRATER_TAP_TEXELS 1.5
+// Where the stamped rut ramp (TrampleBrush.shader) turns into the rut's edge, and the ramp height that is fully dark.
+#define RUT_EDGE 0.1
+#define RUT_FULL 0.4
 
 struct TrampleSample
 {
@@ -47,13 +50,22 @@ TrampleSample SampleTrample(float2 positionXZ)
     return s;
 }
 
+// The stamped ramp, cut at RUT_EDGE with a screen-space anti-aliased edge: crisp bands from texels a few times wider.
+// Needs screen derivatives, so call it from a pixel shader.
+half RutCoverage(float ramp)
+{
+    float width = max(fwidth(ramp), 0.04);
+    float inside = saturate((ramp - RUT_EDGE) / width + 0.5);
+    return (half)(inside * saturate(ramp / RUT_FULL));
+}
+
 // Unguarded: the caller checks TrampleMapsOn.
 TrackSample ReadTracks(float2 positionXZ)
 {
     float2 uv = TrampleUV(positionXZ);
     TrackSample s;
     half4 tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0);
-    s.depth = tracks.r;
+    s.depth = RutCoverage(tracks.r);
     s.churn = tracks.g;
     s.scorch = tracks.b;
     s.crater = tracks.a * HYPERRTS_MAX_CRATER_DEPTH;

@@ -34,6 +34,7 @@ CBUFFER_START(UnityPerMaterial)
     half _ClusterVariation;
     half _BaseOcclusion;
     half _TipDry;
+    float _MipBias;
 CBUFFER_END
 
 // PlantShading.hlsl: modelled leaves light the side in view; cards and canopies light both sides alike.

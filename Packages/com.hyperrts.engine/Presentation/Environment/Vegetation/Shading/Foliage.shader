@@ -28,6 +28,7 @@ Shader "HyperRTS/Foliage"
         _VertexOcclusion ("Canopy Occlusion (vertex R)", Range(0, 1)) = 0
         _ScreenOcclusion ("Screen Occlusion", Range(0, 1)) = 1
         [Enum(Off, 0, Grass, 1, Crop, 2)] _Trample ("Trample (Tree Wind off)", Float) = 1
+        _MipBias ("Texture Mip Bias (negative sharpens)", Range(-1, 0)) = 0
     }
 
     SubShader

@@ -70,10 +70,16 @@ void PlantCrossFade(float4 positionCS)
 #endif
 }
 
+// A negative _MipBias keeps thin blades and stalks sharp for temporal anti-aliasing.
+half4 SamplePlant(float2 uv)
+{
+    return SAMPLE_TEXTURE2D_BIAS(_BaseMap, sampler_BaseMap, uv, _MipBias);
+}
+
 // DisplacedPasses.hlsl's alpha cut for every plant prepass.
 void ClipDisplaced(float2 uv, float4 positionCS)
 {
-    clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).a * _BaseColor.a - _Cutoff);
+    clip(SamplePlant(uv).a * _BaseColor.a - _Cutoff);
     PlantCrossFade(positionCS);
 }
 
@@ -198,7 +204,7 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
 half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
-    half4 texel = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv.xy);
+    half4 texel = SamplePlant(input.uv.xy);
     half4 albedo = texel * _BaseColor;
     clip(albedo.a - _Cutoff);
     PlantCrossFade(input.positionCS);

@@ -15,6 +15,8 @@ Shader "Hidden/HyperRTS/Trample Brush"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/TrampleGlobals.hlsl"
 
+        #define RUT_RAMP 1.5 // Matches RUT_EDGE in Trample.hlsl.
+
         // Matches TrampleStamp.cs.
         struct TrampleStamp
         {
@@ -87,11 +89,15 @@ Shader "Hidden/HyperRTS/Trample Brush"
             return half4(0.0, 0.0, input.value.x * weight, input.value.y * weight);
         }
 
-        // The rut is narrower than the churned soil around it.
+        // The rut is a ramp that falls linearly to the tyre's edge, so the reader can place a crisp edge between texels
+        // (Trample.hlsl RutCoverage). The churned soil around it stays soft.
         half4 TracksFragment(StampVaryings input) : SV_Target
         {
-            float rut = 1.0 - smoothstep(0.55, 0.85, abs(input.local.x));
-            return half4(input.value.x * rut * Footprint(input, 0.9), input.value.y * Footprint(input, 0.6), 0.0, 0.0);
+            bool round = input.value.w > 0.5;
+            float across = round ? length(input.local) : abs(input.local.x);
+            float ends = round ? 1.0 : 1.0 - smoothstep(0.9, 1.0, abs(input.local.y));
+            float ramp = saturate((1.0 - across) * RUT_RAMP) * ends;
+            return half4(input.value.x * ramp, input.value.y * Footprint(input, 0.6), 0.0, 0.0);
         }
 
         // A ragged rim keeps hundreds of scars from reading as stamped circles. A scar without a bowl is a footprint.

@@ -26,6 +26,7 @@ CBUFFER_START(UnityPerMaterial)
     half _CanopyShade;
     half _ScreenOcclusion;
     half _WindSheen;
+    float _MipBias;
 CBUFFER_END
 
 float _CanopyHeight; // RowCrop.height, set per draw
