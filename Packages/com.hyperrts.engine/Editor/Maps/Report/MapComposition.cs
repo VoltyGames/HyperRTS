@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Report
 {
     /// <summary>
     /// How many frames of the playable area, each the size the match camera sees, hold enough kinds of interest: a wood
-    /// edge, water, a field pattern, a settlement or ruin and a change in relief.
+    /// edge, water, a field pattern, a built place (settlement, base yard or prop pad) and a change in relief.
     /// </summary>
     [Serializable]
     public sealed class MapComposition
@@ -80,7 +80,7 @@ namespace HyperRTS.Editor.Maps.Report
         {
             if (frames > 0 && share < rules.compositionTargetShare)
             {
-                issues.Warn($"{share:P0} of {frames} camera frames hold {rules.compositionMinKinds} kinds of interest (wood edge, water, field pattern, settlement, relief); the rules want {rules.compositionTargetShare:P0}.");
+                issues.Warn($"{share:P0} of {frames} camera frames hold {rules.compositionMinKinds} kinds of interest (wood edge, water, field pattern, built place, relief); the rules want {rules.compositionTargetShare:P0}.");
             }
         }
 
@@ -124,6 +124,8 @@ namespace HyperRTS.Editor.Maps.Report
                 case MapLandKind.Field:
                 case MapLandKind.Margin:
                     return FieldPattern;
+                case MapLandKind.Base:
+                case MapLandKind.Pad:
                 case MapLandKind.Yard:
                 case MapLandKind.Garden:
                 case MapLandKind.Back:

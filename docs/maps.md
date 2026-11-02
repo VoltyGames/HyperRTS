@@ -282,9 +282,9 @@ The build then measures the map on the nav grid:
   dry. Across the map, stacks within 20 m of each other form one field. Fewer fields than the mode's
   `minRenewableFields` per player is an error.
 - **Decals.** More than the rules' `maxDecals` is a warning.
-- **Composition.** The play area is tiled with camera frames (rules `compositionFrame`, 60 by 40 m). A frame
+- **Composition.** The play area is tiled with camera frames (rules `compositionFrame`, 90 by 75 m, what the match camera sees at 47 m). A frame
   should hold at least `compositionMinKinds` (3) of five kinds: a wood or belt edge, water (water, bank,
-  floodplain), a field pattern (field, margin), a settlement or ruin (yard, garden, back, area) and relief (height
+  floodplain), a field pattern (field, margin), a built place (base, pad, yard, garden, back, area) and relief (height
   range of `compositionMinRelief`, 3 m). The report stores the share of frames that do and each kind's share under
   `land.composition`; under `compositionTargetShare` (0.85) is a warning.
 - **Props.** The report lists props per hectare of each surface; a surface under its rules `propTargets` is a

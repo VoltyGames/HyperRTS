@@ -43,9 +43,9 @@ namespace HyperRTS.Editor.Maps.Checks
 
         [Header("Composition")]
         [Tooltip("Ground the match camera sees at its middle zoom (metres, across and deep); the report tiles the play area with frames this size.")]
-        public Vector2 compositionFrame = new(60f, 40f);
+        public Vector2 compositionFrame = new(90f, 75f);
 
-        [Tooltip("Fewest of the five kinds of interest (wood edge, water, field pattern, settlement or ruin, relief) a frame should hold.")]
+        [Tooltip("Fewest of the five kinds of interest (wood edge, water, field pattern, built place, relief) a frame should hold.")]
         [Range(1, 5)]
         public int compositionMinKinds = 3;
 

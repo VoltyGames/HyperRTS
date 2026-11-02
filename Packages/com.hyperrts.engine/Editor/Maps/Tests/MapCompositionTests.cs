@@ -25,6 +25,7 @@ namespace HyperRTS.Editor.Maps.Tests
             land.ClaimWhere(bounds, field, _ => true);
             var heights = new MapHeights(121, bounds);
             var rules = MapFixture.Item<MapRules>("Rules");
+            rules.compositionFrame = new Vector2(60f, 40f);
 
             var composition = MapComposition.Measure(land, heights, bounds, rules);
 
