@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass
@@ -46,7 +47,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         /// <summary>Whether plants between <paramref name="near"/> and <paramref name="far"/> metres can fall in a band.</summary>
         public static bool InBand(int band, float shadowDistance, float near, float far) =>
-            band == Near ? near < shadowDistance : far >= shadowDistance;
+            band == Near ? near < ScatterBands.LastShort(shadowDistance) : far >= ScatterBands.FirstPast(shadowDistance);
 
         /// <summary>Room for a slot expected to hold <paramref name="expected"/> plants, with three deviations of slack.</summary>
         public static int Capacity(float expected) =>

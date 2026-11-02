@@ -177,6 +177,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
 
         [TestCase(0f, 30f, true, false, false, TestName = "Near tile: full meshes only")]
         [TestCase(30f, 50f, true, true, false, TestName = "Across the first switch: full and simple")]
+        [TestCase(45f, 48f, true, true, false, TestName = "Past the first switch, where plants still mix: full and simple")]
         [TestCase(110f, 130f, false, true, true, TestName = "Across the second switch: simple and cards")]
         [TestCase(200f, 220f, false, false, true, TestName = "Far tile: cards only")]
         public void Bands_FollowTheTilesDistances(float near, float far, bool full, bool simple, bool card)
@@ -189,7 +190,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         [Test]
         public void Bands_PastTheDrawDistance_AreEmpty()
         {
-            Assert.IsFalse(RowCropBands.InBand(RowCropBands.Card, _crop, 100f, 0f, 500f));
+            Assert.IsFalse(RowCropBands.InBand(RowCropBands.Card, _crop, 90f, 0f, 500f));
             Assert.IsFalse(RowCropBands.InBand(RowCropBands.Simple, _crop, 30f, 0f, 500f));
             Assert.IsTrue(RowCropBands.InBand(RowCropBands.Full, _crop, 30f, 0f, 500f));
         }

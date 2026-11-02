@@ -622,7 +622,9 @@ turns shaded wheat into a flat dark patch. Foliage has the same property at 1.
 
 A camera regrows the plants of its visible tiles when it moves, the quality changes or new ash falls, and every frame
 while a trample map is published (`RowCropRenderer.RegrowsEveryFrame`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants
-shrink away over the last 15 % of the draw distance. It also runs in edit mode.
+shrink away over the last 15 % of the draw distance. Each plant switches model at its own distance, up to 20 % either
+side of the LOD distances, so the models mix over a stretch rather than meeting at a ring that sweeps across the field
+as the camera zooms. It also runs in edit mode.
 
 #### Scatter host
 
@@ -651,7 +653,9 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
   heightmap, and each camera's position with the building mask, crater depth and ash. Its `Stale` catches a map
   rebuild that changed the items, the subclass's own inputs or the heightmap. `ScatterSettings` carries density, distance and shadow
   distance (crops pass 0), and a density of 0 draws nothing for both.
-- `Scatter.hlsl` holds the job struct, hashes, noise and slot counting; `ScatterHash` is the C# twin of the hashes.
+- `Scatter.hlsl` holds the job struct, hashes, noise, band edges and slot counting; `ScatterHash` is the C# twin of
+  the hashes and `ScatterBands` of the band edges. `BandRange` moves the range a plant picks its band at (a crop's LOD,
+  grass casting shadows or not) by up to 20 % from its hash, and `ScatterBands` widens each band's reach to match.
   The kernels share its slot table and `Claim` and `CloseSlots`.
 
 ### Ambient life

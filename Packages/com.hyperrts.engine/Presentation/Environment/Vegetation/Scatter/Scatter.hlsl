@@ -1,5 +1,5 @@
-// Jobs, seeded hashes and noise, terrain height and the slot layout and counting shared by RowCrops.compute and
-// Grass.compute. The job matches ScatterJob.cs and the hashes and noise ScatterHash.cs; ScatterDraws.cs binds the
+// Jobs, seeded hashes and noise, band edges, terrain height and the slot layout and counting shared by RowCrops.compute and
+// Grass.compute. The job matches ScatterJob.cs and the hashes and noise ScatterHash.cs, the band edges ScatterBands.cs; ScatterDraws.cs binds the
 // jobs, counters and args and ScatterSlots.cs the slots.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
@@ -52,6 +52,15 @@ float Noise(int seed, uint salt, float2 p)
     float low = lerp(Unit(Hash(salted, cell.x, cell.y)), Unit(Hash(salted, cell.x + 1, cell.y)), u.x);
     float high = lerp(Unit(Hash(salted, cell.x, cell.y + 1)), Unit(Hash(salted, cell.x + 1, cell.y + 1)), u.x);
     return lerp(low, high, u.y);
+}
+
+#define BAND_EDGE_WIDTH 0.4 // ScatterBands.EdgeWidth
+
+// The range a plant picks its distance band at, off by up to half the edge width either way, so neighbouring bands
+// mix over a stretch instead of meeting at a line that sweeps across the ground as the camera zooms.
+float BandRange(float range, float pick)
+{
+    return range * (1.0 + (pick - 0.5) * BAND_EDGE_WIDTH);
 }
 
 // Each spot belongs to one tile, so plants on a tile edge aren't grown twice.

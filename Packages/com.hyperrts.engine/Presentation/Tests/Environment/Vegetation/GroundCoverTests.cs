@@ -107,6 +107,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
         [TestCase(40f, 60f, 30f, false, true)]
         [TestCase(0f, 20f, 30f, true, false)]
         [TestCase(0f, 20f, 0f, false, true)]
+        [TestCase(32f, 36f, 30f, true, true)]
         public void Bands_HoldTheTilesThatReachThem(float near, float far, float shadows, bool inNear, bool inFar)
         {
             Assert.AreEqual(inNear, GrassBands.InBand(GrassBands.Near, shadows, near, far));

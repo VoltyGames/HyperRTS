@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
@@ -13,9 +14,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         /// <summary>Camera distances (from, to) a band draws over. Empty when it starts past the draw distance.</summary>
         public static (float From, float To) Band(int lod, RowCrop crop, float drawDistance) => lod switch
         {
-            Full => (0f, Mathf.Min(crop.lod0Distance, drawDistance)),
-            Simple => (crop.lod0Distance, Mathf.Min(crop.lod1Distance, drawDistance)),
-            _ => (crop.lod1Distance, drawDistance),
+            Full => (0f, Mathf.Min(ScatterBands.LastShort(crop.lod0Distance), drawDistance)),
+            Simple => (ScatterBands.FirstPast(crop.lod0Distance),
+                Mathf.Min(ScatterBands.LastShort(crop.lod1Distance), drawDistance)),
+            _ => (ScatterBands.FirstPast(crop.lod1Distance), drawDistance),
         };
 
         /// <summary>Whether plants between <paramref name="near"/> and <paramref name="far"/> can fall in a band.</summary>

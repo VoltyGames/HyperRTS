@@ -27,6 +27,7 @@ SamplerState sampler_LinearClamp;
 #define CHANNEL_LEAN_TURN 10u
 #define CHANNEL_SHADE 11u
 #define CHANNEL_DITHER 12u // and 13
+#define CHANNEL_BAND 14u
 #define CLUMP_SALT 0x68E31DA4u
 #define TUFT_SALT 0xB5297A4Du
 #define PATCH_SALT 0x1B56C4E9u
@@ -180,7 +181,7 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     grown.shade = Channel(hash, CHANNEL_SHADE);
     uint variants = (uint)plant.variants;
     uint variant = min((uint)(Channel(hash, CHANNEL_VARIANT) * variants), variants - 1u);
-    uint band = range < _Shaping.y ? 0u : 1u;
+    uint band = BandRange(range, Channel(hash, CHANNEL_BAND)) < _Shaping.y ? 0u : 1u;
     Store((uint)plant.firstSlot + variant * BANDS + band, grown);
 }
 
