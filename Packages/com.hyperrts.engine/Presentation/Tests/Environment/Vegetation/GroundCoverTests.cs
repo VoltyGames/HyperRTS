@@ -136,6 +136,14 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
             Assert.AreEqual(reach, plant.ToGpu(0, 0).reach);
         }
 
+        [TestCase(PlantKind.Ground, 0f, 1f)]
+        [TestCase(PlantKind.Close, 0f, 0f)]
+        [TestCase(PlantKind.Close, 0.5f, 1f)]
+        [TestCase(PlantKind.Clutter, 0f, 0f)]
+        [TestCase(PlantKind.Clutter, 0.5f, 0.5f)]
+        public void ShareAt_DropsClosePlantsAtZeroAndThinsClutter(PlantKind kind, float closeDetail, float share) =>
+            Assert.AreEqual(share, new GrassPlant { kind = kind }.ShareAt(closeDetail));
+
         [TestCase(0f, 0f, 0.29f)]
         [TestCase(-48f, 160f, 0.5f)]
         [TestCase(32f, -16f, 1.3f)]

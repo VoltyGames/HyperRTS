@@ -117,6 +117,7 @@ Shader "HyperRTS/Water"
             #pragma fragment Frag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/MainLightKeywords.hlsl"
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE
+            #pragma multi_compile_fragment _ _WATER_NO_CAUSTICS
             #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -211,6 +212,7 @@ Shader "HyperRTS/Water"
             {
                 half shallow = 1.0 - saturate(depth / WATER_CAUSTIC_DEPTH);
                 half lines = 0.0;
+#ifndef _WATER_NO_CAUSTICS
                 [branch] if (shallow > 0.0 && _Caustics > 0.0)
                 {
                     float drift = _Time.y * 0.15;
@@ -218,6 +220,7 @@ Shader "HyperRTS/Water"
                     half2 b = UnpackNormal(SAMPLE_TEXTURE2D_LOD(_NormalMap, sampler_NormalMap, bedXZ / 1.9 - drift * 0.7, 0)).xy;
                     lines = pow(saturate(1.0 - (abs(a.x + b.x) + abs(a.y + b.y)) * 1.6), 6.0);
                 }
+#endif
 
                 return lines * shallow * shallow * _Caustics;
             }

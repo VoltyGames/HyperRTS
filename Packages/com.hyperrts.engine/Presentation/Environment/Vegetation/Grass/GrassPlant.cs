@@ -41,8 +41,20 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         [Min(0f)]
         public float reach;
 
+        [Tooltip("What quality level scales the plant by: Ground always, Close only while close detail is above 0, " +
+                 "Clutter in proportion to close detail.")]
+        public PlantKind kind;
+
         /// <summary>How far the plant draws at a quality's <paramref name="distance"/>.</summary>
         public float DistanceAt(float distance) => reach > 0f ? Mathf.Min(reach, distance) : distance;
+
+        /// <summary>The share of the plant's density grown at <paramref name="closeDetail"/> (0 to 1).</summary>
+        public float ShareAt(float closeDetail) => kind switch
+        {
+            PlantKind.Close => closeDetail > 0f ? 1f : 0f,
+            PlantKind.Clutter => closeDetail,
+            _ => 1f,
+        };
 
         /// <summary>Metres between the plant's lattice cells: one plant per cell at full coverage.</summary>
         public float Spacing => 1f / Mathf.Sqrt(density);

@@ -34,7 +34,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             get
             {
                 var quality = PresentationQuality.Current;
-                return new ScatterSettings(quality.GrassDensity, quality.GrassDistance, quality.GrassShadowDistance);
+                return new ScatterSettings(quality.GrassDensity, quality.GrassDistance, quality.GrassShadowDistance,
+                    quality.CloseDetail);
             }
         }
 
@@ -87,7 +88,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
                 {
                     var grows = field.tilePlants[i];
                     var plant = field.plants[grows.plant];
-                    if (range.Near >= plant.DistanceAt(settings.Distance))
+                    if (range.Near >= plant.DistanceAt(settings.Distance) || plant.ShareAt(settings.CloseDetail) == 0f)
                     {
                         continue;
                     }

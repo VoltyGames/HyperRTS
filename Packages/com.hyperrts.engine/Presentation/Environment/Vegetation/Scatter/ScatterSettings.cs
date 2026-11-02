@@ -8,15 +8,17 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         public readonly float Density;
         public readonly float Distance;
         public readonly float ShadowDistance;
+        public readonly float CloseDetail;
 
-        public ScatterSettings(float density, float distance, float shadowDistance)
+        public ScatterSettings(float density, float distance, float shadowDistance, float closeDetail)
         {
             Density = density;
             Distance = distance;
             ShadowDistance = shadowDistance;
+            CloseDetail = closeDetail;
         }
 
         /// <summary>The knobs as one value, to tell whether they changed since the last scatter.</summary>
-        public Vector4 Packed => new(Density, Distance, ShadowDistance, 0f);
+        public Vector4 Packed => new(Density, Distance, ShadowDistance, CloseDetail);
     }
 }

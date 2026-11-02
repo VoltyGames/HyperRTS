@@ -819,7 +819,10 @@ loop it streams this frame:
 ### Quality
 
 The game fills one `PresentationQuality` and calls `PresentationQuality.Apply`. It covers effect and ground detail,
-trample maps, grass and row crop density and distance, and render scale. Apply sets them all, and again on each
+trample maps, grass and row crop density and distance, close detail, water caustics and render scale.
+`CloseDetail` (0 to 1) scales a `GrassPlant` by its `PlantKind`: `Close` plants draw while it is above 0, `Clutter`
+plants grow at that share of their density, `Ground` plants ignore it. `WaterCaustics` off sets the global keyword
+`_WATER_NO_CAUSTICS`, which the water shader compiles the bed pattern out with. Apply sets them all, and again on each
 scene load. Shadows and the other pipeline features come from the game's quality levels, each with its own URP
 asset, so the game sets the quality level before Apply, which writes render scale onto that level's asset.
 Apply throws naming the first knob out of range before it writes anything. `Current` holds the last settings and

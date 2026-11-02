@@ -40,6 +40,15 @@ namespace HyperRTS.Presentation.Quality
         /// <summary>Metres row crops cast shadows to, 0 for none. A crop band casts only when it ends within it.</summary>
         public float CropShadowDistance;
 
+        /// <summary>
+        /// Share of close-up detail grown, 0 to 1: close-only plants draw above 0, and clutter plants are thinned to
+        /// this share.
+        /// </summary>
+        public float CloseDetail;
+
+        /// <summary>Whether shallow water lights its bed with caustics.</summary>
+        public bool WaterCaustics;
+
         /// <summary>Share of the screen resolution the cameras render at, above 0 and at most 1.</summary>
         public float RenderScale;
 
@@ -58,6 +67,8 @@ namespace HyperRTS.Presentation.Quality
             CropDensity = 1f,
             CropDistance = 300f,
             CropShadowDistance = 60f,
+            CloseDetail = 1f,
+            WaterCaustics = true,
             RenderScale = 1f,
             BattleHaze = true,
         };
@@ -70,6 +81,9 @@ namespace HyperRTS.Presentation.Quality
         [NoAutoStaticsCleanup]
         private static readonly Dictionary<UniversalRenderPipelineAsset, float> AuthoredScales = new();
 
+        // No keyword means caustics on, so edit mode and map captures, which run without the game, show them.
+        private static readonly GlobalKeyword NoCaustics = GlobalKeyword.Create("_WATER_NO_CAUSTICS");
+
         private void Check()
         {
             Require(GrassDensity is >= 0f and <= 1f, nameof(GrassDensity), GrassDensity, "0 to 1");
@@ -78,6 +92,7 @@ namespace HyperRTS.Presentation.Quality
             Require(CropDensity is >= 0f and <= 1f, nameof(CropDensity), CropDensity, "0 to 1");
             Require(CropDistance > 0f, nameof(CropDistance), CropDistance, "above 0");
             Require(CropShadowDistance >= 0f, nameof(CropShadowDistance), CropShadowDistance, "not negative");
+            Require(CloseDetail is >= 0f and <= 1f, nameof(CloseDetail), CloseDetail, "0 to 1");
         }
 
         /// <summary>
@@ -90,6 +105,7 @@ namespace HyperRTS.Presentation.Quality
             quality.Check();
             var pipeline = ActivePipeline();
             TerrainDetail.SetKeywords(quality.Ground);
+            Shader.SetKeyword(NoCaustics, !quality.WaterCaustics);
             if (AuthoredScales.Count == 0)
             {
                 Application.quitting += RestoreScales;
@@ -99,6 +115,10 @@ namespace HyperRTS.Presentation.Quality
             pipeline.renderScale = quality.RenderScale;
             Current = quality;
         }
+
+        // Global keywords outlive Play mode in the editor.
+        [OnEnteringPlayMode]
+        private static void ResetCaustics() => Shader.SetKeyword(NoCaustics, !Default.WaterCaustics);
 
         private static void RestoreScales()
         {

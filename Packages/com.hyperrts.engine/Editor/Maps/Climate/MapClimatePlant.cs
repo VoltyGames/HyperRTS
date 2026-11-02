@@ -38,6 +38,10 @@ namespace HyperRTS.Editor.Maps.Climate
         [Min(0f)]
         public float reach;
 
+        [Tooltip("What quality level scales the plant by: Ground always, Close only while close detail is above 0, " +
+                 "Clutter in proportion to close detail.")]
+        public PlantKind kind;
+
         protected internal override void Load()
         {
             RequireFilled(meshes, "meshes");
@@ -56,6 +60,7 @@ namespace HyperRTS.Editor.Maps.Climate
             density = density,
             clumping = clumping,
             reach = reach,
+            kind = kind,
         };
     }
 }

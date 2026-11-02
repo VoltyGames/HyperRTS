@@ -84,7 +84,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             Queue(job);
             var plant = _field.plants[job.id];
             var distance = plant.DistanceAt(settings.Distance);
-            var share = job.Threads * coverage * settings.Density * GrassBands.Drawn(range.Near, distance) /
+            var share = job.Threads * coverage * settings.Density * plant.ShareAt(settings.CloseDetail) * GrassBands.Drawn(range.Near, distance) /
                         plant.meshes.Count;
             var first = _firstSlots[job.id];
             for (var band = 0; band < GrassBands.Bands; band++)

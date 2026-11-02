@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             get
             {
                 var quality = PresentationQuality.Current;
-                return new ScatterSettings(quality.CropDensity, quality.CropDistance, quality.CropShadowDistance);
+                return new ScatterSettings(quality.CropDensity, quality.CropDistance, quality.CropShadowDistance, 1f);
             }
         }
 
