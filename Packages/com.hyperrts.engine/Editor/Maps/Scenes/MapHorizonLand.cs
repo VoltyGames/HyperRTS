@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Heights;
@@ -35,8 +36,10 @@ namespace HyperRTS.Editor.Maps.Scenes
         private readonly Quaternion _fromGrid;
         private readonly float _margin;
         private readonly int _marginLayer;
-        private readonly List<(int Layer, float Weight)> _crops = new();
-        private readonly List<(int First, int Variants, float Weight)> _beltTrees = new();
+        private readonly int[] _cropLayers;
+        private readonly float[] _cropWeights;
+        private readonly (int First, int Variants)[] _beltTrees;
+        private readonly float[] _beltWeights;
         private readonly float _beltSpacing;
         private readonly int _layers;
 
@@ -56,15 +59,14 @@ namespace HyperRTS.Editor.Maps.Scenes
             _fieldSize = kit.fieldSize * FieldScale;
             _margin = kit.marginWidth * 2f;
             _marginLayer = climate.SurfaceLayer(kit.marginSurface);
-            kit.crops.ForEach(crop => _crops.Add((climate.SurfaceLayer(crop.surface), crop.weight)));
+            _cropLayers = kit.crops.Select(crop => climate.SurfaceLayer(crop.surface)).ToArray();
+            _cropWeights = kit.crops.Select(crop => crop.weight).ToArray();
             TreePrototypes = Prototypes(climate, out var firsts);
             var belt = climate.BeltKit(kit.beltKit);
             _beltSpacing = belt.spacing;
-            foreach (var share in belt.trees)
-            {
-                var species = climate.TreeIndex(share.tree);
-                _beltTrees.Add((firsts[species], climate.trees[species].prefabs.Count, share.weight));
-            }
+            _beltTrees = belt.trees.Select(share => climate.TreeIndex(share.tree))
+                .Select(species => (firsts[species], climate.trees[species].prefabs.Count)).ToArray();
+            _beltWeights = belt.trees.Select(share => share.weight).ToArray();
         }
 
         /// <summary>One prototype per species and variant, each species' variants in a run.</summary>
@@ -84,16 +86,16 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>Normalised heights over <paramref name="rect"/>, [z, x], as TerrainData takes them.</summary>
-        public float[,] Heights(Rect rect, int resolution, float maxHeight, Rect map)
+        public float[,] Heights(Rect rect, int resolution)
         {
             var samples = new float[resolution, resolution];
-            var inside = Rect.MinMaxRect(map.xMin + 1f, map.yMin + 1f, map.xMax - 1f, map.yMax - 1f);
+            var inside = Rect.MinMaxRect(_map.xMin + 1f, _map.yMin + 1f, _map.xMax - 1f, _map.yMax - 1f);
             for (var z = 0; z < resolution; z++)
             {
                 for (var x = 0; x < resolution; x++)
                 {
                     var p = rect.min + Vector2.Scale(rect.size, new Vector2(x, z) / (resolution - 1f));
-                    samples[z, x] = Mathf.Clamp01(Height(p, inside) / maxHeight);
+                    samples[z, x] = Mathf.Clamp01(Height(p, inside) / _terrain.maxHeight);
                 }
             }
 
@@ -135,7 +137,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var (cell, local) = Field(p);
             var nearEdge = Mathf.Min(Mathf.Min(local.x, _fieldSize.x - local.x), Mathf.Min(local.y, _fieldSize.y - local.y));
-            return nearEdge < _margin ? _marginLayer : Pick(_crops, Hash(cell.x, cell.y, 1));
+            return nearEdge < _margin ? _marginLayer : _cropLayers[PickIndex(_cropWeights, Hash(cell.x, cell.y, 1))];
         }
 
         // The field cell a point falls in and the point's place in it, rows of fields staggered by a random offset.
@@ -143,7 +145,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             Vector2 grid = _toGrid * p;
             var row = Mathf.FloorToInt(grid.y / _fieldSize.y);
-            var shifted = grid.x + Hash(row, 0, 2) * _fieldSize.x;
+            var shifted = grid.x + RowShift(row);
             var column = Mathf.FloorToInt(shifted / _fieldSize.x);
             var local = new Vector2(shifted - column * _fieldSize.x, grid.y - row * _fieldSize.y);
             return (new int2(column, row), local);
@@ -153,7 +155,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         public List<TreeInstance> Trees(Rect rect)
         {
             var trees = new List<TreeInstance>();
-            if (_beltTrees.Count == 0)
+            if (_beltTrees.Length == 0)
             {
                 return trees;
             }
@@ -166,7 +168,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             {
                 for (var column = -columns; column <= columns; column++)
                 {
-                    var origin = new Vector2(column * _fieldSize.x - Hash(row, 0, 2) * _fieldSize.x, row * _fieldSize.y);
+                    var origin = new Vector2(column * _fieldSize.x - RowShift(row), row * _fieldSize.y);
                     TryBelt(trees, rect, origin, Vector2.right * _fieldSize.x, Hash(column, row, 3));
                     TryBelt(trees, rect, origin, Vector2.up * _fieldSize.y, Hash(column, row, 4));
                 }
@@ -191,9 +193,10 @@ namespace HyperRTS.Editor.Maps.Scenes
                     continue;
                 }
 
-                var pick = Hash(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y), 5);
-                var (first, variants, _) = _beltTrees[PickIndex(_beltTrees.ConvertAll(t => t.Weight), pick)];
-                var scale = Mathf.Lerp(0.85f, 1.15f, Hash(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y), 6));
+                var spot = new int2(Mathf.RoundToInt(p.x), Mathf.RoundToInt(p.y));
+                var pick = Hash(spot.x, spot.y, 5);
+                var (first, variants) = _beltTrees[PickIndex(_beltWeights, pick)];
+                var scale = Mathf.Lerp(0.85f, 1.15f, Hash(spot.x, spot.y, 6));
                 var local = (p - rect.min) / rect.size;
                 trees.Add(new TreeInstance
                 {
@@ -208,15 +211,10 @@ namespace HyperRTS.Editor.Maps.Scenes
             }
         }
 
-        private static int Pick(List<(int Layer, float Weight)> choices, float pick) =>
-            choices[PickIndex(choices.ConvertAll(c => c.Weight), pick)].Layer;
-
-        private static int PickIndex(List<float> weights, float pick)
+        private static int PickIndex(float[] weights, float pick)
         {
-            var total = 0f;
-            weights.ForEach(w => total += w);
-            var at = pick * total;
-            for (var i = 0; i < weights.Count; i++)
+            var at = pick * weights.Sum();
+            for (var i = 0; i < weights.Length; i++)
             {
                 at -= weights[i];
                 if (at < 0f)
@@ -225,8 +223,11 @@ namespace HyperRTS.Editor.Maps.Scenes
                 }
             }
 
-            return weights.Count - 1;
+            return weights.Length - 1;
         }
+
+        // Rows of fields are staggered by a random share of a field's width.
+        private float RowShift(int row) => Hash(row, 0, 2) * _fieldSize.x;
 
         private float Hash(int a, int b, int salt) => math.hash(new int4(a, b, salt, (int)_seed)) / (float)uint.MaxValue;
     }

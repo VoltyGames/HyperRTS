@@ -34,7 +34,9 @@ namespace HyperRTS.Editor.Maps.Views
         private int _next;
         private int _readyFrame = -1;
         private int _startFrame = -1;
+        private Camera _camera;
         private CameraController _controller;
+        private WeatherSet _weatherSet;
         private Volume _ungraded;
         private RenderTexture _target;
 
@@ -93,7 +95,7 @@ namespace HyperRTS.Editor.Maps.Views
             }
 
             var camera = Camera.main;
-            var weatherSet = UnityEngine.Object.FindAnyObjectByType<WeatherSet>();
+            var weatherSet = Object.FindAnyObjectByType<WeatherSet>();
             if (camera == null || weatherSet == null || Time.frameCount < _startFrame + WarmupFrames
                 || !camera.TryGetComponent(out CameraController controller))
             {
@@ -120,7 +122,7 @@ namespace HyperRTS.Editor.Maps.Views
 
             // The capture places the camera itself; the controller would pan it with the pointer.
             controller.enabled = false;
-            _controller = controller;
+            (_camera, _controller, _weatherSet) = (camera, controller, weatherSet);
 
             // The camera keeps rendering through its own frame loop, upscaler history and all, but into a texture
             // without the screen-space interface over it.
@@ -131,14 +133,14 @@ namespace HyperRTS.Editor.Maps.Views
 
         private void Frame((string weather, MapLookSpec look, float zoom) shot)
         {
-            UnityEngine.Object.FindAnyObjectByType<WeatherSet>().Apply(shot.weather);
+            _weatherSet.Apply(shot.weather);
             if (PlayWorld.TryGetAuthoritative(out var entityManager))
             {
                 Cheats.SetFog(entityManager, shot.look.fog);
             }
 
             var view = new MapView(shot.look.name, shot.look.pos.ToVector2(), shot.zoom, shot.look.yaw);
-            MapViews.Aim(Camera.main, view, _controller);
+            MapViews.Aim(_camera, view, _controller);
         }
 
         private void Shoot((string weather, MapLookSpec look, float zoom) shot)
@@ -171,7 +173,7 @@ namespace HyperRTS.Editor.Maps.Views
             if (_controller != null)
             {
                 _controller.enabled = true;
-                _controller.GetComponent<Camera>().targetTexture = null;
+                _camera.targetTexture = null;
             }
 
             if (_target != null)

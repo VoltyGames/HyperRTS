@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Environment
                 for (var x = 0; x < size; x++)
                 {
                     var k = new Vector2(Wrapped(x, size), Wrapped(y, size));
-                    var height = Amplitude(k, wind, peakCycles, size) * Gaussian(ref random);
+                    var height = Amplitude(k, wind, peakCycles, size) * TileableNoise.StandardNormal(ref random);
                     var phase = random.NextFloat(0f, 2f * Mathf.PI);
                     var wave = Complex.FromPolarCoordinates(height, phase);
                     // A slope is the height's derivative: i k times each wave.
@@ -66,12 +66,6 @@ namespace HyperRTS.Editor.Environment
             var spread = 0.25f + 0.75f * along * along;
             var spectrum = Mathf.Exp(-1f / Mathf.Pow(length / peakCycles, 2f)) / Mathf.Pow(length, 5f) * spread;
             return Mathf.Sqrt(spectrum);
-        }
-
-        private static float Gaussian(ref Random random)
-        {
-            var u = Mathf.Max(random.NextFloat(), 1e-7f);
-            return Mathf.Sqrt(-2f * Mathf.Log(u)) * Mathf.Cos(2f * Mathf.PI * random.NextFloat());
         }
 
         private static double Rms(Complex[] u, Complex[] v)

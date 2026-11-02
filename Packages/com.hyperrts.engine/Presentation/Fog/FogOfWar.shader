@@ -43,7 +43,7 @@ Shader "Hidden/HyperRTS/FogOfWar"
                 }
 
                 float3 positionWS = ReconstructWorldPosition(uv, depth);
-                half3 fogged = FogOfWarLook(color.rgb, positionWS);
+                half3 fogged = ApplyFogOfWar(color.rgb, FogOfWarAt(positionWS));
                 if (_HyperRTSSightShapeColor.a > 0.0)
                 {
                     fogged = SightShapeOutline(fogged, positionWS);

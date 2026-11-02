@@ -112,7 +112,7 @@ namespace HyperRTS.Editor.Environment
             return sum;
         }
 
-        private static float StandardNormal(ref Random random)
+        internal static float StandardNormal(ref Random random)
         {
             var radius = Mathf.Sqrt(-2f * Mathf.Log(1f - random.NextFloat()));
             return radius * Mathf.Cos(2f * Mathf.PI * random.NextFloat());

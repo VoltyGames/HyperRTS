@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Report;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Views
@@ -17,10 +16,7 @@ namespace HyperRTS.Editor.Maps.Views
         public static List<string> Capture(string specPath)
         {
             using var project = MapProject.Open(specPath);
-            if (EditorSceneManager.GetActiveScene().path != project.Paths.Scene)
-            {
-                EditorSceneManager.OpenScene(project.Paths.Scene, OpenSceneMode.Single);
-            }
+            project.OpenScene();
 
             var issues = new MapIssues();
             var generation = MapGeneration.Lay(project, issues)

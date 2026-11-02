@@ -245,13 +245,6 @@ Shader "HyperRTS/Water"
                 #endif
             }
 
-            // URP's fog between the camera and the opaque seen through the water at uv, whose depth buffer reads rawDepth.
-            half4 BottomFog(float2 uv, float rawDepth)
-            {
-                float3 positionWS = ComputeWorldSpacePosition(uv, rawDepth, UNITY_MATRIX_I_VP);
-                return AtmosphereFogAt(uv, positionWS, EyeDepth(rawDepth));
-            }
-
             half4 Frag(Varyings input) : SV_Target
             {
                 float cameraDistance = length(_WorldSpaceCameraPos - input.positionWS);
@@ -282,11 +275,12 @@ Shader "HyperRTS/Water"
 
                 // The opaque texture already holds URP's fog to the bottom; take it out so the water fogs it once.
                 SceneFog fog = SceneFogAt(input.positionWS, input.positionCS);
-                half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), BottomFog(refracted, refractedDepth));
+                float3 bed = ComputeWorldSpacePosition(refracted, refractedDepth, UNITY_MATRIX_I_VP);
+                half4 bedFog = AtmosphereFogAt(refracted, bed, EyeDepth(refractedDepth));
+                half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), bedFog);
 
                 // The cookie variant tints the sun's colour with the cloud cover, shading glint and foam.
                 Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
-                float3 bed = ComputeWorldSpacePosition(refracted, refractedDepth, UNITY_MATRIX_I_VP);
                 bottom *= 1.0 + Caustics(bed.xz, depth) * sun.shadowAttenuation;
 
                 // Light through the water loses red first, so the bed fades into the silt-green the water scatters.

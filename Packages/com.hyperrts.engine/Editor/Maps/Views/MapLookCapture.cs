@@ -6,7 +6,6 @@ using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Report;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Views
@@ -48,10 +47,7 @@ namespace HyperRTS.Editor.Maps.Views
                 throw new InvalidOperationException($"HyperRTS: map '{project.Spec.name}' has no looks in its spec.");
             }
 
-            if (EditorSceneManager.GetActiveScene().path != project.Paths.Scene)
-            {
-                EditorSceneManager.OpenScene(project.Paths.Scene, OpenSceneMode.Single);
-            }
+            project.OpenScene();
 
             _run = new MapLookRun(project.Spec, Split(weathers), graded, QualityLevel(quality));
             Status = $"Starting {_run.Summary.map}";

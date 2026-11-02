@@ -5,6 +5,7 @@ using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Spec;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Build
@@ -59,6 +60,15 @@ namespace HyperRTS.Editor.Maps.Build
             {
                 library.Dispose();
                 throw;
+            }
+        }
+
+        /// <summary>Opens the map's built scene unless it is the active one.</summary>
+        public void OpenScene()
+        {
+            if (EditorSceneManager.GetActiveScene().path != Paths.Scene)
+            {
+                EditorSceneManager.OpenScene(Paths.Scene, OpenSceneMode.Single);
             }
         }
 

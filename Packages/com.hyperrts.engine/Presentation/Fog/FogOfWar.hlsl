@@ -49,11 +49,6 @@ half3 ApplyFogOfWar(half3 color, half4 fog)
     return lerp(muted, fog.rgb, fog.a);
 }
 
-half3 FogOfWarLook(half3 color, float3 positionWS)
-{
-    return ApplyFogOfWar(color, FogOfWarAt(positionWS));
-}
-
 // A thin line round the ground the selected units see, about a quarter of a cell wide. Its width is set on the
 // ground, not on screen, so crops and hedges don't break it into speckle.
 half3 SightShapeOutline(half3 color, float3 positionWS)

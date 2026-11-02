@@ -92,7 +92,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.heightmapResolution = Heights;
             data.alphamapResolution = Paint;
             data.size = new Vector3(rect.width, terrain.maxHeight, rect.height);
-            data.SetHeights(0, 0, land.Heights(rect, Heights, terrain.maxHeight, generation.Layout.TerrainBounds));
+            data.SetHeights(0, 0, land.Heights(rect, Heights));
             data.terrainLayers = generation.Project.Climate.layers.Select(l => l.terrainLayer).ToArray();
             data.SetAlphamaps(0, 0, land.Weights(rect, Paint));
             data.treePrototypes = land.TreePrototypes;
@@ -109,7 +109,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             tile.drawInstanced = true;
             tile.heightmapPixelError = 8f;
             tile.basemapDistance = 1000f;
-            tile.treeDistance = generation.Layout.Terrain.horizonWidth + 400f;
+            tile.treeDistance = terrain.horizonWidth + 400f;
             tile.treeBillboardDistance = tile.treeDistance;
             tile.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             tile.allowAutoConnect = false;
