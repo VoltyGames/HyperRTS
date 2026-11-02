@@ -9,13 +9,17 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Views
 {
     /// <summary>
-    /// Streams the open scene's SubScenes into the editor world and ticks it until they are loaded and entity
-    /// rendering has registered every mesh, so a capture shows the map's entities even while the editor is unfocused.
+    /// Streams the open scene's SubScenes into the editor world and ticks it until they are loaded, entity rendering
+    /// has registered every mesh and the number of drawn entities has held still, so a capture shows the map's
+    /// entities, including those systems spawn after the load, even while the editor is unfocused.
     /// </summary>
     public static class MapSubScenes
     {
-        /// <summary>Generous bound: streaming and render registration take a handful of updates.</summary>
-        private const int MaxUpdates = 120;
+        /// <summary>Generous bound: streaming, spawning and render registration take a few dozen updates.</summary>
+        private const int MaxUpdates = 600;
+
+        /// <summary>Updates the drawn entity count must hold for before the map counts as settled.</summary>
+        private const int SettledUpdates = 10;
 
         public static void Load()
         {
@@ -31,20 +35,33 @@ namespace HyperRTS.Editor.Maps.Views
                 All = new[] { ComponentType.ReadOnly<MaterialMeshInfo>() },
                 None = new[] { ComponentType.ChunkComponentReadOnly<EntitiesGraphicsChunkInfo>() },
             });
+            using var drawn = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MaterialMeshInfo>());
+            var (lastCount, steady) = (-1, 0);
             for (var i = 0; i < MaxUpdates; i++)
             {
                 world.Update();
-                if (Unloaded(world, scenes).Count == 0 && unregistered.IsEmpty)
+                var count = drawn.CalculateEntityCount();
+                steady = count == lastCount ? steady + 1 : 0;
+                lastCount = count;
+                if (Unloaded(world, scenes).Count == 0 && unregistered.IsEmpty && steady >= SettledUpdates)
                 {
                     return;
                 }
             }
 
+            throw new InvalidOperationException(
+                $"HyperRTS: after {MaxUpdates} editor world updates, {Stuck(world, scenes, unregistered)}.");
+        }
+
+        private static string Stuck(World world, Dictionary<string, Entity> scenes, EntityQuery unregistered)
+        {
             var waiting = Unloaded(world, scenes);
-            var what = waiting.Count > 0
-                ? $"SubScenes {string.Join(", ", waiting)} didn't load"
-                : "entity rendering didn't register every mesh";
-            throw new InvalidOperationException($"HyperRTS: after {MaxUpdates} editor world updates, {what}.");
+            if (waiting.Count > 0)
+            {
+                return $"SubScenes {string.Join(", ", waiting)} didn't load";
+            }
+
+            return unregistered.IsEmpty ? "the drawn entities kept changing" : "entity rendering didn't register every mesh";
         }
 
         private static List<string> Unloaded(World world, Dictionary<string, Entity> scenes) =>
