@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
@@ -18,17 +17,10 @@ namespace HyperRTS.Editor.Maps.Climate
         [Tooltip("HyperRTS/Foliage material the models share.")]
         public Material material;
 
-        [Tooltip("A card plant's <Key>.card.json, the size measured from its render, which width and height scale. Empty for modelled plants.")]
-        public TextAsset cardFile;
-
-        /// <summary>The size read from <see cref="cardFile"/> once loaded; null for a modelled plant.</summary>
-        [NonSerialized]
-        public MapPlantCard card;
-
-        [Tooltip("Random horizontal scale range of the models, times the card width for a card plant.")]
+        [Tooltip("Random horizontal scale range of the models: metres for a card plant on the 1 m SM_GrassClump cards.")]
         public Vector2 width = new(0.85f, 1.15f);
 
-        [Tooltip("Random vertical scale range of the models, times the card height for a card plant.")]
+        [Tooltip("Random vertical scale range of the models: metres for a card plant on the 1 m SM_GrassClump cards.")]
         public Vector2 height = new(0.85f, 1.15f);
 
         public Color healthy = Color.white;
@@ -44,7 +36,6 @@ namespace HyperRTS.Editor.Maps.Climate
         protected internal override void Load()
         {
             RequireFilled(meshes, "meshes");
-            card = cardFile == null ? null : MapPlantCard.Read(cardFile);
         }
 
         /// <summary>The plant as the renderer draws it.</summary>
@@ -53,8 +44,8 @@ namespace HyperRTS.Editor.Maps.Climate
             name = key,
             meshes = new List<Mesh>(meshes),
             material = material,
-            width = card == null ? width : width * card.width,
-            height = card == null ? height : height * card.height,
+            width = width,
+            height = height,
             healthy = healthy,
             dry = dry,
             density = density,
