@@ -1,9 +1,8 @@
 using System;
-using HyperRTS.Presentation.Common;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace HyperRTS.Presentation.HUD
+namespace HyperRTS.Presentation.Common
 {
     /// <summary>Tells a widget whether any watched component was written, or an entity count moved, since the last look.</summary>
     public sealed class ChangeWatch

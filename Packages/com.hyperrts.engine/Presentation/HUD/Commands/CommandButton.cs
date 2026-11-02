@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -96,16 +95,12 @@ namespace HyperRTS.Presentation.HUD.Commands
             _onClick = onClick;
             AddPicture(entityManager.GetComponentData<EntityInfo>(prefab).Icon.Value,
                 HUDText.EntityName(entityManager, prefab));
-            var tree = details.Instantiate();
-            _sweep = tree.Require<HUDSweep>("sweep");
-            _count = tree.Require<Label>("count");
-            _unpowered = tree.Require<HUDGlyph>("unpowered");
-            _costs = tree.Require<CostRow>("costs");
-            _limit = tree.Require<Label>("limit");
-            foreach (var child in tree.Children().ToList())
-            {
-                Add(child);
-            }
+            details.CloneTree(this);
+            _sweep = this.Require<HUDSweep>("sweep");
+            _count = this.Require<Label>("count");
+            _unpowered = this.Require<HUDGlyph>("unpowered");
+            _costs = this.Require<CostRow>("costs");
+            _limit = this.Require<Label>("limit");
 
             if (entityManager.HasBuffer<ResourceCost>(prefab))
             {

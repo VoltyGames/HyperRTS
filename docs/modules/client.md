@@ -41,7 +41,8 @@ Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()
 ## Presentation
 
 Rendering, HUD, effects and audio. `MatchView` is a once-per-frame read model for MonoBehaviours: local player,
-relations and colours.
+relations and colours. It and other presenters read singletons through `LiveSingleton` and re-read only when a
+`ChangeWatch` sees a watched component written or an entity count move.
 
 `Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Trampling`,
 `Fire`, `Weather` (atmosphere, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`, `RowCrops`,
@@ -64,7 +65,7 @@ panel shell as a template instance in stacking order. `HUDController` clones the
 shell to its panel, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks and keeps it in sync with the
 simulation. Code fills in only per-frame data. Games add or replace panels by overriding `CreatePanels` (`Adopt` for a
 shell already in the tree, `Add` for a new one). `HUDContext` re-reads the selection and the purchase buttons only when
-a `ChangeWatch` sees one of their components written.
+their `ChangeWatch` fires.
 
 `HUD/` holds the controller, the `HUD*` building blocks and the sheets. `Commands/` (the card, its buttons and the
 `ICommandSource`s), `Map/` and `Panels/` (resource bar, selection, production queue) each have their own namespace

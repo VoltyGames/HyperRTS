@@ -48,8 +48,9 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             _costs.MarkShort(!ResourceMath.CanAfford(context.Stock.AsNativeArray(), costs, _segments));
-            // The drag's end sits under the cursor, so the row follows it without reading device input.
-            PlaceBeside(placement.Position, Offset, lift: true);
+            // The drag's end sits under the cursor, so the row follows it without reading device input, lifted by
+            // its own height to sit above the point.
+            PlaceBeside(placement.Position, new Vector2(Offset.x, Offset.y - Root.resolvedStyle.height));
         }
 
         // A single building drags too, to turn, and leaves the last line's segments in the buffer.
