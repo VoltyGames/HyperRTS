@@ -6,7 +6,7 @@ using UnityEditor;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// Every effect recipe has layers, no reference to a deleted asset, meshes its debris layers can use, and a graph
+    /// Every effect recipe is named after its graph, has layers, no reference to a deleted asset, meshes its debris layers can use, and a graph
     /// built from its current state, so a broken recipe shows on the Validate page rather than when the next build throws.
     /// </summary>
     public sealed class EffectRecipeRule : IAssetRule
@@ -23,6 +23,12 @@ namespace HyperRTS.Editor.Effects
         public static void Check(string path, ValidationIssues issues)
         {
             var recipe = AssetDatabase.LoadAssetAtPath<EffectRecipe>(path);
+            if (!EffectRecipe.IsRecipe(path))
+            {
+                issues.Error(recipe, $"Name the recipe <Graph>{EffectRecipe.Extension}, as its graph is named after it.");
+                return;
+            }
+
             if (recipe.layers.Count == 0)
             {
                 issues.Error(recipe, "The recipe has no layers.");

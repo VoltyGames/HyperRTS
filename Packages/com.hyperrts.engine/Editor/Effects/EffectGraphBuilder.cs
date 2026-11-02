@@ -20,10 +20,12 @@ namespace HyperRTS.Editor.Effects
         private const string BuildMenu = "Assets/HyperRTS/Build Effect Graph";
         private const string BuildAllMenu = "Assets/HyperRTS/Build All Effect Graphs";
 
-        /// <summary>Builds the graph beside the recipe at <paramref name="recipePath"/>.</summary>
+        /// <summary>Builds the graph beside the recipe at <paramref name="recipePath"/>, saving the recipe first so its stamp matches what was built.</summary>
         public static void Build(string recipePath)
         {
-            Build(Load(recipePath), EffectRecipe.GraphPath(recipePath), EffectRecipe.Stamp(recipePath));
+            var recipe = Load(recipePath);
+            AssetDatabase.SaveAssetIfDirty(recipe);
+            Build(recipe, EffectRecipe.GraphPath(recipePath), EffectRecipe.Stamp(recipePath));
         }
 
         /// <summary>Builds <paramref name="recipe"/> into the graph at <paramref name="graphPath"/>, stamped with <paramref name="stamp"/>.</summary>
