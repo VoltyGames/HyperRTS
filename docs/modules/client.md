@@ -397,7 +397,7 @@ is the `SectionLook` buffer.
 | Shader | Use |
 | --- | --- |
 | `HyperRTS/Water` | Depth colour, refraction, ripples, screen-space scene reflection over the sky, foam and swells at banks, unit wakes (`SampleWake`). Needs Depth and Opaque Textures |
-| `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches. Lit by the sun, Forward+ point and spot lights (per vertex on scattered grass) and Surface Cache GI |
+| `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches. Lit by the sun, Forward+ point and spot lights (per vertex on scattered grass) and Surface Cache GI. Sunlight also passes through to a leaf's side facing away from the sun whatever the view, tinted by its colour twice and partly through its own shadow, so the far side of a crown glows from above; a normalised Blinn-Phong sheen with Fresnel replaces a plain glint. `_ClusterVariation` lightens, darkens or dries each leaf card of a tree by its pivot, so a crown reads as clumps |
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
 | `HyperRTS/Bird` | Unlit alpha-cut bird quads, each picking its wing pose from a 2x2 flipbook |

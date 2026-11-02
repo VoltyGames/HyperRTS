@@ -5,6 +5,9 @@
 #define HYPERRTS_PLANT_SHADING_INCLUDED
 
 #define PLANT_RAIN_DARKENING 0.22 // rain-soaked leaves and stems
+#define PLANT_TRANSMISSION_GAIN 2.5 // light through a leaf takes its colour twice, so it reads saturated yellow-green
+#define PLANT_SHADOWED_TRANSMISSION 0.3 // share that still glows where the plant's own shadow falls
+#define PLANT_LEAF_F0 0.04 // a waxy leaf's reflectance head on
 
 #ifndef PLANT_TWO_SIDED
     #error "PlantShading.hlsl: define PLANT_TWO_SIDED (0 both sides lit alike, 1 side in view lit, bent skyward)."
@@ -79,6 +82,24 @@ half PlantDiffuse(half3 normal, half3 toLight, half3 view, half canopy, half roo
     return wrap * canopy + through;
 }
 
+// Sunlight scattered through the leaf to its side facing away from the sun, whatever the view: from above, the
+// far side of a crown and the backs of blades glow instead of going flat. The root passes none.
+half PlantTransmission(half3 normal, half3 toLight, half canopy, half root, half shadow)
+{
+    half through = saturate(-dot(normal, toLight)) * _Translucency * canopy * (1.0 - root);
+    return through * lerp(PLANT_SHADOWED_TRANSMISSION, 1.0, shadow);
+}
+
+// Normalised Blinn-Phong with Schlick's Fresnel: a soft waxy sheen that brightens toward grazing views.
+half PlantSheen(half3 normal, half3 toLight, half3 view)
+{
+    half3 halfway = normalize(toLight + view);
+    half power = exp2(_Smoothness * 10.0 + 1.0);
+    half fresnel = PLANT_LEAF_F0 + (1.0 - PLANT_LEAF_F0) * pow(1.0 - saturate(dot(halfway, view)), 5.0);
+    half lobe = (power + 8.0) / 25.13 * pow(saturate(dot(normal, halfway)), power);
+    return lobe * fresnel * saturate(dot(normal, toLight));
+}
+
 // Per vertex for ground cover: its blades are small next to a light's reach and its cutout overdraw costs the most.
 half3 PlantVertexLights(float3 positionWS, float4 positionCS, half3 normalWS)
 {
@@ -144,7 +165,7 @@ half3 PlantAdditionalLights(ForwardVaryings input, half3 normal, half3 view, hal
     return lighting;
 }
 
-// Wrapped sun, translucency and glint, all dimmed by the canopy occlusion; the root gets plain up-facing light.
+// Wrapped sun, transmission and sheen, all dimmed by the canopy occlusion; the root gets plain up-facing light.
 half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
 {
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
@@ -152,8 +173,6 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
     // Shadow and cookie only: culling attenuation isn't set for indirect draws.
     half3 direct = sun.color * sun.shadowAttenuation;
     half canopy = input.tint.a;
-    half3 halfway = normalize(sun.direction + view);
-    half glint = pow(saturate(dot(normal, halfway)), exp2(_Smoothness * 10.0 + 1.0)) * _Smoothness;
 
     // Screen AO reads dense blades as a crevice the canopy term already darkens, so each material takes only its share.
     half occlusion = canopy;
@@ -165,7 +184,10 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
     half3 lit = direct * PlantDiffuse(normal, sun.direction, view, canopy, root);
     lit += PlantAdditionalLights(input, normal, view, root);
     half3 ambient = SurfaceCacheAmbient(input.positionWS, normal, view, input.positionCS.xy) * occlusion;
-    return albedo * (lit + ambient) + glint * canopy * direct;
+    half through = PlantTransmission(normal, sun.direction, canopy, root, sun.shadowAttenuation);
+    half3 transmitted = sun.color * (albedo * PLANT_TRANSMISSION_GAIN * through);
+    half3 sheen = direct * (PlantSheen(normal, sun.direction, view) * canopy * (1.0 - root));
+    return albedo * (lit + ambient + transmitted) + sheen;
 }
 
 half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Target
