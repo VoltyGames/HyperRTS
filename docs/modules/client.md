@@ -491,6 +491,15 @@ weathers show none. They fade out between `fadeStart` and `fadeEnd` of view dept
 is under a pixel and only streaks dense crop rows. The feature runs from `lowestQualityLevel` up (1, so the Low level skips it), and only in game and
 scene view perspective cameras.
 
+
+### Sharpening
+
+`SharpenFeature`, with its shader set to `Hidden/HyperRTS/Sharpen`, runs AMD's contrast-adaptive sharpening on the
+finished frame after post-processing and any upscaler: each pixel is pushed away from its four neighbours by up to a
+fifth of each at `strength` 1, less where the neighbourhood is already contrasty, so edges firm up without halos. It
+keeps the frame in a texture past post-processing to read it. It runs from `lowestQualityLevel` up, in game and scene
+view cameras, and the validator offers to add it to a renderer that lacks it.
+
 ### Wind
 
 `Wind` sits on the scene's directional `WindZone` and publishes its strength, gusts and direction to shaders. Its
