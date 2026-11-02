@@ -11,6 +11,8 @@ Shader "HyperRTS/Foliage"
         _Translucency ("Translucency", Range(0, 1)) = 0.45
         _HueVariation ("Hue Variation", Range(0, 0.5)) = 0.12
         _ClusterVariation ("Cluster Variation (trees)", Range(0, 0.3)) = 0
+        _BaseOcclusion ("Base Occlusion (scattered grass)", Range(0, 1)) = 0
+        _TipDry ("Dry Tips (scattered grass)", Range(0, 1)) = 0
         [Toggle] _TwoSidedLeaves ("Two-Sided Leaves (modelled plants)", Float) = 0
         [Toggle(_TREE_WIND)] _TreeWind ("Tree Wind (mesh has wind data)", Float) = 0
         _WindScale ("Wind Scale (0 = still)", Range(0, 1)) = 1

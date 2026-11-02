@@ -326,7 +326,7 @@ word.
 | Type | Holds |
 | --- | --- |
 | `layer` | A terrain layer, how the shader lays it, its map colour and grass cover |
-| `plant` | A grass or small plant: `meshes` (FBX or mesh assets, picked per plant), a `HyperRTS/Foliage` `material`, `width` and `height` scale ranges, `healthy` and `dry` tints, `density` per square metre at full coverage and `clumping` 0 to 1 |
+| `plant` | A grass or small plant: `meshes` (FBX or mesh assets, picked per plant), a `HyperRTS/Foliage` `material`, `width` and `height` scale ranges, `healthy` and `dry` tints, `density` per square metre at full coverage, `clumping` 0 to 1 and `reach`, the metres it draws to (0 for the quality's grass distance), so close-up detail costs nothing far off |
 | `tree` | Terrain tree `prefabs`, one per variant, and optional entity `destructibles` in the same order |
 | `crop` | A crop grown in 3D rows on fields whose surface names it |
 | `decal` | A ground decal: material, size range, rotation, depth |

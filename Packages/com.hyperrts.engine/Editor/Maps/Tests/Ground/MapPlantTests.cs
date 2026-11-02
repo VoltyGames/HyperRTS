@@ -104,6 +104,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
                 i.height = new Vector2(0.2f, 0.3f);
                 i.density = 12f;
                 i.clumping = 0.4f;
+                i.reach = 35f;
             });
             var plant = item.Plant();
 
@@ -111,6 +112,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             Assert.AreEqual(new Vector2(0.2f, 0.3f), plant.height);
             Assert.AreEqual(12f, plant.density);
             Assert.AreEqual(0.4f, plant.clumping);
+            Assert.AreEqual(35f, plant.reach);
         }
 
         [TestCase(MapSymmetry.Rotate180)]

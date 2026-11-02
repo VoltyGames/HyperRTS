@@ -18,5 +18,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         public int firstSlot;
 
         public int seed;
+
+        /// <summary>Metres the plant draws to, or 0 for the quality distance.</summary>
+        public float reach;
     }
 }

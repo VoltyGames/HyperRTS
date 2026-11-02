@@ -30,10 +30,15 @@ half4 FoliageTint(Attributes input, float3 origin)
 #endif
     half dry = saturate(DryPatch(origin.xz) * 0.65 + random * 0.35);
     half3 tint = PlantTint(dry, random) * ClusterTint(input);
+    half occlusion = lerp(1.0, input.color.r, _VertexOcclusion);
 #if defined(_GRASS_INSTANCES)
     tint *= lerp(_GrassHealthy.rgb, _GrassDry.rgb, dry) * grass.ground;
+    // UV v runs up the plant: bases sit in the sward's shade, and some plants' tips have dried to straw.
+    occlusion *= lerp(1.0 - _BaseOcclusion, 1.0, smoothstep(0.0, 0.4, input.uv.y));
+    half tips = smoothstep(0.55, 1.0, input.uv.y) * _TipDry * Random(grass.position + 5.0);
+    tint *= lerp(half3(1.0, 1.0, 1.0), half3(1.18, 1.05, 0.7), tips);
 #endif
-    return half4(tint, lerp(1.0, input.color.r, _VertexOcclusion));
+    return half4(tint, occlusion);
 }
 
 ForwardVaryings ForwardVert(Attributes input)

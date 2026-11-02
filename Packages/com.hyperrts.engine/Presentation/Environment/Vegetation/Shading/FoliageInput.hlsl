@@ -31,6 +31,8 @@ CBUFFER_START(UnityPerMaterial)
     float _Trample; // 0 off, 1 grass (flatten), 2 crop (damage)
     half _TwoSidedLeaves;
     half _ClusterVariation;
+    half _BaseOcclusion;
+    half _TipDry;
 CBUFFER_END
 
 // PlantShading.hlsl: modelled leaves light the side in view; cards and canopies light both sides alike.

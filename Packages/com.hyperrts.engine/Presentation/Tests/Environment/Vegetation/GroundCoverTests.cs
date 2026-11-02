@@ -122,8 +122,18 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
         [Test]
         public void GpuStructs_MatchTheKernelsLayouts()
         {
-            Assert.AreEqual(36, GrassPlantGpu.Stride);
+            Assert.AreEqual(40, GrassPlantGpu.Stride);
             Assert.AreEqual(28, ScatterJob.Stride);
+        }
+
+        [TestCase(0f, 160f, 160f)]
+        [TestCase(40f, 160f, 40f)]
+        [TestCase(240f, 160f, 160f)]
+        public void DistanceAt_TakesTheShorterOfReachAndTheQualityDistance(float reach, float distance, float drawn)
+        {
+            var plant = new GrassPlant { reach = reach };
+            Assert.AreEqual(drawn, plant.DistanceAt(distance));
+            Assert.AreEqual(reach, plant.ToGpu(0, 0).reach);
         }
 
         [TestCase(0f, 0f, 0.29f)]

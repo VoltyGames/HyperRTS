@@ -86,7 +86,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
                 for (var i = tile.first; i < tile.first + tile.count; i++)
                 {
                     var grows = field.tilePlants[i];
-                    var job = ScatterJob.Square(rect, grows.plant, field.plants[grows.plant].Spacing);
+                    var plant = field.plants[grows.plant];
+                    if (range.Near >= plant.DistanceAt(settings.Distance))
+                    {
+                        continue;
+                    }
+
+                    var job = ScatterJob.Square(rect, grows.plant, plant.Spacing);
                     batch.Add(job, grows.coverage, bounds, range, settings);
                 }
             }

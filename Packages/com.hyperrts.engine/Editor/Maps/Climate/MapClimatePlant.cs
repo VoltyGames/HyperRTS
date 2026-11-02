@@ -33,6 +33,11 @@ namespace HyperRTS.Editor.Maps.Climate
         [Range(0f, 1f)]
         public float clumping = 0.5f;
 
+        [Tooltip("Metres the plant draws to; 0 draws it to the quality distance. A short reach adds close-up detail, " +
+                 "such as a dense low sward, without the far cost.")]
+        [Min(0f)]
+        public float reach;
+
         protected internal override void Load()
         {
             RequireFilled(meshes, "meshes");
@@ -50,6 +55,7 @@ namespace HyperRTS.Editor.Maps.Climate
             dry = dry,
             density = density,
             clumping = clumping,
+            reach = reach,
         };
     }
 }

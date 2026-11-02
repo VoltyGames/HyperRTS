@@ -41,7 +41,7 @@ SamplerState sampler_LinearClamp;
 #define GROUND_REACH 8.0  // metres to the probes of the ground colour round a plant
 #define BANDS 2u          // GrassBands.Bands: near casts shadows, far doesn't
 
-struct GrassPlantGpu // GrassPlantGpu.cs, 36 bytes
+struct GrassPlantGpu // GrassPlantGpu.cs, 40 bytes
 {
     float spacing;
     float clumping;
@@ -50,6 +50,7 @@ struct GrassPlantGpu // GrassPlantGpu.cs, 36 bytes
     int variants;
     int firstSlot;
     int seed;
+    float reach; // metres, or 0 for the quality distance
 };
 
 StructuredBuffer<GrassPlantGpu> _Plants;
@@ -108,11 +109,17 @@ float3 GroundPatch(float2 xz)
     return clamp(GroundAt(xz) / max(around * 0.25, 0.02), 0.85, 1.2);
 }
 
-// Share of plants kept at a range, as GrassBands.Keep.
-float Keep(float range)
+// How far a plant draws, as GrassPlant.DistanceAt.
+float DrawDistance(GrassPlantGpu plant)
 {
-    float start = _Thinning.x * _Camera.w;
-    return lerp(1.0, _Thinning.y, saturate((range - start) / max(_Camera.w - start, 0.001)));
+    return plant.reach > 0.0 ? min(plant.reach, _Camera.w) : _Camera.w;
+}
+
+// Share of plants kept at a range, as GrassBands.Keep.
+float Keep(float range, float distance)
+{
+    float start = _Thinning.x * distance;
+    return lerp(1.0, _Thinning.y, saturate((range - start) / max(distance - start, 0.001)));
 }
 
 // Plants past the slot's capacity are dropped and Count clamps the draw to it.
@@ -153,10 +160,11 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     // On the undented ground: the vertex stage sinks plants into craters with everything else.
     float3 position = float3(xz.x, GroundHeight(xz) + CraterDepth(xz), xz.y);
     float range = length(position - _Camera.xyz);
-    float raw = Keep(range);
+    float distance = DrawDistance(plant);
+    float raw = Keep(range, distance);
     float keep = raw * (1.0 + _Shaping.z);
     float pick = Channel(hash, CHANNEL_KEEP);
-    if (range >= _Camera.w || pick >= keep)
+    if (range >= distance || pick >= keep)
     {
         return;
     }
@@ -164,7 +172,7 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     // Thinned plants shrink away before they go and the rest grow to cover for them; all fade out at the end.
     float shrink = saturate((keep - pick) / _Shaping.z);
     float grow = min(rsqrt(raw), _Thinning.z);
-    float fade = saturate((_Camera.w - range) / (_Thinning.w * _Camera.w));
+    float fade = saturate((distance - range) / (_Thinning.w * distance));
     float patch = 1.0 + (Noise(plant.seed, PATCH_SALT, xz / PATCH_SIZE) * 2.0 - 1.0) * _Shaping.w;
     float sparse = lerp(0.7, 1.0, saturate(painted * 1.5));
     float size = Channel(hash, CHANNEL_SIZE);

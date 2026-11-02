@@ -36,6 +36,14 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         [Range(0f, 1f)]
         public float clumping = 0.5f;
 
+        [Tooltip("Metres the plant draws to, thinning and fading on the way; 0 draws it to the quality distance. A short " +
+                 "reach adds close-up detail without the far cost.")]
+        [Min(0f)]
+        public float reach;
+
+        /// <summary>How far the plant draws at a quality's <paramref name="distance"/>.</summary>
+        public float DistanceAt(float distance) => reach > 0f ? Mathf.Min(reach, distance) : distance;
+
         /// <summary>Metres between the plant's lattice cells: one plant per cell at full coverage.</summary>
         public float Spacing => 1f / Mathf.Sqrt(density);
 
@@ -60,6 +68,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             variants = meshes.Count,
             firstSlot = firstSlot,
             seed = (index + 1) * 0x2545F491,
+            reach = reach,
         };
 
         /// <summary>Problems that keep the plant from drawing, one per line. Empty when ready.</summary>
@@ -73,6 +82,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
                 $"{nameof(height)} {height} must be above 0 with y at least x");
             Require(problems, density > 0f, $"{nameof(density)} {density} must be above 0");
             Require(problems, clumping is >= 0f and <= 1f, $"{nameof(clumping)} {clumping} must be 0 to 1");
+            Require(problems, reach >= 0f, $"{nameof(reach)} {reach} must be 0 or more");
             return problems;
         }
 

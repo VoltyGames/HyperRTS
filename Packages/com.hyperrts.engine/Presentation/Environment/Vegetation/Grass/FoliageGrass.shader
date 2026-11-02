@@ -11,6 +11,8 @@ Shader "Hidden/HyperRTS/FoliageGrass"
         _Translucency ("Translucency", Range(0, 1)) = 0.45
         _HueVariation ("Hue Variation", Range(0, 0.5)) = 0.12
         [Toggle] _TwoSidedLeaves ("Two-Sided Leaves (modelled plants)", Float) = 0
+        _BaseOcclusion ("Base Occlusion", Range(0, 1)) = 0
+        _TipDry ("Dry Tips", Range(0, 1)) = 0
         _WindScale ("Wind Scale (0 = still)", Range(0, 1)) = 1
         _WindStrength ("Wind Sway (m per m of height)", Range(0, 0.2)) = 0.03
         _WindSpeed ("Wind Speed", Float) = 1.2
