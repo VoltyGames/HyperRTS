@@ -50,26 +50,35 @@ namespace HyperRTS.Editor.Common
             Action<TextureImporter> configure) =>
             WritePng(path, width, height, format, image => image.SetPixelData(pixels, 0), configure);
 
-        /// <summary>
-        /// Renders a camera to a width × height PNG. Surface Cache GI is off unless <paramref name="settledGI"/> says
-        /// the camera has rendered the same view for long enough, in Play mode, for it to have built up.
-        /// </summary>
-        public static void RenderPng(Camera camera, int width, int height, string path, bool settledGI = false)
+        /// <summary>Renders a camera to a width × height PNG.</summary>
+        public static void RenderPng(Camera camera, int width, int height, string path)
         {
             var target = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32);
-            var previous = RenderTexture.active;
-            var image = new Texture2D(width, height, TextureFormat.RGB24, false);
             try
             {
-                Render(camera, target, path, settledGI);
-                RenderTexture.active = target;
-                image.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
+                Render(camera, target, path);
+                WritePng(target, path);
+            }
+            finally
+            {
+                RenderTexture.ReleaseTemporary(target);
+            }
+        }
+
+        /// <summary>Reads a render texture back and saves it as a PNG, without importing it.</summary>
+        public static void WritePng(RenderTexture source, string path)
+        {
+            var previous = RenderTexture.active;
+            var image = new Texture2D(source.width, source.height, TextureFormat.RGB24, false);
+            try
+            {
+                RenderTexture.active = source;
+                image.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0, false);
                 SavePng(image, path);
             }
             finally
             {
                 RenderTexture.active = previous;
-                RenderTexture.ReleaseTemporary(target);
                 Object.DestroyImmediate(image);
             }
         }
@@ -98,10 +107,10 @@ namespace HyperRTS.Editor.Common
         }
 
         /// <summary>
-        /// Renders with shader variants compiled first and Surface Cache GI off unless settled. Throws if the frame
-        /// fails, which would leave the target blank.
+        /// Renders with shader variants compiled first and Surface Cache GI off. Throws if the frame fails, which would
+        /// leave the target blank.
         /// </summary>
-        private static void Render(Camera camera, RenderTexture target, string path, bool settledGI)
+        private static void Render(Camera camera, RenderTexture target, string path)
         {
             string failure = null;
             void Record(string message, string stackTrace, LogType type)
@@ -112,7 +121,7 @@ namespace HyperRTS.Editor.Common
                 }
             }
 
-            var surfaceCaches = settledGI ? new List<SurfaceCacheGIRendererFeature>() : ActiveSurfaceCaches();
+            var surfaceCaches = ActiveSurfaceCaches();
             var asyncCompilation = ShaderUtil.allowAsyncCompilation;
             Application.logMessageReceived += Record;
             try

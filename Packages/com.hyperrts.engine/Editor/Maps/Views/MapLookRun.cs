@@ -36,6 +36,7 @@ namespace HyperRTS.Editor.Maps.Views
         private int _startFrame = -1;
         private CameraController _controller;
         private Volume _ungraded;
+        private RenderTexture _target;
 
         public MapLookRun(MapSpec spec, List<string> weathers, bool graded, int quality)
         {
@@ -120,6 +121,11 @@ namespace HyperRTS.Editor.Maps.Views
             // The capture places the camera itself; the controller would pan it with the pointer.
             controller.enabled = false;
             _controller = controller;
+
+            // The camera keeps rendering through its own frame loop, upscaler history and all, but into a texture
+            // without the screen-space interface over it.
+            _target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+            camera.targetTexture = _target;
             return true;
         }
 
@@ -140,7 +146,7 @@ namespace HyperRTS.Editor.Maps.Views
             var folder = Path.Combine(MapLookCapture.Folder(_spec.name, _graded), shot.weather);
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, $"{shot.look.name}-{Mathf.RoundToInt(shot.zoom)}m.png");
-            EditorTextures.RenderPng(Camera.main, Width, Height, path, settledGI: true);
+            EditorTextures.WritePng(_target, path);
             Summary.shots.Add(new MapLookShot { weather = shot.weather, point = shot.look.name, zoom = shot.zoom, path = path });
         }
 
@@ -165,6 +171,12 @@ namespace HyperRTS.Editor.Maps.Views
             if (_controller != null)
             {
                 _controller.enabled = true;
+                _controller.GetComponent<Camera>().targetTexture = null;
+            }
+
+            if (_target != null)
+            {
+                Object.Destroy(_target);
             }
 
             if (_ungraded != null)
