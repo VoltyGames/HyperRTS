@@ -1,5 +1,6 @@
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Land;
+using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.Common;
 using UnityEngine;
@@ -7,14 +8,18 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// The ground round each base, with a wandering edge so it never reads as a stamped circle, and the pads (gravel,
-    /// concrete, trampled dirt) under the props whose entry asks for one: a rectangle or oval turned with the prop,
-    /// its edge wandering by the entry's pad wander.
+    /// The ground of each base, a rectangular yard turned with its spawn like a farm or machine yard on a road, its
+    /// edges a little uneven and its corners worn round; and the pads (gravel, concrete, trampled dirt) under the props
+    /// whose entry asks for one: a rectangle or oval turned with the prop, its edge wandering by the entry's pad wander.
     /// </summary>
     public sealed class MapBasePlanner : MapLandPass
     {
-        /// <summary>How far a base's edge wanders in and out, as a share of its radius.</summary>
-        private const float BaseWander = 0.18f;
+        /// <summary>A yard's half width and half depth as shares of the base radius: corners stay where it flattens.</summary>
+        private static readonly Vector2 YardHalf = new(0.86f, 0.69f);
+
+        /// <summary>How far a yard's edge wanders in and out, and how round its corners wear, as shares of the radius.</summary>
+        private const float YardWander = 0.04f;
+        private const float YardCorner = 0.18f;
         private const float BaseWavelength = 22f;
         private const float PadWavelength = 6f;
 
@@ -41,17 +46,29 @@ namespace HyperRTS.Editor.Maps.Planning
                 var ground = Context.Region(MapLandKind.Base, Climate.baseSurface);
                 foreach (var spawn in spawns)
                 {
-                    Base(ground, spawn.Position, Context.Palette.baseRadius, noise);
+                    Yard(ground, spawn, Context.Palette.baseRadius, noise);
                 }
             }
         }
 
-        private void Base(int region, Vector2 center, float radius, MapNoise noise)
+        private void Yard(int region, MapSpawn spawn, float radius, MapNoise noise)
         {
-            var wander = radius * BaseWander;
-            var reach = radius + wander;
+            var half = YardHalf * radius;
+            var corner = YardCorner * radius;
+            var wander = YardWander * radius;
+            var forward = MapGeometry.Forward(spawn.Yaw);
+            var right = MapGeometry.Right(forward);
+            var center = spawn.Position;
+            var reach = half.magnitude + wander;
             var area = new Rect(center - Vector2.one * reach, Vector2.one * (reach * 2f));
-            Land.ClaimWhere(area, region, p => (p - center).magnitude + noise.Sample(p, BaseWavelength) * wander < radius);
+            Land.ClaimWhere(area, region, p =>
+            {
+                var offset = p - center;
+                var local = new Vector2(Mathf.Abs(Vector2.Dot(offset, right)), Mathf.Abs(Vector2.Dot(offset, forward)));
+                // A rounded rectangle: distance outside the box shrunk by the corner radius.
+                var outside = Vector2.Max(local - (half - Vector2.one * corner), Vector2.zero).magnitude - corner;
+                return outside + noise.Sample(p, BaseWavelength) * wander < 0f;
+            });
         }
 
         private void Pad(int region, MapPlacement placement, MapNoise noise)

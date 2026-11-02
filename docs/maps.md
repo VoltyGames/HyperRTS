@@ -124,7 +124,7 @@ All arrays are optional and authored for the sector only. Land is claimed in the
 
 | Feature | Fields | Builds |
 | --- | --- | --- |
-| `spawns` | `pos`, `yaw` | A slot's start position: the base radius is levelled, kept clear and painted as base ground |
+| `spawns` | `pos`, `yaw` | A slot's start position: the base radius is levelled and kept clear, and a rectangular yard turned to `yaw` (0.86 by 0.69 of the radius each way, edges a little uneven, corners worn round) is painted as base ground, like a farm yard rather than a stamped circle |
 | `resources` | `pos`, `kind`, `amount` (required, above 0) | A resource node from the palette holding `amount`. A renewable kind regrows once tapped |
 | `props` | `pos`, `yaw`, `kind` | A palette prefab, with its ground pad and access track |
 | `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings` | A smoothed, meandering channel (held straight at its ends and crossings) whose width swells and narrows, with banks, floodplain meadow, reeds in the shallows and a flowing water mesh |
