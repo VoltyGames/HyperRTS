@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using UnityEngine;
@@ -30,7 +31,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
         public float width = 2500f;
 
         [Tooltip("Seeds the fields, belts and swells.")]
-        [Range(0, HorizonFields.MaxSeed)]
         public int seed;
 
         public HorizonRelief relief = new();
@@ -47,6 +47,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
 
         private Mesh _ground;
         private Material _groundMaterial;
+        private Texture2D _fieldTexture;
         private HorizonTrees _trees;
         private bool _ready;
 #if UNITY_EDITOR
@@ -127,7 +128,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
             var template = terrain.materialTemplate;
             _groundMaterial.SetTexture(AlbedoArrayId, template.GetTexture(AlbedoArrayId));
             _groundMaterial.SetTexture(LayerParamsId, template.GetTexture(LayerParamsId));
-            fields.Apply(_groundMaterial, seed);
+            _fieldTexture = fields.Apply(_groundMaterial, seed, fields.Cells(Area));
             _trees = new HorizonTrees(belts, fields, seed, TerrainRect, Area, Height, treeLineShader);
             _ready = true;
         }
@@ -139,6 +140,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
             _trees = null;
             CoreUtils.Destroy(_ground);
             CoreUtils.Destroy(_groundMaterial);
+            CoreUtils.Destroy(_fieldTexture);
         }
 
         private List<string> Problems()
@@ -158,21 +160,12 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 problems.Add("a shader is missing");
             }
 
-            if (fields.crops.Count is 0 or > HorizonFields.MaxCrops)
+            if (fields.crops.Sum(crop => crop.weight) <= 0f)
             {
-                problems.Add($"{fields.crops.Count} crops, not 1 to {HorizonFields.MaxCrops}");
+                problems.Add("no crops with weight");
             }
 
-            if (belts.trees.Exists(tree => tree.prefab == null))
-            {
-                problems.Add("a belt tree has no prefab");
-            }
-
-            if (belts.share > 0f && belts.trees.Count == 0)
-            {
-                problems.Add("belts without trees");
-            }
-
+            belts.AddProblems(problems);
             return problems;
         }
 

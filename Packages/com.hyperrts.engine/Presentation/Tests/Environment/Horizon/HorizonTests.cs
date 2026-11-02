@@ -89,6 +89,57 @@ namespace HyperRTS.Presentation.Tests.Environment.Horizon
         }
 
         [Test]
+        public void Cells_HoldEveryPointOfTheArea()
+        {
+            var fields = Fields();
+            var area = new Rect(-2900f, -2900f, 5800f, 5800f);
+            var cells = fields.Cells(area);
+
+            for (var x = area.xMin; x <= area.xMax; x += 25f)
+            {
+                for (var y = area.yMin; y <= area.yMax; y += 25f)
+                {
+                    var grid = fields.ToGrid(new Vector2(x, y));
+                    var row = Mathf.FloorToInt(grid.y / fields.size.y);
+                    var column = Mathf.FloorToInt((grid.x + fields.RowShift(Seed, row)) / fields.size.x);
+                    Assert.IsTrue(cells.Contains(new Vector2Int(column, row)), $"({x}, {y}) is in field ({column}, {row})");
+                }
+            }
+        }
+
+        [Test]
+        public void Texture_ListsTheCropsAndSlidesEachRow()
+        {
+            var fields = Fields();
+            fields.crops.Add(new HorizonCrop { layer = 5, weight = 3f });
+            var material = new Material(Shader.Find("Hidden/InternalErrorShader"));
+            var cells = fields.Cells(new Rect(-1000f, -1000f, 2000f, 2000f));
+            var texture = fields.Apply(material, Seed, cells);
+            try
+            {
+                Assert.AreEqual(new Color(3f, 0.25f, 0f, 0f), texture.GetPixel(0, 0));
+                Assert.AreEqual(new Color(5f, 0.75f, 0f, 0f), texture.GetPixel(1, 0));
+                var layers = new HashSet<float>();
+                for (var row = 0; row < cells.height; row++)
+                {
+                    for (var column = 0; column < cells.width; column++)
+                    {
+                        var field = texture.GetPixel(column, row + 1);
+                        Assert.AreEqual(fields.RowShift(Seed, cells.yMin + row), field.b, "each field carries its row's slide");
+                        layers.Add(field.r);
+                    }
+                }
+
+                CollectionAssert.AreEquivalent(new[] { 3f, 5f }, layers, "the fields grow both crops");
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+                Object.DestroyImmediate(material);
+            }
+        }
+
+        [Test]
         public void TreeLine_FacesOutwardAndDropsLoneColumns()
         {
             var line = new HorizonTreeLine(1);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
@@ -45,14 +46,11 @@ namespace HyperRTS.Presentation.Environment.Horizon
         public List<HorizonBelt> Belts(HorizonFields fields, int seed, Rect area)
         {
             var belts = new List<HorizonBelt>();
-            var (min, max) = GridBounds(fields, area);
+            var cells = fields.Cells(area);
             var salted = HorizonFields.Salted(seed, BeltSalt);
-            for (var row = Mathf.FloorToInt(min.y / fields.size.y); row <= Mathf.CeilToInt(max.y / fields.size.y); row++)
+            for (var row = cells.yMin; row < cells.yMax; row++)
             {
-                var shift = fields.RowShift(seed, row);
-                var first = Mathf.FloorToInt((min.x + shift) / fields.size.x);
-                var last = Mathf.CeilToInt((max.x + shift) / fields.size.x);
-                for (var column = first; column <= last; column++)
+                for (var column = cells.xMin; column < cells.xMax; column++)
                 {
                     var start = fields.FieldStart(seed, column, row);
                     TryAdd(belts, fields, start, new Vector2(fields.size.x, 0f), ScatterHash.Hash(salted, column, row * 2));
@@ -71,21 +69,15 @@ namespace HyperRTS.Presentation.Environment.Horizon
             }
         }
 
-        // The grid-space box holding a world rect, whatever the grid's turn.
-        private static (Vector2 Min, Vector2 Max) GridBounds(HorizonFields fields, Rect area)
+        /// <summary>Adds what keeps the belts from growing.</summary>
+        public void AddProblems(List<string> problems)
         {
-            var corners = new[]
+            if (share > 0f && trees.Sum(tree => tree.weight) <= 0f)
             {
-                fields.ToGrid(area.min), fields.ToGrid(area.max),
-                fields.ToGrid(new Vector2(area.xMin, area.yMax)), fields.ToGrid(new Vector2(area.xMax, area.yMin)),
-            };
-            var (min, max) = (corners[0], corners[0]);
-            foreach (var corner in corners)
-            {
-                (min, max) = (Vector2.Min(min, corner), Vector2.Max(max, corner));
+                problems.Add("belts without trees");
             }
 
-            return (min, max);
+            trees.ForEach(tree => tree.AddProblems(problems));
         }
     }
 
@@ -110,9 +102,45 @@ namespace HyperRTS.Presentation.Environment.Horizon
     [Serializable]
     public struct HorizonTree
     {
+        private const string FoliageShader = "HyperRTS/Foliage";
+
         public GameObject prefab;
 
         [Min(0f)]
         public float weight;
+
+        /// <summary>The prefab's last LOD, or null when it has no LOD Group or that LOD isn't one mesh renderer.</summary>
+        public MeshRenderer LastLod()
+        {
+            var group = prefab.GetComponent<LODGroup>();
+            if (group == null || group.lodCount == 0)
+            {
+                return null;
+            }
+
+            var renderers = group.GetLODs()[^1].renderers;
+            return renderers.Length == 1 ? renderers[0] as MeshRenderer : null;
+        }
+
+        /// <summary>The last LOD's leaves, whose colour the tree line takes, or null.</summary>
+        public Material Leaves() =>
+            LastLod().sharedMaterials.FirstOrDefault(material => material != null && material.shader.name == FoliageShader);
+
+        /// <summary>Adds what keeps the tree from growing in a belt.</summary>
+        public void AddProblems(List<string> problems)
+        {
+            if (prefab == null)
+            {
+                problems.Add("a belt tree has no prefab");
+            }
+            else if (LastLod() == null)
+            {
+                problems.Add($"belt tree '{prefab.name}' needs an LOD Group whose last LOD is one mesh renderer");
+            }
+            else if (Leaves() == null)
+            {
+                problems.Add($"belt tree '{prefab.name}' has no {FoliageShader} leaves");
+            }
+        }
     }
 }

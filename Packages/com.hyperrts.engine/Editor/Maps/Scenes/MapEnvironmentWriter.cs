@@ -147,7 +147,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             var horizon = go.AddComponent<Horizon>();
             horizon.terrain = terrain;
             horizon.width = width;
-            horizon.seed = spec.seed & HorizonFields.MaxSeed;
+            horizon.seed = spec.seed;
             horizon.relief = new HorizonRelief
             {
                 height = layout.TerrainOrigin.y + layout.Terrain.height,

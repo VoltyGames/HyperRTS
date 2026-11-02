@@ -493,8 +493,10 @@ navigates.
   about 20 thousand vertices. Heights follow the terrain's edge, then blend over `relief.blend` into open ground swelling
   with `HorizonRelief`'s noise. `HyperRTS/HorizonGround` paints it with the map terrain material's layer arrays.
   `HorizonFields` lays the fields: rows turned to the map's farmland, each row slid by a hashed share of a field, each
-  field one crop picked by weight, with a margin along its edges. `HorizonFields.hlsl` paints the same grid. Where a
-  pixel spans much of a field, fields fade to the crops' and margins' weighted mean, so the far ground doesn't sparkle.
+  field one crop picked by weight, with a margin along its edges. It alone lays them out, and hands the shader a small
+  texture with a texel per field (its crop's layer, its shade and its row's slide) under a row listing the crops and
+  their shares, so the belts and the painted ground agree. Where a pixel spans much of a field, fields fade to the
+  crops' and margins' weighted mean, so the far ground doesn't sparkle.
 - **Belts.** `HorizonBelts.Belts` keeps a share of the field edges, by hash. `HorizonTrees` plants rows of real trees
   along them within `treesWidth` (250 m) of the terrain: each variant's last LOD, instanced in 500 m chunks the camera
   culls, casting shadows. Past that, `HorizonTreeLine` makes each run of belt a ridge with a crown's cross-section,

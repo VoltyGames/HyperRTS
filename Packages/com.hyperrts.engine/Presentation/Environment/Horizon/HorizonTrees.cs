@@ -14,7 +14,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
     /// </summary>
     public sealed class HorizonTrees : IDisposable
     {
-        private const string FoliageShader = "HyperRTS/Foliage";
         private const float ChunkSize = 500f;
         private const int MaxInstances = 1023;
 
@@ -34,12 +33,14 @@ namespace HyperRTS.Presentation.Environment.Horizon
         private readonly List<Chunk> _chunks = new();
         private readonly Dictionary<Material, Material> _instanced = new();
         private readonly List<Material> _lineMaterials = new();
+        private readonly float[] _weights;
         private readonly Mesh _line;
 
         /// <summary>Builds the belts inside <paramref name="area"/>, standing on <paramref name="height"/>.</summary>
         public HorizonTrees(HorizonBelts belts, HorizonFields fields, int seed, Rect terrain, Rect area,
             Func<Vector2, float> height, Shader lineShader)
         {
+            _weights = belts.trees.Select(tree => tree.weight).ToArray();
             var crowns = new Dictionary<Texture, Color>();
             foreach (var tree in belts.trees)
             {
@@ -138,7 +139,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
                         continue;
                     }
 
-                    var variant = Pick(belts.trees, Hashes.Fraction(ScatterHash.Channel(hash, 1)));
+                    var variant = Hashes.Pick(ScatterHash.Channel(hash, 1), _weights);
                     var yaw = Quaternion.Euler(0f, Hashes.Fraction(ScatterHash.Channel(hash, 2)) * 360f, 0f);
                     var scale = Mathf.Lerp(0.85f, 1.15f, Hashes.Fraction(ScatterHash.Channel(hash, 3)));
                     var position = new Vector3(spot.x, height(spot) - Sink, spot.y);
@@ -161,7 +162,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
             var run = belt.To - belt.From;
             var across = new Vector2(-run.normalized.y, run.normalized.x);
             var steps = Mathf.Max(1, Mathf.CeilToInt(run.magnitude / (belts.spacing * ColumnSpacings)));
-            var variant = Pick(belts.trees, Hashes.Fraction(ScatterHash.Channel(belt.Hash, 7)));
+            var variant = Hashes.Pick(ScatterHash.Channel(belt.Hash, 7), _weights);
             for (var i = 0; i <= steps; i++)
             {
                 var spot = Vector2.Lerp(belt.From, belt.To, i / (float)steps);
@@ -216,41 +217,16 @@ namespace HyperRTS.Presentation.Environment.Horizon
             return new Color(mean.r * tint.r, mean.g * tint.g, mean.b * tint.b).gamma;
         }
 
-        private static int Pick(List<HorizonTree> trees, float roll)
-        {
-            roll *= trees.Sum(tree => tree.weight);
-            for (var i = 0; i < trees.Count; i++)
-            {
-                roll -= trees[i].weight;
-                if (roll <= 0f)
-                {
-                    return i;
-                }
-            }
-
-            return trees.Count - 1;
-        }
-
         /// <summary>A tree variant's last LOD: its mesh, instancing copies of its materials, its leaves and height.</summary>
         private sealed class Variant
         {
             public Variant(HorizonTree tree, Dictionary<Material, Material> instanced)
             {
-                var prefab = tree.prefab;
-                var group = prefab.GetComponent<LODGroup>()
-                    ?? throw new InvalidOperationException($"HyperRTS: horizon tree '{prefab.name}' has no LOD Group.");
-                var renderers = group.GetLODs()[^1].renderers;
-                if (renderers.Length != 1 || renderers[0] is not MeshRenderer renderer)
-                {
-                    throw new InvalidOperationException(
-                        $"HyperRTS: horizon tree '{prefab.name}' needs one mesh renderer in its last LOD.");
-                }
-
+                var renderer = tree.LastLod();
                 Mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
-                Local = prefab.transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+                Local = tree.prefab.transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
                 Materials = renderer.sharedMaterials.Select(material => Instanced(material, instanced)).ToArray();
-                Leaves = renderer.sharedMaterials.FirstOrDefault(material => material.shader.name == FoliageShader)
-                    ?? throw new InvalidOperationException($"HyperRTS: horizon tree '{prefab.name}' has no {FoliageShader} leaves.");
+                Leaves = tree.Leaves();
                 Height = Top(Mesh.bounds, Local);
             }
 

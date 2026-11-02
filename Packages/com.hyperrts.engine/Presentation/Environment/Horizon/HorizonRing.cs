@@ -89,22 +89,19 @@ namespace HyperRTS.Presentation.Environment.Horizon
             mesh.SetVertices(vertices);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
-            FaceCornersUp(mesh);
+            FaceTuckUp(mesh, loop);
             mesh.RecalculateBounds();
             return mesh;
         }
 
-        // The loops under and on the terrain's edge have no rounding, so their corner vertices coincide and those
-        // touching only zero-area triangles get no normal; under the terrain they simply face up.
-        private static void FaceCornersUp(Mesh mesh)
+        // The loops under and on the terrain's edge have no rounding, so the faces between their corners have no area
+        // and the tucked loop's corner vertices get no normal. The whole loop lies under the terrain, so it faces up.
+        private static void FaceTuckUp(Mesh mesh, int loop)
         {
             var normals = mesh.normals;
-            for (var i = 0; i < normals.Length; i++)
+            for (var i = 0; i < loop; i++)
             {
-                if (normals[i].sqrMagnitude < 0.5f)
-                {
-                    normals[i] = Vector3.up;
-                }
+                normals[i] = Vector3.up;
             }
 
             mesh.normals = normals;

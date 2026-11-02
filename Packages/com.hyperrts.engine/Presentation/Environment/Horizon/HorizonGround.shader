@@ -3,9 +3,10 @@
 // fields and margins fade to their weighted mean so the ground doesn't sparkle. Horizon sets every property:
 //   _AlbedoArray, _LayerParams  the map terrain material's, as HyperRTS/Terrain documents them
 //   _FieldGrid                  field length along the rows, width across them (m); cos, sin of the grid's turn
-//   _FieldMargin                margin width (m); margin layer; crop count; seed (24 bits)
-//   _CropLayersLow, High        each crop's layer
-//   _CropRollsLow, High         each crop's running share of the weights, 1 from the last crop on
+//   _FieldMargin                margin width (m); margin layer
+//   _FieldCells                 the column and row of _Fields' first field; the crop count
+//   _Fields                     HorizonFields' texture: row 0 the crops (layer, share of the weights), each row above
+//                               a row of fields (crop layer, shade, the row's slide)
 Shader "HyperRTS/HorizonGround"
 {
     Properties
@@ -15,11 +16,9 @@ Shader "HyperRTS/HorizonGround"
         _Variation ("Field Shade Variation", Range(0, 0.5)) = 0.12
         _VariationSize ("Broad Shade Size (m)", Float) = 600
         [HideInInspector] _FieldGrid ("Field Grid", Vector) = (256, 144, 1, 0)
-        [HideInInspector] _FieldMargin ("Field Margin", Vector) = (5, 0, 1, 0)
-        [HideInInspector] _CropLayersLow ("Crop Layers 0 to 3", Vector) = (0, 0, 0, 0)
-        [HideInInspector] _CropLayersHigh ("Crop Layers 4 to 7", Vector) = (0, 0, 0, 0)
-        [HideInInspector] _CropRollsLow ("Crop Rolls 0 to 3", Vector) = (1, 1, 1, 1)
-        [HideInInspector] _CropRollsHigh ("Crop Rolls 4 to 7", Vector) = (1, 1, 1, 1)
+        [HideInInspector] _FieldMargin ("Field Margin", Vector) = (5, 0, 0, 0)
+        [HideInInspector] _FieldCells ("Field Cells", Vector) = (0, 0, 0, 0)
+        [HideInInspector] [NoScaleOffset] _Fields ("Fields", 2D) = "black" {}
     }
 
     SubShader
@@ -36,15 +35,12 @@ Shader "HyperRTS/HorizonGround"
         #pragma target 4.5
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        #include "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonFields.hlsl"
+        #include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
             float4 _FieldGrid;
             float4 _FieldMargin;
-            float4 _CropLayersLow;
-            float4 _CropLayersHigh;
-            float4 _CropRollsLow;
-            float4 _CropRollsHigh;
+            float4 _FieldCells;
             half _Variation;
             float _VariationSize;
         CBUFFER_END
@@ -52,6 +48,7 @@ Shader "HyperRTS/HorizonGround"
         TEXTURE2D_ARRAY(_AlbedoArray);
         SAMPLER(sampler_AlbedoArray);
         TEXTURE2D(_LayerParams);
+        TEXTURE2D(_Fields);
 
         // Where a pixel spans this share of a field's width, fields have fully faded to their mean.
         #define HORIZON_MEAN_FOOTPRINT 0.3
@@ -79,11 +76,34 @@ Shader "HyperRTS/HorizonGround"
             return output;
         }
 
-        float CropLayer(uint crop)
+        struct HorizonField
         {
-            float layers[8] = { _CropLayersLow.x, _CropLayersLow.y, _CropLayersLow.z, _CropLayersLow.w,
-                _CropLayersHigh.x, _CropLayersHigh.y, _CropLayersHigh.z, _CropLayersHigh.w };
-            return layers[crop];
+            float4 texel; // crop layer, shade, the row's slide
+            float2 local; // metres from the field's south-west corner, x along the rows
+            float2 grid;  // the point in the grid, which runs on smoothly across fields
+        };
+
+        // The field under a point, as HorizonFields lays the grid: the row, then the column its slide puts the point in.
+        HorizonField FieldAt(float2 positionXZ)
+        {
+            float2 size = _FieldGrid.xy;
+            float2 turn = _FieldGrid.zw;
+            HorizonField field;
+            field.grid = float2(positionXZ.x * turn.x + positionXZ.y * turn.y, -positionXZ.x * turn.y + positionXZ.y * turn.x);
+            int row = (int)floor(field.grid.y / size.y);
+            uint texelRow = (uint)(row - (int)_FieldCells.y) + 1u;
+            float shifted = field.grid.x + LOAD_TEXTURE2D(_Fields, uint2(0, texelRow)).b;
+            int column = (int)floor(shifted / size.x);
+            field.texel = LOAD_TEXTURE2D(_Fields, uint2((uint)(column - (int)_FieldCells.x), texelRow));
+            field.local = float2(shifted - column * size.x, field.grid.y - row * size.y);
+            return field;
+        }
+
+        // Metres to the field's nearest edge.
+        float FieldEdge(HorizonField field)
+        {
+            float2 toEdge = min(field.local, _FieldGrid.xy - field.local);
+            return min(toEdge.x, toEdge.y);
         }
 
         // HyperRTS/Terrain's RotateUV: (cos, sin) of a clockwise turn.
@@ -123,13 +143,10 @@ Shader "HyperRTS/HorizonGround"
         half3 FarmlandMean()
         {
             half3 crops = 0.0;
-            float rolled = 0.0;
-            float rolls[8] = { _CropRollsLow.x, _CropRollsLow.y, _CropRollsLow.z, _CropRollsLow.w,
-                _CropRollsHigh.x, _CropRollsHigh.y, _CropRollsHigh.z, _CropRollsHigh.w };
-            for (uint i = 0; i < (uint)_FieldMargin.z; i++)
+            for (uint i = 0; i < (uint)_FieldCells.z; i++)
             {
-                crops += LayerMean(CropLayer(i)) * (rolls[i] - rolled);
-                rolled = rolls[i];
+                float2 crop = LOAD_TEXTURE2D(_Fields, uint2(i, 0)).rg;
+                crops += LayerMean(crop.x) * crop.y;
             }
 
             return lerp(crops, LayerMean(_FieldMargin.y), MarginShare());
@@ -138,16 +155,15 @@ Shader "HyperRTS/HorizonGround"
         half3 HorizonAlbedo(float2 positionXZ)
         {
             float2 size = _FieldGrid.xy;
-            uint seed = (uint)_FieldMargin.w;
-            HorizonField field = FieldAt(positionXZ, size, _FieldGrid.zw, seed);
+            HorizonField field = FieldAt(positionXZ);
             float2 footprint = fwidth(field.grid);
             float blur = max(footprint.x, footprint.y);
             float margin = _FieldMargin.x;
-            half marginWeight = 1.0 - smoothstep(margin - blur, margin + blur, FieldEdge(field, size));
+            half marginWeight = 1.0 - smoothstep(margin - blur, margin + blur, FieldEdge(field));
 
-            half3 crop = LayerAlbedo(CropLayer(FieldCrop(field, seed, _CropRollsLow, _CropRollsHigh)), positionXZ);
+            half3 crop = LayerAlbedo(field.texel.r, positionXZ);
             half3 near = lerp(crop, LayerAlbedo(_FieldMargin.y, positionXZ), marginWeight);
-            near *= 1.0 + (FieldShade(field, seed) - 0.5) * 2.0 * _Variation;
+            near *= 1.0 + (field.texel.g - 0.5) * 2.0 * _Variation;
 
             half far = saturate(blur / (min(size.x, size.y) * HORIZON_MEAN_FOOTPRINT));
             [branch] if (far > 0.0)
