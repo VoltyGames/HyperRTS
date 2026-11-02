@@ -17,6 +17,9 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
     /// </summary>
     public sealed class MapFarmlandPlanner : MapLandPass
     {
+        /// <summary>How much a field's margin narrows and widens along its edge: little, as a plough runs straight.</summary>
+        private const float MarginWander = 0.12f;
+
         private const float SampleStep = 1f;
         private const float MinRun = 15f;
         private const int NoField = -1;
@@ -127,7 +130,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
                 }
 
                 var sector = Symmetry.ToSector(p, out var copy);
-                var width = kit.marginWidth * (1f + 0.45f * noise.Sample(p, 14f));
+                var width = kit.marginWidth * (1f + MarginWander * noise.Sample(p, 14f));
                 var seam = Symmetry.SeamDistance(sector) < kit.marginWidth;
                 if (edge[i] * MapLand.CellSize < width || seam)
                 {
