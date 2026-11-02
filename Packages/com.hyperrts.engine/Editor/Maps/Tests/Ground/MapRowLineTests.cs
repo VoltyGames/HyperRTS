@@ -70,7 +70,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             var edges = new MapEdgeField(layout, land, climate);
             var heights = new MapHeights(129, layout.TerrainBounds);
             var shapes = MapFixture.Shapes(layout, climate);
-            climate.groundTint = new MapClimateGroundTint { gradientLength = 260f, soilSize = 140f };
+            climate.groundTint = new MapClimateGroundTint { gradientLength = 260f, soilSize = 140f, bankWidth = 1.5f };
             var plain = new MapGroundTint(layout, land, edges, shapes, heights, climate.groundTint);
             climate.Surface("Sown").swaths = new MapSwaths { spacing = 9f, width = 3f, light = 0.05f, plants = 0.4f };
             var swathed = new MapGroundTint(layout, land, edges, shapes, heights, climate.groundTint);

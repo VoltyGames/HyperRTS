@@ -53,14 +53,15 @@ namespace HyperRTS.Editor.Maps.Planning.War
             }
         }
 
-        /// <summary>Thins the plants in each bowl and grows the war kit's weeds in a ring round it.</summary>
+        /// <summary>Thins the plants in each bowl, grows the war kit's weeds in a ring round it and its plant on burnt patches.</summary>
         public void Regrow(MapGrassBake grass, MapClimate climate)
         {
-            if (Craters.Count == 0)
-            {
-                return;
-            }
+            RegrowCraters(grass, climate);
+            RegrowBurns(grass, climate);
+        }
 
+        private void RegrowCraters(MapGrassBake grass, MapClimate climate)
+        {
             var kit = climate.war;
             var weeds = string.IsNullOrEmpty(kit.weedPlant) ? null : grass.Layers[climate.PlantIndex(kit.weedPlant)];
             foreach (var crater in Craters)
@@ -80,6 +81,26 @@ namespace HyperRTS.Editor.Maps.Planning.War
                         var cover = crater.Weeds(distance, kit.weedRing) * kit.weedCoverage * 255f;
                         weeds[i] = (byte)Mathf.Max(weeds[i], Mathf.RoundToInt(cover));
                     }
+                });
+            }
+        }
+
+        private void RegrowBurns(MapGrassBake grass, MapClimate climate)
+        {
+            var kit = climate.war;
+            if (string.IsNullOrEmpty(kit.burnPlant))
+            {
+                return;
+            }
+
+            var plants = grass.Layers[climate.PlantIndex(kit.burnPlant)];
+            foreach (var patch in Burns)
+            {
+                ForEachTexel(grass.Area, grass.Resolution, patch.Center, patch.Reach, (x, z, p) =>
+                {
+                    var i = z * grass.Resolution + x;
+                    var cover = patch.Cover(p, _edges) * kit.burnCoverage * 255f;
+                    plants[i] = (byte)Mathf.Max(plants[i], Mathf.RoundToInt(cover));
                 });
             }
         }

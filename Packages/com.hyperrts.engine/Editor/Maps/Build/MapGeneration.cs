@@ -55,6 +55,9 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>Surface decals shown only after rain, copies included.</summary>
         public List<MapDecal> WetDecals => _plan.WetDecals;
 
+        /// <summary>How well the play area's camera frames are composed.</summary>
+        public MapComposition Composition { get; private set; }
+
         /// <summary>Where row crops grow, baked once the land is planned.</summary>
         public MapCropBake Crops { get; private set; }
 
@@ -134,6 +137,8 @@ namespace HyperRTS.Editor.Maps.Build
             }
 
             MapSurfaceProps.WarnBare(Land, Placements.All, Layout.Bounds, Project.Rules.propTargets, _issues);
+            Composition = MapComposition.Measure(Land, Heights, Layout.Bounds, Project.Rules);
+            Composition.Warn(Project.Rules, _issues);
         }
 
         private void Paint()

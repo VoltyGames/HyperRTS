@@ -36,6 +36,9 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Props per hectare of each surface.</summary>
         public List<MapSurfaceProps> props = new();
 
+        /// <summary>Share of camera-sized frames holding enough kinds of interest, and each kind's presence.</summary>
+        public MapComposition composition = new();
+
         public static MapLandShares Measure(MapGeneration generation)
         {
             var (land, placements) = (generation.Land, generation.Placements.All);
@@ -67,6 +70,7 @@ namespace HyperRTS.Editor.Maps.Report
                 entities = placements.Count(p => p.IsEntity),
                 cropTiles = generation.Crops.Tiles.Count,
                 cropPlants = generation.Crops.Plants,
+                composition = generation.Composition,
                 props = MapSurfaceProps.Measure(land, placements, generation.Layout.Bounds),
             };
         }

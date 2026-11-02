@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Maps.Placement
                 return false;
             }
 
-            return _shapes.RiverEdgeDistance(point) > radius + 2f;
+            return _shapes.WaterEdgeDistance(point) > radius + 2f;
         }
 
         public bool InBase(Vector2 point, float radius)

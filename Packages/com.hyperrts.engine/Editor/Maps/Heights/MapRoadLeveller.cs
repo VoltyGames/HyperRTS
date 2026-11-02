@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Heights
                 {
                     var distance = road.Distance(p, out var along);
                     var edge = distance - road.Width * 0.5f;
-                    if (edge > MapShapes.RoadShoulder || shapes.RiverEdgeDistance(p) < 1f)
+                    if (edge > MapShapes.RoadShoulder || shapes.WaterEdgeDistance(p) < 1f)
                     {
                         return;
                     }

@@ -112,7 +112,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private static float Reeds(MapShapes shapes, MapClimate climate, MapNoise clumps, Vector2 p, float height,
             float water)
         {
-            var edge = shapes.RiverEdgeDistance(p);
+            var edge = shapes.WaterEdgeDistance(p);
             if (edge < -ReedReachIntoWater || edge > climate.reedWidth || height < water - ReedDepth)
             {
                 return 0f;

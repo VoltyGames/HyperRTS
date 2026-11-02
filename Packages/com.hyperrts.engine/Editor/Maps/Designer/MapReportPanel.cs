@@ -184,6 +184,11 @@ namespace HyperRTS.Editor.Maps.Designer
             figures.Add(("Entities", Count(land.entities)));
             figures.Add(("Crop tiles", Count(land.cropTiles)));
             figures.Add(("Crop plants", land.cropPlants.ToString("N0", CultureInfo.InvariantCulture)));
+            var composition = land.composition;
+            figures.Add(("Composed frames", $"{Percent(composition.share)} of {composition.frames}"));
+            figures.Add(("Frames with", $"wood edge {Percent(composition.woodEdgeShare)}, water {Percent(composition.waterShare)}, "
+                + $"fields {Percent(composition.fieldPatternShare)}, settlement {Percent(composition.settlementShare)}, "
+                + $"relief {Percent(composition.reliefShare)}"));
             _landFigures.Set(figures);
         }
 

@@ -34,6 +34,7 @@ namespace HyperRTS.Editor.Maps.Spec
         public List<MapResourceSpec> resources = new();
         public List<MapPropSpec> props = new();
         public List<MapRiverSpec> rivers = new();
+        public List<MapPondSpec> ponds = new();
         public List<MapRavineSpec> ravines = new();
         public List<MapHillSpec> hills = new();
         public List<MapRoadSpec> roads = new();

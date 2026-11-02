@@ -6,14 +6,16 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Meshes
 {
     /// <summary>
-    /// River ribbons at water level, tucked under the banks. UV in metres (U across, V downstream) so the shader
-    /// scrolls with the current; vertex colour marks fords (<see cref="MapWaterFords"/>).
+    /// River ribbons and pond sheets at water level, tucked under the banks. River UV is in metres (U across, V
+    /// downstream) so the shader scrolls with the current; vertex colour marks fords (<see cref="MapWaterFords"/>). A
+    /// pond's UV is its map position and its vertex blue marks still water.
     /// </summary>
     public sealed class MapWaterMesh
     {
         private const float Step = 2f;
         private const float BankMargin = 6f;
         private const float EdgeOverhang = 12f;
+        private const float SheetMargin = 5f;
 
         private readonly IReadOnlyList<MapCrossing> _crossings;
         private readonly MapClimate _climate;
@@ -38,7 +40,46 @@ namespace HyperRTS.Editor.Maps.Meshes
                 water.AddRibbon(MapGeometry.ExtendAtEdge(river.Line.Points, bounds, EdgeOverhang), half, height);
             }
 
+            foreach (var pond in shapes.Ponds)
+            {
+                water.AddSheet(pond, height);
+            }
+
             return water.ToMesh();
+        }
+
+        /// <summary>Grid cells over the pond and a margin past its edge, which the bank buries.</summary>
+        private void AddSheet(MapPond pond, float height)
+        {
+            var bounds = MapGeometry.Bounds(pond.Shore, SheetMargin);
+            var columns = Mathf.CeilToInt(bounds.width / Step) + 1;
+            var rows = Mathf.CeilToInt(bounds.height / Step) + 1;
+            var first = _vertices.Count;
+            var wet = new bool[columns * rows];
+            for (var row = 0; row < rows; row++)
+            {
+                for (var column = 0; column < columns; column++)
+                {
+                    var point = new Vector2(bounds.xMin + column * Step, bounds.yMin + row * Step);
+                    _vertices.Add(new Vector3(point.x, height, point.y));
+                    _uvs.Add(point);
+                    _colors.Add(new Color(0f, 0f, 1f, 0f));
+                    wet[row * columns + column] = pond.EdgeDistance(point) < SheetMargin - Step;
+                }
+            }
+
+            for (var row = 0; row < rows - 1; row++)
+            {
+                for (var column = 0; column < columns - 1; column++)
+                {
+                    var i = row * columns + column;
+                    if (wet[i] || wet[i + 1] || wet[i + columns] || wet[i + columns + 1])
+                    {
+                        var a = first + i;
+                        _triangles.AddRange(new[] { a, a + columns, a + 1, a + 1, a + columns, a + columns + 1 });
+                    }
+                }
+            }
         }
 
         private void AddRibbon(List<Vector2> line, float half, float height)
@@ -74,7 +115,7 @@ namespace HyperRTS.Editor.Maps.Meshes
 
         private Mesh ToMesh()
         {
-            var mesh = new Mesh { name = "Rivers", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            var mesh = new Mesh { name = "Water", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
             mesh.SetVertices(_vertices);
             mesh.SetUVs(0, _uvs);
             mesh.SetColors(_colors);

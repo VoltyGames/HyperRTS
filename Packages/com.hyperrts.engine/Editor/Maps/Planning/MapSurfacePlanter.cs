@@ -150,7 +150,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private bool TryPlaceScenery(GameObject model, Vector2 spot, float yaw, float scale, float radius)
         {
             var shapes = Context.Shapes;
-            if (shapes.RoadEdgeDistance(spot) < radius || shapes.RiverEdgeDistance(spot) < radius)
+            if (shapes.RoadEdgeDistance(spot) < radius || shapes.WaterEdgeDistance(spot) < radius)
             {
                 return false;
             }

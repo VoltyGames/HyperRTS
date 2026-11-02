@@ -9,6 +9,7 @@ Shader "Hidden/HyperRTS/FoliageGrass"
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.45
         _Smoothness ("Smoothness", Range(0, 1)) = 0.12
         _Translucency ("Translucency", Range(0, 1)) = 0.45
+        _Wrap ("Foliage Lighting (0 solid, 1 leaf)", Range(0, 1)) = 1
         _HueVariation ("Hue Variation", Range(0, 0.5)) = 0.12
         [Toggle] _TwoSidedLeaves ("Two-Sided Leaves (modelled plants)", Float) = 0
         _BaseOcclusion ("Base Occlusion", Range(0, 1)) = 0

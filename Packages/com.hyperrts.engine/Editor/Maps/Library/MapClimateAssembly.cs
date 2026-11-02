@@ -103,6 +103,7 @@ namespace HyperRTS.Editor.Maps.Library
             Add(_climate.decals, kit.craterDecal, file);
             Add(_climate.decals, kit.wetDecal, file);
             Plant(kit.weedPlant, file);
+            Plant(kit.burnPlant, file);
             Add(_climate.layers, kit.burntLayer, file);
             kit.shreddedTrees.ForEach(swap => swap.shredded.ForEach(tree => Tree(tree, file)));
         }

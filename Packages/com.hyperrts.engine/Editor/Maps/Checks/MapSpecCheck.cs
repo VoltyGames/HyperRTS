@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
@@ -43,6 +44,24 @@ namespace HyperRTS.Editor.Maps.Checks
                 Require(road.points.Count >= 2, $"{name} needs at least two points."));
             Each(_spec.rivers, nameof(MapSpec.rivers), "River", (river, name) =>
                 river.crossings.ForEach(crossing => Crossing(river, crossing, name)));
+            Each(_spec.ponds, nameof(MapSpec.ponds), "Pond", Pond);
+        }
+
+        private void Pond(MapPondSpec pond, string name)
+        {
+            Require(pond.points.Count >= 3, $"{name} needs at least three points for its shoreline.");
+            Require(pond.depth > 0f && pond.bankWidth > 0f, $"{name}: depth {pond.depth} and bankWidth {pond.bankWidth} must be above 0.");
+            Require(pond.shoreWidth >= 0f, $"{name}: shoreWidth {pond.shoreWidth} must not be negative.");
+            Require(pond.dam < pond.points.Count, $"{name}: dam {pond.dam} must be -1 or the index of a point; the dam runs to the next one.");
+            if (pond.dam < 0)
+            {
+                return;
+            }
+
+            var tall = pond.damHeight > 0f && pond.damHeight <= MapPond.MaxDamHeight;
+            Require(pond.damWidth > 0f && tall,
+                $"{name}: damWidth {pond.damWidth} must be above 0 and damHeight {pond.damHeight} in 0 to {MapPond.MaxDamHeight} m.");
+            Require(!string.IsNullOrEmpty(pond.damSurface), $"{name} has a dam but names no damSurface.");
         }
 
         private void Header()

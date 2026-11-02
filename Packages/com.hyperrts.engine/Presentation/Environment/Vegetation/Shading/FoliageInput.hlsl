@@ -16,6 +16,7 @@ CBUFFER_START(UnityPerMaterial)
     half _Cutoff;
     half _Smoothness;
     half _Translucency;
+    half _Wrap;
     half _HueVariation;
     float _WindStrength;
     float _WindSpeed;
@@ -37,6 +38,7 @@ CBUFFER_END
 
 // PlantShading.hlsl: modelled leaves light the side in view; cards and canopies light both sides alike.
 #define PLANT_TWO_SIDED _TwoSidedLeaves
+#define PLANT_WRAP _Wrap
 
 #if defined(_GRASS_INSTANCES)
     #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassInstance.hlsl"

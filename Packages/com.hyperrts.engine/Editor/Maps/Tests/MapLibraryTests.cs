@@ -64,6 +64,7 @@ namespace HyperRTS.Editor.Maps.Tests
                 w.craterDecal = "Crater";
                 w.wetDecal = "Crater";
                 w.weedPlant = "Grass";
+                w.burnPlant = "Fireweed";
                 w.burntLayer = "Stubble";
                 w.shreddedTrees.Add(new MapWarTreeSwap { tree = "Oak", shredded = new List<string> { "OakSnapped" } });
             });
@@ -74,7 +75,8 @@ namespace HyperRTS.Editor.Maps.Tests
                 c.groundSurface = "Meadow";
                 c.warKit = "Old";
             });
-            var library = SteppeLibrary(war, scarred, Make<MapClimateTree>("OakSnapped"), Make<MapClimateDecal>("Crater"));
+            var library = SteppeLibrary(war, scarred, Make<MapClimateTree>("OakSnapped"), Make<MapClimateDecal>("Crater"),
+                Make<MapClimatePlant>("Fireweed"));
 
             var climate = library.Climate("Scarred", "test");
 
@@ -82,6 +84,7 @@ namespace HyperRTS.Editor.Maps.Tests
             CollectionAssert.AreEqual(new[] { "Meadow", "Stubble" }, climate.layers.Select(l => l.key));
             CollectionAssert.AreEqual(new[] { "Oak", "OakSnapped" }, climate.trees.Select(t => t.key));
             CollectionAssert.AreEqual(new[] { "Crater" }, climate.decals.Select(d => d.key));
+            CollectionAssert.AreEqual(new[] { "Grass", "Fireweed" }, climate.plants.Select(d => d.key));
             Assert.IsNull(library.Climate("Steppe", "test").war);
         }
 

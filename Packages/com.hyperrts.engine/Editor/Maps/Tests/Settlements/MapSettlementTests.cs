@@ -90,7 +90,7 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             Assert.IsTrue(houses.All(h => h.Position.y > RoadZ), "the river side has none");
             foreach (var placement in _fixture.Placements)
             {
-                Assert.Greater(context.Shapes.RiverEdgeDistance(placement.Position), 0f, $"{placement.Entry.key} on water");
+                Assert.Greater(context.Shapes.WaterEdgeDistance(placement.Position), 0f, $"{placement.Entry.key} on water");
             }
 
             Assert.IsTrue(Warned("touching water"), "the warning names the water");
@@ -123,7 +123,8 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             Assert.Less(houses.Count, 40);
             Assert.Greater(houses.Count, 0);
             Assert.IsTrue(Warned($"fit {houses.Count} of 40 plots"), string.Join("\n", _fixture.Context.Issues.Warnings));
-            Assert.IsTrue(Warned("rejected"), "the warning lists the reasons");
+            // The street runs out before 40 plots and nothing is rejected, so the reason is the road, not a rejection list.
+            Assert.IsTrue(Warned("no plot fits along the roads"), "the warning says why");
         }
 
         [Test]

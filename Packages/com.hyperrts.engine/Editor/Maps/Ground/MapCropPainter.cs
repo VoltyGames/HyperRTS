@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Ground
             var water = layout.Terrain.waterLevel;
             return Paint(generation.Land, layout.Symmetry, generation.Project.Climate, (point, edge, margin) =>
             {
-                if (heights.Height(point) < water + WaterClearance || shapes.RiverEdgeDistance(point) < margin)
+                if (heights.Height(point) < water + WaterClearance || shapes.WaterEdgeDistance(point) < margin)
                 {
                     return true;
                 }

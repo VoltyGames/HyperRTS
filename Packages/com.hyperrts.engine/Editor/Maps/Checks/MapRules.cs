@@ -41,6 +41,23 @@ namespace HyperRTS.Editor.Maps.Checks
         [Tooltip("Fewest props per hectare per surface before the report warns it looks bare.")]
         public List<MapPropTarget> propTargets = new();
 
+        [Header("Composition")]
+        [Tooltip("Ground the match camera sees at its middle zoom (metres, across and deep); the report tiles the play area with frames this size.")]
+        public Vector2 compositionFrame = new(60f, 40f);
+
+        [Tooltip("Fewest of the five kinds of interest (wood edge, water, field pattern, settlement or ruin, relief) a frame should hold.")]
+        [Range(1, 5)]
+        public int compositionMinKinds = 3;
+
+        [Tooltip("Height range inside a frame that counts as a change in relief (metres).")]
+        [Min(0f)]
+        public float compositionMinRelief = 3f;
+
+        [Tooltip("Share of frames that should hold the fewest kinds before the report warns.")]
+        [Range(0f, 1f)]
+        public float compositionTargetShare = 0.85f;
+
+        [Header("Modes")]
         [Tooltip("Thresholds per mode.")]
         public List<MapModeRules> modes = new();
 

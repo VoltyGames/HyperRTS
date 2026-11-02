@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Meshes
 {
     /// <summary>
     /// River vertex colour at crossings: A is how shallow a ford's bed is, G marks a ford's fast water and R the foam
-    /// lines trailing downstream of fords and bridges, all from the climate's ford and crossing foam distances.
+    /// lines trailing downstream of fords and bridges (B, set by ponds, marks still water), all from the climate's ford and crossing foam distances.
     /// </summary>
     public static class MapWaterFords
     {

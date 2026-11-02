@@ -29,6 +29,7 @@ namespace HyperRTS.Editor.Maps.Views
         private readonly List<string> _weathers;
         private readonly bool _graded;
         private readonly int _quality;
+        private readonly bool _cost;
         private readonly int _previousQuality;
         private readonly List<(string weather, MapLookSpec look, float zoom)> _plan = new();
         private int _next;
@@ -39,13 +40,16 @@ namespace HyperRTS.Editor.Maps.Views
         private WeatherSet _weatherSet;
         private Volume _ungraded;
         private RenderTexture _target;
+        private MapLookSwitches _switches;
+        private MapLookCost _costProbe;
 
-        public MapLookRun(MapSpec spec, List<string> weathers, bool graded, int quality)
+        public MapLookRun(MapSpec spec, List<string> weathers, bool graded, int quality, bool cost)
         {
             _spec = spec;
             _weathers = weathers;
             _graded = graded;
             _quality = quality;
+            _cost = cost;
             _previousQuality = QualitySettings.GetQualityLevel();
             Summary = new MapLookSummary
             {
@@ -72,7 +76,16 @@ namespace HyperRTS.Editor.Maps.Views
 
             if (_readyFrame >= 0)
             {
-                Shoot(_plan[_next]);
+                if (_cost && !_costProbe.Measure(_plan[_next].look.name, _plan[_next].zoom))
+                {
+                    return false;
+                }
+
+                if (!_cost)
+                {
+                    Shoot(_plan[_next]);
+                }
+
                 _next++;
             }
 
@@ -104,6 +117,11 @@ namespace HyperRTS.Editor.Maps.Views
 
             QualitySettings.SetQualityLevel(_quality, true);
             var keys = _weathers.Count > 0 ? _weathers : weatherSet.atmospheres.Keys.OrderBy(k => k).ToList();
+            if (_cost)
+            {
+                keys = keys.Take(1).ToList();
+            }
+
             var zooms = new[] { controller.minZoom, (controller.minZoom + controller.maxZoom) * 0.5f, controller.maxZoom };
             foreach (var weather in keys)
             {
@@ -128,6 +146,12 @@ namespace HyperRTS.Editor.Maps.Views
             // without the screen-space interface over it.
             _target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
             camera.targetTexture = _target;
+            if (_cost)
+            {
+                _switches = new MapLookSwitches(camera);
+                _costProbe = new MapLookCost(_switches, _spec.name, Summary.quality, keys[0]);
+            }
+
             return true;
         }
 
@@ -181,6 +205,17 @@ namespace HyperRTS.Editor.Maps.Views
                 Object.Destroy(_target);
             }
 
+            if (_costProbe != null)
+            {
+                // A failure can leave a feature off in the middle of its measurement.
+                foreach (var feature in _switches.Names)
+                {
+                    _switches.Set(feature, true);
+                }
+
+                _switches.Dispose();
+            }
+
             if (_ungraded != null)
             {
                 Object.Destroy(_ungraded.sharedProfile);
@@ -193,6 +228,11 @@ namespace HyperRTS.Editor.Maps.Views
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, "summary.json");
             File.WriteAllText(path, JsonUtility.ToJson(Summary, true));
+            if (_costProbe != null)
+            {
+                File.WriteAllText(Path.Combine(folder, "cost.json"), JsonUtility.ToJson(_costProbe.Summary, true));
+            }
+
             return path;
         }
     }

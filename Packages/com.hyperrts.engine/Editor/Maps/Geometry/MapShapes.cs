@@ -9,7 +9,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Geometry
 {
     /// <summary>
-    /// The layout's rivers, roads, ravines and crossings in map space, built once and shared by every pass. Planners
+    /// The layout's rivers, ponds, roads, ravines and crossings in map space, built once and shared by every pass. Planners
     /// add the tracks they lay with <see cref="AddRoad"/>.
     /// </summary>
     public sealed class MapShapes
@@ -48,6 +48,11 @@ namespace HyperRTS.Editor.Maps.Geometry
                 }
             }
 
+            foreach (var pond in layout.Ponds)
+            {
+                Ponds.Add(new MapPond(MapGeometry.ToVectors(pond.Placed.points), pond.Placed));
+            }
+
             foreach (var road in layout.Roads)
             {
                 AddAuthoredRoad(road.Placed, road.Index, layout, climate, overhang);
@@ -69,6 +74,8 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         public List<MapRoad> Roads { get; } = new();
 
+        public List<MapPond> Ponds { get; } = new();
+
         public List<MapRavine> Ravines { get; } = new();
 
         public List<MapCrossing> Crossings { get; } = new();
@@ -79,13 +86,18 @@ namespace HyperRTS.Editor.Maps.Geometry
         /// <summary>A road laid by a planner (field or access track).</summary>
         public void AddRoad(MapRoad road) => Roads.Add(road);
 
-        /// <summary>Distance to the nearest river's water edge (negative over the water), or infinity far from rivers.</summary>
-        public float RiverEdgeDistance(Vector2 point)
+        /// <summary>Distance to the nearest river's or pond's water edge (negative over the water), or infinity far from water.</summary>
+        public float WaterEdgeDistance(Vector2 point)
         {
             var best = float.PositiveInfinity;
             foreach (var river in Rivers)
             {
                 best = Mathf.Min(best, river.EdgeDistance(point));
+            }
+
+            foreach (var pond in Ponds)
+            {
+                best = Mathf.Min(best, pond.EdgeDistance(point));
             }
 
             return best;

@@ -32,9 +32,10 @@ namespace HyperRTS.Editor.Maps.Views
         /// <summary>
         /// Opens the map's scene and starts the captures in Play mode. <paramref name="weathers"/> is a comma list of
         /// weather keys, empty for all; <paramref name="graded"/> false turns the weathers' Color Lookup off;
-        /// <paramref name="quality"/> a quality level name, empty for the current one.
+        /// <paramref name="quality"/> a quality level name, empty for the current one; <paramref name="cost"/> measures
+        /// frame times per feature in the first weather, into <c>cost.json</c>, instead of taking images.
         /// </summary>
-        public static string Start(string specPath, string weathers, bool graded, string quality)
+        public static string Start(string specPath, string weathers, bool graded, string quality, bool cost)
         {
             if (IsRunning || EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -49,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Views
 
             project.OpenScene();
 
-            _run = new MapLookRun(project.Spec, Split(weathers), graded, QualityLevel(quality));
+            _run = new MapLookRun(project.Spec, Split(weathers), graded, QualityLevel(quality), cost);
             Status = $"Starting {_run.Summary.map}";
             EditorApplication.update += Tick;
             EditorApplication.playModeStateChanged += StopOnExit;

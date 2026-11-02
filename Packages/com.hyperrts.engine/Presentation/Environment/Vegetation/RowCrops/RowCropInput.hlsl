@@ -35,6 +35,7 @@ int _SlotOffset; // set per draw by RowCropBatch
 
 // PlantShading.hlsl: the side in view is lit, bent skyward so a field reads lit from above.
 #define PLANT_TWO_SIDED 1.0
+#define PLANT_WRAP 1.0
 
 struct Attributes
 {

@@ -128,6 +128,7 @@ All arrays are optional and authored for the sector only. Land is claimed in the
 | `resources` | `pos`, `kind`, `amount` (required, above 0) | A resource node from the palette holding `amount`. A renewable kind regrows once tapped |
 | `props` | `pos`, `yaw`, `kind` | A palette prefab, with its ground pad and access track |
 | `rivers` | `points`, `width`, `depth`, `valleyWidth`, `meander`, `widthVariation`, `crossings` | A smoothed, meandering channel (held straight at its ends and crossings) whose width swells and narrows, with banks, floodplain meadow, reeds in the shallows and a flowing water mesh |
+| `ponds` | `points` (polygon), `depth`, `bankWidth`, `shore`, `shoreWidth`, `dam`, `damWidth`, `damHeight`, `damSurface` | Still water inside the polygon (the shoreline) in a basin with gentle banks, a wet margin of the `shore` surface (its trees grow willows) and reeds from the climate. `dam` is the index of the point whose edge to the next is an earth dam: raised above the water or the ground beside it (`damHeight`, at most 6 m), flat on top for `damWidth`, painted `damSurface`; -1 for none. The water is the river's material with no current. Fails when it reaches a river, a road or a base |
 | `ravines` | `points`, `width`, `depth`, `rim`, `branches`, `wooded` | A steep cut with side gullies: walls that block vehicles, a gentle grassy rim and woods in patches on `wooded` of the floor |
 | `hills` | `pos`, `radius`, `height`, `flatTop` | A smooth rise. Keep its slopes under the rules' max slope |
 | `roads` | `points`, `kind` | A road of a library road class, rounded into curves, joined to the roads it meets and levelled if the class says so |
@@ -154,7 +155,7 @@ Surfaces grow their own lone trees and props by rule, so use `scatters` and `row
 The land is a 1 m grid. Each cell is claimed once, by one region with a land kind, a surface and a row angle.
 `MapLandPlanner` runs the land passes in priority order, and each takes only what earlier ones left:
 
-1. Water, roads, river banks and floodplain.
+1. Water (rivers and ponds), roads, river banks and floodplain, then pond margins and dams.
 2. Bases, prop pads and access tracks.
 3. Ravines, settlements, spec tree rows and spec areas.
 4. Woods, belts and farmland.
@@ -182,7 +183,7 @@ sector, clear of roads, bases, pads, resources and settlements. It swaps a share
 kit's shredded species, lays wrecks within `wreckCoverDistance` of belts and woods so the open lanes stay clear,
 lays trench props end to end along belt edges, digs old craters into the heightmap (a soft bowl and low rim, a crater
 decal, a wet decal in the deepest) and burns patches with the kit's `burntLayer`. Painting thins the plants in each
-bowl and grows the kit's `weedPlant` in a ring round it. Empty prop and tree lists skip their step.
+bowl and grows the kit's `weedPlant` in a ring round it and its `burnPlant` (at `burnCoverage`) over each burnt patch. Empty prop and tree lists skip their step.
 
 **Access tracks.** Nearby props asking for the same road class share one track, within their
 `sharedAccessDistance`.
@@ -195,7 +196,7 @@ that stops short of another road is joined onto it at 60° or more.
 
 ### Ground and rendering
 
-Heights come from relief, hills, river valleys and ravines. Roads of a levelling class sit on embankments, with
+Heights come from relief, hills, river valleys, ponds and ravines. Roads of a levelling class sit on embankments, with
 ramps up to bridges.
 
 Every surface sets an `edgeWidth`, the blend band in metres, and an `edgeWander`, how far the line wanders. Where
@@ -206,7 +207,7 @@ symmetry, so mirrored borders wander alike.
 | --- | --- |
 | Ground textures | Terrain layer weights. Each surface's `mixes` paint other layers by symmetric noise (`layer`, `coverage` 0 to 1, `size` in metres). Steep ground takes the slope surface |
 | Grass | A coverage slice per plant in `<Map>_GrassCoverage.asset` and a `GrassField` (`<Map>_Grass.asset`) naming the plants and the 16 m tiles that grow any. Wild ground is clumped by noise, with clearings on about 40 %; a surface plant with `stands` below 1 grows only in stands of its own covering that share, `standSize` metres across. Nothing grows on roads or placed objects |
-| Ground tint | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil colour in light, warmth and moisture, darker hollows, wetness near water, lighter harvest swaths along the rows of surfaces with `swaths`, where plants also thin. Set by the climate's `groundTint` section |
+| Ground tint | 2 texels per metre: light and warmth per field and wood, 20 to 150 m soil colour in light, warmth and moisture, darker hollows, wetness near water (a wet band of the climate's `groundTint.bankWidth`, 1 to 2 m, at `bankWetness`, over a fainter wider damp), lighter harvest swaths along the rows of surfaces with `swaths`, where plants also thin. Set by the climate's `groundTint` section |
 | Row map | Each cell's crop row direction, turned with its symmetry copy |
 | Ground materials | A `GroundMaterialMap` asset (`<Map>_GroundMaterials.asset`) holding one `SurfaceMaterial` byte per cell for impacts and wheel debris, baked into the `GroundMaterials` singleton |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |
@@ -281,6 +282,11 @@ The build then measures the map on the nav grid:
   dry. Across the map, stacks within 20 m of each other form one field. Fewer fields than the mode's
   `minRenewableFields` per player is an error.
 - **Decals.** More than the rules' `maxDecals` is a warning.
+- **Composition.** The play area is tiled with camera frames (rules `compositionFrame`, 60 by 40 m). A frame
+  should hold at least `compositionMinKinds` (3) of five kinds: a wood or belt edge, water (water, bank,
+  floodplain), a field pattern (field, margin), a settlement or ruin (yard, garden, back, area) and relief (height
+  range of `compositionMinRelief`, 3 m). The report stores the share of frames that do and each kind's share under
+  `land.composition`; under `compositionTargetShare` (0.85) is a warning.
 - **Props.** The report lists props per hectare of each surface; a surface under its rules `propTargets` is a
   warning.
 

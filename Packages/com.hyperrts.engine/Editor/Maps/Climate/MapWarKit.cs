@@ -74,6 +74,13 @@ namespace HyperRTS.Editor.Maps.Climate
         [Tooltip("Random patch radius in metres between x and y.")]
         public Vector2 burntRadius = new(8f, 20f);
 
+        [Tooltip("Climate plant growing on each burnt patch, such as fireweed; empty for none.")]
+        [MapKey(typeof(MapClimatePlant))]
+        public string burnPlant;
+
+        [Range(0f, 1f)]
+        public float burnCoverage = 0.6f;
+
         [Header("Wrecks")]
         [MapKey(typeof(MapProp))]
         public List<string> wrecks = new();

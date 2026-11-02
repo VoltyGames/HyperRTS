@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 return false;
             }
 
-            if (_shapes.RiverEdgeDistance(point) < 1f || _shapes.RoadEdgeDistance(point) < 1.5f)
+            if (_shapes.WaterEdgeDistance(point) < 1f || _shapes.RoadEdgeDistance(point) < 1.5f)
             {
                 return false;
             }

@@ -134,7 +134,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return "in a base";
             }
 
-            if (_context.Shapes.RiverEdgeDistance(point) <= 2f)
+            if (_context.Shapes.WaterEdgeDistance(point) <= 2f)
             {
                 return "touching water";
             }

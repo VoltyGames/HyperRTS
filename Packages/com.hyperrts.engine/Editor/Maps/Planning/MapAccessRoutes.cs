@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Planning
             for (var i = 0; i <= count; i++)
             {
                 var point = Vector2.Lerp(from, to, (float)i / count);
-                if (_shapes.RiverEdgeDistance(point) < WaterMargin || _shapes.InRavine(point, RavineMargin))
+                if (_shapes.WaterEdgeDistance(point) < WaterMargin || _shapes.InRavine(point, RavineMargin))
                 {
                     return false;
                 }

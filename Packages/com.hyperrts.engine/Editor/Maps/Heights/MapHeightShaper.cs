@@ -8,7 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Heights
 {
     /// <summary>
-    /// Shapes the ground from the layout: rolling relief and hills, river valleys and fords, ravines, then roads
+    /// Shapes the ground from the layout: rolling relief and hills, river valleys and fords, ponds, ravines, then roads
     /// levelled (on embankments over ravines) and ramps up to bridge decks.
     /// </summary>
     public static class MapHeightShaper
@@ -37,6 +37,7 @@ namespace HyperRTS.Editor.Maps.Heights
                     var p = heights.Position(x, z);
                     var h = terrain.height + Relief(terrain, relief, p) + Hills(layout, p);
                     h = Rivers(shapes, p, h, terrain.waterLevel, edgeWander);
+                    h = Ponds(shapes, p, h, terrain.waterLevel);
                     heights[x, z] = Fords(shapes, p, h, terrain.waterLevel);
                 }
             });
@@ -109,6 +110,16 @@ namespace HyperRTS.Editor.Maps.Heights
                 }
 
                 h = Mathf.Min(h, target);
+            }
+
+            return h;
+        }
+
+        private static float Ponds(MapShapes shapes, Vector2 p, float h, float water)
+        {
+            foreach (var pond in shapes.Ponds)
+            {
+                h = pond.Ground(p, h, water);
             }
 
             return h;
@@ -208,7 +219,7 @@ namespace HyperRTS.Editor.Maps.Heights
                     float target;
                     if (along <= half)
                     {
-                        if (shapes.RiverEdgeDistance(p) < 1f)
+                        if (shapes.WaterEdgeDistance(p) < 1f)
                         {
                             return;
                         }

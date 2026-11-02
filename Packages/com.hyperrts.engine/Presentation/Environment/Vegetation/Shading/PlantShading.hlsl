@@ -9,6 +9,10 @@
 #define PLANT_SHADOWED_TRANSMISSION 0.3 // share that still glows where the plant's own shadow falls
 #define PLANT_LEAF_F0 0.04 // a waxy leaf's reflectance head on
 
+#ifndef PLANT_WRAP
+    #error "PlantShading.hlsl: define PLANT_WRAP (1 foliage lighting, 0 opaque solid)."
+#endif
+
 #ifndef PLANT_TWO_SIDED
     #error "PlantShading.hlsl: define PLANT_TWO_SIDED (0 both sides lit alike, 1 side in view lit, bent skyward)."
 #endif
@@ -73,12 +77,13 @@ void ClipDisplaced(float2 uv, float4 positionCS)
     PlantCrossFade(positionCS);
 }
 
+// PLANT_WRAP (set by the input file): 1 lights as foliage, 0 as an opaque solid with plain Lambert light.
 // Wrapped light on the facing side plus light through the leaf toward the eye; the root wraps and passes none.
 half PlantDiffuse(half3 normal, half3 toLight, half3 view, half canopy, half root)
 {
-    half wrapping = 0.5 * (1.0 - root);
+    half wrapping = 0.5 * (1.0 - root) * PLANT_WRAP;
     half wrap = saturate((dot(normal, toLight) + wrapping) / (1.0 + wrapping));
-    half through = pow(saturate(dot(-toLight, view)), 4.0) * _Translucency * canopy * (1.0 - root);
+    half through = pow(saturate(dot(-toLight, view)), 4.0) * _Translucency * canopy * (1.0 - root) * PLANT_WRAP;
     return wrap * canopy + through;
 }
 
@@ -86,7 +91,7 @@ half PlantDiffuse(half3 normal, half3 toLight, half3 view, half canopy, half roo
 // far side of a crown and the backs of blades glow instead of going flat. The root passes none.
 half PlantTransmission(half3 normal, half3 toLight, half canopy, half root, half shadow)
 {
-    half through = saturate(-dot(normal, toLight)) * _Translucency * canopy * (1.0 - root);
+    half through = saturate(-dot(normal, toLight)) * _Translucency * canopy * (1.0 - root) * PLANT_WRAP;
     return through * lerp(PLANT_SHADOWED_TRANSMISSION, 1.0, shadow);
 }
 
@@ -186,7 +191,7 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
     half3 ambient = SurfaceCacheAmbient(input.positionWS, normal, view, input.positionCS.xy) * occlusion;
     half through = PlantTransmission(normal, sun.direction, canopy, root, sun.shadowAttenuation);
     half3 transmitted = sun.color * (albedo * PLANT_TRANSMISSION_GAIN * through);
-    half3 sheen = direct * (PlantSheen(normal, sun.direction, view) * canopy * (1.0 - root));
+    half3 sheen = direct * (PlantSheen(normal, sun.direction, view) * canopy * (1.0 - root) * PLANT_WRAP);
     return albedo * (lit + ambient + transmitted) + sheen;
 }
 

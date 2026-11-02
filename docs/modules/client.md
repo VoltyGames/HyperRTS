@@ -396,7 +396,7 @@ is the `SectionLook` buffer.
 
 | Shader | Use |
 | --- | --- |
-| `HyperRTS/Water` | Refraction through per-channel absorption toward a scatter colour (`_Absorption` per metre, `_ScatterColor`), caustics on beds under 1.2 m of water, three scales of ripples from the wind-wave spectrum `WaterRipples.png` (an FFT in `WaterSpectrum`), flow-mapped downstream and faster mid-channel than at the banks, screen-space scene reflection over the sky, foam patches below crossings and swells at banks, unit wakes (`SampleWake`). Needs Depth and Opaque Textures |
+| `HyperRTS/Water` | Refraction through per-channel absorption toward a scatter colour (`_Absorption` per metre, `_ScatterColor`), caustics on beds under 1.2 m of water, three scales of ripples from the wind-wave spectrum `WaterRipples.png` (an FFT in `WaterSpectrum`), flow-mapped downstream and faster mid-channel than at the banks, Schlick Fresnel with a smoothness that falls from `_Smoothness` to `_SmoothnessFar` over `_SmoothnessFarDistance`, so far water blurs to the sky instead of aliasing, screen-space scene reflection over the sky, a sun glint clamped at `_GlintPeak` (just past the bloom threshold), a soft depth fade at the shore (`_ShoreFadeDepth`), foam patches below crossings and swells at banks, unit wakes (`SampleWake`). Needs Depth and Opaque Textures |
 | `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches. Lit by the sun, Forward+ point and spot lights (per vertex on scattered grass) and Surface Cache GI. Sunlight also passes through to a leaf's side facing away from the sun whatever the view, tinted by its colour twice and partly through its own shadow, so the far side of a crown glows from above; a normalised Blinn-Phong sheen with Fresnel replaces a plain glint. `_ClusterVariation` lightens, darkens or dries each leaf card of a tree by its pivot, so a crown reads as clumps |
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
@@ -656,6 +656,9 @@ Its `height` also shades the field: light falls off below the heads to `_CanopyS
 dark gaps between lit tops. That canopy term is the crop's ambient occlusion, so `_ScreenOcclusion` (0.2 by
 default) keeps screen-space AO from darkening it again: GTAO reads a dense field of blades as a deep crevice and
 turns shaded wheat into a flat dark patch. Foliage has the same property at 1.
+Foliage's `_Wrap` (default 1, also on `FoliageGrass`) blends leaf lighting to an opaque solid: at 1 plants keep wrapped
+diffuse, translucency, transmission and sheen; at 0 they take plain Lambert light, for pebbles and mounds scattered
+like grass.
 
 A camera regrows the plants of its visible tiles when it moves, the quality changes or new ash falls, and every frame
 while a trample map is published (`RowCropRenderer.RegrowsEveryFrame`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants

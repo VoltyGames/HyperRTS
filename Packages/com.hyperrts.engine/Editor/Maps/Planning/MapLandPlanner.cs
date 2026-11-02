@@ -5,7 +5,7 @@ using HyperRTS.Editor.Maps.Planning.War;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Lays out the land in priority order, each pass claiming only what earlier ones left: water, roads, banks, bases
+    /// Lays out the land in priority order, each pass claiming only what earlier ones left: water, roads, banks, pond margins and dams, bases
     /// and pads, access tracks, ravines, settlements (and spec tree rows), spec areas, woods, belts, farmland, then
     /// meadow everywhere else. Finally the surfaces grow their own trees and props, the war age scars the land, then
     /// decals are laid on surfaces and under props.
@@ -19,6 +19,7 @@ namespace HyperRTS.Editor.Maps.Planning
                 new MapWaterPlanner(context),
                 new MapRoadPlanner(context),
                 new MapBankPlanner(context),
+                new MapPondPlanner(context),
                 new MapBasePlanner(context),
                 new MapAccessPlanner(context),
                 new MapRavinePlanner(context),

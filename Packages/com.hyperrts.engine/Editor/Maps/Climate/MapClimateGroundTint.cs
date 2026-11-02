@@ -53,6 +53,12 @@ namespace HyperRTS.Editor.Maps.Climate
         [Tooltip("Green shift of a full drainage line.")]
         public float flowGreening;
 
+        [Tooltip("Metres of wet, dark, glossy ground along a river's edge (1 to 2).")]
+        public float bankWidth;
+
+        [Tooltip("Wetness (0..1) at the water's edge, fading to nothing over the bank width.")]
+        public float bankWetness;
+
         /// <summary>Every field by name, each of which must be above 0.</summary>
         public (string Field, float Value)[] Fields() => new[]
         {
@@ -61,7 +67,7 @@ namespace HyperRTS.Editor.Maps.Climate
             ("hollowDarkening", hollowDarkening), ("hollowWetness", hollowWetness),
             ("soilSize", soilSize), ("soilLight", soilLight), ("soilWarmth", soilWarmth),
             ("soilWetness", soilWetness), ("flowDarkening", flowDarkening), ("flowWetness", flowWetness),
-            ("flowGreening", flowGreening),
+            ("flowGreening", flowGreening), ("bankWidth", bankWidth), ("bankWetness", bankWetness),
         };
     }
 }

@@ -242,7 +242,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         private static void CreateWater(MapScene scene, MapGeneration generation)
         {
             var (layout, shapes) = (generation.Layout, generation.Shapes);
-            if (shapes.Rivers.Count == 0)
+            if (shapes.Rivers.Count == 0 && shapes.Ponds.Count == 0)
             {
                 return;
             }

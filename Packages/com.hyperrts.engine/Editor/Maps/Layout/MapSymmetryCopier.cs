@@ -38,6 +38,7 @@ namespace HyperRTS.Editor.Maps.Layout
             layout.Hills = expander.Points(spec.hills, nameof(MapSpec.hills));
             layout.Settlements = expander.Points(spec.settlements, nameof(MapSpec.settlements));
             layout.Rivers = expander.Lines(spec.rivers, nameof(MapSpec.rivers));
+            layout.Ponds = expander.Lines(spec.ponds, nameof(MapSpec.ponds));
             layout.Ravines = expander.Lines(spec.ravines, nameof(MapSpec.ravines));
             layout.Roads = expander.Lines(spec.roads, nameof(MapSpec.roads));
             layout.Woods = expander.Lines(spec.woods, nameof(MapSpec.woods));

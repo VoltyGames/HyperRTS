@@ -15,10 +15,12 @@ Shader "HyperRTS/Water"
         _RippleFadeEnd ("Ripple Fade End (m)", Float) = 250
         _RippleStrengthFar ("Ripple Strength Far (fraction)", Range(0, 1)) = 0.4
         _FlowSpeed ("Current (m/s)", Float) = 0.35
-        _Smoothness ("Smoothness", Range(0, 1)) = 0.93
+        _Smoothness ("Smoothness Near", Range(0, 1)) = 0.93
+        _SmoothnessFar ("Smoothness Far", Range(0, 1)) = 0.7
+        _SmoothnessFarDistance ("Smoothness Far Distance (m)", Float) = 250
         _Refraction ("Refraction", Range(0, 0.1)) = 0.025
         _GlintStrength ("Glint Strength", Float) = 12
-        _GlintPeak ("Glint Peak (HDR, under bloom threshold)", Range(0, 1)) = 0.85
+        _GlintPeak ("Glint Peak (HDR clamp, a little past the bloom threshold)", Range(0, 4)) = 1.3
         _GlintFadeStart ("Glint Fade Start (m)", Float) = 80
         _GlintFadeEnd ("Glint Fade End (m)", Float) = 300
         _ShoreFadeDepth ("Shore Fade Depth (m)", Float) = 0.15
@@ -71,6 +73,8 @@ Shader "HyperRTS/Water"
             half _RippleStrengthFar;
             float _FlowSpeed;
             half _Smoothness;
+            half _SmoothnessFar;
+            float _SmoothnessFarDistance;
             half _Refraction;
             half _GlintStrength;
             half _GlintPeak;
@@ -218,8 +222,14 @@ Shader "HyperRTS/Water"
                 return lines * shallow * shallow * _Caustics;
             }
 
-            // Fills only the headroom under _GlintPeak, so the glint never sets off bloom.
-            half3 Glint(Light sun, half3 normalWS, half3 view, half3 base, float cameraDistance)
+            // Far water is rougher, so it neither mirrors sharply nor aliases.
+            half DistantSmoothness(float cameraDistance)
+            {
+                return lerp(_Smoothness, _SmoothnessFar, saturate(cameraDistance / max(_SmoothnessFarDistance, 0.001)));
+            }
+
+            // Fills the headroom under _GlintPeak, which sits just past the bloom threshold: a sparkle, never a blow-out.
+            half3 Glint(Light sun, half3 normalWS, half3 view, half3 base, half smoothness, float cameraDistance)
             {
                 half fade = Fade(cameraDistance, _GlintFadeStart, _GlintFadeEnd);
                 if (fade <= 0.0)
@@ -228,7 +238,7 @@ Shader "HyperRTS/Water"
                 }
 
                 half3 halfway = normalize(sun.direction + view);
-                half highlight = pow(saturate(dot(normalWS, halfway)), exp2(_Smoothness * 11.0));
+                half highlight = pow(saturate(dot(normalWS, halfway)), exp2(smoothness * 11.0));
                 half fresnel = 0.02 + 0.98 * pow(1.0 - saturate(dot(view, halfway)), 5.0);
                 half3 glint = sun.color * (highlight * fresnel * _GlintStrength * sun.shadowAttenuation * fade);
                 half headroom = max(0.0, _GlintPeak - Brightest(base));
@@ -255,8 +265,8 @@ Shader "HyperRTS/Water"
                 float shoreDistance = ShoreDistance(depth, input.positionWS);
                 float shoreDepth = depth + ShoreLap(input.uv);
 
-                // The current runs fastest mid-channel and drags along the banks.
-                float current = _FlowSpeed * lerp(WATER_BANK_CURRENT, 1.0, smoothstep(0.5, 5.0, shoreDistance));
+                // The current runs fastest mid-channel and drags along the banks; vertex B marks still water (ponds).
+                float current = _FlowSpeed * lerp(WATER_BANK_CURRENT, 1.0, smoothstep(0.5, 5.0, shoreDistance)) * (1.0 - input.color.b);
                 half rippleScale = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
                 half3 ripple = Ripples(input.uv, _RippleStrength * rippleScale, current, cameraDistance);
                 half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
@@ -289,18 +299,21 @@ Shader "HyperRTS/Water"
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
                 half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
-                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - _Smoothness, 1.0);
+                half smoothness = DistantSmoothness(cameraDistance);
+                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0);
                 // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
                 half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
                 half4 scene = half4(0.0, 0.0, 0.0, 0.0);
                 if (_ReflectionStrength > 0.0)
                 {
                     scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
+                    // The sharp march can't blur, so a rougher surface hands the reflection over to the blurred sky.
+                    scene.a *= saturate((smoothness - _SmoothnessFar) / max(_Smoothness - _SmoothnessFar, 0.001));
                 }
 
                 half3 reflection = lerp(sky, RemoveAtmosphereFog(scene.rgb, fog.atmosphere), scene.a * _ReflectionStrength);
                 half3 color = lerp(body, reflection, fresnel);
-                color += Glint(sun, normalWS, view, color, cameraDistance);
+                color += Glint(sun, normalWS, view, color, smoothness, cameraDistance);
 
                 // Calm and wake foam thin out on the last few centimetres so they never paint over the dry bank.
                 half rapids = RapidsFoam(input.uv, input.color.g) * 0.5;
