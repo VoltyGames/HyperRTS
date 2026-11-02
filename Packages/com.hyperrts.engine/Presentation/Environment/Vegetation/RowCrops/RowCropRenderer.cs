@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             get
             {
                 var quality = PresentationQuality.Current;
-                return new ScatterSettings(quality.CropDensity, quality.CropDistance, 0f);
+                return new ScatterSettings(quality.CropDensity, quality.CropDistance, quality.CropShadowDistance);
             }
         }
 
@@ -86,7 +86,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
                     var field = fields.fields[index];
                     var crop = fields.crops[field.crop];
                     var job = RowCropSpots.Job(rect, index, field, crop.rowSpacing, crop.plantSpacing);
-                    batches[field.crop].Add(job, bounds, settings.Distance, near, far);
+                    batches[field.crop].Add(job, bounds, settings, near, far);
                 }
             }
         }

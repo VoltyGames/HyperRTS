@@ -82,6 +82,17 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Metres from the camera the simple mesh is drawn to. Cards draw past it.")]
         public float lod1Distance = 120f;
 
+        [Tooltip("Metres from the camera plants start to thin out, from every plant kept to the far share at the simple mesh's far edge.")]
+        public float thinStart = 10f;
+
+        [Tooltip("Share of plants kept at the simple mesh's far edge. The share falls from 1 at the thinning start to this and holds, so far fields cost less.")]
+        [Range(0.05f, 1f)]
+        public float farShare = 1f;
+
+        [Tooltip("Scale of plants at the simple mesh's far edge, so the thinner far plants still cover the ground. Grows from 1 as the share falls.")]
+        [Range(1f, 2f)]
+        public float farScale = 1f;
+
         [Tooltip("Whether the far cards cast shadows.")]
         public bool cardShadows;
 
@@ -113,6 +124,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             Require(problems, edgeMargin >= 0f, $"{nameof(edgeMargin)} {edgeMargin} must not be negative");
             Require(problems, height > 0f, $"{nameof(height)} {height} must be above 0");
             Require(problems, lod0Distance > 0f, $"{nameof(lod0Distance)} {lod0Distance} must be above 0");
+            Require(problems, farShare is >= 0.05f and <= 1f, $"{nameof(farShare)} {farShare} must be 0.05 to 1");
+            Require(problems, farScale is >= 1f and <= 2f, $"{nameof(farScale)} {farScale} must be 1 to 2");
+            Require(problems, thinStart >= 0f && thinStart < lod1Distance,
+                $"{nameof(thinStart)} {thinStart} must be 0 to {nameof(lod1Distance)} {lod1Distance}");
             Require(problems, lod1Distance > lod0Distance,
                 $"{nameof(lod1Distance)} {lod1Distance} must be above {nameof(lod0Distance)} {lod0Distance}");
             return problems;

@@ -33,6 +33,7 @@ SamplerState sampler_LinearClamp;
 #define EDGE_REACH 1.5 // metres probed round a plant; a plant this near the field's edge leans the most
 #define EDGE_DITHER 1.5 // metres the field lookup strays, so edges on the 1 m grid look ragged
 #define LODS 3u // RowCropBands.Lods
+#define TRAMLINE_VERGE 0.15 // metres added to a wheel line's half width for the thinnest plants
 #define FADE_SHARE 0.15 // share of the draw distance over which plants shrink away
 
 struct RowCropField // RowCropField.cs, 48 bytes
@@ -56,6 +57,7 @@ float4 _Camera;      // xyz position, w draw distance
 float4 _Planting;    // row spacing, plant spacing, jitter, yaw jitter (radians)
 float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
 float4 _Variety;     // lean, edge lean (radians), wander metres, 1 / wander length
+float4 _Far;         // share of plants kept and their scale at the simple mesh's far edge, metres thinning starts at
 float4 _Growth;      // min and max growth scale, 1 / growth variation size, scale at the field's edge
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;      // the quality's share of plants
@@ -170,6 +172,21 @@ void Plant(uint3 id : SV_DispatchThreadID)
         return;
     }
 
+    // From the thinning start plants thin out, nested by the density channel, and the rest grow to cover the gaps.
+    float thinning = saturate((range - _Far.z) / (_Size.w - _Far.z));
+    if (Channel(hash, CHANNEL_DENSITY) >= _Density * _Stand * lerp(1.0, _Far.x, thinning))
+    {
+        return;
+    }
+
+    // Fatter far plants would close the wheel lines, so thinned plants keep a wider verge off them.
+    float4 verge = field.tramlines;
+    verge.z += TRAMLINE_VERGE * thinning;
+    if (OnTramline(verge, row * _Planting.x + across))
+    {
+        return;
+    }
+
     TrampleSample trample = SampleTrample(xz);
     if (trample.crop > 0.5 + 0.5 * Channel(hash, CHANNEL_DROP))
     {
@@ -184,7 +201,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     // Probing the edge only pays when the field's edge grows or leans differently from its middle.
     bool edged = _Growth.w != 1.0 || _Variety.y != _Variety.x;
     float edge = edged ? Edge(spot, field, (uint)job.id + 1u) : 0.0;
-    grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * growth * lerp(1.0, _Growth.w, edge) * fade;
+    grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * growth * lerp(1.0, _Growth.w, edge) * lerp(1.0, _Far.y, thinning) * fade;
     float2 forward = _FacesRow > 0.5 ? field.along : float2(0.0, 1.0);
     float2 side = _FacesRow > 0.5 ? field.across : float2(1.0, 0.0);
     grown.facing = forward * cos(turn) + side * sin(turn);

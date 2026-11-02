@@ -427,7 +427,8 @@ keywords (`shader_feature_local`) stay in each shader.
 Shaders that move their vertices share their prepasses. `Rendering/DisplacedPasses.hlsl` gives Foliage, RowCrop,
 Flag and Bark's motion vectors their shadow, depth, depth-normals and motion vector entries from one `Displace` hook
 taking a `WindFrame` and an object matrix: motion vectors call it with last frame's wind and matrix, so sway and
-toppling both show. `Rendering/DisplacedLitPasses.hlsl` wraps whichever URP pass file came before it in one
+toppling both show. Grass (`FoliageGrass`) and RowCrop already use it, so their blades reproject under TAA. Their `_MipBias` (0 to -1,
+default 0) samples the cutout atlas sharper; set about -0.5 on the plant materials for thin stalks. `Rendering/DisplacedLitPasses.hlsl` wraps whichever URP pass file came before it in one
 `DisplacedLitVertex`, for LitTeam (`LitTeamPasses.hlsl`) and Bark (`BarkPasses.hlsl`), and hides the field names that
 change from pass to pass. `Rendering/Hash.hlsl` holds the one PCG hash, `Random` and value noise, used by wind,
 plant tints, grime, terrain hex tiling and the scatter compute shaders.
@@ -578,7 +579,9 @@ thin-film sheen over what the remains map covers, with a noisy fringe; ground wi
 sample. Ash from 0.6 up turns to untextured char over the ash texture: the terrain material's `_RemainsCharColor`,
 near black and shaded in 11 m patches, with a few soft grey ash smudges a few metres long where two scales of the
 noise map's smooth channel, blended, pass `1 - _RemainsCharStreaks`; the ground's bumps are mostly smoothed away.
-Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
+A rut is stamped as a ramp that falls linearly to the tyre's edge, and `RutCoverage` cuts it at `RUT_EDGE` with a
+`fwidth` anti-aliased edge, so two clean bands show between 0.2 m texels instead of a soft blob; as the ramp fades the
+band narrows and goes. Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
 
 Craters also dent the drawn ground. In presented worlds `CraterTerrainSystem` redraws the active Unity Terrain's
@@ -665,6 +668,12 @@ while a trample map is published (`RowCropRenderer.RegrowsEveryFrame`; grass doe
 shrink away over the last 15 % of the draw distance. Each plant switches model at its own distance, up to 20 % either
 side of the LOD distances, so the models mix over a stretch rather than meeting at a ring that sweeps across the field
 as the camera zooms. It also runs in edit mode.
+
+A crop thins out from `thinStart`: the share of plants kept falls from 1 to `farShare` at
+`lod1Distance` and holds, picked by the same hash as the density so the kept plants are the same ones each frame, and the
+kept ones grow to `farScale` to cover the gaps. Plants cost their triangles in every pass, so this is the lever on
+far fields: a field costs about the square of its reach. Crops cast shadows only from the bands that end within
+`PresentationQuality.CropShadowDistance` (`RowCropBands.CastsShadows`); the card band casts when `cardShadows` is set.
 
 #### Scatter host
 

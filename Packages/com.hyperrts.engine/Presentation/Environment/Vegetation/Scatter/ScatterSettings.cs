@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 {
-    /// <summary>The quality knobs a camera's plants are scattered for. Crops draw no shadow band, so pass 0 for it.</summary>
+    /// <summary>The quality knobs a camera's plants are scattered for. Crops cast shadows only from bands that end within the shadow distance.</summary>
     internal readonly struct ScatterSettings
     {
         public readonly float Density;

@@ -20,6 +20,17 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             _ => (ScatterBands.FirstPast(crop.lod1Distance), drawDistance),
         };
 
+        /// <summary>Whether a band casts shadows: a plant band ends within the shadow distance, a card band when its crop asks.</summary>
+        public static bool CastsShadows(int lod, RowCrop crop, float drawDistance, float shadowDistance)
+        {
+            if (shadowDistance <= 0f)
+            {
+                return false;
+            }
+
+            return lod == Card ? crop.cardShadows : Band(lod, crop, drawDistance).To <= shadowDistance;
+        }
+
         /// <summary>Whether plants between <paramref name="near"/> and <paramref name="far"/> can fall in a band.</summary>
         public static bool InBand(int lod, RowCrop crop, float drawDistance, float near, float far)
         {

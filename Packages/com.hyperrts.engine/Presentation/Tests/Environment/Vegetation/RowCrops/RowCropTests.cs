@@ -195,6 +195,15 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
             Assert.IsTrue(RowCropBands.InBand(RowCropBands.Full, _crop, 30f, 0f, 500f));
         }
 
+        [Test]
+        public void Shadows_OnlyFromBandsThatEndWithinTheShadowDistance()
+        {
+            Assert.IsTrue(RowCropBands.CastsShadows(RowCropBands.Full, _crop, 300f, 60f));
+            Assert.IsFalse(RowCropBands.CastsShadows(RowCropBands.Simple, _crop, 300f, 60f));
+            Assert.IsFalse(RowCropBands.CastsShadows(RowCropBands.Full, _crop, 300f, 0f));
+            Assert.IsFalse(RowCropBands.CastsShadows(RowCropBands.Card, _crop, 300f, 60f));
+        }
+
         // The spots RowCrops.compute's Plant keeps, one thread per spot of the job.
         private static List<(int, int)> Grown(Rect tile, RowCropField field)
         {

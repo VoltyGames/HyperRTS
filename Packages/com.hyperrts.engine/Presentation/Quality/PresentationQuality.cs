@@ -37,6 +37,9 @@ namespace HyperRTS.Presentation.Quality
         /// <summary>Metres row crops are drawn to.</summary>
         public float CropDistance;
 
+        /// <summary>Metres row crops cast shadows to, 0 for none. A crop band casts only when it ends within it.</summary>
+        public float CropShadowDistance;
+
         /// <summary>Share of the screen resolution the cameras render at, above 0 and at most 1.</summary>
         public float RenderScale;
 
@@ -54,6 +57,7 @@ namespace HyperRTS.Presentation.Quality
             GrassShadowDistance = 40f,
             CropDensity = 1f,
             CropDistance = 300f,
+            CropShadowDistance = 60f,
             RenderScale = 1f,
             BattleHaze = true,
         };
@@ -73,6 +77,7 @@ namespace HyperRTS.Presentation.Quality
             Require(GrassShadowDistance >= 0f, nameof(GrassShadowDistance), GrassShadowDistance, "not negative");
             Require(CropDensity is >= 0f and <= 1f, nameof(CropDensity), CropDensity, "0 to 1");
             Require(CropDistance > 0f, nameof(CropDistance), CropDistance, "above 0");
+            Require(CropShadowDistance >= 0f, nameof(CropShadowDistance), CropShadowDistance, "not negative");
         }
 
         /// <summary>

@@ -116,6 +116,7 @@ namespace HyperRTS.Editor.Maps.Views
             }
 
             QualitySettings.SetQualityLevel(_quality, true);
+            MapLookQuality.Applied?.Invoke(_quality);
             var keys = _weathers.Count > 0 ? _weathers : weatherSet.atmospheres.Keys.OrderBy(k => k).ToList();
             if (_cost)
             {

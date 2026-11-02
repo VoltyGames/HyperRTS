@@ -19,6 +19,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         private static readonly int VarietyId = Shader.PropertyToID("_Variety");
         private static readonly int GrowthId = Shader.PropertyToID("_Growth");
         private static readonly int StandId = Shader.PropertyToID("_Stand");
+        private static readonly int FarId = Shader.PropertyToID("_Far");
         private static readonly int VariantsId = Shader.PropertyToID("_Variants");
         private static readonly int CanopyHeightId = Shader.PropertyToID("_CanopyHeight");
 
@@ -29,6 +30,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         private readonly Bounds[] _bands = new Bounds[RowCropBands.Lods];
         private readonly int _plantBound;
         private readonly float _height;
+        private ScatterSettings _settings;
 
         internal RowCropBatch(RowCrop crop, RowCropComputeInputs kernels)
             : base(kernels, SlotMeshes(crop), MinCapacity)
@@ -68,12 +70,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         private protected override void ForgetView() => Array.Clear(_needed, 0, _needed.Length);
 
         /// <summary>Queues a visible tile of one of the crop's fields, <paramref name="near"/> to <paramref name="far"/> metres away.</summary>
-        internal void Add(ScatterJob job, Bounds bounds, float drawDistance, float near, float far)
+        internal void Add(ScatterJob job, Bounds bounds, ScatterSettings settings, float near, float far)
         {
             Queue(job);
+            _settings = settings;
             for (var lod = 0; lod < RowCropBands.Lods; lod++)
             {
-                if (!RowCropBands.InBand(lod, _crop, drawDistance, near, far))
+                if (!RowCropBands.InBand(lod, _crop, settings.Distance, near, far))
                 {
                     continue;
                 }
@@ -98,6 +101,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
                 _crop.wander, 1f / _crop.wanderLength));
             var growth = _crop.growthVariation;
             Compute.SetVector(GrowthId, new Vector4(growth.x, growth.y, 1f / _crop.growthVariationSize, _crop.edgeGrowth));
+            Compute.SetVector(FarId, new Vector4(_crop.farShare, _crop.farScale, _crop.thinStart, 0f));
             Compute.SetFloat(StandId, _crop.stand);
             Compute.SetInt(VariantsId, _variants);
         }
@@ -117,11 +121,12 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 
         private protected override RenderParams Parameters(int slot)
         {
-            var card = slot % RowCropBands.Lods == RowCropBands.Card;
-            return new RenderParams(card ? _crop.cardMaterial : _crop.material)
+            var lod = slot % RowCropBands.Lods;
+            var casts = RowCropBands.CastsShadows(lod, _crop, _settings.Distance, _settings.ShadowDistance);
+            return new RenderParams(lod == RowCropBands.Card ? _crop.cardMaterial : _crop.material)
             {
-                worldBounds = _bands[slot % RowCropBands.Lods],
-                shadowCastingMode = card && !_crop.cardShadows ? ShadowCastingMode.Off : ShadowCastingMode.On,
+                worldBounds = _bands[lod],
+                shadowCastingMode = casts ? ShadowCastingMode.On : ShadowCastingMode.Off,
             };
         }
 
