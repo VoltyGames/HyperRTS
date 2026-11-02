@@ -102,7 +102,7 @@ namespace HyperRTS.Editor.Maps.Views
         }
 
         /// <summary>Looks down at the view's focus from its height, at the pitch the match camera has there.</summary>
-        private static void Aim(Camera camera, MapView view, CameraController controller)
+        public static void Aim(Camera camera, MapView view, CameraController controller)
         {
             var pitch = CameraController.PitchAt(view.Height, controller.minZoom, controller.maxZoom,
                 controller.pitchAtMinZoom, controller.pitchAtMaxZoom);

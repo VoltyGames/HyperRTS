@@ -19,6 +19,7 @@ the match camera.
 | Preview | The Map Editor, the `map_preview` [command](editor.md#commands) or batch `.Preview` | Layout image, issues and land figures |
 | Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**, `map_build` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
 | Views | Every build with graphics, **Recapture views** in the Map Editor, or `map_capture` | Screenshots in `Logs/MapReports/<Map>/`, and their contrast in the report |
+| Looks | `map_look`, in Play mode | The spec's `looks` at the closest, middle and farthest zoom in every weather, with GI settled, in `Logs/MapReports/<Map>/look/<Weather>/` and a `summary.json` |
 
 A preview needs no scene. It does not measure rush times or attack paths; only a build does.
 
@@ -137,6 +138,7 @@ All arrays are optional and authored for the sector only. Land is claimed in the
 | `areas` | `points` (polygon), `kind` | One surface painted by hand |
 | `rows` | `points`, `kind`, `spacing` | A row every `spacing` metres of a climate tree or a palette prop |
 | `scatters` | `points` (polygon), `kind`, `count` | Palette props at random in the polygon. `besideRoad` entries move onto the nearest road's verge and face along it, so the polygon must reach a road |
+| `looks` | `name`, `pos`, `yaw`, `fog` | Not a feature: places `map_look` frames. Not mirrored. `fog` keeps the fog of war on there, to judge fogged ground |
 
 Every feature except spawns also takes `shared`. A river crossing has `along` (0 to 1 down the
 authored river), `kind` (`bridge` or `ford`), `width` and `prop`: a bridge's prefab carries the walkable deck, a ford's
@@ -366,7 +368,7 @@ that names no item and a link to an asset that no longer exists, on the Validate
 | --- | --- |
 | `-executeMethod HyperRTS.Editor.Maps.Tools.MapCommandLine.Build -map <spec>` | Builds one map |
 | `...MapCommandLine.Preview -map <spec>` | Previews one map |
-| `map_preview`, `map_build` (every map when none is named), `map_capture` | The same with the Editor open, as [commands](editor.md#commands) |
+| `map_preview`, `map_build` (every map when none is named), `map_capture`, `map_look` | The same with the Editor open, as [commands](editor.md#commands) |
 | `MapPreview.Run`, `MapBuilder.Build`, `MapViewCapture.Capture` | The same from editor code |
 | `MapBuildRunner.Build(spec)`, `.BuildAll()` | Builds as the editor does, saving and reopening scenes; with `ask: false` unsaved scenes throw instead |
 | `MapKeyReference.Write(path, MapLibrary.Load())` | Writes a Markdown list of every `kind` a spec may name |

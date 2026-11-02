@@ -45,6 +45,9 @@ namespace HyperRTS.Editor.Maps.Spec
         public List<MapRowSpec> rows = new();
         public List<MapScatterSpec> scatters = new();
 
+        /// <summary>Points the Play-mode look captures frame (<c>map_look</c>); they change nothing on the map.</summary>
+        public List<MapLookSpec> looks = new();
+
         public MapWarAge WarAge => Enum.Parse<MapWarAge>(warAge);
     }
 }

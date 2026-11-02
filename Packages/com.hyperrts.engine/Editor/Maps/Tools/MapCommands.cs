@@ -34,6 +34,16 @@ namespace HyperRTS.Editor.Maps.Tools
         [CliCommand("map_capture", "Render a built map's standard views from the match camera; returns the image paths.", Tags = new[] { Tag })]
         public static List<string> Capture([CliArg("map", MapHelp, Required = true)] string map) => MapViewCapture.Capture(MapPaths.Find(map));
 
+        [CliCommand("map_look", "Start Play-mode captures of a built map's spec looks at three zooms per weather, with GI settled (minutes). Returns at once with the folder; poll map_look_status until it says Done or Failed. Weathers is a comma list, empty for all; quality a level name, empty for the current one.", Tags = new[] { Tag })]
+        public static object Look(
+            [CliArg("map", MapHelp, Required = true)] string map,
+            [CliArg("weathers", "Comma list of weather keys; empty takes every weather")] string weathers = "",
+            [CliArg("quality", "Quality level name; empty keeps the current level")] string quality = "") =>
+            new { folder = MapLookCapture.Start(MapPaths.Find(map), weathers, quality) };
+
+        [CliCommand("map_look_status", "Progress of the running look capture, or how the last one ended.", Tags = new[] { Tag })]
+        public static object LookStatus() => new { running = MapLookCapture.IsRunning, status = MapLookCapture.Status };
+
         private static object Summary(MapReport report) => new
         {
             report.map,
