@@ -18,6 +18,7 @@ namespace HyperRTS.Presentation.Rendering
         private static readonly int SunId = Shader.PropertyToID("_ContactShadowSun");
         private static readonly int TraceId = Shader.PropertyToID("_ContactShadowTrace");
         private static readonly int ScreenId = Shader.PropertyToID("_ContactShadowScreen");
+        private static readonly int FadeId = Shader.PropertyToID("_ContactShadowFade");
 
         private readonly Material _material;
         private ContactShadowsFeature _settings;
@@ -77,6 +78,7 @@ namespace HyperRTS.Presentation.Rendering
             _material.SetVector(TraceId, new Vector4(_settings.length, _settings.steps, _settings.thickness,
                 _settings.strength * _sunShadowStrength));
             _material.SetVector(ScreenId, new Vector4(desc.width, desc.height, 1f / desc.width, 1f / desc.height));
+            _material.SetVector(FadeId, new Vector4(_settings.fadeStart, 1f / (_settings.fadeEnd - _settings.fadeStart)));
         }
     }
 }

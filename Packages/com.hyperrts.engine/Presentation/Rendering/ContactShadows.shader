@@ -29,6 +29,8 @@ Shader "Hidden/HyperRTS/ContactShadows"
             float4 _ContactShadowTrace;
             // Width, height and their reciprocals.
             float4 _ContactShadowScreen;
+            // View depth the fade starts at, and one over its length.
+            float4 _ContactShadowFade;
 
             // Keeps a surface from shadowing itself through depth precision at the start of the trace.
             static const float SurfaceBias = 0.02;
@@ -95,9 +97,16 @@ Shader "Hidden/HyperRTS/ContactShadows"
                 }
 
                 float3 start = ViewPosition(input.positionCS.xy * _ContactShadowScreen.zw, rawDepth);
+                // View space looks down -z, so eye depth is -z.
+                half fade = half(1.0 - saturate((-start.z - _ContactShadowFade.x) * _ContactShadowFade.y));
+                if (fade <= 0.0h)
+                {
+                    return shadow;
+                }
+
                 // Fixed per pixel rather than per frame, so the trace's banding doesn't crawl.
                 float jitter = InterleavedGradientNoise(input.positionCS.xy, 0);
-                return shadow * (1.0h - half(_ContactShadowTrace.w) * Occlusion(start, jitter));
+                return shadow * (1.0h - half(_ContactShadowTrace.w) * fade * Occlusion(start, jitter));
             }
             ENDHLSL
         }

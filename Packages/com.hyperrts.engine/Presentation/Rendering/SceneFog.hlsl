@@ -53,14 +53,9 @@ half3 RemoveAtmosphereFog(half3 color, half4 fog)
     return max(color - fog.rgb, 0.0) / max(1.0 - fog.a, 0.25);
 }
 
-half3 ApplyFog(half3 color, half4 fog)
-{
-    return lerp(color, fog.rgb, fog.a);
-}
-
 half3 ApplySceneFog(half3 color, SceneFog fog)
 {
-    return ApplyFog(ApplyAtmosphereFog(color, fog.atmosphere), fog.war);
+    return ApplyFogOfWar(ApplyAtmosphereFog(color, fog.atmosphere), fog.war);
 }
 
 #endif

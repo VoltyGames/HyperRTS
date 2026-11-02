@@ -38,6 +38,11 @@ namespace HyperRTS.Presentation.Tests.Rendering
             _feature.thickness = 0.4f;
             _feature.strength = 1.5f;
             StringAssert.Contains("strength", _feature.SettingsProblem());
+            _feature.strength = 1f;
+            _feature.fadeEnd = _feature.fadeStart;
+            StringAssert.Contains("fade", _feature.SettingsProblem());
+            _feature.fadeStart = -1f;
+            StringAssert.Contains("fade", _feature.SettingsProblem());
         }
 
         [Test]

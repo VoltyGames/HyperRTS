@@ -28,6 +28,12 @@ namespace HyperRTS.Presentation.Rendering
         [Tooltip("How dark a contact shadow is, 0 to 1, scaled by the sun's shadow strength.")]
         public float strength = 1f;
 
+        [Tooltip("View depth in metres where contact shadows start to fade, since a short trace is under a pixel far off.")]
+        public float fadeStart = 60f;
+
+        [Tooltip("View depth in metres past which contact shadows are gone.")]
+        public float fadeEnd = 80f;
+
         [Tooltip("Lowest quality level index the shadows run at, so cheaper levels skip them.")]
         public int lowestQualityLevel = 1;
 
@@ -52,7 +58,14 @@ namespace HyperRTS.Presentation.Rendering
                 return $"Contact shadow thickness {thickness} must be above 0.";
             }
 
-            return strength is < 0f or > 1f ? $"Contact shadow strength {strength} must be 0 to 1." : string.Empty;
+            if (strength is < 0f or > 1f)
+            {
+                return $"Contact shadow strength {strength} must be 0 to 1.";
+            }
+
+            return fadeStart < 0f || fadeEnd <= fadeStart
+                ? $"Contact shadow fade {fadeStart} to {fadeEnd} m must start at 0 or more and end past its start."
+                : string.Empty;
         }
 
         public bool RunsAt(int qualityLevel) => qualityLevel >= lowestQualityLevel;

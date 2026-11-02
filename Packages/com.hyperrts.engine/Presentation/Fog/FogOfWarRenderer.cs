@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Fog
 
         [SerializeField]
         [Tooltip("Fog colour; alpha scales every opacity below.")]
-        private Color color = new(0.02f, 0.03f, 0.05f, 1f);
+        private Color color = new(0.035f, 0.033f, 0.03f, 1f);
 
         [SerializeField]
         [Range(0f, 1f)]

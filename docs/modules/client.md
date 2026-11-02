@@ -328,7 +328,9 @@ per cell, and the shown grid eases toward it over `fadeTime` (0.3 s), so the edg
 over about a cell, so it reads round. `FogOfWarFeature`, on the URP renderer with its shader set to
 `Hidden/HyperRTS/FogOfWar`, copies the camera colour through the fog before the transparents, from the depth buffer:
 fogged ground loses `desaturation` of its colour and darkens toward the fog colour, so terrain and buildings fog where
-they stand while health bars, markers and the placement ghost stay clear. Transparents only darken.
+they stand while health bars, markers and the placement ghost stay clear. The fog colour is a neutral dark, so fogged
+ground reads as dim daylight rather than night. Water and six-way smoke drain and darken the same way through
+`SceneFog.hlsl`; other transparents only darken.
 
 While the Selection map's `SightShape` key (Alt) is held, `SightShapeView` is shown and `SightShape` paints the
 ground the selected units see, from their `SightArea`es, into a mask the fog pass outlines in `sightShapeColor`. Water and effect
@@ -485,7 +487,8 @@ traces the depth buffer from each pixel toward the sun (`length` 1 m in up to `s
 jittered per pixel), counts a hit when the trace passes less than `thickness` behind a surface, and registers a darkened
 copy under the same global. Every opaque shader that reads the sun's screen-space shadow then gets contact shadows
 without changes; transparents keep the cascades. `strength` scales with the sun light's shadow strength, so diffuse
-weathers show none. The feature runs from `lowestQualityLevel` up (1, so the Low level skips it), and only in game and
+weathers show none. They fade out between `fadeStart` and `fadeEnd` of view depth (60 to 80 m), where a 1 m trace
+is under a pixel and only streaks dense crop rows. The feature runs from `lowestQualityLevel` up (1, so the Low level skips it), and only in game and
 scene view perspective cameras.
 
 ### Wind

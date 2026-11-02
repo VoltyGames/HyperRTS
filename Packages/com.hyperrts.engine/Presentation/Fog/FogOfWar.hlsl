@@ -41,13 +41,17 @@ half4 FogOfWarAt(float3 positionWS)
     return half4(_HyperRTSFogOfWarColor.rgb, opacity * _HyperRTSFogOfWarColor.a);
 }
 
-// What the fog makes of a lit colour: drained of colour, then darkened toward the fog colour.
-half3 FogOfWarLook(half3 color, float3 positionWS)
+// What fog found by FogOfWarAt makes of a lit colour: drained of colour, then darkened toward the fog colour.
+half3 ApplyFogOfWar(half3 color, half4 fog)
 {
-    half4 fog = FogOfWarAt(positionWS);
     half grey = dot(color, half3(0.2126, 0.7152, 0.0722));
     half3 muted = lerp(color, grey.xxx, saturate(fog.a * 2.0) * _HyperRTSFogOfWarLook.x);
     return lerp(muted, fog.rgb, fog.a);
+}
+
+half3 FogOfWarLook(half3 color, float3 positionWS)
+{
+    return ApplyFogOfWar(color, FogOfWarAt(positionWS));
 }
 
 // A thin line round the ground the selected units see, about a quarter of a cell wide. Its width is set on the
