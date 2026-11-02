@@ -29,11 +29,10 @@ namespace HyperRTS.Editor.Environment
         public const int TerrainSize = 256;
         private const uint TerrainSeed = 20261011u;
         private const float TerrainContrast = 0.17f;
-        public const int RippleSize = 512;
+        public const int RippleSize = 1024;
         private const uint RippleSeed = 7u;
-        private const int RippleWaves = 90;
-        private const int LongestRipple = 14;
-        private const float RippleSteepness = 3f;
+        private const float RipplePeakCycles = 7f;
+        private const float RippleSlope = 0.4f;
 
         public override string Name => "Environment textures";
 
@@ -113,63 +112,9 @@ namespace HyperRTS.Editor.Environment
             return texels;
         }
 
-        /// <summary>Unit tangent-space normals of tiling sine ripples, v up as Unity samples them.</summary>
-        public static Vector3[] RippleNormals()
-        {
-            var height = RippleHeight();
-            var normals = new Vector3[height.Length];
-            for (var y = 0; y < RippleSize; y++)
-            {
-                for (var x = 0; x < RippleSize; x++)
-                {
-                    var slopeU = TileableNoise.Sobel(height, RippleSize, x, y, 1, 0);
-                    var slopeV = TileableNoise.Sobel(height, RippleSize, x, y, 0, 1);
-                    normals[y * RippleSize + x] =
-                        new Vector3(-slopeU * RippleSteepness, -slopeV * RippleSteepness, 1f).normalized;
-                }
-            }
-
-            return normals;
-        }
-
-        /// <summary>Whole-cycle waves so the height tiles, longer ones stronger, stretched over 0..1.</summary>
-        private static float[] RippleHeight()
-        {
-            var height = new float[RippleSize * RippleSize];
-            var random = new Random(RippleSeed);
-            for (var wave = 0; wave < RippleWaves; wave++)
-            {
-                var k = random.NextInt2(-LongestRipple, LongestRipple + 1);
-                var length = Mathf.Sqrt(k.x * k.x + k.y * k.y);
-                if (length < 2f)
-                {
-                    continue;
-                }
-
-                var amplitude = 1f / Mathf.Pow(length, 1.4f);
-                var phase = random.NextFloat(0f, 2f * Mathf.PI);
-                for (var i = 0; i < height.Length; i++)
-                {
-                    var along = (float)(k.x * (i % RippleSize) + k.y * (i / RippleSize)) / RippleSize;
-                    height[i] += amplitude * Mathf.Sin(2f * Mathf.PI * along + phase);
-                }
-            }
-
-            var low = float.MaxValue;
-            var high = float.MinValue;
-            foreach (var value in height)
-            {
-                low = Mathf.Min(low, value);
-                high = Mathf.Max(high, value);
-            }
-
-            for (var i = 0; i < height.Length; i++)
-            {
-                height[i] = Mathf.InverseLerp(low, high, height[i]);
-            }
-
-            return height;
-        }
+        /// <summary>Unit tangent-space normals of a tiling wind-wave spectrum, v up as Unity samples them.</summary>
+        public static Vector3[] RippleNormals() =>
+            WaterSpectrum.Normals(RippleSize, RippleSeed, RipplePeakCycles, RippleSlope);
 
         /// <summary>Two standardised fields weighted, scaled about 0.5 and clipped to 0..1, written into the first.</summary>
         private static float[] Brightness(float[] first, float firstWeight, float[] second, float secondWeight)
@@ -252,10 +197,14 @@ namespace HyperRTS.Editor.Environment
             importer.textureCompression = TextureImporterCompression.Uncompressed;
         }
 
+        // Seen at a grazing angle from the match camera, so trilinear and anisotropic, and full size.
         private static void ConfigureWaterRipples(TextureImporter importer)
         {
             importer.textureType = TextureImporterType.NormalMap;
-            importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.maxTextureSize = RippleSize;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.anisoLevel = 8;
         }
     }
 }

@@ -1,13 +1,13 @@
-// River and lake surface, ripples drifting along V (metres). Vertex A is how shallow a ford is, G fast water.
+// River and lake surface: three scales of spectrum ripples flowing along V (metres), faster mid-channel. Vertex A is
+// how shallow a ford is, G fast water.
 // Needs the URP asset's Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {
     Properties
     {
-        _ShallowColor ("Shallow Color", Color) = (0.34, 0.42, 0.33, 1)
-        _DeepColor ("Deep Color", Color) = (0.07, 0.15, 0.14, 1)
-        _DepthRange ("Depth To Deep Color (m)", Float) = 2.5
-        _Clarity ("Clarity (m)", Float) = 0.7
+        _ScatterColor ("Scatter Color (deep water)", Color) = (0.07, 0.15, 0.14, 1)
+        _Absorption ("Absorption per m (RGB)", Vector) = (0.9, 0.5, 0.55, 0)
+        _Caustics ("Caustics In Shallows", Range(0, 2)) = 0.6
         [Normal] _NormalMap ("Ripples", 2D) = "bump" {}
         _RippleSize ("Ripple Size (m)", Float) = 5
         _RippleStrength ("Ripple Strength", Range(0, 2)) = 0.55
@@ -60,10 +60,9 @@ Shader "HyperRTS/Water"
         SAMPLER(sampler_NormalMap);
 
         CBUFFER_START(UnityPerMaterial)
-            half4 _ShallowColor;
-            half4 _DeepColor;
-            float _DepthRange;
-            float _Clarity;
+            half4 _ScatterColor;
+            half4 _Absorption;
+            half _Caustics;
             float4 _NormalMap_ST;
             float _RippleSize;
             half _RippleStrength;
@@ -159,6 +158,10 @@ Shader "HyperRTS/Water"
                 return output;
             }
 
+            #define WATER_FLOW_PERIOD 3.0 // seconds before a drifting ripple layer fades back to its start
+            #define WATER_CAUSTIC_DEPTH 1.2 // metres of water caustics reach through
+            #define WATER_BANK_CURRENT 0.35 // share of the current left at the bank
+
             // 1 before start metres, 0 past end.
             half Fade(float metres, float start, float end)
             {
@@ -170,13 +173,49 @@ Shader "HyperRTS/Water"
                 return max(color.r, max(color.g, color.b));
             }
 
-            half3 Ripples(float2 uv, half strength)
+            // One ripple scale drifting downstream (V) at speed m/s, turned so the scales don't line up. Two phases a
+            // half period apart fade in turn, so the drift can restart without a jump however the speed varies.
+            half2 FlowLayer(float2 uv, float size, float2x2 turn, float speed, half strength)
             {
-                float2 flow = float2(0.0, _Time.y * _FlowSpeed);
-                half3 first = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, (uv - flow) / _RippleSize), strength);
-                half3 second = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap,
-                    (uv * 0.43 + float2(0.31, 0.0) - flow * 0.7) / _RippleSize), strength);
-                return normalize(half3(first.xy + second.xy, first.z * second.z));
+                float t0 = frac(_Time.y / WATER_FLOW_PERIOD);
+                float t1 = frac(t0 + 0.5);
+                float travel = speed * WATER_FLOW_PERIOD;
+                float2 a = mul(turn, uv - float2(0.0, t0 * travel)) / size;
+                float2 b = mul(turn, uv - float2(0.0, t1 * travel)) / size + 0.5;
+                half weight = 1.0 - abs(2.0 * t0 - 1.0);
+                half2 slope = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, a), strength).xy * weight
+                    + UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, b), strength).xy * (1.0 - weight);
+                return mul(transpose(turn), slope);
+            }
+
+            // Three scales of the wave spectrum: long swells, ripples and a fine chop, the chop gone by mid range.
+            half3 Ripples(float2 uv, half strength, float speed, float cameraDistance)
+            {
+                const float2x2 turnA = float2x2(0.8, -0.6, 0.6, 0.8);
+                const float2x2 turnB = float2x2(-0.28, -0.96, 0.96, -0.28);
+                const float2x2 straight = float2x2(1.0, 0.0, 0.0, 1.0);
+                half2 slope = FlowLayer(uv, _RippleSize * 1.7, turnA, speed * 0.8, strength * 0.55);
+                slope += FlowLayer(uv, _RippleSize * 0.45, straight, speed, strength * 0.8);
+                half chop = Fade(cameraDistance, 30.0, 70.0);
+                slope += FlowLayer(uv, _RippleSize * 0.12, turnB, speed * 1.2, strength * 0.45 * chop);
+                return normalize(half3(slope, 1.0));
+            }
+
+            // Light focused by the ripples onto a shallow bed, as bright wavering threads: two drifting reads of the
+            // ripple slopes cancel along lines where the light bunches.
+            half Caustics(float2 bedXZ, half depth)
+            {
+                half shallow = 1.0 - saturate(depth / WATER_CAUSTIC_DEPTH);
+                half lines = 0.0;
+                [branch] if (shallow > 0.0 && _Caustics > 0.0)
+                {
+                    float drift = _Time.y * 0.15;
+                    half2 a = UnpackNormal(SAMPLE_TEXTURE2D_LOD(_NormalMap, sampler_NormalMap, bedXZ / 1.3 + drift, 0)).xy;
+                    half2 b = UnpackNormal(SAMPLE_TEXTURE2D_LOD(_NormalMap, sampler_NormalMap, bedXZ / 1.9 - drift * 0.7, 0)).xy;
+                    lines = pow(saturate(1.0 - (abs(a.x + b.x) + abs(a.y + b.y)) * 1.6), 6.0);
+                }
+
+                return lines * shallow * shallow * _Caustics;
             }
 
             // Fills only the headroom under _GlintPeak, so the glint never sets off bloom.
@@ -216,20 +255,22 @@ Shader "HyperRTS/Water"
             half4 Frag(Varyings input) : SV_Target
             {
                 float cameraDistance = length(_WorldSpaceCameraPos - input.positionWS);
-                half rippleScale = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
-                half3 ripple = Ripples(input.uv, _RippleStrength * rippleScale);
-                half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
-                half3 normalWS = normalize(TransformTangentToWorld(ripple, half3x3(input.tangentWS.xyz, bitangent, input.normalWS)));
-                // A wake tilts the surface down its slope, as if the foam were a height.
-                WakeSample wake = SampleWakeFoam(input.positionWS, input.uv);
-                normalWS = normalize(normalWS - half3(wake.slope.x, 0.0, wake.slope.y) * _WakeRipple);
-
                 float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
                 float surface = EyeDepth(input.positionCS.z);
                 float rawDepth = SampleSceneDepth(screenUV);
                 float depth = max(0.0, EyeDepth(rawDepth) - surface);
                 float shoreDistance = ShoreDistance(depth, input.positionWS);
                 float shoreDepth = depth + ShoreLap(input.uv);
+
+                // The current runs fastest mid-channel and drags along the banks.
+                float current = _FlowSpeed * lerp(WATER_BANK_CURRENT, 1.0, smoothstep(0.5, 5.0, shoreDistance));
+                half rippleScale = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
+                half3 ripple = Ripples(input.uv, _RippleStrength * rippleScale, current, cameraDistance);
+                half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
+                half3 normalWS = normalize(TransformTangentToWorld(ripple, half3x3(input.tangentWS.xyz, bitangent, input.normalWS)));
+                // A wake tilts the surface down its slope, as if the foam were a height.
+                WakeSample wake = SampleWakeFoam(input.positionWS, input.uv);
+                normalWS = normalize(normalWS - half3(wake.slope.x, 0.0, wake.slope.y) * _WakeRipple);
 
                 float2 refracted = screenUV + ripple.xy * _Refraction * saturate(depth);
                 float refractedDepth = SampleSceneDepth(refracted);
@@ -242,11 +283,15 @@ Shader "HyperRTS/Water"
                 // The opaque texture already holds URP's fog to the bottom; take it out so the water fogs it once.
                 SceneFog fog = SceneFogAt(input.positionWS, input.positionCS);
                 half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), BottomFog(refracted, refractedDepth));
-                half3 tint = lerp(_ShallowColor.rgb, _DeepColor.rgb, saturate(depth / _DepthRange)) * CloudShade(input.positionWS);
-                half3 body = lerp(tint, bottom * _ShallowColor.rgb * 1.8, exp(-depth / _Clarity));
 
                 // The cookie variant tints the sun's colour with the cloud cover, shading glint and foam.
                 Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
+                float3 bed = ComputeWorldSpacePosition(refracted, refractedDepth, UNITY_MATRIX_I_VP);
+                bottom *= 1.0 + Caustics(bed.xz, depth) * sun.shadowAttenuation;
+
+                // Light through the water loses red first, so the bed fades into the silt-green the water scatters.
+                half3 transmitted = exp(-_Absorption.rgb * depth);
+                half3 body = bottom * transmitted + _ScatterColor.rgb * CloudShade(input.positionWS) * (1.0 - transmitted);
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
                 half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
@@ -291,7 +336,7 @@ Shader "HyperRTS/Water"
             // Surface Cache GI asks every renderer for albedo, transparent or not; deep water is what bounces light.
             half3 MetaAlbedo(float2 uv0)
             {
-                return _DeepColor.rgb;
+                return _ScatterColor.rgb;
             }
             ENDHLSL
         }
