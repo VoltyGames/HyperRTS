@@ -17,10 +17,10 @@ namespace HyperRTS.Editor.Maps.Climate
         [Tooltip("HyperRTS/Foliage material the models share.")]
         public Material material;
 
-        [Tooltip("Random horizontal scale range of the models: metres for a card plant on the 1 m SM_GrassClump cards.")]
+        [Tooltip("Random horizontal scale range of the models: metres for a card plant on 1 m card meshes.")]
         public Vector2 width = new(0.85f, 1.15f);
 
-        [Tooltip("Random vertical scale range of the models: metres for a card plant on the 1 m SM_GrassClump cards.")]
+        [Tooltip("Random vertical scale range of the models: metres for a card plant on 1 m card meshes.")]
         public Vector2 height = new(0.85f, 1.15f);
 
         public Color healthy = Color.white;

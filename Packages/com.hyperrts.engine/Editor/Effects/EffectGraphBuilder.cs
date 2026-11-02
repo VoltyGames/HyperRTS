@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Effects
 
         /// <summary>Every effect recipe in the project, the engine's included.</summary>
         public static IEnumerable<string> RecipePaths() =>
-            AssetDatabase.FindAssets("t:" + nameof(EffectRecipe)).Select(AssetDatabase.GUIDToAssetPath).Distinct().OrderBy(path => path);
+            AssetDatabase.FindAssets("t:" + nameof(EffectRecipe)).Select(AssetDatabase.GUIDToAssetPath).OrderBy(path => path);
 
         /// <summary>The recipe for a graph name (<c>FX_Smoke_01</c>) or recipe path; throws naming the graph when there is none.</summary>
         public static string FindRecipe(string graph)

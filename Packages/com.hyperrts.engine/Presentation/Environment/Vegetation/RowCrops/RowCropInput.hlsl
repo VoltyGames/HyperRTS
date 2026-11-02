@@ -74,7 +74,7 @@ half CanopyLight(float height)
 // Bent tops show their pale sides, so a passing gust rolls a lighter band across the field; the lulls darken.
 half WindSheen(float3 origin, float height, WindFrame frame)
 {
-    if (_HyperRTSWindDetail < 0.5)
+    if (_HyperRTSWindDetail < 0.5 || _WindSheen <= 0.0)
     {
         return 1.0;
     }
