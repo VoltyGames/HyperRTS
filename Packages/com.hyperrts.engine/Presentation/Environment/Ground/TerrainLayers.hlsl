@@ -115,12 +115,13 @@ half LayerWeight(half4 control0, half4 control1, half4 control2, half4 control3,
     return control[layer & 3];
 }
 
-TerrainSurface ResolveBlend(TerrainBlend blend)
+// relief scales the layers' normal detail, which softens with distance so far ground keeps its colour, not its bumps.
+TerrainSurface ResolveBlend(TerrainBlend blend, half relief)
 {
     float scale = 1.0 / max(blend.total, 1e-6);
     TerrainSurface surface;
     surface.albedo = blend.albedo * scale;
-    surface.normalTS = normalize(blend.normal + float3(0.0, 0.0, 1e-5));
+    surface.normalTS = normalize(float3(blend.normal.xy * relief, blend.normal.z + 1e-5));
     surface.smoothness = blend.smoothness * scale;
     surface.occlusion = blend.occlusion * scale;
     surface.height = blend.height * scale;
@@ -144,9 +145,16 @@ uint DominantLayer(half4 control0, half4 control1, half4 control2, half4 control
     return dominant;
 }
 
+// A texel or so of noise in the alphamap lookup, so layer edges wander instead of stepping along its grid.
+float2 WarpedControlUV(float2 uv, float2 positionXZ)
+{
+    half2 noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_LinearRepeat, positionXZ / _ControlWarpSize).rg - 0.5;
+    return ControlUV(uv) + noise * 2.0 * _ControlWarp * _Control0_TexelSize.xy;
+}
+
 TerrainSurface BlendLayers(float2 uv, inout TerrainPixel pixel)
 {
-    float2 controlUV = ControlUV(uv);
+    float2 controlUV = WarpedControlUV(uv, pixel.xz);
     half4 control0 = SAMPLE_TEXTURE2D(_Control0, sampler_LinearClamp, controlUV);
     half4 control1 = SAMPLE_TEXTURE2D(_Control1, sampler_LinearClamp, controlUV);
     half4 control2 = SAMPLE_TEXTURE2D(_Control2, sampler_LinearClamp, controlUV);
@@ -168,7 +176,7 @@ TerrainSurface BlendLayers(float2 uv, inout TerrainPixel pixel)
         }
     }
 
-    return ResolveBlend(blend);
+    return ResolveBlend(blend, pixel.relief);
 }
 
 // The map's ground tint and world-noise variation (broad light and dark, smaller warm and cool patches), scaled by the

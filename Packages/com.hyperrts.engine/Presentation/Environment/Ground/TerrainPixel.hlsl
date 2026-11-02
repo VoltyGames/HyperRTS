@@ -13,6 +13,7 @@ struct TerrainPixel
     half3x3 frame;     // TerrainFrame of the terrain's own normal
     float distance;    // to the camera
     half far;          // the far sample's share of albedo
+    half relief;       // share of the layers' normal detail kept at this distance
     half side;         // the side projections' share for triplanar layers
     half2 sideWeights; // x and z projections' split of that share
     float2 rowTurn;    // (cos, sin) that lays u along this pixel's crop rows
@@ -51,6 +52,7 @@ TerrainPixel GetTerrainPixel(float2 uv, float3 positionWS, half3 normalWS)
     pixel.frame = TerrainFrame(normalWS);
     pixel.distance = length(positionWS - GetCameraPositionWS());
     pixel.far = saturate((pixel.distance - _FarStart) / (_FarEnd - _FarStart)) * _FarBlend;
+    pixel.relief = lerp(1.0, _FarRelief, saturate((pixel.distance - _ReliefStart) / (_ReliefEnd - _ReliefStart)));
     pixel.rowTurn = RowTurn(uv);
     SideShares(pixel, normalWS);
     return pixel;

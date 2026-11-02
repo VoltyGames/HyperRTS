@@ -19,6 +19,11 @@ CBUFFER_START(UnityPerMaterial)
     float4 _Control0_TexelSize;
     float _LayerCount;
     float _HeightBlendDepth;
+    half _ControlWarp;
+    float _ControlWarpSize;
+    float _ReliefStart;
+    float _ReliefEnd;
+    half _FarRelief;
     float _FarTiling;
     float _FarStart;
     float _FarEnd;

@@ -225,7 +225,8 @@ Grass and row crops share one scatter host, described under [row crops](modules/
 **Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by texel height, gathered from the surfaces' own
 layers, mixes and tramlines. A layer's `plants` thins scattered plants where it is painted. The climate's `heightBlendDepth`
 sets how far one layer must stand above another to win; about 0.06 interlocks borders without speckle. Layers are
-hex-tiled and randomly turned by their `antiTiling` to hide repeats. Layers with `followsRows` turn with the row
+hex-tiled and randomly turned by their `antiTiling` to hide repeats. A texel or so of noise warps the alphamap lookup
+(`_ControlWarp`), so layer edges wander instead of stepping along its 0.4 m grid. Layers with `followsRows` turn with the row
 map, so furrows follow each field. Grass layers darken less in rain than bare ground. Its Meta pass gives Surface
 Cache GI the ground's colour from above (`MapGroundColor`, bound as `_GroundColorMap`), the picture plants blend into
 at their roots, so the ground bounces its own soil and field colour.
@@ -233,8 +234,12 @@ at their roots, so the ground bounces its own soil and field colour.
 Near the camera, a tileable soil grain from `TerrainMicroTexture` adds normal, occlusion and albedo detail at a 0.5 m
 tile, fading out from 24 to 42 m. Rough ground takes it fully and low texels take most of its shadow. The layer of the
 climate's `slopeSurface` is projected sideways on ground steeper than 30 degrees, fully from 42, so ravine walls don't
-stretch. Within 38 m, parallax occlusion marches the most painted layer's height in 8 steps and shifts every layer by
+stretch. Within 22 m, parallax occlusion marches the most painted layer's height in 8 steps and shifts every layer by
 the one offset, centred on mid height.
+
+The layers' normals soften with distance: full until `_ReliefStart` (20 m), down to `_FarRelief` (0.4) of their
+strength by `_ReliefEnd` (60 m). From the match camera the ground then reads by colour, not as crumpled bumps.
+Ruts and craters keep their full relief.
 
 These strengths live on the climate's `terrain` base material. Each map's terrain material is a Material Variant of it
 that `MapTerrainMaterial` writes, overriding only the layer arrays and the map's own textures. `PresentationQuality.Apply`
@@ -245,9 +250,10 @@ sets the `Ground` level as the shader quality:
 | Low | `_TERRAIN_SIMPLE` | One sample per layer texture | 8 + 3 per layer |
 | Medium | `_TERRAIN_NO_FAR` | Hex tiling | 8 + 9 per layer |
 | High | `_TERRAIN_NO_PARALLAX` | Far sample, micro detail, triplanar slope layer | 10 + 10 per layer, up to 6 more on steep slopes |
-| Ultra | none | Parallax occlusion | High plus up to 9 within 38 m |
+| Ultra | none | Parallax occlusion | High plus up to 9 within 22 m |
 
-The fixed 8 are the four alphamaps, the row, ground tint and noise maps and the terrain normal. Edit mode sets no keyword,
+The fixed 8 are the four alphamaps, the row, ground tint and noise maps and the terrain normal; the edge warp adds one
+noise sample. Edit mode sets no keyword,
 so map captures show Ultra.
 
 **Weather.** In play, `WeatherSet` swaps in the weather `MatchSetup.Weather` names. Empty keeps the default.
