@@ -155,7 +155,7 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
     half3 halfway = normalize(sun.direction + view);
     half glint = pow(saturate(dot(normal, halfway)), exp2(_Smoothness * 10.0 + 1.0)) * _Smoothness;
 
-    // Screen AO reads dense blades as a crevice; canopy occlusion already covers it.
+    // Screen AO reads dense blades as a crevice the canopy term already darkens, so each material takes only its share.
     half occlusion = canopy;
     #if defined(_SCREEN_SPACE_OCCLUSION)
         half screen = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS)).indirectAmbientOcclusion;

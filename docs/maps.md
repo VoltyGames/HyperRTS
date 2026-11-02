@@ -232,7 +232,8 @@ Cache GI the ground's colour from above (`MapGroundColor`, bound as `_GroundColo
 at their roots, so the ground bounces its own soil and field colour.
 
 Near the camera, a tileable soil grain from `TerrainMicroTexture` adds normal, occlusion and albedo detail at a 0.5 m
-tile, fading out from 24 to 42 m. Rough ground takes it fully and low texels take most of its shadow. The layer of the
+tile, fading out from 24 to 42 m. Rough bare ground takes it fully, grass layers (their `grass` cover) skip it, and
+low texels take most of its shadow. The layer of the
 climate's `slopeSurface` is projected sideways on ground steeper than 30 degrees, fully from 42, so ravine walls don't
 stretch. Within 22 m, parallax occlusion marches the most painted layer's height in 8 steps and shifts every layer by
 the one offset, centred on mid height.

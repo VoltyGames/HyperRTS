@@ -8,11 +8,13 @@
 ForwardVaryings ForwardVert(Attributes input)
 {
     RowCropInstance plant = _Instances[_SlotOffset + input.instanceID];
-    float3 world = RowCropPosition(input, plant, WindThisFrame());
+    WindFrame frame = WindThisFrame();
+    float3 world = RowCropPosition(input, plant, frame);
     float height = input.positionOS.y * plant.scale;
-    half4 tint = half4(PlantTint(plant.shade, plant.shade), CanopyLight(height));
-    half3 normal = PlantWindNormal(RowCropNormal(input, plant), plant.position, _WindStrength, _WindSpeed, 1.0,
-        WindThisFrame());
+    // The field ripens in the same dry patches as the ground and grass round it.
+    half3 shade = PlantTint((half)DryPatch(plant.position.xz), plant.shade) * WindSheen(plant.position, height, frame);
+    half4 tint = half4(shade, CanopyLight(height));
+    half3 normal = PlantWindNormal(RowCropNormal(input, plant), plant.position, _WindStrength, _WindSpeed, 1.0, frame);
     return PlantForwardVaryings(world, plant.position, input.uv, height, normal, tint);
 }
 

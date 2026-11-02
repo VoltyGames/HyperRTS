@@ -22,7 +22,8 @@ void ApplyMicro(inout TerrainSurface surface, TerrainPixel pixel)
             RotateUV(st, MICRO_TURN) / MICRO_SECOND_SCALE, RotateUV(dx, MICRO_TURN) / MICRO_SECOND_SCALE,
             RotateUV(dy, MICRO_TURN) / MICRO_SECOND_SCALE);
         half2 slope = first.rg * 2.0 - 1.0 + RotateUV(second.rg * 2.0 - 1.0, MICRO_TURN * float2(1.0, -1.0));
-        half grain = fade * (1.0 - surface.smoothness);
+        // Soil crumbs: grass covers them.
+        half grain = fade * (1.0 - surface.smoothness) * (1.0 - surface.grass);
         surface.normalTS = normalize(half3(surface.normalTS.xy + slope * 0.5 * _MicroNormal * grain,
             surface.normalTS.z));
         half cavity = (first.b + second.b) * 0.5;

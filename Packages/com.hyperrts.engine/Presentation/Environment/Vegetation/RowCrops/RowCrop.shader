@@ -17,6 +17,7 @@ Shader "HyperRTS/RowCrop"
         _GroundBlendHeight ("Ground Colour Height (m)", Range(0.01, 2)) = 0.3
         _CanopyShade ("Canopy Shade At The Roots", Range(0, 1)) = 0.6
         _ScreenOcclusion ("Screen Occlusion", Range(0, 1)) = 0.2
+        _WindSheen ("Wind Sheen (gusts brighten the tops)", Range(0, 0.5)) = 0
     }
 
     SubShader

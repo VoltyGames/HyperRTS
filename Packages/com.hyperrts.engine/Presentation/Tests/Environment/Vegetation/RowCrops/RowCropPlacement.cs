@@ -17,6 +17,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         private const uint LeanTurnChannel = 11;
         private const uint WanderSalt = 0x5BD1E995u;
         private const uint GrowthSalt = 0x27D4EB2Fu;
+        private const uint StaggerSalt = 0x165667B1u;
 
         /// <summary>A lattice spot before jitter: what decides the tile and the field a plant belongs to.</summary>
         public static Vector2 Spot(RowCropField field, int row, int plant, float rowSpacing, float plantSpacing) =>
@@ -29,15 +30,22 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
             return insideX && insideZ;
         }
 
-        /// <summary>Where a plant stands: its spot jittered along and across the row, and moved by its row's wander.</summary>
+        /// <summary>
+        /// Where a plant stands: its spot jittered along and across the row, slid by its row's stagger and moved by its
+        /// row's wander.
+        /// </summary>
         public static Vector2 Position(RowCropField field, int row, int plant, RowCrop crop)
         {
             var hash = ScatterHash.Hash(field.seed, row, plant);
             var jitter = Hashes.Fraction(ScatterHash.Channel(hash, RowCropSpots.AlongChannel)) * 2f - 1f;
-            var along = jitter * crop.jitter * crop.plantSpacing;
+            var along = (jitter * crop.jitter + Stagger(field, row)) * crop.plantSpacing;
             return Spot(field, row, plant, crop.rowSpacing, crop.plantSpacing) + field.across * Stray(field, row, plant, crop)
                 + field.along * along;
         }
+
+        /// <summary>A row's slide along its line, in plant spacings, so gaps in neighbouring rows don't line up.</summary>
+        public static float Stagger(RowCropField field, int row) =>
+            Hashes.Fraction(ScatterHash.Channel(ScatterHash.Hash(field.seed ^ unchecked((int)StaggerSalt), row, 0), 0)) - 0.5f;
 
         /// <summary>Whether a plant falls on a tramline.</summary>
         public static bool OnTramline(RowCropField field, int row, int plant, RowCrop crop) =>

@@ -25,6 +25,7 @@ CBUFFER_START(UnityPerMaterial)
     half _GroundBlendHeight;
     half _CanopyShade;
     half _ScreenOcclusion;
+    half _WindSheen;
 CBUFFER_END
 
 float _CanopyHeight; // RowCrop.height, set per draw
@@ -68,6 +69,18 @@ half CanopyLight(float height)
 {
     half depth = (half)saturate(height / _CanopyHeight);
     return lerp(1.0 - _CanopyShade, 1.0, depth * depth);
+}
+
+// Bent tops show their pale sides, so a passing gust rolls a lighter band across the field; the lulls darken.
+half WindSheen(float3 origin, float height, WindFrame frame)
+{
+    if (_HyperRTSWindDetail < 0.5)
+    {
+        return 1.0;
+    }
+
+    half top = (half)saturate(height / _CanopyHeight);
+    return 1.0 + _WindSheen * (half)WindGust(origin.xz, frame) * top * top;
 }
 
 half3 RowCropNormal(Attributes input, RowCropInstance plant)

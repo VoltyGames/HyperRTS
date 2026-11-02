@@ -18,6 +18,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         private static readonly int SizeId = Shader.PropertyToID("_Size");
         private static readonly int VarietyId = Shader.PropertyToID("_Variety");
         private static readonly int GrowthId = Shader.PropertyToID("_Growth");
+        private static readonly int StandId = Shader.PropertyToID("_Stand");
         private static readonly int VariantsId = Shader.PropertyToID("_Variants");
         private static readonly int CanopyHeightId = Shader.PropertyToID("_CanopyHeight");
 
@@ -96,7 +97,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             Compute.SetVector(VarietyId, new Vector4(_crop.lean * Mathf.Deg2Rad, _crop.edgeLean * Mathf.Deg2Rad,
                 _crop.wander, 1f / _crop.wanderLength));
             var growth = _crop.growthVariation;
-            Compute.SetVector(GrowthId, new Vector4(growth.x, growth.y, 1f / _crop.growthVariationSize, 0f));
+            Compute.SetVector(GrowthId, new Vector4(growth.x, growth.y, 1f / _crop.growthVariationSize, _crop.edgeGrowth));
+            Compute.SetFloat(StandId, _crop.stand);
             Compute.SetInt(VariantsId, _variants);
         }
 

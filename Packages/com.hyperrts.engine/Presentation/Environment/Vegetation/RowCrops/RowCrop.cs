@@ -26,6 +26,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Metres between plants along a row.")]
         public float plantSpacing = 0.3f;
 
+        [Tooltip("Share of sown spots that came up; the rest leave gaps in the rows.")]
+        [Range(0.5f, 1f)]
+        public float stand = 1f;
+
         [Tooltip("Share of the spacing a plant strays from its row spot.")]
         [Range(0f, 0.5f)]
         public float jitter = 0.15f;
@@ -61,6 +65,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Metres across a stretch of taller or shorter plants.")]
         public float growthVariationSize = 12f;
 
+        [Tooltip("Scale of plants at the field's edge, where they grow thinner and shorter.")]
+        [Range(0.3f, 1f)]
+        public float edgeGrowth = 1f;
+
         [Tooltip("Bare margin in metres round field edges, roads and placed objects.")]
         public float edgeMargin = 0.6f;
 
@@ -89,6 +97,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             Require(problems, cardMaterial != null, $"{nameof(cardMaterial)} is missing");
             Require(problems, rowSpacing > 0f, $"{nameof(rowSpacing)} {rowSpacing} must be above 0");
             Require(problems, plantSpacing > 0f, $"{nameof(plantSpacing)} {plantSpacing} must be above 0");
+            Require(problems, stand is >= 0.5f and <= 1f, $"{nameof(stand)} {stand} must be 0.5 to 1");
             Require(problems, jitter is >= 0f and <= 0.5f, $"{nameof(jitter)} {jitter} must be 0 to 0.5");
             Require(problems, scale.x > 0f && scale.y >= scale.x, $"{nameof(scale)} {scale} must be above 0 with y at least x");
             Require(problems, lean is >= 0f and <= 30f, $"{nameof(lean)} {lean} must be 0 to 30");
@@ -100,6 +109,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
                 $"{nameof(growthVariation)} {growthVariation} must be above 0 with y at least x");
             Require(problems, growthVariationSize > 0f,
                 $"{nameof(growthVariationSize)} {growthVariationSize} must be above 0");
+            Require(problems, edgeGrowth is >= 0.3f and <= 1f, $"{nameof(edgeGrowth)} {edgeGrowth} must be 0.3 to 1");
             Require(problems, edgeMargin >= 0f, $"{nameof(edgeMargin)} {edgeMargin} must not be negative");
             Require(problems, height > 0f, $"{nameof(height)} {height} must be above 0");
             Require(problems, lod0Distance > 0f, $"{nameof(lod0Distance)} {lod0Distance} must be above 0");

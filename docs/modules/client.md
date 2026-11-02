@@ -615,6 +615,10 @@ the map tools paint the same lines into the terrain.
 
 A `RowCrop` asset describes one crop: model variants with full, simple and card meshes, materials, row and plant
 spacing, random scale, turn and lean, and two LOD distances. Variant meshes face +Z with the origin at the root.
+Each row slides along its line by its own share of a plant spacing, so the gaps between plants in neighbouring rows
+don't line up into stripes across the field. `stand` leaves gaps where sown spots never came up, and `edgeGrowth`
+shrinks plants at the field's edge, where they lean the most. Plants ripen in the same dry patches as the ground
+and grass round them, and `_WindSheen` lightens their tops under a passing gust, so its band rolls across the field.
 Its `height` also shades the field: light falls off below the heads to `_CanopyShade` at the roots, so rows show
 dark gaps between lit tops. That canopy term is the crop's ambient occlusion, so `_ScreenOcclusion` (0.2 by
 default) keeps screen-space AO from darkening it again: GTAO reads a dense field of blades as a deep crevice and

@@ -77,12 +77,17 @@ TreeWindVertex TreeWindData(float3 positionOS, float2 uv2, float2 uv3, float2 uv
     return v;
 }
 
+// The passing gust at a world point: -1 in a lull to 1 at its peak.
+float WindGust(float2 positionXZ, WindFrame frame)
+{
+    float2 uv = positionXZ * _HyperRTSWindGust.z - frame.gustOffset;
+    return SAMPLE_TEXTURE2D_LOD(_HyperRTSWindGustMap, sampler_HyperRTSWindGustMap, uv, 0).r * 2.0 - 1.0;
+}
+
 // Steady strength at a world point, scaled by the passing gust.
 float WindPush(float2 positionXZ, WindFrame frame)
 {
-    float2 uv = positionXZ * _HyperRTSWindGust.z - frame.gustOffset;
-    float gust = SAMPLE_TEXTURE2D_LOD(_HyperRTSWindGustMap, sampler_HyperRTSWindGustMap, uv, 0).r;
-    return _HyperRTSWindStrength * (1.0 + _HyperRTSWindGust.x * (gust * 2.0 - 1.0));
+    return _HyperRTSWindStrength * (1.0 + _HyperRTSWindGust.x * WindGust(positionXZ, frame));
 }
 
 // Push away from nearby downwash and blasts, rippling outward, in units of the wind's strength.
