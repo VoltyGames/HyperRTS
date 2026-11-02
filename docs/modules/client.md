@@ -206,7 +206,7 @@ set is:
 - The position and normal textures the bake info file names: RGBA half float, Unity object space in metres. Each frame
   takes `rowsPerFrame` rows and every clip is stacked, so frame f's texel is (column, f x rowsPerFrame + v). They
   import exact: linear, point filtered, clamped, no mipmaps or compression.
-- `VAT/<Model>.vat.json`: `positions`, `normals`, `width`, `height`, `rowsPerFrame`, `vertexCount`, `clips`
+- `VAT/<Model>.vat.json`: `positions`, `normals`, `width`, `rowsPerFrame`, `clips`
   (each with `name`, `startRow` as its first frame, `frameCount`, `fps` and `loop`), `boundsMin` and `boundsMax`
   over every frame. A looping clip does not repeat its first frame at the end.
 
@@ -216,7 +216,7 @@ stays hand-editable. `VATAnimatedAuthoring` beside the renderer bakes its start 
 render bounds to cover every frame. It fails the bake when the material and table disagree.
 
 A bake whose bake info says `"layout": "rigid"` moves whole pieces instead of vertices (a sectioned building's
-walls and roofs breaking). It names a `rotations` texture beside `positions`, with `pieceCount` columns (the `width`),
+walls and roofs breaking). It names a `rotations` texture beside `positions`, with a column per piece (the `width`),
 one row per frame (`rowsPerFrame` defaults to 1) and row 0 the frame every piece sits in at rest. A mesh vertex
 holds its piece's column in UV1's u. The material turns on `_VAT_RIGID` instead of `_VAT`, with the two textures:
 the vertex moves to the piece's position for the frame, turned by its rotation quaternion about where the rest row

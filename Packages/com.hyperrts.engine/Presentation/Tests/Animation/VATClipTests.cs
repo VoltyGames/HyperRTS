@@ -11,7 +11,6 @@ namespace HyperRTS.Presentation.Tests.Animation
     public class VATClipTests
     {
         private const string BakeInfoJson = @"{
-            ""name"": ""Rifleman"",
             ""width"": 1802,
             ""rowsPerFrame"": 2,
             ""clips"": [
@@ -23,13 +22,10 @@ namespace HyperRTS.Presentation.Tests.Animation
         }";
 
         private const string RigidJson = @"{
-            ""name"": ""House"",
             ""layout"": ""rigid"",
             ""positions"": ""Pos.exr"",
             ""rotations"": ""Rot.exr"",
             ""width"": 453,
-            ""pieceCount"": 453,
-            ""height"": 259,
             ""clips"": [ { ""name"": ""Wall_In"", ""startRow"": 1, ""frameCount"": 76, ""fps"": 30, ""loop"": false } ],
             ""boundsMin"": [-1, -1, -1],
             ""boundsMax"": [1, 1, 1]

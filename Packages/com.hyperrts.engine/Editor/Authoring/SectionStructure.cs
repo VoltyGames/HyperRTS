@@ -91,7 +91,6 @@ namespace HyperRTS.Editor.Authoring
             }
         }
 
-        public string asset;
         public float fps;
         public Clips clips;
         public Part[] sections;

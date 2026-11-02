@@ -16,18 +16,13 @@ namespace HyperRTS.Presentation.Animation
 
         public const string RigidLayout = "rigid";
 
-        public string name;
-
         [Tooltip("Empty for per-vertex textures, or 'rigid' for pieces moved by a position and a rotation per frame.")]
         public string layout;
         public string positions;
         public string normals;
         public string rotations;
-        public int pieceCount;
         public int width;
-        public int height;
         public int rowsPerFrame;
-        public int vertexCount;
         public VATClipTable.Clip[] clips;
         public float[] boundsMin;
         public float[] boundsMax;
@@ -62,9 +57,9 @@ namespace HyperRTS.Presentation.Animation
                 throw new InvalidDataException($"VAT bake info '{source}' needs 'width' and 'rowsPerFrame' of at least 1.");
             }
 
-            if (IsRigid && (string.IsNullOrEmpty(rotations) || pieceCount < 1))
+            if (IsRigid && string.IsNullOrEmpty(rotations))
             {
-                throw new InvalidDataException($"VAT bake info '{source}' is rigid and needs 'rotations' and a 'pieceCount' of at least 1.");
+                throw new InvalidDataException($"VAT bake info '{source}' is rigid and needs 'rotations'.");
             }
 
             if (clips == null || clips.Length == 0)
