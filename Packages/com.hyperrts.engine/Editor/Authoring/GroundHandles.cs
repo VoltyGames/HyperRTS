@@ -22,24 +22,40 @@ namespace HyperRTS.Editor.Authoring
         public const float VisionAngle = 45f;
         public const float ReachAngle = -45f;
 
-        /// <summary>Ground disc with a drag dot on its edge at <paramref name="angle"/>; returns the edited radius.</summary>
-        public static float Radius(Vector3 center, float radius, Color color, string label, float angle)
+        /// <summary>How a radius disc's drag dot looks and where it sits on the edge.</summary>
+        public readonly struct RadiusDot
         {
+            public readonly Color Color;
+            public readonly string Label;
+            public readonly float Angle;
+
+            public RadiusDot(Color color, string label, float angle)
+            {
+                Color = color;
+                Label = label;
+                Angle = angle;
+            }
+        }
+
+        /// <summary>Ground disc with a drag dot on its edge at <paramref name="angle"/>; returns the edited radius.</summary>
+        public static float Radius(Vector3 center, float radius, in RadiusDot dot)
+        {
+            var (color, label, angle) = (dot.Color, dot.Label, dot.Angle);
             Handles.color = color;
             Handles.DrawWireDisc(center, Vector3.up, radius);
             var direction = Direction(angle);
-            var dot = center + direction * radius;
-            Handles.Label(dot + Vector3.forward * 0.3f, $"{label} {radius:0.##}");
-            var moved = Handles.Slider(dot, direction, HandleUtility.GetHandleSize(dot) * 0.08f, Handles.DotHandleCap, 0f);
+            var position = center + direction * radius;
+            Handles.Label(position + Vector3.forward * 0.3f, $"{label} {radius:0.##}");
+            var moved = Handles.Slider(position, direction, HandleUtility.GetHandleSize(position) * 0.08f, Handles.DotHandleCap, 0f);
             return Mathf.Max(0f, Vector3.Dot(moved - center, direction));
         }
 
         /// <summary><see cref="Radius"/> that applies a drag to <paramref name="owner"/> as one undo step.</summary>
-        public static void EditRadius(Object owner, Vector3 center, float radius, Color color, string label,
-            float angle, string undoLabel, Action<float> apply)
+        public static void EditRadius(Object owner, Vector3 center, float radius, in RadiusDot dot, string undoLabel,
+            Action<float> apply)
         {
             EditorGUI.BeginChangeCheck();
-            var edited = Radius(center, radius, color, label, angle);
+            var edited = Radius(center, radius, dot);
             if (EditorGUI.EndChangeCheck())
             {
                 EditorUndo.Record(owner, undoLabel, () => apply(edited));

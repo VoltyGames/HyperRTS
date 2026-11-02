@@ -113,10 +113,10 @@ namespace HyperRTS.Simulation.Tests.Replays
         {
             var a = ReplayEntity.Capture(0, 0, 1,
                 LocalTransform.FromPositionRotation(new float3(1.03f, 0f, -2.5f), quaternion.RotateY(math.radians(350f))),
-                0.5f, 0f, false);
+                0.5f);
             var b = ReplayEntity.Capture(0, 0, 1,
                 LocalTransform.FromPositionRotation(new float3(3.03f, 0f, -2.5f), quaternion.RotateY(math.radians(10f))),
-                0.5f, 0f, false);
+                0.5f);
 
             Assert.AreEqual(1.03f, a.Position.x, QuantizedPosition.Step);
             Assert.AreEqual(0.5f, a.HealthFraction, 0.01f);

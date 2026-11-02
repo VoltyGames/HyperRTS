@@ -27,8 +27,7 @@ namespace HyperRTS.Simulation.Commands
         private ComponentLookup<ResourceNode> _nodes;
         private ComponentLookup<Builder> _builders;
         private ComponentLookup<ConstructionProgress> _construction;
-        private ComponentLookup<Health> _health;
-        private ComponentLookup<Repairable> _repairables;
+        private RepairLookup _repairs;
         private ComponentLookup<Capturer> _capturers;
         private ComponentLookup<UnitTag> _units;
         private ComponentLookup<HomePad> _padUsers;
@@ -48,8 +47,7 @@ namespace HyperRTS.Simulation.Commands
             _nodes = state.GetComponentLookup<ResourceNode>(true);
             _builders = state.GetComponentLookup<Builder>(true);
             _construction = state.GetComponentLookup<ConstructionProgress>(true);
-            _health = state.GetComponentLookup<Health>(true);
-            _repairables = state.GetComponentLookup<Repairable>(true);
+            _repairs = new RepairLookup(ref state);
             _capturers = state.GetComponentLookup<Capturer>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
             _padUsers = state.GetComponentLookup<HomePad>(true);
@@ -71,8 +69,7 @@ namespace HyperRTS.Simulation.Commands
             _nodes.Update(ref state);
             _builders.Update(ref state);
             _construction.Update(ref state);
-            _health.Update(ref state);
-            _repairables.Update(ref state);
+            _repairs.Update(ref state);
             _capturers.Update(ref state);
             _units.Update(ref state);
             _padUsers.Update(ref state);
@@ -224,7 +221,7 @@ namespace HyperRTS.Simulation.Commands
 
         private bool CanRepair(Entity unit, Entity target, in FactionRelations relations) =>
             _builders.HasComponent(unit) &&
-            BuildingRules.NeedsRepair(_health, _construction, _factions, _repairables, relations, target, _factions[unit].Value);
+            _repairs.NeedsRepair(target, _factions[unit].Value, relations);
 
         private bool CanCapture(Entity unit, Entity target, in FactionRelations relations) =>
             _capturers.HasComponent(unit) && _capture.CanCapture(target, _factions[unit].Value, relations);

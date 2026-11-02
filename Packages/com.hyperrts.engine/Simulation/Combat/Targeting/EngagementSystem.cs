@@ -94,17 +94,21 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 }
 
                 attack.Reach = Targets.Reach(entity, transform.Position, weapon, target);
-                var reach = Reach(entity, transform.Position, mounts, target, attack.Reach, out var floor);
+                var band = Reach(entity, transform.Position, mounts, target, attack.Reach);
 
                 var gap = Targets.Gap(entity, transform.Position, target);
-                if (!ordered && ShouldLeash(entity, transform.Position, weapon, vision, stance, target, gap, reach))
+                var leash = weapon.ScanRange(vision.Value) * weapon.LeashFactor;
+                var leaves = !ordered && (Roams(entity, stance)
+                    ? Strays(entity, transform.Position, stance, target, leash)
+                    : gap > band.Reach);
+                if (leaves)
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
                 }
 
                 attack.Gap = gap;
-                if (!ordered && attack.Gap < floor)
+                if (!ordered && attack.Gap < band.Floor)
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
@@ -117,25 +121,25 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
                 // Bullets close in until the line is clear.
                 var clear = Targets.CanFireAt(entity, transform.Position, weapon, target);
-                Engage(entity, transform.Position, target, ref attack, floor, reach, clear);
+                Engage(entity, transform.Position, target, ref attack, band, clear);
             }
 
             /// <summary>
             /// Halts in range with a <paramref name="clear"/> line, chases otherwise, and backs an ordered unit off a
             /// target inside its minimum range.
             /// </summary>
-            private void Engage(Entity entity, float3 position, Entity target, ref AttackTarget attack, float floor,
-                float reach, bool clear)
+            private void Engage(Entity entity, float3 position, Entity target, ref AttackTarget attack, in RangeBand band,
+                bool clear)
             {
-                var middle = 0.5f * (floor + reach);
-                attack.BackingOff = BacksOff(entity, attack, floor, middle);
-                var within = attack.Gap >= floor && attack.Gap <= reach;
+                var middle = band.Middle;
+                attack.BackingOff = BacksOff(entity, attack, band.Floor, middle);
+                var within = attack.Gap >= band.Floor && attack.Gap <= band.Reach;
                 attack.InRange = !attack.BackingOff && within && clear;
                 if (attack.BackingOff)
                 {
                     BackOff(entity, position, target, middle);
                 }
-                else if (attack.Gap <= reach && clear)
+                else if (attack.Gap <= band.Reach && clear)
                 {
                     Moves.Halt(entity);
                 }
@@ -161,28 +165,24 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 return primary.Ammo.Empty;
             }
 
-            /// <summary><paramref name="gap"/> is the edge distance from <paramref name="position"/>.</summary>
-            private bool ShouldLeash(Entity entity, float3 position, in Weapon weapon, in VisionRange vision,
-                in CombatStance stance, Entity target, float gap, float reach)
-            {
-                if (stance.Value == Stance.HoldPosition || !Moves.IsMobile(entity))
-                {
-                    return gap > reach;
-                }
+            /// <summary>Held and immobile units never move off, so only their reach limits them.</summary>
+            private bool Roams(Entity entity, in CombatStance stance) =>
+                stance.Value != Stance.HoldPosition && Moves.IsMobile(entity);
 
+            private bool Strays(Entity entity, float3 position, in CombatStance stance, Entity target, float leash)
+            {
                 // Defensive units measure from their post, so a fleeing target can't drag them away.
                 var origin = stance.Value == Stance.Defensive ? stance.ReturnPoint : position;
-                var leash = weapon.ScanRange(vision.Value) * weapon.LeashFactor;
                 return Targets.Gap(entity, origin, target) > leash;
             }
 
             /// <summary>Longest range and shortest minimum of the primary and the ready shared-target weapons that can hit it.</summary>
-            private float Reach(Entity entity, float3 position, in DynamicBuffer<WeaponMount> mounts, Entity target,
-                float reach, out float floor)
+            private RangeBand Reach(Entity entity, float3 position, in DynamicBuffer<WeaponMount> mounts, Entity target,
+                float reach)
             {
-                floor = mounts[0].Weapon.MinRange;
-                WeaponMount.ExtendReach(mounts, Targets, entity, position, target, ref reach, ref floor);
-                return reach;
+                var band = new RangeBand(mounts[0].Weapon.MinRange, reach);
+                WeaponMount.ExtendReach(mounts, Targets, entity, position, target, ref band);
+                return band;
             }
 
             private void Release(Entity entity, in Order order, in CombatStance stance, ref AttackTarget attack,

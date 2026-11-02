@@ -138,9 +138,12 @@ namespace HyperRTS.Simulation.Replays
                 var key = known ? last.Key : recording.NextKey++;
                 var healthFraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
                 var building = construction.HasEnabled(entity);
-                var progress = building ? construction[entity].Value : 0f;
                 var current = ReplayEntity.Capture(key, info.ValueRO.TypeId, faction.ValueRO.Value, transform.ValueRO,
-                    healthFraction, progress, building);
+                    healthFraction);
+                if (building)
+                {
+                    current.SetConstruction(construction[entity].Value);
+                }
 
                 recording.Seen.Add(entity);
                 recording.Last[entity] = current;

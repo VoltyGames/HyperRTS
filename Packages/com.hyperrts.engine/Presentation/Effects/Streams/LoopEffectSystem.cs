@@ -72,7 +72,7 @@ namespace HyperRTS.Presentation.Effects.Streams
                 var standing = decays.TryGetComponent(entity, out var decay) ? 1f - decay.DespawnProgress : 1f;
                 for (var i = 0; i < loops.Length; i++)
                 {
-                    Stream(entity, i, loops[i], place.ValueRO, fraction, (float)(now - seen), standing);
+                    Stream(new LoopSource(entity, place.ValueRO, fraction, (float)(now - seen), standing), i, loops[i]);
                 }
             }
 
@@ -81,9 +81,9 @@ namespace HyperRTS.Presentation.Effects.Streams
             Prune();
         }
 
-        private void Stream(Entity entity, int index, in LoopEffect loop, in LocalToWorld place, float health,
-            float age, float standing)
+        private void Stream(in LoopSource source, int index, in LoopEffect loop)
         {
+            var (entity, place, health, age, standing) = (source.Entity, source.Place, source.Health, source.Age, source.Standing);
             var strength = LoopFade.Strength(age, loop.Duration) * standing;
             var belowHealth = loop.AboveHealth > 0f && health <= loop.AboveHealth;
             if (strength <= 0f || belowHealth || !loop.Rig.IsValid())
@@ -102,6 +102,25 @@ namespace HyperRTS.Presentation.Effects.Streams
             _lights.Offers.Add(state.Rig.LoopLight, socket, strength, state.Key, age);
             // The shadow follows the smoke actually emitted, which density thins.
             _smoke.Offers.Add(state.Rig.SmokeShadow, socket, strength * EffectDetail.Density, state.Key, age);
+        }
+
+        /// <summary>The entity a loop streams from, with its health fraction, seconds seen and how much of it still stands.</summary>
+        private readonly struct LoopSource
+        {
+            public readonly Entity Entity;
+            public readonly LocalToWorld Place;
+            public readonly float Health;
+            public readonly float Age;
+            public readonly float Standing;
+
+            public LoopSource(Entity entity, in LocalToWorld place, float health, float age, float standing)
+            {
+                Entity = entity;
+                Place = place;
+                Health = health;
+                Age = age;
+                Standing = standing;
+            }
         }
 
         private void ShowLightsAndShadows(float time)

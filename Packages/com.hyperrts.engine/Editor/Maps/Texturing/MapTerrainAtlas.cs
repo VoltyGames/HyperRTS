@@ -12,21 +12,30 @@ namespace HyperRTS.Editor.Maps.Texturing
     /// One texture array as a flipbook atlas PNG imported as a 2D array, one cell per terrain layer. The hash of its
     /// sources sits in the importer's user data, so an unchanged atlas is never rebuilt.
     /// </summary>
-    internal static class MapTerrainAtlas
+    internal sealed class MapTerrainAtlas
     {
         // Bump when cells are packed differently, so every atlas rebuilds.
         private const int PackingVersion = 1;
         private const int AnisoLevel = 8;
 
-        internal static Texture2DArray Ensure(string path, IReadOnlyList<TerrainLayer> layers, int size,
-            Func<TerrainLayer, Texture2D[]> sources, Func<TerrainLayer, Color32[]> cell, bool normalMap, bool sRGB)
+        private readonly IReadOnlyList<TerrainLayer> _layers;
+        private readonly int _size;
+
+        internal MapTerrainAtlas(IReadOnlyList<TerrainLayer> layers, int size)
         {
-            var hash = Hash(layers, size, sources);
+            _layers = layers;
+            _size = size;
+        }
+
+        internal Texture2DArray Ensure(string path, Func<TerrainLayer, Texture2D[]> sources,
+            Func<TerrainLayer, Color32[]> cell, bool normalMap, bool sRGB)
+        {
+            var hash = Hash(sources);
             if (!IsCurrent(path, hash))
             {
-                var columns = Mathf.CeilToInt(Mathf.Sqrt(layers.Count));
-                var rows = Mathf.CeilToInt(layers.Count / (float)columns);
-                Write(path, layers, size, columns, rows, cell);
+                var columns = Mathf.CeilToInt(Mathf.Sqrt(_layers.Count));
+                var rows = Mathf.CeilToInt(_layers.Count / (float)columns);
+                Write(path, columns, rows, cell);
                 Import(path, columns, rows, normalMap, sRGB, hash);
             }
 
@@ -40,12 +49,12 @@ namespace HyperRTS.Editor.Maps.Texturing
             return importer != null && importer.userData == hash;
         }
 
-        private static string Hash(IReadOnlyList<TerrainLayer> layers, int size, Func<TerrainLayer, Texture2D[]> sources)
+        private string Hash(Func<TerrainLayer, Texture2D[]> sources)
         {
             var hash = new Hash128();
             hash.Append(PackingVersion);
-            hash.Append(size);
-            foreach (var layer in layers)
+            hash.Append(_size);
+            foreach (var layer in _layers)
             {
                 foreach (var texture in sources(layer))
                 {
@@ -59,13 +68,13 @@ namespace HyperRTS.Editor.Maps.Texturing
         }
 
         /// <summary>Flipbook slices run left to right from the top row down; spare cells stay black.</summary>
-        private static void Write(string path, IReadOnlyList<TerrainLayer> layers, int size, int columns, int rows,
-            Func<TerrainLayer, Color32[]> cell)
+        private void Write(string path, int columns, int rows, Func<TerrainLayer, Color32[]> cell)
         {
+            var size = _size;
             var atlas = new Texture2D(columns * size, rows * size, TextureFormat.RGBA32, false, true);
             for (var i = 0; i < columns * rows; i++)
             {
-                var pixels = i < layers.Count ? cell(layers[i]) : new Color32[size * size];
+                var pixels = i < _layers.Count ? cell(_layers[i]) : new Color32[size * size];
                 atlas.SetPixels32(i % columns * size, (rows - 1 - i / columns) * size, size, size, pixels);
             }
 

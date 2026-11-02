@@ -59,11 +59,11 @@ namespace HyperRTS.Editor.Maps.Meshes
             var roads = shapes.Roads;
             foreach (var group in roads.Where(r => r.Class.material != null).GroupBy(r => r.Class))
             {
-                var data = new MapRoadMesh();
+                var data = new MapRoadMesh(heights, groundLevel);
                 foreach (var road in group)
                 {
                     var (start, end) = MapRoadFades.For(road, roads);
-                    data.AddRibbon(road, start, end, heights, groundLevel, p => shapes.RiverEdgeDistance(p) < 0f);
+                    data.AddRibbon(road, start, end, p => shapes.RiverEdgeDistance(p) < 0f);
                 }
 
                 if (data.Count > 0)

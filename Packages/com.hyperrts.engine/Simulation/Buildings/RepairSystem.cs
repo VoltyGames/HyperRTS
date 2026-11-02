@@ -26,12 +26,14 @@ namespace HyperRTS.Simulation.Buildings
 
         private EventWriter<DamageEvent> _damage;
         private TargetReach _reach;
+        private RepairLookup _repairs;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _damage = new EventWriter<DamageEvent>(ref state);
             _reach = new TargetReach(ref state);
+            _repairs = new RepairLookup(ref state);
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
         }
@@ -40,6 +42,7 @@ namespace HyperRTS.Simulation.Buildings
         public void OnUpdate(ref SystemState state)
         {
             _damage.Update(ref state);
+            _repairs.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
 
             new RepairJob
@@ -50,9 +53,8 @@ namespace HyperRTS.Simulation.Buildings
                 HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 ProducibleLookup = SystemAPI.GetComponentLookup<Producible>(true),
                 Reach = _reach,
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
-                SiteLookup = SystemAPI.GetComponentLookup<ConstructionProgress>(true),
                 RepairableLookup = SystemAPI.GetComponentLookup<Repairable>(true),
+                Repairs = _repairs,
                 SectionLookup = SystemAPI.GetBufferLookup<Section>(true),
             }.Schedule();
         }
@@ -69,8 +71,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             public TargetReach Reach;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
-            [ReadOnly] public ComponentLookup<ConstructionProgress> SiteLookup;
+            public RepairLookup Repairs;
             [ReadOnly] public ComponentLookup<Repairable> RepairableLookup;
             [ReadOnly] public BufferLookup<Section> SectionLookup;
 
@@ -120,8 +121,7 @@ namespace HyperRTS.Simulation.Buildings
                     return false;
                 }
 
-                return BuildingRules.NeedsRepair(HealthLookup, SiteLookup, FactionLookup, RepairableLookup,
-                    Relations, target, faction);
+                return Repairs.NeedsRepair(target, faction, Relations);
             }
         }
     }

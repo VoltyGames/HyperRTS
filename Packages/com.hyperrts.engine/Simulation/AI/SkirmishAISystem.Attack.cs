@@ -12,6 +12,19 @@ namespace HyperRTS.Simulation.AI
 {
     public partial struct SkirmishAISystem
     {
+        /// <summary>Where an attack heads and which enemy owns it.</summary>
+        private readonly struct Goal
+        {
+            public readonly float3 Position;
+            public readonly byte Enemy;
+
+            public Goal(float3 position, byte enemy)
+            {
+                Position = position;
+                Enemy = enemy;
+            }
+        }
+
         /// <summary>
         /// Once enough idle combat units gather, sends them all at an enemy base along one of the map's attack lanes
         /// (see <see cref="SendAlongLane"/>). Units that can't hit the ground (air-to-air) stay home to defend.
@@ -27,9 +40,9 @@ namespace HyperRTS.Simulation.AI
                 return;
             }
 
-            if (TryFindTarget(ref state, turn.Faction, center, ai.LimitedByFog, snapshot, out var target, out var enemy))
+            if (TryFindTarget(ref state, turn.Faction, center, ai.LimitedByFog, snapshot, out var goal))
             {
-                SendAlongLane(ref state, turn, snapshot, wave, center, target, enemy);
+                SendAlongLane(ref state, turn, snapshot, wave, center, goal);
                 return;
             }
 
@@ -81,9 +94,11 @@ namespace HyperRTS.Simulation.AI
         /// choice among the map's lanes to that enemy, so bots, and one bot's successive attacks, take different routes.
         /// </summary>
         private void SendAlongLane(ref SystemState state, in Turn turn, in Snapshot snapshot, NativeList<int> wave, float3 center,
-            float3 target, byte enemy)
+            in Goal goal)
         {
             var hints = snapshot.Hints;
+            var target = goal.Position;
+            var enemy = goal.Enemy;
             ref var ai = ref SystemAPI.GetComponentRW<AIPlayer>(turn.Player).ValueRW;
             var pick = AIRoutes.PickLane(ai.RouteSeed, turn.Faction, enemy, ai.Attacks,
                 hints.LaneCount(turn.Faction, enemy));
@@ -113,7 +128,7 @@ namespace HyperRTS.Simulation.AI
         /// <paramref name="limitedByFog"/> so is what the team hasn't seen.
         /// </summary>
         private bool TryFindTarget(ref SystemState state, byte faction, float3 from, bool limitedByFog,
-            in Snapshot snapshot, out float3 target, out byte enemy)
+            in Snapshot snapshot, out Goal goal)
         {
             var team = snapshot.Relations.GetTeam(faction);
             var targets = snapshot.Targets;
@@ -147,8 +162,7 @@ namespace HyperRTS.Simulation.AI
             }
 
             var best = nearestBase.Found ? nearestBase.Index : nearestUnit.Index;
-            target = best >= 0 ? targets.Position(best) : default;
-            enemy = best >= 0 ? targets.Owners[best].Value : default;
+            goal = best >= 0 ? new Goal(targets.Position(best), targets.Owners[best].Value) : default;
             return best >= 0;
         }
 

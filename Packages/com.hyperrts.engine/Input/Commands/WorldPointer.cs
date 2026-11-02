@@ -37,9 +37,9 @@ namespace HyperRTS.Input.Commands
             }
 
             var ray = new PickRay(origin, direction, _camera.farClipPlane);
-            var screenSize = new float2(Screen.width, Screen.height);
-            var viewProjection = CameraMatrices.ViewProjection(_camera);
-            if (!_ranking.TryPick(ref state, in ray, screen, viewProjection, screenSize, out var picked, out var point))
+            var pointer = new PickPointer(screen, CameraMatrices.ViewProjection(_camera),
+                new float2(Screen.width, Screen.height));
+            if (!_ranking.TryPick(ref state, in ray, pointer, out var picked, out var point))
             {
                 return RaycastTerrain(origin, direction, out ground);
             }

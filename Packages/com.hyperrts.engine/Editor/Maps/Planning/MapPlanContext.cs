@@ -17,14 +17,12 @@ namespace HyperRTS.Editor.Maps.Planning
     /// </summary>
     public sealed class MapPlanContext
     {
-        public MapPlanContext(MapLayout layout, MapShapes shapes, MapHeights heights, MapPalette palette,
-            MapClimate climate, MapPlacements placements, MapIssues issues)
+        public MapPlanContext(MapShapes shapes, MapHeights heights, MapPlacements placements, MapIssues issues)
         {
+            var (layout, climate) = (shapes.Layout, shapes.Climate);
             Layout = layout;
             Shapes = shapes;
             Heights = heights;
-            Palette = palette;
-            Climate = climate;
             Placements = placements;
             Issues = issues;
             Land = new MapLand(layout.TerrainBounds);
@@ -37,8 +35,8 @@ namespace HyperRTS.Editor.Maps.Planning
 
         /// <summary>The shaped ground; old craters are dug into it.</summary>
         public MapHeights Heights { get; }
-        public MapPalette Palette { get; }
-        public MapClimate Climate { get; }
+        public MapPalette Palette => Shapes.Palette;
+        public MapClimate Climate => Shapes.Climate;
         public MapPlacements Placements { get; }
         public MapIssues Issues { get; }
         public MapLand Land { get; }

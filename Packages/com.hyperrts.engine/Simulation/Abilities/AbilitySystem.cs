@@ -124,11 +124,15 @@ namespace HyperRTS.Simulation.Abilities
                 }
 
                 ActiveOrder.Finish(busy, moving);
-                Caster.Cast(abilities[index], ref states.ElementAt(stateIndex), entity, faction, target, aim, Ecb);
+                Caster.Cast(abilities[index], ref states.ElementAt(stateIndex), new AbilityActivation
+                {
+                    Caster = entity, Faction = faction, AbilityId = abilities[index].Id, Target = target, Position = aim,
+                }, Ecb);
             }
 
             private bool IsUsable(in Ability ability, in AbilityCooldown state, Entity target, byte faction) =>
-                AbilityRules.IsUsable(ability, state, target, faction, Completed, Targets, Factions, Relations);
+                AbilityRules.IsAvailable(ability, state, faction, Completed) &&
+                AbilityRules.IsValidTarget(ability, target, faction, Targets, Factions, Relations);
         }
     }
 }

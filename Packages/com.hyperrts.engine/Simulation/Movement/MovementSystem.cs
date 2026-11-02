@@ -135,9 +135,10 @@ namespace HyperRTS.Simulation.Movement
                 Walk(ref transform, capsule, from, wanted, agent, crowd);
 
                 var hold = Hold(capsule, depth, from, transform.Position.xz, axis, crowd);
+                var reading = new MoveProgress.Reading(transform.Position.xz, facing, agent.Radius, destination.Value,
+                    waypoints, path);
                 var stalled = moving.ValueRO && !crowd.ReachedGroup &&
-                              progress.HasGivenUp(transform.Position.xz, facing, agent, destination.Value, waypoints,
-                                  ref path, hold, DeltaTime);
+                              progress.HasGivenUp(reading, waypoints, ref path, hold, DeltaTime);
 
                 // A planned manoeuvre stuck in walls replans its way out rather than turning out.
                 if (stalled && remembers && !PathState.IsPlannedManoeuvre(waypoints))

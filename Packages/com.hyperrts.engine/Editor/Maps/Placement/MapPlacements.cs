@@ -56,14 +56,14 @@ namespace HyperRTS.Editor.Maps.Placement
         }
 
         /// <summary>Places an authored-space choice in every copy of the feature it belongs to.</summary>
-        public void AddCopies<T>(List<MapCopy<T>> copies, int index, MapProp entry, Vector2 position,
-            float yaw, float scale, float stretch) where T : class
+        public void AddCopies<T>(List<MapCopy<T>> copies, int index, MapPlacement authored) where T : class
         {
             foreach (var copy in copies.Where(c => c.Index == index))
             {
-                Add(new MapPlacement(entry, copy.Transform.Apply(position), copy.Transform.ApplyYaw(yaw), stretch)
+                var position = copy.Transform.Apply(authored.Position);
+                Add(new MapPlacement(authored.Entry, position, copy.Transform.ApplyYaw(authored.Yaw), authored.Stretch)
                 {
-                    Scale = scale,
+                    Scale = authored.Scale,
                 });
             }
         }

@@ -41,22 +41,33 @@ namespace HyperRTS.Simulation.Combat.Damage
         public WeaponTargets Reach;
 
         /// <summary>A plain hit or heal on <paramref name="target"/> alone, untyped and without splash.</summary>
-        public static DamageEvent Direct(Entity target, float3 position, Entity source, byte faction, float amount) =>
-            OverTime(target, position, position, source, faction, amount, default);
-
-        /// <summary>A typed hit on <paramref name="target"/> alone, such as one tick of damage over time; no splash or garrison share.</summary>
-        public static DamageEvent OverTime(Entity target, float3 position, float3 origin, Entity source, byte faction,
-            float amount, UnityObjectRef<DamageType> type) => new()
+        public static DamageEvent Direct(Entity target, float3 position, Entity source, byte faction,
+            float amount) => new()
         {
             Target = target,
             Position = position,
-            Origin = origin,
+            Origin = position,
             Source = source,
             SourceFaction = faction,
             Amount = amount,
-            Type = type,
             EdgeFactor = 1f,
         };
+
+        /// <summary>This hit with a damage type, such as one tick of damage over time; no garrison share.</summary>
+        public readonly DamageEvent Typed(UnityObjectRef<DamageType> type)
+        {
+            var hit = this;
+            hit.Type = type;
+            return hit;
+        }
+
+        /// <summary>This hit coming from <paramref name="origin"/>, for directional armor.</summary>
+        public readonly DamageEvent From(float3 origin)
+        {
+            var hit = this;
+            hit.Origin = origin;
+            return hit;
+        }
 
         /// <summary>Linear falloff from full damage at the centre to <see cref="EdgeFactor"/> at <see cref="Radius"/>.</summary>
         public readonly float SplashFactor(float gap) =>
@@ -64,7 +75,11 @@ namespace HyperRTS.Simulation.Combat.Damage
 
         /// <summary>Reports where a shot of a shooter type landed; a type id of 0 is ignored.</summary>
         public readonly void AddImpact(ref CueWriter cues, int typeId, float3 direction) =>
-            cues.Add(typeId, CueSlot.Impact, Position, direction, SourceFaction, radius: Radius, target: Target);
+            cues.Add(new CueEvent
+            {
+                TypeId = typeId, Slot = CueSlot.Impact, Faction = SourceFaction, Position = Position,
+                Direction = direction, Radius = Radius, Target = Target,
+            });
     }
 
     /// <summary>Tags the singleton holding this frame's <see cref="DamageEvent"/>s.</summary>

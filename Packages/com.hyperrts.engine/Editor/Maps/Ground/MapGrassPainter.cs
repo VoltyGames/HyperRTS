@@ -27,9 +27,10 @@ namespace HyperRTS.Editor.Maps.Ground
         public const float PropGrassFalloff = 1.5f;
 
         /// <summary>Coverage per climate plant over the terrain, <paramref name="resolution"/> texels a side.</summary>
-        public static MapGrassBake Paint(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes,
-            MapHeights heights, MapClimate climate, MapClearance clearance, int resolution)
+        public static MapGrassBake Paint(MapLand land, MapEdgeField edges, MapShapes shapes, MapHeights heights,
+            MapClearance clearance, int resolution)
         {
+            var (layout, climate) = (shapes.Layout, shapes.Climate);
             var area = layout.TerrainBounds;
             var bake = new MapGrassBake(area, resolution, climate.plants.Count);
             var plants = Plants(climate, edges);

@@ -103,8 +103,8 @@ namespace HyperRTS.Simulation.Selection
             }
 
             var ray = new PickRay(input.RayOrigin, input.RayDirection, input.RayDistance);
-            var picked = _ranking.TryPick(ref state, in ray, input.Pointer, input.ViewProjection, input.ScreenSize,
-                out var entity, out _);
+            var pointer = new PickPointer(input.Pointer, input.ViewProjection, input.ScreenSize);
+            var picked = _ranking.TryPick(ref state, in ray, pointer, out var entity, out _);
             return picked && _ranking.Selectables.HasComponent(entity) ? entity : Entity.Null;
         }
 

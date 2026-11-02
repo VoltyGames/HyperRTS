@@ -73,8 +73,11 @@ namespace HyperRTS.Simulation.Cues
             byte variant = 0)
         {
             var typeId = TypeIdFor(source, slot, variant);
-            return Add(typeId, slot, position, direction, faction, _cover.Find(source), _cover.IsTall(source),
-                variant: variant);
+            return Add(new CueEvent
+            {
+                TypeId = typeId, Slot = slot, Variant = variant, Faction = faction, Position = position,
+                Direction = direction, Cover = _cover.Find(source), Tall = _cover.IsTall(source),
+            });
         }
 
         /// <summary>
@@ -91,20 +94,15 @@ namespace HyperRTS.Simulation.Cues
             return _info.TryGetComponent(source, out var info) ? info.TypeId : 0;
         }
 
-        /// <summary>Plays the slot's cue of an entity type; a type id of 0 is ignored and returns false.</summary>
-        public bool Add(int typeId, CueSlot slot, float3 position, float3 direction, byte faction,
-            Cover cover = Cover.None, bool tall = false, float radius = 0f, Entity target = default, byte variant = 0)
+        /// <summary>Plays the cue of an entity type; a type id of 0 is ignored and returns false.</summary>
+        public bool Add(in CueEvent cue)
         {
-            if (typeId == 0)
+            if (cue.TypeId == 0)
             {
                 return false;
             }
 
-            _events.Add(new CueEvent
-            {
-                TypeId = typeId, Slot = slot, Variant = variant, Faction = faction, Position = position,
-                Direction = direction, Cover = cover, Tall = tall, Radius = radius, Target = target,
-            });
+            _events.Add(cue);
             return true;
         }
 

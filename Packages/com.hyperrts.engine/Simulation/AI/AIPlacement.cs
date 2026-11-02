@@ -17,21 +17,21 @@ namespace HyperRTS.Simulation.AI
         private const int Facings = 2;
 
         /// <summary>
-        /// Closest free spot to <paramref name="home"/>, ring by ring; candidates are a building plus
+        /// Closest free spot to <paramref name="home"/>'s center, ring by ring; candidates are a building plus
         /// <paramref name="gap"/> apart, the gap stays clear around the spot, and the spot passes the map's
         /// building gap to every site as the server checks it.
         /// </summary>
-        public static bool TryFindSpot(in MapSettings map, in NavGrid grid, NativeArray<NavBox> sites, float3 home,
-            float2 footprint, PlacementSurface surface, float gap, out BuildingSpot spot)
+        public static bool TryFindSpot(in MapSettings map, in NavGrid grid, NativeArray<NavBox> sites,
+            in BuildingSpot home, float gap, out BuildingSpot spot)
         {
-            var step = math.cmax(footprint) + gap;
+            var step = math.cmax(home.Footprint) + gap;
             for (var ring = 1; ring <= MaxRings; ring++)
             {
                 for (var k = 0; k < ring * 8; k++)
                 {
                     var cell = RingCell(ring, k);
-                    var position = home + new float3(cell.x, 0f, cell.y) * step;
-                    if (TryFace(map, grid, sites, new BuildingSpot(position, 0f, footprint, surface), gap, out spot))
+                    var position = home.Center + new float3(cell.x, 0f, cell.y) * step;
+                    if (TryFace(map, grid, sites, new BuildingSpot(position, 0f, home.Footprint, home.Surface), gap, out spot))
                     {
                         return true;
                     }

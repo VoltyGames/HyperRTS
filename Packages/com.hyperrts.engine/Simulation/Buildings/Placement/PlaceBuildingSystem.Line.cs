@@ -14,11 +14,10 @@ namespace HyperRTS.Simulation.Buildings.Placement
     public partial struct PlaceBuildingSystem
     {
         /// <summary>
-        /// Places every free segment from the drag start, stopping at the first the player can't buy, and orders the
-        /// sites from the end nearer the builders.
+        /// Places every free segment from the drag start, stopping at the first the player can't buy.
         /// </summary>
         private void PlaceLine(ref SystemState state, in IssuedCommand request, in Buyer buyer,
-            EntityCommandBuffer ecb, NativeList<NavBox> sites, NativeList<Entity> builders, NativeList<Order> orders)
+            EntityCommandBuffer ecb, NativeList<NavBox> sites, NativeList<Order> orders)
         {
             var prefab = request.Command.Prefab;
             var map = SystemAPI.GetSingleton<MapSettings>();
@@ -42,7 +41,11 @@ namespace HyperRTS.Simulation.Buildings.Placement
 
                 orders.Add(Raise(ref state, request, buyer, ecb, sites, spot));
             }
+        }
 
+        /// <summary>Orders the sites from the end nearer the builders.</summary>
+        private void NearEndFirst(ref SystemState state, NativeList<Entity> builders, NativeList<Order> orders)
+        {
             if (IsFarEndNearer(ref state, builders, orders))
             {
                 Reverse(orders);

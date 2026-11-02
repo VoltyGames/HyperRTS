@@ -107,17 +107,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
             return limited;
         }
 
-        /// <summary>Widens <paramref name="reach"/> and lowers <paramref name="floor"/> to every extra weapon that joins the attack on <paramref name="target"/>.</summary>
+        /// <summary>Widens <paramref name="band"/> to every extra weapon that joins the attack on <paramref name="target"/>.</summary>
         public static void ExtendReach(DynamicBuffer<WeaponMount> mounts, in TargetLookup targets, Entity shooter,
-            float3 position, Entity target, ref float reach, ref float floor)
+            float3 position, Entity target, ref RangeBand band)
         {
             for (var i = 1; i < mounts.Length; i++)
             {
                 var mount = mounts[i];
                 if (mount.JoinsAttack(targets, target))
                 {
-                    reach = math.max(reach, targets.Reach(shooter, position, mount.Weapon, target));
-                    floor = math.min(floor, mount.Weapon.MinRange);
+                    band.Reach = math.max(band.Reach, targets.Reach(shooter, position, mount.Weapon, target));
+                    band.Floor = math.min(band.Floor, mount.Weapon.MinRange);
                 }
             }
         }

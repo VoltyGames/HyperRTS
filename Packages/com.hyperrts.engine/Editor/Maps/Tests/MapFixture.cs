@@ -137,7 +137,7 @@ namespace HyperRTS.Editor.Maps.Tests
             var heights = MapHeightShaper.Shape(layout, shapes);
             var placements = MapPropPlacer.Place(layout, shapes, palette, climate, issues);
             Assert.IsFalse(issues.HasErrors, issues.ToString());
-            return new MapPlanContext(layout, shapes, heights, palette, climate, placements, issues);
+            return new MapPlanContext(shapes, heights, placements, issues);
         }
 
         public static MapRoad RoadShape(MapRoadClass roadClass, bool generated, params Vector2[] points) =>

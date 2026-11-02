@@ -46,8 +46,8 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
         private static MapRoadMesh Ribbon(MapRoad road, bool fadeStart, bool fadeEnd, MapHeights heights, float groundLevel = 0f,
             System.Func<Vector2, bool> hidden = null)
         {
-            var mesh = new MapRoadMesh();
-            mesh.AddRibbon(road, fadeStart, fadeEnd, heights, groundLevel, hidden ?? (_ => false));
+            var mesh = new MapRoadMesh(heights, groundLevel);
+            mesh.AddRibbon(road, fadeStart, fadeEnd, hidden ?? (_ => false));
             return mesh;
         }
 

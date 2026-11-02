@@ -106,7 +106,7 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             var shapes = new MapShapes(layout, Palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
             var placements = MapPropPlacer.Place(layout, shapes, Palette, climate, issues);
-            Context = new MapPlanContext(layout, shapes, heights, Palette, climate, placements, issues);
+            Context = new MapPlanContext(shapes, heights, placements, issues);
         }
 
         private MapPalette MakePalette(Action<MapSettlementKit> edit)

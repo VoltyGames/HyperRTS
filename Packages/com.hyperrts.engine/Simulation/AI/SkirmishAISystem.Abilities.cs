@@ -15,6 +15,21 @@ namespace HyperRTS.Simulation.AI
             public float3 Position;
         }
 
+        /// <summary>Who fires an ability and from where; player powers are not ranged.</summary>
+        private readonly struct Caster
+        {
+            public readonly Entity Entity;
+            public readonly float3 From;
+            public readonly bool Ranged;
+
+            public Caster(Entity entity, float3 from, bool ranged)
+            {
+                Entity = entity;
+                From = from;
+                Ranged = ranged;
+            }
+        }
+
         /// <summary>Fires one ready ability per caster, then every ready player power, at a target that suits it.</summary>
         private void UseAbilities(ref SystemState state, in Turn turn, in Snapshot snapshot)
         {
@@ -32,7 +47,8 @@ namespace HyperRTS.Simulation.AI
                 foreach (var ability in abilities)
                 {
                     var ready = cooldowns[AbilityRules.FindCooldown(cooldowns, ability.Id)].IsReady;
-                    if (ready && TryAim(ref state, ability, caster, casters.Position(i), true, turn, snapshot, out var aim))
+                    if (ready && TryAim(ref state, ability, new Caster(caster, casters.Position(i), true), turn, snapshot,
+                        out var aim))
                     {
                         turn.Commands.Add(Command(CommandType.UseAbility, caster, ability, aim));
                         break;
@@ -50,7 +66,8 @@ namespace HyperRTS.Simulation.AI
             foreach (var power in powers)
             {
                 var ready = charges[AbilityRules.FindCooldown(charges, power.Id)].IsReady;
-                if (ready && TryAim(ref state, power, turn.Player, turn.Home, false, turn, snapshot, out var aim))
+                if (ready && TryAim(ref state, power, new Caster(turn.Player, turn.Home, false), turn, snapshot,
+                        out var aim))
                 {
                     turn.Commands.Add(Command(CommandType.UsePower, Entity.Null, power, aim));
                 }
@@ -64,12 +81,13 @@ namespace HyperRTS.Simulation.AI
 
         /// <summary>
         /// Self-targeted abilities fire when an enemy is near; aimed ones at the nearest suitable target, which must be
-        /// in range when <paramref name="ranged"/> (player powers reach anywhere).
+        /// in range when the caster is ranged (player powers reach anywhere).
         /// </summary>
-        private bool TryAim(ref SystemState state, in Ability ability, Entity caster, float3 from, bool ranged,
-            in Turn turn, in Snapshot snapshot, out Aim aim)
+        private bool TryAim(ref SystemState state, in Ability ability, in Caster caster, in Turn turn,
+            in Snapshot snapshot, out Aim aim)
         {
             var faction = turn.Faction;
+            var from = caster.From;
             aim = new Aim { Target = Entity.Null, Position = from };
             if (ability.RequiredTypeId != 0 && !snapshot.Completed.Owns(faction, ability.RequiredTypeId))
             {
@@ -82,7 +100,7 @@ namespace HyperRTS.Simulation.AI
                 return HostileWithin(faction, from, range, snapshot);
             }
 
-            var index = BestTarget(ref state, ability, caster, from, ranged, faction, snapshot);
+            var index = BestTarget(ref state, ability, caster, faction, snapshot);
             if (index < 0)
             {
                 return false;
@@ -95,9 +113,10 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>Index in the snapshot's targets of the nearest entity the ability suits, or -1.</summary>
-        private int BestTarget(ref SystemState state, in Ability ability, Entity caster, float3 from, bool ranged, byte faction,
+        private int BestTarget(ref SystemState state, in Ability ability, in Caster caster, byte faction,
             in Snapshot snapshot)
         {
+            var from = caster.From;
             var targets = snapshot.Targets;
             var closest = Closest.None;
             for (var i = 0; i < targets.Length; i++)
@@ -110,7 +129,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                if (ranged && !AbilityRules.InRange(ability, caster, from, entity, targets.Position(i), _targetLookup))
+                if (caster.Ranged && !AbilityRules.InRange(ability, caster.Entity, from, entity, targets.Position(i), _targetLookup))
                 {
                     continue;
                 }

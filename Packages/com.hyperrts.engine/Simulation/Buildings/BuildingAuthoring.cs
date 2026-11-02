@@ -50,8 +50,12 @@ namespace HyperRTS.Simulation.Buildings
 
                 var writer = this.Writer(entity);
                 BuildingSetup.Add(writer, authoring.footprint, authoring.populationProvided,
-                    !authoring.startsUnderConstruction, authoring.power, authoring.placementSurface,
-                    authoring.rememberedInFog);
+                    !authoring.startsUnderConstruction, authoring.power, authoring.rememberedInFog);
+                if (authoring.placementSurface != PlacementSurface.Land)
+                {
+                    writer.Add(new BuildingPlacement { Surface = authoring.placementSurface });
+                }
+
                 if (authoring.placedInLines)
                 {
                     writer.Add<LinePlacement>();

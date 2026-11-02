@@ -23,8 +23,8 @@ namespace HyperRTS.Editor.Authoring
                 Handles.DrawWireDisc(center, Vector3.up, weapon.acquireRange);
             }
 
-            GroundHandles.EditRadius(weapon, center, weapon.stats.range + self, Color.red, "Reach", GroundHandles.ReachAngle,
-                "Edit Weapon Range",
+            GroundHandles.EditRadius(weapon, center, weapon.stats.range + self,
+                new GroundHandles.RadiusDot(Color.red, "Reach", GroundHandles.ReachAngle), "Edit Weapon Range",
                 reach => weapon.stats.range = Mathf.Max(0.1f, reach - self));
         }
     }

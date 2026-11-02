@@ -159,9 +159,8 @@ namespace HyperRTS.Simulation.Status
                     if (definition.DamagePerSecond > 0f)
                     {
                         // Damage over time has no direction, so it comes from the target itself.
-                        Damage.Add(DamageEvent.OverTime(entity, transform.Position, transform.Position, status.Source,
-                            status.SourceFaction, definition.DamagePerSecond * status.Stacks * DeltaTime,
-                            definition.DamageType));
+                        Damage.Add(DamageEvent.Direct(entity, transform.Position, status.Source, status.SourceFaction,
+                            definition.DamagePerSecond * status.Stacks * DeltaTime).Typed(definition.DamageType));
                     }
                 }
             }

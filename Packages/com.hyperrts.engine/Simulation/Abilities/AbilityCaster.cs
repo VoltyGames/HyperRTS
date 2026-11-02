@@ -36,14 +36,16 @@ namespace HyperRTS.Simulation.Abilities
             _status.Update(ref state);
         }
 
-        public void Cast(in Ability ability, ref AbilityCooldown state, Entity caster, byte faction, Entity target, float3 position,
+        /// <summary>Fires the ability; <paramref name="activation"/> says who, at what and where, and is published as is.</summary>
+        public void Cast(in Ability ability, ref AbilityCooldown state, in AbilityActivation activation,
             EntityCommandBuffer ecb)
         {
+            var caster = activation.Caster;
+            var faction = activation.Faction;
+            var target = activation.Target;
+            var position = activation.Position;
             state.Remaining = ability.Cooldown;
-            _events.Add(new AbilityActivation
-            {
-                Caster = caster, Faction = faction, AbilityId = ability.Id, Target = target, Position = position,
-            });
+            _events.Add(activation);
 
             if (ability.SpawnPrefab != Entity.Null)
             {

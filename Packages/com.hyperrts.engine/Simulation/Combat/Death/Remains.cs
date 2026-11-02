@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -32,6 +33,29 @@ namespace HyperRTS.Simulation.Combat.Death
             }
 
             return remains;
+        }
+
+        /// <summary>Spawns <paramref name="prefab"/> as these remains of the piece.</summary>
+        public readonly Entity Spawn(EntityCommandBuffer.ParallelWriter ecb, int sortKey, Entity prefab)
+        {
+            var spawned = ecb.Instantiate(sortKey, prefab);
+            ecb.Place(sortKey, spawned, Transform, StretchMatrix);
+            if (Stretched)
+            {
+                ecb.AddComponent(sortKey, spawned, Stretch);
+            }
+
+            if (PartsStretched)
+            {
+                ecb.AddComponent(sortKey, spawned, Parts);
+            }
+
+            if (Felled)
+            {
+                ecb.AddComponent(sortKey, spawned, ToppleFall);
+            }
+
+            return spawned;
         }
     }
 }

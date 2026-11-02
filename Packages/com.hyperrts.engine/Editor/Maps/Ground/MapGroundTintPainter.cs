@@ -1,10 +1,5 @@
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Common;
-using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Editor.Maps.Heights;
-using HyperRTS.Editor.Maps.Land;
-using HyperRTS.Editor.Maps.Layout;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,12 +14,9 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>Texels along each side, rounded up to a multiple of 4 for block compression.</summary>
         public static int Size(Rect area) => Mathf.CeilToInt(area.width * PixelsPerMetre / 4f) * 4;
 
-        public static Texture2D Write(string path, MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes,
-            MapHeights heights, MapClimateGroundTint strength)
+        public static Texture2D Write(string path, Rect area, MapGroundTint tint)
         {
-            var area = layout.TerrainBounds;
             var size = Size(area);
-            var tint = new MapGroundTint(layout, land, edges, shapes, heights, strength);
             var pixels = new Color[size * size];
             MapParallel.ForRows(size, y =>
             {

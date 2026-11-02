@@ -28,6 +28,9 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         public MapShapes(MapLayout layout, MapPalette palette, MapClimate climate)
         {
+            Layout = layout;
+            Palette = palette;
+            Climate = climate;
             EdgeWander = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.EdgeWander);
             var water = layout.Terrain.waterLevel;
             var overhang = layout.Terrain.backdropWidth + 10f;
@@ -57,6 +60,10 @@ namespace HyperRTS.Editor.Maps.Geometry
                 Ravines.Add(new MapRavine(line, spec, EdgeWander));
             }
         }
+
+        public MapLayout Layout { get; }
+        public MapPalette Palette { get; }
+        public MapClimate Climate { get; }
 
         public List<MapRiver> Rivers { get; } = new();
 

@@ -131,7 +131,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 fired.PitchAngle = 0f;
             }
 
-            PlayFire(shooter, shot, fired, pose, place, targetPosition, faction);
+            var firing = new Firing(shooter, faction, pose, place, fired);
+            PlayFire(firing, shot, targetPosition);
             if (weapon.ProjectilePrefab == Entity.Null)
             {
                 var origin = shot.Aim.HitOrigin(place, fired);
@@ -143,7 +144,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             else
             {
                 Obstruct(shooter, shot, fired, place, ref target, ref targetPosition);
-                Launch(shooter, shot, fired, place, target, targetPosition, faction);
+                Launch(firing, shot, target, targetPosition);
             }
         }
 
@@ -185,13 +186,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>The fire cue faces the target level, the way the shooter turned, from the muzzle as the pose turned it.</summary>
-        private void PlayFire(Entity shooter, in Weapon weapon, in WeaponPose aimed, byte pose,
-            in LocalTransform transform, float3 targetPosition, byte faction)
+        private void PlayFire(in Firing firing, in Weapon weapon, float3 targetPosition)
         {
-            var toward = targetPosition - transform.Position;
+            var toward = targetPosition - firing.Place.Position;
             toward.y = 0f;
-            weapon.Aim.PlayFire(ref _cues, shooter, transform, aimed, math.normalizesafe(toward, transform.Forward()), faction,
-                pose);
+            weapon.Aim.PlayFire(ref _cues, firing, math.normalizesafe(toward, firing.Place.Forward()));
         }
 
         private void Reveal(Entity shooter)
@@ -202,11 +201,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
         }
 
-        private void Launch(Entity shooter, in Weapon weapon, in WeaponPose pose, in LocalTransform place,
-            Entity target, float3 targetPosition, byte faction)
+        private void Launch(in Firing firing, in Weapon weapon, Entity target, float3 targetPosition)
         {
-            var origin = weapon.Aim.LaunchPoint(place, pose);
-            var seed = math.hash(new uint3((uint)shooter.Index, (uint)target.Index, pose.Shots));
+            var origin = weapon.Aim.LaunchPoint(firing.Place, firing.Pose);
+            var seed = math.hash(new uint3((uint)firing.Shooter.Index, (uint)target.Index, firing.Pose.Shots));
             var aim = weapon.Scatter(weapon.Aim.TargetPoint(targetPosition), seed);
 
             // Smoke thick enough to hide the target breaks a guided round's lock; it flies on to the aim point.
@@ -215,8 +213,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             {
                 Speed = weapon.ProjectileSpeed,
                 Height = weapon.Aim.ProjectileHeight,
-                ImpactTypeId = _cues.TypeIdFor(shooter, CueSlot.Impact),
-                Hit = weapon.Damage.Hit(shooter, faction, origin, locked ? target : Entity.Null, aim, weapon.Targets),
+                ImpactTypeId = _cues.TypeIdFor(firing.Shooter, CueSlot.Impact),
+                Hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, locked ? target : Entity.Null, aim, weapon.Targets),
                 Trajectory = weapon.Aim.Trajectory,
                 Kind = weapon.ProjectileKind,
                 Start = origin,
@@ -226,7 +224,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
             var prefab = weapon.ProjectilePrefab;
             var projectile = _spawner.Spawn(_ecb, prefab, origin,
-                quaternion.LookRotationSafe(heading, math.up()), faction);
+                quaternion.LookRotationSafe(heading, math.up()), firing.Faction);
             _ecb.AddComponent(projectile, flight);
         }
     }

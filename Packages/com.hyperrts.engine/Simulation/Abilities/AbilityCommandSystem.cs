@@ -148,7 +148,8 @@ namespace HyperRTS.Simulation.Abilities
 
         private bool IsUsable(ref SystemState state, in Ability ability, in AbilityCooldown abilityState, byte faction,
             in PlayerCommand command, in Context context) =>
-            AbilityRules.IsUsable(ability, abilityState, command.Target, faction, context.Completed, _targets, SystemAPI.GetComponentLookup<Faction>(true),
+            AbilityRules.IsAvailable(ability, abilityState, faction, context.Completed) &&
+            AbilityRules.IsValidTarget(ability, command.Target, faction, _targets, SystemAPI.GetComponentLookup<Faction>(true),
                 context.Relations);
 
         private void Cast(ref SystemState state, Entity caster, int index, byte faction, in PlayerCommand command,
@@ -173,7 +174,8 @@ namespace HyperRTS.Simulation.Abilities
             {
                 var states = SystemAPI.GetBuffer<AbilityCooldown>(caster);
                 var cooldown = AbilityRules.FindCooldown(states, ability.Id);
-                _caster.Cast(ability, ref states.ElementAt(cooldown), caster, faction, command.Target, aim, context.Ecb);
+                _caster.Cast(ability, ref states.ElementAt(cooldown), Activation(ability, caster, faction, command.Target, aim),
+                    context.Ecb);
             }
         }
 
@@ -196,7 +198,14 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var aim = AbilityRules.Aim(abilities[index], command.Position, command.Target, command.Position, _targets);
-            _caster.Cast(abilities[index], ref states.ElementAt(stateIndex), player, faction, command.Target, aim, context.Ecb);
+            _caster.Cast(abilities[index], ref states.ElementAt(stateIndex),
+                Activation(abilities[index], player, faction, command.Target, aim), context.Ecb);
         }
+
+        private static AbilityActivation Activation(in Ability ability, Entity caster, byte faction, Entity target,
+            float3 position) => new()
+        {
+            Caster = caster, Faction = faction, AbilityId = ability.Id, Target = target, Position = position,
+        };
     }
 }

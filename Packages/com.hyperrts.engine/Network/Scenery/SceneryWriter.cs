@@ -112,8 +112,8 @@ namespace HyperRTS.Network.Scenery
 
         private void SpawnRemains(Entity scenery, Entity prefab, bool witnessed, byte fall, EntityCommandBuffer ecb)
         {
-            var spawned = _remainsLookups.Spawn(ecb.AsParallelWriter(), 0, scenery, prefab, _transforms[scenery], fall,
-                witnessed);
+            var remains = Remains.FromPiece(scenery, _transforms[scenery], fall, witnessed, _remainsLookups);
+            var spawned = remains.Spawn(ecb.AsParallelWriter(), 0, prefab);
             if (!witnessed && _effects.HasComponent(prefab))
             {
                 ecb.SetComponentEnabled<SpawnEffect>(spawned, false);

@@ -70,8 +70,8 @@ namespace HyperRTS.Simulation.Selection
         }
 
         /// <summary>Tests <paramref name="ray"/> against every pick box and ranks what it hits.</summary>
-        public bool TryPick(ref SystemState state, in PickRay ray, float2 pointer, float4x4 viewProjection,
-            float2 screenSize, out Entity entity, out float3 point)
+        public bool TryPick(ref SystemState state, in PickRay ray, in PickPointer pointer, out Entity entity,
+            out float3 point)
         {
             state.CompleteDependency();
             Update(ref state);
@@ -85,15 +85,14 @@ namespace HyperRTS.Simulation.Selection
                 Inside = _insideHandle,
                 Hits = hits,
             }.Run(_boxes);
-            return TryRank(hits.AsArray(), pointer, viewProjection, screenSize, out entity, out point);
+            return TryRank(hits.AsArray(), pointer, out entity, out point);
         }
 
         /// <summary>
         /// Picks among <paramref name="hits"/> (any order) and the on-screen units; the point is the hit position, or
         /// the unit's position when it was picked on screen.
         /// </summary>
-        public bool TryRank(NativeArray<PickHit> hits, float2 pointer, float4x4 viewProjection, float2 screenSize,
-            out Entity entity, out float3 point)
+        public bool TryRank(NativeArray<PickHit> hits, in PickPointer pointer, out Entity entity, out float3 point)
         {
             if (TryClosestHit(hits, true, out var hit))
             {
@@ -104,7 +103,7 @@ namespace HyperRTS.Simulation.Selection
 
             // Units are gathered only now: a unit on the ray already won without them.
             using var units = _units.ToEntityArray(Allocator.Temp);
-            if (TryNearestOnScreen(units, pointer, viewProjection, screenSize, out entity))
+            if (TryNearestOnScreen(units, pointer, out entity))
             {
                 point = Transforms[entity].Position;
                 return true;
@@ -148,8 +147,7 @@ namespace HyperRTS.Simulation.Selection
             return found;
         }
 
-        private bool TryNearestOnScreen(NativeArray<Entity> units, float2 pointer, float4x4 viewProjection,
-            float2 screenSize, out Entity nearest)
+        private bool TryNearestOnScreen(NativeArray<Entity> units, in PickPointer pointer, out Entity nearest)
         {
             nearest = Entity.Null;
             var nearestDistance = float.MaxValue;
@@ -161,14 +159,14 @@ namespace HyperRTS.Simulation.Selection
                 }
 
                 var position = Transforms[unit].Position;
-                if (!SelectionMath.WorldToScreenPoint(viewProjection, position, screenSize, out var screen))
+                if (!SelectionMath.WorldToScreenPoint(pointer.ViewProjection, position, pointer.ScreenSize, out var screen))
                 {
                     continue;
                 }
 
-                var distance = math.distance(screen, pointer);
+                var distance = math.distance(screen, pointer.Position);
                 var radius = EntityRadius.Get(unit, Agents, Obstacles);
-                var reach = math.max(MinScreenRadius, ScreenRadius(viewProjection, screenSize, position, screen, radius));
+                var reach = math.max(MinScreenRadius, ScreenRadius(pointer.ViewProjection, pointer.ScreenSize, position, screen, radius));
                 if (distance <= reach && distance < nearestDistance)
                 {
                     nearest = unit;

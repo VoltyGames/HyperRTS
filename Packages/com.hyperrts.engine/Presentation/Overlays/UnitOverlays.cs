@@ -78,7 +78,10 @@ namespace HyperRTS.Presentation.Overlays
                     if (focus.ShowsMarker)
                     {
                         var color = style.RelationColor(view.RelationTo(factions[i].Value));
-                        AddMarker(entityManager, entities[i], unit, worlds[i], color, focus.Selected, style, now);
+                        var pose = new MarkerPose(worlds[i], unit.Layer);
+                        var footprint = MarkerSize(entityManager, unit, style);
+                        var selectedFor = focus.Selected ? _fades.Elapsed(entities[i], now) : 0f;
+                        AddMarker(pose, footprint, color, focus.Selected, selectedFor, style);
                     }
 
                     if (showsBar)
@@ -103,17 +106,19 @@ namespace HyperRTS.Presentation.Overlays
             _bars.Dispose();
         }
 
-        private void AddMarker(EntityManager entityManager, Entity entity, in OverlayUnit unit, in LocalToWorld world,
-            Color color, bool selected, OverlayStyle style, float now)
+        private static MarkerFootprint MarkerSize(EntityManager entityManager, in OverlayUnit unit, OverlayStyle style)
         {
-            var pose = new MarkerPose(world, unit.Layer);
-            var footprint = unit.IsSquad
+            return unit.IsSquad
                 ? MarkerFootprint.Round(SquadSpread(entityManager, unit), style.markerMargin)
                 : unit.Footprint(style.markerMargin);
+        }
+
+        private void AddMarker(in MarkerPose pose, MarkerFootprint footprint, Color color, bool selected, float selectedFor,
+            OverlayStyle style)
+        {
             if (selected)
             {
-                var settle = SelectionFades.ScaleAndAlpha(_fades.Elapsed(entity, now), style.selectSeconds,
-                    style.selectStartScale);
+                var settle = SelectionFades.ScaleAndAlpha(selectedFor, style.selectSeconds, style.selectStartScale);
                 footprint = footprint.Scaled(settle.x);
                 color.a *= settle.y;
             }

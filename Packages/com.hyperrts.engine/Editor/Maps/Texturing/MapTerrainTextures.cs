@@ -30,12 +30,13 @@ namespace HyperRTS.Editor.Maps.Texturing
 
             var layers = climate.layers.Select(l => l.terrainLayer).ToList();
             var folder = GeneratedFolder(climate);
-            var albedo = MapTerrainAtlas.Ensure($"{folder}/{climate.key}_TerrainAlbedo.png", layers, SliceSize,
+            var atlas = new MapTerrainAtlas(layers, SliceSize);
+            var albedo = atlas.Ensure($"{folder}/{climate.key}_TerrainAlbedo.png",
                 l => new[] { l.diffuseTexture, l.maskMapTexture }, AlbedoCell, normalMap: false, sRGB: true);
-            var normal = MapTerrainAtlas.Ensure($"{folder}/{climate.key}_TerrainNormal.png", layers, SliceSize,
+            var normal = atlas.Ensure($"{folder}/{climate.key}_TerrainNormal.png",
                 l => new[] { l.normalMapTexture }, l => MapTerrainSource.Read(l.normalMapTexture, SliceSize),
                 normalMap: true, sRGB: false);
-            var mask = MapTerrainAtlas.Ensure($"{folder}/{climate.key}_TerrainMask.png", layers, SliceSize,
+            var mask = atlas.Ensure($"{folder}/{climate.key}_TerrainMask.png",
                 l => new[] { l.maskMapTexture }, MaskCell, normalMap: false, sRGB: false);
             return (albedo, normal, mask);
         }

@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Buildings
     public static class BuildingSetup
     {
         public static void Add(EntityWriter writer, float2 footprint, int populationProvided, bool complete,
-            float power = 0f, PlacementSurface surface = PlacementSurface.Land, bool rememberedInFog = true)
+            float power = 0f, bool rememberedInFog = true)
         {
             writer.Add<BuildingTag>();
             if (rememberedInFog)
@@ -22,11 +22,6 @@ namespace HyperRTS.Simulation.Buildings
             }
 
             NavSetup.AddObstacle(writer, footprint);
-            if (surface != PlacementSurface.Land)
-            {
-                writer.Add(new BuildingPlacement { Surface = surface });
-            }
-
             writer.Add(new ConstructionProgress { Value = complete ? 1f : 0f });
             writer.SetEnabled<ConstructionProgress>(!complete);
             writer.Add(new Offline { Reasons = complete ? OfflineReason.None : OfflineReason.UnderConstruction });

@@ -13,7 +13,8 @@ namespace HyperRTS.Editor.Authoring
         protected override Action ShapeHandle(Vector3 center, Color color)
         {
             var unit = (UnitAuthoring)target;
-            var radius = GroundHandles.Radius(center, unit.radius, color, "Radius", GroundHandles.RadiusAngle);
+            var radius = GroundHandles.Radius(center, unit.radius,
+                new GroundHandles.RadiusDot(color, "Radius", GroundHandles.RadiusAngle));
             return () => unit.radius = Mathf.Max(0.05f, radius);
         }
     }

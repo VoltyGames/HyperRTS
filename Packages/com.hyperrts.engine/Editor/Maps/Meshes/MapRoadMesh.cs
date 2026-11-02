@@ -21,6 +21,16 @@ namespace HyperRTS.Editor.Maps.Meshes
 
         private const float AcrossStep = 1.5f;
 
+        private readonly MapHeights _heights;
+        private readonly float _groundLevel;
+
+        /// <summary><paramref name="groundLevel"/> is the terrain height of world y = 0.</summary>
+        public MapRoadMesh(MapHeights heights, float groundLevel)
+        {
+            _heights = heights;
+            _groundLevel = groundLevel;
+        }
+
         public List<Vector3> Vertices { get; } = new();
 
         public List<Vector3> Normals { get; } = new();
@@ -36,12 +46,11 @@ namespace HyperRTS.Editor.Maps.Meshes
         public int Count => Vertices.Count;
 
         /// <summary>
-        /// Adds a road's ribbon. <paramref name="groundLevel"/> is the terrain height of world y = 0; rows whose centre
+        /// Adds a road's ribbon; rows whose centre
         /// is <paramref name="hidden"/> (over water, under a bridge) are left out and break the ribbon there, and every
         /// visible run fades in and out at a break as at a fading end.
         /// </summary>
-        public void AddRibbon(MapRoad road, bool fadeStart, bool fadeEnd, MapHeights heights, float groundLevel,
-            Func<Vector2, bool> hidden)
+        public void AddRibbon(MapRoad road, bool fadeStart, bool fadeEnd, Func<Vector2, bool> hidden)
         {
             var points = MapCurves.Resample(road.Line.Points, Step);
             var along = Distances(points);
@@ -61,7 +70,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 }
 
                 var run = (first, end, first > 0 || fadeStart, end < last || fadeEnd);
-                AddRun(points, along, run, road.Width, heights, groundLevel);
+                AddRun(points, along, run, road.Width);
                 first = end;
             }
         }
@@ -81,7 +90,7 @@ namespace HyperRTS.Editor.Maps.Meshes
 
         /// <summary>One unbroken stretch; <paramref name="along"/> is metres along the road per row.</summary>
         private void AddRun(List<Vector2> points, List<float> along, (int First, int Last, bool In, bool Out) run,
-            float width, MapHeights heights, float groundLevel)
+            float width)
         {
             var columns = Mathf.Max(3, Mathf.CeilToInt(width / AcrossStep) + 1);
             var previous = -1;
@@ -90,7 +99,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 var ahead = points[Mathf.Min(i + 1, points.Count - 1)] - points[Mathf.Max(i - 1, 0)];
                 var row = Count;
                 var alpha = Alpha(along, run, i);
-                AddRow(points[i], ahead.normalized, width, columns, along[i], alpha, heights, groundLevel);
+                AddRow(points[i], ahead.normalized, width, columns, along[i], alpha);
                 if (previous >= 0)
                 {
                     AddQuads(previous, row, columns);
@@ -119,8 +128,7 @@ namespace HyperRTS.Editor.Maps.Meshes
             return along;
         }
 
-        private void AddRow(Vector2 center, Vector2 forward, float width, int columns, float along, float alpha,
-            MapHeights heights, float groundLevel)
+        private void AddRow(Vector2 center, Vector2 forward, float width, int columns, float along, float alpha)
         {
             var right = MapGeometry.Right(forward);
             var fade = (byte)Mathf.RoundToInt(alpha * 255f);
@@ -128,10 +136,10 @@ namespace HyperRTS.Editor.Maps.Meshes
             {
                 var across = (float)c / (columns - 1);
                 var point = center + right * ((across - 0.5f) * width);
-                var normal = heights.Normal(point);
+                var normal = _heights.Normal(point);
                 var side = new Vector3(right.x, 0f, right.y);
                 var tangent = (side - normal * Vector3.Dot(side, normal)).normalized;
-                Vertices.Add(new Vector3(point.x, heights.Height(point) - groundLevel + Lift, point.y));
+                Vertices.Add(new Vector3(point.x, _heights.Height(point) - _groundLevel + Lift, point.y));
                 Normals.Add(normal);
                 Tangents.Add(new Vector4(tangent.x, tangent.y, tangent.z, -1f));
                 Uvs.Add(new Vector2(across, along));

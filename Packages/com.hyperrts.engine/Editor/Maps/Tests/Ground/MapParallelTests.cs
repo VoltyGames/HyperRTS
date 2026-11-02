@@ -62,8 +62,8 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
                 var land = Land(context);
                 var edges = new MapEdgeField(context.Layout, land, climate);
                 var weights = MapGroundTexturePainter.Paint(context.Layout, edges, context.Heights, climate, Resolution);
-                var grass = MapGrassPainter.Paint(context.Layout, land, edges, context.Shapes, context.Heights, climate,
-                    context.Placements.Clearance, Resolution);
+                var grass = MapGrassPainter.Paint(land, edges, context.Shapes, context.Heights, context.Placements.Clearance,
+                    Resolution);
                 grass.ThinByLayers(weights, new[] { 1f, 0.5f, 0.8f, 1f });
                 return (context.Heights, weights, grass);
             }

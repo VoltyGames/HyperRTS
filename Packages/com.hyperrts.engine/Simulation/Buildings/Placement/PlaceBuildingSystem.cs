@@ -97,7 +97,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 var orders = new NativeList<Order>(Allocator.Temp);
                 if (request.Command.Type == CommandType.PlaceLine)
                 {
-                    PlaceLine(ref state, request, buyer, ecb, sites, builders, orders);
+                    PlaceLine(ref state, request, buyer, ecb, sites, orders);
+                    NearEndFirst(ref state, builders, orders);
                 }
                 else if (TryPlace(ref state, request, buyer, ecb, sites, out var order))
                 {

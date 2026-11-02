@@ -33,28 +33,5 @@ namespace HyperRTS.Simulation.Buildings
 
             return factions.TryGetComponent(site, out var owner) && relations.IsAllied(faction, owner.Value);
         }
-
-        /// <summary>
-        /// A damaged, living building to repair: a finished one allied with <paramref name="faction"/>, or a
-        /// <see cref="Repairable"/> one, which belongs to nobody and anyone's builders mend.
-        /// </summary>
-        public static bool NeedsRepair(in ComponentLookup<Health> health, in ComponentLookup<ConstructionProgress> sites,
-            in ComponentLookup<Faction> factions, in ComponentLookup<Repairable> repairables,
-            in FactionRelations relations, Entity target, byte faction)
-        {
-            if (!Health.IsAlive(health, target) || health[target].Current >= health[target].Max)
-            {
-                return false;
-            }
-
-            if (repairables.HasComponent(target))
-            {
-                return true;
-            }
-
-            // Sites are built, not repaired.
-            var finished = sites.HasComponent(target) && !sites.IsComponentEnabled(target);
-            return finished && factions.TryGetComponent(target, out var owner) && relations.IsAllied(faction, owner.Value);
-        }
     }
 }

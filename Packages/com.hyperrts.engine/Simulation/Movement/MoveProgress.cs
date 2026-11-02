@@ -54,22 +54,40 @@ namespace HyperRTS.Simulation.Movement
             Sunk,
         }
 
+        /// <summary>One frame's reading of a unit: the path left to its goal, its facing and its radius.</summary>
+        public readonly struct Reading
+        {
+            public readonly float Remaining;
+            public readonly float2 Facing;
+            public readonly float Radius;
+
+            public Reading(float2 position, float2 facing, float radius, float3 goal,
+                DynamicBuffer<PathWaypoint> waypoints, in PathState path)
+            {
+                Remaining = waypoints.Length > 0
+                    ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
+                    : math.distance(position, goal.xz);
+                Facing = facing;
+                Radius = radius;
+            }
+        }
+
         /// <summary>
         /// Measures the path left and asks for a replan when due, backing off from <see cref="ReplanSeconds"/> to
         /// <see cref="MaxReplanSeconds"/>; true once stalled <see cref="GiveUpSeconds"/> near the end or held by walls.
         /// </summary>
-        public bool HasGivenUp(float2 position, float2 facing, in NavAgent agent, float3 goal,
-            DynamicBuffer<PathWaypoint> waypoints, ref PathState path, WallHold hold, float deltaTime)
+        public bool HasGivenUp(in Reading reading, DynamicBuffer<PathWaypoint> waypoints, ref PathState path,
+            WallHold hold, float deltaTime)
         {
             if (path.Status != PathStatus.Ready)
             {
                 return false;
             }
 
-            var remaining = waypoints.Length > 0
-                ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
-                : math.distance(position, goal.xz);
-            var margin = NavTolerances.Arrive(agent.Radius);
+            var remaining = reading.Remaining;
+            var radius = reading.Radius;
+            var facing = reading.Facing;
+            var margin = NavTolerances.Arrive(radius);
             // A planned manoeuvre stands to change gear and steer, so it replans sooner only while walls hold it.
             var planned = PathState.IsPlannedManoeuvre(waypoints) && hold == WallHold.None &&
                           Stalled < MaxReplanSeconds;
@@ -80,7 +98,7 @@ namespace HyperRTS.Simulation.Movement
             }
 
             // Held by walls alone, no replan frees it, however far the goal.
-            var nearEnd = remaining <= agent.Radius * NearEndRadii + margin;
+            var nearEnd = remaining <= radius * NearEndRadii + margin;
             return Stalled >= GiveUpSeconds && (hold != WallHold.None || nearEnd);
         }
 

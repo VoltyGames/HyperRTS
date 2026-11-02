@@ -134,7 +134,7 @@ namespace HyperRTS.Editor.Maps.Placement
                     if (Clearance.IsDry(position, entry.Radius))
                     {
                         var yaw = MapGeometry.Yaw(direction) + Jitter(entry, MapRandomChannel.RowYaw, row.Index * 1000 + (int)along);
-                        _placements.AddCopies(_layout.Rows, row.Index, entry, position, yaw, 1f, 1f);
+                        _placements.AddCopies(_layout.Rows, row.Index, new MapPlacement(entry, position, yaw, 1f));
                     }
                 }
             }
@@ -162,7 +162,8 @@ namespace HyperRTS.Editor.Maps.Placement
 
                     if (Fits(polygon, position, entry.Radius * scale))
                     {
-                        _placements.AddCopies(_layout.Scatters, scatter.Index, entry, position, yaw, scale, 1f);
+                        _placements.AddCopies(_layout.Scatters, scatter.Index,
+                            new MapPlacement(entry, position, yaw, 1f) { Scale = scale });
                         placed++;
                     }
                 }

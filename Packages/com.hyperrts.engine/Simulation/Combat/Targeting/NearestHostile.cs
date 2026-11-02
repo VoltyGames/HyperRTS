@@ -28,10 +28,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
         private bool _inPlace;
 
         public NearestHostile(in FactionRelations relations, in TargetLookup targets, in Weapon weapon, byte faction,
-            Entity shooter, float3 center, float radius, bool inPlace)
+            Entity shooter, float3 center)
         {
             _shooter = shooter;
-            _inPlace = inPlace;
+            _inPlace = false;
             Best = Entity.Null;
             BestDistance = float.MaxValue;
             _relations = relations;
@@ -40,7 +40,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _faction = faction;
             _team = relations.GetTeam(faction);
             _center = center;
-            _radius = radius;
+            _radius = targets.Radius(shooter);
+        }
+
+        /// <summary>Visits what is within <paramref name="range"/> of the shooter's edge; <c>inPlace</c> as in the type summary.</summary>
+        public void Search(in SpatialIndex index, float range, bool inPlace)
+        {
+            _inPlace = inPlace;
+            index.Query(_center, range + _radius, ref this);
         }
 
         public void Visit(in SpatialEntry entry)

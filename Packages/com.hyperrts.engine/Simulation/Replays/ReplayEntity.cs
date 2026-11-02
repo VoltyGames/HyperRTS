@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Replays
         public readonly float ConstructionValue => Progress / 254f;
 
         public static ReplayEntity Capture(int key, int typeId, byte faction, in LocalTransform transform,
-            float healthFraction, float constructionProgress, bool underConstruction)
+            float healthFraction)
         {
             var forward = math.mul(transform.Rotation, math.forward());
             var yaw = math.atan2(forward.x, forward.z);
@@ -47,9 +47,12 @@ namespace HyperRTS.Simulation.Replays
                 Yaw = (ushort)((int)math.round(yaw / YawStep) & 0xFFFF),
                 Faction = faction,
                 Health = (byte)math.round(math.saturate(healthFraction) * 255f),
-                Progress = underConstruction ? (byte)math.round(math.saturate(constructionProgress) * 254f) : Finished,
+                Progress = Finished,
             };
         }
+
+        /// <summary>Marks the entity as under construction at <paramref name="fraction"/> of its build.</summary>
+        public void SetConstruction(float fraction) => Progress = (byte)math.round(math.saturate(fraction) * 254f);
 
         /// <summary>Transform between this sample and <paramref name="next"/>, turning the short way round.</summary>
         public readonly LocalTransform Interpolate(in ReplayEntity next, float t, float scale)

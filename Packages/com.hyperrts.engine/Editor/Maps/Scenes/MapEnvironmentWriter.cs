@@ -37,8 +37,9 @@ namespace HyperRTS.Editor.Maps.Scenes
             TerrainData data)
         {
             var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
-            var groundTint = MapGroundTintPainter.Write(paths.GroundTint, generation.Layout, generation.Land, generation.Edges,
-                generation.Shapes, generation.Heights, climate.groundTint);
+            var groundTint = MapGroundTintPainter.Write(paths.GroundTint, generation.Layout.TerrainBounds,
+                new MapGroundTint(generation.Layout, generation.Land, generation.Edges, generation.Shapes, generation.Heights,
+                    climate.groundTint));
             var rows = MapRowPainter.Write(paths.RowMap, generation.Land, generation.Layout.Symmetry);
             var picture = MapGroundColor.Write(paths.Ground, generation.TextureWeights, climate, groundTint);
             var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, groundTint, picture, rows);

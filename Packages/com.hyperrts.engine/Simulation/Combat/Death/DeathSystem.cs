@@ -104,7 +104,8 @@ namespace HyperRTS.Simulation.Combat.Death
             {
                 // Only Topple pieces and turret tosses carry a LethalHit, and only Topple pieces read the heading.
                 LethalHits.TryGetComponent(entity, out var fell);
-                var spawned = RemainsLookups.Spawn(Ecb, sortKey, entity, prefab, transform, fell.Heading, true);
+                var remains = Remains.FromPiece(entity, transform, fell.Heading, true, RemainsLookups);
+                var spawned = remains.Spawn(Ecb, sortKey, prefab);
                 if (Drops.HasComponent(entity))
                 {
                     Ecb.AddComponent<FallingRemains>(sortKey, spawned);

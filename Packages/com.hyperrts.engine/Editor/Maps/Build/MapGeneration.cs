@@ -121,7 +121,7 @@ namespace HyperRTS.Editor.Maps.Build
             var palette = Project.Palette;
             var heights = Timer.Time("heights", () => MapHeightShaper.Shape(Layout, Shapes));
             var placements = Timer.Time("props", () => MapPropPlacer.Place(Layout, Shapes, palette, Project.Climate, _issues));
-            _plan = new MapPlanContext(Layout, Shapes, heights, palette, Project.Climate, placements, _issues);
+            _plan = new MapPlanContext(Shapes, heights, placements, _issues);
             Timer.Time("land", () => MapLandPlanner.Plan(_plan));
             MapRoadChecks.Check(Layout, Shapes, palette.baseRadius, _issues);
             Crops = Timer.Time("crops", () => MapCropPainter.Paint(this));
@@ -144,8 +144,8 @@ namespace HyperRTS.Editor.Maps.Build
             TextureWeights = Timer.Time("texture", () =>
                 MapGroundTexturePainter.Paint(Layout, Edges, Heights, climate, Layout.GroundTextureResolution));
             WarScars.Burn(TextureWeights, Layout.TerrainBounds, climate);
-            Grass = Timer.Time("grass", () => MapGrassPainter.Paint(Layout, Land, Edges, Shapes, Heights, climate,
-                Placements.Clearance, Layout.GrassResolution));
+            Grass = Timer.Time("grass", () => MapGrassPainter.Paint(Land, Edges, Shapes, Heights, Placements.Clearance,
+                Layout.GrassResolution));
             Grass.ThinByLayers(TextureWeights, climate.layers.ConvertAll(l => l.plants).ToArray());
             WarScars.Regrow(Grass, climate);
             TerrainTrees = Timer.Time("trees", () => _plan.Trees.PlaceEntities(Placements, Layout.Bounds));

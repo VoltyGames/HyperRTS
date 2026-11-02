@@ -40,21 +40,15 @@ namespace HyperRTS.Simulation.Abilities
         /// <summary>A caster that isn't <see cref="Offline"/>; the AI and player commands both cast only from these.</summary>
         public static bool CanCast(EntityManager entityManager, Entity caster) => !entityManager.HasEnabled<Offline>(caster);
 
-        /// <summary>Ready, its required building owned and aimed at a valid target; checked on issue and firing.</summary>
-        public static bool IsUsable(in Ability ability, in AbilityCooldown state, Entity target, byte faction, in CompletedBuildings completed,
-            in TargetLookup targets, in ComponentLookup<Faction> factions, in FactionRelations relations)
+        /// <summary>Ready and its required building owned; with <see cref="IsValidTarget"/> checked on issue and firing.</summary>
+        public static bool IsAvailable(in Ability ability, in AbilityCooldown state, byte faction, in CompletedBuildings completed)
         {
             if (!state.IsReady)
             {
                 return false;
             }
 
-            if (ability.RequiredTypeId != 0 && !completed.Owns(faction, ability.RequiredTypeId))
-            {
-                return false;
-            }
-
-            return IsValidTarget(ability, target, faction, targets, factions, relations);
+            return ability.RequiredTypeId == 0 || completed.Owns(faction, ability.RequiredTypeId);
         }
 
         /// <summary>

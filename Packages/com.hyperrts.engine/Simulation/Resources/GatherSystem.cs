@@ -106,7 +106,15 @@ namespace HyperRTS.Simulation.Resources
                 var move = new MoveControl(destination, moving, arrived) { Reason = arrival.Reason };
                 if (harvest.Phase == HarvestPhase.Returning)
                 {
-                    Return(entity, ref harvester, ref harvest, move, busy, transform, agent, faction.Value);
+                    if (harvester.CargoAmount <= 0)
+                    {
+                        Resume(ref harvest, move);
+                    }
+                    else if (ReachedDropOff(entity, ref harvest, move, busy, transform, agent))
+                    {
+                        Deliver(ref harvester, ref harvest, faction.Value);
+                    }
+
                     return;
                 }
 
@@ -163,37 +171,36 @@ namespace HyperRTS.Simulation.Resources
                 }
             }
 
-            private void Return(Entity entity, ref Harvester harvester, ref HarvestState harvest, MoveControl move,
-                EnabledRefRW<ActiveOrder> busy, in LocalTransform transform, in NavAgent agent, byte faction)
+            // Empty-handed goes straight back to work.
+            private static void Resume(ref HarvestState harvest, MoveControl move)
             {
-                var moving = move.Moving;
-                // Empty-handed goes straight back to work.
-                if (harvester.CargoAmount <= 0)
-                {
-                    harvest.Phase = HarvestPhase.Gathering;
-                    moving.ValueRW = false;
-                    return;
-                }
+                harvest.Phase = HarvestPhase.Gathering;
+                move.Moving.ValueRW = false;
+            }
 
+            // True once the harvester stands at its drop-off; with none, it waits until one is built.
+            private bool ReachedDropOff(Entity entity, ref HarvestState harvest, MoveControl move,
+                EnabledRefRW<ActiveOrder> busy, in LocalTransform transform, in NavAgent agent)
+            {
+                var faction = FactionLookup[entity].Value;
                 if (!IsDropOff(harvest.DropOff, faction))
                 {
                     harvest.DropOff = ChooseDropOff(entity, transform, agent, faction);
                 }
 
-                // With no drop-off, wait until one is built.
                 var dropOff = harvest.DropOff;
                 if (dropOff == Entity.Null)
                 {
-                    moving.ValueRW = false;
-                    return;
+                    move.Moving.ValueRW = false;
+                    return false;
                 }
 
                 var walk = Arrive(dropOff, entity, ref harvest, move, transform, agent);
-                if (ActiveOrder.StopsShort(walk, busy, moving))
-                {
-                    return;
-                }
+                return !ActiveOrder.StopsShort(walk, busy, move.Moving);
+            }
 
+            private void Deliver(ref Harvester harvester, ref HarvestState harvest, byte faction)
+            {
                 var player = Players[faction];
                 var delivered = ResourcePayout.Scaled(ModifierLookup, player, harvester.CargoAmount);
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);

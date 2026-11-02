@@ -25,7 +25,7 @@ namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, i
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
 | `DamageType` | In `Common`: a damage category that armor and section materials scale, and its `garrisonFactor`, the share that reaches a sheltered garrison ([Transport](movement.md#transport)) |
-| `DamageEvent` | A queued hit, appended through `EventWriter<DamageEvent>`. A negative amount heals. `Direct` and `OverTime` build the hits that have no profile: repair, crushing, falling floors, auras and status damage |
+| `DamageEvent` | A queued hit, appended through `EventWriter<DamageEvent>`. A negative amount heals. `Direct` (with `Typed` and `From`) builds the hits that have no profile: repair, crushing, falling floors, auras and status damage |
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
 | `LastAttacker` | Who gets the kill credit |
 
@@ -209,7 +209,7 @@ without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how
   standing support). It comes back once full, then the next, and standing sections are mended last.
 - **Repairable.** Ticking `repairable` on `SectionsAuthoring` (a bridge) lets any faction's builders repair a
   neutral building through `RepairSystem`, which needs neither a faction nor a finished site (see
-  `BuildingRules.NeedsRepair`). A builder restores `rate × section health / repairSeconds` a second (10 s by default)
+  `RepairLookup.NeedsRepair`). A builder restores `rate × section health / repairSeconds` a second (10 s by default)
   to the section the heal reaches next. The building's health follows its sections and never drops below 1, so with
   every section broken it stays as a wreck instead of dying.
 - **Decks.** A section with `deck` carries a `NavAreaPart` of the building's `NavArea`: it stamps its deck while the

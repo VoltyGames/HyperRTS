@@ -100,8 +100,23 @@ namespace HyperRTS.Simulation.Air
                 {
                     Position = from, Facing = facing, State = drive,
                 };
-                var step = Plan(ref driver, ref heading, transform.Rotation, flight, landed, destination.Value, moving,
-                    ref path, waypoints, crowd, velocity.Value);
+                var leg = PathLeg.Along(driver.Position, destination.Value.xz, waypoints, path);
+                if (moving.ValueRO && driver.HasArrived(leg))
+                {
+                    path.Halt(moving, waypoints);
+                }
+
+                var step = float2.zero;
+                if (moving.ValueRO)
+                {
+                    step = new Steering(crowd, velocity.Value).Drive(ref driver, leg);
+                    heading = driver.Facing;
+                }
+                else
+                {
+                    step = Loiter(transform.Rotation, flight, landed, driver.TopSpeed * DeltaTime, ref heading);
+                }
+
                 heading = driver.Aim(heading, !moving.ValueRO, aim, aiming);
                 Fly(ref transform, from + step + (landed ? float2.zero : crowd.PushWithin(maxStep)), flight, landed);
                 if (moving.ValueRO && crowd.ReachedGroup)
@@ -135,28 +150,6 @@ namespace HyperRTS.Simulation.Air
                 {
                     transform.Rotation = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
                 }
-            }
-
-            /// <summary>This frame's step and facing before the crowd's push.</summary>
-            private readonly float2 Plan(ref Driver driver, ref float2 heading, quaternion rotation, in Flight flight,
-                bool landed, float3 goal, EnabledRefRW<MoveDestination> moving, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints, in CrowdVisitor crowd, float2 velocity)
-            {
-                var leg = PathLeg.Along(driver.Position, goal.xz, waypoints, path);
-                if (moving.ValueRO && driver.HasArrived(leg))
-                {
-                    path.Halt(moving, waypoints);
-                }
-
-                if (moving.ValueRO)
-                {
-                    var steering = new Steering(crowd, velocity);
-                    var step = steering.Drive(ref driver, leg);
-                    heading = driver.Facing;
-                    return step;
-                }
-
-                return Loiter(rotation, flight, landed, driver.TopSpeed * DeltaTime, ref heading);
             }
 
             /// <summary>An idle aircraft that can't hover keeps flying a circle; one that can stays put.</summary>

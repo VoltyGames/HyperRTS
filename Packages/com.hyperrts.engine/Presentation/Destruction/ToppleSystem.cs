@@ -56,15 +56,23 @@ namespace HyperRTS.Presentation.Destruction
             state.CompleteDependency();
             _fog.TryGetSingleton(out FogOfWar fog);
             var deltaTime = SystemAPI.Time.DeltaTime;
-            var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
+            var falls = new Falls
+            {
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(),
+                Parents = SystemAPI.GetComponentLookup<Parent>(true),
+                Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
+                Children = SystemAPI.GetBufferLookup<Child>(true),
+                CrusherQuery = _crushers,
+                View = view,
+                Fog = fog,
+            };
             using var entities = _falling.ToEntityArray(Allocator.Temp);
-            var crushers = new Crushers();
             foreach (var entity in entities)
             {
                 var toppleFall = SystemAPI.GetComponent<ToppleFall>(entity);
                 var clock = SystemAPI.GetComponentRW<FallClock>(entity);
                 var parts = SystemAPI.GetBuffer<FallPart>(entity);
-                if (!clock.ValueRO.Started && !Start(ref state, entity, toppleFall, ref clock.ValueRW, parts, transforms, ref crushers, view, fog))
+                if (!clock.ValueRO.Started && !falls.Start(entity, toppleFall, ref clock.ValueRW, parts))
                 {
                     SystemAPI.SetComponentEnabled<FallClock>(entity, false);
                     continue;
@@ -72,45 +80,56 @@ namespace HyperRTS.Presentation.Destruction
 
                 clock.ValueRW.Advance(toppleFall.Height, deltaTime);
                 var resting = clock.ValueRO.Resting;
-                Turn(entity, toppleFall, clock.ValueRO.Progress, resting, parts, transforms);
+                falls.Turn(entity, toppleFall, clock.ValueRO.Progress, resting, parts);
                 SystemAPI.SetComponentEnabled<FallClock>(entity, !resting);
             }
         }
 
-        /// <summary>Starts a seen fall, pushed by any crusher at the stump; false when nobody saw it.</summary>
-        private bool Start(ref SystemState state, Entity remains, in ToppleFall toppleFall, ref FallClock clock, DynamicBuffer<FallPart> parts,
-            ComponentLookup<LocalTransform> transforms, ref Crushers crushers, in LocalFogView view, in FogOfWar fog)
+        /// <summary>One frame's lookups, fog view and crushers for starting and turning falls.</summary>
+        private struct Falls
         {
-            var stump = transforms[remains].Position;
-            var shown = toppleFall.Witnessed && Seen(view, fog, stump);
-            if (!shown)
+            public ComponentLookup<LocalTransform> Transforms;
+            public ComponentLookup<Parent> Parents;
+            public BufferLookup<LinkedEntityGroup> Groups;
+            public BufferLookup<Child> Children;
+            public EntityQuery CrusherQuery;
+            public Crushers Crushers;
+            public LocalFogView View;
+            public FogOfWar Fog;
+
+            /// <summary>Starts a seen fall, pushed by any crusher at the stump; false when nobody saw it.</summary>
+            public bool Start(Entity remains, in ToppleFall toppleFall, ref FallClock clock, DynamicBuffer<FallPart> parts)
             {
-                return false;
+                var stump = Transforms[remains].Position;
+                var shown = toppleFall.Witnessed && Seen(View, Fog, stump);
+                if (!shown)
+                {
+                    return false;
+                }
+
+                Crushers.Fill(CrusherQuery);
+                clock = FallClock.Pushed(toppleFall.Height, Crushers.Speed(stump));
+                RecordParts(remains, parts);
+                return true;
             }
 
-            crushers.Fill(_crushers);
-            clock = FallClock.Pushed(toppleFall.Height, crushers.Speed(stump));
-            RecordParts(ref state, remains, parts, transforms);
-            return true;
-        }
-
-        /// <summary>The remains' direct children at rest, found through the group since a fresh instance has no Child buffer.</summary>
-        private void RecordParts(ref SystemState state, Entity remains, DynamicBuffer<FallPart> parts, ComponentLookup<LocalTransform> transforms)
-        {
-            var group = new NativeList<Entity>(Allocator.Temp);
-            RenderHierarchy.Collect(remains, SystemAPI.GetBufferLookup<LinkedEntityGroup>(true), SystemAPI.GetBufferLookup<Child>(true), group);
-            FallPart.Record(remains, group, SystemAPI.GetComponentLookup<Parent>(true), transforms, parts);
-        }
-
-        /// <summary>Turns the children so the remains show <see cref="ToppleMath.Pose"/>; resting puts them back exactly.</summary>
-        private static void Turn(Entity remains, in ToppleFall toppleFall, float progress, bool resting, DynamicBuffer<FallPart> parts,
-            ComponentLookup<LocalTransform> transforms)
-        {
-            var final = transforms[remains].Rotation;
-            var turn = resting ? quaternion.identity : math.mul(math.inverse(final), ToppleMath.Pose(toppleFall, final, progress));
-            foreach (var part in parts)
+            /// <summary>The remains' direct children at rest, found through the group since a fresh instance has no Child buffer.</summary>
+            private void RecordParts(Entity remains, DynamicBuffer<FallPart> parts)
             {
-                transforms[part.Part] = part.Turned(turn);
+                var group = new NativeList<Entity>(Allocator.Temp);
+                RenderHierarchy.Collect(remains, Groups, Children, group);
+                FallPart.Record(remains, group, Parents, Transforms, parts);
+            }
+
+            /// <summary>Turns the children so the remains show <see cref="ToppleMath.Pose"/>; resting puts them back exactly.</summary>
+            public void Turn(Entity remains, in ToppleFall toppleFall, float progress, bool resting, DynamicBuffer<FallPart> parts)
+            {
+                var final = Transforms[remains].Rotation;
+                var turn = resting ? quaternion.identity : math.mul(math.inverse(final), ToppleMath.Pose(toppleFall, final, progress));
+                foreach (var part in parts)
+                {
+                    Transforms[part.Part] = part.Turned(turn);
+                }
             }
         }
 

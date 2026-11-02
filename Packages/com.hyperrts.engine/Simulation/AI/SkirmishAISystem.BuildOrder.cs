@@ -130,8 +130,8 @@ namespace HyperRTS.Simulation.AI
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var gap = SystemAPI.GetComponent<AIPlayer>(turn.Player).BuildingGap;
             var sites = NavObstacle.ReadBoxes(_obstacles);
-            var found = AIPlacement.TryFindSpot(map, grid, sites.AsArray(), turn.Home, footprint, surface, gap,
-                out var spot);
+            var found = AIPlacement.TryFindSpot(map, grid, sites.AsArray(),
+                new BuildingSpot(turn.Home, 0f, footprint, surface), gap, out var spot);
             if (!found)
             {
                 return false;

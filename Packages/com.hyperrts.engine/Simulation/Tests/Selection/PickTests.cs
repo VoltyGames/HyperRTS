@@ -59,9 +59,11 @@ namespace HyperRTS.Simulation.Tests.Selection
             ref var state = ref SelectionState();
             var ranking = new PickRanking(ref state);
             using var hitArray = new NativeArray<PickHit>(hits, Allocator.Temp);
-            ranking.TryRank(hitArray, pointer, float4x4.identity, PickScreen, out var entity, out _);
+            ranking.TryRank(hitArray, Pointer(pointer), out var entity, out _);
             return entity;
         }
+
+        private static PickPointer Pointer(float2 position) => new(position, float4x4.identity, PickScreen);
 
         private static PickHit Hit(Entity entity, float fraction) => new() { Entity = entity, Fraction = fraction };
 
@@ -71,7 +73,7 @@ namespace HyperRTS.Simulation.Tests.Selection
             ref var state = ref SelectionState();
             var ranking = new PickRanking(ref state);
             var ray = new PickRay(above + new float3(0f, 10f, 0f), new float3(0f, -1f, 0f), 20f);
-            return ranking.TryPick(ref state, in ray, pointer, float4x4.identity, PickScreen, out entity, out point);
+            return ranking.TryPick(ref state, in ray, Pointer(pointer), out entity, out point);
         }
 
         // Far from every unit on screen, so only the ray can pick.

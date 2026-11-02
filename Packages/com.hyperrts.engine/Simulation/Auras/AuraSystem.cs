@@ -195,14 +195,14 @@ namespace HyperRTS.Simulation.Auras
                 var origin = Transforms[item.Source].Position;
                 if (aura.HealPerSecond > 0f)
                 {
-                    Damage.Add(DamageEvent.OverTime(entity, position, origin, item.Source, item.SourceFaction,
-                        -aura.HealPerSecond * Interval, aura.DamageType));
+                    Damage.Add(DamageEvent.Direct(entity, position, item.Source, item.SourceFaction,
+                        -aura.HealPerSecond * Interval).Typed(aura.DamageType).From(origin));
                 }
 
                 if (aura.DamagePerSecond > 0f)
                 {
-                    Damage.Add(DamageEvent.OverTime(entity, position, origin, item.Source, item.SourceFaction,
-                        aura.DamagePerSecond * Interval, aura.DamageType));
+                    Damage.Add(DamageEvent.Direct(entity, position, item.Source, item.SourceFaction,
+                        aura.DamagePerSecond * Interval).Typed(aura.DamageType).From(origin));
                 }
             }
         }

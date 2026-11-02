@@ -55,7 +55,8 @@ namespace HyperRTS.Simulation.Commands
                 var rowDepth = RowDepth(order, row, columns, spacings);
                 var center = goal.xz + forward * (front - rowDepth * 0.5f);
                 front -= rowDepth;
-                PlaceRow(positions, members, keys, new float3(center.x, goal.y, center.y), right, spacings, slots);
+                SortAcross(positions, members, keys, right);
+                LayRow(members, new float3(center.x, goal.y, center.y), right, spacings, slots);
             }
 
             order.Dispose();
@@ -97,17 +98,27 @@ namespace HyperRTS.Simulation.Commands
             return math.normalizesafe(goal.xz - centroid / positions.Length, new float2(0f, 1f));
         }
 
-        private static void PlaceRow(NativeArray<float3> positions, NativeArray<int> members, NativeArray<float> keys,
-            float3 center, float2 right, NativeArray<float2> spacings, NativeArray<float3> slots)
+        // Units keep their side-to-side order, so a row doesn't cross paths.
+        private static void SortAcross(NativeArray<float3> positions, NativeArray<int> members,
+            NativeArray<float> keys, float2 right)
+        {
+            for (var k = 0; k < members.Length; k++)
+            {
+                keys[members[k]] = math.dot(positions[members[k]].xz, right);
+            }
+
+            members.Sort(new ByKey { Keys = keys });
+        }
+
+        private static void LayRow(NativeArray<int> members, float3 center, float2 right,
+            NativeArray<float2> spacings, NativeArray<float3> slots)
         {
             var width = 0f;
             for (var k = 0; k < members.Length; k++)
             {
-                keys[members[k]] = math.dot(positions[members[k]].xz, right);
                 width += spacings[members[k]].x;
             }
 
-            members.Sort(new ByKey { Keys = keys });
             var left = -width * 0.5f;
             for (var k = 0; k < members.Length; k++)
             {

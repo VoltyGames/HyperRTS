@@ -122,7 +122,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
                 if (inRange && ready && aim.Aligned(pose, angles))
                 {
                     pose.CountShot();
-                    Engage(entity, ref interceptor, ref mount, place, pose, faction.Value, target);
+                    Engage(new Firing(entity, faction.Value, interceptor.Mount, place, pose), ref interceptor, ref mount, target);
                 }
 
                 poses[interceptor.Mount] = pose;
@@ -165,14 +165,14 @@ namespace HyperRTS.Simulation.Combat.Projectiles
                 return Relations.IsHostile(faction, shot.Faction);
             }
 
-            private void Engage(Entity entity, ref Interceptor interceptor, ref WeaponMount mount,
-                in LocalTransform place, in WeaponPose pose, byte faction, int index)
+            private void Engage(in Firing firing, ref Interceptor interceptor, ref WeaponMount mount, int index)
             {
                 var shot = Candidates[index];
                 var aim = mount.Weapon.Aim;
-                var toward = math.normalizesafe(shot.Position - aim.LaunchPoint(place, pose), place.Forward());
-                aim.PlayFire(ref Cues, entity, place, pose, toward, faction, interceptor.Mount);
-                if (!interceptor.Engage(ref mount, entity, shot.Entity))
+                var toward = math.normalizesafe(shot.Position - aim.LaunchPoint(firing.Place, firing.Pose),
+                    firing.Place.Forward());
+                aim.PlayFire(ref Cues, firing, toward);
+                if (!interceptor.Engage(ref mount, firing.Shooter, shot.Entity))
                 {
                     return;
                 }
@@ -183,8 +183,11 @@ namespace HyperRTS.Simulation.Combat.Projectiles
                 projectile.Intercepted = true;
                 Projectiles[shot.Entity] = projectile;
                 Ecb.DestroyEntity(shot.Entity);
-                Cues.Add(Cues.TypeIdFor(entity, CueSlot.Impact), CueSlot.Impact, shot.Position, toward, faction,
-                    target: shot.Entity);
+                Cues.Add(new CueEvent
+                {
+                    TypeId = Cues.TypeIdFor(firing.Shooter, CueSlot.Impact), Slot = CueSlot.Impact,
+                    Faction = firing.Faction, Position = shot.Position, Direction = toward, Target = shot.Entity,
+                });
             }
         }
     }

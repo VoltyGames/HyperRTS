@@ -46,16 +46,16 @@ namespace HyperRTS.Simulation.Combat.Weapons
             HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
 
         /// <summary>Plays the Fire cue at the posed muzzle, else at the shooter's Fire socket or pivot.</summary>
-        public void PlayFire(ref CueWriter cues, Entity shooter, in LocalTransform place, in WeaponPose pose,
-            float3 direction, byte faction, byte variant)
+        public void PlayFire(ref CueWriter cues, in Firing firing, float3 direction)
         {
             if (HasMuzzle)
             {
-                cues.PlayAt(shooter, CueSlot.Fire, LaunchPoint(place, pose), direction, faction, variant);
+                cues.PlayAt(firing.Shooter, CueSlot.Fire, LaunchPoint(firing.Place, firing.Pose), direction,
+                    firing.Faction, firing.PoseIndex);
                 return;
             }
 
-            cues.Play(shooter, CueSlot.Fire, place, direction, faction, variant);
+            cues.Play(firing.Shooter, CueSlot.Fire, firing.Place, direction, firing.Faction, firing.PoseIndex);
         }
 
         /// <summary>Where the weapon aims on a target standing at <paramref name="target"/>.</summary>
