@@ -7,6 +7,9 @@ using HyperRTS.Editor.PlayMode;
 using HyperRTS.Input.Cameras;
 using HyperRTS.Presentation.Environment.Weather;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Maps.Views
 {
@@ -24,6 +27,7 @@ namespace HyperRTS.Editor.Maps.Views
 
         private readonly MapSpec _spec;
         private readonly List<string> _weathers;
+        private readonly bool _graded;
         private readonly int _quality;
         private readonly int _previousQuality;
         private readonly List<(string weather, MapLookSpec look, float zoom)> _plan = new();
@@ -31,14 +35,19 @@ namespace HyperRTS.Editor.Maps.Views
         private int _readyFrame = -1;
         private int _startFrame = -1;
         private CameraController _controller;
+        private Volume _ungraded;
 
-        public MapLookRun(MapSpec spec, List<string> weathers, int quality)
+        public MapLookRun(MapSpec spec, List<string> weathers, bool graded, int quality)
         {
             _spec = spec;
             _weathers = weathers;
+            _graded = graded;
             _quality = quality;
             _previousQuality = QualitySettings.GetQualityLevel();
-            Summary = new MapLookSummary { map = spec.name, quality = QualitySettings.names[quality], width = Width, height = Height };
+            Summary = new MapLookSummary
+            {
+                map = spec.name, quality = QualitySettings.names[quality], graded = graded, width = Width, height = Height,
+            };
         }
 
         public MapLookSummary Summary { get; }
@@ -103,6 +112,11 @@ namespace HyperRTS.Editor.Maps.Views
                 }
             }
 
+            if (!_graded)
+            {
+                _ungraded = Ungraded();
+            }
+
             // The capture places the camera itself; the controller would pan it with the pointer.
             controller.enabled = false;
             _controller = controller;
@@ -123,11 +137,26 @@ namespace HyperRTS.Editor.Maps.Views
 
         private void Shoot((string weather, MapLookSpec look, float zoom) shot)
         {
-            var folder = Path.Combine(MapLookCapture.Folder(_spec.name), shot.weather);
+            var folder = Path.Combine(MapLookCapture.Folder(_spec.name, _graded), shot.weather);
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, $"{shot.look.name}-{Mathf.RoundToInt(shot.zoom)}m.png");
             EditorTextures.RenderPng(Camera.main, Width, Height, path, settledGI: true);
             Summary.shots.Add(new MapLookShot { weather = shot.weather, point = shot.look.name, zoom = shot.zoom, path = path });
+        }
+
+        /// <summary>
+        /// A global volume over every other that zeroes the weathers' Color Lookup, for captures the lookup fitter
+        /// pairs with paintovers.
+        /// </summary>
+        private static Volume Ungraded()
+        {
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            profile.Add<ColorLookup>(true).contribution.Override(0f);
+            var volume = new GameObject("Look Capture Ungraded").AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = float.MaxValue;
+            volume.sharedProfile = profile;
+            return volume;
         }
 
         /// <summary>Puts the camera and quality back and writes the summary; returns its path.</summary>
@@ -138,9 +167,15 @@ namespace HyperRTS.Editor.Maps.Views
                 _controller.enabled = true;
             }
 
+            if (_ungraded != null)
+            {
+                Object.Destroy(_ungraded.sharedProfile);
+                Object.Destroy(_ungraded.gameObject);
+            }
+
             QualitySettings.SetQualityLevel(_previousQuality, true);
             Summary.failure = failure;
-            var folder = MapLookCapture.Folder(_spec.name);
+            var folder = MapLookCapture.Folder(_spec.name, _graded);
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, "summary.json");
             File.WriteAllText(path, JsonUtility.ToJson(Summary, true));

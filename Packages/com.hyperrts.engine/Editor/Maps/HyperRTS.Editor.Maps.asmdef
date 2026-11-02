@@ -11,6 +11,7 @@
         "Unity.Entities.Graphics",
         "Unity.Mathematics",
         "Unity.Pipeline.Attributes",
+        "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.Scenes",
         "Unity.Transforms"

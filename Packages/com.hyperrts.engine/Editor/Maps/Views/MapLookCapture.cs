@@ -26,14 +26,16 @@ namespace HyperRTS.Editor.Maps.Views
         [AutoStaticsCleanup]
         public static string Status { get; private set; } = "";
 
-        /// <summary>The folder a map's look captures go to.</summary>
-        public static string Folder(string map) => Path.Combine(MapReport.ViewsFolder(map), "look");
+        /// <summary>The folder a map's look captures go to; ungraded ones, taken with the lookup off, apart.</summary>
+        public static string Folder(string map, bool graded) =>
+            Path.Combine(MapReport.ViewsFolder(map), graded ? "look" : "look-ungraded");
 
         /// <summary>
         /// Opens the map's scene and starts the captures in Play mode. <paramref name="weathers"/> is a comma list of
-        /// weather keys, empty for all; <paramref name="quality"/> a quality level name, empty for the current one.
+        /// weather keys, empty for all; <paramref name="graded"/> false turns the weathers' Color Lookup off;
+        /// <paramref name="quality"/> a quality level name, empty for the current one.
         /// </summary>
-        public static string Start(string specPath, string weathers, string quality)
+        public static string Start(string specPath, string weathers, bool graded, string quality)
         {
             if (IsRunning || EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -51,13 +53,13 @@ namespace HyperRTS.Editor.Maps.Views
                 EditorSceneManager.OpenScene(project.Paths.Scene, OpenSceneMode.Single);
             }
 
-            _run = new MapLookRun(project.Spec, Split(weathers), QualityLevel(quality));
+            _run = new MapLookRun(project.Spec, Split(weathers), graded, QualityLevel(quality));
             Status = $"Starting {_run.Summary.map}";
             EditorApplication.update += Tick;
             EditorApplication.playModeStateChanged += StopOnExit;
             // A frame after opening the scene, so its objects wake in Play instead of half-loaded.
             EditorApplication.delayCall += EditorApplication.EnterPlaymode;
-            return Folder(project.Spec.name);
+            return Folder(project.Spec.name, graded);
         }
 
         private static List<string> Split(string list) =>

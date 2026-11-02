@@ -9,6 +9,9 @@ namespace HyperRTS.Editor.Maps.Views
     {
         public string map;
         public string quality;
+
+        /// <summary>False when the weathers' Color Lookup was off, for fitting lookups.</summary>
+        public bool graded;
         public int width;
         public int height;
         public string failure;

@@ -50,7 +50,7 @@ command both call that method. Long commands run as detached jobs (`unity comman
 | `map_preview <map>` | `MapPreview.Run` | Issues, land shares, counts, the preview report and image paths |
 | `map_build [map]` | `MapBuildRunner.Build` or `BuildAll` | One summary per map built: rush times, paths and issues, the report, image and views paths |
 | `map_capture <map>` | `MapViewCapture.Capture` | The view image paths |
-| `map_look <map> [weathers] [quality]` | `MapLookCapture.Start` | The folder at once; it enters Play, captures the spec's `looks` at three zooms per weather once GI settles, writes `summary.json` and leaves Play |
+| `map_look <map> [weathers] [quality] [graded]` | `MapLookCapture.Start` | The folder at once; it enters Play, captures the spec's `looks` at three zooms per weather once GI settles, writes `summary.json` and leaves Play. `--graded false` turns the weathers' Color Lookup off and writes to `look-ungraded/`, for fitting lookups |
 | `map_look_status` | `MapLookCapture.Status` | Whether a look capture runs, and its progress or how it ended |
 | `effect_build [recipe]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
 | `effect_capture <rig> [times] [distance]` | `EffectCapture.Capture` | The PNG paths, one for each time |

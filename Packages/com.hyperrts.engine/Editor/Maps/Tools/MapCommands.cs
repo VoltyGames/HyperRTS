@@ -38,8 +38,9 @@ namespace HyperRTS.Editor.Maps.Tools
         public static object Look(
             [CliArg("map", MapHelp, Required = true)] string map,
             [CliArg("weathers", "Comma list of weather keys; empty takes every weather")] string weathers = "",
-            [CliArg("quality", "Quality level name; empty keeps the current level")] string quality = "") =>
-            new { folder = MapLookCapture.Start(MapPaths.Find(map), weathers, quality) };
+            [CliArg("quality", "Quality level name; empty keeps the current level")] string quality = "",
+            [CliArg("graded", "False turns the weathers' Color Lookup off, for captures to fit lookups from")] bool graded = true) =>
+            new { folder = MapLookCapture.Start(MapPaths.Find(map), weathers, graded, quality) };
 
         [CliCommand("map_look_status", "Progress of the running look capture, or how the last one ended.", Tags = new[] { Tag })]
         public static object LookStatus() => new { running = MapLookCapture.IsRunning, status = MapLookCapture.Status };
