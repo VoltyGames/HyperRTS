@@ -81,12 +81,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var paths = generation.Project.Paths;
             var path = $"{paths.Generated}/{paths.Name}_Horizon_{name}.asset";
-            var data = AssetDatabase.LoadAssetAtPath<TerrainData>(path);
-            if (data == null)
-            {
-                data = new TerrainData();
-                AssetDatabase.CreateAsset(data, path);
-            }
+            var data = MapTerrainWriter.TerrainAsset(path);
 
             var terrain = generation.Layout.Terrain;
             data.heightmapResolution = Heights;

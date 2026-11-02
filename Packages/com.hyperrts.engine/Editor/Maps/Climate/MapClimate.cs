@@ -165,6 +165,23 @@ namespace HyperRTS.Editor.Maps.Climate
 
         public bool HasTree(string key) => MapKeys.Contains(trees, key);
 
+        /// <summary>
+        /// One terrain prototype per species and variant, each species' variants in a run starting at its entry in
+        /// <paramref name="firsts"/>.
+        /// </summary>
+        public List<TreePrototype> TreePrototypes(out int[] firsts)
+        {
+            var prototypes = new List<TreePrototype>();
+            firsts = new int[trees.Count];
+            for (var i = 0; i < trees.Count; i++)
+            {
+                firsts[i] = prototypes.Count;
+                trees[i].prefabs.ForEach(prefab => prototypes.Add(new TreePrototype { prefab = prefab }));
+            }
+
+            return prototypes;
+        }
+
         public MapClimateWeather Weather(string key) => MapKeys.Get(weathers, key, this.key, "weather");
     }
 }

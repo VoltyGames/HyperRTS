@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Common
@@ -34,15 +33,26 @@ namespace HyperRTS.Editor.Maps.Common
         public static float Yaw(this System.Random random) => random.Value() * 360f;
 
         /// <summary>One entry of a weighted mix.</summary>
-        public static T Pick<T>(this System.Random random, IReadOnlyList<T> items, Func<T, float> weight)
+        public static T Pick<T>(this System.Random random, IReadOnlyList<T> items, Func<T, float> weight) =>
+            Pick(items, weight, random.Value());
+
+        /// <summary>One entry of a weighted mix for a roll from 0 to 1, such as a hash.</summary>
+        public static T Pick<T>(IReadOnlyList<T> items, Func<T, float> weight, float roll)
         {
-            var roll = random.Value() * items.Sum(weight);
-            foreach (var item in items)
+            // Indexed loops: hash-rolled picks run per texel, where an enumerator per call adds up.
+            var total = 0f;
+            for (var i = 0; i < items.Count; i++)
             {
-                roll -= weight(item);
+                total += weight(items[i]);
+            }
+
+            roll *= total;
+            for (var i = 0; i < items.Count; i++)
+            {
+                roll -= weight(items[i]);
                 if (roll <= 0f)
                 {
-                    return item;
+                    return items[i];
                 }
             }
 
