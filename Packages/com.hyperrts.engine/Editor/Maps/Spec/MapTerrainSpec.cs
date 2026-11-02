@@ -29,5 +29,11 @@ namespace HyperRTS.Editor.Maps.Spec
         /// looks off the world. Rivers and roads that reach the edge run on into it; areas and rows may be drawn there.
         /// </summary>
         public float backdropWidth;
+
+        /// <summary>
+        /// Metres of low-detail farmland round the backdrop, so a camera tilted at its closest zoom sees a horizon
+        /// instead of the world's edge; 0 adds none.
+        /// </summary>
+        public float horizonWidth;
     }
 }

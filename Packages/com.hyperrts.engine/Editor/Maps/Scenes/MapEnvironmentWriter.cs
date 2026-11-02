@@ -59,6 +59,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var (layout, climate) = (generation.Layout, generation.Project.Climate);
             var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
+            MapHorizonWriter.Write(scene, generation, terrain, ground.Material);
             CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
             CreateRowCrops(scene, generation.Project.Paths.RowCrops, terrain);
             CreateGrass(scene, generation.Project.Paths.Grass, terrain);

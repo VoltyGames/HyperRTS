@@ -16,7 +16,7 @@ namespace HyperRTS.Input.Cameras
     [HelpURL(HyperRTSDocs.Input)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    public class CameraController : PresentationBehaviour
+    public partial class CameraController : PresentationBehaviour
     {
         // Mouse delta is per frame, so yaw scales with pixels dragged rather than time.
         private const float DegreesPerPixel = 1f / 500f;
@@ -53,15 +53,6 @@ namespace HyperRTS.Input.Cameras
         [Min(0f)]
         public float zoomSmoothTime = 0.12f;
 
-        [Header("Pitch")]
-        [Tooltip("Degrees down from the horizon at the closest zoom; lower looks further toward the horizon.")]
-        [Range(1f, 90f)]
-        public float pitchAtMinZoom = 44f;
-
-        [Tooltip("Degrees down from the horizon at the farthest zoom; pitch runs linearly with height in between.")]
-        [Range(1f, 90f)]
-        public float pitchAtMaxZoom = 60f;
-
         [Header("Default View")]
         [Tooltip("Position the camera resets to (Home key).")]
         public Vector3 defaultPosition = new(0, 35, -50);
@@ -89,17 +80,17 @@ namespace HyperRTS.Input.Cameras
         private float _height;
         private float _targetHeight;
         private float _zoomVelocity;
+        private Camera _camera;
+        private float _farClip;
 
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
         public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), _height);
 
-        /// <summary>Pitch in degrees down from the horizon at <paramref name="height"/>, linear between the zoom limits.</summary>
-        public static float PitchAt(float height, float minZoom, float maxZoom, float pitchAtMin, float pitchAtMax) =>
-            Mathf.Lerp(pitchAtMin, pitchAtMax, Mathf.InverseLerp(minZoom, maxZoom, height));
-
         protected override void OnAwake()
         {
             _actions = InputActionsProvider.Actions;
+            _camera = GetComponent<Camera>();
+            _farClip = _camera.farClipPlane;
         }
 
         private void OnEnable() => InputActionsProvider.Enable(_actions.Camera);
@@ -220,7 +211,8 @@ namespace HyperRTS.Input.Cameras
         {
             focus.y = 0f;
             _height = height;
-            var pitch = PitchAt(height, minZoom, maxZoom, pitchAtMinZoom, pitchAtMaxZoom);
+            var pitch = PitchAt(height);
+            _camera.farClipPlane = Mathf.Lerp(_farClip, Mathf.Max(farClipAtTilt, _farClip), TiltAt(height));
             transform.rotation = Quaternion.Euler(pitch, _yaw, 0f);
             var forward = transform.forward;
 
