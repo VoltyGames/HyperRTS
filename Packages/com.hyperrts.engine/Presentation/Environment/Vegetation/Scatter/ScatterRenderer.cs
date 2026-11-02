@@ -112,7 +112,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             }
 #endif
 
-            if (!_ready || !CameraStates<ScatterCameraState<TBatch>>.Draws(camera, gameObject))
+            if (!_ready || !SceneCameras.Draws(camera, gameObject))
             {
                 return;
             }

@@ -31,8 +31,8 @@ namespace HyperRTS.Editor.Maps.Spec
         public float backdropWidth;
 
         /// <summary>
-        /// Metres of low-detail farmland round the backdrop, so a camera tilted at its closest zoom sees a horizon
-        /// instead of the world's edge; 0 adds none.
+        /// Metres of farmland past the terrain's edge, so a camera tilted at its closest zoom sees a horizon instead of
+        /// the world's edge; 0 adds none. A <c>Horizon</c> builds it when the scene loads.
         /// </summary>
         public float horizonWidth;
     }

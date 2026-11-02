@@ -45,8 +45,8 @@ relations and colours. It and other presenters read singletons through `LiveSing
 `ChangeWatch` sees a watched component written or an entity count move.
 
 `Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Trampling`,
-`Fire`, `Weather` (atmosphere, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`, `RowCrops`,
-`Scatter`, `Shading`) and `Ambient`. `EdgeNoise.png`, which several of them share, stays at the top; their cell grids
+`Fire`, `Weather` (atmosphere, sky, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`,
+`RowCrops`, `Scatter`, `Shading`), `Horizon` and `Ambient`. `EdgeNoise.png`, which several of them share, stays at the top; their cell grids
 are the simulation's `CellGrid`.
 `Quality/` holds the knobs the game sets from its graphics options.
 `Effects/` is split into `Rig` (the rig component, its graphs, pools and playback), `Streams` (graph streams, trails,
@@ -436,7 +436,11 @@ plant tints, grime, terrain hex tiling and the scatter compute shaders.
 
 An `Atmosphere` component sits on the root of a weather's atmosphere prefab, together with its sun, post-processing
 volume and `Wind`. When enabled it sets the skybox, ambient light, reflection cubemap and wetness, and turns Unity
-fog off. A missing skybox or reflection is an error.
+fog off. A missing skybox or reflection is an error. Skyboxes use `HyperRTS/Sky`, Unity's cubemap sky whose
+photographed ground gives way below the horizon to the sky's own colour just above it, blurred: haze down to half its
+`Horizon Band` (20 degrees), fading back to the photograph by its end. A long view that runs out of land meets haze
+instead of a close-up field, and the ground straight below, which lights the scene from beneath, stays as
+photographed.
 
 `CloudShadows` on the sun draws the sun's cookie every frame into a 2048 by 2048 bilinear R8 render texture that wraps around
 the camera over 640 m of ground: the tileable cloud picture, drifting with its wind, times the shadow of each smoke
@@ -476,6 +480,26 @@ Transparent shaders apply both fogs in the full-screen order with `SceneFogAt` a
 `SceneFog.hlsl`, and need `#pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC`. A shader that samples the
 opaque texture takes URP's fog out of it first with `AtmosphereFogAt` and `RemoveAtmosphereFog`, as water does for
 the bottom it refracts, so it fogs once.
+
+### Horizon
+
+`Horizon` draws farmland round the map out to its `width`, for a camera tilted toward the horizon. A map build adds
+it when its spec has a `horizonWidth`. It builds everything when enabled, in edit mode too, keeps it in memory only and
+submits it to each game and Scene view camera before it renders (`SceneCameras.Draws`). Nothing in it collides or
+navigates.
+
+- **Ground.** `HorizonRing` builds loops of vertices round the terrain's rectangle, rounded at the corners. The first
+  loop lies 4 m in under the terrain's edge, and the loops spread further apart with distance, so a 2500 m ring takes
+  about 20 thousand vertices. Heights follow the terrain's edge, then blend over `relief.blend` into open ground swelling
+  with `HorizonRelief`'s noise. `HyperRTS/HorizonGround` paints it with the map terrain material's layer arrays.
+  `HorizonFields` lays the fields: rows turned to the map's farmland, each row slid by a hashed share of a field, each
+  field one crop picked by weight, with a margin along its edges. `HorizonFields.hlsl` paints the same grid. Where a
+  pixel spans much of a field, fields fade to the crops' and margins' weighted mean, so the far ground doesn't sparkle.
+- **Belts.** `HorizonBelts.Belts` keeps a share of the field edges, by hash. `HorizonTrees` plants rows of real trees
+  along them within `treesWidth` (250 m) of the terrain: each variant's last LOD, instanced in 500 m chunks the camera
+  culls, casting shadows. Past that, `HorizonTreeLine` makes each run of belt a ridge with a crown's cross-section,
+  one submesh per variant. `HyperRTS/HorizonTreeLine` shades it with the variant's leaves seen from afar (its leaf
+  atlas read back once and weighted by coverage, times its tint), broken into crown-sized clumps.
 
 ### Contact shadows
 

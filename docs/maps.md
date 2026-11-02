@@ -91,7 +91,7 @@ the map centre, X points east, Z points north, and angles run clockwise from nor
 | `size` | Playable width (X) and depth (Z) |
 | `symmetry` | `rotate-180`, `mirror-x`, `mirror-z`, or `rotate-3` to `rotate-8`. See [symmetry](#symmetry) |
 | `seed` | Seeds every random stream and noise field |
-| `terrain` | `height` (open ground, m), `relief` (swell amplitude, m; 2 to 4 for rolling farmland), `reliefScale` (swell wavelength, m; 150 to 300), `waterLevel` (below `height`), `maxHeight`, `resolution` (2^n + 1: 513 up to 300 m of terrain, 1025 up to 600 m, 2049 above), `backdropWidth` (100 to 120), `horizonWidth` (metres of low-detail farmland round the backdrop for a tilted camera's horizon: eight terrain tiles of the farmland kit's crops in large straight fields with belts of its trees, no colliders, navigation or props; 0 for none) |
+| `terrain` | `height` (open ground, m), `relief` (swell amplitude, m; 2 to 4 for rolling farmland), `reliefScale` (swell wavelength, m; 150 to 300), `waterLevel` (below `height`), `maxHeight`, `resolution` (2^n + 1: 513 up to 300 m of terrain, 1025 up to 600 m, 2049 above), `backdropWidth` (100 to 120), `horizonWidth` (metres of farmland past the terrain's edge for a tilted camera's horizon, 2000 to 3000; a `Horizon` builds it in memory when the scene loads: the first farmland's kit in larger fields with its belts; 0 for none) |
 
 Base `height` is lowered to world y = 0, and open ground ends up there. The backdrop is unplayable land past the
 playable edge. Gameplay points (spawns, resources, props, hills, settlements) stay inside half the `size` either way;

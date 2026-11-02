@@ -11,18 +11,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         public IEnumerable<T> All => _states.Values;
 
-        /// <summary>
-        /// Game and Scene view cameras that see the owner's layer and scene. Reflection probes and asset preview
-        /// cameras are skipped: they render other scenes or bake once, and would regrow every plant for nothing.
-        /// </summary>
-        public static bool Draws(Camera camera, GameObject owner)
-        {
-            var kind = camera.cameraType is CameraType.Game or CameraType.SceneView;
-            var seesLayer = (camera.cullingMask & (1 << owner.layer)) != 0;
-            var ownScene = !camera.scene.IsValid() || camera.scene == owner.scene;
-            return kind && seesLayer && ownScene;
-        }
-
         public bool TryGet(Camera camera, out T state) => _states.TryGetValue(camera, out state);
 
         public T Get(Camera camera, Func<T> create)

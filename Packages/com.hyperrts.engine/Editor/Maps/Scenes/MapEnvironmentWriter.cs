@@ -1,3 +1,4 @@
+using System.Linq;
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Climate;
@@ -6,6 +7,7 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Presentation.Environment.Ground;
+using HyperRTS.Presentation.Environment.Horizon;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Weather;
@@ -21,7 +23,7 @@ using HyperRTS.Presentation.HUD.Map;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
-    /// <summary>Writes the map's world around the gameplay: terrain, ground colour, row crops, grass, rivers, sky, ford decks and minimap.</summary>
+    /// <summary>Writes the map's world around the gameplay: terrain, horizon, ground colour, row crops, grass, rivers, sky, ford decks and minimap.</summary>
     public static class MapEnvironmentWriter
     {
         private const string RowCropsCompute =
@@ -31,6 +33,14 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         private const string GrassShader =
             "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/FoliageGrass.shader";
+
+        private const string HorizonGroundShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonGround.shader";
+
+        private const string HorizonTreeLineShader =
+            "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonTreeLine.shader";
+
+        /// <summary>Horizon fields are this many times the kit's, as they are only seen far off.</summary>
+        private const float HorizonFieldScale = 1.6f;
 
         /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
@@ -59,7 +69,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var (layout, climate) = (generation.Layout, generation.Project.Climate);
             var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
-            MapHorizonWriter.Write(scene, generation, terrain, ground.Material);
+            CreateHorizon(scene, generation, terrain);
             CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
             CreateRowCrops(scene, generation.Project.Paths.RowCrops, terrain);
             CreateGrass(scene, generation.Project.Paths.Grass, terrain);
@@ -114,6 +124,71 @@ namespace HyperRTS.Editor.Maps.Scenes
 
             minimap.image = image;
             EditorUtility.SetDirty(minimap);
+        }
+
+        /// <summary>
+        /// The farmland round the map out to the spec's <c>horizonWidth</c>: the first farmland's kit (or the climate's
+        /// first) in larger fields at the farmland's angle, belted by its belt kit's trees.
+        /// </summary>
+        private static void CreateHorizon(MapScene scene, MapGeneration generation, Terrain terrain)
+        {
+            var (spec, climate, layout) = (generation.Project.Spec, generation.Project.Climate, generation.Layout);
+            var width = layout.Terrain.horizonWidth;
+            if (width <= 0f)
+            {
+                return;
+            }
+
+            var farmland = spec.farmland.Count > 0 ? spec.farmland[0] : null;
+            var kit = climate.FarmlandKit(farmland != null ? farmland.kind : climate.farmlandKitKeys[0]);
+            var go = new GameObject("Horizon");
+            go.SetActive(false);
+            go.transform.SetParent(scene.Root, false);
+            var horizon = go.AddComponent<Horizon>();
+            horizon.terrain = terrain;
+            horizon.width = width;
+            horizon.seed = spec.seed & HorizonFields.MaxSeed;
+            horizon.relief = new HorizonRelief
+            {
+                height = layout.TerrainOrigin.y + layout.Terrain.height,
+                swell = layout.Terrain.relief,
+                scale = layout.Terrain.reliefScale,
+            };
+            horizon.fields = new HorizonFields
+            {
+                size = kit.fieldSize * HorizonFieldScale,
+                angle = farmland?.angle ?? 0f,
+                marginWidth = kit.marginWidth,
+                marginLayer = climate.SurfaceLayer(kit.marginSurface),
+                crops = kit.crops.Select(crop => new HorizonCrop { layer = climate.SurfaceLayer(crop.surface), weight = crop.weight })
+                    .ToList(),
+            };
+            horizon.belts = Belts(climate, kit);
+            horizon.groundShader = Engine<Shader>(HorizonGroundShader, "horizon ground shader");
+            horizon.treeLineShader = Engine<Shader>(HorizonTreeLineShader, "horizon tree line shader");
+            go.SetActive(true);
+        }
+
+        // The kit's belt kit, each tree species' weight shared among its variants; no trees for a kit without belts.
+        private static HorizonBelts Belts(MapClimate climate, MapFarmlandKit kit)
+        {
+            if (string.IsNullOrEmpty(kit.beltKit))
+            {
+                return new HorizonBelts { share = 0f };
+            }
+
+            var belt = climate.BeltKit(kit.beltKit);
+            return new HorizonBelts
+            {
+                width = belt.width,
+                rows = belt.rows,
+                spacing = belt.spacing,
+                trees = belt.trees.SelectMany(share =>
+                {
+                    var prefabs = climate.trees[climate.TreeIndex(share.tree)].prefabs;
+                    return prefabs.Select(prefab => new HorizonTree { prefab = prefab, weight = share.weight / prefabs.Count });
+                }).ToList(),
+            };
         }
 
         /// <summary>Publishes the ground picture to the foliage shaders.</summary>

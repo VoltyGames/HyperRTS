@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>The TerrainData at <paramref name="path"/>, created there when missing.</summary>
-        public static TerrainData TerrainAsset(string path)
+        private static TerrainData TerrainAsset(string path)
         {
             var data = AssetDatabase.LoadAssetAtPath<TerrainData>(path);
             if (data == null)
@@ -111,7 +111,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>A tree at a world position on the terrain covering <paramref name="bounds"/>, yaw in degrees.</summary>
-        public static TreeInstance Instance(int prototype, Vector2 position, float yaw, float scale, Rect bounds)
+        private static TreeInstance Instance(int prototype, Vector2 position, float yaw, float scale, Rect bounds)
         {
             var local = (position - bounds.min) / bounds.size;
             return new TreeInstance
