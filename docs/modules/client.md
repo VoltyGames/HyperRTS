@@ -485,8 +485,8 @@ the bottom it refracts, so it fogs once.
 
 `Horizon` draws farmland round the map out to its `width`, for a camera tilted toward the horizon. A map build adds
 it when its spec has a `horizonWidth`. It builds everything when enabled, in edit mode too, keeps it in memory only and
-submits it to each game and Scene view camera before it renders (`SceneCameras.Draws`). Nothing in it collides or
-navigates.
+submits it to each game and Scene view camera before it renders (`SceneCameras.Draws`). Nothing in it collides,
+navigates or casts a shadow.
 
 - **Ground.** `HorizonRing` builds loops of vertices round the terrain's rectangle, rounded at the corners. The first
   loop lies 4 m in under the terrain's edge, and the loops spread further apart with distance, so a 2500 m ring takes
@@ -495,13 +495,8 @@ navigates.
   `HorizonFields` lays the fields: rows turned to the map's farmland, each row slid by a hashed share of a field, each
   field one crop picked by weight, with a margin along its edges. It alone lays them out, and hands the shader a small
   texture with a texel per field (its crop's layer, its shade and its row's slide) under a row listing the crops and
-  their shares, so the belts and the painted ground agree. Where a pixel spans much of a field, fields fade to the
+  their shares. Where a pixel spans much of a field, fields fade to the
   crops' and margins' weighted mean, so the far ground doesn't sparkle.
-- **Belts.** `HorizonBelts.Belts` keeps a share of the field edges, by hash. `HorizonTrees` plants rows of real trees
-  along them within `treesWidth` (250 m) of the terrain: each variant's last LOD, instanced in 500 m chunks the camera
-  culls, casting shadows. Past that, `HorizonTreeLine` makes each run of belt a ridge with a crown's cross-section,
-  one submesh per variant. `HyperRTS/HorizonTreeLine` shades it with the variant's leaves seen from afar (its leaf
-  atlas read back once and weighted by coverage, times its tint), broken into crown-sized clumps.
 
 ### Contact shadows
 

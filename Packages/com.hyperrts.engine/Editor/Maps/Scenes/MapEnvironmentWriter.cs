@@ -36,8 +36,6 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         private const string HorizonGroundShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonGround.shader";
 
-        private const string HorizonTreeLineShader =
-            "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonTreeLine.shader";
 
         /// <summary>Horizon fields are this many times the kit's, as they are only seen far off.</summary>
         private const float HorizonFieldScale = 1.6f;
@@ -128,7 +126,7 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         /// <summary>
         /// The farmland round the map out to the spec's <c>horizonWidth</c>: the first farmland's kit (or the climate's
-        /// first) in larger fields at the farmland's angle, belted by its belt kit's trees.
+        /// first) in larger fields at the farmland's angle.
         /// </summary>
         private static void CreateHorizon(MapScene scene, MapGeneration generation, Terrain terrain)
         {
@@ -163,32 +161,8 @@ namespace HyperRTS.Editor.Maps.Scenes
                 crops = kit.crops.Select(crop => new HorizonCrop { layer = climate.SurfaceLayer(crop.surface), weight = crop.weight })
                     .ToList(),
             };
-            horizon.belts = Belts(climate, kit);
             horizon.groundShader = Engine<Shader>(HorizonGroundShader, "horizon ground shader");
-            horizon.treeLineShader = Engine<Shader>(HorizonTreeLineShader, "horizon tree line shader");
             go.SetActive(true);
-        }
-
-        // The kit's belt kit, each tree species' weight shared among its variants; no trees for a kit without belts.
-        private static HorizonBelts Belts(MapClimate climate, MapFarmlandKit kit)
-        {
-            if (string.IsNullOrEmpty(kit.beltKit))
-            {
-                return new HorizonBelts { share = 0f };
-            }
-
-            var belt = climate.BeltKit(kit.beltKit);
-            return new HorizonBelts
-            {
-                width = belt.width,
-                rows = belt.rows,
-                spacing = belt.spacing,
-                trees = belt.trees.SelectMany(share =>
-                {
-                    var prefabs = climate.trees[climate.TreeIndex(share.tree)].prefabs;
-                    return prefabs.Select(prefab => new HorizonTree { prefab = prefab, weight = share.weight / prefabs.Count });
-                }).ToList(),
-            };
         }
 
         /// <summary>Publishes the ground picture to the foliage shaders.</summary>

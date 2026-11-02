@@ -8,10 +8,9 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Horizon
 {
     /// <summary>
-    /// Farmland round the map out to <see cref="width"/>, so a camera tilted toward the horizon sees fields and belts
-    /// fading into haze instead of the world's edge. Built when enabled, in edit mode too, and kept in memory only: a
-    /// ground ring painted with the map terrain's layers in large fields, real belt trees near the terrain and a tree
-    /// line past them. Nothing in it collides, navigates or casts a shadow but the near trees.
+    /// Farmland round the map out to <see cref="width"/>, so a camera tilted toward the horizon sees fields fading into
+    /// haze instead of the world's edge. Built when enabled, in edit mode too, and kept in memory only: a ground ring
+    /// painted with the map terrain's layers in large fields. Nothing in it collides, navigates or casts a shadow.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu(HyperRTSMenu.Environment + "Horizon")]
@@ -30,25 +29,19 @@ namespace HyperRTS.Presentation.Environment.Horizon
         [Min(0f)]
         public float width = 2500f;
 
-        [Tooltip("Seeds the fields, belts and swells.")]
+        [Tooltip("Seeds the fields and swells.")]
         public int seed;
 
         public HorizonRelief relief = new();
 
         public HorizonFields fields = new();
 
-        public HorizonBelts belts = new();
-
         [Tooltip("HyperRTS/HorizonGround, which paints the fields.")]
         public Shader groundShader;
-
-        [Tooltip("HyperRTS/HorizonTreeLine, which shades the far belts.")]
-        public Shader treeLineShader;
 
         private Mesh _ground;
         private Material _groundMaterial;
         private Texture2D _fieldTexture;
-        private HorizonTrees _trees;
         private bool _ready;
 #if UNITY_EDITOR
         private bool _dirty;
@@ -129,15 +122,12 @@ namespace HyperRTS.Presentation.Environment.Horizon
             _groundMaterial.SetTexture(AlbedoArrayId, template.GetTexture(AlbedoArrayId));
             _groundMaterial.SetTexture(LayerParamsId, template.GetTexture(LayerParamsId));
             _fieldTexture = fields.Apply(_groundMaterial, seed, fields.Cells(Area));
-            _trees = new HorizonTrees(belts, fields, seed, TerrainRect, Area, Height, treeLineShader);
             _ready = true;
         }
 
         private void Release()
         {
             _ready = false;
-            _trees?.Dispose();
-            _trees = null;
             CoreUtils.Destroy(_ground);
             CoreUtils.Destroy(_groundMaterial);
             CoreUtils.Destroy(_fieldTexture);
@@ -155,9 +145,9 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 problems.Add("the terrain's material has no layer arrays");
             }
 
-            if (groundShader == null || treeLineShader == null)
+            if (groundShader == null)
             {
-                problems.Add("a shader is missing");
+                problems.Add("no ground shader");
             }
 
             if (fields.crops.Sum(crop => crop.weight) <= 0f)
@@ -165,7 +155,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 problems.Add("no crops with weight");
             }
 
-            belts.AddProblems(problems);
             return problems;
         }
 
@@ -193,7 +182,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 receiveShadows = true,
             };
             Graphics.RenderMesh(parameters, _ground, 0, Matrix4x4.identity);
-            _trees.Draw(camera, gameObject.layer);
         }
     }
 }

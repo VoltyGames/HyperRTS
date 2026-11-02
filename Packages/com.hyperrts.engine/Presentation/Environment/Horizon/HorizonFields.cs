@@ -9,8 +9,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
 {
     /// <summary>
     /// The horizon's farmland: rows of large fields turned to the map's farmland, each row slid by a random share of a
-    /// field, each field one crop picked by weight, with a margin along its edges. Laid out here alone and handed to
-    /// HorizonGround.shader as a texture, so the belts along its edges line up with the ground.
+    /// field, each field one crop picked by weight, with a margin along its edges. HorizonGround.shader paints them from
+    /// a texture laid out here.
     /// </summary>
     [Serializable]
     public sealed class HorizonFields
@@ -48,19 +48,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
             return new Vector2(world.x * cos + world.y * sin, -world.x * sin + world.y * cos);
         }
 
-        /// <summary>A grid point turned back into the world.</summary>
-        public Vector2 ToWorld(Vector2 grid)
-        {
-            var (cos, sin) = (Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
-            return new Vector2(grid.x * cos - grid.y * sin, grid.x * sin + grid.y * cos);
-        }
-
         /// <summary>How far along x a row's fields are slid, under one field's length.</summary>
         public float RowShift(int seed, int row) => Hashes.Fraction(ScatterHash.Hash(Salted(seed, RowSalt), row, 0)) * size.x;
-
-        /// <summary>The grid corner a field starts at: its west end on its south edge.</summary>
-        public Vector2 FieldStart(int seed, int column, int row) =>
-            new(column * size.x - RowShift(seed, row), row * size.y);
 
         /// <summary>The fields holding <paramref name="area"/> whatever each row's slide: columns along x, rows along y.</summary>
         public RectInt Cells(Rect area)
@@ -123,7 +112,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
             return texture;
         }
 
-        public static int Salted(int seed, uint salt) => unchecked((int)((uint)seed ^ salt));
+        private static int Salted(int seed, uint salt) => unchecked((int)((uint)seed ^ salt));
     }
 
     /// <summary>One crop of the horizon's fields: its terrain layer and how often a field grows it.</summary>
