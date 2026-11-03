@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Views
     /// weather, once the frame's GI has built up, into <c>Logs/MapReports/&lt;Map&gt;/look/&lt;Weather&gt;/</c>. Ends
     /// with <c>summary.json</c> there and leaves Play mode.
     /// </summary>
-    internal static class MapLookCapture
+    internal static partial class MapLookCapture
     {
         [AutoStaticsCleanup]
         private static MapLookRun _run;
