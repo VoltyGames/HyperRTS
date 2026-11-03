@@ -4,6 +4,7 @@
 #define HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainRotation.hlsl"
 
 // Hex grid vertices per tile, as in the paper.
 #define HEX_GRID_SCALE 3.4641016
@@ -35,11 +36,6 @@ struct TerrainHexGrid
     float2 vertices[3];
     float3 barycentrics;
 };
-
-float2 RotateUV(float2 uv, float2 rotation)
-{
-    return float2(uv.x * rotation.x - uv.y * rotation.y, uv.x * rotation.y + uv.y * rotation.x);
-}
 
 // Three independent [0, 1) values per grid vertex.
 float3 HexHash(float2 vertex)

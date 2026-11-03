@@ -151,17 +151,9 @@ namespace HyperRTS.Editor.Maps.Climate
 
         public MapWoodlandKit WoodlandKit(string key) => MapKeys.Get(woodlandKits, key, this.key, "woodland kit");
 
-        /// <summary>The horizon belt strips of the belt kits that have one, the farmland kit's own first.</summary>
-        public List<Material> HorizonStrips(MapFarmlandKit farmland)
-        {
-            IEnumerable<MapBeltKit> kits = beltKits;
-            if (!string.IsNullOrEmpty(farmland.beltKit))
-            {
-                kits = kits.Prepend(BeltKit(farmland.beltKit));
-            }
-
-            return kits.Select(kit => kit.horizonStrip).Where(strip => strip != null).Distinct().ToList();
-        }
+        /// <summary>The horizon belt strips of the belt kits that have one.</summary>
+        public List<Material> HorizonStrips() =>
+            beltKits.Select(kit => kit.horizonStrip).Where(strip => strip != null).Distinct().ToList();
 
         /// <summary>The terrain layer a surface paints.</summary>
         public int SurfaceLayer(string surface) => LayerIndex(Surface(surface).layer);

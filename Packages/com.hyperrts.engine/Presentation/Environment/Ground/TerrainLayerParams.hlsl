@@ -2,7 +2,7 @@
 #ifndef HYPERRTS_TERRAIN_LAYER_PARAMS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYER_PARAMS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHexTiling.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainRotation.hlsl"
 
 struct TerrainLayerParams
 {

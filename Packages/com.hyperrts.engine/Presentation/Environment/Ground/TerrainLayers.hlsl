@@ -3,6 +3,7 @@
 #ifndef HYPERRTS_TERRAIN_LAYERS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHexTiling.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayerParams.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainPixel.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainTriplanar.hlsl"

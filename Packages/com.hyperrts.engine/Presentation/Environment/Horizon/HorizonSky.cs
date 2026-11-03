@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
         private static readonly int SkyTexId = Shader.PropertyToID("_SkyTex");
         private static readonly int SkyTintId = Shader.PropertyToID("_SkyTint");
         private static readonly int SkyExposureId = Shader.PropertyToID("_SkyExposure");
-        private static readonly int SkyRotationId = Shader.PropertyToID("_SkyRotation");
+        private static readonly int SkyTurnId = Shader.PropertyToID("_SkyTurn");
         private static readonly int SkyBlurId = Shader.PropertyToID("_SkyBlur");
         private static readonly int SkyFadeId = Shader.PropertyToID("_SkyFade");
         private static readonly int TerrainRectId = Shader.PropertyToID("_TerrainRect");
@@ -54,7 +54,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
             material.SetTexture(SkyTexId, skybox.GetTexture(TexId));
             material.SetColor(SkyTintId, skybox.GetColor(TintId));
             material.SetFloat(SkyExposureId, skybox.GetFloat(ExposureId));
-            material.SetFloat(SkyRotationId, skybox.GetFloat(RotationId));
+            var angle = skybox.GetFloat(RotationId) * Mathf.Deg2Rad;
+            material.SetVector(SkyTurnId, new Vector4(Mathf.Cos(angle), Mathf.Sin(angle), 0f, 0f));
             material.SetFloat(SkyBlurId, skybox.GetFloat(HorizonBlurId));
         }
     }

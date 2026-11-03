@@ -23,7 +23,7 @@ Shader "HyperRTS/HorizonGround"
         [HideInInspector] [NoScaleOffset] _SkyTex ("Sky", Cube) = "grey" {}
         [HideInInspector] _SkyTint ("Sky Tint", Color) = (0.5, 0.5, 0.5, 0.5)
         [HideInInspector] [Gamma] _SkyExposure ("Sky Exposure", Float) = 1
-        [HideInInspector] _SkyRotation ("Sky Rotation", Float) = 0
+        [HideInInspector] _SkyTurn ("Sky Turn", Vector) = (1, 0, 0, 0)
         [HideInInspector] _SkyBlur ("Sky Blur", Float) = 4
         [HideInInspector] _SkyFade ("Sky Fade", Vector) = (600, 1000, 0, 0)
         [HideInInspector] _TerrainRect ("Terrain Rect", Vector) = (0, 0, 0, 0)
@@ -53,7 +53,7 @@ Shader "HyperRTS/HorizonGround"
             float4 _SkyTex_HDR;
             half4 _SkyTint;
             half _SkyExposure;
-            float _SkyRotation;
+            float4 _SkyTurn;
             float _SkyBlur;
             float4 _SkyFade;
             float4 _TerrainRect;

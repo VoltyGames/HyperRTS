@@ -205,17 +205,27 @@ namespace HyperRTS.Presentation.Environment.Horizon
 
         private bool Stands(HorizonFields fields, Rect terrain, float width, List<float> gaps, float x, float y)
         {
-            foreach (var end in new[] { x, x + QuadLength })
+            if (!InRing(fields, terrain, width, x, y) || !InRing(fields, terrain, width, x + QuadLength, y))
             {
-                var distance = HorizonRing.Distance(terrain, fields.ToWorld(new Vector2(end, y)));
-                if (distance < clearance || distance > width)
+                return false;
+            }
+
+            var half = gapWidth * 0.5f;
+            foreach (var gap in gaps)
+            {
+                if (gap > x - half && gap < x + QuadLength + half)
                 {
                     return false;
                 }
             }
 
-            var half = gapWidth * 0.5f;
-            return !gaps.Any(gap => gap > x - half && gap < x + QuadLength + half);
+            return true;
+        }
+
+        private bool InRing(HorizonFields fields, Rect terrain, float width, float x, float y)
+        {
+            var distance = HorizonRing.Distance(terrain, fields.ToWorld(new Vector2(x, y)));
+            return distance >= clearance && distance <= width;
         }
 
         // Grid x of every field-end track meeting the edge, from the rows on both its sides.

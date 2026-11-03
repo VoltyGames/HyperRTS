@@ -17,7 +17,7 @@ Shader "HyperRTS/HorizonBelt"
         [HideInInspector] [NoScaleOffset] _SkyTex ("Sky", Cube) = "grey" {}
         [HideInInspector] _SkyTint ("Sky Tint", Color) = (0.5, 0.5, 0.5, 0.5)
         [HideInInspector] [Gamma] _SkyExposure ("Sky Exposure", Float) = 1
-        [HideInInspector] _SkyRotation ("Sky Rotation", Float) = 0
+        [HideInInspector] _SkyTurn ("Sky Turn", Vector) = (1, 0, 0, 0)
         [HideInInspector] _SkyBlur ("Sky Blur", Float) = 4
         [HideInInspector] _SkyFade ("Sky Fade", Vector) = (600, 1000, 0, 0)
         [HideInInspector] _TerrainRect ("Terrain Rect", Vector) = (0, 0, 0, 0)
@@ -44,7 +44,6 @@ Shader "HyperRTS/HorizonBelt"
         TEXTURE2D(_NormalMap);
         SAMPLER(sampler_NormalMap);
 
-        // PlantShading.hlsl reads the ground blend, hue and mip bias terms too; belts leave them at zero.
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST;
             half4 _BaseColor;
@@ -53,14 +52,10 @@ Shader "HyperRTS/HorizonBelt"
             half _Smoothness;
             half _Translucency;
             half _ScreenOcclusion;
-            half _HueVariation;
-            half _GroundBlend;
-            half _GroundBlendHeight;
-            float _MipBias;
             float4 _SkyTex_HDR;
             half4 _SkyTint;
             half _SkyExposure;
-            float _SkyRotation;
+            float4 _SkyTurn;
             float _SkyBlur;
             float4 _SkyFade;
             float4 _TerrainRect;
@@ -128,7 +123,7 @@ Shader "HyperRTS/HorizonBelt"
             // A belt is crowns seen from the side: wrapped, lit through and bent skyward like a two-sided leaf.
             #define PLANT_WRAP 1.0
             #define PLANT_TWO_SIDED 1.0
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/PlantShading.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/PlantLighting.hlsl"
 
             half4 Frag(Varyings input, bool front : SV_IsFrontFace) : SV_Target
             {

@@ -9,6 +9,8 @@ SAMPLER(sampler_AlbedoArray);
 TEXTURE2D(_LayerParams);
 TEXTURE2D(_Fields);
 
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayerParams.hlsl"
+
 // Where a pixel spans this share of a field's width, fields have fully faded to their mean.
 #define HORIZON_MEAN_FOOTPRINT 0.3
 #define HORIZON_MEAN_MIP 16.0
@@ -55,22 +57,12 @@ float MarginDistance(HorizonField field)
     return min(min(along.x, along.y), min(across.x, across.y));
 }
 
-// HyperRTS/Terrain's RotateUV: (cos, sin) of a clockwise turn.
-float2 Turn(float2 uv, float2 rotation)
-{
-    return float2(uv.x * rotation.x - uv.y * rotation.y, uv.x * rotation.y + uv.y * rotation.x);
-}
-
 // A layer's albedo and tint as the terrain tiles it, row layers laid along the fields' rows.
 half3 LayerAlbedo(float layer, float2 positionXZ)
 {
-    float4 mapping = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 0));
-    half3 tint = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 1)).rgb;
-    float rowLayer = LOAD_TEXTURE2D(_LayerParams, uint2(layer, 3)).w == 0.0;
-    float2 rowTurn = float2(_FieldGrid.z, -_FieldGrid.w);
-    float2 rotation = rowLayer > 0.0 ? Turn(mapping.xy, rowTurn) : mapping.xy;
-    float2 uv = Turn(positionXZ, rotation) * mapping.zw;
-    return SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_AlbedoArray, uv, layer).rgb * tint;
+    TerrainLayerParams params = LoadLayerParams((uint)layer, float2(_FieldGrid.z, -_FieldGrid.w));
+    float2 uv = RotateAndTile(positionXZ, params);
+    return SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_AlbedoArray, uv, layer).rgb * params.tint;
 }
 
 // A layer's mean colour, from its smallest mip.

@@ -26,11 +26,10 @@ half3 SkyHorizonColor(TEXTURECUBE_PARAM(cubemap, samplerCubemap), float4 decode,
     return SkyColor(TEXTURECUBE_ARGS(cubemap, samplerCubemap), decode, tint, exposure, lifted, blur);
 }
 
-// A world bearing in the cubemap's frame: HyperRTS/Sky turns its dome by the rotation (degrees), so this turns back.
-float2 SkyBearing(float2 worldXZ, float rotation)
+// A world bearing in the cubemap's frame: HyperRTS/Sky turns its dome by its rotation, whose (cos, sin) is turn, so this
+// turns back.
+float2 SkyBearing(float2 worldXZ, float2 turn)
 {
-    float angle = rotation * PI / 180.0;
-    float2 turn = float2(cos(angle), sin(angle));
     return float2(worldXZ.x * turn.x + worldXZ.y * turn.y, -worldXZ.x * turn.y + worldXZ.y * turn.x);
 }
 
