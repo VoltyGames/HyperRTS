@@ -50,6 +50,9 @@ namespace HyperRTS.Presentation.Environment.Horizon
         private Mesh _belts;
         private List<Material> _stripMaterials = new();
         private string _skyProblem;
+        private bool _skyChecked;
+        private Material _checkedSkybox;
+        private Shader _checkedSkyShader;
         private bool _ready;
 #if UNITY_EDITOR
         private bool _dirty;
@@ -136,7 +139,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 sky.SetReach(material, TerrainRect, width);
             }
 
-            _skyProblem = null;
+            _skyChecked = false;
             _ready = true;
         }
 
@@ -215,23 +218,32 @@ namespace HyperRTS.Presentation.Environment.Horizon
             }
         }
 
-        // Read each render, so a changed skybox shows at once; a wrong one is reported once, never guessed at.
+        // The skybox's values are copied each render, so a changed sky shows at once; it is checked again only when
+        // the skybox or its shader changes, and a wrong one is reported once, never guessed at.
         private bool SkyReady()
         {
             var skybox = RenderSettings.skybox;
-            var problem = sky.Problem(skybox);
-            if (problem != _skyProblem && problem != null)
+            var shader = skybox != null ? skybox.shader : null;
+            if (!_skyChecked || skybox != _checkedSkybox || shader != _checkedSkyShader)
             {
-                Debug.LogError($"HyperRTS: Horizon can't fade into the sky: {problem}.", this);
+                _skyProblem = sky.Problem(skybox);
+                if (_skyProblem != null)
+                {
+                    Debug.LogError($"HyperRTS: Horizon can't fade into the sky: {_skyProblem}.", this);
+                }
+
+                _skyChecked = true;
+                _checkedSkybox = skybox;
+                _checkedSkyShader = shader;
             }
 
-            _skyProblem = problem;
-            if (problem != null)
+            if (_skyProblem != null)
             {
                 return false;
             }
 
-            foreach (var material in Materials())
+            sky.Apply(skybox, _groundMaterial);
+            foreach (var material in _stripMaterials)
             {
                 sky.Apply(skybox, material);
             }

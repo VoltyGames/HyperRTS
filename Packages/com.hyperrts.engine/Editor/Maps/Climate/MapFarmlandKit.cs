@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Maps.Climate
         public List<MapCropShare> leftovers = new();
 
         /// <summary>The horizon's fields farmed as this kit farms, on a grid turned by <paramref name="angle"/> degrees.</summary>
-        public HorizonFields HorizonFields(MapClimate climate, float angle)
+        public HorizonFields CreateHorizonFields(MapClimate climate, float angle)
         {
             var fields = new HorizonFields
             {

@@ -178,8 +178,8 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         [TestCase(0f, 30f, true, false, TestName = "Near tile: full meshes only")]
         [TestCase(30f, 50f, true, true, TestName = "Across the first switch: full and simple")]
         [TestCase(45f, 48f, true, true, TestName = "Past the first switch, where plants still mix: full and simple")]
-        [TestCase(110f, 130f, false, true, TestName = "Across the canopy's fade: simple to its far edge")]
-        [TestCase(200f, 220f, false, false, TestName = "Far tile: canopy only")]
+        [TestCase(110f, 130f, false, true, TestName = "Across the simple band's fade: simple to its far edge")]
+        [TestCase(200f, 220f, false, false, TestName = "Far tile: nothing drawn")]
         public void Bands_FollowTheTilesDistances(float near, float far, bool full, bool simple)
         {
             Assert.AreEqual(full, RowCropBands.InBand(RowCropBands.Full, _crop, 300f, near, far));

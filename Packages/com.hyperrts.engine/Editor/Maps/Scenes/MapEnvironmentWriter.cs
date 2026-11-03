@@ -148,7 +148,7 @@ namespace HyperRTS.Editor.Maps.Scenes
                 swell = layout.Terrain.relief,
                 scale = layout.Terrain.reliefScale,
             };
-            horizon.fields = kit.HorizonFields(climate, farmland?.angle ?? 0f);
+            horizon.fields = kit.CreateHorizonFields(climate, farmland?.angle ?? 0f);
             horizon.belts = new HorizonBelts { strips = climate.HorizonStrips(kit) };
             horizon.groundShader = Engine<Shader>(HorizonGroundShader, "horizon ground shader");
             go.SetActive(true);
