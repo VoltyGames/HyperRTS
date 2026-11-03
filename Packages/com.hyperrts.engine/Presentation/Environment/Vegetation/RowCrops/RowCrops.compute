@@ -89,15 +89,21 @@ uint FieldAt(float2 spot)
     return (uint)bytes.x + (uint)bytes.y * 256u;
 }
 
-// Share of four probes round the spot that fall outside its field.
-float Edge(float2 spot, RowCropField field, uint id)
+// Whether a spot grows the crop, in this field or another of it (a headland sown across the rows).
+float Grows(float2 spot, int crop)
 {
-    float outside = 0.0;
-    outside += FieldAt(spot + field.across * EDGE_REACH) != id ? 1.0 : 0.0;
-    outside += FieldAt(spot - field.across * EDGE_REACH) != id ? 1.0 : 0.0;
-    outside += FieldAt(spot + field.along * EDGE_REACH) != id ? 1.0 : 0.0;
-    outside += FieldAt(spot - field.along * EDGE_REACH) != id ? 1.0 : 0.0;
-    return outside * 0.25;
+    uint id = FieldAt(spot);
+    return id != 0u && _Fields[id - 1u].crop == crop ? 1.0 : 0.0;
+}
+
+// Share of four probes round the spot that fall outside its crop.
+float Edge(float2 spot, RowCropField field)
+{
+    float inside = Grows(spot + field.across * EDGE_REACH, field.crop);
+    inside += Grows(spot - field.across * EDGE_REACH, field.crop);
+    inside += Grows(spot + field.along * EDGE_REACH, field.crop);
+    inside += Grows(spot - field.along * EDGE_REACH, field.crop);
+    return 1.0 - inside * 0.25;
 }
 
 float2 Lean(uint hash, float edge, RowCropField field)
@@ -200,7 +206,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float growth = lerp(_Growth.x, _Growth.y, Noise(field.seed, GROWTH_SALT, metres * _Growth.z));
     // Probing the edge only pays when the field's edge grows or leans differently from its middle.
     bool edged = _Growth.w != 1.0 || _Variety.y != _Variety.x;
-    float edge = edged ? Edge(spot, field, (uint)job.id + 1u) : 0.0;
+    float edge = edged ? Edge(spot, field) : 0.0;
     grown.scale = lerp(_Size.x, _Size.y, Channel(hash, CHANNEL_SCALE)) * growth * lerp(1.0, _Growth.w, edge) * lerp(1.0, _Far.y, thinning) * fade;
     float2 forward = _FacesRow > 0.5 ? field.along : float2(0.0, 1.0);
     float2 side = _FacesRow > 0.5 ? field.across : float2(1.0, 0.0);

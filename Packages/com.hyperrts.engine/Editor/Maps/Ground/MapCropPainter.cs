@@ -135,11 +135,18 @@ namespace HyperRTS.Editor.Maps.Ground
             });
         }
 
-        /// <summary>Clears cells in their crop's edge margin or kept bare by <paramref name="blocked"/>, and counts the rest.</summary>
+        /// <summary>Clears cells in their crop's edge margin or kept bare by <paramref name="blocked"/>, and counts the rest. The margin keeps off ground that grows no crop or another one.</summary>
         private static void Clear(MapLand land, MapCropBake bake, Func<Vector2, float, float, bool> blocked)
         {
             var ids = bake.Ids;
-            var edges = MapLandDistance.ToRegionEdge(ids);
+            // Fields of one crop meet without a margin, as a headland sown across the main field's rows does.
+            var sown = new MapValues<int>(ids.Grid);
+            for (var i = 0; i < ids.Values.Length; i++)
+            {
+                sown.Values[i] = ids[i] == RowCropFields.None ? -1 : bake.Fields[ids[i] - 1].crop;
+            }
+
+            var edges = MapLandDistance.ToRegionEdge(sown);
             var plants = 0d;
             for (var i = 0; i < ids.Values.Length; i++)
             {

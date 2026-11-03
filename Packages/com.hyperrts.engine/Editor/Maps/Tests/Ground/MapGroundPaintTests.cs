@@ -162,6 +162,36 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
         }
 
         [Test]
+        public void CropPainter_FieldsOfOneCrop_MeetWithoutAMargin()
+        {
+            var crop = Track(ScriptableObject.CreateInstance<RowCrop>());
+            crop.edgeMargin = 2f;
+            var climate = MapFixture.Item<MapClimate>("Test");
+            climate.surfaces.Add(MapFixture.Item<MapClimateSurface>("Sown", i => i.rowCrop = "Crop"));
+            climate.rowCrops.Add(MapFixture.Item<MapClimateRowCrop>("Crop", i => i.crop = crop));
+            var land = new MapLand(new Rect(-32f, -32f, 64f, 64f));
+            Claim(land, new MapLandRegion(MapLandKind.Field, "Sown", 9, RowAngle + 90f),
+                p => Mathf.Abs(p.x) > 4f && p.y > 10f);
+            Claim(land, new MapLandRegion(MapLandKind.Field, "Sown", 7, RowAngle), p => Mathf.Abs(p.x) > 4f);
+
+            var bake = MapCropPainter.Paint(land, MapSymmetry.Parse(MapSymmetry.MirrorXName), climate, (_, _, _) => false);
+
+            Assert.AreEqual(4, bake.Fields.Count, "a field and its headland on each side");
+            land.ForEach((x, z, center) =>
+            {
+                if (Mathf.Abs(center.x) is > 8f and < 28f && Mathf.Abs(center.y - 10f) < 1f)
+                {
+                    Assert.AreNotEqual(RowCropFields.None, bake.Id(x, z), $"cell at {center} on the seam");
+                }
+
+                if (Mathf.Abs(center.x) is > 4f and < 6f)
+                {
+                    Assert.AreEqual(RowCropFields.None, bake.Id(x, z), $"cell at {center} in the margin");
+                }
+            });
+        }
+
+        [Test]
         public void CropPainter_Tiles_ListEveryCropCellsField()
         {
             var (bake, _, _) = PaintCrops(withRoad: true, (_, _, _) => false);
