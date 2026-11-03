@@ -96,12 +96,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     }
 
                     mount.Weapon.Tick(DeltaTime);
-                    if (mount.Target == Entity.Null)
+                    if (mount.Target == Entity.Null || mount.Carriers == 0)
                     {
                         mount.Weapon.EndSalvo();
                     }
                     else if (Faces(entity, mount) && Shots.TryFire(entity, ref mount.Weapon, (byte)i, mount.Target,
-                                 faction.Value))
+                                 faction.Value, mount.Carriers))
                     {
                         mount.Ammo.Spend();
                     }

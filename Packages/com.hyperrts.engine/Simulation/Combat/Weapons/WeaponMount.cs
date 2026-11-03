@@ -36,9 +36,13 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Aims and fires for the entity's <c>Interceptor</c>, never at units.</summary>
         public bool Intercepts;
 
+        /// <summary>Shots each firing makes: one, or a squad's living members who carry this weapon; 0 can't fire.</summary>
+        public byte Carriers;
+
         public static WeaponMount Create(in Weapon weapon, in Ammo ammo) => new()
         {
             Weapon = weapon,
+            Carriers = 1,
             BaseDamage = weapon.Damage.Amount,
             BaseRange = weapon.Range,
             BaseCooldown = weapon.Cooldown,
@@ -60,7 +64,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>A usable weapon that runs dry and needs reloading.</summary>
         public bool IsLimited => Enabled && Ammo.Limited;
 
-        public bool Ready => Enabled && !Ammo.Empty;
+        public bool Ready => Enabled && !Ammo.Empty && Carriers > 0;
 
         /// <summary>The primary, which orders, engagement and the AI read; false for an interceptor alone.</summary>
         public static bool TryGetPrimary(DynamicBuffer<WeaponMount> mounts, out Weapon weapon)

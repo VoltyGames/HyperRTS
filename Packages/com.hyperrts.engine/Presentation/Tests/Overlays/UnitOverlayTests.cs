@@ -67,7 +67,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
             Assert.AreEqual(2f, unit.Radius, 1e-4f);
             Assert.AreEqual(2f + Margin, unit.Footprint(Margin).HalfSize.x, 1e-4f);
             Assert.IsFalse(unit.IsSquad);
-            Assert.AreEqual(0, unit.Members);
+            Assert.AreEqual(0, unit.MemberCount);
         }
 
         [Test]

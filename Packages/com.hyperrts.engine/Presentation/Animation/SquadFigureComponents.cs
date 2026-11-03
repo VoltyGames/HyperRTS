@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -6,15 +5,15 @@ using Unity.Mathematics;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// A squad drawn as several VAT figures under one unit: one figure per share of health, each playing idle, walk,
-    /// run, fire or die from the unit's motion and primary weapon. Client only.
+    /// A squad drawn as several VAT figures under one unit: figure i shows squad member i, standing at its offset and
+    /// playing idle, walk, run, fire or die from its own motion and weapon. Client only.
     /// </summary>
     public struct SquadFigures : IComponentData
     {
         /// <summary>Below this horizontal speed in m/s figures stand idle, so ghost jitter doesn't walk them.</summary>
         public const float WalkSpeed = 0.2f;
 
-        /// <summary>Seconds figures keep firing after the primary weapon's last shot.</summary>
+        /// <summary>Seconds a figure keeps firing after its weapon's last shot.</summary>
         public const float FireHold = 0.6f;
 
         /// <summary>Seconds after a blast that a dropped figure still dies from it.</summary>
@@ -38,24 +37,6 @@ namespace HyperRTS.Presentation.Animation
         public float3 BlastPosition;
         public float BlastTime;
 
-        public float3 LastPosition;
-        public byte LastShots;
-        public float LastShotTime;
-
-        /// <summary>False until the first update records position and shots, so a spawn neither runs nor fires.</summary>
-        public bool Primed;
-
-        /// <summary>Figures shown: one per share of health, at least one while alive.</summary>
-        public static int VisibleCount(in Health health, int figures)
-        {
-            if (health.Current <= 0f)
-            {
-                return 0;
-            }
-
-            return math.clamp((int)math.ceil(figures * health.Fraction), 1, figures);
-        }
-
         /// <summary>Keeps the latest impact in this frame's <paramref name="cues"/> whose splash reaches the squad at <paramref name="position"/>.</summary>
         public void Hear(DynamicBuffer<CueEvent> cues, float3 position, float now)
         {
@@ -74,29 +55,7 @@ namespace HyperRTS.Presentation.Animation
         public readonly bool Killed(float fallTime) =>
             Blasted && fallTime >= BlastTime - BlastBefore && fallTime <= BlastTime + BlastAfter;
 
-        /// <summary>Records this frame's position and primary weapon shot count; returns what living figures show.</summary>
-        public FigureState Observe(float3 position, byte shots, float now, float deltaTime)
-        {
-            if (!Primed)
-            {
-                Primed = true;
-                LastPosition = position;
-                LastShots = shots;
-                LastShotTime = now - FireHold;
-            }
-
-            var speed = deltaTime > 0f ? math.distance(position.xz, LastPosition.xz) / deltaTime : 0f;
-            if (shots != LastShots)
-            {
-                LastShotTime = now;
-            }
-
-            LastPosition = position;
-            LastShots = shots;
-            return Living(speed, now - LastShotTime < FireHold);
-        }
-
-        /// <summary>The motion state for a horizontal <paramref name="speed"/> and whether the squad fired lately.</summary>
+        /// <summary>The motion state for a horizontal <paramref name="speed"/> and whether the figure fired lately.</summary>
         public readonly FigureState Living(float speed, bool firing)
         {
             if (firing)
@@ -168,10 +127,13 @@ namespace HyperRTS.Presentation.Animation
         Hidden,
     }
 
-    /// <summary>One figure of a <see cref="SquadFigures"/> squad; the last in the buffer drops first.</summary>
+    /// <summary>One figure of a <see cref="SquadFigures"/> squad, showing the member at the same index.</summary>
     [InternalBufferCapacity(4)]
     public struct SquadFigure : IBufferElementData
     {
+        /// <summary>Per second rate at which a figure closes on its member's offset.</summary>
+        private const float FollowRate = 12f;
+
         public Entity Figure;
 
         /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
@@ -185,10 +147,51 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Clock time a dying figure hides at.</summary>
         public float HideAt;
 
-        /// <summary>The state this figure moves to: dropped figures die then hide, and kept ones show the squad's.</summary>
-        public readonly FigureState Next(bool kept, FigureState living, float now)
+        /// <summary>Where the figure stands in metres from the squad on world axes, eased toward its member's offset.</summary>
+        public float2 Offset;
+
+        /// <summary>Baked height of the figure above its parent.</summary>
+        public float Height;
+
+        public float3 LastPosition;
+        public byte LastShots;
+        public float LastShotTime;
+
+        /// <summary>False until the first update records position and shots, so a spawn neither runs nor fires.</summary>
+        public bool Primed;
+
+        /// <summary>Eases <see cref="Offset"/> toward <paramref name="target"/>, or jumps there on the first update.</summary>
+        public void Follow(float2 target, float deltaTime)
         {
-            if (kept)
+            Offset = Primed ? math.lerp(Offset, target, 1f - math.exp(-FollowRate * deltaTime)) : target;
+        }
+
+        /// <summary>Records this frame's world position and weapon shot count; returns what a living figure shows.</summary>
+        public FigureState Observe(in SquadFigures squad, float3 position, byte shots, float now, float deltaTime)
+        {
+            if (!Primed)
+            {
+                Primed = true;
+                LastPosition = position;
+                LastShots = shots;
+                LastShotTime = now - SquadFigures.FireHold;
+            }
+
+            var speed = deltaTime > 0f ? math.distance(position.xz, LastPosition.xz) / deltaTime : 0f;
+            if (shots != LastShots)
+            {
+                LastShotTime = now;
+            }
+
+            LastPosition = position;
+            LastShots = shots;
+            return squad.Living(speed, now - LastShotTime < SquadFigures.FireHold);
+        }
+
+        /// <summary>The state this figure moves to: a dead member's figure dies then hides, a living one's shows <paramref name="living"/>.</summary>
+        public readonly FigureState Next(bool alive, FigureState living, float now)
+        {
+            if (alive)
             {
                 return living;
             }

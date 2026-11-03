@@ -64,9 +64,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         /// <summary>
         /// The fire step every weapon takes: deployed if it must be, off cooldown, a turret on target, restart the
-        /// cooldown or step the salvo, and fire from the next muzzle.
+        /// cooldown or step the salvo, and fire <paramref name="shots"/> rounds, each from the next muzzle.
         /// </summary>
-        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction)
+        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
         {
             if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy))
             {
@@ -79,9 +79,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return false;
             }
 
-            var shot = TakeMuzzle(shooter, ref weapon);
+            for (var i = 0; i < shots; i++)
+            {
+                Fire(shooter, TakeMuzzle(shooter, ref weapon), pose, target, faction);
+            }
+
             weapon.StartCooldown();
-            Fire(shooter, shot, pose, target, faction);
             return true;
         }
 

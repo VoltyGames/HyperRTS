@@ -9,8 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// Draws a squad unit as its VAT figures: one per share of health, the lost ones dying then hiding, the rest
-    /// idling, walking, running or firing with the unit. The figures are hand-placed children with VAT Animated.
+    /// Draws a squad unit as its VAT figures, one per Squad member in order: a dead member's figure dies then hides, the
+    /// rest idle, walk, run or fire as their own soldier does. The figures are hand-placed children with VAT Animated.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Squad Figures")]
     [Icon(HyperRTSIcons.Animation)]
@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Animation
         // Golden ratio steps spread any number of phases evenly over a loop.
         private const float PhaseStep = 0.618034f;
 
-        [Tooltip("The figures, children of this unit's model, in the order they stay: the last one falls first.")]
+        [Tooltip("The figures, children of this unit's model, one per Squad member in the same order.")]
         public List<VATAnimatedAuthoring> figures = new();
 
         [Tooltip("Clip played standing still, looked up in each figure's own table.")]
@@ -139,7 +139,7 @@ namespace HyperRTS.Presentation.Animation
                     var figure = authoring.figures[i];
                     DependsOn(figure.clips);
                     var entity = GetEntity(figure, TransformUsageFlags.Dynamic);
-                    entities.Add(new SquadFigure { Figure = entity, Clips = clips[i] });
+                    entities.Add(new SquadFigure { Figure = entity, Clips = clips[i], Height = figure.transform.localPosition.y });
                 }
 
                 var writer = this.Writer();

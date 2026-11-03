@@ -13,7 +13,11 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat.Damage
 {
-    /// <summary>Resolves the frame's <see cref="DamageEvent"/>s in order. Heals skip every multiplier.</summary>
+    /// <summary>
+    /// Resolves the frame's <see cref="DamageEvent"/>s in order. Heals skip every multiplier. A direct hit on a squad
+    /// lands on one living <see cref="SquadMember"/> picked by a seeded roll (a blast's on the nearest), splash hurts each member by its own distance
+    /// from the blast, and a heal goes to the most hurt member; the squad's health is always its members' sum.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
     [UpdateBefore(typeof(SectionCollapseSystem))]
@@ -32,6 +36,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             EventQueues.Create<DamageQueue>(ref state, typeof(DamageEvent));
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<SimulationFrame>();
         }
 
         [BurstCompile]
@@ -56,6 +61,8 @@ namespace HyperRTS.Simulation.Combat.Damage
                 Shelters = SystemAPI.GetComponentLookup<Shelter>(true),
                 ShelterHits = SystemAPI.GetBufferLookup<ShelterHit>(false),
                 Buildings = _buildings,
+                Members = SystemAPI.GetBufferLookup<SquadMember>(false),
+                Frame = SystemAPI.GetSingleton<SimulationFrame>().Value,
             }.Schedule();
         }
 
@@ -76,38 +83,81 @@ namespace HyperRTS.Simulation.Combat.Damage
             [ReadOnly] public ComponentLookup<Shelter> Shelters;
             public BufferLookup<ShelterHit> ShelterHits;
             public SectionDamage Buildings;
+            public BufferLookup<SquadMember> Members;
+            public uint Frame;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
                 var victims = new NativeList<SpatialEntry>(16, Allocator.Temp);
-                foreach (var hit in events)
+                for (var i = 0; i < events.Length; i++)
                 {
-                    Apply(hit.Target, hit.Amount, hit, hit.Origin);
+                    var hit = events[i];
+                    var struck = Apply(hit.Target, hit.Amount, hit, hit.Origin, Seed(hit, i), Nearest(hit));
                     if (hit.Radius > 0f)
                     {
-                        Splash(hit, victims);
+                        Splash(hit, struck, victims);
                     }
                 }
 
                 events.Clear();
             }
 
-            private void Splash(in DamageEvent hit, NativeList<SpatialEntry> victims)
+            /// <summary>A blast aimed at a squad strikes the member nearest it; -1 lets a direct hit roll for one.</summary>
+            private int Nearest(in DamageEvent hit)
+            {
+                if (hit.Radius <= 0f || !Members.TryGetBuffer(hit.Target, out var members)
+                    || !Transforms.TryGetComponent(hit.Target, out var squad))
+                {
+                    return -1;
+                }
+
+                return SquadMember.FindNearest(members, squad.Position, hit.Position);
+            }
+
+            /// <summary>Same frame, shooter, target and place in the queue roll the same member, so a replay hits alike.</summary>
+            private uint Seed(in DamageEvent hit, int index) =>
+                math.hash(new uint4(Frame, (uint)hit.Source.Index, (uint)hit.Target.Index, (uint)index));
+
+            /// <summary>Splash reaches squad members standing beyond the squad's radius, so the query widens by the greatest spread.</summary>
+            private void Splash(in DamageEvent hit, int struck, NativeList<SpatialEntry> victims)
             {
                 victims.Clear();
                 var collector = new SplashCollector { Victims = victims };
-                Index.Query(hit.Position, hit.Radius, ref collector);
+                Index.Query(hit.Position, hit.Radius + SquadMember.MaxSpread, ref collector);
 
                 foreach (var victim in victims)
                 {
-                    if (victim.Entity == hit.Target || !SplashReaches(hit, victim))
+                    if (!SplashReaches(hit, victim))
                     {
                         continue;
                     }
 
+                    if (Members.HasBuffer(victim.Entity))
+                    {
+                        SplashMembers(hit, victim, victim.Entity == hit.Target ? struck : -1);
+                        continue;
+                    }
+
                     var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
-                    var amount = hit.Amount * hit.SplashFactor(gap);
-                    Apply(victim.Entity, amount, hit, hit.Position);
+                    if (victim.Entity != hit.Target && gap <= hit.Radius)
+                    {
+                        Apply(victim.Entity, hit.Amount * hit.SplashFactor(gap), hit, hit.Position, 0u);
+                    }
+                }
+            }
+
+            /// <summary>Each living member but the one a direct hit already struck takes the blast by its own distance.</summary>
+            private void SplashMembers(in DamageEvent hit, in SpatialEntry squad, int struck)
+            {
+                var count = Members[squad.Entity].Length;
+                for (var i = 0; i < count; i++)
+                {
+                    var member = Members[squad.Entity][i];
+                    var gap = EntityRadius.EdgeDistance(member.Position(squad.Position), SquadMember.Radius, hit.Position, 0f);
+                    if (i != struck && member.Alive && gap <= hit.Radius)
+                    {
+                        Apply(squad.Entity, hit.Amount * hit.SplashFactor(gap), hit, hit.Position, 0u, i);
+                    }
                 }
             }
 
@@ -128,20 +178,22 @@ namespace HyperRTS.Simulation.Combat.Damage
                     || Destructibles.HasComponent(victim.Entity);
             }
 
-            /// <summary>A lethal hit fells a <see cref="Topple"/> target away from <paramref name="from"/>.</summary>
-            private void Apply(Entity target, float amount, in DamageEvent hit, float3 from)
+            /// <summary>
+            /// A lethal hit fells a <see cref="Topple"/> target away from <paramref name="from"/>. A squad's hit lands on
+            /// <paramref name="member"/>, or on one picked by <paramref name="seed"/> when that is -1; returns the member struck, else -1.
+            /// </summary>
+            private int Apply(Entity target, float amount, in DamageEvent hit, float3 from, uint seed, int member = -1)
             {
                 if (!Health.TryGetComponent(target, out var health) || health.Current <= 0f)
                 {
-                    return;
+                    return -1;
                 }
 
+                var hasMembers = Members.TryGetBuffer(target, out var members);
                 if (amount < 0f)
                 {
-                    var restored = Buildings.Repair(target, -amount);
-                    health.Current = Buildings.Resolved(target, math.min(health.Max, health.Current + restored));
-                    Health[target] = health;
-                    return;
+                    Heal(target, -amount, hasMembers, members, health);
+                    return -1;
                 }
 
                 PassToPassengers(target, amount, health, hit, from);
@@ -149,8 +201,24 @@ namespace HyperRTS.Simulation.Combat.Damage
                 amount = Buildings.IsSectioned(target)
                     ? Buildings.Route(target, Transforms[target], hit, scale)
                     : amount * scale;
-                var overkill = amount - health.Current;
-                health.Current = Buildings.Resolved(target, math.max(0f, health.Current - amount));
+                var held = health.Current;
+                if (hasMembers)
+                {
+                    member = member >= 0 ? member : SquadMember.Pick(members, seed);
+                    if (member < 0)
+                    {
+                        return -1;
+                    }
+
+                    held = members[member].Health;
+                    health.Current = SquadMember.Hurt(members, member, amount);
+                }
+                else
+                {
+                    health.Current = Buildings.Resolved(target, math.max(0f, health.Current - amount));
+                }
+
+                var overkill = amount - held;
                 Health[target] = health;
                 Report(target, amount);
                 if (health.Current <= 0f && LethalHits.HasComponent(target))
@@ -163,6 +231,24 @@ namespace HyperRTS.Simulation.Combat.Damage
                 {
                     Attackers[target] = new LastAttacker { Source = hit.Source, Faction = hit.SourceFaction };
                 }
+
+                return hasMembers ? member : -1;
+            }
+
+            private void Heal(Entity target, float amount, bool hasMembers, DynamicBuffer<SquadMember> members,
+                Health health)
+            {
+                if (hasMembers)
+                {
+                    health.Current = SquadMember.Heal(members, amount);
+                }
+                else
+                {
+                    var restored = Buildings.Repair(target, amount);
+                    health.Current = Buildings.Resolved(target, math.min(health.Max, health.Current + restored));
+                }
+
+                Health[target] = health;
             }
 
             /// <summary>Armor that soaks the whole hit raises no event.</summary>

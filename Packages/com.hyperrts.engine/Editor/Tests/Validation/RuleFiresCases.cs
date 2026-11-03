@@ -22,6 +22,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Upgrades;
@@ -76,6 +77,8 @@ namespace HyperRTS.Editor.Tests.Validation
                 container.maxPassengerSize = 4;
                 return container;
             });
+            yield return Row<SquadRule>("no members",
+                f => f.Add<SquadAuthoring>(EntityTemplates.CombatUnit()));
             yield return Row<DeliverySourceRule>("no carrier prefab",
                 f => f.Add<DeliverySourceAuthoring>(EntityTemplates.Building()));
         }

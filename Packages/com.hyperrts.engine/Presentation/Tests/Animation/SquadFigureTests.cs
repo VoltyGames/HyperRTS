@@ -16,8 +16,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Tests.Animation
 {
     /// <summary>
-    /// Squad figures on a hand-made four-figure squad: health drops figures, motion and shots pick clips, and figures
-    /// from separate tables play their own clips.
+    /// Squad figures on a hand-made four-figure squad: a dead member drops its figure, each figure stands where its
+    /// member does and plays clips from its own motion and weapon, and figures from separate tables play their own clips.
     /// </summary>
     public class SquadFigureTests
     {
@@ -29,6 +29,7 @@ namespace HyperRTS.Presentation.Tests.Animation
         private SystemHandle _system;
         private Entity _squad;
         private Entity _cues;
+        private Entity _model;
         private Entity[] _figures;
         private double _time;
 
@@ -48,19 +49,50 @@ namespace HyperRTS.Presentation.Tests.Animation
         public void TearDown() => _kit.Dispose();
 
         [Test]
-        public void VisibleCount_IsOneFigurePerShareOfHealthAndOneWhileAlive()
+        public void FigureStands_WhereItsMemberDoesInTheModelsFrame()
         {
-            Assert.AreEqual(4, SquadFigures.VisibleCount(new Health { Current = 100f, Max = 100f }, 4));
-            Assert.AreEqual(3, SquadFigures.VisibleCount(new Health { Current = 60f, Max = 100f }, 4));
-            Assert.AreEqual(1, SquadFigures.VisibleCount(new Health { Current = 1f, Max = 100f }, 4));
-            Assert.AreEqual(0, SquadFigures.VisibleCount(new Health { Current = 0f, Max = 100f }, 4));
+            var turned = float4x4.RotateY(math.PI * 0.5f);
+            _em.SetComponentData(_model, new LocalToWorld { Value = turned });
+            Member(1, offset: new float2(2f, -1f));
+
+            Update();
+
+            var local = _em.GetComponentData<LocalTransform>(_figures[1]).Position;
+            var world = math.transform(turned, local);
+            Assert.AreEqual(2f, world.x, 1e-4f);
+            Assert.AreEqual(-1f, world.z, 1e-4f);
+        }
+
+        [Test]
+        public void MemberCatchingUp_RunsWhileItsSquadmatesStandIdle()
+        {
+            Update();
+            Member(2, offset: new float2(3f, 0f));
+            Update();
+
+            Assert.IsTrue(Clip(2).Plays(Range(20, true)));
+            Assert.IsTrue(Clip(1).Plays(Range(0, true)));
+        }
+
+        [Test]
+        public void Figure_FiresOnlyOnItsOwnWeaponsShot()
+        {
+            _em.GetBuffer<WeaponPose>(_squad).Add(default);
+            Member(1, weapon: 1);
+            Update();
+
+            _em.GetBuffer<WeaponPose>(_squad).ElementAt(1).CountShot();
+            Update();
+
+            Assert.IsTrue(Clip(1).Plays(Range(30, true)));
+            Assert.IsTrue(Clip(0).Plays(Range(0, true)));
         }
 
         [Test]
         public void DroppedFigure_PlaysDieThenHides()
         {
             Update();
-            SetHealth(0.7f);
+            SetLiving(3);
             Update();
 
             Assert.AreEqual(FigureState.Die, State(3));
@@ -95,7 +127,7 @@ namespace HyperRTS.Presentation.Tests.Animation
         {
             Update();
             Blast(new float3(0f, 0f, 3f));
-            SetHealth(0.7f);
+            SetLiving(3);
             Update();
 
             Assert.IsTrue(Clip(3).Plays(Range(40, false)));
@@ -107,7 +139,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             SetBlastClips();
             Update();
             Blast(new float3(0f, 0f, 3f));
-            SetHealth(0.7f);
+            SetLiving(3);
             Update();
 
             Assert.IsTrue(Clip(3).Plays(Range(50, false)));
@@ -118,7 +150,7 @@ namespace HyperRTS.Presentation.Tests.Animation
         {
             SetBlastClips();
             Update();
-            SetHealth(0.7f);
+            SetLiving(3);
             Update();
             Assert.IsTrue(Clip(3).Plays(Range(40, false)));
 
@@ -134,24 +166,24 @@ namespace HyperRTS.Presentation.Tests.Animation
             SetBlastClips();
             Update();
             Blast(new float3(0f, 0f, 30f));
-            SetHealth(0.7f);
+            SetLiving(3);
             Update();
             Assert.IsTrue(Clip(3).Plays(Range(40, false)));
 
-            SetHealth(1f);
+            SetLiving(4);
             Update();
             Blast(new float3(0f, 0f, 3f));
             Advance(SquadFigures.BlastAfter + 0.2f);
-            SetHealth(0.2f);
+            SetLiving(1);
             Update();
 
             Assert.IsTrue(Clip(2).Plays(Range(40, false)));
         }
 
         [Test]
-        public void DamagedSpawn_HidesItsLostFiguresWithoutFalling()
+        public void SpawnWithDeadMembers_HidesTheirFiguresWithoutFalling()
         {
-            SetHealth(0.3f);
+            SetLiving(2);
             Update();
 
             Assert.AreEqual(FigureState.Idle, State(1));
@@ -187,7 +219,7 @@ namespace HyperRTS.Presentation.Tests.Animation
         {
             Update();
             var kept = Clip(0).Value;
-            SetHealth(0.7f);
+            SetLiving(3);
             Update();
 
             Assert.AreEqual(kept, Clip(0).Value);
@@ -271,9 +303,13 @@ namespace HyperRTS.Presentation.Tests.Animation
         {
             _figures = new Entity[count];
             var figures = new SquadFigure[count];
+            _model = _em.CreateEntity(typeof(LocalToWorld));
+            _em.SetComponentData(_model, new LocalToWorld { Value = float4x4.identity });
             for (var i = 0; i < count; i++)
             {
                 _figures[i] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+                _em.AddComponentData(_figures[i], new Parent { Value = _model });
+                _em.AddComponentData(_figures[i], LocalTransform.Identity);
                 _em.AddComponentData(_figures[i], VATClip.Started(Range(0, true), 0f));
                 _em.AddComponentData(_figures[i], VATFade.None);
                 _em.AddComponentData(_figures[i], new LocalToWorld { Value = float4x4.identity });
@@ -291,6 +327,12 @@ namespace HyperRTS.Presentation.Tests.Animation
             _em.AddComponentData(squad, new Health { Current = 100f, Max = 100f });
             _em.AddComponentData(squad, new LocalToWorld { Value = float4x4.identity });
             _em.AddBuffer<WeaponPose>(squad).Add(default);
+            var members = _em.AddBuffer<SquadMember>(squad);
+            for (var i = 0; i < count; i++)
+            {
+                members.Add(new SquadMember { Health = 25f, MaxHealth = 25f });
+            }
+
             var writer = new EntityWriter(_em, squad);
             var setup = new SquadFigures { RunSpeed = 3f, DieHold = DieHold };
             SquadFiguresAuthoring.AddSquad(writer, setup, figures);
@@ -358,8 +400,22 @@ namespace HyperRTS.Presentation.Tests.Animation
             Slot = CueSlot.Impact, Position = position, Radius = 4f,
         });
 
-        private void SetHealth(float fraction) =>
-            _em.SetComponentData(_squad, new Health { Current = 100f * fraction, Max = 100f });
+        // The first members stay alive, the rest are dead.
+        private void SetLiving(int count)
+        {
+            var members = _em.GetBuffer<SquadMember>(_squad);
+            for (var i = 0; i < members.Length; i++)
+            {
+                members.ElementAt(i).Health = i < count ? 25f : 0f;
+            }
+        }
+
+        private void Member(int index, float2 offset = default, byte weapon = 0)
+        {
+            ref var member = ref _em.GetBuffer<SquadMember>(_squad).ElementAt(index);
+            member.Offset = offset;
+            member.Weapon = weapon;
+        }
 
         private FigureState State(int index) => _em.GetBuffer<SquadFigure>(_squad)[index].State;
 

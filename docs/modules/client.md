@@ -153,7 +153,7 @@ shows the world's intent through a display the game hands it. Without one the OS
 ### Unit overlays
 
 Selected and hovered entities get a ground marker draped on the terrain heightmap by `GroundMarker.shader`: a
-rounded rectangle round a vehicle's hull, a circle round infantry and squads (wide enough for their figures) and
+rounded rectangle round a vehicle's hull, a circle round infantry and squads (wide enough for their living members) and
 corner brackets round a building's box, turned with it like its `NavBox`. Selection draws a full line with a soft inner fill and settles in from a
 larger, faded start over `selectSeconds`; hover draws a thinner, translucent line. Colours follow the relation:
 own, ally, enemy, neutral. Markers read `LocalToWorld`, the pose the model is drawn with, so they stay on moving
@@ -162,7 +162,7 @@ marker no more than 2 m below them, and aircraft mark the ground.
 
 Health bars are screen-aligned quads of a fixed pixel size (reference pixels at 1080p times `OverlayRenderer.UIScale`)
 above the model's top: a dark backing, a fill cut into segments of `healthPerSegment` (one per member for squads)
-and coloured from healthy to critical, with squad member pips on the left and veterancy rank pips on the right.
+and coloured from healthy to critical, with one squad member pip per member on the left, dark once dead, and veterancy rank pips on the right.
 `OverlayRenderer.HealthBars` picks who shows one: everyone, damaged units, or only selected ones. Selected and
 hovered units always do. Both overlays are one draw each through `InstanceBuffer<T>`. The bars set the style's
 material values only when the style, its edit count or the pixel scale changes, so Play mode edits to the asset
@@ -290,15 +290,16 @@ same frame as the unit. Machine links still aim at last frame's matrices.
 #### Squad figures
 
 `SquadFiguresAuthoring` on a squad unit draws it as hand-placed VAT figures: children of its `Model`, each with
-`VATAnimatedAuthoring`, listed in the order they stay. It names the idle, walk, run, fire and die clips, the run
+`VATAnimatedAuthoring`, listed in the order of the squad's members. It names the idle, walk, run, fire and die clips, the run
 speed and how long a fallen figure stays down. Each figure looks those names up in its own clip table, so figures
 baked separately (another VAT width, other rows) mix in one squad; the bake fails when a table lacks one of the
-five. Each `SquadFigure` carries its own `FigureClips`. `SquadFigureSystem` shows ceil(figures x
-health fraction), at least one while alive. A figure health drops plays die once, then hides after the hold. A
-squad spawned damaged hides its lost figures without the fall. The
-rest walk or run by the unit's horizontal speed and fire for 0.6 s after each change of the primary weapon's
-`WeaponPose.Shots`. A figure gets a new `VATClip` only when its state changes, and looping clips start at a
-per-figure phase so the squad doesn't move in step.
+five. Each `SquadFigure` carries its own `FigureClips`. Figure i shows `SquadMember` i, so the count of figures
+equals the count of members (a validation rule checks it). `SquadFigureSystem` eases each living figure toward its
+member's `Offset`, turned into the model's frame, and plays a figure whose member died the die clip once, then hides
+it after the hold. A squad spawned with dead members hides their figures without the fall. A figure walks or runs by
+its own horizontal speed, so a member catching up runs while the rest stand, and fires for 0.6 s after each change of
+the `WeaponPose.Shots` of the weapon its member carries. A figure gets a new `VATClip` only when its state changes,
+and looping clips start at a per-figure phase so the squad doesn't move in step.
 
 ### Visibility
 

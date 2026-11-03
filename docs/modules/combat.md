@@ -57,6 +57,36 @@ gains nothing. `EngagementSystem` stores the primary's reach in `AttackTarget.Re
 A unit on Hold Position and a weapon mount scan out to `TargetLookup.ScanReach` (the garrison share plus, for
 direct fire, `MaxRange`) and take only targets within their reach.
 
+### Squads and members
+
+`SquadAuthoring` (module `Simulation/Squads`, its `SquadMember` data in `Simulation/Common`) makes a unit a squad of soldiers while it stays one entity for orders,
+movement, capture, garrisons and veterancy. Each entry of its `members` list names the weapon it carries (0 is the
+primary, 1 and up `extraWeapons`), and the unit's `maxHealth` is shared evenly among them. The baked
+`SquadMember` buffer rides the squad's ghost like `WeaponPose`: `Health` and `MaxHealth` (a tenth of a point),
+`Offset` (centimetres), `Posture` (`Stand`, `Crouch`, `Prone`) and `Weapon`. The squad's `Health.Current` is always
+the sum of its living members' health and `Health.Max` the sum of their maxima. A member at 0 is dead and keeps its
+place in the buffer, so indices never shift.
+
+- **Direct hits** land on one living member, picked by a roll seeded from the frame, the source, the target and the
+  hit's place in the queue, so a replay hits alike. Damage a member can't absorb is lost, never carried over.
+  Garrison shares come through the same path.
+- **Splash** hurts every living member by its own distance from the blast, a member counting as a 0.3 m disc, so the
+  splash query widens by `SquadMember.MaxSpread` and reaches members standing past the squad's radius. A direct hit
+  with a radius also splashes the members it missed.
+- **Heals** fill the most hurt living member first and spill to the next.
+- **Weapons.** `SquadMemberSystem` sets each `WeaponMount.Carriers` to the living members carrying it. Each firing
+  makes one shot per carrier (separate `DamageEvent`s, so they spread over the enemy's members) and a mount with no
+  carriers is not `Ready` and stays silent. Set the weapon's `damage` to the squad's old damage divided by its
+  carriers to keep full-strength damage per second.
+- **Slots.** Members walk their `Offset`, in metres from the squad on world axes so a turning squad doesn't swing
+  them, toward a slot: a loose wedge along the squad's heading while it moves, a ring of 2.2 m when it halts, never
+  past 3.5 m. They close at up to three quarters of the squad's speed relative to it, so a straggler visibly runs.
+  Squads inside a container don't walk. Slots ignore the nav grid, so a member can stand in a wall.
+- **Stats.** A change to the squad's max health (an upgrade, veterancy) rescales the members to match.
+
+A squad of four sends an estimated 20 to 30 bytes per snapshot while its members walk (not yet measured) and a few bytes when it stands still, delta
+compressed against the last snapshot.
+
 ### Salvos, muzzles and ammo
 
 A weapon with `salvoSize` above 1 fires that many shots `salvoInterval` apart, then runs its cooldown. Each shot

@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
@@ -88,6 +89,30 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             Assert.AreEqual(Shot * (1f - Protection) * 0.5f, Lost(inside), 1e-3f);
             Assert.AreEqual(Shot, Lost(outside), 1e-3f);
+        }
+
+        [Test]
+        public void ShareOnASquad_LandsOnOneMember()
+        {
+            var house = House(float3.zero);
+            var squad = Squad(new float3(10f, 0f, 0f));
+            SquadAuthoring.Add(World.Writer(squad), 100f, new byte[] { 0, 0, 0, 0 });
+            Garrison(squad, house);
+            World.Tick();
+
+            Hit(house, _smallArms);
+            Resolve();
+
+            var members = World.Buffer<SquadMember>(squad);
+            var hurt = 0;
+            foreach (var member in members)
+            {
+                hurt += member.Health < member.MaxHealth ? 1 : 0;
+            }
+
+            Assert.AreEqual(1, hurt);
+            Assert.AreEqual(SquadMember.Total(members), World.GetHealth(squad), 1e-3f);
+            Assert.AreEqual(Shot * (1f - Protection) * 0.5f, Lost(squad), 1e-3f);
         }
 
         [Test]

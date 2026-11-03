@@ -1,8 +1,9 @@
-using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Overlays
 {
@@ -13,19 +14,43 @@ namespace HyperRTS.Presentation.Overlays
         public readonly NavObstacle? Obstacle;
         public readonly int Rank;
 
-        /// <summary>Squad figures, or an uncreated buffer for everything that isn't a squad.</summary>
-        public readonly DynamicBuffer<SquadFigure> Figures;
+        /// <summary>Room one standing soldier takes round its own origin.</summary>
+        private const float MemberRadius = 0.8f;
 
-        public OverlayUnit(NavAgent? agent, NavObstacle? obstacle, int rank, DynamicBuffer<SquadFigure> figures)
+        /// <summary>Squad members, or an uncreated buffer for everything that isn't a squad.</summary>
+        public readonly DynamicBuffer<SquadMember> Members;
+
+        public OverlayUnit(NavAgent? agent, NavObstacle? obstacle, int rank, DynamicBuffer<SquadMember> members)
         {
             Agent = agent;
             Obstacle = obstacle;
             Rank = rank;
-            Figures = figures;
+            Members = members;
         }
 
-        public bool IsSquad => Figures.IsCreated;
-        public int Members => IsSquad ? Figures.Length : 0;
+        public bool IsSquad => Members.IsCreated;
+        public int MemberCount => IsSquad ? Members.Length : 0;
+        public int Alive => IsSquad ? SquadMember.CountLiving(Members) : 0;
+
+        /// <summary>Radius of the circle that takes in the squad's living members, which stand past its nav radius.</summary>
+        public float Spread
+        {
+            get
+            {
+                var spread = Radius;
+                if (!IsSquad)
+                {
+                    return spread;
+                }
+
+                foreach (var member in Members)
+                {
+                    spread = member.Alive ? math.max(spread, math.length(member.Offset) + MemberRadius) : spread;
+                }
+
+                return spread;
+            }
+        }
         public NavLayer Layer => Agent?.Layer ?? NavLayer.Ground;
 
         public float Radius
@@ -41,7 +66,7 @@ namespace HyperRTS.Presentation.Overlays
             }
         }
 
-        /// <summary>Marker for a vehicle, infantry or building; squads take a circle round their figures instead.</summary>
+        /// <summary>Marker for a vehicle, infantry or building; squads take a circle round their members instead.</summary>
         public MarkerFootprint Footprint(float margin)
         {
             if (Agent.HasValue)

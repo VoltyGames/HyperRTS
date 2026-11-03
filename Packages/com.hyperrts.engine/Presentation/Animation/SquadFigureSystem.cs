@@ -1,19 +1,20 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// Shows one <see cref="SquadFigure"/> per share of health and plays each the clip for the squad's motion and
-    /// firing.
+    /// Puts each <see cref="SquadFigure"/> where its <see cref="SquadMember"/> stands, eased, and plays it the clip for
+    /// its own motion and weapon. A dead member's figure dies, then hides.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -40,6 +41,8 @@ namespace HyperRTS.Presentation.Animation
                 Now = (float)SystemAPI.Time.ElapsedTime,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
+                Parents = SystemAPI.GetComponentLookup<Parent>(true),
+                Spots = SystemAPI.GetComponentLookup<LocalTransform>(),
                 Clips = SystemAPI.GetComponentLookup<VATClip>(),
                 Fades = SystemAPI.GetComponentLookup<VATFade>(),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
@@ -55,6 +58,8 @@ namespace HyperRTS.Presentation.Animation
             public float Now;
             public float DeltaTime;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
+            [ReadOnly] public ComponentLookup<Parent> Parents;
+            public ComponentLookup<LocalTransform> Spots;
             public ComponentLookup<VATClip> Clips;
             public ComponentLookup<VATFade> Fades;
             [ReadOnly] public ComponentLookup<LocalToWorld> Places;
@@ -63,27 +68,47 @@ namespace HyperRTS.Presentation.Animation
             public RenderSwitch Switch;
 
             private void Execute(Entity entity, ref SquadFigures squad, DynamicBuffer<SquadFigure> figures,
-                in Health health, in LocalToWorld place)
+                in DynamicBuffer<SquadMember> members, in LocalToWorld place)
             {
-                // Unarmed squads never fire; the primary weapon is pose 0.
-                var shots = Poses.TryGetBuffer(entity, out var poses) && poses.Length > 0 ? poses[0].Shots : (byte)0;
-                var living = squad.Observe(place.Position, shots, Now, DeltaTime);
                 squad.Hear(CueEvents[CueQueue], place.Position, Now);
-                var visible = SquadFigures.VisibleCount(health, figures.Length);
-                for (var i = 0; i < figures.Length; i++)
+                var hasPoses = Poses.TryGetBuffer(entity, out var poses);
+                var count = math.min(figures.Length, members.Length);
+                for (var i = 0; i < count; i++)
                 {
+                    var member = members[i];
                     var figure = figures[i];
-                    var next = figure.Next(i < visible, living, Now);
+                    var living = FigureState.Idle;
+                    if (member.Alive)
+                    {
+                        figure.Follow(member.Offset, DeltaTime);
+                        Stand(figure);
+                        var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
+                        var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
+                        living = figure.Observe(squad, feet, shots, Now, DeltaTime);
+                    }
+
+                    var next = figure.Next(member.Alive, living, Now);
                     if (next != figure.State)
                     {
                         Show(entity, ref figure, next, squad);
-                        figures[i] = figure;
                     }
                     else if (next == FigureState.Die)
                     {
                         SwitchToBlast(figure, squad);
                     }
+
+                    figures[i] = figure;
                 }
+            }
+
+            /// <summary>Moves the figure to its offset: world axes turned into its parent's frame, at its baked height.</summary>
+            private void Stand(in SquadFigure figure)
+            {
+                var parent = Places[Parents[figure.Figure].Value].Value;
+                var local = math.mul(math.inverse(new float3x3(parent)), new float3(figure.Offset.x, 0f, figure.Offset.y));
+                var spot = Spots[figure.Figure];
+                spot.Position = new float3(local.x, figure.Height, local.z);
+                Spots[figure.Figure] = spot;
             }
 
             private void Show(Entity entity, ref SquadFigure figure, FigureState next, in SquadFigures squad)

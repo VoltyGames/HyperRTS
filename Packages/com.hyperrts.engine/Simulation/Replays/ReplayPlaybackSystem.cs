@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.Replays
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<Faction> _factions;
         private ComponentLookup<Health> _health;
+        private BufferLookup<SquadMember> _members;
         private ComponentLookup<ConstructionProgress> _construction;
 
         [BurstCompile]
@@ -33,6 +34,7 @@ namespace HyperRTS.Simulation.Replays
             _transforms = state.GetComponentLookup<LocalTransform>();
             _factions = state.GetComponentLookup<Faction>();
             _health = state.GetComponentLookup<Health>();
+            _members = state.GetBufferLookup<SquadMember>();
             _construction = state.GetComponentLookup<ConstructionProgress>();
             state.RequireForUpdate<ReplayPlaybackState>();
             state.RequireForUpdate<MapSettings>();
@@ -164,6 +166,7 @@ namespace HyperRTS.Simulation.Replays
             _transforms.Update(ref state);
             _factions.Update(ref state);
             _health.Update(ref state);
+            _members.Update(ref state);
             _construction.Update(ref state);
             state.CompleteDependency();
 
@@ -201,6 +204,11 @@ namespace HyperRTS.Simulation.Replays
             if (_health.TryGetComponent(entity, out var health))
             {
                 health.Current = health.Max * from.HealthFraction;
+                if (_members.TryGetBuffer(entity, out var members))
+                {
+                    SquadMember.Fill(members, health.Current);
+                }
+
                 _health[entity] = health;
             }
 
