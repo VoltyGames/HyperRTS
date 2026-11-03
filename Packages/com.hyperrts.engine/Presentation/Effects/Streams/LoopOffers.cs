@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Streams
@@ -18,6 +19,7 @@ namespace HyperRTS.Presentation.Effects.Streams
             public float DistanceSq;
         }
 
+        [NoAutoStaticsCleanup]
         private static readonly Comparison<Offer> Nearer = (a, b) => a.DistanceSq.CompareTo(b.DistanceSq);
 
         private readonly List<Offer> _offers = new();

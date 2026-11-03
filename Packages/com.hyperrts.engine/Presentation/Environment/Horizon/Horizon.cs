@@ -78,7 +78,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
             }
         }
 
-        protected void OnEnable()
+        private void OnEnable()
         {
             Build();
             RenderPipelineManager.beginCameraRendering += Render;

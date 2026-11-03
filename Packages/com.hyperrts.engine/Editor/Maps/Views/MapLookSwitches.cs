@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Maps.Views
 
         private void AddBehaviours<T>(string feature) where T : Behaviour
         {
-            var found = Object.FindObjectsByType<T>(FindObjectsSortMode.None);
+            var found = Object.FindObjectsByType<T>();
             Add(feature, found.Length > 0, on =>
             {
                 foreach (var behaviour in found)
@@ -163,7 +163,7 @@ namespace HyperRTS.Editor.Maps.Views
         // The river and pond surfaces, drawn with the climate's water material.
         private void AddWater(Material water)
         {
-            var renderers = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)
+            var renderers = Object.FindObjectsByType<MeshRenderer>()
                 .Where(renderer => renderer.sharedMaterial == water).ToList();
             Add("water", renderers.Count > 0, on =>
             {

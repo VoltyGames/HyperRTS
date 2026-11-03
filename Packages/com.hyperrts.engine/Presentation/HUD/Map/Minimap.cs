@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Heights;

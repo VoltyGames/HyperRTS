@@ -2,7 +2,6 @@ using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Animation;
-using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;

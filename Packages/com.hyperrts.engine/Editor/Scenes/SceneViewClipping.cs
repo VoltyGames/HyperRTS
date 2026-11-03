@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Scenes
@@ -15,6 +16,7 @@ namespace HyperRTS.Editor.Scenes
         // Room for a whole map and its horizon seen from high above; the match camera reaches 3 km at most.
         private const float Far = 5000f;
 
+        [NoAutoStaticsCleanup]
         private static readonly HashSet<SceneView> Configured = new();
 
         static SceneViewClipping() => SceneView.duringSceneGui += Apply;
