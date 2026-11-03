@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
@@ -149,6 +150,18 @@ namespace HyperRTS.Editor.Maps.Climate
         public MapBeltKit BeltKit(string key) => MapKeys.Get(beltKits, key, this.key, "belt kit");
 
         public MapWoodlandKit WoodlandKit(string key) => MapKeys.Get(woodlandKits, key, this.key, "woodland kit");
+
+        /// <summary>The horizon belt strips of the belt kits that have one, the farmland kit's own first.</summary>
+        public List<Material> HorizonStrips(MapFarmlandKit farmland)
+        {
+            IEnumerable<MapBeltKit> kits = beltKits;
+            if (!string.IsNullOrEmpty(farmland.beltKit))
+            {
+                kits = kits.Prepend(BeltKit(farmland.beltKit));
+            }
+
+            return kits.Select(kit => kit.horizonStrip).Where(strip => strip != null).Distinct().ToList();
+        }
 
         /// <summary>The terrain layer a surface paints.</summary>
         public int SurfaceLayer(string surface) => LayerIndex(Surface(surface).layer);

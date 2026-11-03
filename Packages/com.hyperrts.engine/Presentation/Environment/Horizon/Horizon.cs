@@ -9,8 +9,9 @@ namespace HyperRTS.Presentation.Environment.Horizon
 {
     /// <summary>
     /// Farmland round the map out to <see cref="width"/>, so a camera tilted toward the horizon sees fields fading into
-    /// haze instead of the world's edge. Built when enabled, in edit mode too, and kept in memory only: a ground ring
-    /// painted with the map terrain's layers in large fields. Nothing in it collides, navigates or casts a shadow.
+    /// the sky instead of the world's edge. Built when enabled, in edit mode too, and kept in memory only: a ground ring
+    /// painted with the map terrain's layers in fields, crop fields raised in their canopy and tree-line strips along
+    /// some row edges. Nothing in it collides or navigates, and only the raised fields cast shadows.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu(HyperRTSMenu.Environment + "Horizon")]
@@ -25,9 +26,9 @@ namespace HyperRTS.Presentation.Environment.Horizon
         [Tooltip("The map's terrain: the ring starts under its edge, and its material lends the ring its ground layers.")]
         public Terrain terrain;
 
-        [Tooltip("Metres the horizon reaches past the terrain's edge.")]
+        [Tooltip("Metres the horizon reaches past the terrain's edge, about 800 to 1200.")]
         [Min(0f)]
-        public float width = 2500f;
+        public float width = 1000f;
 
         [Tooltip("Seeds the fields and swells.")]
         public int seed;
@@ -36,12 +37,23 @@ namespace HyperRTS.Presentation.Environment.Horizon
 
         public HorizonFields fields = new();
 
+        public HorizonBelts belts = new();
+
+        public HorizonRaisedFields raised = new();
+
+        public HorizonSky sky = new();
+
         [Tooltip("HyperRTS/HorizonGround, which paints the fields.")]
         public Shader groundShader;
 
         private Mesh _ground;
         private Material _groundMaterial;
         private Texture2D _fieldTexture;
+        private Mesh _belts;
+        private List<Material> _stripMaterials = new();
+        private Mesh _raised;
+        private List<Material> _cropMaterials = new();
+        private string _skyProblem;
         private bool _ready;
 #if UNITY_EDITOR
         private bool _dirty;
@@ -122,7 +134,30 @@ namespace HyperRTS.Presentation.Environment.Horizon
             _groundMaterial.SetTexture(AlbedoArrayId, template.GetTexture(AlbedoArrayId));
             _groundMaterial.SetTexture(LayerParamsId, template.GetTexture(LayerParamsId));
             _fieldTexture = fields.Apply(_groundMaterial, seed, fields.Cells(Area));
+            BuildStanding();
+            foreach (var material in Materials())
+            {
+                sky.SetReach(material, TerrainRect, width);
+            }
+
+            _skyProblem = null;
             _ready = true;
+        }
+
+        // What stands on the ground: the belts and the raised fields, each only when it has something to draw.
+        private void BuildStanding()
+        {
+            if (belts.strips.Count > 0)
+            {
+                _belts = belts.Build(belts.Stretches(fields, seed, TerrainRect, width), Height);
+            }
+
+            _stripMaterials = belts.strips.Select(strip => new Material(strip) { hideFlags = HideFlags.DontSave }).ToList();
+            if (raised.RaisedCrops(fields).Count > 0)
+            {
+                _raised = raised.Build(raised.Fields(fields, seed, TerrainRect, width), fields, Height);
+                _cropMaterials = raised.CreateMaterials(fields);
+            }
         }
 
         private void Release()
@@ -131,6 +166,12 @@ namespace HyperRTS.Presentation.Environment.Horizon
             CoreUtils.Destroy(_ground);
             CoreUtils.Destroy(_groundMaterial);
             CoreUtils.Destroy(_fieldTexture);
+            CoreUtils.Destroy(_belts);
+            _stripMaterials.ForEach(CoreUtils.Destroy);
+            _stripMaterials.Clear();
+            CoreUtils.Destroy(_raised);
+            _cropMaterials.ForEach(CoreUtils.Destroy);
+            _cropMaterials.Clear();
         }
 
         private List<string> Problems()
@@ -155,6 +196,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 problems.Add("no crops with weight");
             }
 
+            problems.AddRange(belts.Problems());
+            problems.AddRange(raised.Problems(fields));
             return problems;
         }
 
@@ -173,15 +216,66 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 return;
             }
 
-            var parameters = new RenderParams(_groundMaterial)
+            if (!SkyReady())
+            {
+                return;
+            }
+
+            Draw(camera, _groundMaterial, _ground, 0, ShadowCastingMode.Off);
+            for (var i = 0; i < _stripMaterials.Count; i++)
+            {
+                Draw(camera, _stripMaterials[i], _belts, i, ShadowCastingMode.Off);
+            }
+
+            // The walls shade the ground beside them.
+            for (var i = 0; i < _cropMaterials.Count; i++)
+            {
+                Draw(camera, _cropMaterials[i], _raised, i, ShadowCastingMode.On);
+            }
+        }
+
+        // Read each render, so a changed skybox shows at once; a wrong one is reported once, never guessed at.
+        private bool SkyReady()
+        {
+            var skybox = RenderSettings.skybox;
+            var problem = sky.Problem(skybox);
+            if (problem != _skyProblem && problem != null)
+            {
+                Debug.LogError($"HyperRTS: Horizon can't fade into the sky: {problem}.", this);
+            }
+
+            _skyProblem = problem;
+            if (problem != null)
+            {
+                return false;
+            }
+
+            foreach (var material in Materials())
+            {
+                sky.Apply(skybox, material);
+            }
+
+            return true;
+        }
+
+        private IEnumerable<Material> Materials() => _stripMaterials.Concat(_cropMaterials).Append(_groundMaterial);
+
+        private void Draw(Camera camera, Material material, Mesh mesh, int submesh, ShadowCastingMode shadows)
+        {
+            if (mesh.GetIndexCount(submesh) == 0)
+            {
+                return;
+            }
+
+            var parameters = new RenderParams(material)
             {
                 camera = camera,
                 layer = gameObject.layer,
-                worldBounds = _ground.bounds,
-                shadowCastingMode = ShadowCastingMode.Off,
+                worldBounds = mesh.bounds,
+                shadowCastingMode = shadows,
                 receiveShadows = true,
             };
-            Graphics.RenderMesh(parameters, _ground, 0, Matrix4x4.identity);
+            Graphics.RenderMesh(parameters, mesh, submesh, Matrix4x4.identity);
         }
     }
 }

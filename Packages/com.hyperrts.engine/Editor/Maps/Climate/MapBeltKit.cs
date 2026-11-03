@@ -36,5 +36,8 @@ namespace HyperRTS.Editor.Maps.Climate
         public float gapEvery = 140f;
 
         public float gapWidth = 9f;
+
+        [Tooltip("HyperRTS/HorizonBelt material drawing this belt as a strip on the horizon; empty for none.")]
+        public Material horizonStrip;
     }
 }

@@ -1,4 +1,3 @@
-using System.Linq;
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Climate;
@@ -35,6 +34,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/FoliageGrass.shader";
 
         private const string HorizonGroundShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonGround.shader";
+        private const string HorizonCropShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonCrop.shader";
 
         /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
@@ -122,7 +122,8 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         /// <summary>
         /// The farmland round the map out to the spec's <c>horizonWidth</c>: the first farmland's kit (or the climate's
-        /// first) in fields of the kit's size at the farmland's angle, so the ring carries the map's own grid on.
+        /// first) in fields of the kit's size at the farmland's angle, so the ring carries the map's own grid on, with
+        /// belts drawn by the strips of the kit's belt kit and the climate's other belt kits.
         /// </summary>
         private static void CreateHorizon(MapScene scene, MapGeneration generation, Terrain terrain)
         {
@@ -148,16 +149,10 @@ namespace HyperRTS.Editor.Maps.Scenes
                 swell = layout.Terrain.relief,
                 scale = layout.Terrain.reliefScale,
             };
-            horizon.fields = new HorizonFields
-            {
-                size = kit.fieldSize,
-                angle = farmland?.angle ?? 0f,
-                marginWidth = kit.marginWidth,
-                marginLayer = climate.SurfaceLayer(kit.marginSurface),
-                crops = kit.crops.Select(crop => new HorizonCrop { layer = climate.SurfaceLayer(crop.surface), weight = crop.weight })
-                    .ToList(),
-            };
+            horizon.fields = kit.HorizonFields(climate, farmland?.angle ?? 0f);
+            horizon.belts = new HorizonBelts { strips = climate.HorizonStrips(kit) };
             horizon.groundShader = Engine<Shader>(HorizonGroundShader, "horizon ground shader");
+            horizon.raised = new HorizonRaisedFields { shader = Engine<Shader>(HorizonCropShader, "horizon crop shader") };
             go.SetActive(true);
         }
 

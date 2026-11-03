@@ -1,6 +1,8 @@
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Presentation.Environment.Horizon;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Climate
@@ -51,5 +53,41 @@ namespace HyperRTS.Editor.Maps.Climate
 
         [Tooltip("Surfaces for the pieces too small or narrow to farm (fallow, pasture), one picked per field; empty leaves them margin.")]
         public List<MapCropShare> leftovers = new();
+
+        /// <summary>The horizon's fields farmed as this kit farms, on a grid turned by <paramref name="angle"/> degrees.</summary>
+        public HorizonFields HorizonFields(MapClimate climate, float angle)
+        {
+            var fields = new HorizonFields
+            {
+                size = fieldSize,
+                angle = angle,
+                marginWidth = marginWidth,
+                marginLayer = climate.SurfaceLayer(marginSurface),
+                crops = crops.Select(crop => CreateHorizonCrop(climate, crop)).ToList(),
+            };
+            if (string.IsNullOrEmpty(trackClass))
+            {
+                fields.trackShare = 0f;
+            }
+            else
+            {
+                fields.trackWidth = climate.RoadClass(trackClass).width;
+            }
+
+            return fields;
+        }
+
+        // A surface that grows a row crop raises its horizon fields in that crop's canopy.
+        private static HorizonCrop CreateHorizonCrop(MapClimate climate, MapCropShare share)
+        {
+            var surface = climate.Surface(share.surface);
+            var crop = new HorizonCrop { layer = climate.SurfaceLayer(share.surface), weight = share.weight };
+            if (!string.IsNullOrEmpty(surface.rowCrop))
+            {
+                crop.crop = climate.rowCrops[climate.RowCropIndex(surface.rowCrop)].crop;
+            }
+
+            return crop;
+        }
     }
 }

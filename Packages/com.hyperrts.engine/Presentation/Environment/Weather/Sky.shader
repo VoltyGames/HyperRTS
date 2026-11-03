@@ -36,12 +36,7 @@ Shader "HyperRTS/Sky"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/EntityLighting.hlsl"
-
-            // Skybox/Cubemap's unity_ColorSpaceDouble in linear space, so a grey tint of 0.5 matches it.
-            #define SKY_COLOR_SPACE_DOUBLE 4.59479380
-            // How far above the horizon the horizon colour is read, as a direction's height.
-            #define SKY_HORIZON_LIFT 0.02
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/SkyHorizon.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _Tint;
@@ -79,22 +74,16 @@ Shader "HyperRTS/Sky"
                 return output;
             }
 
-            half3 SkyAt(float3 direction, float mip)
-            {
-                half4 texel = SAMPLE_TEXTURECUBE_LOD(_Tex, sampler_Tex, direction, mip);
-                return DecodeHDREnvironment(texel, _Tex_HDR) * _Tint.rgb * SKY_COLOR_SPACE_DOUBLE * _Exposure;
-            }
-
             half4 Frag(Varyings input) : SV_Target
             {
                 float3 direction = normalize(input.direction);
-                half3 sky = SkyAt(direction, 0.0);
+                half3 sky = SkyColor(TEXTURECUBE_ARGS(_Tex, sampler_Tex), _Tex_HDR, _Tint.rgb, _Exposure, direction, 0.0);
                 [branch] if (direction.y < 0.0)
                 {
                     // Straight down has no bearing; any will do, as the ground there is as photographed.
                     float2 bearing = dot(direction.xz, direction.xz) > 1e-8 ? normalize(direction.xz) : float2(1.0, 0.0);
-                    float3 lifted = normalize(float3(bearing.x, SKY_HORIZON_LIFT, bearing.y));
-                    half3 horizon = SkyAt(lifted, _HorizonBlur);
+                    half3 horizon = SkyHorizonColor(TEXTURECUBE_ARGS(_Tex, sampler_Tex), _Tex_HDR, _Tint.rgb, _Exposure,
+                        bearing, _HorizonBlur);
                     half below = smoothstep(0.5, 1.0, -direction.y / sin(_HorizonBand * PI / 180.0));
                     sky = lerp(horizon, sky, below);
                 }
