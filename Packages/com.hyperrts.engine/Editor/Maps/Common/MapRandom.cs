@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Common
     {
         /// <summary>The stream of one authored feature, the same on every build.</summary>
         public static System.Random Stream(int seed, MapRandomChannel channel, int index) =>
-            new(unchecked(seed * 486187739 + (int)channel * 7919 + index * 104729));
+            new(seed * 486187739 + (int)channel * 7919 + index * 104729);
 
         /// <summary>0 to 1.</summary>
         public static float Value(this System.Random random) => (float)random.NextDouble();

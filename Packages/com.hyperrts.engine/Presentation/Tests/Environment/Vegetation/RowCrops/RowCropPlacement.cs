@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
 
         /// <summary>A row's slide along its line, in plant spacings, so gaps in neighbouring rows don't line up.</summary>
         public static float Stagger(RowCropField field, int row) =>
-            Hashes.Fraction(ScatterHash.Channel(ScatterHash.Hash(field.seed ^ unchecked((int)StaggerSalt), row, 0), 0)) - 0.5f;
+            Hashes.Fraction(ScatterHash.Channel(ScatterHash.Hash(field.seed ^ (int)StaggerSalt, row, 0), 0)) - 0.5f;
 
         /// <summary>Whether a plant falls on a tramline.</summary>
         public static bool OnTramline(RowCropField field, int row, int plant, RowCrop crop) =>

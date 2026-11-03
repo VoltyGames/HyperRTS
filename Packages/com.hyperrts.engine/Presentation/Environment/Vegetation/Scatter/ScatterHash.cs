@@ -10,13 +10,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
     public static class ScatterHash
     {
         public static uint Hash(int seed, int row, int plant) =>
-            Pcg(unchecked((uint)seed) ^ Pcg(unchecked((uint)row) ^ Pcg(unchecked((uint)plant))));
+            Pcg((uint)seed ^ Pcg((uint)row ^ Pcg((uint)plant)));
 
         /// <summary>An independent random value per channel from one plant hash.</summary>
-        public static uint Channel(uint hash, uint channel) => Pcg(unchecked(hash + channel * 0x9E3779B9u));
+        public static uint Channel(uint hash, uint channel) => Pcg(hash + channel * 0x9E3779B9u);
 
         /// <summary>A seed for an independent stream of values from the same map seed.</summary>
-        public static int Salted(int seed, uint salt) => unchecked((int)((uint)seed ^ salt));
+        public static int Salted(int seed, uint salt) => (int)((uint)seed ^ salt);
 
         /// <summary>Smooth value noise from 0 to 1 on an integer grid.</summary>
         public static float Noise(int seed, uint salt, Vector2 point)
