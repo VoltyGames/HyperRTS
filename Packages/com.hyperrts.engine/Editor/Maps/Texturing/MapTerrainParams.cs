@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Maps.Texturing
             pixels[Width + layer] = new Color(tint.x, tint.y, tint.z, climateLayer.tintStrength);
             pixels[2 * Width + layer] = new Color(high.w - low.w, low.w, high.y - low.y, low.y);
             pixels[3 * Width + layer] = Surface(climateLayer);
-            pixels[4 * Width + layer] = Cover(climateLayer, slope);
+            pixels[4 * Width + layer] = GrassAndSlope(climateLayer, slope);
         }
 
         /// <summary>Row 0: the layer's own UV turn and tiling; row layers add the row map's turn per pixel.</summary>
@@ -66,7 +66,7 @@ namespace HyperRTS.Editor.Maps.Texturing
         /// Row 4: r how much the layer is grass cover, which sheds rain; g 1 for the slope surface's layer, which
         /// the shader projects sideways on steep ground.
         /// </summary>
-        public static Color Cover(MapClimateLayer climateLayer, bool slope) =>
+        public static Color GrassAndSlope(MapClimateLayer climateLayer, bool slope) =>
             new(climateLayer.grass, slope ? 1f : 0f, 0f, 0f);
 
         private static Texture2D SubAsset(Material material)

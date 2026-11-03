@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Cues
     public struct PackedCue
     {
         private const float PitchSteps = 127f;
-        private const int CoverShift = 4;
+        private const int ConcealmentShift = 4;
         private const byte SurfaceBits = 0x0F;
         private const byte TallBit = 0x40;
 
@@ -33,8 +33,8 @@ namespace HyperRTS.Simulation.Cues
         public byte Pitch;
 
         // Bytes rather than the enums, so the RPC codegen sends one byte each.
-        /// <summary>The impact's surface in the low 4 bits, the source's cover in the next 2, then its tall bit.</summary>
-        public byte SurfaceCover;
+        /// <summary>The impact's surface in the low 4 bits, the source's concealment in the next 2, then its tall bit.</summary>
+        public byte SurfaceConcealment;
 
         /// <summary>An impact's material, else the cue's <see cref="CueEvent.Variant"/>; impacts never set one.</summary>
         public byte Detail;
@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Cues
                 Faction = cue.Faction,
                 Yaw = HeadingByte.Encode(direction.xz),
                 Pitch = (byte)math.round(pitch * PitchSteps),
-                SurfaceCover = (byte)((int)cue.Surface | (int)cue.Cover << CoverShift | tall),
+                SurfaceConcealment = (byte)((int)cue.Surface | (int)cue.Concealment << ConcealmentShift | tall),
                 Detail = cue.Slot == CueSlot.Impact ? (byte)cue.Material : cue.Variant,
             };
         }
@@ -74,10 +74,10 @@ namespace HyperRTS.Simulation.Cues
                 Faction = Faction,
                 Position = QuantizedPosition.Dequantize(X, Y, Z),
                 Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
-                Cover = (Cover)((SurfaceCover >> CoverShift) & 3),
-                Tall = (SurfaceCover & TallBit) != 0,
+                Concealment = (Concealment)((SurfaceConcealment >> ConcealmentShift) & 3),
+                Tall = (SurfaceConcealment & TallBit) != 0,
                 Radius = Radius * QuantizedPosition.Step,
-                Surface = (ImpactSurface)(SurfaceCover & SurfaceBits),
+                Surface = (ImpactSurface)(SurfaceConcealment & SurfaceBits),
                 Material = impact ? (SurfaceMaterial)Detail : default,
             };
         }

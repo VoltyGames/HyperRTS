@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Cues
         public float3 Direction;
 
         /// <summary>What kept the source hidden, so a cue reaches only the teams that could see its source.</summary>
-        public Cover Cover;
+        public Concealment Concealment;
 
         /// <summary>The source was a <see cref="TallTarget"/>, seen over low cover.</summary>
         public bool Tall;

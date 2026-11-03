@@ -27,7 +27,7 @@ namespace HyperRTS.Network.Replication
         private static readonly ProfilerMarker HideMarker = new("FogRelevancySystem.Hide");
 
         private EntityQuery _ghosts;
-        private CoverLookup _covers;
+        private ConcealmentLookup _concealment;
 
         private struct Viewer
         {
@@ -40,7 +40,7 @@ namespace HyperRTS.Network.Replication
         {
             _ghosts = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, GhostInstance>()
                 .WithNone<Destructible>().Build();
-            _covers = new CoverLookup(ref state);
+            _concealment = new ConcealmentLookup(ref state);
             state.RequireForUpdate<GhostRelevancy>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
@@ -73,11 +73,11 @@ namespace HyperRTS.Network.Replication
                 hidden.Capacity = most;
             }
 
-            _covers.Update(ref state);
+            _concealment.Update(ref state);
             state.Dependency = new HideJob
             {
                 Fog = fog,
-                Covers = _covers,
+                Concealments = _concealment,
                 Viewers = viewers.AsArray(),
                 Relations = SystemAPI.GetSingleton<FactionRelations>(),
                 FogOn = SystemAPI.GetSingleton<MapSettings>().FogOfWar,
@@ -104,7 +104,7 @@ namespace HyperRTS.Network.Replication
         private partial struct HideJob : IJobEntity, IJobEntityChunkBeginEnd
         {
             [ReadOnly] public FogOfWar Fog;
-            [ReadOnly] public CoverLookup Covers;
+            [ReadOnly] public ConcealmentLookup Concealments;
             [ReadOnly] public NativeArray<Viewer> Viewers;
             public FactionRelations Relations;
             public bool FogOn;
@@ -124,16 +124,16 @@ namespace HyperRTS.Network.Replication
             private void Execute(Entity entity, in LocalTransform transform, in Faction owner, in GhostInstance ghost)
             {
                 // With fog off only stealth hides anything.
-                var cover = Covers.Find(entity);
-                if (!FogOn && cover == Cover.None)
+                var concealment = Concealments.Find(entity);
+                if (!FogOn && concealment == Concealment.None)
                 {
                     return;
                 }
 
-                var tall = Covers.IsTall(entity);
+                var tall = Concealments.IsTall(entity);
                 foreach (var viewer in Viewers)
                 {
-                    if (Fog.IsHiddenFrom(Relations, viewer.Faction, owner.Value, transform.Position, cover, tall))
+                    if (Fog.IsHiddenFrom(Relations, viewer.Faction, owner.Value, transform.Position, concealment, tall))
                     {
                         Hidden.TryAdd(new RelevantGhostForConnection(viewer.NetworkId, ghost.ghostId), 1);
                     }

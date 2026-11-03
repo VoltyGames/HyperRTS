@@ -25,8 +25,8 @@ namespace HyperRTS.Editor.Maps.Planning.War
         /// <summary>Distance from the centre past which nothing is burnt.</summary>
         public float Reach => Radius * (1f + EdgeWander * 0.3f) + EdgeSoftness;
 
-        /// <summary>Burn cover at a point, 0 to 1; <paramref name="edges"/> roughens the outline the same in every copy.</summary>
-        public float Cover(Vector2 point, MapNoise edges)
+        /// <summary>Burn coverage at a point, 0 to 1; <paramref name="edges"/> roughens the outline the same in every copy.</summary>
+        public float Coverage(Vector2 point, MapNoise edges)
         {
             var edge = Radius * (1f + EdgeWander * edges.Sample(point, Radius));
             return MapGeometry.Smooth((edge - Vector2.Distance(point, Center)) / EdgeSoftness);

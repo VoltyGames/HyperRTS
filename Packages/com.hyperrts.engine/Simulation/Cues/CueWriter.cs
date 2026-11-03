@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Cues
         [ReadOnly] private ComponentLookup<EntityImpactEffects> _impactEffects;
         [ReadOnly] private ComponentLookup<DeathRemains> _remains;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
-        private CoverLookup _cover;
+        private ConcealmentLookup _concealment;
 
         public CueWriter(ref SystemState state) : this()
         {
@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Cues
             _impactEffects = state.GetComponentLookup<EntityImpactEffects>(true);
             _remains = state.GetComponentLookup<DeathRemains>(true);
             _info = state.GetComponentLookup<EntityInfo>(true);
-            _cover = new CoverLookup(ref state);
+            _concealment = new ConcealmentLookup(ref state);
         }
 
         /// <summary>Call each update before scheduling.</summary>
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Cues
             _impactEffects.Update(ref state);
             _remains.Update(ref state);
             _info.Update(ref state);
-            _cover.Update(ref state);
+            _concealment.Update(ref state);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace HyperRTS.Simulation.Cues
             return Add(new CueEvent
             {
                 TypeId = typeId, Slot = slot, Variant = variant, Faction = faction, Position = position,
-                Direction = direction, Cover = _cover.Find(source), Tall = _cover.IsTall(source),
+                Direction = direction, Concealment = _concealment.Find(source), Tall = _concealment.IsTall(source),
             });
         }
 

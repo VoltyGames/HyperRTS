@@ -1,7 +1,7 @@
 namespace HyperRTS.Simulation.Vision
 {
     /// <summary>What keeps an entity from a team that has it in sight.</summary>
-    public enum Cover : byte
+    public enum Concealment : byte
     {
         None = 0,
 

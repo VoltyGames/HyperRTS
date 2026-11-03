@@ -81,25 +81,25 @@ namespace HyperRTS.Simulation.Vision
         /// Stealth hides an entity from a team none of whose detectors covers it, and concealment also from one with no
         /// ground unit close by, with or without fog.
         /// </summary>
-        public readonly bool IsHiddenByCover(byte team, float3 position, Cover cover)
+        public readonly bool IsHiddenByConcealment(byte team, float3 position, Concealment concealment)
         {
-            if (cover == Cover.None || IsDetected(position, team))
+            if (concealment == Concealment.None || IsDetected(position, team))
             {
                 return false;
             }
 
-            return cover == Cover.Stealthed || !IsClose(position, team);
+            return concealment == Concealment.Stealthed || !IsClose(position, team);
         }
 
-        /// <summary>Whether a team sees an entity there: in its sight at the entity's height, and not hidden by cover.</summary>
-        public readonly bool CanSee(byte team, float3 position, Cover cover, bool tall) =>
-            IsVisible(position, team, tall) && !IsHiddenByCover(team, position, cover);
+        /// <summary>Whether a team sees an entity there: in its sight at the entity's height, and not hidden by concealment.</summary>
+        public readonly bool CanSee(byte team, float3 position, Concealment concealment, bool tall) =>
+            IsVisible(position, team, tall) && !IsHiddenByConcealment(team, position, concealment);
 
         /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
         public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,
-            float3 position, Cover cover, bool tall) =>
+            float3 position, Concealment concealment, bool tall) =>
             relations.IsHostile(viewerFaction, faction) &&
-            !CanSee(relations.GetTeam(viewerFaction), position, cover, tall);
+            !CanSee(relations.GetTeam(viewerFaction), position, concealment, tall);
 
         /// <summary>Whether the team's bit is set for the cell in one of the layers.</summary>
         public readonly bool Has(NativeArray<ulong> plane, int2 cell, byte team) =>

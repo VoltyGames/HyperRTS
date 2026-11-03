@@ -29,7 +29,7 @@ namespace HyperRTS.Editor.Maps.Climate
         public bool Valid => !Any || (width > 0f && width < spacing && plants is >= 0f and <= 1f);
 
         /// <summary>0 between swaths to 1 on one, softened over <paramref name="soft"/> metres.</summary>
-        public float Cover(float across, float soft)
+        public float Coverage(float across, float soft)
         {
             var fromCentre = Mathf.Abs(Mathf.Repeat(across, spacing) - spacing * 0.5f);
             return 1f - MapGeometry.Smooth((fromCentre - width * 0.5f) / soft + 0.5f);

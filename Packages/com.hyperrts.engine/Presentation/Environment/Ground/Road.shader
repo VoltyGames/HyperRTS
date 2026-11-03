@@ -167,8 +167,8 @@ Shader "HyperRTS/Road"
                 }
 
                 Wet(surface.albedo, surface.smoothness, surface.normalTS, _HyperRTSWetness, _WetDarkening, _WetSmoothness);
-                half cover = PuddleCover(PuddleCollect(input, st, dx, dy), _PuddleCoverage);
-                Puddle(surface.albedo, surface.smoothness, surface.normalTS, cover, _PuddleSmoothness);
+                half puddles = PuddleCoverage(PuddleCollect(input, st, dx, dy), _PuddleCoverage);
+                Puddle(surface.albedo, surface.smoothness, surface.normalTS, puddles, _PuddleSmoothness);
             }
 
             InputData Inputs(Varyings input, half3 normalTS)

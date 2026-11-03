@@ -4,14 +4,14 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Vision
 {
-    /// <summary>Reads what decides whether a team sees an entity: its <see cref="Cover"/> and whether it is a <see cref="TallTarget"/>.</summary>
-    public struct CoverLookup
+    /// <summary>Reads what decides whether a team sees an entity: its <see cref="Concealment"/> and whether it is a <see cref="TallTarget"/>.</summary>
+    public struct ConcealmentLookup
     {
         [ReadOnly] private ComponentLookup<Stealthed> _stealthed;
         [ReadOnly] private ComponentLookup<Concealed> _concealed;
         [ReadOnly] private ComponentLookup<TallTarget> _tall;
 
-        public CoverLookup(ref SystemState state)
+        public ConcealmentLookup(ref SystemState state)
         {
             _stealthed = state.GetComponentLookup<Stealthed>(true);
             _concealed = state.GetComponentLookup<Concealed>(true);
@@ -26,14 +26,14 @@ namespace HyperRTS.Simulation.Vision
         }
 
         /// <summary>Stealth first, then concealment.</summary>
-        public readonly Cover Find(Entity entity)
+        public readonly Concealment Find(Entity entity)
         {
             if (_stealthed.HasEnabled(entity))
             {
-                return Cover.Stealthed;
+                return Concealment.Stealthed;
             }
 
-            return _concealed.HasEnabled(entity) ? Cover.Concealed : Cover.None;
+            return _concealed.HasEnabled(entity) ? Concealment.Concealed : Concealment.None;
         }
 
         /// <summary>As tall as a vehicle or a building, so seen over low cover.</summary>

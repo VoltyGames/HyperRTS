@@ -42,12 +42,12 @@ namespace HyperRTS.Editor.Maps.Planning.War
             {
                 ForEachTexel(area, textureWeights.Resolution, patch.Center, patch.Reach, (x, z, p) =>
                 {
-                    var cover = patch.Cover(p, _edges);
+                    var coverage = patch.Coverage(p, _edges);
                     // The burnt layer is stored once per texel, so it is rounded to a byte once.
                     for (var l = 0; l < layers; l++)
                     {
-                        var weight = textureWeights[x, z, l] * (1f - cover);
-                        textureWeights[x, z, l] = l == burnt ? weight + cover : weight;
+                        var weight = textureWeights[x, z, l] * (1f - coverage);
+                        textureWeights[x, z, l] = l == burnt ? weight + coverage : weight;
                     }
                 });
             }
@@ -78,8 +78,8 @@ namespace HyperRTS.Editor.Maps.Planning.War
 
                     if (weeds != null)
                     {
-                        var cover = crater.Weeds(distance, kit.weedRing) * kit.weedCoverage * 255f;
-                        weeds[i] = (byte)Mathf.Max(weeds[i], Mathf.RoundToInt(cover));
+                        var coverage = crater.Weeds(distance, kit.weedRing) * kit.weedCoverage * 255f;
+                        weeds[i] = (byte)Mathf.Max(weeds[i], Mathf.RoundToInt(coverage));
                     }
                 });
             }
@@ -99,8 +99,8 @@ namespace HyperRTS.Editor.Maps.Planning.War
                 ForEachTexel(grass.Area, grass.Resolution, patch.Center, patch.Reach, (x, z, p) =>
                 {
                     var i = z * grass.Resolution + x;
-                    var cover = patch.Cover(p, _edges) * kit.burnCoverage * 255f;
-                    plants[i] = (byte)Mathf.Max(plants[i], Mathf.RoundToInt(cover));
+                    var coverage = patch.Coverage(p, _edges) * kit.burnCoverage * 255f;
+                    plants[i] = (byte)Mathf.Max(plants[i], Mathf.RoundToInt(coverage));
                 });
             }
         }

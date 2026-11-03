@@ -34,9 +34,9 @@ void ApplyWetness(inout TerrainSurface surface, half dampness, half rut, float2 
     Wet(surface.albedo, surface.smoothness, surface.normalTS, max(_HyperRTSWetness * shed - dampness, 0.0),
         _RainDarkening, _RainSmoothness);
     half collect = PuddleCollect(surface, dampness, rut, st, dx, dy) * shed;
-    half cover = PuddleCover(collect, _PuddleCoverage);
-    Puddle(surface.albedo, surface.smoothness, surface.normalTS, cover, _PuddleSmoothness);
-    surface.occlusion = lerp(surface.occlusion, 1.0, cover * 0.5);
+    half puddles = PuddleCoverage(collect, _PuddleCoverage);
+    Puddle(surface.albedo, surface.smoothness, surface.normalTS, puddles, _PuddleSmoothness);
+    surface.occlusion = lerp(surface.occlusion, 1.0, puddles * 0.5);
 }
 
 #endif

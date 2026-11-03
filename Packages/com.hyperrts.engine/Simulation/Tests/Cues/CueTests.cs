@@ -237,7 +237,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.IsFalse(CueRules.IsVisible(voice, 2, fog, relations), "voices are private");
             Assert.IsFalse(CueRules.IsVisible(hiddenShot, 2, fog, relations), "hidden by fog");
             Assert.IsTrue(CueRules.IsVisible(seenShot, 2, fog, relations));
-            seenShot.Cover = Cover.Stealthed;
+            seenShot.Concealment = Concealment.Stealthed;
             Assert.IsFalse(CueRules.IsVisible(seenShot, 2, fog, relations), "undetected stealth is silent");
             Assert.IsTrue(CueRules.IsVisible(hiddenShot, 1, fog, relations), "own cues always");
         }

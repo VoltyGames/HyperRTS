@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var cue = new CueEvent
             {
                 TypeId = 1234, Slot = CueSlot.Fire, Faction = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
-                Direction = math.normalize(new float3(1f, 0.5f, -1f)), Cover = Cover.Concealed, Tall = true,
+                Direction = math.normalize(new float3(1f, 0.5f, -1f)), Concealment = Concealment.Concealed, Tall = true,
             };
 
             var read = PackedCue.Pack(cue).Unpack();
@@ -28,9 +28,9 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.AreEqual(cue.Faction, read.Faction);
             Assert.That(math.distance(cue.Position, read.Position), Is.LessThan(QuantizedPosition.Step));
             Assert.That(math.dot(cue.Direction, read.Direction), Is.GreaterThan(0.999f));
-            Assert.AreEqual(Cover.Concealed, read.Cover);
+            Assert.AreEqual(Concealment.Concealed, read.Concealment);
             Assert.IsTrue(read.Tall);
-            Assert.AreEqual(Cover.None, PackedCue.Pack(default).Unpack().Cover);
+            Assert.AreEqual(Concealment.None, PackedCue.Pack(default).Unpack().Concealment);
         }
 
         [Test]

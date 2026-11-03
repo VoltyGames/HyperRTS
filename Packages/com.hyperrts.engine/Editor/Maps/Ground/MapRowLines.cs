@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Maps.Ground
         public float Swath(int region, Vector2 point)
         {
             var swaths = _swaths[region];
-            return swaths == null ? 0f : swaths.Cover(Across(region, point) + _swathOffset[region], _texel);
+            return swaths == null ? 0f : swaths.Coverage(Across(region, point) + _swathOffset[region], _texel);
         }
 
         /// <summary>Share of standing plants a point keeps: none on a tramline, fewer on a swath.</summary>

@@ -17,7 +17,7 @@ SamplerState sampler_LinearClamp;
 #define CHANNEL_X 0u
 #define CHANNEL_Z 1u
 #define CHANNEL_DENSITY 2u
-#define CHANNEL_COVER 3u
+#define CHANNEL_COVERAGE 3u
 #define CHANNEL_KEEP 4u
 #define CHANNEL_VARIANT 5u
 #define CHANNEL_SIZE 6u
@@ -34,7 +34,7 @@ SamplerState sampler_LinearClamp;
 #define CLUMP_SIZE 3.5    // metres across a clump of one plant
 #define TUFT_SIZE 0.8     // metres across the tufts inside a clump
 #define PATCH_SIZE 9.0    // metres over which plants grow taller or shorter together
-#define COVER_DITHER 0.8  // metres the coverage lookup strays, so patch edges look ragged
+#define COVERAGE_DITHER 0.8  // metres the coverage lookup strays, so patch edges look ragged
 #define GROUND_ALIGN 0.6  // share of the ground's tilt a plant follows
 #define MAX_LEAN 0.3      // sine of the most a plant leans at random, so cards show some top to the RTS camera
 #define NORMAL_STEP 0.75  // metres between the ground normal's height probes
@@ -150,9 +150,9 @@ void Scatter(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    float2 dither = (float2(Channel(hash, CHANNEL_DITHER), Channel(hash, CHANNEL_DITHER + 1u)) - 0.5) * COVER_DITHER;
+    float2 dither = (float2(Channel(hash, CHANNEL_DITHER), Channel(hash, CHANNEL_DITHER + 1u)) - 0.5) * COVERAGE_DITHER;
     float painted = Coverage(xz + dither, job.id);
-    if (Channel(hash, CHANNEL_COVER) >= Clumped(painted, plant, xz) * (1.0 - BurntShare(xz)) || UnderBuilding(xz))
+    if (Channel(hash, CHANNEL_COVERAGE) >= Clumped(painted, plant, xz) * (1.0 - BurntShare(xz)) || UnderBuilding(xz))
     {
         return;
     }

@@ -320,9 +320,10 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
   once they have taken it all, so about 10 m of woods hides what lies beyond and a viewer above the canopy sees over.
   Crushers flatten crop cover under their hull (`CropFlattenSystem`), in every world so clients' fog matches.
 - `FogOfWar.Close` holds the cells within `RevealDistance` of a team's ground units; aircraft and passengers add
-  none. A `Cover` (none, `Concealed`, `Stealthed`) goes with every visibility check: stealth shows only to detectors,
-  concealment also to close ground units. Woods, crops and blocks with `conceals` conceal. A cue carries its
-  source's cover and tall flag (`CueEvent.Cover`, `CueEvent.Tall`), so it reaches whoever could see the source.
+  none. A `Concealment` (none, `Concealed`, `Stealthed`) goes with every visibility check: stealth shows only to
+  detectors, concealment also to close ground units. Woods, crops and blocks with `conceals` conceal. A cue carries
+  its source's concealment and tall flag (`CueEvent.Concealment`, `CueEvent.Tall`), so it reaches whoever could see
+  the source.
 - A viewer's own block, or the block of the container it is in, hides nothing from it. Garrisons see from above
   the roof.
 - Hidden enemies can't be selected, picked or seen, but splash still hits them.

@@ -63,11 +63,11 @@ namespace HyperRTS.Editor.Maps.Ground
                     }
 
                     var region = edges.Sample(p).Region;
-                    var cover = Cover(IsField(land, region), clumps, p) * open * rowLines.Plants(region, p);
+                    var coverage = Coverage(IsField(land, region), clumps, p) * open * rowLines.Plants(region, p);
                     foreach (var (plant, entry) in plants[region])
                     {
                         var stand = entry.stands >= 1f ? 1f : stands[plant].Blotches(p, entry.standSize, entry.stands);
-                        bake.Set(plant, x, z, entry.coverage * cover * stand);
+                        bake.Set(plant, x, z, entry.coverage * coverage * stand);
                     }
                 }
             });
@@ -83,7 +83,7 @@ namespace HyperRTS.Editor.Maps.Ground
         }
 
         /// <summary>Wild clumps at two scales with clearings between; crops are sown evenly and keep their cover.</summary>
-        private static float Cover(bool sown, MapNoise clumps, Vector2 p)
+        private static float Coverage(bool sown, MapNoise clumps, Vector2 p)
         {
             if (sown)
             {

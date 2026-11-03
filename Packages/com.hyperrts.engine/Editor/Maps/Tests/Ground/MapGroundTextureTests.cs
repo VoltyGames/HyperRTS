@@ -192,11 +192,11 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
         }
 
         [Test]
-        public void TerrainParams_Cover_IsTheAuthoredGrass_AndMarksOnlyTheSlopeLayerTriplanar()
+        public void TerrainParams_GrassAndSlope_IsTheAuthoredGrass_AndMarksOnlyTheSlopeLayerTriplanar()
         {
-            Assert.AreEqual(0.4f, MapTerrainParams.Cover(Layer(false), false).r, 1e-5f);
-            Assert.AreEqual(1f, MapTerrainParams.Cover(Layer(false), true).g, "the slope layer");
-            Assert.AreEqual(0f, MapTerrainParams.Cover(Layer(false), false).g, "any other layer");
+            Assert.AreEqual(0.4f, MapTerrainParams.GrassAndSlope(Layer(false), false).r, 1e-5f);
+            Assert.AreEqual(1f, MapTerrainParams.GrassAndSlope(Layer(false), true).g, "the slope layer");
+            Assert.AreEqual(0f, MapTerrainParams.GrassAndSlope(Layer(false), false).g, "any other layer");
         }
 
         private static float BandWidth(float width)

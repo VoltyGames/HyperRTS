@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         [ReadOnly] private ComponentLookup<Inside> _inside;
-        private CoverLookup _cover;
+        private ConcealmentLookup _concealment;
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
         [ReadOnly] private ComponentLookup<PassengerRange> _passengerRange;
         [ReadOnly] private ComponentLookup<VisionRange> _vision;
@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _agents = state.GetComponentLookup<NavAgent>(true);
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _inside = state.GetComponentLookup<Inside>(true);
-            _cover = new CoverLookup(ref state);
+            _concealment = new ConcealmentLookup(ref state);
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _passengerRange = state.GetComponentLookup<PassengerRange>(true);
             _vision = state.GetComponentLookup<VisionRange>(true);
@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _agents.Update(ref state);
             _obstacles.Update(ref state);
             _inside.Update(ref state);
-            _cover.Update(ref state);
+            _concealment.Update(ref state);
             _destructibles.Update(ref state);
             _passengerRange.Update(ref state);
             _vision.Update(ref state);
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             var hostile = relations.IsHostile(attackerFaction, faction.Value);
-            return hostile && !IsHiddenByCover(target, relations.GetTeam(attackerFaction));
+            return hostile && !IsHiddenByConcealment(target, relations.GetTeam(attackerFaction));
         }
 
         /// <summary>
@@ -118,12 +118,12 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public bool Affects(Entity target, in Weapon weapon) =>
             weapon.MinEffect <= 0f || _damage.Armor(target, weapon.Damage.Type) >= weapon.MinEffect;
 
-        /// <summary>Stealthed or concealed from the team (see <see cref="FogOfWar.IsHiddenByCover"/>).</summary>
-        public bool IsHiddenByCover(Entity target, byte team)
+        /// <summary>Stealthed or concealed from the team (see <see cref="FogOfWar.IsHiddenByConcealment"/>).</summary>
+        public bool IsHiddenByConcealment(Entity target, byte team)
         {
-            // Cover first, so uncovered candidates skip the transform lookup.
-            var cover = _cover.Find(target);
-            return cover != Cover.None && _fog.IsHiddenByCover(team, Position(target), cover);
+            // Concealment first, so candidates in the open skip the transform lookup.
+            var concealment = _concealment.Find(target);
+            return concealment != Concealment.None && _fog.IsHiddenByConcealment(team, Position(target), concealment);
         }
 
         /// <summary>
@@ -131,10 +131,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// fog grid, which fog-off maps fill as all-visible.
         /// </summary>
         public bool IsSpotted(Entity target, float3 position, byte team) =>
-            _fog.CanSee(team, position, _cover.Find(target), IsTall(target));
+            _fog.CanSee(team, position, _concealment.Find(target), IsTall(target));
 
         /// <summary>As tall as a vehicle or a building, so seen over low cover (see <see cref="TallTarget"/>).</summary>
-        public bool IsTall(Entity entity) => _cover.IsTall(entity);
+        public bool IsTall(Entity entity) => _concealment.IsTall(entity);
 
         /// <summary>
         /// How far the weapon of <paramref name="shooter"/>, standing at <paramref name="position"/>, reaches
