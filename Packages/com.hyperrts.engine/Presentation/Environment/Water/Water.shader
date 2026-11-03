@@ -7,6 +7,7 @@ Shader "HyperRTS/Water"
     {
         _ScatterColor ("Scatter Color (deep water)", Color) = (0.07, 0.15, 0.14, 1)
         _Absorption ("Absorption per m (RGB)", Vector) = (0.9, 0.5, 0.55, 0)
+        _BedDarkening ("Bed Brightness Under Water", Range(0, 1)) = 0.5
         _Caustics ("Caustics In Shallows", Range(0, 2)) = 0.6
         [Normal] _NormalMap ("Ripples", 2D) = "bump" {}
         _RippleSize ("Ripple Size (m)", Float) = 5
@@ -64,6 +65,7 @@ Shader "HyperRTS/Water"
         CBUFFER_START(UnityPerMaterial)
             half4 _ScatterColor;
             half4 _Absorption;
+            half _BedDarkening;
             half _Caustics;
             float4 _NormalMap_ST;
             float _RippleSize;
@@ -297,6 +299,8 @@ Shader "HyperRTS/Water"
                 bottom *= 1.0 + Caustics(bed.xz, depth) * sun.shadowAttenuation;
 
                 // Light through the water loses red first, so the bed fades into the silt-green the water scatters.
+                // A wet bed is darker than the dry ground the opaque texture shows, from the first centimetres.
+                bottom *= lerp(1.0, _BedDarkening, saturate(depth / 0.1));
                 half3 transmitted = exp(-_Absorption.rgb * depth);
                 half3 body = bottom * transmitted + _ScatterColor.rgb * CloudShade(input.positionWS) * (1.0 - transmitted);
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
