@@ -30,6 +30,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             return Mathf.Lerp(low, high, uz);
         }
 
+        // The PCG hash (permuted congruential generator): one LCG step, then a shift and multiply that scramble the bits.
         private static uint Pcg(uint value)
         {
             var state = value * 747796405u + 2891336453u;
