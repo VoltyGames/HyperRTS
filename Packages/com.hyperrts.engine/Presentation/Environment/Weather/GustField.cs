@@ -72,14 +72,11 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         private static float Lattice(int x, int y, int cells)
         {
-            unchecked
-            {
-                var hash = (uint)(Wrap(x, cells) * 73856093) ^ (uint)(Wrap(y, cells) * 19349663) ^ (uint)(cells * 83492791);
-                hash ^= hash >> 13;
-                hash *= 0x5bd1e995u;
-                hash ^= hash >> 15;
-                return (hash & 0xffffu) / 65535f;
-            }
+            var hash = (uint)(Wrap(x, cells) * 73856093) ^ (uint)(Wrap(y, cells) * 19349663) ^ (uint)(cells * 83492791);
+            hash ^= hash >> 13;
+            hash *= 0x5bd1e995u;
+            hash ^= hash >> 15;
+            return (hash & 0xffffu) / 65535f;
         }
 
         private static int Wrap(int index, int cells) => ((index % cells) + cells) % cells;

@@ -32,12 +32,9 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         private static uint Pcg(uint value)
         {
-            unchecked
-            {
-                var state = value * 747796405u + 2891336453u;
-                var word = ((state >> (int)((state >> 28) + 4u)) ^ state) * 277803737u;
-                return (word >> 22) ^ word;
-            }
+            var state = value * 747796405u + 2891336453u;
+            var word = ((state >> (int)((state >> 28) + 4u)) ^ state) * 277803737u;
+            return (word >> 22) ^ word;
         }
     }
 }

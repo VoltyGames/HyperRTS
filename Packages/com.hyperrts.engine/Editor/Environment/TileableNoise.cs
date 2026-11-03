@@ -201,13 +201,10 @@ namespace HyperRTS.Editor.Environment
 
         private static uint Hash(int x, int y, int seed)
         {
-            unchecked
-            {
-                var hash = (uint)x * 0x8DA6B343u ^ (uint)y * 0xD8163841u ^ (uint)seed * 0xCB1AB31Fu;
-                hash ^= hash >> 13;
-                hash *= 0x5BD1E995u;
-                return hash ^ (hash >> 15);
-            }
+            var hash = (uint)x * 0x8DA6B343u ^ (uint)y * 0xD8163841u ^ (uint)seed * 0xCB1AB31Fu;
+            hash ^= hash >> 13;
+            hash *= 0x5BD1E995u;
+            return hash ^ (hash >> 15);
         }
 
         private static int Wrap(int value, int period) => (value % period + period) % period;
