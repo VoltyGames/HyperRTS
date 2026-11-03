@@ -27,14 +27,14 @@ namespace HyperRTS.Editor.Maps.Views
         private int _settleUntil;
         private int _sampled;
 
-        public MapLookCost(Camera camera, string map, string quality, string weather)
+        public MapLookCost(Camera camera, Material water, string map, string quality, string weather)
         {
             if (!FrameTimingManager.IsFeatureEnabled())
             {
                 throw new InvalidOperationException("HyperRTS: frame timing stats are off, so the cost probe has no GPU times.");
             }
 
-            _switches = new MapLookSwitches(camera);
+            _switches = new MapLookSwitches(camera, water);
             _features = _switches.Names.ToList();
             Summary = new MapLookCostSummary
             {

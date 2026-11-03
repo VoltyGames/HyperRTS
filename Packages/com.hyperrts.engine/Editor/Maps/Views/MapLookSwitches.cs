@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Views
         private readonly Dictionary<string, Action<bool>> _switches = new();
         private Volume _noFog;
 
-        public MapLookSwitches(Camera camera)
+        public MapLookSwitches(Camera camera, Material water)
         {
             AddBehaviours<GrassRenderer>("grass");
             AddBehaviours<RowCropRenderer>("rowCrops");
@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Maps.Views
             AddTrees();
             AddContactShadows();
             AddFog();
-            AddWater();
+            AddWater(water);
             AddAntialiasing(camera);
         }
 
@@ -160,11 +160,11 @@ namespace HyperRTS.Editor.Maps.Views
             _switches["fog"] = on => _noFog.enabled = !on;
         }
 
-        // The river and lake surface the map builder names "Water".
-        private void AddWater()
+        // The river and pond surfaces, drawn with the climate's water material.
+        private void AddWater(Material water)
         {
             var renderers = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)
-                .Where(renderer => renderer.gameObject.name == "Water").ToList();
+                .Where(renderer => renderer.sharedMaterial == water).ToList();
             Add("water", renderers.Count > 0, on =>
             {
                 foreach (var renderer in renderers)

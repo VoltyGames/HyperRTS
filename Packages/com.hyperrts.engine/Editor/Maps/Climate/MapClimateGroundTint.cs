@@ -59,6 +59,12 @@ namespace HyperRTS.Editor.Maps.Climate
         [Tooltip("Wetness (0..1) at the water's edge, fading to nothing over the bank width.")]
         public float bankWetness;
 
+        [Tooltip("Metres of fainter damp ground beyond the bank band, from the water's edge (5 to 10).")]
+        public float dampWidth;
+
+        [Tooltip("Wetness (0..1) of the damp at the water's edge, fading to nothing over the damp width.")]
+        public float dampWetness;
+
         /// <summary>Every field by name, each of which must be above 0.</summary>
         public (string Field, float Value)[] Fields() => new[]
         {
@@ -68,6 +74,7 @@ namespace HyperRTS.Editor.Maps.Climate
             ("soilSize", soilSize), ("soilLight", soilLight), ("soilWarmth", soilWarmth),
             ("soilWetness", soilWetness), ("flowDarkening", flowDarkening), ("flowWetness", flowWetness),
             ("flowGreening", flowGreening), ("bankWidth", bankWidth), ("bankWetness", bankWetness),
+            ("dampWidth", dampWidth), ("dampWetness", dampWetness),
         };
     }
 }

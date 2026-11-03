@@ -49,7 +49,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
         }
 
         /// <summary>How far along x a row's fields are slid, under one field's length.</summary>
-        public float RowShift(int seed, int row) => Hashes.Fraction(ScatterHash.Hash(Salted(seed, RowSalt), row, 0)) * size.x;
+        public float RowShift(int seed, int row) => Hashes.Fraction(ScatterHash.Hash(ScatterHash.Salted(seed, RowSalt), row, 0)) * size.x;
 
         /// <summary>The fields holding <paramref name="area"/> whatever each row's slide: columns along x, rows along y.</summary>
         public RectInt Cells(Rect area)
@@ -91,7 +91,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 texture.SetPixel(i, 0, new Color(crops[i].layer, weights[i] / total, 0f, 0f));
             }
 
-            var (cropSeed, shadeSeed) = (Salted(seed, CropSalt), Salted(seed, ShadeSalt));
+            var (cropSeed, shadeSeed) = (ScatterHash.Salted(seed, CropSalt), ScatterHash.Salted(seed, ShadeSalt));
             for (var row = cells.yMin; row < cells.yMax; row++)
             {
                 var shift = RowShift(seed, row);
@@ -111,8 +111,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
             material.SetTexture(FieldsId, texture);
             return texture;
         }
-
-        private static int Salted(int seed, uint salt) => unchecked((int)((uint)seed ^ salt));
     }
 
     /// <summary>One crop of the horizon's fields: its terrain layer and how often a field grows it.</summary>

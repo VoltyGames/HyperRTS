@@ -12,15 +12,11 @@ namespace HyperRTS.Editor.Maps.Ground
     /// The terrain's ground tint at a map point. RGB 0.5 is neutral; A is wetness. Fields and woods each get their own
     /// tint and a slow gradient across them (strengths from the climate's <see cref="MapClimateGroundTint"/>), blended over
     /// the same border band as the ground textures; soil colour at 20 to 150 m vary light, warmth and moisture within them;
-    /// 10 to 90 m noise breaks up everything; hollows, river banks (a wet band of the climate's `bankWidth`), ravine floors and drainage lines read darker and
+    /// 10 to 90 m noise breaks up everything; hollows, river banks (a wet band of the climate's `bankWidth` over a fainter `dampWidth`), ravine floors and drainage lines read darker and
     /// damper.
     /// </summary>
     public sealed class MapGroundTint
     {
-        // The wider, fainter damp beyond the bank band.
-        private const float WetReach = 7f;
-        private const float DampBeyondBank = 0.45f;
-
         // The tint map's texel, which swath edges soften over.
         private const float Texel = 0.5f;
 
@@ -146,7 +142,7 @@ namespace HyperRTS.Editor.Maps.Ground
         private float Wetness(int region, Vector2 p)
         {
             var edge = _shapes.WaterEdgeDistance(p);
-            var damp = (1f - MapGeometry.Smooth(edge / WetReach)) * DampBeyondBank;
+            var damp = (1f - MapGeometry.Smooth(edge / _strength.dampWidth)) * _strength.dampWetness;
             var bank = (1f - MapGeometry.Smooth(edge / _strength.bankWidth)) * _strength.bankWetness;
             var ravine = region > 0 && _land.Regions[region].Kind == MapLandKind.Ravine;
             return Mathf.Clamp01(Mathf.Max(Mathf.Max(damp, bank), ravine ? 0.25f : 0f));

@@ -50,7 +50,7 @@ namespace HyperRTS.Editor.Maps.Views
 
             project.OpenScene();
 
-            _run = new MapLookRun(project.Spec, Split(weathers), graded, QualityLevel(quality), cost);
+            _run = new MapLookRun(project.Spec, project.Climate.water, Split(weathers), graded, QualityLevel(quality), cost);
             Status = $"Starting {_run.Summary.map}";
             EditorApplication.update += Tick;
             EditorApplication.playModeStateChanged += StopOnExit;

@@ -1,5 +1,5 @@
 // River and lake surface: three scales of spectrum ripples flowing along V (metres), faster mid-channel. Vertex A is
-// how shallow a ford is, G fast water.
+// how shallow a ford is, G fast water, B still water (ponds).
 // Needs the URP asset's Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {

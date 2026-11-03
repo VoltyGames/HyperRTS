@@ -15,10 +15,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         /// <summary>An independent random value per channel from one plant hash.</summary>
         public static uint Channel(uint hash, uint channel) => Pcg(unchecked(hash + channel * 0x9E3779B9u));
 
+        /// <summary>A seed for an independent stream of values from the same map seed.</summary>
+        public static int Salted(int seed, uint salt) => unchecked((int)((uint)seed ^ salt));
+
         /// <summary>Smooth value noise from 0 to 1 on an integer grid.</summary>
         public static float Noise(int seed, uint salt, Vector2 point)
         {
-            var salted = unchecked((int)((uint)seed ^ salt));
+            var salted = Salted(seed, salt);
             var (x, z) = (Mathf.FloorToInt(point.x), Mathf.FloorToInt(point.y));
             var (fx, fz) = (point.x - x, point.y - z);
             var (ux, uz) = (fx * fx * (3f - 2f * fx), fz * fz * (3f - 2f * fz));

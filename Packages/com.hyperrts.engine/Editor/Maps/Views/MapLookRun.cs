@@ -26,6 +26,7 @@ namespace HyperRTS.Editor.Maps.Views
         private const int SettleFrames = 90;
 
         private readonly MapSpec _spec;
+        private readonly Material _water;
         private readonly List<string> _weathers;
         private readonly bool _graded;
         private readonly int _quality;
@@ -42,9 +43,10 @@ namespace HyperRTS.Editor.Maps.Views
         private RenderTexture _target;
         private MapLookCost _costProbe;
 
-        public MapLookRun(MapSpec spec, List<string> weathers, bool graded, int quality, bool cost)
+        public MapLookRun(MapSpec spec, Material water, List<string> weathers, bool graded, int quality, bool cost)
         {
             _spec = spec;
+            _water = water;
             _weathers = weathers;
             _graded = graded;
             _quality = quality;
@@ -147,7 +149,7 @@ namespace HyperRTS.Editor.Maps.Views
             camera.targetTexture = _target;
             if (_cost)
             {
-                _costProbe = new MapLookCost(camera, _spec.name, Summary.quality, keys[0]);
+                _costProbe = new MapLookCost(camera, _water, _spec.name, Summary.quality, keys[0]);
             }
 
             return true;

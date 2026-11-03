@@ -265,7 +265,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
                 regionLight = 0.09f, regionWarmth = 0.06f, gradientLight = 0.025f, gradientWarmth = 0.012f,
                 gradientLength = 260f, hollowDarkening = 0.045f, hollowWetness = 0.3f, soilSize = 140f,
                 soilLight = 0.05f, soilWarmth = 0.03f, soilWetness = 0.25f,
-                bankWidth = 1.5f, bankWetness = 1f,
+                bankWidth = 1.5f, bankWetness = 1f, dampWidth = 7f, dampWetness = 0.45f,
             };
             return climate;
         }
