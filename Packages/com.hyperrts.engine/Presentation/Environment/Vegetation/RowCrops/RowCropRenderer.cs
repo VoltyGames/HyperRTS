@@ -9,8 +9,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
     /// <summary>
     /// Grows a map's row crops on the GPU from <see cref="RowCropFields"/> for each camera about to render, in edit
-    /// mode too, and draws them per distance band. Each camera keeps its own buffers and regrows only when its view,
-    /// the quality settings or the trample map change.
+    /// mode too, and draws them per distance band, with the <see cref="RowCropCanopy"/> past them. Each camera keeps
+    /// its own buffers and regrows only when its view, the quality settings or the trample map change.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("")]
@@ -23,6 +23,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         public RowCropFields fields;
 
         private RowCropComputeInputs _inputs;
+        private RowCropCanopy _canopy;
 
         private protected override ScatterSettings Settings
         {
@@ -38,7 +39,11 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         // Crops bend under the trample map, which changes every frame it is published.
         private protected override bool RegrowsEveryFrame => TrampleSurfaces.TrampleGlobal.Published;
 
-        private protected override void BuildInputs() => _inputs = new RowCropComputeInputs(compute, fields, terrain);
+        private protected override void BuildInputs()
+        {
+            _inputs = new RowCropComputeInputs(compute, fields, terrain);
+            _canopy = new RowCropCanopy(fields, terrain, _inputs);
+        }
 
         private protected override ScatterField Field => fields;
 
@@ -47,11 +52,18 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 
         private protected override void ReleaseInputs()
         {
+            _canopy?.Dispose();
+            _canopy = null;
             _inputs?.Dispose();
             _inputs = null;
         }
 
+        private protected override void DrawAlongside(Camera camera, ScatterSettings settings) =>
+            _canopy.Draw(camera, gameObject.layer, settings);
+
 #if UNITY_EDITOR
+        private protected override bool ReferencesStale() => _canopy.Stale();
+
         private protected override bool Stale(List<RowCropBatch> batches)
         {
             if (batches.Count != fields.crops.Count)

@@ -1,6 +1,6 @@
 // Grows row crop plants for RowCropBatch: Plant runs one thread per lattice spot of a job, dispatched as
 // (spots / 64, 1, jobs), each spot picking its model variant; Count then writes the draw args and clears the counters.
-// Lattice maths match RowCropSpots.Range; hashes, noise and slot counting are in Scatter.hlsl.
+// Lattice maths match RowCropSpots.Range; slot counting is in Scatter.hlsl and the field maths in RowCropField.hlsl.
 #pragma kernel Plant
 #pragma kernel Count
 
@@ -11,6 +11,7 @@ SamplerState sampler_LinearClamp;
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropInstance.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/Scatter.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropField.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BurntPlants.hlsl"
@@ -26,85 +27,26 @@ SamplerState sampler_LinearClamp;
 #define CHANNEL_VARIANT 9u
 #define CHANNEL_LEAN 10u
 #define CHANNEL_LEAN_TURN 11u
-#define CHANNEL_BAND 13u // 12 is RowCropSpots.TramlineChannel
+#define CHANNEL_BAND 13u // 12 is RowCropSpots.TramlineChannel, 14 RowCropField.hlsl's CHANNEL_CANOPY
+#define CHANNEL_SWATH 15u
 #define WANDER_SALT 0x5BD1E995u
-#define GROWTH_SALT 0x27D4EB2Fu
-#define STAGGER_SALT 0x165667B1u
-#define EDGE_REACH 1.5 // metres probed round a plant; a plant this near the field's edge leans the most
 #define EDGE_DITHER 1.5 // metres the field lookup strays, so edges on the 1 m grid look ragged
-#define LODS 3u // RowCropBands.Lods
+#define LODS 2u // RowCropBands.Lods
 #define TRAMLINE_VERGE 0.15 // metres added to a wheel line's half width for the thinnest plants
 #define FADE_SHARE 0.15 // share of the draw distance over which plants shrink away
 
-struct RowCropField // RowCropField.cs, 48 bytes
-{
-    float2 origin;
-    float2 along;
-    float2 across;
-    int crop;
-    int seed;
-    float4 tramlines; // RowCropTramlines: spacing (0 for none), gauge, half width, offset
-};
-
-StructuredBuffer<RowCropField> _Fields;
-Texture2D<float4> _FieldIds;
-
 RWStructuredBuffer<RowCropInstance> _Instances;
 
-float4 _FieldArea;   // x min, z min, texels per metre in x and z
-float4 _FieldTexels; // field id texels across and deep
 float4 _Camera;      // xyz position, w draw distance
 float4 _Planting;    // row spacing, plant spacing, jitter, yaw jitter (radians)
 float4 _Size;        // min scale, max scale, lod0 distance, lod1 distance
 float4 _Variety;     // lean, edge lean (radians), wander metres, 1 / wander length
-float4 _Far;         // share of plants kept and their scale at the simple mesh's far edge, metres thinning starts at
-float4 _Growth;      // min and max growth scale, 1 / growth variation size, scale at the field's edge
+float4 _Far;         // share of plants kept and their scale at the simple mesh's far edge, metres thinning starts at,
+                     // metres before the simple mesh's far edge the plants hand over to the canopy
 float _FacesRow;     // 1: plants face along their row; 0: they keep the model's heading (+Z north)
 float _Density;      // the quality's share of plants
 float _Stand;        // the crop's share of sown spots that came up
 uint _Variants;
-
-// RowCropTramlines.Covers.
-bool OnTramline(float4 tramlines, float across)
-{
-    if (tramlines.x <= 0.0)
-    {
-        return false;
-    }
-
-    float fromLine = across - tramlines.w - floor((across - tramlines.w) / tramlines.x) * tramlines.x;
-    float fromCentre = min(fromLine, tramlines.x - fromLine);
-    return abs(fromCentre - tramlines.y * 0.5) < tramlines.z;
-}
-
-uint FieldAt(float2 spot)
-{
-    int2 texel = (int2)floor((spot - _FieldArea.xy) * _FieldArea.zw);
-    if (any(texel < 0) || any(texel >= (int2)_FieldTexels.xy))
-    {
-        return 0u;
-    }
-
-    float2 bytes = round(_FieldIds.Load(int3(texel, 0)).rg * 255.0);
-    return (uint)bytes.x + (uint)bytes.y * 256u;
-}
-
-// Whether a spot grows the crop, in this field or another of it (a headland sown across the rows).
-float Grows(float2 spot, int crop)
-{
-    uint id = FieldAt(spot);
-    return id != 0u && _Fields[id - 1u].crop == crop ? 1.0 : 0.0;
-}
-
-// Share of four probes round the spot that fall outside its crop.
-float Edge(float2 spot, RowCropField field)
-{
-    float inside = Grows(spot + field.across * EDGE_REACH, field.crop);
-    inside += Grows(spot - field.across * EDGE_REACH, field.crop);
-    inside += Grows(spot + field.along * EDGE_REACH, field.crop);
-    inside += Grows(spot - field.along * EDGE_REACH, field.crop);
-    return 1.0 - inside * 0.25;
-}
 
 float2 Lean(uint hash, float edge, RowCropField field)
 {
@@ -156,10 +98,15 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float2 metres = float2(row * _Planting.x, plant * _Planting.y);
     float wander = (Noise(field.seed, WANDER_SALT, metres * _Variety.w) * 2.0 - 1.0) * _Variety.z;
     float across = (Channel(hash, CHANNEL_ACROSS) * 2.0 - 1.0) * _Planting.z * _Planting.x + wander;
-    // Each row slides by its own share of a spacing, so plant gaps in neighbouring rows don't line up into stripes.
-    float stagger = Channel(Hash(field.seed ^ (int)STAGGER_SALT, row, 0), 0u) - 0.5;
+    float stagger = RowStagger(field, row);
     float along = ((Channel(hash, CHANNEL_ALONG) * 2.0 - 1.0) * _Planting.z + stagger) * _Planting.y;
     if (OnTramline(field.tramlines, row * _Planting.x + across))
+    {
+        return;
+    }
+
+    bool swath = OnSwath(field.swaths, row * _Planting.x + across);
+    if (swath && Channel(hash, CHANNEL_SWATH) >= field.swaths.z)
     {
         return;
     }
@@ -173,7 +120,14 @@ void Plant(uint3 id : SV_DispatchThreadID)
     // On the undented ground: the vertex stage sinks plants into craters with everything else.
     float3 position = float3(xz.x, GroundHeight(xz) + CraterDepth(xz), xz.y);
     float range = length(position - _Camera.xyz);
-    if (range >= _Camera.w)
+    if (range >= _Camera.w || range >= _Size.w)
+    {
+        return;
+    }
+
+    // Over the canopy's fade-in each plant leaves at its own range, so the field hands over without a line.
+    float handover = Handover(_Camera.xyz, position, _Size.w, _Far.w);
+    if (Channel(hash, CHANNEL_CANOPY) < handover)
     {
         return;
     }
@@ -203,7 +157,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float fade = saturate((_Camera.w - range) / (FADE_SHARE * _Camera.w));
     RowCropInstance grown;
     grown.position = position;
-    float growth = lerp(_Growth.x, _Growth.y, Noise(field.seed, GROWTH_SALT, metres * _Growth.z));
+    float growth = FieldGrowth(field, metres);
     // Probing the edge only pays when the field's edge grows or leans differently from its middle.
     bool edged = _Growth.w != 1.0 || _Variety.y != _Variety.x;
     float edge = edged ? Edge(spot, field) : 0.0;
@@ -211,12 +165,14 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float2 forward = _FacesRow > 0.5 ? field.along : float2(0.0, 1.0);
     float2 side = _FacesRow > 0.5 ? field.across : float2(1.0, 0.0);
     grown.facing = forward * cos(turn) + side * sin(turn);
-    grown.trampleDirection = trample.direction;
-    grown.bend = trample.crop;
+    Lodged lodged = Lodging(field, metres);
+    bool lodgedMore = lodged.amount * LODGED_BEND > trample.crop;
+    grown.trampleDirection = lodgedMore ? lodged.direction : trample.direction;
+    grown.bend = lodgedMore ? lodged.amount * LODGED_BEND : trample.crop;
     grown.shade = Channel(hash, CHANNEL_SHADE);
     grown.lean = Lean(hash, edge, field);
     float lodRange = BandRange(range, Channel(hash, CHANNEL_BAND));
-    uint lod = (uint)(lodRange >= _Size.z) + (uint)(lodRange >= _Size.w);
+    uint lod = (uint)(lodRange >= _Size.z);
     uint variant = min((uint)(Channel(hash, CHANNEL_VARIANT) * _Variants), _Variants - 1u);
     Store(variant, lod, grown);
 }

@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 if (surface.swaths.Any)
                 {
                     _swaths[i] = surface.swaths;
-                    _swathOffset[i] = Mathf.Repeat(region.Seed * 0.618034f, 1f) * surface.swaths.spacing;
+                    _swathOffset[i] = surface.swaths.Offset(region.Seed);
                 }
             }
         }

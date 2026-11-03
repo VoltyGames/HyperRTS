@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
 {
-    /// <summary>Row crops: the row lattice split into tiles, per-plant variety from the hash, distance bands and GPU layouts.</summary>
+    /// <summary>Row crops: the row lattice split into tiles, per-plant variety from the hash, plant distance bands and GPU layouts.</summary>
     public class RowCropTests
     {
         private const float RowSpacing = 0.75f;
@@ -94,7 +94,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         [Test]
         public void GpuStructs_MatchTheKernelsLayouts()
         {
-            Assert.AreEqual(48, RowCropField.Stride);
+            Assert.AreEqual(64, RowCropField.Stride);
         }
 
         [Test]
@@ -172,25 +172,23 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         {
             _crop.variants.Add(new RowCropVariant());
             CollectionAssert.Contains(_crop.Problems(), "variants[0].lod0 is missing");
-            CollectionAssert.Contains(_crop.Problems(), "variants[0].card is missing");
+            CollectionAssert.Contains(_crop.Problems(), "variants[0].lod1 is missing");
         }
 
-        [TestCase(0f, 30f, true, false, false, TestName = "Near tile: full meshes only")]
-        [TestCase(30f, 50f, true, true, false, TestName = "Across the first switch: full and simple")]
-        [TestCase(45f, 48f, true, true, false, TestName = "Past the first switch, where plants still mix: full and simple")]
-        [TestCase(110f, 130f, false, true, true, TestName = "Across the second switch: simple and cards")]
-        [TestCase(200f, 220f, false, false, true, TestName = "Far tile: cards only")]
-        public void Bands_FollowTheTilesDistances(float near, float far, bool full, bool simple, bool card)
+        [TestCase(0f, 30f, true, false, TestName = "Near tile: full meshes only")]
+        [TestCase(30f, 50f, true, true, TestName = "Across the first switch: full and simple")]
+        [TestCase(45f, 48f, true, true, TestName = "Past the first switch, where plants still mix: full and simple")]
+        [TestCase(110f, 130f, false, true, TestName = "Across the canopy's fade: simple to its far edge")]
+        [TestCase(200f, 220f, false, false, TestName = "Far tile: canopy only")]
+        public void Bands_FollowTheTilesDistances(float near, float far, bool full, bool simple)
         {
             Assert.AreEqual(full, RowCropBands.InBand(RowCropBands.Full, _crop, 300f, near, far));
             Assert.AreEqual(simple, RowCropBands.InBand(RowCropBands.Simple, _crop, 300f, near, far));
-            Assert.AreEqual(card, RowCropBands.InBand(RowCropBands.Card, _crop, 300f, near, far));
         }
 
         [Test]
         public void Bands_PastTheDrawDistance_AreEmpty()
         {
-            Assert.IsFalse(RowCropBands.InBand(RowCropBands.Card, _crop, 90f, 0f, 500f));
             Assert.IsFalse(RowCropBands.InBand(RowCropBands.Simple, _crop, 30f, 0f, 500f));
             Assert.IsTrue(RowCropBands.InBand(RowCropBands.Full, _crop, 30f, 0f, 500f));
         }
@@ -201,7 +199,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
             Assert.IsTrue(RowCropBands.CastsShadows(RowCropBands.Full, _crop, 300f, 60f));
             Assert.IsFalse(RowCropBands.CastsShadows(RowCropBands.Simple, _crop, 300f, 60f));
             Assert.IsFalse(RowCropBands.CastsShadows(RowCropBands.Full, _crop, 300f, 0f));
-            Assert.IsFalse(RowCropBands.CastsShadows(RowCropBands.Card, _crop, 300f, 60f));
         }
 
         // The spots RowCrops.compute's Plant keeps, one thread per spot of the job.

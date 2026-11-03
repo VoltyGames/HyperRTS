@@ -3,33 +3,23 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
-    /// <summary>The distance bands a crop tile can hold, by the kernel's rule.</summary>
+    /// <summary>The plant distance bands a crop tile can hold, by the kernel's rule. The canopy draws past the last.</summary>
     public static class RowCropBands
     {
-        public const int Lods = 3;
+        public const int Lods = 2;
         public const int Full = 0;
         public const int Simple = 1;
-        public const int Card = 2;
 
         /// <summary>Camera distances (from, to) a band draws over. Empty when it starts past the draw distance.</summary>
         public static (float From, float To) Band(int lod, RowCrop crop, float drawDistance) => lod switch
         {
-            Full => (0f, Mathf.Min(ScatterBands.LastShort(crop.lod0Distance), drawDistance)),
-            Simple => (ScatterBands.FirstPast(crop.lod0Distance),
-                Mathf.Min(ScatterBands.LastShort(crop.lod1Distance), drawDistance)),
-            _ => (ScatterBands.FirstPast(crop.lod1Distance), drawDistance),
+            Full => (0f, Mathf.Min(ScatterBands.LastShort(crop.lod0Distance), crop.lod1Distance, drawDistance)),
+            _ => (ScatterBands.FirstPast(crop.lod0Distance), Mathf.Min(crop.lod1Distance, drawDistance)),
         };
 
-        /// <summary>Whether a band casts shadows: a plant band ends within the shadow distance, a card band when its crop asks.</summary>
-        public static bool CastsShadows(int lod, RowCrop crop, float drawDistance, float shadowDistance)
-        {
-            if (shadowDistance <= 0f)
-            {
-                return false;
-            }
-
-            return lod == Card ? crop.cardShadows : Band(lod, crop, drawDistance).To <= shadowDistance;
-        }
+        /// <summary>Whether a band casts shadows: it ends within the shadow distance.</summary>
+        public static bool CastsShadows(int lod, RowCrop crop, float drawDistance, float shadowDistance) =>
+            shadowDistance > 0f && Band(lod, crop, drawDistance).To <= shadowDistance;
 
         /// <summary>Whether plants between <paramref name="near"/> and <paramref name="far"/> can fall in a band.</summary>
         public static bool InBand(int lod, RowCrop crop, float drawDistance, float near, float far)

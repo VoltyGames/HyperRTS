@@ -18,6 +18,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         private static readonly int SizeId = Shader.PropertyToID("_Size");
         private static readonly int VarietyId = Shader.PropertyToID("_Variety");
         private static readonly int GrowthId = Shader.PropertyToID("_Growth");
+        private static readonly int LodgingId = Shader.PropertyToID("_Lodging");
         private static readonly int StandId = Shader.PropertyToID("_Stand");
         private static readonly int FarId = Shader.PropertyToID("_Far");
         private static readonly int VariantsId = Shader.PropertyToID("_Variants");
@@ -99,9 +100,9 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             Compute.SetVector(SizeId, new Vector4(_crop.scale.x, _crop.scale.y, _crop.lod0Distance, _crop.lod1Distance));
             Compute.SetVector(VarietyId, new Vector4(_crop.lean * Mathf.Deg2Rad, _crop.edgeLean * Mathf.Deg2Rad,
                 _crop.wander, 1f / _crop.wanderLength));
-            var growth = _crop.growthVariation;
-            Compute.SetVector(GrowthId, new Vector4(growth.x, growth.y, 1f / _crop.growthVariationSize, _crop.edgeGrowth));
-            Compute.SetVector(FarId, new Vector4(_crop.farShare, _crop.farScale, _crop.thinStart, 0f));
+            Compute.SetVector(GrowthId, _crop.Growth);
+            Compute.SetVector(LodgingId, _crop.Lodging);
+            Compute.SetVector(FarId, new Vector4(_crop.farShare, _crop.farScale, _crop.thinStart, _crop.canopyFade));
             Compute.SetFloat(StandId, _crop.stand);
             Compute.SetInt(VariantsId, _variants);
         }
@@ -123,7 +124,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         {
             var lod = slot % RowCropBands.Lods;
             var casts = RowCropBands.CastsShadows(lod, _crop, _settings.Distance, _settings.ShadowDistance);
-            return new RenderParams(lod == RowCropBands.Card ? _crop.cardMaterial : _crop.material)
+            return new RenderParams(_crop.material)
             {
                 worldBounds = _bands[lod],
                 shadowCastingMode = casts ? ShadowCastingMode.On : ShadowCastingMode.Off,

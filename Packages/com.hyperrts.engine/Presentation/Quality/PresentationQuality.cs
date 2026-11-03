@@ -37,8 +37,11 @@ namespace HyperRTS.Presentation.Quality
         /// <summary>Metres row crops are drawn to.</summary>
         public float CropDistance;
 
-        /// <summary>Metres row crops cast shadows to, 0 for none. A crop band casts only when it ends within it.</summary>
+        /// <summary>Metres row crop plants cast shadows to, 0 for none. A plant band casts only when it ends within it.</summary>
         public float CropShadowDistance;
+
+        /// <summary>How the row crop canopy past the plants is drawn.</summary>
+        public CanopyQuality CropCanopy;
 
         /// <summary>
         /// Share of close-up detail grown, 0 to 1: close-only plants draw above 0, and clutter plants are thinned to
@@ -67,6 +70,7 @@ namespace HyperRTS.Presentation.Quality
             CropDensity = 1f,
             CropDistance = 300f,
             CropShadowDistance = 60f,
+            CropCanopy = CanopyQuality.SelfShadowed,
             CloseDetail = 1f,
             WaterCaustics = true,
             RenderScale = 1f,
@@ -84,6 +88,12 @@ namespace HyperRTS.Presentation.Quality
         // No keyword means caustics on, so edit mode and map captures, which run without the game, show them.
         private static readonly GlobalKeyword NoCaustics = GlobalKeyword.Create("_WATER_NO_CAUSTICS");
 
+        private static readonly GlobalKeyword CanopyParallax = GlobalKeyword.Create("_CANOPY_PARALLAX");
+        private static readonly GlobalKeyword CanopySelfShadow = GlobalKeyword.Create("_CANOPY_SELF_SHADOW");
+
+        /// <summary>Whether the canopy casts shadows at this quality.</summary>
+        public bool CanopyCastsShadows => CropCanopy >= CanopyQuality.Shadowed;
+
         private void Check()
         {
             Require(GrassDensity is >= 0f and <= 1f, nameof(GrassDensity), GrassDensity, "0 to 1");
@@ -93,10 +103,11 @@ namespace HyperRTS.Presentation.Quality
             Require(CropDistance > 0f, nameof(CropDistance), CropDistance, "above 0");
             Require(CropShadowDistance >= 0f, nameof(CropShadowDistance), CropShadowDistance, "not negative");
             Require(CloseDetail is >= 0f and <= 1f, nameof(CloseDetail), CloseDetail, "0 to 1");
+            Require(System.Enum.IsDefined(typeof(CanopyQuality), CropCanopy), nameof(CropCanopy), (float)CropCanopy, "a CanopyQuality");
         }
 
         /// <summary>
-        /// Throws naming the first bad knob before anything is written, then sets the terrain keywords, the render
+        /// Throws naming the first bad knob before anything is written, then sets the terrain and canopy keywords, the render
         /// scale and <see cref="Current"/>. Shadows and the rest of the pipeline come from the quality level's URP
         /// asset, so set the quality level first.
         /// </summary>
@@ -106,6 +117,7 @@ namespace HyperRTS.Presentation.Quality
             var pipeline = ActivePipeline();
             TerrainDetail.SetKeywords(quality.Ground);
             Shader.SetKeyword(NoCaustics, !quality.WaterCaustics);
+            SetCanopyKeywords(quality.CropCanopy);
             if (AuthoredScales.Count == 0)
             {
                 Application.quitting += RestoreScales;
@@ -118,7 +130,17 @@ namespace HyperRTS.Presentation.Quality
 
         // Global keywords outlive Play mode in the editor.
         [OnEnteringPlayMode]
-        private static void ResetCaustics() => Shader.SetKeyword(NoCaustics, !Default.WaterCaustics);
+        private static void ResetKeywords()
+        {
+            Shader.SetKeyword(NoCaustics, !Default.WaterCaustics);
+            SetCanopyKeywords(Default.CropCanopy);
+        }
+
+        private static void SetCanopyKeywords(CanopyQuality canopy)
+        {
+            Shader.SetKeyword(CanopyParallax, canopy >= CanopyQuality.Parallax);
+            Shader.SetKeyword(CanopySelfShadow, canopy == CanopyQuality.SelfShadowed);
+        }
 
         private static void RestoreScales()
         {

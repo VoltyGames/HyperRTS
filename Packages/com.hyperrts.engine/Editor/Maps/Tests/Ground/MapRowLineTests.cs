@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Tests.Ground
 {
-    /// <summary>Lines along a sown field's rows in every copy: tramlines bare of crops, and lighter, thinner harvest swaths.</summary>
+    /// <summary>Lines along a sown field's rows in every copy: tramlines bare of crops, and lighter, thinner harvest swaths the crop thins on too.</summary>
     public class MapRowLineTests : TemplateFixture
     {
         private const float Spacing = 12f;
@@ -95,6 +95,30 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             }
 
             Assert.That(lighter / (float)samples, Is.InRange(0.25f, 0.42f), "a 3 m swath every 9 m");
+            CropSwathsMatchTheStripes(MapCropPainter.Paint(land, layout.Symmetry, climate, (_, _, _) => false), land, lines, field);
+        }
+
+        // The row crop thins on the same stripes the ground tint lightens, in every copy.
+        private static void CropSwathsMatchTheStripes(MapCropBake bake, MapLand land, MapRowLines lines, int field)
+        {
+            for (var f = 0; f < bake.Fields.Count; f++)
+            {
+                var lattice = bake.Fields[f];
+                for (var x = 24f; x < 56f; x += 0.25f)
+                {
+                    foreach (var p in new[] { new Vector2(x, 40f), new Vector2(-x, -40f) })
+                    {
+                        var stripe = lines.Swath(field, p);
+                        var clear = stripe < 0.1f || stripe > 0.9f;
+                        if (clear && Sown(bake, land, p, f))
+                        {
+                            var across = Vector2.Dot(p - lattice.origin, lattice.across);
+                            Assert.AreEqual(stripe > 0.5f, lattice.swaths.Covers(across), $"crop swath at {p}");
+                            Assert.AreEqual(0.4f, lattice.swaths.plants);
+                        }
+                    }
+                }
+            }
         }
 
         private static MapClimate Climate(RowCrop crop)

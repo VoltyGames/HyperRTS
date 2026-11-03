@@ -37,7 +37,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             get
             {
                 var height = 0f;
-                crops.ForEach(crop => height = Mathf.Max(height, crop.height * Mathf.Max(1f, crop.growthVariation.y)));
+                crops.ForEach(crop => height = Mathf.Max(height, crop.CanopyRise));
                 return height;
             }
         }
@@ -47,6 +47,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
             if (fieldIds == null)
             {
                 problems.Add($"{nameof(fieldIds)} is missing");
+            }
+            else if (!fieldIds.isReadable)
+            {
+                problems.Add($"{nameof(fieldIds)} '{fieldIds.name}' is not readable: the canopy is cut from it on the CPU");
             }
 
             for (var i = 0; i < crops.Count; i++)

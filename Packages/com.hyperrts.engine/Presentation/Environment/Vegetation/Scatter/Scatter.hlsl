@@ -1,11 +1,11 @@
-// Jobs, seeded hashes and noise, band edges, terrain height and the slot layout and counting shared by RowCrops.compute and
-// Grass.compute. The job matches ScatterJob.cs and the hashes and noise ScatterHash.cs, the band edges ScatterBands.cs; ScatterDraws.cs binds the
-// jobs, counters and args and ScatterSlots.cs the slots.
+// Jobs, band edges, terrain height and the slot layout and counting shared by RowCrops.compute and Grass.compute, with
+// ScatterNoise.hlsl's hashes and noise. The job matches ScatterJob.cs and the band edges ScatterBands.cs; ScatterDraws.cs
+// binds the jobs, counters and args and ScatterSlots.cs the slots.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHeight.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/ScatterNoise.hlsl"
 
 struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
 {
@@ -36,23 +36,6 @@ uint _SlotCount;
 RWStructuredBuffer<uint> _Counters; // plants grown per slot this run
 RWStructuredBuffer<DrawArgs> _Args;
 float _TileSize;
-
-uint Hash(int seed, int row, int plant)
-{
-    return Pcg3(asuint(int3(seed, row, plant)));
-}
-
-// Smooth value noise from 0 to 1 on an integer grid.
-float Noise(int seed, uint salt, float2 p)
-{
-    int salted = asint(asuint(seed) ^ salt);
-    int2 cell = (int2)floor(p);
-    float2 f = p - floor(p);
-    float2 u = f * f * (3.0 - 2.0 * f);
-    float low = lerp(Unit(Hash(salted, cell.x, cell.y)), Unit(Hash(salted, cell.x + 1, cell.y)), u.x);
-    float high = lerp(Unit(Hash(salted, cell.x, cell.y + 1)), Unit(Hash(salted, cell.x + 1, cell.y + 1)), u.x);
-    return lerp(low, high, u.y);
-}
 
 #define BAND_EDGE_WIDTH 0.4 // ScatterBands.EdgeWidth
 

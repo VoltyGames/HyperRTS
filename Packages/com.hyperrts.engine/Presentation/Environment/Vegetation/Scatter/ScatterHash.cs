@@ -4,7 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 {
     /// <summary>
-    /// Scatter.hlsl's hashes and noise in C# for the CPU and tests: hashing seed and indices makes symmetric copies
+    /// ScatterNoise.hlsl's hashes and noise in C# for the CPU and tests: hashing seed and indices makes symmetric copies
     /// of a map match.
     /// </summary>
     public static class ScatterHash
