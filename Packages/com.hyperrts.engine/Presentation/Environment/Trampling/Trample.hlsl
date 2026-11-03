@@ -7,9 +7,6 @@
 
 #define TRAMPLE_MAX_BEND 1.4
 #define CRATER_TAP_TEXELS 1.5
-// Where the stamped rut ramp (TrampleBrush.shader) turns into the rut's edge, and the ramp height that is fully dark.
-#define RUT_EDGE 0.1
-#define RUT_FULL 0.4
 
 struct TrampleSample
 {

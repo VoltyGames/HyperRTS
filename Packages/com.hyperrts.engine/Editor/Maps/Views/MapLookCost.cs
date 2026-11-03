@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Views
     /// Measures one look view's median GPU and main-thread frame time with everything on, then with each feature off
     /// in turn, a few frames at a time as the run steps.
     /// </summary>
-    internal sealed class MapLookCost
+    internal sealed class MapLookCost : IDisposable
     {
         public const int Frames = 120;
 
@@ -27,22 +27,24 @@ namespace HyperRTS.Editor.Maps.Views
         private int _settleUntil;
         private int _sampled;
 
-        public MapLookCost(MapLookSwitches switches, string map, string quality, string weather)
+        public MapLookCost(Camera camera, string map, string quality, string weather)
         {
             if (!FrameTimingManager.IsFeatureEnabled())
             {
                 throw new InvalidOperationException("HyperRTS: frame timing stats are off, so the cost probe has no GPU times.");
             }
 
-            _switches = switches;
-            _features = switches.Names.ToList();
+            _switches = new MapLookSwitches(camera);
+            _features = _switches.Names.ToList();
             Summary = new MapLookCostSummary
             {
-                map = map, quality = quality, weather = weather, frames = Frames, skipped = switches.Missing,
+                map = map, quality = quality, weather = weather, frames = Frames, skipped = _switches.Missing,
             };
         }
 
         public MapLookCostSummary Summary { get; }
+
+        public void Dispose() => _switches.Dispose();
 
         /// <summary>Advances the measurement of a view by a frame; true when its point is complete.</summary>
         public bool Measure(string point, float zoom)

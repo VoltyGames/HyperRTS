@@ -8,6 +8,12 @@
 // Metres a full tracks alpha means; deeper craters clip. Matches TrampleStamps.MaxCraterDepth.
 #define HYPERRTS_MAX_CRATER_DEPTH 2.0
 
+// The rut ramp the brush stamps rises by RUT_RAMP across the rut; the ground reads it as rut from RUT_EDGE and fully
+// dark from RUT_FULL, so the edge sits at 1 - RUT_EDGE / RUT_RAMP of the half width.
+#define RUT_RAMP 1.5
+#define RUT_EDGE 0.1
+#define RUT_FULL 0.4
+
 TEXTURE2D(_HyperRTSTrample);
 TEXTURE2D(_HyperRTSTracks);
 TEXTURE2D(_HyperRTSWake);

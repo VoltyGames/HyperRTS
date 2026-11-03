@@ -158,21 +158,27 @@ Shader "HyperRTS/HorizonGround"
             HorizonField field = FieldAt(positionXZ);
             float2 footprint = fwidth(field.grid);
             float blur = max(footprint.x, footprint.y);
-            float margin = _FieldMargin.x;
-            half marginWeight = 1.0 - smoothstep(margin - blur, margin + blur, FieldEdge(field));
-
-            half3 crop = LayerAlbedo(field.texel.r, positionXZ);
-            half3 near = lerp(crop, LayerAlbedo(_FieldMargin.y, positionXZ), marginWeight);
-            near *= 1.0 + (field.texel.g - 0.5) * 2.0 * _Variation;
-
             half far = saturate(blur / (min(size.x, size.y) * HORIZON_MEAN_FOOTPRINT));
-            [branch] if (far > 0.0)
+            half3 albedo;
+            [branch] if (far < 1.0)
             {
-                near = lerp(near, FarmlandMean(), far);
+                float margin = _FieldMargin.x;
+                half marginWeight = 1.0 - smoothstep(margin - blur, margin + blur, FieldEdge(field));
+                half3 crop = LayerAlbedo(field.texel.r, positionXZ);
+                albedo = lerp(crop, LayerAlbedo(_FieldMargin.y, positionXZ), marginWeight);
+                albedo *= 1.0 + (field.texel.g - 0.5) * 2.0 * _Variation;
+                [branch] if (far > 0.0)
+                {
+                    albedo = lerp(albedo, FarmlandMean(), far);
+                }
+            }
+            else
+            {
+                albedo = FarmlandMean();
             }
 
             half broad = ValueNoise(positionXZ / _VariationSize);
-            return near * (1.0 + (broad - 0.5) * _Variation);
+            return albedo * (1.0 + (broad - 0.5) * _Variation);
         }
         ENDHLSL
 

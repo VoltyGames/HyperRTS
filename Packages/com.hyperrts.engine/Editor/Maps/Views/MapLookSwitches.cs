@@ -49,8 +49,14 @@ namespace HyperRTS.Editor.Maps.Views
 
         public void Set(string feature, bool on) => _switches[feature](on);
 
+        /// <summary>Turns every feature back on, since a failure can leave one off mid-measurement.</summary>
         public void Dispose()
         {
+            foreach (var set in _switches.Values)
+            {
+                set(true);
+            }
+
             if (_noFog != null)
             {
                 Object.Destroy(_noFog.sharedProfile);

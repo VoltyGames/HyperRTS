@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -45,8 +46,7 @@ namespace HyperRTS.Presentation.Rendering
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            var cameraType = renderingData.cameraData.cameraType;
-            var shown = cameraType == CameraType.Game || cameraType == CameraType.SceneView;
+            var shown = SceneCameras.Shown(renderingData.cameraData.cameraType);
             if (_pass == null || !shown || strength <= 0f || !RunsAt(QualitySettings.GetQualityLevel()))
             {
                 return;

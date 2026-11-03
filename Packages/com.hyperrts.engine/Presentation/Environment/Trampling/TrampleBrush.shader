@@ -15,7 +15,6 @@ Shader "Hidden/HyperRTS/Trample Brush"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/TrampleGlobals.hlsl"
 
-        #define RUT_RAMP 1.5 // Matches RUT_EDGE in Trample.hlsl.
 
         // Matches TrampleStamp.cs.
         struct TrampleStamp

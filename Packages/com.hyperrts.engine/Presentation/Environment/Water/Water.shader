@@ -311,11 +311,12 @@ Shader "HyperRTS/Water"
                 // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
                 half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
                 half4 scene = half4(0.0, 0.0, 0.0, 0.0);
-                if (_ReflectionStrength > 0.0)
+                // The sharp march can't blur, so a rougher surface hands the reflection over to the blurred sky.
+                half sharpness = saturate((smoothness - _SmoothnessFar) / max(_Smoothness - _SmoothnessFar, 0.001));
+                [branch] if (_ReflectionStrength > 0.0 && sharpness > 0.0)
                 {
                     scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
-                    // The sharp march can't blur, so a rougher surface hands the reflection over to the blurred sky.
-                    scene.a *= saturate((smoothness - _SmoothnessFar) / max(_Smoothness - _SmoothnessFar, 0.001));
+                    scene.a *= sharpness;
                 }
 
                 half3 reflection = lerp(sky, RemoveAtmosphereFog(scene.rgb, fog.atmosphere), scene.a * _ReflectionStrength);

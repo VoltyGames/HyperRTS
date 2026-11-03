@@ -40,7 +40,6 @@ namespace HyperRTS.Editor.Maps.Views
         private WeatherSet _weatherSet;
         private Volume _ungraded;
         private RenderTexture _target;
-        private MapLookSwitches _switches;
         private MapLookCost _costProbe;
 
         public MapLookRun(MapSpec spec, List<string> weathers, bool graded, int quality, bool cost)
@@ -76,14 +75,13 @@ namespace HyperRTS.Editor.Maps.Views
 
             if (_readyFrame >= 0)
             {
-                if (_cost && !_costProbe.Measure(_plan[_next].look.name, _plan[_next].zoom))
-                {
-                    return false;
-                }
-
-                if (!_cost)
+                if (_costProbe == null)
                 {
                     Shoot(_plan[_next]);
+                }
+                else if (!_costProbe.Measure(_plan[_next].look.name, _plan[_next].zoom))
+                {
+                    return false;
                 }
 
                 _next++;
@@ -149,8 +147,7 @@ namespace HyperRTS.Editor.Maps.Views
             camera.targetTexture = _target;
             if (_cost)
             {
-                _switches = new MapLookSwitches(camera);
-                _costProbe = new MapLookCost(_switches, _spec.name, Summary.quality, keys[0]);
+                _costProbe = new MapLookCost(camera, _spec.name, Summary.quality, keys[0]);
             }
 
             return true;
@@ -206,16 +203,7 @@ namespace HyperRTS.Editor.Maps.Views
                 Object.Destroy(_target);
             }
 
-            if (_costProbe != null)
-            {
-                // A failure can leave a feature off in the middle of its measurement.
-                foreach (var feature in _switches.Names)
-                {
-                    _switches.Set(feature, true);
-                }
-
-                _switches.Dispose();
-            }
+            _costProbe?.Dispose();
 
             if (_ungraded != null)
             {

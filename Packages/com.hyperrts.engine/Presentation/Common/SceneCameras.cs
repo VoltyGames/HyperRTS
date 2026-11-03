@@ -11,10 +11,13 @@ namespace HyperRTS.Presentation.Common
         /// </summary>
         public static bool Draws(Camera camera, GameObject owner)
         {
-            var kind = camera.cameraType is CameraType.Game or CameraType.SceneView;
+            var kind = Shown(camera.cameraType);
             var seesLayer = (camera.cullingMask & (1 << owner.layer)) != 0;
             var ownScene = !camera.scene.IsValid() || camera.scene == owner.scene;
             return kind && seesLayer && ownScene;
         }
+
+        /// <summary>True for the Game and Scene view cameras a player or designer looks through.</summary>
+        public static bool Shown(CameraType type) => type is CameraType.Game or CameraType.SceneView;
     }
 }

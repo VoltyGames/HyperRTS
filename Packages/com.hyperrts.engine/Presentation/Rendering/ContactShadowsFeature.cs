@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -104,7 +105,7 @@ namespace HyperRTS.Presentation.Rendering
 
             var cameraData = renderingData.cameraData;
             var perspective = !cameraData.camera.orthographic;
-            var shown = cameraData.cameraType == CameraType.Game || cameraData.cameraType == CameraType.SceneView;
+            var shown = SceneCameras.Shown(cameraData.cameraType);
             if (!perspective || !shown)
             {
                 return false;
