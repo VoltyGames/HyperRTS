@@ -6,7 +6,6 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Report;
-using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Simulation.Destruction;
 using NUnit.Framework;
