@@ -9,10 +9,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class RowCrop : ScriptableObject
     {
-        /// <summary>Extra lengths of canopyFade the hand-off reaches nearer at the flattest view (RowCropField.hlsl's HANDOVER_WIDEN).</summary>
-        public const float GrazingWiden = 1.5f;
-
-        /// <summary>Metres of field lattice that hold at most one lodged patch (RowCropField.hlsl's LODGING_CELL).</summary>
+        /// <summary>Metres of field lattice that hold at most one lodged patch (RowCrops.compute's LODGING_CELL).</summary>
         public const float LodgingCell = 30f;
 
         [Header("Meshes")]
@@ -21,9 +18,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 
         [Tooltip("HyperRTS/RowCrop material of both plant meshes.")]
         public Material material;
-
-        [Tooltip("HyperRTS/RowCropCanopy material of the raised field surface drawn past the plants. Empty for a crop drawn by its plants alone, which leave over canopyFade before lod1Distance, as stubble does where the terrain carries it at range.")]
-        public Material canopyMaterial;
 
         [Header("Planting")]
         [Tooltip("Metres between rows.")]
@@ -78,7 +72,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Bare margin in metres round field edges, roads and placed objects.")]
         public float edgeMargin = 0.6f;
 
-        [Tooltip("Share of the field's 30 m stretches holding a patch flattened by wind and rain, where plants lie over one way and the canopy drops. 0 for none.")]
+        [Tooltip("Share of the field's 30 m stretches holding a patch flattened by wind and rain, where plants lie over one way. 0 for none.")]
         [Range(0f, 1f)]
         public float lodging;
 
@@ -92,7 +86,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Metres from the camera the full mesh is drawn to.")]
         public float lod0Distance = 40f;
 
-        [Tooltip("Metres from the camera the simple mesh is drawn to. The canopy draws past it.")]
+        [Tooltip("Metres from the camera the simple mesh is drawn to. Plants shrink away toward it, as at the draw distance.")]
         public float lod1Distance = 120f;
 
         [Tooltip("Metres from the camera plants start to thin out, from every plant kept to the far share at the simple mesh's far edge.")]
@@ -106,37 +100,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Range(1f, 2f)]
         public float farScale = 1f;
 
-        [Header("Canopy")]
-        [Tooltip("Rows across the canopy texture's tile.")]
-        [Min(1)]
-        public int canopyRows = 12;
-
-        [Tooltip("Plants along a row of the canopy texture's tile.")]
-        [Min(1)]
-        public int canopyPlants = 28;
-
-        [Tooltip("Metres before the simple mesh's far edge over which the plants leave and the canopy rises to its height.")]
-        public float canopyFade = 10f;
-
         /// <summary>Square metres each plant takes.</summary>
         public float PlantArea => rowSpacing * plantSpacing;
 
-        /// <summary>Whether the crop has a canopy past its plants; without one its plants just leave.</summary>
-        public bool HasCanopy => canopyMaterial != null;
-
-        /// <summary>Metres the canopy texture's tile spans: x across the rows, y along them.</summary>
-        public Vector2 CanopyTile => new(canopyRows * rowSpacing, canopyPlants * plantSpacing);
-
-        /// <summary>Growth variation as the kernel and the canopy read it: min and max scale, 1 / stretch size, edge scale.</summary>
+        /// <summary>Growth variation as the kernel reads it: min and max scale, 1 / stretch size, edge scale.</summary>
         public Vector4 Growth => new(growthVariation.x, growthVariation.y, 1f / growthVariationSize, edgeGrowth);
 
-        /// <summary>Metres the canopy rises to at most: the height times the tallest growth.</summary>
-        public float CanopyRise => height * Mathf.Max(1f, growthVariation.y);
-
-        /// <summary>The nearest the canopy starts to rise: at the flattest view the hand-off band reaches furthest in.</summary>
-        public float CanopyStart => lod1Distance - canopyFade * (1f + GrazingWiden);
-
-        /// <summary>Lodging as the kernel and the canopy read it: patch share, smallest and largest patch across.</summary>
+        /// <summary>Lodging as the kernel reads it: patch share, smallest and largest patch across.</summary>
         public Vector4 Lodging => new(lodging, lodgedSize.x, lodgedSize.y, 0f);
 
         /// <summary>Problems that keep the crop from drawing, one per line. Empty when ready.</summary>
@@ -171,11 +141,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
                 $"{nameof(thinStart)} {thinStart} must be 0 to {nameof(lod1Distance)} {lod1Distance}");
             Require(problems, lod1Distance > lod0Distance,
                 $"{nameof(lod1Distance)} {lod1Distance} must be above {nameof(lod0Distance)} {lod0Distance}");
-            // An empty canopyMaterial is a choice, not a gap: the plants alone draw the crop and its tile goes unused.
-            Require(problems, !HasCanopy || (canopyRows >= 1 && canopyPlants >= 1),
-                $"{nameof(canopyRows)} {canopyRows} and {nameof(canopyPlants)} {canopyPlants} must be at least 1");
-            Require(problems, canopyFade > 0f && CanopyStart >= lod0Distance,
-                $"{nameof(canopyFade)} {canopyFade} must be above 0 and end the fade no nearer than {nameof(lod0Distance)} {lod0Distance}");
             return problems;
         }
 

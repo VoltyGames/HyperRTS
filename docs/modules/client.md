@@ -400,7 +400,6 @@ is the `SectionLook` buffer.
 | `HyperRTS/Foliage` | Alpha-cut plants and tree leaves with wind, trample, translucency and dry and green patches. Lit by the sun, Forward+ point and spot lights (per vertex on scattered grass) and Surface Cache GI. Sunlight also passes through to a leaf's side facing away from the sun whatever the view, tinted by its colour twice and partly through its own shadow, so the far side of a crown glows from above; a normalised Blinn-Phong sheen with Fresnel replaces a plain glint. `_ClusterVariation` lightens, darkens or dries each leaf card of a tree by its pivot, so a crown reads as clumps |
 | `HyperRTS/Bark` | Opaque tree bark with wind. Mask map: R metallic, G AO, A smoothness |
 | `HyperRTS/RowCrop` | GPU-placed field crops. See [row crops](#row-crops) |
-| `HyperRTS/RowCropCanopy` | The raised field surface past a crop's plants, with parallax depth and walls. See [canopy](#canopy) |
 | `HyperRTS/Bird` | Unlit alpha-cut bird quads, each picking its wing pose from a 2x2 flipbook |
 
 Instances built on the CPU each frame (overlays, health bars, ground markers, birds) go through `InstanceBuffer<T>`: a
@@ -510,10 +509,6 @@ collides, navigates or casts a shadow. It builds the ring (`HorizonRing`), the f
   metres along and tall) stands as two staggered layers of upright quads along a share of row edges without tracks,
   from 150 m past the terrain out to the ring's end, with gaps where tracks cross. Each stretch picks its strip by
   hash. A climate whose kits have no strip draws no belts.
-- **Raised crops.** `HorizonRaisedFields` raises each field whose crop (`HorizonCrop.crop`) is a row crop with a
-  canopy: a box at the crop's height inside the field's margins, following the land, with walls that shade the ground
-  beside it. `HyperRTS/HorizonCrop` draws it in the crop's canopy and wall textures with rows along the field grid, no
-  parallax, fading to the crop's mean colour far off. One draw per crop; these are the horizon's only shadow casters.
 
 ### Contact shadows
 
@@ -662,13 +657,11 @@ spreads out and relaxes over about a second. Plants lean away from them and tree
 
 Fields of crops in rows, placed and drawn on the GPU, so no crop is an object. The map tools add a `RowCropRenderer`
 to each map scene and bake its `RowCropFields`: which field covers each metre, and each field's crop, row
-direction, tramlines and swaths. A field's `RowCropTramlines` are pairs of wheel lines along its rows where no plant
-grows; the map tools paint the same lines into the terrain. Its `RowCropSwaths` are harvest stripes where only a
-share of the plants stand, on the stripes the ground tint lightens. A crop with no `canopyMaterial` is drawn by its
-plants alone, which leave over `canopyFade` before `lod1Distance`, and `RowCropCanopy` cuts no mesh for it.
+direction and tramlines. A field's `RowCropTramlines` are pairs of wheel lines along its rows where no plant grows;
+the map tools paint the same lines into the terrain.
 
-A `RowCrop` asset describes one crop: model variants with full and simple meshes, the plant and canopy materials, row
-and plant spacing, random scale, turn and lean, two LOD distances and the canopy tile and fade. Variant meshes face +Z with the origin at the root.
+A `RowCrop` asset describes one crop: model variants with full and simple meshes, a material, row and plant spacing,
+random scale, turn and lean, lodging and two LOD distances. Variant meshes face +Z with the origin at the root.
 Each row slides along its line by its own share of a plant spacing, so the gaps between plants in neighbouring rows
 don't line up into stripes across the field. `stand` leaves gaps where sown spots never came up, and `edgeGrowth`
 shrinks plants at the field's edge, where they lean the most. `edgeMargin` keeps a field off ground that grows no
@@ -685,7 +678,7 @@ like grass.
 
 A camera regrows the plants of its visible tiles when it moves, the quality changes or new ash falls, and every frame
 while a trample map is published (`RowCropRenderer.RegrowsEveryFrame`; grass doesn't read that map). Trampled plants bend or disappear, and none grow under a building's footprint. Plants
-shrink away over the last 15 % of the draw distance. Each plant switches model at its own distance, up to 20 % either
+shrink away over the last 15 % before `lod1Distance` or the draw distance, whichever is nearer. Each plant switches model at its own distance, up to 20 % either
 side of the LOD distances, so the models mix over a stretch rather than meeting at a ring that sweeps across the field
 as the camera zooms. It also runs in edit mode.
 
@@ -695,39 +688,8 @@ kept ones grow to `farScale` to cover the gaps. Plants cost their triangles in e
 far fields: a field costs about the square of its reach. Crops cast shadows only from the bands that end within
 `PresentationQuality.CropShadowDistance` (`RowCropBands.CastsShadows`).
 
-#### Canopy
-
-Past `lod1Distance` a crop is drawn as its canopy, a raised field surface. `RowCropCanopy` cuts it when the renderer
-builds its inputs, from the field id picture (which must be readable) and the terrain's heights, read once: marching
-squares over a 3 by 3 smoothed mask of the crop's texels (`RowCropCanopyShape`), so outlines run diagonally rather
-than in 1 m steps, one mesh per crop per 64 m block. The top lies on the ground and the shader raises it; walls hang
-from the outline to 0.3 m under the ground, their texture's distance chained along each outline
-(`RowCropCanopyOutline`) and stretched to whole tiles round a closed loop. Each vertex carries its rise, wall flag,
-wall distance and field id (`RowCropCanopyGeometry`). The meshes live in memory only and each camera draws the blocks
-between the crop's fade-in and the draw distance.
-
-`HyperRTS/RowCropCanopy` finds each pixel's field as the kernel does and lays the canopy tile on its rows
-(`canopyRows` by `canopyPlants` spacings, lattice spot (0, 0) at UV (0, 0), U across the rows). Its height is the
-tile's alpha times the crop's height and the plants' growth noise; trampling bends it down and thins it, ash and
-building footprints clear it, wheel lines and soil show the map's ground colour, and craters sink it. Gusts brighten
-the tops (`_WindSheen`), rain darkens them, and it is lit with the plants' `PlantLighting.hlsl`. Over `canopyFade`
-metres before `lod1Distance` plants drop by their own hash channel while the canopy rises from the ground to its
-height, so the last plants stand in it rather than over holes; toward the draw distance it leaves plant by plant.
-`PresentationQuality.CropCanopy` (`CanopyQuality`) sets its shadows and the global keywords `_CANOPY_PARALLAX` (a
-march of 6 to `_ParallaxSteps` samples down the view ray, fading flat at grazing views, with the traced depth written
-as conservative depth in the forward and depth passes) and `_CANOPY_SELF_SHADOW` (five samples toward the sun).
-The sun's shadow map is read on the drawn top, which is what casts, a metre toward the sun, picking the cascade
-itself since screen-space shadows compile without the cascade keyword. Shading follows the plants': `_CanopyShade`
-below the heads, the sun thinning into the crop by `_SunDepth` (faster for a low sun), the baked occlusion on the
-ambient light alone (`_BakedOcclusion`), and a slanted view losing the soil between the rows behind the stalks it
-crosses, as the tile is baked from straight above. Seen flatter still (from 0.7 down to 0.25 of the view pointing
-down), it shows the sides of the heads instead: the wall texture's upper row, marked by the tile's height, with
-occlusion and soil fading out. Toward flat views the hand-off band also reaches up to `RowCrop.GrazingWiden` more
-lengths nearer (`Handover` in `RowCropField.hlsl`, which the kernel and the canopy share), as its depth there spans
-few pixels. The canopy follows the plants' growth noise and dry patches and grows shorter by `edgeGrowth` at the
-field's edge from the same four probes (`Edge`). A crop's `lodging` share of 30 m lattice cells holds a patch
-`lodgedSize` across, ragged and laid one way, flattened by wind and rain (`Lodging`): plants bend over toward it and
-the canopy drops to a third of its height, a little lighter.
+A crop's `lodging` share of 30 m lattice cells holds a patch `lodgedSize` across, ragged and laid one way, flattened
+by wind and rain (`Lodging` in `RowCrops.compute`): its plants bend over toward it.
 
 #### Scatter host
 
@@ -756,8 +718,8 @@ Row crops and grass (see [maps](../maps.md)) share one host, built to take more 
   heightmap, and each camera's position with the building mask, crater depth and ash. Its `Stale` catches a map
   rebuild that changed the items, the subclass's own inputs or the heightmap. `ScatterSettings` carries density, distance and shadow
   distance (crops pass 0), and a density of 0 draws nothing for both.
-- `Scatter.hlsl` holds the job struct, band edges and slot counting, and `ScatterNoise.hlsl` the hashes and noise
-  that `RowCropField.hlsl` also lends the canopy shader; `ScatterHash` is the C# twin of the hashes and `ScatterBands` of the band edges. `BandRange` moves the range a plant picks its band at (a crop's LOD,
+- `Scatter.hlsl` holds the job struct, hashes, noise, band edges and slot counting; `ScatterHash` is the C# twin of
+  the hashes and `ScatterBands` of the band edges. `BandRange` moves the range a plant picks its band at (a crop's LOD,
   grass casting shadows or not) by up to 20 % from its hash, and `ScatterBands` widens each band's reach to match.
   The kernels share its slot table and `Claim` and `CloseSlots`.
 

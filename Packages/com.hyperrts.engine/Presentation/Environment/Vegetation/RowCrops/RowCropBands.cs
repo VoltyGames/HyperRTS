@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
-    /// <summary>The plant distance bands a crop tile can hold, by the kernel's rule. The canopy draws past the last.</summary>
+    /// <summary>The plant distance bands a crop tile can hold, by the kernel's rule.</summary>
     public static class RowCropBands
     {
         public const int Lods = 2;

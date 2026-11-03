@@ -1,5 +1,4 @@
 using System;
-using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Horizon
@@ -14,11 +13,5 @@ namespace HyperRTS.Presentation.Environment.Horizon
 
         [Min(0f)]
         public float weight;
-
-        [Tooltip("Row crop whose canopy raises the fields that grow it; empty for flat ground.")]
-        public RowCrop crop;
-
-        /// <summary>Whether fields of this crop stand raised, drawn with its row crop's canopy.</summary>
-        public bool Raised => crop != null && crop.canopyMaterial != null;
     }
 }

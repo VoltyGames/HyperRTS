@@ -43,8 +43,6 @@ namespace HyperRTS.Editor.Maps.Ground
                 importer.textureType = TextureImporterType.Default;
                 importer.sRGBTexture = false;
                 importer.mipmapEnabled = false;
-                // RowCropCanopy cuts its meshes from the ids on the CPU.
-                importer.isReadable = true;
                 importer.filterMode = FilterMode.Point;
                 importer.wrapMode = TextureWrapMode.Clamp;
                 importer.npotScale = TextureImporterNPOTScale.None;

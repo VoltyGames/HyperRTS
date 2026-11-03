@@ -10,8 +10,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
     /// <summary>
     /// Farmland round the map out to <see cref="width"/>, so a camera tilted toward the horizon sees fields fading into
     /// the sky instead of the world's edge. Built when enabled, in edit mode too, and kept in memory only: a ground ring
-    /// painted with the map terrain's layers in fields, crop fields raised in their canopy and tree-line strips along
-    /// some row edges. Nothing in it collides or navigates, and only the raised fields cast shadows.
+    /// painted with the map terrain's layers in fields and tree-line strips along some row edges. Nothing in it
+    /// collides, navigates or casts a shadow.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu(HyperRTSMenu.Environment + "Horizon")]
@@ -39,8 +39,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
 
         public HorizonBelts belts = new();
 
-        public HorizonRaisedFields raised = new();
-
         public HorizonSky sky = new();
 
         [Tooltip("HyperRTS/HorizonGround, which paints the fields.")]
@@ -51,8 +49,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
         private Texture2D _fieldTexture;
         private Mesh _belts;
         private List<Material> _stripMaterials = new();
-        private Mesh _raised;
-        private List<Material> _cropMaterials = new();
         private string _skyProblem;
         private bool _ready;
 #if UNITY_EDITOR
@@ -144,7 +140,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
             _ready = true;
         }
 
-        // What stands on the ground: the belts and the raised fields, each only when it has something to draw.
+        // What stands on the ground: the belts, when there are any.
         private void BuildStanding()
         {
             if (belts.strips.Count > 0)
@@ -153,11 +149,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
             }
 
             _stripMaterials = belts.strips.Select(strip => new Material(strip) { hideFlags = HideFlags.DontSave }).ToList();
-            if (raised.RaisedCrops(fields).Count > 0)
-            {
-                _raised = raised.Build(raised.Fields(fields, seed, TerrainRect, width), fields, Height);
-                _cropMaterials = raised.CreateMaterials(fields);
-            }
         }
 
         private void Release()
@@ -169,9 +160,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
             CoreUtils.Destroy(_belts);
             _stripMaterials.ForEach(CoreUtils.Destroy);
             _stripMaterials.Clear();
-            CoreUtils.Destroy(_raised);
-            _cropMaterials.ForEach(CoreUtils.Destroy);
-            _cropMaterials.Clear();
         }
 
         private List<string> Problems()
@@ -197,7 +185,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
             }
 
             problems.AddRange(belts.Problems());
-            problems.AddRange(raised.Problems(fields));
             return problems;
         }
 
@@ -221,16 +208,10 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 return;
             }
 
-            Draw(camera, _groundMaterial, _ground, 0, ShadowCastingMode.Off);
+            Draw(camera, _groundMaterial, _ground, 0);
             for (var i = 0; i < _stripMaterials.Count; i++)
             {
-                Draw(camera, _stripMaterials[i], _belts, i, ShadowCastingMode.Off);
-            }
-
-            // The walls shade the ground beside them.
-            for (var i = 0; i < _cropMaterials.Count; i++)
-            {
-                Draw(camera, _cropMaterials[i], _raised, i, ShadowCastingMode.On);
+                Draw(camera, _stripMaterials[i], _belts, i);
             }
         }
 
@@ -258,9 +239,9 @@ namespace HyperRTS.Presentation.Environment.Horizon
             return true;
         }
 
-        private IEnumerable<Material> Materials() => _stripMaterials.Concat(_cropMaterials).Append(_groundMaterial);
+        private IEnumerable<Material> Materials() => _stripMaterials.Append(_groundMaterial);
 
-        private void Draw(Camera camera, Material material, Mesh mesh, int submesh, ShadowCastingMode shadows)
+        private void Draw(Camera camera, Material material, Mesh mesh, int submesh)
         {
             if (mesh.GetIndexCount(submesh) == 0)
             {
@@ -272,7 +253,7 @@ namespace HyperRTS.Presentation.Environment.Horizon
                 camera = camera,
                 layer = gameObject.layer,
                 worldBounds = mesh.bounds,
-                shadowCastingMode = shadows,
+                shadowCastingMode = ShadowCastingMode.Off,
                 receiveShadows = true,
             };
             Graphics.RenderMesh(parameters, mesh, submesh, Matrix4x4.identity);

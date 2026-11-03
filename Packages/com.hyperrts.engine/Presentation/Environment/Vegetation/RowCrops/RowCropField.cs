@@ -27,8 +27,5 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 
         [Tooltip("Wheel lines the crop leaves bare.")]
         public RowCropTramlines tramlines;
-
-        [Tooltip("Harvest stripes where fewer plants stand.")]
-        public RowCropSwaths swaths;
     }
 }

@@ -102,7 +102,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
                 _crop.wander, 1f / _crop.wanderLength));
             Compute.SetVector(GrowthId, _crop.Growth);
             Compute.SetVector(LodgingId, _crop.Lodging);
-            Compute.SetVector(FarId, new Vector4(_crop.farShare, _crop.farScale, _crop.thinStart, _crop.canopyFade));
+            Compute.SetVector(FarId, new Vector4(_crop.farShare, _crop.farScale, _crop.thinStart, 0f));
             Compute.SetFloat(StandId, _crop.stand);
             Compute.SetInt(VariantsId, _variants);
         }

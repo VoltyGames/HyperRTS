@@ -66,16 +66,11 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         /// <summary>Hands every visible tile's jobs to the camera's batches.</summary>
         private protected abstract void Queue(List<TBatch> batches, Vector3 position, ScatterSettings settings);
 
-        /// <summary>Draws what the subclass adds beside the scattered instances, for a camera that draws them.</summary>
-        private protected virtual void DrawAlongside(Camera camera, ScatterSettings settings)
-        {
-        }
-
         /// <summary>Adds what is wrong with the subclass's own references.</summary>
         private protected abstract void AddProblems(List<string> problems);
 
 #if UNITY_EDITOR
-        /// <summary>Whether the subclass's own references or inputs went stale while the scene stayed open.</summary>
+        /// <summary>Whether the subclass's own references went missing while the scene stayed open.</summary>
         private protected virtual bool ReferencesStale() => false;
 
         /// <summary>Whether a map rebuild changed what a camera's batches draw.</summary>
@@ -135,7 +130,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             }
 
             state.Draw(gameObject.layer, camera);
-            DrawAlongside(camera, settings);
         }
 
 #if UNITY_EDITOR

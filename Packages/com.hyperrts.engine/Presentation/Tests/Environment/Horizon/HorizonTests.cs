@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Presentation.Environment.Horizon;
-using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -9,8 +8,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Horizon
 {
     /// <summary>
     /// The horizon's ring reaches from under the terrain out to its width, its fields tile the farmland in varied sizes
-    /// with tracks only on their edges, its belts stand on row edges clear of the terrain, and only canopy crops stand
-    /// raised, inside their margins.
+    /// with tracks only on their edges, and its belts stand on row edges clear of the terrain.
     /// </summary>
     public class HorizonTests
     {
@@ -143,43 +141,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Horizon
                 fields.FieldAt(Seed, nudged, out var row);
                 Assert.AreEqual(from.y, row.start, 0.01f, "a stretch stands on a row's south edge");
                 Assert.AreEqual(fields.marginWidth, row.southMargin, "no belt stands along a track");
-            }
-        }
-
-        [Test]
-        public void RaisedFields_StandOnlyOnCanopyCropsInsideTheirMarginsPastTheTerrain()
-        {
-            var fields = Fields();
-            var crop = ScriptableObject.CreateInstance<RowCrop>();
-            var canopy = new Material(Shader.Find("Hidden/InternalErrorShader"));
-            crop.canopyMaterial = canopy;
-            fields.crops[0] = new HorizonCrop { layer = 3, weight = 1f, crop = crop };
-            var raised = new HorizonRaisedFields();
-            try
-            {
-                var boxes = raised.Fields(fields, Seed, Terrain, Width);
-
-                Assert.IsNotEmpty(boxes);
-                foreach (var box in boxes)
-                {
-                    Assert.AreEqual(0, box.crop, "only the crop with a canopy stands raised");
-                    var field = fields.FieldAt(Seed, fields.ToWorld(box.area.center), out var row);
-                    var along = new Vector2(field.start + field.startMargin, field.end - field.endMargin) - Vector2.one * row.slide;
-                    Assert.AreEqual(along.x, box.area.xMin, 0.01f, "the box starts inside its field's margin");
-                    Assert.AreEqual(along.y, box.area.xMax, 0.01f, "the box ends inside its field's margin");
-                    Assert.AreEqual(row.start + row.southMargin, box.area.yMin, 0.01f, "the box keeps off its row's south margin");
-                    Assert.AreEqual(row.end - row.northMargin, box.area.yMax, 0.01f, "the box keeps off its row's north margin");
-                    Assert.Greater(HorizonRing.Distance(Terrain, fields.ToWorld(box.area.min)), 0f, "no box stands on the terrain");
-                }
-
-                var mesh = raised.Build(boxes, fields, _ => 0f);
-                Assert.AreEqual(crop.height, mesh.vertices.Max(vertex => vertex.y), 0.001f, "the tops stand at the crop's height");
-                Object.DestroyImmediate(mesh);
-            }
-            finally
-            {
-                Object.DestroyImmediate(canopy);
-                Object.DestroyImmediate(crop);
             }
         }
 

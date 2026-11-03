@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Ground
 
         /// <summary>A copy's lattice: the region's rows in the authored sector, moved onto the copy.</summary>
         public static RowCropField Lattice(MapLandRegion region, MapTransform copy, RowCrop crop, int cropIndex,
-            MapClimateSurface surface)
+            MapTramlines tramlines)
         {
             var along = MapGeometry.Forward(region.RowAngle);
             var across = MapGeometry.Right(along);
@@ -69,8 +69,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 across = copy.Apply(across),
                 crop = cropIndex,
                 seed = region.Seed,
-                tramlines = surface.tramlines.From(region.Seed, phaseAcross * crop.rowSpacing),
-                swaths = surface.swaths.From(region.Seed, phaseAcross * crop.rowSpacing),
+                tramlines = tramlines.From(region.Seed, phaseAcross * crop.rowSpacing),
             };
         }
 
@@ -128,8 +127,8 @@ namespace HyperRTS.Editor.Maps.Ground
 
                     fields[(region, copy)] = field = bake.Fields.Count;
                     var sown = land.Regions[region];
-                    var surface = climate.Surface(sown.Surface);
-                    bake.Fields.Add(Lattice(sown, symmetry.Copies[copy], bake.Crops[crop], crop, surface));
+                    var tramlines = climate.Surface(sown.Surface).tramlines;
+                    bake.Fields.Add(Lattice(sown, symmetry.Copies[copy], bake.Crops[crop], crop, tramlines));
                 }
 
                 bake.Ids[x, z] = RowCropFields.FieldId(field);

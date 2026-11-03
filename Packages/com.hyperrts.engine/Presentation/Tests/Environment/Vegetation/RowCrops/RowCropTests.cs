@@ -94,7 +94,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         [Test]
         public void GpuStructs_MatchTheKernelsLayouts()
         {
-            Assert.AreEqual(64, RowCropField.Stride);
+            Assert.AreEqual(48, RowCropField.Stride);
         }
 
         [Test]

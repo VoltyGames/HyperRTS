@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Maps.Climate
                 angle = angle,
                 marginWidth = marginWidth,
                 marginLayer = climate.SurfaceLayer(marginSurface),
-                crops = crops.Select(crop => CreateHorizonCrop(climate, crop)).ToList(),
+                crops = crops.Select(crop => new HorizonCrop { layer = climate.SurfaceLayer(crop.surface), weight = crop.weight }).ToList(),
             };
             if (string.IsNullOrEmpty(trackClass))
             {
@@ -75,19 +75,6 @@ namespace HyperRTS.Editor.Maps.Climate
             }
 
             return fields;
-        }
-
-        // A surface that grows a row crop raises its horizon fields in that crop's canopy.
-        private static HorizonCrop CreateHorizonCrop(MapClimate climate, MapCropShare share)
-        {
-            var surface = climate.Surface(share.surface);
-            var crop = new HorizonCrop { layer = climate.SurfaceLayer(share.surface), weight = share.weight };
-            if (!string.IsNullOrEmpty(surface.rowCrop))
-            {
-                crop.crop = climate.rowCrops[climate.RowCropIndex(surface.rowCrop)].crop;
-            }
-
-            return crop;
         }
     }
 }

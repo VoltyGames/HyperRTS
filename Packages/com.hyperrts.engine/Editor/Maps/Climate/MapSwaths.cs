@@ -1,6 +1,5 @@
 using System;
 using HyperRTS.Editor.Maps.Geometry;
-using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Climate
@@ -28,26 +27,6 @@ namespace HyperRTS.Editor.Maps.Climate
         public bool Any => spacing > 0f;
 
         public bool Valid => !Any || (width > 0f && width < spacing && plants is >= 0f and <= 1f);
-
-        /// <summary>Metres a region's swaths are slid across its rows, from its seed.</summary>
-        public float Offset(int seed) => Mathf.Repeat(seed * 0.618034f, 1f) * spacing;
-
-        /// <summary>A region's swaths for its row crop, measured from <paramref name="originAcross"/> across its rows in the sector, so the plants thin on the stripes the ground tint lightens.</summary>
-        public RowCropSwaths From(int seed, float originAcross)
-        {
-            if (!Any)
-            {
-                return default;
-            }
-
-            return new RowCropSwaths
-            {
-                spacing = spacing,
-                halfWidth = width * 0.5f,
-                plants = plants,
-                offset = originAcross + Offset(seed),
-            };
-        }
 
         /// <summary>0 between swaths to 1 on one, softened over <paramref name="soft"/> metres.</summary>
         public float Cover(float across, float soft)

@@ -34,7 +34,6 @@ namespace HyperRTS.Editor.Maps.Scenes
             "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/FoliageGrass.shader";
 
         private const string HorizonGroundShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonGround.shader";
-        private const string HorizonCropShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonCrop.shader";
 
         /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
@@ -152,7 +151,6 @@ namespace HyperRTS.Editor.Maps.Scenes
             horizon.fields = kit.HorizonFields(climate, farmland?.angle ?? 0f);
             horizon.belts = new HorizonBelts { strips = climate.HorizonStrips(kit) };
             horizon.groundShader = Engine<Shader>(HorizonGroundShader, "horizon ground shader");
-            horizon.raised = new HorizonRaisedFields { shader = Engine<Shader>(HorizonCropShader, "horizon crop shader") };
             go.SetActive(true);
         }
 
