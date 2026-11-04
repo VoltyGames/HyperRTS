@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;
 using Unity.Entities;
@@ -17,6 +18,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     public class SquadTests : SimulationFixture
     {
         private const float Each = 25f;
+        private const int Research = 4242;
 
         private Entity Squad(float3 position, params byte[] weapons)
         {
@@ -172,6 +174,31 @@ namespace HyperRTS.Simulation.Tests.Squads
             Assert.AreEqual(15f, Member(squad, 1), 1e-3f);
             Assert.AreEqual(20f, Member(squad, 2), 1e-3f);
             AssertHealthIsMemberSum(squad);
+        }
+
+        [Test]
+        public void UpgradedMember_CarriesTheUpgradeWhileItsMountIsEnabled_AndItsOwnWeaponOtherwise()
+        {
+            var squad = World.SpawnUnit(1, float3.zero, maxHealth: Each * 2);
+            SquadAuthoring.Add(World.Writer(squad), Each * 2, new byte[] { 0, 0 }, new byte?[] { null, 1 });
+            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
+            World.AddMount(squad, range: 6f, damage: 30f, cooldown: 100f, requiredResearchTypeId: Research);
+            World.Tick();
+            Assert.AreEqual(0, World.Buffer<SquadMember>(squad)[1].Weapon, "locked");
+
+            var research = World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1));
+            research.Add(new CompletedResearch { TypeId = Research });
+            World.Run(0.2f);
+            var members = World.Buffer<SquadMember>(squad);
+            Assert.AreEqual(1, members[1].Weapon, "researched");
+            Assert.AreEqual(0, members[0].Weapon, "a member without an upgrade keeps its weapon");
+            Assert.AreEqual(1, World.Buffer<WeaponMount>(squad)[0].Carriers);
+            Assert.AreEqual(1, World.Mount(squad).Carriers);
+
+            research.Clear();
+            World.Run(0.2f);
+            Assert.AreEqual(0, World.Buffer<SquadMember>(squad)[1].Weapon, "locked again");
+            Assert.AreEqual(2, World.Buffer<WeaponMount>(squad)[0].Carriers);
         }
 
         [Test]

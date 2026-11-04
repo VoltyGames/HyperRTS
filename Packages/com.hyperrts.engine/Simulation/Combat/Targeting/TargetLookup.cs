@@ -1,4 +1,4 @@
-﻿using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [ReadOnly] private ComponentLookup<Destructible> _destructibles;
         [ReadOnly] private ComponentLookup<PassengerRange> _passengerRange;
         [ReadOnly] private ComponentLookup<VisionRange> _vision;
+        [ReadOnly] private ComponentLookup<Deployable> _deployables;
         [ReadOnly] private SightBlockers _blockers;
         private DamageFactors _damage;
         [ReadOnly] private FogOfWar _fog;
@@ -46,6 +47,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _destructibles = state.GetComponentLookup<Destructible>(true);
             _passengerRange = state.GetComponentLookup<PassengerRange>(true);
             _vision = state.GetComponentLookup<VisionRange>(true);
+            _deployables = state.GetComponentLookup<Deployable>(true);
             _damage = new DamageFactors(ref state);
         }
 
@@ -62,6 +64,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _destructibles.Update(ref state);
             _passengerRange.Update(ref state);
             _vision.Update(ref state);
+            _deployables.Update(ref state);
             _damage.Update(ref state);
             // Burst only lets the [ReadOnly] singletons be filled through out.
             queries.Fog.TryGetSingleton(out _fog);
@@ -205,6 +208,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
             var gap = Gap(shooter, position, target);
             return gap >= weapon.MinRange && gap <= Reach(shooter, position, weapon, target);
         }
+
+        /// <summary>Whether the target lies within the weapon's firing arc, always so for an all-round weapon.</summary>
+        public bool InFiringArc(Entity shooter, in Weapon weapon, Entity target) =>
+            weapon.InFiringArc(_deployables, shooter, _transforms[shooter], Position(target));
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 

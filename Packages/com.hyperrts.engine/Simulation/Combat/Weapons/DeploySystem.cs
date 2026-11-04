@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
@@ -79,7 +80,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             public float DeltaTime;
 
-            private void Execute(ref Deployable deployable) => deployable.Advance(DeltaTime);
+            private void Execute(ref Deployable deployable, in LocalTransform transform) =>
+                deployable.Advance(DeltaTime, Rotations.Facing(transform.Rotation));
         }
     }
 }

@@ -101,6 +101,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Tooltip("Holds fire until its Deployable unit has deployed.")]
         public bool needsDeploy;
 
+        [Tooltip("Half angle in degrees of the cone it fires into, about the way its unit faced when it deployed (or faces now if it never deploys). 0 fires all round.")]
+        [Range(0f, 180f)]
+        public float firingArc;
+
         [Header("Salvo")]
         [Tooltip("Shots fired at one target before the cooldown starts; 1 fires single shots.")]
         [Min(1)]
@@ -140,6 +144,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 SalvoInterval = salvoInterval,
                 Spread = spread,
                 NeedsDeploy = needsDeploy,
+                FiringArc = math.radians(firingArc),
                 Aim = new WeaponAim
                 {
                     TraverseRate = math.radians(traverseSpeed),

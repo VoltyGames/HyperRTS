@@ -5,6 +5,10 @@ namespace HyperRTS.Simulation.Common
     /// <summary>Quaternion helpers the simulation shares.</summary>
     public static class Rotations
     {
+        /// <summary>The unit XZ direction a body with this rotation faces.</summary>
+        public static float2 Facing(quaternion rotation) =>
+            math.normalizesafe(math.mul(rotation, math.forward()).xz, new float2(0f, 1f));
+
         /// <summary>The shortest rotation turning unit vector <paramref name="from"/> onto unit vector <paramref name="to"/>.</summary>
         public static quaternion FromTo(float3 from, float3 to)
         {

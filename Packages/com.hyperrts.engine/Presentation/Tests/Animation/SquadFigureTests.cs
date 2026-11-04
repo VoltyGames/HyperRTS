@@ -50,6 +50,54 @@ namespace HyperRTS.Presentation.Tests.Animation
         public void TearDown() => _kit.Dispose();
 
         [Test]
+        public void MemberFiringItsUpgrade_ShowsTheUpgradedFigureAndTheCardNameFollows()
+        {
+            var upgraded = AddUpgradedModel(1, "RPG-7");
+            Update();
+            Assert.IsTrue(Drawn(1));
+            Assert.IsFalse(DrawnModel(upgraded), "the upgraded figure waits hidden");
+
+            Member(1, weapon: 1);
+            Update();
+            Assert.IsFalse(Drawn(1));
+            Assert.IsTrue(DrawnModel(upgraded));
+            Assert.AreEqual("RPG-7", Figure(1).Weapon.ToString());
+            Assert.IsTrue(_em.GetComponentData<LowerClip>(upgraded).Clip.Plays(Range(1000, true)), "it plays its own table");
+
+            Member(1, weapon: 0);
+            Update();
+            Assert.IsTrue(Drawn(1));
+            Assert.IsFalse(DrawnModel(upgraded));
+        }
+
+        [Test]
+        public void DeployedWeapon_ShowsItsModelAndSendsTheCrewToTheirPlacesOnlyWhileSetUp()
+        {
+            var gun = AddDeployedModel();
+            var buffer = _em.GetBuffer<SquadFigure>(_squad);
+            buffer.ElementAt(0).Crew = new CrewPlace { Takes = true, Offset = new float2(0f, -0.6f), Posture = Posture.Prone };
+            _em.AddComponentData(_squad, new Deployable { State = DeployState.Packed });
+            Member(0, offset: new float2(2f, 0f));
+            Update();
+            Advance(1f);
+            Assert.IsFalse(DrawnModel(gun), "packed, the gun is stowed");
+            Assert.AreEqual(2f, _em.GetComponentData<LocalTransform>(_figures[0]).Position.x, 0.05f);
+
+            _em.SetComponentData(_squad, new Deployable { State = DeployState.Deploying });
+            Advance(2f);
+            Assert.IsTrue(DrawnModel(gun));
+            var place = _em.GetComponentData<LocalTransform>(_figures[0]).Position;
+            Assert.AreEqual(0f, place.x, 0.05f, "not dragged back to its slot");
+            Assert.AreEqual(-0.6f, place.z, 0.05f);
+            Assert.IsTrue(Lower(0).Plays(Range(130, true)), "prone at the gun");
+
+            _em.SetComponentData(_squad, new Deployable { State = DeployState.Packing });
+            Advance(2f);
+            Assert.IsFalse(DrawnModel(gun));
+            Assert.AreEqual(2f, _em.GetComponentData<LocalTransform>(_figures[0]).Position.x, 0.05f);
+        }
+
+        [Test]
         public void FigureStands_WhereItsMemberDoesInTheModelsFrame()
         {
             var turned = float4x4.RotateY(math.PI * 0.5f);
@@ -566,6 +614,42 @@ namespace HyperRTS.Presentation.Tests.Animation
         private VATClip Lower(int index) => _em.GetComponentData<LowerClip>(_figures[index]).Clip;
 
         private VATClip Upper(int index) => _em.GetComponentData<UpperClip>(_figures[index]).Clip;
+
+        // A second figure for the member's upgraded weapon, baked hidden like the squad's others.
+        private Entity AddUpgradedModel(int index, string weapon)
+        {
+            var upgraded = ModelPart();
+            var figure = Figure(index);
+            figure.Other = new FigureVariant { Figure = upgraded, Clips = Clips(1000), Weapon = weapon };
+            _em.GetBuffer<SquadFigure>(_squad).ElementAt(index) = figure;
+            return upgraded;
+        }
+
+        private Entity AddDeployedModel()
+        {
+            var gun = ModelPart();
+            var squad = _em.GetComponentData<SquadFigures>(_squad);
+            squad.DeployedModel = gun;
+            _em.SetComponentData(_squad, squad);
+            return gun;
+        }
+
+        private Entity ModelPart()
+        {
+            var part = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+            _em.AddComponentData(part, new Parent { Value = _model });
+            _em.AddComponentData(part, LocalTransform.Identity);
+            var start = VATClip.Started(Range(0, true), 0f);
+            _em.AddComponentData(part, new LowerClip { Clip = start });
+            _em.AddComponentData(part, new UpperClip { Clip = start });
+            _em.AddComponentData(part, new LowerFade { Fade = VATFade.None });
+            _em.AddComponentData(part, new UpperFade { Fade = VATFade.None });
+            _em.AddComponentData(part, new LocalToWorld { Value = float4x4.identity });
+            _em.GetBuffer<LinkedEntityGroup>(_squad).Add(part);
+            return part;
+        }
+
+        private bool DrawnModel(Entity part) => _em.IsComponentEnabled<MaterialMeshInfo>(part);
 
         private bool Drawn(int index) => _em.IsComponentEnabled<MaterialMeshInfo>(_figures[index]);
     }

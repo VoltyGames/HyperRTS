@@ -50,6 +50,17 @@ namespace HyperRTS.Simulation.Common
         /// <summary>Index of the squad's <see cref="Combat.Weapons.WeaponMount"/> this member fires.</summary>
         [GhostField] public byte Weapon;
 
+        /// <summary>
+        /// The mount it fires without its upgrade; <see cref="Weapon"/> is this or <see cref="UpgradedWeapon"/>, so a
+        /// client that sees them differ knows the upgraded weapon is in hand.
+        /// </summary>
+        [GhostField] public byte BaseWeapon;
+
+        /// <summary>Server only: the mount it fires instead while that mount is enabled; only meaningful with <see cref="HasUpgrade"/>.</summary>
+        [GhostField(SendData = false)] public byte UpgradedWeapon;
+
+        [GhostField(SendData = false)] public bool HasUpgrade;
+
         /// <summary>Server only: the offset it walks toward.</summary>
         [GhostField(SendData = false)] public float2 Slot;
 

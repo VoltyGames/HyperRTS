@@ -18,7 +18,7 @@ namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, i
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, salvo size and interval, spread. The primary and each extra weapon carry one |
+| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, firing arc, salvo size and interval, spread. The primary and each extra weapon carry one |
 | `WeaponMount` | One weapon: the primary at index 0, then the extra weapons, then an interceptor's. Server only; stats rewrite each from its own bases |
 | `DamageProfile` | What a hit deals: amount, damage type, garrison factor, splash radius and edge factor, friendly fire. Weapons, abilities and bombs carry one and build their hit with `Hit`; `DamageSettings` is its inspector block |
 | `AmmoAuthoring` | Rounds per load and how they refill: `Docked`, `Round` or `Magazine` |
@@ -83,6 +83,11 @@ place in the buffer, so indices never shift.
   makes one shot per carrier (separate `DamageEvent`s, so they spread over the enemy's members) and a mount with no
   carriers is not `Ready` and stays silent. Set the weapon's `damage` to the squad's old damage divided by its
   carriers to keep full-strength damage per second.
+- **Upgrades.** A member may name an `upgradedWeapon`, normally a research-gated extra weapon. While that mount is
+  `Enabled` (`MountUnlockSystem` flips it when the research completes or the owner changes) `SquadMemberSystem` sets
+  `SquadMember.Weapon` to it, so the carrier rule above moves the shot to the new mount; otherwise it is the member's
+  own weapon (`BaseWeapon`, replicated so clients can tell which one is in hand). Cards and figures follow
+  [squad figures](client.md#squad-figures).
 - **Slots.** Members walk their `Offset`, in metres from the squad on world axes so a turning squad doesn't swing
   them, toward a slot: a loose wedge along the squad's heading while it moves, a ring of 2.2 m when it halts, never
   past 3.5 m. They close at up to three quarters of the squad's speed relative to it, so a straggler visibly runs.
@@ -199,6 +204,15 @@ centred, and an interceptor with `needsDeploy` neither tracks nor engages. `Weap
 either on a unit without a Deployable. `State` and `Progress` replicate, and a `Deployed` machine (see
 [animation](support.md#animation)) follows the progress. The skirmish AI deploys a unit holding a target in range and
 packs up a deployed one with nothing to shoot, so its next wave takes it.
+
+A weapon with a `firingArc` (half angle in degrees, 0 for all round) fires only into that cone. The cone is about
+`Deployable.DeployedHeading`, the way the unit faced when it finished deploying, or about its facing when it never
+deploys. Auto-targeting (`NearestHostile`) skips targets outside it and `EngagementSystem` drops a self-picked target
+that leaves it. `DeployFacingSystem` handles an ordered attack on a target in range: a deployed unit whose target is
+outside the cone packs up; a packed one turns to face the target (a `FacingGoal`) and deploys, so the new cone is
+centred on it, and the weapon fires only once deployed, as the deploy time says. It applies only to weapons with a
+firing arc; other deployables still wait for the Deploy command. A squad that is `Deployable` is a weapon team: its
+gun model and crew places are in [squad figures](client.md#squad-figures).
 
 A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells
 arc onto the point aimed at launch, `ArcHeight` times the ground distance high, and miss a target that moved. Rockets

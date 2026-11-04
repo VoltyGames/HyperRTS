@@ -65,12 +65,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>
-        /// The fire step every weapon takes: deployed if it must be, off cooldown, a turret on target, restart the
+        /// The fire step every weapon takes: deployed if it must be, inside its firing arc, off cooldown, a turret on target, restart the
         /// cooldown or step the salvo, and fire <paramref name="shots"/> rounds, each from the next muzzle.
         /// </summary>
         public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
         {
-            if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy))
+            if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy) || OutsideArc(shooter, weapon, target))
             {
                 weapon.EndSalvo();
                 return false;
@@ -89,6 +89,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
             weapon.StartCooldown();
             return true;
         }
+
+        private bool OutsideArc(Entity shooter, in Weapon weapon, Entity target) =>
+            weapon.FiringArc > 0f
+            && !weapon.InFiringArc(_deployables, shooter, _transforms[shooter], _transforms[target].Position);
 
         /// <summary>The weapon as it fires this shot, from its next muzzle in turn.</summary>
         private Weapon TakeMuzzle(Entity shooter, ref Weapon weapon)

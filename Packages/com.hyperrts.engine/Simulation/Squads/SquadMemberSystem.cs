@@ -12,8 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
-    /// Keeps each squad's members in order: their health sums to the squad's after stat changes, each weapon mount
-    /// counts its living carriers, and members walk toward their slots, a loose wedge while the squad moves, a ring
+    /// Keeps each squad's members in order: their health sums to the squad's after stat changes, a member fires its
+    /// upgraded weapon while that mount is enabled, each weapon mount counts its living carriers, and members walk toward their slots, a loose wedge while the squad moves, a ring
     /// when it halts, a row along the site it builds, or the cover spot a member holds. Members walk at most three
     /// quarters of the squad's speed relative to it, so one that fell behind visibly runs to catch up. Squads inside
     /// a container stay put. Slots ignore the nav grid, so a member can stand in a wall.
@@ -51,6 +51,7 @@ namespace HyperRTS.Simulation.Squads
                 DynamicBuffer<WeaponMount> mounts, in Velocity velocity, in MovementSpeed speed, in LocalTransform transform)
             {
                 MatchHealth(ref health, members);
+                ChooseWeapons(members, mounts);
                 CountCarriers(members, mounts);
                 if (!InsideLookup.HasEnabled(entity))
                 {
@@ -82,6 +83,22 @@ namespace HyperRTS.Simulation.Squads
                 }
 
                 health.Current = SquadMember.Total(members);
+            }
+
+            private static void ChooseWeapons(DynamicBuffer<SquadMember> members, DynamicBuffer<WeaponMount> mounts)
+            {
+                for (var i = 0; i < members.Length; i++)
+                {
+                    var member = members[i];
+                    var upgraded = member.HasUpgrade && member.UpgradedWeapon < mounts.Length
+                        && mounts[member.UpgradedWeapon].Enabled;
+                    var weapon = upgraded ? member.UpgradedWeapon : member.BaseWeapon;
+                    if (member.HasUpgrade && weapon != member.Weapon)
+                    {
+                        member.Weapon = weapon;
+                        members[i] = member;
+                    }
+                }
             }
 
             private static void CountCarriers(DynamicBuffer<SquadMember> members, DynamicBuffer<WeaponMount> mounts)

@@ -42,6 +42,7 @@ namespace HyperRTS.Presentation.Animation
                 Now = (float)SystemAPI.Time.ElapsedTime,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
+                Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
                 Parents = SystemAPI.GetComponentLookup<Parent>(true),
                 Spots = SystemAPI.GetComponentLookup<LocalTransform>(),
                 Lowers = SystemAPI.GetComponentLookup<LowerClip>(),
@@ -63,6 +64,7 @@ namespace HyperRTS.Presentation.Animation
             public float Now;
             public float DeltaTime;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
             [ReadOnly] public ComponentLookup<Parent> Parents;
             public ComponentLookup<LocalTransform> Spots;
             public ComponentLookup<LowerClip> Lowers;
@@ -84,47 +86,89 @@ namespace HyperRTS.Presentation.Animation
                 var count = math.min(figures.Length, members.Length);
                 var parts = new NativeList<Entity>(Allocator.Temp);
                 RenderHierarchy.Collect(entity, Linked, Children, parts);
+                var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
+                ShowDeployedModel(parts, ref squad, crewing);
                 for (var i = 0; i < count; i++)
                 {
                     var member = members[i];
                     var figure = figures[i];
+                    if (member.Alive && figure.NeedsOtherModel(member))
+                    {
+                        figure.SwapModel();
+                    }
+
+                    if (figure.State == FigureState.Unset && figure.HasUpgradedModel)
+                    {
+                        Switch.SetBranch(parts, figure.Other.Figure, HideReason.Figure, true);
+                    }
+
+                    var crewed = crewing && figure.Crew.Takes;
+                    var posture = crewed ? figure.Crew.Posture : member.Posture;
                     var moving = FigureState.Idle;
                     var firing = false;
                     var digging = false;
                     if (member.Alive)
                     {
-                        figure.Follow(member.Offset, DeltaTime);
-                        Stand(ref figure, member);
+                        Stand(ref figure, member, crewed);
                         var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                         var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
                         moving = figure.Observe(squad, feet, shots, Now, DeltaTime, out firing);
-                        digging = IsDigging(member, moving, firing);
+                        digging = !crewed && IsDigging(member, moving, firing);
                     }
 
                     var next = figure.Next(member.Alive, moving, Now);
                     if (next != figure.State)
                     {
-                        Show(entity, parts, ref figure, next, member.Posture, firing, digging, squad);
+                        Show(entity, parts, ref figure, next, posture, firing, digging, squad);
                     }
                     else if (next == FigureState.Die)
                     {
                         SwitchToBlast(parts, ref figure, squad);
                     }
-                    else if (next != FigureState.Hidden && (figure.Firing != firing || figure.Posture != member.Posture
+                    else if (next != FigureState.Hidden && (figure.Firing != firing || figure.Posture != posture
                                                             || figure.Digging != digging))
                     {
-                        Pose(parts, ref figure, next, member.Posture, firing, digging);
+                        Pose(parts, ref figure, next, posture, firing, digging);
                     }
 
                     figures[i] = figure;
                 }
             }
 
-            /// <summary>Moves the figure to its offset: world axes turned into its parent's frame, at its baked height, turned to its cover.</summary>
-            private void Stand(ref SquadFigure figure, in SquadMember member)
+            // The model shows from the start of deploying until packing up; hiding it is a no-op on a squad that has none.
+            private void ShowDeployedModel(NativeList<Entity> parts, ref SquadFigures squad, bool deployed)
+            {
+                if (squad.DeployedModel == Entity.Null || squad.ModelHidden == !deployed)
+                {
+                    return;
+                }
+
+                squad.ModelHidden = !deployed;
+                Switch.SetBranch(parts, squad.DeployedModel, HideReason.Figure, squad.ModelHidden);
+            }
+
+            /// <summary>
+            /// Eases the figure toward its member's offset, or its crew place while <paramref name="crewed"/>, and moves
+            /// it there: world axes turned into its parent's frame, at its baked height, turned to its cover.
+            /// </summary>
+            private void Stand(ref SquadFigure figure, in SquadMember member, bool crewed)
             {
                 var parent = Places[Parents[figure.Figure].Value].Value;
-                var worldToParent = math.inverse(new float3x3(parent));
+                var parentToWorld = new float3x3(parent);
+                var worldToParent = math.inverse(parentToWorld);
+                var goal = member.Offset;
+                if (crewed)
+                {
+                    goal = math.mul(parentToWorld, new float3(figure.Crew.Offset.x, 0f, figure.Crew.Offset.y)).xz;
+                }
+
+                figure.Follow(goal, DeltaTime);
+                var stance = member;
+                if (crewed)
+                {
+                    stance.Cover = CoverKind.None;
+                }
+
                 var local = math.mul(worldToParent, new float3(figure.Offset.x, 0f, figure.Offset.y));
                 var spot = Spots[figure.Figure];
                 if (!figure.Primed)
@@ -133,7 +177,7 @@ namespace HyperRTS.Presentation.Animation
                 }
 
                 spot.Position = new float3(local.x, figure.Height, local.z);
-                spot.Rotation = figure.Turned(spot.Rotation, member, worldToParent, DeltaTime);
+                spot.Rotation = figure.Turned(spot.Rotation, stance, worldToParent, DeltaTime);
                 Spots[figure.Figure] = spot;
             }
 

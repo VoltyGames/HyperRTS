@@ -93,6 +93,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
                     return;
                 }
 
+                // A target the unit chose itself and can no longer turn onto is dropped.
+                if (!ordered && weapon.FiringArc > 0f && !Targets.InFiringArc(entity, weapon, target))
+                {
+                    Release(entity, order, stance, ref attack, attacking);
+                    return;
+                }
+
                 attack.Reach = Targets.Reach(entity, transform.Position, weapon, target);
                 var band = Reach(entity, transform.Position, mounts, target, attack.Reach);
 

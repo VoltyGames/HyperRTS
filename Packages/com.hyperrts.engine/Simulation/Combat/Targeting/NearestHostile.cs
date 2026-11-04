@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
     /// Finds the closest hostile a weapon can hit, worth its damage (<see cref="Weapon.MinEffect"/>), beyond its
-    /// <see cref="Weapon.MinRange"/>, spotted by the shooter's team and, for direct fire, with a clear line to it. A
+    /// <see cref="Weapon.MinRange"/>, inside its <see cref="Weapon.FiringArc"/>, spotted by the shooter's team and, for direct fire, with a clear line to it. A
     /// shooter firing <c>inPlace</c> takes only targets within its <see cref="TargetLookup.Reach"/>.
     /// </summary>
     public struct NearestHostile : ISpatialVisitor
@@ -58,6 +58,11 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             if (!_targets.IsSpotted(entry.Entity, entry.Position, _team) || !_targets.Affects(entry.Entity, _weapon))
+            {
+                return;
+            }
+
+            if (_weapon.FiringArc > 0f && !_targets.InFiringArc(_shooter, _weapon, entry.Entity))
             {
                 return;
             }

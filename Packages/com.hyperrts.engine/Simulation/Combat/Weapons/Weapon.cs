@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
@@ -57,6 +58,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Holds fire until its unit is <see cref="Deployable"/> and deployed.</summary>
         public bool NeedsDeploy;
 
+        /// <summary>
+        /// Half angle in radians of the cone it fires into, about the heading its unit deployed at or else its facing;
+        /// 0 fires all round.
+        /// </summary>
+        public float FiringArc;
+
         /// <summary>Aircraft are air targets; everything else (units on any other layer, buildings) is surface.</summary>
         public static bool CanHit(WeaponTargets targets, NavLayer layer) => targets switch
         {
@@ -68,6 +75,30 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>How far it looks for targets: <see cref="AcquireRange"/>, else <paramref name="visionRange"/>, never under <see cref="Range"/>.</summary>
         public readonly float ScanRange(float visionRange) =>
             math.max(AcquireRange > 0f ? AcquireRange : visionRange, Range);
+
+        /// <summary>Whether a target at <paramref name="toTarget"/> (XZ, any length) lies within the firing arc about <paramref name="heading"/>.</summary>
+        public readonly bool InFiringArc(float2 heading, float2 toTarget)
+        {
+            if (FiringArc <= 0f)
+            {
+                return true;
+            }
+
+            var direction = math.normalizesafe(toTarget);
+            return direction.Equals(float2.zero) || math.dot(heading, direction) >= math.cos(FiringArc);
+        }
+
+        /// <summary>Whether the target is within the firing arc of a shooter standing at <paramref name="place"/>.</summary>
+        public readonly bool InFiringArc(in ComponentLookup<Deployable> deployables, Entity shooter, in LocalTransform place,
+            float3 targetPosition)
+        {
+            if (FiringArc <= 0f)
+            {
+                return true;
+            }
+
+            return InFiringArc(Deployable.Heading(deployables, shooter, place), (targetPosition - place.Position).xz);
+        }
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 

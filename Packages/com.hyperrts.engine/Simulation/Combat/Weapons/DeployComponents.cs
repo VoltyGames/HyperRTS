@@ -1,6 +1,8 @@
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
@@ -20,6 +22,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         /// <summary>Anything but packed up holds the unit in place.</summary>
         public readonly bool Immobile => State != DeployState.Packed;
+
+        /// <summary>Unit XZ direction it faced when it finished deploying, which its weapons' firing arcs are about.</summary>
+        public float2 DeployedHeading;
+
+        /// <summary>From the start of deploying until packing up begins, when the weapon's crew stands at its places.</summary>
+        public readonly bool Emplaced => State is DeployState.Deploying or DeployState.Deployed;
 
         public readonly bool Deployed => State == DeployState.Deployed;
 
@@ -43,12 +51,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
         }
 
-        public void Advance(float deltaTime)
+        /// <summary>Moves toward deployed or packed up; <paramref name="facing"/> is the unit's XZ direction, kept as the heading once deployed.</summary>
+        public void Advance(float deltaTime, float2 facing)
         {
             if (State == DeployState.Deploying)
             {
                 Progress = math.min(1f, Progress + deltaTime / DeployTime);
-                State = Progress >= 1f ? DeployState.Deployed : State;
+                if (Progress >= 1f)
+                {
+                    State = DeployState.Deployed;
+                    DeployedHeading = facing;
+                }
             }
             else if (State == DeployState.Packing)
             {
@@ -66,6 +79,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
 
             return !lookup.TryGetComponent(unit, out var deployable) || !deployable.Deployed;
+        }
+
+        /// <summary>The direction firing arcs are about: where a deployed unit deployed, else where the unit faces now.</summary>
+        public static float2 Heading(in ComponentLookup<Deployable> lookup, Entity unit, in LocalTransform place)
+        {
+            if (lookup.TryGetComponent(unit, out var deployable) && deployable.Deployed)
+            {
+                return deployable.DeployedHeading;
+            }
+
+            return Rotations.Facing(place.Rotation);
         }
 
         public static bool IsImmobile(in ComponentLookup<Deployable> lookup, Entity unit) =>

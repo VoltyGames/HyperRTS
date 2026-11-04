@@ -33,10 +33,22 @@ namespace HyperRTS.Simulation.Squads
             [Tooltip("0 is the unit's primary weapon, 1 and up its extra weapons in order.")]
             [Min(0)]
             public int weapon;
+
+            [Tooltip("The extra weapon it fires instead while that weapon is enabled, such as by research. Off keeps its own weapon.")]
+            public bool hasUpgradedWeapon;
+
+            [Tooltip("The upgraded weapon's mount index, as for Weapon.")]
+            [Min(0)]
+            public int upgradedWeapon;
         }
 
-        /// <summary>Adds the members with <paramref name="maxHealth"/> shared evenly, standing in a ring, each carrying the weapon at its index.</summary>
-        public static void Add(EntityWriter writer, float maxHealth, IReadOnlyList<byte> weapons)
+        /// <summary>
+        /// Adds the members with <paramref name="maxHealth"/> shared evenly, standing in a ring, each carrying the weapon
+        /// at its index and, where <paramref name="upgrades"/> (null for none) has an index,
+        /// the weapon at that index instead while it is enabled.
+        /// </summary>
+        public static void Add(EntityWriter writer, float maxHealth, IReadOnlyList<byte> weapons,
+            IReadOnlyList<byte?> upgrades = null)
         {
             var each = maxHealth / weapons.Count;
             writer.Add(default(Suppression));
@@ -52,6 +64,9 @@ namespace HyperRTS.Simulation.Squads
                 buffer.Add(new SquadMember
                 {
                     Health = each, MaxHealth = each, Offset = slot, Slot = slot, Weapon = weapons[i],
+                    BaseWeapon = weapons[i],
+                    HasUpgrade = upgrades?[i] != null,
+                    UpgradedWeapon = upgrades?[i] ?? 0,
                 });
             }
         }
@@ -62,12 +77,15 @@ namespace HyperRTS.Simulation.Squads
             {
                 var unit = GetComponent<UnitAuthoring>();
                 var weapons = new List<byte>();
+                var upgrades = new List<byte?>();
                 foreach (var member in authoring.members)
                 {
                     weapons.Add((byte)math.clamp(member.weapon, 0, byte.MaxValue));
+                    var upgraded = (byte)math.clamp(member.upgradedWeapon, 0, byte.MaxValue);
+                    upgrades.Add(member.hasUpgradedWeapon ? upgraded : null);
                 }
 
-                Add(this.Writer(), unit.maxHealth, weapons);
+                Add(this.Writer(), unit.maxHealth, weapons, upgrades);
             }
         }
     }

@@ -356,6 +356,16 @@ after the hold. A squad spawned with dead members hides their figures without th
 when its state, posture or firing changes, written to every renderer under it, and looping clips start at a per-figure
 phase so the squad doesn't move in step.
 
+A figure may name an `upgradedRoot` with its own clip prefix and `upgradedWeaponName`, baked as a second figure entity
+kept in `SquadFigure.Other`. When the member's `Weapon` differs from its `BaseWeapon` (an upgrade is in hand) the system
+swaps the two: the new model is placed and posed afresh, the old one hides, and the card's name follows the model shown.
+
+`deployedModel` is a child of the unit (a gun on its tripod) baked as a render entity, hidden by `HideReason.Figure` and
+shown while the squad's `Deployable` is `Emplaced`, from the start of deploying until packing up begins. A figure with
+`takesCrewPlace` then eases to its `crewOffset` (metres in the unit's frame, x right, y ahead) in its `crewPosture`,
+using the posture's idle and fire clips (for example `ProneFire` for a gunner 0.6 m behind the gun), and ignores its
+member's slot and cover; packed, figures behave as before.
+
 ### Visibility
 
 A mesh draws while its `HiddenBy` has no `HideReason`. Baking gives every mesh and gameplay root one.
