@@ -92,12 +92,12 @@ namespace HyperRTS.Presentation.Animation
                 {
                     var member = members[i];
                     var figure = figures[i];
-                    if (member.Alive && figure.NeedsOtherModel(member))
+                    if (member.Alive && figure.NeedsOtherModel(member, crewing))
                     {
                         figure.SwapModel();
                     }
 
-                    if (figure.State == FigureState.Unset && figure.HasUpgradedModel)
+                    if (figure.State == FigureState.Unset && figure.HasOtherModel)
                     {
                         Switch.SetBranch(parts, figure.Other.Figure, HideReason.Figure, true);
                     }

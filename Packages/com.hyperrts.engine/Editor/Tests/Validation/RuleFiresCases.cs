@@ -80,6 +80,13 @@ namespace HyperRTS.Editor.Tests.Validation
             });
             yield return Row<SquadRule>("no members",
                 f => f.Add<SquadAuthoring>(EntityTemplates.CombatUnit()));
+            yield return Row<SquadFiguresRule>("both an upgraded and an emplaced figure", f =>
+            {
+                var squad = f.Add<SquadFiguresAuthoring>(EntityTemplates.CombatUnit());
+                var root = new GameObject("Figure").transform;
+                squad.figures.Add(new SquadFiguresAuthoring.Figure { root = root, upgradedRoot = root, emplacedRoot = root });
+                return squad;
+            });
             yield return Row<CoverSpotRule>("faces away from the prop", f =>
             {
                 var cover = f.Add<CoverSpotAuthoring>(new GameObject("Wall"));

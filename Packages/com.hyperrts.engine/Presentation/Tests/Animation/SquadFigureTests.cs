@@ -71,6 +71,28 @@ namespace HyperRTS.Presentation.Tests.Animation
         }
 
         [Test]
+        public void EmplacedFigure_ShowsOnlyWhileTheSquadIsSetUpAndSwapsBackOnPackUp()
+        {
+            var bare = AddEmplacedModel(0);
+            var buffer = _em.GetBuffer<SquadFigure>(_squad);
+            buffer.ElementAt(0).Crew = new CrewPlace { Takes = true, Offset = new float2(0f, -0.6f), Posture = Posture.Prone };
+            _em.AddComponentData(_squad, new Deployable { State = DeployState.Packed });
+            Update();
+            Assert.IsTrue(Drawn(0));
+            Assert.IsFalse(DrawnModel(bare), "packed, the carried figure shows");
+
+            _em.SetComponentData(_squad, new Deployable { State = DeployState.Deploying });
+            Advance(1f);
+            Assert.IsFalse(Drawn(0));
+            Assert.IsTrue(DrawnModel(bare));
+
+            _em.SetComponentData(_squad, new Deployable { State = DeployState.Packing });
+            Advance(1f);
+            Assert.IsTrue(Drawn(0));
+            Assert.IsFalse(DrawnModel(bare));
+        }
+
+        [Test]
         public void DeployedWeapon_ShowsItsModelAndSendsTheCrewToTheirPlacesOnlyWhileSetUp()
         {
             var gun = AddDeployedModel();
@@ -623,6 +645,15 @@ namespace HyperRTS.Presentation.Tests.Animation
             figure.Other = new FigureVariant { Figure = upgraded, Clips = Clips(1000), Weapon = weapon };
             _em.GetBuffer<SquadFigure>(_squad).ElementAt(index) = figure;
             return upgraded;
+        }
+
+        private Entity AddEmplacedModel(int index)
+        {
+            var bare = ModelPart();
+            var figure = Figure(index);
+            figure.Other = new FigureVariant { Reason = VariantReason.Emplaced, Figure = bare, Clips = Clips(1000) };
+            _em.GetBuffer<SquadFigure>(_squad).ElementAt(index) = figure;
+            return bare;
         }
 
         private Entity AddDeployedModel()

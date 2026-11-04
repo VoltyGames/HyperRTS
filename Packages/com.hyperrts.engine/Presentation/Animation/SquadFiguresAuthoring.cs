@@ -47,6 +47,16 @@ namespace HyperRTS.Presentation.Animation
             [Tooltip("The upgraded weapon's designation for the member card.")]
             public string upgradedWeaponName;
 
+            [Header("Emplaced")]
+            [Tooltip("The figure shown instead while the unit's weapon is set up and this figure takes a crew place, such as a gunner with empty hands. A child of this unit's model. Empty keeps this one. Not with an upgraded figure.")]
+            public Transform emplacedRoot;
+
+            [Tooltip("Clip prefix of the emplaced figure, as above.")]
+            public string emplacedClipPrefix;
+
+            [Tooltip("The emplaced figure's weapon designation for the member card.")]
+            public string emplacedWeaponName;
+
             [Header("Deployed")]
             [Tooltip("Stands at the crew place below while the unit's weapon is set up, instead of its slot in the squad.")]
             public bool takesCrewPlace;
@@ -56,6 +66,9 @@ namespace HyperRTS.Presentation.Animation
 
             [Tooltip("How it holds itself at the crew place. Fire and idle use the posture's clips.")]
             public Posture crewPosture = Posture.Prone;
+
+            /// <summary>A figure shows at most one other model, so an upgraded and an emplaced one together are ambiguous.</summary>
+            public bool HasTwoVariants => upgradedRoot != null && emplacedRoot != null;
         }
 
         [Tooltip("The deployed weapon's model, a child of this unit shown from when the unit starts deploying until it packs up. Empty for none.")]
@@ -184,17 +197,17 @@ namespace HyperRTS.Presentation.Animation
             return clips;
         }
 
-        /// <summary>The clips of figure <paramref name="index"/>'s upgraded model; fails when its renderers don't share a clip table.</summary>
-        public FigureClips UpgradedClips(int index)
+        /// <summary>The clips of figure <paramref name="index"/>'s other model <paramref name="root"/>; fails when its renderers don't share a clip table.</summary>
+        public FigureClips VariantClips(int index, Transform root, string prefix)
         {
-            var table = Table(figures[index].upgradedRoot);
+            var table = Table(root);
             if (table == null)
             {
                 throw new InvalidOperationException(
-                    $"Squad Figures on '{name}' needs the upgraded figure {index} to have Bone Animated renderers that share one clip table.");
+                    $"Squad Figures on '{name}' needs the other figure {index} to have Bone Animated renderers that share one clip table.");
             }
 
-            return Clips(table, figures[index].upgradedClipPrefix ?? "");
+            return Clips(table, prefix ?? "");
         }
 
         public SquadFigures Squad() => new() { RunSpeed = runSpeed, DieHold = dieHold };
@@ -245,7 +258,7 @@ namespace HyperRTS.Presentation.Animation
                     {
                         Figure = entity, Clips = clips[i], Height = figure.localPosition.y,
                         Weapon = baked.weaponName,
-                        Other = Upgraded(authoring, i),
+                        Other = Variant(authoring, i),
                         Crew = new CrewPlace { Takes = baked.takesCrewPlace, Offset = baked.crewOffset, Posture = baked.crewPosture },
                     });
                 }
@@ -259,21 +272,38 @@ namespace HyperRTS.Presentation.Animation
                 AddSquad(this.Writer(), squad, entities);
             }
 
-            private FigureVariant Upgraded(SquadFiguresAuthoring authoring, int index)
+            private FigureVariant Variant(SquadFiguresAuthoring authoring, int index)
             {
-                var root = authoring.figures[index].upgradedRoot;
-                if (root == null)
+                var baked = authoring.figures[index];
+                if (baked.HasTwoVariants)
                 {
-                    return default;
+                    throw new InvalidOperationException(
+                        $"Squad Figures on '{authoring.name}': figure {index} has both an upgraded and an emplaced figure.");
                 }
 
+                if (baked.upgradedRoot != null)
+                {
+                    return Variant(authoring, index, baked.upgradedRoot, baked.upgradedClipPrefix, baked.upgradedWeaponName, VariantReason.Upgraded);
+                }
+
+                if (baked.emplacedRoot != null)
+                {
+                    return Variant(authoring, index, baked.emplacedRoot, baked.emplacedClipPrefix, baked.emplacedWeaponName, VariantReason.Emplaced);
+                }
+
+                return default;
+            }
+
+            private FigureVariant Variant(SquadFiguresAuthoring authoring, int index, Transform root, string prefix, string weapon, VariantReason reason)
+            {
                 DependsOn(Table(root));
                 return new FigureVariant
                 {
+                    Reason = reason,
                     Figure = GetEntity(root, TransformUsageFlags.Dynamic),
-                    Clips = authoring.UpgradedClips(index),
+                    Clips = authoring.VariantClips(index, root, prefix),
                     Height = root.localPosition.y,
-                    Weapon = authoring.figures[index].upgradedWeaponName,
+                    Weapon = weapon,
                 };
             }
         }

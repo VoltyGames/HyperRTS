@@ -24,11 +24,11 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
         public FigureClips Clips;
 
-        /// <summary>The model for the member's upgraded weapon while it is not shown, and the base one while it is; null for none.</summary>
+        /// <summary>The model shown for <see cref="FigureVariant.Reason"/> while it is not shown, and the base one while it is; null for none.</summary>
         public FigureVariant Other;
 
-        /// <summary>True while <see cref="Figure"/> is the upgraded model.</summary>
-        public bool ShowsUpgraded;
+        /// <summary>True while <see cref="Figure"/> is the model <see cref="FigureVariant.Reason"/> asks for.</summary>
+        public bool ShowsOther;
 
         /// <summary>Where the figure stands while its squad's weapon is deployed.</summary>
         public CrewPlace Crew;
@@ -79,22 +79,30 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>False until the first update records position and shots, so a spawn neither runs nor fires.</summary>
         public bool Primed;
 
-        public readonly bool HasUpgradedModel => Other.Figure != Entity.Null;
+        public readonly bool HasOtherModel => Other.Figure != Entity.Null;
 
-        /// <summary>Whether the model for the weapon <paramref name="member"/> fires now is not the one shown.</summary>
-        public readonly bool NeedsOtherModel(in SquadMember member) =>
-            HasUpgradedModel && ShowsUpgraded != (member.Weapon != member.BaseWeapon);
+        /// <summary>Whether the model <paramref name="member"/> calls for now, given whether the squad is <paramref name="emplaced"/>, is not the one shown.</summary>
+        public readonly bool NeedsOtherModel(in SquadMember member, bool emplaced)
+        {
+            if (!HasOtherModel)
+            {
+                return false;
+            }
+
+            var wantsOther = Other.Reason == VariantReason.Emplaced ? emplaced && Crew.Takes : member.Weapon != member.BaseWeapon;
+            return ShowsOther != wantsOther;
+        }
 
         /// <summary>Shows the other model; it is placed and posed afresh, as a figure not yet shown.</summary>
         public void SwapModel()
         {
-            var shown = new FigureVariant { Figure = Figure, Clips = Clips, Weapon = Weapon, Height = Height };
+            var shown = new FigureVariant { Reason = Other.Reason, Figure = Figure, Clips = Clips, Weapon = Weapon, Height = Height };
             Figure = Other.Figure;
             Clips = Other.Clips;
             Weapon = Other.Weapon;
             Height = Other.Height;
             Other = shown;
-            ShowsUpgraded = !ShowsUpgraded;
+            ShowsOther = !ShowsOther;
             State = FigureState.Unset;
             Lower = default;
             Upper = default;

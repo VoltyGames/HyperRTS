@@ -360,6 +360,11 @@ A figure may name an `upgradedRoot` with its own clip prefix and `upgradedWeapon
 kept in `SquadFigure.Other`. When the member's `Weapon` differs from its `BaseWeapon` (an upgrade is in hand) the system
 swaps the two: the new model is placed and posed afresh, the old one hides, and the card's name follows the model shown.
 
+A figure may instead name an `emplacedRoot` (with `emplacedClipPrefix` and `emplacedWeaponName`), kept in
+`SquadFigure.Other` with `FigureVariant.Reason` `Emplaced`: it shows while the squad's `Deployable` is `Emplaced` and the
+figure takes a crew place (a gunner with empty hands behind the deployed gun), and the carried model returns on pack-up.
+A figure has at most one other model, so `SquadFiguresRule` errors when both roots are set.
+
 `deployedModel` is a child of the unit (a gun on its tripod) baked as a render entity, hidden by `HideReason.Figure` and
 shown while the squad's `Deployable` is `Emplaced`, from the start of deploying until packing up begins. A figure with
 `takesCrewPlace` then eases to its `crewOffset` (metres in the unit's frame, x right, y ahead) in its `crewPosture`,
