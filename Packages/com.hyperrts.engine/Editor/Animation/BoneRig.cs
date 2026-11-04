@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Presentation.Animation;
 using UnityEngine;
-using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Animation
@@ -46,13 +46,7 @@ namespace HyperRTS.Editor.Animation
 
         public List<string> BoneNames()
         {
-            var names = new List<string>(_bones.Length);
-            foreach (var bone in _bones)
-            {
-                names.Add(bone.name);
-            }
-
-            return names;
+            return _bones.Select(bone => bone.name).ToList();
         }
 
         public int BoneIndex(string bone) => _index.TryGetValue(bone, out var found)
@@ -142,7 +136,7 @@ namespace HyperRTS.Editor.Animation
             }
 
             var mesh = Object.Instantiate(renderer.sharedMesh);
-            Move(mesh, into);
+            BoneMesh.Move(mesh, into);
             Skin(mesh, renderer.sharedMesh.boneWeights, remap);
             return mesh;
         }
@@ -157,91 +151,31 @@ namespace HyperRTS.Editor.Animation
                 ?? throw new InvalidOperationException($"Node '{node}' of '{model.name}' has no mesh.");
             var mesh = Object.Instantiate(source);
             var seat = Find(_root, socket);
-            var carrier = seat;
-            while (carrier != null && !_index.ContainsKey(carrier.name))
-            {
-                carrier = carrier.parent;
-            }
-
-            var weighted = carrier != null
-                ? _index[carrier.name]
-                : throw new InvalidOperationException($"Socket node '{socket}' of '{_root.name}' hangs from no skeleton bone.");
+            var weighted = CarryingBone(seat)
+                ?? throw new InvalidOperationException($"Socket node '{socket}' of '{_root.name}' hangs from no skeleton bone.");
             // Onto the socket, into the bone's own space, then back through its bind pose into the skeleton mesh's rest space.
-            Move(mesh, _bindposes[weighted].inverse * _bones[weighted].worldToLocalMatrix * seat.localToWorldMatrix);
+            BoneMesh.Move(mesh, _bindposes[weighted].inverse * _bones[weighted].worldToLocalMatrix * seat.localToWorldMatrix);
             var weights = new BoneWeight[mesh.vertexCount];
             Array.Fill(weights, new BoneWeight { boneIndex0 = 0, weight0 = 1f });
             Skin(mesh, weights, new[] { weighted });
             return mesh;
         }
 
+        // Index of the skeleton bone at or above the node, if any.
+        private int? CarryingBone(Transform node)
+        {
+            for (var at = node; at != null; at = at.parent)
+            {
+                if (_index.TryGetValue(at.name, out var found))
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
         public void Dispose() => Object.DestroyImmediate(_root);
-
-        /// <summary>
-        /// One mesh of <paramref name="meshes"/> in order, as one submesh, bone channels kept; the inputs are destroyed.
-        /// A single mesh comes back as it is.
-        /// </summary>
-        public static Mesh Merge(List<Mesh> meshes)
-        {
-            if (meshes.Count == 1)
-            {
-                return meshes[0];
-            }
-
-            var indices = new List<Vector4>();
-            var weights = new List<Vector4>();
-            var combine = new CombineInstance[meshes.Count];
-            var vertices = 0;
-            for (var i = 0; i < meshes.Count; i++)
-            {
-                var some = new List<Vector4>();
-                meshes[i].GetUVs(BoneAnimatedAuthoring.IndexChannel, some);
-                indices.AddRange(some);
-                meshes[i].GetUVs(BoneAnimatedAuthoring.WeightChannel, some);
-                weights.AddRange(some);
-                combine[i] = new CombineInstance { mesh = meshes[i], transform = Matrix4x4.identity };
-                vertices += meshes[i].vertexCount;
-            }
-
-            var merged = new Mesh { indexFormat = vertices > ushort.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16 };
-            merged.CombineMeshes(combine, mergeSubMeshes: true, useMatrices: false);
-            merged.SetUVs(BoneAnimatedAuthoring.IndexChannel, indices);
-            merged.SetUVs(BoneAnimatedAuthoring.WeightChannel, weights);
-            foreach (var mesh in meshes)
-            {
-                Object.DestroyImmediate(mesh);
-            }
-
-            return merged;
-        }
-
-        // Moves vertices, normals and tangents by a rigid transform, keeping each tangent's handedness.
-        private static void Move(Mesh mesh, Matrix4x4 by)
-        {
-            var normals = by.inverse.transpose;
-            var vertices = mesh.vertices;
-            var directions = mesh.normals;
-            var tangents = mesh.tangents;
-            for (var i = 0; i < vertices.Length; i++)
-            {
-                vertices[i] = by.MultiplyPoint3x4(vertices[i]);
-            }
-
-            for (var i = 0; i < directions.Length; i++)
-            {
-                directions[i] = normals.MultiplyVector(directions[i]).normalized;
-            }
-
-            for (var i = 0; i < tangents.Length; i++)
-            {
-                var turned = by.MultiplyVector(tangents[i]).normalized;
-                tangents[i] = new Vector4(turned.x, turned.y, turned.z, tangents[i].w);
-            }
-
-            mesh.vertices = vertices;
-            mesh.normals = directions;
-            mesh.tangents = tangents;
-            mesh.RecalculateBounds();
-        }
 
         // Indices into the skeleton in the index channel, weights in the weight channel, negative for upper-body bones.
         private void Skin(Mesh mesh, BoneWeight[] weights, int[] remap)

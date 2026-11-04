@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Squads
             }
 
             var members = SystemAPI.GetBuffer<SquadMember>(squad);
-            if (!HasDead(members) || !CanPay(ref state, squad, player, rules.ReinforceCost / members.Length))
+            if (!SquadMember.AnyDead(members) || !CanPay(ref state, squad, player, rules.ReinforceCost / members.Length))
             {
                 return;
             }
@@ -118,7 +118,7 @@ namespace HyperRTS.Simulation.Squads
             DynamicBuffer<SquadMember> members, ref Health health, in SquadRules rules, float deltaTime)
         {
             var share = rules.ReinforceCost / members.Length;
-            if (!HasDead(members) || !IsWorking(ref state, squad, reinforcing.Point))
+            if (!SquadMember.AnyDead(members) || !IsWorking(ref state, squad, reinforcing.Point))
             {
                 Refund(ref state, squad, reinforcing, share);
                 return false;
@@ -136,7 +136,7 @@ namespace HyperRTS.Simulation.Squads
             reinforcing.Elapsed += deltaTime;
             if (reinforcing.Elapsed >= rules.ReinforceTime)
             {
-                Revive(members);
+                SquadMember.Revive(members);
                 health.Current = SquadMember.Total(members);
                 reinforcing.Elapsed = 0f;
                 reinforcing.Paid = false;
@@ -159,27 +159,6 @@ namespace HyperRTS.Simulation.Squads
             var gap = SystemAPI.GetComponent<LocalTransform>(squad).Position.xz
                       - SystemAPI.GetComponent<LocalTransform>(point).Position.xz;
             return math.lengthsq(gap) <= range * range;
-        }
-
-        private static bool HasDead(DynamicBuffer<SquadMember> members) => SquadMember.CountLiving(members) < members.Length;
-
-        /// <summary>Brings the first dead member back at full health in the squad's centre; it walks to its slot.</summary>
-        private static void Revive(DynamicBuffer<SquadMember> members)
-        {
-            for (var i = 0; i < members.Length; i++)
-            {
-                if (!members[i].Alive)
-                {
-                    var member = members[i];
-                    member.Health = member.MaxHealth;
-                    member.Offset = float2.zero;
-                    member.Slot = float2.zero;
-                    member.Posture = Posture.Stand;
-                    member.LeaveSpot();
-                    members[i] = member;
-                    return;
-                }
-            }
         }
 
         private void Refund(ref SystemState state, Entity squad, in Reinforcing reinforcing, float share)

@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment.Trampling
 {
-    /// <summary>One quad drawn into an trample map. Matches <c>TrampleStamp</c> in TrampleBrush.shader.</summary>
+    /// <summary>One quad drawn into a trample map. Matches <c>TrampleStamp</c> in TrampleBrush.shader.</summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct TrampleStamp
     {

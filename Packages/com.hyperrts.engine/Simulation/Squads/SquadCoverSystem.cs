@@ -165,12 +165,12 @@ namespace HyperRTS.Simulation.Squads
                     var there = math.distance(member.Offset, member.Slot) < Arrived;
                     member.Cover = there ? held.Kind : CoverKind.None;
                     member.Sink = there ? held.Drop : 0f;
-                    member.CoverHeading = SquadMember.HeadingOf(held.Facing);
+                    member.CoverHeading = SquadMember.PackHeading(held.Facing);
                 }
                 else if (halted && Blockers.IsConcealing(member.Position(squad)))
                 {
                     member.Cover = CoverKind.Light;
-                    member.CoverHeading = SquadMember.HeadingOf(forward);
+                    member.CoverHeading = SquadMember.PackHeading(forward);
                 }
             }
         }

@@ -21,14 +21,7 @@ namespace HyperRTS.Presentation.HUD.Commands
     {
         private const string ActiveClass = "hud-command--active";
 
-        private readonly LiveQuery _retreatPoints = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<RetreatPoint>(), ComponentType.ReadOnly<Faction>(),
-            ComponentType.ReadOnly<LocalTransform>()));
-
-        private readonly LiveQuery _reinforcePoints = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<ReinforcePoint>(), ComponentType.ReadOnly<Faction>(),
-            ComponentType.ReadOnly<LocalTransform>()));
-
+        private readonly SquadPoints _points = new();
         private readonly List<Entity> _squads = new();
         private CommandButton _retreat;
         private CommandButton _reinforce;
@@ -83,8 +76,8 @@ namespace HyperRTS.Presentation.HUD.Commands
 
             var entityManager = context.EntityManager;
             var faction = context.View.Local.Faction;
-            var hasRetreatPoint = HasAlliedPoint(context, _retreatPoints, faction);
-            using var reinforcePoints = FindPoints(context, faction);
+            var hasRetreatPoint = _points.HasRetreat(context, faction);
+            using var reinforcePoints = _points.FindReinforce(context, faction);
             var anyDead = false;
             var anyInRange = false;
             var anyAffordable = false;
@@ -108,7 +101,7 @@ namespace HyperRTS.Presentation.HUD.Commands
                 }
 
                 anyDead = true;
-                if (IsInRange(entityManager, squad, reinforcePoints))
+                if (SquadPoints.IsInRange(entityManager, squad, reinforcePoints))
                 {
                     anyInRange = true;
                     anyAffordable |= CanPay(context, squad, rules.ReinforceCost / members.Length);
@@ -213,58 +206,5 @@ namespace HyperRTS.Presentation.HUD.Commands
             return !entityManager.HasBuffer<ResourceCost>(squad)
                    || ResourceMath.CanAfford(context.Stock, entityManager.GetBuffer<ResourceCost>(squad, true), share);
         }
-
-        private static bool HasAlliedPoint(HUDContext context, LiveQuery query, byte faction)
-        {
-            var entityManager = context.EntityManager;
-            using var entities = query.In(entityManager).ToEntityArray(Allocator.Temp);
-            foreach (var point in entities)
-            {
-                if (IsWorking(entityManager, point) && IsAllied(context, faction, point))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private NativeList<(float2 Position, float Range)> FindPoints(HUDContext context, byte faction)
-        {
-            var entityManager = context.EntityManager;
-            var found = new NativeList<(float2, float)>(Allocator.Temp);
-            using var entities = _reinforcePoints.In(entityManager).ToEntityArray(Allocator.Temp);
-            foreach (var point in entities)
-            {
-                if (IsWorking(entityManager, point) && IsAllied(context, faction, point))
-                {
-                    var position = entityManager.GetComponentData<LocalTransform>(point).Position.xz;
-                    found.Add((position, entityManager.GetComponentData<ReinforcePoint>(point).Range));
-                }
-            }
-
-            return found;
-        }
-
-        private static bool IsInRange(EntityManager entityManager, Entity squad,
-            NativeList<(float2 Position, float Range)> points)
-        {
-            var here = entityManager.GetComponentData<LocalTransform>(squad).Position.xz;
-            foreach (var (position, range) in points)
-            {
-                if (math.distancesq(here, position) <= range * range)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool IsAllied(HUDContext context, byte faction, Entity point) =>
-            context.View.Relations.IsAllied(faction, context.EntityManager.GetComponentData<Faction>(point).Value);
-
-        private static bool IsWorking(EntityManager entityManager, Entity point) =>
-            !entityManager.HasEnabled<Dead>(point) && !entityManager.HasEnabled<Offline>(point);
     }
 }

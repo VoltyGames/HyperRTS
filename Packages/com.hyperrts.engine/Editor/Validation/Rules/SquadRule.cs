@@ -24,25 +24,15 @@ namespace HyperRTS.Editor.Validation.Rules
             var carried = new bool[weapons];
             foreach (var member in squad.members)
             {
-                if (member.weapon < 0 || member.weapon >= weapons)
-                {
-                    issues.Error(squad, $"{squad.name} has a member with weapon {member.weapon}, but the unit has {weapons} weapons.");
-                    continue;
-                }
-
-                carried[member.weapon] = true;
-                if (!member.hasUpgradedWeapon)
+                if (!Carry(squad, carried, member.weapon, "with", issues))
                 {
                     continue;
                 }
 
-                if (member.upgradedWeapon < 0 || member.upgradedWeapon >= weapons)
+                if (member.hasUpgradedWeapon)
                 {
-                    issues.Error(squad, $"{squad.name} has a member upgrading to weapon {member.upgradedWeapon}, but the unit has {weapons} weapons.");
-                    continue;
+                    Carry(squad, carried, member.upgradedWeapon, "upgrading to", issues);
                 }
-
-                carried[member.upgradedWeapon] = true;
             }
 
             for (var i = 0; i < weapons; i++)
@@ -52,6 +42,19 @@ namespace HyperRTS.Editor.Validation.Rules
                     issues.Warn(squad, $"{squad.name} has no member carrying weapon {i}, so it never fires.");
                 }
             }
+        }
+
+        // Marks the weapon carried, or reports a member naming a weapon the unit lacks.
+        private static bool Carry(SquadAuthoring squad, bool[] carried, int weapon, string how, ValidationIssues issues)
+        {
+            if (weapon >= 0 && weapon < carried.Length)
+            {
+                carried[weapon] = true;
+                return true;
+            }
+
+            issues.Error(squad, $"{squad.name} has a member {how} weapon {weapon}, but the unit has {carried.Length} weapons.");
+            return false;
         }
     }
 }

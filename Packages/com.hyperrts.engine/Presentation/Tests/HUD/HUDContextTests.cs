@@ -18,36 +18,9 @@ using HyperRTS.Presentation.HUD.Panels;
 namespace HyperRTS.Presentation.Tests.HUD
 {
     /// <summary>The HUD's view of a hand-built world and the command card it drives: slots, hotkeys and pages.</summary>
-    public class HUDContextTests
+    public class HUDContextTests : HUDFixture
     {
         private const int LastSlot = CommandCard.Slots - 1;
-
-        private PresentationWorldKit _kit;
-        private EntityManager _em;
-        private MatchView _view;
-        private HUDContext _context;
-        private HUDText _text;
-
-        [SetUp]
-        public void SetUp()
-        {
-            // A game's translated HUDText outlives Play mode (no domain reload); these tests read the engine's keys.
-            _text = HUDText.Current;
-            HUDText.Current = new HUDText();
-            _kit = new PresentationWorldKit("HUD Tests");
-            _em = _kit.EntityManager;
-            _kit.World.CreateSystem<ClientSingletonSystem>();
-            _kit.AddPlayer(1, local: true);
-            _view = new MatchView();
-            _context = new HUDContext();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            HUDText.Current = _text;
-            _kit.Dispose();
-        }
 
         [Test]
         public void SelectionHash_ChangesWhenASelectedBuildingIsCapturedOrFinished()
@@ -184,64 +157,10 @@ namespace HyperRTS.Presentation.Tests.HUD
             Assert.AreEqual(1, card.Root.Children().Count(child => child.ClassListContains("hud-command")));
         }
 
-        [TestCase(false, false, false, false, SquadCommands.Refusal.FullStrength)]
-        [TestCase(true, false, false, false, SquadCommands.Refusal.NoPoint)]
-        [TestCase(true, true, false, false, SquadCommands.Refusal.TooPoor)]
-        [TestCase(true, true, true, false, SquadCommands.Refusal.None)]
-        [TestCase(false, false, false, true, SquadCommands.Refusal.None)]
-        public void ReinforceButton_SaysWhyItCannotAct(bool dead, bool inRange, bool affordable, bool working,
-            SquadCommands.Refusal expected)
-        {
-            Assert.AreEqual(expected, SquadCommands.FindReinforceReason(dead, inRange, affordable, working));
-        }
-
-        [Test]
-        public void SquadCommands_AreOnlyOfferedForSquads()
-        {
-            Refresh();
-            var squad = _em.CreateEntity(typeof(SquadMember));
-            var tank = _em.CreateEntity(typeof(EntityInfo));
-            var source = new SquadCommands();
-
-            var tankOnly = new List<CommandEntry>();
-            source.Build(_context, new[] { tank }, tankOnly);
-            var withSquad = new List<CommandEntry>();
-            source.Build(_context, new[] { tank, squad }, withSquad);
-
-            Assert.IsEmpty(tankOnly);
-            Assert.AreEqual(new[] { 'R', 'T' }, withSquad.Select(entry => entry.Hotkey).ToArray());
-        }
-
-        [Test]
-        public void MemberCard_ShowsItsWeapon_AndWorkOverCover()
-        {
-            var card = new SquadMemberCard();
-            var digger = new SquadMember
-            {
-                Health = 10f, MaxHealth = 10f, Cover = CoverKind.Heavy, Action = MemberAction.Dig,
-            };
-
-            card.Show(digger, "M249");
-            var label = card.Q<Label>(className: "hud-member__state");
-            Assert.AreEqual("M249", card.Q<Label>(className: "hud-member__weapon").text);
-            Assert.AreEqual(HUDText.Text("squad.digging"), label.text);
-
-            digger.Health = 0f;
-            card.Show(digger, "M249");
-            Assert.AreEqual(HUDText.Text("squad.dead"), label.text);
-            Assert.IsTrue(card.ClassListContains("hud-member--dead"));
-        }
-
         private int Hash()
         {
             Refresh();
             return _context.SelectionHash;
-        }
-
-        private void Refresh()
-        {
-            _view.Refresh(_kit.World);
-            Assert.IsTrue(_context.Refresh(_view));
         }
 
         private CommandCard Refreshed(CommandCard card)

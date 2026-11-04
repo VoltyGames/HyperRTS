@@ -4,32 +4,6 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Animation
 {
-    /// <summary>One clip of a <see cref="BoneAnimationSet"/>: how many frames it bakes and the clip time each samples.</summary>
-    internal sealed class ClipFrames
-    {
-        public readonly BoneAnimationSet.Clip Clip;
-        private readonly int _steps;
-
-        public ClipFrames(BoneAnimationSet.Clip clip, float fps)
-        {
-            Clip = clip;
-            var steps = Mathf.Max(1, Mathf.RoundToInt(clip.source.length / clip.speed * fps));
-            // A loop does not repeat its first frame at the end.
-            Count = clip.loop ? steps : steps + 1;
-            _steps = steps;
-        }
-
-        public int Count { get; }
-
-        /// <summary>Seconds into the source clip that frame <paramref name="frame"/> shows.</summary>
-        public float TimeOf(int frame) => Clip.source.length * frame / _steps;
-
-        public VATClipTable.Clip AsClip(int startRow, float fps, float groundSpeed) => new()
-        {
-            name = Clip.name, startRow = startRow, frameCount = Count, fps = fps, loop = Clip.loop, groundSpeed = groundSpeed,
-        };
-    }
-
     /// <summary>The skin matrices of every bone for every baked frame: the bone texture's pixels and the all-frame bounds.</summary>
     internal sealed class BoneFrames
     {
@@ -37,9 +11,20 @@ namespace HyperRTS.Editor.Animation
 
         private readonly List<Matrix4x4[]> _frames = new();
 
-        public void Add(Matrix4x4[] pose) => _frames.Add(pose);
+        /// <summary>Poses the rig at every frame of every plan, in order.</summary>
+        public static BoneFrames Sample(BoneRig rig, List<ClipFrames> plans)
+        {
+            var frames = new BoneFrames();
+            foreach (var plan in plans)
+            {
+                for (var i = 0; i < plan.Count; i++)
+                {
+                    frames._frames.Add(rig.Pose(plan.Clip.source, plan.TimeOf(i), plan.Clip.inPlace));
+                }
+            }
 
-        public int Count => _frames.Count;
+            return frames;
+        }
 
         /// <summary>Half-float RGBA, a row per frame and three texels a bone holding the matrix's top three rows.</summary>
         public Texture2D Texture(int bones)

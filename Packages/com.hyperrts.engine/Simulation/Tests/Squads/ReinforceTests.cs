@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Squads;
@@ -25,8 +24,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         {
             _supplies ??= World.CreateSupplies();
             World.AddResources(1, _supplies, funds);
-            var squad = World.SpawnUnit(1, float3.zero, speed: 5f, maxHealth: Each * 4);
-            SquadAuthoring.Add(World.Writer(squad), Each * 4, new byte[4]);
+            var squad = World.SpawnSquad(1, float3.zero);
             World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
             World.EntityManager.AddBuffer<ResourceCost>(squad);
             World.SetCost(squad, _supplies, 100);

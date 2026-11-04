@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;
@@ -16,12 +15,9 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// </summary>
     public class SuppressionTests : SimulationFixture
     {
-        private const float Each = 25f;
-
         private Entity Squad(float3 position, int size = 2)
         {
-            var squad = World.SpawnUnit(1, position, speed: 5f, maxHealth: Each * size);
-            SquadAuthoring.Add(World.Writer(squad), Each * size, new byte[size]);
+            var squad = World.SpawnSquad(1, position, size);
             return squad;
         }
 

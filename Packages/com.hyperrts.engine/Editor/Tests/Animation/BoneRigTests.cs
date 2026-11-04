@@ -90,7 +90,7 @@ namespace HyperRTS.Editor.Tests.Animation
             using var rig = Rig();
             var kit = Model("Kit", Quaternion.Euler(-90f, 0f, 0f));
 
-            var merged = Track(BoneRig.Merge(new List<Mesh> { rig.SkinnedMesh(kit, "Body"), rig.SkinnedMesh(kit, "Body") }));
+            var merged = Track(BoneMesh.Merge(new List<Mesh> { rig.SkinnedMesh(kit, "Body"), rig.SkinnedMesh(kit, "Body") }));
 
             Assert.AreEqual(6, merged.vertexCount);
             Assert.AreEqual(1, merged.subMeshCount);

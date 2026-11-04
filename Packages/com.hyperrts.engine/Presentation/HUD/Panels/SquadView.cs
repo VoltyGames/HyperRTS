@@ -123,22 +123,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         private void ShowStatus(EntityManager entityManager, Entity entity, in Suppression suppression,
             in SquadRules rules)
         {
-            var reinforcing = entityManager.HasEnabled<Reinforcing>(entity);
-            var building = entityManager.HasEnabled<SquadWork>(entity);
-            var status = 0;
-            if (suppression.Retreating)
-            {
-                status = 1;
-            }
-            else if (reinforcing)
-            {
-                status = 2;
-            }
-            else if (building)
-            {
-                status = 3;
-            }
-
+            var status = FindStatus(entityManager, entity, suppression);
             _status.SetHidden(status == 0);
             _progress.SetHidden(status < 2);
             if (status != _shownStatus)
@@ -147,16 +132,31 @@ namespace HyperRTS.Presentation.HUD.Panels
                 _statusText.text = HUDText.Text(StatusKeys[status]);
             }
 
-            if (building && !reinforcing && !suppression.Retreating)
-            {
-                _progress.Fraction = entityManager.GetComponentData<SquadWork>(entity).Progress;
-            }
-
-            if (reinforcing)
+            if (status == 2)
             {
                 var elapsed = entityManager.GetComponentData<Reinforcing>(entity).Elapsed;
                 _progress.Fraction = rules.ReinforceTime > 0f ? elapsed / rules.ReinforceTime : 1f;
             }
+            else if (status == 3)
+            {
+                _progress.Fraction = entityManager.GetComponentData<SquadWork>(entity).Progress;
+            }
+        }
+
+        // An index into StatusKeys: 0 none, 1 retreating, 2 reinforcing, 3 building.
+        private static int FindStatus(EntityManager entityManager, Entity entity, in Suppression suppression)
+        {
+            if (suppression.Retreating)
+            {
+                return 1;
+            }
+
+            if (entityManager.HasEnabled<Reinforcing>(entity))
+            {
+                return 2;
+            }
+
+            return entityManager.HasEnabled<SquadWork>(entity) ? 3 : 0;
         }
     }
 }

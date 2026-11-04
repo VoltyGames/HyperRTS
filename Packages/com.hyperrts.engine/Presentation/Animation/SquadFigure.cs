@@ -90,7 +90,7 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>False until the first update records position and shots, so a spawn neither runs nor fires.</summary>
         public bool Primed;
 
-        public readonly bool HasOtherModel => Other.Figure != Entity.Null;
+        public readonly bool HasOtherModel => Other.Model.Figure != Entity.Null;
 
         /// <summary>Whether the model <paramref name="member"/> calls for now, given whether the squad is <paramref name="emplaced"/>, is not the one shown.</summary>
         public readonly bool NeedsOtherModel(in SquadMember member, bool emplaced)
@@ -107,18 +107,22 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Shows the other model; it is placed and posed afresh, as a figure not yet shown.</summary>
         public void SwapModel()
         {
-            var shown = new FigureVariant { Reason = Other.Reason, Figure = Figure, Clips = Clips, Weapon = Weapon, Height = Height };
-            Figure = Other.Figure;
-            Clips = Other.Clips;
-            Weapon = Other.Weapon;
-            Height = Other.Height;
-            Other = shown;
+            var shown = new FigureModel { Figure = Figure, Clips = Clips, Weapon = Weapon, Height = Height };
+            Figure = Other.Model.Figure;
+            Clips = Other.Model.Clips;
+            Weapon = Other.Model.Weapon;
+            Height = Other.Model.Height;
+            Other.Model = shown;
             ShowsOther = !ShowsOther;
             State = FigureState.Unset;
             Lower = default;
             Upper = default;
             LowerRate = 1f;
         }
+
+        /// <summary>Whether the clips played were chosen for another posture, firing or digging than these.</summary>
+        public readonly bool PoseDiffers(Posture posture, bool firing, bool digging) =>
+            Firing != firing || Posture != posture || Digging != digging;
 
         /// <summary>Times its own speed that <paramref name="clip"/> plays so its feet keep to the ground at the figure's speed.</summary>
         public readonly float RateFor(in VATClipRange clip)

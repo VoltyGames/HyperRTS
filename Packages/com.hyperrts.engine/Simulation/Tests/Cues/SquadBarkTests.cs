@@ -30,8 +30,7 @@ namespace HyperRTS.Simulation.Tests.Cues
 
         private Entity Squad(byte faction = 1, int size = 4, bool settle = true)
         {
-            var squad = World.SpawnUnit(faction, float3.zero, speed: 0f, maxHealth: Each * size);
-            SquadAuthoring.Add(World.Writer(squad), Each * size, new byte[size]);
+            var squad = World.SpawnSquad(faction, float3.zero, size, speed: 0f);
             var sounds = EntitySoundsAuthoring.Add(World.Writer(squad));
             var cue = World.Own(ScriptableObject.CreateInstance<SoundCue>());
             foreach (var slot in Slots)

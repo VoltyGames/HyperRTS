@@ -22,7 +22,6 @@ namespace HyperRTS.Simulation.Tests.AI
     /// </summary>
     public class AISquadTests : SimulationFixture
     {
-        private const float Each = 25f;
         private const byte Bot = 2;
 
         private ResourceType _supplies;
@@ -40,8 +39,7 @@ namespace HyperRTS.Simulation.Tests.AI
 
         private Entity Squad(float3 position, int dead = 0)
         {
-            var squad = World.SpawnUnit(Bot, position, speed: 5f, maxHealth: Each * 4);
-            SquadAuthoring.Add(World.Writer(squad), Each * 4, new byte[4]);
+            var squad = World.SpawnSquad(Bot, position);
             World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
             var members = World.Buffer<SquadMember>(squad);
             for (var i = 0; i < dead; i++)

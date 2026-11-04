@@ -24,30 +24,34 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues.Error(cover, "More than 255 spots; the rest are never used.");
             }
 
-            var hasFootprint = cover.TryGetComponent<NavObstacleAuthoring>(out var obstacle);
+            cover.TryGetComponent<NavObstacleAuthoring>(out var obstacle);
             for (var i = 0; i < cover.spots.Count; i++)
             {
-                var spot = cover.spots[i];
-                if (spot.facing.sqrMagnitude < 1e-4f)
-                {
-                    issues.Error(cover, $"Spot {i} has no facing.");
-                }
-                else if (!IsInsideBuilding(cover, spot.position)
-                         && Vector2.Dot(spot.facing, -new Vector2(spot.position.x, spot.position.z)) <= 0f)
-                {
-                    issues.Error(cover, $"Spot {i} faces away from the prop, so it covers the open side.");
-                }
+                CheckSpot(cover, obstacle, i, issues);
+            }
+        }
 
-                if (new Vector2(spot.position.x, spot.position.z).magnitude > MaxReach)
-                {
-                    issues.Warn(cover, $"Spot {i} is more than {MaxReach} m from the prop.");
-                }
+        private static void CheckSpot(CoverSpotAuthoring cover, NavObstacleAuthoring obstacle, int index, ValidationIssues issues)
+        {
+            var spot = cover.spots[index];
+            var ground = new Vector2(spot.position.x, spot.position.z);
+            if (spot.facing.sqrMagnitude < 1e-4f)
+            {
+                issues.Error(cover, $"Spot {index} has no facing.");
+            }
+            else if (!IsInsideBuilding(cover, spot.position) && Vector2.Dot(spot.facing, -ground) <= 0f)
+            {
+                issues.Error(cover, $"Spot {index} faces away from the prop, so it covers the open side.");
+            }
 
-                if (hasFootprint && Mathf.Abs(spot.position.x) < obstacle.size.x * 0.5f
-                    && Mathf.Abs(spot.position.z) < obstacle.size.y * 0.5f)
-                {
-                    issues.Warn(cover, $"Spot {i} is inside the prop's own nav obstacle, where no one can stand.");
-                }
+            if (ground.magnitude > MaxReach)
+            {
+                issues.Warn(cover, $"Spot {index} is more than {MaxReach} m from the prop.");
+            }
+
+            if (obstacle != null && Mathf.Abs(ground.x) < obstacle.size.x * 0.5f && Mathf.Abs(ground.y) < obstacle.size.y * 0.5f)
+            {
+                issues.Warn(cover, $"Spot {index} is inside the prop's own nav obstacle, where no one can stand.");
             }
         }
 

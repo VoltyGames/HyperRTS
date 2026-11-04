@@ -41,13 +41,14 @@ namespace HyperRTS.Presentation.Environment.Trampling
                          .Query<RefRO<Trench>, RefRO<NavObstacle>, RefRO<LocalToWorld>>()
                          .WithNone<ConstructionProgress, FogHidden>().WithEntityAccess())
             {
-                if (_dug.Add(entity))
+                if (!_dug.Add(entity))
                 {
-                    var along = math.normalizesafe(place.ValueRO.Right.xz, new float2(1f, 0f));
-                    var half = obstacle.ValueRO.Size * 0.5f;
-                    stamps.AddTrench(place.ValueRO.Position.xz, along, new float2(half.y, half.x + EndOverlap),
-                        trench.ValueRO.Depth);
+                    continue;
                 }
+
+                var along = math.normalizesafe(place.ValueRO.Right.xz, new float2(1f, 0f));
+                var half = obstacle.ValueRO.Size * 0.5f;
+                stamps.AddTrench(place.ValueRO.Position.xz, along, new float2(half.y, half.x + EndOverlap), trench.ValueRO.Depth);
             }
         }
     }

@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
@@ -22,8 +21,7 @@ namespace HyperRTS.Simulation.Tests.Squads
 
         private Entity Squad(float3 position, int size)
         {
-            var squad = World.SpawnUnit(1, position, maxHealth: Each * size);
-            SquadAuthoring.Add(World.Writer(squad), Each * size, new byte[size]);
+            var squad = World.SpawnSquad(1, position, size);
             World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
             return squad;
         }

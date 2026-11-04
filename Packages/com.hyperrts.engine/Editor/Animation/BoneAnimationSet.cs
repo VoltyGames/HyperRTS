@@ -118,14 +118,7 @@ namespace HyperRTS.Editor.Animation
             using var posed = new BoneRig(rig, skeleton, upperRoot, rootBone);
             var meshes = parts.Select(part => MakeMesh(posed, part)).ToList();
             var bones = posed.BoneNames();
-            var pose = new BoneFrames();
-            foreach (var plan in plans)
-            {
-                for (var i = 0; i < plan.Count; i++)
-                {
-                    pose.Add(posed.Pose(plan.Clip.source, plan.TimeOf(i), plan.Clip.inPlace));
-                }
-            }
+            var pose = BoneFrames.Sample(posed, plans);
 
             var written = new List<string>
             {
@@ -145,14 +138,15 @@ namespace HyperRTS.Editor.Animation
         private Mesh MakeMesh(BoneRig posed, Part part)
         {
             var model = part.model != null ? part.model : rig;
-            if (string.IsNullOrEmpty(part.socket))
+            Func<string, Mesh> build = node => posed.SkinnedMesh(model, node);
+            if (!string.IsNullOrEmpty(part.socket))
             {
-                return BoneRig.Merge(part.nodes.Select(node => posed.SkinnedMesh(model, node)).ToList());
+                var socket = sockets.Find(candidate => candidate.name == part.socket)
+                    ?? throw new InvalidOperationException($"Bone set '{name}' part '{part.name}' names socket '{part.socket}', which the set lacks.");
+                build = node => posed.AttachedMesh(model, node, socket.node);
             }
 
-            var socket = sockets.Find(candidate => candidate.name == part.socket)
-                ?? throw new InvalidOperationException($"Bone set '{name}' part '{part.name}' names socket '{part.socket}', which the set lacks.");
-            return BoneRig.Merge(part.nodes.Select(node => posed.AttachedMesh(model, node, socket.node)).ToList());
+            return BoneMesh.Merge(part.nodes.Select(build).ToList());
         }
 
         private BoneClipTable MakeTable(BoneRig posed, List<ClipFrames> plans, List<string> bones, Bounds bounds)
