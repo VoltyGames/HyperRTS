@@ -72,6 +72,12 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Deployed units pack up, so they may move again.</summary>
         PackUp = 26,
 
+        /// <summary>Squads run to the nearest friendly retreat point.</summary>
+        Retreat = 27,
+
+        /// <summary>Squads with dead members bring them back at a friendly reinforce point in range.</summary>
+        Reinforce = 28,
+
         /// <summary>First value a game may use for its own commands; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }

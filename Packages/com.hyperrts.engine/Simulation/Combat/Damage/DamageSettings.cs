@@ -15,6 +15,10 @@ namespace HyperRTS.Simulation.Combat.Damage
         [Tooltip("Optional damage category that armor can scale.")]
         public DamageType damageType;
 
+        [Tooltip("Suppression one hit adds to a squad it lands on (1 pins it at once): machine guns most, rifles some. Splash adds it per soldier reached, shared out by the squad's size.")]
+        [Range(0f, 1f)]
+        public float suppression;
+
         [Tooltip("Radius around the impact that also takes damage; 0 hits only the target.")]
         [Min(0f)]
         public float radius;
@@ -34,6 +38,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             Type = damageType,
             GarrisonFactor = DamageType.Garrison(damageType),
             CoverPiercing = DamageType.Piercing(damageType),
+            Suppression = suppression,
             Radius = radius,
             EdgeFactor = edgeFactor,
             FriendlyFire = friendlyFire,

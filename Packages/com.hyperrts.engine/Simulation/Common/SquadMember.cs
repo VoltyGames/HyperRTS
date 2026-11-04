@@ -97,20 +97,16 @@ namespace HyperRTS.Simulation.Common
         /// of its spot (light cover on a concealing cell has no arc). <paramref name="toThreat"/> is the XZ direction
         /// to where the hit came from; <paramref name="piercing"/> is the share of the protection the hit ignores.
         /// </summary>
-        public readonly float DamageShare(in CoverRules rules, float2 toThreat, float piercing)
-        {
-            if (Cover == CoverKind.None)
-            {
-                return 1f;
-            }
+        public readonly float DamageShare(in CoverRules rules, float2 toThreat, float piercing) =>
+            Covers(rules, toThreat) ? math.lerp(rules.DamageTaken(Cover), 1f, math.saturate(piercing)) : 1f;
 
-            if (HasSpot && math.dot(math.normalizesafe(toThreat), CoverFacing) < rules.ArcCos)
-            {
-                return 1f;
-            }
+        /// <summary>Share of a hit's suppression it takes, by the same rules as <see cref="DamageShare"/>.</summary>
+        public readonly float SuppressionShare(in CoverRules rules, float2 toThreat, float piercing) =>
+            Covers(rules, toThreat) ? math.lerp(rules.SuppressionTaken(Cover), 1f, math.saturate(piercing)) : 1f;
 
-            return math.lerp(rules.DamageTaken(Cover), 1f, math.saturate(piercing));
-        }
+        private readonly bool Covers(in CoverRules rules, float2 toThreat) =>
+            Cover != CoverKind.None
+            && !(HasSpot && math.dot(math.normalizesafe(toThreat), CoverFacing) < rules.ArcCos);
 
         /// <summary>World position of a member standing at <see cref="Offset"/> from a squad at <paramref name="squad"/>.</summary>
         public readonly float3 Position(float3 squad) => squad + new float3(Offset.x, 0f, Offset.y);
@@ -185,6 +181,10 @@ namespace HyperRTS.Simulation.Common
         /// <summary>The share of a hit from <paramref name="from"/> this member takes, standing in a squad at <paramref name="squad"/>.</summary>
         public readonly float ExposureTo(in CoverRules rules, float3 squad, float3 from, float piercing) =>
             DamageShare(rules, from.xz - Position(squad).xz, piercing);
+
+        /// <summary>The share of a hit's suppression from <paramref name="from"/> this member takes.</summary>
+        public readonly float SuppressionFrom(in CoverRules rules, float3 squad, float3 from, float piercing) =>
+            SuppressionShare(rules, from.xz - Position(squad).xz, piercing);
 
         /// <summary>The living member standing nearest <paramref name="point"/>, or -1 when all are dead.</summary>
         public static int FindNearest(DynamicBuffer<SquadMember> members, float3 squad, float3 point)

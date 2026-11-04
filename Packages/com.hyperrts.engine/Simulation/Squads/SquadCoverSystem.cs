@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Squads
     /// <summary>
     /// Puts the members of a halted squad in cover. Each one without a spot takes the best free
     /// <see cref="CoverSpot"/> near the squad (heavy over light, facing the way the squad does, close to its place in
-    /// the ring) and walks to it; it counts as covered, and crouches, once it stands there. A member drops its spot when
+    /// the ring) and walks to it; it counts as covered once it stands there. A member drops its spot when
     /// its squad moves or its prop is gone. A member with no spot on a concealing cell (woods, tall crops) is in light
     /// cover from every side.
     /// </summary>
@@ -151,7 +151,7 @@ namespace HyperRTS.Simulation.Squads
                 member.Slot = taken.Position.xz - transform.Position.xz;
             }
 
-            /// <summary>Sets its cover and posture from where it stands now.</summary>
+            /// <summary>Sets its cover from where it stands now; <see cref="SquadPostureSystem"/> sets the posture.</summary>
             private void Settle(ref SquadMember member, float3 squad, float2 forward, bool halted)
             {
                 member.Cover = CoverKind.None;
@@ -166,15 +166,6 @@ namespace HyperRTS.Simulation.Squads
                 {
                     member.Cover = CoverKind.Light;
                     member.CoverHeading = SquadMember.HeadingOf(forward);
-                }
-
-                if (member.Cover != CoverKind.None)
-                {
-                    member.Posture = Posture.Crouch;
-                }
-                else if (member.Posture == Posture.Crouch)
-                {
-                    member.Posture = Posture.Stand;
                 }
             }
         }

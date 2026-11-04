@@ -39,6 +39,10 @@ namespace HyperRTS.Simulation.Squads
         public static void Add(EntityWriter writer, float maxHealth, IReadOnlyList<byte> weapons)
         {
             var each = maxHealth / weapons.Count;
+            writer.Add(default(Suppression));
+            writer.Add(Pace.Normal);
+            writer.Add(new Reinforcing());
+            writer.SetEnabled<Reinforcing>(false);
             var buffer = writer.AddBuffer<SquadMember>();
             for (var i = 0; i < weapons.Count; i++)
             {

@@ -160,6 +160,7 @@ namespace HyperRTS.Simulation.Tests
             });
             EntityManager.AddComponentData(match, SightSettings.Standard.Rules);
             EntityManager.AddComponentData(match, CoverSettings.Standard.Rules);
+            EntityManager.AddComponentData(match, SquadSettings.Standard.Rules);
 
             var relations = new FactionRelations();
             relations.Teams.Add(0);

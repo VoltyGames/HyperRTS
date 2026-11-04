@@ -19,6 +19,9 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>The <see cref="DamageType.coverPiercing"/> of <see cref="Type"/>.</summary>
         public float CoverPiercing;
 
+        /// <summary>Suppression one hit adds to a squad, from 0 to 1.</summary>
+        public float Suppression;
+
         /// <summary>Splash radius round the impact; 0 hits only the target.</summary>
         public float Radius;
 
@@ -41,6 +44,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             Type = Type,
             GarrisonFactor = GarrisonFactor,
             CoverPiercing = CoverPiercing,
+            Suppression = Suppression,
             Radius = Radius,
             EdgeFactor = EdgeFactor,
             FriendlyFire = FriendlyFire,

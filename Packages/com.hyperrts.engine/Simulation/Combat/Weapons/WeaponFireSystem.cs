@@ -66,6 +66,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Units = SystemAPI.GetComponentLookup<UnitTag>(true),
+                Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 FacingGoals = SystemAPI.GetComponentLookup<FacingGoal>(false),
@@ -80,6 +81,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
+            [ReadOnly] public ComponentLookup<Pace> Paces;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             public ComponentLookup<FacingGoal> FacingGoals;
@@ -87,6 +89,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
             private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in Faction faction)
             {
+                var rate = Paces.TryGetComponent(entity, out var pace) ? pace.FireRate : 1f;
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
@@ -95,8 +98,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
                         continue;
                     }
 
-                    mount.Weapon.Tick(DeltaTime);
-                    if (mount.Target == Entity.Null || mount.Carriers == 0)
+                    mount.Weapon.Tick(DeltaTime * rate);
+                    if (mount.Target == Entity.Null || mount.Carriers == 0 || rate <= 0f)
                     {
                         mount.Weapon.EndSalvo();
                     }

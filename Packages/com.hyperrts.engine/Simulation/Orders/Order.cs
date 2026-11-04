@@ -26,6 +26,9 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Fly to the home pad (or claim one at Target, an own airfield) and dock there.</summary>
         ReturnToBase = 12,
 
+        /// <summary>Run to Position, a friendly retreat point, firing nothing; ends on arrival.</summary>
+        Retreat = 13,
+
         /// <summary>First value a game may use for its own orders; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }

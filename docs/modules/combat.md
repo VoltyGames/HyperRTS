@@ -92,6 +92,40 @@ place in the buffer, so indices never shift.
 A squad of four sends an estimated 20 to 30 bytes per snapshot while its members walk (not yet measured) and a few bytes when it stands still, delta
 compressed against the last snapshot.
 
+### Suppression, posture, retreat and reinforce
+
+`SquadRules` on the Match (baked from `MatchAuthoring.squads`, `SquadSettings`) holds every number below.
+
+- **Suppression.** A squad carries `Suppression` (`Value` 0 to 1, one GhostField at 0.01 steps, about a byte while it
+  changes and a bit while still; the quiet timer is server only). A weapon's `DamageSettings.suppression` is the amount
+  one hit adds. `DamageSystem` adds it for a direct hit on the struck member's `SuppressionShare`, which is the cover's
+  `SuppressionTaken` share by the same arc and piercing as damage; a splash adds `suppression x falloff / squad size`
+  for each member reached. Out of fire for `DecayDelay` seconds it falls `DecayRate` a second.
+  `SquadRules.Level` turns it into `Steady`, `Suppressed` (from `SuppressedAt`) or `Pinned` (from `PinnedAt`).
+- **Pace.** `SquadPostureSystem` (after `SquadCoverSystem`) writes `Pace` each frame: multipliers on speed, rate of
+  fire and damage taken. `MovementSystem` scales top speed by it and, at 0, leaves the unit where it stands with its
+  destination kept; `WeaponFireSystem` ticks cooldowns at `FireRate` and is silent at 0; `DamageFactors` multiplies
+  damage by `DamageTaken`. Suppressed: `SuppressedSpeed` and `SuppressedFireRate`. Pinned: `PinnedFireRate`, and
+  `ProneSpeed` (0 holds it still, so pinned squads keep their orders and go on when free).
+- **Posture.** Only `SquadPostureSystem` sets `SquadMember.Posture`, in this order: retreating stands; pinned lies
+  prone; a member with `Cover` crouches; otherwise a moving squad stands (crouches while suppressed, at
+  `CrouchSpeed`) and a halted squad crouches while it has an attack target. "Moving" is an enabled `MoveDestination`.
+- **Retreat.** `OrderType.Retreat` (13, a `MovesToPosition` order) and `CommandType.Retreat` (27). `RetreatSystem`
+  gives each commanded or selected squad the order to the nearest allied working `RetreatPoint` (`RetreatPointAuthoring`:
+  a radius), with that point as `Target`, and does nothing when there is none. While the order runs `Pace` is
+  `RetreatSpeed` (1.25), `FireRate` 0 and `DamageTaken` `RetreatDamageTaken` (0.5), and suppression is cleared every
+  frame. The order ends within the point's radius; if the point is lost it moves to the next or stops. Any other
+  order replaces the retreat. Pinned squads retreat because the retreat pace ignores posture.
+- **Reinforce.** `CommandType.Reinforce` (28). `ReinforceSystem` starts `Reinforcing` (enableable) on a commanded or
+  selected squad with a dead member, an allied working `ReinforcePoint` (`ReinforcePointAuthoring`: a range) within
+  range and resources for one member; otherwise it does nothing. Each member costs `ReinforceCost` x its slice of the
+  squad's `ResourceCost` (rounded down per resource, via `ResourceMath.TrySpend` with a share) from the commanding
+  player, paid when its `ReinforceTime` starts and refunded if the reinforcing ends first (squad out of range, point
+  lost, squad dead). The first dead member in the buffer revives in place at full health at the squad's centre and
+  walks to its slot; `Health` is re-summed and `SquadMemberSystem` recounts carriers. It ends when nobody is dead or
+  the next member can't be paid for. Replays that `Fill` members from the recorded squad health assume the dead are
+  last, which reinforcing breaks.
+
 ### Cover
 
 Cover means protection; what hides a unit from sight is concealment.
@@ -107,7 +141,7 @@ Cover means protection; what hides a unit from sight is concealment.
   the best free spot within `CoverRules.SearchRadius` (at most the 3.5 m spread): heavy over light, facing within the
   front arc of the squad's forward, nearest its ring place. No two members share one. Members re-reserve each frame
   and drop the spot when the squad moves, its prop is gone or they die. `SquadMember.Cover` is set only once the
-  member stands in the spot; it crouches then, and `CoverHeading` (256 steps) is the way it faces.
+  member stands in the spot; `SquadPostureSystem` crouches it then, and `CoverHeading` (256 steps) is the way it faces.
 - **Concealing ground.** A halted member with no spot on a concealing cell (woods, tall crops) has `Light` cover
   from every side: `Cover` set and `SpotEntity` null, so there is no arc.
 - **Damage.** `DamageSystem` multiplies a hit on a member in cover by `lerp(kind's share, 1, piercing)` when it comes
@@ -115,7 +149,7 @@ Cover means protection; what hides a unit from sight is concealment.
   blast. `DamageType.coverPiercing` is the share of the protection a hit ignores. A direct hit picks its member by
   seeded roll weighted by that share, so exposed members are hit more.
 - **Rules.** `CoverSettings` on the Match bakes `CoverRules`: damage and suppression taken per kind, the front arc
-  half angle and the search radius. Nothing reads the suppression shares yet.
+  half angle and the search radius. Suppression reads the suppression shares.
 - **Heading.** On a concealing cell `CoverHeading` is the squad's facing, so a client can tell a covered member's
   facing from `Cover` alone (`SpotEntity` is server only). `SquadFigureSystem` eases a covered member's figure to
   that heading and back to its baked rotation when the cover goes.

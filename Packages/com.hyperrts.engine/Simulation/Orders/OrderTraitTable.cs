@@ -55,6 +55,7 @@ namespace HyperRTS.Simulation.Orders
             OrderType.AttackMove => Walks | Fights,
             OrderType.Patrol => Walks | Fights | OrderTraits.Loops,
             OrderType.Escort => OrderTraits.EngagesWhileMoving,
+            OrderType.Retreat => OrderTraits.MovesToPosition,
             _ => OrderTraits.None,
         };
     }

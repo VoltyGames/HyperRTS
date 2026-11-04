@@ -42,11 +42,11 @@ namespace HyperRTS.Simulation.Tests.Squads
             return prop;
         }
 
-        private void Hit(Entity target, float amount, float3 origin, float piercing = 0f) =>
+        private void Hit(Entity target, float amount, float3 origin, float piercing = 0f, float suppression = 0f) =>
             World.QueueDamage(new DamageEvent
             {
                 Target = target, Position = origin, Origin = origin, SourceFaction = 2, Amount = amount,
-                EdgeFactor = 1f, CoverPiercing = piercing,
+                EdgeFactor = 1f, CoverPiercing = piercing, Suppression = suppression,
             });
 
         private int BuildCount() =>
@@ -107,13 +107,15 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 1);
             World.Run(3f);
 
-            Hit(squad, 10f, Ahead);
+            Hit(squad, 10f, Ahead, suppression: 0.5f);
             World.Tick();
             Assert.AreEqual(5f, Lost(squad, 0), 1e-3f, "heavy cover halves a hit from the front");
+            Assert.AreEqual(0.15f, World.Get<Suppression>(squad).Value, 1e-3f, "heavy cover lets 0.3 of the suppression through");
 
-            Hit(squad, 10f, Behind);
+            Hit(squad, 10f, Behind, suppression: 0.5f);
             World.Tick();
             Assert.AreEqual(15f, Lost(squad, 0), 1e-3f, "a hit from behind is full");
+            Assert.AreEqual(0.65f, World.Get<Suppression>(squad).Value, 0.01f);
 
             Hit(squad, 2f, Ahead, piercing: 1f);
             World.Tick();

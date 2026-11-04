@@ -77,6 +77,36 @@ namespace HyperRTS.Simulation.Resources
             return true;
         }
 
+        /// <summary>Whether the stock covers <paramref name="share"/> of the cost, rounded down per resource.</summary>
+        public static bool CanAfford(DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResourceCost> cost, float share)
+        {
+            foreach (var item in cost)
+            {
+                if (GetAmount(stock, item.Type) < (int)(item.Amount * share))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>Deducts <paramref name="share"/> of the cost, the amount <see cref="Refund(DynamicBuffer{ResourceStock}, DynamicBuffer{ResourceCost}, float)"/> returns, if affordable.</summary>
+        public static bool TrySpend(DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResourceCost> cost, float share)
+        {
+            if (!CanAfford(stock, cost, share))
+            {
+                return false;
+            }
+
+            foreach (var item in cost)
+            {
+                Add(stock, item.Type, -(int)(item.Amount * share));
+            }
+
+            return true;
+        }
+
         public static void Refund(DynamicBuffer<ResourceStock> stock, DynamicBuffer<ResourceCost> cost)
         {
             foreach (var item in cost)

@@ -55,6 +55,7 @@ namespace HyperRTS.Simulation.Movement
                 Grid = grid,
                 GivingWay = _givingWay,
                 Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
+                Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 States = SystemAPI.GetComponentLookup<LocomotionState>(false),
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
@@ -69,6 +70,7 @@ namespace HyperRTS.Simulation.Movement
             [ReadOnly] public NavGrid Grid;
             public GivingWay GivingWay;
             [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
+            [ReadOnly] public ComponentLookup<Pace> Paces;
 
             // Each unit writes only its own state.
             [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
@@ -98,7 +100,15 @@ namespace HyperRTS.Simulation.Movement
                     return;
                 }
 
-                var maxStep = speed.Value * DeltaTime;
+                var top = speed.Value * (Paces.TryGetComponent(entity, out var pace) ? pace.Speed : 1f);
+                // A frozen squad keeps its destination and goes on when it is free.
+                if (top <= 0f)
+                {
+                    velocity.Value = float2.zero;
+                    return;
+                }
+
+                var maxStep = top * DeltaTime;
                 var heading = float2.zero;
                 var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
                 // Instant handling needs no memory between frames, so units without it start each from rest.
@@ -116,10 +126,10 @@ namespace HyperRTS.Simulation.Movement
                 var axis = facing * agent.HalfSegment;
                 var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value, wasMoving, destination,
                     GivingWay);
-                Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
+                Index.QueryHulls(crowd.Center, crowd.Reach(top), ref crowd);
 
                 var capsule = new NavCapsule(agent.Access(Grid), axis);
-                var driver = new Driver(locomotion, agent, speed.Value, DeltaTime)
+                var driver = new Driver(locomotion, agent, top, DeltaTime)
                 {
                     Position = from, Facing = facing, State = drive,
                 };

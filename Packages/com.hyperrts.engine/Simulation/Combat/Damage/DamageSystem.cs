@@ -63,6 +63,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 ShelterHits = SystemAPI.GetBufferLookup<ShelterHit>(false),
                 Buildings = _buildings,
                 Members = SystemAPI.GetBufferLookup<SquadMember>(false),
+                Suppressions = SystemAPI.GetComponentLookup<Suppression>(false),
                 Frame = SystemAPI.GetSingleton<SimulationFrame>().Value,
                 Cover = SystemAPI.GetSingleton<CoverRules>(),
             }.Schedule();
@@ -86,6 +87,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             public BufferLookup<ShelterHit> ShelterHits;
             public SectionDamage Buildings;
             public BufferLookup<SquadMember> Members;
+            public ComponentLookup<Suppression> Suppressions;
             public uint Frame;
             public CoverRules Cover;
 
@@ -95,7 +97,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 for (var i = 0; i < events.Length; i++)
                 {
                     var hit = events[i];
-                    var struck = Apply(hit.Target, hit.Amount, hit, hit.Origin, Seed(hit, i), Nearest(hit));
+                    var struck = Apply(hit.Target, hit.Amount, hit, hit.Origin, Seed(hit, i), Nearest(hit), hit.Suppression);
                     if (hit.Radius > 0f)
                     {
                         Splash(hit, struck, victims);
@@ -103,18 +105,6 @@ namespace HyperRTS.Simulation.Combat.Damage
                 }
 
                 events.Clear();
-            }
-
-            /// <summary>A blast aimed at a squad strikes the member nearest it; -1 lets a direct hit roll.</summary>
-            private int Nearest(in DamageEvent hit)
-            {
-                if (hit.Radius <= 0f || !Members.TryGetBuffer(hit.Target, out var members)
-                    || !Transforms.TryGetComponent(hit.Target, out var squad))
-                {
-                    return -1;
-                }
-
-                return SquadMember.FindNearest(members, squad.Position, hit.Position);
             }
 
             /// <summary>Same frame, shooter, target and place in the queue roll the same member, so a replay hits alike.</summary>
@@ -149,21 +139,6 @@ namespace HyperRTS.Simulation.Combat.Damage
                 }
             }
 
-            /// <summary>Each living member but the one a direct hit already struck takes the blast by its own distance.</summary>
-            private void SplashMembers(in DamageEvent hit, in SpatialEntry squad, int struck)
-            {
-                var count = Members[squad.Entity].Length;
-                for (var i = 0; i < count; i++)
-                {
-                    var member = Members[squad.Entity][i];
-                    var gap = EntityRadius.EdgeDistance(member.Position(squad.Position), SquadMember.Radius, hit.Position, 0f);
-                    if (i != struck && member.Alive && gap <= hit.Radius)
-                    {
-                        Apply(squad.Entity, hit.Amount * hit.SplashFactor(gap), hit, hit.Position, 0u, i);
-                    }
-                }
-            }
-
             /// <summary>Splash stays on the layers the hit reaches, so a ground burst spares aircraft above. Heals reach allies only.</summary>
             private bool SplashReaches(in DamageEvent hit, in SpatialEntry victim)
             {
@@ -183,9 +158,11 @@ namespace HyperRTS.Simulation.Combat.Damage
 
             /// <summary>
             /// A lethal hit fells a <see cref="Topple"/> target away from <paramref name="from"/>. A squad's hit lands on
-            /// <paramref name="member"/>, or on one picked by <paramref name="seed"/> when that is -1; returns the member struck, else -1.
+            /// <paramref name="member"/>, or on one picked by <paramref name="seed"/> when that is -1, and adds
+            /// <paramref name="suppression"/> past that member's cover; returns the member struck, else -1.
             /// </summary>
-            private int Apply(Entity target, float amount, in DamageEvent hit, float3 from, uint seed, int member = -1)
+            private int Apply(Entity target, float amount, in DamageEvent hit, float3 from, uint seed, int member = -1,
+                float suppression = 0f)
             {
                 if (!Health.TryGetComponent(target, out var health) || health.Current <= 0f)
                 {
@@ -217,6 +194,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                     amount *= members[member].ExposureTo(Cover, squad, from, hit.CoverPiercing);
                     held = members[member].Health;
                     health.Current = SquadMember.Hurt(members, member, amount);
+                    Suppress(target, members[member], suppression, hit, from);
                 }
                 else
                 {

@@ -32,6 +32,9 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>The <see cref="DamageType.coverPiercing"/> of <see cref="Type"/>.</summary>
         public float CoverPiercing;
 
+        /// <summary>Suppression a hit adds to a squad it lands on, before cover; see <see cref="Suppression"/>.</summary>
+        public float Suppression;
+
         public float Radius;
 
         /// <summary>Fraction of <see cref="Amount"/> dealt at the splash edge, 1 = no falloff.</summary>
