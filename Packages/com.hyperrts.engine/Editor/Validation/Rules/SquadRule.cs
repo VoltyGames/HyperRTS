@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Squads;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
-    /// <summary>A squad has members, each carrying a weapon the unit has, and every weapon has a carrier.</summary>
+    /// <summary>A squad has members, each carrying a weapon the unit has, and every weapon has a carrier, counting upgraded ones.</summary>
     public sealed class SquadRule : AuthoringRule<SquadAuthoring>
     {
         protected override void Check(SquadAuthoring squad, ValidationIssues issues)
@@ -31,6 +31,18 @@ namespace HyperRTS.Editor.Validation.Rules
                 }
 
                 carried[member.weapon] = true;
+                if (!member.hasUpgradedWeapon)
+                {
+                    continue;
+                }
+
+                if (member.upgradedWeapon < 0 || member.upgradedWeapon >= weapons)
+                {
+                    issues.Error(squad, $"{squad.name} has a member upgrading to weapon {member.upgradedWeapon}, but the unit has {weapons} weapons.");
+                    continue;
+                }
+
+                carried[member.upgradedWeapon] = true;
             }
 
             for (var i = 0; i < weapons; i++)
