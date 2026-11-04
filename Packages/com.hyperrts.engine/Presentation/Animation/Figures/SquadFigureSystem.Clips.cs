@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation.VAT;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Presentation.Rendering.Parts;
+using HyperRTS.Simulation.Common.Infantry;
 using Unity.Collections;
 using Unity.Entities;
 

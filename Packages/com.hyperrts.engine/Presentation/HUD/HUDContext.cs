@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Common.Prefabs;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;

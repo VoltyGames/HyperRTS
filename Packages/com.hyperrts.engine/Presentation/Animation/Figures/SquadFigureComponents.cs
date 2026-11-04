@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Simulation.Common.Infantry;
 using Unity.Collections;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;

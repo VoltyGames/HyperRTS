@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Surfaces;

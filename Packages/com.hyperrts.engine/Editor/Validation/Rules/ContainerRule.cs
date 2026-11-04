@@ -1,7 +1,7 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Transport;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Sight;
 using UnityEditor;
 using UnityEngine;
 

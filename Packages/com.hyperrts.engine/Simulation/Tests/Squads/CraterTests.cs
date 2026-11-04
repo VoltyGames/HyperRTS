@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Squads;

@@ -1,6 +1,6 @@
 using HyperRTS.Network.Scenery;
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Vision.Fog;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues.Effects;
 using System.Collections.Generic;
 using HyperRTS.Core;
@@ -8,7 +9,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Replays;
-using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

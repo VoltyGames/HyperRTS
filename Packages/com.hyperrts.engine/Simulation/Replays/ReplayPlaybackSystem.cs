@@ -1,5 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Collections;

@@ -2,7 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

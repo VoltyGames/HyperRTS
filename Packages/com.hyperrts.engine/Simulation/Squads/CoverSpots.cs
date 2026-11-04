@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common.Infantry;
 using System;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;

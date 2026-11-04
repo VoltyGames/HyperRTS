@@ -1,6 +1,7 @@
 using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;

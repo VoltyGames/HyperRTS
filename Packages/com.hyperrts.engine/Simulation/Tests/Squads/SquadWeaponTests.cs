@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;

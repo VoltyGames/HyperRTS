@@ -1,9 +1,9 @@
+using HyperRTS.Simulation.Common.Cells;
 using System;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
-using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;

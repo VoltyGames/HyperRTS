@@ -2,7 +2,6 @@ using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Heights

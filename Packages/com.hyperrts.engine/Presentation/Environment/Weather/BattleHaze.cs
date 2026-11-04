@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using System;
 using Unity.Collections;
 using Unity.Jobs;

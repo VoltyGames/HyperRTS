@@ -1,7 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

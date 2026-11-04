@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Infantry;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;

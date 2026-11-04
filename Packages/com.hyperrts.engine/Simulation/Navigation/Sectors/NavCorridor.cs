@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using System;
 using HyperRTS.Simulation.Navigation.Fields;
 using Unity.Collections;

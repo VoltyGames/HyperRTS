@@ -10,7 +10,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Movement;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Detection;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

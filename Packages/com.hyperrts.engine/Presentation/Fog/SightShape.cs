@@ -1,8 +1,9 @@
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

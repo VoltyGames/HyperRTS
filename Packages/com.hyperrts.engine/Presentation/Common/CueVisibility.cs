@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Entities;
 using Unity.Mathematics;
 

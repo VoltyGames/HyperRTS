@@ -2,7 +2,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Entities;
 using UnityEngine;
 

@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
 using NUnit.Framework;

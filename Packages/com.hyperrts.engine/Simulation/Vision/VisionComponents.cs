@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Stats;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Entities;
 using Unity.Netcode;
 

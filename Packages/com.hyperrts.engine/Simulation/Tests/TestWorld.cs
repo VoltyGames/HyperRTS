@@ -1,4 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Prefabs;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;

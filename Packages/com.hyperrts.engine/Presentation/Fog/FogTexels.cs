@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;

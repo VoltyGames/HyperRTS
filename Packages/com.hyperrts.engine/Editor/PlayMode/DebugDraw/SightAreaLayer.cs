@@ -1,7 +1,8 @@
 using HyperRTS.Core;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

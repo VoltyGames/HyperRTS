@@ -1,7 +1,8 @@
+using HyperRTS.Presentation.Overlays.Markers;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 

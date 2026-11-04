@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Presentation.HUD;

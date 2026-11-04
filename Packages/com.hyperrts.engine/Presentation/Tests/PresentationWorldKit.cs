@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Prefabs;
 using System;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;

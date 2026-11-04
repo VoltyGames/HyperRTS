@@ -1,8 +1,11 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Events;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Detection;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

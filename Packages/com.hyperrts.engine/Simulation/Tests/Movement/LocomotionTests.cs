@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Agents;

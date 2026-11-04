@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 
 namespace HyperRTS.Simulation.Cues
 {

@@ -1,3 +1,5 @@
+using HyperRTS.Presentation.Overlays.Bars;
+using HyperRTS.Presentation.Overlays.Ghosts;
 using HyperRTS.Simulation.Common;
 using System;
 using HyperRTS.Core;

@@ -1,9 +1,10 @@
 ﻿using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Entities;
 using UnityEngine;
 

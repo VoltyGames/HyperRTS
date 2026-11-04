@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Animation.Bones;
 using HyperRTS.Presentation.Animation.VAT;
 using System;
-using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Animation.Figures

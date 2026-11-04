@@ -1,9 +1,9 @@
+using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Vision.Fog;
 using System.Text;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
-using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

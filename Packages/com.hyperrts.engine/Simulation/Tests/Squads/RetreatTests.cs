@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;

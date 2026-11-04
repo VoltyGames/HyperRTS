@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Cells;
 using System;
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Rendering;

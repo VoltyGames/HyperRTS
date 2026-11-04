@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Fog

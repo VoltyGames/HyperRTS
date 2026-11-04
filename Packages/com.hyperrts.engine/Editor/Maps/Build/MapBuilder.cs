@@ -1,5 +1,4 @@
 using HyperRTS.Editor.Maps.Common;
-using HyperRTS.Simulation.Common;
 using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Hints;

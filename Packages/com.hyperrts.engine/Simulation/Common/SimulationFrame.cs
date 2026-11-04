@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Events;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Common

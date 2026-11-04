@@ -2,6 +2,8 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Events;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Spatial;

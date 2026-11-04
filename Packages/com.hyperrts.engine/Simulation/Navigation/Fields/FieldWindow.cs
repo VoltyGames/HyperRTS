@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Common.Cells;
 using System;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;

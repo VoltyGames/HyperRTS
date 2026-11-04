@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Vision.Fog;
 using System;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Mathematics;
 

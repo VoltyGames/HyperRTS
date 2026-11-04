@@ -1,8 +1,9 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

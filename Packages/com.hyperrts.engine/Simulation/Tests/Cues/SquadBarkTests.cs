@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Cues.Voice;

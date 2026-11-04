@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;

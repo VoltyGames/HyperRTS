@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Fog;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;

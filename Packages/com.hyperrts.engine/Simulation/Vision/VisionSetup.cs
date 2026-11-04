@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Vision.Sight;
 
 namespace HyperRTS.Simulation.Vision
 {

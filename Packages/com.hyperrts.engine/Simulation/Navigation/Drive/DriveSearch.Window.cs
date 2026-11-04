@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Drive

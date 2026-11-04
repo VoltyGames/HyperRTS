@@ -5,6 +5,8 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

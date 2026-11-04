@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;
 using Unity.Mathematics;
 

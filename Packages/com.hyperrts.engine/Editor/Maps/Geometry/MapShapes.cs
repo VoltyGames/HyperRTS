@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Layout;

@@ -1,9 +1,9 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Collections;
 using Unity.Scripting.LifecycleManagement;
-using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

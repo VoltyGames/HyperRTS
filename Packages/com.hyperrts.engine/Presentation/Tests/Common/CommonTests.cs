@@ -1,6 +1,8 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Surfaces;
+using HyperRTS.Simulation.Vision.Fog;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -9,7 +11,6 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
-using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;
 using UnityEngine;

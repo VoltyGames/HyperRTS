@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Placement

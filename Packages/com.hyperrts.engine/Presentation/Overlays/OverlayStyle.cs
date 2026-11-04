@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Overlays

@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;

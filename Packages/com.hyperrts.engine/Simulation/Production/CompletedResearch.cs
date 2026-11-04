@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Prefabs;
 using Unity.Entities;
 using Unity.Netcode;
 

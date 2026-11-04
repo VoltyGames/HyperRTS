@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Overlays;
+using HyperRTS.Presentation.Overlays.Ghosts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Areas;

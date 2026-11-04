@@ -1,9 +1,9 @@
+using HyperRTS.Simulation.Common.Cells;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Areas;

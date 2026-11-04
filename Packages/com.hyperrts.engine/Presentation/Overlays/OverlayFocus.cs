@@ -1,3 +1,5 @@
+using HyperRTS.Presentation.Overlays.Bars;
+
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>What the local player is doing with one unit this frame, which decides its marker and health bar.</summary>

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using System.Collections.Generic;

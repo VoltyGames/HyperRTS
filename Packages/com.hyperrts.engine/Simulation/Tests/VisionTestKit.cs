@@ -1,6 +1,8 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;

@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Entities;
 using Unity.Mathematics;

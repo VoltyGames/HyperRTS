@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Power;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings

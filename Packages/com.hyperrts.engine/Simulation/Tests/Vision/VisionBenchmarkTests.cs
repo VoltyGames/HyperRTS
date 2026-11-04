@@ -1,4 +1,6 @@
 using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using Unity.Core;

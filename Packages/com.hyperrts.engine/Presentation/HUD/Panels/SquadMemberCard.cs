@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD.Panels

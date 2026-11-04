@@ -8,7 +8,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

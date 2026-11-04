@@ -1,4 +1,6 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
@@ -6,7 +8,6 @@ using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Squads;
-using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

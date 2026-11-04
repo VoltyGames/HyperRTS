@@ -1,6 +1,8 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Events;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;

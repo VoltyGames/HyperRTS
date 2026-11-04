@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Cues.Voice

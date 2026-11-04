@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;

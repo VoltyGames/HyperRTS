@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Navigation.Heights

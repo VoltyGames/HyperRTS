@@ -1,8 +1,8 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Infantry;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

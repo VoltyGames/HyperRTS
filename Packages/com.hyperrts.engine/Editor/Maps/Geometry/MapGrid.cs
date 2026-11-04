@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Common.Cells;
 using System;
-using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using UnityEngine;
 

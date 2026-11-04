@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;

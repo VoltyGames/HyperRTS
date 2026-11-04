@@ -1,3 +1,6 @@
+using HyperRTS.Presentation.Overlays.Bars;
+using HyperRTS.Presentation.Overlays.Markers;
+using HyperRTS.Simulation.Common.Infantry;
 using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;

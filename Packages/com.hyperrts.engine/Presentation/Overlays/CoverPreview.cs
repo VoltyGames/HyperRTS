@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Infantry;
 using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;

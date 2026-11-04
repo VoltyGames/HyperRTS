@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Overlays.Ghosts;
 using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;

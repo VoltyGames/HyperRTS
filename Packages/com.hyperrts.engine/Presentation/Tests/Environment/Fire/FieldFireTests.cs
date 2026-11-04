@@ -1,9 +1,9 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Fire;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Surfaces;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Mathematics;

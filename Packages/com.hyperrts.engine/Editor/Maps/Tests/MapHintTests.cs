@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Cells;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,6 @@ using HyperRTS.Editor.Maps.Hints;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Grid;
 using NUnit.Framework;
 using Unity.Mathematics;

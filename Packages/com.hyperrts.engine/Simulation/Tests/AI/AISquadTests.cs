@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Infantry;
 using System;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Buildings;

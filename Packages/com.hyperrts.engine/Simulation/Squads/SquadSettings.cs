@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Common.Infantry;
 using System;
-using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Squads

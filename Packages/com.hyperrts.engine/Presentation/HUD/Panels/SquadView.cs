@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Animation.Figures;
-using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
+using System.Collections.Generic;
 using HyperRTS.Simulation.Squads;
 using Unity.Collections;
 using Unity.Entities;

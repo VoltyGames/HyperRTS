@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Vision.Fog;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;

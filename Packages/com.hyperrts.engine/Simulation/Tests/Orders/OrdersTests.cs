@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Events;
 using System;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;

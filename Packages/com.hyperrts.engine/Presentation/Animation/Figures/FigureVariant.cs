@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Common.Infantry;
 using Unity.Collections;
-using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 

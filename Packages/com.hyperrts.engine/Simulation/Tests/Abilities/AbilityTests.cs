@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Detection;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

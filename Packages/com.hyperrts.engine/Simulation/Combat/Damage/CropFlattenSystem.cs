@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;

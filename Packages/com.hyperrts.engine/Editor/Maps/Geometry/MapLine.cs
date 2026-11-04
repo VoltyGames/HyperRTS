@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Cells;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using Unity.Mathematics;

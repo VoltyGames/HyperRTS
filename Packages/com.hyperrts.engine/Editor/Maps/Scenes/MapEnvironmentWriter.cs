@@ -14,7 +14,7 @@ using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Heights;
-using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Sight;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;

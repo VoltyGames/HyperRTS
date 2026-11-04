@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Common.Prefabs;
+using HyperRTS.Simulation.Vision.Detection;
 using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
@@ -8,7 +10,6 @@ using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Movement;
-using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

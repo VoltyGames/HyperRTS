@@ -6,6 +6,7 @@ using HyperRTS.Network.Replication;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
