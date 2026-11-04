@@ -260,6 +260,7 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex SilhouetteVertex
             #pragma fragment SilhouetteFragment
+            #define SILHOUETTE_SLACK_ON
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LitTeamVertexKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/Materials/LitTeamSilhouettePass.hlsl"

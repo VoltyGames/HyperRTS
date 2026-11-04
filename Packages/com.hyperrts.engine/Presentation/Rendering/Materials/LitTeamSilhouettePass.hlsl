@@ -7,6 +7,9 @@
 
 #define SILHOUETTE_FILL 0.12
 #define SILHOUETTE_RIM_POWER 2.0
+// Metres a part may sit behind what hides it and still count as seen, so feet and tracks touching the ground, or a
+// sole a little under it, draw no silhouette.
+#define SILHOUETTE_SLACK 0.3
 
 struct SilhouetteAttributes
 {
@@ -24,7 +27,8 @@ struct SilhouetteVaryings
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
-// Same transform as the forward pass so the mask's ZTest Equal matches its depth exactly.
+// Same transform as the forward pass so the mask's ZTest Equal matches its depth exactly; the silhouette pass adds
+// SILHOUETTE_SLACK_ON.
 SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT BONE_INPUT BUILD_ORDER_INPUT)
 {
     SilhouetteVaryings output = (SilhouetteVaryings)0;
@@ -36,6 +40,10 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
     VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
     output.positionCS = vertexInput.positionCS;
     output.positionWS = vertexInput.positionWS;
+#ifdef SILHOUETTE_SLACK_ON
+    // The silhouette pass alone: drawn nearer the camera, so only parts hidden by more than the slack pass ZTest Greater.
+    output.positionCS = TransformWorldToHClip(vertexInput.positionWS + GetWorldSpaceNormalizeViewDir(vertexInput.positionWS) * SILHOUETTE_SLACK);
+#endif
     output.normalWS = TransformObjectToWorldNormal(input.normalOS);
     return output;
 }
