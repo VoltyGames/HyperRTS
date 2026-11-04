@@ -29,6 +29,9 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>The <see cref="DamageType.garrisonFactor"/> of <see cref="Type"/>; 0 never reaches a garrison.</summary>
         public float GarrisonFactor;
 
+        /// <summary>The <see cref="DamageType.coverPiercing"/> of <see cref="Type"/>.</summary>
+        public float CoverPiercing;
+
         public float Radius;
 
         /// <summary>Fraction of <see cref="Amount"/> dealt at the splash edge, 1 = no falloff.</summary>

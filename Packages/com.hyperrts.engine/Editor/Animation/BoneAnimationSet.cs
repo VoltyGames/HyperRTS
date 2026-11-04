@@ -192,11 +192,25 @@ namespace HyperRTS.Editor.Animation
             }
         }
 
-        // Overwrites the file, which keeps its meta and so the references to it.
+        // Copies into the asset already at the path, so it stays the same object: replacing it would leave prefabs that
+        // nest a figure holding a dead reference until they reimport.
         private static string Write(Object made, string path)
         {
-            AssetDatabase.CreateAsset(made, path);
             var asset = AssetDatabase.LoadMainAssetAtPath(path);
+            if (asset != null && asset.GetType() == made.GetType())
+            {
+                var assetName = asset.name;
+                EditorUtility.CopySerialized(made, asset);
+                asset.name = assetName;
+                EditorUtility.SetDirty(asset);
+                DestroyImmediate(made);
+            }
+            else
+            {
+                AssetDatabase.CreateAsset(made, path);
+                asset = AssetDatabase.LoadMainAssetAtPath(path);
+            }
+
             var labels = AssetDatabase.GetLabels(asset);
             if (!labels.Contains(GeneratedLabel))
             {

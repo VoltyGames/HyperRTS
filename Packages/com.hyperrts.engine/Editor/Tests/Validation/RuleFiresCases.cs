@@ -15,6 +15,7 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
@@ -79,6 +80,15 @@ namespace HyperRTS.Editor.Tests.Validation
             });
             yield return Row<SquadRule>("no members",
                 f => f.Add<SquadAuthoring>(EntityTemplates.CombatUnit()));
+            yield return Row<CoverSpotRule>("faces away from the prop", f =>
+            {
+                var cover = f.Add<CoverSpotAuthoring>(new GameObject("Wall"));
+                cover.spots.Add(new CoverSpotAuthoring.Spot
+                {
+                    position = new Vector3(0f, 0f, -0.8f), facing = new Vector2(0f, -1f), kind = CoverKind.Heavy,
+                });
+                return cover;
+            });
             yield return Row<DeliverySourceRule>("no carrier prefab",
                 f => f.Add<DeliverySourceAuthoring>(EntityTemplates.Building()));
         }

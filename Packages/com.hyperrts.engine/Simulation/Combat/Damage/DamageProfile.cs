@@ -16,6 +16,9 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>The <see cref="DamageType.garrisonFactor"/> of <see cref="Type"/>.</summary>
         public float GarrisonFactor;
 
+        /// <summary>The <see cref="DamageType.coverPiercing"/> of <see cref="Type"/>.</summary>
+        public float CoverPiercing;
+
         /// <summary>Splash radius round the impact; 0 hits only the target.</summary>
         public float Radius;
 
@@ -37,6 +40,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             Amount = Amount,
             Type = Type,
             GarrisonFactor = GarrisonFactor,
+            CoverPiercing = CoverPiercing,
             Radius = Radius,
             EdgeFactor = EdgeFactor,
             FriendlyFire = FriendlyFire,

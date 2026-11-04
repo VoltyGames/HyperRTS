@@ -15,6 +15,13 @@ namespace HyperRTS.Simulation.Common
         [Min(0f)]
         public float garrisonFactor = 1f;
 
+        [Tooltip("Share of a soldier's cover that a hit ignores: 0 = full protection, 1 = none (thermobaric blasts fill the hole).")]
+        [Range(0f, 1f)]
+        public float coverPiercing;
+
+        /// <summary>The cover piercing of <paramref name="type"/>, 0 for plain damage.</summary>
+        public static float Piercing(DamageType type) => type != null ? type.coverPiercing : 0f;
+
         /// <summary>The garrison factor of <paramref name="type"/>, 1 for plain damage.</summary>
         public static float Garrison(DamageType type) => type != null ? type.garrisonFactor : 1f;
     }

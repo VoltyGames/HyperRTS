@@ -50,7 +50,67 @@ namespace HyperRTS.Simulation.Common
         /// <summary>Server only: the offset it walks toward.</summary>
         [GhostField(SendData = false)] public float2 Slot;
 
+        /// <summary>
+        /// Protection it has now: from its spot once it stands there, or light from every side on a concealing cell
+        /// (woods, tall crops) with no spot. None while it walks.
+        /// </summary>
+        [GhostField] public CoverKind Cover;
+
+        /// <summary>World direction it faces in cover, in 256 steps round from the X axis toward Z.</summary>
+        [GhostField] public byte CoverHeading;
+
+        /// <summary>Server only: the prop of the spot it holds, or null; see <c>CoverSpot</c>.</summary>
+        [GhostField(SendData = false)] public Entity SpotEntity;
+
+        /// <summary>Server only: its index in the prop's <c>CoverSpot</c> buffer.</summary>
+        [GhostField(SendData = false)] public byte SpotIndex;
+
+        /// <summary>A squad moving faster than this, in metres a second, walks in a wedge and holds no spot.</summary>
+        public const float MovingSpeed = 0.5f;
+
         public readonly bool Alive => Health > 0f;
+
+        public readonly bool HasSpot => SpotEntity != Entity.Null;
+
+        /// <summary>Unit direction on the XZ plane the member faces in cover.</summary>
+        public readonly float2 CoverFacing
+        {
+            get
+            {
+                var angle = CoverHeading * (math.PI * 2f / 256f);
+                return new float2(math.cos(angle), math.sin(angle));
+            }
+        }
+
+        public static byte HeadingOf(float2 direction) =>
+            (byte)((int)math.round(math.atan2(direction.y, direction.x) * (256f / (math.PI * 2f))) & 255);
+
+        /// <summary>Stops holding a spot, so it walks to its slot again.</summary>
+        public void LeaveSpot()
+        {
+            SpotEntity = Entity.Null;
+            Cover = CoverKind.None;
+        }
+
+        /// <summary>
+        /// Share of a hit it takes: the cover's share, or 1 when none or when the hit comes from outside the front arc
+        /// of its spot (light cover on a concealing cell has no arc). <paramref name="toThreat"/> is the XZ direction
+        /// to where the hit came from; <paramref name="piercing"/> is the share of the protection the hit ignores.
+        /// </summary>
+        public readonly float DamageShare(in CoverRules rules, float2 toThreat, float piercing)
+        {
+            if (Cover == CoverKind.None)
+            {
+                return 1f;
+            }
+
+            if (HasSpot && math.dot(math.normalizesafe(toThreat), CoverFacing) < rules.ArcCos)
+            {
+                return 1f;
+            }
+
+            return math.lerp(rules.DamageTaken(Cover), 1f, math.saturate(piercing));
+        }
 
         /// <summary>World position of a member standing at <see cref="Offset"/> from a squad at <paramref name="squad"/>.</summary>
         public readonly float3 Position(float3 squad) => squad + new float3(Offset.x, 0f, Offset.y);
@@ -89,26 +149,42 @@ namespace HyperRTS.Simulation.Common
             return count;
         }
 
-        /// <summary>One living member chosen by <paramref name="seed"/>, or -1 when all are dead.</summary>
-        public static int Pick(DynamicBuffer<SquadMember> members, uint seed)
+        /// <summary>
+        /// One living member chosen by <paramref name="seed"/>, or -1 when all are dead. Members weigh by the share of a
+        /// hit from <paramref name="from"/> they take, so exposed ones are hit more often than ones in cover.
+        /// </summary>
+        public static int PickExposed(DynamicBuffer<SquadMember> members, float3 squad, uint seed,
+            in CoverRules rules, float3 from, float piercing)
         {
-            var living = CountLiving(members);
-            if (living == 0)
-            {
-                return -1;
-            }
-
-            var skip = Random.CreateFromIndex(seed).NextInt(living);
+            var total = 0f;
             for (var i = 0; i < members.Length; i++)
             {
-                if (members[i].Alive && skip-- == 0)
+                total += members[i].Alive ? members[i].ExposureTo(rules, squad, from, piercing) : 0f;
+            }
+
+            var roll = Random.CreateFromIndex(seed).NextFloat() * total;
+            var last = -1;
+            for (var i = 0; i < members.Length; i++)
+            {
+                if (!members[i].Alive)
+                {
+                    continue;
+                }
+
+                last = i;
+                roll -= members[i].ExposureTo(rules, squad, from, piercing);
+                if (roll < 0f)
                 {
                     return i;
                 }
             }
 
-            return -1;
+            return last;
         }
+
+        /// <summary>The share of a hit from <paramref name="from"/> this member takes, standing in a squad at <paramref name="squad"/>.</summary>
+        public readonly float ExposureTo(in CoverRules rules, float3 squad, float3 from, float piercing) =>
+            DamageShare(rules, from.xz - Position(squad).xz, piercing);
 
         /// <summary>The living member standing nearest <paramref name="point"/>, or -1 when all are dead.</summary>
         public static int FindNearest(DynamicBuffer<SquadMember> members, float3 squad, float3 point)

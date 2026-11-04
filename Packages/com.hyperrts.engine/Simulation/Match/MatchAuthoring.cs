@@ -5,6 +5,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.MatchStart;
+using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;
@@ -54,6 +55,9 @@ namespace HyperRTS.Simulation.Match
 
         [Tooltip("What high ground is worth to sight and direct fire, and how close enemies spot concealed infantry.")]
         public SightSettings sight = SightSettings.Standard;
+
+        [Tooltip("What cover takes off a hit and how far a halted squad looks for it.")]
+        public CoverSettings cover = CoverSettings.Standard;
 
         [Header("Rules")]
         [Tooltip("Production speed of power-consuming producers while their owner's power is low.")]
@@ -141,6 +145,7 @@ namespace HyperRTS.Simulation.Match
                     MaxSlope = authoring.maxSlope,
                 });
                 AddComponent(entity, authoring.sight.Rules);
+                AddComponent(entity, authoring.cover.Rules);
                 AddComponent(entity, new MatchRules
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,

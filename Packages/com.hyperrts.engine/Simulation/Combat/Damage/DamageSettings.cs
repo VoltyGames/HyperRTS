@@ -33,6 +33,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             Amount = damage,
             Type = damageType,
             GarrisonFactor = DamageType.Garrison(damageType),
+            CoverPiercing = DamageType.Piercing(damageType),
             Radius = radius,
             EdgeFactor = edgeFactor,
             FriendlyFire = friendlyFire,

@@ -15,8 +15,8 @@ namespace HyperRTS.Simulation.Combat.Damage
 {
     /// <summary>
     /// Resolves the frame's <see cref="DamageEvent"/>s in order. Heals skip every multiplier. A direct hit on a squad
-    /// lands on one living <see cref="SquadMember"/> picked by a seeded roll (a blast's on the nearest), splash hurts each member by its own distance
-    /// from the blast, and a heal goes to the most hurt member; the squad's health is always its members' sum.
+    /// lands on one living <see cref="SquadMember"/> (a blast's on the nearest), rolled by seed and favouring the
+    /// uncovered; splash hurts each by its distance from the blast; cover cuts hits from its front.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
@@ -37,6 +37,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<SimulationFrame>();
+            state.RequireForUpdate<CoverRules>();
         }
 
         [BurstCompile]
@@ -63,6 +64,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 Buildings = _buildings,
                 Members = SystemAPI.GetBufferLookup<SquadMember>(false),
                 Frame = SystemAPI.GetSingleton<SimulationFrame>().Value,
+                Cover = SystemAPI.GetSingleton<CoverRules>(),
             }.Schedule();
         }
 
@@ -85,6 +87,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             public SectionDamage Buildings;
             public BufferLookup<SquadMember> Members;
             public uint Frame;
+            public CoverRules Cover;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
@@ -102,7 +105,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 events.Clear();
             }
 
-            /// <summary>A blast aimed at a squad strikes the member nearest it; -1 lets a direct hit roll for one.</summary>
+            /// <summary>A blast aimed at a squad strikes the member nearest it; -1 lets a direct hit roll.</summary>
             private int Nearest(in DamageEvent hit)
             {
                 if (hit.Radius <= 0f || !Members.TryGetBuffer(hit.Target, out var members)
@@ -204,12 +207,14 @@ namespace HyperRTS.Simulation.Combat.Damage
                 var held = health.Current;
                 if (hasMembers)
                 {
-                    member = member >= 0 ? member : SquadMember.Pick(members, seed);
+                    var squad = Transforms[target].Position;
+                    member = member >= 0 ? member : SquadMember.PickExposed(members, squad, seed, Cover, from, hit.CoverPiercing);
                     if (member < 0)
                     {
                         return -1;
                     }
 
+                    amount *= members[member].ExposureTo(Cover, squad, from, hit.CoverPiercing);
                     held = members[member].Health;
                     health.Current = SquadMember.Hurt(members, member, amount);
                 }

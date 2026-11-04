@@ -92,6 +92,32 @@ place in the buffer, so indices never shift.
 A squad of four sends an estimated 20 to 30 bytes per snapshot while its members walk (not yet measured) and a few bytes when it stands still, delta
 compressed against the last snapshot.
 
+### Cover
+
+Cover means protection; what hides a unit from sight is concealment.
+
+- **Spots.** A prop carries `CoverSpot`s (`CoverSpotAuthoring`): a local position, a facing (the way a soldier in it
+  looks, across the prop toward the fire it stops) and a `CoverKind`, `Heavy` or `Light`. The inspector fillers "Fill
+  both sides" and "Fill ring" write the list; edit it by hand after. The `CoverSpotRule` validation rule flags spots
+  inside the prop's nav obstacle, with no facing, facing away from the prop, or far from the prop. A destroyed prop takes its spots with it.
+- **Index.** `CoverSpotSystem` keeps the singleton `CoverSpots`: every spot in world space in a 4 m grid, each with a
+  `Reservation`, rebuilt only when cover entities appear, vanish or move (`Version` counts builds). A spot is named
+  by `CoverSpotKey` (prop and index), which survives a rebuild.
+- **Taking a spot.** `SquadCoverSystem` runs after `SquadMemberSystem`. When a squad halts, each living member takes
+  the best free spot within `CoverRules.SearchRadius` (at most the 3.5 m spread): heavy over light, facing within the
+  front arc of the squad's forward, nearest its ring place. No two members share one. Members re-reserve each frame
+  and drop the spot when the squad moves, its prop is gone or they die. `SquadMember.Cover` is set only once the
+  member stands in the spot; it crouches then, and `CoverHeading` (256 steps) is the way it faces.
+- **Concealing ground.** A halted member with no spot on a concealing cell (woods, tall crops) has `Light` cover
+  from every side: `Cover` set and `SpotEntity` null, so there is no arc.
+- **Damage.** `DamageSystem` multiplies a hit on a member in cover by `lerp(kind's share, 1, piercing)` when it comes
+  from within the arc (`CoverRules.ArcCos`) of the member's facing, direct hits from `Origin`, splash from the
+  blast. `DamageType.coverPiercing` is the share of the protection a hit ignores. A direct hit picks its member by
+  seeded roll weighted by that share, so exposed members are hit more.
+- **Rules.** `CoverSettings` on the Match bakes `CoverRules`: damage and suppression taken per kind, the front arc
+  half angle and the search radius. Nothing reads the suppression shares yet.
+- **Not built yet.** Craters from heavy explosions on open ground.
+
 ### Salvos, muzzles and ammo
 
 A weapon with `salvoSize` above 1 fires that many shots `salvoInterval` apart, then runs its cooldown. Each shot

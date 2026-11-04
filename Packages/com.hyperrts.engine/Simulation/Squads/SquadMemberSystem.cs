@@ -13,9 +13,9 @@ namespace HyperRTS.Simulation.Squads
     /// <summary>
     /// Keeps each squad's members in order: their health sums to the squad's after stat changes, each weapon mount
     /// counts its living carriers, and members walk toward their slots, a loose wedge while the squad moves and a ring
-    /// when it halts. Members walk at most three quarters of the squad's speed relative to it, so one that fell behind
-    /// visibly runs to catch up. Squads inside a container stay put. Slots ignore the nav grid, so a member can stand
-    /// in a wall.
+    /// when it halts, or the cover spot a member holds. Members walk at most three quarters of the squad's speed
+    /// relative to it, so one that fell behind visibly runs to catch up. Squads inside a container stay put. Slots
+    /// ignore the nav grid, so a member can stand in a wall.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]
@@ -35,7 +35,6 @@ namespace HyperRTS.Simulation.Squads
         [BurstCompile]
         private partial struct MemberJob : IJobEntity
         {
-            private const float MovingSpeed = 0.5f;
             private const float CatchUp = 0.75f;
             private const float Tolerance = 1e-3f;
 
@@ -101,7 +100,7 @@ namespace HyperRTS.Simulation.Squads
             private void Walk(DynamicBuffer<SquadMember> members, float2 squadVelocity, float speed)
             {
                 var living = SquadMember.CountLiving(members);
-                var moving = math.lengthsq(squadVelocity) > MovingSpeed * MovingSpeed;
+                var moving = math.lengthsq(squadVelocity) > SquadMember.MovingSpeed * SquadMember.MovingSpeed;
                 var heading = math.normalizesafe(squadVelocity);
                 var reach = speed * CatchUp * DeltaTime;
                 var rank = 0;
@@ -113,8 +112,12 @@ namespace HyperRTS.Simulation.Squads
                         continue;
                     }
 
-                    var slot = moving ? SquadMember.WedgeSlot(rank, living, heading) : SquadMember.SpreadSlot(rank, living);
-                    member.Slot = ClampSpread(slot);
+                    if (!member.HasSpot)
+                    {
+                        var slot = moving ? SquadMember.WedgeSlot(rank, living, heading) : SquadMember.SpreadSlot(rank, living);
+                        member.Slot = ClampSpread(slot);
+                    }
+
                     var gap = member.Slot - member.Offset;
                     var length = math.length(gap);
                     member.Offset = length <= reach ? member.Slot : member.Offset + gap / length * reach;

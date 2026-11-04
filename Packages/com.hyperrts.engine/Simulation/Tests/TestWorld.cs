@@ -13,6 +13,7 @@ using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Core;
@@ -158,6 +159,7 @@ namespace HyperRTS.Simulation.Tests
                 StrategicAssets = true,
             });
             EntityManager.AddComponentData(match, SightSettings.Standard.Rules);
+            EntityManager.AddComponentData(match, CoverSettings.Standard.Rules);
 
             var relations = new FactionRelations();
             relations.Teams.Add(0);
