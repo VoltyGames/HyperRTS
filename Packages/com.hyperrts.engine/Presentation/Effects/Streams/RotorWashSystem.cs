@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Surfaces;

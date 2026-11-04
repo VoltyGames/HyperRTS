@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Destruction;

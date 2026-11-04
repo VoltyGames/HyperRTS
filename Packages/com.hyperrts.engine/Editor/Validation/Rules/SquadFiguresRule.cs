@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Animation.Figures;
 using HyperRTS.Simulation.Squads;
 
 namespace HyperRTS.Editor.Validation.Rules

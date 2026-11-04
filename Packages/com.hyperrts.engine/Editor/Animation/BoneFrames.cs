@@ -1,5 +1,5 @@
+using HyperRTS.Presentation.Animation.Bones;
 using System.Collections.Generic;
-using HyperRTS.Presentation.Animation;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Animation

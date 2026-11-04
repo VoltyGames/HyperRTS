@@ -1,7 +1,7 @@
+using HyperRTS.Presentation.Animation.VAT;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using HyperRTS.Presentation.Animation;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;

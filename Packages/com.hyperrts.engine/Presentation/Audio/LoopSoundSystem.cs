@@ -1,8 +1,8 @@
+using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Cues.Sounds;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;

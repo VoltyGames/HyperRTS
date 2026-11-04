@@ -1,6 +1,6 @@
+using HyperRTS.Presentation.Animation.Figures;
 using System.Collections.Generic;
 using HyperRTS.Core;
-using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;

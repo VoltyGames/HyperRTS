@@ -1,9 +1,9 @@
+using HyperRTS.Presentation.Animation.Bones;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Core;
-using HyperRTS.Presentation.Animation;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;

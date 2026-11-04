@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Animation.VAT;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Animation

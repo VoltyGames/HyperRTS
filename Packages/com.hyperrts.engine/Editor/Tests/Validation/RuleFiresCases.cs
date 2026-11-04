@@ -1,3 +1,5 @@
+using HyperRTS.Presentation.Animation.Figures;
+using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Projectiles;
@@ -9,7 +11,6 @@ using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Rules;
-using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Presentation.Effects.Streams;

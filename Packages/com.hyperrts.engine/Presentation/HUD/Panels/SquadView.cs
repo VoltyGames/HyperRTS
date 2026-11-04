@@ -1,5 +1,5 @@
+using HyperRTS.Presentation.Animation.Figures;
 using System.Collections.Generic;
-using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Squads;
 using Unity.Collections;

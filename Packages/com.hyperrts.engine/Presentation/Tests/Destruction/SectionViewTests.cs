@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation;
+using HyperRTS.Presentation.Animation.VAT;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
