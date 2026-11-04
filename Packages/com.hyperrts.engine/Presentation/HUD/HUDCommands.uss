@@ -24,9 +24,10 @@
     opacity: 0.4;
 }
 
+/* The left padding keeps the label clear of the hotkey in the corner. */
 .hud-command--text {
     height: 34px;
-    padding: 2px 4px;
+    padding: 2px 4px 2px 14px;
 }
 
 /* Fills the grid so the page card lands in the last slot. */

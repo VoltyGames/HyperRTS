@@ -126,9 +126,11 @@ namespace HyperRTS.Simulation.Squads
         private static WorldCoverSpot World(in CoverSpot spot, in LocalTransform transform, Entity entity, byte index)
         {
             var facing = math.rotate(transform.Rotation, new float3(spot.Facing.x, 0f, spot.Facing.y)).xz;
+            var position = transform.TransformPoint(spot.Position);
             return new WorldCoverSpot
             {
-                Position = transform.TransformPoint(spot.Position),
+                Position = position,
+                Drop = math.max(0f, transform.Position.y - position.y),
                 Facing = math.normalizesafe(facing),
                 Kind = spot.Kind,
                 Entity = entity,

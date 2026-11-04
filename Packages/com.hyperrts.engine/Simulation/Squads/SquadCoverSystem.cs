@@ -158,11 +158,13 @@ namespace HyperRTS.Simulation.Squads
             private void Settle(ref SquadMember member, float3 squad, float2 forward, bool halted)
             {
                 member.Cover = CoverKind.None;
+                member.Sink = 0f;
                 if (member.HasSpot && Spots.TryFind(member.SpotEntity, member.SpotIndex, out var spot))
                 {
                     var held = Spots.Spots[spot];
                     var there = math.distance(member.Offset, member.Slot) < Arrived;
                     member.Cover = there ? held.Kind : CoverKind.None;
+                    member.Sink = there ? held.Drop : 0f;
                     member.CoverHeading = SquadMember.HeadingOf(held.Facing);
                 }
                 else if (halted && Blockers.IsConcealing(member.Position(squad)))

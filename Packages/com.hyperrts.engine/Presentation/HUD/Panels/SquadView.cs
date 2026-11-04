@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Squads;
 using Unity.Entities;
@@ -12,6 +13,8 @@ namespace HyperRTS.Presentation.HUD.Panels
     /// </summary>
     public sealed class SquadView
     {
+        private static readonly string[] StatusKeys = { "", "squad.retreating", "squad.reinforcing", "squad.building" };
+
         private const string LevelClass = "hud-squad__suppression--";
 
         private readonly VisualElement _root;
@@ -22,6 +25,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         private readonly Label _statusText;
         private readonly HUDBar _progress;
         private readonly List<SquadMemberCard> _cards = new();
+        private readonly Dictionary<string, string> _weaponNames = new();
         private int _shownLevel = -1;
         private int _shownStatus = -1;
 
@@ -49,15 +53,36 @@ namespace HyperRTS.Presentation.HUD.Panels
 
             var members = entityManager.GetBuffer<SquadMember>(entity, true);
             Resize(members.Length);
+            var figures = entityManager.HasBuffer<SquadFigure>(entity)
+                ? entityManager.GetBuffer<SquadFigure>(entity, true)
+                : default;
             for (var i = 0; i < members.Length; i++)
             {
-                _cards[i].Show(i, members[i]);
+                _cards[i].Show(members[i], WeaponName(figures, i));
             }
 
             var suppression = entityManager.GetComponentData<Suppression>(entity);
             _suppression.Fraction = suppression.Value;
             ShowLevel(rules.Level(suppression.Value));
             ShowStatus(entityManager, entity, suppression, rules);
+        }
+
+        // Each weapon's text is looked up once per baked string, so a frame allocates nothing.
+        private string WeaponName(DynamicBuffer<SquadFigure> figures, int index)
+        {
+            if (!figures.IsCreated || index >= figures.Length)
+            {
+                return "";
+            }
+
+            var designation = figures[index].Weapon.ToString();
+            if (!_weaponNames.TryGetValue(designation, out var shown))
+            {
+                shown = HUDText.WeaponName(designation);
+                _weaponNames[designation] = shown;
+            }
+
+            return shown;
         }
 
         private void Resize(int count)
@@ -98,6 +123,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             in SquadRules rules)
         {
             var reinforcing = entityManager.HasEnabled<Reinforcing>(entity);
+            var building = entityManager.HasEnabled<SquadWork>(entity);
             var status = 0;
             if (suppression.Retreating)
             {
@@ -107,15 +133,22 @@ namespace HyperRTS.Presentation.HUD.Panels
             {
                 status = 2;
             }
+            else if (building)
+            {
+                status = 3;
+            }
 
             _status.SetHidden(status == 0);
-            _progress.SetHidden(status != 2);
+            _progress.SetHidden(status < 2);
             if (status != _shownStatus)
             {
                 _shownStatus = status;
-                _statusText.text = status == 1
-                    ? HUDText.Text("squad.retreating")
-                    : HUDText.Text("squad.reinforcing");
+                _statusText.text = HUDText.Text(StatusKeys[status]);
+            }
+
+            if (building && !reinforcing && !suppression.Retreating)
+            {
+                _progress.Fraction = entityManager.GetComponentData<SquadWork>(entity).Progress;
             }
 
             if (reinforcing)

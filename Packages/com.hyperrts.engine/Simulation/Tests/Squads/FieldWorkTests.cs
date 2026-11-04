@@ -89,12 +89,12 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
-        public void CoverSpots_OfASite_AreTakenOnlyOnceItIsBuilt()
+        public void CoverSpots_OfASite_AreTakenOnlyOnceItIsBuilt_AndATrenchSpotStandsTheSoldier()
         {
             var site = World.SpawnBuilding(0, new float3(0f, 0f, 2f), Footprint, complete: false);
             World.EntityManager.AddBuffer<CoverSpot>(site).Add(new CoverSpot
             {
-                Position = new float3(0f, 0f, -2f), Facing = new float2(0f, 1f), Kind = CoverKind.Heavy,
+                Position = new float3(0f, -1.2f, -2f), Facing = new float2(0f, 1f), Kind = CoverKind.Heavy,
             });
             var squad = World.SpawnUnit(1, float3.zero);
             SquadAuthoring.Add(World.Writer(squad), 25f, new byte[1]);
@@ -105,7 +105,10 @@ namespace HyperRTS.Simulation.Tests.Squads
 
             World.Set(site, new ConstructionProgress { Value = 1f });
             World.Run(3f);
-            Assert.AreEqual(CoverKind.Heavy, World.Buffer<SquadMember>(squad)[0].Cover);
+            var member = World.Buffer<SquadMember>(squad)[0];
+            Assert.AreEqual(CoverKind.Heavy, member.Cover);
+            Assert.AreEqual(1.2f, member.Sink, 1e-3f, "the spot lies 1.2 m below the ground");
+            Assert.AreEqual(Posture.Stand, member.Posture, "walls to the shoulders, so the soldier stands");
         }
     }
 }

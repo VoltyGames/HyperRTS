@@ -1,3 +1,4 @@
+using Unity.Collections;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Entities;
@@ -194,6 +195,9 @@ namespace HyperRTS.Presentation.Animation
         private const float TurnRate = 8f;
 
         public Entity Figure;
+
+        /// <summary>The weapon's designation for the HUD's member card; baked, never sent.</summary>
+        public FixedString32Bytes Weapon;
 
         /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
         public FigureClips Clips;

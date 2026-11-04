@@ -42,6 +42,7 @@ float4 _GrimeBand;
 float4 _TrackLift0;
 float4 _TrackLift1;
 float4 _TrackSpan;
+float _CraterSink;
 float _BuildProgress;
 float _Reveal;
 float _BuildDropHeight;

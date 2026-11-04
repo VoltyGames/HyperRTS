@@ -102,10 +102,10 @@ Shader "Hidden/HyperRTS/Trample Brush"
         // A ragged rim keeps hundreds of scars from reading as stamped circles. A scar without a bowl is a footprint.
         half4 ScarsFragment(StampVaryings input) : SV_Target
         {
-            // A negative bowl radius is a trench: flat floor, sloped sides, open ends so segments join.
+            // A negative bowl radius is a trench: flat floor, steep sides, open ends so segments join.
             if (input.value.z < 0.0)
             {
-                float wall = 1.0 - smoothstep(0.55, 1.0, abs(input.local.x));
+                float wall = 1.0 - smoothstep(0.85, 1.0, abs(input.local.x));
                 return half4(0.0, input.value.w * wall, 0.0, input.value.x * wall);
             }
 

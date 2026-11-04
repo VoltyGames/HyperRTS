@@ -191,7 +191,7 @@
 }
 
 .hud-member {
-    width: 62px;
+    width: 76px;
     margin: 0 4px 4px 0;
     padding: 2px 3px;
 }
@@ -201,10 +201,14 @@
     margin: 2px 0;
 }
 
-.hud-member__number,
+/* One line each, cut short with an ellipsis, so a long state ("Heavy cover" in Russian) stays on its card. */
+.hud-member__weapon,
 .hud-member__state {
     padding: 0;
     margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .hud-squad__row {

@@ -58,6 +58,9 @@ namespace HyperRTS.Presentation.HUD
             ["outcome.draw"] = "DRAW",
             ["outcome.ended"] = "MATCH OVER",
             ["tooltip.build-time"] = "Build time",
+            ["tooltip.limit"] = "Limit",
+            ["squad.digging"] = "Digging",
+            ["squad.building"] = "Building",
             ["tooltip.population"] = "Population",
             ["tooltip.power"] = "Power",
             ["tooltip.requires"] = "Requires",
@@ -96,6 +99,12 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>Whole seconds with the unit: "12 s".</summary>
         public static string Seconds(float seconds) => $"{Mathf.CeilToInt(seconds)} {Text("tooltip.seconds")}";
+
+        /// <summary>A weapon's designation as a member card shows it: weapon.m4a1 for M4A1.</summary>
+        public static string WeaponName(string designation) => designation.Length == 0 ? "" : Current.Designation(Key("weapon", designation), designation);
+
+        /// <summary>Shown designation of a weapon: <paramref name="key"/> is weapon.*; the base returns the authored text.</summary>
+        public virtual string Designation(string key, string authored) => authored;
 
         public static string AbilityName(string name) => Current.Name(Key("ability", name), name);
 

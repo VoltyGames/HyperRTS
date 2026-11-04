@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Squads
                     if (member.Alive)
                     {
                         var covered = coverCrouches && member.Cover != CoverKind.None;
-                        member.Posture = covered ? Posture.Crouch : carriage;
+                        member.Posture = covered ? member.CoverPosture : carriage;
                         members[i] = member;
                     }
                 }

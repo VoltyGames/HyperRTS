@@ -13,6 +13,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD.Commands;
+using HyperRTS.Presentation.HUD.Panels;
 
 namespace HyperRTS.Presentation.Tests.HUD
 {
@@ -209,6 +210,26 @@ namespace HyperRTS.Presentation.Tests.HUD
 
             Assert.IsEmpty(tankOnly);
             Assert.AreEqual(new[] { 'R', 'T' }, withSquad.Select(entry => entry.Hotkey).ToArray());
+        }
+
+        [Test]
+        public void MemberCard_ShowsItsWeapon_AndWorkOverCover()
+        {
+            var card = new SquadMemberCard();
+            var digger = new SquadMember
+            {
+                Health = 10f, MaxHealth = 10f, Cover = CoverKind.Heavy, Action = MemberAction.Dig,
+            };
+
+            card.Show(digger, "M249");
+            var label = card.Q<Label>(className: "hud-member__state");
+            Assert.AreEqual("M249", card.Q<Label>(className: "hud-member__weapon").text);
+            Assert.AreEqual(HUDText.Text("squad.digging"), label.text);
+
+            digger.Health = 0f;
+            card.Show(digger, "M249");
+            Assert.AreEqual(HUDText.Text("squad.dead"), label.text);
+            Assert.IsTrue(card.ClassListContains("hud-member--dead"));
         }
 
         private int Hash()

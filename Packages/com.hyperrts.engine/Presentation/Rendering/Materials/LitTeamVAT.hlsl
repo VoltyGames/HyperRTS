@@ -56,10 +56,11 @@ void ApplyRigidVAT(float2 vatIndex, inout float3 positionOS, inout float3 normal
     normalOS = VATRotate(rotation, normalOS);
 }
 
-// Bends a track mesh over its wheels, then sinks the object into any crater under it.
+// Bends a track mesh over its wheels, then sinks the object into any crater under it, as far as _CraterSink lets it.
 float3 DeformObject(float3 positionOS)
 {
-    return SinkObjectIntoCrater(BendTrack(positionOS));
+    float3 bent = BendTrack(positionOS);
+    return lerp(bent, SinkObjectIntoCrater(bent), _CraterSink);
 }
 
 #if defined(_VAT_RIGID)

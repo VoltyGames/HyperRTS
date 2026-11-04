@@ -148,6 +148,9 @@ Cover means protection; what hides a unit from sight is concealment.
   site's long side (`SquadWork.Position`, up to `SquadWork.MaxSpread` from the squad, the squad stands, no spot is
   held) and sets `SquadMember.Action` to `Dig` once each stands in place; figures play the `Dig` clip. A squad adds
   the builder's rate once for each living member.
+- **Depth.** A spot below its prop's origin (a trench floor) gives `WorldCoverSpot.Drop`; a member standing in it has
+  `SquadMember.Sink` (server only). From `SquadMember.StandingDepth` (1 m) down it stands rather than crouches, with
+  the walls to its shoulders, as in a fire trench. Its figure drops into the drawn dent through the crater sink.
 - **Concealing ground.** A halted member with no spot on a concealing cell (woods, tall crops) has `Light` cover
   from every side: `Cover` set and `SpotEntity` null, so there is no arc.
 - **Damage.** `DamageSystem` multiplies a hit on a member in cover by `lerp(kind's share, 1, piercing)` when it comes

@@ -128,6 +128,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                     Along = math.normalizesafe(along, new float2(1f, 0f)),
                     Length = obstacle.Size.x,
                     HalfWidth = obstacle.Size.y * 0.5f,
+                    Progress = SiteLookup[site].Value,
                 };
                 WorkLookup.SetComponentEnabled(builder, true);
             }

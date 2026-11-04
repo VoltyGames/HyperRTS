@@ -59,6 +59,9 @@ namespace HyperRTS.Simulation.Common
         /// </summary>
         [GhostField] public CoverKind Cover;
 
+        /// <summary>Server only: metres below the ground it stands in its spot, such as in a trench.</summary>
+        [GhostField(SendData = false)] public float Sink;
+
         /// <summary>World direction it faces in cover, in 256 steps round from the X axis toward Z.</summary>
         [GhostField] public byte CoverHeading;
 
@@ -74,6 +77,12 @@ namespace HyperRTS.Simulation.Common
         public readonly bool Alive => Health > 0f;
 
         public readonly bool HasSpot => SpotEntity != Entity.Null;
+
+        /// <summary>A spot at least this deep, in metres, is a fire trench: walls to the shoulders, so it stands.</summary>
+        public const float StandingDepth = 1f;
+
+        /// <summary>How it holds itself in cover: crouched behind a wall, standing in a trench.</summary>
+        public readonly Posture CoverPosture => Sink >= StandingDepth ? Posture.Stand : Posture.Crouch;
 
         /// <summary>Unit direction on the XZ plane the member faces in cover.</summary>
         public readonly float2 CoverFacing

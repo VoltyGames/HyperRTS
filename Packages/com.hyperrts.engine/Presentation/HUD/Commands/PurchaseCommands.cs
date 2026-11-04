@@ -40,8 +40,8 @@ namespace HyperRTS.Presentation.HUD.Commands
             _producers.Clear();
             _offers.Clear();
             _fresh = true;
-            var builds = new List<Entity>();
-            var advancedBuilds = new List<Entity>();
+            var builds = new List<BuildOption>();
+            var advancedBuilds = new List<BuildOption>();
             var products = new List<Entity>();
             var entityManager = context.EntityManager;
             foreach (var entity in owned)
@@ -50,13 +50,16 @@ namespace HyperRTS.Presentation.HUD.Commands
                 Collect<ProductionOption>(entityManager, entity, products);
             }
 
-            foreach (var prefab in builds)
+            foreach (var option in builds)
             {
-                Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab));
+                var prefab = option.Prefab;
+                Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab)).Hotkey =
+                    option.Hotkey;
             }
 
-            foreach (var prefab in advancedBuilds)
+            foreach (var option in advancedBuilds)
             {
+                var prefab = option.Prefab;
                 Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab)).Page = 1;
             }
 
@@ -182,6 +185,12 @@ namespace HyperRTS.Presentation.HUD.Commands
                 tooltip.AddStat(HUDText.Text("tooltip.power"), power.ToString("+0;-0;0"));
             }
 
+            if (entityManager.HasComponent<BuildLimit>(prefab))
+            {
+                tooltip.AddStat(HUDText.Text("tooltip.limit"),
+                    entityManager.GetComponentData<BuildLimit>(prefab).Max.ToString());
+            }
+
             var missing = new List<Entity>();
             context.FindMissingPrerequisites(prefab, context.SnapshotBuyer(), missing);
             foreach (var required in missing)
@@ -216,8 +225,8 @@ namespace HyperRTS.Presentation.HUD.Commands
         }
 
         // The first builder to list a prefab decides its page, so a mixed selection shows each option once.
-        private static void CollectBuilds(EntityManager entityManager, Entity entity, List<Entity> builds,
-            List<Entity> advancedBuilds)
+        private static void CollectBuilds(EntityManager entityManager, Entity entity, List<BuildOption> builds,
+            List<BuildOption> advancedBuilds)
         {
             if (!entityManager.HasBuffer<BuildOption>(entity))
             {
@@ -226,11 +235,11 @@ namespace HyperRTS.Presentation.HUD.Commands
 
             foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
             {
-                var listed = option.Prefab == Entity.Null || builds.Contains(option.Prefab)
-                             || advancedBuilds.Contains(option.Prefab);
+                var listed = option.Prefab == Entity.Null || builds.Exists(other => other.Prefab == option.Prefab)
+                             || advancedBuilds.Exists(other => other.Prefab == option.Prefab);
                 if (!listed)
                 {
-                    (option.Advanced ? advancedBuilds : builds).Add(option.Prefab);
+                    (option.Advanced ? advancedBuilds : builds).Add(option);
                 }
             }
         }

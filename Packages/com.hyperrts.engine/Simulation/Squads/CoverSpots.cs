@@ -16,6 +16,9 @@ namespace HyperRTS.Simulation.Squads
 
         public CoverKind Kind;
 
+        /// <summary>Metres the spot lies below its prop's origin, such as the floor of a trench.</summary>
+        public float Drop;
+
         /// <summary>The prop it is on and its index in that prop's <see cref="CoverSpot"/> buffer.</summary>
         public Entity Entity;
 

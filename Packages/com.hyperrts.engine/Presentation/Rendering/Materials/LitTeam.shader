@@ -47,6 +47,9 @@ Shader "HyperRTS/LitTeam"
         _TrackLift1("Track Lift (stations 4 to 7, m)", Vector) = (0, 0, 0, 0)
         _TrackSpan("Track Span (front z, back z, axle y, wheel radius)", Vector) = (0, 0, 0, 0)
 
+        [Header(Ground)]
+        _CraterSink("Crater Sink (1 drops into a crater under it, 0 for a model that brings its own dent)", Range(0, 1)) = 1
+
         [Header(Construction)]
         [Toggle(_BUILD)] _Build("Build Piece By Piece (UV3)", Float) = 0
         _BuildProgress("Build Progress", Range(0, 1)) = 1

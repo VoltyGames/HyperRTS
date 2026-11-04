@@ -32,6 +32,9 @@ namespace HyperRTS.Presentation.Animation
 
             [Tooltip("Added before this squad's idle, walk, run, fire, crouch and prone clip names, as a rifleman and a launcher carrier stand differently. Empty for none.")]
             public string clipPrefix;
+
+            [Tooltip("The weapon's designation, shown on the squad's member card (M4A1, PKP). Empty for none.")]
+            public string weaponName;
         }
 
         [Tooltip("The figures, one per Squad member in the same order.")]
@@ -200,7 +203,11 @@ namespace HyperRTS.Presentation.Animation
                     var figure = authoring.figures[i].root;
                     DependsOn(Table(figure));
                     var entity = GetEntity(figure, TransformUsageFlags.Dynamic);
-                    entities.Add(new SquadFigure { Figure = entity, Clips = clips[i], Height = figure.localPosition.y });
+                    entities.Add(new SquadFigure
+                    {
+                        Figure = entity, Clips = clips[i], Height = figure.localPosition.y,
+                        Weapon = authoring.figures[i].weaponName,
+                    });
                 }
 
                 var writer = this.Writer();

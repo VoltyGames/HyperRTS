@@ -108,6 +108,10 @@ retreats or reinforces, that status with the current soldier's progress. `SquadC
 to the card. A refused one stays, dimmed like a locked build card, and its tooltip names the reason: no retreat
 point, no reinforce point in range, full strength or too poor (the price of one soldier is shown). Clients read
 `Suppression.Retreating` and the `Reinforcing` enable bit and progress, which are replicated.
+A card names the soldier's weapon, a designation baked per figure (`SquadFiguresAuthoring.Figure.weaponName`, held in
+`SquadFigure.Weapon`, never sent) and shown through `HUDText.WeaponName`; a digging member reads "Digging", and a squad
+at work shows "Building" with the site's progress (`SquadWork.Progress`, replicated). Builder options take hotkeys from
+`BuilderAuthoring.hotkeys`, one letter per build option in order; the build tooltip lists the cap (`tooltip.limit`).
 
 While a line is dragged, `LineCost` shows its total, the valid `PlacementSegment`s times the per-segment cost, above and right of
 the line's end. It turns `hud-costs--short`, the unaffordable card's colour, when the stock can't cover it.
@@ -647,7 +651,7 @@ A rut is stamped as a ramp that falls linearly to the tyre's edge, and `RutCover
 band narrows and goes. Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
 
-`TrenchStampSystem` stamps each built `Trench` building the player sees into the scar map once (a flat-bottomed ditch
+`TrenchStampSystem` stamps each built `Trench` building the player sees into the scar map once (a flat-bottomed ditch with steep sides
 along its long side, `TrampleStamps.AddTrench`), so the same dent follows; the simulation's ground never changes.
 
 Craters also dent the drawn ground. In presented worlds `CraterTerrainSystem` redraws the active Unity Terrain's
@@ -658,10 +662,11 @@ maps, another terrain and the world's end put the copied heights back, so dented
 TerrainData asset. `CraterSink.hlsl` samples the same depth: the `LitTeam`, `Foliage` (grass included), `Bark` and
 `RowCrop` vertex stages, shadow and depth passes too, lower the whole object by the depth at its origin. The sink
 fades with the origin's height above the undented ground (`_HyperRTSUndentedHeights`, published by `CraterTerrain`):
-full within 0.5 m, none from 2 m up, so aircraft, bridge decks and rooftops stay put. The grass and row crop kernels,
+full within 0.5 m, none from 2 m up, so aircraft, bridge decks and rooftops stay put. A `LitTeam` material's
+`_CraterSink` scales it: 0 for a model that brings its own dent, such as a trench, and 1 for everything else. Squad
+figures sink with it, so soldiers stand lower in a trench or crater with no figure code. The grass and row crop kernels,
 which get the tracks map bound by `CraterTerrain.BindCraters` for each camera, place plants on the undented ground
-first. The simulation's ground never changes, so craters
-are not cover.
+first. The simulation's ground never changes; a crater's cover comes from the spots of its `Crater` entity.
 
 ### Field fires
 
