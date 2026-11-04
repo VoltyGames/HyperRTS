@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Cursors
     public partial struct CursorIntentSystem : ISystem
     {
         private OrderResolver _resolver;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private EntityQuery _selected;
         private EntityQuery _localPlayer;
 
@@ -30,7 +30,7 @@ namespace HyperRTS.Presentation.Cursors
         public void OnCreate(ref SystemState state)
         {
             _resolver = new OrderResolver(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithNone<Dead>().Build();
             _localPlayer = SystemAPI.QueryBuilder().WithAll<LocalPlayer, Player>().Build();
             state.RequireForUpdate<CursorIntent>();
@@ -80,7 +80,7 @@ namespace HyperRTS.Presentation.Cursors
             }
 
             state.CompleteDependency();
-            _resolver.Update(ref state, _fogQuery);
+            _resolver.Update(ref state, _targetQueries);
             var relations = SystemAPI.GetSingleton<FactionRelations>();
             var best = CursorKind.Default;
             var producers = false;

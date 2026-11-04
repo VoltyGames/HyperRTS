@@ -40,6 +40,10 @@ namespace HyperRTS.Simulation.Vision
         public readonly bool IsCreated => Cells.IsCreated;
 
         /// <summary>An empty grid laid out as the map's fog grid.</summary>
+        /// <summary>The singleton's query, for a system to create in OnCreate and read in OnUpdate.</summary>
+        public static EntityQuery Query(ref SystemState state) =>
+            new EntityQueryBuilder(Allocator.Temp).WithAll<SightBlockers>().Build(ref state);
+
         public static SightBlockers Create(in MapSettings map, Allocator allocator)
         {
             var grid = map.FogGrid();

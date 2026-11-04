@@ -29,14 +29,14 @@ namespace HyperRTS.Simulation.Combat.Weapons
     public partial struct WeaponFireSystem : ISystem
     {
         private TargetLookup _targets;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private Shooter _shots;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             _shots = new Shooter(ref state);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state, _fogQuery);
+            _targets.Update(ref state, _targetQueries);
 
             new WeaponTargetJob
             {
@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }.ScheduleParallel();
 
             _shots.Update(ref state, SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(state.WorldUnmanaged));
+                    .CreateCommandBuffer(state.WorldUnmanaged), _targetQueries.Blockers);
 
             // Single-threaded: every shot appends to the one damage queue.
             new ShotJob

@@ -50,6 +50,11 @@ hits at once waits for a clear line, so an ordered attack closes in until it has
 it. A round launched through porous cover that hides the target (`SightBlockers.Haze` of 1 or more, summed over the
 length the line crosses in each cell, such as smoke) loses its lock and flies on to the aim point.
 
+A system using `TargetLookup` creates its `TargetQueries` (fog, sight rules, sight blockers) in `OnCreate` and passes
+them to `Update`: the lookup travels into jobs, which can't carry a query, and Entities warns about any query asked
+for in `OnUpdate`, cached or not. `Shooter` takes the blockers' query the same way, and `EventWriter` finds its
+queue once through an `EntityManager` query it disposes.
+
 `TargetLookup.Reach` is a weapon's range against one target. A passenger firing out of a container with a
 `PassengerRange` (`ContainerAuthoring.passengerRangeBonus`) reaches that share further. A direct-fire or rocket weapon
 standing above its target gains `SightRules.RangePerMetre` of range per metre, up to `MaxRange`; ballistic fire

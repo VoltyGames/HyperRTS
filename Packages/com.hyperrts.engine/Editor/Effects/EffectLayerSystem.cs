@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Effects
             Pick(initialize, "size", _layer.size);
             if (_layer.aspect > 0f)
             {
-                Pick(initialize, "scaleY", new FloatRange(_layer.aspect, _layer.aspect));
+                PickChannel(initialize, "scale", "Y", new FloatRange(_layer.aspect, _layer.aspect));
             }
 
             PickColor(initialize);
@@ -244,9 +244,15 @@ namespace HyperRTS.Editor.Effects
                 return;
             }
 
+            PickChannel(context, attribute, "Z", range);
+        }
+
+        // One channel of a vector attribute, as VFX Graph stores it (scale Y, not a scaleY attribute it must upgrade).
+        private void PickChannel(object context, string attribute, string channel, FloatRange range)
+        {
             var block = _graph.Block(context, "SetAttribute");
             _graph.Set(block, "attribute", attribute);
-            _graph.Set(block, "channels", "Z");
+            _graph.Set(block, "channels", channel);
             Values(block, range.IsConstant, range.min, range.max);
         }
 

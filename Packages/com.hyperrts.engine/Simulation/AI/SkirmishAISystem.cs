@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.AI
         private EntityQuery _queues;
         private EntityQuery _limited;
         private TargetLookup _targetLookup;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private ComponentLookup<Faction> _factions;
 
         [BurstCompile]
@@ -105,7 +105,7 @@ namespace HyperRTS.Simulation.AI
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             _targetLookup = new TargetLookup(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             _factions = state.GetComponentLookup<Faction>(true);
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<MapSettings>();
@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.AI
             }
 
             state.CompleteDependency();
-            _targetLookup.Update(ref state, _fogQuery);
+            _targetLookup.Update(ref state, _targetQueries);
             _factions.Update(ref state);
             var snapshot = TakeSnapshot(ref state);
             foreach (var player in due)
@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.AI
             Completed = new CompletedBuildings(_completed, Allocator.Temp),
             Relations = SystemAPI.GetSingleton<FactionRelations>(),
             Hints = TakeHints(ref state),
-            Fog = _fogQuery.TryGetSingleton(out FogOfWar fog) ? fog : default,
+            Fog = _targetQueries.Fog.TryGetSingleton(out FogOfWar fog) ? fog : default,
         };
 
         private AIMapHintsView TakeHints(ref SystemState state)

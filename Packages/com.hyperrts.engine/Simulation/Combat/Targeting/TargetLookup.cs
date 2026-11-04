@@ -47,11 +47,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _passengerRange = state.GetComponentLookup<PassengerRange>(true);
             _vision = state.GetComponentLookup<VisionRange>(true);
             _damage = new DamageFactors(ref state);
-            FogQuery(ref state).TryGetSingleton(out _fog);
         }
 
-        /// <summary><paramref name="fog"/> is the system's <see cref="FogQuery"/>, built once in OnCreate.</summary>
-        public void Update(ref SystemState state, EntityQuery fog)
+        /// <summary><paramref name="queries"/> are the system's, created once in OnCreate.</summary>
+        public void Update(ref SystemState state, in TargetQueries queries)
         {
             _transforms.Update(ref state);
             _health.Update(ref state);
@@ -64,11 +63,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _passengerRange.Update(ref state);
             _vision.Update(ref state);
             _damage.Update(ref state);
-            fog.TryGetSingleton(out _fog);
-            new EntityQueryBuilder(Allocator.Temp).WithAll<SightRules>().Build(ref state)
-                .TryGetSingleton(out _sight);
-            new EntityQueryBuilder(Allocator.Temp).WithAll<SightBlockers>().Build(ref state)
-                .TryGetSingleton(out _blockers);
+            // Burst only lets the [ReadOnly] singletons be filled through out.
+            queries.Fog.TryGetSingleton(out _fog);
+            queries.Sight.TryGetSingleton(out _sight);
+            queries.Blockers.TryGetSingleton(out _blockers);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -223,13 +221,5 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         /// <summary>The container a passenger sits in, otherwise the entity itself.</summary>
         public Entity Holder(Entity entity) => IsInside(entity) ? _inside[entity].Container : entity;
-
-        /// <summary>
-        /// The fog singleton's query. Systems build it in OnCreate and pass it to <see cref="Update"/>: this lookup
-        /// travels into jobs, which can't carry a query, and Burst only lets the [ReadOnly] fog field be filled
-        /// through <c>out</c>. Building it here also makes the system's jobs wait for the fog restamp.
-        /// </summary>
-        public static EntityQuery FogQuery(ref SystemState state) =>
-            new EntityQueryBuilder(Allocator.Temp).WithAll<FogOfWar>().Build(ref state);
     }
 }

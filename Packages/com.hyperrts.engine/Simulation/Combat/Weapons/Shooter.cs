@@ -44,8 +44,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _cues = new CueWriter(ref state);
         }
 
-        /// <summary>Call each update before scheduling, with this frame's buffer.</summary>
-        public void Update(ref SystemState state, EntityCommandBuffer ecb)
+        /// <summary>
+        /// Call each update before scheduling, with this frame's buffer and the system's <see cref="SightBlockers"/>
+        /// query, created in OnCreate.
+        /// </summary>
+        public void Update(ref SystemState state, EntityCommandBuffer ecb, EntityQuery blockers)
         {
             _transforms.Update(ref state);
             _spawner.Update(ref state);
@@ -58,8 +61,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _damage.Update(ref state);
             _cues.Update(ref state);
             _ecb = ecb;
-            new EntityQueryBuilder(Allocator.Temp).WithAll<SightBlockers>().Build(ref state)
-                .TryGetSingleton(out _blockers);
+            blockers.TryGetSingleton(out _blockers);
         }
 
         /// <summary>

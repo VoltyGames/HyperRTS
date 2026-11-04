@@ -18,20 +18,20 @@ namespace HyperRTS.Simulation.Combat.Targeting
     public partial struct AttackOrderSystem : ISystem
     {
         private TargetLookup _targets;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             state.RequireForUpdate<FactionRelations>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state, _fogQuery);
+            _targets.Update(ref state, _targetQueries);
             new AttackOrderJob
             {
                 Targets = _targets,

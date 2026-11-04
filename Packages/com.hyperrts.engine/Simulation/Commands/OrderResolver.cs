@@ -59,11 +59,11 @@ namespace HyperRTS.Simulation.Commands
             _entityManager = state.EntityManager;
         }
 
-        /// <summary><paramref name="fog"/> is the system's <see cref="TargetLookup.FogQuery"/>.</summary>
-        public void Update(ref SystemState state, EntityQuery fog)
+        /// <summary><paramref name="queries"/> are the system's, created once in OnCreate.</summary>
+        public void Update(ref SystemState state, in TargetQueries queries)
         {
             _factions.Update(ref state);
-            _targets.Update(ref state, fog);
+            _targets.Update(ref state, queries);
             _mounts.Update(ref state);
             _harvesters.Update(ref state);
             _nodes.Update(ref state);

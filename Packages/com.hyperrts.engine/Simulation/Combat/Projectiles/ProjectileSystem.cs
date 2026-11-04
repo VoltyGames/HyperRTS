@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
     public partial struct ProjectileSystem : ISystem
     {
         private TargetLookup _targets;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private EventWriter<DamageEvent> _damage;
         private CueWriter _cues;
 
@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             _damage = new EventWriter<DamageEvent>(ref state);
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state, _fogQuery);
+            _targets.Update(ref state, _targetQueries);
             _damage.Update(ref state);
             _cues.Update(ref state);
 

@@ -24,12 +24,14 @@ namespace HyperRTS.Simulation.Vision
 
         private byte _viewer;
         private bool _active;
+        private ConcealmentLookup _concealment;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<LocalFogView>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
+            _concealment = new ConcealmentLookup(ref state);
         }
 
         [BurstCompile]
@@ -50,6 +52,7 @@ namespace HyperRTS.Simulation.Vision
             };
 
             var seen = new NativeHashSet<FogMemoryKey>(64, state.WorldUpdateAllocator);
+            _concealment.Update(ref state);
             state.Dependency = new SightJob
             {
                 Sight = sight,
@@ -57,7 +60,7 @@ namespace HyperRTS.Simulation.Vision
                 Viewer = view.Viewer,
                 Seen = seen,
                 Latest = SystemAPI.GetComponentLookup<LatestSeen>(),
-                Concealments = new ConcealmentLookup(ref state),
+                Concealments = _concealment,
                 Construction = SystemAPI.GetComponentLookup<ConstructionProgress>(true),
                 Ghosts = SystemAPI.GetComponentLookup<GhostInstance>(true),
             }.Schedule(state.Dependency);

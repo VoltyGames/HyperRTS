@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Commands
     {
         private OrderWriter _writer;
         private OrderResolver _resolver;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private CommandReader _commands;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<NavAgent> _agents;
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Commands
         {
             _writer = new OrderWriter(ref state);
             _resolver = new OrderResolver(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             var selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithPresent<ActiveOrder>()
                 .WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, UnitCommands, selected);
@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Commands
 
             state.CompleteDependency();
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
-            _resolver.Update(ref state, _fogQuery);
+            _resolver.Update(ref state, _targetQueries);
             _transforms.Update(ref state);
             _agents.Update(ref state);
             _stances.Update(ref state);

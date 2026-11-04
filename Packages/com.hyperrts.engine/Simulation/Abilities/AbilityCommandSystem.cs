@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Abilities
         private EntityQuery _completed;
         private OrderWriter _writer;
         private TargetLookup _targets;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private AbilityCaster _caster;
 
         public void OnCreate(ref SystemState state)
@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Abilities
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _writer = new OrderWriter(ref state);
             _targets = new TargetLookup(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<MapSettings>();
@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Abilities
 
             state.CompleteDependency();
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
-            _targets.Update(ref state, _fogQuery);
+            _targets.Update(ref state, _targetQueries);
             _caster.Update(ref state);
 
             var context = new Context

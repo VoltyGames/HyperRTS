@@ -25,14 +25,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public const float RepathDistance = 1f;
 
         private TargetLookup _targets;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private MoveLookup _moves;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             _moves = new MoveLookup(ref state);
             state.RequireForUpdate<FactionRelations>();
         }
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state, _fogQuery);
+            _targets.Update(ref state, _targetQueries);
             _moves.Update(ref state);
 
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();

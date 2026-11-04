@@ -21,14 +21,17 @@ namespace HyperRTS.Simulation.Common
 
         /// <summary>
         /// Call each update before scheduling. Jobs copy the writer, so it can't hold the queue's query; the queue
-        /// entity lives as long as the world, so it is found once.
+        /// entity lives as long as the world, so it is found once, on the first update, since its owner may create it
+        /// after this system's OnCreate. The query is the EntityManager's, not the system's, and is disposed, so the
+        /// system asks for no query mid-update.
         /// </summary>
         public void Update(ref SystemState state)
         {
             _events.Update(ref state);
             if (_queue == Entity.Null)
             {
-                _queue = new EntityQueryBuilder(Allocator.Temp).WithAll<T>().Build(ref state).GetSingletonEntity();
+                using var queue = new EntityQueryBuilder(Allocator.Temp).WithAll<T>().Build(state.EntityManager);
+                _queue = queue.GetSingletonEntity();
             }
         }
 

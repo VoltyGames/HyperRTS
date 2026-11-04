@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Abilities
     {
         private EntityQuery _completed;
         private TargetLookup _targets;
-        private EntityQuery _fogQuery;
+        private TargetQueries _targetQueries;
         private AbilityCaster _caster;
 
         [BurstCompile]
@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Abilities
         {
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _targets = new TargetLookup(ref state);
-            _fogQuery = TargetLookup.FogQuery(ref state);
+            _targetQueries = TargetQueries.Create(ref state);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Abilities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state, _fogQuery);
+            _targets.Update(ref state, _targetQueries);
             _caster.Update(ref state);
 
             new CooldownJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();

@@ -19,6 +19,7 @@ namespace HyperRTS.Simulation.Vision
     {
         private int _fogVersion;
         private int _factionOrder;
+        private ConcealmentLookup _concealment;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Vision
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<FogOfWar>();
+            _concealment = new ConcealmentLookup(ref state);
         }
 
         [BurstCompile]
@@ -55,6 +57,7 @@ namespace HyperRTS.Simulation.Vision
 
             var commands = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            _concealment.Update(ref state);
             state.Dependency = hides
                 ? new HideJob
                 {
@@ -62,7 +65,7 @@ namespace HyperRTS.Simulation.Vision
                     Relations = relations,
                     Viewer = view.Viewer,
                     Hidden = SystemAPI.GetComponentLookup<FogHidden>(true),
-                    Concealments = new ConcealmentLookup(ref state),
+                    Concealments = _concealment,
                     Commands = commands,
                 }.ScheduleParallel(state.Dependency)
                 : new RevealAllJob { Commands = commands }.ScheduleParallel(state.Dependency);
