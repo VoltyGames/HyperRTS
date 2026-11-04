@@ -100,21 +100,38 @@ namespace HyperRTS.Simulation.Match
 
         [Header("AI")]
         [Tooltip("Tuning of AI slots set to Easy.")]
-        public AITuning easyAI = new() { thinkInterval = 4f, attackWaveSize = 10, useAbilities = false };
+        public AITuning easyAI = new()
+        {
+            thinkInterval = 4f, attackWaveSize = 10, useAbilities = false,
+            retreatSquads = false, fieldWorkLines = 0,
+        };
 
         [Tooltip("Tuning of AI slots set to Normal.")]
-        public AITuning normalAI = new() { thinkInterval = 2f, attackWaveSize = 6, useAbilities = true };
+        public AITuning normalAI = new()
+        {
+            thinkInterval = 2f, attackWaveSize = 6, useAbilities = true,
+            fieldWorkLines = 1,
+        };
 
         [Tooltip("Tuning of AI slots set to Hard.")]
-        public AITuning hardAI = new() { thinkInterval = 1f, attackWaveSize = 4, useAbilities = true };
+        public AITuning hardAI = new()
+        {
+            thinkInterval = 1f, attackWaveSize = 4, useAbilities = true,
+            fieldWorkLines = 2, fieldWorkBarrier = true,
+        };
 
         [Tooltip("Tuning of AI slots set to Expert.")]
-        public AITuning expertAI = new() { thinkInterval = 0.5f, attackWaveSize = 4, useAbilities = true };
+        public AITuning expertAI = new()
+        {
+            thinkInterval = 0.5f, attackWaveSize = 4, useAbilities = true,
+            fieldWorkLines = 2, fieldWorkBarrier = true,
+        };
 
         [Tooltip("Tuning of AI slots set to Brutal: Expert play plus an income bonus.")]
         public AITuning brutalAI = new()
         {
             thinkInterval = 0.5f, attackWaveSize = 4, useAbilities = true, incomeMultiplier = 1.25f,
+            fieldWorkLines = 3, fieldWorkBarrier = true,
         };
 
         [Tooltip("Build order of slots without their own, used when a match setup turns a human slot into an AI.")]

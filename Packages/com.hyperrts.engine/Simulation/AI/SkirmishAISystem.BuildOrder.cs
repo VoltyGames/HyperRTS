@@ -34,8 +34,8 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                // The AI doesn't plan wall lines yet.
-                if (SystemAPI.HasComponent<LinePlacement>(step.Prefab))
+                // Walls aren't planned, and field works are only dug in at defence points.
+                if (SystemAPI.HasComponent<LinePlacement>(step.Prefab) || SystemAPI.HasComponent<AIFieldWork>(step.Prefab))
                 {
                     continue;
                 }

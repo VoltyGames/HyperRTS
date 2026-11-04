@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
@@ -33,7 +34,7 @@ namespace HyperRTS.Simulation.AI
         {
             var army = snapshot.Army;
             var wave = new NativeList<int>(Allocator.Temp);
-            var center = GatherWave(ref state, turn.Faction, army, wave);
+            var center = GatherWave(ref state, turn, snapshot, wave);
             var ai = SystemAPI.GetComponent<AIPlayer>(turn.Player);
             if (wave.Length == 0 || wave.Length < ai.AttackWaveSize)
             {
@@ -70,15 +71,21 @@ namespace HyperRTS.Simulation.AI
             return command;
         }
 
-        /// <summary>Adds the faction's idle units that can hit the ground to <paramref name="wave"/>; returns their centre.</summary>
-        private float3 GatherWave(ref SystemState state, byte faction, in AIGroup army, NativeList<int> wave)
+        /// <summary>
+        /// Adds the faction's idle units that can hit the ground to <paramref name="wave"/>; returns their centre.
+        /// Builders other than squads stay out, and so do units given a job this think and squads still recovering.
+        /// </summary>
+        private float3 GatherWave(ref SystemState state, in Turn turn, in Snapshot snapshot, NativeList<int> wave)
         {
             var sum = float3.zero;
+            var army = snapshot.Army;
             var mounts = SystemAPI.GetBufferLookup<WeaponMount>(true);
             for (var i = 0; i < army.Length; i++)
             {
-                var targets = mounts[army.Entities[i]][0].Weapon.Targets;
-                if (army.IsOwnedBy(i, faction) && Weapon.CanHit(targets, NavLayer.Ground))
+                var entity = army.Entities[i];
+                var targets = mounts[entity][0].Weapon.Targets;
+                if (army.IsOwnedBy(i, turn.Faction) && Weapon.CanHit(targets, NavLayer.Ground)
+                                                      && IsFreeForWave(ref state, entity, turn, snapshot))
                 {
                     wave.Add(i);
                     sum += army.Position(i);
@@ -86,6 +93,17 @@ namespace HyperRTS.Simulation.AI
             }
 
             return wave.Length > 0 ? sum / wave.Length : float3.zero;
+        }
+
+        private bool IsFreeForWave(ref SystemState state, Entity unit, in Turn turn, in Snapshot snapshot)
+        {
+            var isSquad = SystemAPI.HasBuffer<SquadMember>(unit);
+            if (SystemAPI.HasComponent<Builder>(unit) && !isSquad)
+            {
+                return false;
+            }
+
+            return !turn.Busy.Contains(unit) && !IsRecovering(ref state, unit, turn, snapshot);
         }
 
         /// <summary>

@@ -34,6 +34,24 @@ namespace HyperRTS.Simulation.AI
         [Min(0.1f)]
         public float incomeMultiplier = 1f;
 
+        [Tooltip("Squads that are pinned or hurt run for a retreat point.")]
+        public bool retreatSquads = true;
+
+        [Tooltip("A squad retreats when its living members fall to this share of its size.")]
+        [Range(0f, 1f)]
+        public float retreatLivingShare = 0.5f;
+
+        [Tooltip("A squad retreats when its health falls to this share of its full health.")]
+        [Range(0f, 1f)]
+        public float retreatHealthShare = 0.33f;
+
+        [Tooltip("Field work lines a builder squad digs at each defence point once the build order is done; 0 digs none.")]
+        [Min(0)]
+        public int fieldWorkLines = 1;
+
+        [Tooltip("Also lays a barrier line, such as wire, in front of each defence point's cover.")]
+        public bool fieldWorkBarrier;
+
         public AIDifficultyTuning ToTuning(AIDifficulty difficulty) => new()
         {
             Difficulty = difficulty,
@@ -51,6 +69,11 @@ namespace HyperRTS.Simulation.AI
             SelfAbilityTriggerRange = selfAbilityTriggerRange,
             BuildingGap = buildingGap,
             LimitedByFog = limitedByFog,
+            RetreatsSquads = retreatSquads,
+            RetreatLivingShare = retreatLivingShare,
+            RetreatHealthShare = retreatHealthShare,
+            FieldWorkLines = fieldWorkLines,
+            FieldWorkBarrier = fieldWorkBarrier,
         };
     }
 }

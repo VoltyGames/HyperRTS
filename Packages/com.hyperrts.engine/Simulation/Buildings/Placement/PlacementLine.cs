@@ -44,6 +44,13 @@ namespace HyperRTS.Simulation.Buildings.Placement
                    && First.Footprint.Equals(other.First.Footprint);
         }
 
+        /// <summary>The ground-plane side the segments of a line along <paramref name="direction"/> face.</summary>
+        public static float2 Front(float2 direction)
+        {
+            var yaw = Yaw(math.normalizesafe(direction, new float2(1f, 0f)));
+            return new float2(math.sin(yaw), math.cos(yaw));
+        }
+
         /// <summary>Right (+X) along the line, with the front turned toward the camera as a placed building faces.</summary>
         private static float Yaw(float2 direction)
         {

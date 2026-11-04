@@ -21,6 +21,9 @@ namespace HyperRTS.Simulation.AI
 
         public float2 Point(int index) => _points[index].Position;
 
+        /// <summary>The <paramref name="index"/>th defence point (below <c>DefenceCount</c>) of a slot, nearest its base first.</summary>
+        public float2 DefencePoint(in AISlotHint slot, int index) => _points[slot.DefenceStart + index].Position;
+
         public bool TryGetSlot(byte slot, out AISlotHint hint)
         {
             for (var i = 0; i < _slots.Length; i++)

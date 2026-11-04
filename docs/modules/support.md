@@ -16,8 +16,23 @@ On each think, an AI player:
 2. Finishes abandoned sites and sends idle harvesters to work.
 3. Trains units and researches.
 4. Uses ready abilities and powers.
-5. Once enough combat units are idle, attack-moves them along a lane to the nearest hostile building. The wave is
+5. Looks after its squads: a squad that is pinned, or down to `retreatLivingShare` of its members or
+   `retreatHealthShare` of its health, gets `CommandType.Retreat` unless it is already running or inside a friendly
+   retreat point's radius; an idle squad with dead members in range of a friendly reinforce point, and money for one
+   member, gets `CommandType.Reinforce`.
+6. Once the build order is done, digs in at its slot's defence points: an idle builder that offers an `AIFieldWork`
+   places `fieldWorkLines` cover lines per point with `CommandType.PlaceLine`, 12 m long across the approach (outward
+   from the base), 6 m apart stepping back toward the base, and with `fieldWorkBarrier` a barrier line 5 m in front.
+   A line that already has a work of its role on it, site or built, is not placed again. Mark a line-placed building
+   with `AIFieldWorkAuthoring` (role Cover or Barrier) for the bot to use it; such a building is never a build-order
+   step.
+7. Once enough combat units are idle, attack-moves them along a lane to the nearest hostile building. The wave is
    one command listing its units (`PlayerCommands.Address`), so it moves as one formation on a shared group field.
+   Squads wait out of the wave while they retreat, are reinforced or could be (dead members, in range, affordable),
+   and non-squad builders never join.
+
+Per difficulty, `AITuning` sets `retreatSquads` (off on Easy), the two retreat shares (0.5 and 0.33), `fieldWorkLines`
+(Easy 0, Normal 1, Hard and Expert 2, Brutal 3) and `fieldWorkBarrier` (Hard and up).
 
 The lane is chosen from the match seed, so replays repeat it. To replace the AI, disable the system and write
 your own `PlayerCommand`s.

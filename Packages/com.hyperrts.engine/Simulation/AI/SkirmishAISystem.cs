@@ -9,6 +9,7 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;
@@ -21,7 +22,8 @@ namespace HyperRTS.Simulation.AI
     /// <summary>
     /// Skirmish AI for <see cref="AIPlayer"/>s: follows its <see cref="AIBuildStep"/> build order, then keeps producers
     /// training; keeps harvesters on the map's resource fields in the slot's expansion order, fires ready abilities,
-    /// deploys and packs up deployable units and sends idle armies at an enemy base along one of the map's attack
+    /// deploys and packs up deployable units, retreats and reinforces its squads, digs field works in at its defence
+    /// points and sends idle armies at an enemy base along one of the map's attack
     /// lanes (see <see cref="AIMapHints"/>, which the map must carry). It only issues <see cref="PlayerCommand"/>s,
     /// exactly like a human player. Split by concern over partial files.
     /// </summary>
@@ -42,6 +44,13 @@ namespace HyperRTS.Simulation.AI
             public AIGroup Sites;
             public AIGroup Casters;
             public AIGroup Owned;
+            public AIGroup Squads;
+            public AIGroup RetreatPoints;
+            public NativeArray<RetreatPoint> RetreatData;
+            public AIGroup ReinforcePoints;
+            public NativeArray<ReinforcePoint> ReinforceData;
+            public AIGroup FieldWorks;
+            public NativeArray<AIFieldWork> FieldWorkData;
             public NativeArray<EntityInfo> OwnedInfo;
             public NativeArray<Entity> Producers;
             public CompletedBuildings Completed;
@@ -75,6 +84,10 @@ namespace HyperRTS.Simulation.AI
         private EntityQuery _obstacles;
         private EntityQuery _casters;
         private EntityQuery _owned;
+        private EntityQuery _squads;
+        private EntityQuery _retreatPoints;
+        private EntityQuery _reinforcePoints;
+        private EntityQuery _fieldWorks;
         private EntityQuery _completed;
         private EntityQuery _queues;
         private EntityQuery _limited;
@@ -88,7 +101,7 @@ namespace HyperRTS.Simulation.AI
             _idleHarvesters = SystemAPI.QueryBuilder().WithAll<Harvester, Faction, LocalTransform>()
                 .WithDisabled<ActiveOrder>().WithNone<Dead>().Build();
             _idleArmy = SystemAPI.QueryBuilder().WithAll<WeaponMount, CombatStance, Faction, LocalTransform>()
-                .WithDisabled<ActiveOrder>().WithNone<Harvester, Builder, Dead, AttackTarget>().Build();
+                .WithDisabled<ActiveOrder>().WithNone<Harvester, Dead, AttackTarget>().Build();
             _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, Faction, LocalTransform>().Build();
             _producers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, ProductionQueueItem, Faction>()
                 .WithNone<ConstructionProgress, Dead>().Build();
@@ -101,6 +114,13 @@ namespace HyperRTS.Simulation.AI
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
             _casters = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Faction, LocalTransform>().WithNone<Dead>().Build();
             _owned = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().WithNone<Dead>().Build();
+            _squads = SystemAPI.QueryBuilder().WithAll<SquadMember, Suppression, Health, Faction, LocalTransform>()
+                .WithNone<Dead>().Build();
+            _retreatPoints = SystemAPI.QueryBuilder().WithAll<RetreatPoint, Faction, LocalTransform>()
+                .WithNone<Dead, Offline>().Build();
+            _reinforcePoints = SystemAPI.QueryBuilder().WithAll<ReinforcePoint, Faction, LocalTransform>()
+                .WithNone<Dead, Offline>().Build();
+            _fieldWorks = SystemAPI.QueryBuilder().WithAll<AIFieldWork, Faction, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
@@ -164,6 +184,13 @@ namespace HyperRTS.Simulation.AI
             Casters = AIGroup.From(_casters),
             Owned = AIGroup.From(_owned),
             OwnedInfo = _owned.ToComponentDataArray<EntityInfo>(Allocator.Temp),
+            Squads = AIGroup.From(_squads),
+            RetreatPoints = AIGroup.From(_retreatPoints),
+            RetreatData = _retreatPoints.ToComponentDataArray<RetreatPoint>(Allocator.Temp),
+            ReinforcePoints = AIGroup.From(_reinforcePoints),
+            ReinforceData = _reinforcePoints.ToComponentDataArray<ReinforcePoint>(Allocator.Temp),
+            FieldWorks = AIGroup.From(_fieldWorks),
+            FieldWorkData = _fieldWorks.ToComponentDataArray<AIFieldWork>(Allocator.Temp),
             Producers = _producers.ToEntityArray(Allocator.Temp),
             Completed = new CompletedBuildings(_completed, Allocator.Temp),
             Relations = SystemAPI.GetSingleton<FactionRelations>(),
@@ -195,10 +222,12 @@ namespace HyperRTS.Simulation.AI
 
             var buildOrderDone = FollowBuildOrder(ref state, turn, snapshot);
             ResumeSites(ref state, turn, snapshot);
+            LookAfterSquads(ref state, turn, snapshot);
             SendHarvesters(turn, snapshot);
             if (buildOrderDone)
             {
                 Train(ref state, turn, snapshot);
+                BuildFieldWorks(ref state, turn, snapshot);
             }
 
             Deploy(ref state, turn);

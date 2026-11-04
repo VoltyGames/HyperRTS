@@ -26,6 +26,21 @@ namespace HyperRTS.Simulation.AI
         /// <summary>Attacks only what its team sees, or buildings it has explored; otherwise sweeps the map centre.</summary>
         public bool LimitedByFog;
 
+        /// <summary>Whether squads that are pinned or hurt past the shares below run for a retreat point.</summary>
+        public bool RetreatsSquads;
+
+        /// <summary>A squad retreats when its living members fall to this share of its size.</summary>
+        public float RetreatLivingShare;
+
+        /// <summary>A squad retreats when its health falls to this share of its full health.</summary>
+        public float RetreatHealthShare;
+
+        /// <summary>Field work lines built at each defence point; 0 builds none.</summary>
+        public int FieldWorkLines;
+
+        /// <summary>Also lays a barrier line in front of each defence point's cover.</summary>
+        public bool FieldWorkBarrier;
+
         /// <summary>Round-robin cursor over production options.</summary>
         public int NextOption;
 
