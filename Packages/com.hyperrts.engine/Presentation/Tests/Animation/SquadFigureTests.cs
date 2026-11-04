@@ -178,6 +178,55 @@ namespace HyperRTS.Presentation.Tests.Animation
         }
 
         [Test]
+        public void FigureMovingAtHalfTheClipsGroundSpeed_PlaysItAtHalfRate()
+        {
+            GiveWalkGroundSpeed(2f);
+            Update();
+            MoveFor(1f, 3f);
+
+            Assert.AreEqual(FigureState.Walk, State(0));
+            Assert.AreEqual(5f, Lower(0).Value.z, 0.1f, "10 fps clip at half rate");
+            Assert.AreEqual(5f, Upper(0).Value.z, 0.1f, "the arms in step with the legs");
+        }
+
+        [Test]
+        public void StrideRateChange_KeepsTheFrameShowing()
+        {
+            GiveWalkGroundSpeed(2f);
+            Update();
+            MoveFor(1f, 3f);
+
+            var changes = 0;
+            for (var i = 0; i < 20; i++)
+            {
+                var before = Lower(0).Value;
+                Move(1.5f);
+                var after = Lower(0).Value;
+                if (after.z != before.z)
+                {
+                    changes++;
+                    Assert.AreEqual((float)_time - before.w, ((float)_time - after.w) * after.z / before.z, 1e-3f);
+                }
+            }
+
+            Assert.Greater(changes, 0);
+        }
+
+        [Test]
+        public void IdleFigure_WritesNoClipRate()
+        {
+            GiveWalkGroundSpeed(2f);
+            Update();
+            Advance(1f);
+            var kept = Lower(0).Value;
+
+            Advance(1f);
+
+            Assert.AreEqual(kept, Lower(0).Value);
+            Assert.AreEqual(10f, kept.z);
+        }
+
+        [Test]
         public void MemberInCover_TurnsToItsHeadingAndBackWhenItLeaves()
         {
             Update();
@@ -594,6 +643,15 @@ namespace HyperRTS.Presentation.Tests.Animation
             for (var i = 0; i < (int)math.ceil(seconds / Step); i++)
             {
                 Move(speed);
+            }
+        }
+
+        private void GiveWalkGroundSpeed(float speed)
+        {
+            var figures = _em.GetBuffer<SquadFigure>(_squad);
+            for (var i = 0; i < figures.Length; i++)
+            {
+                figures.ElementAt(i).Clips.Walk.GroundSpeed = speed;
             }
         }
 

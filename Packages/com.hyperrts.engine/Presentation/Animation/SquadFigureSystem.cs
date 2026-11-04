@@ -131,6 +131,11 @@ namespace HyperRTS.Presentation.Animation
                         Pose(parts, ref figure, next, posture, firing, digging);
                     }
 
+                    if (member.Alive && next is FigureState.Walk or FigureState.Run && figure.Retune(Now))
+                    {
+                        Retime(parts, figure);
+                    }
+
                     figures[i] = figure;
                 }
             }
@@ -251,13 +256,21 @@ namespace HyperRTS.Presentation.Animation
                 if (lowerChanged)
                 {
                     figure.Lower = lower;
-                    figure.LowerStart = figure.StartTime(lower, Now);
+                    figure.LowerRate = figure.RateFor(lower);
+                    figure.LowerStart = figure.StartTime(lower, Now, figure.LowerRate);
                 }
 
                 var upperChanged = !figure.Upper.SameAs(upper);
                 figure.Upper = upper;
-                var upperStart = upper.SameAs(lower) ? figure.LowerStart : figure.StartTime(upper, Now);
-                Play(parts, figure, lowerChanged ? lower : default, upperChanged ? upper : default, upperStart);
+                var upperStart = figure.LowerStart;
+                var upperRate = figure.LowerRate;
+                if (!upper.SameAs(lower))
+                {
+                    upperRate = 1f;
+                    upperStart = figure.StartTime(upper, Now, upperRate);
+                }
+
+                Play(parts, figure, lowerChanged ? lower : default, upperChanged ? upper : default, upperStart, upperRate);
             }
 
             private void Fall(NativeList<Entity> parts, ref SquadFigure figure, in VATClipRange clip)
@@ -265,12 +278,13 @@ namespace HyperRTS.Presentation.Animation
                 figure.Lower = clip;
                 figure.Upper = clip;
                 figure.LowerStart = Now;
-                Play(parts, figure, clip, clip, Now);
+                figure.LowerRate = 1f;
+                Play(parts, figure, clip, clip, Now, 1f);
             }
 
             // A range with no frames leaves that half as it is.
             private void Play(NativeList<Entity> parts, in SquadFigure figure, in VATClipRange lower, in VATClipRange upper,
-                float upperStart)
+                float upperStart, float upperRate)
             {
                 foreach (var part in parts)
                 {
@@ -283,7 +297,7 @@ namespace HyperRTS.Presentation.Animation
                     {
                         var low = Lowers[part];
                         var fade = LowerFades[part];
-                        low.Clip.Switch(lower, figure.LowerStart, Now, ref fade.Fade);
+                        low.Clip.Switch(lower, figure.LowerStart, Now, figure.LowerRate, ref fade.Fade);
                         Lowers[part] = low;
                         LowerFades[part] = fade;
                     }
@@ -292,9 +306,32 @@ namespace HyperRTS.Presentation.Animation
                     {
                         var high = Uppers[part];
                         var fade = UpperFades[part];
-                        high.Clip.Switch(upper, upperStart, Now, ref fade.Fade);
+                        high.Clip.Switch(upper, upperStart, Now, upperRate, ref fade.Fade);
                         Uppers[part] = high;
                         UpperFades[part] = fade;
+                    }
+                }
+            }
+
+            // A rate change keeps each clip playing and its fade running; only the speed and start move.
+            private void Retime(NativeList<Entity> parts, in SquadFigure figure)
+            {
+                var upperFollows = figure.Upper.SameAs(figure.Lower);
+                foreach (var part in parts)
+                {
+                    if (!Lowers.HasComponent(part) || !Under(part, figure.Figure))
+                    {
+                        continue;
+                    }
+
+                    var low = Lowers[part];
+                    low.Clip.Value = figure.Lower.Packed(figure.LowerStart, figure.LowerRate);
+                    Lowers[part] = low;
+                    if (upperFollows)
+                    {
+                        var high = Uppers[part];
+                        high.Clip.Value = figure.Upper.Packed(figure.LowerStart, figure.LowerRate);
+                        Uppers[part] = high;
                     }
                 }
             }

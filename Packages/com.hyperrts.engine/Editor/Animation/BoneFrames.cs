@@ -24,9 +24,9 @@ namespace HyperRTS.Editor.Animation
         /// <summary>Seconds into the source clip that frame <paramref name="frame"/> shows.</summary>
         public float TimeOf(int frame) => Clip.source.length * frame / _steps;
 
-        public VATClipTable.Clip AsClip(int startRow, float fps) => new()
+        public VATClipTable.Clip AsClip(int startRow, float fps, float groundSpeed) => new()
         {
-            name = Clip.name, startRow = startRow, frameCount = Count, fps = fps, loop = Clip.loop,
+            name = Clip.name, startRow = startRow, frameCount = Count, fps = fps, loop = Clip.loop, groundSpeed = groundSpeed,
         };
     }
 

@@ -112,6 +112,20 @@ namespace HyperRTS.Editor.Tests.Animation
         }
 
         [Test]
+        public void ClipWithRootTravel_ReportsItsGroundSpeed()
+        {
+            using var rig = Rig();
+            var clip = Track(new AnimationClip());
+            clip.SetCurve("Hips", typeof(Transform), "localPosition.x", AnimationCurve.Linear(0f, 0f, 2f, 3f));
+            var still = Track(new AnimationClip());
+            still.SetCurve("Hips", typeof(Transform), "localPosition.y", AnimationCurve.Linear(0f, 1f, 2f, 1.5f));
+
+            Assert.AreEqual(1.5f, rig.GroundSpeed(clip, 1f), 1e-3f);
+            Assert.AreEqual(3f, rig.GroundSpeed(clip, 2f), 1e-3f, "played twice as fast covers twice the ground");
+            Assert.AreEqual(0f, rig.GroundSpeed(still, 1f), 1e-3f, "height is not ground");
+        }
+
+        [Test]
         public void Weapon_SitsWithItsOriginOnTheSocketNode()
         {
             using var rig = Rig();

@@ -17,7 +17,11 @@ namespace HyperRTS.Presentation.Animation
         public static VATClip Started(in VATClipRange clip, float now) => new() { Value = clip.Packed(now) };
 
         /// <summary>True when <paramref name="clip"/> is the one playing, whenever it started.</summary>
-        public bool Plays(in VATClipRange clip) => Value.xyz.Equals(clip.Packed(0f).xyz);
+        public bool Plays(in VATClipRange clip)
+        {
+            var packed = clip.Packed(0f);
+            return Value.x == packed.x && Value.y == packed.y && (Value.z > 0f) == (packed.z > 0f);
+        }
 
         /// <summary>Starts <paramref name="clip"/> at <paramref name="now"/> unless it already plays; true when it wrote.</summary>
         public bool Play(in VATClipRange clip, float now, ref VATFade fade)
@@ -27,15 +31,15 @@ namespace HyperRTS.Presentation.Animation
                 return false;
             }
 
-            Switch(clip, now, now, ref fade);
+            Switch(clip, now, now, 1f, ref fade);
             return true;
         }
 
-        /// <summary>Plays <paramref name="clip"/> as if it began at <paramref name="startTime"/>, fading from the pose showing at <paramref name="now"/>.</summary>
-        public void Switch(in VATClipRange clip, float startTime, float now, ref VATFade fade)
+        /// <summary>Plays <paramref name="clip"/> at <paramref name="rate"/> times its speed as if it began at <paramref name="startTime"/>, fading from the pose showing at <paramref name="now"/>.</summary>
+        public void Switch(in VATClipRange clip, float startTime, float now, float rate, ref VATFade fade)
         {
             fade = VATFade.From(FrameAt(now), now);
-            Value = clip.Packed(startTime);
+            Value = clip.Packed(startTime, rate);
         }
 
         /// <summary>The frames LitTeamVAT.hlsl and LitTeamBones.hlsl blend at <paramref name="time"/>; the shader does the same sums.</summary>
@@ -80,7 +84,11 @@ namespace HyperRTS.Presentation.Animation
         public float Fps;
         public bool Loop;
 
-        public float4 Packed(float startTime) => new(StartRow, FrameCount, Loop ? Fps : -Fps, startTime);
+        /// <summary>Metres per second the clip's figure travels, from baking; 0 plays the clip at its own rate whatever the figure's speed.</summary>
+        public float GroundSpeed;
+
+        /// <summary>The material value starting the clip at <paramref name="startTime"/>, played <paramref name="rate"/> times its own speed.</summary>
+        public float4 Packed(float startTime, float rate = 1f) => new(StartRow, FrameCount, (Loop ? Fps : -Fps) * rate, startTime);
 
         public readonly bool SameAs(in VATClipRange other) =>
             StartRow == other.StartRow && FrameCount == other.FrameCount && Fps == other.Fps && Loop == other.Loop;

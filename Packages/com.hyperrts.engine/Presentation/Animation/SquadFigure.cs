@@ -15,6 +15,14 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Per second rate at which a figure turns to its cover heading or back.</summary>
         private const float TurnRate = 8f;
 
+        /// <summary>Slowest and fastest a stride plays against its clip, so a stray speed neither freezes nor blurs the legs.</summary>
+        private const float SlowestRate = 0.5f;
+
+        private const float FastestRate = 1.6f;
+
+        /// <summary>Share the stride rate must change by before it is rewritten, so a steady walk writes nothing.</summary>
+        private const float RateStep = 0.03f;
+
         /// <summary>The model shown now: the one for the weapon its member fires.</summary>
         public Entity Figure;
 
@@ -50,6 +58,9 @@ namespace HyperRTS.Presentation.Animation
         public VATClipRange Lower;
 
         public float LowerStart;
+
+        /// <summary>Times the legs' clip speed it plays at, so strides match the ground the figure covers; the upper body follows it while it plays the same clip.</summary>
+        public float LowerRate;
 
         /// <summary>Horizontal speed in m/s averaged over <see cref="SquadFigures.SpeedTime"/>.</summary>
         public float Speed;
@@ -106,6 +117,35 @@ namespace HyperRTS.Presentation.Animation
             State = FigureState.Unset;
             Lower = default;
             Upper = default;
+            LowerRate = 1f;
+        }
+
+        /// <summary>Times its own speed that <paramref name="clip"/> plays so its feet keep to the ground at the figure's speed.</summary>
+        public readonly float RateFor(in VATClipRange clip)
+        {
+            if (clip.GroundSpeed <= 0f)
+            {
+                return 1f;
+            }
+
+            return math.clamp(Speed / clip.GroundSpeed, SlowestRate, FastestRate);
+        }
+
+        /// <summary>
+        /// Moves the legs' clip to the rate for the speed now, keeping its phase, and returns true when it changed
+        /// by more than <see cref="RateStep"/>.
+        /// </summary>
+        public bool Retune(float now)
+        {
+            var wanted = RateFor(Lower);
+            if (Lower.FrameCount == 0 || math.abs(wanted / LowerRate - 1f) <= RateStep)
+            {
+                return false;
+            }
+
+            LowerStart = now - (now - LowerStart) * LowerRate / wanted;
+            LowerRate = wanted;
+            return true;
         }
 
         /// <summary>Eases <see cref="Offset"/> toward <paramref name="target"/>, or jumps there on the first update.</summary>
@@ -177,10 +217,10 @@ namespace HyperRTS.Presentation.Animation
             return now >= HideAt ? FigureState.Hidden : FigureState.Die;
         }
 
-        /// <summary>When <paramref name="clip"/> started for this figure if it began at <paramref name="now"/>.</summary>
-        public readonly float StartTime(in VATClipRange clip, float now)
+        /// <summary>When <paramref name="clip"/> started for this figure if it began at <paramref name="now"/>, played at <paramref name="rate"/>.</summary>
+        public readonly float StartTime(in VATClipRange clip, float now, float rate)
         {
-            var length = clip.FrameCount / clip.Fps;
+            var length = clip.FrameCount / (clip.Fps * rate);
             return clip.Loop ? now - Phase * length : now;
         }
     }

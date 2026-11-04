@@ -231,7 +231,8 @@ reach a build):
   the parent of `rootBone`, so a clip file and the rig must name the same bones under the same parent (the Mixamo
   skeleton exported from Blender under an `Armature` node does, while a Humanoid rig is untried). `inPlace` removes the
   root bone's ground travel, the straight line from its first to its last position, so locomotion with root motion
-  plays on the spot and still loops; height and sway stay.
+  plays on the spot and still loops; height and sway stay. The table records that travel as the clip's `groundSpeed`
+  in metres per second (0 for clips not in place, or made without travel).
 - `rootBone`: the top bone of the skeleton, such as the hips.
 - `upperRoot`: the bone that roots the upper body, which plays its own clip; the bones below it join it.
 - `parts`: meshes to export, each one or more `nodes` merged into one mesh of one submesh (a soldier's body, head and
@@ -250,7 +251,7 @@ reach a build):
   bone's pose times its inverse bind pose, mapping the skeleton mesh's rest vertices to the posed ones in the rig
   model's root space.
 - `<Set>_Clips`, a `BoneClipTable`: the bones in texture order, the rows, the clips (`startRow`, `frameCount`, `fps`,
-  `loop`) and the bounds over every frame of every part.
+  `loop`, `groundSpeed`) and the bounds over every frame of every part.
 - `<Set>_<Part>`, a plain Mesh with no skin: UV6 holds four bone indices and UV7 the four weights, negative for a bone
   of the upper body. Parts of one set share the texture; a skinned part whose bind pose differs from the skeleton's fails
   the bake.
@@ -354,7 +355,10 @@ step with them. A member who died plays the die clip once on both halves (or a b
 `Left` or `Right`, named by where a blast within 0.5 s came from relative to the figure's facing), then the figure hides
 after the hold. A squad spawned with dead members hides their figures without the fall. A figure gets new clips only
 when its state, posture or firing changes, written to every renderer under it, and looping clips start at a per-figure
-phase so the squad doesn't move in step.
+phase so the squad doesn't move in step. While the legs play a clip with a `groundSpeed` (walk, run, crawl), the system
+plays it at the figure's averaged speed over that, from 0.5 to 1.6 times, so planted feet don't slide. A rate that moves
+more than 3% rewrites the clip's start time to keep the frame showing, and the upper body takes the same rate while it
+plays the legs' clip.
 
 A figure may name an `upgradedRoot` with its own clip prefix and `upgradedWeaponName`, baked as a second figure entity
 kept in `SquadFigure.Other`. When the member's `Weapon` differs from its `BaseWeapon` (an upgrade is in hand) the system

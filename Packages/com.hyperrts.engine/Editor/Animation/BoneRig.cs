@@ -85,6 +85,19 @@ namespace HyperRTS.Editor.Animation
             return pose;
         }
 
+        /// <summary>Ground speed in m/s below which a clip counts as having none.</summary>
+        public const float MinGroundSpeed = 0.1f;
+
+        /// <summary>Metres per second the root bone travels over <paramref name="clip"/> played <paramref name="speed"/> times faster: the ground an in place pose removes. Under <see cref="MinGroundSpeed"/> is sway, not travel, and reads 0.</summary>
+        public float GroundSpeed(AnimationClip clip, float speed)
+        {
+            var (start, end) = Travel(clip);
+            var drift = _root.transform.TransformVector(end - start);
+            drift.y = 0f;
+            var ground = drift.magnitude * speed / clip.length;
+            return ground < MinGroundSpeed ? 0f : ground;
+        }
+
         private void Sample(AnimationClip clip, float time) => clip.SampleAnimation(_rootBone.parent.gameObject, time);
 
         private (Vector3 Start, Vector3 End) Travel(AnimationClip clip)

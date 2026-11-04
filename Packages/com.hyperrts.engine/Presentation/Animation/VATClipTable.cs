@@ -35,7 +35,14 @@ namespace HyperRTS.Presentation.Animation
             [Tooltip("Loops; off plays once and holds the last frame.")]
             public bool loop = true;
 
-            public VATClipRange Range => new() { StartRow = startRow, FrameCount = frameCount, Fps = fps, Loop = loop };
+            [Tooltip("Metres per second the clip's travel covers, which a bone clip baked in place no longer shows; 0 for none, so it plays at its own rate.")]
+            [Min(0f)]
+            public float groundSpeed;
+
+            public VATClipRange Range => new()
+            {
+                StartRow = startRow, FrameCount = frameCount, Fps = fps, Loop = loop, GroundSpeed = groundSpeed,
+            };
         }
 
         [Tooltip("The bake's VAT/<Model>.vat.json, read by Import Bake Info in the context menu.")]

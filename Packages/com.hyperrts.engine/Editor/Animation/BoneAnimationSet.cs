@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Animation
             [Tooltip("Loops; off plays once and holds the last frame.")]
             public bool loop = true;
 
-            [Tooltip("Removes the root bone's ground travel, so a clip with root motion plays on the spot; its height and sway stay.")]
+            [Tooltip("Removes the root bone's ground travel, so a clip with root motion plays on the spot; its height and sway stay. The table keeps that travel as the clip's ground speed.")]
             public bool inPlace;
 
             [Tooltip("Plays this many times faster; over 1 bakes fewer frames.")]
@@ -130,7 +130,7 @@ namespace HyperRTS.Editor.Animation
             var written = new List<string>
             {
                 Write(pose.Texture(bones.Count), TexturePath),
-                Write(MakeTable(plans, bones, pose.Bounds(meshes)), TablePath),
+                Write(MakeTable(posed, plans, bones, pose.Bounds(meshes)), TablePath),
             };
             for (var i = 0; i < parts.Count; i++)
             {
@@ -155,7 +155,7 @@ namespace HyperRTS.Editor.Animation
             return BoneRig.Merge(part.nodes.Select(node => posed.AttachedMesh(model, node, socket.node)).ToList());
         }
 
-        private BoneClipTable MakeTable(List<ClipFrames> plans, List<string> bones, Bounds bounds)
+        private BoneClipTable MakeTable(BoneRig posed, List<ClipFrames> plans, List<string> bones, Bounds bounds)
         {
             var table = CreateInstance<BoneClipTable>();
             table.bones = bones;
@@ -165,7 +165,8 @@ namespace HyperRTS.Editor.Animation
             var start = 0;
             foreach (var plan in plans)
             {
-                table.clips.Add(plan.AsClip(start, fps));
+                var ground = plan.Clip.inPlace ? posed.GroundSpeed(plan.Clip.source, plan.Clip.speed) : 0f;
+                table.clips.Add(plan.AsClip(start, fps, ground));
                 start += plan.Count;
             }
 
