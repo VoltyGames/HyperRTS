@@ -116,7 +116,17 @@ Cover means protection; what hides a unit from sight is concealment.
   seeded roll weighted by that share, so exposed members are hit more.
 - **Rules.** `CoverSettings` on the Match bakes `CoverRules`: damage and suppression taken per kind, the front arc
   half angle and the search radius. Nothing reads the suppression shares yet.
-- **Not built yet.** Craters from heavy explosions on open ground.
+- **Heading.** On a concealing cell `CoverHeading` is the squad's facing, so a client can tell a covered member's
+  facing from `Cover` alone (`SpotEntity` is server only). `SquadFigureSystem` eases a covered member's figure to
+  that heading and back to its baked rotation when the cover goes.
+- **Craters.** `CraterSettings` on the Match (a prefab, `minRadius`, `maxCount`, `spacing`) bakes `CraterRules` only
+  when it names a prefab; with none, nothing digs. `CraterSystem` (after `ImpactSurfaceSystem`) reads the frame's
+  impact cues: a ground impact with a splash radius of at least `minRadius`, more than `spacing` metres from every
+  cover spot and crater, instantiates the prefab there with a `Crater` order number, and past `maxCount` destroys the
+  oldest first. The prefab carries `CoverSpotAuthoring` (light, "Fill ring"). Only shooters that leave impact cues
+  (marks or impact effects) dig. The server alone spawns craters and they are not ghosts: spot reservations are
+  server state and clients draw craters from the cues (`ImpactMark`, `CraterTerrainSystem`). A cover preview on the
+  client would need them replicated.
 
 ### Salvos, muzzles and ammo
 

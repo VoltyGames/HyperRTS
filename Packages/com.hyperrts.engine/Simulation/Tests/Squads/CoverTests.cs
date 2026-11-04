@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Squads;
+using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -93,7 +94,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             Assert.IsTrue(walking.HasSpot);
             Assert.AreEqual(CoverKind.None, walking.Cover);
 
-                        World.Run(3f);
+            World.Run(3f);
             var arrived = World.Buffer<SquadMember>(squad)[0];
             Assert.AreEqual(CoverKind.Heavy, arrived.Cover);
             Assert.AreEqual(Posture.Crouch, arrived.Posture);
@@ -126,9 +127,10 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 4);
             World.Run(3f);
 
-            for (var i = 0; i < 40; i++)
+            // Enough small hits that the roll can't by chance favour the covered pair (about five deviations out).
+            for (var i = 0; i < 200; i++)
             {
-                Hit(squad, 1f, Ahead);
+                Hit(squad, 0.1f, Ahead);
                 World.Tick();
             }
 
@@ -176,6 +178,43 @@ namespace HyperRTS.Simulation.Tests.Squads
             var member = World.Buffer<SquadMember>(squad)[0];
             Assert.IsFalse(member.HasSpot);
             Assert.AreEqual(CoverKind.None, member.Cover);
+        }
+
+        [Test]
+        public void SquadInWoods_IsInLightCoverFromEverySideWithoutASpot()
+        {
+            World.SpawnSightBlock(float3.zero, new SightBlock { Size = new float2(20f, 40f), Density = 0.1f, PorousTop = 10f });
+            var squad = Squad(float3.zero, 3);
+
+            World.Run(2f);
+
+            foreach (var member in World.Buffer<SquadMember>(squad))
+            {
+                Assert.IsFalse(member.HasSpot);
+                Assert.AreEqual(CoverKind.Light, member.Cover);
+                Assert.AreEqual(Posture.Crouch, member.Posture);
+            }
+
+            Hit(squad, 20f, Behind);
+            World.Tick();
+            Assert.Less(World.Get<Health>(squad).Current, Each * 3f);
+        }
+
+        [Test]
+        public void SquadThatMoves_DropsItsSpotsAndStandsUp()
+        {
+            Prop(new float3(0f, 0f, 3f), (float3.zero, CoverKind.Heavy));
+            var squad = Squad(float3.zero, 1);
+            World.Run(3f);
+            Assert.AreEqual(Posture.Crouch, World.Buffer<SquadMember>(squad)[0].Posture);
+
+            World.MoveTo(squad, new float3(0f, 0f, 40f));
+            World.Run(2f);
+
+            var member = World.Buffer<SquadMember>(squad)[0];
+            Assert.IsFalse(member.HasSpot);
+            Assert.AreEqual(CoverKind.None, member.Cover);
+            Assert.AreEqual(Posture.Stand, member.Posture);
         }
 
         [Test]

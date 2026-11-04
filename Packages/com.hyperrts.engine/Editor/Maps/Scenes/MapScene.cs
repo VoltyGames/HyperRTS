@@ -139,6 +139,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             match.navCellSize = project.Rules.navCellSize;
             match.buildingGap = project.Rules.buildingGap;
             match.maxSlope = project.Rules.maxSlope;
+            match.craters = project.Rules.craters;
             match.waterLevel = layout.WaterHeight;
             match.floodBelowWaterLevel = true;
             var (heights, groundLevel) = (generation.Heights, layout.GroundLevel);

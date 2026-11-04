@@ -93,7 +93,7 @@ namespace HyperRTS.Presentation.Animation
                     if (member.Alive)
                     {
                         figure.Follow(member.Offset, DeltaTime);
-                        Stand(figure);
+                        Stand(ref figure, member);
                         var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                         var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
                         moving = figure.Observe(squad, feet, shots, Now, DeltaTime, out firing);
@@ -117,13 +117,20 @@ namespace HyperRTS.Presentation.Animation
                 }
             }
 
-            /// <summary>Moves the figure to its offset: world axes turned into its parent's frame, at its baked height.</summary>
-            private void Stand(in SquadFigure figure)
+            /// <summary>Moves the figure to its offset: world axes turned into its parent's frame, at its baked height, turned to its cover.</summary>
+            private void Stand(ref SquadFigure figure, in SquadMember member)
             {
                 var parent = Places[Parents[figure.Figure].Value].Value;
-                var local = math.mul(math.inverse(new float3x3(parent)), new float3(figure.Offset.x, 0f, figure.Offset.y));
+                var worldToParent = math.inverse(new float3x3(parent));
+                var local = math.mul(worldToParent, new float3(figure.Offset.x, 0f, figure.Offset.y));
                 var spot = Spots[figure.Figure];
+                if (!figure.Primed)
+                {
+                    figure.Baked = spot.Rotation;
+                }
+
                 spot.Position = new float3(local.x, figure.Height, local.z);
+                spot.Rotation = figure.Turned(spot.Rotation, member, worldToParent, DeltaTime);
                 Spots[figure.Figure] = spot;
             }
 
@@ -133,6 +140,7 @@ namespace HyperRTS.Presentation.Animation
                 var hidden = next == FigureState.Hidden;
                 Switch.SetBranch(entity, figure.Figure, HideReason.Figure, hidden);
                 figure.State = next;
+                figure.StateSince = Now;
                 if (hidden)
                 {
                     return;

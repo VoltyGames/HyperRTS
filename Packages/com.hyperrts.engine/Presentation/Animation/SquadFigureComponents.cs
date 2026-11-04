@@ -57,15 +57,39 @@ namespace HyperRTS.Presentation.Animation
         public readonly bool Killed(float fallTime) =>
             Blasted && fallTime >= BlastTime - BlastBefore && fallTime <= BlastTime + BlastAfter;
 
-        /// <summary>How fast a figure moves, from its horizontal <paramref name="speed"/>.</summary>
-        public readonly FigureState Moving(float speed)
+        /// <summary>Seconds over which a figure's measured speed averages, since a squad moves in simulation steps.</summary>
+        public const float SpeedTime = 0.25f;
+
+        /// <summary>Seconds a figure keeps a motion before it may change to another, so a borderline speed doesn't flicker.</summary>
+        public const float MoveHold = 0.3f;
+
+        /// <summary>Share of <see cref="WalkSpeed"/> below which a walking figure stops.</summary>
+        public const float StopShare = 0.5f;
+
+        /// <summary>Share of <see cref="RunSpeed"/> below which a running figure slows to a walk.</summary>
+        public const float SlowShare = 0.8f;
+
+        /// <summary>
+        /// How fast a figure moves, from its averaged horizontal <paramref name="speed"/>. A walk or run ends only below
+        /// a lower speed than it began at, and a motion held under <see cref="MoveHold"/> seconds stays.
+        /// </summary>
+        public readonly FigureState Moving(float speed, FigureState current, float held)
         {
-            if (speed >= RunSpeed)
+            var wanted = Wanted(speed, current);
+            var living = current is FigureState.Idle or FigureState.Walk or FigureState.Run;
+            return living && held < MoveHold ? current : wanted;
+        }
+
+        private readonly FigureState Wanted(float speed, FigureState current)
+        {
+            var runFrom = current == FigureState.Run ? RunSpeed * SlowShare : RunSpeed;
+            if (speed >= runFrom)
             {
                 return FigureState.Run;
             }
 
-            return speed >= WalkSpeed ? FigureState.Walk : FigureState.Idle;
+            var walkFrom = current is FigureState.Walk or FigureState.Run ? WalkSpeed * StopShare : WalkSpeed;
+            return speed >= walkFrom ? FigureState.Walk : FigureState.Idle;
         }
     }
 
@@ -163,6 +187,9 @@ namespace HyperRTS.Presentation.Animation
         /// <summary>Per second rate at which a figure closes on its member's offset.</summary>
         private const float FollowRate = 12f;
 
+        /// <summary>Per second rate at which a figure turns to its cover heading or back.</summary>
+        private const float TurnRate = 8f;
+
         public Entity Figure;
 
         /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
@@ -183,6 +210,12 @@ namespace HyperRTS.Presentation.Animation
 
         public float LowerStart;
 
+        /// <summary>Horizontal speed in m/s averaged over <see cref="SquadFigures.SpeedTime"/>.</summary>
+        public float Speed;
+
+        /// <summary>Clock time <see cref="State"/> last changed.</summary>
+        public float StateSince;
+
         /// <summary>The clip the upper body plays now.</summary>
         public VATClipRange Upper;
 
@@ -194,6 +227,9 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>Baked height of the figure above its parent.</summary>
         public float Height;
+
+        /// <summary>Baked rotation in its parent's frame, the squad's facing; set on the first update.</summary>
+        public quaternion Baked;
 
         public float3 LastPosition;
         public byte LastShots;
@@ -208,6 +244,23 @@ namespace HyperRTS.Presentation.Animation
             Offset = Primed ? math.lerp(Offset, target, 1f - math.exp(-FollowRate * deltaTime)) : target;
         }
 
+        /// <summary>
+        /// The rotation to ease to: toward the way <paramref name="member"/> faces in cover, else back to the baked one.
+        /// <paramref name="worldToParent"/> turns a world direction into the figure's parent frame.
+        /// </summary>
+        public readonly quaternion Turned(quaternion current, in SquadMember member, float3x3 worldToParent, float deltaTime)
+        {
+            var target = Baked;
+            if (member.Cover != CoverKind.None)
+            {
+                var facing = member.CoverFacing;
+                var local = math.mul(worldToParent, new float3(facing.x, 0f, facing.y));
+                target = math.mul(quaternion.LookRotationSafe(local, math.up()), Baked);
+            }
+
+            return Primed ? math.slerp(current, target, 1f - math.exp(-TurnRate * deltaTime)) : target;
+        }
+
         /// <summary>Records this frame's world position and weapon shot count; returns how a living figure moves and whether it fires.</summary>
         public FigureState Observe(in SquadFigures squad, float3 position, byte shots, float now, float deltaTime, out bool firing)
         {
@@ -219,7 +272,8 @@ namespace HyperRTS.Presentation.Animation
                 LastShotTime = now - SquadFigures.FireHold;
             }
 
-            var speed = deltaTime > 0f ? math.distance(position.xz, LastPosition.xz) / deltaTime : 0f;
+            var measured = deltaTime > 0f ? math.distance(position.xz, LastPosition.xz) / deltaTime : 0f;
+            Speed = math.lerp(Speed, measured, 1f - math.exp(-deltaTime / SquadFigures.SpeedTime));
             if (shots != LastShots)
             {
                 LastShotTime = now;
@@ -228,7 +282,7 @@ namespace HyperRTS.Presentation.Animation
             LastPosition = position;
             LastShots = shots;
             firing = now - LastShotTime < SquadFigures.FireHold;
-            return squad.Moving(speed);
+            return squad.Moving(Speed, State, now - StateSince);
         }
 
         /// <summary>The state this figure moves to: a dead member's figure dies then hides, a living one's shows <paramref name="living"/>.</summary>

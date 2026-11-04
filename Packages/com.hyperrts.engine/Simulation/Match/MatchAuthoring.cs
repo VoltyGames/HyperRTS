@@ -59,6 +59,9 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("What cover takes off a hit and how far a halted squad looks for it.")]
         public CoverSettings cover = CoverSettings.Standard;
 
+        [Tooltip("Which blasts dig a crater that gives soldiers light cover.")]
+        public CraterSettings craters = CraterSettings.Standard;
+
         [Header("Rules")]
         [Tooltip("Production speed of power-consuming producers while their owner's power is low.")]
         [Range(0f, 1f)]
@@ -146,6 +149,12 @@ namespace HyperRTS.Simulation.Match
                 });
                 AddComponent(entity, authoring.sight.Rules);
                 AddComponent(entity, authoring.cover.Rules);
+                if (authoring.craters.prefab != null)
+                {
+                    var prefab = GetEntity(authoring.craters.prefab, TransformUsageFlags.Dynamic);
+                    AddComponent(entity, authoring.craters.Rules(prefab));
+                }
+
                 AddComponent(entity, new MatchRules
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,

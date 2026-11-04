@@ -65,6 +65,7 @@ namespace HyperRTS.Simulation.Squads
                 var halted = !IsMoving(velocity);
                 Keep(squad, members, transform, halted);
                 var near = new NativeList<int>(16, Allocator.Temp);
+                var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
                 var living = SquadMember.CountLiving(members);
                 var rank = 0;
                 for (var i = 0; i < members.Length; i++)
@@ -77,10 +78,10 @@ namespace HyperRTS.Simulation.Squads
 
                     if (halted && !member.HasSpot)
                     {
-                        Take(ref member, squad, transform, SquadMember.SpreadSlot(rank, living), near);
+                        Take(ref member, squad, transform, forward, SquadMember.SpreadSlot(rank, living), near);
                     }
 
-                    Settle(ref member, transform.Position, halted);
+                    Settle(ref member, transform.Position, forward, halted);
                     members[i] = member;
                     rank++;
                 }
@@ -114,12 +115,11 @@ namespace HyperRTS.Simulation.Squads
                 }
             }
 
-            private void Take(ref SquadMember member, Entity squad, in LocalTransform transform, float2 place,
-                NativeList<int> near)
+            private void Take(ref SquadMember member, Entity squad, in LocalTransform transform, float2 forward,
+                float2 place, NativeList<int> near)
             {
                 near.Clear();
                 Spots.FindNear(transform.Position.xz, math.min(Rules.SearchRadius, SquadMember.MaxSpread), near);
-                var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
                 var best = -1;
                 var bestScore = float.MinValue;
                 foreach (var spot in near)
@@ -152,7 +152,7 @@ namespace HyperRTS.Simulation.Squads
             }
 
             /// <summary>Sets its cover and posture from where it stands now.</summary>
-            private void Settle(ref SquadMember member, float3 squad, bool halted)
+            private void Settle(ref SquadMember member, float3 squad, float2 forward, bool halted)
             {
                 member.Cover = CoverKind.None;
                 if (member.HasSpot && Spots.TryFind(member.SpotEntity, member.SpotIndex, out var spot))
@@ -165,6 +165,7 @@ namespace HyperRTS.Simulation.Squads
                 else if (halted && Blockers.IsConcealing(member.Position(squad)))
                 {
                     member.Cover = CoverKind.Light;
+                    member.CoverHeading = SquadMember.HeadingOf(forward);
                 }
 
                 if (member.Cover != CoverKind.None)

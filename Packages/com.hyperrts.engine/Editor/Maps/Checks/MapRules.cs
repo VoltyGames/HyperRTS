@@ -2,13 +2,15 @@ using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Squads;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
     /// The thresholds a map is measured against and the match settings it is built with (the built scene's match
-    /// takes its nav cell size, building gap and max slope from here). Exactly one <c>*.rules.asset</c> per project.
+    /// takes its nav cell size, building gap, max slope and craters from here). Exactly one <c>*.rules.asset</c> per
+    /// project.
     /// </summary>
     [MapLibraryItem("rules")]
     [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Rules", fileName = "New.rules")]
@@ -23,6 +25,9 @@ namespace HyperRTS.Editor.Maps.Checks
 
         [Tooltip("Steepest drivable ground (degrees); steeper terrain blocks units.")]
         public float maxSlope = 30f;
+
+        [Tooltip("The craters heavy blasts dig in the built match, as cover.")]
+        public CraterSettings craters = CraterSettings.Standard;
 
         [Tooltip("Light vehicle speed (m/s); rush times are path lengths at this speed.")]
         public float vehicleSpeed = 8f;

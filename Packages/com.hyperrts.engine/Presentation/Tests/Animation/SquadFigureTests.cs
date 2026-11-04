@@ -68,11 +68,62 @@ namespace HyperRTS.Presentation.Tests.Animation
         public void MemberCatchingUp_RunsWhileItsSquadmatesStandIdle()
         {
             Update();
+            Advance(SquadFigures.MoveHold);
             Member(2, offset: new float2(3f, 0f));
             Update();
 
             Assert.IsTrue(Lower(2).Plays(Range(20, true)));
             Assert.IsTrue(Lower(1).Plays(Range(0, true)));
+        }
+
+        [Test]
+        public void SquadMovingInSteps_StaysInWalkWithoutSwitchingClips()
+        {
+            Update();
+            for (var frame = 0; frame < 10; frame++)
+            {
+                Move(frame % 2 == 0 ? 3f : 0f);
+            }
+
+            var started = Figure(0).LowerStart;
+            Assert.AreEqual(FigureState.Walk, State(0));
+            for (var frame = 0; frame < 40; frame++)
+            {
+                Move(frame % 2 == 0 ? 3f : 0f);
+                Assert.AreEqual(FigureState.Walk, State(0));
+            }
+
+            Assert.AreEqual(started, Figure(0).LowerStart, "the stride never restarted");
+
+            var changes = 0;
+            for (var frame = 0; frame < 30; frame++)
+            {
+                var before = State(0);
+                Move(0f);
+                changes += State(0) != before ? 1 : 0;
+            }
+
+            Assert.AreEqual(1, changes);
+            Assert.AreEqual(FigureState.Idle, State(0));
+        }
+
+        [Test]
+        public void MemberInCover_TurnsToItsHeadingAndBackWhenItLeaves()
+        {
+            Update();
+            ref var member = ref _em.GetBuffer<SquadMember>(_squad).ElementAt(0);
+            member.Cover = CoverKind.Heavy;
+            member.CoverHeading = 0;
+
+            Advance(2f);
+            var facing = math.mul(_em.GetComponentData<LocalTransform>(_figures[0]).Rotation, math.forward());
+            Assert.AreEqual(1f, facing.x, 0.05f, "turned from the squad's Z to the heading along X");
+
+            _em.GetBuffer<SquadMember>(_squad).ElementAt(0).Cover = CoverKind.None;
+            Advance(2f);
+            facing = math.mul(_em.GetComponentData<LocalTransform>(_figures[0]).Rotation, math.forward());
+            Assert.AreEqual(1f, facing.z, 0.05f);
+            Assert.AreEqual(0f, facing.x, 0.05f);
         }
 
         [Test]
@@ -198,13 +249,13 @@ namespace HyperRTS.Presentation.Tests.Animation
             Update();
             Assert.IsTrue(Lower(0).Plays(Range(0, true)));
 
-            Move(1f);
+            MoveFor(1f, 0.5f);
             Assert.IsTrue(Lower(0).Plays(Range(10, true)));
 
-            Move(5f);
+            MoveFor(5f, 0.5f);
             Assert.IsTrue(Lower(0).Plays(Range(20, true)));
 
-            Move(0f);
+            MoveFor(0f, 2f);
             Assert.IsTrue(Lower(0).Plays(Range(0, true)));
 
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
@@ -220,15 +271,14 @@ namespace HyperRTS.Presentation.Tests.Animation
         public void FiringWhileWalking_FiresWithTheUpperBodyOverWalkingLegs()
         {
             Update();
-            Move(1f);
+            MoveFor(1f, 0.5f);
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Move(1f);
 
             Assert.IsTrue(Lower(0).Plays(Range(10, true)));
             Assert.IsTrue(Upper(0).Plays(Range(30, true)));
 
-            Advance(SquadFigures.FireHold);
-            Move(1f);
+            MoveFor(1f, SquadFigures.FireHold + 0.1f);
 
             Assert.IsTrue(Upper(0).Plays(Range(10, true)));
             Assert.AreEqual(Lower(0).Value.w, Upper(0).Value.w, "the arms rejoin the stride in step");
@@ -280,7 +330,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             Assert.IsTrue(Lower(0).Plays(Range(0, true)));
             Assert.IsTrue(Lower(1).Plays(Range(100, true)));
 
-            Move(5f);
+            MoveFor(5f, 0.5f);
             Assert.IsTrue(Lower(0).Plays(Range(20, true)));
             Assert.IsTrue(Lower(1).Plays(Range(120, true)));
         }
@@ -465,6 +515,16 @@ namespace HyperRTS.Presentation.Tests.Animation
             _em.SetComponentData(_squad, new LocalToWorld { Value = float4x4.Translate(position) });
             Update();
         }
+
+        private void MoveFor(float speed, float seconds)
+        {
+            for (var i = 0; i < (int)math.ceil(seconds / Step); i++)
+            {
+                Move(speed);
+            }
+        }
+
+        private SquadFigure Figure(int index) => _em.GetBuffer<SquadFigure>(_squad)[index];
 
         private void SetBlastClips()
         {
