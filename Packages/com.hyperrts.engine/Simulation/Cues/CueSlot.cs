@@ -36,6 +36,24 @@ namespace HyperRTS.Simulation.Cues
         /// </summary>
         Announce = 12,
 
+        /// <summary>A halted squad's members reach cover.</summary>
+        TakeCover = 13,
+
+        /// <summary>A squad's suppression rises to suppressed.</summary>
+        Suppressed = 14,
+
+        /// <summary>A squad's suppression rises to pinned.</summary>
+        Pinned = 15,
+
+        /// <summary>A squad starts to retreat.</summary>
+        Retreat = 16,
+
+        /// <summary>A squad's members start digging.</summary>
+        DigIn = 17,
+
+        /// <summary>A squad gets a dead member back.</summary>
+        Reinforced = 18,
+
         /// <summary>First value a game may use for its own slots; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }

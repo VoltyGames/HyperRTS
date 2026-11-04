@@ -8,7 +8,8 @@ namespace HyperRTS.Simulation.Cues
     {
         private static bool IsVoice(CueSlot slot) =>
             slot is CueSlot.Ready or CueSlot.Select or CueSlot.Move or CueSlot.Attack or CueSlot.AbilityVoice
-                or CueSlot.UnderFire;
+                or CueSlot.UnderFire or CueSlot.TakeCover or CueSlot.Suppressed or CueSlot.Pinned or CueSlot.Retreat
+                or CueSlot.DigIn or CueSlot.Reinforced;
 
         /// <summary>Voices, production done and announcements speak only to their owner.</summary>
         public static bool IsOwnerOnly(CueSlot slot) =>

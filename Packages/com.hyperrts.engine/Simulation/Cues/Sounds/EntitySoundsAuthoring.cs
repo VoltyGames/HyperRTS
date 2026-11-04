@@ -44,6 +44,24 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [Tooltip("Voice: when it takes damage after a quiet spell, throttled per unit and per player.")]
         public SoundCue underFire;
 
+        [Tooltip("Squad voice: a halted squad's members reach cover.")]
+        public SoundCue takeCover;
+
+        [Tooltip("Squad voice: its suppression rises to suppressed.")]
+        public SoundCue suppressed;
+
+        [Tooltip("Squad voice: its suppression rises to pinned.")]
+        public SoundCue pinned;
+
+        [Tooltip("Squad voice: it starts to retreat.")]
+        public SoundCue retreat;
+
+        [Tooltip("Squad voice: its members start digging.")]
+        public SoundCue digIn;
+
+        [Tooltip("Squad voice: a dead member comes back.")]
+        public SoundCue reinforced;
+
         [Tooltip("When it is produced or its construction finishes.")]
         public SoundCue ready;
 
@@ -94,6 +112,12 @@ namespace HyperRTS.Simulation.Cues.Sounds
                 EntitySoundsAuthoring.Set(sounds, CueSlot.ProductionDone, authoring.productionDone);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.AbilityVoice, authoring.abilityVoice);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.UnderFire, authoring.underFire);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.TakeCover, authoring.takeCover);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Suppressed, authoring.suppressed);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Pinned, authoring.pinned);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Retreat, authoring.retreat);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.DigIn, authoring.digIn);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Reinforced, authoring.reinforced);
                 for (var i = 0; i < authoring.mountFire.Count; i++)
                 {
                     EntitySoundsAuthoring.Set(sounds, CueSlot.Fire, authoring.mountFire[i], (byte)(i + 1));
