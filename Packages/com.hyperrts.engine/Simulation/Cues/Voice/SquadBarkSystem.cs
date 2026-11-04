@@ -53,9 +53,14 @@ namespace HyperRTS.Simulation.Cues.Voice
                          .Query<RefRW<SquadBarkState>, RefRO<Suppression>, RefRO<Faction>, RefRO<LocalTransform>,
                              DynamicBuffer<SquadMember>>().WithEntityAccess())
             {
+                if (faction.ValueRO.Value != local)
+                {
+                    continue;
+                }
+
                 var slot = bark.ValueRW.Observe(rules, suppression.ValueRO, members);
                 var allowed = now >= _next && now >= bark.ValueRO.QuietUntil;
-                if (slot == CueSlot.None || faction.ValueRO.Value != local || !allowed)
+                if (slot == CueSlot.None || !allowed)
                 {
                     continue;
                 }

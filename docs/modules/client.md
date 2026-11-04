@@ -367,7 +367,7 @@ swaps the two: the new model is placed and posed afresh, the old one hides, and 
 A figure may instead name an `emplacedRoot` (with `emplacedClipPrefix` and `emplacedWeaponName`), kept in
 `SquadFigure.Other` with `FigureVariant.Reason` `Emplaced`: it shows while the squad's `Deployable` is `Emplaced` and the
 figure takes a crew place (a gunner with empty hands behind the deployed gun), and the carried model returns on pack-up.
-A figure has at most one other model, so `SquadFiguresRule` errors when both roots are set.
+A figure has at most one other model, so `SquadFiguresRule` errors when both roots are set or the figures and squad members differ in count.
 
 `deployedModel` is a child of the unit (a gun on its tripod) baked as a render entity, hidden by `HideReason.Figure` and
 shown while the squad's `Deployable` is `Emplaced`, from the start of deploying until packing up begins. A figure with

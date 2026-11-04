@@ -143,9 +143,21 @@ Shader "HyperRTS/Health Bar"
                 {
                     float retreating = input.squad.w;
                     float level = input.squad.y;
-                    half4 tint = level > 1.5 ? _Pinned : (level > 0.5 ? _Suppressed : _MemberPip);
-                    tint = retreating > 0.5 ? _Retreat : tint;
-                    float amount = retreating > 0.5 ? 1.0 : input.squad.x;
+                    half4 tint = _MemberPip;
+                    float amount = input.squad.x;
+                    if (retreating > 0.5)
+                    {
+                        tint = _Retreat;
+                        amount = 1.0;
+                    }
+                    else if (level > 1.5)
+                    {
+                        tint = _Pinned;
+                    }
+                    else if (level > 0.5)
+                    {
+                        tint = _Suppressed;
+                    }
                     float filled = BoxMask(p, float2(1.0, -strip), float2(1.0 + width * amount, -1.0));
                     color = lerp(_Back, tint, filled);
                 }

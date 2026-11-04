@@ -25,15 +25,15 @@ namespace HyperRTS.Simulation.Combat.Damage
             /// <summary>Each living member but the one a direct hit already struck takes the blast by its own distance.</summary>
             private void SplashMembers(in DamageEvent hit, in SpatialEntry squad, int struck)
             {
-                var count = Members[squad.Entity].Length;
-                for (var i = 0; i < count; i++)
+                var members = Members[squad.Entity];
+                for (var i = 0; i < members.Length; i++)
                 {
-                    var member = Members[squad.Entity][i];
+                    var member = members[i];
                     var gap = EntityRadius.EdgeDistance(member.Position(squad.Position), SquadMember.Radius, hit.Position, 0f);
                     if (i != struck && member.Alive && gap <= hit.Radius)
                     {
-                        var suppression = hit.Suppression * hit.SplashFactor(gap) / Members[squad.Entity].Length;
-                        Apply(squad.Entity, hit.Amount * hit.SplashFactor(gap), hit, hit.Position, 0u, i, suppression);
+                        var factor = hit.SplashFactor(gap);
+                        Apply(squad.Entity, hit.Amount * factor, hit, hit.Position, 0u, i, hit.Suppression * factor / members.Length);
                     }
                 }
             }

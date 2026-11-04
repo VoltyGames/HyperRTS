@@ -58,6 +58,13 @@ namespace HyperRTS.Presentation.Animation
             }.Schedule(state.Dependency);
         }
 
+        /// <summary>A squad's render parts, gathered on first use; the list handle is shared by every copy.</summary>
+        private struct FigureParts
+        {
+            public Entity Root;
+            public NativeList<Entity> List;
+        }
+
         [BurstCompile]
         private partial struct SquadJob : IJobEntity
         {
@@ -84,8 +91,7 @@ namespace HyperRTS.Presentation.Animation
                 squad.Hear(CueEvents[CueQueue], place.Position, Now);
                 var hasPoses = Poses.TryGetBuffer(entity, out var poses);
                 var count = math.min(figures.Length, members.Length);
-                var parts = new NativeList<Entity>(Allocator.Temp);
-                RenderHierarchy.Collect(entity, Linked, Children, parts);
+                var parts = new FigureParts { Root = entity, List = new NativeList<Entity>(Allocator.Temp) };
                 var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
                 ShowDeployedModel(parts, ref squad, crewing);
                 for (var i = 0; i < count; i++)
@@ -99,7 +105,7 @@ namespace HyperRTS.Presentation.Animation
 
                     if (figure.State == FigureState.Unset && figure.HasOtherModel)
                     {
-                        Switch.SetBranch(parts, figure.Other.Figure, HideReason.Figure, true);
+                        Switch.SetBranch(Gather(parts), figure.Other.Figure, HideReason.Figure, true);
                     }
 
                     var crewed = crewing && figure.Crew.Takes;
@@ -119,7 +125,7 @@ namespace HyperRTS.Presentation.Animation
                     var next = figure.Next(member.Alive, moving, Now);
                     if (next != figure.State)
                     {
-                        Show(entity, parts, ref figure, next, posture, firing, digging, squad);
+                        Show(parts, ref figure, next, posture, firing, digging, squad);
                     }
                     else if (next == FigureState.Die)
                     {
@@ -141,7 +147,7 @@ namespace HyperRTS.Presentation.Animation
             }
 
             // The model shows from the start of deploying until packing up; hiding it is a no-op on a squad that has none.
-            private void ShowDeployedModel(NativeList<Entity> parts, ref SquadFigures squad, bool deployed)
+            private void ShowDeployedModel(in FigureParts parts, ref SquadFigures squad, bool deployed)
             {
                 if (squad.DeployedModel == Entity.Null || squad.ModelHidden == !deployed)
                 {
@@ -149,7 +155,7 @@ namespace HyperRTS.Presentation.Animation
                 }
 
                 squad.ModelHidden = !deployed;
-                Switch.SetBranch(parts, squad.DeployedModel, HideReason.Figure, squad.ModelHidden);
+                Switch.SetBranch(Gather(parts), squad.DeployedModel, HideReason.Figure, squad.ModelHidden);
             }
 
             /// <summary>
@@ -186,11 +192,11 @@ namespace HyperRTS.Presentation.Animation
                 Spots[figure.Figure] = spot;
             }
 
-            private void Show(Entity entity, NativeList<Entity> parts, ref SquadFigure figure, FigureState next, Posture posture,
+            private void Show(in FigureParts parts, ref SquadFigure figure, FigureState next, Posture posture,
                 bool firing, bool digging, in SquadFigures squad)
             {
                 var hidden = next == FigureState.Hidden;
-                Switch.SetBranch(entity, figure.Figure, HideReason.Figure, hidden);
+                Switch.SetBranch(parts.Root, figure.Figure, HideReason.Figure, hidden);
                 figure.State = next;
                 figure.StateSince = Now;
                 if (hidden)
@@ -229,7 +235,7 @@ namespace HyperRTS.Presentation.Animation
                 figure.Clips.Blasted(squad.BlastPosition, Places[figure.Figure].Value);
 
             // A fall that began just before its blast cue arrived changes to the blast fall.
-            private void SwitchToBlast(NativeList<Entity> parts, ref SquadFigure figure, in SquadFigures squad)
+            private void SwitchToBlast(in FigureParts parts, ref SquadFigure figure, in SquadFigures squad)
             {
                 if (squad.BlastTime != Now || !squad.Killed(figure.HideAt - squad.DieHold))
                 {
@@ -244,7 +250,7 @@ namespace HyperRTS.Presentation.Animation
             }
 
             // The legs follow motion and posture; the upper body fires over them or keeps their clip, in step with them.
-            private void Pose(NativeList<Entity> parts, ref SquadFigure figure, FigureState moving, Posture posture, bool firing,
+            private void Pose(in FigureParts parts, ref SquadFigure figure, FigureState moving, Posture posture, bool firing,
                 bool digging)
             {
                 figure.Posture = posture;
@@ -273,7 +279,7 @@ namespace HyperRTS.Presentation.Animation
                 Play(parts, figure, lowerChanged ? lower : default, upperChanged ? upper : default, upperStart, upperRate);
             }
 
-            private void Fall(NativeList<Entity> parts, ref SquadFigure figure, in VATClipRange clip)
+            private void Fall(in FigureParts parts, ref SquadFigure figure, in VATClipRange clip)
             {
                 figure.Lower = clip;
                 figure.Upper = clip;
@@ -283,12 +289,12 @@ namespace HyperRTS.Presentation.Animation
             }
 
             // A range with no frames leaves that half as it is.
-            private void Play(NativeList<Entity> parts, in SquadFigure figure, in VATClipRange lower, in VATClipRange upper,
+            private void Play(in FigureParts parts, in SquadFigure figure, in VATClipRange lower, in VATClipRange upper,
                 float upperStart, float upperRate)
             {
-                foreach (var part in parts)
+                foreach (var part in Gather(parts))
                 {
-                    if (!Lowers.HasComponent(part) || !Under(part, figure.Figure))
+                    if (!PlaysClips(part, figure.Figure))
                     {
                         continue;
                     }
@@ -314,12 +320,12 @@ namespace HyperRTS.Presentation.Animation
             }
 
             // A rate change keeps each clip playing and its fade running; only the speed and start move.
-            private void Retime(NativeList<Entity> parts, in SquadFigure figure)
+            private void Retime(in FigureParts parts, in SquadFigure figure)
             {
                 var upperFollows = figure.Upper.SameAs(figure.Lower);
-                foreach (var part in parts)
+                foreach (var part in Gather(parts))
                 {
-                    if (!Lowers.HasComponent(part) || !Under(part, figure.Figure))
+                    if (!PlaysClips(part, figure.Figure))
                     {
                         continue;
                     }
@@ -335,6 +341,19 @@ namespace HyperRTS.Presentation.Animation
                     }
                 }
             }
+
+            // The squad's render parts, walked only when a figure first changes this frame.
+            private NativeList<Entity> Gather(in FigureParts parts)
+            {
+                if (parts.List.Length == 0)
+                {
+                    RenderHierarchy.Collect(parts.Root, Linked, Children, parts.List);
+                }
+
+                return parts.List;
+            }
+
+            private bool PlaysClips(Entity part, Entity figure) => Lowers.HasComponent(part) && Under(part, figure);
 
             private bool Under(Entity part, Entity figure)
             {

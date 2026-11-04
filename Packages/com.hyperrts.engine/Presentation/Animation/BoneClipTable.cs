@@ -32,8 +32,6 @@ namespace HyperRTS.Presentation.Animation
 
         public int TextureWidth => bones.Count * 3;
 
-        public bool Has(string clipName) => clips.Exists(clip => clip.name == clipName);
-
         public VATClipRange Range(string clipName)
         {
             foreach (var clip in clips)

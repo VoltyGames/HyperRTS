@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Squads;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine.UIElements;
 
@@ -25,7 +26,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         private readonly Label _statusText;
         private readonly HUDBar _progress;
         private readonly List<SquadMemberCard> _cards = new();
-        private readonly Dictionary<string, string> _weaponNames = new();
+        private readonly Dictionary<FixedString32Bytes, string> _weaponNames = new();
         private int _shownLevel = -1;
         private int _shownStatus = -1;
 
@@ -75,10 +76,10 @@ namespace HyperRTS.Presentation.HUD.Panels
                 return "";
             }
 
-            var designation = figures[index].Weapon.ToString();
+            var designation = figures[index].Weapon;
             if (!_weaponNames.TryGetValue(designation, out var shown))
             {
-                shown = HUDText.WeaponName(designation);
+                shown = HUDText.WeaponName(designation.ToString());
                 _weaponNames[designation] = shown;
             }
 
