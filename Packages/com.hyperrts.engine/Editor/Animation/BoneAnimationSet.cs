@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Animation
 {
     /// <summary>
-    /// The source of one bone animation bake: a rig model, the clips to sample on it, the upper-body root bone and the
+    /// The source of one bone animation bake: a rig model, the clips to sample on it, the root and upper-body root bones and the
     /// meshes to skin. <b>Bake</b> writes beside the set, in <c>Generated/</c>, the bone texture
     /// (<c>&lt;Set&gt;_Bones</c>), the clip table (<c>&lt;Set&gt;_Clips</c>) and a mesh for each part
     /// (<c>&lt;Set&gt;_&lt;Part&gt;</c>), whose bone indices and weights sit in vertex channels. Only those reach builds,
@@ -36,6 +36,9 @@ namespace HyperRTS.Editor.Animation
 
             [Tooltip("Loops; off plays once and holds the last frame.")]
             public bool loop = true;
+
+            [Tooltip("Removes the root bone's ground travel, so a clip with root motion plays on the spot; its height and sway stay.")]
+            public bool inPlace;
 
             [Tooltip("Plays this many times faster; over 1 bakes fewer frames.")]
             [Min(0.1f)]
@@ -73,6 +76,9 @@ namespace HyperRTS.Editor.Animation
 
         public List<Clip> clips = new();
 
+        [Tooltip("Top bone of the skeleton, such as the hips. Clips play on its parent, and in place clips lose its ground travel.")]
+        public string rootBone;
+
         [Tooltip("Bone at the root of the upper body, which plays its own clip; the bones below it join it.")]
         public string upperRoot;
 
@@ -103,7 +109,7 @@ namespace HyperRTS.Editor.Animation
             }
 
             Directory.CreateDirectory(Folder);
-            using var posed = new BoneRig(rig, parts[0].node, upperRoot);
+            using var posed = new BoneRig(rig, parts[0].node, upperRoot, rootBone);
             var meshes = parts.Select(part => MakeMesh(posed, part)).ToList();
             var bones = posed.BoneNames();
             var pose = new BoneFrames();
@@ -111,7 +117,7 @@ namespace HyperRTS.Editor.Animation
             {
                 for (var i = 0; i < plan.Count; i++)
                 {
-                    pose.Add(posed.Pose(plan.Clip.source, plan.TimeOf(i)));
+                    pose.Add(posed.Pose(plan.Clip.source, plan.TimeOf(i), plan.Clip.inPlace));
                 }
             }
 
@@ -161,9 +167,9 @@ namespace HyperRTS.Editor.Animation
 
         private void Check()
         {
-            if (rig == null || parts.Count == 0 || clips.Count == 0 || string.IsNullOrEmpty(upperRoot))
+            if (rig == null || parts.Count == 0 || clips.Count == 0 || string.IsNullOrEmpty(upperRoot) || string.IsNullOrEmpty(rootBone))
             {
-                throw new InvalidOperationException($"Bone set '{name}' needs a rig, parts, clips and an upper root bone.");
+                throw new InvalidOperationException($"Bone set '{name}' needs a rig, parts, clips, a root bone and an upper root bone.");
             }
 
             var missing = clips.Find(clip => clip.source == null || string.IsNullOrEmpty(clip.name));

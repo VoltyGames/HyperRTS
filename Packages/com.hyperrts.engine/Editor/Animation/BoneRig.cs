@@ -9,25 +9,29 @@ namespace HyperRTS.Editor.Animation
     /// <summary>
     /// A temporary instance of a bone set's rig model, posed by its clips. Its first skinned part names the skeleton;
     /// every bone's skin matrix maps that mesh's rest vertices to where the clip's frame puts them, in the model root's
-    /// space, so the baked meshes need no skin and no object transform.
+    /// space, so the baked meshes need no skin and no object transform. Clips are sampled on the parent of the root
+    /// bone, which is where a Generic clip's bone paths start.
     /// </summary>
     internal sealed class BoneRig : IDisposable
     {
         private const float BindTolerance = 1e-3f;
 
         private readonly GameObject _root;
+        private readonly Transform _rootBone;
+        private readonly Dictionary<AnimationClip, (Vector3 Start, Vector3 End)> _travel = new();
         private readonly SkinnedMeshRenderer _body;
         private readonly Transform[] _bones;
         private readonly Matrix4x4[] _bindposes;
         private readonly bool[] _upper;
         private readonly Dictionary<string, int> _index = new();
 
-        public BoneRig(GameObject model, string bodyNode, string upperRoot)
+        public BoneRig(GameObject model, string bodyNode, string upperRoot, string rootBone)
         {
             _root = Object.Instantiate(model);
             _root.hideFlags = HideFlags.HideAndDontSave;
             _body = Find(bodyNode).GetComponent<SkinnedMeshRenderer>()
                 ?? throw new InvalidOperationException($"Node '{bodyNode}' of '{model.name}' has no skinned mesh to name the skeleton.");
+            _rootBone = Find(rootBone);
             _bones = _body.bones;
             _bindposes = _body.sharedMesh.bindposes;
             var top = Find(upperRoot);
@@ -54,10 +58,22 @@ namespace HyperRTS.Editor.Animation
             ? found
             : throw new InvalidOperationException($"The skeleton of '{_root.name}' has no bone '{bone}'.");
 
-        /// <summary>Every bone's skin matrix with <paramref name="clip"/> sampled at <paramref name="time"/>.</summary>
-        public Matrix4x4[] Pose(AnimationClip clip, float time)
+        /// <summary>
+        /// Every bone's skin matrix with <paramref name="clip"/> sampled at <paramref name="time"/>. In place removes the
+        /// root bone's ground travel, the straight line from its first to its last position, and keeps its height and sway.
+        /// </summary>
+        public Matrix4x4[] Pose(AnimationClip clip, float time, bool inPlace)
         {
-            clip.SampleAnimation(_root, time);
+            Sample(clip, time);
+            if (inPlace)
+            {
+                var (start, end) = Travel(clip);
+                var along = Mathf.Clamp01(time / clip.length);
+                var drift = Vector3.Lerp(start, end, along) - start;
+                drift.y = 0f;
+                _rootBone.position -= _root.transform.TransformVector(drift);
+            }
+
             var toRoot = _root.transform.worldToLocalMatrix;
             var pose = new Matrix4x4[_bones.Length];
             for (var i = 0; i < pose.Length; i++)
@@ -66,6 +82,22 @@ namespace HyperRTS.Editor.Animation
             }
 
             return pose;
+        }
+
+        private void Sample(AnimationClip clip, float time) => clip.SampleAnimation(_rootBone.parent.gameObject, time);
+
+        private (Vector3 Start, Vector3 End) Travel(AnimationClip clip)
+        {
+            if (!_travel.TryGetValue(clip, out var ends))
+            {
+                Sample(clip, 0f);
+                var start = _root.transform.InverseTransformPoint(_rootBone.position);
+                Sample(clip, clip.length);
+                ends = (start, _root.transform.InverseTransformPoint(_rootBone.position));
+                _travel.Add(clip, ends);
+            }
+
+            return ends;
         }
 
         /// <summary>A copy of a skinned node's mesh with its skin moved into vertex channels.</summary>

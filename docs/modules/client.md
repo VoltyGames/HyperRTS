@@ -203,8 +203,13 @@ reach a build):
 
 - `rig`: a model imported with a Generic or Humanoid rig (SkinnedMeshRenderer and Avatar). Its first part is a skinned
   mesh whose bones form the skeleton; any number of bones and any names work, they are data.
-- `clips`: a name, an AnimationClip (from the rig's own file or another humanoid model's), loop and speed. Sampled at
-  `fps` (30), a looping clip does not repeat its first frame at the end.
+- `clips`: a name, an AnimationClip (from the rig's own file or another model's), loop, `inPlace` and speed. Sampled at
+  `fps` (30), a looping clip does not repeat its first frame at the end. A Generic clip finds its bones by path from
+  the parent of `rootBone`, so a clip file and the rig must name the same bones under the same parent (the Mixamo
+  skeleton exported from Blender under an `Armature` node does, while a Humanoid rig is untried). `inPlace` removes the
+  root bone's ground travel, the straight line from its first to its last position, so locomotion with root motion
+  plays on the spot and still loops; height and sway stay.
+- `rootBone`: the top bone of the skeleton, such as the hips.
 - `upperRoot`: the bone that roots the upper body, which plays its own clip; the bones below it join it.
 - `parts`: nodes of the rig model to export as meshes. A skinned node keeps its weights; a plain node with a `socket`
   (a name for a bone, in `sockets`) is a weapon or gear weighted wholly to that bone, so weapons are swappable meshes.
