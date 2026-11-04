@@ -85,6 +85,24 @@ namespace HyperRTS.Editor.Tests.Animation
         }
 
         [Test]
+        public void MergedNodes_MakeOneMeshKeepingTheirBones()
+        {
+            using var rig = Rig();
+            var kit = Model("Kit", Quaternion.Euler(-90f, 0f, 0f));
+
+            var merged = Track(BoneRig.Merge(new List<Mesh> { rig.SkinnedMesh(kit, "Body"), rig.SkinnedMesh(kit, "Body") }));
+
+            Assert.AreEqual(6, merged.vertexCount);
+            Assert.AreEqual(1, merged.subMeshCount);
+            Assert.AreEqual(6, merged.triangles.Length);
+            Assert.AreEqual(0f, Vector3.Distance(HandAt, merged.vertices[3]), 1e-4f);
+            var weights = new List<Vector4>();
+            merged.GetUVs(BoneAnimatedAuthoring.WeightChannel, weights);
+            Assert.AreEqual(6, weights.Count);
+            Assert.AreEqual(-1f, weights[5].x, "the hand is upper body, so its weight is negative");
+        }
+
+        [Test]
         public void SkinnedPartAtAnotherRestPose_Fails()
         {
             using var rig = Rig();

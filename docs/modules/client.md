@@ -212,8 +212,9 @@ reach a build):
   plays on the spot and still loops; height and sway stay.
 - `rootBone`: the top bone of the skeleton, such as the hips.
 - `upperRoot`: the bone that roots the upper body, which plays its own clip; the bones below it join it.
-- `parts`: nodes to export as meshes, from the rig or from the part's own `model`, so one set, and one texture, serves
-  every kit and weapon file on the skeleton. A skinned node keeps its weights; its bones match the skeleton's by name
+- `parts`: meshes to export, each one or more `nodes` merged into one mesh of one submesh (a soldier's body, head and
+  gear at one level of detail, so a figure draws as few renderers), from the rig or from the part's own `model`, so one
+  set, and one texture, serves every kit and weapon file on the skeleton. A skinned node keeps its weights; its bones match the skeleton's by name
   and its bind poses may differ only by one move of the whole mesh (its node's axis conversion), which the bake applies.
   A plain node with a `socket` is a weapon or gear weighted wholly to one bone: its origin sits on the socket's node,
   a skeleton bone or an empty under one (`sockets`, such as a rifle grip in the right hand), so weapons are swappable

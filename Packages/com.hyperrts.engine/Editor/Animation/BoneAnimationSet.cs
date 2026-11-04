@@ -55,8 +55,8 @@ namespace HyperRTS.Editor.Animation
             [Tooltip("The model holding the mesh; empty takes it from the rig.")]
             public GameObject model;
 
-            [Tooltip("The node of the model holding the mesh: a skinned mesh bound to the rig's skeleton, or a plain mesh when Socket is set.")]
-            public string node;
+            [Tooltip("Nodes of the model merged into this one mesh, such as a soldier's body, head and gear: skinned meshes bound to the rig's skeleton, or plain meshes when Socket is set. They share one material.")]
+            public List<string> nodes = new();
 
             [Tooltip("Empty for a skinned mesh. Else the socket a plain mesh, such as a weapon, sits at, its origin on the socket's node.")]
             public string socket;
@@ -147,12 +147,12 @@ namespace HyperRTS.Editor.Animation
             var model = part.model != null ? part.model : rig;
             if (string.IsNullOrEmpty(part.socket))
             {
-                return posed.SkinnedMesh(model, part.node);
+                return BoneRig.Merge(part.nodes.Select(node => posed.SkinnedMesh(model, node)).ToList());
             }
 
             var socket = sockets.Find(candidate => candidate.name == part.socket)
                 ?? throw new InvalidOperationException($"Bone set '{name}' part '{part.name}' names socket '{part.socket}', which the set lacks.");
-            return posed.AttachedMesh(model, part.node, socket.node);
+            return BoneRig.Merge(part.nodes.Select(node => posed.AttachedMesh(model, node, socket.node)).ToList());
         }
 
         private BoneClipTable MakeTable(List<ClipFrames> plans, List<string> bones, Bounds bounds)
@@ -177,6 +177,12 @@ namespace HyperRTS.Editor.Animation
             if (rig == null || string.IsNullOrEmpty(skeleton) || parts.Count == 0 || clips.Count == 0 || string.IsNullOrEmpty(upperRoot) || string.IsNullOrEmpty(rootBone))
             {
                 throw new InvalidOperationException($"Bone set '{name}' needs a rig, a skeleton node, parts, clips, a root bone and an upper root bone.");
+            }
+
+            var empty = parts.Find(part => string.IsNullOrEmpty(part.name) || part.nodes.Count == 0);
+            if (empty != null)
+            {
+                throw new InvalidOperationException($"Bone set '{name}' has a part without a name or nodes.");
             }
 
             var missing = clips.Find(clip => clip.source == null || string.IsNullOrEmpty(clip.name));
