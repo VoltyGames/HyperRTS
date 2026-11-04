@@ -5,8 +5,8 @@ using Unity.Rendering;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// The vertex animation clip HyperRTS/LitTeam plays on a render entity with _VAT on. Fps carries the loop flag in
-    /// its sign: positive loops, negative plays once and holds the last frame.
+    /// The clip HyperRTS/LitTeam plays on a render entity with _VAT_RIGID on, and the packing of every bone clip. Fps
+    /// carries the loop flag in its sign: positive loops, negative plays once and holds the last frame.
     /// </summary>
     [MaterialProperty("_VATClip")]
     public struct VATClip : IComponentData
@@ -38,7 +38,7 @@ namespace HyperRTS.Presentation.Animation
             Value = clip.Packed(startTime);
         }
 
-        /// <summary>The frames LitTeamVAT.hlsl blends at <paramref name="time"/>; the shader does the same sums.</summary>
+        /// <summary>The frames LitTeamVAT.hlsl and LitTeamBones.hlsl blend at <paramref name="time"/>; the shader does the same sums.</summary>
         public VATFrame FrameAt(float time)
         {
             var frames = Value.y;
@@ -52,13 +52,12 @@ namespace HyperRTS.Presentation.Animation
     }
 
     /// <summary>
-    /// The pose a <see cref="VATClip"/> switch fades out of, which LitTeamVAT.hlsl blends into the new clip over the
-    /// material's _VATFadeTime.
+    /// The pose a <see cref="VATClip"/> switch fades out of, held by <see cref="LowerFade"/> and <see cref="UpperFade"/>,
+    /// which LitTeamBones.hlsl blends into the new clip over the material's _BoneFadeTime.
     /// </summary>
-    [MaterialProperty("_VATFade")]
-    public struct VATFade : IComponentData
+    public struct VATFade
     {
-        /// <summary>Seconds of the material's default _VATFadeTime.</summary>
+        /// <summary>Seconds of the material's default _BoneFadeTime.</summary>
         public const float Seconds = 0.2f;
 
         /// <summary>x frame, y next frame, z blend of the old pose, frozen at the switch; w the switch time on the clock.</summary>
@@ -73,7 +72,7 @@ namespace HyperRTS.Presentation.Animation
         public readonly float Weight(float now, float seconds) => math.saturate((now - Value.w) / seconds);
     }
 
-    /// <summary>One clip's frames in a vertex animation texture, as game code keeps it to play. Frames count from StartRow.</summary>
+    /// <summary>One clip's frames in an animation texture, as game code keeps it to play. Frames count from StartRow.</summary>
     public struct VATClipRange
     {
         public int StartRow;
@@ -82,6 +81,9 @@ namespace HyperRTS.Presentation.Animation
         public bool Loop;
 
         public float4 Packed(float startTime) => new(StartRow, FrameCount, Loop ? Fps : -Fps, startTime);
+
+        public readonly bool SameAs(in VATClipRange other) =>
+            StartRow == other.StartRow && FrameCount == other.FrameCount && Fps == other.Fps && Loop == other.Loop;
     }
 
     /// <summary>Two frames, each rowsPerFrame texture rows, and how far to blend from the first to the second.</summary>

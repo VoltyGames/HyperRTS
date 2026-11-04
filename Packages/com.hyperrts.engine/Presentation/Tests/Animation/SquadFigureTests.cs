@@ -17,7 +17,8 @@ namespace HyperRTS.Presentation.Tests.Animation
 {
     /// <summary>
     /// Squad figures on a hand-made four-figure squad: a dead member drops its figure, each figure stands where its
-    /// member does and plays clips from its own motion and weapon, and figures from separate tables play their own clips.
+    /// member does and plays clips from its own motion, posture and weapon (legs and upper body apart), and figures from separate tables
+    /// play their own clips.
     /// </summary>
     public class SquadFigureTests
     {
@@ -70,8 +71,8 @@ namespace HyperRTS.Presentation.Tests.Animation
             Member(2, offset: new float2(3f, 0f));
             Update();
 
-            Assert.IsTrue(Clip(2).Plays(Range(20, true)));
-            Assert.IsTrue(Clip(1).Plays(Range(0, true)));
+            Assert.IsTrue(Lower(2).Plays(Range(20, true)));
+            Assert.IsTrue(Lower(1).Plays(Range(0, true)));
         }
 
         [Test]
@@ -84,8 +85,8 @@ namespace HyperRTS.Presentation.Tests.Animation
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(1).CountShot();
             Update();
 
-            Assert.IsTrue(Clip(1).Plays(Range(30, true)));
-            Assert.IsTrue(Clip(0).Plays(Range(0, true)));
+            Assert.IsTrue(Upper(1).Plays(Range(30, true)));
+            Assert.IsTrue(Upper(0).Plays(Range(0, true)));
         }
 
         [Test]
@@ -96,7 +97,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             Update();
 
             Assert.AreEqual(FigureState.Die, State(3));
-            Assert.IsTrue(Clip(3).Plays(Range(40, false)));
+            Assert.IsTrue(Lower(3).Plays(Range(40, false)));
             Assert.IsTrue(Drawn(3));
 
             Advance(DieHold);
@@ -130,7 +131,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             SetLiving(3);
             Update();
 
-            Assert.IsTrue(Clip(3).Plays(Range(40, false)));
+            Assert.IsTrue(Lower(3).Plays(Range(40, false)));
         }
 
         [Test]
@@ -142,7 +143,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             SetLiving(3);
             Update();
 
-            Assert.IsTrue(Clip(3).Plays(Range(50, false)));
+            Assert.IsTrue(Lower(3).Plays(Range(50, false)));
         }
 
         [Test]
@@ -152,12 +153,12 @@ namespace HyperRTS.Presentation.Tests.Animation
             Update();
             SetLiving(3);
             Update();
-            Assert.IsTrue(Clip(3).Plays(Range(40, false)));
+            Assert.IsTrue(Lower(3).Plays(Range(40, false)));
 
             Blast(new float3(0f, 0f, -3f));
             Update();
 
-            Assert.IsTrue(Clip(3).Plays(Range(60, false)));
+            Assert.IsTrue(Lower(3).Plays(Range(60, false)));
         }
 
         [Test]
@@ -168,7 +169,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             Blast(new float3(0f, 0f, 30f));
             SetLiving(3);
             Update();
-            Assert.IsTrue(Clip(3).Plays(Range(40, false)));
+            Assert.IsTrue(Lower(3).Plays(Range(40, false)));
 
             SetLiving(4);
             Update();
@@ -177,7 +178,7 @@ namespace HyperRTS.Presentation.Tests.Animation
             SetLiving(1);
             Update();
 
-            Assert.IsTrue(Clip(2).Plays(Range(40, false)));
+            Assert.IsTrue(Lower(2).Plays(Range(40, false)));
         }
 
         [Test]
@@ -195,35 +196,71 @@ namespace HyperRTS.Presentation.Tests.Animation
         public void Clip_FollowsSpeedThenFiresOnAShot()
         {
             Update();
-            Assert.IsTrue(Clip(0).Plays(Range(0, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(0, true)));
 
             Move(1f);
-            Assert.IsTrue(Clip(0).Plays(Range(10, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(10, true)));
 
             Move(5f);
-            Assert.IsTrue(Clip(0).Plays(Range(20, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(20, true)));
 
             Move(0f);
-            Assert.IsTrue(Clip(0).Plays(Range(0, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(0, true)));
 
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Update();
-            Assert.IsTrue(Clip(0).Plays(Range(30, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(0, true)), "the legs keep idling");
+            Assert.IsTrue(Upper(0).Plays(Range(30, true)));
 
             Advance(SquadFigures.FireHold);
-            Assert.IsTrue(Clip(0).Plays(Range(0, true)));
+            Assert.IsTrue(Upper(0).Plays(Range(0, true)));
+        }
+
+        [Test]
+        public void FiringWhileWalking_FiresWithTheUpperBodyOverWalkingLegs()
+        {
+            Update();
+            Move(1f);
+            _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
+            Move(1f);
+
+            Assert.IsTrue(Lower(0).Plays(Range(10, true)));
+            Assert.IsTrue(Upper(0).Plays(Range(30, true)));
+
+            Advance(SquadFigures.FireHold);
+            Move(1f);
+
+            Assert.IsTrue(Upper(0).Plays(Range(10, true)));
+            Assert.AreEqual(Lower(0).Value.w, Upper(0).Value.w, "the arms rejoin the stride in step");
+        }
+
+        [Test]
+        public void Posture_PicksCrouchAndProneClipsForLegsAndFire()
+        {
+            Member(0, posture: Posture.Crouch);
+            Member(1, posture: Posture.Prone);
+            Update();
+
+            Assert.IsTrue(Lower(0).Plays(Range(100, true)));
+            Assert.IsTrue(Lower(1).Plays(Range(130, true)));
+
+            _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
+            Update();
+
+            Assert.IsTrue(Upper(0).Plays(Range(120, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(100, true)));
         }
 
         [Test]
         public void OnlyChangedFigures_GetANewClip()
         {
             Update();
-            var kept = Clip(0).Value;
+            var kept = Lower(0).Value;
             SetLiving(3);
             Update();
 
-            Assert.AreEqual(kept, Clip(0).Value);
-            Assert.AreNotEqual(kept.w, Clip(3).Value.w);
+            Assert.AreEqual(kept, Lower(0).Value);
+            Assert.AreNotEqual(kept.w, Lower(3).Value.w);
         }
 
         [Test]
@@ -231,7 +268,7 @@ namespace HyperRTS.Presentation.Tests.Animation
         {
             Update();
 
-            Assert.AreNotEqual(Clip(1).Value.w, Clip(2).Value.w);
+            Assert.AreNotEqual(Lower(1).Value.w, Lower(2).Value.w);
         }
 
         [Test]
@@ -240,12 +277,12 @@ namespace HyperRTS.Presentation.Tests.Animation
             _em.GetBuffer<SquadFigure>(_squad).ElementAt(1).Clips = Clips(100);
 
             Update();
-            Assert.IsTrue(Clip(0).Plays(Range(0, true)));
-            Assert.IsTrue(Clip(1).Plays(Range(100, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(0, true)));
+            Assert.IsTrue(Lower(1).Plays(Range(100, true)));
 
             Move(5f);
-            Assert.IsTrue(Clip(0).Plays(Range(20, true)));
-            Assert.IsTrue(Clip(1).Plays(Range(120, true)));
+            Assert.IsTrue(Lower(0).Plays(Range(20, true)));
+            Assert.IsTrue(Lower(1).Plays(Range(120, true)));
         }
 
         [Test]
@@ -255,8 +292,8 @@ namespace HyperRTS.Presentation.Tests.Animation
             try
             {
                 var squad = root.AddComponent<SquadFiguresAuthoring>();
-                squad.figures.Add(Figure(root, 0, 64));
-                squad.figures.Add(Figure(root, 100, 128));
+                squad.figures.Add(Figure(root, 0));
+                squad.figures.Add(Figure(root, 100));
 
                 var clips = squad.Clips();
 
@@ -264,12 +301,12 @@ namespace HyperRTS.Presentation.Tests.Animation
                 Assert.AreEqual(Range(120, true), clips[1].Run);
                 Assert.AreEqual(Range(140, false), clips[1].Die);
 
-                squad.figures[1].clips.clips.RemoveAt(4);
+                squad.figures[1].root.GetComponentInChildren<BoneAnimatedAuthoring>().clips.clips.RemoveAt(4);
                 Assert.Throws<KeyNotFoundException>(() => squad.Clips());
             }
             finally
             {
-                foreach (var figure in root.GetComponentsInChildren<VATAnimatedAuthoring>())
+                foreach (var figure in root.GetComponentsInChildren<BoneAnimatedAuthoring>())
                 {
                     Object.DestroyImmediate(figure.clips);
                 }
@@ -278,25 +315,59 @@ namespace HyperRTS.Presentation.Tests.Animation
             }
         }
 
-        // A figure baked on its own: its table's width and rows differ but its clip names match the squad's.
-        private static VATAnimatedAuthoring Figure(GameObject root, int offset, int width)
+        [Test]
+        public void Authoring_FillsOnlyEmptyPostureClipsWithTheStandingOnes()
         {
-            var table = ScriptableObject.CreateInstance<VATClipTable>();
-            table.width = width;
+            var root = new GameObject("Squad");
+            try
+            {
+                var squad = root.AddComponent<SquadFiguresAuthoring>();
+                squad.figures.Add(Figure(root, 0));
+                squad.crouchWalkClip = "Run";
+
+                var clips = squad.Clips()[0];
+
+                Assert.AreEqual(clips.Idle, clips.CrouchIdle);
+                Assert.AreEqual(clips.Run, clips.CrouchWalk);
+                Assert.AreEqual(clips.Fire, clips.ProneFire);
+
+                squad.proneCrawlClip = "Missing";
+                Assert.Throws<KeyNotFoundException>(() => squad.Clips());
+            }
+            finally
+            {
+                foreach (var figure in root.GetComponentsInChildren<BoneAnimatedAuthoring>())
+                {
+                    Object.DestroyImmediate(figure.clips);
+                }
+
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        // A figure baked on its own, with a body and a weapon sharing its table; its clip names match the squad's.
+        private static SquadFiguresAuthoring.Figure Figure(GameObject root, int offset, string prefix = "")
+        {
+            var table = ScriptableObject.CreateInstance<BoneClipTable>();
             string[] names = { "Idle", "Walk", "Run", "Fire", "Die" };
             for (var i = 0; i < names.Length; i++)
             {
                 table.clips.Add(new VATClipTable.Clip
                 {
-                    name = names[i], startRow = offset + i * 10, frameCount = 10, fps = 10f, loop = i < 4,
+                    name = prefix + names[i], startRow = offset + i * 10, frameCount = 10, fps = 10f, loop = i < 4,
                 });
             }
 
             var figure = new GameObject($"Figure {offset}");
             figure.transform.SetParent(root.transform);
-            var authoring = figure.AddComponent<VATAnimatedAuthoring>();
-            authoring.clips = table;
-            return authoring;
+            foreach (var part in new[] { "Body", "Weapon" })
+            {
+                var child = new GameObject(part);
+                child.transform.SetParent(figure.transform);
+                child.AddComponent<BoneAnimatedAuthoring>().clips = table;
+            }
+
+            return new SquadFiguresAuthoring.Figure { root = figure.transform, clipPrefix = prefix };
         }
 
         private Entity Squad(int count)
@@ -310,8 +381,11 @@ namespace HyperRTS.Presentation.Tests.Animation
                 _figures[i] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
                 _em.AddComponentData(_figures[i], new Parent { Value = _model });
                 _em.AddComponentData(_figures[i], LocalTransform.Identity);
-                _em.AddComponentData(_figures[i], VATClip.Started(Range(0, true), 0f));
-                _em.AddComponentData(_figures[i], VATFade.None);
+                var start = VATClip.Started(Range(0, true), 0f);
+                _em.AddComponentData(_figures[i], new LowerClip { Clip = start });
+                _em.AddComponentData(_figures[i], new UpperClip { Clip = start });
+                _em.AddComponentData(_figures[i], new LowerFade { Fade = VATFade.None });
+                _em.AddComponentData(_figures[i], new UpperFade { Fade = VATFade.None });
                 _em.AddComponentData(_figures[i], new LocalToWorld { Value = float4x4.identity });
                 figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0) };
             }
@@ -346,6 +420,12 @@ namespace HyperRTS.Presentation.Tests.Animation
             Run = Range(offset + 20, true),
             Fire = Range(offset + 30, true),
             Die = Range(offset + 40, false),
+            CrouchIdle = Range(offset + 100, true),
+            CrouchWalk = Range(offset + 110, true),
+            CrouchFire = Range(offset + 120, true),
+            ProneIdle = Range(offset + 130, true),
+            ProneCrawl = Range(offset + 140, true),
+            ProneFire = Range(offset + 150, true),
         };
 
         private static FigureClips BlastClips() => new()
@@ -410,16 +490,19 @@ namespace HyperRTS.Presentation.Tests.Animation
             }
         }
 
-        private void Member(int index, float2 offset = default, byte weapon = 0)
+        private void Member(int index, float2 offset = default, byte weapon = 0, Posture posture = Posture.Stand)
         {
             ref var member = ref _em.GetBuffer<SquadMember>(_squad).ElementAt(index);
             member.Offset = offset;
             member.Weapon = weapon;
+            member.Posture = posture;
         }
 
         private FigureState State(int index) => _em.GetBuffer<SquadFigure>(_squad)[index].State;
 
-        private VATClip Clip(int index) => _em.GetComponentData<VATClip>(_figures[index]);
+        private VATClip Lower(int index) => _em.GetComponentData<LowerClip>(_figures[index]).Clip;
+
+        private VATClip Upper(int index) => _em.GetComponentData<UpperClip>(_figures[index]).Clip;
 
         private bool Drawn(int index) => _em.IsComponentEnabled<MaterialMeshInfo>(_figures[index]);
     }

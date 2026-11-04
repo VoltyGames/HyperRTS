@@ -1,10 +1,8 @@
-// HyperRTS/LitTeam vertex animation textures. With _VAT on, each pass's vertex function takes its pose from
-// _VATPositions and _VATNormals at the instance's _VATClip and the global _VATTime. UV1 holds each vertex's texel:
-// u = (column + 0.5) / width, v = row within the frame, so it survives Unity splitting vertices on import.
-// With _VAT_RIGID on, the mesh is rigid pieces instead: UV1's u names the piece's column, and the piece moves by its
-// position in _VATPositions and rotation (a quaternion) in _VATRotations at the frame's row, about where row 0 has it.
-// LIT_TEAM_DEFORM then applies the construction reveal (LitTeamBuild.hlsl), bends track meshes over their wheels
-// (LitTeamTrack.hlsl) and sinks the object into craters.
+// HyperRTS/LitTeam vertex animation. With _VAT_RIGID on, the mesh is rigid pieces: UV1's u names the piece's column, and
+// the piece moves by its position in _VATPositions and rotation (a quaternion) in _VATRotations at the _VATClip frame's
+// row, about where row 0 has it. With _BONES on, LitTeamBones.hlsl skins the mesh instead. LIT_TEAM_DEFORM then applies
+// the construction reveal (LitTeamBuild.hlsl), bends track meshes over their wheels (LitTeamTrack.hlsl) and sinks the
+// object into craters.
 #ifndef HYPERRTS_LIT_TEAM_VAT_INCLUDED
 #define HYPERRTS_LIT_TEAM_VAT_INCLUDED
 
@@ -13,12 +11,8 @@
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/Materials/LitTeamTrack.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
 
-#if defined(_VAT) || defined(_VAT_RIGID)
-#define LIT_TEAM_VAT
-#endif
-
 // Passes whose Attributes lack TEXCOORD1 take it as a separate input.
-#ifdef LIT_TEAM_VAT
+#ifdef _VAT_RIGID
 #define VAT_INDEX_INPUT , float2 vatIndex : TEXCOORD1
 #else
 #define VAT_INDEX_INPUT
@@ -37,22 +31,10 @@ float3 VATFrameAt(float4 clip, float time)
 }
 
 TEXTURE2D(_VATPositions);
-TEXTURE2D(_VATNormals);
 TEXTURE2D(_VATRotations);
 float _VATTime;
 
-uint2 VATTexel(float2 vatIndex, float frame)
-{
-    return uint2(floor(vatIndex.x * _VATPositions_TexelSize.z), frame * _VATRowsPerFrame + floor(vatIndex.y + 0.5));
-}
-
-#define VAT_LOAD(texture, vatIndex, frame)     lerp(LOAD_TEXTURE2D_LOD(texture, VATTexel(vatIndex, frame.x), 0).xyz,          LOAD_TEXTURE2D_LOD(texture, VATTexel(vatIndex, frame.y), 0).xyz, frame.z)
-
-// 0 while the pose frozen at the last clip switch shows, 1 once the current clip has taken over.
-float VATFadeWeight()
-{
-    return saturate((_VATTime - _VATFade.w) / max(_VATFadeTime, 0.0001));
-}
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/Materials/LitTeamBones.hlsl"
 
 // Rotates v by the unit quaternion q (x, y, z, w).
 float3 VATRotate(float4 q, float3 v)
@@ -74,33 +56,16 @@ void ApplyRigidVAT(float2 vatIndex, inout float3 positionOS, inout float3 normal
     normalOS = VATRotate(rotation, normalOS);
 }
 
-void ApplyVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
-{
-#ifdef _VAT_RIGID
-    ApplyRigidVAT(vatIndex, positionOS, normalOS);
-#else
-    float3 frame = VATFrameAt(_VATClip, _VATTime);
-    positionOS = VAT_LOAD(_VATPositions, vatIndex, frame);
-    normalOS = VAT_LOAD(_VATNormals, vatIndex, frame);
-    float weight = VATFadeWeight();
-    if (weight < 1.0)
-    {
-        float3 old = _VATFade.xyz;
-        positionOS = lerp(VAT_LOAD(_VATPositions, vatIndex, old), positionOS, weight);
-        normalOS = lerp(VAT_LOAD(_VATNormals, vatIndex, old), normalOS, weight);
-    }
-    normalOS = normalize(normalOS);
-#endif
-}
-
 // Bends a track mesh over its wheels, then sinks the object into any crater under it.
 float3 DeformObject(float3 positionOS)
 {
     return SinkObjectIntoCrater(BendTrack(positionOS));
 }
 
-#ifdef LIT_TEAM_VAT
-    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS) ApplyVAT(vatIndex, positionOS, normalOS);
+#if defined(_VAT_RIGID)
+    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS) ApplyRigidVAT(vatIndex, positionOS, normalOS);
+#elif defined(_BONES)
+    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS) ApplyBones(boneIndex, boneWeight, positionOS, normalOS);
 #else
     #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS)
 #endif
@@ -111,7 +76,8 @@ float3 DeformObject(float3 positionOS)
     #define LIT_TEAM_BUILD(positionOS, normalOS)
 #endif
 
-// Every LitTeam pass moves its vertices through this, so all of them agree on depth. Reads the buildOrder input.
+// Every LitTeam pass moves its vertices through this, so all of them agree on depth. Reads the buildOrder, boneIndex
+// and boneWeight inputs.
 #define LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS) \
     LIT_TEAM_POSE(vatIndex, positionOS, normalOS) \
     LIT_TEAM_BUILD(positionOS, normalOS) \

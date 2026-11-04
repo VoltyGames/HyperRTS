@@ -55,13 +55,14 @@ command both call that method. Long commands run as detached jobs (`unity comman
 | `effect_build [recipe]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
 | `effect_capture <rig> [times] [distance]` | `EffectCapture.Capture` | The PNG paths, one for each time |
 | `generate [name] [--list true]` | `GeneratorRunner.Run` or `RunAll` | Each generator run (or, with `list`, every one) with its sources, outputs and last run |
+| `bone_bake [set]` | `BoneAnimationSet.Bake` | Each set baked (none named bakes every set) with the paths of the bone texture, clip table and meshes it wrote |
 | `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's rule, severity, message, asset path and fix label |
 
 `<map>` is a map name or its spec path (`map_build` with none builds every map), and `[recipe]` a graph name or its `.effect.asset` path; an unknown one fails,
 naming it. `effect_capture` renders a rig in `Logs/EffectCaptures/<Rig>/` at seconds after its burst (default
 `0.1,0.3,0.6,1.2,2.5`), from 24 m unless `distance` says otherwise; graphs only run on the Editor's frames, which
 stop while it is in the background, so it fails after 45 s without one. The commands carry the tags `hyperrts/maps`,
-`hyperrts/effects`, `hyperrts/generate` and `hyperrts/validate`, so `unity command --tag hyperrts` lists them with
+`hyperrts/effects`, `hyperrts/generate`, `hyperrts/animation` and `hyperrts/validate`, so `unity command --tag hyperrts` lists them with
 their arguments. `map_build` fails while an open scene has unsaved changes, since a build opens its
 own scene and a command can't answer the save dialog.
 

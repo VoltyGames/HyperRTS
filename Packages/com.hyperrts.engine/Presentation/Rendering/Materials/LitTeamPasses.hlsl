@@ -4,12 +4,12 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/Materials/LitTeamVAT.hlsl"
 
-// The forward pass reads UV1 as URP's static lightmap UV, which VAT renderers never use; other passes take it apart.
+// The forward pass reads UV1 as URP's static lightmap UV, which rigid VAT and bone renderers never use; other passes take it apart.
 #if defined(UNIVERSAL_FORWARD_LIT_PASS_INCLUDED)
-    #define DISPLACED_LIT_INPUTS BUILD_ORDER_INPUT
+    #define DISPLACED_LIT_INPUTS BONE_INPUT BUILD_ORDER_INPUT
     #define DisplaceLit(input, positionOS, normalOS) LIT_TEAM_DEFORM(input.staticLightmapUV, positionOS, normalOS)
 #else
-    #define DISPLACED_LIT_INPUTS VAT_INDEX_INPUT BUILD_ORDER_INPUT
+    #define DISPLACED_LIT_INPUTS VAT_INDEX_INPUT BONE_INPUT BUILD_ORDER_INPUT
     #define DisplaceLit(input, positionOS, normalOS) LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS)
 #endif
 

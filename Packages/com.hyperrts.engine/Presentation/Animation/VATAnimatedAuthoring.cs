@@ -9,8 +9,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// Plays vertex animation texture clips on this renderer: a HyperRTS/LitTeam material with _VAT or _VAT_RIGID on. Game code
-    /// switches clips through <see cref="VATClip.Play"/>, which fades from the old pose.
+    /// Plays vertex animation texture clips on this renderer: a HyperRTS/LitTeam material with _VAT_RIGID on.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "VAT Animated")]
     [Icon(HyperRTSIcons.Animation)]
@@ -19,12 +18,9 @@ namespace HyperRTS.Presentation.Animation
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     public class VATAnimatedAuthoring : AuthoringBehaviour
     {
-        private const string Keyword = "_VAT";
         private const string RigidKeyword = "_VAT_RIGID";
         private static readonly int RotationsId = Shader.PropertyToID("_VATRotations");
         private static readonly int PositionsId = Shader.PropertyToID("_VATPositions");
-        private static readonly int NormalsId = Shader.PropertyToID("_VATNormals");
-        private static readonly int RowsPerFrameId = Shader.PropertyToID("_VATRowsPerFrame");
 
         // Lightmap indices from here up mean none.
         private const int NoLightmap = 0xFFFE;
@@ -35,19 +31,9 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Clip that plays until game code plays another.")]
         public string startClip;
 
-        /// <summary>Turns a LitTeam material's VAT on and points it at a bake's textures and layout.</summary>
-        public static void SetUpMaterial(Material material, Texture positions, Texture normals, int rowsPerFrame)
-        {
-            material.EnableKeyword(Keyword);
-            material.SetTexture(PositionsId, positions);
-            material.SetTexture(NormalsId, normals);
-            material.SetFloat(RowsPerFrameId, rowsPerFrame);
-        }
-
         public static void AddVAT(EntityWriter writer, in VATClipRange start, AABB bounds)
         {
             writer.Add(VATClip.Started(start, 0f));
-            writer.Add(VATFade.None);
             writer.Add(new VATBounds { Value = bounds });
         }
 
@@ -84,10 +70,9 @@ namespace HyperRTS.Presentation.Animation
 
         private string MaterialProblem(Material material)
         {
-            var rigid = material != null && material.IsKeywordEnabled(RigidKeyword);
-            if (material == null || !(rigid || material.IsKeywordEnabled(Keyword)))
+            if (material == null || !material.IsKeywordEnabled(RigidKeyword))
             {
-                return $"needs a material with the {Keyword} or {RigidKeyword} keyword on";
+                return $"needs a material with the {RigidKeyword} keyword on";
             }
 
             var positions = material.GetTexture(PositionsId);
@@ -96,18 +81,7 @@ namespace HyperRTS.Presentation.Animation
                 return $"needs VAT positions {clips.width} texels wide, as '{clips.name}' says";
             }
 
-            if (rigid && material.GetTexture(RotationsId) == null)
-            {
-                return "needs VAT rotations on its rigid material";
-            }
-
-            var rows = material.GetFloat(RowsPerFrameId);
-            if (!Mathf.Approximately(rows, clips.rowsPerFrame))
-            {
-                return $"has VAT rows per frame {rows} on its material but {clips.rowsPerFrame} in '{clips.name}'";
-            }
-
-            return null;
+            return material.GetTexture(RotationsId) == null ? "needs VAT rotations on its rigid material" : null;
         }
 
         public class Baker : Baker<VATAnimatedAuthoring>

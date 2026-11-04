@@ -264,7 +264,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
         {
             var pieces = Piece(house);
             _em.AddComponentData(pieces, new VATClip());
-            _em.AddComponentData(pieces, VATFade.None);
             return new SectionModel
             {
                 Intact = Piece(house),

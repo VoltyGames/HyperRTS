@@ -19,9 +19,8 @@ In progress:
 - **Unit motion**: `MotionRigSystem` turns turrets, elevates barrels, plays recoil, rolls wheels, spins rotors up and down and
   tilts hulls on the client. Tracks don't scroll and suspension doesn't flex yet. See
   [motion rig](modules/client.md#motion-rig).
-- **Vertex animation**: `HyperRTS/LitTeam` plays VAT clips for instanced infantry, and squads show one figure per
-  share of health that idles, walks, runs, fires and dies with the unit. No clip blending, per-instance speed or
-  figure spacing in formation yet. See [vertex animation](modules/client.md#vertex-animation).
+- **Bone animation**: `HyperRTS/LitTeam` skins instanced infantry from a bone animation texture with separate lower
+  and upper body clips, and squads show one figure per member. See [bone animation](modules/client.md#bone-animation).
 
 ## Decisions
 

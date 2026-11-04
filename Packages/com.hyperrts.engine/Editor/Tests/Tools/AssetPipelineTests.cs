@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Tests.Tools
         private const string VATModel = VATFolder + "/Quad.obj";
         private const string VATPositions = VATFolder + "/VAT/Quad_Pos.exr";
         private const string Triangle = "v 0 0 0\nv 1 0 0\nv 1 1 0\nvt 0 0\nvt 1 0\nvt 1 1\nf 1/1 2/2 3/3\n";
-        private const string BakeInfo = @"{ ""positions"": ""Quad_Pos.exr"", ""normals"": ""Quad_Nrm.exr"" }";
+        private const string BakeInfo = @"{ ""positions"": ""Quad_Pos.exr"" }";
 
         private Vector3[] _terrain;
         private Vector3[] _ripples;
@@ -122,15 +122,17 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         [Test]
-        public void LitTeamVertexStagesCompileWithAndWithoutVATAndBuild()
+        public void LitTeamVertexStagesCompileWithRigidVATBonesAndBuild()
         {
             var shader = Shader.Find("HyperRTS/LitTeam");
 
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT", "DOTS_INSTANCING_ON"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES", "DOTS_INSTANCING_ON"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "DOTS_INSTANCING_ON"));
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BUILD", "DOTS_INSTANCING_ON"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT", "_BUILD"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "_BUILD"));
         }
 
         private static IEnumerable<TestCaseData> Channels()

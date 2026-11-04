@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Import
             if (!Named.TryGetValue(json, out var named) || named.Written != written)
             {
                 var bakeInfo = JsonUtility.FromJson<VATBakeInfo>(File.ReadAllText(json));
-                named = (written, new[] { bakeInfo.positions, bakeInfo.normals, bakeInfo.rotations });
+                named = (written, new[] { bakeInfo.positions, bakeInfo.rotations });
                 Named[json] = named;
             }
 

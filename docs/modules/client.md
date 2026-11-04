@@ -184,7 +184,7 @@ forward pass (`LitTeamGrime.hlsl`) lays dust and mud low on the hull by noise, u
 
 LitTeam carries only what materials use: opaque or alpha tested, metallic workflow, normal, metallic gloss, occlusion
 and emission maps, no detail maps, parallax or transparency. Its keywords are `_NORMALMAP`, `_METALLICSPECGLOSSMAP`,
-`_OCCLUSIONMAP`, `_EMISSION`, `_ALPHATEST_ON`, `_BUILD` and `_VAT`. Its inspector, `LitTeamGUI`, shows the
+`_OCCLUSIONMAP`, `_EMISSION`, `_ALPHATEST_ON`, `_BUILD`, `_BONES` and `_VAT_RIGID`. Its inspector, `LitTeamGUI`, shows the
 properties as plain fields and keeps each map's keyword on while the map is set, `_EMISSION` while the emission colour
 isn't black, and the alpha-test queue while alpha clipping is on, as URP's Lit inspector does; the model hooks write
 the same. `Rendering/SurfaceMaps.hlsl` holds the base colour and normal map accessors that LitTeam and Bark share.
@@ -194,42 +194,60 @@ and rim where a unit is hidden. Every rendered part of a unit is put on renderin
 Grass and small plants are not cover: `FoliageGrass` marks stencil bit 64 and the silhouette skips those pixels, so a
 unit driving through grass shows no team-coloured patches.
 
-### Vertex animation
+### Bone animation
 
-`HyperRTS/LitTeam` with the `_VAT` keyword on plays baked vertex animation textures (VAT), so crowds of animated
-infantry draw as instanced static meshes. Every pass, shadows and silhouettes included, reads the same pose. A VAT
-set is:
+`HyperRTS/LitTeam` with the `_BONES` keyword skins a mesh in the vertex stage from a bone animation texture, so crowds
+of animated infantry draw as instanced static meshes. Every pass, shadows and silhouettes included, reads the same
+pose. The source is a `BoneAnimationSet` asset (an editor-only ScriptableObject, so the rig model and its clips never
+reach a build):
 
-- `<Model>.fbx`: the rest pose. UV1 holds each vertex's texel, u = (column + 0.5) / width and v = row within the
-  frame, so Unity may split vertices at seams. A model with `VAT/<Model>.vat.json` beside it imports uncompressed,
-  without generated lightmap UVs, and with UV1 kept as 32-bit floats. VAT renderers can't be lightmapped.
-- The position and normal textures the bake info file names: RGBA half float, Unity object space in metres. Each frame
-  takes `rowsPerFrame` rows and every clip is stacked, so frame f's texel is (column, f x rowsPerFrame + v). They
-  import exact: linear, point filtered, clamped, no mipmaps or compression.
-- `VAT/<Model>.vat.json`: `positions`, `normals`, `width`, `rowsPerFrame`, `clips`
-  (each with `name`, `startRow` as its first frame, `frameCount`, `fps` and `loop`), `boundsMin` and `boundsMax`
-  over every frame. A looping clip does not repeat its first frame at the end.
+- `rig`: a model imported with a Generic or Humanoid rig (SkinnedMeshRenderer and Avatar). Its first part is a skinned
+  mesh whose bones form the skeleton; any number of bones and any names work, they are data.
+- `clips`: a name, an AnimationClip (from the rig's own file or another humanoid model's), loop and speed. Sampled at
+  `fps` (30), a looping clip does not repeat its first frame at the end.
+- `upperRoot`: the bone that roots the upper body, which plays its own clip; the bones below it join it.
+- `parts`: nodes of the rig model to export as meshes. A skinned node keeps its weights; a plain node with a `socket`
+  (a name for a bone, in `sockets`) is a weapon or gear weighted wholly to that bone, so weapons are swappable meshes.
 
-Put the textures in the material's VAT slots, set its rows per frame and turn on `_VAT` (the Debug inspector shows
-material keywords). A `VATClipTable` asset imports the bake info file through **Import Bake Info** in its context menu, then
-stays hand-editable. `VATAnimatedAuthoring` beside the renderer bakes its start clip into `VATClip` and widens the
-render bounds to cover every frame. It fails the bake when the material and table disagree.
+**Bake** (the asset's context menu, `HyperRTS/Animation/Bake Bone Animation Set`, or the `bone_bake [set]`
+[command](../editor.md#commands)) writes `Generated/` beside the set, labelled Generated:
 
-A bake whose bake info says `"layout": "rigid"` moves whole pieces instead of vertices (a sectioned building's
-walls and roofs breaking). It names a `rotations` texture beside `positions`, with a column per piece (the `width`),
-one row per frame (`rowsPerFrame` defaults to 1) and row 0 the frame every piece sits in at rest. A mesh vertex
-holds its piece's column in UV1's u. The material turns on `_VAT_RIGID` instead of `_VAT`, with the two textures:
-the vertex moves to the piece's position for the frame, turned by its rotation quaternion about where the rest row
-has it, and normals only turn. There is no fade between clips. `VATSubmeshBakingSystem` gives the extra material
-entities of a multi-material renderer the same clip components.
+- `<Set>_Bones`, a half-float RGBA Texture2D, point filtered, 3 texels a bone wide and one row per frame of every clip
+  stacked (at most 16384). Bone b's texels at columns 3 b to 3 b + 2 are the top three rows of its skin matrix: the
+  bone's pose times its inverse bind pose, mapping the skeleton mesh's rest vertices to the posed ones in the rig
+  model's root space.
+- `<Set>_Clips`, a `BoneClipTable`: the bones in texture order, the rows, the clips (`startRow`, `frameCount`, `fps`,
+  `loop`) and the bounds over every frame of every part.
+- `<Set>_<Part>`, a plain Mesh with no skin: UV6 holds four bone indices and UV7 the four weights, negative for a bone
+  of the upper body. Parts of one set share the texture; a skinned part whose bind pose differs from the skeleton's fails
+  the bake.
 
-Game code plays clips with `VATClip.Play(range, now, ref fade)`, using `SystemAPI.Time.ElapsedTime` as `now`. Every
-switch freezes the pose that was showing into the `VATFade` component, and the shader blends from it to the new clip
-over the material's `_VATFadeTime` (0.2 s). Squad figures also have four optional blast falls, `DieBlastFront`,
-`Back`, `Left` and `Right`, named by where the blast came from relative to the figure's facing. A figure that drops
-within 0.5 s after a nearby impact cue with a splash radius, or fell up to 0.2 s before one, plays the fall for its
-side; a table without them falls with Die.
-`VATClockSystem` feeds the same clock to the shader, so pausing and replay speed apply to the animation.
+The material turns on `_BONES` and points `_BoneTex` at the texture. Per instance (Entities Graphics properties),
+`LowerClip` and `UpperClip` hold a `VATClip` packed as x start row, y frames, z signed fps (negative plays once) and w
+start time, and `LowerFade` and `UpperFade` a `VATFade`: the frozen frame pair, its blend and the switch time. A vertex
+takes up to four bones, each reading the clip of its half (the sign of its weight), blended between frames and, for
+`_BoneFadeTime` (0.2 s) after a switch, from the frozen pose. That is 6 texel fetches a bone, 24 at most a vertex, plus 24
+more during a fade. `BoneAnimatedAuthoring` on a renderer bakes the start clip into all four and widens the render
+bounds to every frame (`VATBoundsBakingSystem`); `BoneSubmeshBakingSystem` gives a multi-material renderer's extra
+entities the same. A figure's body (at three levels of detail in a LODGroup) and weapon are separate renderers that
+game code writes the same clips to.
+
+Game code plays clips with `VATClip.Switch` on `LowerClip.Clip` and the matching fade, using `SystemAPI.Time.ElapsedTime`
+as the time. `VATClockSystem` feeds the same clock to the shader as `_VATTime`, so pausing and replay speed apply.
+
+### Rigid vertex animation
+
+`_VAT_RIGID` moves whole pieces instead of vertices (a sectioned building's walls and roofs breaking). The bake info
+(`VAT/<Model>.vat.json`, written by the structure tool) names a `positions` and a `rotations` texture with `"layout":
+"rigid"`: a column per piece (the `width`), one row per frame and row 0 the frame every piece rests in. A mesh vertex
+holds its piece's column in UV1's u. The material has the two textures in its `_VATPositions` and `_VATRotations` slots:
+the vertex moves to the piece's position for the frame, turned by its rotation quaternion about where the rest row has
+it, and normals only turn. The bake info lists `clips` (`name`, `startRow`, `frameCount`, `fps`, `loop`) and
+`boundsMin` and `boundsMax` over every frame; a `VATClipTable` imports it through **Import Bake Info**, and
+`VATAnimatedAuthoring` beside the renderer bakes its start clip into `VATClip` and the bounds. A model with
+`VAT/<Model>.vat.json` beside it imports uncompressed, without generated lightmap UVs and with UV1 as 32-bit floats;
+the textures import exact (linear, point filtered, clamped, no mipmaps or compression). There is no fade between clips.
+`VATSubmeshBakingSystem` gives a multi-material renderer's extra entities the clip.
 
 ### Build reveal
 
@@ -289,17 +307,21 @@ same frame as the unit. Machine links still aim at last frame's matrices.
 
 #### Squad figures
 
-`SquadFiguresAuthoring` on a squad unit draws it as hand-placed VAT figures: children of its `Model`, each with
-`VATAnimatedAuthoring`, listed in the order of the squad's members. It names the idle, walk, run, fire and die clips, the run
-speed and how long a fallen figure stays down. Each figure looks those names up in its own clip table, so figures
-baked separately (another VAT width, other rows) mix in one squad; the bake fails when a table lacks one of the
-five. Each `SquadFigure` carries its own `FigureClips`. Figure i shows `SquadMember` i, so the count of figures
-equals the count of members (a validation rule checks it). `SquadFigureSystem` eases each living figure toward its
-member's `Offset`, turned into the model's frame, and plays a figure whose member died the die clip once, then hides
-it after the hold. A squad spawned with dead members hides their figures without the fall. A figure walks or runs by
-its own horizontal speed, so a member catching up runs while the rest stand, and fires for 0.6 s after each change of
-the `WeaponPose.Shots` of the weapon its member carries. A figure gets a new `VATClip` only when its state changes,
-and looping clips start at a per-figure phase so the squad doesn't move in step.
+`SquadFiguresAuthoring` on a squad unit draws it as hand-placed bone-animated figures: children of its `Model`, each
+with `BoneAnimatedAuthoring` renderers (body levels of detail in a LODGroup, a weapon) that share one `BoneClipTable`,
+listed in the order of the squad's members, each with an optional clip prefix (`M4_`, `JAV_`) for its stance clips. The
+authoring names the idle, walk, run, fire, crouch, prone and die clips, the run speed and how long a fallen figure
+stays down. Crouch and prone clips left empty fall back to the standing ones, explicitly at bake; a name the table
+lacks fails the bake. Each `SquadFigure` carries its own `FigureClips`. Figure i shows `SquadMember` i, so the count of
+figures equals the count of members (a validation rule checks it). `SquadFigureSystem` eases each living figure toward
+its member's `Offset`, turned into the model's frame. The legs play the clip for the member's `Posture` and its own
+horizontal speed (a member catching up runs while the rest stand); the upper body plays the fire clip of the posture
+for 0.6 s after each change of the `WeaponPose.Shots` of the weapon its member carries, else what the legs play, in
+step with them. A member who died plays the die clip once on both halves (or a blast fall, `DieBlastFront`, `Back`,
+`Left` or `Right`, named by where a blast within 0.5 s came from relative to the figure's facing), then the figure hides
+after the hold. A squad spawned with dead members hides their figures without the fall. A figure gets new clips only
+when its state, posture or firing changes, written to every renderer under it, and looping clips start at a per-figure
+phase so the squad doesn't move in step.
 
 ### Visibility
 
@@ -421,7 +443,7 @@ cookies, for Road), `ForwardLightingKeywords` (that plus probes, fog and renderi
 volumes, and LitTeam its lightmaps), `MainLightKeywords` (Water), `SimpleLightingKeywords` (that plus screen space
 occlusion and the Forward+ cluster loop, for plant and flag forward passes), `ShadowCasterKeywords`,
 `DepthNormalsKeywords`, `InstancingKeywords` (GPU and Entities Graphics instancing, for every pass drawn both ways) and
-`LitTeamVertexKeywords` (LitTeam's VAT and build keywords, in every pass that moves its vertices). An include holds
+`LitTeamVertexKeywords` (LitTeam's rigid VAT, bone and build keywords, in every pass that moves its vertices). An include holds
 only lines identical in every pass that uses it, so a pass needing a different line keeps its own; other material
 keywords (`shader_feature_local`) stay in each shader.
 

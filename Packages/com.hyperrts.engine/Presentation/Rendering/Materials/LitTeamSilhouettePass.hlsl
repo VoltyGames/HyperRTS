@@ -25,7 +25,7 @@ struct SilhouetteVaryings
 };
 
 // Same transform as the forward pass so the mask's ZTest Equal matches its depth exactly.
-SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT BUILD_ORDER_INPUT)
+SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT BONE_INPUT BUILD_ORDER_INPUT)
 {
     SilhouetteVaryings output = (SilhouetteVaryings)0;
     UNITY_SETUP_INSTANCE_ID(input);

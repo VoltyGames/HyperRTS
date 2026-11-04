@@ -1,6 +1,6 @@
 // HyperRTS/LitTeam inputs: the material properties and accessors URP's Lit passes read (laid out like URP's
 // LitInput.hlsl, minus detail maps, parallax, the specular workflow and transparency) plus the team colour, its mask,
-// its height band, the vertex animation clip and its fade, the build progress, grime and track lift. Every LitTeam pass includes this, so the SRP
+// its height band, the rigid animation clip, the bone animation clips and their fades, the build progress, grime and track lift. Every LitTeam pass includes this, so the SRP
 // Batcher sees one UnityPerMaterial layout.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
@@ -31,10 +31,12 @@ half4 _EmissionColor;
 float4 _TeamColor;
 float4 _TeamStrip;
 float4 _VATClip;
-float4 _VATFade;
+float4 _LowerClip;
+float4 _UpperClip;
+float4 _LowerFade;
+float4 _UpperFade;
 float4 _VATPositions_TexelSize;
-float _VATRowsPerFrame;
-float _VATFadeTime;
+float _BoneFadeTime;
 float4 _Grime;
 float4 _GrimeBand;
 float4 _TrackLift0;
@@ -63,7 +65,10 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float4, _TeamColor)
     UNITY_DOTS_INSTANCED_PROP(float4, _TeamStrip)
     UNITY_DOTS_INSTANCED_PROP(float4, _VATClip)
-    UNITY_DOTS_INSTANCED_PROP(float4, _VATFade)
+    UNITY_DOTS_INSTANCED_PROP(float4, _LowerClip)
+    UNITY_DOTS_INSTANCED_PROP(float4, _UpperClip)
+    UNITY_DOTS_INSTANCED_PROP(float4, _LowerFade)
+    UNITY_DOTS_INSTANCED_PROP(float4, _UpperFade)
     UNITY_DOTS_INSTANCED_PROP(float4, _Grime)
     UNITY_DOTS_INSTANCED_PROP(float4, _GrimeBand)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackLift0)
@@ -85,7 +90,10 @@ static float4 unity_DOTS_Sampled_EmissionColor;
 static float4 unity_DOTS_Sampled_TeamColor;
 static float4 unity_DOTS_Sampled_TeamStrip;
 static float4 unity_DOTS_Sampled_VATClip;
-static float4 unity_DOTS_Sampled_VATFade;
+static float4 unity_DOTS_Sampled_LowerClip;
+static float4 unity_DOTS_Sampled_UpperClip;
+static float4 unity_DOTS_Sampled_LowerFade;
+static float4 unity_DOTS_Sampled_UpperFade;
 static float4 unity_DOTS_Sampled_Grime;
 static float4 unity_DOTS_Sampled_GrimeBand;
 static float4 unity_DOTS_Sampled_TrackLift0;
@@ -107,7 +115,10 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
     unity_DOTS_Sampled_TeamColor            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TeamColor);
     unity_DOTS_Sampled_TeamStrip            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TeamStrip);
     unity_DOTS_Sampled_VATClip              = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _VATClip);
-    unity_DOTS_Sampled_VATFade              = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _VATFade);
+    unity_DOTS_Sampled_LowerClip             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _LowerClip);
+    unity_DOTS_Sampled_UpperClip             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _UpperClip);
+    unity_DOTS_Sampled_LowerFade             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _LowerFade);
+    unity_DOTS_Sampled_UpperFade             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _UpperFade);
     unity_DOTS_Sampled_Grime                = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _Grime);
     unity_DOTS_Sampled_GrimeBand            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _GrimeBand);
     unity_DOTS_Sampled_TrackLift0           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackLift0);
@@ -131,7 +142,10 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 #define _TeamColor              unity_DOTS_Sampled_TeamColor
 #define _TeamStrip              unity_DOTS_Sampled_TeamStrip
 #define _VATClip                unity_DOTS_Sampled_VATClip
-#define _VATFade                unity_DOTS_Sampled_VATFade
+#define _LowerClip               unity_DOTS_Sampled_LowerClip
+#define _UpperClip               unity_DOTS_Sampled_UpperClip
+#define _LowerFade               unity_DOTS_Sampled_LowerFade
+#define _UpperFade               unity_DOTS_Sampled_UpperFade
 #define _Grime                  unity_DOTS_Sampled_Grime
 #define _GrimeBand              unity_DOTS_Sampled_GrimeBand
 #define _TrackLift0             unity_DOTS_Sampled_TrackLift0

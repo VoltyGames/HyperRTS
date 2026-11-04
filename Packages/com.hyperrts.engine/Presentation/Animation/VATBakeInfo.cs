@@ -16,10 +16,9 @@ namespace HyperRTS.Presentation.Animation
 
         public const string RigidLayout = "rigid";
 
-        [Tooltip("Empty for per-vertex textures, or 'rigid' for pieces moved by a position and a rotation per frame.")]
+        [Tooltip("'rigid' for pieces moved by a position and a rotation per frame.")]
         public string layout;
         public string positions;
-        public string normals;
         public string rotations;
         public int width;
         public int rowsPerFrame;

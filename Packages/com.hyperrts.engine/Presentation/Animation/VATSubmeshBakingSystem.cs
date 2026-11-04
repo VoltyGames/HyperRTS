@@ -6,7 +6,7 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation
 {
     /// <summary>
-    /// Gives the extra material entities of a multi-material vertex-animated renderer the clip, fade and bounds of the
+    /// Gives the extra material entities of a multi-material vertex-animated renderer the clip and bounds of the
     /// renderer's own entity, since Entities Graphics bakes each material as a child entity without them.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
@@ -35,7 +35,6 @@ namespace HyperRTS.Presentation.Animation
                 }
 
                 em.AddComponentData(mesh, em.GetComponentData<VATClip>(owner));
-                em.AddComponentData(mesh, em.GetComponentData<VATFade>(owner));
                 em.AddComponentData(mesh, em.GetComponentData<VATBounds>(owner));
             }
         }

@@ -221,7 +221,6 @@ namespace HyperRTS.Presentation.Destruction
             foreach (var mesh in meshes)
             {
                 EntityManager.SetComponentData(mesh, VATClip.Started(range, at.Now));
-                EntityManager.SetComponentData(mesh, VATFade.None);
             }
 
             look.BreakEnd = at.Now + clip.Seconds;
