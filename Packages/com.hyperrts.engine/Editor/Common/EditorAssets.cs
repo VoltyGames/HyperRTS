@@ -12,6 +12,7 @@ using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 [assembly: InternalsVisibleTo("HyperRTS.Editor.Maps")]
+[assembly: InternalsVisibleTo("HyperRTS.Editor.Tests")]
 
 namespace HyperRTS.Editor.Common
 {

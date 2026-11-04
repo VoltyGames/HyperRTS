@@ -7,8 +7,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Animation
 {
     /// <summary>
-    /// A temporary instance of a bone set's rig model, posed by its clips. Its first skinned part names the skeleton;
-    /// every bone's skin matrix maps that mesh's rest vertices to where the clip's frame puts them, in the model root's
+    /// A temporary instance of a bone set's rig model, posed by its clips. Its skeleton node's skinned mesh names the
+    /// skeleton; every bone's skin matrix maps that mesh's rest vertices to where the clip's frame puts them, in the model root's
     /// space, so the baked meshes need no skin and no object transform. Clips are sampled on the parent of the root
     /// bone, which is where a Generic clip's bone paths start.
     /// </summary>
@@ -25,16 +25,16 @@ namespace HyperRTS.Editor.Animation
         private readonly bool[] _upper;
         private readonly Dictionary<string, int> _index = new();
 
-        public BoneRig(GameObject model, string bodyNode, string upperRoot, string rootBone)
+        public BoneRig(GameObject model, string skeleton, string upperRoot, string rootBone)
         {
             _root = Object.Instantiate(model);
             _root.hideFlags = HideFlags.HideAndDontSave;
-            _body = Find(bodyNode).GetComponent<SkinnedMeshRenderer>()
-                ?? throw new InvalidOperationException($"Node '{bodyNode}' of '{model.name}' has no skinned mesh to name the skeleton.");
-            _rootBone = Find(rootBone);
+            _body = Find(_root, skeleton).GetComponent<SkinnedMeshRenderer>()
+                ?? throw new InvalidOperationException($"Node '{skeleton}' of '{model.name}' has no skinned mesh to name the skeleton.");
+            _rootBone = Find(_root, rootBone);
             _bones = _body.bones;
             _bindposes = _body.sharedMesh.bindposes;
-            var top = Find(upperRoot);
+            var top = Find(_root, upperRoot);
             _upper = new bool[_bones.Length];
             for (var i = 0; i < _bones.Length; i++)
             {
@@ -100,49 +100,61 @@ namespace HyperRTS.Editor.Animation
             return ends;
         }
 
-        /// <summary>A copy of a skinned node's mesh with its skin moved into vertex channels.</summary>
-        public Mesh SkinnedMesh(string node)
+        /// <summary>
+        /// A copy of a skinned node's mesh, moved into the skeleton mesh's rest space, with its skin moved into vertex
+        /// channels. <paramref name="model"/> may be the rig or any model bound to the same skeleton at the same rest pose:
+        /// its bones match by name, and its bind poses may differ from the skeleton's only by one move of the whole mesh,
+        /// such as its node's axis conversion.
+        /// </summary>
+        public Mesh SkinnedMesh(GameObject model, string node)
         {
-            var renderer = Find(node).GetComponent<SkinnedMeshRenderer>()
-                ?? throw new InvalidOperationException($"Node '{node}' of '{_root.name}' has no skinned mesh.");
+            var renderer = Find(model, node).GetComponent<SkinnedMeshRenderer>()
+                ?? throw new InvalidOperationException($"Node '{node}' of '{model.name}' has no skinned mesh.");
+            var bindposes = renderer.sharedMesh.bindposes;
             var remap = new int[renderer.bones.Length];
             for (var i = 0; i < remap.Length; i++)
             {
                 remap[i] = BoneIndex(renderer.bones[i].name);
-                var same = Approximately(renderer.sharedMesh.bindposes[i], _bindposes[remap[i]]);
+            }
+
+            var into = _bindposes[remap[0]].inverse * bindposes[0];
+            for (var i = 1; i < remap.Length; i++)
+            {
+                var same = Approximately(bindposes[i], _bindposes[remap[i]] * into);
                 if (!same)
                 {
-                    throw new InvalidOperationException($"Node '{node}' binds bone '{renderer.bones[i].name}' differently from the skeleton, so it can't share its bone texture.");
+                    throw new InvalidOperationException($"Node '{node}' of '{model.name}' binds bone '{renderer.bones[i].name}' at another rest pose than the skeleton, so it can't share its bone texture.");
                 }
             }
 
             var mesh = Object.Instantiate(renderer.sharedMesh);
+            Move(mesh, into);
             Skin(mesh, renderer.sharedMesh.boneWeights, remap);
             return mesh;
         }
 
-        /// <summary>A copy of a rigid node's mesh carried by <paramref name="bone"/>, in the skeleton mesh's rest space.</summary>
-        public Mesh AttachedMesh(string node, string bone)
+        /// <summary>
+        /// A copy of a rigid node's mesh, its origin set on the rig's <paramref name="socket"/> node and carried by the
+        /// skeleton bone at or above it, in the skeleton mesh's rest space.
+        /// </summary>
+        public Mesh AttachedMesh(GameObject model, string node, string socket)
         {
-            var holder = Find(node);
-            var source = holder.GetComponent<MeshFilter>()?.sharedMesh
-                ?? throw new InvalidOperationException($"Node '{node}' of '{_root.name}' has no mesh.");
+            var source = Find(model, node).GetComponent<MeshFilter>()?.sharedMesh
+                ?? throw new InvalidOperationException($"Node '{node}' of '{model.name}' has no mesh.");
             var mesh = Object.Instantiate(source);
-            var weighted = BoneIndex(bone);
-            // Into the bone's own space, then back through its bind pose into the skeleton mesh's rest space.
-            var into = _bindposes[weighted].inverse * _bones[weighted].worldToLocalMatrix * holder.localToWorldMatrix;
-            var normals = into.inverse.transpose;
-            var vertices = mesh.vertices;
-            var directions = mesh.normals;
-            for (var i = 0; i < vertices.Length; i++)
+            var seat = Find(_root, socket);
+            var carrier = seat;
+            while (carrier != null && !_index.ContainsKey(carrier.name))
             {
-                vertices[i] = into.MultiplyPoint3x4(vertices[i]);
-                directions[i] = normals.MultiplyVector(directions[i]).normalized;
+                carrier = carrier.parent;
             }
 
-            mesh.vertices = vertices;
-            mesh.normals = directions;
-            var weights = new BoneWeight[vertices.Length];
+            var weighted = carrier != null
+                ? _index[carrier.name]
+                : throw new InvalidOperationException($"Socket node '{socket}' of '{_root.name}' hangs from no skeleton bone.");
+            // Onto the socket, into the bone's own space, then back through its bind pose into the skeleton mesh's rest space.
+            Move(mesh, _bindposes[weighted].inverse * _bones[weighted].worldToLocalMatrix * seat.localToWorldMatrix);
+            var weights = new BoneWeight[mesh.vertexCount];
             Array.Fill(weights, new BoneWeight { boneIndex0 = 0, weight0 = 1f });
             Skin(mesh, weights, new[] { weighted });
             return mesh;
@@ -150,7 +162,36 @@ namespace HyperRTS.Editor.Animation
 
         public void Dispose() => Object.DestroyImmediate(_root);
 
-        // Indices into the skeleton in channel 4, weights in channel 5, negative for upper-body bones.
+        // Moves vertices, normals and tangents by a rigid transform, keeping each tangent's handedness.
+        private static void Move(Mesh mesh, Matrix4x4 by)
+        {
+            var normals = by.inverse.transpose;
+            var vertices = mesh.vertices;
+            var directions = mesh.normals;
+            var tangents = mesh.tangents;
+            for (var i = 0; i < vertices.Length; i++)
+            {
+                vertices[i] = by.MultiplyPoint3x4(vertices[i]);
+            }
+
+            for (var i = 0; i < directions.Length; i++)
+            {
+                directions[i] = normals.MultiplyVector(directions[i]).normalized;
+            }
+
+            for (var i = 0; i < tangents.Length; i++)
+            {
+                var turned = by.MultiplyVector(tangents[i]).normalized;
+                tangents[i] = new Vector4(turned.x, turned.y, turned.z, tangents[i].w);
+            }
+
+            mesh.vertices = vertices;
+            mesh.normals = directions;
+            mesh.tangents = tangents;
+            mesh.RecalculateBounds();
+        }
+
+        // Indices into the skeleton in the index channel, weights in the weight channel, negative for upper-body bones.
         private void Skin(Mesh mesh, BoneWeight[] weights, int[] remap)
         {
             if (weights.Length != mesh.vertexCount)
@@ -176,10 +217,10 @@ namespace HyperRTS.Editor.Animation
 
         private float Signed(float weight, int bone) => _upper[bone] ? -weight : weight;
 
-        private Transform Find(string node)
+        private static Transform Find(GameObject model, string node)
         {
             Transform found = null;
-            foreach (var candidate in _root.GetComponentsInChildren<Transform>(true))
+            foreach (var candidate in model.GetComponentsInChildren<Transform>(true))
             {
                 if (candidate.name != node)
                 {
@@ -188,13 +229,13 @@ namespace HyperRTS.Editor.Animation
 
                 if (found != null)
                 {
-                    throw new InvalidOperationException($"'{_root.name}' has more than one node named '{node}'.");
+                    throw new InvalidOperationException($"'{model.name}' has more than one node named '{node}'.");
                 }
 
                 found = candidate;
             }
 
-            return found != null ? found : throw new InvalidOperationException($"'{_root.name}' has no node named '{node}'.");
+            return found != null ? found : throw new InvalidOperationException($"'{model.name}' has no node named '{node}'.");
         }
 
         private static bool Approximately(Matrix4x4 a, Matrix4x4 b)

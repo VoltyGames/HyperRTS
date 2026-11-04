@@ -12,7 +12,8 @@ namespace HyperRTS.Editor.Animation
 {
     /// <summary>
     /// The source of one bone animation bake: a rig model, the clips to sample on it, the root and upper-body root bones and the
-    /// meshes to skin. <b>Bake</b> writes beside the set, in <c>Generated/</c>, the bone texture
+    /// meshes to skin, from the rig or from other models bound to the same skeleton, so every kit and weapon of every faction
+    /// shares one bone texture. <b>Bake</b> writes beside the set, in <c>Generated/</c>, the bone texture
     /// (<c>&lt;Set&gt;_Bones</c>), the clip table (<c>&lt;Set&gt;_Clips</c>) and a mesh for each part
     /// (<c>&lt;Set&gt;_&lt;Part&gt;</c>), whose bone indices and weights sit in vertex channels. Only those reach builds,
     /// never the rig model or its clips.
@@ -51,10 +52,13 @@ namespace HyperRTS.Editor.Animation
             [Tooltip("Name of the mesh asset, after the set's: <Set>_<Part>.")]
             public string name;
 
-            [Tooltip("The node of the rig model holding the mesh: a skinned mesh, or a plain mesh when Socket is set.")]
+            [Tooltip("The model holding the mesh; empty takes it from the rig.")]
+            public GameObject model;
+
+            [Tooltip("The node of the model holding the mesh: a skinned mesh bound to the rig's skeleton, or a plain mesh when Socket is set.")]
             public string node;
 
-            [Tooltip("Empty for a skinned mesh. Else the socket whose bone a plain mesh, such as a weapon, is weighted to.")]
+            [Tooltip("Empty for a skinned mesh. Else the socket a plain mesh, such as a weapon, sits at, its origin on the socket's node.")]
             public string socket;
         }
 
@@ -64,14 +68,16 @@ namespace HyperRTS.Editor.Animation
             [Tooltip("Name a part asks the socket by.")]
             public string name;
 
-            [Tooltip("The skeleton bone gear on this socket follows.")]
-            public string bone;
+            [Tooltip("A node of the rig: a skeleton bone, or an empty under one where gear sits, such as a rifle's grip in the right hand. Gear follows the bone.")]
+            public string node;
         }
 
-        [Tooltip("The rig model: a skinned mesh whose bones form the skeleton, and the nodes of the parts.")]
+        [Tooltip("The rig model: the skeleton, the socket nodes and the parts that name no model.")]
         public GameObject rig;
 
-        [Tooltip("The first part, a skinned mesh, names the skeleton.")]
+        [Tooltip("The node of the rig holding the skinned mesh whose bones and bind poses every skinned part shares.")]
+        public string skeleton;
+
         public List<Part> parts = new();
 
         public List<Clip> clips = new();
@@ -109,7 +115,7 @@ namespace HyperRTS.Editor.Animation
             }
 
             Directory.CreateDirectory(Folder);
-            using var posed = new BoneRig(rig, parts[0].node, upperRoot, rootBone);
+            using var posed = new BoneRig(rig, skeleton, upperRoot, rootBone);
             var meshes = parts.Select(part => MakeMesh(posed, part)).ToList();
             var bones = posed.BoneNames();
             var pose = new BoneFrames();
@@ -138,14 +144,15 @@ namespace HyperRTS.Editor.Animation
 
         private Mesh MakeMesh(BoneRig posed, Part part)
         {
+            var model = part.model != null ? part.model : rig;
             if (string.IsNullOrEmpty(part.socket))
             {
-                return posed.SkinnedMesh(part.node);
+                return posed.SkinnedMesh(model, part.node);
             }
 
             var socket = sockets.Find(candidate => candidate.name == part.socket)
                 ?? throw new InvalidOperationException($"Bone set '{name}' part '{part.name}' names socket '{part.socket}', which the set lacks.");
-            return posed.AttachedMesh(part.node, socket.bone);
+            return posed.AttachedMesh(model, part.node, socket.node);
         }
 
         private BoneClipTable MakeTable(List<ClipFrames> plans, List<string> bones, Bounds bounds)
@@ -167,20 +174,15 @@ namespace HyperRTS.Editor.Animation
 
         private void Check()
         {
-            if (rig == null || parts.Count == 0 || clips.Count == 0 || string.IsNullOrEmpty(upperRoot) || string.IsNullOrEmpty(rootBone))
+            if (rig == null || string.IsNullOrEmpty(skeleton) || parts.Count == 0 || clips.Count == 0 || string.IsNullOrEmpty(upperRoot) || string.IsNullOrEmpty(rootBone))
             {
-                throw new InvalidOperationException($"Bone set '{name}' needs a rig, parts, clips, a root bone and an upper root bone.");
+                throw new InvalidOperationException($"Bone set '{name}' needs a rig, a skeleton node, parts, clips, a root bone and an upper root bone.");
             }
 
             var missing = clips.Find(clip => clip.source == null || string.IsNullOrEmpty(clip.name));
             if (missing != null)
             {
                 throw new InvalidOperationException($"Bone set '{name}' has a clip without a name or a source clip.");
-            }
-
-            if (!string.IsNullOrEmpty(parts[0].socket))
-            {
-                throw new InvalidOperationException($"Bone set '{name}': its first part must be the skinned mesh that names the skeleton.");
             }
         }
 

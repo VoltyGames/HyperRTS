@@ -201,8 +201,9 @@ of animated infantry draw as instanced static meshes. Every pass, shadows and si
 pose. The source is a `BoneAnimationSet` asset (an editor-only ScriptableObject, so the rig model and its clips never
 reach a build):
 
-- `rig`: a model imported with a Generic or Humanoid rig (SkinnedMeshRenderer and Avatar). Its first part is a skinned
-  mesh whose bones form the skeleton; any number of bones and any names work, they are data.
+- `rig`: a model imported with a Generic or Humanoid rig. `skeleton` names its node holding the skinned mesh whose
+  bones and bind poses form the skeleton; any number of bones and any names work, they are data. The rig also holds the
+  socket nodes.
 - `clips`: a name, an AnimationClip (from the rig's own file or another model's), loop, `inPlace` and speed. Sampled at
   `fps` (30), a looping clip does not repeat its first frame at the end. A Generic clip finds its bones by path from
   the parent of `rootBone`, so a clip file and the rig must name the same bones under the same parent (the Mixamo
@@ -211,8 +212,12 @@ reach a build):
   plays on the spot and still loops; height and sway stay.
 - `rootBone`: the top bone of the skeleton, such as the hips.
 - `upperRoot`: the bone that roots the upper body, which plays its own clip; the bones below it join it.
-- `parts`: nodes of the rig model to export as meshes. A skinned node keeps its weights; a plain node with a `socket`
-  (a name for a bone, in `sockets`) is a weapon or gear weighted wholly to that bone, so weapons are swappable meshes.
+- `parts`: nodes to export as meshes, from the rig or from the part's own `model`, so one set, and one texture, serves
+  every kit and weapon file on the skeleton. A skinned node keeps its weights; its bones match the skeleton's by name
+  and its bind poses may differ only by one move of the whole mesh (its node's axis conversion), which the bake applies.
+  A plain node with a `socket` is a weapon or gear weighted wholly to one bone: its origin sits on the socket's node,
+  a skeleton bone or an empty under one (`sockets`, such as a rifle grip in the right hand), so weapons are swappable
+  meshes modelled about their grip.
 
 **Bake** (the asset's context menu, `HyperRTS/Animation/Bake Bone Animation Set`, or the `bone_bake [set]`
 [command](../editor.md#commands)) writes `Generated/` beside the set, labelled Generated:
