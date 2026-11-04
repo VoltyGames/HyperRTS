@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Squads
     /// <summary>
     /// Decides each squad's posture and <see cref="Pace"/> from its suppression, motion and orders, after cover has
     /// settled: retreating squads stand and run with suppression cleared, pinned ones lie prone, members in cover
-    /// crouch, suppressed squads move crouched, and a halted squad that is firing crouches. Every member's posture is
+    /// crouch, suppressed squads move crouched, a halted squad that is firing crouches, and one at work stands to dig. Every member's posture is
     /// set here and nowhere else.
     /// </summary>
     [BurstCompile]
@@ -32,6 +32,7 @@ namespace HyperRTS.Simulation.Squads
                 Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Moves = SystemAPI.GetComponentLookup<MoveDestination>(true),
                 Attacks = SystemAPI.GetComponentLookup<AttackTarget>(true),
+                Work = SystemAPI.GetComponentLookup<SquadWork>(true),
             }.ScheduleParallel();
         }
 
@@ -44,6 +45,7 @@ namespace HyperRTS.Simulation.Squads
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             [ReadOnly] public ComponentLookup<MoveDestination> Moves;
             [ReadOnly] public ComponentLookup<AttackTarget> Attacks;
+            [ReadOnly] public ComponentLookup<SquadWork> Work;
 
             private void Execute(Entity entity, DynamicBuffer<SquadMember> members, ref Suppression suppression,
                 ref Pace pace)
@@ -51,14 +53,21 @@ namespace HyperRTS.Simulation.Squads
                 if (Orders.HasEnabled(entity) && Orders[entity].Value.Type == OrderType.Retreat)
                 {
                     suppression.Clear();
+                    suppression.Retreating = true;
                     pace = Rules.RetreatPace;
                     SetPostures(members, Posture.Stand, false);
                     return;
                 }
 
+                suppression.Retreating = false;
                 suppression.Decay(Rules, DeltaTime);
                 var level = Rules.Level(suppression.Value);
                 var carriage = Carriage(level, Moves.HasEnabled(entity), Attacks.HasEnabled(entity));
+                if (Work.HasEnabled(entity) && level != SuppressionLevel.Pinned)
+                {
+                    carriage = Posture.Stand;
+                }
+
                 pace = Rules.PaceAt(level, carriage);
                 SetPostures(members, carriage, level != SuppressionLevel.Pinned);
             }

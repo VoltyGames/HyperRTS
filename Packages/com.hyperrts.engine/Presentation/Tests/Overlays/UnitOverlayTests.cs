@@ -61,7 +61,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void Unit_AircraftTakesItsAgentsLayerAndRadius()
         {
-            var unit = new OverlayUnit(new NavAgent { Radius = 2f, Layer = NavLayer.Air }, null, 3, default);
+            var unit = new OverlayUnit(new NavAgent { Radius = 2f, Layer = NavLayer.Air }, null, 3, default, null);
 
             Assert.AreEqual(NavLayer.Air, unit.Layer);
             Assert.AreEqual(2f, unit.Radius, 1e-4f);
@@ -73,7 +73,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void Unit_BuildingIsGroundWithBracketsAndHalfItsLongestSide()
         {
-            var unit = new OverlayUnit(null, new NavObstacle { Size = new float2(12f, 8f) }, 0, default);
+            var unit = new OverlayUnit(null, new NavObstacle { Size = new float2(12f, 8f) }, 0, default, null);
 
             Assert.AreEqual(NavLayer.Ground, unit.Layer);
             Assert.AreEqual(6f, unit.Radius, 1e-4f);
@@ -83,7 +83,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void Unit_WithNeitherAgentNorObstacleIsDefaultCircle()
         {
-            var unit = new OverlayUnit(null, null, 0, default);
+            var unit = new OverlayUnit(null, null, 0, default, null);
 
             Assert.AreEqual(EntityRadius.Default, unit.Radius, 1e-4f);
             Assert.AreEqual(MarkerShape.Outline, unit.Footprint(Margin).Shape);
@@ -176,9 +176,9 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void HealthBar_SegmentsPerHealthChunkOrSquadMember()
         {
-            var tank = new HealthBarData(new Health { Current = 300f, Max = 600f }, 0, 0, 2, 2f, _style);
-            var squad = new HealthBarData(new Health { Current = 50f, Max = 100f }, 5, 3, 0, 1f, _style);
-            var fortress = new HealthBarData(new Health { Current = 1f, Max = 50000f }, 0, 0, 0, 10f, _style);
+            var tank = new HealthBarData(new Health { Current = 300f, Max = 600f }, 0, 0, 2, 2f, SquadBarState.None, _style);
+            var squad = new HealthBarData(new Health { Current = 50f, Max = 100f }, 5, 3, 0, 1f, SquadBarState.None, _style);
+            var fortress = new HealthBarData(new Health { Current = 1f, Max = 50000f }, 0, 0, 0, 10f, SquadBarState.None, _style);
 
             Assert.AreEqual(6, tank.Segments);
             Assert.AreEqual(0.5f, tank.Fraction, 1e-4f);

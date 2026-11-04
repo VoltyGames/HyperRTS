@@ -28,6 +28,7 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveSingleton<CameraFocusRequest> _cameraFocus = new();
         private readonly LiveSingleton<HotkeyPresses> _hotkeys = new();
         private readonly LiveSingleton<PrefabRegistry> _registry = new();
+        private readonly LiveSingleton<SquadRules> _squadRules = new();
 
         private readonly ChangeWatch _selection = new(() => new[]
         {
@@ -112,6 +113,9 @@ namespace HyperRTS.Presentation.HUD
             Buyer.Snapshot(EntityManager, _queues.In(EntityManager), _limited.In(EntityManager), View.Local.Faction,
                 new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
                 EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true));
+
+        /// <summary>The match's squad rules; false before the match is baked.</summary>
+        public bool TryGetSquadRules(out SquadRules rules) => _squadRules.TryGet(EntityManager, out rules);
 
         /// <summary>The letters and digits pressed last frame while gameplay input was live; none without the singleton.</summary>
         public HotkeyPresses Hotkeys => _hotkeys.TryGet(EntityManager, out var presses) ? presses : default;

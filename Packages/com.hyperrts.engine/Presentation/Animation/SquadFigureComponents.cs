@@ -111,6 +111,9 @@ namespace HyperRTS.Presentation.Animation
         public VATClipRange ProneFire;
         public VATClipRange Die;
 
+        /// <summary>Both halves of the body while digging at a field work; the idle clip when unset in authoring.</summary>
+        public VATClipRange Dig;
+
         /// <summary>Optional falls named by where the blast came from relative to the figure's facing; frame count 0 is unset.</summary>
         public VATClipRange DieBlastFront;
         public VATClipRange DieBlastBack;
@@ -204,6 +207,9 @@ namespace HyperRTS.Presentation.Animation
 
         /// <summary>True while the upper body plays its fire clip.</summary>
         public bool Firing;
+
+        /// <summary>True while both halves of the body play the dig clip.</summary>
+        public bool Digging;
 
         /// <summary>The clip the legs play now, and when it started on the clock, which the upper body follows when it plays the same.</summary>
         public VATClipRange Lower;

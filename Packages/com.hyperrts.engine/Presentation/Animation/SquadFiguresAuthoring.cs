@@ -67,6 +67,9 @@ namespace HyperRTS.Presentation.Animation
         [Tooltip("Upper body firing while prone. Empty plays the standing fire clip.")]
         public string proneFireClip;
 
+        [Tooltip("Clip played, whole body, while digging at a field work. Empty plays the standing idle clip.")]
+        public string digClip = "Dig";
+
         [Tooltip("Clip a figure plays once when health drops it.")]
         public string dieClip = "Die";
 
@@ -173,6 +176,7 @@ namespace HyperRTS.Presentation.Animation
                 ProneIdle = OrElse(table, prefix, proneIdleClip, idle),
                 ProneCrawl = OrElse(table, prefix, proneCrawlClip, walk),
                 ProneFire = OrElse(table, prefix, proneFireClip, fire),
+                Dig = OrElse(table, "", digClip, idle),
                 Die = table.Range(dieClip),
                 DieBlastFront = OrElse(table, "", dieBlastFrontClip, default),
                 DieBlastBack = OrElse(table, "", dieBlastBackClip, default),

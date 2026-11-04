@@ -8,8 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Draws ground markers, health bars, capture dials, garrison pips, the placement outline and rally points with
-    /// instanced meshes, and keeps the placement ghost's model copies.
+    /// Draws ground markers, health bars, capture dials, garrison pips, the placement outline and rally points and the
+    /// cover preview with instanced meshes, and keeps the placement ghost's model copies.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Rig + "Overlay Renderer")]
     [Icon(HyperRTSIcons.UI)]
@@ -45,6 +45,7 @@ namespace HyperRTS.Presentation.Overlays
         private UnitOverlays _units;
         private BuildingOverlays _buildings;
         private CommandOverlays _commands;
+        private CoverPreview _cover;
         private PlacementGhosts _ghosts;
 
         /// <summary>Which units show a health bar; a game sets it from its settings.</summary>
@@ -72,6 +73,7 @@ namespace HyperRTS.Presentation.Overlays
             _units = new UnitOverlays(grid, billboard, markerMaterial, barMaterial);
             _buildings = new BuildingOverlays(dial, disc, billboard);
             _commands = new CommandOverlays(ring, flat);
+            _cover = new CoverPreview(ring);
             _ghosts = new PlacementGhosts(ghostMaterial);
         }
 
@@ -88,10 +90,12 @@ namespace HyperRTS.Presentation.Overlays
             _units.Gather(view, style, HealthBars, Time.unscaledTime);
             _buildings.Gather(view, style, camera);
             _commands.Gather(view, style);
+            _cover.Gather(view, style);
             _ghosts.Update(view, style);
             _units.Draw(style, UIScale, gameObject.layer);
             _buildings.Draw(_materials, gameObject.layer);
             _commands.Draw(_materials, gameObject.layer);
+            _cover.Draw(_materials, gameObject.layer);
         }
 
         protected override void OnDestroyed()
@@ -104,6 +108,7 @@ namespace HyperRTS.Presentation.Overlays
             _units.Dispose();
             _buildings.Dispose();
             _commands.Dispose();
+            _cover.Dispose();
             _ghosts.Dispose();
             _materials?.Dispose();
         }

@@ -153,6 +153,25 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             Assert.AreEqual(trees.Length, Standing(trees));
         }
 
+        [Test]
+        public void OpenObstacle_StampsItsWholeBoxAsScenery_OrNothingWithoutARating()
+        {
+            var trap = World.SpawnBuilding(1, new float3(0.5f, 0f, 0.5f), new float2(4f, 1f));
+            World.Set(trap, new NavObstacle { Size = new float2(4f, 1f), Open = true });
+            World.Add(trap, new Destructible { Crush = 4 });
+            var trench = World.SpawnBuilding(1, new float3(0.5f, 0f, 10.5f), new float2(4f, 1f));
+            World.Set(trench, new NavObstacle { Size = new float2(4f, 1f), Open = true });
+            World.Tick();
+
+            var grid = World.Grid();
+            Assert.AreEqual(4, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(-1f, 0f, 0.5f)))], "the end cells too");
+            Assert.AreEqual(4, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(2f, 0f, 0.5f)))]);
+            Assert.AreEqual(0, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(0.5f, 0f, 2.5f)))]);
+            Assert.IsTrue(grid.IsWalkable(new float3(0.5f, 0f, 0.5f)), "infantry walk through, a tank's limit is below the rating");
+            Assert.AreEqual(0, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(0.5f, 0f, 10.5f)))], "a trench has no rating");
+            Assert.IsTrue(grid.IsWalkable(new float3(0.5f, 0f, 10.5f)));
+        }
+
         // Lies crosswise along Z at the origin, so a unit driving along X meets its long side.
         private Entity SpawnWreck()
         {

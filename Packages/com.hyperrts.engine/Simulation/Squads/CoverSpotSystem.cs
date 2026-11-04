@@ -28,7 +28,8 @@ namespace HyperRTS.Simulation.Squads
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _cover = SystemAPI.QueryBuilder().WithAll<CoverSpot, LocalTransform>().Build();
+            // Spots of a site still being built do not exist yet; its enabled bit leaves the query as it completes.
+            _cover = SystemAPI.QueryBuilder().WithAll<CoverSpot, LocalTransform>().WithNone<ConstructionProgress>().Build();
             // Its own description, so the change filter isn't shared with the cached query above.
             _changed = SystemAPI.QueryBuilder().WithAll<CoverSpot, LocalTransform>()
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).Build();
@@ -78,7 +79,8 @@ namespace HyperRTS.Simulation.Squads
         {
             // An order-independent sum, since an archetype move reorders the chunks.
             var signature = (ulong)count;
-            foreach (var (spots, transform) in SystemAPI.Query<DynamicBuffer<CoverSpot>, RefRO<LocalTransform>>())
+            foreach (var (spots, transform) in SystemAPI.Query<DynamicBuffer<CoverSpot>, RefRO<LocalTransform>>()
+                         .WithNone<ConstructionProgress>())
             {
                 signature += math.hash(transform.ValueRO.Position) + (ulong)math.hash(transform.ValueRO.Rotation.value) * 31UL
                     + (ulong)spots.Length;
@@ -97,7 +99,8 @@ namespace HyperRTS.Simulation.Squads
         {
             var world = new NativeList<WorldCoverSpot>(64, Allocator.Temp);
             foreach (var (spots, transform, entity) in
-                     SystemAPI.Query<DynamicBuffer<CoverSpot>, RefRO<LocalTransform>>().WithEntityAccess())
+                     SystemAPI.Query<DynamicBuffer<CoverSpot>, RefRO<LocalTransform>>()
+                         .WithNone<ConstructionProgress>().WithEntityAccess())
             {
                 for (var i = 0; i < spots.Length; i++)
                 {

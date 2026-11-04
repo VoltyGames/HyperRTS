@@ -44,6 +44,9 @@ namespace HyperRTS.Simulation.Common
 
         [GhostField] public Posture Posture;
 
+        /// <summary>What it is doing where it stands, such as digging at a field work.</summary>
+        [GhostField] public MemberAction Action;
+
         /// <summary>Index of the squad's <see cref="Combat.Weapons.WeaponMount"/> this member fires.</summary>
         [GhostField] public byte Weapon;
 

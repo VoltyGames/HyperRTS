@@ -30,6 +30,7 @@ namespace HyperRTS.Presentation.Overlays
             ComponentType.Exclude<Inside>()));
 
         private readonly LiveSingleton<HoveredEntity> _hovered = new();
+        private readonly LiveSingleton<SquadRules> _squadRules = new();
 
         private readonly GroundMarkers _markers;
         private readonly HealthBars _bars;
@@ -46,6 +47,7 @@ namespace HyperRTS.Presentation.Overlays
             var entityManager = view.EntityManager;
             var handles = new UnitHandles(entityManager);
             _hovered.TryGet(entityManager, out var hovered);
+            _squadRules.TryGet(entityManager, out var squadRules);
             using var chunks = _living.In(entityManager).ToArchetypeChunkArray(Allocator.Temp);
             foreach (var chunk in chunks)
             {
@@ -81,7 +83,7 @@ namespace HyperRTS.Presentation.Overlays
 
                     if (showsBar)
                     {
-                        AddBar(entityManager, entities[i], unit, worlds[i].Position, health, style);
+                        AddBar(entityManager, entities[i], unit, worlds[i].Position, health, squadRules, style);
                     }
                 }
             }
@@ -126,10 +128,11 @@ namespace HyperRTS.Presentation.Overlays
         }
 
         private void AddBar(EntityManager entityManager, Entity entity, in OverlayUnit unit, float3 position,
-            in Health health, OverlayStyle style)
+            in Health health, in SquadRules squadRules, OverlayStyle style)
         {
             var top = EntityExtent.Top(entityManager, entity, position, unit.Radius);
-            var bar = new HealthBarData(health, unit.MemberCount, unit.Alive, unit.Rank, unit.Radius, style);
+            var bar = new HealthBarData(health, unit.MemberCount, unit.Alive, unit.Rank, unit.Radius,
+                SquadBarState.Of(unit, squadRules), style);
             _bars.Add(new Vector3(position.x, top, position.z), bar, style);
         }
 
@@ -146,6 +149,7 @@ namespace HyperRTS.Presentation.Overlays
             private ComponentTypeHandle<NavObstacle> _obstacles;
             private ComponentTypeHandle<Experience> _experience;
             private BufferTypeHandle<SquadMember> _members;
+            private ComponentTypeHandle<Suppression> _suppression;
 
             public UnitHandles(EntityManager entityManager)
             {
@@ -158,6 +162,7 @@ namespace HyperRTS.Presentation.Overlays
                 _agents = Read<NavAgent>(entityManager);
                 _obstacles = Read<NavObstacle>(entityManager);
                 _experience = Read<Experience>(entityManager);
+                _suppression = Read<Suppression>(entityManager);
                 entityManager.CompleteDependencyBeforeRO<SquadMember>();
                 _members = entityManager.GetBufferTypeHandle<SquadMember>(true);
             }
@@ -173,7 +178,8 @@ namespace HyperRTS.Presentation.Overlays
                 chunk.Has(ref _agents) ? chunk.GetNativeArray(ref _agents)[index] : null,
                 chunk.Has(ref _obstacles) ? chunk.GetNativeArray(ref _obstacles)[index] : null,
                 chunk.Has(ref _experience) ? chunk.GetNativeArray(ref _experience)[index].Rank : 0,
-                chunk.Has(ref _members) ? chunk.GetBufferAccessor(ref _members)[index] : default);
+                chunk.Has(ref _members) ? chunk.GetBufferAccessor(ref _members)[index] : default,
+                chunk.Has(ref _suppression) ? chunk.GetNativeArray(ref _suppression)[index] : null);
 
             private static ComponentTypeHandle<T> Read<T>(EntityManager entityManager) where T : unmanaged, IComponentData
             {

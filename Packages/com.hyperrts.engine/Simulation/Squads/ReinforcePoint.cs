@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Squads
 {
@@ -10,18 +11,20 @@ namespace HyperRTS.Simulation.Squads
 
     /// <summary>
     /// A squad bringing back its dead members one at a time at <see cref="Point"/>. Each member is paid for when its
-    /// turn starts and refunded if the reinforcing is cut short.
+    /// turn starts and refunded if the reinforcing is cut short. Clients see that it is on and how far the current
+    /// member is.
     /// </summary>
+    [GhostEnabledBit]
     public struct Reinforcing : IComponentData, IEnableableComponent
     {
-        public Entity Point;
+        [GhostField(SendData = false)] public Entity Point;
 
         /// <summary>The player entity whose resources pay.</summary>
-        public Entity Payer;
+        [GhostField(SendData = false)] public Entity Payer;
 
         /// <summary>Seconds spent on the current member.</summary>
-        public float Elapsed;
+        [GhostField(Quantization = 100)] public float Elapsed;
 
-        public bool Paid;
+        [GhostField(SendData = false)] public bool Paid;
     }
 }

@@ -80,6 +80,10 @@ surfaces, line placement) in sub-folders.
 
 `BuildingAuthoring` sets the footprint, population, power and whether it starts under construction. A unit with
 `BuilderAuthoring` places sites and builds them up; its `advancedBuildOptions` go on the command card's second page.
+A squad with `BuilderAuthoring` builds at its rate for each living member, its members digging along the site
+(see Cover in [combat](combat.md)). `BuildingAuthoring.openFootprint` makes the `NavObstacle` open: placement keeps
+the box clear but units cross it, and a `Destructible` crush rating still closes it to vehicles that cannot crush
+that much (tank traps) while none leaves it open (trenches). `TrenchAuthoring` adds a client-side ditch.
 Builders also repair. Selling refunds `MatchRules.SellRefund`.
 `FlagMountAuthoring` flies the owner's flag.
 

@@ -7,7 +7,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Ground
 {
     /// <summary>
-    /// Dents the active terrain under the crater bowls stamped last frame, reading the heights back at most every
+    /// Dents the active terrain under the crater bowls and trenches stamped last frame, reading the heights back at most every
     /// <see cref="SyncSeconds"/> on a frame with no new crater. Restores the terrain on a replay seek, when the maps
     /// go or change, and when the terrain or this world goes. Visual only: the simulation's ground never changes.
     /// </summary>
@@ -85,8 +85,8 @@ namespace HyperRTS.Presentation.Environment.Ground
                 var bowl = scar.Value.x > 0f;
                 if (bowl)
                 {
-                    min = math.min(min, scar.Center - scar.HalfSize);
-                    max = math.max(max, scar.Center + scar.HalfSize);
+                    min = math.min(min, scar.Center - scar.Extent);
+                    max = math.max(max, scar.Center + scar.Extent);
                 }
             }
 

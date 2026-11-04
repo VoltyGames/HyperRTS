@@ -41,6 +41,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         private int _builtAreaVersion;
         private int _builtSceneryVersion;
         private ulong _builtScenerySignature;
+        private EntityQuery _openScenery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -49,6 +50,8 @@ namespace HyperRTS.Simulation.Navigation.Grid
             _areas = SystemAPI.QueryBuilder().WithAll<NavArea, LocalTransform>().Build();
             _scenery = SystemAPI.QueryBuilder().WithAll<Destructible, LocalTransform>()
                 .WithNone<NavObstacle, NavAgent>().Build();
+            _openScenery = SystemAPI.QueryBuilder().WithAll<Destructible, NavObstacle, LocalTransform>()
+                .WithNone<NavAgent>().Build();
             _blockers = SystemAPI.QueryBuilder().WithAll<Blocker, LocalTransform>().Build();
             _parts = SystemAPI.QueryBuilder().WithAll<NavObstaclePart, NavObstacle>().Build();
             _parts.SetChangedVersionFilter(ComponentType.ReadOnly<NavObstaclePart>());
@@ -105,6 +108,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
             {
                 state.Dependency = ClearJob<byte>.Schedule(grid.Scenery, state.Dependency);
                 state.Dependency = new SceneryJob { Grid = grid }.Schedule(_scenery, state.Dependency);
+                state.Dependency = new OpenSceneryJob { Grid = grid }.Schedule(_openScenery, state.Dependency);
                 state.Dependency = new SceneryDiffJob
                 {
                     Field = grid.Field, Scenery = grid.Scenery, Previous = _previousScenery,
@@ -146,11 +150,17 @@ namespace HyperRTS.Simulation.Navigation.Grid
         private bool ScenerySignatureChanged(ref SystemState state)
         {
             // An order-independent sum, since an archetype move reorders the chunks.
-            var signature = (ulong)_scenery.CalculateEntityCount();
+            var signature = (ulong)(_scenery.CalculateEntityCount() + _openScenery.CalculateEntityCount());
             foreach (var (destructible, transform) in SystemAPI.Query<RefRO<Destructible>, RefRO<LocalTransform>>()
                          .WithNone<NavObstacle, NavAgent>())
             {
                 signature += math.hash(new float4(transform.ValueRO.Position, destructible.ValueRO.Crush));
+            }
+
+            foreach (var (destructible, obstacle, transform) in SystemAPI
+                         .Query<RefRO<Destructible>, RefRO<NavObstacle>, RefRO<LocalTransform>>().WithNone<NavAgent>())
+            {
+                signature += obstacle.ValueRO.Open ? obstacle.ValueRO.Hash(transform.ValueRO) + (ulong)destructible.ValueRO.Crush : 0UL;
             }
 
             var changed = signature != _builtScenerySignature;

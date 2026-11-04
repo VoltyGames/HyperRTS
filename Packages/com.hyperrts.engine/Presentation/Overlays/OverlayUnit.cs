@@ -20,8 +20,12 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>Squad members, or an uncreated buffer for everything that isn't a squad.</summary>
         public readonly DynamicBuffer<SquadMember> Members;
 
-        public OverlayUnit(NavAgent? agent, NavObstacle? obstacle, int rank, DynamicBuffer<SquadMember> members)
+        public readonly Suppression? Suppression;
+
+        public OverlayUnit(NavAgent? agent, NavObstacle? obstacle, int rank, DynamicBuffer<SquadMember> members,
+            Suppression? suppression)
         {
+            Suppression = suppression;
             Agent = agent;
             Obstacle = obstacle;
             Rank = rank;

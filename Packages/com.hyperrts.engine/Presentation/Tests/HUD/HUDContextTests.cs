@@ -183,6 +183,34 @@ namespace HyperRTS.Presentation.Tests.HUD
             Assert.AreEqual(1, card.Root.Children().Count(child => child.ClassListContains("hud-command")));
         }
 
+        [TestCase(false, false, false, false, SquadCommands.Refusal.FullStrength)]
+        [TestCase(true, false, false, false, SquadCommands.Refusal.NoPoint)]
+        [TestCase(true, true, false, false, SquadCommands.Refusal.TooPoor)]
+        [TestCase(true, true, true, false, SquadCommands.Refusal.None)]
+        [TestCase(false, false, false, true, SquadCommands.Refusal.None)]
+        public void ReinforceButton_SaysWhyItCannotAct(bool dead, bool inRange, bool affordable, bool working,
+            SquadCommands.Refusal expected)
+        {
+            Assert.AreEqual(expected, SquadCommands.FindReinforceReason(dead, inRange, affordable, working));
+        }
+
+        [Test]
+        public void SquadCommands_AreOnlyOfferedForSquads()
+        {
+            Refresh();
+            var squad = _em.CreateEntity(typeof(SquadMember));
+            var tank = _em.CreateEntity(typeof(EntityInfo));
+            var source = new SquadCommands();
+
+            var tankOnly = new List<CommandEntry>();
+            source.Build(_context, new[] { tank }, tankOnly);
+            var withSquad = new List<CommandEntry>();
+            source.Build(_context, new[] { tank, squad }, withSquad);
+
+            Assert.IsEmpty(tankOnly);
+            Assert.AreEqual(new[] { 'R', 'T' }, withSquad.Select(entry => entry.Hotkey).ToArray());
+        }
+
         private int Hash()
         {
             Refresh();

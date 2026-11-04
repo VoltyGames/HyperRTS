@@ -13,7 +13,7 @@ namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s: by default building,
-    /// training and research, abilities and support powers, stances, and return, unload and sell. Games add their own
+    /// training and research, abilities and support powers, stances, squad retreat and reinforce, and return, unload and sell. Games add their own
     /// sources, whose entries can take grid slots and hotkeys. Entries on the second page (a builder's advanced
     /// options) sit behind a More card in the last slot; Escape, a right click or a new selection turns back. Hovering
     /// or focusing a button shows its tooltip above the card.
@@ -39,6 +39,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             _sources = new List<ICommandSource>
             {
                 new PurchaseCommands(layouts.CommandButtonDetails), new AbilityCommands(), new StanceCommands(),
+                new SquadCommands(),
                 new PredicateCommand("command.return", CommandType.ReturnToBase, 0, (em, e) => em.HasComponent<HomePad>(e)),
                 new PredicateCommand("command.unload", CommandType.Unload, -1, (em, e) => em.HasComponent<Container>(e)),
                 new PredicateCommand("command.deploy", CommandType.Deploy, 0, (em, e) => em.HasComponent<Deployable>(e)),

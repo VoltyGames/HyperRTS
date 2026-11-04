@@ -89,6 +89,10 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 | `command.return`, `command.unload`, `command.deploy`, `command.pack-up`, `command.sell` | Fixed commands |
 | `command.more`, `command.back` | Command card page cards |
 | `stance.<stance>` | Stance names |
+| `command.retreat`, `command.reinforce` | Squad commands, hotkeys R and T |
+| `squad.<posture>`, `squad.heavy-cover`, `squad.light-cover`, `squad.dead` | A soldier card's state |
+| `squad.steady`, `squad.suppressed`, `squad.pinned`, `squad.retreating`, `squad.reinforcing` | A squad's suppression level and status |
+| `tooltip.retreat`, `tooltip.reinforce`, `tooltip.reinforce-time`, `tooltip.no-retreat-point`, `tooltip.no-reinforce-point`, `tooltip.full-strength`, `tooltip.cannot-afford` | Squad command tooltips |
 | `outcome.victory`, `outcome.defeat`, `outcome.draw` | Game over banner |
 | `tooltip.build-time`, `tooltip.population`, `tooltip.power`, `tooltip.requires`, `tooltip.seconds` | Tooltip labels |
 | `entity.<name>`, `resource.<asset>`, `ability.<name>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
@@ -97,6 +101,13 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 The command card is a grid of 72 px cards, five a row, laid out in `HUDCommands.uss`. A build, train, research or
 ability card is a picture: the icon fills the button, scaled and cropped, with the hotkey top left and the cost in a
 strip along the bottom. Its name is in the tooltip. Caption buttons (stances, unload, sell) stay text.
+
+One selected squad adds a `SquadView` to the selection panel: a `SquadMemberCard` per soldier (number, health, the
+cover it holds or its posture, greyed when dead), the squad's suppression bar with its level, and while it
+retreats or reinforces, that status with the current soldier's progress. `SquadCommands` adds Retreat and Reinforce
+to the card. A refused one stays, dimmed like a locked build card, and its tooltip names the reason: no retreat
+point, no reinforce point in range, full strength or too poor (the price of one soldier is shown). Clients read
+`Suppression.Retreating` and the `Reinforcing` enable bit and progress, which are replicated.
 
 While a line is dragged, `LineCost` shows its total, the valid `PlacementSegment`s times the per-segment cost, above and right of
 the line's end. It turns `hud-costs--short`, the unaffordable card's colour, when the stock can't cover it.
@@ -166,7 +177,14 @@ and coloured from healthy to critical, with one squad member pip per member on t
 `OverlayRenderer.HealthBars` picks who shows one: everyone, damaged units, or only selected ones. Selected and
 hovered units always do. Both overlays are one draw each through `InstanceBuffer<T>`. The bars set the style's
 material values only when the style, its edit count or the pixel scale changes, so Play mode edits to the asset
-show at once.
+show at once. A squad's bar also has a suppression strip below it (grey, yellow while suppressed, red while pinned,
+blue while retreating) and a small shield after its member pips for the best cover its living soldiers hold: green
+for heavy, yellow for light (`OverlayStyle` Squads colours, `SquadBarState`).
+
+`CoverPreview` draws rings on the cover spots a move would use when squads are selected and the pointer is over open
+ground (`HoveredEntity.Ground`): spots within `CoverRules.Reach` of the point that face the way the squads would walk
+(`CoverRules.Faces`, the same test `SquadCoverSystem` uses), green for heavy and yellow for light, or one red ring
+when there are none. Craters are server only, so the preview does not show them.
 
 ### Team colour
 
@@ -628,6 +646,9 @@ A rut is stamped as a ramp that falls linearly to the tyre's edge, and `RutCover
 `fwidth` anti-aliased edge, so two clean bands show between 0.2 m texels instead of a soft blob; as the ramp fades the
 band narrows and goes. Foliage leans plants along the travel direction, and water reads `SampleWake`. The quality setting picks Full, Low
 at half resolution, or Off, which frees the textures.
+
+`TrenchStampSystem` stamps each built `Trench` building the player sees into the scar map once (a flat-bottomed ditch
+along its long side, `TrampleStamps.AddTrench`), so the same dent follows; the simulation's ground never changes.
 
 Craters also dent the drawn ground. In presented worlds `CraterTerrainSystem` redraws the active Unity Terrain's
 heightmap under each new bowl on the GPU, with the `Hidden/HyperRTS/Crater Height` shader from the package's

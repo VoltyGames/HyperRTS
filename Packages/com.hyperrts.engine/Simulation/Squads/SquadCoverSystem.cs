@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Squads
     /// Puts the members of a halted squad in cover. Each one without a spot takes the best free
     /// <see cref="CoverSpot"/> near the squad (heavy over light, facing the way the squad does, close to its place in
     /// the ring) and walks to it; it counts as covered once it stands there. A member drops its spot when
-    /// its squad moves or its prop is gone. A member with no spot on a concealing cell (woods, tall crops) is in light
+    /// its squad moves or works, or its prop is gone. A member with no spot on a concealing cell (woods, tall crops) is in light
     /// cover from every side.
     /// </summary>
     [BurstCompile]
@@ -43,6 +43,7 @@ namespace HyperRTS.Simulation.Squads
                 Rules = SystemAPI.GetSingleton<CoverRules>(),
                 Blockers = SystemAPI.GetSingleton<SightBlockers>(),
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
+                WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(true),
             }.Schedule();
         }
 
@@ -53,6 +54,7 @@ namespace HyperRTS.Simulation.Squads
             public CoverRules Rules;
             [ReadOnly] public SightBlockers Blockers;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
+            [ReadOnly] public ComponentLookup<SquadWork> WorkLookup;
 
             private void Execute(Entity squad, DynamicBuffer<SquadMember> members, in LocalTransform transform,
                 in Velocity velocity)
@@ -62,7 +64,8 @@ namespace HyperRTS.Simulation.Squads
                     return;
                 }
 
-                var halted = !IsMoving(velocity);
+                // A squad at work digs where it stands and leaves any spot.
+                var halted = !IsMoving(velocity) && !WorkLookup.HasEnabled(squad);
                 Keep(squad, members, transform, halted);
                 var near = new NativeList<int>(16, Allocator.Temp);
                 var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
@@ -119,13 +122,13 @@ namespace HyperRTS.Simulation.Squads
                 float2 place, NativeList<int> near)
             {
                 near.Clear();
-                Spots.FindNear(transform.Position.xz, math.min(Rules.SearchRadius, SquadMember.MaxSpread), near);
+                Spots.FindNear(transform.Position.xz, Rules.Reach, near);
                 var best = -1;
                 var bestScore = float.MinValue;
                 foreach (var spot in near)
                 {
                     var candidate = Spots.Spots[spot];
-                    if (!Spots.Reservations[spot].IsFree || math.dot(candidate.Facing, forward) < Rules.ArcCos)
+                    if (!Spots.Reservations[spot].IsFree || !Rules.Faces(candidate.Facing, forward))
                     {
                         continue;
                     }

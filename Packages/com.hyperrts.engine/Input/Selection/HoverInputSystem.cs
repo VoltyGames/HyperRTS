@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Interaction;
 using HyperRTS.Core;
 using HyperRTS.Input.Commands;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Input.Selection
@@ -28,13 +29,15 @@ namespace HyperRTS.Input.Selection
         protected override void OnUpdate()
         {
             var hovered = Entity.Null;
+            var ground = default(float3);
+            var hasGround = false;
             if (!IsPointerBusy())
             {
                 var point = _actions.Selection.Point.ReadValue<Vector2>();
-                _pointer.TryPick(ref CheckedStateRef, point, out hovered, out _);
+                hasGround = _pointer.TryPick(ref CheckedStateRef, point, out hovered, out ground);
             }
 
-            SystemAPI.SetSingleton(new HoveredEntity { Value = hovered });
+            SystemAPI.SetSingleton(new HoveredEntity { Value = hovered, Ground = ground, HasGround = hasGround });
         }
 
         private bool IsPointerBusy()

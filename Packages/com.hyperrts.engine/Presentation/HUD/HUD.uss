@@ -179,6 +179,51 @@
     margin-top: 6px;
 }
 
+/* Squad */
+
+.hud-squad {
+    margin-top: 8px;
+}
+
+.hud-squad__members {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.hud-member {
+    width: 62px;
+    margin: 0 4px 4px 0;
+    padding: 2px 3px;
+}
+
+.hud-member__health {
+    height: 5px;
+    margin: 2px 0;
+}
+
+.hud-member__number,
+.hud-member__state {
+    padding: 0;
+    margin: 0;
+}
+
+.hud-squad__row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 2px;
+}
+
+.hud-squad__suppression,
+.hud-squad__progress {
+    flex-grow: 1;
+    height: 5px;
+}
+
+.hud-squad__level {
+    min-width: 84px;
+    padding: 0 6px 0 0;
+}
+
 /* Production queue */
 
 .hud-single__queue {

@@ -344,6 +344,7 @@ namespace HyperRTS.Presentation.Tests.Animation
                 var squad = root.AddComponent<SquadFiguresAuthoring>();
                 squad.figures.Add(Figure(root, 0));
                 squad.figures.Add(Figure(root, 100));
+                squad.digClip = "";
 
                 var clips = squad.Clips();
 
@@ -374,12 +375,14 @@ namespace HyperRTS.Presentation.Tests.Animation
                 var squad = root.AddComponent<SquadFiguresAuthoring>();
                 squad.figures.Add(Figure(root, 0));
                 squad.crouchWalkClip = "Run";
+                squad.digClip = "";
 
                 var clips = squad.Clips()[0];
 
                 Assert.AreEqual(clips.Idle, clips.CrouchIdle);
                 Assert.AreEqual(clips.Run, clips.CrouchWalk);
                 Assert.AreEqual(clips.Fire, clips.ProneFire);
+                Assert.AreEqual(clips.Idle, clips.Dig);
 
                 squad.proneCrawlClip = "Missing";
                 Assert.Throws<KeyNotFoundException>(() => squad.Clips());

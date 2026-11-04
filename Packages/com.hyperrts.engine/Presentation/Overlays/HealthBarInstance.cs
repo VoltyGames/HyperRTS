@@ -11,6 +11,9 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>Width and bar height in reference pixels, squad members and members alive.</summary>
         public Vector4 Size;
 
+        /// <summary>Suppression (-1 for a non-squad), its level, cover kind and 1 while retreating.</summary>
+        public Vector4 Squad;
+
         /// <summary>World point the bar sits above.</summary>
         public Vector3 Anchor;
     }

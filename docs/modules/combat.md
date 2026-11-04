@@ -142,6 +142,12 @@ Cover means protection; what hides a unit from sight is concealment.
   front arc of the squad's forward, nearest its ring place. No two members share one. Members re-reserve each frame
   and drop the spot when the squad moves, its prop is gone or they die. `SquadMember.Cover` is set only once the
   member stands in the spot; `SquadPostureSystem` crouches it then, and `CoverHeading` (256 steps) is the way it faces.
+- **Site work.** A spot belongs to its prop only once the prop is built: `CoverSpotSystem` leaves out entities whose
+  `ConstructionProgress` is enabled. A spot inside a building's footprint (a trench, a nest) may face any way.
+  `SquadWork`, enabled by `ConstructionSystem` while a squad builds in reach, sends the members to a row along the
+  site's long side (`SquadWork.Position`, up to `SquadWork.MaxSpread` from the squad, the squad stands, no spot is
+  held) and sets `SquadMember.Action` to `Dig` once each stands in place; figures play the `Dig` clip. A squad adds
+  the builder's rate once for each living member.
 - **Concealing ground.** A halted member with no spot on a concealing cell (woods, tall crops) has `Light` cover
   from every side: `Cover` set and `SpotEntity` null, so there is no arc.
 - **Damage.** `DamageSystem` multiplies a hit on a member in cover by `lerp(kind's share, 1, piercing)` when it comes

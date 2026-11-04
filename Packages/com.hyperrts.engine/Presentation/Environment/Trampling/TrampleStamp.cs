@@ -20,5 +20,8 @@ namespace HyperRTS.Presentation.Environment.Trampling
 
         /// <summary>Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round). Remains: (rubble, ash, fuel, wet mud).</summary>
         public float4 Value;
+
+        /// <summary>Half the size of the world-axis box round the turned quad.</summary>
+        public readonly float2 Extent => math.abs(new float2(Forward.y, -Forward.x)) * HalfSize.x + math.abs(Forward) * HalfSize.y;
     }
 }

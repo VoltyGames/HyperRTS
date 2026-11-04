@@ -198,6 +198,19 @@ namespace HyperRTS.Simulation.Navigation.Grid
             }
         }
 
+        /// <summary>Raises the scenery rating of the cells under a turned box to at least <paramref name="rating"/>.</summary>
+        public void StampScenery(in NavBox box, byte rating)
+        {
+            foreach (var cell in CellsUnder(box))
+            {
+                if (InBox(box, cell))
+                {
+                    var index = Grid.Index(cell);
+                    Scenery[index] = (byte)math.max((int)Scenery[index], rating);
+                }
+            }
+        }
+
         /// <summary>Records the box this version changed (<see cref="Changes"/>) and marks the field sectors round each changed cell.</summary>
         public void RecordChanges()
         {

@@ -36,6 +36,9 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Enemies who saw it keep seeing it where they last did once it is in the fog.")]
         public bool rememberedInFog = true;
 
+        [Tooltip("Units walk across the footprint instead of round it. A Destructible Crushed By rating still closes it to units that cannot crush that much (tank traps); with none it is fully open (trenches).")]
+        public bool openFootprint;
+
         [Tooltip("Placed by dragging a line of segments, for walls. Footprint X is each segment's length.")]
         public bool placedInLines;
 
@@ -50,7 +53,7 @@ namespace HyperRTS.Simulation.Buildings
 
                 var writer = this.Writer(entity);
                 BuildingSetup.Add(writer, authoring.footprint, authoring.populationProvided,
-                    !authoring.startsUnderConstruction, authoring.power, authoring.rememberedInFog);
+                    !authoring.startsUnderConstruction, authoring.power, authoring.rememberedInFog, authoring.openFootprint);
                 if (authoring.placementSurface != PlacementSurface.Land)
                 {
                     writer.Add(new BuildingPlacement { Surface = authoring.placementSurface });

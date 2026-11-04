@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Common
 {
@@ -15,6 +16,12 @@ namespace HyperRTS.Simulation.Common
 
         /// <summary>Metres round a halted squad to look for spots, at most <see cref="SquadMember.MaxSpread"/>.</summary>
         public float SearchRadius;
+
+        /// <summary>Metres from a halted squad's place that it looks for spots.</summary>
+        public readonly float Reach => math.min(SearchRadius, SquadMember.MaxSpread);
+
+        /// <summary>Whether a spot facing <paramref name="spotFacing"/> protects a squad facing <paramref name="forward"/>.</summary>
+        public readonly bool Faces(float2 spotFacing, float2 forward) => math.dot(spotFacing, forward) >= ArcCos;
 
         /// <summary>Share of damage a member in <paramref name="kind"/> cover takes from the front.</summary>
         public readonly float DamageTaken(CoverKind kind)

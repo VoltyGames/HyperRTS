@@ -19,6 +19,11 @@ namespace HyperRTS.Presentation.Overlays
         private static readonly int LowId = Shader.PropertyToID("_Low");
         private static readonly int RankPipId = Shader.PropertyToID("_RankPip");
         private static readonly int MemberPipId = Shader.PropertyToID("_MemberPip");
+        private static readonly int SuppressedId = Shader.PropertyToID("_Suppressed");
+        private static readonly int PinnedId = Shader.PropertyToID("_Pinned");
+        private static readonly int RetreatId = Shader.PropertyToID("_Retreat");
+        private static readonly int HeavyCoverId = Shader.PropertyToID("_HeavyCover");
+        private static readonly int LightCoverId = Shader.PropertyToID("_LightCover");
 
         private readonly InstanceBuffer<HealthBarInstance> _bars;
         private readonly Material _material;
@@ -41,6 +46,8 @@ namespace HyperRTS.Presentation.Overlays
             {
                 Bar = new Vector4(bar.Fraction, bar.Segments, bar.Rank, 1f),
                 Size = new Vector4(bar.Width, style.barHeight, bar.Members, bar.Alive),
+                Squad = new Vector4(bar.Squad.Suppression, (float)bar.Squad.Level, (float)bar.Squad.Cover,
+                    bar.Squad.Retreating ? 1f : 0f),
                 Anchor = anchor,
             });
         }
@@ -79,6 +86,11 @@ namespace HyperRTS.Presentation.Overlays
             _material.SetColor(LowId, style.healthLow);
             _material.SetColor(RankPipId, style.rankPip);
             _material.SetColor(MemberPipId, style.memberPip);
+            _material.SetColor(SuppressedId, style.suppressed);
+            _material.SetColor(PinnedId, style.pinned);
+            _material.SetColor(RetreatId, style.retreating);
+            _material.SetColor(HeavyCoverId, style.heavyCover);
+            _material.SetColor(LightCoverId, style.lightCover);
             _appliedStyle = style;
             _appliedPixelScale = pixelScale;
             _appliedVersion = style.Version;

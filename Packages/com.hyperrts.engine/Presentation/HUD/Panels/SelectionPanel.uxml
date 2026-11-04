@@ -10,6 +10,17 @@
           <HyperRTS.Presentation.HUD.HUDBar name="construction" class="hud-single__construction" />
         </ui:VisualElement>
       </ui:VisualElement>
+      <ui:VisualElement name="squad" class="hud-squad">
+        <ui:VisualElement name="members" class="hud-squad__members" />
+        <ui:VisualElement class="hud-squad__row">
+          <HyperRTS.Presentation.HUD.HUDBar name="suppression" class="hud-squad__suppression" />
+          <ui:Label name="level" class="hud-squad__level" />
+        </ui:VisualElement>
+        <ui:VisualElement name="status" class="hud-squad__row">
+          <ui:Label name="status-text" class="hud-squad__level" />
+          <HyperRTS.Presentation.HUD.HUDBar name="progress" class="hud-squad__progress" />
+        </ui:VisualElement>
+      </ui:VisualElement>
       <ui:VisualElement name="queue" class="hud-single__queue" />
     </ui:VisualElement>
     <ui:VisualElement name="groups" class="hud-single__groups" />

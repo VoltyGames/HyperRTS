@@ -55,6 +55,10 @@ namespace HyperRTS.Presentation.Environment.Trampling
             Scars.Add(Disc(center, reach, new float4(depth, math.saturate(mark.scorch), radius / reach, 1f)));
         }
 
+        /// <summary>A ditch <paramref name="depth"/> metres deep along <paramref name="forward"/>, sloping up at its sides; a negative bowl value marks it.</summary>
+        public void AddTrench(float2 center, float2 forward, float2 halfSize, float depth) =>
+            Scars.Add(Stamp(center, forward, halfSize, new float4(math.saturate(depth / MaxCraterDepth), 0f, -1f, 1f)));
+
         /// <summary>A footprint scorched and churned to <paramref name="share"/>: square, with no bowl.</summary>
         public void AddFootprintScar(float2 center, float2 forward, float2 size, float share) =>
             Scars.Add(Stamp(center, forward, size * 0.5f, new float4(0f, share, 0f, share)));

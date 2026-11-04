@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Squads;
 using UnityEngine;
@@ -5,7 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Validation.Rules
 {
     /// <summary>
-    /// Cover spots stand outside the prop's own nav obstacle, near the prop, facing across it, and number at most 255.
+    /// Cover spots stand outside the prop's own nav obstacle, near the prop, facing across it (or any way from inside a building's footprint), and number at most 255.
     /// </summary>
     public sealed class CoverSpotRule : AuthoringRule<CoverSpotAuthoring>
     {
@@ -31,7 +32,8 @@ namespace HyperRTS.Editor.Validation.Rules
                 {
                     issues.Error(cover, $"Spot {i} has no facing.");
                 }
-                else if (Vector2.Dot(spot.facing, -new Vector2(spot.position.x, spot.position.z)) <= 0f)
+                else if (!IsInsideBuilding(cover, spot.position)
+                         && Vector2.Dot(spot.facing, -new Vector2(spot.position.x, spot.position.z)) <= 0f)
                 {
                     issues.Error(cover, $"Spot {i} faces away from the prop, so it covers the open side.");
                 }
@@ -47,6 +49,18 @@ namespace HyperRTS.Editor.Validation.Rules
                     issues.Warn(cover, $"Spot {i} is inside the prop's own nav obstacle, where no one can stand.");
                 }
             }
+        }
+
+        // A soldier inside a trench or a nest has the prop on every side, so it may face any way.
+        private static bool IsInsideBuilding(CoverSpotAuthoring cover, Vector3 position)
+        {
+            if (!cover.TryGetComponent<BuildingAuthoring>(out var building))
+            {
+                return false;
+            }
+
+            var inside = Mathf.Abs(position.x) < building.footprint.x * 0.5f;
+            return inside && Mathf.Abs(position.z) < building.footprint.y * 0.5f;
         }
     }
 }

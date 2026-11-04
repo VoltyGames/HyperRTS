@@ -91,6 +91,25 @@ namespace HyperRTS.Presentation.Overlays
         [Tooltip("Living squad member pips; fallen members show as dim pips.")]
         public Color memberPip = new(0.92f, 0.91f, 0.87f, 1f);
 
+        [Header("Squads")]
+        [Tooltip("Suppression strip under a squad's health bar while suppressed.")]
+        public Color suppressed = new(0.98f, 0.8f, 0.25f, 1f);
+
+        [Tooltip("Suppression strip while pinned.")]
+        public Color pinned = new(0.9f, 0.25f, 0.2f, 1f);
+
+        [Tooltip("Strip while the squad retreats.")]
+        public Color retreating = new(0.45f, 0.7f, 1f, 1f);
+
+        [Tooltip("Cover mark on a squad's bar and cover preview spots: heavy cover.")]
+        public Color heavyCover = new(0.35f, 0.85f, 0.4f, 1f);
+
+        [Tooltip("Cover mark and preview spots for light cover.")]
+        public Color lightCover = new(0.95f, 0.85f, 0.25f, 1f);
+
+        [Tooltip("Cover preview ring where a move would find no cover.")]
+        public Color noCover = new(0.9f, 0.25f, 0.2f, 0.8f);
+
         [Header("Capture & Garrison")]
         [Tooltip("Backing behind the capture dial and the garrison pips.")]
         public Color markerBack = new(0.03f, 0.03f, 0.03f, 0.7f);

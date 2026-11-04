@@ -88,6 +88,11 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             private void Execute(Entity entity, in NavObstacle obstacle, in LocalTransform transform)
             {
+                if (obstacle.Open)
+                {
+                    return;
+                }
+
                 using var marker = RestampMarker.Auto();
                 if (!Parts.TryGetBuffer(entity, out var parts))
                 {
@@ -146,6 +151,22 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 var index = Grid.Grid.Index(cell);
                 var rating = math.min(destructible.Crush, NavAccess.AllScenery - 1);
                 Grid.Scenery[index] = (byte)math.max((int)Grid.Scenery[index], rating);
+            }
+        }
+
+        /// <summary>Single-threaded: an open obstacle with a crush rating fills every cell under its box.</summary>
+        [BurstCompile]
+        private partial struct OpenSceneryJob : IJobEntity
+        {
+            public NavGrid Grid;
+
+            private void Execute(in Destructible destructible, in NavObstacle obstacle, in LocalTransform transform)
+            {
+                if (obstacle.Open && destructible.Crush > 0)
+                {
+                    var rating = (byte)math.min(destructible.Crush, NavAccess.AllScenery - 1);
+                    Grid.StampScenery(new NavBox(transform.Position, transform.Rotation, obstacle.Size), rating);
+                }
             }
         }
     }

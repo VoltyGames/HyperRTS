@@ -90,6 +90,7 @@ namespace HyperRTS.Presentation.Animation
                     var figure = figures[i];
                     var moving = FigureState.Idle;
                     var firing = false;
+                    var digging = false;
                     if (member.Alive)
                     {
                         figure.Follow(member.Offset, DeltaTime);
@@ -97,20 +98,22 @@ namespace HyperRTS.Presentation.Animation
                         var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                         var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
                         moving = figure.Observe(squad, feet, shots, Now, DeltaTime, out firing);
+                        digging = IsDigging(member, moving, firing);
                     }
 
                     var next = figure.Next(member.Alive, moving, Now);
                     if (next != figure.State)
                     {
-                        Show(entity, parts, ref figure, next, member.Posture, firing, squad);
+                        Show(entity, parts, ref figure, next, member.Posture, firing, digging, squad);
                     }
                     else if (next == FigureState.Die)
                     {
                         SwitchToBlast(parts, ref figure, squad);
                     }
-                    else if (next != FigureState.Hidden && (figure.Firing != firing || figure.Posture != member.Posture))
+                    else if (next != FigureState.Hidden && (figure.Firing != firing || figure.Posture != member.Posture
+                                                            || figure.Digging != digging))
                     {
-                        Pose(parts, ref figure, next, member.Posture, firing);
+                        Pose(parts, ref figure, next, member.Posture, firing, digging);
                     }
 
                     figures[i] = figure;
@@ -135,7 +138,7 @@ namespace HyperRTS.Presentation.Animation
             }
 
             private void Show(Entity entity, NativeList<Entity> parts, ref SquadFigure figure, FigureState next, Posture posture,
-                bool firing, in SquadFigures squad)
+                bool firing, bool digging, in SquadFigures squad)
             {
                 var hidden = next == FigureState.Hidden;
                 Switch.SetBranch(entity, figure.Figure, HideReason.Figure, hidden);
@@ -153,7 +156,14 @@ namespace HyperRTS.Presentation.Animation
                     return;
                 }
 
-                Pose(parts, ref figure, next, posture, firing);
+                Pose(parts, ref figure, next, posture, firing, digging);
+            }
+
+            // A standing member at its place on a site digs unless it is firing.
+            private static bool IsDigging(in SquadMember member, FigureState moving, bool firing)
+            {
+                var standing = member.Posture == Posture.Stand && moving == FigureState.Idle;
+                return standing && !firing && member.Action == MemberAction.Dig;
             }
 
             private VATClipRange DieClip(in SquadFigure figure, in SquadFigures squad)
@@ -185,12 +195,14 @@ namespace HyperRTS.Presentation.Animation
             }
 
             // The legs follow motion and posture; the upper body fires over them or keeps their clip, in step with them.
-            private void Pose(NativeList<Entity> parts, ref SquadFigure figure, FigureState moving, Posture posture, bool firing)
+            private void Pose(NativeList<Entity> parts, ref SquadFigure figure, FigureState moving, Posture posture, bool firing,
+                bool digging)
             {
                 figure.Posture = posture;
                 figure.Firing = firing;
-                var lower = figure.Clips.Lower(posture, moving);
-                var upper = figure.Clips.Upper(posture, moving, firing);
+                figure.Digging = digging;
+                var lower = digging ? figure.Clips.Dig : figure.Clips.Lower(posture, moving);
+                var upper = digging ? figure.Clips.Dig : figure.Clips.Upper(posture, moving, firing);
                 var lowerChanged = !figure.Lower.SameAs(lower);
                 if (lowerChanged)
                 {
