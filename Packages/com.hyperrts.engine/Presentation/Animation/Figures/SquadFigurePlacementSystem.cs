@@ -67,11 +67,6 @@ namespace HyperRTS.Presentation.Animation.Figures
                 figure.Follow(member.Offset, DeltaTime);
                 var local = math.mul(worldToParent, new float3(figure.Offset.x, 0f, figure.Offset.y));
                 var spot = Spots[figure.Figure];
-                if (!figure.Primed)
-                {
-                    figure.Baked = spot.Rotation;
-                }
-
                 spot.Position = new float3(local.x, figure.Height, local.z);
                 var parentRotation = quaternion.LookRotationSafe(parentToWorld.c2, parentToWorld.c1);
                 figure.Turn(parentRotation, member, DeltaTime);

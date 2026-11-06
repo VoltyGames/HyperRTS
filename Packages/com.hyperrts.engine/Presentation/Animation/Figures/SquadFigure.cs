@@ -77,7 +77,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>Baked height of the shown model above its parent.</summary>
         public float Height;
 
-        /// <summary>Baked rotation in its parent's frame, the squad's facing; set on the first update.</summary>
+        /// <summary>Baked rotation in its parent's frame, the squad's facing.</summary>
         public quaternion Baked;
 
         /// <summary>The way the figure faces in the world, eased, so a squad that turns at once doesn't turn its figures at once.</summary>

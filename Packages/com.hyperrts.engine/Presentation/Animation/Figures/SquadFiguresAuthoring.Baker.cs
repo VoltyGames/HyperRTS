@@ -26,6 +26,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                         Figure = GetEntity(figure.root, TransformUsageFlags.Dynamic),
                         Clips = Clips(authoring, i, figure.root, figure.clips),
                         Height = figure.root.localPosition.y,
+                        Baked = figure.root.localRotation,
                         Other = Variant(authoring, i),
                     });
                 }

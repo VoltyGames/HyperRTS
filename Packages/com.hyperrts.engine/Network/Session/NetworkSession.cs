@@ -264,11 +264,15 @@ namespace HyperRTS.Network.Session
             }
         }
 
-        /// <summary>Session worlds end with their Play session: domain reload is off, so one left behind would run on.</summary>
+        /// <summary>
+        /// Session worlds end with their Play session: domain reload is off, so one left behind would run on. The
+        /// statics reset after, so the slot the closing client remembers doesn't carry into the new session.
+        /// </summary>
         [OnEnteringPlayMode]
         internal static void EndSessionWithPlay()
         {
             DisposeWorlds(World.DefaultGameObjectInjectionWorld);
+            ResetStatics();
             Application.quitting -= EndSession;
             Application.quitting += EndSession;
         }
@@ -278,7 +282,6 @@ namespace HyperRTS.Network.Session
         // Never 0, which a join request sends when it owns no slot.
         private static ulong NewToken() => BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0) | 1;
 
-        [OnEnteringPlayMode]
         internal static void ResetStatics()
         {
             Preference = default;

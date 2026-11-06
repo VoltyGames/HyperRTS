@@ -94,7 +94,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
                 _em.AddComponentData(_figures[i], new LowerFade { Fade = ClipFade.None });
                 _em.AddComponentData(_figures[i], new UpperFade { Fade = ClipFade.None });
                 _em.AddComponentData(_figures[i], new LocalToWorld { Value = float4x4.identity });
-                figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0) };
+                figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0), Baked = quaternion.identity };
             }
 
             _em.AddBuffer<FigureRenderer>(squad);
