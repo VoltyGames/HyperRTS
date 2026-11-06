@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Squads
             private void Execute(Entity entity, DynamicBuffer<SquadMember> members, ref Suppression suppression,
                 ref Pace pace, in Velocity velocity)
             {
-                var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
+                var crewing = Deployable.IsEmplaced(Deployables, entity);
                 if (Orders.HasEnabled(entity) && Orders[entity].Value.Type == OrderType.Retreat)
                 {
                     suppression.Clear();

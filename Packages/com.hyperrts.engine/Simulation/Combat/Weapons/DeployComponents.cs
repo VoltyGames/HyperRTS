@@ -94,6 +94,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public static bool IsImmobile(in ComponentLookup<Deployable> lookup, Entity unit) =>
             lookup.TryGetComponent(unit, out var deployable) && deployable.Immobile;
+
+        /// <summary>Whether <paramref name="unit"/> deploys and is setting up or set up, so its crew stands at their places.</summary>
+        public static bool IsEmplaced(in ComponentLookup<Deployable> lookup, Entity unit) =>
+            lookup.TryGetComponent(unit, out var deployable) && deployable.Emplaced;
     }
 
     /// <summary>Where a <see cref="Deployable"/> unit is between packed up and deployed.</summary>

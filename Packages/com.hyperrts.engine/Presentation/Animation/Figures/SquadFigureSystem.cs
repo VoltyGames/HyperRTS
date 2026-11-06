@@ -72,7 +72,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             {
                 var hasPoses = Poses.TryGetBuffer(entity, out var poses);
                 var count = math.min(figures.Length, members.Length);
-                var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
+                var crewing = Deployable.IsEmplaced(Deployables, entity);
                 ShowDeployedModel(entity, ref squad, crewing);
                 for (var i = 0; i < count; i++)
                 {

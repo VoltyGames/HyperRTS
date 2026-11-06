@@ -54,7 +54,7 @@ namespace HyperRTS.Presentation.HUD
         /// </summary>
         public int SelectionHash { get; private set; }
 
-        /// <summary>True on the frames purchase buttons re-read the match: at a fixed rate and on a new selection.</summary>
+        /// <summary>True on the frames purchase and squad buttons re-read the match: at a fixed rate and on a new selection.</summary>
         public bool PurchasesDue { get; private set; }
 
         /// <summary>The player the HUD shows: the one picked with <see cref="ShowPlayer"/>, else the local player.</summary>

@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Squads
                 {
                     var working = WorkLookup.HasEnabled(entity);
                     var work = working ? WorkLookup[entity] : default;
-                    var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
+                    var crewing = Deployable.IsEmplaced(Deployables, entity);
                     var facing = Deployable.Heading(Deployables, entity, transform);
                     Walk(members, velocity.Value, speed.Value, transform.Position.xz, work, working, crewing, facing);
                 }

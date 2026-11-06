@@ -123,7 +123,7 @@ A game shell drives a match through these calls:
 | Host or join from a menu | `NetworkSession.StartHost` or `StartClient`, then `LoadScene` on every peer |
 | Loading and connection state | `NetworkSession.SceneLoad`, `Status`, `DisconnectReason` |
 | Read the match | `MatchView.TryGetDefault` |
-| Command card buttons | An `ICommandSource` passed to `CommandCard`; a `PredicateCommand` for a button shown when some owned entity passes a test |
+| Command card buttons | A `CommandSpec` asset in the `CommandCatalogue`, shown by an `ICommandSource` passed to `CommandCard` |
 | Pause and speed | `LocalGameSpeed.SetScale` |
 | Own the Escape key | `InputActionsProvider.FrontEndOwnsCancel` and `MatchView.CancelInteraction` |
 | Block gameplay keys | `InputActionsProvider.Suspend` and `Resume` |

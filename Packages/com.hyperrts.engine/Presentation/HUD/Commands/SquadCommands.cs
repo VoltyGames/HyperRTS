@@ -83,7 +83,7 @@ namespace HyperRTS.Presentation.HUD.Commands
 
         public void Refresh(HUDContext context)
         {
-            if (_squads.Count == 0 || !context.TryGetSquadRules(out var rules))
+            if (_squads.Count == 0 || !context.PurchasesDue || !context.TryGetSquadRules(out var rules))
             {
                 return;
             }

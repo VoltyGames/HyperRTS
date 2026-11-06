@@ -20,7 +20,5 @@ namespace HyperRTS.Presentation.Interaction
         public Key At(int index) => (Key)_keys[index];
 
         public void Add(Key key) => _keys.Add((byte)key);
-
-        public bool Contains(Key key) => _keys.Contains((byte)key);
     }
 }

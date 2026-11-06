@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Squads
 
                 // A squad at work digs where it stands and leaves any spot.
                 var halted = !SquadMember.IsMoving(velocity.Value) && !WorkLookup.HasEnabled(squad);
-                var crewing = Deployables.TryGetComponent(squad, out var deployable) && deployable.Emplaced;
+                var crewing = Deployable.IsEmplaced(Deployables, squad);
                 Keep(squad, members, transform, halted, crewing);
                 Seat(squad, members, transform, halted, crewing);
             }
