@@ -347,8 +347,12 @@ listed in the order of the squad's members, each with an optional clip prefix (`
 authoring names the idle, walk, run, fire, crouch, prone and die clips, the run speed and how long a fallen figure
 stays down. Crouch and prone clips left empty fall back to the standing ones, explicitly at bake; a name the table
 lacks fails the bake. Each `SquadFigure` carries its own `FigureClips`. Figure i shows `SquadMember` i, so the count of
-figures equals the count of members (a validation rule checks it). `SquadFigureSystem` eases each living figure toward
-its member's `Offset`, turned into the model's frame. The legs play the clip for the member's `Posture` and its own
+figures equals the count of members (a validation rule checks it). `SquadFigurePlacementSystem`, in the `PoseSystemGroup`,
+eases each living figure toward its member's `Offset` (world axes) and turns it to its cover, composing the squad's own
+`LocalTransform` with the local transforms down to the figure's parent, so figures never lag the squad by a frame. The
+clips are `SquadFigureSystem`'s, in the presentation group, since cues and shots land after the transform group. The
+baker lists each model's clip-playing renderers (levels of detail, weapon, material children) in a `FigureRenderer`
+buffer on the squad, each part keyed by the model (base or other) it plays for. The legs play the clip for the member's `Posture` and its own
 horizontal speed (a member catching up runs while the rest stand); the upper body plays the fire clip of the posture
 for 0.6 s after each change of the `WeaponPose.Shots` of the weapon its member carries, else what the legs play, in
 step with them. A member who died plays the die clip once on both halves (or a blast fall, `DieBlastFront`, `Back`,

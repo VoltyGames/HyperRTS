@@ -15,9 +15,9 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation.Figures
 {
     /// <summary>
-    /// Puts each <see cref="SquadFigure"/> where its <see cref="SquadMember"/> stands, eased, and plays every renderer of
-    /// it the clips for its own motion, posture and weapon: the legs follow motion and posture, the upper body fires over
-    /// them. A dead member's figure dies, then hides.
+    /// Plays every renderer of each <see cref="SquadFigure"/> the clips for its own motion, posture and weapon: the legs
+    /// follow motion and posture, the upper body fires over them. A dead member's figure dies, then hides;
+    /// <see cref="SquadFigurePlacementSystem"/> places them.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -45,26 +45,16 @@ namespace HyperRTS.Presentation.Animation.Figures
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
-                Parents = SystemAPI.GetComponentLookup<Parent>(true),
-                Spots = SystemAPI.GetComponentLookup<LocalTransform>(),
                 Lowers = SystemAPI.GetComponentLookup<LowerClip>(),
                 Uppers = SystemAPI.GetComponentLookup<UpperClip>(),
                 LowerFades = SystemAPI.GetComponentLookup<LowerFade>(),
                 UpperFades = SystemAPI.GetComponentLookup<UpperFade>(),
-                Linked = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
-                Children = SystemAPI.GetBufferLookup<Child>(true),
+                Renderers = SystemAPI.GetBufferLookup<FigureRenderer>(true),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
                 CueEvents = SystemAPI.GetBufferLookup<CueEvent>(true),
                 CueQueue = SystemAPI.GetSingletonEntity<CueQueue>(),
                 Switch = _switch,
             }.Schedule(state.Dependency);
-        }
-
-        /// <summary>A squad's render parts, gathered on first use; the list handle is shared by every copy.</summary>
-        private struct FigureParts
-        {
-            public Entity Root;
-            public NativeList<Entity> List;
         }
 
         [BurstCompile]
@@ -74,14 +64,11 @@ namespace HyperRTS.Presentation.Animation.Figures
             public float DeltaTime;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
-            [ReadOnly] public ComponentLookup<Parent> Parents;
-            public ComponentLookup<LocalTransform> Spots;
             public ComponentLookup<LowerClip> Lowers;
             public ComponentLookup<UpperClip> Uppers;
             public ComponentLookup<LowerFade> LowerFades;
             public ComponentLookup<UpperFade> UpperFades;
-            [ReadOnly] public BufferLookup<LinkedEntityGroup> Linked;
-            [ReadOnly] public BufferLookup<Child> Children;
+            [ReadOnly] public BufferLookup<FigureRenderer> Renderers;
             [ReadOnly] public ComponentLookup<LocalToWorld> Places;
             [ReadOnly] public BufferLookup<CueEvent> CueEvents;
             public Entity CueQueue;
@@ -93,9 +80,8 @@ namespace HyperRTS.Presentation.Animation.Figures
                 squad.Hear(CueEvents[CueQueue], place.Position, Now);
                 var hasPoses = Poses.TryGetBuffer(entity, out var poses);
                 var count = math.min(figures.Length, members.Length);
-                var parts = new FigureParts { Root = entity, List = new NativeList<Entity>(Allocator.Temp) };
                 var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
-                ShowDeployedModel(parts, ref squad, crewing);
+                ShowDeployedModel(entity, ref squad, crewing);
                 for (var i = 0; i < count; i++)
                 {
                     var member = members[i];
@@ -107,7 +93,7 @@ namespace HyperRTS.Presentation.Animation.Figures
 
                     if (figure.State == FigureState.Unset && figure.HasOtherModel)
                     {
-                        Switch.SetBranch(Gather(parts), figure.Other.Model.Figure, HideReason.Figure, true);
+                        Switch.SetBranch(entity, figure.Other.Model.Figure, HideReason.Figure, true);
                     }
 
                     var crewed = crewing && figure.Crew.Takes;
@@ -117,7 +103,6 @@ namespace HyperRTS.Presentation.Animation.Figures
                     var digging = false;
                     if (member.Alive)
                     {
-                        Stand(ref figure, member, crewed);
                         var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                         var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
                         moving = figure.Observe(squad, feet, shots, Now, DeltaTime, out firing);
@@ -125,36 +110,36 @@ namespace HyperRTS.Presentation.Animation.Figures
                     }
 
                     var next = figure.Next(member.Alive, moving, Now);
-                    Animate(parts, ref figure, next, posture, firing, digging, squad);
+                    Animate(entity, ref figure, next, posture, firing, digging, squad);
 
                     figures[i] = figure;
                 }
             }
 
-            private void Animate(in FigureParts parts, ref SquadFigure figure, FigureState next, Posture posture,
+            private void Animate(Entity root, ref SquadFigure figure, FigureState next, Posture posture,
                 bool firing, bool digging, in SquadFigures squad)
             {
                 if (next != figure.State)
                 {
-                    Show(parts, ref figure, next, posture, firing, digging, squad);
+                    Show(root, ref figure, next, posture, firing, digging, squad);
                 }
                 else if (next == FigureState.Die)
                 {
-                    SwitchToBlast(parts, ref figure, squad);
+                    SwitchToBlast(root, ref figure, squad);
                 }
                 else if (next != FigureState.Hidden && figure.PoseDiffers(posture, firing, digging))
                 {
-                    Pose(parts, ref figure, next, posture, firing, digging);
+                    Pose(root, ref figure, next, posture, firing, digging);
                 }
 
                 if (next is FigureState.Walk or FigureState.Run && figure.Retune(Now))
                 {
-                    Retime(parts, figure);
+                    Retime(root, figure);
                 }
             }
 
             // The model shows from the start of deploying until packing up; hiding it is a no-op on a squad that has none.
-            private void ShowDeployedModel(in FigureParts parts, ref SquadFigures squad, bool deployed)
+            private void ShowDeployedModel(Entity root, ref SquadFigures squad, bool deployed)
             {
                 if (squad.DeployedModel == Entity.Null || squad.ModelHidden == !deployed)
                 {
@@ -162,48 +147,14 @@ namespace HyperRTS.Presentation.Animation.Figures
                 }
 
                 squad.ModelHidden = !deployed;
-                Switch.SetBranch(Gather(parts), squad.DeployedModel, HideReason.Figure, squad.ModelHidden);
+                Switch.SetBranch(root, squad.DeployedModel, HideReason.Figure, squad.ModelHidden);
             }
 
-            /// <summary>
-            /// Eases the figure toward its member's offset, or its crew place while <paramref name="crewed"/>, and moves
-            /// it there: world axes turned into its parent's frame, at its baked height, turned to its cover.
-            /// </summary>
-            private void Stand(ref SquadFigure figure, in SquadMember member, bool crewed)
-            {
-                var parent = Places[Parents[figure.Figure].Value].Value;
-                var parentToWorld = new float3x3(parent);
-                var worldToParent = math.inverse(parentToWorld);
-                var goal = member.Offset;
-                if (crewed)
-                {
-                    goal = math.mul(parentToWorld, new float3(figure.Crew.Offset.x, 0f, figure.Crew.Offset.y)).xz;
-                }
-
-                figure.Follow(goal, DeltaTime);
-                var stance = member;
-                if (crewed)
-                {
-                    stance.Cover = CoverKind.None;
-                }
-
-                var local = math.mul(worldToParent, new float3(figure.Offset.x, 0f, figure.Offset.y));
-                var spot = Spots[figure.Figure];
-                if (!figure.Primed)
-                {
-                    figure.Baked = spot.Rotation;
-                }
-
-                spot.Position = new float3(local.x, figure.Height, local.z);
-                spot.Rotation = figure.Turned(spot.Rotation, stance, worldToParent, DeltaTime);
-                Spots[figure.Figure] = spot;
-            }
-
-            private void Show(in FigureParts parts, ref SquadFigure figure, FigureState next, Posture posture,
+            private void Show(Entity root, ref SquadFigure figure, FigureState next, Posture posture,
                 bool firing, bool digging, in SquadFigures squad)
             {
                 var hidden = next == FigureState.Hidden;
-                Switch.SetBranch(parts.Root, figure.Figure, HideReason.Figure, hidden);
+                Switch.SetBranch(root, figure.Figure, HideReason.Figure, hidden);
                 figure.State = next;
                 figure.StateSince = Now;
                 if (hidden)
@@ -214,11 +165,11 @@ namespace HyperRTS.Presentation.Animation.Figures
                 if (next == FigureState.Die)
                 {
                     figure.HideAt = Now + squad.DieHold;
-                    Fall(parts, ref figure, DieClip(figure, squad));
+                    Fall(root, ref figure, DieClip(figure, squad));
                     return;
                 }
 
-                Pose(parts, ref figure, next, posture, firing, digging);
+                Pose(root, ref figure, next, posture, firing, digging);
             }
 
             // A standing member at its place on a site digs unless it is firing.
@@ -242,7 +193,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 figure.Clips.Blasted(squad.BlastPosition, Places[figure.Figure].Value);
 
             // A fall that began just before its blast cue arrived changes to the blast fall.
-            private void SwitchToBlast(in FigureParts parts, ref SquadFigure figure, in SquadFigures squad)
+            private void SwitchToBlast(Entity root, ref SquadFigure figure, in SquadFigures squad)
             {
                 if (squad.BlastTime != Now || !squad.Killed(figure.HideAt - squad.DieHold))
                 {
@@ -252,7 +203,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 var clip = BlastClip(figure, squad);
                 if (figure.Lower.SameAs(figure.Clips.Die) && !figure.Lower.SameAs(clip))
                 {
-                    Fall(parts, ref figure, clip);
+                    Fall(root, ref figure, clip);
                 }
             }
         }

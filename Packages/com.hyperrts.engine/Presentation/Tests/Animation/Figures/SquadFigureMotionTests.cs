@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         public void FigureStands_WhereItsMemberDoesInTheModelsFrame()
         {
             var turned = float4x4.RotateY(math.PI * 0.5f);
-            _em.SetComponentData(_model, new LocalToWorld { Value = turned });
+            _em.SetComponentData(_model, LocalTransform.FromRotation(quaternion.RotateY(math.PI * 0.5f)));
             Member(1, offset: new float2(2f, -1f));
 
             Update();
@@ -32,6 +32,43 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var world = math.transform(turned, local);
             Assert.AreEqual(2f, world.x, 1e-4f);
             Assert.AreEqual(-1f, world.z, 1e-4f);
+        }
+
+        [Test]
+        public void SquadMovingAndTurning_TakesItsFiguresAlongInTheSameUpdate()
+        {
+            Member(1, offset: new float2(2f, -1f));
+            Update();
+            Advance(1f);
+
+            MoveSquad(new float3(5f, 0f, 3f), math.PI * 0.5f);
+            var before = Figure(1).Offset;
+            Update();
+
+            var squad = _em.GetComponentData<LocalToWorld>(_squad);
+            var offset = Figure(1).Offset;
+            var place = _em.GetComponentData<LocalToWorld>(_figures[1]);
+            Assert.AreEqual(before.x, offset.x, 1e-3f, "settled on its member's offset");
+            Assert.AreEqual(squad.Position.x + offset.x, place.Position.x, 1e-4f);
+            Assert.AreEqual(squad.Position.z + offset.y, place.Position.z, 1e-4f);
+        }
+
+        [Test]
+        public void SquadTurningAtOnce_TurnsItsFiguresOverSeveralUpdates()
+        {
+            Update();
+            Advance(1f);
+            var from = _em.GetComponentData<LocalToWorld>(_figures[1]).Forward;
+
+            MoveSquad(float3.zero, math.PI);
+            Update();
+            var first = _em.GetComponentData<LocalToWorld>(_figures[1]).Forward;
+            Assert.Less(math.degrees(math.acos(math.dot(from, first))), 150f, "not turned at once");
+            Assert.Greater(math.dot(from, first), -0.99f);
+
+            Advance(2f);
+            var last = _em.GetComponentData<LocalToWorld>(_figures[1]).Forward;
+            Assert.AreEqual(-1f, math.dot(from, last), 1e-2f, "faces the new way in the end");
         }
 
         [Test]

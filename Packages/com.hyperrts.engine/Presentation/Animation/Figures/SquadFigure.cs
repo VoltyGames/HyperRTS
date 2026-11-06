@@ -84,6 +84,9 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>Baked rotation in its parent's frame, the squad's facing; set on the first update.</summary>
         public quaternion Baked;
 
+        /// <summary>The way the figure faces in the world, eased, so a squad that turns at once doesn't turn its figures at once.</summary>
+        public quaternion Facing;
+
         public float3 LastPosition;
         public byte LastShots;
         public float LastShotTime;
@@ -160,20 +163,19 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         /// <summary>
-        /// The rotation to ease to: toward the way <paramref name="member"/> faces in cover, else back to the baked one.
-        /// <paramref name="worldToParent"/> turns a world direction into the figure's parent frame.
+        /// Eases <see cref="Facing"/> toward the way <paramref name="member"/> faces in cover, else the baked turn from
+        /// its parent's world rotation <paramref name="parentRotation"/>; jumps there on the first update.
         /// </summary>
-        public readonly quaternion Turned(quaternion current, in SquadMember member, float3x3 worldToParent, float deltaTime)
+        public void Turn(quaternion parentRotation, in SquadMember member, float deltaTime)
         {
-            var target = Baked;
+            var target = math.mul(parentRotation, Baked);
             if (member.Cover != CoverKind.None)
             {
                 var facing = member.CoverFacing;
-                var local = math.mul(worldToParent, new float3(facing.x, 0f, facing.y));
-                target = math.mul(quaternion.LookRotationSafe(local, math.up()), Baked);
+                target = math.mul(quaternion.LookRotationSafe(new float3(facing.x, 0f, facing.y), math.up()), Baked);
             }
 
-            return Primed ? math.slerp(current, target, 1f - math.exp(-TurnRate * deltaTime)) : target;
+            Facing = Primed ? math.slerp(Facing, target, 1f - math.exp(-TurnRate * deltaTime)) : target;
         }
 
         /// <summary>Records this frame's world position and weapon shot count; returns how a living figure moves and whether it fires.</summary>

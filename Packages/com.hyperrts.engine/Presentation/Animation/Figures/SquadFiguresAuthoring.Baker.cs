@@ -35,7 +35,9 @@ namespace HyperRTS.Presentation.Animation.Figures
                     squad.DeployedModel = GetEntity(authoring.deployedModel, TransformUsageFlags.Dynamic);
                 }
 
-                AddSquad(this.Writer(), squad, entities);
+                var writer = this.Writer();
+                AddSquad(writer, squad, entities);
+                writer.AddBuffer<FigureRenderer>();
             }
 
             private FigureVariant Variant(SquadFiguresAuthoring authoring, int index)

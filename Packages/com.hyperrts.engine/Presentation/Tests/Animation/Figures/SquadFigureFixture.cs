@@ -30,6 +30,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
 
         protected PresentationWorldKit _kit;
         protected EntityManager _em;
+        protected SystemHandle _placement;
+        protected SystemHandle _parents;
+        protected SystemHandle _matrices;
         protected SystemHandle _system;
         protected Entity _squad;
         protected Entity _cues;
@@ -42,6 +45,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         {
             _kit = new PresentationWorldKit("Squad Figure Tests");
             _em = _kit.EntityManager;
+            _placement = _kit.World.CreateSystem<SquadFigurePlacementSystem>();
+            _parents = _kit.World.CreateSystem<ParentSystem>();
+            _matrices = _kit.World.CreateSystem<LocalToWorldSystem>();
             _system = _kit.World.CreateSystem<SquadFigureSystem>();
             _squad = Squad(4);
             _cues = _em.CreateEntity(typeof(CueQueue));
@@ -55,8 +61,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         {
             _figures = new Entity[count];
             var figures = new SquadFigure[count];
-            _model = _em.CreateEntity(typeof(LocalToWorld));
-            _em.SetComponentData(_model, new LocalToWorld { Value = float4x4.identity });
+            var squad = _em.CreateEntity(typeof(LocalTransform), typeof(LocalToWorld));
+            _em.SetComponentData(squad, LocalTransform.Identity);
+            _model = _em.CreateEntity(typeof(LocalTransform), typeof(LocalToWorld));
+            _em.SetComponentData(_model, LocalTransform.Identity);
+            _em.AddComponentData(_model, new Parent { Value = squad });
             for (var i = 0; i < count; i++)
             {
                 _figures[i] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
@@ -71,7 +80,12 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
                 figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0) };
             }
 
-            var squad = _em.CreateEntity();
+            _em.AddBuffer<FigureRenderer>(squad);
+            foreach (var figure in _figures)
+            {
+                _em.GetBuffer<FigureRenderer>(squad).Add(new FigureRenderer { Model = figure, Part = figure });
+            }
+
             var group = _em.AddBuffer<LinkedEntityGroup>(squad);
             group.Add(squad);
             foreach (var figure in _figures)
@@ -80,7 +94,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             }
 
             _em.AddComponentData(squad, new Health { Current = 100f, Max = 100f });
-            _em.AddComponentData(squad, new LocalToWorld { Value = float4x4.identity });
             _em.AddBuffer<WeaponPose>(squad).Add(default);
             var members = _em.AddBuffer<SquadMember>(squad);
             for (var i = 0; i < count; i++)
@@ -125,6 +138,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         {
             _time += Step;
             _kit.World.SetTime(new TimeData(_time, Step));
+            _placement.Update(_kit.World.Unmanaged);
+            _parents.Update(_kit.World.Unmanaged);
+            _matrices.Update(_kit.World.Unmanaged);
             _system.Update(_kit.World.Unmanaged);
             _em.GetBuffer<CueEvent>(_cues).Clear();
         }
@@ -141,10 +157,17 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
 
         protected void Move(float speed)
         {
-            var place = _em.GetComponentData<LocalToWorld>(_squad);
-            var position = place.Position + new float3(speed * Step, 0f, 0f);
-            _em.SetComponentData(_squad, new LocalToWorld { Value = float4x4.Translate(position) });
+            MoveSquad(new float3(speed * Step, 0f, 0f), 0f);
             Update();
+        }
+
+        // Between updates, as movement does before the transform systems build matrices.
+        protected void MoveSquad(float3 by, float turn)
+        {
+            var spot = _em.GetComponentData<LocalTransform>(_squad);
+            spot.Position += by;
+            spot.Rotation = math.mul(quaternion.RotateY(turn), spot.Rotation);
+            _em.SetComponentData(_squad, spot);
         }
 
         protected void MoveFor(float speed, float seconds)
@@ -249,6 +272,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.AddComponentData(part, new LowerFade { Fade = VATFade.None });
             _em.AddComponentData(part, new UpperFade { Fade = VATFade.None });
             _em.AddComponentData(part, new LocalToWorld { Value = float4x4.identity });
+            _em.GetBuffer<FigureRenderer>(_squad).Add(new FigureRenderer { Model = part, Part = part });
             _em.GetBuffer<LinkedEntityGroup>(_squad).Add(part);
             return part;
         }

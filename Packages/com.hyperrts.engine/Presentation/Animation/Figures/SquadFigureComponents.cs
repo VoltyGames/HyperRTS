@@ -180,6 +180,16 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
     }
 
+    /// <summary>A renderer under one of a squad's figure models that plays its clips (body levels of detail, weapon, material children), of a squad; baked.</summary>
+    [InternalBufferCapacity(4)]
+    public struct FigureRenderer : IBufferElementData
+    {
+        /// <summary>The figure model, base or other, this part plays for.</summary>
+        public Entity Model;
+
+        public Entity Part;
+    }
+
     /// <summary>What a squad figure shows. Unset is a baked figure the system has not placed yet; the living states are its motion.</summary>
     public enum FigureState : byte
     {
