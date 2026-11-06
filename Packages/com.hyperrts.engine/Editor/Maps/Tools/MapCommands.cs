@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Tools
         private const string Tag = "hyperrts/maps";
         private const string MapHelp = "A map name (Kalyna) or its spec path";
 
-        [CliCommand("map_preview", "Preview a map's layout in seconds: issues, land shares, counts and the preview image path.", Tags = new[] { Tag })]
+        [CliCommand("map", "preview", "Preview a map's layout in seconds: issues, land shares, counts and the preview image path.", Tags = new[] { Tag })]
         public static object Preview([CliArg("map", MapHelp, Required = true)] string map)
         {
             var report = MapPreview.Run(MapPaths.Find(map));
@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Tools
             return new { report.map, report.errors, report.warnings, report.land, report = MapReport.JsonPath(name), image = MapReport.ImagePath(name) };
         }
 
-        [CliCommand("map_build", "Build a map's scene, or every map when none is named (minutes): rush times, paths, issues, the report and image paths. Fails while open scenes have unsaved changes.", Tags = new[] { Tag })]
+        [CliCommand("map", "build", "Build a map's scene, or every map when none is named (minutes): rush times, paths, issues, the report and image paths. Fails while open scenes have unsaved changes.", Tags = new[] { Tag })]
         public static object Build([CliArg("map", MapHelp + "; empty builds every map")] string map = "")
         {
             var reports = string.IsNullOrEmpty(map)
@@ -31,10 +31,10 @@ namespace HyperRTS.Editor.Maps.Tools
             return reports.Select(Summary).ToList();
         }
 
-        [CliCommand("map_capture", "Render a built map's standard views from the match camera; returns the image paths.", Tags = new[] { Tag })]
+        [CliCommand("map", "capture", "Render a built map's standard views from the match camera; returns the image paths.", Tags = new[] { Tag })]
         public static List<string> Capture([CliArg("map", MapHelp, Required = true)] string map) => MapViewCapture.Capture(MapPaths.Find(map));
 
-        [CliCommand("map_look", "Start Play-mode captures of a built map's spec looks at three zooms per weather, with GI settled (minutes). Returns at once with the folder; poll map_look_status until it says Done or Failed. Weathers is a comma list, empty for all; quality a level name, empty for the current one.", Tags = new[] { Tag })]
+        [CliCommand("map", "look", "Start Play-mode captures of a built map's spec looks at three zooms per weather, with GI settled (minutes). Returns at once with the folder; poll map look_status until it says Done or Failed. Weathers is a comma list, empty for all; quality a level name, empty for the current one.", Tags = new[] { Tag })]
         public static object Look(
             [CliArg("map", MapHelp, Required = true)] string map,
             [CliArg("weathers", "Comma list of weather keys; empty takes every weather")] string weathers = "",
@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Tools
             [CliArg("cost", "True measures the median GPU and CPU frame time per look view with each feature off in turn, in the first weather, into cost.json, and takes no images")] bool cost = false) =>
             new { folder = MapLookCapture.Start(MapPaths.Find(map), weathers, graded, quality, cost) };
 
-        [CliCommand("map_look_status", "Progress of the running look capture, or how the last one ended.", Tags = new[] { Tag })]
+        [CliCommand("map", "look_status", "Progress of the running look capture, or how the last one ended.", Tags = new[] { Tag })]
         public static object LookStatus() => new { running = MapLookCapture.IsRunning, status = MapLookCapture.Status };
 
         private static object Summary(MapReport report) => new

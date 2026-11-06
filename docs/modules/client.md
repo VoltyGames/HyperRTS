@@ -243,7 +243,7 @@ reach a build):
   a skeleton bone or an empty under one (`sockets`, such as a rifle grip in the right hand), so weapons are swappable
   meshes modelled about their grip.
 
-**Bake** (the asset's context menu, `HyperRTS/Animation/Bake Bone Animation Set`, or the `bone_bake [set]`
+**Bake** (the asset's context menu, `HyperRTS/Animation/Bake Bone Animation Set`, or the `bone bake [set]`
 [command](../editor.md#commands)) writes `Generated/` beside the set, labelled Generated:
 
 - `<Set>_Bones`, a half-float RGBA Texture2D, point filtered, 3 texels a bone wide and one row per frame of every clip

@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Commands
     /// <summary>The bone animation bake as a pipeline command and a menu item.</summary>
     public static class BoneCommands
     {
-        [CliCommand("bone_bake", "Bake one bone animation set (a name or its path), or every set when none is named: the bone texture, clip table and meshes written beside it. Returns the asset paths.", Tags = new[] { "hyperrts/animation" })]
+        [CliCommand("bone", "bake", "Bake one bone animation set (a name or its path), or every set when none is named: the bone texture, clip table and meshes written beside it. Returns the asset paths.", Tags = new[] { "hyperrts/animation" })]
         public static object Bake([CliArg("set", "A BoneAnimationSet name or its .asset path; empty bakes every set")] string set = "")
         {
             var sets = string.IsNullOrEmpty(set) ? EditorAssets.FindAssets<BoneAnimationSet>() : new List<BoneAnimationSet> { Find(set) };

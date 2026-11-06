@@ -3,7 +3,7 @@ using System;
 namespace HyperRTS.Editor.Maps.Spec
 {
     /// <summary>
-    /// A place the look captures (<c>map_look</c>) frame from the match camera at every zoom, to judge light, plants
+    /// A place the look captures (<c>map look</c>) frame from the match camera at every zoom, to judge light, plants
     /// and water in Play mode. It changes nothing on the map and is never copied by the symmetry.
     /// </summary>
     [Serializable]

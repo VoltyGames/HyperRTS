@@ -41,33 +41,33 @@ optional `Badge` shows short text such as the Validate page's `3E 12W` (errors a
 ## Commands
 
 Each Tools window action an agent needs is also a command of the `com.unity.pipeline` package, run from any shell
-with `unity command <name> [args]` while the Editor is open. A command is a thin `[CliCommand]` wrapper in an
+with `unity command <group> <name> [args]` while the Editor is open. A command is a thin `[CliCommand]` wrapper in an
 `Editor/Commands/` folder (the map commands sit in `Editor/Maps/Tools/`): the work lives in a method on the type that owns it, and the Tools window button and the
 command both call that method. Long commands run as detached jobs (`unity command --detach`).
 
 | Command | Calls | Returns |
 | --- | --- | --- |
-| `map_preview <map>` | `MapPreview.Run` | Issues, land shares, counts, the preview report and image paths |
-| `map_build [map]` | `MapBuildRunner.Build` or `BuildAll` | One summary per map built: rush times, paths and issues, the report, image and views paths |
-| `map_capture <map>` | `MapViewCapture.Capture` | The view image paths |
-| `map_look <map> [weathers] [quality] [graded] [cost]` | `MapLookCapture.Start` | The folder at once; it enters Play, captures the spec's `looks` at three zooms per weather once GI settles, writes `summary.json` and leaves Play. `--graded false` turns the weathers' Color Lookup off and writes to `look-ungraded/`, for fitting lookups. `--cost true` takes no images: in the first weather (or the one named) it measures the median GPU and main-thread time over 120 frames at every look point and zoom, with everything on and then with each of grass, row crops, trees, contact shadows, fog, water, anti-aliasing and the horizon off in turn, and writes `cost.json` (read it with `hardpower textures look-cost <folder>`). A feature the scene lacks is listed under `skipped` |
-| `map_look_status` | `MapLookCapture.Status` | Whether a look capture runs, and its progress or how it ended |
-| `effect_build [recipe]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
-| `effect_capture <rig> [times] [distance]` | `EffectCapture.Capture` | The PNG paths, one for each time |
-| `generate [name] [--list true]` | `GeneratorRunner.Run` or `RunAll` | Each generator run (or, with `list`, every one) with its sources, outputs and last run |
-| `bone_bake [set]` | `BoneAnimationSet.Bake` | Each set baked (none named bakes every set) with the paths of the bone texture, clip table and meshes it wrote |
-| `validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's rule, severity, message, asset path and fix label |
+| `map preview <map>` | `MapPreview.Run` | Issues, land shares, counts, the preview report and image paths |
+| `map build [map]` | `MapBuildRunner.Build` or `BuildAll` | One summary per map built: rush times, paths and issues, the report, image and views paths |
+| `map capture <map>` | `MapViewCapture.Capture` | The view image paths |
+| `map look <map> [weathers] [quality] [graded] [cost]` | `MapLookCapture.Start` | The folder at once; it enters Play, captures the spec's `looks` at three zooms per weather once GI settles, writes `summary.json` and leaves Play. `--graded false` turns the weathers' Color Lookup off and writes to `look-ungraded/`, for fitting lookups. `--cost true` takes no images: in the first weather (or the one named) it measures the median GPU and main-thread time over 120 frames at every look point and zoom, with everything on and then with each of grass, row crops, trees, contact shadows, fog, water, anti-aliasing and the horizon off in turn, and writes `cost.json` (read it with `hardpower textures look-cost <folder>`). A feature the scene lacks is listed under `skipped` |
+| `map look_status` | `MapLookCapture.Status` | Whether a look capture runs, and its progress or how it ended |
+| `effect build [recipe]` | `EffectGraphBuilder.Build` | Each graph built, with its `Problem` and `ShaderErrors` |
+| `effect capture <rig> [times] [distance]` | `EffectCapture.Capture` | The PNG paths, one for each time |
+| `generator run [name] [--list true]` | `GeneratorRunner.Run` or `RunAll` | Each generator run (or, with `list`, every one) with its sources, outputs and last run |
+| `bone bake [set]` | `BoneAnimationSet.Bake` | Each set baked (none named bakes every set) with the paths of the bone texture, clip table and meshes it wrote |
+| `project validate` | `ProjectValidator.Run` | Error and warning counts, then each issue's rule, severity, message, asset path and fix label |
 
-`<map>` is a map name or its spec path (`map_build` with none builds every map), and `[recipe]` a graph name or its `.effect.asset` path; an unknown one fails,
-naming it. `effect_capture` renders a rig in `Logs/EffectCaptures/<Rig>/` at seconds after its burst (default
+`<map>` is a map name or its spec path (`map build` with none builds every map), and `[recipe]` a graph name or its `.effect.asset` path; an unknown one fails,
+naming it. `effect capture` renders a rig in `Logs/EffectCaptures/<Rig>/` at seconds after its burst (default
 `0.1,0.3,0.6,1.2,2.5`), from 24 m unless `distance` says otherwise; graphs only run on the Editor's frames, which
 stop while it is in the background, so it fails after 45 s without one. The commands carry the tags `hyperrts/maps`,
 `hyperrts/effects`, `hyperrts/generate`, `hyperrts/animation` and `hyperrts/validate`, so `unity command --tag hyperrts` lists them with
-their arguments. `map_build` fails while an open scene has unsaved changes, since a build opens its
+their arguments. `map build` fails while an open scene has unsaved changes, since a build opens its
 own scene and a command can't answer the save dialog.
 
 To add a command, write a static method in an `Editor/Commands/` class of any editor assembly that references
-`Unity.Pipeline.Attributes`, tag it `[CliCommand("name", "what it does", Tags = new[] { "<area>" })]` and its
+`Unity.Pipeline.Attributes`, tag it `[CliCommand("<group>", "<name>", "what it does", Tags = new[] { "<area>" })]` and its
 parameters `[CliArg]`. Return a small result (counts, issues, file paths) and name the full report file rather than
 returning it. Throw to fail: the message reaches the caller. An `async Task<T>` method runs off the main thread
 while it awaits.
@@ -79,9 +79,9 @@ Generate page. It has a unique `Name`, a `Group` heading, an `Order`, a one-line
 `Outputs` (paths, or a short description when they are many) and a `Run()` method. A step that uses another's output
 must come after it. An import hook that keeps an output current calls its generator through `GeneratorRunner.Run`,
 so an import and a manual run do the same work. Each run's time and result go to `Library/HyperRTS/GeneratorRuns.json`,
-which the page and `generate --list true` show.
+which the page and `generator run --list true` show.
 
-**Run all** runs every generator in order and saves assets after each. The `generate` [command](#commands) runs one
+**Run all** runs every generator in order and saves assets after each. The `generator run` [command](#commands) runs one
 or all of them. In batch mode, call `HyperRTS.Editor.Generators.GeneratorRunner.RunAll` with `-executeMethod`. To
 change generated output, change the generator and run it again.
 
@@ -94,7 +94,7 @@ the package, so they only show when it is embedded or local.
 An effect's VFX graph is generated from its `<Graph>.effect.asset` recipe, an `EffectRecipe` ScriptableObject made
 with **Assets ▸ Create ▸ HyperRTS ▸ Effects ▸ Effect Recipe**. Build one from **Assets ▸ HyperRTS ▸ Build
 Effect Graph** on the selected recipe, every graph from **Build All Effect Graphs**, the **Effect graphs**
-[generator](#generators), the recipe inspector's **Build graph** or the `effect_build` [command](#commands). A build
+[generator](#generators), the recipe inspector's **Build graph** or the `effect build` [command](#commands). A build
 is in place: the graph keeps its GUID, so prefabs keep their reference. The `EffectRecipeRule` [rule](#validation)
 reports a recipe without layers, a link to a deleted texture or mesh (`BrokenLinks`, naming the field), a debris
 layer without 1 to 4 meshes, and a graph that is missing or older than its recipe. Textures and meshes are object
@@ -199,7 +199,7 @@ replay waiting for Play mode and the local package import stamp.
 follows the rig selected in the Project window, with replay, loop interval, pause, scale and wind controls, and
 holds the fog of war clear while open; closing it puts the wind and fog globals back. Saving a recipe of the rig, by
 hand or in its inspector, rebuilds that graph and plays again. `EffectPreviewPlayer` plays the rig and
-`EffectCapture` renders it for the `effect_capture` command, above the open scene, so its light and fog still tint
+`EffectCapture` renders it for the `effect capture` command, above the open scene, so its light and fog still tint
 the picture.
 
 ## Validation
@@ -217,7 +217,7 @@ overrides `AppliesTo`. An asset rule asks its `AssetSet` for `All<T>(folders)`, 
 once however many rules ask for it; tests build a set from assets made in memory with `AssetSet.From`.
 
 The same rules run in the inspector, on the **Validate** page, in the console on entering Play mode, from the
-`validate` [command](#commands), and in the `ValidationTests.ProjectHasNoValidationErrors` test. Prefab and asset
+`project validate` [command](#commands), and in the `ValidationTests.ProjectHasNoValidationErrors` test. Prefab and asset
 rules run only in the full pass, after the component rules. The prefab and asset sets are kept between passes until
 the next import, delete or move. An error or a warning can carry a quick fix, which is one undo step. Closed SubScenes
 are not checked.
