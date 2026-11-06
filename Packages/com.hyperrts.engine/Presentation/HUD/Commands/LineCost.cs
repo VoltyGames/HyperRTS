@@ -13,8 +13,6 @@ namespace HyperRTS.Presentation.HUD.Commands
     /// </summary>
     public sealed class LineCost : HUDPanel
     {
-        private static readonly Vector2 Offset = new(16f, -8f);
-
         private readonly CostRow _costs;
         private Entity _prefab;
         private int _segments;
@@ -49,7 +47,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             _costs.MarkShort(!ResourceMath.CanAfford(context.Stock.AsNativeArray(), costs, _segments));
             // The drag's end sits under the cursor, so the row follows it without reading device input, lifted by
             // its own height to sit above the point.
-            PlaceBeside(placement.Position, new Vector2(Offset.x, Offset.y - Root.resolvedStyle.height));
+            PlaceBeside(placement.Position, new Vector2(0f, -Root.resolvedStyle.height));
         }
 
         // A single building drags too, to turn, and leaves the last line's segments in the buffer.

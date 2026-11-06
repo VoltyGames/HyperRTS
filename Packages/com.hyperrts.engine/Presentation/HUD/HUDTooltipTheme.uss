@@ -1,0 +1,24 @@
+.hud-tooltip {
+    background-color: var(--hud-tooltip-bg);
+    border-width: 1px;
+    border-color: var(--hud-line-strong);
+    border-radius: var(--hud-radius);
+    font-size: 12px;
+}
+
+.hud-tooltip__title {
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.hud-tooltip__line {
+    color: rgb(190, 198, 210);
+}
+
+.hud-tooltip__line--warning {
+    color: var(--hud-danger);
+}
+
+.hud-tooltip__stat-name {
+    color: var(--hud-text-muted);
+}

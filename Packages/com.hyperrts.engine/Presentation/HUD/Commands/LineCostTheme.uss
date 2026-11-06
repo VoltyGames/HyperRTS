@@ -1,0 +1,8 @@
+.hud-line-cost {
+    background-color: var(--hud-overlay-bg);
+    border-radius: var(--hud-radius-small);
+}
+
+.hud-line-cost .hud-costs__amount {
+    font-size: 14px;
+}

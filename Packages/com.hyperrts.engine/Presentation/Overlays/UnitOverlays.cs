@@ -135,7 +135,7 @@ namespace HyperRTS.Presentation.Overlays
         {
             var top = EntityExtent.Top(entityManager, entity, position, unit.Radius);
             var bar = new HealthBarData(health, unit.MemberCount, unit.Alive, unit.Rank, unit.Radius,
-                SquadBarState.Of(unit, squadRules), style);
+                SquadBarState.Read(unit, squadRules), style);
             _bars.Add(new Vector3(position.x, top, position.z), bar, style);
         }
 

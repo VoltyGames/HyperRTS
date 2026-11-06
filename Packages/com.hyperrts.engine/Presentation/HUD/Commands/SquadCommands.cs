@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             var entityManager = context.EntityManager;
-            var faction = context.View.Local.Faction;
+            var faction = context.ShownFaction;
             var relations = context.View.Relations;
             var reinforcePoints = SquadPoints.From<ReinforcePoint>(_reinforcePoints.In(entityManager));
             var allRetreating = true;

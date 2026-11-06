@@ -13,14 +13,16 @@ namespace HyperRTS.Presentation.HUD
     public sealed class StrategicCountdowns : HUDPanel
     {
         private readonly List<Row> _rows = new();
+        private readonly VisualTreeAsset _rowTemplate;
 
         private readonly LiveQuery _charges = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Player>(),
             ComponentType.ReadOnly<StrategicCharge>()));
 
-        public StrategicCountdowns(VisualElement root)
+        public StrategicCountdowns(VisualElement root, HUDPanelLayouts layouts)
             : base(root)
         {
+            _rowTemplate = layouts.StrategicCountdownRow;
         }
 
         public override bool BlocksPointer => false;
@@ -51,7 +53,9 @@ namespace HyperRTS.Presentation.HUD
         {
             if (index == _rows.Count)
             {
-                _rows.Add(new Row(HUDElements.Text("", "hud-countdowns__row", Root)));
+                var label = (Label)_rowTemplate.CloneRoot();
+                Root.Add(label);
+                _rows.Add(new Row(label));
             }
 
             return _rows[index];

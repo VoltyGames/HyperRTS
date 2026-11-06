@@ -5,23 +5,22 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD.Panels
 {
     /// <summary>One soldier of a selected squad: its weapon, health, and the cover it holds or its posture. A dead one is greyed.</summary>
-    [UxmlElement]
-    public partial class SquadMemberCard : VisualElement
+    public sealed class SquadMemberCard
     {
         private readonly Label _weapon;
         private readonly HUDBar _health;
         private readonly Label _state;
         private int _shownState = -1;
 
-        public SquadMemberCard()
+        public SquadMemberCard(VisualTreeAsset template)
         {
-            AddToClassList("hud-member");
-            _weapon = HUDElements.Text("", "hud-member__weapon", this);
-            _health = new HUDBar();
-            _health.AddToClassList("hud-member__health");
-            Add(_health);
-            _state = HUDElements.Text("", "hud-member__state", this);
+            Root = template.CloneRoot();
+            _weapon = Root.Require<Label>("weapon");
+            _health = Root.Require<HUDBar>("health");
+            _state = Root.Require<Label>("state");
         }
+
+        public VisualElement Root { get; }
 
         /// <summary>Shows <paramref name="member"/> carrying <paramref name="weapon"/>, the designation baked on its squad.</summary>
         public void Show(in SquadMember member, string weapon)
@@ -32,7 +31,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             }
 
             _health.Fraction = member.MaxHealth > 0f ? member.Health / member.MaxHealth : 0f;
-            EnableInClassList("hud-member--dead", !member.Alive);
+            Root.EnableInClassList("hud-member--dead", !member.Alive);
             var state = member.Alive ? 1 + (int)member.Posture + 4 * (int)member.Cover + 16 * (int)member.Action : 0;
             if (state != _shownState)
             {

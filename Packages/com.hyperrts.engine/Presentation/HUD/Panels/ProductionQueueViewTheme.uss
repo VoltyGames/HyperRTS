@@ -1,0 +1,14 @@
+.hud-slot {
+    border-width: 1px;
+    border-color: var(--hud-line-strong);
+    border-radius: var(--hud-radius-small);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hud-slot:hover {
+    border-color: rgb(255, 110, 90);
+}
+
+.hud-slot__progress {
+    --bar-fill: var(--hud-bar-progress);
+}

@@ -24,7 +24,6 @@ namespace HyperRTS.Presentation.HUD.Commands
         private readonly Dictionary<Entity, QueuedOption> _queued = new();
 
         private readonly CommandKit _kit;
-        private bool _fresh;
 
         public PurchaseCommands(CommandKit kit)
         {
@@ -38,7 +37,6 @@ namespace HyperRTS.Presentation.HUD.Commands
             _options.Clear();
             _producers.Clear();
             _offers.Clear();
-            _fresh = true;
             var builds = new List<(Entity Prefab, int Card)>();
             var products = new List<Entity>();
             var entityManager = context.EntityManager;
@@ -63,12 +61,11 @@ namespace HyperRTS.Presentation.HUD.Commands
 
         public void Refresh(HUDContext context)
         {
-            if (_options.Count == 0 || !(_fresh || context.PurchasesChanged))
+            if (_options.Count == 0 || !context.PurchasesDue)
             {
                 return;
             }
 
-            _fresh = false;
             ReadProducers(context);
             var entityManager = context.EntityManager;
             var buyer = context.SnapshotBuyer();

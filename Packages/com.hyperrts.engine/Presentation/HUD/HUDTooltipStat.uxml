@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:VisualElement class="hud-tooltip__stat" picking-mode="Ignore">
+    <ui:Label name="name" class="hud-tooltip__stat-name" picking-mode="Ignore" />
+    <ui:Label name="value" class="hud-tooltip__stat-value" picking-mode="Ignore" />
+  </ui:VisualElement>
+</ui:UXML>

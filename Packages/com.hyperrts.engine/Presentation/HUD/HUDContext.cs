@@ -32,25 +32,17 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveSingleton<PrefabRegistry> _registry = new();
         private readonly LiveSingleton<SquadRules> _squadRules = new();
 
-        private readonly ChangeWatch _selection = new(() => new[]
-        {
-            ComponentType.ReadOnly<Selected>(), ComponentType.ReadOnly<Faction>(),
-            ComponentType.ReadOnly<ConstructionProgress>(), ComponentType.ReadOnly<FogHidden>(),
-        });
-
-        private readonly ChangeWatch _purchases = new(() => new[]
-        {
-            ComponentType.ReadOnly<ResourceStock>(), ComponentType.ReadOnly<ProductionQueueItem>(),
-            ComponentType.ReadOnly<Producer>(), ComponentType.ReadOnly<Offline>(),
-            ComponentType.ReadOnly<CompletedResearch>(), ComponentType.ReadOnly<ConstructionProgress>(),
-            ComponentType.ReadOnly<BuildingTag>(), ComponentType.ReadOnly<Dead>(), ComponentType.ReadOnly<Faction>(),
-        });
-
         private readonly LiveQuery _queues = new(entityManager =>
             ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager));
 
         private readonly LiveQuery _limited = new(entityManager =>
             BuildCounts.Query(Allocator.Temp).Build(entityManager));
+
+        /// <summary>How often purchase buttons re-read stock, queues and prerequisites.</summary>
+        private const float PurchaseInterval = 0.1f;
+
+        private Entity _picked;
+        private float _nextPurchase;
 
         public MatchView View { get; private set; }
 
@@ -63,10 +55,23 @@ namespace HyperRTS.Presentation.HUD
         /// </summary>
         public int SelectionHash { get; private set; }
 
-        /// <summary>True when a stock, queue, building, research or power change may alter a purchase button.</summary>
-        public bool PurchasesChanged { get; private set; }
+        /// <summary>True on the frames purchase buttons re-read the match: at a fixed rate and on a new selection.</summary>
+        public bool PurchasesDue { get; private set; }
+
+        /// <summary>The player the HUD shows: the one picked with <see cref="ShowPlayer"/>, else the local player.</summary>
+        public Entity ShownPlayer { get; private set; }
+
+        public bool HasShownPlayer => ShownPlayer != Entity.Null;
+
+        public byte ShownFaction { get; private set; }
+
+        /// <summary>False when the shown player is not the local one: the card then shows but its buttons are disabled.</summary>
+        public bool CanCommand => View.HasLocalPlayer && ShownPlayer == View.LocalPlayer;
 
         public EntityManager EntityManager => View.EntityManager;
+
+        /// <summary>Shows <paramref name="player"/>'s side, for an observer or a replay; <c>Entity.Null</c> goes back to the local player.</summary>
+        public void ShowPlayer(Entity player) => _picked = player;
 
         /// <summary>Reads this frame's selection through <paramref name="view"/>; false until it is ready.</summary>
         public bool Refresh(MatchView view)
@@ -76,18 +81,29 @@ namespace HyperRTS.Presentation.HUD
             {
                 Selected.Clear();
                 SelectionHash = 0;
-                PurchasesChanged = true;
-                _selection.Forget();
+                ShownPlayer = Entity.Null;
+                PurchasesDue = true;
                 return false;
             }
 
-            PurchasesChanged = _purchases.Changed(EntityManager);
-            if (_selection.Changed(EntityManager))
+            FindShownPlayer();
+            var previous = SelectionHash;
+            ReadSelection();
+            var timeUp = UnityEngine.Time.unscaledTime >= _nextPurchase;
+            PurchasesDue = timeUp || SelectionHash != previous;
+            if (timeUp)
             {
-                ReadSelection();
+                _nextPurchase = UnityEngine.Time.unscaledTime + PurchaseInterval;
             }
 
             return true;
+        }
+
+        private void FindShownPlayer()
+        {
+            var picked = _picked != Entity.Null && EntityManager.Exists(_picked);
+            ShownPlayer = picked ? _picked : View.LocalPlayer;
+            ShownFaction = HasShownPlayer ? EntityManager.GetComponentData<Player>(ShownPlayer).Faction : default;
         }
 
         private void ReadSelection()
@@ -106,15 +122,15 @@ namespace HyperRTS.Presentation.HUD
 
         public bool IsOwned(Entity entity) =>
             EntityManager.HasComponent<Faction>(entity)
-            && EntityManager.GetComponentData<Faction>(entity).Value == View.Local.Faction;
+            && EntityManager.GetComponentData<Faction>(entity).Value == ShownFaction;
 
-        public DynamicBuffer<ResourceStock> Stock => EntityManager.GetBuffer<ResourceStock>(View.LocalPlayer, true);
+        public DynamicBuffer<ResourceStock> Stock => EntityManager.GetBuffer<ResourceStock>(ShownPlayer, true);
 
-        /// <summary>The local player as a buyer this frame, shared by every button that checks a purchase.</summary>
+        /// <summary>The shown player as a buyer this frame, shared by every button that checks a purchase.</summary>
         public Buyer SnapshotBuyer() =>
-            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), _limited.In(EntityManager), View.Local.Faction,
+            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), _limited.In(EntityManager), ShownFaction,
                 new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
-                EntityManager.GetBuffer<CompletedResearch>(View.LocalPlayer, true));
+                EntityManager.GetBuffer<CompletedResearch>(ShownPlayer, true));
 
         /// <summary>The match's squad rules; false before the match is baked.</summary>
         public bool TryGetSquadRules(out SquadRules rules) => _squadRules.TryGet(EntityManager, out rules);
@@ -134,11 +150,7 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>Adds the prefabs of <paramref name="prefab"/>'s unmet prerequisites to <paramref name="missing"/>.</summary>
         public void FindMissingPrerequisites(Entity prefab, in Buyer buyer, List<Entity> missing)
         {
-            if (!_registry.TryGet(EntityManager, out var registry))
-            {
-                return;
-            }
-
+            var registry = _registry.Get(EntityManager);
             foreach (var prerequisite in EntityManager.GetBuffer<Prerequisite>(prefab, true))
             {
                 var required = registry.Find(prerequisite.TypeId);
@@ -154,9 +166,7 @@ namespace HyperRTS.Presentation.HUD
         public float HeadProgress(Entity producer, Entity prefab)
         {
             var elapsed = EntityManager.GetComponentData<Producer>(producer).Elapsed;
-            var buildTime = EntityManager.HasComponent<Producible>(prefab)
-                ? EntityManager.GetComponentData<Producible>(prefab).BuildTime
-                : 0f;
+            var buildTime = EntityManager.GetComponentData<Producible>(prefab).BuildTime;
             return buildTime > 0f ? math.saturate(elapsed / buildTime) : 1f;
         }
 
@@ -171,9 +181,9 @@ namespace HyperRTS.Presentation.HUD
 
         public void Issue(PlayerCommand command)
         {
-            if (View.HasLocalPlayer)
+            if (CanCommand)
             {
-                EntityManager.GetBuffer<PlayerCommand>(View.LocalPlayer).Add(command);
+                EntityManager.GetBuffer<PlayerCommand>(ShownPlayer).Add(command);
             }
         }
 

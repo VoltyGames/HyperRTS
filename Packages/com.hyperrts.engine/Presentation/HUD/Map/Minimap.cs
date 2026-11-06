@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Vision.Fog;
-using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -40,10 +39,9 @@ namespace HyperRTS.Presentation.HUD.Map
 
         private readonly LiveSingleton<TerrainHeight> _terrain = new();
 
-        private readonly List<(Vector2 Point, Color Color, float Radius, bool Square)> _markers = new();
         private readonly Vector2[] _view = new Vector2[4];
         private readonly VisualElement _canvas;
-        private readonly VisualElement _markerLayer;
+        private readonly MinimapMarkerLayer _markerLayer;
         private readonly VisualElement _viewLayer;
         private readonly MinimapFog _fog;
         private readonly MinimapStyle _style;
@@ -57,14 +55,14 @@ namespace HyperRTS.Presentation.HUD.Map
         {
             _canvas = Root.Require<VisualElement>("canvas");
             _fog = new MinimapFog(Root.Require<VisualElement>("fog"));
-            _markerLayer = Root.Require<VisualElement>("markers");
-            _markerLayer.generateVisualContent += PaintMarkers;
+            var markers = Root.Require<VisualElement>("markers");
+            _markerLayer = new MinimapMarkerLayer(markers);
             _canvas.RegisterCallback<PointerDownEvent>(OnPointerDown);
             _canvas.RegisterCallback<PointerMoveEvent>(OnPointerMove);
             _canvas.RegisterCallback<PointerUpEvent>(OnPointerUp);
             _viewLayer = Root.Require<VisualElement>("view");
             _viewLayer.generateVisualContent += PaintView;
-            _style = new MinimapStyle(_viewLayer, _markerLayer);
+            _style = new MinimapStyle(_viewLayer, markers);
         }
 
         public override bool NeedsPlayer => false;
@@ -87,24 +85,23 @@ namespace HyperRTS.Presentation.HUD.Map
                 _viewLayer.MarkDirtyRepaint();
             }
 
-
-            // Repainting re-tessellates every marker, so markers refresh at a fixed rate while the view rect stays live.
+            // Drawing and uploading the markers is the dear part, so they refresh at a fixed rate while the view rect stays live.
             if (Time.unscaledTime < _nextMarkerTime)
             {
                 return;
             }
 
             _nextMarkerTime = Time.unscaledTime + MarkerInterval;
-            _markers.Clear();
+            using var markers = new NativeList<MinimapMarker>(256, Allocator.TempJob);
             if (_hasMap)
             {
-                GatherNodes(context.EntityManager);
-                GatherEntities(view, _units, _style.UnitRadius, false);
-                GatherEntities(view, _structures, _style.StructureRadius, true);
-                GatherMemories(view);
+                GatherNodes(context.EntityManager, markers);
+                GatherEntities(view, _units, _style.UnitRadius, false, markers);
+                GatherEntities(view, _structures, _style.StructureRadius, true, markers);
+                GatherMemories(view, markers);
             }
 
-            _markerLayer.MarkDirtyRepaint();
+            _markerLayer.Draw(markers.AsArray(), _style);
         }
 
         // Units and structures differ only by NavObstacle, which sets their marker size.
@@ -131,37 +128,37 @@ namespace HyperRTS.Presentation.HUD.Map
                 : new StyleBackground(StyleKeyword.Null);
         }
 
-        private void GatherNodes(EntityManager entityManager)
+        private void GatherNodes(EntityManager entityManager, NativeList<MinimapMarker> markers)
         {
             var query = _nodes.In(entityManager);
             using var nodes = query.ToComponentDataArray<ResourceNode>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < nodes.Length; i++)
             {
-                var type = nodes[i].Type.Value;
-                AddMarker(transforms[i].Position.xz, type != null ? type.color : Color.white, _style.NodeRadius, true);
+                AddMarker(markers, transforms[i].Position.xz, nodes[i].Type.Value.color, _style.NodeRadius, true);
             }
         }
 
-        private void GatherEntities(MatchView view, LiveQuery liveQuery, float radius, bool square)
+        private void GatherEntities(MatchView view, LiveQuery liveQuery, float radius, bool square,
+            NativeList<MinimapMarker> markers)
         {
             var query = liveQuery.In(view.EntityManager);
             using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < factions.Length; i++)
             {
-                AddMarker(transforms[i].Position.xz, view.GetColor(factions[i].Value), radius, square);
+                AddMarker(markers, transforms[i].Position.xz, view.GetColor(factions[i].Value), radius, square);
             }
         }
 
-        private void GatherMemories(MatchView view)
+        private void GatherMemories(MatchView view, NativeList<MinimapMarker> markers)
         {
             using var memories = _memories.In(view.EntityManager).ToComponentDataArray<FogMemory>(Allocator.Temp);
             foreach (var memory in memories)
             {
                 var color = view.GetColor(memory.State.Faction);
                 var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
-                AddMarker(memory.State.Transform.Position.xz, shaded, _style.StructureRadius, true);
+                AddMarker(markers, memory.State.Transform.Position.xz, shaded, _style.StructureRadius, true);
             }
         }
 
@@ -191,42 +188,14 @@ namespace HyperRTS.Presentation.HUD.Map
             }
         }
 
-        private void AddMarker(float2 world, Color color, float radius, bool square) =>
-            _markers.Add((MinimapMath.WorldToMinimap(world, _map.Min, _map.Size), color, radius, square));
-
-        private void PaintMarkers(MeshGenerationContext context)
-        {
-            if (!_hasMap)
+        private void AddMarker(NativeList<MinimapMarker> markers, float2 world, Color color, float radius, bool square) =>
+            markers.Add(new MinimapMarker
             {
-                return;
-            }
-
-            var size = _markerLayer.contentRect.size;
-            var painter = context.painter2D;
-            painter.strokeColor = _style.OutlineColor;
-            painter.lineWidth = _style.OutlineWidth;
-            foreach (var (point, color, radius, square) in _markers)
-            {
-                var center = Vector2.Scale(point, size);
-                painter.fillColor = color;
-                painter.BeginPath();
-                if (square)
-                {
-                    painter.MoveTo(center + new Vector2(-radius, -radius));
-                    painter.LineTo(center + new Vector2(radius, -radius));
-                    painter.LineTo(center + new Vector2(radius, radius));
-                    painter.LineTo(center + new Vector2(-radius, radius));
-                    painter.ClosePath();
-                }
-                else
-                {
-                    painter.Arc(center, radius, 0f, 360f);
-                }
-
-                painter.Fill();
-                painter.Stroke();
-            }
-        }
+                Point = MinimapMath.WorldToMinimap(world, _map.Min, _map.Size),
+                Color = color,
+                Radius = radius,
+                Square = square,
+            });
 
         private void PaintView(MeshGenerationContext context)
         {

@@ -1,6 +1,5 @@
-/* Command card and tooltip layout, imported by HUD.uss. The look is in HUDTheme.uss. */
-
 /* Five 72px cards a row with 2px margins and exactly three rows: a set height, since a wrapping row measures taller. */
+
 .hud-commands {
     width: 398px;
     height: var(--hud-bottom-height);
@@ -25,12 +24,14 @@
 }
 
 /* The left padding keeps the label clear of the hotkey in the corner. */
+
 .hud-command--text {
     height: 34px;
     padding: 2px 4px 2px 14px;
 }
 
 /* Fills the grid so the page card lands in the last slot. */
+
 .hud-command--blank {
     visibility: hidden;
 }
@@ -48,6 +49,7 @@
 }
 
 /* Two classes, to beat .hud-icon's scale-to-fit. */
+
 .hud-command .hud-command__icon {
     position: absolute;
     left: 0;
@@ -66,6 +68,7 @@
 }
 
 /* A small badge, so the greyed picture still shows; the padding is its dark backing. */
+
 .hud-command__lock {
     display: none;
     width: 14px;
@@ -112,6 +115,7 @@
 }
 
 /* Only on cards without a picture, where the name stands in for the initials, which hide. */
+
 .hud-command .hud-icon__initials {
     display: none;
 }
@@ -141,51 +145,6 @@
 }
 
 .hud-command__limit {
-    padding: 0;
-    margin: 0;
-}
-
-.hud-costs {
-    flex-direction: row;
-}
-
-.hud-costs__amount {
-    padding: 0 2px;
-}
-
-/* Tooltip, above the right edge of the panel that owns it */
-
-.hud-tooltip {
-    position: absolute;
-    right: 0;
-    bottom: 100%;
-    width: 280px;
-    margin-bottom: 8px;
-    padding: 8px 10px;
-}
-
-.hud-tooltip__title,
-.hud-tooltip__line {
-    padding: 0;
-    margin: 0;
-    white-space: normal;
-}
-
-.hud-tooltip__line {
-    margin-top: 3px;
-}
-
-.hud-tooltip__costs {
-    margin: 4px 0 2px -2px;
-}
-
-.hud-tooltip__stat {
-    flex-direction: row;
-    justify-content: space-between;
-}
-
-.hud-tooltip__stat-name,
-.hud-tooltip__stat-value {
     padding: 0;
     margin: 0;
 }

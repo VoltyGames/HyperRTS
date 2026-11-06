@@ -1,0 +1,18 @@
+.hud-resource__name {
+    font-size: 11px;
+    color: var(--hud-text-muted);
+}
+
+.hud-resource__amount {
+    color: var(--hud-resource-amount);
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.hud-resource__amount--full {
+    color: var(--hud-danger);
+}
+
+.hud-resource__amount--low-power {
+    color: var(--hud-warn);
+}

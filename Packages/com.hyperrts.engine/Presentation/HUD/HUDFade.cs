@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.HUD
     [UxmlElement]
     public partial class HUDFade : HUDPaintedElement
     {
-        public HUDFade() : base("--fade-color", new Color(0f, 0f, 0f, 0.85f))
+        public HUDFade() : base("--fade-color")
         {
         }
 

@@ -9,8 +9,7 @@ namespace HyperRTS.Presentation.HUD
     /// A details card that the panel owning it anchors: a title, then the lines, stats and costs the hovered or focused
     /// <see cref="ITooltipSource"/> writes. It never takes the pointer.
     /// </summary>
-    [UxmlElement]
-    public partial class HUDTooltip : VisualElement
+    public sealed class HUDTooltip : VisualElement
     {
         // One delegate each, so tracking a reused button again finds them registered and adds nothing.
         private readonly EventCallback<PointerEnterEvent> _onEnter;
@@ -18,13 +17,16 @@ namespace HyperRTS.Presentation.HUD
         private readonly EventCallback<FocusInEvent> _onFocusIn;
         private readonly EventCallback<FocusOutEvent> _onFocusOut;
 
+        private readonly VisualTreeAsset _statTemplate;
         private ITooltipSource _hovered;
         private ITooltipSource _focused;
         private ITooltipSource _shown;
         private int _version;
 
-        public HUDTooltip()
+        /// <param name="statTemplate">One name and value line (<see cref="HUDPanelLayouts.TooltipStat"/>).</param>
+        public HUDTooltip(VisualTreeAsset statTemplate)
         {
+            _statTemplate = statTemplate;
             _onEnter = evt => _hovered = evt.currentTarget as ITooltipSource;
             _onLeave = evt => Leave(ref _hovered, evt.currentTarget as ITooltipSource);
             _onFocusIn = evt => _focused = evt.currentTarget as ITooltipSource;
@@ -80,10 +82,9 @@ namespace HyperRTS.Presentation.HUD
 
         public void AddStat(string name, string value)
         {
-            var row = new VisualElement { pickingMode = PickingMode.Ignore };
-            row.AddToClassList("hud-tooltip__stat");
-            AddLabel(name, "hud-tooltip__stat-name", row);
-            AddLabel(value, "hud-tooltip__stat-value", row);
+            var row = _statTemplate.CloneRoot();
+            row.Require<Label>("name").text = name;
+            row.Require<Label>("value").text = value;
             Add(row);
         }
 

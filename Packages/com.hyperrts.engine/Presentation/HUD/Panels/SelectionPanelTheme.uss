@@ -1,0 +1,25 @@
+.hud-single__icon {
+    border-bottom-width: 3px;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.hud-single__name {
+    font-size: 17px;
+    -unity-font-style: bold;
+}
+
+.hud-single__caption {
+    font-size: 11px;
+    color: var(--hud-text-muted);
+}
+
+.hud-single__construction {
+    --bar-fill: var(--hud-bar-build);
+}
+
+.hud-group__count {
+    font-size: 12px;
+    -unity-font-style: bold;
+    background-color: var(--hud-badge-bg);
+    border-radius: var(--hud-radius-tiny);
+}

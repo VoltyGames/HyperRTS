@@ -1,0 +1,4 @@
+.hud-costs__amount {
+    font-size: 10px;
+    -unity-font-style: bold;
+}

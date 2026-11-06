@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD.Map
 {
-    /// <summary>The minimap's colours, line widths and marker radii, read from the custom properties in HUD.uss.</summary>
+    /// <summary>The minimap's colours, line widths and marker radii, read from the custom properties in Minimap.uss.</summary>
     internal sealed class MinimapStyle
     {
         private readonly CustomStyleProperty<Color> _viewColor = new("--minimap-view-color");
@@ -36,7 +36,6 @@ namespace HyperRTS.Presentation.HUD.Map
                 UnitRadius = unit;
                 StructureRadius = structure;
                 NodeRadius = node;
-                markerLayer.MarkDirtyRepaint();
             });
         }
 

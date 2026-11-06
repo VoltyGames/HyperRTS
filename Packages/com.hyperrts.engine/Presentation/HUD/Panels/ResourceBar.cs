@@ -9,7 +9,7 @@ using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Panels
 {
-    /// <summary>Top bar: the local player's stockpile per resource type, population used / cap and power.</summary>
+    /// <summary>Top bar: the shown player's stockpile per resource type, population used / cap and power.</summary>
     public sealed class ResourceBar : HUDPanel
     {
         private const string FullPopulationClass = "hud-resource__amount--full";
@@ -103,10 +103,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         /// <summary>Shown once the player has any power plant or consumer; red while consumption exceeds supply.</summary>
         private void RefreshPower(HUDContext context)
         {
-            var player = context.View.LocalPlayer;
-            var grid = context.EntityManager.HasComponent<PowerGrid>(player)
-                ? context.EntityManager.GetComponentData<PowerGrid>(player)
-                : default;
+            var grid = context.EntityManager.GetComponentData<PowerGrid>(context.ShownPlayer);
             if (grid.Produced == _shownPower.Produced && grid.Consumed == _shownPower.Consumed)
             {
                 return;
@@ -121,13 +118,7 @@ namespace HyperRTS.Presentation.HUD.Panels
 
         private void RefreshPopulation(HUDContext context)
         {
-            var player = context.View.LocalPlayer;
-            if (!context.EntityManager.HasComponent<Population>(player))
-            {
-                return;
-            }
-
-            var population = context.EntityManager.GetComponentData<Population>(player);
+            var population = context.EntityManager.GetComponentData<Population>(context.ShownPlayer);
             if (population.Used == _shownPopulation.Used && population.Cap == _shownPopulation.Cap)
             {
                 return;

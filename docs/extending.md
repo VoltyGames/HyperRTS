@@ -81,7 +81,8 @@ it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
 - **Text:** subclass `HUDText` and set `HUDText.Current` before the HUD builds. Keys are listed in
   [client](modules/client.md#presentation).
 - **Style:** `HUD.uss` holds layout and `HUDTheme.uss` the look, both read from custom properties declared on
-  `.hud-root`. Assign your own sheet as `HUDController.themeSheet`: it imports the engine `HUDTheme.uss` and overrides
+  `.hud-root`. Both are indexes that import one sheet per panel, beside its UXML (`Panels/SquadView.uss` and
+  `Panels/SquadViewTheme.uss`, for example). Assign your own sheet as `HUDController.themeSheet`: it imports the engine `HUDTheme.uss` and overrides
   the properties it wants on `.hud-root`, plus any rule of its own.
   - Layout, in `HUD.uss`: `--hud-inset` (edge gap of the top bar and bottom row), `--hud-panel-padding`,
     `--hud-minimap-size`, `--hud-bottom-height` (command card height), `--hud-icon-size` (selected unit icon),

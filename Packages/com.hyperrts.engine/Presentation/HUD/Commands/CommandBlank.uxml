@@ -1,0 +1,3 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:VisualElement class="hud-command hud-command--blank" picking-mode="Ignore" />
+</ui:UXML>

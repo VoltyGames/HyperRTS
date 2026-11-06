@@ -1,0 +1,63 @@
+.hud-root {
+    --hud-text: rgb(228, 232, 238);
+    --hud-text-muted: rgb(150, 160, 175);
+    --hud-panel-bg: rgba(12, 16, 22, 0.82);
+    --hud-tooltip-bg: rgba(12, 16, 22, 0.94);
+    --hud-overlay-bg: rgba(8, 10, 14, 0.75);
+    --hud-badge-bg: rgba(0, 0, 0, 0.7);
+    --hud-line: rgba(255, 255, 255, 0.08);
+    --hud-line-strong: rgba(255, 255, 255, 0.12);
+    --hud-tile-bg: rgba(255, 255, 255, 0.06);
+    --hud-radius: 6px;
+    --hud-radius-small: 4px;
+    --hud-radius-tiny: 3px;
+    --hud-card-bg: rgba(255, 255, 255, 0.06);
+    --hud-card-bg-hover: rgba(255, 255, 255, 0.14);
+    --hud-card-bg-active: rgba(120, 200, 255, 0.25);
+    --hud-card-line: rgba(255, 255, 255, 0.1);
+    --hud-card-line-hover: rgba(120, 200, 255, 0.7);
+    --hud-card-active-line: rgb(110, 220, 120);
+    --hud-card-active-bg: rgba(110, 220, 120, 0.18);
+    --hud-card-queued-line: rgb(110, 220, 120);
+    --hud-card-queued-bg: rgba(110, 220, 120, 0.18);
+    --hud-card-picture-bg: rgb(34, 40, 48);
+    --hud-card-picture-bg-hover: rgb(46, 54, 64);
+    --hud-resource-amount: var(--hud-text);
+    --hud-warn: rgb(255, 184, 56);
+    --hud-danger: rgb(255, 95, 80);
+    --hud-bar-health: rgb(82, 214, 96);
+    --hud-bar-build: rgb(240, 190, 60);
+    --hud-bar-progress: rgb(90, 180, 255);
+    color: var(--hud-text);
+    font-size: 13px;
+}
+
+.hud-panel {
+    background-color: var(--hud-panel-bg);
+    border-width: 1px;
+    border-color: var(--hud-line);
+    border-radius: var(--hud-radius);
+}
+
+/* Only a tile without a picture, so a transparent icon sits straight on its panel. */
+
+.hud-icon--empty {
+    background-color: var(--hud-tile-bg);
+    border-radius: var(--hud-radius-small);
+}
+
+.hud-icon__initials {
+    -unity-font-style: bold;
+    font-size: 15px;
+    color: rgb(170, 180, 195);
+}
+
+.hud-bar {
+    --bar-fill: var(--hud-bar-health);
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: var(--hud-radius-tiny);
+}
+
+.hud-bar__fill {
+    background-color: var(--bar-fill);
+}

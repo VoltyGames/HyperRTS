@@ -7,11 +7,12 @@ namespace HyperRTS.Presentation.HUD
     public abstract class HUDPaintedElement : VisualElement
     {
         private readonly CustomStyleProperty<Color> _colorProperty;
+        private readonly string _colorVariable;
 
-        protected HUDPaintedElement(string colorVariable, Color fallback)
+        protected HUDPaintedElement(string colorVariable)
         {
+            _colorVariable = colorVariable;
             _colorProperty = new CustomStyleProperty<Color>(colorVariable);
-            PaintColor = fallback;
             pickingMode = PickingMode.Ignore;
             generateVisualContent += Paint;
             RegisterCallback<CustomStyleResolvedEvent>(OnStyleResolved);
@@ -23,11 +24,14 @@ namespace HyperRTS.Presentation.HUD
 
         private void OnStyleResolved(CustomStyleResolvedEvent evt)
         {
-            if (evt.customStyle.TryGetValue(_colorProperty, out var color))
+            if (!evt.customStyle.TryGetValue(_colorProperty, out var color))
             {
-                PaintColor = color;
-                MarkDirtyRepaint();
+                throw new System.InvalidOperationException(
+                    $"HyperRTS: {GetType().Name} needs the USS custom property {_colorVariable} from the HUD theme.");
             }
+
+            PaintColor = color;
+            MarkDirtyRepaint();
         }
     }
 }

@@ -1,0 +1,4 @@
+.hud-minimap__canvas {
+    background-color: rgba(30, 42, 34, 0.9);
+    border-radius: var(--hud-radius-small);
+}

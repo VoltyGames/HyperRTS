@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <ui:VisualElement class="hud-member">
+    <ui:Label name="weapon" class="hud-member__weapon" />
+    <HyperRTS.Presentation.HUD.HUDBar name="health" class="hud-member__health" />
+    <ui:Label name="state" class="hud-member__state" />
+  </ui:VisualElement>
+</ui:UXML>

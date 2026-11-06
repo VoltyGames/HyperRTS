@@ -43,8 +43,8 @@ command card's right click all use the one order in `InteractionState.Cancel`.
 ## Presentation
 
 Rendering, HUD, effects and audio. `MatchView` is a once-per-frame read model for MonoBehaviours: local player,
-relations and colours. It and other presenters read singletons through `LiveSingleton` and re-read only when a
-`ChangeWatch` sees a watched component written or an entity count move.
+relations and colours. It and other presenters read singletons through `LiveSingleton`; `MatchView` re-reads colours only
+when a `ChangeWatch` sees a `Player` or colour override written or their count move.
 
 `Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Trampling`,
 `Fire`, `Weather` (atmosphere, sky, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`,
@@ -66,8 +66,14 @@ at the `Rendering/` root.
 panel shell as a template instance in stacking order. `HUDController` clones the tree, unwraps the instances, hands each
 shell to its panel, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks and keeps it in sync with the
 simulation. Code fills in only per-frame data. Games add or replace panels by overriding `CreatePanels` (`Adopt` for a
-shell already in the tree, `Add` for a new one). `HUDContext` re-reads the selection and the purchase buttons only when
-their `ChangeWatch` fires.
+shell already in the tree, `Add` for a new one). `HUDContext` reads the selection every frame and hashes it
+(`SelectionHash`) so panels rebuild only when it changes; purchase buttons re-read stock, queues and prerequisites at
+10 Hz and on a new selection (`PurchasesDue`), and each button keeps what it shows so an unchanged value writes nothing.
+
+`HUDContext` also holds the shown player: the local player, or one an observer or replay picks with `ShowPlayer`. The
+resource bar, selection, card and purchase checks read that player. `CanCommand` is false when the shown player is not
+the local one: the card then shows but its buttons are disabled and `Issue` drops commands. With no shown player (an
+observer who has picked none) only the panels that need none stay (`HUDPanel.NeedsPlayer`).
 
 `HUD/` holds the controller, the `HUD*` building blocks and the sheets. `Commands/` (the card, its buttons and the
 `ICommandSource`s), `Map/` and `Panels/` (resource bar, selection, production queue) each have their own namespace
@@ -82,12 +88,15 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 | `OverlayRenderer` | Instanced ground markers, health bars, placement footprint outline with blocked cells, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |
 | `PlacementGhosts` | The placed building's real model as visual-only copies (`VisualPrefab`) in the `HyperRTS/Placement Ghost` material, tinted valid or invalid per entity, one per spot or line segment |
 
+`HUDText.Keys` lists every fixed key the HUD can ask for (the table below, plus those built from enum values), so a game can check its tables.
+
 `HUDText` keys:
 
 | Key | Text |
 | --- | --- |
 | `hud.pop`, `hud.power` | Resource bar labels |
 | `hud.strategic-ready` | A charged strategic asset in the countdowns |
+| `hud.rotate-hint` | The placement hint; `{0}` is the rotate key and `{1}` the snap key, as the input actions name them (`PlacementKeys`) |
 | `command.return`, `command.unload`, `command.deploy`, `command.pack-up`, `command.sell` | Fixed commands |
 | `command.more`, `command.back` | Command card page cards |
 | `stance.<stance>` | Stance names |
@@ -97,10 +106,10 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 | `tooltip.retreat`, `tooltip.reinforce`, `tooltip.reinforce-time`, `tooltip.no-retreat-point`, `tooltip.no-reinforce-point`, `tooltip.full-strength`, `tooltip.cannot-afford` | Squad command tooltips |
 | `outcome.victory`, `outcome.defeat`, `outcome.draw` | Game over banner |
 | `tooltip.build-time`, `tooltip.population`, `tooltip.power`, `tooltip.requires`, `tooltip.seconds` | Tooltip labels |
-| `entity.<name>`, `resource.<asset>`, `ability.<name>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
+| `entity.<name>`, `resource.<asset>`, `ability.<name>`, `weapon.<designation>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
 | `entity.<name>.description` | Optional tooltip line under the name; `HUDText.Description` returns null when there is none |
 
-The command card is a grid of 72 px cards, five across, laid out in `HUDCommands.uss`. A build, train, research or
+The command card is a grid of 72 px cards, five across, laid out in `Commands/CommandCard.uss`. A build, train, research or
 ability card is a picture: the icon fills the button, scaled and cropped, with the hotkey top left and the cost in a
 strip along the bottom. Its name is in the tooltip. Order buttons (stances, unload, sell) show their label key as a caption unless the spec has an icon. Every button is built from
 `CommandButton.uxml`, whose parts (picture, caption, hotkey, cooldown, badges, cost strip) are hidden by the `hrts-hidden`
@@ -156,7 +165,7 @@ that owns Escape through `MatchView.CancelInteraction`, and for the card's right
 holding a [strategic asset](support.md#strategic-assets): the name and `m:ss` to the charge, or `hud.strategic-ready`,
 in the owner's colour. Observers see it too.
 
-The minimap shows the baked map image, local fog, unit and structure markers and the camera view. Their colours, line widths, marker radii and fog alphas are `--minimap-*` custom properties in `HUD.uss`, which a theme overrides; the view outline repaints only when its corners move.
+The minimap shows the baked map image, local fog, unit and structure markers and the camera view. Their colours, line widths, marker radii and fog alphas are `--minimap-*` custom properties in `Map/Minimap.uss`, which a theme overrides. The markers are drawn by a Burst job (`MinimapMarkerJob`) into one texture the size of their layer, uploaded 10 times a second; the view outline repaints only when its corners move.
 
 ### Cursors
 

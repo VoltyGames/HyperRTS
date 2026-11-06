@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         {
             _entries.Clear();
             _casters.Clear();
-            _player = context.View.LocalPlayer;
+            _player = context.ShownPlayer;
 
             var entityManager = context.EntityManager;
             foreach (var caster in owned)

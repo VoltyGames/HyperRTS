@@ -74,7 +74,7 @@ namespace HyperRTS.Presentation.HUD
             Adopt(new GameOverBanner(hud.Require<VisualElement>("game-over")));
             Adopt(new LineCost(hud.Require<CostRow>("line-cost")));
             Adopt(new PlacementHint(hud.Require<Label>("placement-hint")));
-            Adopt(new StrategicCountdowns(hud.Require<VisualElement>("strategic-countdowns")));
+            Adopt(new StrategicCountdowns(hud.Require<VisualElement>("strategic-countdowns"), panelLayouts));
         }
 
         /// <summary>Adds a panel of a game's own to <paramref name="parent"/>.</summary>
@@ -134,11 +134,11 @@ namespace HyperRTS.Presentation.HUD
 
             foreach (var panel in _panels)
             {
-                // Observers keep only the panels that need no player; the rest manage their own visibility.
+                // With no shown player only the panels that need none stay; the rest manage their own visibility.
                 if (panel.NeedsPlayer)
                 {
-                    panel.Root.SetHidden(!view.HasLocalPlayer);
-                    if (!view.HasLocalPlayer)
+                    panel.Root.SetHidden(!_context.HasShownPlayer);
+                    if (!_context.HasShownPlayer)
                     {
                         continue;
                     }

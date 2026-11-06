@@ -1,0 +1,39 @@
+.hud-minimap {
+    width: var(--hud-minimap-size);
+    height: var(--hud-minimap-size);
+    padding: 4px;
+}
+
+.hud-minimap__canvas {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.hud-minimap__fog {
+    -unity-background-image-tint-color: black;
+    --minimap-explored-alpha: 0.431;
+    --minimap-unexplored-alpha: 0.843;
+}
+
+.hud-minimap__markers {
+    --minimap-outline-color: rgba(0, 0, 0, 0.7);
+    --minimap-outline-width: 1;
+    --minimap-unit-radius: 2.2;
+    --minimap-structure-radius: 3.2;
+    --minimap-node-radius: 2.4;
+}
+
+.hud-minimap__view {
+    --minimap-view-color: rgba(255, 255, 255, 0.85);
+    --minimap-view-width: 1.5;
+}
+
+.hud-minimap__fog,
+.hud-minimap__markers,
+.hud-minimap__view {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}

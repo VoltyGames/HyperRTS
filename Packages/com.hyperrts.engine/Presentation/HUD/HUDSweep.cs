@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.HUD
     {
         private float _fraction;
 
-        public HUDSweep() : base("--sweep-color", new Color(0f, 0f, 0f, 0.6f))
+        public HUDSweep() : base("--sweep-color")
         {
         }
 

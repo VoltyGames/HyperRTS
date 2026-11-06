@@ -13,6 +13,9 @@ namespace HyperRTS.Presentation.Common
         public bool TryGet(EntityManager entityManager, out T value) =>
             _query.In(entityManager).TryGetSingleton(out value);
 
+        /// <summary>The singleton; throws when the world has none.</summary>
+        public T Get(EntityManager entityManager) => _query.In(entityManager).GetSingleton<T>();
+
         /// <summary>Waits for jobs writing it, before a main-thread read of data they fill.</summary>
         public void Complete(EntityManager entityManager) => _query.In(entityManager).CompleteDependency();
 

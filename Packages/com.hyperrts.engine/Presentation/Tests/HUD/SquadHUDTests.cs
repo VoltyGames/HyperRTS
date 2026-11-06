@@ -54,21 +54,21 @@ namespace HyperRTS.Presentation.Tests.HUD
         [Test]
         public void MemberCard_ShowsItsWeapon_AndWorkOverCover()
         {
-            var card = new SquadMemberCard();
+            var card = new SquadMemberCard(HUDPanelTests.Layouts.SquadMemberCard);
             var digger = new SquadMember
             {
                 Health = 10f, MaxHealth = 10f, Cover = CoverKind.Heavy, Action = MemberAction.Dig,
             };
 
             card.Show(digger, "M249");
-            var label = card.Q<Label>(className: "hud-member__state");
-            Assert.AreEqual("M249", card.Q<Label>(className: "hud-member__weapon").text);
+            var label = card.Root.Q<Label>(className: "hud-member__state");
+            Assert.AreEqual("M249", card.Root.Q<Label>(className: "hud-member__weapon").text);
             Assert.AreEqual(HUDText.Text("squad.digging"), label.text);
 
             digger.Health = 0f;
             card.Show(digger, "M249");
             Assert.AreEqual(HUDText.Text("squad.dead"), label.text);
-            Assert.IsTrue(card.ClassListContains("hud-member--dead"));
+            Assert.IsTrue(card.Root.ClassListContains("hud-member--dead"));
         }
 
         [Test]
@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             root.Add(new Label { name = "status-text" });
             root.Add(new HUDBar { name = "progress" });
 
-            new SquadView(root).Refresh(_context, squad);
+            new SquadView(root, HUDPanelTests.Layouts.SquadMemberCard).Refresh(_context, squad);
 
             var names = root.Query<Label>(className: "hud-member__weapon").ToList().Select(label => label.text);
             CollectionAssert.AreEqual(new[] { "M4A1", "M249", "AT4" }, names);

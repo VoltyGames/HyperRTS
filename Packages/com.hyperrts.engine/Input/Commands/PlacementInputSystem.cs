@@ -28,6 +28,7 @@ namespace HyperRTS.Input.Commands
         private RTSInputActions _actions;
         private WorldPointer _pointer;
         private PlacementRotation _rotation;
+        private bool _keysPublished;
         private SeenEnemies _enemies;
         private VisibleFootprints _footprints;
 
@@ -46,6 +47,7 @@ namespace HyperRTS.Input.Commands
             RequireForUpdate<PlacementState>();
             RequireForUpdate<ScrollEdge>();
             RequireForUpdate<PointerState>();
+            RequireForUpdate<PlacementKeys>();
             RequireForUpdate<LocalPlayer>();
             RequireForUpdate<MapSettings>();
             RequireForUpdate<NavGrid>();
@@ -59,12 +61,14 @@ namespace HyperRTS.Input.Commands
             var placement = SystemAPI.GetSingleton<PlacementState>();
             if (!placement.Active)
             {
+                _keysPublished = false;
                 _rotation = PlacementRotation.Start();
                 PauseEdgeScroll(false);
                 return;
             }
 
             var commands = _actions.Commands;
+            PublishKeys(commands);
             var cancelled = commands.Command.WasPressedThisFrame();
             if (placement.Prefab == Entity.Null || cancelled)
             {
@@ -93,6 +97,22 @@ namespace HyperRTS.Input.Commands
 
             PauseEdgeScroll(_rotation.IsTurning);
             SystemAPI.SetSingleton(placement);
+        }
+
+        // Read once per placement so a rebound key shows on the next one.
+        private void PublishKeys(RTSInputActions.CommandsActions commands)
+        {
+            if (_keysPublished)
+            {
+                return;
+            }
+
+            _keysPublished = true;
+            SystemAPI.SetSingleton(new PlacementKeys
+            {
+                Rotate = commands.RotateBuilding.GetBindingDisplayString(),
+                Snap = commands.Queue.GetBindingDisplayString(),
+            });
         }
 
         /// <summary>RotateBuilding held turns with the pointer's sideways motion; a tap adds a step.</summary>

@@ -22,6 +22,7 @@ namespace HyperRTS.Presentation.Interaction
             entityManager.CreateSingleton<PendingCommand>();
             var placement = entityManager.CreateSingleton<PlacementState>();
             entityManager.AddBuffer<PlacementSegment>(placement);
+            entityManager.CreateSingleton<PlacementKeys>();
             entityManager.CreateSingleton<PointerState>();
             entityManager.CreateSingleton<HoveredEntity>();
             entityManager.CreateSingleton<CameraFocusRequest>();

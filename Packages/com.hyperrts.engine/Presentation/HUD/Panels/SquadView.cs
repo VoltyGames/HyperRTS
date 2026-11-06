@@ -20,6 +20,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         private const string LevelClass = "hud-squad__suppression--";
 
         private readonly VisualElement _root;
+        private readonly VisualTreeAsset _cardTemplate;
         private readonly VisualElement _members;
         private readonly HUDBar _suppression;
         private readonly Label _level;
@@ -31,9 +32,10 @@ namespace HyperRTS.Presentation.HUD.Panels
         private int _shownLevel = -1;
         private int _shownStatus = -1;
 
-        public SquadView(VisualElement root)
+        public SquadView(VisualElement root, VisualTreeAsset cardTemplate)
         {
             _root = root;
+            _cardTemplate = cardTemplate;
             _members = root.Require<VisualElement>("members");
             _suppression = root.Require<HUDBar>("suppression");
             _level = root.Require<Label>("level");
@@ -87,14 +89,14 @@ namespace HyperRTS.Presentation.HUD.Panels
         {
             while (_cards.Count < count)
             {
-                var card = new SquadMemberCard();
+                var card = new SquadMemberCard(_cardTemplate);
                 _cards.Add(card);
-                _members.Add(card);
+                _members.Add(card.Root);
             }
 
             while (_cards.Count > count)
             {
-                _cards[^1].RemoveFromHierarchy();
+                _cards[^1].Root.RemoveFromHierarchy();
                 _cards.RemoveAt(_cards.Count - 1);
             }
         }

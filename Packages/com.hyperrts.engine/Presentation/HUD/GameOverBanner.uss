@@ -1,0 +1,11 @@
+.hud-banner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 28%;
+    align-items: center;
+}
+
+.hud-banner__title {
+    padding: 12px 64px;
+}

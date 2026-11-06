@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>Whether world clicks under the panel are ignored (false for pass-through overlays).</summary>
         public virtual bool BlocksPointer => true;
 
-        /// <summary>Shown only with a local player: observers have no stockpile, selection or commands.</summary>
+        /// <summary>Shown only with a shown player: observers without one have no stockpile, selection or commands.</summary>
         public virtual bool NeedsPlayer => true;
 
         public abstract void Refresh(HUDContext context);

@@ -35,7 +35,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             _healthText = Root.Require<Label>("health-text");
             _construction = Root.Require<HUDBar>("construction");
             _queue = new ProductionQueueView(Root.Require<VisualElement>("queue"), layouts.ProductionQueueViewSlot);
-            _squad = new SquadView(Root.Require<VisualElement>("squad"));
+            _squad = new SquadView(Root.Require<VisualElement>("squad"), layouts.SquadMemberCard);
             _groups = Root.Require<VisualElement>("groups");
         }
 

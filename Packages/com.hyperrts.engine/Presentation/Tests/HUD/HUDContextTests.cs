@@ -64,20 +64,24 @@ namespace HyperRTS.Presentation.Tests.HUD
         }
 
         [Test]
-        public void SellCommand_Offered_OnlyForBuildingsNotAGarrisonItsOccupantsHold()
+        public void ShownPlayer_IsTheLocalOneUntilAnotherIsPicked_AndOnlyTheLocalOneCommands()
         {
             Refresh();
-            var depot = _em.CreateEntity(typeof(BuildingTag));
-            var house = _em.CreateEntity(typeof(BuildingTag), typeof(NeutralGarrison));
-            var source = new OrderCommands(CommandTestKit.Orders(CommandType.Sell));
+            Assert.IsTrue(_context.HasShownPlayer);
+            Assert.IsTrue(_context.CanCommand);
 
-            var garrisonOnly = new List<CommandEntry>();
-            source.Build(_context, new[] { house }, garrisonOnly);
-            var withDepot = new List<CommandEntry>();
-            source.Build(_context, new[] { house, depot }, withDepot);
+            var other = _kit.AddPlayer(2);
+            _context.ShowPlayer(other);
+            Refresh();
 
-            Assert.IsEmpty(garrisonOnly, "a house you occupy isn't yours to sell");
-            Assert.AreEqual(1, withDepot.Count);
+            Assert.AreEqual(other, _context.ShownPlayer);
+            Assert.AreEqual(2, _context.ShownFaction);
+            Assert.IsFalse(_context.CanCommand);
+            Assert.DoesNotThrow(() => _context.Issue(default), "a command for a player you only watch is dropped");
+
+            _context.ShowPlayer(Entity.Null);
+            Refresh();
+            Assert.AreEqual(_view.LocalPlayer, _context.ShownPlayer);
         }
 
         private int Hash()

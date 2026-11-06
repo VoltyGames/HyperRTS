@@ -32,6 +32,22 @@ namespace HyperRTS.Presentation.HUD
         [Tooltip("Drag-box marquee and its corner accents (SelectionDragBoxUI.uxml).")]
         private VisualTreeAsset selectionDragBoxUI;
 
+        [SerializeField]
+        [Tooltip("One soldier of a selected squad (SquadMemberCard.uxml).")]
+        private VisualTreeAsset squadMemberCard;
+
+        [SerializeField]
+        [Tooltip("One strategic asset countdown line (StrategicCountdownRow.uxml).")]
+        private VisualTreeAsset strategicCountdownRow;
+
+        [SerializeField]
+        [Tooltip("One name and value line in a tooltip (HUDTooltipStat.uxml).")]
+        private VisualTreeAsset tooltipStat;
+
+        [SerializeField]
+        [Tooltip("An empty command card slot (CommandBlank.uxml).")]
+        private VisualTreeAsset commandBlank;
+
         public VisualTreeAsset Root => root;
 
         public VisualTreeAsset ResourceBarEntry => resourceBarEntry;
@@ -43,5 +59,13 @@ namespace HyperRTS.Presentation.HUD
         public VisualTreeAsset CommandButton => commandButton;
 
         public VisualTreeAsset SelectionDragBoxUI => selectionDragBoxUI;
+
+        public VisualTreeAsset SquadMemberCard => squadMemberCard;
+
+        public VisualTreeAsset StrategicCountdownRow => strategicCountdownRow;
+
+        public VisualTreeAsset TooltipStat => tooltipStat;
+
+        public VisualTreeAsset CommandBlank => commandBlank;
     }
 }

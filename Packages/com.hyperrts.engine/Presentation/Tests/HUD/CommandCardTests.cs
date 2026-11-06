@@ -3,7 +3,9 @@ using System.Linq;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Presentation.HUD.Commands;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
@@ -147,6 +149,35 @@ namespace HyperRTS.Presentation.Tests.HUD
             Assert.IsTrue(state.Cancel());
             Assert.AreEqual(0, state.Page.Page);
             Assert.IsFalse(state.Cancel());
+        }
+
+        [Test]
+        public void SellCommand_Offered_OnlyForBuildingsNotAGarrisonItsOccupantsHold()
+        {
+            Refresh();
+            var depot = _em.CreateEntity(typeof(BuildingTag));
+            var house = _em.CreateEntity(typeof(BuildingTag), typeof(NeutralGarrison));
+            var source = new OrderCommands(CommandTestKit.Orders(CommandType.Sell));
+
+            var garrisonOnly = new List<CommandEntry>();
+            source.Build(_context, new[] { house }, garrisonOnly);
+            var withDepot = new List<CommandEntry>();
+            source.Build(_context, new[] { house, depot }, withDepot);
+
+            Assert.IsEmpty(garrisonOnly, "a house you occupy isn't yours to sell");
+            Assert.AreEqual(1, withDepot.Count);
+        }
+
+        [Test]
+        public void Buttons_AreDisabled_WhileTheShownPlayerIsNotTheLocalOne()
+        {
+            var card = NewCard(Spec("Go"));
+            Assert.IsTrue(((CommandButton)card.Root[0]).enabledSelf);
+
+            _context.ShowPlayer(_kit.AddPlayer(2));
+            Refreshed(card);
+
+            Assert.IsFalse(((CommandButton)card.Root[0]).enabledSelf);
         }
 
         private CommandSpec Spec(string label, Key key = Key.None, int page = 0, int slot = 0)

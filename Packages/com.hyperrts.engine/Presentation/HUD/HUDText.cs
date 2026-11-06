@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.HUD
             ["hud.pop"] = "POP",
             ["hud.power"] = "PWR",
             ["hud.strategic-ready"] = "READY",
-            ["hud.rotate-hint"] = "Drag or hold R: rotate, R: +45°, Shift: snap",
+            ["hud.rotate-hint"] = "Drag or hold {0}: rotate, {0}: +45°, {1}: snap",
             ["command.return"] = "Return",
             ["command.unload"] = "Unload",
             ["command.deploy"] = "Deploy",
@@ -73,7 +73,7 @@ namespace HyperRTS.Presentation.HUD
         public virtual string Get(string key) => English[key];
 
         /// <summary>
-        /// Shown name of authored content: <paramref name="key"/> is entity.*, resource.* or ability.* and
+        /// Shown name of authored content: <paramref name="key"/> is entity.*, resource.*, ability.* or weapon.* and
         /// <paramref name="authored"/> is the display name it was authored with.
         /// </summary>
         public virtual string Name(string key, string authored) => authored;
@@ -100,10 +100,7 @@ namespace HyperRTS.Presentation.HUD
         public static string Seconds(float seconds) => $"{Mathf.CeilToInt(seconds)} {Text("tooltip.seconds")}";
 
         /// <summary>A weapon's designation as a member card shows it: weapon.m4a1 for M4A1.</summary>
-        public static string WeaponName(string designation) => designation.Length == 0 ? "" : Current.Designation(Key("weapon", designation), designation);
-
-        /// <summary>Shown designation of a weapon: <paramref name="key"/> is weapon.*; the base returns the authored text.</summary>
-        public virtual string Designation(string key, string authored) => authored;
+        public static string WeaponName(string designation) => designation.Length == 0 ? "" : Current.Name(Key("weapon", designation), designation);
 
         public static string AbilityName(string name) => Current.Name(Key("ability", name), name);
 

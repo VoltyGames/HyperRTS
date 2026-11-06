@@ -49,38 +49,6 @@ namespace HyperRTS.Presentation.Tests.HUD
         private EntityManager EntityManager => _world.EntityManager;
 
         [Test]
-        public void FindRefusal_NamesAMissingPrerequisite_BeforeThePrice()
-        {
-            var prefab = _world.UnitPrefab(_supplies, 100);
-            Require(prefab, "Barracks");
-
-            Assert.AreEqual(PurchaseRefusal.MissingPrerequisite, Refusal(prefab), "locked and unaffordable");
-
-            _world.SpawnBuilding(1, Far, new float2(4f, 4f), name: "Barracks");
-            Assert.AreEqual(PurchaseRefusal.CannotAfford, Refusal(prefab));
-
-            _world.AddResources(1, _supplies, 100);
-            Assert.AreEqual(PurchaseRefusal.None, Refusal(prefab));
-        }
-
-        [Test]
-        public void FindRefusal_NamesAReachedLimit_AndFinishedResearch()
-        {
-            _world.AddResources(1, _supplies, 1000);
-            var hero = _world.AddBuildLimit(_world.UnitPrefab(_supplies, 10, name: "Hero"), 1);
-            _world.AddBuildLimit(_world.SpawnUnit(1, Far, name: "Hero"), 1);
-            var upgrade = _world.UnitPrefab(_supplies, 10, name: "Upgrade");
-            EntityManager.AddComponent<Research>(upgrade);
-            EntityManager.GetBuffer<CompletedResearch>(_world.Player(1)).Add(new CompletedResearch
-            {
-                Prefab = upgrade, TypeId = EntityInfo.TypeIdFromName("Upgrade"),
-            });
-
-            Assert.AreEqual(PurchaseRefusal.AtLimit, Refusal(hero));
-            Assert.AreEqual(PurchaseRefusal.Researched, Refusal(upgrade));
-        }
-
-        [Test]
         public void FindMissingPrerequisites_ListsOnlyUnmetTypesWithAPrefab()
         {
             var prefab = _world.UnitPrefab(_supplies, 10);
@@ -164,7 +132,7 @@ namespace HyperRTS.Presentation.Tests.HUD
 
             var entries = new List<CommandEntry>();
             new PurchaseCommands(CommandTestKit.Prefabs("Tank")).Build(_context, new[] { builder }, entries);
-            var tooltip = new HUDTooltip();
+            var tooltip = new HUDTooltip(HUDPanelTests.Layouts.TooltipStat);
             Assert.IsTrue(entries.Single().Button.Describe(tooltip));
 
             Assert.AreEqual("Tank", tooltip.Q<Label>(className: "hud-tooltip__title").text);
@@ -194,12 +162,6 @@ namespace HyperRTS.Presentation.Tests.HUD
             state.Elapsed = elapsed;
             EntityManager.SetComponentData(producer, state);
             return producer;
-        }
-
-        private PurchaseRefusal Refusal(Entity prefab)
-        {
-            Refresh();
-            return _context.FindRefusal(prefab, _context.SnapshotBuyer());
         }
 
         private void Refresh()

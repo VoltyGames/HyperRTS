@@ -1,0 +1,32 @@
+.hud-member {
+    border-width: 1px;
+    border-color: var(--hud-line-strong);
+    background-color: var(--hud-tile-bg);
+}
+
+.hud-member--dead {
+    opacity: 0.35;
+}
+
+.hud-member__weapon,
+.hud-member__state,
+.hud-squad__level {
+    font-size: 11px;
+    color: var(--hud-text-muted);
+}
+
+.hud-squad__suppression {
+    --bar-fill: var(--hud-text-muted);
+}
+
+.hud-squad__suppression--suppressed {
+    --bar-fill: var(--hud-warn);
+}
+
+.hud-squad__suppression--pinned {
+    --bar-fill: var(--hud-danger);
+}
+
+.hud-squad__progress {
+    --bar-fill: var(--hud-bar-progress);
+}

@@ -1,0 +1,22 @@
+.hud-drag-box {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-width: 2px;
+}
+
+/* An 18px L from two 4px borders, set over the box's 2px edge; panel px scale with resolution and UI scale. */
+
+.hud-drag-box__corner {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+}
+
+.hud-drag-box__corner--tl, .hud-drag-box__corner--bl { left: -2px; border-left-width: 4px; }
+
+.hud-drag-box__corner--tr, .hud-drag-box__corner--br { right: -2px; border-right-width: 4px; }
+
+.hud-drag-box__corner--tl, .hud-drag-box__corner--tr { top: -2px; border-top-width: 4px; }
+
+.hud-drag-box__corner--bl, .hud-drag-box__corner--br { bottom: -2px; border-bottom-width: 4px; }

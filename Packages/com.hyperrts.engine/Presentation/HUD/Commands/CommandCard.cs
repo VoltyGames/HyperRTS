@@ -24,7 +24,8 @@ namespace HyperRTS.Presentation.HUD.Commands
         private readonly List<CommandEntry> _entries = new();
         private readonly List<CommandButton> _turns = new();
         private readonly List<Entity> _owned = new();
-        private readonly HUDTooltip _tooltip = new();
+        private readonly HUDTooltip _tooltip;
+        private readonly VisualTreeAsset _blank;
         private int _hash = -1;
         private int _page = -1;
         private bool _cancel;
@@ -34,6 +35,8 @@ namespace HyperRTS.Presentation.HUD.Commands
             params ICommandSource[] extra) : base(root)
         {
             _kit = new CommandKit(layouts.CommandButton, catalogue);
+            _blank = layouts.CommandBlank;
+            _tooltip = new HUDTooltip(layouts.TooltipStat);
             _sources = new List<ICommandSource>
             {
                 new PurchaseCommands(_kit), new AbilityCommands(_kit), new OrderCommands(_kit), new SquadCommands(_kit),
@@ -63,6 +66,11 @@ namespace HyperRTS.Presentation.HUD.Commands
             if (context.CommandPage != _page)
             {
                 Show(context.CommandPage);
+            }
+
+            foreach (var entry in _entries)
+            {
+                entry.Button.SetEnabled(context.CanCommand);
             }
 
             foreach (var source in _sources)
@@ -177,19 +185,11 @@ namespace HyperRTS.Presentation.HUD.Commands
             var last = Array.FindLastIndex(cells, cell => cell != null);
             for (var slot = 0; slot <= last; slot++)
             {
-                Root.Add(cells[slot] ?? Blank());
+                Root.Add(cells[slot] ?? _blank.CloneRoot());
             }
 
             Root.SetInvisible(_entries.Count == 0);
             Root.Add(_tooltip);
-        }
-
-        private static VisualElement Blank()
-        {
-            var blank = new VisualElement { pickingMode = PickingMode.Ignore };
-            blank.AddToClassList("hud-command");
-            blank.AddToClassList("hud-command--blank");
-            return blank;
         }
 
         private void OnPointerDown(PointerDownEvent evt)

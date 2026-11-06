@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Overlays.Bars
 
         public static SquadBarState None => new(-1f, SuppressionLevel.Steady, CoverKind.None, false);
 
-        public static SquadBarState Of(in OverlayUnit unit, in SquadRules rules)
+        public static SquadBarState Read(in OverlayUnit unit, in SquadRules rules)
         {
             if (!unit.IsSquad || !unit.Suppression.HasValue)
             {
