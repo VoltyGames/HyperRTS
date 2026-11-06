@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
-            _projectiles = state.GetEntityQuery(ComponentType.ReadOnly<Projectile>(), ComponentType.ReadOnly<LocalTransform>());
+            _projectiles = SystemAPI.QueryBuilder().WithAll<Projectile, LocalTransform>().Build();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<SimulationFrame>();

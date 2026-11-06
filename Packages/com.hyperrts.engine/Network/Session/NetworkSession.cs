@@ -181,6 +181,9 @@ namespace HyperRTS.Network.Session
             worlds.UnionWith(ClientServerBootstrap.ServerWorlds);
             worlds.UnionWith(ClientServerBootstrap.ClientWorlds);
             worlds.UnionWith(ClientServerBootstrap.ThinClientWorlds);
+
+            // Netcode forgets its tracked worlds when Play starts, so a session that outlived Play is found here.
+            worlds.UnionWith(SessionWorlds.Created);
             worlds.RemoveWhere(world => world == null || world == keep || world == _base || !world.IsCreated);
 
             // Unity disposes only worlds off its active world stack, which pops from the top down.
@@ -199,6 +202,8 @@ namespace HyperRTS.Network.Session
             {
                 world.Dispose();
             }
+
+            SessionWorlds.Created.Clear();
         }
 
         private static bool TryPop(World world)
@@ -258,6 +263,17 @@ namespace HyperRTS.Network.Session
                 Preference = wanted;
             }
         }
+
+        /// <summary>Session worlds end with their Play session: domain reload is off, so one left behind would run on.</summary>
+        [OnEnteringPlayMode]
+        internal static void EndSessionWithPlay()
+        {
+            DisposeWorlds(World.DefaultGameObjectInjectionWorld);
+            Application.quitting -= EndSession;
+            Application.quitting += EndSession;
+        }
+
+        private static void EndSession() => DisposeWorlds(null);
 
         // Never 0, which a join request sends when it owns no slot.
         private static ulong NewToken() => BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0) | 1;

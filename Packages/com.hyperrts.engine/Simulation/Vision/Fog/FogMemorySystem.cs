@@ -31,6 +31,8 @@ namespace HyperRTS.Simulation.Vision.Fog
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<LocalFogView>();
+            state.RequireForUpdate<FogOfWar>();
+            state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             _concealment = new ConcealmentLookup(ref state);
         }

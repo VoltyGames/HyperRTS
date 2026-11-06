@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using HyperRTS.Network.Common;
 using HyperRTS.Network.Players;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
 using Unity.Networking.Transport;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Network.Session
@@ -12,6 +14,10 @@ namespace HyperRTS.Network.Session
     /// <summary>Creates the worlds <see cref="NetworkSession"/> runs, with their settings, and opens their connections.</summary>
     internal static class SessionWorlds
     {
+        /// <summary>Every world made here and not yet disposed, so none outlives its session when Netcode forgets it.</summary>
+        [NoAutoStaticsCleanup]
+        public static readonly HashSet<World> Created = new();
+
         /// <summary>Every server, client and presentation system but the <see cref="RemoteClientOnlyAttribute"/> ones.</summary>
         public static NativeList<SystemTypeIndex> HostSystems()
         {
@@ -43,6 +49,7 @@ namespace HyperRTS.Network.Session
             var world = ClientServerBootstrap.CreateSingleWorldHost("HostWorld", systems);
             SetSingleton(world, ServerTickRate());
             AddJoin(world);
+            Created.Add(world);
             return world;
         }
 
@@ -52,6 +59,7 @@ namespace HyperRTS.Network.Session
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
             SetSingleton(world, ServerTickRate());
+            Created.Add(world);
             return world;
         }
 
@@ -61,6 +69,7 @@ namespace HyperRTS.Network.Session
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld", systems);
             AddJoin(world);
+            Created.Add(world);
             return world;
         }
 

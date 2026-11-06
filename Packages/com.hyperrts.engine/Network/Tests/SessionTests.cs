@@ -51,6 +51,18 @@ namespace HyperRTS.Network.Tests
             Assert.IsFalse(NetworkSession.Rejoin(SessionScene.Keep));
         }
 
+        [Test]
+        public void SessionWorld_EndsWithPlay_EvenWhenNetcodeNoLongerTracksIt()
+        {
+            var host = SessionWorlds.CreateHost(SessionWorlds.HostSystems());
+            ClientServerBootstrap.ServerWorlds.Clear();
+            ClientServerBootstrap.ClientWorlds.Clear();
+
+            NetworkSession.EndSessionWithPlay();
+
+            Assert.IsFalse(host.IsCreated);
+        }
+
         private static LaunchOptions Parse(string line) => LaunchOptions.Parse(line.Split(' '));
 
         [Test]

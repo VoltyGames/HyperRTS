@@ -34,6 +34,7 @@ namespace HyperRTS.Presentation.Cursors
             _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithNone<Dead>().Build();
             _localPlayer = SystemAPI.QueryBuilder().WithAll<LocalPlayer, Player>().Build();
             state.RequireForUpdate<CursorIntent>();
+            state.RequireForUpdate<FactionRelations>();
         }
 
         [BurstCompile]

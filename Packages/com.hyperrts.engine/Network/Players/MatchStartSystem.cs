@@ -32,6 +32,7 @@ namespace HyperRTS.Network.Players
             _humans = SystemAPI.QueryBuilder().WithAll<Player, PlayerConnection, GhostOwner>().WithNone<AIPlayer>()
                 .Build();
             state.RequireForUpdate<MatchState>();
+            state.RequireForUpdate<MatchRules>();
         }
 
         public void OnUpdate(ref SystemState state)
