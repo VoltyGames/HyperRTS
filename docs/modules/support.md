@@ -56,7 +56,7 @@ byte with an impact's material, which only impacts use.
 Squad barks come from `SquadBarkSystem`, client-side only and for the local player's squads. A squad speaks when most
 of its living members reach cover (TakeCover), its suppression level rises (Suppressed, Pinned), `Retreating` turns
 on, a member starts digging or a dead member comes back. When several happen at once, Pinned beats Suppressed, then
-Retreat, Reinforced, DigIn and TakeCover. A squad barks at most once per `squadBarkInterval` (6 s) and the player once per `squadBarkPlayerInterval` (1.5 s). Acknowledgements wait `acknowledgementInterval` (1 s). All five are `VoiceSettings` on `MatchAuthoring.voice`, baked into `VoiceRules`. A squad's
+Retreat, Reinforced, DigIn and TakeCover. A squad barks at most once per `squadBarkInterval` (6 s) and the player once per `squadBarkPlayerInterval` (1.5 s). Acknowledgements wait `acknowledgementInterval` (1 s). All five are `VoiceSettings` on `InfantryTuning.voice`, baked into `VoiceRules`. A squad's
 first appearance, such as a spawn or a replay's first state, stays silent: `SquadBarkState` holds what it saw last.
 
 Sounds play through [cues](#cues). Playback is on the [client](client.md#audio), and the server plays nothing.

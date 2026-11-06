@@ -65,7 +65,7 @@ prespawned ghosts in single player.
 
 ## Match
 
-One `MatchAuthoring` per map sets its size, fog, player slots, sides, AI tuning, replays and join timeout. Each slot
+One `MatchAuthoring` per map sets its size, fog, player slots, sides, AI tuning, replays and join timeout, and references one `InfantryTuning` asset (cover, squad, voice and crater numbers; baking fails without it). Each slot
 has a name, team, colour, control type, starting stock, spawn point and side. Slot index + 1 is the player's
 faction.
 

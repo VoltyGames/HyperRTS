@@ -1754,6 +1754,7 @@ MonoBehaviour:
   navCellSize: 1
   fogCellSize: 2
   fogOfWar: 1
+  infantry: {fileID: 11400000, guid: e8b05d2a41c9477f9a63d17b0c4e5f82, type: 2}
   players:
   - name: Player
     team: 1

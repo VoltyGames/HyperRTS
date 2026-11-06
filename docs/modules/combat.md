@@ -103,7 +103,7 @@ compressed against the last snapshot.
 
 ### Suppression, posture, retreat and reinforce
 
-`SquadRules` on the Match (baked from `MatchAuthoring.squads`, `SquadSettings`) holds every number below, and the
+`SquadRules` on the Match (baked from `InfantryTuning.squads`, `SquadSettings`) holds every number below, and the
 formation numbers above. Whether a squad is halted is decided once, by `SquadMember.IsMoving` on its actual
 velocity (over 0.5 m/s), for the member slots, the cover search and the posture.
 
@@ -175,7 +175,7 @@ Cover means protection; what hides a unit from sight is concealment.
   from within the arc (`CoverRules.ArcCos`) of the member's facing, direct hits from `Origin`, splash from the
   blast. `DamageType.coverPiercing` is the share of the protection a hit ignores. A direct hit picks its member by
   seeded roll weighted by that share, so exposed members are hit more.
-- **Rules.** `CoverSettings` on the Match bakes `CoverRules`: a `CoverEntry` per `CoverKind` (damage taken,
+- **Rules.** `CoverSettings` on the Match's `InfantryTuning` bakes `CoverRules`: a `CoverEntry` per `CoverKind` (damage taken,
   suppression taken and preference, indexed by the kind), the front arc half angle and the search radius.
   `SquadMember.ExposureTo` returns both shares of a hit, and the front arc test lives in `CoverRules.Faces`.
 - **Heading.** On a concealing cell `CoverHeading` is the squad's facing, so a client can tell a covered member's

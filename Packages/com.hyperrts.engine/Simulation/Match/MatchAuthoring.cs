@@ -5,10 +5,8 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Cues.Voice;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.MatchStart;
-using HyperRTS.Simulation.Squads;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -58,17 +56,8 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("What high ground is worth to sight and direct fire, and how close enemies spot concealed infantry.")]
         public SightSettings sight = SightSettings.Standard;
 
-        [Tooltip("What cover takes off a hit and how far a halted squad looks for it.")]
-        public CoverSettings cover = CoverSettings.Standard;
-
-        [Tooltip("How suppression, posture, retreat and reinforcing change a squad.")]
-        public SquadSettings squads = SquadSettings.Standard;
-
-        [Tooltip("How often units acknowledge orders, call out under fire and bark.")]
-        public VoiceSettings voice = VoiceSettings.Standard;
-
-        [Tooltip("Which blasts dig a crater that gives soldiers light cover.")]
-        public CraterSettings craters = CraterSettings.Standard;
+        [Tooltip("Cover, squad, voice and crater numbers for infantry.")]
+        public InfantryTuning infantry;
 
         [Header("Rules")]
         [Tooltip("Production speed of power-consuming producers while their owner's power is low.")]
@@ -173,14 +162,7 @@ namespace HyperRTS.Simulation.Match
                     MaxSlope = authoring.maxSlope,
                 });
                 AddComponent(entity, authoring.sight.Rules);
-                AddComponent(entity, authoring.cover.Rules);
-                AddComponent(entity, authoring.squads.Rules);
-                AddComponent(entity, authoring.voice.Rules);
-                if (authoring.craters.prefab != null)
-                {
-                    var prefab = GetEntity(authoring.craters.prefab, TransformUsageFlags.Dynamic);
-                    AddComponent(entity, authoring.craters.Rules(prefab));
-                }
+                AddInfantryTuning(entity, authoring);
 
                 AddComponent(entity, new MatchRules
                 {
@@ -209,6 +191,25 @@ namespace HyperRTS.Simulation.Match
                 AddComponent(entity, relations);
                 AddTunings(entity, authoring);
                 AddSides(entity, authoring.sides);
+            }
+
+            private void AddInfantryTuning(Entity match, MatchAuthoring authoring)
+            {
+                if (authoring.infantry == null)
+                {
+                    throw new ArgumentException($"The Match on '{authoring.name}' has no Infantry Tuning.");
+                }
+
+                DependsOn(authoring.infantry);
+                var tuning = authoring.infantry;
+                AddComponent(match, tuning.cover.Rules);
+                AddComponent(match, tuning.squads.Rules);
+                AddComponent(match, tuning.voice.Rules);
+                if (tuning.craters.prefab != null)
+                {
+                    var prefab = GetEntity(tuning.craters.prefab, TransformUsageFlags.Dynamic);
+                    AddComponent(match, tuning.craters.Rules(prefab));
+                }
             }
 
             // Kit and build order prefabs are referenced here, so every world's PrefabRegistry has them.
