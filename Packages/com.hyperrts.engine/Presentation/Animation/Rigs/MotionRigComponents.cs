@@ -92,8 +92,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         }
 
         /// <summary>
-        /// Measures <see cref="Curvature"/> from the turn since last frame over the metres rolled. Standing keeps it, as
-        /// steered wheels stay turned.
+        /// Measures <see cref="Curvature"/> from the turn since last frame over the metres rolled; standing keeps it.
         /// </summary>
         public void MeasureCurvature(float2 heading, float rolled)
         {

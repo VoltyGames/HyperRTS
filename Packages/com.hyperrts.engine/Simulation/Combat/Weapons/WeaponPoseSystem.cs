@@ -10,10 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// Turns each <see cref="WeaponPose"/> toward its weapon's target at the weapon's traverse and elevation rates:
-    /// the primary at the <see cref="AttackTarget"/>, extra weapons at their own. Arcing weapons pitch up to their
-    /// launch angle; idle weapons, and those waiting for their unit to deploy, turn back to centre. Runs before firing,
-    /// so turrets fire once on target.
+    /// Turns each <see cref="WeaponPose"/> toward its weapon's target at the weapon's traverse and elevation rates,
+    /// before firing so turrets fire once on target.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

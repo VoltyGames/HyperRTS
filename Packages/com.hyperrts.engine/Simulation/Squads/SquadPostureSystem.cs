@@ -12,9 +12,7 @@ namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
     /// Decides each squad's posture and <see cref="Pace"/> from its suppression, motion and orders, after cover has
-    /// settled: retreating squads stand and run with suppression cleared, pinned ones lie prone, members in cover
-    /// crouch, crew at their places hold the crew posture, suppressed squads move crouched, a halted squad that is firing crouches, and one at work stands to dig. Every member's posture is
-    /// set here and nowhere else.
+    /// settled. Every member's posture is set here and nowhere else.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]

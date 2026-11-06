@@ -7,7 +7,6 @@ namespace HyperRTS.Presentation.Animation.Figures
 {
     public partial struct SquadFigureSystem
     {
-        // The clip playing half of the job: what each figure's renderers play and when.
         private partial struct SquadJob
         {
             // The legs follow motion and posture; the upper body fires over them or keeps their clip, in step with them.

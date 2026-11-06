@@ -10,9 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
-    /// Digs a <see cref="Crater"/> cover entity where an impact cue lands on open ground with a splash radius of at least
-    /// <see cref="CraterRules.MinRadius"/>, clear of other craters and cover spots, and removes the oldest past the cap.
-    /// Only shooters that leave impact cues dig. The server alone spawns them: clients draw craters from the cues.
+    /// Digs a <see cref="Crater"/> cover entity where a large enough impact lands on open ground, and removes the
+    /// oldest past the cap. Server only: clients draw craters from the cues.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

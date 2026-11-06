@@ -11,11 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>
-    /// Poses each <see cref="MotionRig"/>'s children from the interpolated unit: turrets and barrels follow the
-    /// replicated <see cref="WeaponPose"/>, barrels recoil per shot, wheels roll with the ground covered, road wheels
-    /// rise and fall with it and bend their tracks, steering wheels turn with the turn per metre, rotors spin up with
-    /// flight into the unit's <see cref="RotorSpin"/>, and the body tilts with the ground or leans with acceleration.
-    /// Ground vehicles also sway on their <see cref="Suspension"/>.
+    /// Poses each <see cref="MotionRig"/>'s children from the interpolated unit: turrets, barrels, wheels, rotors and
+    /// body tilt. Ground vehicles also sway on their <see cref="Suspension"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]

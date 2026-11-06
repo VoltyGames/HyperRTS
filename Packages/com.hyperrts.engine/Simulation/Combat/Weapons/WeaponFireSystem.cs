@@ -16,13 +16,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// Aims and fires every <see cref="WeaponMount"/>: an instant <see cref="DamageEvent"/>, or a launched
-    /// <see cref="Projectile"/> when the weapon has a prefab, or a kill roll on a projectile in flight for an interceptor. The primary shoots the <see cref="AttackTarget"/> once it
-    /// is in reach; an extra weapon shoots it when it can hit it, else, if independent, the nearest spotted hostile in
-    /// its own range. Offline shooters, weapons out of <see cref="Ammo"/> and undeployed
-    /// <see cref="Weapon.NeedsDeploy"/> weapons stay silent. A salvo stops when its target is lost, and a shot reveals
-    /// a stealthed shooter for its <see cref="Stealth.RevealDuration"/>. A unit's hull-fixed primary turns the hull to
-    /// the target through movement and fires once it faces it; a turret fires once its pose is on target.
+    /// Aims and fires every <see cref="WeaponMount"/> at its target, as a <see cref="DamageEvent"/>, a launched <see
+    /// cref="Projectile"/> or an interceptor's kill roll. Offline, out-of-ammo and undeployed weapons stay silent.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

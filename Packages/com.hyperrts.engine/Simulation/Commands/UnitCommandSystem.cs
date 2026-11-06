@@ -16,10 +16,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
-    /// Turns unit <see cref="PlayerCommand"/>s into orders for the commanded unit or the player's selected units.
-    /// Ground moves of several units are spread into a <see cref="Formation"/>, each slot moved to the nearest spot its
-    /// unit fits on the <see cref="NavGrid"/>; a patrol also queues the leg back to
-    /// where each unit stands or its queue ends. Producers are not handled here.
+    /// Turns unit <see cref="PlayerCommand"/>s into orders for the commanded unit or the player's selected units,
+    /// spreading ground moves into a <see cref="Formation"/> on the <see cref="NavGrid"/>. Producers are not handled
+    /// here.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

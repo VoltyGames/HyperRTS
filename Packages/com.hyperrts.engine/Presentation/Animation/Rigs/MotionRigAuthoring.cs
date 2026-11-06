@@ -14,9 +14,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>
-    /// Client-side motion of a unit or building model's parts: turrets and barrels follow the weapon or interceptor
-    /// pose, barrels recoil, wheels roll, rotors spin up and down and a unit's body tilts. <see cref="FillFromModel"/>
-    /// finds the parts by their art names.
+    /// Client-side motion of a unit or building model's parts: turrets, barrels, wheels, rotors and body tilt.
+    /// <see cref="FillFromModel"/> finds the parts by their art names.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Motion Rig")]
     [Icon(HyperRTSIcons.Animation)]

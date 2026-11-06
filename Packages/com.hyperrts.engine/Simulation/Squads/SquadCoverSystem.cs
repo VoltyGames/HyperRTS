@@ -14,11 +14,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
-    /// Puts the members of a halted squad in cover. Each one without a spot takes the best free
-    /// <see cref="CoverSpot"/> near the squad (heavy over light, facing the way the squad does, close to its place in
-    /// the ring) and walks to it; it counts as covered once it stands there. A member drops its spot when
-    /// its squad moves or works, or its prop is gone. A member at a crew place holds no spot and has no cover. A member with no spot on a concealing cell (woods, tall crops) is in light
-    /// cover from every side.
+    /// Puts the members of a halted squad in cover: each without a spot takes the best free <see cref="CoverSpot"/>
+    /// near the squad and counts as covered once it stands there. A member without a spot on a concealing cell is in
+    /// light cover.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]

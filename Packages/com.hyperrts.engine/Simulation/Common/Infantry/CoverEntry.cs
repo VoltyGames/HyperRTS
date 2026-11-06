@@ -5,10 +5,8 @@ namespace HyperRTS.Simulation.Common.Infantry
     /// <summary>What one <see cref="CoverKind"/> does for a member standing in it, from the front.</summary>
     public struct CoverEntry
     {
-        /// <summary>Share of damage taken.</summary>
         public float DamageTaken;
 
-        /// <summary>Share of suppression taken.</summary>
         public float SuppressionTaken;
 
         /// <summary>How much a squad wants a spot of this kind, scored against the metres from its place in the ring.</summary>

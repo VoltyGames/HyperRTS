@@ -395,32 +395,31 @@ same frame as the unit. Machine links still aim at last frame's matrices.
 #### Squad figures
 
 `SquadFiguresAuthoring` on a squad unit draws it as hand-placed bone-animated figures: children of its `Model`, each
-with `BoneAnimatedAuthoring` renderers (body levels of detail in a LODGroup, a weapon) that share one `BoneClipTable`,
-listed in the order of the squad's members, each with a `FigureClipSet` (a ScriptableObject) that picks its clips from
-that table by name: legs for idle, walk and run in each posture, a fire clip per posture, a whole-body clip per
-`MemberAction` (except None) and a death per posture for a shot and for a blast from each side. Every entry is required:
-an unset one or a name the table lacks fails the bake, naming the set and the entry, and nothing falls back to the
-standing clips. The authoring also holds the run speed and how long a fallen figure stays down. `FigureClipSet.Build`
-resolves a set against a table into a `FigureClips` blob of ranges; the baker adds it to the blob store, so figures that
-play the same set on the same table share one, and each `SquadFigure` and `FigureModel` keeps only the reference.
-Figure i shows `SquadMember` i, so the count of
-figures equals the count of members (a validation rule checks it). `SquadFigurePlacementSystem`, in the `PoseSystemGroup`,
-eases each living figure toward its member's `Offset` (world axes) and turns it to its cover, composing the squad's own
-`LocalTransform` with the local transforms down to the figure's parent, so figures never lag the squad by a frame. The
-clips are `SquadFigureSystem`'s, in the presentation group, since cues and shots land after the transform group. The
-baker lists each model's clip-playing renderers (levels of detail, weapon, material children) in a `FigureRenderer`
-buffer on the squad, each part keyed by the model (base or other) it plays for. The legs play the clip for the member's `Posture` and its own
-horizontal speed (a member catching up runs while the rest stand); the upper body plays the fire clip of the posture
-once after each change of the `WeaponPose.Shots` of the weapon its member carries (a new shot restarts it) and keeps
-firing for the clip's own length, else it plays what the legs play, in step with them. A member who died plays the
-fall of its posture once on both halves: the shot fall, or when its `Death` is `Blast` the fall for the side (front,
-back, left or right) the member's replicated `BlastHeading` gives relative to the figure's facing. Then the figure hides
-after the hold. A squad spawned with dead members hides their figures without the fall. A figure gets new clips only
-when its state, posture or firing changes, written to every renderer under it, and looping clips start at a per-figure
-phase so the squad doesn't move in step. While the legs play a clip with a `groundSpeed` (walk, run, crawl), the system
-plays it at the figure's averaged speed over that, from 0.5 to 1.6 times, so planted feet don't slide. A rate that moves
-more than 3% rewrites the clip's start time to keep the frame showing, and the upper body takes the same rate while it
-plays the legs' clip.
+with `BoneAnimatedAuthoring` renderers (body levels of detail in a LODGroup, a weapon) that share one `BoneClipTable`.
+Figure i shows `SquadMember` i, so the counts match (a validation rule checks it). Each figure has a `FigureClipSet` (a
+ScriptableObject) that picks its clips from the table by name: legs for idle, walk and run in each posture, a fire clip
+per posture, a whole-body clip per `MemberAction` (except None) and a death per posture for a shot and for a blast from
+each side. Every entry is required: an unset one or a name the table lacks fails the bake, naming the set and the
+entry, and nothing falls back to the standing clips. The authoring also holds the run speed and how long a fallen
+figure stays down. `FigureClipSet.Build` resolves a set against a table into a `FigureClips` blob that the baker adds
+to the blob store, so figures playing the same set on the same table share one.
+
+`SquadFigurePlacementSystem`, in the `PoseSystemGroup`, eases each living figure toward its member's `Offset` (world
+axes) and turns it to its cover, so figures never lag the squad by a frame. `SquadFigureSystem` plays the clips in the
+presentation group, since cues and shots land after the transform group, on the clip-playing renderers the baker lists
+in a `FigureRenderer` buffer.
+
+- **Legs** play the clip for the member's `Posture` and its own horizontal speed, so a member catching up runs while the
+  rest stand. The upper body plays the posture's fire clip once after each change of the carried weapon's
+  `WeaponPose.Shots`, for the clip's own length, else it plays what the legs play.
+- **Death** plays the posture's fall once on both halves: the shot fall, or for a `Blast` the fall for the side (front,
+  back, left or right) the replicated `BlastHeading` gives relative to the figure's facing. Then the figure hides after
+  the hold. A squad spawned with dead members hides their figures without the fall.
+- **Rate.** Clips are written to every renderer only when state, posture or firing changes, and looping clips start at
+  a per-figure phase so the squad doesn't move in step. A clip with a `groundSpeed` (walk, run, crawl) plays at the
+  figure's averaged speed over that, from 0.5 to 1.6 times, so planted feet don't slide. A rate that moves more than 3%
+  rewrites the clip's start time to keep the frame showing, and the upper body takes the same rate while it plays the
+  legs' clip.
 
 A figure may name an `upgradedRoot` with its own `upgradedClips` set and `upgradedWeaponName`, baked as a second figure entity
 kept in `SquadFigure.Other`. When the member's `Weapon` differs from its `BaseWeapon` (an upgrade is in hand) the system

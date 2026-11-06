@@ -33,10 +33,8 @@ namespace HyperRTS.Presentation.Animation.Figures
     }
 
     /// <summary>
-    /// Which bone clip a squad figure plays for each posture, motion, action and death. Every entry is required: a
-    /// missing one or a name the figure's bone clip table lacks fails the bake naming this set and the entry, so a
-    /// crouched figure never quietly plays the standing clip. A rifleman and a launcher carrier use different sets
-    /// over the same table.
+    /// Which bone clip a squad figure plays for each posture, motion, action and death. Every entry is required, so a
+    /// missing one fails the bake naming this set and the entry.
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Figure Clip Set", fileName = "FigureClipSet")]
     [HelpURL(HyperRTSDocs.Presentation)]

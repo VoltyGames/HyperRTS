@@ -13,9 +13,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Presentation.Cursors
 {
     /// <summary>
-    /// Decides <see cref="CursorIntent"/> each frame: edge scrolling, then the pointer over UI, building placement, a
-    /// pending targeted command, and last what a right-click with the selection would do, through the same
-    /// <see cref="OrderResolver"/> the simulation uses.
+    /// Decides <see cref="CursorIntent"/> each frame: edge scrolling, pointer over UI, placement, a pending targeted
+    /// command, then what a right-click would order, through the <see cref="OrderResolver"/> the simulation uses.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

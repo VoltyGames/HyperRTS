@@ -40,10 +40,8 @@ namespace HyperRTS.Simulation.Combat.Damage
                 : health.Current / math.max(health.Max, 1e-4f);
 
         /// <summary>
-        /// Deals the hit to the sections it reaches, each times <paramref name="scale"/> and its material's factor,
-        /// and returns the damage dealt. A direct hit lands in full on the first section the line from its origin to
-        /// its point enters (else the nearest), and its splash on the rest; splash from a hit elsewhere reaches every
-        /// section within its radius.
+        /// Deals the hit to the sections it reaches, each times <paramref name="scale"/> and its material's factor, and
+        /// returns the damage dealt. A direct hit lands in full on the first section on its line, splash on the rest.
         /// </summary>
         public float Route(Entity target, in LocalTransform transform, in DamageEvent hit, float scale)
         {

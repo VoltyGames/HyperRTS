@@ -5,9 +5,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// One weapon of an entity, at the same index as its <see cref="WeaponPose"/> and its fire cue's variant. An armed
-    /// entity's primary is index 0 and sets how it engages; extra weapons follow it, and an interceptor comes last.
-    /// Server only: one capacity keeps a single-weapon unit's buffer in its chunk.
+    /// One weapon of an entity, at the same index as its <see cref="WeaponPose"/> and its fire cue's variant. Index 0
+    /// is the primary and sets how the entity engages; an interceptor comes last. Server only.
     /// </summary>
     [InternalBufferCapacity(1)]
     public struct WeaponMount : IBufferElementData

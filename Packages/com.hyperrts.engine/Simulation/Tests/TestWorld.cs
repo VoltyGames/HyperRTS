@@ -137,10 +137,8 @@ namespace HyperRTS.Simulation.Tests
         }
 
         /// <summary>
-        /// Creates map, rules, relations, AI tunings and one player per team entry (faction = index + 1, first is
-        /// local), plus the AI map hints every AI needs: a slot per player and a direct lane (no waypoints) between
-        /// enemies; <see cref="AIHintsTestKit.CreateHints"/> replaces them. Builds the nav grid, as a loaded map has
-        /// before anyone commands.
+        /// Creates map, rules, relations, AI tunings, one player per team entry (faction = index + 1, first is local)
+        /// and the nav grid, plus AI map hints that <see cref="AIHintsTestKit.CreateHints"/> replaces.
         /// </summary>
         public void CreateMatch(params byte[] teams) => CreateMatch(teams, 200f);
 

@@ -131,9 +131,8 @@ namespace HyperRTS.Presentation.Common
         public bool IsLocalDefeated() => HasLocalPlayer && EntityManager.HasEnabled<Defeated>(LocalPlayer);
 
         /// <summary>
-        /// Undoes the topmost of a building placement, a targeted command waiting for a click and the command card's
-        /// second page (see <see cref="InteractionState.Cancel"/>); false when there was nothing to undo. For a front
-        /// end that owns Escape (<c>InputActionsProvider.FrontEndOwnsCancel</c>) and for the card's right click.
+        /// Undoes the topmost of a building placement, a targeted command waiting for a click and the card's second page
+        /// (see <see cref="InteractionState.Cancel"/>); false when there was nothing to undo.
         /// </summary>
         public bool CancelInteraction()
         {

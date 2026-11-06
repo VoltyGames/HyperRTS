@@ -14,9 +14,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation.Figures
 {
     /// <summary>
-    /// Plays every renderer of each <see cref="SquadFigure"/> the clips for its own motion, posture and weapon: the legs
-    /// follow motion and posture, the upper body fires over them. A dead member's figure dies, then hides;
-    /// <see cref="SquadFigurePlacementSystem"/> places them.
+    /// Plays each <see cref="SquadFigure"/>'s renderers the clips for its motion, posture and weapon; a dead member's
+    /// figure dies, then hides. <see cref="SquadFigurePlacementSystem"/> places them.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]

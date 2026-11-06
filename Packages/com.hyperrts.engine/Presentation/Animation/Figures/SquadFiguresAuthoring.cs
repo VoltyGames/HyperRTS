@@ -9,10 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation.Figures
 {
     /// <summary>
-    /// Draws a squad unit as bone-animated figures, one per Squad member in order: a dead member's figure dies then
-    /// hides, the rest idle, walk, run, crouch or crawl as their own soldier does, with the upper body firing over the
-    /// legs. A figure is a hand-placed child whose Bone Animated renderers (body levels of detail, weapon) share one
-    /// clip table, and its Figure Clip Set picks which of that table's clips it plays.
+    /// Draws a squad unit as bone-animated figures, one per Squad member. Each figure is a child whose Bone Animated
+    /// renderers share one clip table, and its Figure Clip Set picks the clips it plays.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Squad Figures")]
     [Icon(HyperRTSIcons.Animation)]

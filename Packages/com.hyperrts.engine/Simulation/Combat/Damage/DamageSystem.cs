@@ -16,9 +16,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Damage
 {
     /// <summary>
-    /// Resolves the frame's <see cref="DamageEvent"/>s in order. Heals skip every multiplier. A direct hit on a squad
-    /// lands on one living <see cref="SquadMember"/> (a blast's on the nearest), rolled by seed and favouring the
-    /// uncovered; splash hurts each by its distance from the blast; cover cuts hits from its front.
+    /// Resolves the frame's <see cref="DamageEvent"/>s in order: heals skip every multiplier, and squad hits land on
+    /// members by seed, splash and cover.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
@@ -173,9 +172,8 @@ namespace HyperRTS.Simulation.Combat.Damage
             }
 
             /// <summary>
-            /// Scales the blow by the target's armor, routes it to its sections, squad members or health, and records
-            /// it. A lethal hit fells a <see cref="Topple"/> target away from the blow's origin. Returns the squad
-            /// member struck, else -1.
+            /// Scales the blow by the target's armor, routes it to sections, squad members or health, and records it.
+            /// Returns the squad member struck, else -1.
             /// </summary>
             private int Apply(Entity target, in DamageEvent hit, in Blow blow)
             {

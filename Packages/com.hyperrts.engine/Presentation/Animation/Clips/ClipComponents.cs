@@ -16,7 +16,7 @@ namespace HyperRTS.Presentation.Animation.Clips
 
         public static PlayingClip Started(in ClipRange clip, float now) => new() { Value = clip.Packed(now) };
 
-        /// <summary>Plays <paramref name="clip"/> at <paramref name="rate"/> times its speed as if it began at <paramref name="startTime"/>, fading from the pose showing at <paramref name="now"/>.</summary>
+        /// <summary>Plays <paramref name="clip"/> at <paramref name="rate"/> times its speed as if started at <paramref name="startTime"/>, fading from the pose at <paramref name="now"/>.</summary>
         public void Switch(in ClipRange clip, float startTime, float now, float rate, ref ClipFade fade)
         {
             fade = ClipFade.From(BlendAt(now), now);

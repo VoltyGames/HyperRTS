@@ -1,8 +1,6 @@
-// HyperRTS/LitTeam vertex animation. With _VAT_RIGID on, the mesh is rigid pieces: UV1's u names the piece's column, and
-// the piece moves by its position in _VATPositions and rotation (a quaternion) in _VATRotations at the _VATClip frame's
-// row, about where row 0 has it. With _BONES on, LitTeamBones.hlsl skins the mesh instead. LIT_TEAM_DEFORM then applies
-// the construction reveal (LitTeamBuild.hlsl), bends track meshes over their wheels (LitTeamTrack.hlsl) and sinks the
-// object into craters.
+// HyperRTS/LitTeam vertex animation. With _VAT_RIGID on, the mesh is rigid pieces: UV1's u names the piece's column,
+// and _VATPositions and _VATRotations at the _VATClip row move it from its row 0 place. With _BONES on,
+// LitTeamBones.hlsl skins the mesh instead. LIT_TEAM_DEFORM adds the build reveal, track bend and crater sink.
 #ifndef HYPERRTS_LIT_TEAM_VAT_INCLUDED
 #define HYPERRTS_LIT_TEAM_VAT_INCLUDED
 

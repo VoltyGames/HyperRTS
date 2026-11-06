@@ -84,9 +84,8 @@ namespace HyperRTS.Simulation.Common.Infantry
         }
 
         /// <summary>
-        /// The offset in a loose wedge pointing along <paramref name="heading"/>, snapped to one of
-        /// <see cref="WedgeHeadings"/> so a squad on a curving path doesn't resend its offsets every frame: a point man,
-        /// then pairs falling back to the sides.
+        /// The offset in a loose wedge along <paramref name="heading"/>, snapped to <see cref="WedgeHeadings"/> so a
+        /// curving path doesn't resend offsets every frame.
         /// </summary>
         public readonly float2 WedgeSlot(int rank, int count, float2 heading)
         {

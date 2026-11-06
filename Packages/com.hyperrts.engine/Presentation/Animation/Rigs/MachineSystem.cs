@@ -12,11 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>
-    /// Runs machine clocks, easing them to a stop while a machine shouldn't run (neutral, or its building offline or
-    /// idle), and poses their parts: spins, swings and slides in step with the spin, links that sit on one point
-    /// aiming at another, parts that turn downwind, parts that raise, extend or stretch over their span of the speed,
-    /// which a Deployed machine takes from its unit's deploy progress, and parts that point at another. Links and pointers
-    /// read last frame's transforms.
+    /// Runs machine clocks, easing them to a stop while a machine shouldn't run, and poses their parts from the clock.
+    /// Links and pointers read last frame's transforms.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PoseSystemGroup))]

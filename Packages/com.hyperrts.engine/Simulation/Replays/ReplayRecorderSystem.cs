@@ -11,9 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
-    /// While a <see cref="ReplayRecording"/> exists, samples every gameplay entity at its rate after the frame's
-    /// gameplay ran: a keyframe every few seconds, deltas of what changed in between, and every cue since the last
-    /// sample but the owner-only ones. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
+    /// Samples every gameplay entity into a <see cref="ReplayRecording"/> after the frame: keyframes, deltas and cues
+    /// except owner-only ones. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]

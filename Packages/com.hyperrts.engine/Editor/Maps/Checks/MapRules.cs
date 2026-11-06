@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
-    /// The thresholds a map is measured against and the match settings it is built with (the built scene's match
-    /// takes its nav cell size, building gap, max slope and infantry tuning from here). Exactly one <c>*.rules.asset</c> per
-    /// project.
+    /// The thresholds a map is measured against and the match settings its scene is built with. Exactly one
+    /// <c>*.rules.asset</c> per project.
     /// </summary>
     [MapLibraryItem("rules")]
     [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Rules", fileName = "New.rules")]

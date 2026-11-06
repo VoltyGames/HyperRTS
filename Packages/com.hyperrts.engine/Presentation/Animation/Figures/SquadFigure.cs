@@ -172,7 +172,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             Facing = Primed ? math.slerp(Facing, target, 1f - math.exp(-TurnRate * deltaTime)) : target;
         }
 
-        /// <summary>Records this frame's world position and weapon shot count; returns how a living figure moves and whether it fires, from a shot until <paramref name="fireHold"/> seconds later.</summary>
+        /// <summary>Records this frame's position and shot count; returns how a living figure moves and whether it fires.</summary>
         public FigureState Observe(in SquadFigures squad, float3 position, byte shots, float now, float deltaTime,
             float fireHold, out bool firing)
         {

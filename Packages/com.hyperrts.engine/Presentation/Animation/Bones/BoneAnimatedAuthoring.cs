@@ -10,9 +10,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Animation.Bones
 {
     /// <summary>
-    /// Plays bone animation clips on this renderer: a mesh imported from a bone kit, on a HyperRTS/LitTeam material with
-    /// _BONES on. A figure's body, level-of-detail meshes and weapons each carry one and get the same clips from game
-    /// code, which switches them through <see cref="LowerClip"/> and <see cref="UpperClip"/>.
+    /// Plays bone animation clips on this renderer: a mesh from a bone kit, on a HyperRTS/LitTeam material with
+    /// _BONES on.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Bone Animated")]
     [Icon(HyperRTSIcons.Animation)]

@@ -9,9 +9,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
-    /// A command card button built from CommandButton.uxml, whose parts (picture, caption, hotkey, cooldown, badges,
-    /// cost strip) stay hidden until a source shows them. Refusals show as classes and badges, and its name and
-    /// details are in the tooltip.
+    /// A command card button built from CommandButton.uxml. Its parts stay hidden until a source shows them, and
+    /// refusals show as classes and badges.
     /// </summary>
     public sealed class CommandButton : Button, ITooltipSource
     {
@@ -35,9 +34,6 @@ namespace HyperRTS.Presentation.HUD.Commands
         private int _shownLimitMax = -1;
         private int _shownSeconds = -1;
 
-        /// <param name="parts">CommandButton.uxml.</param>
-        /// <param name="label">The caption, or the name a picture without a texture shows.</param>
-        /// <param name="hotkey">Shown in the corner; empty for none.</param>
         public CommandButton(VisualTreeAsset parts, CommandLook look, string label, Texture2D icon, string hotkey,
             Action onClick)
         {

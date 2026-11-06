@@ -20,9 +20,8 @@ namespace HyperRTS.Simulation.Cues.Voice
         public double QuietUntil;
 
         /// <summary>
-        /// Records the squad's state and returns the cue slot of the strongest change since last time, or
-        /// <see cref="CueSlot.None"/>. The first look only records. Pinned beats suppressed, then retreat, reinforced,
-        /// digging in and taking cover.
+        /// Records the squad's state and returns the cue slot of the strongest change since last time, or <see
+        /// cref="CueSlot.None"/>. The first look only records.
         /// </summary>
         public CueSlot Observe(in SquadRules rules, in Suppression suppression, bool retreating,
             DynamicBuffer<SquadMember> members)

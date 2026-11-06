@@ -60,8 +60,7 @@ namespace HyperRTS.Simulation.Combat.Damage
 
         /// <summary>
         /// Deals <paramref name="amount"/>, scaled by the struck member's cover, to the member the blow names or one
-        /// rolled by its seed favouring the uncovered, and adds the blow's suppression past that cover. False when no
-        /// member can be struck.
+        /// rolled by its seed, and adds the blow's suppression. False when no member can be struck.
         /// </summary>
         public bool Hurt(Entity squad, float amount, in DamageEvent hit, in Blow blow, out MemberWound wound)
         {

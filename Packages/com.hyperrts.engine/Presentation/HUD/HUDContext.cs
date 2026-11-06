@@ -50,8 +50,7 @@ namespace HyperRTS.Presentation.HUD
         public List<Entity> Selected { get; } = new();
 
         /// <summary>
-        /// Changes whenever the selected set, an owner or a construction state in it changes, so widgets know when to
-        /// rebuild (a captured or finished building gets a new card).
+        /// Changes whenever the selected set, an owner or a construction state in it changes, so widgets rebuild.
         /// </summary>
         public int SelectionHash { get; private set; }
 

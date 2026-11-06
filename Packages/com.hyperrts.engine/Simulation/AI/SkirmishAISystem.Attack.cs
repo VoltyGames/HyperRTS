@@ -109,9 +109,8 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>
-        /// Attack-moves the wave through the waypoints of one lane to <paramref name="enemy"/>'s base (starting at the
-        /// one nearest the wave) and on to the <paramref name="target"/>, as shift-queued orders. The lane is a seeded
-        /// choice among the map's lanes to that enemy, so bots, and one bot's successive attacks, take different routes.
+        /// Attack-moves the wave along a seeded lane to <paramref name="enemy"/>'s base and on to the <paramref
+        /// name="target"/>, so routes vary between bots and attacks.
         /// </summary>
         private void SendAlongLane(ref SystemState state, in Turn turn, in Snapshot snapshot, NativeList<int> wave, float3 center,
             in Goal goal)
@@ -143,9 +142,8 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>
-        /// Nearest hostile critical building, else the nearest hostile unit, among the enemies the map has a lane to
-        /// from this faction (<paramref name="enemy"/> is the one found); undetected stealth is skipped, and with
-        /// <paramref name="limitedByFog"/> so is what the team hasn't seen.
+        /// Nearest hostile critical building, else the nearest hostile unit, among enemies the map has a lane to;
+        /// undetected stealth is skipped, and with <paramref name="limitedByFog"/> so is what the team hasn't seen.
         /// </summary>
         private bool TryFindTarget(ref SystemState state, byte faction, float3 from, bool limitedByFog,
             in Snapshot snapshot, out Goal goal)

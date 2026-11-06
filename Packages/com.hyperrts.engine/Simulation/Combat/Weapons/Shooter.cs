@@ -15,8 +15,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
     /// Fires a weapon from a job: the fire cue, an instant hit or a launched <see cref="Projectile"/>, and the stealth
-    /// reveal. A direct-fire round with something solid in the way hits that instead, and one launched through smoke
-    /// loses its target. Use from one thread.
+    /// reveal. Use from one thread.
     /// </summary>
     public struct Shooter
     {
@@ -71,9 +70,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>
-        /// The fire step every weapon takes: deployed if it must be, inside its firing arc, off cooldown, a turret on target, restart the
-        /// cooldown or step the salvo, and fire <paramref name="shots"/> rounds, each from the next muzzle, as one volley
-        /// with one reveal, one shot counted and one fire cue.
+        /// The fire step every weapon takes, ending in one volley of <paramref name="shots"/> rounds with one reveal,
+        /// one shot counted and one fire cue.
         /// </summary>
         public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
         {

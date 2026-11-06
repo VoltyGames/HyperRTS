@@ -10,9 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Cues.Voice
 {
     /// <summary>
-    /// Squad barks: when one of the local player's squads takes cover, is suppressed or pinned, retreats, digs in or
-    /// gets a member back, it speaks the matching cue. Client-side only (never sent), at most one bark per squad every
-    /// <see cref="VoiceRules.SquadBarkInterval"/> and one per player every <see cref="VoiceRules.SquadBarkPlayerInterval"/>.
+    /// Squad barks: a local squad's cover, suppression, retreat, digging and reinforcement changes speak their cue.
+    /// Client-side only, rate-limited per squad and per player.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]

@@ -15,10 +15,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// With squads selected and the pointer over open ground, rings on the cover spots a move there would use, green
-    /// for heavy and yellow for light, or a red ring on the ground when it would find none. It applies the same
-    /// search as <c>SquadCoverSystem</c>: spots within <see cref="CoverRules.Reach"/> of the point that face the way
-    /// the squad would walk.
+    /// With squads selected and the pointer over open ground, rings on the cover spots a move there would use (green
+    /// heavy, yellow light), or a red ring when it would find none. Uses the search of <c>SquadCoverSystem</c>.
     /// </summary>
     public sealed class CoverPreview : IDisposable
     {

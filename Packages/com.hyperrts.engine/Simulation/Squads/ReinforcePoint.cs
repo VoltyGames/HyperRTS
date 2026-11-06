@@ -12,9 +12,8 @@ namespace HyperRTS.Simulation.Squads
     }
 
     /// <summary>
-    /// A squad bringing back its dead members one at a time at <see cref="Point"/>. Each member is paid for when its
-    /// turn starts and refunded if the reinforcing is cut short. Clients see that it is on and how far the current
-    /// member is.
+    /// A squad bringing back its dead members one at a time at <see cref="Point"/>. Each is paid for when its turn
+    /// starts and refunded if cut short.
     /// </summary>
     [GhostEnabledBit]
     public struct Reinforcing : IComponentData, IEnableableComponent

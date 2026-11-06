@@ -10,9 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision.Fog
 {
     /// <summary>
-    /// Keeps a <see cref="FogMemory"/> memory of each enemy <see cref="RememberedInFog"/> root the local player saw and lost
-    /// in the fog, until he sees it alive again or finds its place empty. Cleared on reveal-all, fog off or a viewer
-    /// change.
+    /// Keeps a <see cref="FogMemory"/> of each enemy <see cref="RememberedInFog"/> root the local player saw and lost,
+    /// until he sees it alive again or finds its place empty.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]

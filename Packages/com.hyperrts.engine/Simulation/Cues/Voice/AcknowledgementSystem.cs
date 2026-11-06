@@ -10,9 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Cues.Voice
 {
     /// <summary>
-    /// Voice acknowledgements: when the local player selects units or orders them to move or attack, one of them
-    /// answers with its select, move or attack cue. Client-side only (never sent), and rate-limited (<see cref="VoiceRules.AcknowledgementInterval"/>) so spam-clicking
-    /// doesn't stack voices.
+    /// Voice acknowledgements: when the local player selects or orders units, one answers with its cue. Client-side
+    /// only, rate-limited by <see cref="VoiceRules.AcknowledgementInterval"/>.
     /// </summary>
     // After the OrderFirst input systems, before the OrderLast systems that send or clear this frame's commands.
     [BurstCompile]

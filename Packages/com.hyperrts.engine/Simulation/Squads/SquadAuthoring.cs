@@ -58,11 +58,8 @@ namespace HyperRTS.Simulation.Squads
         }
 
         /// <summary>
-        /// Adds the members with <paramref name="maxHealth"/> shared evenly, standing in a ring, each carrying the weapon
-        /// at its index and, where <paramref name="upgrades"/> (null for none) has an index,
-        /// the weapon at that index instead while it is enabled. <paramref name="crews"/> (null for none) are the crew
-        /// places members take while the unit's weapon is set up, and <paramref name="designations"/> (null for none) their
-        /// weapons' names.
+        /// Adds the members with <paramref name="maxHealth"/> shared evenly, in a ring. Null <paramref
+        /// name="upgrades"/>, <paramref name="crews"/> and <paramref name="designations"/> mean none.
         /// </summary>
         public static void Add(EntityWriter writer, float maxHealth, IReadOnlyList<byte> weapons,
             IReadOnlyList<byte?> upgrades = null, IReadOnlyList<CrewPlace> crews = null,

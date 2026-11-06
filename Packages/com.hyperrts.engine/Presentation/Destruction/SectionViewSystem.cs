@@ -15,9 +15,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Shows each <see cref="Section"/> standing (or holed where a seen impact landed), breaking as a clip of pieces,
-    /// or broken, to match the building's broken mask. Breaks this client saw play their clip, effect and debris; a loaded
-    /// or unseen building shows the end state.
+    /// Shows each <see cref="Section"/> standing, breaking or broken to match the building's broken mask. Breaks this
+    /// client saw play their clip, effect and debris; a loaded or unseen building shows the end state.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

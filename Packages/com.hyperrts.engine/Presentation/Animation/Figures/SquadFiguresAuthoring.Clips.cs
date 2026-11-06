@@ -32,8 +32,8 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         /// <summary>
-        /// The clip ranges <paramref name="set"/> picks from the clip table of <paramref name="model"/>, which the caller
-        /// owns; fails when there is no set, the model's renderers don't share a table, or the set doesn't fit it.
+        /// The clip ranges <paramref name="set"/> picks from the clip table of <paramref name="model"/>, owned by the caller;
+        /// fails when the set doesn't fit it.
         /// </summary>
         public BlobAssetReference<FigureClips> BuildClips(int index, Transform model, FigureClipSet set)
         {

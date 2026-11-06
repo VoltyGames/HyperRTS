@@ -13,12 +13,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
-    /// Keeps each squad's members in order: their health sums to the squad's after stat changes, a member fires its
-    /// upgraded weapon while that mount is enabled, each weapon mount counts its living carriers, and members walk toward their slots, a loose wedge while the squad moves, a ring
-    /// when it halts, a row along the site it builds, or the cover spot a member holds. While the squad's weapon is set up, members who
-    /// take a crew place walk to it instead. Members walk at most three
-    /// quarters of the squad's speed relative to it, so one that fell behind visibly runs to catch up. Squads inside
-    /// a container stay put. Slots ignore the nav grid, so a member can stand in a wall.
+    /// Keeps each squad's members in order: sums their health into the squad's and walks them toward their slots. Slots
+    /// ignore the nav grid, so a member can stand in a wall.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]

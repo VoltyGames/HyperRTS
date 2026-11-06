@@ -10,10 +10,8 @@ using Unity.Netcode;
 namespace HyperRTS.Network.Players
 {
     /// <summary>
-    /// Holds a networked match until every human slot has a connection, so nobody (AI included) plays while others
-    /// still load; after <see cref="MatchRules.JoinTimeout"/> it starts anyway and late players join a running match.
-    /// Sets <see cref="MatchState.Started"/>, which loading screens wait for and command receiving requires.
-    /// Not Burst: it switches managed system groups.
+    /// Holds a networked match until every human slot is connected, or <see cref="MatchRules.JoinTimeout"/> passes,
+    /// then sets <see cref="MatchState.Started"/>. Not Burst: it switches managed system groups.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]

@@ -11,9 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// Leaves each <see cref="WeaponMount.Target"/> set only to what the weapon can shoot this frame: the primary the
-    /// <see cref="AttackTarget"/> once it is in reach, an extra weapon the same target when it can hit it, else, if
-    /// independent, its own. A weapon that shoots projectiles takes the nearest incoming one.
+    /// Leaves each <see cref="WeaponMount.Target"/> set only to what the weapon can shoot this frame; a projectile
+    /// shooter takes the nearest incoming one.
     /// </summary>
     [BurstCompile]
     [WithNone(typeof(Offline))]

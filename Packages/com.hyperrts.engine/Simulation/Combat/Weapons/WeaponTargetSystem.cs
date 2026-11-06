@@ -10,10 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// Gives each <see cref="WeaponMount"/> its target for the frame with <see cref="WeaponTargetJob"/>, after
-    /// <see cref="EngagementSystem"/> picks the <see cref="AttackTarget"/> and before the weapons turn and fire, so
-    /// extra weapons aim at this frame's pick. Files the projectiles in flight into a <see cref="ProjectileGrid"/> first, for
-    /// the weapons that shoot them.
+    /// Gives each <see cref="WeaponMount"/> its target for the frame with <see cref="WeaponTargetJob"/>, after <see
+    /// cref="EngagementSystem"/> and before the weapons turn and fire.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

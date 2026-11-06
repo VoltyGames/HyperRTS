@@ -7,12 +7,9 @@ using Unity.Entities;
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
-    /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s: by default building,
-    /// training and research, abilities and support powers, stances, squad retreat and reinforce, and return, unload,
-    /// deploy, pack up and sell. Each entry comes from a <see cref="CommandSpec"/> that gives its grid slot, page and
-    /// hotkey; an entry whose slot is taken moves to the next free one, and past the last page slot to the next
-    /// page. With more than one page the last slot of each turns the page. Escape, a right click or a new selection
-    /// turns back. Hovering or focusing a button shows its tooltip above the card.
+    /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s. Each entry comes from a
+    /// <see cref="CommandSpec"/> that gives its slot, page and hotkey; a taken slot moves to the next free one, spilling
+    /// to the next page, whose last slot turns the page.
     /// </summary>
     public sealed class CommandCard : HUDPanel
     {

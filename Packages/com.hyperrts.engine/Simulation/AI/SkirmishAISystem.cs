@@ -21,12 +21,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.AI
 {
     /// <summary>
-    /// Skirmish AI for <see cref="AIPlayer"/>s: follows its <see cref="AIBuildStep"/> build order, then keeps producers
-    /// training; keeps harvesters on the map's resource fields in the slot's expansion order, fires ready abilities,
-    /// deploys and packs up deployable units, retreats and reinforces its squads, digs field works in at its defence
-    /// points and sends idle armies at an enemy base along one of the map's attack
-    /// lanes (see <see cref="AIMapHints"/>, which the map must carry). It only issues <see cref="PlayerCommand"/>s,
-    /// exactly like a human player. Split by concern over partial files.
+    /// Skirmish AI for <see cref="AIPlayer"/>s: builds, produces, harvests, uses abilities, manages squads and sends
+    /// armies along the map's attack lanes (see <see cref="AIMapHints"/>). It only issues <see cref="PlayerCommand"/>s,
+    /// like a human player.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(AISystemGroup))]

@@ -27,8 +27,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
         private static readonly Regex NumberedName = new(@"^(Turret|Launcher)_(\d\d)$");
 
         /// <summary>
-        /// Fills the slots, and the weapons' turret and barrel pivots, from parts named Turret, Barrel, Launcher,
-        /// Wheel_L01, Rotor_Main, Prop_01, Hull and so on, in every model under it, such as a damaged one.
+        /// Fills the slots and the weapons' pivots from parts named by the art (Turret, Barrel, Wheel_L01 and so on) in
+        /// every model under it.
         /// </summary>
         [InspectorButton("Fill from model")]
         public void FillFromModel()

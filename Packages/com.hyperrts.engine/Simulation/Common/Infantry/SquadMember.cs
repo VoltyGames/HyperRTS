@@ -34,9 +34,9 @@ namespace HyperRTS.Simulation.Common.Infantry
     }
 
     /// <summary>
-    /// One soldier of a squad, replicated on the squad's ghost like a <see cref="Combat.Weapons.WeaponPose"/>. The squad
-    /// stays one entity and its <see cref="Health"/> is the sum of its living members. A member at zero health is
-    /// dead and stays in the buffer, so indices never shift.
+    /// One soldier of a squad, replicated on the squad's ghost like a <see cref="Combat.Weapons.WeaponPose"/>. The
+    /// squad's <see cref="Health"/> is the sum of its living members; a dead one stays in the buffer so indices never
+    /// shift.
     /// </summary>
     [InternalBufferCapacity(4)]
     public partial struct SquadMember : IBufferElementData
@@ -159,10 +159,9 @@ namespace HyperRTS.Simulation.Common.Infantry
         public readonly float3 Position(float3 squad) => squad + new float3(Offset.x, 0f, Offset.y);
 
         /// <summary>
-        /// The shares of a hit from <paramref name="from"/> this member takes, standing in a squad at
-        /// <paramref name="squad"/>: its cover's shares, or all of it when it has none or the hit comes from outside the
-        /// front arc of its spot (light cover on a concealing cell has no arc). <paramref name="piercing"/> is the
-        /// share of the protection the hit ignores.
+        /// The shares of a hit from <paramref name="from"/> this member takes: its cover's shares, or all of it with no
+        /// cover or from outside the spot's front arc. <paramref name="piercing"/> is the share of the protection the
+        /// hit ignores.
         /// </summary>
         public readonly Exposure ExposureTo(in CoverRules rules, float3 squad, float3 from, float piercing)
         {

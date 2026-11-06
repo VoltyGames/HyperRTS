@@ -11,9 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Status
 {
     /// <summary>
-    /// Applies queued <see cref="StatusRequest"/>s, expires effects and deals their damage over time. An effect's
-    /// bonuses use its type id as their source, so stacking rewrites them and expiry removes them. Runs before
-    /// <see cref="DamageSystem"/>, so damage over time lands before deaths are marked.
+    /// Applies queued <see cref="StatusRequest"/>s, expires effects and deals their damage over time, before <see
+    /// cref="DamageSystem"/>. An effect's bonuses use its type id as their source.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

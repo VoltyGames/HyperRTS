@@ -13,9 +13,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
-    /// Shows a replay without simulating: takes over the scene's entities (same type, nearest position), then each
-    /// frame spawns, destroys and interpolates entities to the recorded state at <see cref="ReplayPlayback.Time"/>,
-    /// and queues the cues it passes. Seeking rebuilds from the nearest keyframe at or before the time.
+    /// Shows a replay without simulating: takes over the scene's entities, then spawns, destroys and interpolates them
+    /// to the state at <see cref="ReplayPlayback.Time"/>. Seeking rebuilds from the nearest earlier keyframe.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ReplaySystemGroup))]

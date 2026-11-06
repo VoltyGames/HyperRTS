@@ -12,9 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
-    /// Validates and leashes <see cref="AttackTarget"/>s, chases targets out of weapon range, backs off from ordered ones
-    /// inside the minimum range and halts once in range. A rooted <see cref="Deployable"/> fights like a building.
-    /// Also keeps <see cref="CombatStance.ReturnPoint"/> on idle, unengaged units.
+    /// Validates and leashes <see cref="AttackTarget"/>s, chases targets out of range, backs off inside minimum range
+    /// and halts once in range. A rooted <see cref="Deployable"/> fights like a building.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

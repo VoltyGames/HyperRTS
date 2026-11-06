@@ -10,9 +10,7 @@ namespace HyperRTS.Simulation.Transport
 {
     /// <summary>
     /// Frees the slots of passengers who died inside, then shares each <see cref="ShelterHit"/> evenly among the
-    /// living, as hits the damage queue resolves next frame with each passenger's own armor. Runs before
-    /// <see cref="ContainerDeathSystem"/>, so passengers blown out by the hit that destroys their shelter still take
-    /// their share.
+    /// living. Runs before <see cref="ContainerDeathSystem"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]

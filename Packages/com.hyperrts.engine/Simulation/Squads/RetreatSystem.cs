@@ -11,10 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
-    /// Handles the Retreat command for the commanded or selected squads: each gets a <see cref="OrderType.Retreat"/>
-    /// order to the nearest friendly working <see cref="RetreatPoint"/>, which the move order walks and
-    /// <see cref="SquadPostureSystem"/> speeds up, and <c>Retreating</c> is on while it runs. The order ends once the squad is within the point's radius, or
-    /// moves on to another point when its own is lost, or stops if none is left.
+    /// Handles the Retreat command: each squad gets a <see cref="OrderType.Retreat"/> order to the nearest friendly
+    /// working <see cref="RetreatPoint"/>, moving on to another point if its own is lost.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

@@ -13,9 +13,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
-    /// Points idle, attack-moving and hold-position weapons (and finished towers) at the nearest hostile in range that
-    /// the weapon can hit and its team can see: in the fog's sight and not hidden by stealth, so long-range fires need
-    /// a spotter. Units on any other order, or out of ammo, never auto-acquire.
+    /// Points idle, attack-moving and hold-position weapons at the nearest hostile they can hit and the team can see,
+    /// so long-range fires need a spotter.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
