@@ -126,6 +126,21 @@ namespace HyperRTS.Editor.Tests.Animation
         }
 
         [Test]
+        public void InPlaceClip_FirstFrameShowsTheClipStart()
+        {
+            using var rig = Rig();
+            var clip = Track(new AnimationClip());
+            clip.SetCurve("Hips", typeof(Transform), "localPosition.x", AnimationCurve.Linear(0f, 0f, 2f, 3f));
+            clip.SetCurve("Hips", typeof(Transform), "localPosition.y", AnimationCurve.Linear(0f, 1f, 2f, 1.5f));
+
+            var first = rig.Pose(clip, 0f, true)[1].MultiplyPoint3x4(HandAt);
+            var middle = rig.Pose(clip, 1f, true)[1].MultiplyPoint3x4(HandAt);
+
+            Assert.AreEqual(0f, Vector3.Distance(HandAt, first), 1e-4f, "the start pose, not the end pose a stride ahead");
+            Assert.AreEqual(0f, Vector3.Distance(HandAt + new Vector3(0f, 0.25f, 0f), middle), 1e-4f, "ground travel removed, height kept");
+        }
+
+        [Test]
         public void Weapon_SitsWithItsOriginOnTheSocketNode()
         {
             using var rig = Rig();

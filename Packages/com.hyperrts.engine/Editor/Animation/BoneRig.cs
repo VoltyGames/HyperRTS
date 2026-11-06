@@ -59,15 +59,10 @@ namespace HyperRTS.Editor.Animation
         /// </summary>
         public Matrix4x4[] Pose(AnimationClip clip, float time, bool inPlace)
         {
+            // Measured before sampling: the first measure of a clip samples its ends, which would replace this pose.
+            var drift = inPlace ? Drift(clip, time) : Vector3.zero;
             Sample(clip, time);
-            if (inPlace)
-            {
-                var (start, end) = Travel(clip);
-                var along = Mathf.Clamp01(time / clip.length);
-                var drift = Vector3.Lerp(start, end, along) - start;
-                drift.y = 0f;
-                _rootBone.position -= _root.transform.TransformVector(drift);
-            }
+            _rootBone.position -= _root.transform.TransformVector(drift);
 
             var toRoot = _root.transform.worldToLocalMatrix;
             var pose = new Matrix4x4[_bones.Length];
@@ -93,6 +88,15 @@ namespace HyperRTS.Editor.Animation
         }
 
         private void Sample(AnimationClip clip, float time) => clip.SampleAnimation(_rootBone.parent.gameObject, time);
+
+        /// <summary>The root's ground travel from the start of <paramref name="clip"/> to <paramref name="time"/> along its straight line, in the model root's space.</summary>
+        private Vector3 Drift(AnimationClip clip, float time)
+        {
+            var (start, end) = Travel(clip);
+            var drift = Vector3.Lerp(start, end, Mathf.Clamp01(time / clip.length)) - start;
+            drift.y = 0f;
+            return drift;
+        }
 
         private (Vector3 Start, Vector3 End) Travel(AnimationClip clip)
         {
