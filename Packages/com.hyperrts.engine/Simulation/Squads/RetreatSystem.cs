@@ -80,14 +80,16 @@ namespace HyperRTS.Simulation.Squads
             return true;
         }
 
-        /// <summary>Ends the retreat on arrival; a lost point sends the squad to the next one.</summary>
+        /// <summary>Ends the retreat on arrival; a lost or offline point sends the squad to the next one.</summary>
         private void Continue(ref SystemState state, Entity squad, in FactionRelations relations)
         {
             var target = SystemAPI.GetComponent<ActiveOrder>(squad).Value.Target;
             var here = SystemAPI.GetComponent<LocalTransform>(squad).Position;
-            // Dead is on every entity, enabled only the frame it dies.
+            // Dead and Offline are on the entity but enabled only while they hold.
             var dead = SystemAPI.HasComponent<Dead>(target) && SystemAPI.IsComponentEnabled<Dead>(target);
-            if (SystemAPI.HasComponent<RetreatPoint>(target) && SystemAPI.HasComponent<LocalTransform>(target) && !dead)
+            var offline = SystemAPI.HasComponent<Offline>(target) && SystemAPI.IsComponentEnabled<Offline>(target);
+            if (SystemAPI.HasComponent<RetreatPoint>(target) && SystemAPI.HasComponent<LocalTransform>(target) && !dead
+                && !offline)
             {
                 var radius = SystemAPI.GetComponent<RetreatPoint>(target).Radius;
                 var there = SystemAPI.GetComponent<LocalTransform>(target).Position;

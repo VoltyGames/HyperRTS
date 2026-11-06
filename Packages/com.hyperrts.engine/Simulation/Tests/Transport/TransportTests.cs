@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -287,7 +288,11 @@ namespace HyperRTS.Simulation.Tests.Transport
             if (survive)
             {
                 Assert.IsFalse(World.IsInside(rifle));
+                return;
             }
+
+            var events = World.Buffer<EntityDamaged>(World.Query(typeof(GameEvents)).GetSingletonEntity());
+            Assert.AreEqual(rifle, events[0].Entity, "the kill is reported like a lethal hit");
         }
     }
 }

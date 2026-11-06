@@ -26,18 +26,16 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(EngagementSystem))]
+    [UpdateAfter(typeof(WeaponPoseSystem))]
     [UpdateBefore(typeof(StealthSystem))]
     public partial struct WeaponFireSystem : ISystem
     {
-        private TargetLookup _targets;
         private TargetQueries _targetQueries;
         private Shooter _shots;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _shots = new Shooter(ref state);
             state.RequireForUpdate<SpatialIndex>();
@@ -50,16 +48,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _targets.Update(ref state, _targetQueries);
-
-            new WeaponTargetJob
-            {
-                Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
-                Targets = _targets,
-                Scans = new ScanSchedule(SystemAPI.GetSingleton<SimulationFrame>()),
-            }.ScheduleParallel();
-
             _shots.Update(ref state, SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged), _targetQueries.Blockers);
 

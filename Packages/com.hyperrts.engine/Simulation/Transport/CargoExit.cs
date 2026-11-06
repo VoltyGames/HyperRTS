@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Transport
         private ComponentLookup<Health> _health;
         private ComponentLookup<LastAttacker> _attackers;
         [ReadOnly] private ComponentLookup<Container> _containers;
+        [ReadOnly] private ComponentLookup<Faction> _factions;
 
         public CargoExit(ref SystemState state)
         {
@@ -40,6 +42,7 @@ namespace HyperRTS.Simulation.Transport
             _health = state.GetComponentLookup<Health>();
             _attackers = state.GetComponentLookup<LastAttacker>();
             _containers = state.GetComponentLookup<Container>(true);
+            _factions = state.GetComponentLookup<Faction>(true);
         }
 
         public void Update(ref SystemState state)
@@ -53,6 +56,7 @@ namespace HyperRTS.Simulation.Transport
             _health.Update(ref state);
             _attackers.Update(ref state);
             _containers.Update(ref state);
+            _factions.Update(ref state);
         }
 
         /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
@@ -84,8 +88,8 @@ namespace HyperRTS.Simulation.Transport
             }
         }
 
-        /// <summary>Kills every passenger, crediting whoever destroyed the container.</summary>
-        public void KillAll(Entity container, DynamicBuffer<Cargo> cargo)
+        /// <summary>Kills every passenger as a lethal hit would: credited to whoever destroyed the container, and reported as damaged.</summary>
+        public void KillAll(Entity container, DynamicBuffer<Cargo> cargo, ref EventWriter<EntityDamaged> damaged)
         {
             var killer = Attacker(container);
             foreach (var item in cargo)
@@ -94,6 +98,10 @@ namespace HyperRTS.Simulation.Transport
                 {
                     _health.GetRefRW(item.Unit).ValueRW.Current = 0f;
                     _attackers[item.Unit] = killer;
+                    if (_factions.TryGetComponent(item.Unit, out var owner))
+                    {
+                        EntityDamaged.Raise(ref damaged, item.Unit, owner.Value);
+                    }
                 }
             }
 

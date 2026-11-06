@@ -85,9 +85,9 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < army.Length; i++)
             {
                 var entity = army.Entities[i];
-                var targets = mounts[entity][0].Weapon.Targets;
-                if (army.IsOwnedBy(i, turn.Faction) && Weapon.CanHit(targets, NavLayer.Ground)
-                                                      && IsFreeForWave(ref state, entity, turn, snapshot))
+                var armed = WeaponMount.TryGetPrimary(mounts[entity], out var primary);
+                if (armed && army.IsOwnedBy(i, turn.Faction) && Weapon.CanHit(primary.Targets, NavLayer.Ground)
+                    && IsFreeForWave(ref state, entity, turn, snapshot))
                 {
                     wave.Add(i);
                     sum += army.Position(i);

@@ -7,7 +7,9 @@
 An armed unit picks the nearest hostile its team can see, closes to range and fires. A target in fog or
 hidden by stealth is never auto-acquired, so long-range weapons need a spotter; explicit attack orders still reach
 past sight. Every hit goes through one damage
-queue, so armor, splash and kill credit apply to all of them.
+queue, so armor, splash and kill credit apply to all of them. Two kills skip it on purpose: a destroyed container's
+passengers die with `EntityDamaged` and the container's killer credited, and a collapse only totals sections that
+hits already broke.
 
 Combat's code sits in sub-folders of `Simulation/Combat/`, each its own `HyperRTS.Simulation.Combat.<Folder>`
 namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, interceptors, impact surfaces),
@@ -39,8 +41,8 @@ the longest reach among them. An independent one picks its own target, such as a
 while the gun shoots tanks. `MinEffect` skips targets whose armor blunts the damage, an extra weapon may need
 research and carry rounds that refill while docked (an aircraft goes home when all its limited weapons are empty),
 and each fires its own Fire cue, which `mountFire` on the sound and effect authoring fills in order from index 1. One
-without an entry fires silently. `WeaponFireSystem` gives each weapon its target for the frame (`WeaponTargetJob`:
-the primary the attack target once it is in reach) and fires them all through `Shooter.TryFire`.
+without an entry fires silently. `WeaponTargetSystem` gives each weapon its target for the frame (`WeaponTargetJob`:
+the primary the attack target once it is in reach), right after engagement picks it, and `WeaponFireSystem` fires them all through `Shooter.TryFire`.
 
 Direct fire and rockets (`Weapon.NeedsLineOfFire`, any trajectory but ballistic) need a clear line from the
 shooter's eye to the target's top (`SightLines.TopOf`, 1 m, or 3 m for a `TallTarget`, as sight judges it), over the ground and solid sight blocks in every cell the line crosses (`SightBlockers.TryFindObstruction`;

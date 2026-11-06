@@ -244,10 +244,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                     return;
                 }
 
-                if (owner.Value != Faction.Neutral)
-                {
-                    Damaged.Add(new EntityDamaged { Entity = target, Faction = owner.Value });
-                }
+                EntityDamaged.Raise(ref Damaged, target, owner.Value);
             }
 
             /// <summary>Passes the share of a hit on a shelter that its walls, at their health before the hit, don't stop.</summary>

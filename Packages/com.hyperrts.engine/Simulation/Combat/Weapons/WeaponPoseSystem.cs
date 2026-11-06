@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(EngagementSystem))]
+    [UpdateAfter(typeof(WeaponTargetSystem))]
     [UpdateBefore(typeof(WeaponFireSystem))]
     public partial struct WeaponPoseSystem : ISystem
     {

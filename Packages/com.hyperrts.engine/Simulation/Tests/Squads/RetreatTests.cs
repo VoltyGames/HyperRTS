@@ -67,6 +67,22 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
+        public void Retreat_LeavesAPointThatGoesOffline()
+        {
+            var squad = Squad(float3.zero);
+            var near = Point(1, new float3(60f, 0f, 0f));
+            Point(1, new float3(-90f, 0f, 0f));
+            Retreat(squad);
+            World.Tick(frames: 3);
+            Assert.AreEqual(60f, World.Get<ActiveOrder>(squad).Value.Position.x, 1e-3f);
+
+            World.SetOffline(near, true);
+            World.Tick(frames: 3);
+
+            Assert.AreEqual(-90f, World.Get<ActiveOrder>(squad).Value.Position.x, 1e-3f);
+        }
+
+        [Test]
         public void Retreat_WithNoPointDoesNothing()
         {
             var squad = Squad(float3.zero);

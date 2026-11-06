@@ -114,12 +114,27 @@ namespace HyperRTS.Simulation.Squads
             {
                 state.CompleteDependency();
                 ref var current = ref SystemAPI.GetSingletonRW<CoverSpots>().ValueRW;
+                CarryReservations(current, built);
                 current.Dispose();
                 current = built;
             }
             else
             {
                 state.EntityManager.CreateSingleton(built, "CoverSpots");
+            }
+        }
+
+        // A new index starts free, which would let a second squad take a spot the first still holds.
+        private static void CarryReservations(in CoverSpots old, in CoverSpots built)
+        {
+            var reservations = built.Reservations;
+            for (var i = 0; i < old.Spots.Length; i++)
+            {
+                var key = new CoverSpotKey(old.Spots[i].Entity, old.Spots[i].Index);
+                if (!old.Reservations[i].IsFree && built.ByKey.TryGetValue(key, out var spot))
+                {
+                    reservations[spot] = old.Reservations[i];
+                }
             }
         }
 

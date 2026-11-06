@@ -1,6 +1,7 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
 using Unity.Collections;
@@ -18,11 +19,13 @@ namespace HyperRTS.Simulation.Transport
     public partial struct ContainerDeathSystem : ISystem
     {
         private CargoExit _exit;
+        private EventWriter<EntityDamaged> _damaged;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _exit = new CargoExit(ref state);
+            _damaged = new EventWriter<EntityDamaged>(ref state);
             state.RequireForUpdate<NavGrid>();
         }
 
@@ -30,7 +33,8 @@ namespace HyperRTS.Simulation.Transport
         public void OnUpdate(ref SystemState state)
         {
             _exit.Update(ref state);
-            new EvacuateJob { Exit = _exit, Grid = SystemAPI.GetSingleton<NavGrid>() }.Schedule();
+            _damaged.Update(ref state);
+            new EvacuateJob { Exit = _exit, Damaged = _damaged, Grid = SystemAPI.GetSingleton<NavGrid>() }.Schedule();
         }
 
         [BurstCompile]
@@ -39,6 +43,7 @@ namespace HyperRTS.Simulation.Transport
         private partial struct EvacuateJob : IJobEntity
         {
             public CargoExit Exit;
+            public EventWriter<EntityDamaged> Damaged;
             [ReadOnly] public NavGrid Grid;
 
             private void Execute(Entity entity, in Container container, DynamicBuffer<Cargo> cargo)
@@ -54,7 +59,7 @@ namespace HyperRTS.Simulation.Transport
                 }
                 else
                 {
-                    Exit.KillAll(entity, cargo);
+                    Exit.KillAll(entity, cargo, ref Damaged);
                 }
             }
         }

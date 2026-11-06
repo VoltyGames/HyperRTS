@@ -82,6 +82,37 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
+        public void RebuiltIndex_KeepsSpotsHeldAndNoSquadTakesThem()
+        {
+            Prop(new float3(0f, 0f, 2f), (new float3(-1.5f, 0f, 0f), CoverKind.Heavy), (new float3(-0.5f, 0f, 0f), CoverKind.Heavy),
+                (new float3(0.5f, 0f, 0f), CoverKind.Heavy), (new float3(1.5f, 0f, 0f), CoverKind.Heavy));
+            var first = Squad(float3.zero, 2);
+            var second = Squad(new float3(0.5f, 0f, 0f), 2);
+            World.Run(3f);
+
+            foreach (var squad in new[] { first, second })
+            {
+                var members = World.Buffer<SquadMember>(squad);
+                var member = members[0];
+                member.LeaveSpot();
+                members[0] = member;
+            }
+
+            Prop(new float3(0f, 0f, 200f), (float3.zero, CoverKind.Light));
+            World.Run(3f);
+
+            var taken = new System.Collections.Generic.HashSet<(Entity, byte)>();
+            foreach (var squad in new[] { first, second })
+            {
+                foreach (var member in World.Buffer<SquadMember>(squad))
+                {
+                    Assert.IsTrue(member.HasSpot);
+                    Assert.IsTrue(taken.Add((member.SpotEntity, member.SpotIndex)), "a spot is held by two members after a rebuild");
+                }
+            }
+        }
+
+        [Test]
         public void Member_IsCoveredAndCrouchedOnlyOnceItStandsInTheSpot()
         {
             Prop(new float3(0f, 0f, 3f), (float3.zero, CoverKind.Heavy));

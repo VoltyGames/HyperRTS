@@ -64,5 +64,14 @@ namespace HyperRTS.Simulation.Common.Events
     {
         public Entity Entity;
         public byte Faction;
+
+        /// <summary>Raises the event for an owned entity; a neutral one raises none.</summary>
+        public static void Raise(ref EventWriter<EntityDamaged> writer, Entity entity, byte owner)
+        {
+            if (owner != Common.Faction.Neutral)
+            {
+                writer.Add(new EntityDamaged { Entity = entity, Faction = owner });
+            }
+        }
     }
 }

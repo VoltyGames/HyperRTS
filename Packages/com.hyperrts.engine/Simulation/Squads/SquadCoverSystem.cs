@@ -68,7 +68,8 @@ namespace HyperRTS.Simulation.Squads
                 // A squad at work digs where it stands and leaves any spot.
                 var halted = !IsMoving(velocity) && !WorkLookup.HasEnabled(squad);
                 Keep(squad, members, transform, halted);
-                var near = new NativeList<int>(16, Allocator.Temp);
+                var near = new NativeList<int>(0, Allocator.Temp);
+                var searched = false;
                 var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
                 var living = SquadMember.CountLiving(members);
                 var rank = 0;
@@ -82,6 +83,12 @@ namespace HyperRTS.Simulation.Squads
 
                     if (halted && !member.HasSpot)
                     {
+                        if (!searched)
+                        {
+                            Spots.FindNear(transform.Position.xz, Rules.Reach, near);
+                            searched = true;
+                        }
+
                         Take(ref member, squad, transform, forward, SquadMember.SpreadSlot(rank, living), near);
                     }
 
@@ -107,8 +114,16 @@ namespace HyperRTS.Simulation.Squads
 
                     if (halted && member.Alive && Spots.TryFind(member.SpotEntity, member.SpotIndex, out var spot))
                     {
-                        Spots.Reservations[spot] = Reserved(Spots.Reservations[spot], squad);
-                        member.Slot = Spots.Spots[spot].Position.xz - transform.Position.xz;
+                        var reservation = Spots.Reservations[spot];
+                        if (reservation.TryReserve(squad))
+                        {
+                            Spots.Reservations[spot] = reservation;
+                            member.Slot = Spots.Spots[spot].Position.xz - transform.Position.xz;
+                        }
+                        else
+                        {
+                            member.LeaveSpot();
+                        }
                     }
                     else
                     {
@@ -122,8 +137,6 @@ namespace HyperRTS.Simulation.Squads
             private void Take(ref SquadMember member, Entity squad, in LocalTransform transform, float2 forward,
                 float2 place, NativeList<int> near)
             {
-                near.Clear();
-                Spots.FindNear(transform.Position.xz, Rules.Reach, near);
                 var best = -1;
                 var bestScore = float.MinValue;
                 foreach (var spot in near)
