@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Destruction;
@@ -64,7 +65,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var tree = SpawnTree(new float3(5f, 0f, 0f), remains, out var standing, out var topple);
 
-            World.QueueDamage(new DamageEvent { Position = float3.zero, Profile = new DamageProfile { Amount = 999f, Radius = 8f, EdgeFactor = 1f } });
+            World.QueueDamage(new DamageEvent { Position = float3.zero, Layers = WeaponTargets.Surface, Profile = new DamageProfile { Amount = 999f, Radius = 8f, EdgeFactor = 1f } });
             World.Tick();
 
             Assert.IsFalse(World.EntityManager.Exists(tree));

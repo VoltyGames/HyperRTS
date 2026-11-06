@@ -69,7 +69,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         /// <summary>
         /// The fire step every weapon takes: deployed if it must be, inside its firing arc, off cooldown, a turret on target, restart the
-        /// cooldown or step the salvo, and fire <paramref name="shots"/> rounds, each from the next muzzle.
+        /// cooldown or step the salvo, and fire <paramref name="shots"/> rounds, each from the next muzzle, as one volley
+        /// with one reveal, one shot counted and one fire cue.
         /// </summary>
         public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
         {
@@ -84,11 +85,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return false;
             }
 
-            for (var i = 0; i < shots; i++)
-            {
-                Fire(shooter, TakeMuzzle(shooter, ref weapon), pose, target, faction);
-            }
-
+            Fire(shooter, ref weapon, pose, target, faction, shots);
             weapon.StartCooldown();
             return true;
         }
@@ -123,8 +120,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
             return weapon.Aim.Aligned(aimed, weapon.Aim.Angles(_transforms[shooter], aimed, aim));
         }
 
-        /// <summary>Fires the weapon at <see cref="WeaponPose"/> index <paramref name="pose"/>, counting the shot there.</summary>
-        private void Fire(Entity shooter, in Weapon weapon, byte pose, Entity target, byte faction)
+        /// <summary>
+        /// Fires a volley at <see cref="WeaponPose"/> index <paramref name="pose"/>: the reveal, the shot count and the
+        /// fire cue happen once, the hit or launch once per round.
+        /// </summary>
+        private void Fire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
         {
             Reveal(shooter);
             var poses = _poses[shooter];
@@ -133,30 +133,53 @@ namespace HyperRTS.Simulation.Combat.Weapons
             poses[pose] = fired;
             var place = _transforms[shooter];
             var targetPosition = _transforms[target].Position;
-            var shot = weapon;
-            if (TryFindPort(shooter, targetPosition, out var port))
+            var ported = TryFindPort(shooter, targetPosition, out var port);
+            if (ported)
             {
                 place = port;
-                shot.Aim.HasMuzzle = true;
-                shot.Aim.Muzzle = float3.zero;
                 fired.YawAngle = 0f;
                 fired.PitchAngle = 0f;
             }
 
             var firing = new Firing(shooter, faction, pose, place, fired);
-            PlayFire(firing, shot, targetPosition);
-            if (weapon.ProjectilePrefab == Entity.Null)
+            for (var round = 0; round < shots; round++)
             {
-                var origin = shot.Aim.HitOrigin(place, fired);
-                var hit = weapon.Damage.Hit(shooter, faction, origin, target, targetPosition, weapon.Targets);
-                _damage.Add(hit);
-                var along = math.normalizesafe(targetPosition - origin, place.Forward());
-                hit.AddImpact(ref _cues, _cues.TypeIdFor(shooter, CueSlot.Impact), along);
+                var shot = TakeMuzzle(shooter, ref weapon);
+                if (ported)
+                {
+                    shot.Aim.HasMuzzle = true;
+                    shot.Aim.Muzzle = float3.zero;
+                }
+
+                if (round == 0)
+                {
+                    PlayFire(firing, shot, targetPosition);
+                }
+
+                if (weapon.FiresRounds)
+                {
+                    var aimed = target;
+                    var aimedAt = targetPosition;
+                    Obstruct(shooter, shot, fired, place, ref aimed, ref aimedAt);
+                    Launch(firing, shot, round, aimed, aimedAt);
+                }
+                else
+                {
+                    Strike(firing, shot, round == 0, target, targetPosition);
+                }
             }
-            else
+        }
+
+        /// <summary>An instant hit; the first round of a volley also writes the impact cue.</summary>
+        private void Strike(in Firing firing, in Weapon weapon, bool cue, Entity target, float3 targetPosition)
+        {
+            var origin = weapon.Aim.HitOrigin(firing.Place, firing.Pose);
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, target, targetPosition, weapon.Targets);
+            _damage.Add(hit);
+            if (cue)
             {
-                Obstruct(shooter, shot, fired, place, ref target, ref targetPosition);
-                Launch(firing, shot, target, targetPosition);
+                var along = math.normalizesafe(targetPosition - origin, firing.Place.Forward());
+                hit.AddImpact(ref _cues, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), along);
             }
         }
 
@@ -213,10 +236,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
         }
 
-        private void Launch(in Firing firing, in Weapon weapon, Entity target, float3 targetPosition)
+        private void Launch(in Firing firing, in Weapon weapon, int round, Entity target, float3 targetPosition)
         {
             var origin = weapon.Aim.LaunchPoint(firing.Place, firing.Pose);
-            var seed = math.hash(new uint3((uint)firing.Shooter.Index, (uint)target.Index, firing.Pose.Shots));
+            var seed = math.hash(new uint4((uint)firing.Shooter.Index, (uint)target.Index, firing.Pose.Shots, (uint)round));
             var aim = weapon.Scatter(weapon.Aim.TargetPoint(targetPosition), seed);
 
             // Smoke thick enough to hide the target breaks a guided round's lock; it flies on to the aim point.
@@ -227,7 +250,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 Height = weapon.Aim.ProjectileHeight,
                 ImpactTypeId = _cues.TypeIdFor(firing.Shooter, CueSlot.Impact),
                 Hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, locked ? target : Entity.Null, aim, weapon.Targets),
-                Trajectory = weapon.Aim.Trajectory,
+                Course = weapon.Aim.Course,
                 Kind = weapon.ProjectileKind,
                 Start = origin,
                 Apex = weapon.Aim.ArcHeight * math.distance(origin.xz, aim.xz),

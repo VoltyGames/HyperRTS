@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Tests.Squads
                 Position = at,
                 Origin = at + new float3(0f, 0f, 20f),
                 SourceFaction = 2,
+                Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile { EdgeFactor = 1f, Suppression = suppression, Radius = radius },
             });
 

@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Height above the shooter's and target's pivots that projectiles fly at; 0 flies pivot to pivot.</summary>
         public float ProjectileHeight;
 
-        public Trajectory Trajectory;
+        public ShotCourse Course;
 
         /// <summary>Apex of an arcing shot as a fraction of the launch-to-aim ground distance.</summary>
         public float ArcHeight;
@@ -108,7 +108,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             var ground = math.max(math.distance(from.xz, aim.xz), 0.01f);
             var slope = (aim.y - from.y) / ground;
             // An arc of apex ArcHeight times the ground distance leaves at a slope of 4 ArcHeight above the chord.
-            return math.atan(Trajectory == Trajectory.Direct ? slope : slope + 4f * ArcHeight);
+            return math.atan(Course.Curves ? slope + 4f * ArcHeight : slope);
         }
     }
 }

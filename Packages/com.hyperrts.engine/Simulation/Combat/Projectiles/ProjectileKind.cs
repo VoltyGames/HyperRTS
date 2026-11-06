@@ -11,5 +11,8 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         Rocket = 2,
         Missile = 4,
         Bomb = 8,
+
+        /// <summary>First flag a game may use for its own kinds (16, 32, 64, 128); the engine never defines one from here up.</summary>
+        GameFirst = 16,
     }
 }

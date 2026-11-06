@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Tests.AI
             {
                 squad[i] = World.SpawnUnit(2, new float3(i * 3f, 0f, 0f));
                 var writer = World.Writer(squad[i]);
-                var weapon = new Weapon { Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f };
+                var weapon = new Weapon { Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f, Targets = WeaponTargets.Surface };
                 WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
             }
 
@@ -160,6 +160,7 @@ namespace HyperRTS.Simulation.Tests.AI
             var weapon = new Weapon
             {
                 Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f,
+                Targets = WeaponTargets.Surface,
             };
             WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
             World.MakeProducer(World.SpawnBuilding(2, at, new float2(4f, 4f)), new float3(0f, 0f, -4f), soldier);

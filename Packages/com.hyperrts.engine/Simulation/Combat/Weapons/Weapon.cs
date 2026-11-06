@@ -59,13 +59,19 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// </summary>
         public float FiringArc;
 
-        /// <summary>Aircraft are air targets; everything else (units on any other layer, buildings) is surface.</summary>
-        public static bool CanHit(WeaponTargets targets, NavLayer layer) => targets switch
+        /// <summary>Whether <paramref name="targets"/> includes the class of a unit on <paramref name="layer"/>; amphibious units count as ground and naval.</summary>
+        public static bool CanHit(WeaponTargets targets, NavLayer layer)
         {
-            WeaponTargets.Surface => layer != NavLayer.Air,
-            WeaponTargets.Air => layer == NavLayer.Air,
-            _ => true,
-        };
+            var classes = layer switch
+            {
+                NavLayer.Ground => WeaponTargets.Ground,
+                NavLayer.Naval => WeaponTargets.Naval,
+                NavLayer.Amphibious => WeaponTargets.Surface,
+                NavLayer.Air => WeaponTargets.Air,
+                _ => WeaponTargets.None,
+            };
+            return (targets & classes) != WeaponTargets.None;
+        }
 
         /// <summary>The distances it hits from: its minimum range up to <paramref name="reach"/>.</summary>
         public readonly RangeBand Band(float reach) => new(MinRange, reach);
@@ -96,8 +102,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
-        /// <summary>Direct fire and rockets need a clear line to the target; lobbed shells don't.</summary>
-        public readonly bool NeedsLineOfFire => Aim.Trajectory != Trajectory.Ballistic;
+        /// <summary>Whether its shots need a clear line to the target; lobbed shells don't.</summary>
+        public readonly bool NeedsLineOfFire => Aim.Course.NeedsLineOfFire;
 
         /// <summary>Launches rounds, which hit whatever is in the way, rather than hitting at once.</summary>
         public readonly bool FiresRounds => ProjectilePrefab != Entity.Null;
@@ -136,7 +142,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// A homing shot keeps its target only without a <see cref="Spread"/>: one with a spread flies to its scattered
         /// point instead, as a rocket ripple saturates an area. Ballistic shells keep it while it stays put.
         /// </summary>
-        public bool KeepsLock => Spread <= 0f || Aim.Trajectory == Trajectory.Ballistic;
+        public bool KeepsLock => Spread <= 0f || !Aim.Course.Homes;
 
         /// <summary><paramref name="aim"/> moved to a random point within <see cref="Spread"/>.</summary>
         public float3 Scatter(float3 aim, uint seed)

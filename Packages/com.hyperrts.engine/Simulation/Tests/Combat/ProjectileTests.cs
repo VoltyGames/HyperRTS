@@ -90,6 +90,23 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.Less(World.GetHealth(enemy), 100f);
         }
 
+        [TestCase(Trajectory.Ballistic, 0.5f, 4f)]
+        [TestCase(Trajectory.Rocket, 0.5f, 3f)]
+        [TestCase(Trajectory.Rocket, 0f, 0f)]
+        [TestCase(Trajectory.Ballistic, 1f, 0f)]
+        public void CoursePresets_KeepTheirCurves(Trajectory trajectory, float t, float height)
+        {
+            var course = ShotCourse.From(trajectory);
+            var start = float3.zero;
+            var end = new float3(12f, 0f, 0f);
+
+            var point = course.Point(start, end, 4f, t);
+
+            Assert.AreEqual(height, point.y, 1e-4f);
+            Assert.AreEqual(12f * t, point.x, 1e-4f);
+            Assert.AreEqual(trajectory == Trajectory.Ballistic, course.PacedOnGround);
+        }
+
         [Test]
         public void Launch_GivesTheProjectileItsWeaponsKind()
         {

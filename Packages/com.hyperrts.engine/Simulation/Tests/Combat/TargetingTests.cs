@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Entities;
@@ -233,6 +234,19 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             Assert.AreEqual(OrderType.Move, World.Get<ActiveOrder>(gun).Value.Type, "right-click just moves there");
         }
+
+        [TestCase(WeaponTargets.Ground, NavLayer.Ground, true)]
+        [TestCase(WeaponTargets.Ground, NavLayer.Naval, false)]
+        [TestCase(WeaponTargets.Naval, NavLayer.Ground, false)]
+        [TestCase(WeaponTargets.Naval, NavLayer.Naval, true)]
+        [TestCase(WeaponTargets.Surface, NavLayer.Amphibious, true)]
+        [TestCase(WeaponTargets.Naval, NavLayer.Amphibious, true)]
+        [TestCase(WeaponTargets.Surface, NavLayer.Air, false)]
+        [TestCase(WeaponTargets.Air, NavLayer.Ground, false)]
+        [TestCase(WeaponTargets.Surface | WeaponTargets.Air, NavLayer.Air, true)]
+        [TestCase(WeaponTargets.Projectile, NavLayer.Ground, false)]
+        public void Weapon_HitsOnlyTheClassesItTargets(WeaponTargets targets, NavLayer layer, bool hits) =>
+            Assert.AreEqual(hits, Weapon.CanHit(targets, layer));
 
         [Test]
         public void AntiAirWeapon_EngagesAircraft_AndIgnoresGround()

@@ -12,7 +12,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Projectiles
 {
     /// <summary>
-    /// Flies projectiles along their <see cref="Trajectory"/> toward their aim point, queues their
+    /// Flies projectiles along their <see cref="ShotCourse"/> toward their aim point, queues their
     /// <see cref="DamageEvent"/> and impact <see cref="CueEvent"/> on arrival and destroys them.
     /// </summary>
     [BurstCompile]

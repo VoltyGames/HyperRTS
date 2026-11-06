@@ -42,6 +42,11 @@ namespace HyperRTS.Editor.Validation.Rules
 
         private static void CheckFlight(WeaponAuthoring weapon, string label, WeaponStats stats, ValidationIssues issues)
         {
+            if (stats.targets == WeaponTargets.None)
+            {
+                issues.Error(weapon, $"{label} has no targets, so it can never fire.");
+            }
+
             if (stats.minRange >= stats.range)
             {
                 issues.Error(weapon, $"{label} has a minimum range {stats.minRange} not below its range {stats.range}.");
@@ -69,6 +74,6 @@ namespace HyperRTS.Editor.Validation.Rules
         }
 
         private static bool Covers(WeaponTargets primary, WeaponTargets mount) =>
-            primary == mount || primary == WeaponTargets.SurfaceAndAir;
+            primary.HasFlag(mount);
     }
 }

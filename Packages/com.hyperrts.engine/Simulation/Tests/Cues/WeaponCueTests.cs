@@ -34,6 +34,20 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         [Test]
+        public void SquadVolley_PlaysOneFireCue_AndOneImpactCue_ButHitsOncePerMember()
+        {
+            var squad = Voiced(World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0), CueSlot.Fire, CueSlot.Impact);
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
+
+            var heard = World.QueuedOver(0.5f);
+
+            Assert.AreEqual(1, heard.FindAll(cue => cue.Slot == CueSlot.Fire).Count, "one fire cue");
+            Assert.AreEqual(1, heard.FindAll(cue => cue.Slot == CueSlot.Impact).Count, "one impact cue");
+            Assert.AreEqual(60f, World.GetHealth(enemy), 1e-3f, "four members hit for 10 each");
+            Assert.AreEqual(World.GetTypeId(squad), Find(heard, CueSlot.Fire).TypeId);
+        }
+
+        [Test]
         public void TurretFire_PlaysAtTheMuzzleTheTurretTurned()
         {
             var tank = World.AddWeapon(World.SpawnUnit(1, float3.zero, name: "Tank"), range: 10f,

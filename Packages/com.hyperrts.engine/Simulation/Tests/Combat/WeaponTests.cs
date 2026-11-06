@@ -254,7 +254,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [TestCase(Trajectory.Direct, false)]
         public void Spread_ScattersEveryTrajectory_AndOnlyShellsKeepTheirLock(Trajectory trajectory, bool keepsLock)
         {
-            var weapon = new Weapon { Spread = 4f, Aim = new WeaponAim { Trajectory = trajectory } };
+            var weapon = new Weapon { Spread = 4f, Aim = new WeaponAim { Course = ShotCourse.From(trajectory) } };
             var aim = new float3(10f, 0f, 20f);
 
             var landed = new HashSet<float3>();
@@ -272,7 +272,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void NoSpread_KeepsTheAimAndTheLock()
         {
-            var missile = new Weapon { Aim = new WeaponAim { Trajectory = Trajectory.Rocket } };
+            var missile = new Weapon { Aim = new WeaponAim { Course = ShotCourse.Rocket } };
 
             Assert.AreEqual(new float3(1f, 2f, 3f), missile.Scatter(new float3(1f, 2f, 3f), 99u));
             Assert.IsTrue(missile.KeepsLock);

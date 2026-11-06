@@ -89,6 +89,7 @@ namespace HyperRTS.Simulation.Tests.AI
             var weapon = new Weapon
             {
                 Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f,
+                Targets = WeaponTargets.Surface,
             };
             WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
             var tank = UnitPrefab("Tank", 15, 30f);

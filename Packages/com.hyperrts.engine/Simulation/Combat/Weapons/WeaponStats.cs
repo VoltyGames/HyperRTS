@@ -94,8 +94,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Min(0f)]
         public float minRange;
 
-        [Tooltip("What the weapon can hit: Surface (ground and naval units, buildings), Air (aircraft), or both.")]
-        public WeaponTargets targets;
+        [Tooltip("What the weapon can hit: Ground (units and buildings), Naval, Air (aircraft) and Projectile (shells and missiles in flight).")]
+        public WeaponTargets targets = WeaponTargets.Surface;
 
         [Tooltip("Never auto-acquire targets whose armor scales this damage below this factor; 0 picks any.")]
         [Min(0f)]
@@ -171,7 +171,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     MaxPitch = math.radians(maxElevation),
                     AimTolerance = math.radians(aimTolerance),
                     ProjectileHeight = projectileHeight,
-                    Trajectory = trajectory,
+                    Course = ShotCourse.From(trajectory),
                     ArcHeight = arcHeight,
                 },
             };

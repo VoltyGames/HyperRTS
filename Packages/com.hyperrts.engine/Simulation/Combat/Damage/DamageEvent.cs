@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>What the hit deals: amount, damage type, cover piercing, suppression and splash.</summary>
         public DamageProfile Profile;
 
-        /// <summary>Layers the splash reaches: the weapon's targets, else the surface only.</summary>
+        /// <summary>Layers the splash reaches: the weapon's targets.</summary>
         public WeaponTargets Layers;
 
         /// <summary>A plain hit or heal on <paramref name="target"/> alone, untyped and without splash.</summary>

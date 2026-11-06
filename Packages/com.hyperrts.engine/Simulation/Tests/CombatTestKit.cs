@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Tests
                 Aim = new WeaponAim
                 {
                     ProjectileHeight = 1f,
-                    Trajectory = trajectory,
+                    Course = ShotCourse.From(trajectory),
                     ArcHeight = arcHeight,
                     Turreted = turreted,
                 },
@@ -58,6 +58,7 @@ namespace HyperRTS.Simulation.Tests
                 Cooldown = cooldown,
                 Targets = targets,
                 MinEffect = minEffect,
+                Aim = new WeaponAim { Course = ShotCourse.Direct },
             };
             Aim(ref weapon, 360f);
             var ammo = Ammo.Create(rounds, reloadTime, refill);

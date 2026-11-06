@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Tests.Commands
         {
             var armed = SpawnSelected(float3.zero);
             var unarmed = SpawnSelected(new float3(2f, 0f, 0f));
-            World.EntityManager.AddBuffer<WeaponMount>(armed).Add(default);
+            World.EntityManager.AddBuffer<WeaponMount>(armed).Add(new WeaponMount { Weapon = new Weapon { Targets = WeaponTargets.Surface } });
             var enemy = World.SpawnUnit(2, new float3(8f, 0f, 0f));
 
             SmartOn(enemy);
@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Tests.Commands
             var onGround = World.SpawnUnit(1, new float3(0f, 0f, -2f));
             foreach (var (unit, target) in new[] { (onEnemy, enemy), (onFriend, friend), (onGround, Entity.Null) })
             {
-                World.EntityManager.AddBuffer<WeaponMount>(unit).Add(default);
+                World.EntityManager.AddBuffer<WeaponMount>(unit).Add(new WeaponMount { Weapon = new Weapon { Targets = WeaponTargets.Surface } });
                 World.Command(1, new PlayerCommand
                 {
                     Type = CommandType.AttackMove, Unit = unit, Target = target, Position = goal,

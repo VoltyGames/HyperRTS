@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
@@ -154,6 +155,7 @@ namespace HyperRTS.Simulation.Tests.Common
             {
                 Position = pose.Position,
                 SourceFaction = 1,
+                Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile { Amount = 100f, Radius = 2f, EdgeFactor = 1f },
             });
             var spawned = Single(TickUntilSpawned(5, ComponentType.ReadOnly<LocalTransform>(),

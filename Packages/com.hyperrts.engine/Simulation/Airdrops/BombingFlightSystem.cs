@@ -107,7 +107,7 @@ namespace HyperRTS.Simulation.Airdrops
                     Speed = load.Speed,
                     ImpactTypeId = impact,
                     Hit = load.Damage.Hit(bomber, faction, origin, target, aim, WeaponTargets.Surface),
-                    Trajectory = Trajectory.Direct,
+                    Course = ShotCourse.Direct,
                     Start = origin,
                 });
             }

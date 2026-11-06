@@ -20,7 +20,7 @@ namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, i
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, firing arc, ammo (`rounds`, `reloadTime`, `refill`), salvo size and interval, spread. The primary and each extra weapon carry one |
+| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets (a `WeaponTargets` set of Ground, Naval, Air and Projectile, matched to the target's nav layer; buildings are Ground), needs deploy, firing arc, ammo (`rounds`, `reloadTime`, `refill`), salvo size and interval, spread. The primary and each extra weapon carry one |
 | `WeaponMount` | One weapon: the primary at index 0, then the extra weapons, then an interceptor's. Server only; stats rewrite each from its own bases |
 | `DamageProfile` | What a hit deals: amount, damage type, garrison factor, cover piercing, suppression, splash radius and edge factor, friendly fire. Weapons, abilities and bombs carry one and build their hit with `Hit`; `DamageSettings` is its inspector block |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
@@ -43,7 +43,7 @@ and each fires its own Fire cue, which `mountFire` on the sound and effect autho
 without an entry fires silently. `WeaponTargetSystem` gives each weapon its target for the frame (`WeaponTargetJob`:
 the primary the attack target once it is in reach), right after engagement picks it, and `WeaponFireSystem` fires them all through `Shooter.TryFire`.
 
-Direct fire and rockets (`Weapon.NeedsLineOfFire`, any trajectory but ballistic) need a clear line from the
+Direct fire and rockets (`ShotCourse.NeedsLineOfFire`, read through `Weapon.NeedsLineOfFire`) need a clear line from the
 shooter's eye to the target's top (`SightLines.TopOf`, 1 m, or 3 m for a `TallTarget`, as sight judges it), over the ground and solid sight blocks in every cell the line crosses (`SightBlockers.TryFindObstruction`;
 the shooter's own block, its garrison's and the target's don't count). Scans skip blocked targets. A weapon that
 hits at once waits for a clear line, so an ordered attack closes in until it has one. One that fires rounds
@@ -237,9 +237,13 @@ the deployed heading, `SquadPostureSystem` gives it the crew posture, and `Squad
 cover; the other members keep the ring. Members carry a `designation` (`SquadAuthoring.Member.designation`), and an upgraded weapon's `WeaponStats.designation` is shown on
 member cards, baked into `WeaponPose.Designation` and never sent.
 
-A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells
-arc onto the point aimed at launch, `ArcHeight` times the ground distance high, and miss a target that moved. Rockets
-climb, then dive onto the live target. A weapon with `MinRange` never picks targets inside it, drops ones that close
+A projectile flies by its weapon's `ShotCourse`, which the authored `Trajectory` picks a preset of at bake. Runtime
+code reads only the course: whether it homes, whether it curves, whether it needs a line of fire, whether it is paced
+by its ground distance, and the cubic it follows (`Reach`, how far along the chord from each end the two control points
+sit, and `Lift`, how high they sit as a multiple of the apex). Direct shots fly straight and home on the target.
+Ballistic shells arc onto the point aimed at launch (control points at the chord's thirds, lifted 4/3 of the apex,
+which is `ArcHeight` times the ground distance) and miss a target that moved. Rockets climb, then dive onto the live
+target (control points over the ends, lifted by the apex). A weapon with `MinRange` never picks targets inside it, drops ones that close
 in, and backs off to mid range when ordered to attack one.
 
 Each weapon has a `WeaponPose`: yaw relative to the hull, pitch and a wrapping shot count, three bytes per weapon that
@@ -251,14 +255,16 @@ the hull and only once its pose is within `aimTolerance` of the target. A unit's
 `FacingGoal` instead, and movement turns the parked hull toward it at its `Locomotion` turn rate, never swinging a long
 hull into a closed cell. The weapon fires once the hull is within `aimTolerance` of the target. Buildings never turn,
 so a building's weapon always bakes as turreted and its `Turret` and `Barrel` follow the pose like a unit's.
-Shots leave from the muzzle turned by the pose: raised about the weapon's `barrel` and traversed about its `turret`,
+A volley (`shots` carriers of a squad) reveals the shooter, counts one shot on the pose and plays one Fire cue, plus
+one Impact cue for an instant hit; only the hits and launches repeat, and each launched round's scatter is seeded by
+its carrier index. Shots leave from the muzzle turned by the pose: raised about the weapon's `barrel` and traversed about its `turret`,
 so directional armor sees the real origin, and the Fire cue (muzzle flash, tracer) plays from there too.
 
 ### Interception
 
 `InterceptorAuthoring` lets a building or unit shoot down hostile projectiles in flight, such as a C-RAM gun or a SAM
 battery. It engages the nearest hostile projectile inside its `radius` whose `ProjectileKind` it lists: Shell,
-Rocket, Missile or Bomb, which the firing weapon's `projectileKind` sets (None is never engaged). Drones are units, so
+Rocket, Missile or Bomb, which the firing weapon's `projectileKind` sets (None is never engaged). A game adds kinds from `ProjectileKind.GameFirst` (16) up. Drones are units, so
 interceptors ignore them.
 
 | Field | Role |

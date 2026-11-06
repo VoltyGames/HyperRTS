@@ -111,6 +111,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var weapon = new Weapon
             {
                 Range = 8f, Damage = new DamageProfile { Amount = 30f, Radius = 3f, EdgeFactor = 1f }, Cooldown = 100f,
+                Targets = WeaponTargets.Surface,
             };
             WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
             var target = World.SpawnUnit(2, new float3(6f, 0f, 0f));
@@ -239,6 +240,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             Position = position,
             Origin = position,
+            Layers = WeaponTargets.Surface,
             SourceFaction = 1,
             Profile = new DamageProfile { Amount = 40f, Radius = radius, EdgeFactor = 0.5f, FriendlyFire = friendlyFire },
         };

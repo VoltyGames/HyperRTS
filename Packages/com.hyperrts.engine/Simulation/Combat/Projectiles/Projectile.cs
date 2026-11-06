@@ -21,7 +21,8 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         /// <summary>Shooter type whose impact cue (sound, effects, marks) plays on arrival (0 = none); outlives the shooter.</summary>
         public int ImpactTypeId;
 
-        public Trajectory Trajectory;
+        /// <summary>How it flies, copied from its weapon at launch.</summary>
+        public ShotCourse Course;
 
         /// <summary>What an <see cref="Interceptor"/> sees it as.</summary>
         public ProjectileKind Kind;
@@ -38,9 +39,9 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         /// <summary>0 at launch to 1 on impact along an arcing path.</summary>
         public float Progress;
 
-        public bool Homes => Trajectory != Trajectory.Ballistic;
+        public bool Homes => Course.Homes;
 
-        public bool Arcs => Trajectory != Trajectory.Direct;
+        public bool Arcs => Course.Curves;
 
         public bool Arrived => Progress >= 1f;
 
@@ -63,48 +64,11 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         public void Advance(float deltaTime) =>
             Progress = math.min(1f, Progress + Speed * deltaTime / math.max(PathLength(), MinPath));
 
-        public float3 Position() => Trajectory == Trajectory.Ballistic ? ArcPoint() : CurvePoint();
+        public float3 Position() => Course.Point(Start, Hit.Position, Apex, Progress);
 
         /// <summary>Direction of travel, which the shot faces.</summary>
-        public float3 Heading() => Trajectory == Trajectory.Ballistic ? ArcTangent() : CurveTangent();
+        public float3 Heading() => Course.Tangent(Start, Hit.Position, Apex, Progress);
 
-        private float PathLength()
-        {
-            if (Trajectory == Trajectory.Ballistic)
-            {
-                return math.distance(Start.xz, Hit.Position.xz);
-            }
-
-            // The mean of chord and control polygon is a close, cheap estimate of a cubic's length.
-            var chord = math.distance(Start, Hit.Position);
-            var polygon = 2f * Apex + math.distance(Start.xz, Hit.Position.xz);
-            return 0.5f * (chord + polygon);
-        }
-
-        private float3 ArcPoint()
-        {
-            var t = Progress;
-            return math.lerp(Start, Hit.Position, t) + new float3(0f, 4f * Apex * t * (1f - t), 0f);
-        }
-
-        private float3 ArcTangent() => Hit.Position - Start + new float3(0f, 4f * Apex * (1f - 2f * Progress), 0f);
-
-        // Control points straight above the launch and the live aim give the climb and the dive.
-        private float3 CurvePoint()
-        {
-            var t = Progress;
-            var s = 1f - t;
-            var up = new float3(0f, Apex, 0f);
-            return s * s * s * Start + 3f * s * s * t * (Start + up) + 3f * s * t * t * (Hit.Position + up)
-                + t * t * t * Hit.Position;
-        }
-
-        private float3 CurveTangent()
-        {
-            var t = Progress;
-            var s = 1f - t;
-            var up = new float3(0f, Apex, 0f);
-            return 3f * s * s * up + 6f * s * t * (Hit.Position - Start) - 3f * t * t * up;
-        }
+        private float PathLength() => Course.PathLength(Start, Hit.Position, Apex);
     }
 }

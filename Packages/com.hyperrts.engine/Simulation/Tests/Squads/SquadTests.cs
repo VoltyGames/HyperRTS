@@ -32,6 +32,7 @@ namespace HyperRTS.Simulation.Tests.Squads
                 Position = at,
                 Origin = at,
                 SourceFaction = 2,
+                Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile { Amount = amount, Radius = radius, EdgeFactor = edge },
             });
 

@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
@@ -91,6 +92,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 Origin = from,
                 Position = at,
                 SourceFaction = 2,
+                Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile { Amount = amount, Type = type, Radius = radius, EdgeFactor = 0.5f },
             });
 
@@ -120,6 +122,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 Position = centre,
                 Origin = new float3(30f, 1.5f, 0f),
                 SourceFaction = 2,
+                Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile { Amount = 30f, Radius = 3f, EdgeFactor = 0.5f },
             });
             World.Tick();
