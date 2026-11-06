@@ -16,12 +16,6 @@ namespace HyperRTS.Simulation.Buildings
     {
         public Entity Prefab;
 
-        /// <summary>On the command card's second page, behind a "More" card.</summary>
-        public bool Advanced;
-
-        /// <summary>The key that picks it on the command card; '\0' for none.</summary>
-        public char Hotkey;
-
         Entity IPrefabOption.Prefab => Prefab;
     }
 }

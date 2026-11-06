@@ -74,7 +74,6 @@ namespace HyperRTS.Editor.Catalog
             if (prefab.TryGetComponent(out BuilderAuthoring builder))
             {
                 made.AddRange(builder.buildOptions);
-                made.AddRange(builder.advancedBuildOptions);
             }
 
             made.RemoveAll(option => option == null);

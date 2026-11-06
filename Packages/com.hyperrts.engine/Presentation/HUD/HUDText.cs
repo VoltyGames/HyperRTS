@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Text;
-using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
@@ -110,8 +109,6 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>Keyed by the asset name, which is also the type's network id: resource.supplies.</summary>
         public static string ResourceName(ResourceType type) => Current.Name(Key("resource", type.name), type.displayName);
-
-        public static string StanceName(Stance stance) => Text(Key("stance", stance.ToString()));
 
         public static string OutcomeTitle(MatchOutcome outcome) => Text(Key("outcome", outcome.ToString()));
 

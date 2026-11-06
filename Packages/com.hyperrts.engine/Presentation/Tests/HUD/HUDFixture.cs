@@ -33,6 +33,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void TearDown()
         {
             HUDText.Current = _text;
+            CommandTestKit.Destroy();
             _kit.Dispose();
         }
 

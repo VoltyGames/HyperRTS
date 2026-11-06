@@ -18,7 +18,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `SelectionDragState` | The selection box being dragged |
 | `HoveredEntity` | The commandable entity under the pointer, written by `HoverInputSystem` |
 | `CameraFocusRequest` | A minimap click moving the camera |
-| `HotkeyPresses` | Keys pressed this frame, for command-card hotkeys |
+| `HotkeyPresses` | `Key`s pressed this frame, for command-card hotkeys |
 | `ScrollEdge` | The screen edge the pointer is scrolling against, written by `CameraController` |
 | `CursorIntent` | The cursor to show, a `CursorKind`, written by `CursorIntentSystem` |
 
@@ -30,13 +30,15 @@ UI state that input, the HUD and overlays share, created once per presented worl
 | `InputActionsProvider` | The one shared actions instance, with `Suspend` and `Resume` |
 | `InputMapSystem` | Base of the systems below: enables its input map while it runs |
 | `SelectionInputSystem` | Mouse gestures to `SelectionInput` |
+| `CancelInputSystem` | Escape undoes the topmost client mode through `InteractionState.Cancel`: placement, then a pending targeted command, then the card page |
 | `CommandInputSystem` | Right-click, hotkeys and targeted commands to `PlayerCommand` |
 | `PlacementInputSystem` | Moves and [turns](economy.md#facing) the placement ghost through `PlacementRotation` (drag, hold or tap R, Shift to snap) and confirms it on release, or drags and releases a [line](economy.md#line-placement) |
 | `WorldPointer` | What the cursor points at, and the ground point |
 | `CameraController` | Pan, edge scroll, eased zoom, rotate, map bounds. Pitch follows zoom height, flatter up close. Starts at the home base |
 
 Clicks over the HUD, while placing, or while a command is pending never reach selection. A front end that handles
-Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()` first.
+Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInteraction()` first. That method, `CancelInputSystem` and the
+command card's right click all use the one order in `InteractionState.Cancel`.
 
 ## Presentation
 
@@ -60,7 +62,7 @@ at the `Rendering/` root.
 ### HUD
 
 `HUD.prefab` holds a UI Toolkit HUD. Its `HUDPanelLayouts` asset gathers the HUD tree (`HUD.uxml`), the row templates
-(UXML beside each script), the build card details (`CommandButtonDetails.uxml`) and the drag box. `HUD.uxml` holds each
+(UXML beside each script), the command button parts (`CommandButton.uxml`) and the drag box. `HUD.uxml` holds each
 panel shell as a template instance in stacking order. `HUDController` clones the tree, unwraps the instances, hands each
 shell to its panel, styles it with `HUD.uss` for layout and `HUDTheme.uss` for looks and keeps it in sync with the
 simulation. Code fills in only per-frame data. Games add or replace panels by overriding `CreatePanels` (`Adopt` for a
@@ -75,7 +77,7 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 | --- | --- |
 | Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap`, `GameOverBanner`, each built from its shell in `HUD.uxml`; `LineCost` drives the `line-cost` row in `HUD.uxml` |
 | Elements | `HUDIcon`, `HUDBar`, `CostRow`, `CommandButton`, `HUDTooltip`, `HUDSweep`, `HUDGlyph`, `HUDFade`: UXML elements filled through `Bind` or properties |
-| `ICommandSource` | Adds command-card entries: purchases, abilities, stances and `PredicateCommand`s (return, unload, deploy, pack up, sell: a key, command and test per owned entity). Each has a slot and hotkey |
+| `ICommandSource` | Decides which [command specs](#hud) apply to the selection and shows their live state: purchases, abilities, `OrderCommands` (stances, return, unload, deploy, pack up, sell) and squad retreat and reinforce. Placement, labels and hotkeys are the spec's, not the source's |
 | `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate |
 | `OverlayRenderer` | Instanced ground markers, health bars, placement footprint outline with blocked cells, rally markers, capture dials, garrison pips. Colours and sizes come from an `OverlayStyle` asset |
 | `PlacementGhosts` | The placed building's real model as visual-only copies (`VisualPrefab`) in the `HyperRTS/Placement Ghost` material, tinted valid or invalid per entity, one per spot or line segment |
@@ -89,7 +91,7 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 | `command.return`, `command.unload`, `command.deploy`, `command.pack-up`, `command.sell` | Fixed commands |
 | `command.more`, `command.back` | Command card page cards |
 | `stance.<stance>` | Stance names |
-| `command.retreat`, `command.reinforce` | Squad commands, hotkeys R and T |
+| `command.retreat`, `command.reinforce` | Squad commands, hotkeys R and T in the game's specs |
 | `squad.<posture>`, `squad.heavy-cover`, `squad.light-cover`, `squad.dead` | A soldier card's state |
 | `squad.steady`, `squad.suppressed`, `squad.pinned`, `squad.retreating`, `squad.reinforcing` | A squad's suppression level and status |
 | `tooltip.retreat`, `tooltip.reinforce`, `tooltip.reinforce-time`, `tooltip.no-retreat-point`, `tooltip.no-reinforce-point`, `tooltip.full-strength`, `tooltip.cannot-afford` | Squad command tooltips |
@@ -98,9 +100,11 @@ and keep each UXML beside its script. `SelectionDragBoxUI` is in `HUD/` too.
 | `entity.<name>`, `resource.<asset>`, `ability.<name>` | Names, kebab-cased: "War Factory" is `entity.war-factory` |
 | `entity.<name>.description` | Optional tooltip line under the name; `HUDText.Description` returns null when there is none |
 
-The command card is a grid of 72 px cards, five a row, laid out in `HUDCommands.uss`. A build, train, research or
+The command card is a grid of 72 px cards, five across, laid out in `HUDCommands.uss`. A build, train, research or
 ability card is a picture: the icon fills the button, scaled and cropped, with the hotkey top left and the cost in a
-strip along the bottom. Its name is in the tooltip. Caption buttons (stances, unload, sell) stay text.
+strip along the bottom. Its name is in the tooltip. Order buttons (stances, unload, sell) show their label key as a caption unless the spec has an icon. Every button is built from
+`CommandButton.uxml`, whose parts (picture, caption, hotkey, cooldown, badges, cost strip) are hidden by the `hrts-hidden`
+class until a source shows them.
 
 One selected squad adds a `SquadView` to the selection panel: a `SquadMemberCard` per soldier (number, health, the
 cover it holds or its posture, greyed when dead), the squad's suppression bar with its level, and while it
@@ -112,8 +116,7 @@ point, no reinforce point in range, full strength or too poor (the price of one 
 progress, which are replicated.
 A card names the soldier's weapon: its member's own `Designation` (baked, never sent), or the designation of the upgraded mount it fires (`WeaponStats.designation`, baked into
 `WeaponPose.Designation`, never sent) shown through `HUDText.WeaponName`; a digging member reads "Digging", and a squad
-at work shows "Building" with the site's progress (`SquadWork.Progress`, replicated). Builder options take hotkeys from
-`BuilderAuthoring.hotkeys`, one letter per build option in order; the build tooltip lists the cap (`tooltip.limit`).
+at work shows "Building" with the site's progress (`SquadWork.Progress`, replicated). The build tooltip lists the cap (`tooltip.limit`).
 
 While a line is dragged, `LineCost` shows its total, the valid `PlacementSegment`s times the per-segment cost, above and right of
 the line's end. It turns `hud-costs--short`, the unaffordable card's colour, when the stock can't cover it.
@@ -133,13 +136,21 @@ A lightning badge marks an option whose producer is offline for low power. A ref
 hotkeys but still shows its tooltip: name, description, cost, build time, population, power and each missing
 prerequisite in the warning colour. The tooltip shows on hover and on keyboard or gamepad focus, above the card.
 
-The card has one level of paging, as in StarCraft II, so grid positions and hotkeys stay put. A `CommandEntry` with
-`Page` 1 goes on the second page: `PurchaseCommands` puts a builder's advanced options (`BuildOption.Advanced`) there,
-and every other source's entries stay on the first. When a second page exists, a More card with a chevron takes the
-last of the 15 slots, after blank fillers, and opens it; there a Back card takes the same slot. Escape, a right click
-on the card or a new selection turns back. The page is the `CommandCardPage` client singleton, so Escape reaches it
-through `HotkeyInputSystem` or, for a front end that owns Escape, `MatchView.CancelInteraction`, which first cancels
-a placement or targeted order.
+The card is data. A `CommandSpec` asset describes one button: what it is for (`CommandTarget`: a prefab to build, train or
+research, an ability by name, or an order with its argument), the card it sits on (a builder or producer prefab, empty for
+every card), a label key and icon (empty takes the prefab's or ability's own), a `Key` hotkey, and its page and slot.
+A `CommandCatalogue` on `HUDController` lists them. A spec with a card beats one without for the same target, which is how
+one faction differs from another. Sources look specs up by target and card, log an error for a gap and skip the button.
+
+The card places entries by slot (0 to 14, left to right then top to bottom) and fills the gaps with blanks. A slot already taken moves the
+entry to the next free one, and past the last slot to the next page. With more than one page the last slot of every page is
+the page card: More to the next page, Back from the last to the first. A key press fires the one entry at that key on the
+shown page. `CommandSpecRule` rejects two specs that share a key on one page of a card, a key an input action already
+uses (except the building rotation, which only acts while placing, when card hotkeys are off) and a spec missing its target.
+
+Escape, a right click on the card or a new selection turns back. The page is the `CommandCardPage` client singleton;
+`InteractionState.Cancel` undoes a placement, else a targeted order, else the page, for `CancelInputSystem`, for a front end
+that owns Escape through `MatchView.CancelInteraction`, and for the card's right click.
 
 `StrategicCountdowns` fills the `strategic-countdowns` slot at the top centre of `HUD.uxml` with a row per player
 holding a [strategic asset](support.md#strategic-assets): the name and `m:ss` to the charge, or `hud.strategic-ready`,

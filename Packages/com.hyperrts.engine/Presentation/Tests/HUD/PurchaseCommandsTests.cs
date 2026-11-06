@@ -42,6 +42,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void TearDown()
         {
             HUDText.Current = _text;
+            CommandTestKit.Destroy();
             _world.Dispose();
         }
 
@@ -106,7 +107,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             var second = Queue(SpawnProducer(tank, jeep), 5f, tank);
             Refresh();
 
-            var source = new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails);
+            var source = new PurchaseCommands(CommandTestKit.Prefabs("Tank", "Jeep"));
             var entries = new List<CommandEntry>();
             source.Build(_context, new[] { first, second }, entries);
             source.Refresh(_context);
@@ -130,7 +131,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             EntityManager.SetComponentEnabled<Offline>(producer, true);
             Refresh();
 
-            var source = new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails);
+            var source = new PurchaseCommands(CommandTestKit.Prefabs("Tank"));
             var entries = new List<CommandEntry>();
             source.Build(_context, new[] { producer }, entries);
             source.Refresh(_context);
@@ -162,28 +163,13 @@ namespace HyperRTS.Presentation.Tests.HUD
             Refresh();
 
             var entries = new List<CommandEntry>();
-            new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails).Build(_context, new[] { builder }, entries);
+            new PurchaseCommands(CommandTestKit.Prefabs("Tank")).Build(_context, new[] { builder }, entries);
             var tooltip = new HUDTooltip();
             Assert.IsTrue(entries.Single().Button.Describe(tooltip));
 
             Assert.AreEqual("Tank", tooltip.Q<Label>(className: "hud-tooltip__title").text);
             var warning = tooltip.Q<Label>(className: "hud-tooltip__line--warning");
             Assert.AreEqual("Requires Factory", warning.text);
-        }
-
-        [Test]
-        public void AdvancedBuildOptions_GoOnTheSecondPage_OncePerPrefab()
-        {
-            var depot = _world.UnitPrefab(_supplies, 10, name: "Depot");
-            var airfield = _world.UnitPrefab(_supplies, 10, name: "Airfield");
-            var first = _world.AddAdvancedBuildOptions(_world.MakeBuilder(_world.SpawnUnit(1, Far), depot), airfield);
-            var second = _world.MakeBuilder(_world.SpawnUnit(1, Far), airfield);
-            Refresh();
-
-            var entries = new List<CommandEntry>();
-            new PurchaseCommands(HUDPanelTests.Layouts.CommandButtonDetails).Build(_context, new[] { first, second }, entries);
-
-            CollectionAssert.AreEqual(new[] { 0, 1 }, entries.Select(entry => entry.Page));
         }
 
         private Entity SpawnProducer(params Entity[] options) =>

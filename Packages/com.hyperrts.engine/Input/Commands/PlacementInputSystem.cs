@@ -65,7 +65,7 @@ namespace HyperRTS.Input.Commands
             }
 
             var commands = _actions.Commands;
-            var cancelled = InputActionsProvider.CancelPressed || commands.Command.WasPressedThisFrame();
+            var cancelled = commands.Command.WasPressedThisFrame();
             if (placement.Prefab == Entity.Null || cancelled)
             {
                 SystemAPI.SetSingleton(new PlacementState());

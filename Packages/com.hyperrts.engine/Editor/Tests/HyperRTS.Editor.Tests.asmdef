@@ -6,6 +6,7 @@
         "HyperRTS.Presentation",
         "HyperRTS.Presentation.Tests",
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.InputSystem",
         "HyperRTS.Editor",
         "Unity.Mathematics",
         "Unity.Scenes",

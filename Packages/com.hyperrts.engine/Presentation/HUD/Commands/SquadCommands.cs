@@ -27,11 +27,17 @@ namespace HyperRTS.Presentation.HUD.Commands
             ComponentType.ReadOnly<ReinforcePoint>(), ComponentType.ReadOnly<Faction>(),
             ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
 
+        private readonly CommandKit _kit;
         private readonly List<Entity> _squads = new();
         private CommandButton _retreat;
         private CommandButton _reinforce;
         private SquadRefusal _retreatReason;
         private SquadRefusal _reinforceReason;
+
+        public SquadCommands(CommandKit kit)
+        {
+            _kit = kit;
+        }
 
         public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
         {
@@ -51,16 +57,28 @@ namespace HyperRTS.Presentation.HUD.Commands
                 return;
             }
 
-            var retreat = new CommandEntry(HUDText.Text("command.retreat"),
-                () => context.Issue(new PlayerCommand { Type = CommandType.Retreat })) { Hotkey = 'R' };
-            _retreat = retreat.Button;
-            _retreat.Description = tooltip => DescribeRetreat(tooltip);
-            var reinforce = new CommandEntry(HUDText.Text("command.reinforce"),
-                () => context.Issue(new PlayerCommand { Type = CommandType.Reinforce })) { Hotkey = 'T' };
-            _reinforce = reinforce.Button;
-            _reinforce.Description = tooltip => DescribeReinforce(context, tooltip);
-            entries.Add(retreat);
-            entries.Add(reinforce);
+            var card = EntityInfo.GetTypeId(context.EntityManager, _squads[0]);
+            var catalogue = _kit.Catalogue;
+            var retreat = catalogue.FindOrder(card, CommandType.Retreat, 0);
+            var reinforce = catalogue.FindOrder(card, CommandType.Reinforce, 0);
+            if (retreat == null || reinforce == null)
+            {
+                _squads.Clear();
+                return;
+            }
+
+            _retreat = AddOrder(context, entries, retreat, tooltip => DescribeRetreat(tooltip));
+            _reinforce = AddOrder(context, entries, reinforce, tooltip => DescribeReinforce(context, tooltip));
+        }
+
+        private CommandButton AddOrder(HUDContext context, List<CommandEntry> entries, CommandSpec spec,
+            System.Action<HUDTooltip> describe)
+        {
+            var command = new PlayerCommand { Type = spec.Order, Argument = spec.Argument };
+            var entry = _kit.Create(spec, "", null, () => context.Issue(command));
+            entry.Button.Description = describe;
+            entries.Add(entry);
+            return entry.Button;
         }
 
         public void Refresh(HUDContext context)
@@ -100,10 +118,14 @@ namespace HyperRTS.Presentation.HUD.Commands
             var retreatPoints = SquadPoints.From<RetreatPoint>(_retreatPoints.In(entityManager));
             _retreatReason = SquadOrderRule.FindRetreatRefusal(retreatPoints.HasAllied(faction, relations));
             _reinforceReason = allReinforcing ? SquadRefusal.None : reinforceReason;
-            _retreat.ShowSquadRefusal(_retreatReason);
-            _reinforce.ShowSquadRefusal(_reinforceReason);
-            _retreat.EnableInClassList(ActiveClass, allRetreating);
-            _reinforce.EnableInClassList(ActiveClass, allReinforcing);
+            Show(_retreat, _retreatReason, allRetreating);
+            Show(_reinforce, _reinforceReason, allReinforcing);
+        }
+
+        private static void Show(CommandButton button, SquadRefusal reason, bool active)
+        {
+            button.ShowSquadRefusal(reason);
+            button.EnableInClassList(ActiveClass, active);
         }
 
         // Selected squads share one button, so it shows the reason closest to able; any squad that can act clears it.

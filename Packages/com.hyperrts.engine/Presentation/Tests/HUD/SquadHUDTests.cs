@@ -6,9 +6,11 @@ using HyperRTS.Presentation.HUD.Commands;
 using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;
 using Unity.Entities;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.Tests.HUD
@@ -21,7 +23,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         [TestCase(SquadRefusal.TooPoor, "hud-command--too-poor")]
         public void SquadButton_ShowsItsOwnRefusalClass(SquadRefusal refusal, string expected)
         {
-            var button = new CommandEntry("Reinforce", () => { }).Button;
+            var button = CommandTestKit.Button("Reinforce");
 
             button.ShowSquadRefusal(refusal);
             Assert.IsTrue(button.ClassListContains(expected));
@@ -38,7 +40,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             Refresh();
             var squad = _em.CreateEntity(typeof(SquadMember));
             var tank = _em.CreateEntity(typeof(EntityInfo));
-            var source = new SquadCommands();
+            var source = new SquadCommands(CommandTestKit.Orders(CommandType.Retreat, CommandType.Reinforce));
 
             var tankOnly = new List<CommandEntry>();
             source.Build(_context, new[] { tank }, tankOnly);
@@ -46,7 +48,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             source.Build(_context, new[] { tank, squad }, withSquad);
 
             Assert.IsEmpty(tankOnly);
-            Assert.AreEqual(new[] { 'R', 'T' }, withSquad.Select(entry => entry.Hotkey).ToArray());
+            Assert.AreEqual(new[] { Key.R, Key.T }, withSquad.Select(entry => entry.Hotkey).ToArray());
         }
 
         [Test]

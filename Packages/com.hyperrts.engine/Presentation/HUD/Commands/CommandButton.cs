@@ -1,42 +1,69 @@
 using System;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Squads;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;
-using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
-    /// Command card button: a caption, or a picture card (an ability's or prefab's icon filling the button, a prefab's
-    /// cost along the bottom) whose name and details are in the tooltip. Purchase states show as classes and badges.
+    /// A command card button built from CommandButton.uxml, whose parts (picture, caption, hotkey, cooldown, badges,
+    /// cost strip) stay hidden until a source shows them. Refusals show as classes and badges, and its name and
+    /// details are in the tooltip.
     /// </summary>
-    [UxmlElement]
-    public partial class CommandButton : Button, ITooltipSource
+    public sealed class CommandButton : Button, ITooltipSource
     {
-        private Action _onClick;
+        private readonly Action _onClick;
+        private readonly HUDIcon _icon;
+        private readonly Label _name;
+        private readonly HUDGlyph _chevron;
+        private readonly Label _caption;
+        private readonly HUDSweep _sweep;
+        private readonly Label _count;
+        private readonly HUDGlyph _unpowered;
+        private readonly VisualElement _strip;
+        private readonly CostRow _costs;
+        private readonly Label _limit;
+        private readonly Label _cooldown;
         private Action<HUDTooltip> _describe;
         private PurchaseRefusal _refusal;
         private SquadRefusal _squadRefusal;
-        private CostRow _costs;
-        private HUDSweep _sweep;
-        private Label _count;
-        private HUDGlyph _unpowered;
-        private Label _limit;
         private int _shownCount = -1;
         private int _shownLimitCount = -1;
         private int _shownLimitMax = -1;
+        private int _shownSeconds = -1;
 
-        public CommandButton()
+        /// <param name="parts">CommandButton.uxml.</param>
+        /// <param name="label">The caption, or the name a picture without a texture shows.</param>
+        /// <param name="hotkey">Shown in the corner; empty for none.</param>
+        public CommandButton(VisualTreeAsset parts, CommandLook look, string label, Texture2D icon, string hotkey,
+            Action onClick)
         {
+            _onClick = onClick;
             AddToClassList("hud-command");
             clicked += Press;
+            parts.CloneTree(this);
+            _icon = this.Require<HUDIcon>("icon");
+            _name = this.Require<Label>("name");
+            _chevron = this.Require<HUDGlyph>("chevron");
+            _caption = this.Require<Label>("caption");
+            _sweep = this.Require<HUDSweep>("sweep");
+            _count = this.Require<Label>("count");
+            _unpowered = this.Require<HUDGlyph>("unpowered");
+            _strip = this.Require<VisualElement>("strip");
+            _costs = this.Require<CostRow>("costs");
+            _limit = this.Require<Label>("limit");
+            _cooldown = this.Require<Label>("cooldown");
+            ShowLook(look, label, icon);
+            var key = this.Require<Label>("hotkey");
+            key.text = hotkey;
+            key.SetHidden(hotkey.Length == 0);
+            Description = tooltip => tooltip.AddTitle(label);
         }
 
-        /// <summary>True while a purchase rule refuses it: it still shows its tooltip but ignores presses.</summary>
+        /// <summary>True while a purchase rule or squad order refuses it: it still shows its tooltip but ignores presses.</summary>
         public bool IsRefused => _refusal != PurchaseRefusal.None || _squadRefusal != SquadRefusal.None;
 
         /// <summary>Enabled and not refused, so a press or its hotkey acts.</summary>
@@ -44,7 +71,7 @@ namespace HyperRTS.Presentation.HUD.Commands
 
         public int TooltipVersion { get; private set; }
 
-        /// <summary>Writes the tooltip's content; null for a button without one.</summary>
+        /// <summary>Writes the tooltip's content.</summary>
         public Action<HUDTooltip> Description
         {
             set
@@ -56,63 +83,22 @@ namespace HyperRTS.Presentation.HUD.Commands
 
         public bool Describe(HUDTooltip tooltip)
         {
-            _describe?.Invoke(tooltip);
-            return _describe != null;
+            _describe(tooltip);
+            return true;
         }
 
-        public CommandButton Bind(string caption, Action onClick)
+        /// <summary>Puts a chevron over the caption, for the page cards.</summary>
+        public void ShowChevron(HUDGlyphShape shape)
         {
-            text = caption;
-            _onClick = onClick;
-            return this;
+            _chevron.Shape = shape;
+            _chevron.SetHidden(false);
         }
 
-        public CommandButton Bind(Texture2D icon, string name, Action onClick)
+        /// <summary>Lists the prefab's cost along the bottom.</summary>
+        public void ShowPrice(DynamicBuffer<ResourceCost> costs)
         {
-            _onClick = onClick;
-            AddPicture(icon, name);
-            Description = tooltip => tooltip.AddTitle(name);
-            return this;
-        }
-
-        /// <summary>A caption card with a chevron that turns the command card's page (More, Back).</summary>
-        public CommandButton BindPage(string caption, HUDGlyphShape chevron, Action onClick)
-        {
-            _onClick = onClick;
-            AddToClassList("hud-command--page");
-            var glyph = new HUDGlyph(chevron);
-            glyph.AddToClassList("hud-command__chevron");
-            Add(glyph);
-            HUDElements.Text(caption, "hud-command__caption", this).pickingMode = PickingMode.Ignore;
-            return this;
-        }
-
-        /// <summary>
-        /// A build, train or research card, with the sweep, badges and cost strip of <paramref name="details"/>
-        /// (CommandButtonDetails.uxml); the caller sets its <see cref="Description"/>.
-        /// </summary>
-        public CommandButton BindPrefab(EntityManager entityManager, Entity prefab, VisualTreeAsset details,
-            Action onClick)
-        {
-            _onClick = onClick;
-            AddPicture(entityManager.GetComponentData<EntityInfo>(prefab).Icon.Value,
-                HUDText.EntityName(entityManager, prefab));
-            details.CloneTree(this);
-            _sweep = this.Require<HUDSweep>("sweep");
-            _count = this.Require<Label>("count");
-            _unpowered = this.Require<HUDGlyph>("unpowered");
-            _costs = this.Require<CostRow>("costs");
-            _limit = this.Require<Label>("limit");
-
-            if (entityManager.HasBuffer<ResourceCost>(prefab))
-            {
-                _costs.Bind(entityManager.GetBuffer<ResourceCost>(prefab, true));
-            }
-
-            ShowQueue(new QueuedOption(0, QueuedOption.Idle));
-            ShowUnpowered(false);
-            ShowLimit(0, 0);
-            return this;
+            _costs.Bind(costs);
+            _strip.SetHidden(false);
         }
 
         /// <summary>
@@ -132,7 +118,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             EnableInClassList("hud-command--locked", refusal == PurchaseRefusal.MissingPrerequisite);
             EnableInClassList("hud-command--maxed", refusal == PurchaseRefusal.AtLimit);
             EnableInClassList("hud-command--researched", refusal == PurchaseRefusal.Researched);
-            _costs?.MarkShort(refusal == PurchaseRefusal.CannotAfford);
+            _costs.MarkShort(refusal == PurchaseRefusal.CannotAfford);
         }
 
         /// <summary>
@@ -186,27 +172,49 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
         }
 
-        /// <summary>What a click does: nothing while a purchase rule refuses it.</summary>
+        /// <summary>Whole seconds left before it can be used again; 0 hides the countdown.</summary>
+        public void ShowCooldown(int seconds)
+        {
+            if (seconds == _shownSeconds)
+            {
+                return;
+            }
+
+            _shownSeconds = seconds;
+            _cooldown.text = seconds.ToString();
+            _cooldown.SetHidden(seconds == 0);
+        }
+
+        /// <summary>What a click does: nothing while a rule refuses it.</summary>
         public void Press()
         {
             if (!IsRefused)
             {
-                _onClick?.Invoke();
+                _onClick();
             }
         }
 
-        // Without a texture the icon shows initials, so the name stays on the card to tell options apart.
-        private void AddPicture(Texture2D icon, string name)
+        private void ShowLook(CommandLook look, string label, Texture2D icon)
         {
-            AddToClassList("hud-command--picture");
-            var picture = new HUDIcon { pickingMode = PickingMode.Ignore };
-            picture.AddToClassList("hud-command__icon");
-            picture.Bind(icon, name);
-            Add(picture);
-            if (icon == null)
+            switch (look)
             {
-                HUDElements.Text(name, "hud-command__name", this).pickingMode = PickingMode.Ignore;
+                case CommandLook.Picture:
+                    AddToClassList("hud-command--picture");
+                    _icon.Bind(icon, label);
+                    _icon.SetHidden(false);
+                    _name.text = label;
+                    _name.SetHidden(icon != null);
+                    return;
+                case CommandLook.Page:
+                    AddToClassList("hud-command--page");
+                    break;
+                default:
+                    AddToClassList("hud-command--text");
+                    break;
             }
+
+            _caption.text = label;
+            _caption.SetHidden(false);
         }
     }
 }

@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+  <HyperRTS.Presentation.HUD.HUDIcon name="icon" class="hud-command__icon hrts-hidden" picking-mode="Ignore" />
+  <ui:Label name="name" class="hud-command__name hrts-hidden" picking-mode="Ignore" />
+  <HyperRTS.Presentation.HUD.HUDGlyph name="chevron" class="hud-command__chevron hrts-hidden" />
+  <ui:Label name="caption" class="hud-command__caption hrts-hidden" picking-mode="Ignore" />
+  <HyperRTS.Presentation.HUD.HUDSweep name="sweep" class="hud-command__sweep hrts-hidden" />
+  <ui:VisualElement class="hud-command__badges" picking-mode="Ignore">
+    <HyperRTS.Presentation.HUD.HUDGlyph shape="Padlock" class="hud-command__lock" />
+    <ui:Label name="count" class="hud-command__count hrts-hidden" />
+    <HyperRTS.Presentation.HUD.HUDGlyph name="unpowered" shape="Lightning" class="hud-command__unpowered hrts-hidden" />
+  </ui:VisualElement>
+  <HyperRTS.Presentation.HUD.HUDFade name="strip" class="hud-command__strip hrts-hidden">
+    <HyperRTS.Presentation.HUD.Commands.CostRow name="costs" picking-mode="Ignore" />
+    <ui:Label name="limit" class="hud-command__limit hrts-hidden" />
+  </HyperRTS.Presentation.HUD.HUDFade>
+  <ui:Label name="hotkey" class="hud-command__hotkey hrts-hidden" picking-mode="Ignore" />
+  <ui:Label name="cooldown" class="hud-command__cooldown hrts-hidden" picking-mode="Ignore" />
+</ui:UXML>

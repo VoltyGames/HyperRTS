@@ -1,19 +1,19 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Build, train and research cards, showing why the purchase rules refuse one, what the selected producers have
-    /// queued and whether low power slows them. A builder's advanced options go on the card's second page.
+    /// queued and whether low power slows them.
     /// </summary>
     public sealed class PurchaseCommands : ICommandSource
     {
@@ -23,13 +23,12 @@ namespace HyperRTS.Presentation.HUD.Commands
         private readonly HashSet<Entity> _unpowered = new();
         private readonly Dictionary<Entity, QueuedOption> _queued = new();
 
-        private readonly VisualTreeAsset _details;
+        private readonly CommandKit _kit;
         private bool _fresh;
 
-        /// <param name="details">Each build card's sweep, badges and cost strip (CommandButtonDetails.uxml).</param>
-        public PurchaseCommands(VisualTreeAsset details)
+        public PurchaseCommands(CommandKit kit)
         {
-            _details = details;
+            _kit = kit;
         }
 
         private static QueuedOption Idle => new(0, QueuedOption.Idle);
@@ -40,32 +39,24 @@ namespace HyperRTS.Presentation.HUD.Commands
             _producers.Clear();
             _offers.Clear();
             _fresh = true;
-            var builds = new List<BuildOption>();
-            var advancedBuilds = new List<BuildOption>();
+            var builds = new List<(Entity Prefab, int Card)>();
             var products = new List<Entity>();
             var entityManager = context.EntityManager;
             foreach (var entity in owned)
             {
-                CollectBuilds(entityManager, entity, builds, advancedBuilds);
+                CollectBuilds(entityManager, entity, builds);
                 Collect<ProductionOption>(entityManager, entity, products);
             }
 
-            foreach (var option in builds)
+            foreach (var (prefab, card) in builds)
             {
-                var prefab = option.Prefab;
-                Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab)).Hotkey =
-                    option.Hotkey;
-            }
-
-            foreach (var option in advancedBuilds)
-            {
-                var prefab = option.Prefab;
-                Add(context, entries, prefab, new List<Entity>(), () => context.StartPlacement(prefab)).Page = 1;
+                Add(context, entries, card, prefab, new List<Entity>(), () => context.StartPlacement(prefab));
             }
 
             foreach (var prefab in products)
             {
-                Add(context, entries, prefab, FindProducers(entityManager, owned, prefab),
+                var producers = FindProducers(entityManager, owned, prefab);
+                Add(context, entries, EntityInfo.GetTypeId(entityManager, producers[0]), prefab, producers,
                     () => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
             }
         }
@@ -142,15 +133,27 @@ namespace HyperRTS.Presentation.HUD.Commands
             return false;
         }
 
-        private CommandEntry Add(HUDContext context, List<CommandEntry> entries, Entity prefab,
+        private void Add(HUDContext context, List<CommandEntry> entries, int card, Entity prefab,
             List<Entity> producers, System.Action invoke)
         {
-            var button = new CommandButton().BindPrefab(context.EntityManager, prefab, _details, invoke);
-            button.Description = tooltip => Describe(context, prefab, tooltip);
-            _options.Add(new Option(button, prefab, producers));
-            var entry = new CommandEntry(button, invoke);
+            var entityManager = context.EntityManager;
+            var name = HUDText.EntityName(entityManager, prefab);
+            var info = entityManager.GetComponentData<EntityInfo>(prefab);
+            var spec = _kit.Catalogue.FindPrefab(card, info.TypeId, name);
+            if (spec == null)
+            {
+                return;
+            }
+
+            var entry = _kit.Create(spec, name, info.Icon.Value, invoke);
+            if (entityManager.HasBuffer<ResourceCost>(prefab))
+            {
+                entry.Button.ShowPrice(entityManager.GetBuffer<ResourceCost>(prefab, true));
+            }
+
+            entry.Button.Description = tooltip => Describe(context, prefab, tooltip);
+            _options.Add(new Option(entry.Button, prefab, producers));
             entries.Add(entry);
-            return entry;
         }
 
         /// <summary>Name, description, cost, build time, population, power and missing prerequisites.</summary>
@@ -224,9 +227,8 @@ namespace HyperRTS.Presentation.HUD.Commands
             return producers;
         }
 
-        // The first builder to list a prefab decides its page, so a mixed selection shows each option once.
-        private static void CollectBuilds(EntityManager entityManager, Entity entity, List<BuildOption> builds,
-            List<BuildOption> advancedBuilds)
+        // The first builder to list a prefab decides whose card it sits on, so a mixed selection shows each option once.
+        private static void CollectBuilds(EntityManager entityManager, Entity entity, List<(Entity Prefab, int Card)> builds)
         {
             if (!entityManager.HasBuffer<BuildOption>(entity))
             {
@@ -235,11 +237,9 @@ namespace HyperRTS.Presentation.HUD.Commands
 
             foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
             {
-                var listed = option.Prefab == Entity.Null || builds.Exists(other => other.Prefab == option.Prefab)
-                             || advancedBuilds.Exists(other => other.Prefab == option.Prefab);
-                if (!listed)
+                if (option.Prefab != Entity.Null && !builds.Exists(other => other.Prefab == option.Prefab))
                 {
-                    (option.Advanced ? advancedBuilds : builds).Add(option);
+                    builds.Add((option.Prefab, EntityInfo.GetTypeId(entityManager, entity)));
                 }
             }
         }

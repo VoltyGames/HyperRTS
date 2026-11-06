@@ -1,50 +1,42 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Transport;
-using Unity.Entities;
 using UnityEngine.UIElements;
-using HyperRTS.Presentation.HUD;
+using Unity.Entities;
 
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s: by default building,
-    /// training and research, abilities and support powers, stances, squad retreat and reinforce, and return, unload and sell. Games add their own
-    /// sources, whose entries can take grid slots and hotkeys. Entries on the second page (a builder's advanced
-    /// options) sit behind a More card in the last slot; Escape, a right click or a new selection turns back. Hovering
-    /// or focusing a button shows its tooltip above the card.
+    /// training and research, abilities and support powers, stances, squad retreat and reinforce, and return, unload,
+    /// deploy, pack up and sell. Each entry comes from a <see cref="CommandSpec"/> that gives its grid slot, page and
+    /// hotkey; an entry whose slot is taken moves to the next free one, and past the last page slot to the next
+    /// page. With more than one page the last slot of each turns the page. Escape, a right click or a new selection
+    /// turns back. Hovering or focusing a button shows its tooltip above the card.
     /// </summary>
     public sealed class CommandCard : HUDPanel
     {
-        /// <summary>Five by three; the page card takes the last.</summary>
+        public const int Columns = 5;
         public const int Slots = 15;
 
+        private readonly CommandKit _kit;
         private readonly List<ICommandSource> _sources;
         private readonly List<CommandEntry> _entries = new();
+        private readonly List<CommandButton> _turns = new();
         private readonly List<Entity> _owned = new();
         private readonly HUDTooltip _tooltip = new();
-        private CommandButton _more;
-        private CommandButton _back;
         private int _hash = -1;
         private int _page = -1;
-        private bool _turnBack;
+        private bool _cancel;
 
         /// <summary>The engine's sources, then <paramref name="extra"/>.</summary>
-        public CommandCard(VisualElement root, HUDPanelLayouts layouts, params ICommandSource[] extra) : base(root)
+        public CommandCard(VisualElement root, HUDPanelLayouts layouts, CommandCatalogue catalogue,
+            params ICommandSource[] extra) : base(root)
         {
+            _kit = new CommandKit(layouts.CommandButton, catalogue);
             _sources = new List<ICommandSource>
             {
-                new PurchaseCommands(layouts.CommandButtonDetails), new AbilityCommands(), new StanceCommands(),
-                new SquadCommands(),
-                new PredicateCommand("command.return", CommandType.ReturnToBase, 0, (em, e) => em.HasComponent<HomePad>(e)),
-                new PredicateCommand("command.unload", CommandType.Unload, -1, (em, e) => em.HasComponent<Container>(e)),
-                new PredicateCommand("command.deploy", CommandType.Deploy, 0, (em, e) => em.HasComponent<Deployable>(e)),
-                new PredicateCommand("command.pack-up", CommandType.PackUp, 0, (em, e) => em.HasComponent<Deployable>(e)),
-                new PredicateCommand("command.sell", CommandType.Sell, 0, BuildingRules.IsSellable),
+                new PurchaseCommands(_kit), new AbilityCommands(_kit), new OrderCommands(_kit), new SquadCommands(_kit),
             };
             _sources.AddRange(extra);
             Root.RegisterCallback<PointerDownEvent>(OnPointerDown, TrickleDown.TrickleDown);
@@ -55,16 +47,19 @@ namespace HyperRTS.Presentation.HUD.Commands
             if (context.SelectionHash != _hash)
             {
                 _hash = context.SelectionHash;
-                _turnBack = true;
                 Rebuild(context);
+                if (context.CommandPage != 0)
+                {
+                    context.ShowCommandPage(0);
+                }
             }
 
-            if (_turnBack && context.CommandPage != 0)
+            if (_cancel)
             {
-                context.ShowCommandPage(0);
+                _cancel = false;
+                context.View.CancelInteraction();
             }
 
-            _turnBack = false;
             if (context.CommandPage != _page)
             {
                 Show(context.CommandPage);
@@ -97,27 +92,69 @@ namespace HyperRTS.Presentation.HUD.Commands
                 source.Build(context, _owned, built);
             }
 
-            // OrderBy is stable, so entries without a slot keep their sources' order after the slotted ones.
-            _entries.AddRange(built.OrderBy(entry => entry.Slot < 0 ? int.MaxValue : entry.Slot));
+            // OrderBy is stable, so specs sharing a slot keep their sources' order.
+            _entries.AddRange(built.OrderBy(entry => entry.Spec.Page).ThenBy(entry => entry.Spec.Slot));
+            var pages = Place(Slots);
+            if (pages > 1)
+            {
+                pages = Place(Slots - 1);
+            }
+
             foreach (var entry in _entries)
             {
-                if (entry.Hotkey != '\0')
-                {
-                    HUDElements.Text(entry.Hotkey.ToString(), "hud-command__hotkey", entry.Button);
-                }
-
                 _tooltip.Track(entry.Button);
             }
 
-            _more = null;
-            _back = null;
-            if (_entries.Exists(entry => entry.Page > 0))
+            BuildTurns(context, pages);
+            _page = -1;
+        }
+
+        // Gives each entry a free slot among the first `usable` of its page, spilling past the end to the next page.
+        private int Place(int usable)
+        {
+            var taken = new HashSet<(int Page, int Slot)>();
+            var pages = 1;
+            foreach (var entry in _entries)
             {
-                _more = PageCard("command.more", HUDGlyphShape.ChevronRight, () => context.ShowCommandPage(1));
-                _back = PageCard("command.back", HUDGlyphShape.ChevronLeft, () => context.ShowCommandPage(0));
+                var page = entry.Spec.Page;
+                var slot = entry.Spec.Slot;
+                while (slot >= usable || taken.Contains((page, slot)))
+                {
+                    slot++;
+                    if (slot >= usable)
+                    {
+                        page++;
+                        slot = 0;
+                    }
+                }
+
+                taken.Add((page, slot));
+                entry.Page = page;
+                entry.Slot = slot;
+                pages = Math.Max(pages, page + 1);
             }
 
-            _page = -1;
+            return pages;
+        }
+
+        // Every page but the last has More, and the last has Back to the first.
+        private void BuildTurns(HUDContext context, int pages)
+        {
+            _turns.Clear();
+            if (pages == 1)
+            {
+                return;
+            }
+
+            for (var page = 0; page < pages; page++)
+            {
+                var more = page < pages - 1;
+                var target = more ? page + 1 : 0;
+                var turn = new CommandButton(_kit.ButtonParts, CommandLook.Page,
+                    HUDText.Text(more ? "command.more" : "command.back"), null, "", () => context.ShowCommandPage(target));
+                turn.ShowChevron(more ? HUDGlyphShape.ChevronRight : HUDGlyphShape.ChevronLeft);
+                _turns.Add(turn);
+            }
         }
 
         private void Show(int page)
@@ -125,55 +162,53 @@ namespace HyperRTS.Presentation.HUD.Commands
             _page = page;
             Root.Clear();
             _tooltip.Forget();
-            var shown = 0;
+            var cells = new VisualElement[Slots];
             foreach (var entry in _entries.Where(entry => entry.Page == page))
             {
-                Root.Add(entry.Button);
-                shown++;
+                cells[entry.Slot] = entry.Button;
             }
 
-            var turn = page == 0 ? _more : _back;
-            if (turn != null)
+            if (_turns.Count > 0)
             {
-                // Blank slots keep the page card bottom right, where it is on both pages.
-                for (; shown < Slots - 1; shown++)
-                {
-                    var blank = new VisualElement { pickingMode = PickingMode.Ignore };
-                    blank.AddToClassList("hud-command");
-                    blank.AddToClassList("hud-command--blank");
-                    Root.Add(blank);
-                }
+                cells[Slots - 1] = _turns[page];
+            }
 
-                Root.Add(turn);
+            // Blank cells hold the slots before the last button in place.
+            var last = Array.FindLastIndex(cells, cell => cell != null);
+            for (var slot = 0; slot <= last; slot++)
+            {
+                Root.Add(cells[slot] ?? Blank());
             }
 
             Root.SetInvisible(_entries.Count == 0);
             Root.Add(_tooltip);
         }
 
-        private static CommandButton PageCard(string key, HUDGlyphShape chevron, System.Action turn) =>
-            new CommandButton().BindPage(HUDText.Text(key), chevron, turn);
+        private static VisualElement Blank()
+        {
+            var blank = new VisualElement { pickingMode = PickingMode.Ignore };
+            blank.AddToClassList("hud-command");
+            blank.AddToClassList("hud-command--blank");
+            return blank;
+        }
 
         private void OnPointerDown(PointerDownEvent evt)
         {
             if (evt.button == (int)MouseButton.RightMouse)
             {
-                _turnBack = true;
+                _cancel = true;
             }
         }
 
+        // A key presses the one entry at that key on the shown page.
         private void PressHotkeys(HUDContext context)
         {
-            var hotkeys = context.Hotkeys;
-            if (hotkeys.Keys.IsEmpty)
+            var presses = context.Hotkeys;
+            for (var i = 0; i < presses.Count; i++)
             {
-                return;
-            }
-
-            foreach (var entry in _entries)
-            {
-                var pressed = entry.Page == _page && entry.Hotkey != '\0' && hotkeys.Contains(entry.Hotkey);
-                if (pressed && entry.Button.CanPress)
+                var key = presses.At(i);
+                var entry = _entries.Find(other => other.Page == _page && other.Hotkey == key);
+                if (entry != null && entry.Button.CanPress)
                 {
                     entry.Invoke();
                 }

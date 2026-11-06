@@ -16,6 +16,7 @@
         "Unity.Networking.Transport",
         "Unity.Pipeline.Attributes",
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.InputSystem",
         "Unity.Scenes",
         "Unity.Transforms"
     ],

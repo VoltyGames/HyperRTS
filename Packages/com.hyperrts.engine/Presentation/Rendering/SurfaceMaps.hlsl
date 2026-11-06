@@ -14,8 +14,12 @@ half GetBumpScale()             { return _BumpScale; }
 half4 SampleBaseMap(float2 uv)  { return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv); }
 half4 SampleBumpMap(float2 uv)  { return SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv); }
 
-// No detail map: LitDepthNormalsPass's calls behind UseDetailMap() compile away, so these need no bodies.
-half4 SampleDetailMask(float2 uv);
-float4 GetDetailAlbedoMapST();
+// No detail map: LitDepthNormalsPass only calls these behind UseDetailMap(), but DXC wants bodies before it drops them.
+half4 SampleDetailMask(float2 uv)      { return 0; }
+half4 SampleDetailAlbedoMap(float2 uv) { return 0; }
+half4 SampleDetailNormalMap(float2 uv) { return half4(0.5, 0.5, 1, 1); }
+float4 GetDetailAlbedoMapST()          { return float4(1, 1, 0, 0); }
+half GetDetailAlbedoMapScale()         { return 0; }
+half GetDetailNormalMapScale()         { return 0; }
 
 #endif

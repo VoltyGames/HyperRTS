@@ -131,36 +131,25 @@ namespace HyperRTS.Presentation.Common
         public bool IsLocalDefeated() => HasLocalPlayer && EntityManager.HasEnabled<Defeated>(LocalPlayer);
 
         /// <summary>
-        /// Cancels a building placement or a targeted command waiting for a click, else turns the command card back to
-        /// its first page; false when there was nothing to undo. For a front end that owns Escape
-        /// (<c>InputActionsProvider.FrontEndOwnsCancel</c>).
+        /// Undoes the topmost of a building placement, a targeted command waiting for a click and the command card's
+        /// second page (see <see cref="InteractionState.Cancel"/>); false when there was nothing to undo. For a front
+        /// end that owns Escape (<c>InputActionsProvider.FrontEndOwnsCancel</c>) and for the card's right click.
         /// </summary>
         public bool CancelInteraction()
         {
-            var placing = Placement.Active;
-            var targeting = Pending.Type != CommandType.None;
-            if (placing)
+            var state = new InteractionState
             {
-                SetPlacement(new PlacementState());
+                Placement = Placement, Pending = Pending, Page = new CommandCardPage { Page = (byte)CommandPage },
+            };
+            if (!state.Cancel())
+            {
+                return false;
             }
 
-            if (targeting)
-            {
-                SetPending(new PendingCommand());
-            }
-
-            if (placing || targeting)
-            {
-                return true;
-            }
-
-            var paged = CommandPage > 0;
-            if (paged)
-            {
-                SetCommandPage(0);
-            }
-
-            return paged;
+            SetPlacement(state.Placement);
+            SetPending(state.Pending);
+            SetCommandPage(state.Page.Page);
+            return true;
         }
 
         private void Bind(World world)

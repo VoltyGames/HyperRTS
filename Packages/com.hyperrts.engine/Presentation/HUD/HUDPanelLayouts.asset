@@ -16,5 +16,5 @@ MonoBehaviour:
   resourceBarEntry: {fileID: 9197481963319205126, guid: 25a6b27cd9ef4139aab3867f9bd3f3b1, type: 3}
   selectionPanelGroup: {fileID: 9197481963319205126, guid: e12ae06ab4e54fa99cf107e752893fc9, type: 3}
   productionQueueViewSlot: {fileID: 9197481963319205126, guid: 09c7be826d9e4e8086150ec7df5a7ab3, type: 3}
-  commandButtonDetails: {fileID: 9197481963319205126, guid: d4b8f3e0a5c27169e0f6b7c8d9a03425, type: 3}
+  commandButton: {fileID: 9197481963319205126, guid: d4b8f3e0a5c27169e0f6b7c8d9a03425, type: 3}
   selectionDragBoxUI: {fileID: 9197481963319205126, guid: 0e1376a0431f4f3dacb31d4f381bbd30, type: 3}

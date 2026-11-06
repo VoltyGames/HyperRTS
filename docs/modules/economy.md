@@ -79,7 +79,7 @@ Code sits in `Simulation/Buildings/`, with `Construction/` (sites, work points, 
 surfaces, line placement) in sub-folders.
 
 `BuildingAuthoring` sets the footprint, population, power and whether it starts under construction. A unit with
-`BuilderAuthoring` places sites and builds them up; its `advancedBuildOptions` go on the command card's second page.
+`BuilderAuthoring` places sites and builds them up; its options sit on the command card as [command specs](client.md#hud), the second page for the advanced ones.
 A squad with `BuilderAuthoring` builds at its rate for each living member, its members digging along the site
 (see Cover in [combat](combat.md)). `BuildingAuthoring.openFootprint` makes the `NavObstacle` open: placement keeps
 the box clear but units cross it, and a `Destructible` crush rating still closes it to vehicles that cannot crush

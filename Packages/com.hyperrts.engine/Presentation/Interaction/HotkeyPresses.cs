@@ -1,16 +1,26 @@
 using Unity.Collections;
 using Unity.Entities;
+using UnityEngine.InputSystem;
 
 namespace HyperRTS.Presentation.Interaction
 {
     /// <summary>
-    /// Client singleton: the letters and digits pressed last frame while gameplay input was live, written by input for
-    /// HUD hotkeys (command card entries), which have no input actions of their own.
+    /// Client singleton: the keys pressed last frame while gameplay input was live, written by input for HUD hotkeys
+    /// (command card entries), which have no input actions of their own.
     /// </summary>
     public struct HotkeyPresses : IComponentData
     {
-        public FixedList32Bytes<char> Keys;
+        // Key values stay under 256, so a byte holds one.
+        private FixedList32Bytes<byte> _keys;
 
-        public bool Contains(char key) => Keys.Contains(char.ToUpperInvariant(key));
+        public int Count => _keys.Length;
+
+        public bool IsFull => _keys.Length == _keys.Capacity;
+
+        public Key At(int index) => (Key)_keys[index];
+
+        public void Add(Key key) => _keys.Add((byte)key);
+
+        public bool Contains(Key key) => _keys.Contains((byte)key);
     }
 }

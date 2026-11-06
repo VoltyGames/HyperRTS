@@ -25,8 +25,8 @@ namespace HyperRTS.Presentation.HUD
         private VisualTreeAsset productionQueueViewSlot;
 
         [SerializeField]
-        [Tooltip("Sweep, badges and cost strip of a build card (CommandButtonDetails.uxml).")]
-        private VisualTreeAsset commandButtonDetails;
+        [Tooltip("Every part of a command card button (CommandButton.uxml).")]
+        private VisualTreeAsset commandButton;
 
         [SerializeField]
         [Tooltip("Drag-box marquee and its corner accents (SelectionDragBoxUI.uxml).")]
@@ -40,7 +40,7 @@ namespace HyperRTS.Presentation.HUD
 
         public VisualTreeAsset ProductionQueueViewSlot => productionQueueViewSlot;
 
-        public VisualTreeAsset CommandButtonDetails => commandButtonDetails;
+        public VisualTreeAsset CommandButton => commandButton;
 
         public VisualTreeAsset SelectionDragBoxUI => selectionDragBoxUI;
     }

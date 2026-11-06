@@ -70,18 +70,6 @@ namespace HyperRTS.Simulation.Tests
             return unit;
         }
 
-        /// <summary>Adds second-page options to a builder made by <see cref="MakeBuilder"/>.</summary>
-        public static Entity AddAdvancedBuildOptions(this TestWorld world, Entity builder, params Entity[] options)
-        {
-            var buffer = world.Buffer<BuildOption>(builder);
-            foreach (var option in options)
-            {
-                buffer.Add(new BuildOption { Prefab = option, Advanced = true });
-            }
-
-            return builder;
-        }
-
         public static Entity MakeProducer(this TestWorld world, Entity building, float3 spawnOffset,
             params Entity[] options)
         {

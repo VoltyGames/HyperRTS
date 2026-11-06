@@ -1,11 +1,9 @@
 using HyperRTS.Simulation.Common;
-using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Commands
@@ -16,22 +14,24 @@ namespace HyperRTS.Presentation.HUD.Commands
     /// </summary>
     public sealed class AbilityCommands : ICommandSource
     {
+        private readonly CommandKit _kit;
         private readonly List<Entry> _entries = new();
         private readonly List<Entity> _casters = new();
         private Entity _player;
 
+        public AbilityCommands(CommandKit kit)
+        {
+            _kit = kit;
+        }
+
         private sealed class Entry
         {
-            public Button Button;
-            public Label Countdown;
+            public CommandButton Button;
             public int Id;
             public bool IsPower;
 
             /// <summary>Soonest holder's cooldown this frame; MaxValue when no holder is left.</summary>
             public float Remaining;
-
-            /// <summary>Whole seconds on the countdown, so its text only changes once a second.</summary>
-            public int Shown = -1;
         }
 
         /// <summary>Adds a button per distinct ability of the owned casters, then per support power.</summary>
@@ -52,7 +52,7 @@ namespace HyperRTS.Presentation.HUD.Commands
                 _casters.Add(caster);
                 foreach (var ability in entityManager.GetBuffer<Ability>(caster, true))
                 {
-                    AddDistinct(context, entries, ability, false);
+                    AddDistinct(context, entries, EntityInfo.GetTypeId(entityManager, caster), ability, false);
                 }
             }
 
@@ -60,7 +60,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             {
                 foreach (var ability in entityManager.GetBuffer<Ability>(_player, true))
                 {
-                    AddDistinct(context, entries, ability, true);
+                    AddDistinct(context, entries, 0, ability, true);
                 }
             }
         }
@@ -84,7 +84,8 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
         }
 
-        private void AddDistinct(HUDContext context, List<CommandEntry> entries, in Ability ability, bool isPower)
+        private void AddDistinct(HUDContext context, List<CommandEntry> entries, int card, in Ability ability,
+            bool isPower)
         {
             if (Find(ability.Id, isPower) != null)
             {
@@ -92,14 +93,18 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             var name = HUDText.AbilityName(ability.Name.ToString());
+            var spec = _kit.Catalogue.FindAbility(card, ability.Id, name);
+            if (spec == null)
+            {
+                return;
+            }
+
             var type = isPower ? CommandType.UsePower : CommandType.UseAbility;
             var target = ability.Target;
             var id = ability.Id;
-            Action invoke = () => Use(context, type, target, id);
-            var button = new CommandButton().Bind(ability.Icon.Value, name, invoke);
-            var countdown = HUDElements.Text("", "hud-command__cooldown", button);
-            entries.Add(new CommandEntry(button, invoke));
-            _entries.Add(new Entry { Button = button, Countdown = countdown, Id = id, IsPower = isPower });
+            var entry = _kit.Create(spec, name, ability.Icon.Value, () => Use(context, type, target, id));
+            entries.Add(entry);
+            _entries.Add(new Entry { Button = entry.Button, Id = id, IsPower = isPower });
         }
 
         private static void Use(HUDContext context, CommandType type, AbilityTarget target, int id)
@@ -154,14 +159,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             var cooling = !ready && entry.Remaining < float.MaxValue;
-            var seconds = cooling ? (int)math.ceil(entry.Remaining) : 0;
-            if (seconds == entry.Shown)
-            {
-                return;
-            }
-
-            entry.Shown = seconds;
-            entry.Countdown.text = seconds > 0 ? seconds.ToString() : "";
+            entry.Button.ShowCooldown(cooling ? (int)math.ceil(entry.Remaining) : 0);
         }
     }
 }
