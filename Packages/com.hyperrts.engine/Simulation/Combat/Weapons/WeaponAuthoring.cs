@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
@@ -46,10 +45,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Tooltip("Weapons mounted beside the primary; each plays its own Fire cue by weapon index.")]
         public List<WeaponSlot> extraWeapons = new();
 
-        /// <summary>A building never turns, so its weapon always aims a turret.</summary>
-        public bool AimsTurret => turreted || TryGetComponent<BuildingAuthoring>(out _);
+        /// <summary>A building never turns and an interceptor tracks shots in the air, so their weapons always aim a turret.</summary>
+        public bool AimsTurret => turreted || stats.ShootsProjectiles || TryGetComponent<BuildingAuthoring>(out _);
 
-        /// <summary>Weapon mounts the primary and extra weapons take; an interceptor's mount follows them.</summary>
+        /// <summary>Weapon mounts the primary and extra weapons take.</summary>
         public int WeaponCount => 1 + extraWeapons.Count;
 
         /// <summary>An extra weapon: its own stats (with its ammo) plus its targeting and unlock.</summary>
@@ -80,12 +79,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 foreach (var slot in authoring.extraWeapons)
                 {
                     designations.Add(slot.stats.designation);
-                }
-
-                var interceptor = GetComponent<InterceptorAuthoring>();
-                if (interceptor != null)
-                {
-                    mounts.Add(interceptor.BakeMount(this, authoring.transform));
                 }
 
                 var writer = this.Writer();

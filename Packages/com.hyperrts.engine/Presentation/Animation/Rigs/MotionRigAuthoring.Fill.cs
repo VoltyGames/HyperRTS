@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         // Propellers turn about the aircraft's nose axis.
         private static readonly Regex PropName = new(@"^Prop_\d\d$");
 
-        // Turret_02 and Launcher_02 aim weapon 1, for a mount or interceptor on a launcher of its own.
+        // Turret_02 and Launcher_02 aim weapon 1, for an extra weapon or interceptor on a launcher of its own.
         private static readonly Regex NumberedName = new(@"^(Turret|Launcher)_(\d\d)$");
 
         /// <summary>
@@ -67,7 +67,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
             var raised = all.Except(parts).FirstOrDefault(part => part.name is "Barrel" or "Launcher");
             FillWeaponPivots(raised);
-            FillInterceptorPivots(raised);
             tiltRoot = IsBuilding ? null : Named("Hull").FirstOrDefault() ?? ModelRoot();
             tiltFollower = TiltFollower();
             if (tiltRoot != null)
@@ -187,17 +186,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 stats[index].barrel = barrel;
                 stats[index].turret = Turret(index, barrel);
             }
-        }
-
-        private void FillInterceptorPivots(Transform raised)
-        {
-            if (!TryGetComponent<InterceptorAuthoring>(out var interceptor))
-            {
-                return;
-            }
-
-            interceptor.barrel = Barrel(interceptor.Mount, raised);
-            interceptor.turret = Turret(interceptor.Mount, interceptor.barrel);
         }
 
         // Without a barrel slot of its own, a weapon fires from the launcher its Machine raises.

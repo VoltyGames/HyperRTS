@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
     [Serializable]
     public abstract class WeaponPartSlot : PartSlot
     {
-        [Tooltip("Weapon it follows: 0 is the primary weapon, 1 and up the extra weapons in order, then the interceptor.")]
+        [Tooltip("Weapon it follows: 0 is the primary weapon, 1 and up the extra weapons in order, interceptors included.")]
         [Min(0)]
         public int weapon;
 

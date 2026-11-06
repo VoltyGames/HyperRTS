@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues.Error(weapon, $"{label} has no range.");
             }
 
-            if (!slot.independent && !Covers(weapon.stats.targets, slot.stats.targets))
+            if (!slot.independent && !slot.stats.ShootsProjectiles && !Covers(weapon.stats.targets, slot.stats.targets))
             {
                 issues.Error(weapon, $"{label} hits {slot.stats.targets} but the primary only " +
                     $"{weapon.stats.targets}: make it independent.");
@@ -67,9 +67,35 @@ namespace HyperRTS.Editor.Validation.Rules
                 issues.Error(weapon, $"{label} has extra muzzles but no first muzzle.");
             }
 
+            if (stats.ShootsProjectiles)
+            {
+                CheckInterception(weapon, label, stats, issues);
+            }
+
             if (stats.needsDeploy && !weapon.TryGetComponent<DeployableAuthoring>(out _))
             {
                 issues.Error(weapon, $"{label} needs deployment but the unit has no Deployable.");
+            }
+        }
+
+        /// <summary>A weapon that shoots projectiles shoots only them, instantly, at kinds it names.</summary>
+        private static void CheckInterception(WeaponAuthoring weapon, string label, WeaponStats stats,
+            ValidationIssues issues)
+        {
+            if (stats.targets != WeaponTargets.Projectile)
+            {
+                issues.Error(weapon, $"{label} hits projectiles and {stats.targets & ~WeaponTargets.Projectile}: " +
+                    "an interceptor targets only Projectile.");
+            }
+
+            if (stats.projectilePrefab != null)
+            {
+                issues.Error(weapon, $"{label} hits projectiles but launches one itself: an interceptor hits instantly.");
+            }
+
+            if (stats.interceptKinds == ProjectileKind.None)
+            {
+                issues.Error(weapon, $"{label} hits projectiles but engages no kind of them.");
             }
         }
 

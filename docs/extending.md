@@ -27,7 +27,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | React to deaths | Query `Dead` entities after `DeathSystem`. `LastAttacker` names the killer |
 | Damage or heal | `EventWriter<DamageEvent>`, built with a `DamageProfile`'s `Hit` or `DamageEvent.Direct`. A negative amount heals |
 | A weapon | `WeaponAuthoring`: `stats` is the primary, `extraWeapons` more. Code reads them as the `WeaponMount` buffer, primary first |
-| A new projectile kind | A `ProjectileKind` flag from `GameFirst` (16) up, set on the weapon's `projectileKind` and listed by interceptors |
+| A new projectile kind | A `ProjectileKind` flag from `GameFirst` (16) up, set on the weapon's `projectileKind` and listed in an interceptor weapon's `interceptKinds` |
 | Custom ability effects | Read `AbilityActivation` after `AbilitySystem` |
 | Aura effects | Read the entity's `AuraPresence` |
 | Disable an entity | Set a bit from `OfflineReason.Custom` up in `Offline.Reasons`. Units need `Offline` baked, disabled |

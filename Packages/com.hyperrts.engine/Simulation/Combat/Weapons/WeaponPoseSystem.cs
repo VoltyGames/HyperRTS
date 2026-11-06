@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// Turns each <see cref="WeaponPose"/> toward its weapon's target at the weapon's traverse and elevation rates:
     /// the primary at the <see cref="AttackTarget"/>, extra weapons at their own. Arcing weapons pitch up to their
     /// launch angle; idle weapons, and those waiting for their unit to deploy, turn back to centre. Runs before firing,
-    /// so turrets fire once on target. Interceptors turn their own.
+    /// so turrets fire once on target.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -49,13 +49,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    if (mount.Intercepts)
-                    {
-                        continue;
-                    }
-
-                    // The primary tracks the attack target while it closes in; extra weapons only what they shoot.
-                    var target = i == 0 ? primary : mount.Target;
+                    // The primary tracks the attack target while it closes in; extra weapons and interceptors only what they shoot.
+                    var tracksAttack = i == 0 && !mount.Weapon.ShootsProjectiles;
+                    var target = tracksAttack ? primary : mount.Target;
                     Pose(poses, i, hull, mount.Weapon, Aimed(entity, mount.Weapon, target));
                 }
             }

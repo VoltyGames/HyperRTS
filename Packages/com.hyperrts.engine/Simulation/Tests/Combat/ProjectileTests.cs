@@ -1,10 +1,12 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Projectiles;
+using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -218,6 +220,20 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.AreEqual(-0.5f * math.PI, Pose(tower, 1).YawRadians, YawTolerance, "the interceptor on the shot");
         }
 
+        [Test]
+        public void InterceptorFireRate_FollowsPace()
+        {
+            var fast = Defence(Site(), killChance: 0f);
+            var slow = Defence(World.SpawnBuilding(1, new float3(0f, 0f, 8f), new float2(2f, 2f)), killChance: 0f);
+            World.Add(slow, new Pace { Speed = 1f, FireRate = 0.25f, DamageTaken = 1f });
+            Shot(new float3(6f, 4f, 4f));
+
+            World.Run(2f);
+
+            Assert.Greater(Pose(fast, 0).Shots, 2 * Pose(slow, 0).Shots);
+            Assert.Greater(Pose(slow, 0).Shots, 0);
+        }
+
         private Entity SpawnShooter(Trajectory trajectory, float range) =>
             World.AddWeapon(World.SpawnUnit(1, float3.zero), range: range, cooldown: 100f,
                 projectile: World.ProjectilePrefab(), trajectory: trajectory, arcHeight: 0.5f);
@@ -250,14 +266,18 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         private Entity Site() => World.SpawnBuilding(1, float3.zero, new float2(2f, 2f));
 
-        /// <summary>An interceptor alone, or after the entity's weapons as the bakers lay it out.</summary>
+        /// <summary>An interceptor weapon: the entity's only one, or after the weapons it has as the bakers lay it out.</summary>
         private Entity Defence(Entity entity, float interval = 0.2f, float killChance = 1f, int rounds = 0,
             float reloadTime = 1f)
         {
             var weapon = new Weapon
             {
+                Range = 20f,
                 Cooldown = interval,
                 SalvoSize = 1,
+                Targets = WeaponTargets.Projectile,
+                InterceptKinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile,
+                KillChance = killChance,
                 Aim = new WeaponAim
                 {
                     Turreted = true,
@@ -269,25 +289,15 @@ namespace HyperRTS.Simulation.Tests.Combat
                 },
             };
             var mount = WeaponMount.Create(weapon, Ammo.Create(rounds, reloadTime, AmmoRefill.Round));
-            mount.Intercepts = true;
-            var interceptor = new Interceptor
-            {
-                Radius = 20f,
-                KillChance = killChance,
-                Kinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile,
-            };
-            var writer = World.Writer(entity);
             if (!World.EntityManager.HasComponent<WeaponMount>(entity))
             {
-                InterceptorAuthoring.Add(writer, interceptor, mount);
+                WeaponSetup.Add(World.Writer(entity), new[] { mount },
+                    CombatStance.Create(Stance.Aggressive, World.Get<LocalTransform>(entity).Position));
                 return entity;
             }
 
-            var mounts = World.Buffer<WeaponMount>(entity);
-            interceptor.Mount = (byte)mounts.Length;
-            mounts.Add(mount);
+            World.Buffer<WeaponMount>(entity).Add(mount);
             World.Buffer<WeaponPose>(entity).Add(default);
-            writer.Add(interceptor);
             return entity;
         }
 

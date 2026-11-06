@@ -28,6 +28,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [ReadOnly] private ComponentLookup<Inside> _inside;
         [ReadOnly] private BufferLookup<FiringPort> _ports;
         private BufferLookup<WeaponPose> _poses;
+        private ComponentLookup<Projectile> _projectiles;
         private EventWriter<DamageEvent> _damage;
         private CueWriter _cues;
         private EntityCommandBuffer _ecb;
@@ -43,6 +44,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _inside = state.GetComponentLookup<Inside>(true);
             _ports = state.GetBufferLookup<FiringPort>(true);
             _poses = state.GetBufferLookup<WeaponPose>();
+            _projectiles = state.GetComponentLookup<Projectile>();
             _damage = new EventWriter<DamageEvent>(ref state);
             _cues = new CueWriter(ref state);
         }
@@ -61,6 +63,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _inside.Update(ref state);
             _ports.Update(ref state);
             _poses.Update(ref state);
+            _projectiles.Update(ref state);
             _damage.Update(ref state);
             _cues.Update(ref state);
             _ecb = ecb;
@@ -88,6 +91,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
             Fire(shooter, ref weapon, pose, target, faction, shots);
             weapon.StartCooldown();
             return true;
+        }
+
+        /// <summary>Whether <paramref name="target"/> is a projectile still flying inside the weapon's range.</summary>
+        public bool CanIntercept(Entity shooter, in Weapon weapon, Entity target)
+        {
+            if (!_projectiles.TryGetComponent(target, out var projectile) || projectile.Intercepted)
+            {
+                return false;
+            }
+
+            return math.distance(_transforms[shooter].Position, _transforms[target].Position) < weapon.Range;
         }
 
         private bool OutsideArc(Entity shooter, in Weapon weapon, Entity target) =>
@@ -163,6 +177,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     Obstruct(shooter, shot, fired, place, ref aimed, ref aimedAt);
                     Launch(firing, shot, round, aimed, aimedAt);
                 }
+                else if (weapon.ShootsProjectiles)
+                {
+                    Intercept(firing, shot, target, targetPosition);
+                }
                 else
                 {
                     Strike(firing, shot, round == 0, target, targetPosition);
@@ -181,6 +199,27 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 var along = math.normalizesafe(targetPosition - origin, firing.Place.Forward());
                 hit.AddImpact(ref _cues, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), along);
             }
+        }
+
+        /// <summary>A shot at a projectile: a seeded roll that downs it, then the impact cue where it dies.</summary>
+        private void Intercept(in Firing firing, in Weapon weapon, Entity target, float3 targetPosition)
+        {
+            // Seeded by shooter, target and shot count, so the same fight rolls the same.
+            var seed = math.hash(new uint4((uint)firing.Shooter.Index, (uint)target.Index, (uint)target.Version,
+                firing.Pose.Shots));
+            if (Random.CreateFromIndex(seed).NextFloat() >= weapon.KillChance)
+            {
+                return;
+            }
+
+            var projectile = _projectiles[target];
+            projectile.Intercepted = true;
+            _projectiles[target] = projectile;
+            _ecb.DestroyEntity(target);
+            var origin = weapon.Aim.HitOrigin(firing.Place, firing.Pose);
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, target, targetPosition, weapon.Targets);
+            var along = math.normalizesafe(targetPosition - origin, firing.Place.Forward());
+            hit.AddImpact(ref _cues, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), along);
         }
 
         /// <summary>Turns a direct-fire round onto whatever solid stands between the muzzle and the target.</summary>

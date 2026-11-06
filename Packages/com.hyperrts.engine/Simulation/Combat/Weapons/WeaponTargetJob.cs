@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Spatial;
@@ -12,7 +13,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// <summary>
     /// Leaves each <see cref="WeaponMount.Target"/> set only to what the weapon can shoot this frame: the primary the
     /// <see cref="AttackTarget"/> once it is in reach, an extra weapon the same target when it can hit it, else, if
-    /// independent, its own. Interceptors aim themselves.
+    /// independent, its own. A weapon that shoots projectiles takes the nearest incoming one.
     /// </summary>
     [BurstCompile]
     [WithNone(typeof(Offline))]
@@ -23,6 +24,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public FactionRelations Relations;
         public TargetLookup Targets;
         public ScanSchedule Scans;
+        [ReadOnly] public ProjectileGrid Projectiles;
 
         private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in LocalTransform transform,
             in AttackTarget attack, EnabledRefRO<AttackTarget> attacking, in CombatStance stance, in Faction faction)
@@ -32,17 +34,26 @@ namespace HyperRTS.Simulation.Combat.Weapons
             for (var i = 0; i < mounts.Length; i++)
             {
                 var mount = mounts[i];
-                if (mount.Intercepts)
+                if (mount.Weapon.ShootsProjectiles)
                 {
-                    continue;
+                    mount.Target = Incoming(transform.Position, mount, faction.Value);
+                }
+                else if (i == 0)
+                {
+                    mount.Target = Primary(mount, attack, attacking.ValueRO);
+                }
+                else
+                {
+                    mount.Target = Aim(entity, transform.Position, mount, shared, scanning, faction.Value);
                 }
 
-                mount.Target = i == 0
-                    ? Primary(mount, attack, attacking.ValueRO)
-                    : Aim(entity, transform.Position, mount, shared, scanning, faction.Value);
                 mounts[i] = mount;
             }
         }
+
+        /// <summary>The nearest hostile projectile it engages inside its range, else the nearest headed for that range.</summary>
+        private Entity Incoming(float3 position, in WeaponMount mount, byte faction) =>
+            mount.Ready ? Projectiles.Nearest(position, mount.Weapon, faction, Relations) : Entity.Null;
 
         /// <summary>Engagement's reach, since a longer-ranged extra weapon can put the unit in range before the primary reaches.</summary>
         private Entity Primary(in WeaponMount mount, in AttackTarget attack, bool attacking)

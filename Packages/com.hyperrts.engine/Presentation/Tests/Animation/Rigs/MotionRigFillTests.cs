@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Animation.Rigs;
 using System.Linq;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Movement;
@@ -134,19 +133,25 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
         }
 
+        private static WeaponStats AddInterceptor(WeaponAuthoring weapon)
+        {
+            var slot = new WeaponAuthoring.WeaponSlot { stats = { targets = WeaponTargets.Projectile } };
+            weapon.extraWeapons.Add(slot);
+            return slot.stats;
+        }
+
         [Test]
         public void FillFromModel_OnABuilding_AimsTheInterceptorAfterTheWeapon_AndNeverTilts()
         {
             var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
             var launcher = Pivot("Launcher", turret);
             _unit.AddComponent<BuildingAuthoring>();
-            _unit.AddComponent<WeaponAuthoring>();
-            var interceptor = _unit.AddComponent<InterceptorAuthoring>();
+            var weapon = _unit.AddComponent<WeaponAuthoring>();
+            var interceptor = AddInterceptor(weapon);
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
             rig.FillFromModel();
 
-            Assert.AreEqual(1, interceptor.Mount);
             Assert.AreEqual(1, rig.elevations.Single(slot => slot.part == launcher).weapon, "the launcher follows it");
             Assert.AreEqual((turret, launcher), (interceptor.turret, interceptor.barrel));
             Assert.IsNull(rig.tiltRoot);
@@ -165,7 +170,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var secondLauncher = Pivot("Launcher_02", second);
             _unit.AddComponent<BuildingAuthoring>();
             var weapon = _unit.AddComponent<WeaponAuthoring>();
-            var interceptor = _unit.AddComponent<InterceptorAuthoring>();
+            var interceptor = AddInterceptor(weapon);
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
             rig.FillFromModel();

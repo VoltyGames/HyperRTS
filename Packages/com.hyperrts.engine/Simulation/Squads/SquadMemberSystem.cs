@@ -113,11 +113,6 @@ namespace HyperRTS.Simulation.Squads
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    if (mount.Intercepts)
-                    {
-                        continue;
-                    }
-
                     var carriers = 0;
                     foreach (var member in members)
                     {

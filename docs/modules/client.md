@@ -316,9 +316,9 @@ brake, roll out of turns and rock back from each recoil shot, by 1 to 3 degrees.
 kick fields tune it. **Fill from
 model** finds the parts by their art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
 `Idler_L`, `Rotor_Main`, `Rotor_Tail` and propellers `Prop_01` on, which spin about the nose axis. It keeps slots it already lists, measures wheel radii and the footprint
-from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon or an interceptor. Numbered parts
+from the meshes, and gives `Launcher` weapon 1 when the unit has an extra weapon (an interceptor is one). Numbered parts
 aim their own weapon: `Turret_01` and `Launcher_01` weapon 0, `Turret_02` and `Launcher_02` weapon 1. It also fills the
-weapons' and the interceptor's turret and barrel pivots. Same-named parts of every model under the rig, such as a
+weapons' turret and barrel pivots. Same-named parts of every model under the rig, such as a
 damaged model beside the intact one, all follow, and parts a Machine moves are left to it. With Damage Stages, the
 other stage's matching body becomes the `tiltFollower`, which tilts and sways with the tilt root. A building's body never
 tilts, so it gets no tilt root.

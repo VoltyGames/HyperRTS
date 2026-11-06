@@ -20,8 +20,8 @@ namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, i
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets (a `WeaponTargets` set of Ground, Naval, Air and Projectile, matched to the target's nav layer; buildings are Ground), needs deploy, firing arc, ammo (`rounds`, `reloadTime`, `refill`), salvo size and interval, spread. The primary and each extra weapon carry one |
-| `WeaponMount` | One weapon: the primary at index 0, then the extra weapons, then an interceptor's. Server only; stats rewrite each from its own bases |
+| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, projectile kinds and kill chance (`interceptKinds`, `killChance`, for a weapon that targets projectiles), targets (a `WeaponTargets` set of Ground, Naval, Air and Projectile, matched to the target's nav layer; buildings are Ground), needs deploy, firing arc, ammo (`rounds`, `reloadTime`, `refill`), salvo size and interval, spread. The primary and each extra weapon carry one |
+| `WeaponMount` | One weapon: the primary at index 0, then the extra weapons. Server only; stats rewrite each from its own bases |
 | `DamageProfile` | What a hit deals: amount, damage type, garrison factor, cover piercing, suppression, splash radius and edge factor, friendly fire. Weapons, abilities and bombs carry one and build their hit with `Hit`; `DamageSettings` is its inspector block |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
@@ -205,7 +205,7 @@ first muzzle. `spread` scatters each shot's aim point at random within that many
 and shot count. A ballistic shell keeps its target while it stays put; a homing shot with a spread gives up its lock
 and flies to its scattered point, so a rocket ripple covers an area. Missiles that must stay locked keep 0.
 
-Limited rounds (`rounds` in the `WeaponStats` of the primary or an extra weapon, or on an interceptor) sit in each
+Limited rounds (`rounds` in the `WeaponStats` of the primary or an extra weapon, an interceptor included) sit in each
 mount's `Ammo` (max 0 never runs dry) and refill by their `AmmoRefill`: `Docked` one round per `reloadTime` while
 docked at an airfield, `Round` one per `reloadTime` anywhere, and `Magazine` every round together `reloadTime`
 after the magazine runs empty. A part-empty magazine never reloads. `WeaponMount.Reload` is the one reload loop:
@@ -218,8 +218,8 @@ orders and halts it, and `Deployable.Progress` rises from 0 to 1 over `deployTim
 `packUpTime`. Either command reverses one in progress. While deploying, deployed or packing up the unit is rooted:
 `OrderResolver` refuses every order but Attack, so the player must pack it up first, and `EngagementSystem` fights
 it like a building, never chasing or backing off. Until it has deployed, its `needsDeploy` weapons keep their turret
-centred, and an interceptor with `needsDeploy` neither tracks nor engages. `WeaponRule` and `InterceptorRule` flag
-either on a unit without a Deployable. `State` and `Progress` replicate, and a `Deployed` machine (see
+centred, and an interceptor with `needsDeploy` neither tracks nor engages. `WeaponRule` flags a `needsDeploy` weapon
+on a unit without a Deployable. `State` and `Progress` replicate, and a `Deployed` machine (see
 [animation](support.md#animation)) follows the progress. The skirmish AI deploys a unit holding a target in range and
 packs up a deployed one with nothing to shoot, so its next wave takes it.
 
@@ -250,7 +250,7 @@ Each weapon has a `WeaponPose`: yaw relative to the hull, pitch and a wrapping s
 clients read to aim turrets and play recoil. `WeaponPoseSystem` turns them toward the weapon's target at the
 weapon's traverse and elevation speeds, within its elevation limits and lifted to the launch angle for arcs, and turns
 idle ones back to centre. It runs before firing. The pivots, rates, limits and muzzle sit in the weapon's `WeaponAim`,
-which an interceptor holds too. A `Turreted` weapon, and every extra weapon, fires without turning
+which an interceptor holds too, as it is a weapon. A `Turreted` weapon, and every extra weapon, fires without turning
 the hull and only once its pose is within `aimTolerance` of the target. A unit's hull-fixed primary weapon sets a
 `FacingGoal` instead, and movement turns the parked hull toward it at its `Locomotion` turn rate, never swinging a long
 hull into a closed cell. The weapon fires once the hull is within `aimTolerance` of the target. Buildings never turn,
@@ -262,27 +262,31 @@ so directional armor sees the real origin, and the Fire cue (muzzle flash, trace
 
 ### Interception
 
-`InterceptorAuthoring` lets a building or unit shoot down hostile projectiles in flight, such as a C-RAM gun or a SAM
-battery. It engages the nearest hostile projectile inside its `radius` whose `ProjectileKind` it lists: Shell,
-Rocket, Missile or Bomb, which the firing weapon's `projectileKind` sets (None is never engaged). A game adds kinds from `ProjectileKind.GameFirst` (16) up. Drones are units, so
-interceptors ignore them.
+An interceptor is a weapon whose `targets` are `Projectile`, so a building or unit shoots down hostile projectiles in
+flight, such as a C-RAM gun or a SAM battery, from the primary's `WeaponStats` or an extra weapon's. It engages the
+nearest hostile projectile inside its `range` whose `ProjectileKind` its `interceptKinds` list: Shell, Rocket,
+Missile or Bomb, which the firing weapon's `projectileKind` sets (None is never engaged). A game adds kinds from
+`ProjectileKind.GameFirst` (16) up. Drones are units, so interceptors ignore them. `WeaponRule` wants it to hit only
+projectiles, with no projectile prefab of its own and at least one kind. A primary that shoots projectiles never sets
+an attack target: orders, engagement and the AI read it as unarmed, and it aims a turret.
 
 | Field | Role |
 | --- | --- |
-| `radius`, `kinds` | What it engages, measured from the pivot in 3D |
-| `engagementsPerSecond`, `killChance` | How often it engages, and the chance each engagement kills |
-| `muzzle`, `turret`, `barrel`, `aimSpeed`, elevation limits, `aimTolerance` | Aim, like a weapon's |
-| `rounds`, `reloadTime` | Optional stock, one round refilled per `reloadTime` (`AmmoRefill.Round`) |
+| `range`, `interceptKinds` | What it engages, measured from the pivot in 3D |
+| `cooldown`, `killChance` | How often it engages, and the chance each engagement kills |
+| `muzzle`, `turret`, `barrel`, traverse and elevation speeds, limits, `aimTolerance` | Aim, like any weapon's |
+| `rounds`, `reloadTime`, `refill` | Optional stock, like any weapon's |
 
-`InterceptorSystem` runs after the weapons and before `ProjectileSystem`. Its aim, cooldown, rounds and
-`needsDeploy` bake into a `WeaponMount` marked `Intercepts` after the weapons (index 0 on an entity with no weapon),
-which `Interceptor.Mount` names and the fire path leaves alone. Its `WeaponPose` sits at that index, so a
-`MotionRigAuthoring` turret or launcher follows it, and it engages once that pose is within `aimTolerance`. Each engagement plays its Fire cue toward the target, with the pose index as the
-variant, for the tracer burst. A kill marks the projectile `Intercepted`, so it stops flying and never lands, and
-plays the interceptor's Impact cue where it died as the airburst, classed as an `Air` surface. A miss lets it fly on.
-A shot aimed inside the radius is tracked before it enters, so the turret is on it as it arrives, but only one
-inside the radius is engaged. The roll is seeded by shooter, target and engagement count. An `Offline` or dead
-interceptor does nothing.
+`WeaponTargetSystem` files the projectiles in flight into a `ProjectileGrid` (16 m cells, built once a frame, each
+filed where it is and where it is headed) and `WeaponTargetJob` gives such a weapon the nearest hostile one of an
+engaged kind, so it does not scan every projectile. `WeaponPoseSystem` turns its `WeaponPose` toward it, so a
+`MotionRigAuthoring` turret or launcher follows, and `WeaponFireSystem` fires it through `Shooter.TryFire`, with the
+cooldown scaled by `Pace.FireRate` and rounds spent like any weapon's. Each engagement plays the Fire cue with the
+weapon index as the variant, for the tracer burst. `Shooter` then rolls the kill, seeded by shooter, target and shot
+count. A kill marks the projectile `Intercepted`, so it stops flying and never lands, and plays the interceptor's
+Impact cue where it died as the airburst, classed as an `Air` surface. A miss lets it fly on. A shot aimed inside the
+range is tracked before it enters, so the turret is on it as it arrives, but only one inside the range is engaged. An
+`Offline` or dead interceptor does nothing.
 
 ### Remains
 

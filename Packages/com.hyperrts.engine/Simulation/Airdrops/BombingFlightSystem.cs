@@ -137,7 +137,7 @@ namespace HyperRTS.Simulation.Airdrops
 
         private static bool Covers(in WeaponMount mount, float3 from, float3 point)
         {
-            if (mount.Intercepts || !Weapon.CanHit(mount.Weapon.Targets, NavLayer.Air))
+            if (!Weapon.CanHit(mount.Weapon.Targets, NavLayer.Air))
             {
                 return false;
             }

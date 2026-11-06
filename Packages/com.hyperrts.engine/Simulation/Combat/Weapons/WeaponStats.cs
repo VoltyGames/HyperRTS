@@ -97,6 +97,13 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Tooltip("What the weapon can hit: Ground (units and buildings), Naval, Air (aircraft) and Projectile (shells and missiles in flight).")]
         public WeaponTargets targets = WeaponTargets.Surface;
 
+        [Tooltip("Projectile kinds it shoots at when its targets include Projectile; the range is how far out it engages.")]
+        public ProjectileKind interceptKinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile;
+
+        [Tooltip("Chance that one shot at a projectile destroys it; a miss lets it fly on.")]
+        [Range(0f, 1f)]
+        public float killChance = 0.5f;
+
         [Tooltip("Never auto-acquire targets whose armor scales this damage below this factor; 0 picks any.")]
         [Min(0f)]
         public float minEffect;
@@ -133,6 +140,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Min(0f)]
         public float spread;
 
+        /// <summary>Shoots projectiles in flight, so it is an interceptor.</summary>
+        public bool ShootsProjectiles => (targets & WeaponTargets.Projectile) != WeaponTargets.None;
+
         /// <summary>Damage per second before armor, with the cooldown floored at its minimum.</summary>
         public float Dps => hit.damage / Mathf.Max(cooldown, 0.05f);
 
@@ -156,6 +166,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 ProjectileSpeed = projectileSpeed,
                 ProjectileKind = projectileKind,
                 Targets = targets,
+                InterceptKinds = interceptKinds,
+                KillChance = killChance,
                 MinEffect = minEffect,
                 MinRange = minRange,
                 SalvoSize = salvoSize,

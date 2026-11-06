@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
     /// Aims and fires every <see cref="WeaponMount"/>: an instant <see cref="DamageEvent"/>, or a launched
-    /// <see cref="Projectile"/> when the weapon has a prefab. The primary shoots the <see cref="AttackTarget"/> once it
+    /// <see cref="Projectile"/> when the weapon has a prefab, or a kill roll on a projectile in flight for an interceptor. The primary shoots the <see cref="AttackTarget"/> once it
     /// is in reach; an extra weapon shoots it when it can hit it, else, if independent, the nearest spotted hostile in
     /// its own range. Offline shooters, weapons out of <see cref="Ammo"/> and undeployed
     /// <see cref="Weapon.NeedsDeploy"/> weapons stay silent. A salvo stops when its target is lost, and a shot reveals
@@ -83,13 +83,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    if (mount.Intercepts)
-                    {
-                        continue;
-                    }
-
                     mount.Weapon.Tick(DeltaTime * rate);
-                    if (mount.Target == Entity.Null || mount.Carriers == 0 || rate <= 0f)
+                    if (!CanShoot(entity, mount, rate))
                     {
                         mount.Weapon.EndSalvo();
                     }
@@ -101,6 +96,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
                     mounts[i] = mount;
                 }
+            }
+
+            /// <summary>A target to shoot; a projectile only while it still flies, inside the weapon's range.</summary>
+            private bool CanShoot(Entity entity, in WeaponMount mount, float rate)
+            {
+                if (mount.Target == Entity.Null || mount.Carriers == 0 || rate <= 0f)
+                {
+                    return false;
+                }
+
+                return !mount.Weapon.ShootsProjectiles || Shots.CanIntercept(entity, mount.Weapon, mount.Target);
             }
 
             /// <summary>A unit's hull-fixed weapon turns the hull; a garrisoned passenger fires out of any side without turning.</summary>

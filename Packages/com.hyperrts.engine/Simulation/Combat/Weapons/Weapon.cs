@@ -23,6 +23,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>What the weapon can hit; units and orders never aim it at anything else.</summary>
         public WeaponTargets Targets;
 
+        /// <summary>Kinds of projectile a weapon that targets projectiles shoots at; others fly on.</summary>
+        public ProjectileKind InterceptKinds;
+
+        /// <summary>Chance from 0 to 1 that one shot at a projectile downs it.</summary>
+        public float KillChance;
+
         /// <summary>Targets whose armor multiplier for this damage type falls below it are never picked; 0 picks all.</summary>
         public float MinEffect;
 
@@ -99,6 +105,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
             return InFiringArc(Deployable.Heading(deployables, shooter, place), (targetPosition - place.Position).xz);
         }
+
+        /// <summary>Shoots projectiles in flight rather than units, such as a C-RAM gun.</summary>
+        public readonly bool ShootsProjectiles => (Targets & WeaponTargets.Projectile) != WeaponTargets.None;
+
+        public readonly bool Engages(ProjectileKind kind) => (InterceptKinds & kind) != ProjectileKind.None;
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 

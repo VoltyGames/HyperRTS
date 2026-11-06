@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         /// <summary>How it flies, copied from its weapon at launch.</summary>
         public ShotCourse Course;
 
-        /// <summary>What an <see cref="Interceptor"/> sees it as.</summary>
+        /// <summary>What an interceptor weapon sees it as.</summary>
         public ProjectileKind Kind;
 
         /// <summary>Shot down this frame: it stops flying and never lands.</summary>

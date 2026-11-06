@@ -66,19 +66,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
         [Tooltip("Ground vehicles: degrees per second a shot rocks the body away from the gun.")]
         public float recoilRate = 12f;
 
-        /// <summary>Primary and extra weapons, then an interceptor: the <c>WeaponPose</c> indices a slot may follow.</summary>
-        public int WeaponCount
-        {
-            get
-            {
-                if (TryGetComponent<InterceptorAuthoring>(out var interceptor))
-                {
-                    return interceptor.Mount + 1;
-                }
-
-                return TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponCount : 0;
-            }
-        }
+        /// <summary>Primary and extra weapons, interceptors among them: the <c>WeaponPose</c> indices a slot may follow.</summary>
+        public int WeaponCount => TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponCount : 0;
 
         /// <summary>A building stands on levelled ground and never moves, so its body never tilts.</summary>
         private bool IsBuilding => TryGetComponent<BuildingAuthoring>(out _);

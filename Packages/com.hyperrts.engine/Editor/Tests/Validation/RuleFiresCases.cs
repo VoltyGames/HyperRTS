@@ -132,12 +132,6 @@ namespace HyperRTS.Editor.Tests.Validation
         private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> UnitRows()
         {
             yield return Row<GarrisonPartRule>("no Container above it", f => f.Add<GarrisonPartAuthoring>(new GameObject("Gun")));
-            yield return Row<InterceptorRule>("no Deployable", f =>
-            {
-                var interceptor = f.Add<InterceptorAuthoring>(EntityTemplates.Unit());
-                interceptor.needsDeploy = true;
-                return interceptor;
-            });
             yield return Row<LocomotionRule>("has no wheelbase", f =>
             {
                 var locomotion = f.Add<LocomotionAuthoring>(EntityTemplates.Unit());

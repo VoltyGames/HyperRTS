@@ -33,9 +33,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>An extra weapon that may pick its own target when it can't hit the shared one.</summary>
         public bool Independent;
 
-        /// <summary>Aims and fires for the entity's <c>Interceptor</c>, never at units.</summary>
-        public bool Intercepts;
-
         /// <summary>Shots each firing makes: one, or a squad's living members who carry this weapon; 0 can't fire.</summary>
         public byte Carriers;
 
@@ -66,10 +63,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public bool Ready => Enabled && !Ammo.Empty && Carriers > 0;
 
-        /// <summary>The primary, which orders, engagement and the AI read; false for an interceptor alone.</summary>
+        /// <summary>The primary, which orders, engagement and the AI read; false when it shoots projectiles.</summary>
         public static bool TryGetPrimary(DynamicBuffer<WeaponMount> mounts, out Weapon weapon)
         {
-            var armed = mounts.Length > 0 && !mounts[0].Intercepts;
+            var armed = mounts.Length > 0 && !mounts[0].Weapon.ShootsProjectiles;
             weapon = armed ? mounts[0].Weapon : default;
             return armed;
         }
@@ -129,7 +126,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>A ready weapon that shares the unit's target and can hurt it.</summary>
         private bool JoinsAttack(in TargetLookup targets, Entity target)
         {
-            if (Independent || Intercepts || !Ready)
+            if (Independent || !Ready)
             {
                 return false;
             }

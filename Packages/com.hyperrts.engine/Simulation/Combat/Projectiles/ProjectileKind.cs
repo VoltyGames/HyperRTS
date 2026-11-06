@@ -2,7 +2,7 @@ using System;
 
 namespace HyperRTS.Simulation.Combat.Projectiles
 {
-    /// <summary>What a projectile is to an <see cref="Interceptor"/>, which engages any mix of these; None is never engaged.</summary>
+    /// <summary>What a projectile is to an interceptor weapon, which engages any mix of these; None is never engaged.</summary>
     [Flags]
     public enum ProjectileKind : byte
     {
