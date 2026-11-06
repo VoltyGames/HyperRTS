@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Update();
 
             Assert.AreEqual(FigureState.Die, State(3));
-            Assert.IsTrue(Lower(3).Plays(Range(40, false)));
+            Assert.IsTrue(Plays(Lower(3), Range(40, false)));
             Assert.IsTrue(Drawn(3));
 
             Advance(DieHold);
@@ -61,8 +61,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             SetLiving(2);
             Update();
 
-            Assert.IsTrue(Lower(3).Plays(Range(50, false)));
-            Assert.IsTrue(Lower(2).Plays(Range(40, false)));
+            Assert.IsTrue(Plays(Lower(3), Range(50, false)));
+            Assert.IsTrue(Plays(Lower(2), Range(40, false)));
         }
 
         [Test]
@@ -77,9 +77,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             SetLiving(1);
             Update();
 
-            Assert.IsTrue(Lower(1).Plays(Range(170, false)));
-            Assert.IsTrue(Lower(2).Plays(Range(160, false)));
-            Assert.IsTrue(Lower(3).Plays(Range(160, false)));
+            Assert.IsTrue(Plays(Lower(1), Range(170, false)));
+            Assert.IsTrue(Plays(Lower(2), Range(160, false)));
+            Assert.IsTrue(Plays(Lower(3), Range(160, false)));
         }
 
         [Test]

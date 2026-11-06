@@ -81,7 +81,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         {
             var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
             var box = Pivot("Barrel", turret);
-            box.gameObject.AddComponent<HyperRTS.Simulation.Animation.MachinePartAuthoring>();
+            box.gameObject.AddComponent<MachinePartAuthoring>();
             var weapon = _unit.AddComponent<WeaponAuthoring>();
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 

@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Tests
         private static readonly string[][] Tiers =
         {
             new[] { "Common", "Stats" },
-            new[] { "Animation", "Navigation", "Vision", "Selection", "Orders", "Cues" },
+            new[] { "Navigation", "Vision", "Selection", "Orders", "Cues" },
             new[]
             {
                 "Combat", "Destruction", "Transport", "Air", "Movement", "Resources", "Production", "Upgrades", "Buildings",

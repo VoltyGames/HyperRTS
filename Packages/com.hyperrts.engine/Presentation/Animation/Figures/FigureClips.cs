@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -27,19 +27,19 @@ namespace HyperRTS.Presentation.Animation.Figures
         public const int FallKinds = 5;
 
         /// <summary>By posture then idle, walk, run.</summary>
-        public BlobArray<VATClipRange> Legs;
+        public BlobArray<ClipRange> Legs;
 
         /// <summary>By posture; each plays once per shot.</summary>
-        public BlobArray<VATClipRange> Fire;
+        public BlobArray<ClipRange> Fire;
 
         /// <summary>By <see cref="MemberAction"/>; the entry of None has no frames.</summary>
-        public BlobArray<VATClipRange> Actions;
+        public BlobArray<ClipRange> Actions;
 
         /// <summary>By posture then the shot fall and the four blast falls.</summary>
-        public BlobArray<VATClipRange> Falls;
+        public BlobArray<ClipRange> Falls;
 
         /// <summary>What the legs play for a posture and a living state.</summary>
-        public VATClipRange Lower(Posture posture, FigureState moving)
+        public ClipRange Lower(Posture posture, FigureState moving)
         {
             var motion = moving switch
             {
@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         /// <summary>What the upper body plays: the fire clip of the posture while firing, else what the legs play.</summary>
-        public VATClipRange Upper(Posture posture, FigureState moving, bool firing) =>
+        public ClipRange Upper(Posture posture, FigureState moving, bool firing) =>
             firing ? Fire[(int)posture] : Lower(posture, moving);
 
         /// <summary>Seconds a figure of <paramref name="posture"/> keeps firing after a shot: its fire clip's length.</summary>
@@ -62,13 +62,13 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         /// <summary>The whole-body clip for what a member does where it stands.</summary>
-        public VATClipRange Action(MemberAction action) => Actions[(int)action];
+        public ClipRange Action(MemberAction action) => Actions[(int)action];
 
         /// <summary>
         /// The fall of a member of <paramref name="posture"/> dropped by <paramref name="cause"/>; for a blast, by its
         /// world <paramref name="direction"/> to a figure at <paramref name="figureToWorld"/>.
         /// </summary>
-        public VATClipRange Fall(Posture posture, DeathCause cause, float3 direction, in float4x4 figureToWorld)
+        public ClipRange Fall(Posture posture, DeathCause cause, float3 direction, in float4x4 figureToWorld)
         {
             var kind = 0;
             if (cause == DeathCause.Blast)

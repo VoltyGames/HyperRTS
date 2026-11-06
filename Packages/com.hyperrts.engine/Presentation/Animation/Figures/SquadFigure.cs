@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -52,7 +52,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         public bool Shot;
 
         /// <summary>The clip the legs play now, and when it started on the clock, which the upper body follows when it plays the same.</summary>
-        public VATClipRange Lower;
+        public ClipRange Lower;
 
         public float LowerStart;
 
@@ -66,7 +66,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         public float StateSince;
 
         /// <summary>The clip the upper body plays now.</summary>
-        public VATClipRange Upper;
+        public ClipRange Upper;
 
         /// <summary>Clock time a dying figure hides at.</summary>
         public float HideAt;
@@ -84,10 +84,9 @@ namespace HyperRTS.Presentation.Animation.Figures
         public quaternion Facing;
 
         public float3 LastPosition;
-        public byte LastShots;
-        public float LastShotTime;
+        public ChangeTimer Shots;
 
-        /// <summary>False until the first update records position and shots, so a spawn neither runs nor fires.</summary>
+        /// <summary>False until the first update records the position, so a spawn does not run.</summary>
         public bool Primed;
 
         public readonly bool HasOtherModel => Other.Model.Figure != Entity.Null;
@@ -124,7 +123,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             Firing != firing || Posture != posture || Digging != digging;
 
         /// <summary>Times its own speed that <paramref name="clip"/> plays so its feet keep to the ground at the figure's speed.</summary>
-        public readonly float RateFor(in VATClipRange clip)
+        public readonly float RateFor(in ClipRange clip)
         {
             if (clip.GroundSpeed <= 0f)
             {
@@ -181,21 +180,13 @@ namespace HyperRTS.Presentation.Animation.Figures
             {
                 Primed = true;
                 LastPosition = position;
-                LastShots = shots;
-                LastShotTime = now - fireHold;
             }
 
             var measured = deltaTime > 0f ? math.distance(position.xz, LastPosition.xz) / deltaTime : 0f;
             Speed = math.lerp(Speed, measured, 1f - math.exp(-deltaTime / SquadFigures.SpeedTime));
-            Shot = shots != LastShots;
-            if (Shot)
-            {
-                LastShotTime = now;
-            }
-
+            Shot = Shots.Update(shots, deltaTime);
             LastPosition = position;
-            LastShots = shots;
-            firing = now - LastShotTime < fireHold;
+            firing = Shots.Within(fireHold);
             return squad.Moving(Speed, State, now - StateSince);
         }
 
@@ -222,7 +213,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         /// <summary>When <paramref name="clip"/> started for this figure if it began at <paramref name="now"/>, played at <paramref name="rate"/>.</summary>
-        public readonly float StartTime(in VATClipRange clip, float now, float rate)
+        public readonly float StartTime(in ClipRange clip, float now, float rate)
         {
             var length = clip.FrameCount / (clip.Fps * rate);
             return clip.Loop ? now - Phase * length : now;

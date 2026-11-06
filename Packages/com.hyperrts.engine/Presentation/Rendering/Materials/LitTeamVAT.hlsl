@@ -32,7 +32,7 @@ float3 VATFrameAt(float4 clip, float time)
 
 TEXTURE2D(_VATPositions);
 TEXTURE2D(_VATRotations);
-float _VATTime;
+float _ClipTime;
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/Materials/LitTeamBones.hlsl"
 
@@ -45,7 +45,7 @@ float3 VATRotate(float4 q, float3 v)
 // Moves a rigid piece's vertex from where row 0 rests it to where the clip's frame has it; normals only turn.
 void ApplyRigidVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
 {
-    float3 frame = VATFrameAt(_VATClip, _VATTime);
+    float3 frame = VATFrameAt(_VATClip, _ClipTime);
     uint column = floor(vatIndex.x * _VATPositions_TexelSize.z);
     float3 rest = LOAD_TEXTURE2D_LOD(_VATPositions, uint2(column, 0), 0).xyz;
     float3 position = lerp(LOAD_TEXTURE2D_LOD(_VATPositions, uint2(column, frame.x), 0).xyz,

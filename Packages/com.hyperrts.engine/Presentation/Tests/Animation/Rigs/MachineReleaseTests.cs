@@ -1,6 +1,5 @@
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Core;
@@ -11,10 +10,10 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Tests.Animation.Rigs
 {
     /// <summary>
-    /// Production doors open per released unit, hold, close, roll up by scale, skip releases from before first sight,
-    /// and stay open through an aircraft's drop run.
+    /// Door machines open per released unit, hold, close, roll up by scale, skip releases from before first sight, and
+    /// stay open through an aircraft's drop run.
     /// </summary>
-    public class ProductionDoorTests
+    public class MachineReleaseTests
     {
         private const float Step = 0.1f;
         private static readonly float3 Rest = new(0f, 1f, 0f);
@@ -27,9 +26,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         [SetUp]
         public void SetUp()
         {
-            _world = new World("Production Door Tests");
+            _world = new World("Machine Release Tests");
             _em = _world.EntityManager;
-            _system = _world.CreateSystem<ProductionDoorSystem>();
+            _system = _world.CreateSystem<MachineSystem>();
         }
 
         [TearDown]
@@ -39,15 +38,13 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         public void Release_OpensWithEasing_HoldsThenCloses()
         {
             var building = Building(0);
-            var door = Door(building);
+            var door = Door(building, MachineRun.Releasing, MachineMotion.Extend);
             Run(1f);
             Assert.AreEqual(Rest, Position(door), "shut before any release");
 
             Release(building);
             Run(0.5f);
-            var halfway = Position(door).y;
-            Assert.Greater(halfway, Rest.y);
-            Assert.Less(halfway, Rest.y + Lift.y);
+            Assert.That(Position(door).y, Is.GreaterThan(Rest.y).And.LessThan(Rest.y + Lift.y));
 
             Run(1f);
             Assert.AreEqual(Rest.y + Lift.y, Position(door).y, 1e-4f, "open");
@@ -63,7 +60,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         public void ReleaseWhileClosing_ReopensFromWhereItStands()
         {
             var building = Building(0);
-            var door = Door(building);
+            var door = Door(building, MachineRun.Releasing, MachineMotion.Extend);
             Run(Step);
             Release(building);
             Run(4.5f);
@@ -78,8 +75,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         [Test]
         public void BuildingFirstSeenMidMatch_DoesNotReplayOldReleases()
         {
-            var building = Building(7);
-            var door = Door(building);
+            var door = Door(Building(7), MachineRun.Releasing, MachineMotion.Extend);
 
             Run(1f);
 
@@ -90,20 +86,18 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         public void RollUpDoor_ScalesItsHeightTowardThePivot_AndBack()
         {
             var building = Building(0);
-            var door = Door(building);
             var rest = new float3(2f, 3f, 1f);
-            var roll = _em.GetComponentData<ProductionDoor>(door);
-            roll.OpenOffset = float3.zero;
-            roll.OpenScale = new float3(1f, 0.05f, 1f);
-            roll.RestScale = rest;
-            _em.SetComponentData(door, roll);
+            var door = Door(building, MachineRun.Releasing, MachineMotion.Stretch);
+            var part = _em.GetComponentData<MachinePart>(door);
+            part.OpenScale = new float3(1f, 0.05f, 1f);
+            part.RestScale = rest;
+            _em.SetComponentData(door, part);
             _em.AddComponentData(door, new PostTransformMatrix { Value = float4x4.Scale(rest) });
             Run(Step);
 
             Release(building);
             Run(0.5f);
-            Assert.Less(Height(door), rest.y);
-            Assert.Greater(Height(door), rest.y * 0.05f, "eases rather than snapping");
+            Assert.That(Height(door), Is.LessThan(rest.y).And.GreaterThan(rest.y * 0.05f), "eases rather than snapping");
 
             Run(1f);
             Assert.AreEqual(rest.y * 0.05f, Height(door), 1e-4f, "rolled up");
@@ -119,7 +113,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         {
             var aircraft = _em.CreateEntity();
             _em.AddComponentData(aircraft, new DropRun());
-            var door = Door(aircraft);
+            var door = Door(aircraft, MachineRun.Dropping, MachineMotion.Extend);
             Run(1f);
             Assert.AreEqual(Rest, Position(door), "shut before the run");
 
@@ -127,13 +121,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             Run(0.5f);
             Assert.Greater(Position(door).y, Rest.y, "eases open");
             Run(6f);
-            Assert.AreEqual(Rest.y + Lift.y, Position(door).y, 1e-4f, "stays open past the hold while the run lasts");
+            Assert.AreEqual(Rest.y + Lift.y, Position(door).y, 1e-4f, "stays open while the run lasts");
 
             _em.SetComponentData(aircraft, new DropRun());
             Run(2f);
-            Assert.AreEqual(Rest.y + Lift.y, Position(door).y, 1e-4f, "holds after the run");
-            Run(2f);
-            Assert.AreEqual(Rest.y, Position(door).y, 1e-4f, "closed again");
+            Assert.AreEqual(Rest.y, Position(door).y, 1e-4f, "closed after the run");
         }
 
         private float Height(Entity door) => _em.GetComponentData<PostTransformMatrix>(door).Value.c1.y;
@@ -152,22 +144,24 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             return building;
         }
 
-        private Entity Door(Entity building)
+        // A door is its own machine: one second to move, and three more open after the release.
+        private Entity Door(Entity building, MachineRun run, MachineMotion motion)
         {
             var door = _em.CreateEntity();
             _em.AddComponentData(door, LocalTransform.FromPosition(Rest));
-            _em.AddComponentData(door, new ProductionDoor
+            _em.AddComponentData(door, new Parent { Value = building });
+            _em.AddComponentData(door, new MachineClock { Run = run, Owner = building, RampSeconds = 1f, KeepRunningSeconds = 4f });
+            _em.AddComponentData(door, new MachinePart
             {
-                Root = building,
-                OpenOffset = Lift,
-                OpenRotation = quaternion.identity,
-                OpenScale = new float3(1f),
+                Machine = door,
+                Motion = motion,
+                Axis = math.up(),
+                Amplitude = Lift.y,
+                To = 1f,
+                Rest = quaternion.identity,
                 RestPosition = Rest,
-                RestRotation = quaternion.identity,
                 RestScale = new float3(1f),
-                MoveSeconds = 1f,
-                HoldSeconds = 3f,
-                Elapsed = float.MaxValue,
+                OpenScale = new float3(1f),
             });
             return door;
         }

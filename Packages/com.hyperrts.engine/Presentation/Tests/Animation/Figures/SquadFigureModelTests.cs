@@ -31,7 +31,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Update();
             Assert.IsFalse(Drawn(1));
             Assert.IsTrue(DrawnModel(upgraded));
-            Assert.IsTrue(_em.GetComponentData<LowerClip>(upgraded).Clip.Plays(Range(1000, true)), "it plays its own table");
+            Assert.IsTrue(Plays(_em.GetComponentData<LowerClip>(upgraded).Clip, Range(1000, true)), "it plays its own table");
 
             Member(1, weapon: 0);
             Update();

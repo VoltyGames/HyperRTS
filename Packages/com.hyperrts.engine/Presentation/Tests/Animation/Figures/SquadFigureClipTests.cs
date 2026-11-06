@@ -29,32 +29,32 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(1).CountShot();
             Update();
 
-            Assert.IsTrue(Upper(1).Plays(Range(30, false)));
-            Assert.IsTrue(Upper(0).Plays(Range(0, true)));
+            Assert.IsTrue(Plays(Upper(1), Range(30, false)));
+            Assert.IsTrue(Plays(Upper(0), Range(0, true)));
         }
 
         [Test]
         public void Clip_FollowsSpeedThenFiresOnAShot()
         {
             Update();
-            Assert.IsTrue(Lower(0).Plays(Range(0, true)));
+            Assert.IsTrue(Plays(Lower(0), Range(0, true)));
 
             MoveFor(1f, 0.5f);
-            Assert.IsTrue(Lower(0).Plays(Range(10, true)));
+            Assert.IsTrue(Plays(Lower(0), Range(10, true)));
 
             MoveFor(5f, 0.5f);
-            Assert.IsTrue(Lower(0).Plays(Range(20, true)));
+            Assert.IsTrue(Plays(Lower(0), Range(20, true)));
 
             MoveFor(0f, 2f);
-            Assert.IsTrue(Lower(0).Plays(Range(0, true)));
+            Assert.IsTrue(Plays(Lower(0), Range(0, true)));
 
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Update();
-            Assert.IsTrue(Lower(0).Plays(Range(0, true)), "the legs keep idling");
-            Assert.IsTrue(Upper(0).Plays(Range(30, false)));
+            Assert.IsTrue(Plays(Lower(0), Range(0, true)), "the legs keep idling");
+            Assert.IsTrue(Plays(Upper(0), Range(30, false)));
 
             Advance(FireLength);
-            Assert.IsTrue(Upper(0).Plays(Range(0, true)));
+            Assert.IsTrue(Plays(Upper(0), Range(0, true)));
         }
 
         [Test]
@@ -65,12 +65,12 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Move(1f);
 
-            Assert.IsTrue(Lower(0).Plays(Range(10, true)));
-            Assert.IsTrue(Upper(0).Plays(Range(30, false)));
+            Assert.IsTrue(Plays(Lower(0), Range(10, true)));
+            Assert.IsTrue(Plays(Upper(0), Range(30, false)));
 
             MoveFor(1f, FireLength + 0.1f);
 
-            Assert.IsTrue(Upper(0).Plays(Range(10, true)));
+            Assert.IsTrue(Plays(Upper(0), Range(10, true)));
             Assert.AreEqual(Lower(0).Value.w, Upper(0).Value.w, "the arms rejoin the stride in step");
         }
 
@@ -81,14 +81,14 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Member(1, posture: Posture.Prone);
             Update();
 
-            Assert.IsTrue(Lower(0).Plays(Range(100, true)));
-            Assert.IsTrue(Lower(1).Plays(Range(130, true)));
+            Assert.IsTrue(Plays(Lower(0), Range(100, true)));
+            Assert.IsTrue(Plays(Lower(1), Range(130, true)));
 
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Update();
 
-            Assert.IsTrue(Upper(0).Plays(Range(120, false)));
-            Assert.IsTrue(Lower(0).Plays(Range(100, true)));
+            Assert.IsTrue(Plays(Upper(0), Range(120, false)));
+            Assert.IsTrue(Plays(Lower(0), Range(100, true)));
         }
 
         [Test]
@@ -100,7 +100,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var first = Upper(0).Value.w;
 
             Advance(FireLength / 2f);
-            Assert.IsTrue(Upper(0).Plays(Range(30, false)), "still firing before the clip ends");
+            Assert.IsTrue(Plays(Upper(0), Range(30, false)), "still firing before the clip ends");
             Assert.AreEqual(first, Upper(0).Value.w, "a clip that is not shot again plays on");
 
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
@@ -108,7 +108,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Assert.Greater(Upper(0).Value.w, first, "another shot restarts the clip");
 
             Advance(FireLength);
-            Assert.IsTrue(Upper(0).Plays(Range(0, true)));
+            Assert.IsTrue(Plays(Upper(0), Range(0, true)));
         }
 
         [Test]
@@ -118,11 +118,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Update();
             MoveFor(5f, 0.5f);
 
-            Assert.IsTrue(Lower(0).Plays(Range(140, true)), "running prone crawls");
+            Assert.IsTrue(Plays(Lower(0), Range(140, true)), "running prone crawls");
 
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Move(5f);
-            Assert.IsTrue(Upper(0).Plays(Range(150, false)));
+            Assert.IsTrue(Plays(Upper(0), Range(150, false)));
         }
 
         [Test]
@@ -151,12 +151,12 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.GetBuffer<SquadFigure>(_squad).ElementAt(1).Clips = Clips(100);
 
             Update();
-            Assert.IsTrue(Lower(0).Plays(Range(0, true)));
-            Assert.IsTrue(Lower(1).Plays(Range(100, true)));
+            Assert.IsTrue(Plays(Lower(0), Range(0, true)));
+            Assert.IsTrue(Plays(Lower(1), Range(100, true)));
 
             MoveFor(5f, 0.5f);
-            Assert.IsTrue(Lower(0).Plays(Range(20, true)));
-            Assert.IsTrue(Lower(1).Plays(Range(120, true)));
+            Assert.IsTrue(Plays(Lower(0), Range(20, true)));
+            Assert.IsTrue(Plays(Lower(1), Range(120, true)));
         }
     }
 }

@@ -62,7 +62,7 @@ income, refills and casualty income scale with the player's `Income` stat.
   `landingPoint`, or the building's origin without one, it spawns the `crate` there: a ghost prefab of the cargo under
   parachutes, which sinks at `fallSpeed` and pays the owner `amount` of `type`, scaled by `Income`, when it lands.
 - From `DropRun.LeadSeconds` (3 s) of flight before the release until as long after, the aircraft's replicated
-  `DropRun.Active` is set, so every client opens its [doors](support.md#animation) for the run.
+  `DropRun.Active` is set, so every client opens its [doors](client.md#machines) for the run.
 
 Defaults for the balance pass: a truck carries 100 a trip, about 240 a minute on a worked field. The design asks
 40 to 60% of that, so a receiver pays 180 every 90 s (120 a minute), with a 30 m cruise and a 6 m/s fall.
@@ -174,7 +174,7 @@ share `ProducibleAuthoring`: build time and population.
 - Every queued prefab needs `Producible` and every player `Population`.
 - When an entity changes owner, its queue is refunded to the old owner.
 - `Producer.Released` counts the units a producer has released and replicates to every client, which opens its
-  [production doors](support.md#animation).
+  [production doors](client.md#machines).
 
 ## Capture
 

@@ -1,6 +1,6 @@
 # Support modules
 
-[Modules](../modules.md) ▸ AI, Cues, Replays, Animation, Strategic assets
+[Modules](../modules.md) ▸ AI, Cues, Replays, Strategic assets
 
 ## AI
 
@@ -123,38 +123,6 @@ Replays record what happened, not the commands, because the simulation is not de
 - `ReplayRecorder` samples every game entity at 10 Hz, plus every cue except owner-only ones.
 - `ReplaySerializer` saves and loads the file. Other format versions are rejected.
 - `ReplayViewer` plays a replay in a local world with the fog revealed. It can seek.
-
-## Animation
-
-Animates machines such as pumpjacks, wind turbines, radar antennas and cranes. Put `MachineAuthoring` on the root and
-`MachinePartAuthoring` on each moving child. A part can `Spin`, `Swing` in step with the spin, `Slide` to and fro
-along its axis (a crane on its rail, amplitude in metres), act as a `Link` rod between two transforms, or turn
-`Downwind` about its axis so its forward, plus `offset` degrees, follows the scene's `Wind` (a windsock). `Raise`
-turns a part about its axis and `Extend` moves it along its axis by `amplitude` degrees or metres as the machine
-speeds up, eased in and out: a launcher raising to its rest elevation, an outrigger jack lowering. Each moves over its
-own span of the speed, `from` to `to`, so a launcher's jacks can finish lowering before its box starts to raise, and
-packing up runs the stages in reverse. `Point` turns a part about its axis so its `aim` transform keeps the bearing it
-had at rest, which makes a hydraulic ram and its rod track each other as the box they hold rises. `MachinePartRule`
-flags a span that ends before it starts and a `Point` part with no aim. A part a machine moves is left out of the
-Motion Rig's fill, and a weapon with no barrel slot fires from the `Barrel` or `Launcher` its machine raises.
-
-A machine's `runs` says when its clock turns: `Always`, `Powered` while its building is complete and not `Offline` (a
-radar stops on low power), `Producing` while its building's queue has work that isn't halted (a crane runs only during
-production), or `Firing` for a second after any of its building's weapons or interceptor fired (a gatling's barrels),
-read from the replicated `WeaponPose` shot counts. The clock eases to a stop and back over `rampSeconds` rather than
-snapping. `Deployed` skips the ramp and takes its speed from the replicated `Deployable.Progress` of the unit or
-building above it, so `Raise` and `Extend` parts unfold over the deploy time and fold over the pack-up time. A machine first seen mid-match starts at the speed it should have.
-
-`ProductionDoorAuthoring` on a child of a producer opens that door for each unit the producer releases: it moves by
-`openOffset`, turns `openAngle` about `openAxis` and scales by `openScale`, eased over `moveSeconds`, holds for
-`holdSeconds`, then closes. A roll-up curtain pivoted at the top of its opening sets `openScale` to (1, 0.05, 1) and
-coils up toward the pivot; a scaling door bakes a `PostTransformMatrix`.
-`ProductionDoorSystem` reads `Producer.Released`, a replicated count of released units, so every client sees it,
-enemies included. The owner-only production cue can't drive it. A building first seen mid-match adopts the count
-without opening, and a release while the door closes sends it back up from where it stands.
-Under an aircraft with `FlightAuthoring` instead, such as a cargo ramp or bomb bay, the door stays open while the
-aircraft's replicated `DropRun.Active` is set over an airdrop or strike, then holds and closes. Set `holdSeconds` to
-0 there, since the run already lasts past the drop.
 
 ## Strategic assets
 

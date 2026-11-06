@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Combat.Weapons;

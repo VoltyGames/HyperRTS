@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Rendering.Parts;
@@ -215,12 +215,12 @@ namespace HyperRTS.Presentation.Destruction
             }
 
             var clip = Pick(SystemAPI.GetComponent<SectionClips>(at.Entity), at.Sections[index], look, at.Now);
-            var range = new VATClipRange { StartRow = clip.StartRow, FrameCount = clip.FrameCount, Fps = clip.Fps };
+            var range = new ClipRange { StartRow = clip.StartRow, FrameCount = clip.FrameCount, Fps = clip.Fps };
             var meshes = new NativeList<Entity>(Allocator.Temp);
             _switch.Under(parts, model.Pieces, meshes);
             foreach (var mesh in meshes)
             {
-                EntityManager.SetComponentData(mesh, VATClip.Started(range, at.Now));
+                EntityManager.SetComponentData(mesh, PlayingClip.Started(range, at.Now));
             }
 
             look.BreakEnd = at.Now + clip.Seconds;

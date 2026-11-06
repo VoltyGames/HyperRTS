@@ -79,8 +79,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Member(2, offset: new float2(3f, 0f));
             Update();
 
-            Assert.IsTrue(Lower(2).Plays(Range(20, true)));
-            Assert.IsTrue(Lower(1).Plays(Range(0, true)));
+            Assert.IsTrue(Plays(Lower(2), Range(20, true)));
+            Assert.IsTrue(Plays(Lower(1), Range(0, true)));
         }
 
         [Test]

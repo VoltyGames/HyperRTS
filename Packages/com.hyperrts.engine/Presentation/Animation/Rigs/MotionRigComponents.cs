@@ -175,8 +175,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>Recoil distance still pushed back, rotor speed from 0 to 1, or a steering wheel's angle.</summary>
         public float Amount;
 
-        public byte LastShots;
-        public bool Seen;
+        public ChangeTimer Shots;
 
         public readonly quaternion Rotation => Kind == MotionPartKind.SteeringWheel
             ? math.mul(RestRotation, math.mul(quaternion.AxisAngle(SteerAxis, Amount), quaternion.AxisAngle(Axis, Angle)))
@@ -192,10 +191,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>Kicks back the full distance when the shot count changes, then eases back over <see cref="Time"/>. True on a shot.</summary>
         public bool Recoil(byte shots, float deltaTime)
         {
-            var fired = Seen && shots != LastShots;
+            var fired = Shots.Update(shots, deltaTime);
             Amount = fired ? Size : math.max(0f, Amount - Size * deltaTime / Time);
-            LastShots = shots;
-            Seen = true;
             return fired;
         }
 

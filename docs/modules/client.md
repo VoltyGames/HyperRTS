@@ -259,31 +259,62 @@ reach a build):
   the bake.
 
 The material turns on `_BONES` and points `_BoneTex` at the texture. Per instance (Entities Graphics properties),
-`LowerClip` and `UpperClip` hold a `VATClip` packed as x start row, y frames, z signed fps (negative plays once) and w
-start time, and `LowerFade` and `UpperFade` a `VATFade`: the frozen frame pair, its blend and the switch time. A vertex
-takes up to four bones, each reading the clip of its half (the sign of its weight), blended between frames and, for
+`LowerClip` and `UpperClip` hold a `PlayingClip` packed as x start row, y rows, z signed fps (negative plays once) and w
+start time, and `LowerFade` and `UpperFade` a `ClipFade`: the frozen row pair, its blend and the switch time. A vertex
+takes up to four bones, each reading the clip of its half (the sign of its weight), blended between rows and, for
 `_BoneFadeTime` (0.2 s) after a switch, from the frozen pose. That is 6 texel fetches a bone, 24 at most a vertex, plus 24
 more during a fade. `BoneAnimatedAuthoring` on a renderer bakes the start clip into all four and widens the render
-bounds to every frame (`VATBoundsBakingSystem`); `BoneSubmeshBakingSystem` gives a multi-material renderer's extra
+bounds to every row (`ClipBoundsBakingSystem`); `ClipSubmeshBakingSystem` gives a multi-material renderer's extra
 entities the same. A figure's body (at three levels of detail in a LODGroup) and weapon are separate renderers that
 game code writes the same clips to.
 
-Game code plays clips with `VATClip.Switch` on `LowerClip.Clip` and the matching fade, using `SystemAPI.Time.ElapsedTime`
-as the time. `VATClockSystem` feeds the same clock to the shader as `_VATTime`, so pausing and replay speed apply.
+Game code plays clips with `PlayingClip.Switch` on `LowerClip.Clip` and the matching fade, using `SystemAPI.Time.ElapsedTime`
+as the time. `ClipClockSystem` feeds the same clock to the shader as `_ClipTime`, so pausing and replay speed apply.
 
 ### Rigid vertex animation
 
 `_VAT_RIGID` moves whole pieces instead of vertices (a sectioned building's walls and roofs breaking). The bake info
-(`VAT/<Model>.vat.json`, written by the structure tool) names a `positions` and a `rotations` texture with `"layout":
-"rigid"`: a column per piece (the `width`), one row per frame and row 0 the frame every piece rests in. A mesh vertex
+(`VAT/<Model>.vat.json`, written by the structure tool) names a `positions` and a `rotations` texture: a column per piece (the `width`), one row per frame and row 0 the frame every piece rests in. A mesh vertex
 holds its piece's column in UV1's u. The material has the two textures in its `_VATPositions` and `_VATRotations` slots:
 the vertex moves to the piece's position for the frame, turned by its rotation quaternion about where the rest row has
 it, and normals only turn. The bake info lists `clips` (`name`, `startRow`, `frameCount`, `fps`, `loop`) and
 `boundsMin` and `boundsMax` over every frame; a `VATClipTable` imports it through **Import Bake Info**, and
-`VATAnimatedAuthoring` beside the renderer bakes its start clip into `VATClip` and the bounds. A model with
+`VATAnimatedAuthoring` beside the renderer bakes its start clip into `PlayingClip` and the bounds. A model with
 `VAT/<Model>.vat.json` beside it imports uncompressed, without generated lightmap UVs and with UV1 as 32-bit floats;
 the textures import exact (linear, point filtered, clamped, no mipmaps or compression). There is no fade between clips.
-`VATSubmeshBakingSystem` gives a multi-material renderer's extra entities the clip.
+`ClipSubmeshBakingSystem` gives a multi-material renderer's extra entities the clip.
+
+### Machines
+
+Animates machines such as pumpjacks, wind turbines, radar antennas and cranes. Put `MachineAuthoring` on the root and
+`MachinePartAuthoring` on each moving child; a part with no machine above it fails the bake. A part can `Spin`, `Swing` in step with the spin, `Slide` to and fro
+along its axis (a crane on its rail, amplitude in metres), act as a `Link` rod between two transforms, or turn
+`Downwind` about its axis so its forward, plus `offset` degrees, follows the scene's `Wind` (a windsock). `Raise`
+turns a part about its axis, `Extend` moves it along its axis by `amplitude` degrees or metres and `Stretch` scales it
+to `openScale` about its own pivot as the machine speeds up, eased in and out: a launcher raising to its rest elevation, an outrigger jack lowering. Each moves over its
+own span of the speed, `from` to `to`, so a launcher's jacks can finish lowering before its box starts to raise, and
+packing up runs the stages in reverse. `Point` turns a part about its axis so its `aim` transform keeps the bearing it
+had at rest, which makes a hydraulic ram and its rod track each other as the box they hold rises. `MachinePartRule`
+flags a span that ends before it starts and a `Point` part with no aim, and `MachineRule` a ramp of 0 seconds. A part a machine moves is left out of the
+Motion Rig's fill, and a weapon with no barrel slot fires from the `Barrel` or `Launcher` its machine raises.
+
+A machine's `runs` says when its clock turns: `Always`, `Powered` while its building is complete and not `Offline` (a
+radar stops on low power), `Producing` while its building's queue has work that isn't halted (a crane runs only during
+production), or `Firing` for `keepRunningSeconds` after any of its building's weapons or interceptor fired (a gatling's
+barrels), read from the replicated `WeaponPose` shot counts. The clock eases to a stop and back over `rampSeconds` rather
+than snapping. `Deployed` skips the ramp and takes its speed from the replicated `Deployable.Progress` of the unit or
+building above it, so `Raise` and `Extend` parts unfold over the deploy time and fold over the pack-up time. A machine
+first seen mid-match starts at the speed it should have.
+
+A door is a machine on its own: `Releasing` runs for `keepRunningSeconds` after the replicated `Producer.Released`
+count of the producer above it rises, so every client sees it, enemies included (the owner-only production cue can't
+drive it). Set `rampSeconds` to the time to open and `keepRunningSeconds` to that plus the time it stays open. The
+part is `Raise` for a hinged door, `Extend` for one that slides and `Stretch` for a roll-up curtain pivoted at the top
+of its opening, whose `openScale` of (1, 0.05, 1) coils it up toward the pivot; a `Stretch` part bakes a
+`PostTransformMatrix`. A producer first seen mid-match adopts the count without opening, and a release while the door
+closes sends it back up from where it stands. Under an aircraft with `FlightAuthoring`, a cargo ramp or bomb bay runs
+`Dropping`, open while the replicated `DropRun.Active` is set over an airdrop or strike. A `Releasing` machine with no
+`ProducerAuthoring` above it, or a `Dropping` one with no `FlightAuthoring`, fails the bake.
 
 ### Build reveal
 

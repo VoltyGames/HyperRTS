@@ -1,6 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Presentation.Animation.Bones;
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Infantry;
@@ -168,7 +168,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 return standing && !firing && member.Action == MemberAction.Dig;
             }
 
-            private VATClipRange DieClip(in SquadFigure figure, in SquadMember member)
+            private ClipRange DieClip(in SquadFigure figure, in SquadMember member)
             {
                 var direction = member.BlastDirection;
                 return figure.Clips.Value.Fall(member.Posture, member.Death, new float3(direction.x, 0f, direction.y),

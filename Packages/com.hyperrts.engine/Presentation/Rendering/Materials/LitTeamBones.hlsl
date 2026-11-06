@@ -26,9 +26,9 @@ struct BoneSide
 BoneSide BoneSideAt(float4 clip, float4 fade)
 {
     BoneSide side;
-    side.frame = VATFrameAt(clip, _VATTime);
+    side.frame = VATFrameAt(clip, _ClipTime);
     side.old = fade.xyz;
-    side.shown = saturate((_VATTime - fade.w) / max(_BoneFadeTime, 0.0001));
+    side.shown = saturate((_ClipTime - fade.w) / max(_BoneFadeTime, 0.0001));
     return side;
 }
 

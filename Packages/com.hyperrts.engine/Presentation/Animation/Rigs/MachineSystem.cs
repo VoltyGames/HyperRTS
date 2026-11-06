@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Environment.Weather;
-using HyperRTS.Simulation.Animation;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
@@ -14,8 +14,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
     /// <summary>
     /// Runs machine clocks, easing them to a stop while a machine shouldn't run (neutral, or its building offline or
     /// idle), and poses their parts: spins, swings and slides in step with the spin, links that sit on one point
-    /// aiming at another, parts that turn downwind, parts that raise or extend over their span of the speed, which a
-    /// Deployed machine takes from its unit's deploy progress, and parts that point at another. Links and pointers
+    /// aiming at another, parts that turn downwind, parts that raise, extend or stretch over their span of the speed,
+    /// which a Deployed machine takes from its unit's deploy progress, and parts that point at another. Links and pointers
     /// read last frame's transforms.
     /// </summary>
     [BurstCompile]
@@ -38,12 +38,18 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
+                Producers = SystemAPI.GetComponentLookup<Producer>(true),
+                DropRuns = SystemAPI.GetComponentLookup<DropRun>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new PartJob
             {
                 Clocks = SystemAPI.GetComponentLookup<MachineClock>(true),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
                 Downwind = wind.Downwind,
+            }.ScheduleParallel(state.Dependency);
+            state.Dependency = new StretchJob
+            {
+                Clocks = SystemAPI.GetComponentLookup<MachineClock>(true),
             }.ScheduleParallel(state.Dependency);
         }
 
@@ -56,6 +62,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
             [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
+            [ReadOnly] public ComponentLookup<Producer> Producers;
+            [ReadOnly] public ComponentLookup<DropRun> DropRuns;
 
             private void Execute(Entity entity, ref MachineClock clock)
             {
@@ -80,14 +88,18 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     case MachineRun.Producing:
                         return !offline.HasReasonOtherThan(OfflineReason.Unpowered) && Queues.TryGetBuffer(building, out var queue) && !queue.IsEmpty;
                     case MachineRun.Firing:
-                        return clock.Fired(Shots(building), DeltaTime);
+                        return clock.ChangedRecently(Shots(building), DeltaTime);
+                    case MachineRun.Releasing:
+                        return Producers.TryGetComponent(building, out var producer) && clock.ChangedRecently(producer.Released, DeltaTime);
+                    case MachineRun.Dropping:
+                        return DropRuns.TryGetComponent(building, out var drop) && drop.Active;
                     default:
                         return true;
                 }
             }
 
             // Any weapon or interceptor shot changes the sum, which wraps like each count.
-            private byte Shots(Entity building)
+            private uint Shots(Entity building)
             {
                 byte shots = 0;
                 if (Poses.TryGetBuffer(building, out var poses))
@@ -147,8 +159,10 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     case MachineMotion.Point:
                         Point(ref transform, part, parent.Value);
                         break;
-                    default:
+                    case MachineMotion.Link:
                         Link(ref transform, part, parent.Value);
+                        break;
+                    case MachineMotion.Stretch:
                         break;
                 }
             }
@@ -175,6 +189,21 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 var direction = math.normalizesafe(math.transform(toLocal, aim.Position) - start, math.up());
                 transform.Position = start;
                 transform.Rotation = Rotations.FromTo(math.up(), direction);
+            }
+        }
+
+        /// <summary>Only stretch parts carry a <see cref="PostTransformMatrix"/>, which the baker adds for them.</summary>
+        [BurstCompile]
+        private partial struct StretchJob : IJobEntity
+        {
+            [ReadOnly] public ComponentLookup<MachineClock> Clocks;
+
+            private void Execute(ref PostTransformMatrix stretch, in MachinePart part)
+            {
+                if (part.Motion == MachineMotion.Stretch && Clocks.TryGetComponent(part.Machine, out var clock))
+                {
+                    stretch.Value = part.Stretched(clock.Ramp);
+                }
             }
         }
     }

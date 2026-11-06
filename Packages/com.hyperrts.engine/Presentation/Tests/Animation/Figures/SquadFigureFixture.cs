@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Animation.Bones;
 using HyperRTS.Presentation.Animation.Figures;
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
@@ -88,11 +88,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
                 _figures[i] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
                 _em.AddComponentData(_figures[i], new Parent { Value = _model });
                 _em.AddComponentData(_figures[i], LocalTransform.Identity);
-                var start = VATClip.Started(Range(0, true), 0f);
+                var start = PlayingClip.Started(Range(0, true), 0f);
                 _em.AddComponentData(_figures[i], new LowerClip { Clip = start });
                 _em.AddComponentData(_figures[i], new UpperClip { Clip = start });
-                _em.AddComponentData(_figures[i], new LowerFade { Fade = VATFade.None });
-                _em.AddComponentData(_figures[i], new UpperFade { Fade = VATFade.None });
+                _em.AddComponentData(_figures[i], new LowerFade { Fade = ClipFade.None });
+                _em.AddComponentData(_figures[i], new UpperFade { Fade = ClipFade.None });
                 _em.AddComponentData(_figures[i], new LocalToWorld { Value = float4x4.identity });
                 figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0) };
             }
@@ -152,7 +152,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var rows = new[] { 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170 };
             for (var i = 0; i < names.Length; i++)
             {
-                table.clips.Add(new VATClipTable.Clip
+                table.clips.Add(new NamedClip
                 {
                     name = names[i], startRow = offset + rows[i], frameCount = 10, fps = 10f, loop = !names[i].Contains("Die"),
                 });
@@ -181,7 +181,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         private static PostureClips Postures(string stand, string crouch, string prone) =>
             new() { stand = stand, crouch = crouch, prone = prone };
 
-        public static VATClipRange Range(int startRow, bool loop) =>
+        public static ClipRange Range(int startRow, bool loop) =>
             new() { StartRow = startRow, FrameCount = 10, Fps = 10f, Loop = loop };
 
         protected void Update()
@@ -266,9 +266,16 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
 
         protected FigureState State(int index) => _em.GetBuffer<SquadFigure>(_squad)[index].State;
 
-        protected VATClip Lower(int index) => _em.GetComponentData<LowerClip>(_figures[index]).Clip;
+        /// <summary>True when <paramref name="clip"/> is the one playing, whenever it started.</summary>
+        protected static bool Plays(in PlayingClip clip, in ClipRange range)
+        {
+            var packed = range.Packed(0f);
+            return clip.Value.x == packed.x && clip.Value.y == packed.y && (clip.Value.z > 0f) == (packed.z > 0f);
+        }
 
-        protected VATClip Upper(int index) => _em.GetComponentData<UpperClip>(_figures[index]).Clip;
+        protected PlayingClip Lower(int index) => _em.GetComponentData<LowerClip>(_figures[index]).Clip;
+
+        protected PlayingClip Upper(int index) => _em.GetComponentData<UpperClip>(_figures[index]).Clip;
 
         // A second figure for the member's upgraded weapon, baked hidden like the squad's others.
         protected Entity AddUpgradedModel(int index)
@@ -309,11 +316,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var part = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
             _em.AddComponentData(part, new Parent { Value = _model });
             _em.AddComponentData(part, LocalTransform.Identity);
-            var start = VATClip.Started(Range(0, true), 0f);
+            var start = PlayingClip.Started(Range(0, true), 0f);
             _em.AddComponentData(part, new LowerClip { Clip = start });
             _em.AddComponentData(part, new UpperClip { Clip = start });
-            _em.AddComponentData(part, new LowerFade { Fade = VATFade.None });
-            _em.AddComponentData(part, new UpperFade { Fade = VATFade.None });
+            _em.AddComponentData(part, new LowerFade { Fade = ClipFade.None });
+            _em.AddComponentData(part, new UpperFade { Fade = ClipFade.None });
             _em.AddComponentData(part, new LocalToWorld { Value = float4x4.identity });
             _em.GetBuffer<FigureRenderer>(_squad).Add(new FigureRenderer { Model = part, Part = part });
             _em.GetBuffer<LinkedEntityGroup>(_squad).Add(part);

@@ -1,13 +1,13 @@
-using HyperRTS.Simulation.Animation;
+using HyperRTS.Presentation.Animation.Rigs;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
-    /// <summary>A Raise or Extend part moves over a span that ends after it starts, and a Point part has an aim.</summary>
+    /// <summary>A Raise, Extend or Stretch part moves over a span that ends after it starts, and a Point part has an aim.</summary>
     public sealed class MachinePartRule : AuthoringRule<MachinePartAuthoring>
     {
         protected override void Check(MachinePartAuthoring part, ValidationIssues issues)
         {
-            var unfolds = part.motion is MachineMotion.Raise or MachineMotion.Extend;
+            var unfolds = part.motion is MachineMotion.Raise or MachineMotion.Extend or MachineMotion.Stretch;
             if (unfolds && part.to <= part.from)
             {
                 issues.Error(part, $"'{part.name}' moves over the span {part.from} to {part.to}; To must be above From.");

@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Animation.Bones;
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Common.Infantry;
 using System;
 using System.Collections.Generic;
@@ -49,7 +49,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             }
         }
 
-        private void FillActions(BoneClipTable table, BlobBuilderArray<VATClipRange> actionClips)
+        private void FillActions(BoneClipTable table, BlobBuilderArray<ClipRange> actionClips)
         {
             foreach (MemberAction action in Enum.GetValues(typeof(MemberAction)))
             {
@@ -68,10 +68,10 @@ namespace HyperRTS.Presentation.Animation.Figures
             }
         }
 
-        private VATClipRange Find(BoneClipTable table, string entry, Posture posture, PostureClips clips) =>
+        private ClipRange Find(BoneClipTable table, string entry, Posture posture, PostureClips clips) =>
             Find(table, $"{entry} {posture}", clips.For(posture));
 
-        private VATClipRange Find(BoneClipTable table, string entry, string clipName)
+        private ClipRange Find(BoneClipTable table, string entry, string clipName)
         {
             if (string.IsNullOrEmpty(clipName))
             {

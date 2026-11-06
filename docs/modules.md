@@ -21,7 +21,7 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 | Tier | Modules |
 | --- | --- |
 | Base | Common, Stats |
-| Foundation | Animation, Navigation, Vision, Selection, Orders, Cues |
+| Foundation | Navigation, Vision, Selection, Orders, Cues |
 | Gameplay | Combat, Destruction, Transport, Air, Movement, Resources, Production, Upgrades, Buildings, Power, Abilities, Auras, Veterancy, Capture, Match, Status, Airdrops |
 | Orchestration | AI, GameEntities, MatchStart, Commands, Replays |
 
@@ -33,6 +33,6 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 | [Movement](modules/movement.md) | Navigation, Movement, Air, Transport |
 | [Combat](modules/combat.md) | Combat, Destruction, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
 | [Economy](modules/economy.md) | Resources, Buildings, Power, Production, Capture, Airdrops |
-| [Support](modules/support.md) | AI, Cues, Replays, Animation, strategic assets (Airdrops) |
+| [Support](modules/support.md) | AI, Cues, Replays, strategic assets (Airdrops) |
 | [Client](modules/client.md) | Interaction, Input, Presentation |
 | [Map tools](modules/map-tools.md) | The map builder, Map Editor and map library |

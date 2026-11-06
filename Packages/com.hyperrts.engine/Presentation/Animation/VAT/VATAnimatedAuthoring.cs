@@ -6,6 +6,8 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+using HyperRTS.Presentation.Animation.Clips;
+
 namespace HyperRTS.Presentation.Animation.VAT
 {
     /// <summary>
@@ -31,10 +33,10 @@ namespace HyperRTS.Presentation.Animation.VAT
         [Tooltip("Clip that plays until game code plays another.")]
         public string startClip;
 
-        public static void AddVAT(EntityWriter writer, in VATClipRange start, AABB bounds)
+        public static void AddVAT(EntityWriter writer, in ClipRange start, AABB bounds)
         {
-            writer.Add(VATClip.Started(start, 0f));
-            writer.Add(new VATBounds { Value = bounds });
+            writer.Add(PlayingClip.Started(start, 0f));
+            writer.Add(new ClipBounds { Value = bounds });
         }
 
         /// <summary>Why this renderer can't play its clips, or null when it can.</summary>

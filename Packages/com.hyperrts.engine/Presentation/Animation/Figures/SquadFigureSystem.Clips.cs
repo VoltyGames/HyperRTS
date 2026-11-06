@@ -1,5 +1,5 @@
 using HyperRTS.Core;
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;
 
@@ -41,7 +41,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 Play(root, figure, lowerChanged ? lower : default, upperChanged ? upper : default, upperStart, upperRate);
             }
 
-            private void Fall(Entity root, ref SquadFigure figure, in VATClipRange clip)
+            private void Fall(Entity root, ref SquadFigure figure, in ClipRange clip)
             {
                 figure.Lower = clip;
                 figure.Upper = clip;
@@ -51,7 +51,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             }
 
             // A range with no frames leaves that half as it is.
-            private void Play(Entity root, in SquadFigure figure, in VATClipRange lower, in VATClipRange upper,
+            private void Play(Entity root, in SquadFigure figure, in ClipRange lower, in ClipRange upper,
                 float upperStart, float upperRate)
             {
                 foreach (var renderer in Renderers[root])

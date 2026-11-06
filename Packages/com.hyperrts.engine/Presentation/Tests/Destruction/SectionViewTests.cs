@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
@@ -95,13 +95,13 @@ namespace HyperRTS.Presentation.Tests.Destruction
             Update(10f);
 
             var piece = models[2];
-            var started = _em.GetComponentData<VATClip>(piece.Pieces).Value;
+            var started = _em.GetComponentData<PlayingClip>(piece.Pieces).Value;
             Assert.AreEqual(new float4(61f, 60f, -30f, 10f), started, "falls apart alone");
             AssertDrawn(piece, intact: false, pieces: true, stub: true, heap: false);
 
             Update(10f + Clips.Collapse.Seconds + 0.1f);
             AssertDrawn(piece, intact: false, pieces: false, stub: true, heap: true);
-            Assert.AreEqual(10f, _em.GetComponentData<VATClip>(piece.Pieces).Value.w, "the clip is not replayed");
+            Assert.AreEqual(10f, _em.GetComponentData<PlayingClip>(piece.Pieces).Value.w, "the clip is not replayed");
             AssertDrawn(models[0], intact: true, pieces: false, stub: false, heap: false);
         }
 
@@ -120,7 +120,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             AssertDrawn(models[0], intact: false, pieces: false, stub: true, heap: true);
             AssertDrawn(models[1], intact: false, pieces: false, stub: true, heap: true);
             AssertDrawn(models[2], intact: true, pieces: false, stub: false, heap: false);
-            Assert.AreEqual(0f, _em.GetComponentData<VATClip>(models[0].Pieces).Value.w);
+            Assert.AreEqual(0f, _em.GetComponentData<PlayingClip>(models[0].Pieces).Value.w);
             Assert.IsTrue(_em.GetComponentData<ShownSections>(house).Seen);
         }
 
@@ -190,7 +190,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             SetBroken(house, 0b0010ul);
             Update(1.5f);
 
-            Assert.AreEqual(startRow, _em.GetComponentData<VATClip>(models[1].Pieces).Value.x);
+            Assert.AreEqual(startRow, _em.GetComponentData<PlayingClip>(models[1].Pieces).Value.x);
         }
 
         private void Update(float time)
@@ -264,7 +264,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         private SectionModel PiecesModel(Entity house, float3 side)
         {
             var pieces = Piece(house);
-            _em.AddComponentData(pieces, new VATClip());
+            _em.AddComponentData(pieces, new PlayingClip());
             return new SectionModel
             {
                 Intact = Piece(house),

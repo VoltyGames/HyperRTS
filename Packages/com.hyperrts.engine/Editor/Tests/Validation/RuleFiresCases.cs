@@ -17,7 +17,6 @@ using HyperRTS.Simulation.Abilities;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
-using HyperRTS.Simulation.Animation;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
@@ -138,6 +137,12 @@ namespace HyperRTS.Editor.Tests.Validation
                 locomotion.pivots = false;
                 locomotion.turnRadius = 9f;
                 return locomotion;
+            });
+            yield return Row<MachineRule>("Ramp Seconds must be above 0", f =>
+            {
+                var machine = f.Add<MachineAuthoring>(new GameObject("Door"));
+                machine.rampSeconds = 0f;
+                return machine;
             });
             yield return Row<MachinePartRule>("To must be above From", f =>
             {

@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Core;
@@ -42,14 +42,14 @@ namespace HyperRTS.Presentation.Animation.Bones
             material.SetTexture(BoneTextureId, bones);
         }
 
-        public static void AddBones(EntityWriter writer, in VATClipRange start, AABB bounds)
+        public static void AddBones(EntityWriter writer, in ClipRange start, AABB bounds)
         {
-            var clip = VATClip.Started(start, 0f);
+            var clip = PlayingClip.Started(start, 0f);
             writer.Add(new LowerClip { Clip = clip });
             writer.Add(new UpperClip { Clip = clip });
-            writer.Add(new LowerFade { Fade = VATFade.None });
-            writer.Add(new UpperFade { Fade = VATFade.None });
-            writer.Add(new VATBounds { Value = bounds });
+            writer.Add(new LowerFade { Fade = ClipFade.None });
+            writer.Add(new UpperFade { Fade = ClipFade.None });
+            writer.Add(new ClipBounds { Value = bounds });
         }
 
         /// <summary>Why this renderer can't play its clips, or null when it can.</summary>

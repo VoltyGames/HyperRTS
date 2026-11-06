@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Animation
+namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>Running time of a machine (pumpjack, turbine) that its <see cref="MachinePart"/>s move by.</summary>
     public struct MachineClock : IComponentData
@@ -25,33 +25,17 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>Set by the first frame, which snaps <see cref="Ramp"/>: no spin-up when first seen.</summary>
         public bool Started;
 
-        /// <summary>Wrapping sum of the building's weapon shot counts when last seen, for <see cref="MachineRun.Firing"/>.</summary>
-        public byte Shots;
+        /// <summary>Watches the count <see cref="MachineRun.Firing"/> and <see cref="MachineRun.Releasing"/> read.</summary>
+        public ChangeTimer Changes;
 
-        /// <summary>Seconds since <see cref="Shots"/> last changed.</summary>
-        public float SinceShot;
+        /// <summary>Seconds a Firing or Releasing machine keeps running after its count last changed.</summary>
+        public float KeepRunningSeconds;
 
-        /// <summary>Seconds a Firing machine keeps running after its building's last shot.</summary>
-        public const float FiringSeconds = 1f;
-
-        /// <summary>Takes the building's shot count this frame and says whether it fired within <see cref="FiringSeconds"/>.</summary>
-        public bool Fired(byte shots, float deltaTime)
+        /// <summary>Takes this frame's <paramref name="count"/> and says whether it changed within <see cref="KeepRunningSeconds"/>.</summary>
+        public bool ChangedRecently(uint count, float deltaTime)
         {
-            if (!Started)
-            {
-                SinceShot = FiringSeconds;
-            }
-            else if (shots != Shots)
-            {
-                SinceShot = 0f;
-            }
-            else
-            {
-                SinceShot += deltaTime;
-            }
-
-            Shots = shots;
-            return SinceShot < FiringSeconds;
+            Changes.Update(count, deltaTime);
+            return Changes.Within(KeepRunningSeconds);
         }
 
         /// <summary>Eases the speed toward running or stopped and moves the clock by it.</summary>
@@ -87,11 +71,17 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>While its building's queue has work it isn't halted on (a crane over the line).</summary>
         Producing = 2,
 
-        /// <summary>While its building fired a weapon or interceptor in the last second (a gatling's barrels).</summary>
+        /// <summary>While its building fired a weapon or interceptor in the keep-running seconds (a gatling's barrels).</summary>
         Firing = 3,
 
         /// <summary>Its speed is its unit's deploy progress, so Raise and Extend parts unfold as it deploys, each over its own span.</summary>
         Deployed = 4,
+
+        /// <summary>For the keep-running seconds after its producer releases a unit (a factory door).</summary>
+        Releasing = 5,
+
+        /// <summary>While its aircraft is on its drop run (a cargo ramp or bomb bay).</summary>
+        Dropping = 6,
     }
 
     /// <summary>A moving piece of a machine, posed every frame from its machine's clock.</summary>
@@ -115,7 +105,7 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>Degrees added to the cycle, to set parts relative to each other.</summary>
         public float Phase;
 
-        /// <summary>Raise and Extend: the span of the machine's speed, 0 to 1, it moves over, so parts unfold in turn.</summary>
+        /// <summary>Raise, Extend and Stretch: the span of the machine's speed, 0 to 1, it moves over, so parts unfold in turn.</summary>
         public float From;
         public float To;
 
@@ -126,9 +116,13 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>Point: where <see cref="Aim"/> sat at rest, in the parent's space.</summary>
         public float3 RestAim;
 
+        /// <summary>Stretch: the own-axis scale at full speed, as a factor of <see cref="RestScale"/>.</summary>
+        public float3 OpenScale;
+
         /// <summary>The baked local pose the motion starts from.</summary>
         public quaternion Rest;
         public float3 RestPosition;
+        public float3 RestScale;
 
         /// <summary>
         /// Downwind: the pose turned about <see cref="Axis"/> so its local forward, plus <see cref="Offset"/> degrees,
@@ -140,8 +134,12 @@ namespace HyperRTS.Simulation.Animation
         /// <summary>Point: the pose turned about <see cref="Axis"/> so <paramref name="aim"/>, in the parent's space, keeps its rest bearing.</summary>
         public readonly quaternion Pointing(float3 aim) => Turned(RestAim - RestPosition, aim - RestPosition, 0f);
 
-        /// <summary>Raise and Extend: how far through its span it is at machine speed <paramref name="ramp"/>, eased in and out.</summary>
+        /// <summary>Raise, Extend and Stretch: how far through its span it is at machine speed <paramref name="ramp"/>, eased in and out.</summary>
         public readonly float Unfolded(float ramp) => math.smoothstep(From, To, ramp);
+
+        /// <summary>Stretch: the non-uniform scale at machine speed <paramref name="ramp"/>, about the part's own pivot.</summary>
+        public readonly float4x4 Stretched(float ramp) =>
+            float4x4.Scale(RestScale * math.lerp(new float3(1f), OpenScale, Unfolded(ramp)));
 
         // Turns the rest pose about the axis by the angle from have to want, both flattened onto the axis' plane.
         private readonly quaternion Turned(float3 have, float3 want, float extra)
@@ -185,5 +183,8 @@ namespace HyperRTS.Simulation.Animation
 
         /// <summary>Turns about its axis to keep aiming at another part's pivot (a hydraulic ram).</summary>
         Point = 7,
+
+        /// <summary>Scales about its own pivot to its open scale as the speed rises (a roll-up door coiling toward its top).</summary>
+        Stretch = 8,
     }
 }

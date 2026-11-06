@@ -220,7 +220,7 @@ orders and halts it, and `Deployable.Progress` rises from 0 to 1 over `deployTim
 it like a building, never chasing or backing off. Until it has deployed, its `needsDeploy` weapons keep their turret
 centred, and an interceptor with `needsDeploy` neither tracks nor engages. `WeaponRule` flags a `needsDeploy` weapon
 on a unit without a Deployable. `State` and `Progress` replicate, and a `Deployed` machine (see
-[animation](support.md#animation)) follows the progress. The skirmish AI deploys a unit holding a target in range and
+[animation](client.md#machines)) follows the progress. The skirmish AI deploys a unit holding a target in range and
 packs up a deployed one with nothing to shoot, so its next wave takes it.
 
 A weapon with a `firingArc` (half angle in degrees, 0 for all round) fires only into that cone. The cone is about

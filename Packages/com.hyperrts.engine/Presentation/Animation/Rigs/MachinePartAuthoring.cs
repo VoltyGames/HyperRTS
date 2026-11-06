@@ -1,9 +1,10 @@
+using System;
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Animation
+namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>A moving child of a Machine: a spinning crank, a rocking beam, a sliding crane, a rod or a ram.</summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Machine Part")]
@@ -12,7 +13,7 @@ namespace HyperRTS.Simulation.Animation
     [DisallowMultipleComponent]
     public class MachinePartAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Spin about the axis, Swing to and fro about it, Slide along it, Link one point to another, turn Downwind about it, Raise about it and Extend along it as the machine speeds up, or Point about it at the aim.")]
+        [Tooltip("Spin about the axis, Swing to and fro about it, Slide along it, Link one point to another, turn Downwind about it, Raise about it, Extend along it and Stretch its scale as the machine speeds up, or Point about it at the aim.")]
         public MachineMotion motion;
 
         [Tooltip("Local axis for Spin, Swing, Downwind, Raise and Point, or the direction for Slide and Extend.")]
@@ -21,7 +22,7 @@ namespace HyperRTS.Simulation.Animation
         [Tooltip("Degrees per second of the machine's cycle; give every part of one machine the same speed.")]
         public float speed = 45f;
 
-        [Tooltip("Swing: largest angle either way of the offset (degrees). Slide: the same in metres. Raise and Extend: degrees or metres at full speed.")]
+        [Tooltip("Swing: largest angle either way of the offset (degrees). Slide: the same in metres. Raise and Extend: degrees or metres at full speed (a door that slides open uses Extend with its travel).")]
         public float amplitude = 15f;
 
         [Tooltip("Swing: the angle it rocks about, in degrees from its modelled pose. Slide: metres along the axis. Downwind: degrees from its forward to the way it points.")]
@@ -36,13 +37,16 @@ namespace HyperRTS.Simulation.Animation
         [Tooltip("Link: the transform this part's up axis points at (an equalizer bearing). Point: the pivot it keeps aiming at.")]
         public Transform aim;
 
-        [Tooltip("Raise and Extend: the machine speed, 0 to 1, at which it starts moving; a deploying unit's jacks go before its launcher.")]
+        [Tooltip("Raise, Extend and Stretch: the machine speed, 0 to 1, at which it starts moving; a deploying unit's jacks go before its launcher.")]
         [Range(0f, 1f)]
         public float from;
 
         [Tooltip("Raise and Extend: the machine speed at which it has finished; keep it above From.")]
         [Range(0f, 1f)]
         public float to = 1f;
+
+        [Tooltip("Stretch: own-axis scale at full speed, as a factor of its modelled scale. A roll-up curtain pivoted at its top opens at (1, 0.05, 1) and coils up toward the pivot.")]
+        public Vector3 openScale = Vector3.one;
 
         public class Baker : Baker<MachinePartAuthoring>
         {
@@ -51,14 +55,18 @@ namespace HyperRTS.Simulation.Animation
                 var machine = GetComponentInParent<MachineAuthoring>();
                 if (machine == null)
                 {
-                    return;
+                    throw new InvalidOperationException($"Machine Part on '{authoring.name}' has no Machine above it.");
                 }
 
                 var link = authoring.motion == MachineMotion.Link;
                 var aims = link || authoring.motion == MachineMotion.Point;
                 var place = GetComponent<Transform>();
                 DependsOn(authoring.aim);
-                var writer = this.Writer();
+                // A non-uniform scale needs a PostTransformMatrix, which LocalTransform alone can't carry.
+                var flags = authoring.motion == MachineMotion.Stretch
+                    ? TransformUsageFlags.Dynamic | TransformUsageFlags.NonUniformScale
+                    : TransformUsageFlags.Dynamic;
+                var writer = this.Writer(flags);
                 writer.Add(new MachinePart
                 {
                     Machine = GetEntity(machine, TransformUsageFlags.Dynamic),
@@ -73,8 +81,10 @@ namespace HyperRTS.Simulation.Animation
                     From = authoring.from,
                     To = authoring.to,
                     RestAim = authoring.aim != null ? place.parent.InverseTransformPoint(authoring.aim.position) : default,
+                    OpenScale = authoring.openScale,
                     Rest = place.localRotation,
                     RestPosition = place.localPosition,
+                    RestScale = place.localScale,
                 });
             }
         }

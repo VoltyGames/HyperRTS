@@ -2,20 +2,20 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;
 
-namespace HyperRTS.Presentation.Animation.VAT
+namespace HyperRTS.Presentation.Animation.Clips
 {
     /// <summary>
-    /// Widens a vertex-animated entity's RenderBounds from the rest pose to every frame, so culling never drops a pose
-    /// that reaches past it. Runs after the mesh renderer baker has written the rest-pose bounds.
+    /// Widens an animated entity's RenderBounds from the rest pose to every row, so culling never drops a pose that
+    /// reaches past it. Runs after the mesh renderer baker has written the rest-pose bounds.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
-    public partial struct VATBoundsBakingSystem : ISystem
+    public partial struct ClipBoundsBakingSystem : ISystem
     {
         private EntityQuery _animated;
 
         public void OnCreate(ref SystemState state)
         {
-            _animated = new EntityQueryBuilder(Allocator.Temp).WithAll<VATBounds>().WithAllRW<RenderBounds>()
+            _animated = new EntityQueryBuilder(Allocator.Temp).WithAll<ClipBounds>().WithAllRW<RenderBounds>()
                 .WithOptions(EntityQueryOptions.IncludePrefab | EntityQueryOptions.IncludeDisabledEntities).Build(ref state);
         }
 
@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Animation.VAT
             using var animated = _animated.ToEntityArray(Allocator.Temp);
             foreach (var entity in animated)
             {
-                em.SetComponentData(entity, new RenderBounds { Value = em.GetComponentData<VATBounds>(entity).Value });
+                em.SetComponentData(entity, new RenderBounds { Value = em.GetComponentData<ClipBounds>(entity).Value });
             }
         }
     }

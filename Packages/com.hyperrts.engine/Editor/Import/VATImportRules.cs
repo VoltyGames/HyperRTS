@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Animation.VAT;
 using System;
 using System.Collections.Generic;

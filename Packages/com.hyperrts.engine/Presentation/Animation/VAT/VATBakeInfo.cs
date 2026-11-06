@@ -1,12 +1,13 @@
 using System;
 using System.IO;
+using HyperRTS.Presentation.Animation.Clips;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Animation.VAT
 {
     /// <summary>
-    /// A VAT bake info file, <c>VAT/&lt;Model&gt;.vat.json</c> beside its model: the textures it names, their layout,
-    /// the clips and the all-frame bounds. Keys it does not list are ignored.
+    /// A VAT bake info file, <c>VAT/&lt;Model&gt;.vat.json</c> beside its model: the textures it names, their width,
+    /// the clips and the all-row bounds. Keys it does not list are ignored.
     /// </summary>
     [Serializable]
     public class VATBakeInfo
@@ -14,15 +15,10 @@ namespace HyperRTS.Presentation.Animation.VAT
         public const string Folder = "VAT";
         public const string Extension = ".vat.json";
 
-        public const string RigidLayout = "rigid";
-
-        [Tooltip("'rigid' for pieces moved by a position and a rotation per frame.")]
-        public string layout;
         public string positions;
         public string rotations;
         public int width;
-        public int rowsPerFrame;
-        public VATClipTable.Clip[] clips;
+        public NamedClip[] clips;
         public float[] boundsMin;
         public float[] boundsMax;
 
@@ -35,30 +31,22 @@ namespace HyperRTS.Presentation.Animation.VAT
         public static VATBakeInfo Parse(string json, string source)
         {
             var bakeInfo = JsonUtility.FromJson<VATBakeInfo>(json);
-            // A rigid bake has one row per frame.
-            if (bakeInfo.IsRigid && bakeInfo.rowsPerFrame == 0)
-            {
-                bakeInfo.rowsPerFrame = 1;
-            }
-
             bakeInfo.Check(source);
             return bakeInfo;
         }
-
-        public bool IsRigid => layout == RigidLayout;
 
         public static Vector3 Corner(float[] values) => new(values[0], values[1], values[2]);
 
         private void Check(string source)
         {
-            if (width < 1 || rowsPerFrame < 1)
+            if (width < 1)
             {
-                throw new InvalidDataException($"VAT bake info '{source}' needs 'width' and 'rowsPerFrame' of at least 1.");
+                throw new InvalidDataException($"VAT bake info '{source}' needs a 'width' of at least 1.");
             }
 
-            if (IsRigid && string.IsNullOrEmpty(rotations))
+            if (string.IsNullOrEmpty(rotations))
             {
-                throw new InvalidDataException($"VAT bake info '{source}' is rigid and needs 'rotations'.");
+                throw new InvalidDataException($"VAT bake info '{source}' needs 'rotations'.");
             }
 
             if (clips == null || clips.Length == 0)
@@ -75,7 +63,7 @@ namespace HyperRTS.Presentation.Animation.VAT
             CheckCorner(boundsMax, "boundsMax", source);
         }
 
-        private static void CheckClip(VATClipTable.Clip clip, string source)
+        private static void CheckClip(NamedClip clip, string source)
         {
             if (string.IsNullOrEmpty(clip.name))
             {
