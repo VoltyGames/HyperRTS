@@ -58,8 +58,11 @@ namespace HyperRTS.Simulation.Tests.Cues
             members[member] = each;
         }
 
-        private void Suppress(Entity squad, float value, bool retreating = false) =>
-            World.Set(squad, new Suppression { Value = value, Retreating = retreating, Quiet = 0f });
+        private void Suppress(Entity squad, float value, bool retreating = false)
+        {
+            World.Set(squad, new Suppression { Value = value, Quiet = 0f });
+            World.SetEnabled<Retreating>(squad, retreating);
+        }
 
         // Holds suppression steady so waiting out the squad interval changes nothing.
         private void Wait(Entity squad, float value, bool retreating = false)

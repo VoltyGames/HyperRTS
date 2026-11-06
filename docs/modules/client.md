@@ -105,9 +105,11 @@ strip along the bottom. Its name is in the tooltip. Caption buttons (stances, un
 One selected squad adds a `SquadView` to the selection panel: a `SquadMemberCard` per soldier (number, health, the
 cover it holds or its posture, greyed when dead), the squad's suppression bar with its level, and while it
 retreats or reinforces, that status with the current soldier's progress. `SquadCommands` adds Retreat and Reinforce
-to the card. A refused one stays, dimmed like a locked build card, and its tooltip names the reason: no retreat
-point, no reinforce point in range, full strength or too poor (the price of one soldier is shown). Clients read
-`Suppression.Retreating` and the `Reinforcing` enable bit and progress, which are replicated.
+to the card. A refused one stays and its tooltip names the reason: no retreat
+point, no reinforce point in range, full strength or too poor (the price of one soldier is shown). The reason is a
+`SquadRefusal` from `SquadOrderRule`, shown by `CommandButton.ShowSquadRefusal` as `hud-command--no-point`,
+`--full-strength` or `--too-poor`. Clients read the `Retreating` and `Reinforcing` enable bits and the reinforcing
+progress, which are replicated.
 A card names the soldier's weapon, a designation baked per figure (`SquadFiguresAuthoring.Figure.weaponName`, held in
 `SquadFigure.Weapon`, never sent) and shown through `HUDText.WeaponName`; a digging member reads "Digging", and a squad
 at work shows "Building" with the site's progress (`SquadWork.Progress`, replicated). Builder options take hotkeys from

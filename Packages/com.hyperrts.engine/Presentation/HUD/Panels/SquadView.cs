@@ -66,7 +66,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             var suppression = entityManager.GetComponentData<Suppression>(entity);
             _suppression.Fraction = suppression.Value;
             ShowLevel(rules.Level(suppression.Value));
-            ShowStatus(entityManager, entity, suppression, rules);
+            ShowStatus(entityManager, entity, rules);
         }
 
         // Each weapon's text is looked up once per baked string, so a frame allocates nothing.
@@ -121,10 +121,9 @@ namespace HyperRTS.Presentation.HUD.Panels
         }
 
         // Retreating hides the bar; reinforcing fills it with the current soldier's time.
-        private void ShowStatus(EntityManager entityManager, Entity entity, in Suppression suppression,
-            in SquadRules rules)
+        private void ShowStatus(EntityManager entityManager, Entity entity, in SquadRules rules)
         {
-            var status = FindStatus(entityManager, entity, suppression);
+            var status = FindStatus(entityManager, entity);
             _status.SetHidden(status == 0);
             _progress.SetHidden(status < 2);
             if (status != _shownStatus)
@@ -145,9 +144,9 @@ namespace HyperRTS.Presentation.HUD.Panels
         }
 
         // An index into StatusKeys: 0 none, 1 retreating, 2 reinforcing, 3 building.
-        private static int FindStatus(EntityManager entityManager, Entity entity, in Suppression suppression)
+        private static int FindStatus(EntityManager entityManager, Entity entity)
         {
-            if (suppression.Retreating)
+            if (entityManager.HasEnabled<Retreating>(entity))
             {
                 return 1;
             }

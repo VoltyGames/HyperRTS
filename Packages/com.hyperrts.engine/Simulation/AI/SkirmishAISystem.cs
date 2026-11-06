@@ -46,10 +46,8 @@ namespace HyperRTS.Simulation.AI
             public AIGroup Casters;
             public AIGroup Owned;
             public AIGroup Squads;
-            public AIGroup RetreatPoints;
-            public NativeArray<RetreatPoint> RetreatData;
-            public AIGroup ReinforcePoints;
-            public NativeArray<ReinforcePoint> ReinforceData;
+            public SquadPoints RetreatPoints;
+            public SquadPoints ReinforcePoints;
             public AIGroup FieldWorks;
             public NativeArray<AIFieldWork> FieldWorkData;
             public NativeArray<EntityInfo> OwnedInfo;
@@ -186,10 +184,8 @@ namespace HyperRTS.Simulation.AI
             Owned = AIGroup.From(_owned),
             OwnedInfo = _owned.ToComponentDataArray<EntityInfo>(Allocator.Temp),
             Squads = AIGroup.From(_squads),
-            RetreatPoints = AIGroup.From(_retreatPoints),
-            RetreatData = _retreatPoints.ToComponentDataArray<RetreatPoint>(Allocator.Temp),
-            ReinforcePoints = AIGroup.From(_reinforcePoints),
-            ReinforceData = _reinforcePoints.ToComponentDataArray<ReinforcePoint>(Allocator.Temp),
+            RetreatPoints = SquadPoints.From<RetreatPoint>(_retreatPoints),
+            ReinforcePoints = SquadPoints.From<ReinforcePoint>(_reinforcePoints),
             FieldWorks = AIGroup.From(_fieldWorks),
             FieldWorkData = _fieldWorks.ToComponentDataArray<AIFieldWork>(Allocator.Temp),
             Producers = _producers.ToEntityArray(Allocator.Temp),

@@ -35,7 +35,7 @@ namespace HyperRTS.Presentation.Overlays.Bars
             }
 
             var suppression = unit.Suppression.Value;
-            return new SquadBarState(suppression.Value, rules.Level(suppression.Value), cover, suppression.Retreating);
+            return new SquadBarState(suppression.Value, rules.Level(suppression.Value), cover, unit.Retreating);
         }
     }
 }

@@ -20,9 +20,6 @@ namespace HyperRTS.Simulation.Common.Infantry
     {
         [GhostField(Quantization = 100)] public float Value;
 
-        /// <summary>Whether the squad is running for a retreat point, sent so the HUD can show it.</summary>
-        [GhostField] public bool Retreating;
-
         /// <summary>Server only: seconds since the last fire landed.</summary>
         [GhostField(SendData = false)] public float Quiet;
 

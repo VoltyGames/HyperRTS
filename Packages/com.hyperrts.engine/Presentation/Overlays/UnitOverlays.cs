@@ -153,6 +153,7 @@ namespace HyperRTS.Presentation.Overlays
             private ComponentTypeHandle<Experience> _experience;
             private BufferTypeHandle<SquadMember> _members;
             private ComponentTypeHandle<Suppression> _suppression;
+            private ComponentTypeHandle<Retreating> _retreating;
 
             public UnitHandles(EntityManager entityManager)
             {
@@ -166,6 +167,7 @@ namespace HyperRTS.Presentation.Overlays
                 _obstacles = Read<NavObstacle>(entityManager);
                 _experience = Read<Experience>(entityManager);
                 _suppression = Read<Suppression>(entityManager);
+                _retreating = Read<Retreating>(entityManager);
                 entityManager.CompleteDependencyBeforeRO<SquadMember>();
                 _members = entityManager.GetBufferTypeHandle<SquadMember>(true);
             }
@@ -182,7 +184,8 @@ namespace HyperRTS.Presentation.Overlays
                 chunk.Has(ref _obstacles) ? chunk.GetNativeArray(ref _obstacles)[index] : null,
                 chunk.Has(ref _experience) ? chunk.GetNativeArray(ref _experience)[index].Rank : 0,
                 chunk.Has(ref _members) ? chunk.GetBufferAccessor(ref _members)[index] : default,
-                chunk.Has(ref _suppression) ? chunk.GetNativeArray(ref _suppression)[index] : null);
+                chunk.Has(ref _suppression) ? chunk.GetNativeArray(ref _suppression)[index] : null,
+                chunk.Has(ref _retreating) && chunk.IsComponentEnabled(ref _retreating, index));
 
             private static ComponentTypeHandle<T> Read<T>(EntityManager entityManager) where T : unmanaged, IComponentData
             {

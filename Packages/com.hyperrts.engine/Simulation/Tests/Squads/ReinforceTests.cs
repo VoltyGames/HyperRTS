@@ -20,6 +20,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         private const int Funds = 500;
 
         private ResourceType _supplies;
+        private Entity _point;
 
         private Entity Squad(int funds, float pointRange = 25f)
         {
@@ -37,8 +38,8 @@ namespace HyperRTS.Simulation.Tests.Squads
                 members[i] = member;
             }
 
-            var point = World.SpawnBuilding(1, new float3(10f, 0f, 0f), new float2(4f, 4f));
-            World.Add(point, new ReinforcePoint { Range = pointRange });
+            _point = World.SpawnBuilding(1, new float3(10f, 0f, 0f), new float2(4f, 4f));
+            World.Add(_point, new ReinforcePoint { Range = pointRange });
             return squad;
         }
 
@@ -110,6 +111,38 @@ namespace HyperRTS.Simulation.Tests.Squads
             Assert.AreEqual(2, Living(squad));
             Assert.AreEqual(0, Spent(), "refunded");
             Assert.IsFalse(World.IsEnabled<Reinforcing>(squad));
+        }
+
+        [TestCase(Funds, true, SquadRefusal.None)]
+        [TestCase(Funds, false, SquadRefusal.NoPoint)]
+        [TestCase(1, true, SquadRefusal.TooPoor)]
+        public void Rule_NamesWhatIsInTheWay(int funds, bool inRange, SquadRefusal expected)
+        {
+            var squad = Squad(funds);
+            var rules = SquadSettings.Standard.Rules;
+            var cost = World.EntityManager.GetBuffer<ResourceCost>(squad);
+            var stock = World.EntityManager.GetBuffer<ResourceStock>(World.Player(1));
+            var members = World.Buffer<SquadMember>(squad);
+
+            Assert.AreEqual(expected, SquadOrderRule.FindReinforceRefusal(members, inRange, rules, cost, stock));
+            Assert.AreEqual(SquadRefusal.None, SquadOrderRule.FindReinforceRefusal(members, true, rules, default, stock),
+                "a squad without a price is free");
+            SquadMember.Revive(members);
+            SquadMember.Revive(members);
+            Assert.AreEqual(SquadRefusal.FullStrength,
+                SquadOrderRule.FindReinforceRefusal(members, true, rules, cost, stock));
+        }
+
+        [Test]
+        public void Reinforce_IsRefusedAtAnOfflinePoint()
+        {
+            var squad = Squad(Funds);
+            World.SetOffline(_point, true);
+
+            Reinforce(squad);
+            World.Run(6f);
+
+            Assert.AreEqual(2, Living(squad));
         }
     }
 }

@@ -4,9 +4,11 @@ using Unity.Netcode;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>A place where friendly squads within <see cref="Range"/> of it can bring back dead members.</summary>
-    public struct ReinforcePoint : IComponentData
+    public struct ReinforcePoint : IComponentData, ISquadPoint
     {
         public float Range;
+
+        public readonly float Reach => Range;
     }
 
     /// <summary>

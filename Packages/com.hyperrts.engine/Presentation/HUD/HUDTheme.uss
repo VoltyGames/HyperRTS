@@ -211,17 +211,20 @@
     background-color: var(--hud-card-queued-bg);
 }
 
-.hud-command--unaffordable .hud-command__icon {
+.hud-command--unaffordable .hud-command__icon,
+.hud-command--too-poor .hud-command__icon {
     opacity: 0.75;
 }
 
 .hud-command--locked .hud-command__icon,
+.hud-command--no-point .hud-command__icon,
 .hud-command--researched .hud-command__icon {
     filter: grayscale(1);
     opacity: 0.4;
 }
 
-.hud-command--maxed .hud-command__icon {
+.hud-command--maxed .hud-command__icon,
+.hud-command--full-strength .hud-command__icon {
     opacity: 0.5;
 }
 

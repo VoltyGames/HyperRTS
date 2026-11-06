@@ -15,15 +15,20 @@ namespace HyperRTS.Presentation.Tests.HUD
     /// <summary>The squad buttons' refusals and the soldier card.</summary>
     public class SquadHUDTests : HUDFixture
     {
-        [TestCase(false, false, false, false, SquadCommands.Refusal.FullStrength)]
-        [TestCase(true, false, false, false, SquadCommands.Refusal.NoPoint)]
-        [TestCase(true, true, false, false, SquadCommands.Refusal.TooPoor)]
-        [TestCase(true, true, true, false, SquadCommands.Refusal.None)]
-        [TestCase(false, false, false, true, SquadCommands.Refusal.None)]
-        public void ReinforceButton_SaysWhyItCannotAct(bool dead, bool inRange, bool affordable, bool working,
-            SquadCommands.Refusal expected)
+        [TestCase(SquadRefusal.NoPoint, "hud-command--no-point")]
+        [TestCase(SquadRefusal.FullStrength, "hud-command--full-strength")]
+        [TestCase(SquadRefusal.TooPoor, "hud-command--too-poor")]
+        public void SquadButton_ShowsItsOwnRefusalClass(SquadRefusal refusal, string expected)
         {
-            Assert.AreEqual(expected, SquadCommands.FindReinforceReason(dead, inRange, affordable, working));
+            var button = new CommandEntry("Reinforce", () => { }).Button;
+
+            button.ShowSquadRefusal(refusal);
+            Assert.IsTrue(button.ClassListContains(expected));
+            Assert.IsTrue(button.IsRefused);
+
+            button.ShowSquadRefusal(SquadRefusal.None);
+            Assert.IsFalse(button.ClassListContains(expected));
+            Assert.IsFalse(button.IsRefused);
         }
 
         [Test]

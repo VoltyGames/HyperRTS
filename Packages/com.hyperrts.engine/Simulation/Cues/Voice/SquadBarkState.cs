@@ -24,7 +24,8 @@ namespace HyperRTS.Simulation.Cues.Voice
         /// <see cref="CueSlot.None"/>. The first look only records. Pinned beats suppressed, then retreat, reinforced,
         /// digging in and taking cover.
         /// </summary>
-        public CueSlot Observe(in SquadRules rules, in Suppression suppression, DynamicBuffer<SquadMember> members)
+        public CueSlot Observe(in SquadRules rules, in Suppression suppression, bool retreating,
+            DynamicBuffer<SquadMember> members)
         {
             var living = 0;
             var covered = 0;
@@ -43,7 +44,7 @@ namespace HyperRTS.Simulation.Cues.Voice
 
             var now = new SquadBarkState
             {
-                Known = true, Level = rules.Level(suppression.Value), Retreating = suppression.Retreating,
+                Known = true, Level = rules.Level(suppression.Value), Retreating = retreating,
                 Covered = covered * 2 > living, Digging = digging, Living = living, QuietUntil = QuietUntil,
             };
             var slot = Known ? Strongest(now) : CueSlot.None;

@@ -2,6 +2,7 @@ using System;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Squads;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -19,6 +20,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         private Action _onClick;
         private Action<HUDTooltip> _describe;
         private PurchaseRefusal _refusal;
+        private SquadRefusal _squadRefusal;
         private CostRow _costs;
         private HUDSweep _sweep;
         private Label _count;
@@ -35,7 +37,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         }
 
         /// <summary>True while a purchase rule refuses it: it still shows its tooltip but ignores presses.</summary>
-        public bool IsRefused => _refusal != PurchaseRefusal.None;
+        public bool IsRefused => _refusal != PurchaseRefusal.None || _squadRefusal != SquadRefusal.None;
 
         /// <summary>Enabled and not refused, so a press or its hotkey acts.</summary>
         public bool CanPress => enabledInHierarchy && !IsRefused;
@@ -131,6 +133,24 @@ namespace HyperRTS.Presentation.HUD.Commands
             EnableInClassList("hud-command--maxed", refusal == PurchaseRefusal.AtLimit);
             EnableInClassList("hud-command--researched", refusal == PurchaseRefusal.Researched);
             _costs?.MarkShort(refusal == PurchaseRefusal.CannotAfford);
+        }
+
+        /// <summary>
+        /// Applies a squad order's verdict as <c>hud-command--no-point</c>, <c>--full-strength</c> or
+        /// <c>--too-poor</c>.
+        /// </summary>
+        public void ShowSquadRefusal(SquadRefusal refusal)
+        {
+            if (refusal == _squadRefusal)
+            {
+                return;
+            }
+
+            _squadRefusal = refusal;
+            TooltipVersion++;
+            EnableInClassList("hud-command--no-point", refusal == SquadRefusal.NoPoint);
+            EnableInClassList("hud-command--full-strength", refusal == SquadRefusal.FullStrength);
+            EnableInClassList("hud-command--too-poor", refusal == SquadRefusal.TooPoor);
         }
 
         /// <summary>The queued count badge, and the sweep while one is in work.</summary>

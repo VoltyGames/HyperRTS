@@ -54,13 +54,11 @@ namespace HyperRTS.Simulation.Squads
                 if (Orders.HasEnabled(entity) && Orders[entity].Value.Type == OrderType.Retreat)
                 {
                     suppression.Clear();
-                    suppression.Retreating = true;
                     pace = Rules.RetreatPace;
                     SetPostures(members, Posture.Stand, false);
                     return;
                 }
 
-                suppression.Retreating = false;
                 suppression.Decay(Rules, DeltaTime);
                 var level = Rules.Level(suppression.Value);
                 var carriage = Carriage(level, Moves.HasEnabled(entity), Attacks.HasEnabled(entity));

@@ -67,6 +67,21 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
+        public void Retreating_IsOnWhileTheRetreatOrderRuns()
+        {
+            var squad = Squad(float3.zero);
+            Point(1, new float3(60f, 0f, 0f));
+            Retreat(squad);
+            World.Tick(frames: 3);
+            Assert.IsTrue(World.IsEnabled<Retreating>(squad));
+
+            World.Command(1, new PlayerCommand { Type = CommandType.Move, Unit = squad, Position = new float3(-20f, 0f, 0f) });
+            World.Tick(frames: 3);
+
+            Assert.IsFalse(World.IsEnabled<Retreating>(squad), "a new order ends the retreat");
+        }
+
+        [Test]
         public void Retreat_LeavesAPointThatGoesOffline()
         {
             var squad = Squad(float3.zero);
@@ -80,6 +95,18 @@ namespace HyperRTS.Simulation.Tests.Squads
             World.Tick(frames: 3);
 
             Assert.AreEqual(-90f, World.Get<ActiveOrder>(squad).Value.Position.x, 1e-3f);
+        }
+
+        [Test]
+        public void Retreat_IgnoresAnOfflinePoint()
+        {
+            var squad = Squad(float3.zero);
+            World.SetOffline(Point(1, new float3(20f, 0f, 0f)), true);
+
+            Retreat(squad);
+            World.Run(1f);
+
+            Assert.IsFalse(World.IsEnabled<ActiveOrder>(squad));
         }
 
         [Test]

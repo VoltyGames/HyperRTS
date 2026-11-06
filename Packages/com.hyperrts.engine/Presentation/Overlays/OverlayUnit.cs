@@ -23,10 +23,14 @@ namespace HyperRTS.Presentation.Overlays
 
         public readonly Suppression? Suppression;
 
+        /// <summary>Whether the squad is running for a retreat point.</summary>
+        public readonly bool Retreating;
+
         public OverlayUnit(NavAgent? agent, NavObstacle? obstacle, int rank, DynamicBuffer<SquadMember> members,
-            Suppression? suppression)
+            Suppression? suppression, bool retreating)
         {
             Suppression = suppression;
+            Retreating = retreating;
             Agent = agent;
             Obstacle = obstacle;
             Rank = rank;

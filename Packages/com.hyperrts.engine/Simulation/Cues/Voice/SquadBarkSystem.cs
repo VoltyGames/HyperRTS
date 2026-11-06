@@ -50,16 +50,17 @@ namespace HyperRTS.Simulation.Cues.Voice
             var rules = SystemAPI.GetSingleton<SquadRules>();
             var player = SystemAPI.GetSingletonEntity<LocalPlayer>();
             var local = SystemAPI.GetComponent<Player>(player).Faction;
-            foreach (var (bark, suppression, faction, transform, members, squad) in SystemAPI
-                         .Query<RefRW<SquadBarkState>, RefRO<Suppression>, RefRO<Faction>, RefRO<LocalTransform>,
-                             DynamicBuffer<SquadMember>>().WithEntityAccess())
+            foreach (var (bark, suppression, retreating, faction, transform, members, squad) in SystemAPI
+                         .Query<RefRW<SquadBarkState>, RefRO<Suppression>, EnabledRefRO<Retreating>, RefRO<Faction>,
+                             RefRO<LocalTransform>, DynamicBuffer<SquadMember>>()
+                         .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).WithEntityAccess())
             {
                 if (faction.ValueRO.Value != local)
                 {
                     continue;
                 }
 
-                var slot = bark.ValueRW.Observe(rules, suppression.ValueRO, members);
+                var slot = bark.ValueRW.Observe(rules, suppression.ValueRO, retreating.ValueRO, members);
                 var allowed = now >= _next && now >= bark.ValueRO.QuietUntil;
                 if (slot == CueSlot.None || !allowed)
                 {

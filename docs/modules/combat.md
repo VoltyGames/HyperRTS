@@ -122,7 +122,14 @@ compressed against the last snapshot.
   a radius), with that point as `Target`, and does nothing when there is none. While the order runs `Pace` is
   `RetreatSpeed` (1.25), `FireRate` 0 and `DamageTaken` `RetreatDamageTaken` (0.5), and suppression is cleared every
   frame. The order ends within the point's radius; if the point is lost it moves to the next or stops. Any other
-  order replaces the retreat. Pinned squads retreat because the retreat pace ignores posture.
+  order replaces the retreat. Pinned squads retreat because the retreat pace ignores posture. `RetreatSystem` keeps
+  the `Retreating` enable bit (a ghost bit, baked off on squads) on while the order runs, and the AI, the HUD, the
+  health bar and the barks read it.
+- **One rule set.** `SquadPoints` (module `Squads`) copies the working points of one kind out of the world and answers
+  which a faction may use (allied, not `Dead`, not `Offline`), which cover a position and the nearest.
+  `SquadOrderRule` gives the `SquadRefusal` for a squad (`FullStrength`, `NoPoint`, `TooPoor`) and the free-without-
+  `ResourceCost` pay and refund; `SquadRules.ReinforceShare(members)` is a member's share of the price. The two
+  systems, the AI and `SquadCommands` all call them.
 - **Reinforce.** `CommandType.Reinforce` (28). `ReinforceSystem` starts `Reinforcing` (enableable) on a commanded or
   selected squad with a dead member, an allied working `ReinforcePoint` (`ReinforcePointAuthoring`: a range) within
   range and resources for one member; otherwise it does nothing. Each member costs `ReinforceCost` x its slice of the

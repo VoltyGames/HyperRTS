@@ -63,7 +63,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void Unit_AircraftTakesItsAgentsLayerAndRadius()
         {
-            var unit = new OverlayUnit(new NavAgent { Radius = 2f, Layer = NavLayer.Air }, null, 3, default, null);
+            var unit = new OverlayUnit(new NavAgent { Radius = 2f, Layer = NavLayer.Air }, null, 3, default, null, false);
 
             Assert.AreEqual(NavLayer.Air, unit.Layer);
             Assert.AreEqual(2f, unit.Radius, 1e-4f);
@@ -75,7 +75,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void Unit_BuildingIsGroundWithBracketsAndHalfItsLongestSide()
         {
-            var unit = new OverlayUnit(null, new NavObstacle { Size = new float2(12f, 8f) }, 0, default, null);
+            var unit = new OverlayUnit(null, new NavObstacle { Size = new float2(12f, 8f) }, 0, default, null, false);
 
             Assert.AreEqual(NavLayer.Ground, unit.Layer);
             Assert.AreEqual(6f, unit.Radius, 1e-4f);
@@ -85,7 +85,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void Unit_WithNeitherAgentNorObstacleIsDefaultCircle()
         {
-            var unit = new OverlayUnit(null, null, 0, default, null);
+            var unit = new OverlayUnit(null, null, 0, default, null, false);
 
             Assert.AreEqual(EntityRadius.Default, unit.Radius, 1e-4f);
             Assert.AreEqual(MarkerShape.Outline, unit.Footprint(Margin).Shape);

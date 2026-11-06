@@ -56,6 +56,8 @@ namespace HyperRTS.Simulation.Squads
             writer.Add(Pace.Normal);
             writer.Add(new Reinforcing());
             writer.SetEnabled<Reinforcing>(false);
+            writer.Add(new Retreating());
+            writer.SetEnabled<Retreating>(false);
             writer.Add(new SquadWork());
             writer.SetEnabled<SquadWork>(false);
             var buffer = writer.AddBuffer<SquadMember>();

@@ -43,6 +43,9 @@ namespace HyperRTS.Simulation.Common.Infantry
         /// <summary>Seconds to bring back one member.</summary>
         public float ReinforceTime;
 
+        /// <summary>The part of the squad's price that bringing back one of <paramref name="members"/> costs.</summary>
+        public readonly float ReinforceShare(int members) => ReinforceCost / members;
+
         public readonly SuppressionLevel Level(float suppression)
         {
             if (suppression >= PinnedAt)

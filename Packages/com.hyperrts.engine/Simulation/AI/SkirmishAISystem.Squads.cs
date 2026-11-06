@@ -54,12 +54,15 @@ namespace HyperRTS.Simulation.AI
         private bool ShouldRetreat(ref SystemState state, Entity squad, float3 position, in AIPlayer ai, in SquadRules rules, in Turn turn,
             in Snapshot snapshot)
         {
-            if (SystemAPI.GetComponent<Suppression>(squad).Retreating || IsRetreatOrdered(ref state, squad))
+            if (IsRetreating(ref state, squad) || IsRetreatOrdered(ref state, squad))
             {
                 return false;
             }
 
-            if (!TryFindRetreatPoint(position, turn.Faction, snapshot, out var isSafe) || isSafe)
+            var points = snapshot.RetreatPoints;
+            var hasPoint = points.HasAllied(turn.Faction, snapshot.Relations);
+            var refused = SquadOrderRule.FindRetreatRefusal(hasPoint) != SquadRefusal.None;
+            if (refused || points.Covers(position, turn.Faction, snapshot.Relations))
             {
                 return false;
             }
@@ -75,65 +78,29 @@ namespace HyperRTS.Simulation.AI
             SystemAPI.IsComponentEnabled<ActiveOrder>(squad)
             && SystemAPI.GetComponent<ActiveOrder>(squad).Value.Type == OrderType.Retreat;
 
-        /// <summary>Whether a friendly working retreat point exists, and whether <paramref name="position"/> is inside one's radius.</summary>
-        private bool TryFindRetreatPoint(float3 position, byte faction, in Snapshot snapshot, out bool isSafe)
-        {
-            var points = snapshot.RetreatPoints;
-            var found = false;
-            isSafe = false;
-            for (var i = 0; i < points.Length; i++)
-            {
-                if (!snapshot.Relations.IsAllied(faction, points.Owners[i].Value))
-                {
-                    continue;
-                }
-
-                found = true;
-                var radius = snapshot.RetreatData[i].Radius;
-                isSafe |= points.DistanceSq(i, position) <= radius * radius;
-            }
-
-            return found;
-        }
+        private bool IsRetreating(ref SystemState state, Entity squad) =>
+            SystemAPI.HasComponent<Retreating>(squad) && SystemAPI.IsComponentEnabled<Retreating>(squad);
 
         /// <summary>A squad with dead members, in range of a friendly reinforce point, that the player can afford a member for.</summary>
         private bool WantsReinforcing(ref SystemState state, Entity squad, in SquadRules rules, in Turn turn, in Snapshot snapshot)
         {
-            var members = SystemAPI.GetBuffer<SquadMember>(squad);
-            if (SquadMember.CountLiving(members) == members.Length || IsReinforcing(ref state, squad))
+            if (IsReinforcing(ref state, squad))
             {
                 return false;
             }
 
             var position = SystemAPI.GetComponent<LocalTransform>(squad).Position;
-            if (!IsInReinforceRange(position, turn.Faction, snapshot))
-            {
-                return false;
-            }
-
-            return !SystemAPI.HasBuffer<ResourceCost>(squad)
-                   || ResourceMath.CanAfford(SystemAPI.GetBuffer<ResourceStock>(turn.Player),
-                       SystemAPI.GetBuffer<ResourceCost>(squad), rules.ReinforceCost / members.Length);
+            var inRange = snapshot.ReinforcePoints.Covers(position, turn.Faction, snapshot.Relations);
+            var cost = SystemAPI.HasBuffer<ResourceCost>(squad)
+                ? SystemAPI.GetBuffer<ResourceCost>(squad)
+                : default;
+            var refusal = SquadOrderRule.FindReinforceRefusal(SystemAPI.GetBuffer<SquadMember>(squad), inRange, rules,
+                cost, SystemAPI.GetBuffer<ResourceStock>(turn.Player));
+            return refusal == SquadRefusal.None;
         }
 
         private bool IsReinforcing(ref SystemState state, Entity squad) =>
             SystemAPI.HasComponent<Reinforcing>(squad) && SystemAPI.IsComponentEnabled<Reinforcing>(squad);
-
-        private bool IsInReinforceRange(float3 position, byte faction, in Snapshot snapshot)
-        {
-            var points = snapshot.ReinforcePoints;
-            for (var i = 0; i < points.Length; i++)
-            {
-                var range = snapshot.ReinforceData[i].Range;
-                var allied = snapshot.Relations.IsAllied(faction, points.Owners[i].Value);
-                if (allied && points.DistanceSq(i, position) <= range * range)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
 
         /// <summary>
         /// Whether a unit is a squad that is running for a retreat point or being reinforced, or waits to be: it stays
@@ -146,7 +113,7 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            if (SystemAPI.GetComponent<Suppression>(unit).Retreating || IsReinforcing(ref state, unit))
+            if (IsRetreating(ref state, unit) || IsReinforcing(ref state, unit))
             {
                 return true;
             }

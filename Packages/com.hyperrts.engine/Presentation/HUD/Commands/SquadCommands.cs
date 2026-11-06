@@ -1,15 +1,12 @@
-using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Squads;
-using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
-using HyperRTS.Presentation.Common;
 
 namespace HyperRTS.Presentation.HUD.Commands
 {
@@ -22,21 +19,19 @@ namespace HyperRTS.Presentation.HUD.Commands
     {
         private const string ActiveClass = "hud-command--active";
 
-        private readonly SquadPoints _points = new();
+        private readonly LiveQuery _retreatPoints = new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<RetreatPoint>(), ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
+
+        private readonly LiveQuery _reinforcePoints = new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<ReinforcePoint>(), ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
+
         private readonly List<Entity> _squads = new();
         private CommandButton _retreat;
         private CommandButton _reinforce;
-        private Refusal _retreatReason;
-        private Refusal _reinforceReason;
-
-        /// <summary>Why a button can't act now.</summary>
-        public enum Refusal : byte
-        {
-            None,
-            NoPoint,
-            FullStrength,
-            TooPoor,
-        }
+        private SquadRefusal _retreatReason;
+        private SquadRefusal _reinforceReason;
 
         public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
         {
@@ -77,13 +72,11 @@ namespace HyperRTS.Presentation.HUD.Commands
 
             var entityManager = context.EntityManager;
             var faction = context.View.Local.Faction;
-            var hasRetreatPoint = _points.HasRetreat(context, faction);
-            using var reinforcePoints = _points.FindReinforce(context, faction);
-            var anyDead = false;
-            var anyInRange = false;
-            var anyAffordable = false;
+            var relations = context.View.Relations;
+            var reinforcePoints = SquadPoints.From<ReinforcePoint>(_reinforcePoints.In(entityManager));
             var allRetreating = true;
             var allReinforcing = true;
+            var reinforceReason = SquadRefusal.FullStrength;
             foreach (var squad in _squads)
             {
                 if (!entityManager.Exists(squad))
@@ -91,91 +84,75 @@ namespace HyperRTS.Presentation.HUD.Commands
                     continue;
                 }
 
-                var members = entityManager.GetBuffer<SquadMember>(squad, true);
-                var retreating = entityManager.GetComponentData<Suppression>(squad).Retreating;
-                var reinforcing = entityManager.HasEnabled<Reinforcing>(squad);
-                allRetreating &= retreating;
-                allReinforcing &= reinforcing;
-                if (reinforcing || SquadMember.CountLiving(members) == members.Length)
+                allRetreating &= entityManager.HasEnabled<Retreating>(squad);
+                if (entityManager.HasEnabled<Reinforcing>(squad))
                 {
                     continue;
                 }
 
-                anyDead = true;
-                if (SquadPoints.IsInRange(entityManager, squad, reinforcePoints))
-                {
-                    anyInRange = true;
-                    anyAffordable |= CanPay(context, squad, rules.ReinforceCost / members.Length);
-                }
+                allReinforcing = false;
+                var here = entityManager.GetComponentData<LocalTransform>(squad).Position;
+                var refusal = SquadOrderRule.FindReinforceRefusal(entityManager.GetBuffer<SquadMember>(squad, true),
+                    reinforcePoints.Covers(here, faction, relations), rules, Cost(entityManager, squad), context.Stock);
+                reinforceReason = NearestToAble(reinforceReason, refusal);
             }
 
-            _retreatReason = hasRetreatPoint ? Refusal.None : Refusal.NoPoint;
-            _reinforceReason = FindReinforceReason(anyDead, anyInRange, anyAffordable, allReinforcing);
-            _retreat.ShowRefusal(ToRefusal(_retreatReason));
-            _reinforce.ShowRefusal(ToRefusal(_reinforceReason));
+            var retreatPoints = SquadPoints.From<RetreatPoint>(_retreatPoints.In(entityManager));
+            _retreatReason = SquadOrderRule.FindRetreatRefusal(retreatPoints.HasAllied(faction, relations));
+            _reinforceReason = allReinforcing ? SquadRefusal.None : reinforceReason;
+            _retreat.ShowSquadRefusal(_retreatReason);
+            _reinforce.ShowSquadRefusal(_reinforceReason);
             _retreat.EnableInClassList(ActiveClass, allRetreating);
             _reinforce.EnableInClassList(ActiveClass, allReinforcing);
         }
 
-        /// <summary>The refusal for a reinforce button, given what the selected squads allow; none while any can start or all are working.</summary>
-        public static Refusal FindReinforceReason(bool anyDead, bool anyInRange, bool anyAffordable, bool allReinforcing)
+        // Selected squads share one button, so it shows the reason closest to able; any squad that can act clears it.
+        private static SquadRefusal NearestToAble(SquadRefusal shown, SquadRefusal next)
         {
-            if (allReinforcing)
+            if (shown == SquadRefusal.None || next == SquadRefusal.None)
             {
-                return Refusal.None;
+                return SquadRefusal.None;
             }
 
-            if (!anyDead)
-            {
-                return Refusal.FullStrength;
-            }
-
-            if (!anyInRange)
-            {
-                return Refusal.NoPoint;
-            }
-
-            return anyAffordable ? Refusal.None : Refusal.TooPoor;
+            return shown > next ? shown : next;
         }
 
-        private static PurchaseRefusal ToRefusal(Refusal reason) => reason switch
-        {
-            Refusal.NoPoint => PurchaseRefusal.MissingPrerequisite,
-            Refusal.FullStrength => PurchaseRefusal.AtLimit,
-            Refusal.TooPoor => PurchaseRefusal.CannotAfford,
-            _ => PurchaseRefusal.None,
-        };
+        private static DynamicBuffer<ResourceCost> Cost(EntityManager entityManager, Entity squad) =>
+            entityManager.HasBuffer<ResourceCost>(squad)
+                ? entityManager.GetBuffer<ResourceCost>(squad, true)
+                : default;
 
         private void DescribeRetreat(HUDTooltip tooltip)
         {
             tooltip.AddTitle(HUDText.Text("command.retreat"));
             tooltip.AddLine(HUDText.Text("tooltip.retreat"));
-            if (_retreatReason == Refusal.NoPoint)
-            {
-                tooltip.AddWarning(HUDText.Text("tooltip.no-retreat-point"));
-            }
+            AddWarning(tooltip, _retreatReason, "tooltip.no-retreat-point");
         }
 
         private void DescribeReinforce(HUDContext context, HUDTooltip tooltip)
         {
             tooltip.AddTitle(HUDText.Text("command.reinforce"));
             tooltip.AddLine(HUDText.Text("tooltip.reinforce"));
-            var entityManager = context.EntityManager;
             if (context.TryGetSquadRules(out var rules))
             {
-                AddSoldierCost(entityManager, tooltip, rules);
+                AddSoldierCost(context.EntityManager, tooltip, rules);
                 tooltip.AddStat(HUDText.Text("tooltip.reinforce-time"), HUDText.Seconds(rules.ReinforceTime));
             }
 
-            switch (_reinforceReason)
+            AddWarning(tooltip, _reinforceReason, "tooltip.no-reinforce-point");
+        }
+
+        private static void AddWarning(HUDTooltip tooltip, SquadRefusal reason, string noPointKey)
+        {
+            switch (reason)
             {
-                case Refusal.NoPoint:
-                    tooltip.AddWarning(HUDText.Text("tooltip.no-reinforce-point"));
+                case SquadRefusal.NoPoint:
+                    tooltip.AddWarning(HUDText.Text(noPointKey));
                     break;
-                case Refusal.FullStrength:
+                case SquadRefusal.FullStrength:
                     tooltip.AddWarning(HUDText.Text("tooltip.full-strength"));
                     break;
-                case Refusal.TooPoor:
+                case SquadRefusal.TooPoor:
                     tooltip.AddWarning(HUDText.Text("tooltip.cannot-afford"));
                     break;
             }
@@ -191,7 +168,7 @@ namespace HyperRTS.Presentation.HUD.Commands
                     continue;
                 }
 
-                var share = rules.ReinforceCost / entityManager.GetBuffer<SquadMember>(squad, true).Length;
+                var share = rules.ReinforceShare(entityManager.GetBuffer<SquadMember>(squad, true).Length);
                 foreach (var cost in entityManager.GetBuffer<ResourceCost>(squad, true))
                 {
                     tooltip.AddStat(HUDText.ResourceName(cost.Type.Value), ((int)(cost.Amount * share)).ToString());
@@ -199,13 +176,6 @@ namespace HyperRTS.Presentation.HUD.Commands
 
                 return;
             }
-        }
-
-        private static bool CanPay(HUDContext context, Entity squad, float share)
-        {
-            var entityManager = context.EntityManager;
-            return !entityManager.HasBuffer<ResourceCost>(squad)
-                   || ResourceMath.CanAfford(context.Stock, entityManager.GetBuffer<ResourceCost>(squad, true), share);
         }
     }
 }
