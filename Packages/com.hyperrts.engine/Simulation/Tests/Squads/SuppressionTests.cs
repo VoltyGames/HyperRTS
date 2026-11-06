@@ -16,22 +16,9 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// </summary>
     public class SuppressionTests : SimulationFixture
     {
-        private Entity Squad(float3 position, int size = 2)
-        {
-            var squad = World.SpawnSquad(1, position, size);
-            return squad;
-        }
+        private static readonly float3 Shooter = new(0f, 0f, 20f);
 
-        private void Hit(Entity target, float suppression, float radius = 0f, float3 at = default) =>
-            World.QueueDamage(new DamageEvent
-            {
-                Target = target,
-                Position = at,
-                Origin = at + new float3(0f, 0f, 20f),
-                SourceFaction = 2,
-                Layers = WeaponTargets.Surface,
-                Profile = new DamageProfile { EdgeFactor = 1f, Suppression = suppression, Radius = radius },
-            });
+        private Entity Squad(float3 position, int size = 2) => World.SpawnSquad(1, position, size);
 
         private float Suppression(Entity squad) => World.Get<Suppression>(squad).Value;
 
@@ -46,9 +33,9 @@ namespace HyperRTS.Simulation.Tests.Squads
         {
             var squad = Squad(float3.zero);
 
-            Hit(squad, 0.3f);
+            World.HitSquad(squad, suppression: 0.3f, from: Shooter);
             World.Tick();
-            Hit(squad, 0.3f);
+            World.HitSquad(squad, suppression: 0.3f, from: Shooter);
             World.Tick();
             Assert.AreEqual(0.6f, Suppression(squad), 0.01f);
 
@@ -65,7 +52,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 4);
 
             // The struck member takes the hit's 0.2, each of the other three a quarter of it.
-            Hit(squad, 0.2f, radius: 10f);
+            World.HitSquad(squad, suppression: 0.2f, radius: 10f, from: Shooter);
             World.Tick();
 
             Assert.AreEqual(0.35f, Suppression(squad), 0.02f);

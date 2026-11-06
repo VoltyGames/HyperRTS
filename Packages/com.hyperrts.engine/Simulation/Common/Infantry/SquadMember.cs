@@ -67,10 +67,10 @@ namespace HyperRTS.Simulation.Common.Infantry
         /// </summary>
         [GhostField] public byte BaseWeapon;
 
-        /// <summary>Server only: the mount it fires instead while that mount is enabled; only meaningful with <see cref="HasUpgrade"/>.</summary>
+        /// <summary>Server only: the mount it fires instead while that mount is enabled; equal to <see cref="BaseWeapon"/> when it has none.</summary>
         [GhostField(SendData = false)] public byte UpgradedWeapon;
 
-        [GhostField(SendData = false)] public bool HasUpgrade;
+        public readonly bool HasUpgrade => UpgradedWeapon != BaseWeapon;
 
         /// <summary>Server only: the offset it walks toward.</summary>
         [GhostField(SendData = false)] public float2 Slot;

@@ -84,8 +84,7 @@ namespace HyperRTS.Simulation.Squads
                 {
                     Health = each, MaxHealth = each, Weapon = weapons[i],
                     BaseWeapon = weapons[i],
-                    HasUpgrade = upgrades?[i] != null,
-                    UpgradedWeapon = upgrades?[i] ?? 0,
+                    UpgradedWeapon = upgrades?[i] ?? weapons[i],
                     Designation = designations != null ? designations[i] : default,
                     TakesCrewPlace = crews != null && crews[i].Takes,
                     CrewOffset = crews != null ? crews[i].Offset : default,
@@ -105,9 +104,8 @@ namespace HyperRTS.Simulation.Squads
                 var designations = new List<FixedString32Bytes>();
                 foreach (var member in authoring.members)
                 {
-                    weapons.Add((byte)math.clamp(member.weapon, 0, byte.MaxValue));
-                    var upgraded = (byte)math.clamp(member.upgradedWeapon, 0, byte.MaxValue);
-                    upgrades.Add(member.hasUpgradedWeapon ? upgraded : null);
+                    weapons.Add((byte)member.weapon);
+                    upgrades.Add(member.hasUpgradedWeapon ? (byte)member.upgradedWeapon : null);
                     designations.Add(member.designation);
                     crews.Add(new CrewPlace { Takes = member.takesCrewPlace, Offset = member.crewOffset, Posture = member.crewPosture });
                 }

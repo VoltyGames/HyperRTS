@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Squads;
@@ -32,6 +34,25 @@ namespace HyperRTS.Simulation.Tests
             world.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
             return squad;
         }
+
+        /// <summary>
+        /// Queues a hit at <paramref name="at"/> that lands on <paramref name="target"/> (or splashes within
+        /// <paramref name="radius"/> of it), from a shooter <paramref name="from"/> metres past it and of faction 2.
+        /// </summary>
+        public static void HitSquad(this TestWorld world, Entity target, float amount = 0f, float3 at = default,
+            float radius = 0f, float edge = 1f, float suppression = 0f, float piercing = 0f, float3 from = default) =>
+            world.QueueDamage(new DamageEvent
+            {
+                Target = target,
+                Position = at,
+                Origin = at + from,
+                SourceFaction = 2,
+                Layers = WeaponTargets.Surface,
+                Profile = new DamageProfile
+                {
+                    Amount = amount, Radius = radius, EdgeFactor = edge, Suppression = suppression, CoverPiercing = piercing,
+                },
+            });
 
         public static void AssertHealthIsMemberSum(this TestWorld world, Entity squad)
         {

@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.AI
     /// Builders must list it among their build options.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Buildings + "AI Field Work")]
+    [Icon(HyperRTSIcons.Buildings)]
     [HelpURL(HyperRTSDocs.AI)]
     [DisallowMultipleComponent]
     public class AIFieldWorkAuthoring : AuthoringBehaviour

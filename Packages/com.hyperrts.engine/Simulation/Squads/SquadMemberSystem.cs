@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Squads
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(true),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
-            }.Schedule();
+            }.ScheduleParallel();
         }
 
         [BurstCompile]
@@ -97,8 +97,7 @@ namespace HyperRTS.Simulation.Squads
                 for (var i = 0; i < members.Length; i++)
                 {
                     var member = members[i];
-                    var upgraded = member.HasUpgrade && member.UpgradedWeapon < mounts.Length
-                        && mounts[member.UpgradedWeapon].Enabled;
+                    var upgraded = member.HasUpgrade && mounts[member.UpgradedWeapon].Enabled;
                     var weapon = upgraded ? member.UpgradedWeapon : member.BaseWeapon;
                     if (member.HasUpgrade && weapon != member.Weapon)
                     {

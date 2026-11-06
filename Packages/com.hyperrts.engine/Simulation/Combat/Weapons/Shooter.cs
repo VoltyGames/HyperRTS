@@ -140,7 +140,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// </summary>
         private void Fire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
         {
-            Reveal(shooter);
+            if (_stealth.TryGetRefRW(shooter, out var stealth))
+            {
+                stealth.ValueRW.RevealTimer = stealth.ValueRO.RevealDuration;
+            }
+
             var poses = _poses[shooter];
             var fired = poses[pose];
             fired.CountShot();
@@ -170,21 +174,26 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     PlayFire(firing, shot, targetPosition);
                 }
 
-                if (weapon.FiresRounds)
-                {
-                    var aimed = target;
-                    var aimedAt = targetPosition;
-                    Obstruct(shooter, shot, fired, place, ref aimed, ref aimedAt);
-                    Launch(firing, shot, round, aimed, aimedAt);
-                }
-                else if (weapon.ShootsProjectiles)
-                {
-                    Intercept(firing, shot, target, targetPosition);
-                }
-                else
-                {
-                    Strike(firing, shot, round == 0, target, targetPosition);
-                }
+                Shoot(firing, shot, round, target, targetPosition);
+            }
+        }
+
+        private void Shoot(in Firing firing, in Weapon shot, int round, Entity target, float3 targetPosition)
+        {
+            if (shot.FiresRounds)
+            {
+                var aimed = target;
+                var aimedAt = targetPosition;
+                Obstruct(firing.Shooter, shot, firing.Pose, firing.Place, ref aimed, ref aimedAt);
+                Launch(firing, shot, round, aimed, aimedAt);
+            }
+            else if (shot.ShootsProjectiles)
+            {
+                Intercept(firing, shot, target, targetPosition);
+            }
+            else
+            {
+                Strike(firing, shot, round == 0, target, targetPosition);
             }
         }
 
@@ -196,9 +205,14 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _damage.Add(hit);
             if (cue)
             {
-                var along = math.normalizesafe(targetPosition - origin, firing.Place.Forward());
-                hit.AddImpact(ref _cues, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), along);
+                AddImpact(firing, hit, origin, targetPosition);
             }
+        }
+
+        private void AddImpact(in Firing firing, in DamageEvent hit, float3 origin, float3 targetPosition)
+        {
+            var along = math.normalizesafe(targetPosition - origin, firing.Place.Forward());
+            hit.AddImpact(ref _cues, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), along);
         }
 
         /// <summary>A shot at a projectile: a seeded roll that downs it, then the impact cue where it dies.</summary>
@@ -207,7 +221,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             // Seeded by shooter, target and shot count, so the same fight rolls the same.
             var seed = math.hash(new uint4((uint)firing.Shooter.Index, (uint)target.Index, (uint)target.Version,
                 firing.Pose.Shots));
-            if (Random.CreateFromIndex(seed).NextFloat() >= weapon.KillChance)
+            if (!weapon.Kills(seed))
             {
                 return;
             }
@@ -218,8 +232,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _ecb.DestroyEntity(target);
             var origin = weapon.Aim.HitOrigin(firing.Place, firing.Pose);
             var hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, target, targetPosition, weapon.Targets);
-            var along = math.normalizesafe(targetPosition - origin, firing.Place.Forward());
-            hit.AddImpact(ref _cues, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), along);
+            AddImpact(firing, hit, origin, targetPosition);
         }
 
         /// <summary>Turns a direct-fire round onto whatever solid stands between the muzzle and the target.</summary>
@@ -267,14 +280,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
             weapon.Aim.PlayFire(ref _cues, firing, math.normalizesafe(toward, firing.Place.Forward()));
         }
 
-        private void Reveal(Entity shooter)
-        {
-            if (_stealth.TryGetRefRW(shooter, out var stealth))
-            {
-                stealth.ValueRW.RevealTimer = stealth.ValueRO.RevealDuration;
-            }
-        }
-
         private void Launch(in Firing firing, in Weapon weapon, int round, Entity target, float3 targetPosition)
         {
             var origin = weapon.Aim.LaunchPoint(firing.Place, firing.Pose);
@@ -283,21 +288,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
             // Smoke thick enough to hide the target breaks a guided round's lock; it flies on to the aim point.
             var locked = weapon.KeepsLock && !(_blockers.IsCreated && _blockers.Haze(origin, aim) >= 1f);
-            var flight = new Projectile
-            {
-                Speed = weapon.ProjectileSpeed,
-                Height = weapon.Aim.ProjectileHeight,
-                ImpactTypeId = _cues.TypeIdFor(firing.Shooter, CueSlot.Impact),
-                Hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, locked ? target : Entity.Null, aim, weapon.Targets),
-                Course = weapon.Aim.Course,
-                Kind = weapon.ProjectileKind,
-                Start = origin,
-                Apex = weapon.Aim.ArcHeight * math.distance(origin.xz, aim.xz),
-            };
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, locked ? target : Entity.Null, aim, weapon.Targets);
+            var flight = weapon.Launched(hit, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), origin, aim);
             var heading = flight.Arcs ? flight.Heading() : aim - origin;
-
-            var prefab = weapon.ProjectilePrefab;
-            var projectile = _spawner.Spawn(_ecb, prefab, origin,
+            var projectile = _spawner.Spawn(_ecb, weapon.ProjectilePrefab, origin,
                 quaternion.LookRotationSafe(heading, math.up()), firing.Faction);
             _ecb.AddComponent(projectile, flight);
         }

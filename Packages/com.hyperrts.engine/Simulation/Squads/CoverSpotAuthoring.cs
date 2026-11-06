@@ -13,6 +13,7 @@ namespace HyperRTS.Simulation.Squads
     /// (toward the side the fire comes from) and a kind. The fillers write the list for you; edit it by hand after.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Cover Spots")]
+    [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class CoverSpotAuthoring : AuthoringBehaviour
@@ -29,9 +30,11 @@ namespace HyperRTS.Simulation.Squads
             [Tooltip("Direction on the ground (X, Z) the soldier faces, toward the side the fire comes from.")]
             public Vector2 facing;
 
+            [Tooltip("How much protection the spot gives.")]
             public CoverKind kind;
         }
 
+        [Tooltip("The spots, in this object's space.")]
         public List<Spot> spots = new();
 
         [Header("Fillers")]
@@ -50,6 +53,7 @@ namespace HyperRTS.Simulation.Squads
         [Min(0.1f)]
         public float fillRadius = 1f;
 
+        [Tooltip("The kind the fillers give every spot they write.")]
         public CoverKind fillKind = CoverKind.Heavy;
 
         [InspectorButton("Fill both sides")]

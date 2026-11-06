@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Squads
     /// they stand within its range and it is working.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Reinforce Point")]
+    [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class ReinforcePointAuthoring : AuthoringBehaviour

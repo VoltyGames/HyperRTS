@@ -169,6 +169,18 @@ namespace HyperRTS.Presentation.HUD.Commands
                 tooltip.AddCosts(entityManager.GetBuffer<ResourceCost>(prefab, true));
             }
 
+            AddStats(entityManager, prefab, tooltip);
+
+            var missing = new List<Entity>();
+            context.FindMissingPrerequisites(prefab, context.SnapshotBuyer(), missing);
+            foreach (var required in missing)
+            {
+                tooltip.AddWarning($"{HUDText.Text("tooltip.requires")} {HUDText.EntityName(entityManager, required)}");
+            }
+        }
+
+        private static void AddStats(EntityManager entityManager, Entity prefab, HUDTooltip tooltip)
+        {
             if (entityManager.HasComponent<Producible>(prefab))
             {
                 var producible = entityManager.GetComponentData<Producible>(prefab);
@@ -189,13 +201,6 @@ namespace HyperRTS.Presentation.HUD.Commands
             {
                 tooltip.AddStat(HUDText.Text("tooltip.limit"),
                     entityManager.GetComponentData<BuildLimit>(prefab).Max.ToString());
-            }
-
-            var missing = new List<Entity>();
-            context.FindMissingPrerequisites(prefab, context.SnapshotBuyer(), missing);
-            foreach (var required in missing)
-            {
-                tooltip.AddWarning($"{HUDText.Text("tooltip.requires")} {HUDText.EntityName(entityManager, required)}");
             }
         }
 

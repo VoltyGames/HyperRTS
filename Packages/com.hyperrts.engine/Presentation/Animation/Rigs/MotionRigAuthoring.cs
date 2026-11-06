@@ -113,6 +113,14 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 }
             }
 
+            foreach (var problem in BodyProblems())
+            {
+                yield return problem;
+            }
+        }
+
+        private IEnumerable<string> BodyProblems()
+        {
             if (tiltRoot != null && !IsBelow(tiltRoot))
             {
                 yield return $"Tilt root '{tiltRoot.name}' must be a child of '{name}'.";

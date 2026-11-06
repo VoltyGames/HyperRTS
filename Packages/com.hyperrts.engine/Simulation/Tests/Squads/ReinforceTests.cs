@@ -16,7 +16,6 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// </summary>
     public class ReinforceTests : SimulationFixture
     {
-        private const float Each = 25f;
         private const int Funds = 500;
 
         private ResourceType _supplies;
@@ -63,14 +62,14 @@ namespace HyperRTS.Simulation.Tests.Squads
             World.Run(1.5f);
             Assert.AreEqual(3, Living(squad));
             Assert.AreEqual(36, Spent());
-            Assert.AreEqual(Each * 3, World.Get<Health>(squad).Current, 1e-3f, "the squad's health is its members' sum");
+            Assert.AreEqual(SquadTestKit.MemberHealth * 3, World.Get<Health>(squad).Current, 1e-3f, "the squad's health is its members' sum");
             Assert.AreEqual(3, World.Buffer<WeaponMount>(squad)[0].Carriers, "the revived member carries a weapon");
 
             World.Run(5f);
             Assert.AreEqual(4, Living(squad));
             Assert.AreEqual(36, Spent(), "two members, two payments");
             Assert.IsFalse(World.IsEnabled<Reinforcing>(squad));
-            Assert.AreEqual(Each * 4, World.Get<Health>(squad).Current, 1e-3f);
+            Assert.AreEqual(SquadTestKit.MemberHealth * 4, World.Get<Health>(squad).Current, 1e-3f);
         }
 
         [Test]

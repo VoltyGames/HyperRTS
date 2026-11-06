@@ -128,6 +128,35 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     return;
                 }
 
+                switch (part.Motion)
+                {
+                    case MachineMotion.Spin:
+                    case MachineMotion.Swing:
+                    case MachineMotion.Slide:
+                    case MachineMotion.Raise:
+                    case MachineMotion.Extend:
+                        Cycle(ref transform, part, clock);
+                        break;
+                    case MachineMotion.Downwind:
+                        if (Places.TryGetComponent(parent.Value, out var frame))
+                        {
+                            transform.Rotation = part.FacingDownwind(math.rotate(math.inverse(frame.Rotation), Downwind));
+                        }
+
+                        break;
+                    case MachineMotion.Point:
+                        Point(ref transform, part, parent.Value);
+                        break;
+                    case MachineMotion.Link:
+                        Link(ref transform, part, parent.Value);
+                        break;
+                    case MachineMotion.Stretch:
+                        break;
+                }
+            }
+
+            private static void Cycle(ref LocalTransform transform, in MachinePart part, in MachineClock clock)
+            {
                 var cycle = math.radians(part.Speed * clock.Time + part.Phase);
                 switch (part.Motion)
                 {
@@ -148,21 +177,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
                         break;
                     case MachineMotion.Extend:
                         transform.Position = part.RestPosition + part.Axis * (part.Amplitude * part.Unfolded(clock.Ramp));
-                        break;
-                    case MachineMotion.Downwind:
-                        if (Places.TryGetComponent(parent.Value, out var frame))
-                        {
-                            transform.Rotation = part.FacingDownwind(math.rotate(math.inverse(frame.Rotation), Downwind));
-                        }
-
-                        break;
-                    case MachineMotion.Point:
-                        Point(ref transform, part, parent.Value);
-                        break;
-                    case MachineMotion.Link:
-                        Link(ref transform, part, parent.Value);
-                        break;
-                    case MachineMotion.Stretch:
                         break;
                 }
             }

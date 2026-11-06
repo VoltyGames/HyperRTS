@@ -84,6 +84,23 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 rig.LastVelocity = velocity;
 
                 Tilt(ref rig, place.Position, forward, right, acceleration);
+                var spin = PoseParts(entity, ref rig, parts, place.Position, forward, right, rolled);
+
+                if (Spins.HasComponent(entity))
+                {
+                    Spins[entity] = new RotorSpin { Amount = spin };
+                }
+
+                if (Tracks.TryGetBuffer(entity, out var tracks))
+                {
+                    BendTracks(tracks, TrackWheels[entity], parts);
+                }
+            }
+
+            /// <summary>Poses every part and returns the strongest rotor spin.</summary>
+            private float PoseParts(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, float3 position,
+                float3 forward, float3 right, float rolled)
+            {
                 var running = Flights.HasComponent(entity) && !Docks.HasEnabled(entity);
                 Poses.TryGetBuffer(entity, out var poses);
                 var spin = 0f;
@@ -99,7 +116,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
                     if (part.Travel > 0f)
                     {
-                        part.FollowGround(MotionRig.GroundLift(Terrain, place.Position, forward, right, bodyTilt, part.Contact), DeltaTime);
+                        part.FollowGround(MotionRig.GroundLift(Terrain, position, forward, right, bodyTilt, part.Contact), DeltaTime);
                         transform.Position = part.LiftedPosition;
                     }
 
@@ -108,15 +125,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     spin = part.Kind == MotionPartKind.Rotor ? math.max(spin, part.Amount) : spin;
                 }
 
-                if (Spins.HasComponent(entity))
-                {
-                    Spins[entity] = new RotorSpin { Amount = spin };
-                }
-
-                if (Tracks.TryGetBuffer(entity, out var tracks))
-                {
-                    BendTracks(tracks, TrackWheels[entity], parts);
-                }
+                return spin;
             }
 
             private void BendTracks(DynamicBuffer<MotionRigTrack> tracks, DynamicBuffer<TrackWheel> wheels,

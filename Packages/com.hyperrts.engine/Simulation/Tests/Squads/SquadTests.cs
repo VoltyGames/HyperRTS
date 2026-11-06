@@ -18,23 +18,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// </summary>
     public class SquadTests : SimulationFixture
     {
-        private const float Each = 25f;
-
-        private Entity Squad(float3 position, params byte[] weapons)
-        {
-            return World.SpawnSquad(1, position, weapons);
-        }
-
-        private void Hit(Entity target, float amount, float3 at = default, float radius = 0f, float edge = 1f) =>
-            World.QueueDamage(new DamageEvent
-            {
-                Target = target,
-                Position = at,
-                Origin = at,
-                SourceFaction = 2,
-                Layers = WeaponTargets.Surface,
-                Profile = new DamageProfile { Amount = amount, Radius = radius, EdgeFactor = edge },
-            });
+        private Entity Squad(float3 position, params byte[] weapons) => World.SpawnSquad(1, position, weapons);
 
         private float Member(Entity squad, int index) => World.Buffer<SquadMember>(squad)[index].Health;
 
@@ -54,11 +38,11 @@ namespace HyperRTS.Simulation.Tests.Squads
         {
             var squad = Squad(float3.zero, 0, 0, 0, 0);
 
-            Hit(squad, 40f);
+            World.HitSquad(squad, 40f);
             World.Tick();
 
             Assert.AreEqual(1, Hurt(squad), "one member took the hit");
-            Assert.AreEqual(3f * Each, World.GetHealth(squad), 1e-3f, "the 15 past its health is lost");
+            Assert.AreEqual(3f * SquadTestKit.MemberHealth, World.GetHealth(squad), 1e-3f, "the 15 past its health is lost");
             var shot = 0;
             foreach (var member in World.Buffer<SquadMember>(squad))
             {
@@ -76,13 +60,13 @@ namespace HyperRTS.Simulation.Tests.Squads
 
             for (var i = 0; i < 12; i++)
             {
-                Hit(squad, 1f);
+                World.HitSquad(squad, 1f);
             }
 
             World.Tick();
 
             Assert.GreaterOrEqual(Hurt(squad), 2);
-            Assert.AreEqual(Each * 4f - 12f, World.GetHealth(squad), 1e-3f);
+            Assert.AreEqual(SquadTestKit.MemberHealth * 4f - 12f, World.GetHealth(squad), 1e-3f);
             World.AssertHealthIsMemberSum(squad);
         }
 
@@ -99,11 +83,11 @@ namespace HyperRTS.Simulation.Tests.Squads
                 members[i] = member;
             }
 
-            Hit(Entity.Null, 20f, new float3(3f, 0f, 0f), radius: 3f, edge: 0f);
+            World.HitSquad(Entity.Null, 20f, new float3(3f, 0f, 0f), radius: 3f, edge: 0f);
             World.Tick();
 
-            Assert.AreEqual(Each, Member(squad, 0), 0.5f, "outside the blast");
-            Assert.Greater(Each, Member(squad, 1) + 0.5f);
+            Assert.AreEqual(SquadTestKit.MemberHealth, Member(squad, 0), 0.5f, "outside the blast");
+            Assert.Greater(SquadTestKit.MemberHealth, Member(squad, 1) + 0.5f);
             Assert.Greater(Member(squad, 1), Member(squad, 2) + 0.5f, "nearer members lose more");
             Assert.Greater(Member(squad, 2), Member(squad, 3) + 0.5f);
             World.AssertHealthIsMemberSum(squad);
@@ -122,7 +106,7 @@ namespace HyperRTS.Simulation.Tests.Squads
                 members[i] = member;
             }
 
-            Hit(squad, 30f, new float3(3f, 0f, 0.4f), radius: 0.5f);
+            World.HitSquad(squad, 30f, new float3(3f, 0f, 0.4f), radius: 0.5f);
             World.Tick();
 
             Assert.AreEqual(0f, Member(squad, 3), 1e-3f, "the member under the blast");
@@ -174,7 +158,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         public void StatChangeToMaxHealth_ScalesMembersAndKeepsTheSum()
         {
             var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
-            Hit(squad, 10f);
+            World.HitSquad(squad, 10f);
             World.Tick();
 
             var health = World.Get<Health>(squad);
@@ -232,11 +216,11 @@ namespace HyperRTS.Simulation.Tests.Squads
             member.Offset = new float2(5f, 0f);
             members[1] = member;
 
-            Hit(Entity.Null, 20f, new float3(5f, 0f, 0f), radius: 1f, edge: 0f);
+            World.HitSquad(Entity.Null, 20f, new float3(5f, 0f, 0f), radius: 1f, edge: 0f);
             World.Tick();
 
-            Assert.AreEqual(Each, Member(squad, 0), 0.5f, "out of the blast");
-            Assert.Greater(Each, Member(squad, 1) + 0.5f);
+            Assert.AreEqual(SquadTestKit.MemberHealth, Member(squad, 0), 0.5f, "out of the blast");
+            Assert.Greater(SquadTestKit.MemberHealth, Member(squad, 1) + 0.5f);
         }
 
         [Test]

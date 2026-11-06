@@ -17,16 +17,10 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// </summary>
     public class CoverTests : SimulationFixture
     {
-        private const float Each = 25f;
         private static readonly float3 Ahead = new(0f, 0f, 20f);
         private static readonly float3 Behind = new(0f, 0f, -20f);
 
-        private Entity Squad(float3 position, int size)
-        {
-            var squad = World.SpawnSquad(1, position, size);
-            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
-            return squad;
-        }
+        private Entity Squad(float3 position, int size) => World.SpawnArmedSquad(position, new byte[size]);
 
         private Entity Prop(float3 at, params (float3 Position, CoverKind Kind)[] spots)
         {
@@ -41,16 +35,6 @@ namespace HyperRTS.Simulation.Tests.Squads
 
             return prop;
         }
-
-        private void Hit(Entity target, float amount, float3 origin, float piercing = 0f, float suppression = 0f) =>
-            World.QueueDamage(new DamageEvent
-            {
-                Target = target,
-                Position = origin,
-                Origin = origin,
-                SourceFaction = 2,
-                Profile = new DamageProfile { Amount = amount, EdgeFactor = 1f, CoverPiercing = piercing, Suppression = suppression },
-            });
 
         private int BuildCount() =>
             World.EntityManager.CreateEntityQuery(typeof(CoverSpots)).GetSingleton<CoverSpots>().Version;
@@ -158,17 +142,17 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 1);
             World.Run(3f);
 
-            Hit(squad, 10f, Ahead, suppression: 0.5f);
+            World.HitSquad(squad, 10f, Ahead, suppression: 0.5f);
             World.Tick();
             Assert.AreEqual(5f, Lost(squad, 0), 1e-3f, "heavy cover halves a hit from the front");
             Assert.AreEqual(0.15f, World.Get<Suppression>(squad).Value, 1e-3f, "heavy cover lets 0.3 of the suppression through");
 
-            Hit(squad, 10f, Behind, suppression: 0.5f);
+            World.HitSquad(squad, 10f, Behind, suppression: 0.5f);
             World.Tick();
             Assert.AreEqual(15f, Lost(squad, 0), 1e-3f, "a hit from behind is full");
             Assert.AreEqual(0.65f, World.Get<Suppression>(squad).Value, 0.01f);
 
-            Hit(squad, 2f, Ahead, piercing: 1f);
+            World.HitSquad(squad, 2f, Ahead, piercing: 1f);
             World.Tick();
             Assert.AreEqual(17f, Lost(squad, 0), 1e-3f, "a piercing hit ignores cover");
 
@@ -189,7 +173,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             // Enough small hits that the roll can't by chance favour the covered pair (about five deviations out).
             for (var i = 0; i < 200; i++)
             {
-                Hit(squad, 0.1f, Ahead);
+                World.HitSquad(squad, 0.1f, Ahead);
                 World.Tick();
             }
 
@@ -254,9 +238,9 @@ namespace HyperRTS.Simulation.Tests.Squads
                 Assert.AreEqual(Posture.Crouch, member.Posture);
             }
 
-            Hit(squad, 20f, Behind);
+            World.HitSquad(squad, 20f, Behind);
             World.Tick();
-            Assert.Less(World.Get<Health>(squad).Current, Each * 3f);
+            Assert.Less(World.Get<Health>(squad).Current, SquadTestKit.MemberHealth * 3f);
         }
 
         [Test]

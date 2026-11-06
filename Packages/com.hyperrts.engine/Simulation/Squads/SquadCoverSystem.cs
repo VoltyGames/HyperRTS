@@ -75,6 +75,13 @@ namespace HyperRTS.Simulation.Squads
                 var halted = !SquadMember.IsMoving(velocity.Value) && !WorkLookup.HasEnabled(squad);
                 var crewing = Deployables.TryGetComponent(squad, out var deployable) && deployable.Emplaced;
                 Keep(squad, members, transform, halted, crewing);
+                Seat(squad, members, transform, halted, crewing);
+            }
+
+            /// <summary>Gives each living member a spot when the squad has halted, and settles it into its cover.</summary>
+            private void Seat(Entity squad, DynamicBuffer<SquadMember> members, in LocalTransform transform, bool halted,
+                bool crewing)
+            {
                 var near = new NativeList<int>(0, Allocator.Temp);
                 var searched = false;
                 var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);

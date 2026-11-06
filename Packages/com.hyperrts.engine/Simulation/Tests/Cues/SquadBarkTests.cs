@@ -15,7 +15,6 @@ namespace HyperRTS.Simulation.Tests.Cues
     /// <summary>Squad barks: which state changes speak, once, only for the local player and not on spawn.</summary>
     public class SquadBarkTests : SimulationFixture
     {
-        private const float Each = 25f;
         private static readonly CueSlot[] Slots =
         {
             CueSlot.TakeCover, CueSlot.Suppressed, CueSlot.Pinned, CueSlot.Retreat, CueSlot.DigIn, CueSlot.Reinforced,
@@ -48,7 +47,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         private void Change(Entity squad, int member, CoverKind cover = CoverKind.None, MemberAction action = MemberAction.None,
-            float health = Each)
+            float health = SquadTestKit.MemberHealth)
         {
             var members = World.Buffer<SquadMember>(squad);
             var each = members[member];

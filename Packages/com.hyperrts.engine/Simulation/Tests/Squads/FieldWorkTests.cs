@@ -21,8 +21,7 @@ namespace HyperRTS.Simulation.Tests.Squads
 
         private Entity Squad(float3 position, int size)
         {
-            var squad = World.SpawnUnit(1, position, speed: 4f);
-            SquadAuthoring.Add(World.Writer(squad), 25f * size, new byte[size]);
+            var squad = World.SpawnSquad(1, position, new byte[size], speed: 4f);
             World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
             return World.MakeBuilder(squad);
         }

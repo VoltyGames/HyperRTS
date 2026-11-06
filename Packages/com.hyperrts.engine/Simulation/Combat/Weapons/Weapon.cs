@@ -167,5 +167,21 @@ namespace HyperRTS.Simulation.Combat.Weapons
             var offset = random.NextFloat2Direction() * Spread * math.sqrt(random.NextFloat());
             return aim + new float3(offset.x, 0f, offset.y);
         }
+
+        /// <summary>Whether a shot at <paramref name="seed"/> downs its projectile, by <see cref="KillChance"/>.</summary>
+        public bool Kills(uint seed) => Random.CreateFromIndex(seed).NextFloat() < KillChance;
+
+        /// <summary>The flight of a round from <paramref name="origin"/> to <paramref name="aim"/> that lands as <paramref name="hit"/>.</summary>
+        public Projectile Launched(DamageEvent hit, int impactTypeId, float3 origin, float3 aim) => new()
+        {
+            Speed = ProjectileSpeed,
+            Height = Aim.ProjectileHeight,
+            ImpactTypeId = impactTypeId,
+            Hit = hit,
+            Course = Aim.Course,
+            Kind = ProjectileKind,
+            Start = origin,
+            Apex = Aim.ArcHeight * math.distance(origin.xz, aim.xz),
+        };
     }
 }

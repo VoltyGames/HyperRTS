@@ -10,6 +10,7 @@ namespace HyperRTS.Simulation.Squads
     /// that is working, and the retreat ends when the squad is within the radius.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Combat + "Retreat Point")]
+    [Icon(HyperRTSIcons.Combat)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class RetreatPointAuthoring : AuthoringBehaviour

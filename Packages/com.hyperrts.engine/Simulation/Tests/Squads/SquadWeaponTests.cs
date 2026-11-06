@@ -13,14 +13,13 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// <summary>A squad's weapons follow their living carriers, and an upgrade shows only while its mount is enabled.</summary>
     public class SquadWeaponTests : SimulationFixture
     {
-        private const float Each = SquadTestKit.MemberHealth;
         private const int Research = 4242;
 
         [Test]
         public void UpgradedMember_CarriesTheUpgradeWhileItsMountIsEnabled_AndItsOwnWeaponOtherwise()
         {
-            var squad = World.SpawnUnit(1, float3.zero, maxHealth: Each * 2);
-            SquadAuthoring.Add(World.Writer(squad), Each * 2, new byte[] { 0, 0 }, new byte?[] { null, 1 });
+            var squad = World.SpawnUnit(1, float3.zero, maxHealth: SquadTestKit.MemberHealth * 2);
+            SquadAuthoring.Add(World.Writer(squad), SquadTestKit.MemberHealth * 2, new byte[] { 0, 0 }, new byte?[] { null, 1 });
             World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
             World.AddMount(squad, range: 6f, damage: 30f, cooldown: 100f, requiredResearchTypeId: Research);
             World.Tick();

@@ -44,24 +44,47 @@ namespace HyperRTS.Simulation.Squads
                 }
             }
 
+            if (points.IsEmpty)
+            {
+                return;
+            }
+
+            var standing = Standing();
             var spots = SystemAPI.GetSingleton<CoverSpots>();
             var near = new NativeList<int>(Allocator.Temp);
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
             foreach (var point in points)
             {
                 near.Clear();
                 spots.FindNear(point.xz, rules.Spacing, near);
-                if (near.IsEmpty && !NearCrater(point.xz, rules.Spacing))
+                if (near.IsEmpty && !NearCrater(standing, point.xz, rules.Spacing))
                 {
-                    Dig(ref state, rules, point);
+                    Dig(ecb, rules, point, standing);
                 }
             }
+
+            ecb.Playback(state.EntityManager);
         }
 
-        private bool NearCrater(float2 point, float spacing)
+        private NativeList<Dug> Standing()
         {
-            foreach (var place in _craters.ToComponentDataArray<LocalTransform>(Allocator.Temp))
+            var entities = _craters.ToEntityArray(Allocator.Temp);
+            var craters = _craters.ToComponentDataArray<Crater>(Allocator.Temp);
+            var places = _craters.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+            var standing = new NativeList<Dug>(entities.Length + 1, Allocator.Temp);
+            for (var i = 0; i < entities.Length; i++)
             {
-                if (math.distancesq(place.Position.xz, point) <= spacing * spacing)
+                standing.Add(new Dug { Entity = entities[i], Order = craters[i].Order, Position = places[i].Position.xz });
+            }
+
+            return standing;
+        }
+
+        private static bool NearCrater(NativeList<Dug> standing, float2 point, float spacing)
+        {
+            foreach (var crater in standing)
+            {
+                if (math.distancesq(crater.Position, point) <= spacing * spacing)
                 {
                     return true;
                 }
@@ -70,32 +93,39 @@ namespace HyperRTS.Simulation.Squads
             return false;
         }
 
-        private void Dig(ref SystemState state, in CraterRules rules, float3 point)
+        private void Dig(EntityCommandBuffer ecb, in CraterRules rules, float3 point, NativeList<Dug> standing)
         {
-            if (_craters.CalculateEntityCount() >= rules.MaxCount)
+            if (standing.Length >= rules.MaxCount)
             {
-                RemoveOldest(ref state);
+                RemoveOldest(ecb, standing);
             }
 
-            var crater = state.EntityManager.Instantiate(rules.Prefab);
-            state.EntityManager.SetComponentData(crater, LocalTransform.FromPosition(point));
-            state.EntityManager.AddComponentData(crater, new Crater { Order = ++_dug });
+            var crater = ecb.Instantiate(rules.Prefab);
+            ecb.SetComponent(crater, LocalTransform.FromPosition(point));
+            ecb.AddComponent(crater, new Crater { Order = ++_dug });
+            standing.Add(new Dug { Entity = crater, Order = _dug, Position = point.xz });
         }
 
-        private void RemoveOldest(ref SystemState state)
+        private static void RemoveOldest(EntityCommandBuffer ecb, NativeList<Dug> standing)
         {
-            var entities = _craters.ToEntityArray(Allocator.Temp);
-            var craters = _craters.ToComponentDataArray<Crater>(Allocator.Temp);
             var oldest = 0;
-            for (var i = 1; i < craters.Length; i++)
+            for (var i = 1; i < standing.Length; i++)
             {
-                if (craters[i].Order < craters[oldest].Order)
+                if (standing[i].Order < standing[oldest].Order)
                 {
                     oldest = i;
                 }
             }
 
-            state.EntityManager.DestroyEntity(entities[oldest]);
+            ecb.DestroyEntity(standing[oldest].Entity);
+            standing.RemoveAtSwapBack(oldest);
+        }
+
+        private struct Dug
+        {
+            public Entity Entity;
+            public uint Order;
+            public float2 Position;
         }
     }
 }
