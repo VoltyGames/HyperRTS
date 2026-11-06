@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// protection that is left at <paramref name="intact"/> health, scaled by the damage type's garrison factor.
         /// </summary>
         public readonly float Passing(in DamageEvent hit, float amount, float intact) =>
-            amount * (1f - Protection * math.saturate(intact)) * hit.GarrisonFactor;
+            amount * (1f - Protection * math.saturate(intact)) * hit.Profile.GarrisonFactor;
     }
 
     /// <summary>A hit on a <see cref="Shelter"/> that reaches its passengers, waiting for the container to share it out.</summary>

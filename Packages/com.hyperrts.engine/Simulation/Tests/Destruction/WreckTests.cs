@@ -29,11 +29,11 @@ namespace HyperRTS.Simulation.Tests.Destruction
             Assert.IsTrue(World.EntityManager.Exists(wreck), "a wreck does not decay");
             Assert.AreEqual(0, Stage(wreck), "fresh while whole");
 
-            World.QueueDamage(new DamageEvent { Position = float3.zero, Amount = 200f, Radius = 4f, EdgeFactor = 1f });
+            World.QueueDamage(new DamageEvent { Position = float3.zero, Profile = new DamageProfile { Amount = 200f, Radius = 4f, EdgeFactor = 1f } });
             World.Tick();
             Assert.AreEqual(1, Stage(wreck), "burnt below half");
 
-            World.QueueDamage(new DamageEvent { Position = float3.zero, Amount = 400f, Radius = 4f, EdgeFactor = 1f });
+            World.QueueDamage(new DamageEvent { Position = float3.zero, Profile = new DamageProfile { Amount = 400f, Radius = 4f, EdgeFactor = 1f } });
             World.Tick();
             Assert.IsFalse(World.EntityManager.Exists(wreck));
             World.Run(400f);

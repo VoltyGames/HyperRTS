@@ -152,7 +152,9 @@ namespace HyperRTS.Simulation.Tests.Common
 
             _world.QueueDamage(new DamageEvent
             {
-                Position = pose.Position, SourceFaction = 1, Amount = 100f, Radius = 2f, EdgeFactor = 1f,
+                Position = pose.Position,
+                SourceFaction = 1,
+                Profile = new DamageProfile { Amount = 100f, Radius = 2f, EdgeFactor = 1f },
             });
             var spawned = Single(TickUntilSpawned(5, ComponentType.ReadOnly<LocalTransform>(),
                 ComponentType.Exclude<Health>()));

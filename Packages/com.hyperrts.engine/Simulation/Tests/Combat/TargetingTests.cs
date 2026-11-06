@@ -138,18 +138,15 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         [TestCase(1.5f, true)]
         [TestCase(1f, false)]
-        public void DefensiveLeash_ScalesWithTheWeaponsLeashFactor(float leashFactor, bool keeps)
+        public void DefensiveLeash_ScalesWithTheStancesLeashFactor(float leashFactor, bool keeps)
         {
             var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), Stance.Defensive, range: 2f);
-            var weapon = World.Primary(soldier);
-            weapon.LeashFactor = leashFactor;
-            World.SetPrimary(soldier, weapon);
             var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f), speed: 0f);
             World.Tick();
 
             // About 12 from its post: past a 10 acquire range, inside 1.5 times it.
             var post = new float3(-7f, 0f, 0f);
-            World.Set(soldier, new CombatStance { Value = Stance.Defensive, ReturnPoint = post });
+            World.Set(soldier, CombatStance.Create(Stance.Defensive, post, leashFactor: leashFactor));
             World.Set(soldier, new AttackTarget { Value = enemy });
             World.SetEnabled<AttackTarget>(soldier, true);
             World.Tick();

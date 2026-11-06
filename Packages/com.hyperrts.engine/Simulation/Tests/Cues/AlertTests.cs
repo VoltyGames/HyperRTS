@@ -147,7 +147,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         public void BuildingHits_AreAnnouncedOncePerInterval()
         {
             var depot = World.SpawnBuilding(1, float3.zero, Footprint);
-            var hit = new DamageEvent { Target = depot, SourceFaction = 2, Amount = 1f };
+            var hit = new DamageEvent { Target = depot, SourceFaction = 2, Profile = new DamageProfile { Amount = 1f } };
 
             var heard = new List<CueEvent>();
             for (var i = 0; i < 10; i++)
@@ -243,7 +243,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         private void Hit(Entity target) =>
-            World.QueueDamage(new DamageEvent { Target = target, SourceFaction = 2, Amount = 1f });
+            World.QueueDamage(new DamageEvent { Target = target, SourceFaction = 2, Profile = new DamageProfile { Amount = 1f } });
 
         private List<CueEvent> Announced(float seconds) => World.QueuedOver(seconds, CueSlot.Announce);
 

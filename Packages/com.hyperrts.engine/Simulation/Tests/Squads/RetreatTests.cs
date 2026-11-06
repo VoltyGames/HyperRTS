@@ -160,7 +160,10 @@ namespace HyperRTS.Simulation.Tests.Squads
 
             World.QueueDamage(new DamageEvent
             {
-                Target = squad, Origin = new float3(0f, 0f, 20f), SourceFaction = 2, EdgeFactor = 1f, Suppression = 1f,
+                Target = squad,
+                Origin = new float3(0f, 0f, 20f),
+                SourceFaction = 2,
+                Profile = new DamageProfile { EdgeFactor = 1f, Suppression = 1f },
             });
             World.Tick(frames: 2);
             Assert.AreEqual(0f, World.Get<Suppression>(squad).Value, 1e-3f, "and fire doesn't suppress it");

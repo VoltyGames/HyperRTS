@@ -88,9 +88,9 @@ namespace HyperRTS.Simulation.Tests.AI
             var writer = World.Writer(soldier);
             var weapon = new Weapon
             {
-                Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f, LeashFactor = 1.5f,
+                Range = 2f, Damage = new DamageProfile { Amount = 1f }, Cooldown = 1f,
             };
-            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, Stance.Aggressive, float3.zero);
+            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
             var tank = UnitPrefab("Tank", 15, 30f);
             var first = World.MakeProducer(World.SpawnBuilding(2, float3.zero, new float2(4f, 4f)),
                 new float3(0f, 0f, -4f), soldier, tank);

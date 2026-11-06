@@ -114,7 +114,7 @@ namespace HyperRTS.Simulation.Transport
             if (_stances.HasComponent(unit))
             {
                 var restored = _saved.TryGetComponent(unit, out var saved) ? saved.Value : default;
-                _stances[unit] = new CombatStance { Value = restored, ReturnPoint = position };
+                _stances[unit] = _stances[unit].WithPost(restored, position);
             }
 
             var transform = _transforms[unit];

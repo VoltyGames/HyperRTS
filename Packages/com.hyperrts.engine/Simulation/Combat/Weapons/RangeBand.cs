@@ -12,6 +12,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
             Reach = reach;
         }
 
+        /// <summary>Whether a target <paramref name="gap"/> away, edge to edge, is neither too near nor too far.</summary>
+        public readonly bool Contains(float gap) => gap >= Floor && gap <= Reach;
+
         public readonly float Middle => 0.5f * (Floor + Reach);
     }
 }

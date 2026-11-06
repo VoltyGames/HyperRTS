@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var tree = SpawnTree(new float3(5f, 0f, 0f), remains, out var standing, out var topple);
 
-            World.QueueDamage(new DamageEvent { Position = float3.zero, Amount = 999f, Radius = 8f, EdgeFactor = 1f });
+            World.QueueDamage(new DamageEvent { Position = float3.zero, Profile = new DamageProfile { Amount = 999f, Radius = 8f, EdgeFactor = 1f } });
             World.Tick();
 
             Assert.IsFalse(World.EntityManager.Exists(tree));
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var tree = SpawnTree(new float3(5f, 0f, 0f), remains, out _, out _);
 
-            World.QueueDamage(new DamageEvent { Target = tree, Origin = new float3(5f, 0f, -10f), Amount = 999f });
+            World.QueueDamage(new DamageEvent { Target = tree, Origin = new float3(5f, 0f, -10f), Profile = new DamageProfile { Amount = 999f } });
             World.Tick();
 
             var (shown, _) = FellRemains();

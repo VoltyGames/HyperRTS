@@ -32,24 +32,28 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>Splash also hurts the source's allies.</summary>
         public bool FriendlyFire;
 
-        /// <summary>The hit on <paramref name="target"/> at <paramref name="position"/>, its splash reaching <paramref name="reach"/>.</summary>
+        /// <summary>A profile that only carries <paramref name="type"/> and its cover piercing, for damage over time.</summary>
+        public static DamageProfile FromType(DamageType type) => new()
+        {
+            Type = type,
+            CoverPiercing = DamageType.Piercing(type),
+        };
+
+        /// <summary>Linear falloff from full damage at the centre to <see cref="EdgeFactor"/> at <see cref="Radius"/>.</summary>
+        public readonly float SplashFactor(float gap) =>
+            math.lerp(1f, EdgeFactor, math.saturate(gap / math.max(Radius, 1e-4f)));
+
+        /// <summary>The hit on <paramref name="target"/> at <paramref name="position"/>, its splash reaching <paramref name="layers"/>.</summary>
         public readonly DamageEvent Hit(Entity source, byte faction, float3 origin, Entity target, float3 position,
-            WeaponTargets reach) => new()
+            WeaponTargets layers) => new()
         {
             Target = target,
             Position = position,
             Origin = origin,
             Source = source,
             SourceFaction = faction,
-            Amount = Amount,
-            Type = Type,
-            GarrisonFactor = GarrisonFactor,
-            CoverPiercing = CoverPiercing,
-            Suppression = Suppression,
-            Radius = Radius,
-            EdgeFactor = EdgeFactor,
-            FriendlyFire = FriendlyFire,
-            Reach = reach,
+            Profile = this,
+            Layers = layers,
         };
     }
 }

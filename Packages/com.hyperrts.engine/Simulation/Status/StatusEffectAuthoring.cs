@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Stats;
 using System.Collections.Generic;
@@ -74,7 +75,7 @@ namespace HyperRTS.Simulation.Status
                     MaxStacks = authoring.maxStacks,
                     Rule = authoring.stackRule,
                     DamagePerSecond = authoring.damagePerSecond,
-                    DamageType = authoring.damageType,
+                    Damage = DamageProfile.FromType(authoring.damageType),
                 }, authoring.bonuses);
             }
         }

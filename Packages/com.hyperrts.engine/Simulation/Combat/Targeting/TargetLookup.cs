@@ -207,8 +207,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// <summary>Whether the target sits between the weapon's minimum range and its <see cref="Reach"/>.</summary>
         public bool Reaches(Entity shooter, float3 position, in Weapon weapon, Entity target)
         {
-            var gap = Gap(shooter, position, target);
-            return gap >= weapon.MinRange && gap <= Reach(shooter, position, weapon, target);
+            return weapon.Band(Reach(shooter, position, weapon, target)).Contains(Gap(shooter, position, target));
         }
 
         /// <summary>Whether the target lies within the weapon's firing arc, always so for an all-round weapon.</summary>

@@ -69,53 +69,17 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 in VisionRange vision, in Faction faction, ref CombatStance stance, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking)
             {
-                var primary = mounts[0];
-                var weapon = primary.Weapon;
                 var order = CurrentOrder(entity);
                 if (!attacking.ValueRO)
                 {
-                    // Attack-movers carry their post along, so a defensive leash is measured from where they engage.
-                    var standing = order.Type == OrderType.None && !Moves.IsMoving(entity);
-                    if (standing || Traits.Has(order.Type, OrderTraits.EngagesWhileMoving))
-                    {
-                        stance.ReturnPoint = transform.Position;
-                    }
-
+                    KeepPost(entity, transform.Position, order, ref stance);
                     return;
                 }
 
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                if (Loses(primary, faction, target, ordered))
-                {
-                    Release(entity, order, stance, ref attack, attacking);
-                    return;
-                }
-
-                // A target the unit chose itself and can no longer turn onto is dropped.
-                if (!ordered && weapon.FiringArc > 0f && !Targets.InFiringArc(entity, weapon, target))
-                {
-                    Release(entity, order, stance, ref attack, attacking);
-                    return;
-                }
-
-                attack.Reach = Targets.Reach(entity, transform.Position, weapon, target);
-                var band = Reach(entity, transform.Position, mounts, target, attack.Reach);
-
-                var gap = Targets.Gap(entity, transform.Position, target);
-                var leash = weapon.ScanRange(vision.Value) * weapon.LeashFactor;
-                var leaves = !ordered && (Roams(entity, stance)
-                    ? Strays(entity, transform.Position, stance, target, leash)
-                    : gap > band.Reach);
-                if (leaves)
-                {
-                    Release(entity, order, stance, ref attack, attacking);
-                    return;
-                }
-
-                attack.Gap = gap;
-                if (!ordered && attack.Gap < band.Floor)
+                if (Releases(entity, transform.Position, mounts, vision, faction, stance, ordered, ref attack, out var band))
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
@@ -127,8 +91,55 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 }
 
                 // Bullets close in until the line is clear.
-                var clear = Targets.CanFireAt(entity, transform.Position, weapon, target);
+                var clear = Targets.CanFireAt(entity, transform.Position, mounts[0].Weapon, target);
                 Engage(entity, transform.Position, target, ref attack, band, clear);
+            }
+
+            /// <summary>Attack-movers carry their post along, so a defensive leash is measured from where they engage.</summary>
+            private void KeepPost(Entity entity, float3 position, in Order order, ref CombatStance stance)
+            {
+                var standing = order.Type == OrderType.None && !Moves.IsMoving(entity);
+                if (standing || Traits.Has(order.Type, OrderTraits.EngagesWhileMoving))
+                {
+                    stance.ReturnPoint = position;
+                }
+            }
+
+            /// <summary>
+            /// Whether the unit lets go of its target: it is gone or out of reach, a target it picked itself is out of
+            /// its firing arc or past the leash, or inside its minimum range. Otherwise sets the gap and range band.
+            /// </summary>
+            private bool Releases(Entity entity, float3 position, in DynamicBuffer<WeaponMount> mounts,
+                in VisionRange vision, in Faction faction, in CombatStance stance, bool ordered, ref AttackTarget attack,
+                out RangeBand band)
+            {
+                var primary = mounts[0];
+                var weapon = primary.Weapon;
+                var target = attack.Value;
+                band = default;
+                if (Loses(primary, faction, target, ordered))
+                {
+                    return true;
+                }
+
+                // A target the unit chose itself and can no longer turn onto is dropped.
+                if (!ordered && weapon.FiringArc > 0f && !Targets.InFiringArc(entity, weapon, target))
+                {
+                    return true;
+                }
+
+                attack.Reach = Targets.Reach(entity, position, weapon, target);
+                band = Reach(entity, position, mounts, target, attack.Reach);
+                var gap = Targets.Gap(entity, position, target);
+                var leash = stance.ScanRange(vision.Value, weapon.Range) * stance.LeashFactor;
+                var strays = Roams(entity, stance) ? Strays(entity, position, stance, target, leash) : gap > band.Reach;
+                if (!ordered && strays)
+                {
+                    return true;
+                }
+
+                attack.Gap = gap;
+                return !ordered && gap < band.Floor;
             }
 
             /// <summary>
@@ -140,8 +151,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             {
                 var middle = band.Middle;
                 attack.BackingOff = BacksOff(entity, attack, band.Floor, middle);
-                var within = attack.Gap >= band.Floor && attack.Gap <= band.Reach;
-                attack.InRange = !attack.BackingOff && within && clear;
+                attack.InRange = !attack.BackingOff && band.Contains(attack.Gap) && clear;
                 if (attack.BackingOff)
                 {
                     BackOff(entity, position, target, middle);
@@ -187,7 +197,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             private RangeBand Reach(Entity entity, float3 position, in DynamicBuffer<WeaponMount> mounts, Entity target,
                 float reach)
             {
-                var band = new RangeBand(mounts[0].Weapon.MinRange, reach);
+                var band = mounts[0].Weapon.Band(reach);
                 WeaponMount.ExtendReach(mounts, Targets, entity, position, target, ref band);
                 return band;
             }

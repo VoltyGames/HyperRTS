@@ -57,8 +57,11 @@ namespace HyperRTS.Simulation.Tests.Destruction
 
         private void Hit(Entity bridge, int span) => World.QueueDamage(new DamageEvent
         {
-            Target = bridge, Origin = Span(span) + new float3(0f, 20f, 0f), Position = Span(span), SourceFaction = 2,
-            Amount = 100f,
+            Target = bridge,
+            Origin = Span(span) + new float3(0f, 20f, 0f),
+            Position = Span(span),
+            SourceFaction = 2,
+            Profile = new DamageProfile { Amount = 100f },
         });
 
         private bool Open(int span) => World.Grid().IsWalkable(Span(span));

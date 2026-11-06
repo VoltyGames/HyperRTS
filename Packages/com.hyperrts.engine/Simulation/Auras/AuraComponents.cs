@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
@@ -12,7 +13,7 @@ namespace HyperRTS.Simulation.Auras
         public AuraTargets Affects;
         public float HealPerSecond;
         public float DamagePerSecond;
-        public UnityObjectRef<DamageType> DamageType;
+        public DamageProfile Damage;
     }
 
     /// <summary>An aura this entity is inside, one per aura id, sorted by id. Rewritten by <see cref="AuraSystem"/>.</summary>

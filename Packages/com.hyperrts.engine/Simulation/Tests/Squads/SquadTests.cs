@@ -32,9 +32,7 @@ namespace HyperRTS.Simulation.Tests.Squads
                 Position = at,
                 Origin = at,
                 SourceFaction = 2,
-                Amount = amount,
-                Radius = radius,
-                EdgeFactor = edge,
+                Profile = new DamageProfile { Amount = amount, Radius = radius, EdgeFactor = edge },
             });
 
         private float Member(Entity squad, int index) => World.Buffer<SquadMember>(squad)[index].Health;

@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
                 var weapon = primary.Weapon;
                 var holding = stance.Value == Stance.HoldPosition;
-                var range = holding ? Targets.ScanReach(entity, weapon) : weapon.ScanRange(vision.Value);
+                var range = holding ? Targets.ScanReach(entity, weapon) : stance.ScanRange(vision.Value, weapon.Range);
                 var finder = new NearestHostile(Relations, Targets, weapon, faction.Value, entity, transform.Position);
                 finder.Search(Index, range, holding);
 

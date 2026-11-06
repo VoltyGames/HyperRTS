@@ -70,7 +70,7 @@ it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
 | Garrisons, transports | `Container` and `Passenger` |
 | General's powers | `Ability` on the player entity |
 | Radar jamming, healing zones | `Aura` |
-| Aircraft | `Flight`, `Airfield` pads, `AmmoAuthoring` |
+| Aircraft | `Flight`, `Airfield` pads, weapon ammo |
 
 ## HUD
 

@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return Entity.Null;
             }
 
-            var reached = attack.Gap >= mount.Weapon.MinRange && attack.Gap <= attack.Reach;
+            var reached = mount.Weapon.Band(attack.Reach).Contains(attack.Gap);
             return reached && Targets.IsAlive(attack.Value) ? attack.Value : Entity.Null;
         }
 

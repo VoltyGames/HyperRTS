@@ -24,8 +24,11 @@ namespace HyperRTS.Simulation.Tests.Squads
         private void Hit(Entity target, float suppression, float radius = 0f, float3 at = default) =>
             World.QueueDamage(new DamageEvent
             {
-                Target = target, Position = at, Origin = at + new float3(0f, 0f, 20f), SourceFaction = 2,
-                EdgeFactor = 1f, Suppression = suppression, Radius = radius,
+                Target = target,
+                Position = at,
+                Origin = at + new float3(0f, 0f, 20f),
+                SourceFaction = 2,
+                Profile = new DamageProfile { EdgeFactor = 1f, Suppression = suppression, Radius = radius },
             });
 
         private float Suppression(Entity squad) => World.Get<Suppression>(squad).Value;

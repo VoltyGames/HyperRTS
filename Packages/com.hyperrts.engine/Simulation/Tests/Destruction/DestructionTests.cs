@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var tree = SpawnScenery(new float3(2f, 0f, 0f), 0);
             var house = World.SpawnBuilding(0, new float3(-2f, 0f, 0f), new float2(2f, 2f));
 
-            World.QueueDamage(new DamageEvent { Position = float3.zero, SourceFaction = 1, Amount = 20f, Radius = 6f, EdgeFactor = 1f });
+            World.QueueDamage(new DamageEvent { Position = float3.zero, SourceFaction = 1, Profile = new DamageProfile { Amount = 20f, Radius = 6f, EdgeFactor = 1f } });
             World.Tick();
 
             Assert.Less(World.GetHealth(tree), 50f, "destructible scenery takes the blast");

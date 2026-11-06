@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Stats;
 using System.Collections.Generic;
@@ -70,7 +71,7 @@ namespace HyperRTS.Simulation.Auras
                     Affects = authoring.affects,
                     HealPerSecond = authoring.healPerSecond,
                     DamagePerSecond = authoring.damagePerSecond,
-                    DamageType = authoring.damageType,
+                    Damage = DamageProfile.FromType(authoring.damageType),
                 }, modifiers);
             }
         }

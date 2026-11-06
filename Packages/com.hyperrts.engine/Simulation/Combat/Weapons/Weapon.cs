@@ -20,11 +20,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>What interceptors see its projectiles as.</summary>
         public ProjectileKind ProjectileKind;
 
-        public float AcquireRange;
-
-        /// <summary>Auto-acquired targets are dropped beyond this multiple of the acquire range.</summary>
-        public float LeashFactor;
-
         /// <summary>What the weapon can hit; units and orders never aim it at anything else.</summary>
         public WeaponTargets Targets;
 
@@ -72,9 +67,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _ => true,
         };
 
-        /// <summary>How far it looks for targets: <see cref="AcquireRange"/>, else <paramref name="visionRange"/>, never under <see cref="Range"/>.</summary>
-        public readonly float ScanRange(float visionRange) =>
-            math.max(AcquireRange > 0f ? AcquireRange : visionRange, Range);
+        /// <summary>The distances it hits from: its minimum range up to <paramref name="reach"/>.</summary>
+        public readonly RangeBand Band(float reach) => new(MinRange, reach);
 
         /// <summary>Whether a target at <paramref name="toTarget"/> (XZ, any length) lies within the firing arc about <paramref name="heading"/>.</summary>
         public readonly bool InFiringArc(float2 heading, float2 toTarget)

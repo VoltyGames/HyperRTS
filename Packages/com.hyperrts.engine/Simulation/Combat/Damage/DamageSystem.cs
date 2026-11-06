@@ -28,12 +28,14 @@ namespace HyperRTS.Simulation.Combat.Damage
         private DamageFactors _factors;
         private EventWriter<EntityDamaged> _damaged;
         private SectionDamage _buildings;
+        private SquadDamage _squads;
 
         public void OnCreate(ref SystemState state)
         {
             _factors = new DamageFactors(ref state);
             _damaged = new EventWriter<EntityDamaged>(ref state);
             _buildings = new SectionDamage(ref state);
+            _squads = new SquadDamage(ref state);
 
             EventQueues.Create<DamageQueue>(ref state, typeof(DamageEvent));
             state.RequireForUpdate<SpatialIndex>();
@@ -49,6 +51,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             _factors.Update(ref state);
             _damaged.Update(ref state);
             _buildings.Update(ref state);
+            _squads.Update(ref state, SystemAPI.GetSingleton<CoverRules>());
 
             new ResolveJob
             {
@@ -65,10 +68,8 @@ namespace HyperRTS.Simulation.Combat.Damage
                 Shelters = SystemAPI.GetComponentLookup<Shelter>(true),
                 ShelterHits = SystemAPI.GetBufferLookup<ShelterHit>(false),
                 Buildings = _buildings,
-                Members = SystemAPI.GetBufferLookup<SquadMember>(false),
-                Suppressions = SystemAPI.GetComponentLookup<Suppression>(false),
+                Squads = _squads,
                 Frame = SystemAPI.GetSingleton<SimulationFrame>().Value,
-                Cover = SystemAPI.GetSingleton<CoverRules>(),
                 Squad = SystemAPI.GetSingleton<SquadRules>(),
             }.Schedule();
         }
@@ -90,10 +91,8 @@ namespace HyperRTS.Simulation.Combat.Damage
             [ReadOnly] public ComponentLookup<Shelter> Shelters;
             public BufferLookup<ShelterHit> ShelterHits;
             public SectionDamage Buildings;
-            public BufferLookup<SquadMember> Members;
-            public ComponentLookup<Suppression> Suppressions;
+            public SquadDamage Squads;
             public uint Frame;
-            public CoverRules Cover;
             public SquadRules Squad;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
@@ -102,8 +101,15 @@ namespace HyperRTS.Simulation.Combat.Damage
                 for (var i = 0; i < events.Length; i++)
                 {
                     var hit = events[i];
-                    var struck = Apply(hit.Target, hit.Amount, hit, hit.Origin, Seed(hit, i), Nearest(hit), hit.Suppression);
-                    if (hit.Radius > 0f)
+                    var struck = Apply(hit.Target, hit, new Blow
+                    {
+                        Amount = hit.Profile.Amount,
+                        From = hit.Origin,
+                        Seed = Seed(hit, i),
+                        Member = Squads.Nearest(hit),
+                        Suppression = hit.Profile.Suppression,
+                    });
+                    if (hit.Profile.Radius > 0f)
                     {
                         Splash(hit, struck, victims);
                     }
@@ -121,7 +127,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             {
                 victims.Clear();
                 var collector = new SplashCollector { Victims = victims };
-                Index.Query(hit.Position, hit.Radius + math.max(Squad.MaxSpread, Squad.WorkSpread), ref collector);
+                Index.Query(hit.Position, hit.Profile.Radius + math.max(Squad.MaxSpread, Squad.WorkSpread), ref collector);
 
                 foreach (var victim in victims)
                 {
@@ -130,16 +136,21 @@ namespace HyperRTS.Simulation.Combat.Damage
                         continue;
                     }
 
-                    if (Members.HasBuffer(victim.Entity))
+                    if (Squads.IsSquad(victim.Entity))
                     {
                         SplashMembers(hit, victim, victim.Entity == hit.Target ? struck : -1);
                         continue;
                     }
 
                     var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
-                    if (victim.Entity != hit.Target && gap <= hit.Radius)
+                    if (victim.Entity != hit.Target && gap <= hit.Profile.Radius)
                     {
-                        Apply(victim.Entity, hit.Amount * hit.SplashFactor(gap), hit, hit.Position, 0u);
+                        Apply(victim.Entity, hit, new Blow
+                        {
+                            Amount = hit.Profile.Amount * hit.Profile.SplashFactor(gap),
+                            From = hit.Position,
+                            Member = -1,
+                        });
                     }
                 }
             }
@@ -147,89 +158,89 @@ namespace HyperRTS.Simulation.Combat.Damage
             /// <summary>Splash stays on the layers the hit reaches, so a ground burst spares aircraft above. Heals reach allies only.</summary>
             private bool SplashReaches(in DamageEvent hit, in SpatialEntry victim)
             {
-                if (!Weapon.CanHit(hit.Reach, victim.Layer))
+                if (!Weapon.CanHit(hit.Layers, victim.Layer))
                 {
                     return false;
                 }
 
-                if (hit.Amount < 0f)
+                if (hit.Profile.Amount < 0f)
                 {
                     return Relations.IsAllied(hit.SourceFaction, victim.Faction);
                 }
 
-                return hit.FriendlyFire || Relations.IsHostile(hit.SourceFaction, victim.Faction)
+                return hit.Profile.FriendlyFire || Relations.IsHostile(hit.SourceFaction, victim.Faction)
                     || Destructibles.HasComponent(victim.Entity);
             }
 
             /// <summary>
-            /// A lethal hit fells a <see cref="Topple"/> target away from <paramref name="from"/>. A squad's hit lands on
-            /// <paramref name="member"/>, or on one picked by <paramref name="seed"/> when that is -1, and adds
-            /// <paramref name="suppression"/> past that member's cover; returns the member struck, else -1.
+            /// Scales the blow by the target's armor, routes it to its sections, squad members or health, and records
+            /// it. A lethal hit fells a <see cref="Topple"/> target away from the blow's origin. Returns the squad
+            /// member struck, else -1.
             /// </summary>
-            private int Apply(Entity target, float amount, in DamageEvent hit, float3 from, uint seed, int member = -1,
-                float suppression = 0f)
+            private int Apply(Entity target, in DamageEvent hit, in Blow blow)
             {
                 if (!Health.TryGetComponent(target, out var health) || health.Current <= 0f)
                 {
                     return -1;
                 }
 
-                var hasMembers = Members.TryGetBuffer(target, out var members);
-                if (amount < 0f)
+                if (blow.Amount < 0f)
                 {
-                    Heal(target, -amount, hasMembers, members, health);
+                    Heal(target, -blow.Amount, health);
                     return -1;
                 }
 
-                PassToPassengers(target, amount, health, hit, from);
+                PassToPassengers(target, blow.Amount, health, hit, blow.From);
                 var scale = Factors.Scale(target, hit);
-                amount = Buildings.IsSectioned(target)
-                    ? Buildings.Route(target, Transforms[target], hit, scale)
-                    : amount * scale;
+                var struck = -1;
                 var held = health.Current;
-                if (hasMembers)
+                float dealt;
+                if (Squads.IsSquad(target))
                 {
-                    var squad = Transforms[target].Position;
-                    member = member >= 0 ? member : SquadMember.PickExposed(members, squad, seed, Cover, from, hit.CoverPiercing);
-                    if (member < 0)
+                    if (!Squads.Hurt(target, blow.Amount * scale, hit, blow, out var wound))
                     {
                         return -1;
                     }
 
-                    amount *= members[member].ExposureTo(Cover, squad, from, hit.CoverPiercing).Damage;
-                    held = members[member].Health;
-                    health.Current = SquadMember.Hurt(members, member, amount);
-                    RecordDeath(members, member, held, hit, squad);
-                    Suppress(target, members[member], suppression, hit, from);
+                    struck = wound.Member;
+                    held = wound.Held;
+                    dealt = wound.Dealt;
+                    health.Current = wound.SquadHealth;
                 }
                 else
                 {
-                    health.Current = Buildings.Resolved(target, math.max(0f, health.Current - amount));
+                    dealt = Buildings.IsSectioned(target)
+                        ? Buildings.Route(target, Transforms[target], hit, scale)
+                        : blow.Amount * scale;
+                    health.Current = Buildings.Resolved(target, math.max(0f, health.Current - dealt));
                 }
 
-                var overkill = amount - held;
+                Record(target, health, dealt - held, dealt, hit, blow.From);
+                return struck;
+            }
+
+            /// <summary>Stores the health and reports the damage, a lethal hit's heading and who dealt it.</summary>
+            private void Record(Entity target, Health health, float overkill, float dealt, in DamageEvent hit, float3 from)
+            {
                 Health[target] = health;
-                Report(target, amount);
+                Report(target, dealt);
                 if (health.Current <= 0f && LethalHits.HasComponent(target))
                 {
                     var heading = ToppleMath.Quantize(from, Transforms[target].Position);
-                    LethalHits[target] = new LethalHit { Type = hit.Type, Overkill = overkill, Heading = heading };
+                    LethalHits[target] = new LethalHit { Type = hit.Profile.Type, Overkill = overkill, Heading = heading };
                 }
 
                 if (Attackers.HasComponent(target) && hit.SourceFaction != 0)
                 {
                     Attackers[target] = new LastAttacker { Source = hit.Source, Faction = hit.SourceFaction };
                 }
-
-                return hasMembers ? member : -1;
             }
 
-            private void Heal(Entity target, float amount, bool hasMembers, DynamicBuffer<SquadMember> members,
-                Health health)
+            private void Heal(Entity target, float amount, Health health)
             {
-                if (hasMembers)
+                if (Squads.IsSquad(target))
                 {
-                    health.Current = SquadMember.Heal(members, amount);
+                    health.Current = Squads.Heal(target, amount);
                 }
                 else
                 {
@@ -254,7 +265,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             /// <summary>Passes the share of a hit on a shelter that its walls, at their health before the hit, don't stop.</summary>
             private void PassToPassengers(Entity target, float amount, in Health health, in DamageEvent hit, float3 from)
             {
-                if (hit.GarrisonFactor <= 0f || !Shelters.TryGetComponent(target, out var shelter))
+                if (hit.Profile.GarrisonFactor <= 0f || !Shelters.TryGetComponent(target, out var shelter))
                 {
                     return;
                 }
@@ -262,9 +273,9 @@ namespace HyperRTS.Simulation.Combat.Damage
                 var passing = hit;
                 passing.Target = Entity.Null;
                 passing.Origin = from;
-                passing.Amount = shelter.Passing(hit, amount, Buildings.Intact(target, health));
-                passing.Radius = 0f;
-                if (passing.Amount > 0f)
+                passing.Profile.Amount = shelter.Passing(hit, amount, Buildings.Intact(target, health));
+                passing.Profile.Radius = 0f;
+                if (passing.Profile.Amount > 0f)
                 {
                     ShelterHits[target].Add(new ShelterHit { Hit = passing });
                 }

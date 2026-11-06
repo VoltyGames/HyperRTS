@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
@@ -28,7 +29,7 @@ namespace HyperRTS.Simulation.Status
         /// <summary>Damage each second per stack, credited to the effect's source; 0 for none.</summary>
         public float DamagePerSecond;
 
-        public UnityObjectRef<DamageType> DamageType;
+        public DamageProfile Damage;
 
         /// <summary>The stack count after applying the effect again on top of <paramref name="stacks"/>.</summary>
         public readonly int NextStacks(int stacks) =>

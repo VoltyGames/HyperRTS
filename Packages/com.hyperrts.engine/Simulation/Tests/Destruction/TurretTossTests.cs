@@ -122,7 +122,10 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             _world.QueueDamage(new DamageEvent
             {
-                Target = tank, Origin = at + new float3(0f, 0f, -10f), Amount = amount, Type = type, SourceFaction = 2,
+                Target = tank,
+                Origin = at + new float3(0f, 0f, -10f),
+                SourceFaction = 2,
+                Profile = new DamageProfile { Amount = amount, Type = type },
             });
             _world.Tick();
         }

@@ -14,8 +14,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// The weapons, primary first, with a pose each; build each with <see cref="WeaponMount.Create"/>.
         /// <paramref name="designations"/> (null for none) name the first weapons in order.
         /// </summary>
-        public static void Add(EntityWriter writer, IReadOnlyList<WeaponMount> mounts, Stance stance,
-            float3 returnPoint, IReadOnlyList<FixedString32Bytes> designations = null)
+        public static void Add(EntityWriter writer, IReadOnlyList<WeaponMount> mounts, CombatStance stance,
+            IReadOnlyList<FixedString32Bytes> designations = null)
         {
             writer.AddBuffer(mounts);
             var poses = writer.AddBuffer<WeaponPose>();
@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 poses.ElementAt(i).Designation = designations[i];
             }
 
-            writer.Add(new CombatStance { Value = stance, ReturnPoint = returnPoint });
+            writer.Add(stance);
             writer.Add<AttackTarget>();
             writer.SetEnabled<AttackTarget>(false);
         }

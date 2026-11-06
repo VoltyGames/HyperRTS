@@ -20,15 +20,14 @@ namespace: `Weapons` (weapons, aim, ammo, deploy), `Projectiles` (projectiles, i
 | Type | Role |
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and extra weapons |
-| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, firing arc, salvo size and interval, spread. The primary and each extra weapon carry one |
+| `WeaponStats` | Its hit (`DamageSettings`), cooldown, projectile, trajectory and projectile kind, muzzle and extra muzzles, aim (turret and barrel pivots, traverse and elevation speeds, elevation limits, tolerance), range, minimum range, targets, needs deploy, firing arc, ammo (`rounds`, `reloadTime`, `refill`), salvo size and interval, spread. The primary and each extra weapon carry one |
 | `WeaponMount` | One weapon: the primary at index 0, then the extra weapons, then an interceptor's. Server only; stats rewrite each from its own bases |
-| `DamageProfile` | What a hit deals: amount, damage type, garrison factor, splash radius and edge factor, friendly fire. Weapons, abilities and bombs carry one and build their hit with `Hit`; `DamageSettings` is its inspector block |
-| `AmmoAuthoring` | Rounds per load and how they refill: `Docked`, `Round` or `Magazine` |
+| `DamageProfile` | What a hit deals: amount, damage type, garrison factor, cover piercing, suppression, splash radius and edge factor, friendly fire. Weapons, abilities and bombs carry one and build their hit with `Hit`; `DamageSettings` is its inspector block |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
 | `DamageType` | In `Common`: a damage category that armor and section materials scale, and its `garrisonFactor`, the share that reaches a sheltered garrison ([Transport](movement.md#transport)) |
-| `DamageEvent` | A queued hit, appended through `EventWriter<DamageEvent>`. A negative amount heals. `Direct` (with `Typed` and `From`) builds the hits that have no profile: repair, crushing, falling floors, auras and status damage |
-| `CombatStance` | Aggressive, Defensive, HoldPosition or Passive |
+| `DamageEvent` | A queued hit, appended through `EventWriter<DamageEvent>`: the target, place, source, a `Profile` and the `Layers` its splash reaches. A negative amount heals. `Direct` builds the hits that have no weapon: repair, crushing, falling floors, auras and status damage; `Typed` gives them the damage type and cover piercing of a `DamageProfile.FromType` profile, which auras and status effects bake from their damage type |
+| `CombatStance` | Aggressive, Defensive, HoldPosition or Passive, plus the unit's acquire range and leash factor, which `ScanRange` and the engagement leash read |
 | `LastAttacker` | Who gets the kill credit |
 
 Idle units look for targets every 4th frame. `DamageSystem` applies all damage last in the combat phase, scaled by
@@ -77,6 +76,7 @@ place in the buffer, so indices never shift.
 - **Direct hits** land on one living member, picked by a roll seeded from the frame, the source, the target and the
   hit's place in the queue, so a replay hits alike. Damage a member can't absorb is lost, never carried over.
   Garrison shares come through the same path.
+- **Absorption.** `SquadDamage` (beside `SectionDamage`, for buildings) picks the member, applies its cover, hurts it, records its death and adds suppression; `DamageSystem.Apply` scales a `Blow` by armor and routes it to sections, a squad or health. The member roll seeds from frame, source, target and queue place.
 - **Splash** hurts every living member by its own distance from the blast, a member counting as a 0.3 m disc, so the
   splash query widens by the larger of `SquadRules.MaxSpread` and `WorkSpread` and reaches members standing past the squad's radius. A direct hit
   with a radius also splashes the members it missed.
@@ -205,7 +205,7 @@ first muzzle. `spread` scatters each shot's aim point at random within that many
 and shot count. A ballistic shell keeps its target while it stays put; a homing shot with a spread gives up its lock
 and flies to its scattered point, so a rocket ripple covers an area. Missiles that must stay locked keep 0.
 
-Limited rounds (`AmmoAuthoring` for the primary, `rounds` on an extra weapon or an interceptor) sit in each
+Limited rounds (`rounds` in the `WeaponStats` of the primary or an extra weapon, or on an interceptor) sit in each
 mount's `Ammo` (max 0 never runs dry) and refill by their `AmmoRefill`: `Docked` one round per `reloadTime` while
 docked at an airfield, `Round` one per `reloadTime` anywhere, and `Magazine` every round together `reloadTime`
 after the magazine runs empty. A part-empty magazine never reloads. `WeaponMount.Reload` is the one reload loop:

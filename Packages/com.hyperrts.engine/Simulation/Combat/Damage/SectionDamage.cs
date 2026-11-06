@@ -64,13 +64,13 @@ namespace HyperRTS.Simulation.Combat.Damage
                 }
 
                 var gap = section.Gap(position);
-                if (i != entry && (hit.Radius <= 0f || gap > hit.Radius))
+                if (i != entry && (hit.Profile.Radius <= 0f || gap > hit.Profile.Radius))
                 {
                     continue;
                 }
 
-                var share = i == entry ? 1f : hit.SplashFactor(gap);
-                var amount = hit.Amount * share * scale * SectionFactor.Find(factors, section.Material, hit.Type);
+                var share = i == entry ? 1f : hit.Profile.SplashFactor(gap);
+                var amount = hit.Profile.Amount * share * scale * SectionFactor.Find(factors, section.Material, hit.Profile.Type);
                 dealt += building.Damage(sections, i, amount);
             }
 

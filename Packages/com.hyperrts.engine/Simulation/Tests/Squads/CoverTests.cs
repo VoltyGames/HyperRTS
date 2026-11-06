@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests.Squads
 {
@@ -44,8 +45,11 @@ namespace HyperRTS.Simulation.Tests.Squads
         private void Hit(Entity target, float amount, float3 origin, float piercing = 0f, float suppression = 0f) =>
             World.QueueDamage(new DamageEvent
             {
-                Target = target, Position = origin, Origin = origin, SourceFaction = 2, Amount = amount,
-                EdgeFactor = 1f, CoverPiercing = piercing, Suppression = suppression,
+                Target = target,
+                Position = origin,
+                Origin = origin,
+                SourceFaction = 2,
+                Profile = new DamageProfile { Amount = amount, EdgeFactor = 1f, CoverPiercing = piercing, Suppression = suppression },
             });
 
         private int BuildCount() =>
@@ -167,6 +171,12 @@ namespace HyperRTS.Simulation.Tests.Squads
             Hit(squad, 2f, Ahead, piercing: 1f);
             World.Tick();
             Assert.AreEqual(17f, Lost(squad, 0), 1e-3f, "a piercing hit ignores cover");
+
+            var burn = World.Own(ScriptableObject.CreateInstance<DamageType>());
+            burn.coverPiercing = 1f;
+            World.QueueDamage(DamageEvent.Direct(squad, Ahead, Entity.Null, 2, 2f).Typed(DamageProfile.FromType(burn)));
+            World.Tick();
+            Assert.AreEqual(19f, Lost(squad, 0), 1e-3f, "damage over time of a piercing type ignores cover too");
         }
 
         [Test]

@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var writer = World.Writer(tank);
             writer.Add(new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
 
-            World.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Amount = 20f });
+            World.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Profile = new DamageProfile { Amount = 20f } });
             World.Tick();
 
             Assert.AreEqual(100f - 20f * multiplier, World.GetHealth(tank), 1e-3f);
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Buffer<StatModifier>(target)
                 .Add(new StatModifier { Stat = Stat.DamageTaken, Percent = -0.25f, Source = source });
 
-            World.QueueDamage(new DamageEvent { Target = target, Source = shooter, SourceFaction = 1, Amount = 40f });
+            World.QueueDamage(new DamageEvent { Target = target, Source = shooter, SourceFaction = 1, Profile = new DamageProfile { Amount = 40f } });
             World.Tick();
 
             Assert.AreEqual(70f, World.GetHealth(target), 1e-3f);
@@ -97,7 +97,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var unit = World.SpawnUnit(1, float3.zero);
             World.Set(unit, new Health { Current = 50f, Max = 100f });
 
-            World.QueueDamage(new DamageEvent { Target = unit, Amount = -80f });
+            World.QueueDamage(new DamageEvent { Target = unit, Profile = new DamageProfile { Amount = -80f } });
             World.Tick();
 
             Assert.AreEqual(100f, World.GetHealth(unit));
@@ -111,9 +111,8 @@ namespace HyperRTS.Simulation.Tests.Combat
             var weapon = new Weapon
             {
                 Range = 8f, Damage = new DamageProfile { Amount = 30f, Radius = 3f, EdgeFactor = 1f }, Cooldown = 100f,
-                LeashFactor = 1.5f,
             };
-            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, Stance.Aggressive, float3.zero);
+            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
             var target = World.SpawnUnit(2, new float3(6f, 0f, 0f));
             var neighbour = World.SpawnUnit(2, new float3(6f, 0f, 1.5f));
             var aircraft = World.SpawnAircraft(2, new float3(6f, 0f, -1f));
@@ -202,7 +201,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var target = World.SpawnUnit(2, float3.zero, speed: 0f);
             var burn = Effect("Burn", new StatusEffectDefinition
             {
-                Duration = 1f, MaxStacks = 1, DamagePerSecond = 10f, DamageType = _bullet,
+                Duration = 1f, MaxStacks = 1, DamagePerSecond = 10f, Damage = DamageProfile.FromType(_bullet),
             });
 
             Apply(target, burn, attacker, 1);
@@ -241,10 +240,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             Position = position,
             Origin = position,
             SourceFaction = 1,
-            Amount = 40f,
-            Radius = radius,
-            EdgeFactor = 0.5f,
-            FriendlyFire = friendlyFire,
+            Profile = new DamageProfile { Amount = 40f, Radius = radius, EdgeFactor = 0.5f, FriendlyFire = friendlyFire },
         };
 
         private Entity Effect(string name, StatusEffectDefinition definition, StatBonus[] bonuses = null)
@@ -272,7 +268,7 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         private void Hit(Entity target, DamageType type, float amount)
         {
-            World.QueueDamage(new DamageEvent { Target = target, Amount = amount, Type = type });
+            World.QueueDamage(new DamageEvent { Target = target, Profile = new DamageProfile { Amount = amount, Type = type } });
             World.Tick();
         }
 

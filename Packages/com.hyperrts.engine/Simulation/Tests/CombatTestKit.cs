@@ -28,7 +28,6 @@ namespace HyperRTS.Simulation.Tests
                 Cooldown = cooldown,
                 ProjectilePrefab = projectile,
                 ProjectileSpeed = 10f,
-                LeashFactor = 1.5f,
                 Targets = targets,
                 MinRange = minRange,
                 Aim = new WeaponAim
@@ -41,8 +40,8 @@ namespace HyperRTS.Simulation.Tests
             };
             Aim(ref weapon, traverseSpeed);
             var writer = world.Writer(entity);
-            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, stance,
-                world.Get<LocalTransform>(entity).Position);
+            WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) },
+                CombatStance.Create(stance, world.Get<LocalTransform>(entity).Position));
             return entity;
         }
 

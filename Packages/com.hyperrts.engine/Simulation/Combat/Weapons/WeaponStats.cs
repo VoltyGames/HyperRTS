@@ -108,6 +108,18 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Range(0f, 180f)]
         public float firingArc;
 
+        [Header("Ammo")]
+        [Tooltip("Shots before it must reload; 0 never runs dry. An empty weapon holds fire (an aircraft with a pad flies home).")]
+        [Min(0)]
+        public int rounds;
+
+        [Tooltip("Seconds to reload one round, or the whole magazine with Magazine.")]
+        [Min(0.05f)]
+        public float reloadTime = 1f;
+
+        [Tooltip("Docked reloads by the round only at an airfield, Round by the round anywhere, Magazine every round at once once empty.")]
+        public AmmoRefill refill;
+
         [Header("Salvo")]
         [Tooltip("Shots fired at one target before the cooldown starts; 1 fires single shots.")]
         [Min(1)]
@@ -123,6 +135,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         /// <summary>Damage per second before armor, with the cooldown floored at its minimum.</summary>
         public float Dps => hit.damage / Mathf.Max(cooldown, 0.05f);
+
+        /// <summary>The weapon's magazine, full.</summary>
+        public Ammo BakeAmmo() => Ammo.Create(rounds, reloadTime, refill);
 
         /// <summary>
         /// The baked weapon, with its muzzle sockets relative to <paramref name="root"/>. Several muzzles go on the end

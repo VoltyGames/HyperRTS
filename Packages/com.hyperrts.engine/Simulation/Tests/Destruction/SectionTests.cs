@@ -87,8 +87,11 @@ namespace HyperRTS.Simulation.Tests.Destruction
         private void Shoot(Entity house, float3 from, float3 at, float amount, DamageType type = null, float radius = 0f) =>
             World.QueueDamage(new DamageEvent
             {
-                Target = house, Origin = from, Position = at, SourceFaction = 2, Amount = amount, Type = type,
-                Radius = radius, EdgeFactor = 0.5f,
+                Target = house,
+                Origin = from,
+                Position = at,
+                SourceFaction = 2,
+                Profile = new DamageProfile { Amount = amount, Type = type, Radius = radius, EdgeFactor = 0.5f },
             });
 
         [Test]
@@ -114,13 +117,15 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var centre = new float3(4.5f, 1.5f, 0f);
             World.QueueDamage(new DamageEvent
             {
-                Position = centre, Origin = new float3(30f, 1.5f, 0f), SourceFaction = 2, Amount = 30f, Radius = 3f,
-                EdgeFactor = 0.5f,
+                Position = centre,
+                Origin = new float3(30f, 1.5f, 0f),
+                SourceFaction = 2,
+                Profile = new DamageProfile { Amount = 30f, Radius = 3f, EdgeFactor = 0.5f },
             });
             World.Tick();
 
             var right = SectionOf(house, Right);
-            var expected = 30f * new DamageEvent { Radius = 3f, EdgeFactor = 0.5f }.SplashFactor(right.Gap(centre));
+            var expected = 30f * new DamageProfile { Radius = 3f, EdgeFactor = 0.5f }.SplashFactor(right.Gap(centre));
             Assert.AreEqual(100f - expected, right.Health, 1e-3f);
             Assert.Less(SectionOf(house, Roof).Health, 100f, "the roof's edge is in reach");
             Assert.Greater(SectionOf(house, Roof).Health, right.Health, "and farther, so it takes less");
@@ -192,7 +197,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             World.Tick();
             Assert.AreEqual(300f, World.GetHealth(house), 1e-3f);
 
-            World.QueueDamage(new DamageEvent { Target = house, Amount = -110f });
+            World.QueueDamage(new DamageEvent { Target = house, Profile = new DamageProfile { Amount = -110f } });
             World.Tick();
 
             Assert.IsFalse(IsBroken(house, Right), "the latest comes back first");

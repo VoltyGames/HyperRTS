@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Transport
                 foreach (var item in hits)
                 {
                     var share = item.Hit;
-                    share.Amount /= cargo.Length;
+                    share.Profile.Amount /= cargo.Length;
                     foreach (var passenger in cargo)
                     {
                         share.Target = passenger.Unit;
