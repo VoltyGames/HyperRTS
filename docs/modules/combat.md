@@ -80,6 +80,9 @@ place in the buffer, so indices never shift.
 - **Splash** hurts every living member by its own distance from the blast, a member counting as a 0.3 m disc, so the
   splash query widens by the larger of `SquadRules.MaxSpread` and `WorkSpread` and reaches members standing past the squad's radius. A direct hit
   with a radius also splashes the members it missed.
+- **Death.** A hit that drops a member sets its `SquadMember.Death` (`Shot`, or `Blast` when the hit has a radius) and,
+  for a blast, `BlastHeading`, the world direction from the member to the blast, in 256 steps. Both are replicated, so
+  figures pick their fall from them; a revived member clears it.
 - **Heals** fill the most hurt living member first and spill to the next.
 - **Weapons.** `SquadMemberSystem` sets each `WeaponMount.Carriers` to the living members carrying it. Each firing
   makes one shot per carrier (separate `DamageEvent`s, so they spread over the enemy's members) and a mount with no
@@ -141,8 +144,9 @@ velocity (over 0.5 m/s), for the member slots, the cover search and the posture.
   player, paid when its `ReinforceTime` starts and refunded if the reinforcing ends first (squad out of range, point
   lost, squad dead). The first dead member in the buffer revives in place at full health at the squad's centre and
   walks to its slot; `Health` is re-summed and `SquadMemberSystem` recounts carriers. It ends when nobody is dead or
-  the next member can't be paid for. Replays that `Fill` members from the recorded squad health assume the dead are
-  last, which reinforcing breaks.
+  the next member can't be paid for. A replay records the squad's health and a mask of its living members
+  (`ReplayEntity.Living`, up to 16 members), and playback shares the health among the living (`SquadMember.Fill`), so
+  the right soldiers show dead.
 
 ### Cover
 
@@ -226,7 +230,12 @@ that leaves it. `DeployFacingSystem` handles an ordered attack on a target in ra
 outside the cone packs up; a packed one turns to face the target (a `FacingGoal`) and deploys, so the new cone is
 centred on it, and the weapon fires only once deployed, as the deploy time says. It applies only to weapons with a
 firing arc; other deployables still wait for the Deploy command. A squad that is `Deployable` is a weapon team: its
-gun model and crew places are in [squad figures](client.md#squad-figures).
+gun model is in [squad figures](client.md#squad-figures). Its crew places are server data on the squad members
+(`SquadAuthoring.Member.takesCrewPlace`, `crewOffset` in metres in the unit's frame with x right and y ahead,
+`crewPosture`): while the `Deployable` is `Emplaced`, `SquadMemberSystem` walks such a member to its place turned by
+the deployed heading, `SquadPostureSystem` gives it the crew posture, and `SquadCoverSystem` gives it no spot and no
+cover; the other members keep the ring. Members carry a `designation` (`SquadAuthoring.Member.designation`), and an upgraded weapon's `WeaponStats.designation` is shown on
+member cards, baked into `WeaponPose.Designation` and never sent.
 
 A projectile flies by its weapon's `Trajectory`. Direct shots fly straight and home on the target. Ballistic shells
 arc onto the point aimed at launch, `ArcHeight` times the ground distance high, and miss a target that moved. Rockets

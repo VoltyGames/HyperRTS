@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -12,7 +13,7 @@ namespace HyperRTS.Simulation.Squads
     /// <summary>
     /// Decides each squad's posture and <see cref="Pace"/> from its suppression, motion and orders, after cover has
     /// settled: retreating squads stand and run with suppression cleared, pinned ones lie prone, members in cover
-    /// crouch, suppressed squads move crouched, a halted squad that is firing crouches, and one at work stands to dig. Every member's posture is
+    /// crouch, crew at their places hold the crew posture, suppressed squads move crouched, a halted squad that is firing crouches, and one at work stands to dig. Every member's posture is
     /// set here and nowhere else.
     /// </summary>
     [BurstCompile]
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Squads
                 Moves = SystemAPI.GetComponentLookup<MoveDestination>(true),
                 Attacks = SystemAPI.GetComponentLookup<AttackTarget>(true),
                 Work = SystemAPI.GetComponentLookup<SquadWork>(true),
+                Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
             }.ScheduleParallel();
         }
 
@@ -47,15 +49,17 @@ namespace HyperRTS.Simulation.Squads
             [ReadOnly] public ComponentLookup<MoveDestination> Moves;
             [ReadOnly] public ComponentLookup<AttackTarget> Attacks;
             [ReadOnly] public ComponentLookup<SquadWork> Work;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
 
             private void Execute(Entity entity, DynamicBuffer<SquadMember> members, ref Suppression suppression,
                 ref Pace pace, in Velocity velocity)
             {
+                var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
                 if (Orders.HasEnabled(entity) && Orders[entity].Value.Type == OrderType.Retreat)
                 {
                     suppression.Clear();
                     pace = Rules.RetreatPace;
-                    SetPostures(members, Posture.Stand, false);
+                    SetPostures(members, Posture.Stand, false, crewing);
                     return;
                 }
 
@@ -68,7 +72,7 @@ namespace HyperRTS.Simulation.Squads
                 }
 
                 pace = Rules.PaceAt(level, carriage);
-                SetPostures(members, carriage, level != SuppressionLevel.Pinned);
+                SetPostures(members, carriage, level != SuppressionLevel.Pinned, crewing);
             }
 
             /// <summary>How the squad holds itself outside cover.</summary>
@@ -83,7 +87,8 @@ namespace HyperRTS.Simulation.Squads
                 return crouched ? Posture.Crouch : Posture.Stand;
             }
 
-            private static void SetPostures(DynamicBuffer<SquadMember> members, Posture carriage, bool coverCrouches)
+            private static void SetPostures(DynamicBuffer<SquadMember> members, Posture carriage, bool coverCrouches,
+                bool crewing)
             {
                 for (var i = 0; i < members.Length; i++)
                 {
@@ -91,7 +96,8 @@ namespace HyperRTS.Simulation.Squads
                     if (member.Alive)
                     {
                         var covered = coverCrouches && member.Cover != CoverKind.None;
-                        member.Posture = covered ? member.CoverPosture : carriage;
+                        var outside = covered ? member.CoverPosture : carriage;
+                        member.Posture = member.Crews(crewing) ? member.CrewPosture : outside;
                         members[i] = member;
                     }
                 }

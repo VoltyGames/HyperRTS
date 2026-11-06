@@ -7,6 +7,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -89,6 +90,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 var ammo = GetComponent<AmmoAuthoring>();
                 var mounts = new List<WeaponMount> { WeaponMount.Create(weapon, ammo != null ? ammo.Bake() : default) };
                 AddExtras(authoring, mounts, muzzles);
+                var designations = new List<FixedString32Bytes> { authoring.stats.designation };
+                foreach (var slot in authoring.extraWeapons)
+                {
+                    designations.Add(slot.stats.designation);
+                }
+
                 var interceptor = GetComponent<InterceptorAuthoring>();
                 if (interceptor != null)
                 {
@@ -96,7 +103,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 }
 
                 var writer = this.Writer();
-                WeaponSetup.Add(writer, mounts, authoring.stance, authoring.transform.position);
+                WeaponSetup.Add(writer, mounts, authoring.stance, authoring.transform.position, designations);
                 if (muzzles.Count > 0)
                 {
                     WeaponSetup.AddMuzzles(writer, muzzles);

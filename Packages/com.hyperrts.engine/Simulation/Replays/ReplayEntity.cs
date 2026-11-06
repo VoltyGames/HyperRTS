@@ -24,6 +24,9 @@ namespace HyperRTS.Simulation.Replays
         public byte Faction;
         public byte Health;
 
+        /// <summary>Bit i is set while squad member i lives (<c>SquadMember.LivingMask</c>); 0 for an entity without members.</summary>
+        public ushort Living;
+
         /// <summary>Construction progress in 0..254, or <see cref="Finished"/>.</summary>
         public byte Progress;
 
@@ -33,7 +36,7 @@ namespace HyperRTS.Simulation.Replays
         public readonly float ConstructionValue => Progress / 254f;
 
         public static ReplayEntity Capture(int key, int typeId, byte faction, in LocalTransform transform,
-            float healthFraction)
+            float healthFraction, ushort living)
         {
             var forward = math.mul(transform.Rotation, math.forward());
             var yaw = math.atan2(forward.x, forward.z);
@@ -47,6 +50,7 @@ namespace HyperRTS.Simulation.Replays
                 Yaw = (ushort)((int)math.round(yaw / YawStep) & 0xFFFF),
                 Faction = faction,
                 Health = (byte)math.round(math.saturate(healthFraction) * 255f),
+                Living = living,
                 Progress = Finished,
             };
         }
@@ -76,7 +80,7 @@ namespace HyperRTS.Simulation.Replays
                 return false;
             }
 
-            return Yaw == other.Yaw && Health == other.Health && Progress == other.Progress;
+            return Yaw == other.Yaw && Health == other.Health && Living == other.Living && Progress == other.Progress;
         }
     }
 }

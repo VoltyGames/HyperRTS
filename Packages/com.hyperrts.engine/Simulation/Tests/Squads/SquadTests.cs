@@ -60,6 +60,13 @@ namespace HyperRTS.Simulation.Tests.Squads
 
             Assert.AreEqual(1, Hurt(squad), "one member took the hit");
             Assert.AreEqual(3f * Each, World.GetHealth(squad), 1e-3f, "the 15 past its health is lost");
+            var shot = 0;
+            foreach (var member in World.Buffer<SquadMember>(squad))
+            {
+                shot += member.Death == DeathCause.Shot ? 1 : 0;
+            }
+
+            Assert.AreEqual(1, shot, "the fallen member remembers it was shot");
             World.AssertHealthIsMemberSum(squad);
         }
 
@@ -116,25 +123,29 @@ namespace HyperRTS.Simulation.Tests.Squads
                 members[i] = member;
             }
 
-            Hit(squad, 30f, new float3(3f, 0f, 0f), radius: 0.5f);
+            Hit(squad, 30f, new float3(3f, 0f, 0.4f), radius: 0.5f);
             World.Tick();
 
             Assert.AreEqual(0f, Member(squad, 3), 1e-3f, "the member under the blast");
+            var dead = World.Buffer<SquadMember>(squad)[3];
+            Assert.AreEqual(DeathCause.Blast, dead.Death);
+            Assert.Greater(dead.BlastDirection.y, 0.9f, "it fell away from the blast beside it");
             Assert.AreEqual(1, Hurt(squad), "the others stand outside the blast");
             World.AssertHealthIsMemberSum(squad);
         }
 
         [Test]
-        public void Fill_SharesASquadsHealthFromTheFirstMember()
+        public void Fill_KeepsTheDeadDeadAndSharesTheHealthAmongTheLiving()
         {
             var members = World.Buffer<SquadMember>(Squad(float3.zero, 0, 0, 0, 0));
 
-            SquadMember.Fill(members, 60f);
+            SquadMember.Fill(members, 40f, 0b1010);
 
-            Assert.AreEqual(Each, members[0].Health, 1e-3f);
-            Assert.AreEqual(Each, members[1].Health, 1e-3f);
-            Assert.AreEqual(10f, members[2].Health, 1e-3f);
-            Assert.AreEqual(0f, members[3].Health, 1e-3f, "the last falls first");
+            Assert.AreEqual(0f, members[0].Health, 1e-3f);
+            Assert.AreEqual(20f, members[1].Health, 1e-3f);
+            Assert.AreEqual(0f, members[2].Health, 1e-3f);
+            Assert.AreEqual(20f, members[3].Health, 1e-3f);
+            Assert.AreEqual(0b1010, SquadMember.LivingMask(members));
         }
 
         [Test]

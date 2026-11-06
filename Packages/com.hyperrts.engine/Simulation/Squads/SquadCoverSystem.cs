@@ -1,4 +1,5 @@
 using HyperRTS.Core;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Movement;
@@ -16,7 +17,7 @@ namespace HyperRTS.Simulation.Squads
     /// Puts the members of a halted squad in cover. Each one without a spot takes the best free
     /// <see cref="CoverSpot"/> near the squad (heavy over light, facing the way the squad does, close to its place in
     /// the ring) and walks to it; it counts as covered once it stands there. A member drops its spot when
-    /// its squad moves or works, or its prop is gone. A member with no spot on a concealing cell (woods, tall crops) is in light
+    /// its squad moves or works, or its prop is gone. A member at a crew place holds no spot and has no cover. A member with no spot on a concealing cell (woods, tall crops) is in light
     /// cover from every side.
     /// </summary>
     [BurstCompile]
@@ -47,6 +48,7 @@ namespace HyperRTS.Simulation.Squads
                 Blockers = SystemAPI.GetSingleton<SightBlockers>(),
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(true),
+                Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
             }.Schedule();
         }
 
@@ -59,6 +61,7 @@ namespace HyperRTS.Simulation.Squads
             [ReadOnly] public SightBlockers Blockers;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<SquadWork> WorkLookup;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
 
             private void Execute(Entity squad, DynamicBuffer<SquadMember> members, in LocalTransform transform,
                 in Velocity velocity)
@@ -70,17 +73,26 @@ namespace HyperRTS.Simulation.Squads
 
                 // A squad at work digs where it stands and leaves any spot.
                 var halted = !SquadMember.IsMoving(velocity.Value) && !WorkLookup.HasEnabled(squad);
-                Keep(squad, members, transform, halted);
+                var crewing = Deployables.TryGetComponent(squad, out var deployable) && deployable.Emplaced;
+                Keep(squad, members, transform, halted, crewing);
                 var near = new NativeList<int>(0, Allocator.Temp);
                 var searched = false;
                 var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
-                var living = SquadMember.CountLiving(members);
+                var living = SquadMember.CountFreeLiving(members, crewing);
                 var rank = 0;
                 for (var i = 0; i < members.Length; i++)
                 {
                     var member = members[i];
                     if (!member.Alive)
                     {
+                        continue;
+                    }
+
+                    if (member.Crews(crewing))
+                    {
+                        member.Cover = CoverKind.None;
+                        member.Sink = 0f;
+                        members[i] = member;
                         continue;
                     }
 
@@ -105,7 +117,8 @@ namespace HyperRTS.Simulation.Squads
             /// A member keeps its spot by reserving it again. A spot is held until a frame passes without one, so it
             /// stays taken whichever squad is handled first.
             /// </summary>
-            private void Keep(Entity squad, DynamicBuffer<SquadMember> members, in LocalTransform transform, bool halted)
+            private void Keep(Entity squad, DynamicBuffer<SquadMember> members, in LocalTransform transform, bool halted,
+                bool crewing)
             {
                 for (var i = 0; i < members.Length; i++)
                 {
@@ -115,7 +128,7 @@ namespace HyperRTS.Simulation.Squads
                         continue;
                     }
 
-                    if (halted && member.Alive && Spots.TryFind(member.SpotEntity, member.SpotIndex, out var spot))
+                    if (halted && member.Alive && !member.Crews(crewing) && Spots.TryFind(member.SpotEntity, member.SpotIndex, out var spot))
                     {
                         var reservation = Spots.Reservations[spot];
                         if (reservation.TryReserve(squad))

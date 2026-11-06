@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation.Figures;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
@@ -55,12 +55,12 @@ namespace HyperRTS.Presentation.HUD.Panels
 
             var members = entityManager.GetBuffer<SquadMember>(entity, true);
             Resize(members.Length);
-            var figures = entityManager.HasBuffer<SquadFigure>(entity)
-                ? entityManager.GetBuffer<SquadFigure>(entity, true)
+            var poses = entityManager.HasBuffer<WeaponPose>(entity)
+                ? entityManager.GetBuffer<WeaponPose>(entity, true)
                 : default;
             for (var i = 0; i < members.Length; i++)
             {
-                _cards[i].Show(members[i], WeaponName(figures, i));
+                _cards[i].Show(members[i], WeaponName(poses, members[i]));
             }
 
             var suppression = entityManager.GetComponentData<Suppression>(entity);
@@ -70,14 +70,10 @@ namespace HyperRTS.Presentation.HUD.Panels
         }
 
         // Each weapon's text is looked up once per baked string, so a frame allocates nothing.
-        private string WeaponName(DynamicBuffer<SquadFigure> figures, int index)
+        private string WeaponName(DynamicBuffer<WeaponPose> poses, in SquadMember member)
         {
-            if (!figures.IsCreated || index >= figures.Length)
-            {
-                return "";
-            }
-
-            var designation = figures[index].Weapon;
+            var upgraded = member.Weapon != member.BaseWeapon && poses.IsCreated && member.Weapon < poses.Length;
+            var designation = upgraded ? poses[member.Weapon].Designation : member.Designation;
             if (!_weaponNames.TryGetValue(designation, out var shown))
             {
                 shown = HUDText.WeaponName(designation.ToString());
@@ -129,7 +125,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             if (status != _shownStatus)
             {
                 _shownStatus = status;
-                _statusText.text = HUDText.Text(StatusKeys[status]);
+                _statusText.text = status == 0 ? "" : HUDText.Text(StatusKeys[status]);
             }
 
             if (status == 2)

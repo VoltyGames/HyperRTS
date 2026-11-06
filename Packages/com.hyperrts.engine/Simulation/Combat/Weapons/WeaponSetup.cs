@@ -10,12 +10,21 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// <summary>Adds the components that let an entity attack.</summary>
     public static class WeaponSetup
     {
-        /// <summary>The weapons, primary first, with a pose each; build each with <see cref="WeaponMount.Create"/>.</summary>
+        /// <summary>
+        /// The weapons, primary first, with a pose each; build each with <see cref="WeaponMount.Create"/>.
+        /// <paramref name="designations"/> (null for none) name the first weapons in order.
+        /// </summary>
         public static void Add(EntityWriter writer, IReadOnlyList<WeaponMount> mounts, Stance stance,
-            float3 returnPoint)
+            float3 returnPoint, IReadOnlyList<FixedString32Bytes> designations = null)
         {
             writer.AddBuffer(mounts);
-            writer.AddBuffer<WeaponPose>().Resize(mounts.Count, NativeArrayOptions.ClearMemory);
+            var poses = writer.AddBuffer<WeaponPose>();
+            poses.Resize(mounts.Count, NativeArrayOptions.ClearMemory);
+            for (var i = 0; designations != null && i < designations.Count; i++)
+            {
+                poses.ElementAt(i).Designation = designations[i];
+            }
+
             writer.Add(new CombatStance { Value = stance, ReturnPoint = returnPoint });
             writer.Add<AttackTarget>();
             writer.SetEnabled<AttackTarget>(false);

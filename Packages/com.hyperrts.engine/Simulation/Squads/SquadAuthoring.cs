@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.GameEntities;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -41,15 +42,31 @@ namespace HyperRTS.Simulation.Squads
             [Tooltip("The upgraded weapon's mount index, as for Weapon.")]
             [Min(0)]
             public int upgradedWeapon;
+
+            [Tooltip("The designation of the weapon it carries, shown on its card (M4A1, PKP). Empty for none.")]
+            public string designation;
+
+            [Header("Deployed")]
+            [Tooltip("Stands at the crew place below while the unit's weapon is set up, instead of its slot in the squad.")]
+            public bool takesCrewPlace;
+
+            [Tooltip("Metres in the unit's frame, x to the right and y ahead, such as 0.6 behind the gun.")]
+            public Vector2 crewOffset;
+
+            [Tooltip("How it holds itself at the crew place. Fire and idle use the posture's clips.")]
+            public Posture crewPosture = Posture.Prone;
         }
 
         /// <summary>
         /// Adds the members with <paramref name="maxHealth"/> shared evenly, standing in a ring, each carrying the weapon
         /// at its index and, where <paramref name="upgrades"/> (null for none) has an index,
-        /// the weapon at that index instead while it is enabled.
+        /// the weapon at that index instead while it is enabled. <paramref name="crews"/> (null for none) are the crew
+        /// places members take while the unit's weapon is set up, and <paramref name="designations"/> (null for none) their
+        /// weapons' names.
         /// </summary>
         public static void Add(EntityWriter writer, float maxHealth, IReadOnlyList<byte> weapons,
-            IReadOnlyList<byte?> upgrades = null)
+            IReadOnlyList<byte?> upgrades = null, IReadOnlyList<CrewPlace> crews = null,
+            IReadOnlyList<FixedString32Bytes> designations = null)
         {
             var each = maxHealth / weapons.Count;
             writer.Add(default(Suppression));
@@ -69,6 +86,10 @@ namespace HyperRTS.Simulation.Squads
                     BaseWeapon = weapons[i],
                     HasUpgrade = upgrades?[i] != null,
                     UpgradedWeapon = upgrades?[i] ?? 0,
+                    Designation = designations != null ? designations[i] : default,
+                    TakesCrewPlace = crews != null && crews[i].Takes,
+                    CrewOffset = crews != null ? crews[i].Offset : default,
+                    CrewPosture = crews != null ? crews[i].Posture : default,
                 });
             }
         }
@@ -80,14 +101,18 @@ namespace HyperRTS.Simulation.Squads
                 var unit = GetComponent<UnitAuthoring>();
                 var weapons = new List<byte>();
                 var upgrades = new List<byte?>();
+                var crews = new List<CrewPlace>();
+                var designations = new List<FixedString32Bytes>();
                 foreach (var member in authoring.members)
                 {
                     weapons.Add((byte)math.clamp(member.weapon, 0, byte.MaxValue));
                     var upgraded = (byte)math.clamp(member.upgradedWeapon, 0, byte.MaxValue);
                     upgrades.Add(member.hasUpgradedWeapon ? upgraded : null);
+                    designations.Add(member.designation);
+                    crews.Add(new CrewPlace { Takes = member.takesCrewPlace, Offset = member.crewOffset, Posture = member.crewPosture });
                 }
 
-                Add(this.Writer(), unit.maxHealth, weapons, upgrades);
+                Add(this.Writer(), unit.maxHealth, weapons, upgrades, crews, designations);
             }
         }
     }

@@ -42,6 +42,31 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
+        public void CrewMember_StandsAtItsPlaceTurnedByTheHeading_ProneAndUncovered_WhileTheWeaponIsSetUp()
+        {
+            var squad = World.SpawnArmedSquad(float3.zero, 0, 0);
+            var members = World.Buffer<SquadMember>(squad);
+            var gunner = members[0];
+            gunner.TakesCrewPlace = true;
+            gunner.CrewOffset = new float2(0f, -2f);
+            gunner.CrewPosture = Posture.Prone;
+            members[0] = gunner;
+            World.EntityManager.AddComponentData(squad, new Deployable
+            {
+                State = DeployState.Deployed, DeployTime = 1f, PackUpTime = 1f, Progress = 1f, DeployedHeading = new float2(1f, 0f),
+            });
+
+            World.Run(3f);
+
+            gunner = World.Buffer<SquadMember>(squad)[0];
+            Assert.AreEqual(-2f, gunner.Offset.x, 0.05f, "two metres behind a gun that points along x");
+            Assert.AreEqual(0f, gunner.Offset.y, 0.05f);
+            Assert.AreEqual(Posture.Prone, gunner.Posture);
+            Assert.AreEqual(CoverKind.None, gunner.Cover);
+            Assert.IsFalse(gunner.HasSpot);
+        }
+
+        [Test]
         public void EachCarrierFiresItsOwnShot_AndAMountWithoutCarriersStaysSilent()
         {
             var gun = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 1);

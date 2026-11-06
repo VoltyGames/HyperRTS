@@ -199,6 +199,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                     amount *= members[member].ExposureTo(Cover, squad, from, hit.CoverPiercing).Damage;
                     held = members[member].Health;
                     health.Current = SquadMember.Hurt(members, member, amount);
+                    RecordDeath(members, member, held, hit, squad);
                     Suppress(target, members[member], suppression, hit, from);
                 }
                 else

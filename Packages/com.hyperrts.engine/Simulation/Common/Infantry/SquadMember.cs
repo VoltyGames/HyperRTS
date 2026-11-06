@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
@@ -10,6 +11,26 @@ namespace HyperRTS.Simulation.Common.Infantry
         Stand,
         Crouch,
         Prone,
+    }
+
+    /// <summary>What killed a squad member; figures pick their fall from it.</summary>
+    public enum DeathCause : byte
+    {
+        None,
+        Shot,
+        Blast,
+    }
+
+    /// <summary>Where a squad member stands and how it holds itself while its squad's weapon is set up, such as a gunner prone behind the gun.</summary>
+    public struct CrewPlace
+    {
+        /// <summary>False leaves the member at its slot.</summary>
+        public bool Takes;
+
+        /// <summary>Metres in the unit's frame: x to the right, y ahead.</summary>
+        public float2 Offset;
+
+        public Posture Posture;
     }
 
     /// <summary>
@@ -72,6 +93,24 @@ namespace HyperRTS.Simulation.Common.Infantry
         /// <summary>Server only: its index in the prop's <c>CoverSpot</c> buffer.</summary>
         [GhostField(SendData = false)] public byte SpotIndex;
 
+        /// <summary>The designation of the weapon it carries, for its HUD card (M4A1, PKP); baked, never sent. Its upgraded weapon shows the mount's own.</summary>
+        [GhostField(SendData = false)] public FixedString32Bytes Designation;
+
+        /// <summary>What dropped it; <see cref="DeathCause.None"/> while it lives.</summary>
+        [GhostField] public DeathCause Death;
+
+        /// <summary>World direction from it toward the blast that killed it, in 256 steps round from the X axis toward Z; only for <see cref="DeathCause.Blast"/>.</summary>
+        [GhostField] public byte BlastHeading;
+
+        /// <summary>While its squad's weapon is set up it stands at <see cref="CrewOffset"/> instead of its slot, and has no cover.</summary>
+        [GhostField] public bool TakesCrewPlace;
+
+        /// <summary>Server only: metres in the unit's frame, x to the right and y ahead, it stands at while crewing.</summary>
+        [GhostField(SendData = false)] public float2 CrewOffset;
+
+        /// <summary>Server only: how it holds itself while crewing.</summary>
+        [GhostField(SendData = false)] public Posture CrewPosture;
+
         /// <summary>A squad moving faster than this, in metres a second, walks in a wedge and holds no spot.</summary>
         private const float MovingSpeed = 0.5f;
 
@@ -79,6 +118,12 @@ namespace HyperRTS.Simulation.Common.Infantry
         public static bool IsMoving(float2 velocity) => math.lengthsq(velocity) > MovingSpeed * MovingSpeed;
 
         public readonly bool Alive => Health > 0f;
+
+        /// <summary>Whether it stands at its crew place now, given whether its squad's weapon is <paramref name="emplaced"/>.</summary>
+        public readonly bool Crews(bool emplaced) => emplaced && TakesCrewPlace;
+
+        /// <summary>Offset from the squad of its crew place when the unit faces <paramref name="heading"/>, a unit direction on the XZ plane.</summary>
+        public readonly float2 CrewSlot(float2 heading) => CrewOffset.x * new float2(heading.y, -heading.x) + CrewOffset.y * heading;
 
         public readonly bool HasSpot => SpotEntity != Entity.Null;
 
@@ -89,13 +134,15 @@ namespace HyperRTS.Simulation.Common.Infantry
         public readonly Posture CoverPosture => Sink >= StandingDepth ? Posture.Stand : Posture.Crouch;
 
         /// <summary>Unit direction on the XZ plane the member faces in cover.</summary>
-        public readonly float2 CoverFacing
+        public readonly float2 CoverFacing => UnpackHeading(CoverHeading);
+
+        /// <summary>Unit direction on the XZ plane from the member toward the blast that killed it.</summary>
+        public readonly float2 BlastDirection => UnpackHeading(BlastHeading);
+
+        private static float2 UnpackHeading(byte heading)
         {
-            get
-            {
-                var angle = CoverHeading * (math.PI * 2f / 256f);
-                return new float2(math.cos(angle), math.sin(angle));
-            }
+            var angle = heading * (math.PI * 2f / 256f);
+            return new float2(math.cos(angle), math.sin(angle));
         }
 
         public static byte PackHeading(float2 direction) =>

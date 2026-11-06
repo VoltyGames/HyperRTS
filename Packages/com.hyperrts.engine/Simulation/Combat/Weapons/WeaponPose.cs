@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
@@ -27,6 +28,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>The server's exact yaw and pitch in radians, which the bytes round for clients.</summary>
         [GhostField(SendData = false)] public float YawAngle;
         [GhostField(SendData = false)] public float PitchAngle;
+
+        /// <summary>The weapon's designation for the HUD's member cards (M4A1, PKP); baked on the prefab ghost, never sent.</summary>
+        [GhostField(SendData = false)] public FixedString32Bytes Designation;
 
         public float YawRadians => HeadingByte.Wrap(HeadingByte.Radians(Yaw));
 

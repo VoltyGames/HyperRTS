@@ -4,6 +4,7 @@ using System.Linq;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Presentation.HUD.Commands;
 using HyperRTS.Presentation.HUD.Panels;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;
@@ -66,6 +67,33 @@ namespace HyperRTS.Presentation.Tests.HUD
             card.Show(digger, "M249");
             Assert.AreEqual(HUDText.Text("squad.dead"), label.text);
             Assert.IsTrue(card.ClassListContains("hud-member--dead"));
+        }
+
+        [Test]
+        public void SquadView_NamesEachMemberByItsOwnWeapon_AndAnUpgradeByItsMount()
+        {
+            Refresh();
+            _em.CreateSingleton(default(SquadRules));
+            var squad = _em.CreateEntity(typeof(Suppression));
+            var members = _em.AddBuffer<SquadMember>(squad);
+            members.Add(new SquadMember { Health = 10f, MaxHealth = 10f, Designation = "M4A1" });
+            members.Add(new SquadMember { Health = 10f, MaxHealth = 10f, Designation = "M249" });
+            members.Add(new SquadMember { Health = 10f, MaxHealth = 10f, Designation = "M4A1", Weapon = 1 });
+            var poses = _em.AddBuffer<WeaponPose>(squad);
+            poses.Add(default);
+            poses.Add(new WeaponPose { Designation = "AT4" });
+            var root = new VisualElement();
+            root.Add(new VisualElement { name = "members" });
+            root.Add(new HUDBar { name = "suppression" });
+            root.Add(new Label { name = "level" });
+            root.Add(new VisualElement { name = "status" });
+            root.Add(new Label { name = "status-text" });
+            root.Add(new HUDBar { name = "progress" });
+
+            new SquadView(root).Refresh(_context, squad);
+
+            var names = root.Query<Label>(className: "hud-member__weapon").ToList().Select(label => label.text);
+            CollectionAssert.AreEqual(new[] { "M4A1", "M249", "AT4" }, names);
         }
     }
 }

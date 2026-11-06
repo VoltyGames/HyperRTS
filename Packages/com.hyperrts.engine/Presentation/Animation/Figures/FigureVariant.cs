@@ -1,7 +1,4 @@
-using HyperRTS.Simulation.Common.Infantry;
-using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Animation.Figures
 {
@@ -11,15 +8,14 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>Its member fires the upgraded weapon.</summary>
         Upgraded,
 
-        /// <summary>Its squad's weapon is set up and the figure takes a crew place.</summary>
+        /// <summary>Its squad's weapon is set up and its member takes a crew place.</summary>
         Emplaced,
     }
 
-    /// <summary>What a <see cref="SquadFigure"/> keeps for the model it shows: the entity, its weapon name, clips and baked height.</summary>
+    /// <summary>What a <see cref="SquadFigure"/> keeps for the model it shows: the entity, clips and baked height.</summary>
     public struct FigureModel
     {
         public Entity Figure;
-        public FixedString32Bytes Weapon;
         public FigureClips Clips;
         public float Height;
     }
@@ -30,17 +26,5 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>Why the variant shows; the base model shows the rest of the time.</summary>
         public VariantReason Reason;
         public FigureModel Model;
-    }
-
-    /// <summary>Where a figure stands and how it holds itself while its squad's weapon is set up, such as a gunner prone behind the gun.</summary>
-    public struct CrewPlace
-    {
-        /// <summary>False leaves the figure at its member's slot.</summary>
-        public bool Takes;
-
-        /// <summary>Metres in the unit's frame: x to the right, y ahead.</summary>
-        public float2 Offset;
-
-        public Posture Posture;
     }
 }

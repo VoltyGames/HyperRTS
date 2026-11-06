@@ -13,6 +13,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
     [Serializable]
     public class WeaponStats
     {
+        [Tooltip("The weapon's designation, shown on a squad member's card (M4A1, PKP). Empty for none.")]
+        public string designation;
+
         [Header("Damage")]
         [Tooltip("What each hit deals, its damage type and its splash.")]
         public DamageSettings hit = new();

@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Animation.VAT;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Collections;
-using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -20,15 +19,6 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>Seconds a figure keeps firing after its weapon's last shot.</summary>
         public const float FireHold = 0.6f;
 
-        /// <summary>Seconds after a blast that a dropped figure still dies from it.</summary>
-        public const float BlastAfter = 0.5f;
-
-        /// <summary>Seconds before a blast that a figure's fall still counts as its victim, as health and cues land a frame apart.</summary>
-        public const float BlastBefore = 0.2f;
-
-        /// <summary>Metres past a blast's radius that still reach the squad's figures.</summary>
-        public const float BlastReach = 2f;
-
         /// <summary>Horizontal speed in m/s from which figures run instead of walk.</summary>
         public float RunSpeed;
 
@@ -40,30 +30,6 @@ namespace HyperRTS.Presentation.Animation.Figures
 
         /// <summary>True while the deployed model is hidden; it starts shown, so the first update hides it.</summary>
         public bool ModelHidden;
-
-        /// <summary>True once a blast has hit near the squad; <see cref="BlastPosition"/> and <see cref="BlastTime"/> are the latest.</summary>
-        public bool Blasted;
-
-        public float3 BlastPosition;
-        public float BlastTime;
-
-        /// <summary>Keeps the latest impact in this frame's <paramref name="cues"/> whose splash reaches the squad at <paramref name="position"/>.</summary>
-        public void Hear(DynamicBuffer<CueEvent> cues, float3 position, float now)
-        {
-            foreach (var cue in cues)
-            {
-                if (cue.IsBlast && math.distance(cue.Position, position) <= cue.Radius + BlastReach)
-                {
-                    Blasted = true;
-                    BlastPosition = cue.Position;
-                    BlastTime = now;
-                }
-            }
-        }
-
-        /// <summary>True when a figure that began to fall at <paramref name="fallTime"/> died of the latest blast.</summary>
-        public readonly bool Killed(float fallTime) =>
-            Blasted && fallTime >= BlastTime - BlastBefore && fallTime <= BlastTime + BlastAfter;
 
         /// <summary>Seconds over which a figure's measured speed averages, since a squad moves in simulation steps.</summary>
         public const float SpeedTime = 0.25f;
@@ -161,10 +127,10 @@ namespace HyperRTS.Presentation.Animation.Figures
             };
         }
 
-        /// <summary>The fall for a blast at <paramref name="blast"/> seen from a figure at <paramref name="figureToWorld"/>; Die when that side has none.</summary>
-        public readonly VATClipRange Blasted(float3 blast, in float4x4 figureToWorld)
+        /// <summary>The fall for a blast in world <paramref name="direction"/> from a figure at <paramref name="figureToWorld"/>; Die when that side has none.</summary>
+        public readonly VATClipRange Blasted(float3 direction, in float4x4 figureToWorld)
         {
-            var local = math.transform(math.inverse(figureToWorld), blast);
+            var local = math.rotate(math.inverse(figureToWorld), direction);
             var clip = BlastSide(local);
             return clip.FrameCount > 0 ? clip : Die;
         }

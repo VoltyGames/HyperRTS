@@ -95,9 +95,9 @@ namespace HyperRTS.Simulation.Tests.Replays
         }
 
         [Test]
-        public void SameState_SeesEveryFieldButTheKey_AndFilesStoreEntitiesIn19Bytes()
+        public void SameState_SeesEveryFieldButTheKey_AndFilesStoreEntitiesIn21Bytes()
         {
-            Assert.AreEqual(19, UnsafeUtility.SizeOf<ReplayEntity>());
+            Assert.AreEqual(21, UnsafeUtility.SizeOf<ReplayEntity>());
 
             foreach (var field in typeof(ReplayEntity).GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
@@ -113,10 +113,10 @@ namespace HyperRTS.Simulation.Tests.Replays
         {
             var a = ReplayEntity.Capture(0, 0, 1,
                 LocalTransform.FromPositionRotation(new float3(1.03f, 0f, -2.5f), quaternion.RotateY(math.radians(350f))),
-                0.5f);
+                0.5f, 0);
             var b = ReplayEntity.Capture(0, 0, 1,
                 LocalTransform.FromPositionRotation(new float3(3.03f, 0f, -2.5f), quaternion.RotateY(math.radians(10f))),
-                0.5f);
+                0.5f, 0);
 
             Assert.AreEqual(1.03f, a.Position.x, QuantizedPosition.Step);
             Assert.AreEqual(0.5f, a.HealthFraction, 0.01f);

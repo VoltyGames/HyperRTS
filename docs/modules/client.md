@@ -110,8 +110,8 @@ point, no reinforce point in range, full strength or too poor (the price of one 
 `SquadRefusal` from `SquadOrderRule`, shown by `CommandButton.ShowSquadRefusal` as `hud-command--no-point`,
 `--full-strength` or `--too-poor`. Clients read the `Retreating` and `Reinforcing` enable bits and the reinforcing
 progress, which are replicated.
-A card names the soldier's weapon, a designation baked per figure (`SquadFiguresAuthoring.Figure.weaponName`, held in
-`SquadFigure.Weapon`, never sent) and shown through `HUDText.WeaponName`; a digging member reads "Digging", and a squad
+A card names the soldier's weapon: its member's own `Designation` (baked, never sent), or the designation of the upgraded mount it fires (`WeaponStats.designation`, baked into
+`WeaponPose.Designation`, never sent) shown through `HUDText.WeaponName`; a digging member reads "Digging", and a squad
 at work shows "Building" with the site's progress (`SquadWork.Progress`, replicated). Builder options take hotkeys from
 `BuilderAuthoring.hotkeys`, one letter per build option in order; the build tooltip lists the cap (`tooltip.limit`).
 
@@ -358,7 +358,8 @@ buffer on the squad, each part keyed by the model (base or other) it plays for. 
 horizontal speed (a member catching up runs while the rest stand); the upper body plays the fire clip of the posture
 for 0.6 s after each change of the `WeaponPose.Shots` of the weapon its member carries, else what the legs play, in
 step with them. A member who died plays the die clip once on both halves (or a blast fall, `DieBlastFront`, `Back`,
-`Left` or `Right`, named by where a blast within 0.5 s came from relative to the figure's facing), then the figure hides
+`Left` or `Right`, named by the member's replicated `BlastHeading` relative to the figure's facing, when its
+`Death` is `Blast`), then the figure hides
 after the hold. A squad spawned with dead members hides their figures without the fall. A figure gets new clips only
 when its state, posture or firing changes, written to every renderer under it, and looping clips start at a per-figure
 phase so the squad doesn't move in step. While the legs play a clip with a `groundSpeed` (walk, run, crawl), the system
@@ -370,16 +371,16 @@ A figure may name an `upgradedRoot` with its own clip prefix and `upgradedWeapon
 kept in `SquadFigure.Other`. When the member's `Weapon` differs from its `BaseWeapon` (an upgrade is in hand) the system
 swaps the two: the new model is placed and posed afresh, the old one hides, and the card's name follows the model shown.
 
-A figure may instead name an `emplacedRoot` (with `emplacedClipPrefix` and `emplacedWeaponName`), kept in
+A figure may instead name an `emplacedRoot` (with `emplacedClipPrefix`), kept in
 `SquadFigure.Other` with `FigureVariant.Reason` `Emplaced`: it shows while the squad's `Deployable` is `Emplaced` and the
-figure takes a crew place (a gunner with empty hands behind the deployed gun), and the carried model returns on pack-up.
+member takes a crew place (a gunner with empty hands behind the deployed gun), and the carried model returns on pack-up.
 A figure has at most one other model, so `SquadFiguresRule` errors when both roots are set or the figures and squad members differ in count.
 
 `deployedModel` is a child of the unit (a gun on its tripod) baked as a render entity, hidden by `HideReason.Figure` and
-shown while the squad's `Deployable` is `Emplaced`, from the start of deploying until packing up begins. A figure with
-`takesCrewPlace` then eases to its `crewOffset` (metres in the unit's frame, x right, y ahead) in its `crewPosture`,
-using the posture's idle and fire clips (for example `ProneFire` for a gunner 0.6 m behind the gun), and ignores its
-member's slot and cover; packed, figures behave as before.
+shown while the squad's `Deployable` is `Emplaced`, from the start of deploying until packing up begins. A member with
+`takesCrewPlace` then walks to its crew place and takes its posture in the simulation (see
+[combat](combat.md#squads-and-members)), and its figure follows `SquadMember.Offset` and `Posture` like any other, using the
+posture's idle and fire clips (for example `ProneFire` for a gunner 0.6 m behind the gun).
 
 ### Visibility
 

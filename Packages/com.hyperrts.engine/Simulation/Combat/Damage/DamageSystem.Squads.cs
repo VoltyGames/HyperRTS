@@ -38,6 +38,22 @@ namespace HyperRTS.Simulation.Combat.Damage
                 }
             }
 
+            /// <summary>A member a hit just dropped remembers whether a blast or a shot did it, and the way the blast lay.</summary>
+            private static void RecordDeath(DynamicBuffer<SquadMember> members, int index, float heldBefore,
+                in DamageEvent hit, float3 squad)
+            {
+                var member = members[index];
+                if (heldBefore <= 0f || member.Alive)
+                {
+                    return;
+                }
+
+                var blast = hit.Radius > 0f;
+                member.Death = blast ? DeathCause.Blast : DeathCause.Shot;
+                member.BlastHeading = blast ? SquadMember.PackHeading(hit.Position.xz - member.Position(squad).xz) : (byte)0;
+                members[index] = member;
+            }
+
             /// <summary>Adds the suppression of a hit to the squad, as much as the struck member's cover lets through.</summary>
             private void Suppress(Entity squad, in SquadMember member, float amount, in DamageEvent hit, float3 from)
             {

@@ -4,7 +4,6 @@ using HyperRTS.Presentation.Animation.VAT;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Infantry;
-using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -32,7 +31,6 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             _switch = new RenderSwitch(ref state);
             state.RequireForUpdate<SquadFigures>();
-            state.RequireForUpdate<CueQueue>();
         }
 
         [BurstCompile]
@@ -51,8 +49,6 @@ namespace HyperRTS.Presentation.Animation.Figures
                 UpperFades = SystemAPI.GetComponentLookup<UpperFade>(),
                 Renderers = SystemAPI.GetBufferLookup<FigureRenderer>(true),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
-                CueEvents = SystemAPI.GetBufferLookup<CueEvent>(true),
-                CueQueue = SystemAPI.GetSingletonEntity<CueQueue>(),
                 Switch = _switch,
             }.Schedule(state.Dependency);
         }
@@ -70,14 +66,11 @@ namespace HyperRTS.Presentation.Animation.Figures
             public ComponentLookup<UpperFade> UpperFades;
             [ReadOnly] public BufferLookup<FigureRenderer> Renderers;
             [ReadOnly] public ComponentLookup<LocalToWorld> Places;
-            [ReadOnly] public BufferLookup<CueEvent> CueEvents;
-            public Entity CueQueue;
             public RenderSwitch Switch;
 
             private void Execute(Entity entity, ref SquadFigures squad, DynamicBuffer<SquadFigure> figures,
                 in DynamicBuffer<SquadMember> members, in LocalToWorld place)
             {
-                squad.Hear(CueEvents[CueQueue], place.Position, Now);
                 var hasPoses = Poses.TryGetBuffer(entity, out var poses);
                 var count = math.min(figures.Length, members.Length);
                 var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
@@ -96,8 +89,6 @@ namespace HyperRTS.Presentation.Animation.Figures
                         Switch.SetBranch(entity, figure.Other.Model.Figure, HideReason.Figure, true);
                     }
 
-                    var crewed = crewing && figure.Crew.Takes;
-                    var posture = crewed ? figure.Crew.Posture : member.Posture;
                     var moving = FigureState.Idle;
                     var firing = false;
                     var digging = false;
@@ -106,30 +97,27 @@ namespace HyperRTS.Presentation.Animation.Figures
                         var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                         var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
                         moving = figure.Observe(squad, feet, shots, Now, DeltaTime, out firing);
-                        digging = !crewed && IsDigging(member, moving, firing);
+                        digging = IsDigging(member, moving, firing);
                     }
 
                     var next = figure.Next(member.Alive, moving, Now);
-                    Animate(entity, ref figure, next, posture, firing, digging, squad);
+                    Animate(entity, ref figure, next, member, firing, digging, squad);
 
                     figures[i] = figure;
                 }
             }
 
-            private void Animate(Entity root, ref SquadFigure figure, FigureState next, Posture posture,
+            private void Animate(Entity root, ref SquadFigure figure, FigureState next, in SquadMember member,
                 bool firing, bool digging, in SquadFigures squad)
             {
                 if (next != figure.State)
                 {
-                    Show(root, ref figure, next, posture, firing, digging, squad);
+                    Show(root, ref figure, next, member, firing, digging, squad);
                 }
-                else if (next == FigureState.Die)
+                else if (next != FigureState.Die && next != FigureState.Hidden
+                    && figure.PoseDiffers(member.Posture, firing, digging))
                 {
-                    SwitchToBlast(root, ref figure, squad);
-                }
-                else if (next != FigureState.Hidden && figure.PoseDiffers(posture, firing, digging))
-                {
-                    Pose(root, ref figure, next, posture, firing, digging);
+                    Pose(root, ref figure, next, member.Posture, firing, digging);
                 }
 
                 if (next is FigureState.Walk or FigureState.Run && figure.Retune(Now))
@@ -150,7 +138,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 Switch.SetBranch(root, squad.DeployedModel, HideReason.Figure, squad.ModelHidden);
             }
 
-            private void Show(Entity root, ref SquadFigure figure, FigureState next, Posture posture,
+            private void Show(Entity root, ref SquadFigure figure, FigureState next, in SquadMember member,
                 bool firing, bool digging, in SquadFigures squad)
             {
                 var hidden = next == FigureState.Hidden;
@@ -165,11 +153,11 @@ namespace HyperRTS.Presentation.Animation.Figures
                 if (next == FigureState.Die)
                 {
                     figure.HideAt = Now + squad.DieHold;
-                    Fall(root, ref figure, DieClip(figure, squad));
+                    Fall(root, ref figure, DieClip(figure, member));
                     return;
                 }
 
-                Pose(root, ref figure, next, posture, firing, digging);
+                Pose(root, ref figure, next, member.Posture, firing, digging);
             }
 
             // A standing member at its place on a site digs unless it is firing.
@@ -179,32 +167,15 @@ namespace HyperRTS.Presentation.Animation.Figures
                 return standing && !firing && member.Action == MemberAction.Dig;
             }
 
-            private VATClipRange DieClip(in SquadFigure figure, in SquadFigures squad)
+            private VATClipRange DieClip(in SquadFigure figure, in SquadMember member)
             {
-                if (!squad.Killed(Now))
+                if (member.Death != DeathCause.Blast)
                 {
                     return figure.Clips.Die;
                 }
 
-                return BlastClip(figure, squad);
-            }
-
-            private VATClipRange BlastClip(in SquadFigure figure, in SquadFigures squad) =>
-                figure.Clips.Blasted(squad.BlastPosition, Places[figure.Figure].Value);
-
-            // A fall that began just before its blast cue arrived changes to the blast fall.
-            private void SwitchToBlast(Entity root, ref SquadFigure figure, in SquadFigures squad)
-            {
-                if (squad.BlastTime != Now || !squad.Killed(figure.HideAt - squad.DieHold))
-                {
-                    return;
-                }
-
-                var clip = BlastClip(figure, squad);
-                if (figure.Lower.SameAs(figure.Clips.Die) && !figure.Lower.SameAs(clip))
-                {
-                    Fall(root, ref figure, clip);
-                }
+                var direction = member.BlastDirection;
+                return figure.Clips.Blasted(new float3(direction.x, 0f, direction.y), Places[figure.Figure].Value);
             }
         }
     }

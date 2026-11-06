@@ -1,5 +1,6 @@
 using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
@@ -130,6 +131,7 @@ namespace HyperRTS.Simulation.Replays
         {
             var health = SystemAPI.GetComponentLookup<Health>(true);
             var construction = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
+            var squads = SystemAPI.GetBufferLookup<SquadMember>(true);
             foreach (var (info, faction, transform, entity) in SystemAPI
                          .Query<RefRO<EntityInfo>, RefRO<Faction>, RefRO<LocalTransform>>()
                          .WithNone<Inside>().WithEntityAccess())
@@ -138,8 +140,9 @@ namespace HyperRTS.Simulation.Replays
                 var key = known ? last.Key : recording.NextKey++;
                 var healthFraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
                 var building = construction.HasEnabled(entity);
+                var living = squads.TryGetBuffer(entity, out var members) ? SquadMember.LivingMask(members) : (ushort)0;
                 var current = ReplayEntity.Capture(key, info.ValueRO.TypeId, faction.ValueRO.Value, transform.ValueRO,
-                    healthFraction);
+                    healthFraction, living);
                 if (building)
                 {
                     current.SetConstruction(construction[entity].Value);

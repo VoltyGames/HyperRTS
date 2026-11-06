@@ -1,6 +1,5 @@
 using HyperRTS.Presentation.Animation.VAT;
 using HyperRTS.Simulation.Common.Infantry;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -27,9 +26,6 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>The model shown now: the one for the weapon its member fires.</summary>
         public Entity Figure;
 
-        /// <summary>The weapon's designation for the HUD's member card; baked, never sent.</summary>
-        public FixedString32Bytes Weapon;
-
         /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
         public FigureClips Clips;
 
@@ -38,9 +34,6 @@ namespace HyperRTS.Presentation.Animation.Figures
 
         /// <summary>True while <see cref="Figure"/> is the model <see cref="FigureVariant.Reason"/> asks for.</summary>
         public bool ShowsOther;
-
-        /// <summary>Where the figure stands while its squad's weapon is deployed.</summary>
-        public CrewPlace Crew;
 
         /// <summary>0 to 1: how far into each looping clip this figure starts, so loops don't play in step.</summary>
         public float Phase;
@@ -104,17 +97,16 @@ namespace HyperRTS.Presentation.Animation.Figures
                 return false;
             }
 
-            var wantsOther = Other.Reason == VariantReason.Emplaced ? emplaced && Crew.Takes : member.Weapon != member.BaseWeapon;
+            var wantsOther = Other.Reason == VariantReason.Emplaced ? member.Crews(emplaced) : member.Weapon != member.BaseWeapon;
             return ShowsOther != wantsOther;
         }
 
         /// <summary>Shows the other model; it is placed and posed afresh, as a figure not yet shown.</summary>
         public void SwapModel()
         {
-            var shown = new FigureModel { Figure = Figure, Clips = Clips, Weapon = Weapon, Height = Height };
+            var shown = new FigureModel { Figure = Figure, Clips = Clips, Height = Height };
             Figure = Other.Model.Figure;
             Clips = Other.Model.Clips;
-            Weapon = Other.Model.Weapon;
             Height = Other.Model.Height;
             Other.Model = shown;
             ShowsOther = !ShowsOther;

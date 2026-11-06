@@ -15,7 +15,8 @@ namespace HyperRTS.Simulation.Squads
     /// <summary>
     /// Keeps each squad's members in order: their health sums to the squad's after stat changes, a member fires its
     /// upgraded weapon while that mount is enabled, each weapon mount counts its living carriers, and members walk toward their slots, a loose wedge while the squad moves, a ring
-    /// when it halts, a row along the site it builds, or the cover spot a member holds. Members walk at most three
+    /// when it halts, a row along the site it builds, or the cover spot a member holds. While the squad's weapon is set up, members who
+    /// take a crew place walk to it instead. Members walk at most three
     /// quarters of the squad's speed relative to it, so one that fell behind visibly runs to catch up. Squads inside
     /// a container stay put. Slots ignore the nav grid, so a member can stand in a wall.
     /// </summary>
@@ -36,6 +37,7 @@ namespace HyperRTS.Simulation.Squads
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(true),
+                Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
             }.Schedule();
         }
 
@@ -48,6 +50,7 @@ namespace HyperRTS.Simulation.Squads
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<SquadWork> WorkLookup;
+            [ReadOnly] public ComponentLookup<Deployable> Deployables;
 
             private void Execute(Entity entity, ref Health health, DynamicBuffer<SquadMember> members,
                 DynamicBuffer<WeaponMount> mounts, in Velocity velocity, in MovementSpeed speed, in LocalTransform transform)
@@ -59,7 +62,9 @@ namespace HyperRTS.Simulation.Squads
                 {
                     var working = WorkLookup.HasEnabled(entity);
                     var work = working ? WorkLookup[entity] : default;
-                    Walk(members, velocity.Value, speed.Value, transform.Position.xz, work, working);
+                    var crewing = Deployables.TryGetComponent(entity, out var deployable) && deployable.Emplaced;
+                    var facing = Deployable.Heading(Deployables, entity, transform);
+                    Walk(members, velocity.Value, speed.Value, transform.Position.xz, work, working, crewing, facing);
                 }
             }
 
@@ -125,9 +130,9 @@ namespace HyperRTS.Simulation.Squads
             }
 
             private void Walk(DynamicBuffer<SquadMember> members, float2 squadVelocity, float speed, float2 squad,
-                in SquadWork work, bool working)
+                in SquadWork work, bool working, bool crewing, float2 facing)
             {
-                var living = SquadMember.CountLiving(members);
+                var living = SquadMember.CountFreeLiving(members, crewing);
                 var moving = SquadMember.IsMoving(squadVelocity);
                 var heading = math.normalizesafe(squadVelocity);
                 var reach = speed * Rules.CatchUp * DeltaTime;
@@ -140,7 +145,12 @@ namespace HyperRTS.Simulation.Squads
                         continue;
                     }
 
-                    if (!member.HasSpot)
+                    var crewed = member.Crews(crewing);
+                    if (crewed)
+                    {
+                        member.Slot = member.CrewSlot(facing);
+                    }
+                    else if (!member.HasSpot)
                     {
                         var slot = moving ? Rules.WedgeSlot(rank, living, heading) : Rules.SpreadSlot(rank, living);
                         var farthest = Rules.MaxSpread;
@@ -158,7 +168,7 @@ namespace HyperRTS.Simulation.Squads
                     member.Offset = length <= reach ? member.Slot : member.Offset + gap / length * reach;
                     member.Action = working && length <= Rules.DigRange ? MemberAction.Dig : MemberAction.None;
                     members[i] = member;
-                    rank++;
+                    rank += crewed ? 0 : 1;
                 }
             }
 

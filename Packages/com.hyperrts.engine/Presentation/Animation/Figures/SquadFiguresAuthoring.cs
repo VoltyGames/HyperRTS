@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Common.Infantry;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
@@ -34,9 +33,6 @@ namespace HyperRTS.Presentation.Animation.Figures
             [Tooltip("Added before this squad's idle, walk, run, fire, crouch and prone clip names, as a rifleman and a launcher carrier stand differently. Empty for none.")]
             public string clipPrefix;
 
-            [Tooltip("The weapon's designation, shown on the squad's member card (M4A1, PKP). Empty for none.")]
-            public string weaponName;
-
             [Header("Upgraded weapon")]
             [Tooltip("The figure shown instead while its member fires the upgraded weapon, a child of this unit's model. Empty keeps this one.")]
             public Transform upgradedRoot;
@@ -44,28 +40,12 @@ namespace HyperRTS.Presentation.Animation.Figures
             [Tooltip("Clip prefix of the upgraded figure, as above.")]
             public string upgradedClipPrefix;
 
-            [Tooltip("The upgraded weapon's designation for the member card.")]
-            public string upgradedWeaponName;
-
             [Header("Emplaced")]
-            [Tooltip("The figure shown instead while the unit's weapon is set up and this figure takes a crew place, such as a gunner with empty hands. A child of this unit's model. Empty keeps this one. Not with an upgraded figure.")]
+            [Tooltip("The figure shown instead while the unit's weapon is set up and its member takes a crew place, such as a gunner with empty hands. A child of this unit's model. Empty keeps this one. Not with an upgraded figure.")]
             public Transform emplacedRoot;
 
             [Tooltip("Clip prefix of the emplaced figure, as above.")]
             public string emplacedClipPrefix;
-
-            [Tooltip("The emplaced figure's weapon designation for the member card.")]
-            public string emplacedWeaponName;
-
-            [Header("Deployed")]
-            [Tooltip("Stands at the crew place below while the unit's weapon is set up, instead of its slot in the squad.")]
-            public bool takesCrewPlace;
-
-            [Tooltip("Metres in the unit's frame, x to the right and y ahead, such as 0.6 behind the gun.")]
-            public Vector2 crewOffset;
-
-            [Tooltip("How it holds itself at the crew place. Fire and idle use the posture's clips.")]
-            public Posture crewPosture = Posture.Prone;
 
             /// <summary>A figure shows at most one other model, so an upgraded and an emplaced one together are ambiguous.</summary>
             public bool HasTwoVariants => upgradedRoot != null && emplacedRoot != null;

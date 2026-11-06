@@ -19,13 +19,10 @@ namespace HyperRTS.Presentation.Animation.Figures
                     var figure = authoring.figures[i].root;
                     DependsOn(Table(figure));
                     var entity = GetEntity(figure, TransformUsageFlags.Dynamic);
-                    var baked = authoring.figures[i];
                     entities.Add(new SquadFigure
                     {
                         Figure = entity, Clips = clips[i], Height = figure.localPosition.y,
-                        Weapon = baked.weaponName,
                         Other = Variant(authoring, i),
-                        Crew = new CrewPlace { Takes = baked.takesCrewPlace, Offset = baked.crewOffset, Posture = baked.crewPosture },
                     });
                 }
 
@@ -51,18 +48,18 @@ namespace HyperRTS.Presentation.Animation.Figures
 
                 if (baked.upgradedRoot != null)
                 {
-                    return Variant(authoring, index, baked.upgradedRoot, baked.upgradedClipPrefix, baked.upgradedWeaponName, VariantReason.Upgraded);
+                    return Variant(authoring, index, baked.upgradedRoot, baked.upgradedClipPrefix, VariantReason.Upgraded);
                 }
 
                 if (baked.emplacedRoot != null)
                 {
-                    return Variant(authoring, index, baked.emplacedRoot, baked.emplacedClipPrefix, baked.emplacedWeaponName, VariantReason.Emplaced);
+                    return Variant(authoring, index, baked.emplacedRoot, baked.emplacedClipPrefix, VariantReason.Emplaced);
                 }
 
                 return default;
             }
 
-            private FigureVariant Variant(SquadFiguresAuthoring authoring, int index, Transform root, string prefix, string weapon, VariantReason reason)
+            private FigureVariant Variant(SquadFiguresAuthoring authoring, int index, Transform root, string prefix, VariantReason reason)
             {
                 DependsOn(Table(root));
                 return new FigureVariant
@@ -73,7 +70,6 @@ namespace HyperRTS.Presentation.Animation.Figures
                         Figure = GetEntity(root, TransformUsageFlags.Dynamic),
                         Clips = authoring.VariantClips(index, root, prefix),
                         Height = root.localPosition.y,
-                        Weapon = weapon,
                     },
                 };
             }

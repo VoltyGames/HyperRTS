@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Core;
 using Unity.Entities;
@@ -35,7 +34,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         protected SystemHandle _matrices;
         protected SystemHandle _system;
         protected Entity _squad;
-        protected Entity _cues;
         protected Entity _model;
         protected Entity[] _figures;
         protected double _time;
@@ -50,8 +48,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _matrices = _kit.World.CreateSystem<LocalToWorldSystem>();
             _system = _kit.World.CreateSystem<SquadFigureSystem>();
             _squad = Squad(4);
-            _cues = _em.CreateEntity(typeof(CueQueue));
-            _em.AddBuffer<CueEvent>(_cues);
             _time = 0d;
         }
 
@@ -142,7 +138,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _parents.Update(_kit.World.Unmanaged);
             _matrices.Update(_kit.World.Unmanaged);
             _system.Update(_kit.World.Unmanaged);
-            _em.GetBuffer<CueEvent>(_cues).Clear();
         }
 
         // One update past the seconds, so rounding can't leave the clock just short.
@@ -198,10 +193,13 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             }
         }
 
-        protected void Blast(float3 position) => _em.GetBuffer<CueEvent>(_cues).Add(new CueEvent
+        // How a dead member fell; a blast lay toward the direction on the ground plane.
+        protected void SetDeath(int index, DeathCause cause, float2 toward = default)
         {
-            Slot = CueSlot.Impact, Position = position, Radius = 4f,
-        });
+            ref var member = ref _em.GetBuffer<SquadMember>(_squad).ElementAt(index);
+            member.Death = cause;
+            member.BlastHeading = SquadMember.PackHeading(toward);
+        }
 
         // The first members stay alive, the rest are dead.
         protected void SetLiving(int count)
@@ -228,13 +226,13 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         protected VATClip Upper(int index) => _em.GetComponentData<UpperClip>(_figures[index]).Clip;
 
         // A second figure for the member's upgraded weapon, baked hidden like the squad's others.
-        protected Entity AddUpgradedModel(int index, string weapon)
+        protected Entity AddUpgradedModel(int index)
         {
             var upgraded = ModelPart();
             var figure = Figure(index);
             figure.Other = new FigureVariant
             {
-                Model = new FigureModel { Figure = upgraded, Clips = Clips(1000), Weapon = weapon },
+                Model = new FigureModel { Figure = upgraded, Clips = Clips(1000) },
             };
             _em.GetBuffer<SquadFigure>(_squad).ElementAt(index) = figure;
             return upgraded;
