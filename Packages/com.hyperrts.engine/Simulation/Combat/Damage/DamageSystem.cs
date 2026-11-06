@@ -40,6 +40,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             state.RequireForUpdate<FactionRelations>();
             state.RequireForUpdate<SimulationFrame>();
             state.RequireForUpdate<CoverRules>();
+            state.RequireForUpdate<SquadRules>();
         }
 
         [BurstCompile]
@@ -68,6 +69,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 Suppressions = SystemAPI.GetComponentLookup<Suppression>(false),
                 Frame = SystemAPI.GetSingleton<SimulationFrame>().Value,
                 Cover = SystemAPI.GetSingleton<CoverRules>(),
+                Squad = SystemAPI.GetSingleton<SquadRules>(),
             }.Schedule();
         }
 
@@ -92,6 +94,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             public ComponentLookup<Suppression> Suppressions;
             public uint Frame;
             public CoverRules Cover;
+            public SquadRules Squad;
 
             private void Execute(DynamicBuffer<DamageEvent> events)
             {
@@ -118,7 +121,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             {
                 victims.Clear();
                 var collector = new SplashCollector { Victims = victims };
-                Index.Query(hit.Position, hit.Radius + SquadMember.MaxSpread, ref collector);
+                Index.Query(hit.Position, hit.Radius + math.max(Squad.MaxSpread, Squad.WorkSpread), ref collector);
 
                 foreach (var victim in victims)
                 {
@@ -193,7 +196,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                         return -1;
                     }
 
-                    amount *= members[member].ExposureTo(Cover, squad, from, hit.CoverPiercing);
+                    amount *= members[member].ExposureTo(Cover, squad, from, hit.CoverPiercing).Damage;
                     held = members[member].Health;
                     health.Current = SquadMember.Hurt(members, member, amount);
                     Suppress(target, members[member], suppression, hit, from);

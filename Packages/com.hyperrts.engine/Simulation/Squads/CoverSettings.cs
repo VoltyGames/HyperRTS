@@ -8,21 +8,11 @@ namespace HyperRTS.Simulation.Squads
     [Serializable]
     public struct CoverSettings
     {
-        [Tooltip("Share of damage taken behind heavy cover (sandbags, concrete, wrecks, rocks), from the front.")]
-        [Range(0f, 1f)]
-        public float heavyDamage;
+        [Tooltip("Light cover (fences, hay, woodpiles, craters, and woods or tall crops with no spot).")]
+        public CoverProtection light;
 
-        [Tooltip("Share of suppression taken behind heavy cover, from the front.")]
-        [Range(0f, 1f)]
-        public float heavySuppression;
-
-        [Tooltip("Share of damage taken behind light cover (fences, hay, woodpiles), from the front.")]
-        [Range(0f, 1f)]
-        public float lightDamage;
-
-        [Tooltip("Share of suppression taken behind light cover, from the front.")]
-        [Range(0f, 1f)]
-        public float lightSuppression;
+        [Tooltip("Heavy cover (sandbags, concrete, wrecks, rocks).")]
+        public CoverProtection heavy;
 
         [Tooltip("Half angle in degrees either side of a spot's facing that its cover protects.")]
         [Range(0f, 180f)]
@@ -34,18 +24,22 @@ namespace HyperRTS.Simulation.Squads
 
         public static CoverSettings Standard => new()
         {
-            heavyDamage = 0.5f, heavySuppression = 0.3f, lightDamage = 0.75f, lightSuppression = 0.6f,
+            light = new CoverProtection { damageTaken = 0.75f, suppressionTaken = 0.6f, preference = 10f },
+            heavy = new CoverProtection { damageTaken = 0.5f, suppressionTaken = 0.3f, preference = 20f },
             frontArc = 75f, searchRadius = 3.5f,
         };
 
-        public readonly CoverRules Rules => new()
+        public readonly CoverRules Rules
         {
-            HeavyDamage = heavyDamage,
-            HeavySuppression = heavySuppression,
-            LightDamage = lightDamage,
-            LightSuppression = lightSuppression,
-            ArcCos = Mathf.Cos(frontArc * Mathf.Deg2Rad),
-            SearchRadius = searchRadius,
-        };
+            get
+            {
+                var rules = new CoverRules { ArcCos = Mathf.Cos(frontArc * Mathf.Deg2Rad), SearchRadius = searchRadius };
+                rules.Entries.Length = CoverRules.Kinds;
+                rules.Entries[(int)CoverKind.None] = CoverEntry.Open;
+                rules.Entries[(int)CoverKind.Light] = light.Entry;
+                rules.Entries[(int)CoverKind.Heavy] = heavy.Entry;
+                return rules;
+            }
+        }
     }
 }

@@ -20,18 +20,8 @@ namespace HyperRTS.Simulation.Common.Infantry
     [InternalBufferCapacity(4)]
     public partial struct SquadMember : IBufferElementData
     {
-        /// <summary>Furthest a member stands from its squad, in metres.</summary>
-        public const float MaxSpread = 3.5f;
-
         /// <summary>Splash treats a member as a disc of this radius.</summary>
         public const float Radius = 0.3f;
-
-        private const float SpreadRadius = 2.2f;
-        private const float WedgeDepth = 1.2f;
-        private const float WedgeWidth = 1f;
-
-        /// <summary>Directions a moving squad's wedge points in.</summary>
-        public const int WedgeHeadings = 16;
 
         [GhostField(Quantization = 10)] public float Health;
         [GhostField(Quantization = 10)] public float MaxHealth;
@@ -83,7 +73,10 @@ namespace HyperRTS.Simulation.Common.Infantry
         [GhostField(SendData = false)] public byte SpotIndex;
 
         /// <summary>A squad moving faster than this, in metres a second, walks in a wedge and holds no spot.</summary>
-        public const float MovingSpeed = 0.5f;
+        private const float MovingSpeed = 0.5f;
+
+        /// <summary>Whether a squad with this velocity is moving; every squad system decides halted by it.</summary>
+        public static bool IsMoving(float2 velocity) => math.lengthsq(velocity) > MovingSpeed * MovingSpeed;
 
         public readonly bool Alive => Health > 0f;
 
@@ -115,31 +108,20 @@ namespace HyperRTS.Simulation.Common.Infantry
             Cover = CoverKind.None;
         }
 
-        /// <summary>
-        /// Share of a hit it takes: the cover's share, or 1 when none or when the hit comes from outside the front arc
-        /// of its spot (light cover on a concealing cell has no arc). <paramref name="toThreat"/> is the XZ direction
-        /// to where the hit came from; <paramref name="piercing"/> is the share of the protection the hit ignores.
-        /// </summary>
-        public readonly float DamageShare(in CoverRules rules, float2 toThreat, float piercing) =>
-            Covers(rules, toThreat) ? math.lerp(rules.DamageTaken(Cover), 1f, math.saturate(piercing)) : 1f;
-
-        /// <summary>Share of a hit's suppression it takes, by the same rules as <see cref="DamageShare"/>.</summary>
-        public readonly float SuppressionShare(in CoverRules rules, float2 toThreat, float piercing) =>
-            Covers(rules, toThreat) ? math.lerp(rules.SuppressionTaken(Cover), 1f, math.saturate(piercing)) : 1f;
-
-        private readonly bool Covers(in CoverRules rules, float2 toThreat) =>
-            Cover != CoverKind.None
-            && !(HasSpot && math.dot(math.normalizesafe(toThreat), CoverFacing) < rules.ArcCos);
-
         /// <summary>World position of a member standing at <see cref="Offset"/> from a squad at <paramref name="squad"/>.</summary>
         public readonly float3 Position(float3 squad) => squad + new float3(Offset.x, 0f, Offset.y);
 
-        /// <summary>The share of a hit from <paramref name="from"/> this member takes, standing in a squad at <paramref name="squad"/>.</summary>
-        public readonly float ExposureTo(in CoverRules rules, float3 squad, float3 from, float piercing) =>
-            DamageShare(rules, from.xz - Position(squad).xz, piercing);
-
-        /// <summary>The share of a hit's suppression from <paramref name="from"/> this member takes.</summary>
-        public readonly float SuppressionFrom(in CoverRules rules, float3 squad, float3 from, float piercing) =>
-            SuppressionShare(rules, from.xz - Position(squad).xz, piercing);
+        /// <summary>
+        /// The shares of a hit from <paramref name="from"/> this member takes, standing in a squad at
+        /// <paramref name="squad"/>: its cover's shares, or all of it when it has none or the hit comes from outside the
+        /// front arc of its spot (light cover on a concealing cell has no arc). <paramref name="piercing"/> is the
+        /// share of the protection the hit ignores.
+        /// </summary>
+        public readonly Exposure ExposureTo(in CoverRules rules, float3 squad, float3 from, float piercing)
+        {
+            var toThreat = math.normalizesafe(from.xz - Position(squad).xz);
+            var covered = Cover != CoverKind.None && (!HasSpot || rules.Faces(CoverFacing, toThreat));
+            return covered ? rules.Entry(Cover).Pierced(piercing) : Exposure.Open;
+        }
     }
 }

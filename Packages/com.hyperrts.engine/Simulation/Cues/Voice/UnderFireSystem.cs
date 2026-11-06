@@ -10,15 +10,12 @@ namespace HyperRTS.Simulation.Cues.Voice
 {
     /// <summary>
     /// Plays the under fire voice of a unit hit this frame after a quiet spell (<see cref="UnderFireVoice"/>), at most
-    /// once per <see cref="PlayerInterval"/> for each player.
+    /// once per <see cref="VoiceRules.UnderFireInterval"/> for each player.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct UnderFireSystem : ISystem
     {
-        /// <summary>Seconds between two under fire voices of one player.</summary>
-        public const float PlayerInterval = 5f;
-
         private CueWriter _cues;
         private NativeArray<double> _nextByPlayer;
 
@@ -28,6 +25,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             _cues = new CueWriter(ref state);
             _nextByPlayer = new NativeArray<double>(Faction.Max + 1, Allocator.Persistent);
             state.RequireForUpdate<GameEvents>();
+            state.RequireForUpdate<VoiceRules>();
         }
 
         [BurstCompile]
@@ -40,6 +38,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             new CallOutJob
             {
                 Now = SystemAPI.Time.ElapsedTime,
+                Rules = SystemAPI.GetSingleton<VoiceRules>(),
                 Cues = _cues,
                 Voices = SystemAPI.GetComponentLookup<UnderFireVoice>(false),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
@@ -54,6 +53,7 @@ namespace HyperRTS.Simulation.Cues.Voice
         private partial struct CallOutJob : IJobEntity
         {
             public double Now;
+            public VoiceRules Rules;
             public CueWriter Cues;
             public ComponentLookup<UnderFireVoice> Voices;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Cues.Voice
                 }
 
                 var voice = Voices[unit];
-                var quiet = voice.Strike(Now);
+                var quiet = voice.Strike(Now, Rules.UnderFireQuiet);
                 Voices[unit] = voice;
                 return quiet;
             }
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Cues.Voice
                 var place = Transforms[hit.Entity];
                 if (Cues.Play(hit.Entity, CueSlot.UnderFire, place, place.Forward(), hit.Faction))
                 {
-                    NextByPlayer[hit.Faction] = Now + PlayerInterval;
+                    NextByPlayer[hit.Faction] = Now + Rules.UnderFireInterval;
                 }
             }
         }

@@ -64,6 +64,35 @@ namespace HyperRTS.Simulation.Squads
         [Min(0.1f)]
         public float reinforceTime;
 
+        [Header("Formation")]
+        [Tooltip("Metres of ring a halted squad gives each living member, so the ring grows with the squad. 3.5 puts four members 2.2 m out.")]
+        [Min(0.1f)]
+        public float memberSpacing;
+
+        [Tooltip("Metres between the rows of a moving squad's wedge.")]
+        [Min(0f)]
+        public float wedgeDepth;
+
+        [Tooltip("Metres a wedge's members stand to the side for each row.")]
+        [Min(0f)]
+        public float wedgeWidth;
+
+        [Tooltip("Furthest a member stands from a squad that moves or halts, in metres. It also caps the cover search and the ring.")]
+        [Min(0f)]
+        public float maxSpread;
+
+        [Tooltip("Furthest a digging member stands from its squad, in metres.")]
+        [Min(0f)]
+        public float workSpread;
+
+        [Tooltip("Share of the squad's speed a member runs at to catch up with its slot.")]
+        [Min(0f)]
+        public float catchUp;
+
+        [Tooltip("Metres from its place on a building site within which a member digs.")]
+        [Min(0f)]
+        public float digRange;
+
         public static SquadSettings Standard => new()
         {
             suppressedAt = 0.4f, pinnedAt = 0.8f, decayDelay = 3f, decayRate = 0.2f,
@@ -71,6 +100,8 @@ namespace HyperRTS.Simulation.Squads
             crouchSpeed = 0.8f, proneSpeed = 0f,
             retreatSpeed = 1.25f, retreatDamageTaken = 0.5f,
             reinforceCost = 0.75f, reinforceTime = 4f,
+            memberSpacing = 3.5f, wedgeDepth = 1.2f, wedgeWidth = 1f, maxSpread = 3.5f, workSpread = 6f,
+            catchUp = 0.75f, digRange = 0.25f,
         };
 
         public readonly SquadRules Rules => new()
@@ -88,6 +119,13 @@ namespace HyperRTS.Simulation.Squads
             RetreatDamageTaken = retreatDamageTaken,
             ReinforceCost = reinforceCost,
             ReinforceTime = reinforceTime,
+            MemberSpacing = memberSpacing,
+            WedgeDepth = wedgeDepth,
+            WedgeWidth = wedgeWidth,
+            MaxSpread = maxSpread,
+            WorkSpread = workSpread,
+            CatchUp = catchUp,
+            DigRange = digRange,
         };
     }
 }

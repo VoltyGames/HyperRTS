@@ -31,6 +31,7 @@ namespace HyperRTS.Simulation.Squads
         {
             state.RequireForUpdate<CoverSpots>();
             state.RequireForUpdate<CoverRules>();
+            state.RequireForUpdate<SquadRules>();
             state.RequireForUpdate<SightBlockers>();
         }
 
@@ -42,6 +43,7 @@ namespace HyperRTS.Simulation.Squads
             {
                 Spots = spots,
                 Rules = SystemAPI.GetSingleton<CoverRules>(),
+                Squad = SystemAPI.GetSingleton<SquadRules>(),
                 Blockers = SystemAPI.GetSingleton<SightBlockers>(),
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(true),
@@ -53,6 +55,7 @@ namespace HyperRTS.Simulation.Squads
         {
             public CoverSpots Spots;
             public CoverRules Rules;
+            public SquadRules Squad;
             [ReadOnly] public SightBlockers Blockers;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<SquadWork> WorkLookup;
@@ -66,7 +69,7 @@ namespace HyperRTS.Simulation.Squads
                 }
 
                 // A squad at work digs where it stands and leaves any spot.
-                var halted = !IsMoving(velocity) && !WorkLookup.HasEnabled(squad);
+                var halted = !SquadMember.IsMoving(velocity.Value) && !WorkLookup.HasEnabled(squad);
                 Keep(squad, members, transform, halted);
                 var near = new NativeList<int>(0, Allocator.Temp);
                 var searched = false;
@@ -85,11 +88,11 @@ namespace HyperRTS.Simulation.Squads
                     {
                         if (!searched)
                         {
-                            Spots.FindNear(transform.Position.xz, Rules.Reach, near);
+                            Spots.FindNear(transform.Position.xz, Rules.Reach(Squad.MaxSpread), near);
                             searched = true;
                         }
 
-                        Take(ref member, squad, transform, forward, SquadMember.SpreadSlot(rank, living), near);
+                        Take(ref member, squad, transform, forward, Squad.SpreadSlot(rank, living), near);
                     }
 
                     Settle(ref member, transform.Position, forward, halted);
@@ -147,8 +150,9 @@ namespace HyperRTS.Simulation.Squads
                         continue;
                     }
 
-                    // A kind outweighs any distance between a spot and the member's place in the ring.
-                    var score = (byte)candidate.Kind * 10f - math.distance(candidate.Position.xz, transform.Position.xz + place);
+                    // The kind's preference outweighs distance between a spot and the member's place in the ring.
+                    var score = Rules.Entry(candidate.Kind).Preference
+                        - math.distance(candidate.Position.xz, transform.Position.xz + place);
                     if (score > bestScore)
                     {
                         bestScore = score;
@@ -188,9 +192,6 @@ namespace HyperRTS.Simulation.Squads
                 }
             }
         }
-
-        private static bool IsMoving(in Velocity velocity) =>
-            math.lengthsq(velocity.Value) > SquadMember.MovingSpeed * SquadMember.MovingSpeed;
 
         private static Reservation Reserved(Reservation reservation, Entity holder)
         {

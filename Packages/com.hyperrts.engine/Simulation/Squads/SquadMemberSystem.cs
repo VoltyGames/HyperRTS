@@ -25,10 +25,14 @@ namespace HyperRTS.Simulation.Squads
     public partial struct SquadMemberSystem : ISystem
     {
         [BurstCompile]
+        public void OnCreate(ref SystemState state) => state.RequireForUpdate<SquadRules>();
+
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             new MemberJob
             {
+                Rules = SystemAPI.GetSingleton<SquadRules>(),
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(true),
@@ -38,12 +42,9 @@ namespace HyperRTS.Simulation.Squads
         [BurstCompile]
         private partial struct MemberJob : IJobEntity
         {
-            private const float CatchUp = 0.75f;
             private const float Tolerance = 1e-3f;
 
-            // A member this close to its place on the site digs.
-            private const float DigRange = 0.25f;
-
+            public SquadRules Rules;
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<SquadWork> WorkLookup;
@@ -127,9 +128,9 @@ namespace HyperRTS.Simulation.Squads
                 in SquadWork work, bool working)
             {
                 var living = SquadMember.CountLiving(members);
-                var moving = math.lengthsq(squadVelocity) > SquadMember.MovingSpeed * SquadMember.MovingSpeed;
+                var moving = SquadMember.IsMoving(squadVelocity);
                 var heading = math.normalizesafe(squadVelocity);
-                var reach = speed * CatchUp * DeltaTime;
+                var reach = speed * Rules.CatchUp * DeltaTime;
                 var rank = 0;
                 for (var i = 0; i < members.Length; i++)
                 {
@@ -141,12 +142,12 @@ namespace HyperRTS.Simulation.Squads
 
                     if (!member.HasSpot)
                     {
-                        var slot = moving ? SquadMember.WedgeSlot(rank, living, heading) : SquadMember.SpreadSlot(rank, living);
-                        var farthest = SquadMember.MaxSpread;
+                        var slot = moving ? Rules.WedgeSlot(rank, living, heading) : Rules.SpreadSlot(rank, living);
+                        var farthest = Rules.MaxSpread;
                         if (working)
                         {
                             slot = work.Position(rank, living, squad) - squad;
-                            farthest = SquadWork.MaxSpread;
+                            farthest = Rules.WorkSpread;
                         }
 
                         member.Slot = ClampSpread(slot, farthest);
@@ -155,7 +156,7 @@ namespace HyperRTS.Simulation.Squads
                     var gap = member.Slot - member.Offset;
                     var length = math.length(gap);
                     member.Offset = length <= reach ? member.Slot : member.Offset + gap / length * reach;
-                    member.Action = working && length <= DigRange ? MemberAction.Dig : MemberAction.None;
+                    member.Action = working && length <= Rules.DigRange ? MemberAction.Dig : MemberAction.None;
                     members[i] = member;
                     rank++;
                 }

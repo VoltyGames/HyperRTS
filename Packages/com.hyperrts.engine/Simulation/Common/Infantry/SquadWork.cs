@@ -21,9 +21,6 @@ namespace HyperRTS.Simulation.Common.Infantry
         /// <summary>Metres from the footprint's edge to a digging member.</summary>
         public const float Standoff = 0.9f;
 
-        /// <summary>Furthest a digging member stands from its squad, which halts short of a site by its reach.</summary>
-        public const float MaxSpread = 6f;
-
         /// <summary>Share of the site's length the crew spreads over.</summary>
         private const float Spread = 0.9f;
 

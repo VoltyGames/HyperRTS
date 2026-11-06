@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         // Holds suppression steady so waiting out the squad interval changes nothing.
         private void Wait(Entity squad, float value, bool retreating = false)
         {
-            for (var t = 0f; t < SquadBarkSystem.SquadInterval; t += TestWorld.FrameTime)
+            for (var t = 0f; t < World.Singleton<VoiceRules>().SquadBarkInterval; t += TestWorld.FrameTime)
             {
                 Suppress(squad, value, retreating);
                 World.Tick();
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.AreEqual(1, Barks().Length);
 
             Suppress(squad, 0.95f);
-            CollectionAssert.IsEmpty(Barks(SquadBarkSystem.SquadInterval - 1f), "the squad spoke a moment ago");
+            CollectionAssert.IsEmpty(Barks(World.Singleton<VoiceRules>().SquadBarkInterval - 1f), "the squad spoke a moment ago");
         }
 
         [Test]
@@ -132,7 +132,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             Suppress(first, 0.5f);
             Suppress(second, 0.5f);
 
-            Assert.AreEqual(1, Barks(SquadBarkSystem.PlayerInterval - 0.2f).Length);
+            Assert.AreEqual(1, Barks(World.Singleton<VoiceRules>().SquadBarkPlayerInterval - 0.2f).Length);
         }
 
         [Test]

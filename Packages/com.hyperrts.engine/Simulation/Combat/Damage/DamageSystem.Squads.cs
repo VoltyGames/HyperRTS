@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             {
                 if (amount > 0f && Suppressions.TryGetComponent(squad, out var suppression))
                 {
-                    suppression.Add(amount * member.SuppressionFrom(Cover, Transforms[squad].Position, from, hit.CoverPiercing));
+                    suppression.Add(amount * member.ExposureTo(Cover, Transforms[squad].Position, from, hit.CoverPiercing).Suppression);
                     Suppressions[squad] = suppression;
                 }
             }

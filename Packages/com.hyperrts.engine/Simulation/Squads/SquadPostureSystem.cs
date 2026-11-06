@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Squads
             [ReadOnly] public ComponentLookup<SquadWork> Work;
 
             private void Execute(Entity entity, DynamicBuffer<SquadMember> members, ref Suppression suppression,
-                ref Pace pace)
+                ref Pace pace, in Velocity velocity)
             {
                 if (Orders.HasEnabled(entity) && Orders[entity].Value.Type == OrderType.Retreat)
                 {
@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Squads
 
                 suppression.Decay(Rules, DeltaTime);
                 var level = Rules.Level(suppression.Value);
-                var carriage = Carriage(level, Moves.HasEnabled(entity), Attacks.HasEnabled(entity));
+                var carriage = Carriage(level, SquadMember.IsMoving(velocity.Value), Attacks.HasEnabled(entity));
                 if (Work.HasEnabled(entity) && level != SuppressionLevel.Pinned)
                 {
                     carriage = Posture.Stand;

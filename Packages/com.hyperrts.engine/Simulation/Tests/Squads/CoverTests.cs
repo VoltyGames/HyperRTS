@@ -58,6 +58,23 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
+        public void HaltedSquad_TakesTheKindItPrefers_WhateverTheEnumOrder()
+        {
+            var rules = World.Singleton<CoverRules>();
+            var light = rules.Entry(CoverKind.Light);
+            light.Preference = rules.Entry(CoverKind.Heavy).Preference + 10f;
+            rules.Entries[(int)CoverKind.Light] = light;
+            World.Set(World.MatchEntity(), rules);
+            Prop(new float3(0f, 0f, 2f), (new float3(-1f, 0f, 0f), CoverKind.Heavy), (new float3(1f, 0f, 0f), CoverKind.Light));
+            var squad = Squad(float3.zero, 1);
+
+            World.Run(2f);
+
+            var member = World.Buffer<SquadMember>(squad)[0];
+            Assert.AreEqual(1, member.SpotIndex, "the light spot, which is now preferred");
+        }
+
+        [Test]
         public void HaltedSquad_TakesFreeSpotsWithoutSharing()
         {
             Prop(new float3(0f, 0f, 2f), (new float3(-1f, 0f, 0f), CoverKind.Heavy), (new float3(0f, 0f, 0f), CoverKind.Light),

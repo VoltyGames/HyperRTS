@@ -78,7 +78,7 @@ place in the buffer, so indices never shift.
   hit's place in the queue, so a replay hits alike. Damage a member can't absorb is lost, never carried over.
   Garrison shares come through the same path.
 - **Splash** hurts every living member by its own distance from the blast, a member counting as a 0.3 m disc, so the
-  splash query widens by `SquadMember.MaxSpread` and reaches members standing past the squad's radius. A direct hit
+  splash query widens by the larger of `SquadRules.MaxSpread` and `WorkSpread` and reaches members standing past the squad's radius. A direct hit
   with a radius also splashes the members it missed.
 - **Heals** fill the most hurt living member first and spill to the next.
 - **Weapons.** `SquadMemberSystem` sets each `WeaponMount.Carriers` to the living members carrying it. Each firing
@@ -91,8 +91,10 @@ place in the buffer, so indices never shift.
   own weapon (`BaseWeapon`, replicated so clients can tell which one is in hand). Cards and figures follow
   [squad figures](client.md#squad-figures).
 - **Slots.** Members walk their `Offset`, in metres from the squad on world axes so a turning squad doesn't swing
-  them, toward a slot: a loose wedge along the squad's heading while it moves, a ring of 2.2 m when it halts, never
-  past 3.5 m. They close at up to three quarters of the squad's speed relative to it, so a straggler visibly runs.
+  them, toward a slot: a loose wedge along the squad's heading while it moves (`WedgeDepth`, `WedgeWidth`), a ring when it
+  halts whose radius is `MemberSpacing` times the living count over 2 pi (2.2 m for four), never past `MaxSpread`
+  (3.5 m). They close at up to `CatchUp` (three quarters) of the squad's speed relative to it, so a straggler visibly
+  runs. A new squad starts with every member at its point and walks out.
   Squads inside a container don't walk. Slots ignore the nav grid, so a member can stand in a wall.
 - **Stats.** A change to the squad's max health (an upgrade, veterancy) rescales the members to match.
 
@@ -101,7 +103,9 @@ compressed against the last snapshot.
 
 ### Suppression, posture, retreat and reinforce
 
-`SquadRules` on the Match (baked from `MatchAuthoring.squads`, `SquadSettings`) holds every number below.
+`SquadRules` on the Match (baked from `MatchAuthoring.squads`, `SquadSettings`) holds every number below, and the
+formation numbers above. Whether a squad is halted is decided once, by `SquadMember.IsMoving` on its actual
+velocity (over 0.5 m/s), for the member slots, the cover search and the posture.
 
 - **Suppression.** A squad carries `Suppression` (`Value` 0 to 1, one GhostField at 0.01 steps, about a byte while it
   changes and a bit while still; the quiet timer is server only). A weapon's `DamageSettings.suppression` is the amount
@@ -116,7 +120,7 @@ compressed against the last snapshot.
   `ProneSpeed` (0 holds it still, so pinned squads keep their orders and go on when free).
 - **Posture.** Only `SquadPostureSystem` sets `SquadMember.Posture`, in this order: retreating stands; pinned lies
   prone; a member with `Cover` crouches; otherwise a moving squad stands (crouches while suppressed, at
-  `CrouchSpeed`) and a halted squad crouches while it has an attack target. "Moving" is an enabled `MoveDestination`.
+  `CrouchSpeed`) and a halted squad crouches while it has an attack target. "Moving" is `SquadMember.IsMoving`, by velocity, not by an order.
 - **Retreat.** `OrderType.Retreat` (13, a `MovesToPosition` order) and `CommandType.Retreat` (27). `RetreatSystem`
   gives each commanded or selected squad the order to the nearest allied working `RetreatPoint` (`RetreatPointAuthoring`:
   a radius), with that point as `Target`, and does nothing when there is none. While the order runs `Pace` is
@@ -152,14 +156,14 @@ Cover means protection; what hides a unit from sight is concealment.
   `Reservation`, rebuilt only when cover entities appear, vanish or move (`Version` counts builds). A spot is named
   by `CoverSpotKey` (prop and index), which survives a rebuild.
 - **Taking a spot.** `SquadCoverSystem` runs after `SquadMemberSystem`. When a squad halts, each living member takes
-  the best free spot within `CoverRules.SearchRadius` (at most the 3.5 m spread): heavy over light, facing within the
-  front arc of the squad's forward, nearest its ring place. No two members share one. Members re-reserve each frame
+  the best free spot within `CoverRules.SearchRadius` (at most `SquadRules.MaxSpread`): the highest `Preference` of its kind (heavy over
+  light), facing within the front arc of the squad's forward, nearest its ring place. No two members share one. Members re-reserve each frame
   and drop the spot when the squad moves, its prop is gone or they die. `SquadMember.Cover` is set only once the
   member stands in the spot; `SquadPostureSystem` crouches it then, and `CoverHeading` (256 steps) is the way it faces.
 - **Site work.** A spot belongs to its prop only once the prop is built: `CoverSpotSystem` leaves out entities whose
   `ConstructionProgress` is enabled. A spot inside a building's footprint (a trench, a nest) may face any way.
   `SquadWork`, enabled by `ConstructionSystem` while a squad builds in reach, sends the members to a row along the
-  site's long side (`SquadWork.Position`, up to `SquadWork.MaxSpread` from the squad, the squad stands, no spot is
+  site's long side (`SquadWork.Position`, up to `SquadRules.WorkSpread` from the squad, the squad stands, no spot is
   held) and sets `SquadMember.Action` to `Dig` once each stands in place; figures play the `Dig` clip. A squad adds
   the builder's rate once for each living member.
 - **Depth.** A spot below its prop's origin (a trench floor) gives `WorldCoverSpot.Drop`; a member standing in it has
@@ -171,8 +175,9 @@ Cover means protection; what hides a unit from sight is concealment.
   from within the arc (`CoverRules.ArcCos`) of the member's facing, direct hits from `Origin`, splash from the
   blast. `DamageType.coverPiercing` is the share of the protection a hit ignores. A direct hit picks its member by
   seeded roll weighted by that share, so exposed members are hit more.
-- **Rules.** `CoverSettings` on the Match bakes `CoverRules`: damage and suppression taken per kind, the front arc
-  half angle and the search radius. Suppression reads the suppression shares.
+- **Rules.** `CoverSettings` on the Match bakes `CoverRules`: a `CoverEntry` per `CoverKind` (damage taken,
+  suppression taken and preference, indexed by the kind), the front arc half angle and the search radius.
+  `SquadMember.ExposureTo` returns both shares of a hit, and the front arc test lives in `CoverRules.Faces`.
 - **Heading.** On a concealing cell `CoverHeading` is the squad's facing, so a client can tell a covered member's
   facing from `Cover` alone (`SpotEntity` is server only). `SquadFigureSystem` eases a covered member's figure to
   that heading and back to its baked rotation when the cover goes.

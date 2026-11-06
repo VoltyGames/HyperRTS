@@ -8,6 +8,7 @@ using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Cues.Voice;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.MatchStart;
@@ -164,6 +165,7 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.AddComponentData(match, SightSettings.Standard.Rules);
             EntityManager.AddComponentData(match, CoverSettings.Standard.Rules);
             EntityManager.AddComponentData(match, SquadSettings.Standard.Rules);
+            EntityManager.AddComponentData(match, VoiceSettings.Standard.Rules);
 
             var relations = new FactionRelations();
             relations.Teams.Add(0);

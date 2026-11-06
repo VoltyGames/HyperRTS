@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Cues.Voice
 {
     /// <summary>
     /// Voice acknowledgements: when the local player selects units or orders them to move or attack, one of them
-    /// answers with its select, move or attack cue. Client-side only (never sent), and rate-limited so spam-clicking
+    /// answers with its select, move or attack cue. Client-side only (never sent), and rate-limited (<see cref="VoiceRules.AcknowledgementInterval"/>) so spam-clicking
     /// doesn't stack voices.
     /// </summary>
     // After the OrderFirst input systems, before the OrderLast systems that send or clear this frame's commands.
@@ -20,9 +20,6 @@ namespace HyperRTS.Simulation.Cues.Voice
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct AcknowledgementSystem : ISystem
     {
-        /// <summary>Seconds between two acknowledgements.</summary>
-        public const float Interval = 1f;
-
         private CommandReader _commands;
         private CueWriter _cues;
         private double _next;
@@ -37,6 +34,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<LocalPlayer>();
             state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<VoiceRules>();
         }
 
         [BurstCompile]
@@ -63,7 +61,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             {
                 if (TryAnswer(ref state, unit, slot, issued.Faction))
                 {
-                    _next = now + Interval;
+                    _next = now + SystemAPI.GetSingleton<VoiceRules>().AcknowledgementInterval;
                     return;
                 }
             }

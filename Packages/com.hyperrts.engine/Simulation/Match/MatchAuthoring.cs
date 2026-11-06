@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
+using HyperRTS.Simulation.Cues.Voice;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Squads;
@@ -62,6 +63,9 @@ namespace HyperRTS.Simulation.Match
 
         [Tooltip("How suppression, posture, retreat and reinforcing change a squad.")]
         public SquadSettings squads = SquadSettings.Standard;
+
+        [Tooltip("How often units acknowledge orders, call out under fire and bark.")]
+        public VoiceSettings voice = VoiceSettings.Standard;
 
         [Tooltip("Which blasts dig a crater that gives soldiers light cover.")]
         public CraterSettings craters = CraterSettings.Standard;
@@ -171,6 +175,7 @@ namespace HyperRTS.Simulation.Match
                 AddComponent(entity, authoring.sight.Rules);
                 AddComponent(entity, authoring.cover.Rules);
                 AddComponent(entity, authoring.squads.Rules);
+                AddComponent(entity, authoring.voice.Rules);
                 if (authoring.craters.prefab != null)
                 {
                     var prefab = GetEntity(authoring.craters.prefab, TransformUsageFlags.Dynamic);

@@ -34,6 +34,7 @@ namespace HyperRTS.Presentation.Overlays
 
         private readonly LiveSingleton<CoverSpots> _spots = new();
         private readonly LiveSingleton<CoverRules> _rules = new();
+        private readonly LiveSingleton<SquadRules> _squadRules = new();
         private readonly LiveSingleton<HoveredEntity> _hovered = new();
         private readonly InstanceBuffer<OverlayInstance> _rings;
         private NativeList<int> _near;
@@ -55,6 +56,7 @@ namespace HyperRTS.Presentation.Overlays
 
             _spots.Complete(entityManager);
             if (!_spots.TryGet(entityManager, out var spots) || !spots.IsCreated || !_rules.TryGet(entityManager, out var rules)
+                || !_squadRules.TryGet(entityManager, out var squads)
                 || !TryFindSquadCenter(view, out var center))
             {
                 return;
@@ -63,7 +65,7 @@ namespace HyperRTS.Presentation.Overlays
             var ground = hovered.Ground;
             var heading = math.normalizesafe(ground.xz - center);
             _near.Clear();
-            spots.FindNear(ground.xz, rules.Reach, _near);
+            spots.FindNear(ground.xz, rules.Reach(squads.MaxSpread), _near);
             var found = false;
             foreach (var index in _near)
             {

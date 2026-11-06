@@ -192,12 +192,41 @@ namespace HyperRTS.Simulation.Tests.Squads
 
             World.Run(2f);
 
+            var rules = World.Singleton<SquadRules>();
             for (var i = 0; i < 4; i++)
             {
                 var offset = World.Buffer<SquadMember>(squad)[i].Offset;
-                Assert.AreEqual(0f, math.distance(offset, SquadMember.SpreadSlot(i, 4)), 0.05f);
-                Assert.LessOrEqual(math.length(offset), SquadMember.MaxSpread);
+                Assert.AreEqual(0f, math.distance(offset, rules.SpreadSlot(i, 4)), 0.05f);
+                Assert.LessOrEqual(math.length(offset), rules.MaxSpread);
             }
+        }
+
+        [Test]
+        public void Ring_GrowsWithTheLivingCount_UpToTheMaxSpread()
+        {
+            var rules = SquadSettings.Standard.Rules;
+
+            Assert.Less(rules.RingRadius(2), rules.RingRadius(4));
+            Assert.Less(rules.RingRadius(4), rules.RingRadius(6));
+            Assert.GreaterOrEqual(rules.RingRadius(4), 2.2f);
+            Assert.AreEqual(rules.MaxSpread, rules.RingRadius(20), 1e-4f);
+            Assert.AreEqual(rules.RingRadius(6), math.length(rules.SpreadSlot(3, 6)), 1e-4f);
+        }
+
+        [Test]
+        public void Splash_ReachesADiggingMemberFiveMetresOut()
+        {
+            var squad = Squad(float3.zero, 0, 0);
+            var members = World.Buffer<SquadMember>(squad);
+            var member = members[1];
+            member.Offset = new float2(5f, 0f);
+            members[1] = member;
+
+            Hit(Entity.Null, 20f, new float3(5f, 0f, 0f), radius: 1f, edge: 0f);
+            World.Tick();
+
+            Assert.AreEqual(Each, Member(squad, 0), 0.5f, "out of the blast");
+            Assert.Greater(Each, Member(squad, 1) + 0.5f);
         }
 
         [Test]

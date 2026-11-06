@@ -68,12 +68,12 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.AreEqual(1, World.Queued(CueSlot.UnderFire).Length);
             Assert.AreEqual(1, World.Queued(CueSlot.UnderFire)[0].Faction);
 
-            World.Run(UnderFireSystem.PlayerInterval + 1f);
+            World.Run(World.Singleton<VoiceRules>().UnderFireInterval + 1f);
             Hit(unit);
             World.Tick();
             Assert.IsEmpty(World.Queued(CueSlot.UnderFire), "still under fire, not a fresh alarm");
 
-            World.Run(UnderFireVoice.QuietTime + 1f);
+            World.Run(World.Singleton<VoiceRules>().UnderFireQuiet + 1f);
             Hit(unit);
             World.Tick();
             Assert.AreEqual(1, World.Queued(CueSlot.UnderFire).Length, "quiet long enough to call out again");
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             World.Tick();
             Assert.AreEqual(1, World.Queued(CueSlot.UnderFire).Length);
 
-            World.Run(UnderFireSystem.PlayerInterval + 0.1f);
+            World.Run(World.Singleton<VoiceRules>().UnderFireInterval + 0.1f);
             Hit(c);
             World.Tick();
             Assert.AreEqual(1, World.Queued(CueSlot.UnderFire).Length, "another unit, after the player's interval");

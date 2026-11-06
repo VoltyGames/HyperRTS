@@ -63,10 +63,9 @@ namespace HyperRTS.Simulation.Squads
             var buffer = writer.AddBuffer<SquadMember>();
             for (var i = 0; i < weapons.Count; i++)
             {
-                var slot = SquadMember.SpreadSlot(i, weapons.Count);
                 buffer.Add(new SquadMember
                 {
-                    Health = each, MaxHealth = each, Offset = slot, Slot = slot, Weapon = weapons[i],
+                    Health = each, MaxHealth = each, Weapon = weapons[i],
                     BaseWeapon = weapons[i],
                     HasUpgrade = upgrades?[i] != null,
                     UpgradedWeapon = upgrades?[i] ?? 0,

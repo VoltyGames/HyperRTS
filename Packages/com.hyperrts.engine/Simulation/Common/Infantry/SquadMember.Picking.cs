@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Common.Infantry
             var total = 0f;
             for (var i = 0; i < members.Length; i++)
             {
-                total += members[i].Alive ? members[i].ExposureTo(rules, squad, from, piercing) : 0f;
+                total += members[i].Alive ? members[i].ExposureTo(rules, squad, from, piercing).Damage : 0f;
             }
 
             var roll = Random.CreateFromIndex(seed).NextFloat() * total;
@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Common.Infantry
                 }
 
                 last = i;
-                roll -= members[i].ExposureTo(rules, squad, from, piercing);
+                roll -= members[i].ExposureTo(rules, squad, from, piercing).Damage;
                 if (roll < 0f)
                 {
                     return i;

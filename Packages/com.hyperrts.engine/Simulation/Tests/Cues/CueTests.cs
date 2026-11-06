@@ -141,7 +141,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             World.Tick();
             Assert.IsEmpty(World.Queued(), "spam-clicking within the interval stays quiet");
 
-            World.Run(AcknowledgementSystem.Interval);
+            World.Run(World.Singleton<VoiceRules>().AcknowledgementInterval);
             var enemy = World.SpawnUnit(2, new float3(30f, 0f, 0f));
             World.Command(1, new PlayerCommand { Type = CommandType.Smart, Target = enemy });
             World.Tick();

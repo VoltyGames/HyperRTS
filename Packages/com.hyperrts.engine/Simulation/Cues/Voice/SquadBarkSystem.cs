@@ -12,19 +12,13 @@ namespace HyperRTS.Simulation.Cues.Voice
     /// <summary>
     /// Squad barks: when one of the local player's squads takes cover, is suppressed or pinned, retreats, digs in or
     /// gets a member back, it speaks the matching cue. Client-side only (never sent), at most one bark per squad every
-    /// <see cref="SquadInterval"/> and one per player every <see cref="PlayerInterval"/>.
+    /// <see cref="VoiceRules.SquadBarkInterval"/> and one per player every <see cref="VoiceRules.SquadBarkPlayerInterval"/>.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct SquadBarkSystem : ISystem
     {
-        /// <summary>Seconds between two barks of one squad.</summary>
-        public const float SquadInterval = 6f;
-
-        /// <summary>Seconds between two barks of the local player's squads.</summary>
-        public const float PlayerInterval = 1.5f;
-
         private CueWriter _cues;
         private EntityQuery _unseen;
         private double _next;
@@ -38,6 +32,7 @@ namespace HyperRTS.Simulation.Cues.Voice
                 .WithNone<SquadBarkState>().Build();
             state.RequireForUpdate<LocalPlayer>();
             state.RequireForUpdate<SquadRules>();
+            state.RequireForUpdate<VoiceRules>();
         }
 
         [BurstCompile]
@@ -48,6 +43,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             _cues.Update(ref state);
             var now = SystemAPI.Time.ElapsedTime;
             var rules = SystemAPI.GetSingleton<SquadRules>();
+            var voice = SystemAPI.GetSingleton<VoiceRules>();
             var player = SystemAPI.GetSingletonEntity<LocalPlayer>();
             var local = SystemAPI.GetComponent<Player>(player).Faction;
             foreach (var (bark, suppression, retreating, faction, transform, members, squad) in SystemAPI
@@ -70,8 +66,8 @@ namespace HyperRTS.Simulation.Cues.Voice
                 var place = transform.ValueRO;
                 if (_cues.Play(squad, slot, place, place.Forward(), local))
                 {
-                    bark.ValueRW.QuietUntil = now + SquadInterval;
-                    _next = now + PlayerInterval;
+                    bark.ValueRW.QuietUntil = now + voice.SquadBarkInterval;
+                    _next = now + voice.SquadBarkPlayerInterval;
                 }
             }
         }
