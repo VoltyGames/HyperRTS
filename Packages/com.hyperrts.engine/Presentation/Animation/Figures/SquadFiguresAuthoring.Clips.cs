@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Animation.Bones;
-using HyperRTS.Presentation.Animation.VAT;
+using Unity.Entities;
 using System;
 using UnityEngine;
 
@@ -32,73 +32,48 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         /// <summary>
-        /// Each figure's clips from its own table by this squad's clip names; fails when a figure or its table is
-        /// missing, or a clip is missing from it.
+        /// The clip ranges <paramref name="set"/> picks from the clip table of <paramref name="model"/>, which the caller
+        /// owns; fails when there is no set, the model's renderers don't share a table, or the set doesn't fit it.
         /// </summary>
-        public FigureClips[] Clips()
+        public BlobAssetReference<FigureClips> BuildClips(int index, Transform model, FigureClipSet set)
+        {
+            var table = Table(model);
+            if (table == null)
+            {
+                throw new InvalidOperationException(
+                    $"Squad Figures on '{name}' needs figure {index} to have Bone Animated renderers that share one clip table.");
+            }
+
+            if (set == null)
+            {
+                throw new InvalidOperationException($"Squad Figures on '{name}' gives figure {index} no Figure Clip Set.");
+            }
+
+            return set.Build(table);
+        }
+
+        /// <summary>Fails when a figure or its other model lacks a clip table, a set, or a clip its set names.</summary>
+        public void CheckClips()
         {
             if (figures.Count == 0)
             {
                 throw new InvalidOperationException($"Squad Figures on '{name}' lists no figures.");
             }
 
-            var clips = new FigureClips[figures.Count];
             for (var i = 0; i < figures.Count; i++)
             {
-                var table = Table(figures[i].root);
-                if (table == null)
+                var figure = figures[i];
+                BuildClips(i, figure.root, figure.clips).Dispose();
+                if (figure.upgradedRoot != null)
                 {
-                    throw new InvalidOperationException(
-                        $"Squad Figures on '{name}' needs every figure to have Bone Animated renderers that share one clip table.");
+                    BuildClips(i, figure.upgradedRoot, figure.upgradedClips).Dispose();
                 }
 
-                clips[i] = Clips(table, figures[i].clipPrefix ?? "");
+                if (figure.emplacedRoot != null)
+                {
+                    BuildClips(i, figure.emplacedRoot, figure.emplacedClips).Dispose();
+                }
             }
-
-            return clips;
         }
-
-        /// <summary>The clips of figure <paramref name="index"/>'s other model <paramref name="root"/>; fails when its renderers don't share a clip table.</summary>
-        public FigureClips VariantClips(int index, Transform root, string prefix)
-        {
-            var table = Table(root);
-            if (table == null)
-            {
-                throw new InvalidOperationException(
-                    $"Squad Figures on '{name}' needs the other figure {index} to have Bone Animated renderers that share one clip table.");
-            }
-
-            return Clips(table, prefix ?? "");
-        }
-
-        private FigureClips Clips(BoneClipTable table, string prefix)
-        {
-            var idle = table.Range(prefix + idleClip);
-            var walk = table.Range(prefix + walkClip);
-            var fire = table.Range(prefix + fireClip);
-            return new FigureClips
-            {
-                Idle = idle,
-                Walk = walk,
-                Run = table.Range(prefix + runClip),
-                Fire = fire,
-                CrouchIdle = OrElse(table, prefix, crouchIdleClip, idle),
-                CrouchWalk = OrElse(table, prefix, crouchWalkClip, walk),
-                CrouchFire = OrElse(table, prefix, crouchFireClip, fire),
-                ProneIdle = OrElse(table, prefix, proneIdleClip, idle),
-                ProneCrawl = OrElse(table, prefix, proneCrawlClip, walk),
-                ProneFire = OrElse(table, prefix, proneFireClip, fire),
-                Dig = OrElse(table, "", digClip, idle),
-                Die = table.Range(dieClip),
-                DieBlastFront = OrElse(table, "", dieBlastFrontClip, default),
-                DieBlastBack = OrElse(table, "", dieBlastBackClip, default),
-                DieBlastLeft = OrElse(table, "", dieBlastLeftClip, default),
-                DieBlastRight = OrElse(table, "", dieBlastRightClip, default),
-            };
-        }
-
-        // Only an empty name takes the stand-in; a name the table lacks fails.
-        private static VATClipRange OrElse(BoneClipTable table, string prefix, string clipName, VATClipRange standIn) =>
-            string.IsNullOrEmpty(clipName) ? standIn : table.Range(prefix + clipName);
     }
 }

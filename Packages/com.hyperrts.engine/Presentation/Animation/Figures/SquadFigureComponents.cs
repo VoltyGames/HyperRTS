@@ -1,8 +1,4 @@
-using HyperRTS.Presentation.Animation.VAT;
-using HyperRTS.Simulation.Common.Infantry;
-using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Animation.Figures
 {
@@ -15,9 +11,6 @@ namespace HyperRTS.Presentation.Animation.Figures
     {
         /// <summary>Below this horizontal speed in m/s figures stand idle, so ghost jitter doesn't walk them.</summary>
         public const float WalkSpeed = 0.2f;
-
-        /// <summary>Seconds a figure keeps firing after its weapon's last shot.</summary>
-        public const float FireHold = 0.6f;
 
         /// <summary>Horizontal speed in m/s from which figures run instead of walk.</summary>
         public float RunSpeed;
@@ -64,85 +57,6 @@ namespace HyperRTS.Presentation.Animation.Figures
 
             var walkFrom = current is FigureState.Walk or FigureState.Run ? WalkSpeed * StopShare : WalkSpeed;
             return speed >= walkFrom ? FigureState.Walk : FigureState.Idle;
-        }
-    }
-
-    /// <summary>
-    /// One figure's clips from its own bone table: standing, crouched and prone movement and fire, and the fall.
-    /// Crouch and prone clips are optional in authoring, which then fills them with the standing ones.
-    /// </summary>
-    public struct FigureClips
-    {
-        public VATClipRange Idle;
-        public VATClipRange Walk;
-        public VATClipRange Run;
-        public VATClipRange Fire;
-        public VATClipRange CrouchIdle;
-        public VATClipRange CrouchWalk;
-        public VATClipRange CrouchFire;
-        public VATClipRange ProneIdle;
-        public VATClipRange ProneCrawl;
-        public VATClipRange ProneFire;
-        public VATClipRange Die;
-
-        /// <summary>Both halves of the body while digging at a field work; the idle clip when unset in authoring.</summary>
-        public VATClipRange Dig;
-
-        /// <summary>Optional falls named by where the blast came from relative to the figure's facing; frame count 0 is unset.</summary>
-        public VATClipRange DieBlastFront;
-        public VATClipRange DieBlastBack;
-        public VATClipRange DieBlastLeft;
-        public VATClipRange DieBlastRight;
-
-        /// <summary>What the legs play for a posture and a living state; running and walking share the low postures' clip.</summary>
-        public readonly VATClipRange Lower(Posture posture, FigureState moving)
-        {
-            var still = moving == FigureState.Idle;
-            return posture switch
-            {
-                Posture.Crouch => still ? CrouchIdle : CrouchWalk,
-                Posture.Prone => still ? ProneIdle : ProneCrawl,
-                _ => moving switch
-                {
-                    FigureState.Walk => Walk,
-                    FigureState.Run => Run,
-                    _ => Idle,
-                },
-            };
-        }
-
-        /// <summary>What the upper body plays: the fire clip of the posture while firing, else what the legs play.</summary>
-        public readonly VATClipRange Upper(Posture posture, FigureState moving, bool firing)
-        {
-            if (!firing)
-            {
-                return Lower(posture, moving);
-            }
-
-            return posture switch
-            {
-                Posture.Crouch => CrouchFire,
-                Posture.Prone => ProneFire,
-                _ => Fire,
-            };
-        }
-
-        /// <summary>The fall for a blast in world <paramref name="direction"/> from a figure at <paramref name="figureToWorld"/>; Die when that side has none.</summary>
-        public readonly VATClipRange Blasted(float3 direction, in float4x4 figureToWorld)
-        {
-            var local = math.rotate(math.inverse(figureToWorld), direction);
-            var clip = BlastSide(local);
-            return clip.FrameCount > 0 ? clip : Die;
-        }
-
-        private readonly VATClipRange BlastSide(float3 local)
-        {
-            if (math.abs(local.z) >= math.abs(local.x))
-            {
-                return local.z >= 0f ? DieBlastFront : DieBlastBack;
-            }
-
-            return local.x >= 0f ? DieBlastRight : DieBlastLeft;
         }
     }
 

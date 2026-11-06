@@ -27,6 +27,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         protected const float Step = 0.1f;
         protected const float DieHold = 2f;
 
+        /// <summary>Seconds of the fixture's fire clips, which set how long a figure keeps firing.</summary>
+        protected const float FireLength = 1f;
+
         protected PresentationWorldKit _kit;
         protected EntityManager _em;
         protected SystemHandle _placement;
@@ -37,6 +40,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         protected Entity _model;
         protected Entity[] _figures;
         protected double _time;
+        private readonly Dictionary<int, BlobAssetReference<FigureClips>> _clips = new();
+        private readonly List<Object> _made = new();
 
         [SetUp]
         public void SetUp()
@@ -52,7 +57,23 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         }
 
         [TearDown]
-        public void TearDown() => _kit.Dispose();
+        public void TearDown()
+        {
+            _kit.Dispose();
+            foreach (var clips in _clips.Values)
+            {
+                clips.Dispose();
+            }
+
+            _clips.Clear();
+            foreach (var made in _made)
+            {
+                Object.DestroyImmediate(made);
+            }
+
+            _made.Clear();
+        }
+
         protected Entity Squad(int count)
         {
             _figures = new Entity[count];
@@ -103,29 +124,62 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             return squad;
         }
 
-        protected static FigureClips Clips(int offset) => new()
+        // The ranges the pipeline gives a figure whose table starts at the row offset; figures at one offset share them.
+        protected BlobAssetReference<FigureClips> Clips(int offset)
         {
-            Idle = Range(offset, true),
-            Walk = Range(offset + 10, true),
-            Run = Range(offset + 20, true),
-            Fire = Range(offset + 30, true),
-            Die = Range(offset + 40, false),
-            CrouchIdle = Range(offset + 100, true),
-            CrouchWalk = Range(offset + 110, true),
-            CrouchFire = Range(offset + 120, true),
-            ProneIdle = Range(offset + 130, true),
-            ProneCrawl = Range(offset + 140, true),
-            ProneFire = Range(offset + 150, true),
-        };
+            if (!_clips.TryGetValue(offset, out var clips))
+            {
+                var table = Table(offset);
+                var set = Set();
+                _made.Add(table);
+                _made.Add(set);
+                clips = set.Build(table);
+                _clips[offset] = clips;
+            }
 
-        protected static FigureClips BlastClips() => new()
+            return clips;
+        }
+
+        // Every clip the set names, ten rows apart from the offset; the falls play once and the rest loop.
+        public static BoneClipTable Table(int offset)
         {
-            Die = Range(40, false),
-            DieBlastFront = Range(50, false),
-            DieBlastBack = Range(60, false),
-            DieBlastLeft = Range(70, false),
-            DieBlastRight = Range(80, false),
-        };
+            var table = ScriptableObject.CreateInstance<BoneClipTable>();
+            var names = new[]
+            {
+                "Idle", "Walk", "Run", "Fire", "Die", "DieBlast_Front", "DieBlast_Back", "DieBlast_Left", "DieBlast_Right",
+                "Dig", "CrouchIdle", "CrouchWalk", "CrouchFire", "ProneIdle", "ProneCrawl", "ProneFire", "ProneDie", "CrouchDie",
+            };
+            var rows = new[] { 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170 };
+            for (var i = 0; i < names.Length; i++)
+            {
+                table.clips.Add(new VATClipTable.Clip
+                {
+                    name = names[i], startRow = offset + rows[i], frameCount = 10, fps = 10f, loop = !names[i].Contains("Die"),
+                });
+            }
+
+            return table;
+        }
+
+        // Crouched and prone figures run with their walking and crawling clips, and a crouched fall is its own clip.
+        public static FigureClipSet Set()
+        {
+            var set = ScriptableObject.CreateInstance<FigureClipSet>();
+            set.idle = Postures("Idle", "CrouchIdle", "ProneIdle");
+            set.walk = Postures("Walk", "CrouchWalk", "ProneCrawl");
+            set.run = Postures("Run", "CrouchWalk", "ProneCrawl");
+            set.fire = Postures("Fire", "CrouchFire", "ProneFire");
+            set.actions.Add(new ActionClip { action = MemberAction.Dig, clip = "Dig" });
+            set.shotDeath = Postures("Die", "CrouchDie", "ProneDie");
+            set.blastFrontDeath = Postures("DieBlast_Front", "CrouchDie", "ProneDie");
+            set.blastBackDeath = Postures("DieBlast_Back", "CrouchDie", "ProneDie");
+            set.blastLeftDeath = Postures("DieBlast_Left", "CrouchDie", "ProneDie");
+            set.blastRightDeath = Postures("DieBlast_Right", "CrouchDie", "ProneDie");
+            return set;
+        }
+
+        private static PostureClips Postures(string stand, string crouch, string prone) =>
+            new() { stand = stand, crouch = crouch, prone = prone };
 
         public static VATClipRange Range(int startRow, bool loop) =>
             new() { StartRow = startRow, FrameCount = 10, Fps = 10f, Loop = loop };
@@ -178,20 +232,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var figures = _em.GetBuffer<SquadFigure>(_squad);
             for (var i = 0; i < figures.Length; i++)
             {
-                figures.ElementAt(i).Clips.Walk.GroundSpeed = speed;
+                figures.ElementAt(i).Clips.Value.Legs[1].GroundSpeed = speed;
             }
         }
 
         protected SquadFigure Figure(int index) => _em.GetBuffer<SquadFigure>(_squad)[index];
-
-        protected void SetBlastClips()
-        {
-            var figures = _em.GetBuffer<SquadFigure>(_squad);
-            for (var i = 0; i < figures.Length; i++)
-            {
-                figures.ElementAt(i).Clips = BlastClips();
-            }
-        }
 
         // How a dead member fell; a blast lay toward the direction on the ground plane.
         protected void SetDeath(int index, DeathCause cause, float2 toward = default)

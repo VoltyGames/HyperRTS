@@ -12,16 +12,20 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             public override void Bake(SquadFiguresAuthoring authoring)
             {
-                var clips = authoring.Clips();
-                var entities = new List<SquadFigure>();
-                for (var i = 0; i < clips.Length; i++)
+                if (authoring.figures.Count == 0)
                 {
-                    var figure = authoring.figures[i].root;
-                    DependsOn(Table(figure));
-                    var entity = GetEntity(figure, TransformUsageFlags.Dynamic);
+                    throw new InvalidOperationException($"Squad Figures on '{authoring.name}' lists no figures.");
+                }
+
+                var entities = new List<SquadFigure>();
+                for (var i = 0; i < authoring.figures.Count; i++)
+                {
+                    var figure = authoring.figures[i];
                     entities.Add(new SquadFigure
                     {
-                        Figure = entity, Clips = clips[i], Height = figure.localPosition.y,
+                        Figure = GetEntity(figure.root, TransformUsageFlags.Dynamic),
+                        Clips = Clips(authoring, i, figure.root, figure.clips),
+                        Height = figure.root.localPosition.y,
                         Other = Variant(authoring, i),
                     });
                 }
@@ -48,30 +52,39 @@ namespace HyperRTS.Presentation.Animation.Figures
 
                 if (baked.upgradedRoot != null)
                 {
-                    return Variant(authoring, index, baked.upgradedRoot, baked.upgradedClipPrefix, VariantReason.Upgraded);
+                    return Variant(authoring, index, baked.upgradedRoot, baked.upgradedClips, VariantReason.Upgraded);
                 }
 
                 if (baked.emplacedRoot != null)
                 {
-                    return Variant(authoring, index, baked.emplacedRoot, baked.emplacedClipPrefix, VariantReason.Emplaced);
+                    return Variant(authoring, index, baked.emplacedRoot, baked.emplacedClips, VariantReason.Emplaced);
                 }
 
                 return default;
             }
 
-            private FigureVariant Variant(SquadFiguresAuthoring authoring, int index, Transform root, string prefix, VariantReason reason)
+            private FigureVariant Variant(SquadFiguresAuthoring authoring, int index, Transform root, FigureClipSet set, VariantReason reason)
             {
-                DependsOn(Table(root));
                 return new FigureVariant
                 {
                     Reason = reason,
                     Model = new FigureModel
                     {
                         Figure = GetEntity(root, TransformUsageFlags.Dynamic),
-                        Clips = authoring.VariantClips(index, root, prefix),
+                        Clips = Clips(authoring, index, root, set),
                         Height = root.localPosition.y,
                     },
                 };
+            }
+
+            // The blob is shared with every figure whose set and table give the same ranges.
+            private BlobAssetReference<FigureClips> Clips(SquadFiguresAuthoring authoring, int index, Transform model, FigureClipSet set)
+            {
+                var clips = authoring.BuildClips(index, model, set);
+                DependsOn(Table(model));
+                DependsOn(set);
+                AddBlobAsset(ref clips, out _);
+                return clips;
             }
         }
     }

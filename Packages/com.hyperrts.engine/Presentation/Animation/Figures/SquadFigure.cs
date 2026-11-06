@@ -26,8 +26,8 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>The model shown now: the one for the weapon its member fires.</summary>
         public Entity Figure;
 
-        /// <summary>Figures baked separately keep their own tables, so each carries its own clip ranges.</summary>
-        public FigureClips Clips;
+        /// <summary>The clip ranges of the shown model, shared by every figure that plays the same set on the same table.</summary>
+        public BlobAssetReference<FigureClips> Clips;
 
         /// <summary>The model shown for <see cref="FigureVariant.Reason"/> while it is not shown, and the base one while it is; null for none.</summary>
         public FigureVariant Other;
@@ -47,6 +47,9 @@ namespace HyperRTS.Presentation.Animation.Figures
 
         /// <summary>True while both halves of the body play the dig clip.</summary>
         public bool Digging;
+
+        /// <summary>True on the frame its weapon fired, which restarts the fire clip.</summary>
+        public bool Shot;
 
         /// <summary>The clip the legs play now, and when it started on the clock, which the upper body follows when it plays the same.</summary>
         public VATClipRange Lower;
@@ -170,27 +173,29 @@ namespace HyperRTS.Presentation.Animation.Figures
             Facing = Primed ? math.slerp(Facing, target, 1f - math.exp(-TurnRate * deltaTime)) : target;
         }
 
-        /// <summary>Records this frame's world position and weapon shot count; returns how a living figure moves and whether it fires.</summary>
-        public FigureState Observe(in SquadFigures squad, float3 position, byte shots, float now, float deltaTime, out bool firing)
+        /// <summary>Records this frame's world position and weapon shot count; returns how a living figure moves and whether it fires, from a shot until <paramref name="fireHold"/> seconds later.</summary>
+        public FigureState Observe(in SquadFigures squad, float3 position, byte shots, float now, float deltaTime,
+            float fireHold, out bool firing)
         {
             if (!Primed)
             {
                 Primed = true;
                 LastPosition = position;
                 LastShots = shots;
-                LastShotTime = now - SquadFigures.FireHold;
+                LastShotTime = now - fireHold;
             }
 
             var measured = deltaTime > 0f ? math.distance(position.xz, LastPosition.xz) / deltaTime : 0f;
             Speed = math.lerp(Speed, measured, 1f - math.exp(-deltaTime / SquadFigures.SpeedTime));
-            if (shots != LastShots)
+            Shot = shots != LastShots;
+            if (Shot)
             {
                 LastShotTime = now;
             }
 
             LastPosition = position;
             LastShots = shots;
-            firing = now - LastShotTime < SquadFigures.FireHold;
+            firing = now - LastShotTime < fireHold;
             return squad.Moving(Speed, State, now - StateSince);
         }
 

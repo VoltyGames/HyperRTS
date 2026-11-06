@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Animation.Figures
     /// Draws a squad unit as bone-animated figures, one per Squad member in order: a dead member's figure dies then
     /// hides, the rest idle, walk, run, crouch or crawl as their own soldier does, with the upper body firing over the
     /// legs. A figure is a hand-placed child whose Bone Animated renderers (body levels of detail, weapon) share one
-    /// clip table.
+    /// clip table, and its Figure Clip Set picks which of that table's clips it plays.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Animation + "Squad Figures")]
     [Icon(HyperRTSIcons.Animation)]
@@ -23,29 +23,29 @@ namespace HyperRTS.Presentation.Animation.Figures
         // Golden ratio steps spread any number of phases evenly over a loop.
         private const float PhaseStep = 0.618034f;
 
-        /// <summary>A figure and which of the bake's stance clips it plays.</summary>
+        /// <summary>A figure and the clip set it plays.</summary>
         [Serializable]
         public class Figure
         {
             [Tooltip("The figure, a child of this unit's model.")]
             public Transform root;
 
-            [Tooltip("Added before this squad's idle, walk, run, fire, crouch and prone clip names, as a rifleman and a launcher carrier stand differently. Empty for none.")]
-            public string clipPrefix;
+            [Tooltip("The clips this figure plays, as a rifleman and a launcher carrier stand differently.")]
+            public FigureClipSet clips;
 
             [Header("Upgraded weapon")]
             [Tooltip("The figure shown instead while its member fires the upgraded weapon, a child of this unit's model. Empty keeps this one.")]
             public Transform upgradedRoot;
 
-            [Tooltip("Clip prefix of the upgraded figure, as above.")]
-            public string upgradedClipPrefix;
+            [Tooltip("The clips the upgraded figure plays; required with an upgraded figure.")]
+            public FigureClipSet upgradedClips;
 
             [Header("Emplaced")]
             [Tooltip("The figure shown instead while the unit's weapon is set up and its member takes a crew place, such as a gunner with empty hands. A child of this unit's model. Empty keeps this one. Not with an upgraded figure.")]
             public Transform emplacedRoot;
 
-            [Tooltip("Clip prefix of the emplaced figure, as above.")]
-            public string emplacedClipPrefix;
+            [Tooltip("The clips the emplaced figure plays; required with an emplaced figure.")]
+            public FigureClipSet emplacedClips;
 
             /// <summary>A figure shows at most one other model, so an upgraded and an emplaced one together are ambiguous.</summary>
             public bool HasTwoVariants => upgradedRoot != null && emplacedRoot != null;
@@ -56,54 +56,6 @@ namespace HyperRTS.Presentation.Animation.Figures
 
         [Tooltip("The figures, one per Squad member in the same order.")]
         public List<Figure> figures = new();
-
-        [Tooltip("Clip played standing still.")]
-        public string idleClip = "Idle";
-
-        [Tooltip("Clip played moving slower than the run speed.")]
-        public string walkClip = "Walk";
-
-        [Tooltip("Clip played moving at or above the run speed.")]
-        public string runClip = "Run";
-
-        [Tooltip("Clip the upper body plays while the primary weapon is firing.")]
-        public string fireClip = "Fire";
-
-        [Tooltip("Crouched and still. Empty plays the standing idle clip.")]
-        public string crouchIdleClip;
-
-        [Tooltip("Crouched and moving. Empty plays the standing walk clip.")]
-        public string crouchWalkClip;
-
-        [Tooltip("Upper body firing while crouched. Empty plays the standing fire clip.")]
-        public string crouchFireClip;
-
-        [Tooltip("Prone and still. Empty plays the standing idle clip.")]
-        public string proneIdleClip;
-
-        [Tooltip("Prone and moving. Empty plays the standing walk clip.")]
-        public string proneCrawlClip;
-
-        [Tooltip("Upper body firing while prone. Empty plays the standing fire clip.")]
-        public string proneFireClip;
-
-        [Tooltip("Clip played, whole body, while digging at a field work. Empty plays the standing idle clip.")]
-        public string digClip = "Dig";
-
-        [Tooltip("Clip a figure plays once when health drops it.")]
-        public string dieClip = "Die";
-
-        [Tooltip("Clip played once instead of Die when a blast ahead of the figure drops it. Empty for none.")]
-        public string dieBlastFrontClip;
-
-        [Tooltip("Clip played instead of Die when a blast behind the figure drops it. Empty for none.")]
-        public string dieBlastBackClip;
-
-        [Tooltip("Clip played instead of Die when a blast on the figure's left drops it. Empty for none.")]
-        public string dieBlastLeftClip;
-
-        [Tooltip("Clip played instead of Die when a blast on the figure's right drops it. Empty for none.")]
-        public string dieBlastRightClip;
 
         [Tooltip("Horizontal speed in m/s from which figures run instead of walk.")]
         [Min(0.3f)]

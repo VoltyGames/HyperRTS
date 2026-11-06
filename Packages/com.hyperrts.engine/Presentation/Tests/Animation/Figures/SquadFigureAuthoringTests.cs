@@ -1,93 +1,86 @@
 using HyperRTS.Presentation.Animation.Bones;
 using HyperRTS.Presentation.Animation.Figures;
-using HyperRTS.Presentation.Animation.VAT;
+using HyperRTS.Simulation.Common.Infantry;
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Tests.Animation.Figures
 {
-    /// <summary>Resolving each figure's clips from its own table when the squad is baked.</summary>
+    /// <summary>Resolving each figure's clips from its set and its own table when the squad is baked.</summary>
     public class SquadFigureAuthoringTests
     {
-        [Test]
-        public void Authoring_ResolvesClipsFromEachFiguresOwnTable()
+        private GameObject _root;
+        private SquadFiguresAuthoring _squad;
+        private FigureClipSet _set;
+
+        [SetUp]
+        public void SetUp()
         {
-            var root = new GameObject("Squad");
-            try
+            _root = new GameObject("Squad");
+            _squad = _root.AddComponent<SquadFiguresAuthoring>();
+            _set = SquadFigureFixture.Set();
+            _set.name = "Test Set";
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var figure in _root.GetComponentsInChildren<BoneAnimatedAuthoring>())
             {
-                var squad = root.AddComponent<SquadFiguresAuthoring>();
-                squad.figures.Add(Figure(root, 0));
-                squad.figures.Add(Figure(root, 100));
-                squad.digClip = "";
-
-                var clips = squad.Clips();
-
-                Assert.AreEqual(SquadFigureFixture.Range(20, true), clips[0].Run);
-                Assert.AreEqual(SquadFigureFixture.Range(120, true), clips[1].Run);
-                Assert.AreEqual(SquadFigureFixture.Range(140, false), clips[1].Die);
-
-                squad.figures[1].root.GetComponentInChildren<BoneAnimatedAuthoring>().clips.clips.RemoveAt(4);
-                Assert.Throws<KeyNotFoundException>(() => squad.Clips());
+                Object.DestroyImmediate(figure.clips);
             }
-            finally
-            {
-                foreach (var figure in root.GetComponentsInChildren<BoneAnimatedAuthoring>())
-                {
-                    Object.DestroyImmediate(figure.clips);
-                }
 
-                Object.DestroyImmediate(root);
-            }
+            Object.DestroyImmediate(_set);
+            Object.DestroyImmediate(_root);
         }
 
         [Test]
-        public void Authoring_FillsOnlyEmptyPostureClipsWithTheStandingOnes()
+        public void BuildClips_ResolvesTheSetFromEachFiguresOwnTable()
         {
-            var root = new GameObject("Squad");
-            try
-            {
-                var squad = root.AddComponent<SquadFiguresAuthoring>();
-                squad.figures.Add(Figure(root, 0));
-                squad.crouchWalkClip = "Run";
-                squad.digClip = "";
+            var first = AddFigure(0);
+            var second = AddFigure(100);
 
-                var clips = squad.Clips()[0];
+            var near = _squad.BuildClips(0, first, _set);
+            var far = _squad.BuildClips(1, second, _set);
 
-                Assert.AreEqual(clips.Idle, clips.CrouchIdle);
-                Assert.AreEqual(clips.Run, clips.CrouchWalk);
-                Assert.AreEqual(clips.Fire, clips.ProneFire);
-                Assert.AreEqual(clips.Idle, clips.Dig);
+            Assert.AreEqual(SquadFigureFixture.Range(20, true), near.Value.Lower(Posture.Stand, FigureState.Run));
+            Assert.AreEqual(SquadFigureFixture.Range(120, true), far.Value.Lower(Posture.Stand, FigureState.Run));
+            Assert.AreEqual(SquadFigureFixture.Range(260, false), far.Value.Fall(Posture.Prone, DeathCause.Shot, default, default));
+            Assert.IsFalse(far.Value.Fire[(int)Posture.Stand].Loop, "a fire clip plays once per shot");
+            near.Dispose();
+            far.Dispose();
 
-                squad.proneCrawlClip = "Missing";
-                Assert.Throws<KeyNotFoundException>(() => squad.Clips());
-            }
-            finally
-            {
-                foreach (var figure in root.GetComponentsInChildren<BoneAnimatedAuthoring>())
-                {
-                    Object.DestroyImmediate(figure.clips);
-                }
-
-                Object.DestroyImmediate(root);
-            }
+            second.GetComponentInChildren<BoneAnimatedAuthoring>().clips.clips.RemoveAt(4);
+            var failure = Assert.Throws<KeyNotFoundException>(() => _squad.BuildClips(1, second, _set));
+            StringAssert.Contains("Test Set", failure.Message);
+            StringAssert.Contains("shotDeath Stand", failure.Message);
         }
 
-        // A figure baked on its own, with a body and a weapon sharing its table; its clip names match the squad's.
-        private static SquadFiguresAuthoring.Figure Figure(GameObject root, int offset, string prefix = "")
+        [Test]
+        public void BuildClips_FailsOnAnUnsetEntryInsteadOfFallingBackToStanding()
         {
-            var table = ScriptableObject.CreateInstance<BoneClipTable>();
-            string[] names = { "Idle", "Walk", "Run", "Fire", "Die" };
-            for (var i = 0; i < names.Length; i++)
-            {
-                table.clips.Add(new VATClipTable.Clip
-                {
-                    name = prefix + names[i], startRow = offset + i * 10, frameCount = 10, fps = 10f, loop = i < 4,
-                });
-            }
+            var figure = AddFigure(0);
 
+            _set.idle.crouch = "";
+            var failure = Assert.Throws<InvalidOperationException>(() => _squad.BuildClips(0, figure, _set));
+            StringAssert.Contains("idle Crouch", failure.Message);
+
+            _set.idle.crouch = "CrouchIdle";
+            _set.actions.Clear();
+            Assert.Throws<InvalidOperationException>(() => _squad.BuildClips(0, figure, _set));
+
+            Assert.Throws<InvalidOperationException>(() => _squad.BuildClips(0, figure, null));
+        }
+
+        // A figure with a body and a weapon sharing one table.
+        private Transform AddFigure(int offset)
+        {
+            var table = SquadFigureFixture.Table(offset);
             var figure = new GameObject($"Figure {offset}");
-            figure.transform.SetParent(root.transform);
+            figure.transform.SetParent(_root.transform);
             foreach (var part in new[] { "Body", "Weapon" })
             {
                 var child = new GameObject(part);
@@ -95,7 +88,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
                 child.AddComponent<BoneAnimatedAuthoring>().clips = table;
             }
 
-            return new SquadFiguresAuthoring.Figure { root = figure.transform, clipPrefix = prefix };
+            return figure.transform;
         }
     }
 }

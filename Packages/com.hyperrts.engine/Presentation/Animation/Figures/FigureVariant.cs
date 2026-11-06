@@ -16,7 +16,7 @@ namespace HyperRTS.Presentation.Animation.Figures
     public struct FigureModel
     {
         public Entity Figure;
-        public FigureClips Clips;
+        public BlobAssetReference<FigureClips> Clips;
         public float Height;
     }
 

@@ -345,10 +345,14 @@ same frame as the unit. Machine links still aim at last frame's matrices.
 
 `SquadFiguresAuthoring` on a squad unit draws it as hand-placed bone-animated figures: children of its `Model`, each
 with `BoneAnimatedAuthoring` renderers (body levels of detail in a LODGroup, a weapon) that share one `BoneClipTable`,
-listed in the order of the squad's members, each with an optional clip prefix (`M4_`, `JAV_`) for its stance clips. The
-authoring names the idle, walk, run, fire, crouch, prone and die clips, the run speed and how long a fallen figure
-stays down. Crouch and prone clips left empty fall back to the standing ones, explicitly at bake; a name the table
-lacks fails the bake. Each `SquadFigure` carries its own `FigureClips`. Figure i shows `SquadMember` i, so the count of
+listed in the order of the squad's members, each with a `FigureClipSet` (a ScriptableObject) that picks its clips from
+that table by name: legs for idle, walk and run in each posture, a fire clip per posture, a whole-body clip per
+`MemberAction` (except None) and a death per posture for a shot and for a blast from each side. Every entry is required:
+an unset one or a name the table lacks fails the bake, naming the set and the entry, and nothing falls back to the
+standing clips. The authoring also holds the run speed and how long a fallen figure stays down. `FigureClipSet.Build`
+resolves a set against a table into a `FigureClips` blob of ranges; the baker adds it to the blob store, so figures that
+play the same set on the same table share one, and each `SquadFigure` and `FigureModel` keeps only the reference.
+Figure i shows `SquadMember` i, so the count of
 figures equals the count of members (a validation rule checks it). `SquadFigurePlacementSystem`, in the `PoseSystemGroup`,
 eases each living figure toward its member's `Offset` (world axes) and turns it to its cover, composing the squad's own
 `LocalTransform` with the local transforms down to the figure's parent, so figures never lag the squad by a frame. The
@@ -356,10 +360,10 @@ clips are `SquadFigureSystem`'s, in the presentation group, since cues and shots
 baker lists each model's clip-playing renderers (levels of detail, weapon, material children) in a `FigureRenderer`
 buffer on the squad, each part keyed by the model (base or other) it plays for. The legs play the clip for the member's `Posture` and its own
 horizontal speed (a member catching up runs while the rest stand); the upper body plays the fire clip of the posture
-for 0.6 s after each change of the `WeaponPose.Shots` of the weapon its member carries, else what the legs play, in
-step with them. A member who died plays the die clip once on both halves (or a blast fall, `DieBlastFront`, `Back`,
-`Left` or `Right`, named by the member's replicated `BlastHeading` relative to the figure's facing, when its
-`Death` is `Blast`), then the figure hides
+once after each change of the `WeaponPose.Shots` of the weapon its member carries (a new shot restarts it) and keeps
+firing for the clip's own length, else it plays what the legs play, in step with them. A member who died plays the
+fall of its posture once on both halves: the shot fall, or when its `Death` is `Blast` the fall for the side (front,
+back, left or right) the member's replicated `BlastHeading` gives relative to the figure's facing. Then the figure hides
 after the hold. A squad spawned with dead members hides their figures without the fall. A figure gets new clips only
 when its state, posture or firing changes, written to every renderer under it, and looping clips start at a per-figure
 phase so the squad doesn't move in step. While the legs play a clip with a `groundSpeed` (walk, run, crawl), the system
@@ -367,11 +371,11 @@ plays it at the figure's averaged speed over that, from 0.5 to 1.6 times, so pla
 more than 3% rewrites the clip's start time to keep the frame showing, and the upper body takes the same rate while it
 plays the legs' clip.
 
-A figure may name an `upgradedRoot` with its own clip prefix and `upgradedWeaponName`, baked as a second figure entity
+A figure may name an `upgradedRoot` with its own `upgradedClips` set and `upgradedWeaponName`, baked as a second figure entity
 kept in `SquadFigure.Other`. When the member's `Weapon` differs from its `BaseWeapon` (an upgrade is in hand) the system
 swaps the two: the new model is placed and posed afresh, the old one hides, and the card's name follows the model shown.
 
-A figure may instead name an `emplacedRoot` (with `emplacedClipPrefix`), kept in
+A figure may instead name an `emplacedRoot` (with `emplacedClips`), kept in
 `SquadFigure.Other` with `FigureVariant.Reason` `Emplaced`: it shows while the squad's `Deployable` is `Emplaced` and the
 member takes a crew place (a gunner with empty hands behind the deployed gun), and the carried model returns on pack-up.
 A figure has at most one other model, so `SquadFiguresRule` errors when both roots are set or the figures and squad members differ in count.

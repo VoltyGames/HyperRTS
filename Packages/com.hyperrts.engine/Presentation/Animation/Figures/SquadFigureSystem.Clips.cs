@@ -17,8 +17,9 @@ namespace HyperRTS.Presentation.Animation.Figures
                 figure.Posture = posture;
                 figure.Firing = firing;
                 figure.Digging = digging;
-                var lower = digging ? figure.Clips.Dig : figure.Clips.Lower(posture, moving);
-                var upper = digging ? figure.Clips.Dig : figure.Clips.Upper(posture, moving, firing);
+                ref var clips = ref figure.Clips.Value;
+                var lower = digging ? clips.Action(MemberAction.Dig) : clips.Lower(posture, moving);
+                var upper = digging ? clips.Action(MemberAction.Dig) : clips.Upper(posture, moving, firing);
                 var lowerChanged = !figure.Lower.SameAs(lower);
                 if (lowerChanged)
                 {
@@ -27,7 +28,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                     figure.LowerStart = figure.StartTime(lower, Now, figure.LowerRate);
                 }
 
-                var upperChanged = !figure.Upper.SameAs(upper);
+                var upperChanged = figure.Shot && firing || !figure.Upper.SameAs(upper);
                 figure.Upper = upper;
                 var upperStart = figure.LowerStart;
                 var upperRate = figure.LowerRate;

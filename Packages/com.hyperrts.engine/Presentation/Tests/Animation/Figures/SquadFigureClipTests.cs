@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(1).CountShot();
             Update();
 
-            Assert.IsTrue(Upper(1).Plays(Range(30, true)));
+            Assert.IsTrue(Upper(1).Plays(Range(30, false)));
             Assert.IsTrue(Upper(0).Plays(Range(0, true)));
         }
 
@@ -51,9 +51,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Update();
             Assert.IsTrue(Lower(0).Plays(Range(0, true)), "the legs keep idling");
-            Assert.IsTrue(Upper(0).Plays(Range(30, true)));
+            Assert.IsTrue(Upper(0).Plays(Range(30, false)));
 
-            Advance(SquadFigures.FireHold);
+            Advance(FireLength);
             Assert.IsTrue(Upper(0).Plays(Range(0, true)));
         }
 
@@ -66,9 +66,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Move(1f);
 
             Assert.IsTrue(Lower(0).Plays(Range(10, true)));
-            Assert.IsTrue(Upper(0).Plays(Range(30, true)));
+            Assert.IsTrue(Upper(0).Plays(Range(30, false)));
 
-            MoveFor(1f, SquadFigures.FireHold + 0.1f);
+            MoveFor(1f, FireLength + 0.1f);
 
             Assert.IsTrue(Upper(0).Plays(Range(10, true)));
             Assert.AreEqual(Lower(0).Value.w, Upper(0).Value.w, "the arms rejoin the stride in step");
@@ -87,8 +87,42 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
             Update();
 
-            Assert.IsTrue(Upper(0).Plays(Range(120, true)));
+            Assert.IsTrue(Upper(0).Plays(Range(120, false)));
             Assert.IsTrue(Lower(0).Plays(Range(100, true)));
+        }
+
+        [Test]
+        public void FireClip_PlaysOncePerShotAndTheFigureKeepsFiringForItsLength()
+        {
+            Update();
+            _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
+            Update();
+            var first = Upper(0).Value.w;
+
+            Advance(FireLength / 2f);
+            Assert.IsTrue(Upper(0).Plays(Range(30, false)), "still firing before the clip ends");
+            Assert.AreEqual(first, Upper(0).Value.w, "a clip that is not shot again plays on");
+
+            _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
+            Update();
+            Assert.Greater(Upper(0).Value.w, first, "another shot restarts the clip");
+
+            Advance(FireLength);
+            Assert.IsTrue(Upper(0).Plays(Range(0, true)));
+        }
+
+        [Test]
+        public void ProneFigure_CrawlsAndFiresWithTheProneClips()
+        {
+            Member(0, posture: Posture.Prone);
+            Update();
+            MoveFor(5f, 0.5f);
+
+            Assert.IsTrue(Lower(0).Plays(Range(140, true)), "running prone crawls");
+
+            _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
+            Move(5f);
+            Assert.IsTrue(Upper(0).Plays(Range(150, false)));
         }
 
         [Test]

@@ -39,33 +39,22 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         [Test]
         public void BlastDeath_PicksTheClipForWhereTheBlastCameFrom()
         {
-            var clips = BlastClips();
+            var clips = Clips(0);
             var facing = float4x4.identity;
+            var blast = DeathCause.Blast;
 
-            Assert.AreEqual(clips.DieBlastFront, clips.Blasted(new float3(0f, 0f, 5f), facing));
-            Assert.AreEqual(clips.DieBlastBack, clips.Blasted(new float3(0f, 0f, -5f), facing));
-            Assert.AreEqual(clips.DieBlastRight, clips.Blasted(new float3(5f, 0f, 1f), facing));
-            Assert.AreEqual(clips.DieBlastLeft, clips.Blasted(new float3(-5f, 0f, 1f), facing));
+            Assert.AreEqual(Range(50, false), clips.Value.Fall(Posture.Stand, blast, new float3(0f, 0f, 5f), facing));
+            Assert.AreEqual(Range(60, false), clips.Value.Fall(Posture.Stand, blast, new float3(0f, 0f, -5f), facing));
+            Assert.AreEqual(Range(80, false), clips.Value.Fall(Posture.Stand, blast, new float3(5f, 0f, 1f), facing));
+            Assert.AreEqual(Range(70, false), clips.Value.Fall(Posture.Stand, blast, new float3(-5f, 0f, 1f), facing));
 
             var turned = float4x4.RotateY(math.PI);
-            Assert.AreEqual(clips.DieBlastBack, clips.Blasted(new float3(0f, 0f, 5f), turned));
-        }
-
-        [Test]
-        public void FigureWithoutBlastClips_PlaysDie()
-        {
-            Update();
-            SetDeath(3, DeathCause.Blast, new float2(0f, 1f));
-            SetLiving(3);
-            Update();
-
-            Assert.IsTrue(Lower(3).Plays(Range(40, false)));
+            Assert.AreEqual(Range(60, false), clips.Value.Fall(Posture.Stand, blast, new float3(0f, 0f, 5f), turned));
         }
 
         [Test]
         public void MemberKilledByABlast_FallsAwayFromWhereItCameAndAShotPlaysDie()
         {
-            SetBlastClips();
             Update();
             SetDeath(3, DeathCause.Blast, new float2(0f, 1f));
             SetDeath(2, DeathCause.Shot);
@@ -74,6 +63,23 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
 
             Assert.IsTrue(Lower(3).Plays(Range(50, false)));
             Assert.IsTrue(Lower(2).Plays(Range(40, false)));
+        }
+
+        [Test]
+        public void CrouchedAndProneMembers_FallInTheirOwnPostureWhateverDroppedThem()
+        {
+            Member(1, posture: Posture.Crouch);
+            Member(2, posture: Posture.Prone);
+            Member(3, posture: Posture.Prone);
+            Update();
+            SetDeath(2, DeathCause.Shot);
+            SetDeath(3, DeathCause.Blast, new float2(0f, 1f));
+            SetLiving(1);
+            Update();
+
+            Assert.IsTrue(Lower(1).Plays(Range(170, false)));
+            Assert.IsTrue(Lower(2).Plays(Range(160, false)));
+            Assert.IsTrue(Lower(3).Plays(Range(160, false)));
         }
 
         [Test]

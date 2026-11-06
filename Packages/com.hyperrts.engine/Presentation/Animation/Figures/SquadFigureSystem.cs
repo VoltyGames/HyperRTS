@@ -96,7 +96,8 @@ namespace HyperRTS.Presentation.Animation.Figures
                     {
                         var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                         var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
-                        moving = figure.Observe(squad, feet, shots, Now, DeltaTime, out firing);
+                        var hold = figure.Clips.Value.FireHold(member.Posture);
+                        moving = figure.Observe(squad, feet, shots, Now, DeltaTime, hold, out firing);
                         digging = IsDigging(member, moving, firing);
                     }
 
@@ -115,7 +116,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                     Show(root, ref figure, next, member, firing, digging, squad);
                 }
                 else if (next != FigureState.Die && next != FigureState.Hidden
-                    && figure.PoseDiffers(member.Posture, firing, digging))
+                    && (figure.PoseDiffers(member.Posture, firing, digging) || firing && figure.Shot))
                 {
                     Pose(root, ref figure, next, member.Posture, firing, digging);
                 }
@@ -169,13 +170,9 @@ namespace HyperRTS.Presentation.Animation.Figures
 
             private VATClipRange DieClip(in SquadFigure figure, in SquadMember member)
             {
-                if (member.Death != DeathCause.Blast)
-                {
-                    return figure.Clips.Die;
-                }
-
                 var direction = member.BlastDirection;
-                return figure.Clips.Blasted(new float3(direction.x, 0f, direction.y), Places[figure.Figure].Value);
+                return figure.Clips.Value.Fall(member.Posture, member.Death, new float3(direction.x, 0f, direction.y),
+                    Places[figure.Figure].Value);
             }
         }
     }

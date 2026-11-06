@@ -33,17 +33,24 @@ namespace HyperRTS.Presentation.Animation.Bones
 
         public int TextureWidth => bones.Count * 3;
 
-        public VATClipRange Range(string clipName)
+        public VATClipRange Range(string clipName) =>
+            TryRange(clipName, out var range)
+                ? range
+                : throw new KeyNotFoundException($"Bone clip table '{name}' has no clip '{clipName}'.");
+
+        public bool TryRange(string clipName, out VATClipRange range)
         {
             foreach (var clip in clips)
             {
                 if (clip.name == clipName)
                 {
-                    return clip.Range;
+                    range = clip.Range;
+                    return true;
                 }
             }
 
-            throw new KeyNotFoundException($"Bone clip table '{name}' has no clip '{clipName}'.");
+            range = default;
+            return false;
         }
     }
 }
