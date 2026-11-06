@@ -32,6 +32,7 @@ Shader "HyperRTS/Sky"
             Name "Sky"
 
             HLSLPROGRAM
+            #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
 

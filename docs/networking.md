@@ -149,6 +149,10 @@ holds.
    `GhostOwnerIsLocal` on that client, which tags the ghost `LocalPlayer`, so input and HUD work unchanged. An
    observer owns no ghost, so the server answers it with `ObserverAccepted` and the client makes a `LocalObserver`.
 
+A connection only carries RPCs until it joins: the client adds `NetworkStreamInGame` as it sends its request and
+the server as it seats it. The global `NetcodeConfig` asset therefore needs **Automatic State Replication** off, and
+`NetworkSession` throws when it is on.
+
 **Identity.** `NetworkSession.Token` is a random number made once per process. The server stores it with the slot
 the client claims. When the connection drops, the slot keeps the token and waits for its owner, with its units idle.
 Strangers only take slots nobody has claimed. If the owner returns before the old connection times out, the new
@@ -226,7 +230,7 @@ Receivers take RPCs through `RpcInbox<T>`, which destroys their request entities
 `Rpc.Send`; `Entity.Null` there means every remote connection.
 
 Every RPC rides Netcode's one reliable ordered pipeline. Its out-of-band pipeline would keep cues and scenery from
-delaying commands, but Netcode 7.1's source generator makes no serializer for an `IOutOfBandRpcCommand`, so it waits
+delaying commands, but Netcode 7.2's source generator makes no serializer for an `IOutOfBandRpcCommand`, so it waits
 for a version that does.
 
 ## Fog of war

@@ -40,6 +40,7 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment LitPassFragment
 
@@ -70,6 +71,7 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment ShadowPassFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
@@ -91,6 +93,7 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment DepthOnlyFragment
             #pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -110,6 +113,7 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment DepthNormalsFragment
             #pragma shader_feature_local _NORMALMAP
@@ -132,6 +136,7 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
+            #pragma use_dxc
             #pragma vertex MotionVert
             #pragma fragment MotionFrag
             #pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -151,6 +156,7 @@ Shader "HyperRTS/Bark"
 
             HLSLPROGRAM
             #pragma target 4.5
+            #pragma use_dxc
             #pragma vertex UniversalVertexMeta
             #pragma fragment UniversalFragmentMetaLit
             #pragma shader_feature_local_fragment _MASKMAP

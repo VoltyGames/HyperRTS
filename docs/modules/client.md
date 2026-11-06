@@ -488,6 +488,12 @@ downstream of fords and bridges. Open water carries no streaks; banks get their 
 
 `WorldRect.hlsl` holds `RectUV` and `SampleHeightmap`, which the terrain height and the undented ground read.
 
+Every hand-written shader and compute shader compiles with DXC, which reads HLSL 2021: `#pragma use_dxc` sits beside
+its `#pragma target`, in `HLSLINCLUDE` when the passes share one. It is per shader because Unity's own shaders stay on
+FXC: URP's `DynamicGISkyOcclusion` fails under project-wide DXC. `#pragma hlsl_version 2021` adds nothing, since DXC
+already defaults to it and FXC ignores it. Shader Graphs and VFX Graphs take no pragmas, so the includes they pull
+in (`Effects/Shaders/`, and the fog, lighting and depth files those include) keep to what FXC also compiles.
+
 URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/` and are pulled in with
 `#include_with_pragmas`: `LightingKeywords` (main and additional lights, shadows, screen space effects, decals and
 cookies, for Road), `ForwardLightingKeywords` (that plus probes, fog and rendering layers, for the full Lit model),

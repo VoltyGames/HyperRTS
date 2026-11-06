@@ -112,6 +112,7 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment LitTeamPassFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LitTeamVertexKeywords.hlsl"
@@ -147,6 +148,7 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment ShadowPassFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LitTeamVertexKeywords.hlsl"
@@ -172,6 +174,7 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment DepthOnlyFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LitTeamVertexKeywords.hlsl"
@@ -194,6 +197,7 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment DepthNormalsFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LitTeamVertexKeywords.hlsl"
@@ -231,6 +235,7 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma use_dxc
             #pragma vertex SilhouetteVertex
             #pragma fragment UnitMaskFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LitTeamVertexKeywords.hlsl"
@@ -261,6 +266,7 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma use_dxc
             #pragma vertex SilhouetteVertex
             #pragma fragment SilhouetteFragment
             #define SILHOUETTE_SLACK_ON
@@ -280,6 +286,7 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma use_dxc
             #pragma vertex UniversalVertexMeta
             #pragma fragment UniversalFragmentMetaLit
             #pragma shader_feature_local_fragment _EMISSION
@@ -300,6 +307,7 @@ Shader "HyperRTS/LitTeam"
             // ObjectMotionVectors.hlsl's own pragmas, minus its vertex entry, which DisplacedLitVertex replaces.
             HLSLPROGRAM
             #pragma target 3.5
+            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment frag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"

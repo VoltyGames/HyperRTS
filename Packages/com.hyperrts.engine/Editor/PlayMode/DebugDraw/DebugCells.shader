@@ -2,12 +2,12 @@ Shader "Hidden/HyperRTS/DebugCells"
 {
     Properties
     {
-        _MainTex ("Cells", 2D) = "white" {}
+        [MainTexture] _MainTex ("Cells", 2D) = "white" {}
     }
 
     SubShader
     {
-        Tags { "RenderType" = "Transparent" "Queue" = "Transparent" }
+        Tags { "RenderPipeline" = "UniversalPipeline" "RenderType" = "Transparent" "Queue" = "Transparent" }
 
         Pass
         {
@@ -15,32 +15,42 @@ Shader "Hidden/HyperRTS/DebugCells"
             ZWrite Off
             Blend SrcAlpha OneMinusSrcAlpha
 
-            CGPROGRAM
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma use_dxc
             #pragma vertex Vertex
             #pragma fragment Fragment
-            #include "UnityCG.cginc"
 
-            sampler2D _MainTex;
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct Varyings
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            struct Attributes
             {
-                float4 position : SV_POSITION;
+                float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
             };
 
-            Varyings Vertex(float4 position : POSITION, float2 uv : TEXCOORD0)
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            Varyings Vertex(Attributes input)
             {
                 Varyings output;
-                output.position = UnityObjectToClipPos(position);
-                output.uv = uv;
+                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.uv = input.uv;
                 return output;
             }
 
-            fixed4 Fragment(Varyings input) : SV_Target
+            half4 Fragment(Varyings input) : SV_Target
             {
-                return tex2D(_MainTex, input.uv);
+                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }

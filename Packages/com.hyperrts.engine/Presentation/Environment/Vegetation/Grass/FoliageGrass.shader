@@ -40,6 +40,7 @@ Shader "Hidden/HyperRTS/FoliageGrass"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #pragma use_dxc
         #define _GRASS_INSTANCES 1
         #define PLANT_VERTEX_LIGHTS 1
         ENDHLSL

@@ -14,6 +14,7 @@ Shader "Hidden/HyperRTS/Sharpen"
             Cull Off
 
             HLSLPROGRAM
+            #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
 

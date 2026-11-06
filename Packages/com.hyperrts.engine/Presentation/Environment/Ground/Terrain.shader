@@ -102,6 +102,7 @@ Shader "HyperRTS/Terrain"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #pragma use_dxc
         #pragma multi_compile_instancing
         #pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
         #pragma multi_compile_fragment _ _ALPHATEST_ON

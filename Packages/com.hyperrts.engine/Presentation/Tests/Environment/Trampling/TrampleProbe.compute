@@ -1,5 +1,6 @@
 // Test-only: samples an trample map the way terrain, foliage, crop and water shaders do, at two world points.
 #pragma kernel Probe
+#pragma use_dxc
 
 Texture2D<float4> _Source;
 SamplerState sampler_LinearClamp;

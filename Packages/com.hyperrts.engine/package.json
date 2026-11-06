@@ -16,9 +16,9 @@
   "documentationUrl": "https://github.com/SIGamesStudio/HyperRTS/blob/main/docs/getting-started.md",
   "keywords": ["rts", "dots", "ecs", "strategy"],
   "dependencies": {
-    "com.unity.entities": "6.7.0",
-    "com.unity.entities.graphics": "6.7.0",
-    "com.unity.netcode": "7.1.0",
+    "com.unity.entities": "7.0.0",
+    "com.unity.entities.graphics": "7.0.0",
+    "com.unity.netcode": "7.2.0",
     "com.unity.inputsystem": "7.0.0",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.pipeline": "0.8.0-exp.1",

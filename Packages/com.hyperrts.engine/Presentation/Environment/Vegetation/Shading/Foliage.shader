@@ -45,6 +45,7 @@ Shader "HyperRTS/Foliage"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #pragma use_dxc
         ENDHLSL
 
         Pass

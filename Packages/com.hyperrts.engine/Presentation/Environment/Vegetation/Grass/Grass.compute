@@ -3,6 +3,7 @@
 // The lattice matches ScatterJob.Square and the thinning GrassBands.cs.
 #pragma kernel Scatter
 #pragma kernel Count
+#pragma use_dxc
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 

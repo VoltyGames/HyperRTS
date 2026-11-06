@@ -15,8 +15,8 @@ namespace HyperRTS.Network.Session
         /// <summary>Every server, client and presentation system but the <see cref="RemoteClientOnlyAttribute"/> ones.</summary>
         public static NativeList<SystemTypeIndex> HostSystems()
         {
-            var systems = Systems(WorldSystemFilterFlags.ServerSimulation, WorldSystemFilterFlags.ClientSimulation,
-                WorldSystemFilterFlags.Presentation);
+            var systems = DefaultWorldInitialization.GetAllSystemTypeIndices(WorldSystemFilterFlags.ServerSimulation |
+                WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.Presentation);
 
             // Removed in place: systems are created in this order, and some look up others in OnCreate.
             for (var i = systems.Length - 1; i >= 0; i--)
@@ -31,33 +31,13 @@ namespace HyperRTS.Network.Session
         }
 
         public static NativeList<SystemTypeIndex> ClientSystems() =>
-            Systems(WorldSystemFilterFlags.ClientSimulation, WorldSystemFilterFlags.Presentation);
-
-        /// <summary>
-        /// The systems of every role, in the order of the first role that has each. Entities 6.7 drops systems that
-        /// lack one of several combined flags, the world time and scene systems among them, so roles go one by one.
-        /// </summary>
-        private static NativeList<SystemTypeIndex> Systems(params WorldSystemFilterFlags[] roles)
-        {
-            var systems = new NativeList<SystemTypeIndex>(512, Allocator.Temp);
-            var added = new NativeHashSet<SystemTypeIndex>(512, Allocator.Temp);
-            foreach (var role in roles)
-            {
-                foreach (var system in DefaultWorldInitialization.GetAllSystemTypeIndices(role))
-                {
-                    if (added.Add(system))
-                    {
-                        systems.Add(system);
-                    }
-                }
-            }
-
-            return systems;
-        }
+            DefaultWorldInitialization.GetAllSystemTypeIndices(WorldSystemFilterFlags.ClientSimulation |
+                WorldSystemFilterFlags.Presentation);
 
         /// <summary>One world that serves remote clients and is the local player's client, with this player's join.</summary>
         public static NetcodeWorld CreateHost(NativeList<SystemTypeIndex> systems)
         {
+            RequireJoinsToSetInGame();
             // Sessions listen and connect themselves, on the port and drivers they were given.
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateSingleWorldHost("HostWorld", systems);
@@ -68,6 +48,7 @@ namespace HyperRTS.Network.Session
 
         public static NetcodeWorld CreateServer()
         {
+            RequireJoinsToSetInGame();
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
             SetSingleton(world, ServerTickRate());
@@ -76,10 +57,25 @@ namespace HyperRTS.Network.Session
 
         public static NetcodeWorld CreateClient(NativeList<SystemTypeIndex> systems)
         {
+            RequireJoinsToSetInGame();
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld", systems);
             AddJoin(world);
             return world;
+        }
+
+        /// <summary>
+        /// The join systems put a connection in game once it is seated, so Netcode must not do it on connect: the
+        /// global <see cref="NetcodeConfig"/> needs Automatic State Replication off.
+        /// </summary>
+        private static void RequireJoinsToSetInGame()
+        {
+            var config = NetcodeConfig.Global;
+            if (config == null || config.AutomaticStateReplication)
+            {
+                throw new InvalidOperationException("[HyperRTS] Turn Automatic State Replication off on the global " +
+                                                    "NetcodeConfig asset: joins put connections in game themselves.");
+            }
         }
 
         /// <summary>Opens the port on <paramref name="world"/>; on failure the world is disposed and false returned.</summary>

@@ -11,6 +11,7 @@ Shader "Hidden/HyperRTS/Cloud Cookie"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #pragma use_dxc
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
         #define SMOKE_CAPACITY 32

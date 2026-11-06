@@ -3,6 +3,7 @@
 // Lattice maths match RowCropSpots.Range; hashes, noise and slot counting are in Scatter.hlsl.
 #pragma kernel Plant
 #pragma kernel Count
+#pragma use_dxc
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 

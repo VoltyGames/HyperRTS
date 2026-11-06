@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Combat.Death
         public ToppleFall ToppleFall;
         public bool Felled;
 
-        public float4x4 StretchMatrix => Stretched ? Stretch.Value : float4x4.identity;
+        public readonly float4x4 StretchMatrix => Stretched ? Stretch.Value : float4x4.identity;
 
         /// <summary><paramref name="fall"/> is read only for <see cref="Topple"/> pieces.</summary>
         public static Remains FromPiece(Entity piece, in LocalTransform standing, byte fall, bool witnessed,
