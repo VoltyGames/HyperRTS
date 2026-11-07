@@ -3,19 +3,10 @@ using UnityEditor;
 
 namespace HyperRTS.Editor.Hub
 {
-    /// <summary>HyperRTS ▸ Documentation: opens the guides in the browser.</summary>
+    /// <summary>HyperRTS ▸ Documentation: opens the guides in the browser; each component's help button opens its own section.</summary>
     internal static class DocumentationMenu
     {
-        [MenuItem(EditorMenu.Documentation + "Getting Started", false, EditorMenu.DocumentationPriority)]
-        private static void OpenGettingStarted() => Help.BrowseURL(HyperRTSDocs.GettingStarted);
-
-        [MenuItem(EditorMenu.Documentation + "Module Reference", false, EditorMenu.DocumentationPriority + 1)]
-        private static void OpenModules() => Help.BrowseURL(HyperRTSDocs.Modules);
-
-        [MenuItem(EditorMenu.Documentation + "Editor", false, EditorMenu.DocumentationPriority + 2)]
-        private static void OpenEditor() => Help.BrowseURL(HyperRTSDocs.Editor);
-
-        [MenuItem(EditorMenu.Documentation + "Networking", false, EditorMenu.DocumentationPriority + 3)]
-        private static void OpenNetworking() => Help.BrowseURL(HyperRTSDocs.Networking);
+        [MenuItem(EditorMenu.Documentation, false, EditorMenu.DocumentationPriority)]
+        private static void Open() => Help.BrowseURL(HyperRTSDocs.Index);
     }
 }

@@ -3,12 +3,11 @@ namespace HyperRTS.Simulation.Common.Authoring
     /// <summary>Doc URLs for <c>[HelpURL]</c>; the module constants point at their section of a modules page.</summary>
     public static class HyperRTSDocs
     {
+        public const string Index = "https://github.com/VoltyGames/HyperRTS/tree/main/docs";
         public const string Root = "https://github.com/VoltyGames/HyperRTS/blob/main/docs/";
         public const string GettingStarted = Root + "getting-started.md";
-        public const string Modules = Root + "modules.md";
         private const string Pages = Root + "modules/";
         public const string Networking = Root + "networking.md";
-        public const string Editor = Root + "editor.md";
 
         public const string Abilities = Pages + "combat.md#abilities";
         public const string AI = Pages + "support.md#ai";

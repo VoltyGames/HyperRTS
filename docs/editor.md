@@ -8,10 +8,13 @@ follows the [UI rule](../CLAUDE.md#conventions).
 
 | Menu | Does |
 | --- | --- |
-| **HyperRTS ▸ Tools** | Opens the Tools window |
-| **HyperRTS ▸ Map Editor** | Opens the [Map Editor](maps.md#map-editor). Double-clicking a `.map.json` opens it too |
+| **HyperRTS ▸ Tools** (Ctrl+Shift+T) | Opens the Tools window |
+| **HyperRTS ▸ Map Editor** (Ctrl+Shift+M) | Opens the [Map Editor](maps.md#map-editor). Double-clicking a `.map.json` opens it too |
 | **HyperRTS ▸ Effect Preview** | Opens the [Effect Preview](#effect-preview) |
-| **HyperRTS ▸ Documentation** | Opens these docs in the browser |
+| **HyperRTS ▸ Documentation** | Opens these docs in the browser. Each component's help button opens its own section |
+
+Rebind the hotkeys under **Main Menu** in **Edit ▸ Shortcuts**. Commands on one kind of asset sit in that asset's
+context menu under **Assets ▸ HyperRTS** (Build Effect Graph, Bake Bone Animation Set).
 
 ## Tools window
 
@@ -104,13 +107,18 @@ references, so a moved asset stays linked. The recipe format and the builder are
 
 ## Creation menus
 
-**GameObject ▸ HyperRTS** creates the `EngineRig` rig, a Match, and templates for units, buildings, upgrades and
-map objects. **Assets ▸ Create ▸ HyperRTS ▸ Prefabs** creates the same templates as prefab assets.
-**Assets ▸ Create ▸ HyperRTS** also creates data assets: Resource Type, Damage Type, Impact Mark, Sound Cue and AI
-Build Order.
+**GameObject ▸ HyperRTS** places the `EngineRig` rig, a Match, or a template for a unit, building, upgrade or map
+object in the scene. New scene objects go into the SubScene open for editing.
+
+**Assets ▸ Create ▸ HyperRTS ▸ Entity...** opens the New Entity wizard: search the list, pick an entry, type the
+prefab's name and **Create** saves it in the selected folder. It lists every group of every `EntityBases` asset
+(**Assets ▸ Create ▸ HyperRTS ▸ Entity Bases**), where a project names its base prefabs by heading, then the engine
+templates. A base becomes a prefab variant of it. The name sets the HUD display name too, with underscores read as
+spaces (`USA_M1A2` shows as "USA M1A2").
 
 A template is a root with a pick box and authoring components, plus a primitive `Model` child for you to replace.
-`Editor/Templates/TemplateRegistry.cs` lists them all. New scene objects go into the SubScene open for editing.
+`Editor/Templates/TemplateRegistry.cs` lists them all. **Assets ▸ Create ▸ HyperRTS** also creates data assets:
+Resource Type, Damage Type, Impact Mark, Sound Cue and AI Build Order.
 
 Authoring components sit under **Add Component ▸ HyperRTS**, one submenu per module. Each one's help button opens
 its section of the module reference.

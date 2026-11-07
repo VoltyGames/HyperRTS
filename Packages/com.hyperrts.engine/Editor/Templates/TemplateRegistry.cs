@@ -6,8 +6,8 @@ using Unity.Scripting.LifecycleManagement;
 namespace HyperRTS.Editor.Templates
 {
     /// <summary>
-    /// Every role template, listed once. GameObject ▸ HyperRTS and Assets ▸ Create ▸ HyperRTS ▸ Prefabs both use these
-    /// paths, so the two menus offer the same set under the same names.
+    /// Every role template, listed once: GameObject ▸ HyperRTS places them in a scene, and the New Entity wizard saves
+    /// them as prefabs, under the same names.
     /// </summary>
     public static class TemplateRegistry
     {

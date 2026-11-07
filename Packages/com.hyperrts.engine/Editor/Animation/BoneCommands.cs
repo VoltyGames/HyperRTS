@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Animation
             return sets.Select(found => new { set = AssetDatabase.GetAssetPath(found), written = found.Bake() }).ToList();
         }
 
-        [MenuItem("HyperRTS/Animation/Bake Bone Animation Set")]
+        [MenuItem("Assets/HyperRTS/Bake Bone Animation Set")]
         private static void BakeSelected()
         {
             foreach (var found in Selection.GetFiltered<BoneAnimationSet>(SelectionMode.Assets))
@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Animation
             }
         }
 
-        [MenuItem("HyperRTS/Animation/Bake Bone Animation Set", true)]
+        [MenuItem("Assets/HyperRTS/Bake Bone Animation Set", true)]
         private static bool CanBakeSelected() => Selection.GetFiltered<BoneAnimationSet>(SelectionMode.Assets).Length > 0;
 
         private static BoneAnimationSet Find(string set)

@@ -10,11 +10,10 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Tests.Tools
 {
-    /// <summary>The Tools window, its UXML controls, the generator list and the template menus.</summary>
+    /// <summary>The Tools window, its UXML controls, the generator list and the template menu.</summary>
     public class ToolsWindowTests : TemplateFixture
     {
         private const string ObjectMenu = "GameObject/HyperRTS/";
-        private const string PrefabMenu = "Assets/Create/HyperRTS/Prefabs/";
 
         [Test]
         public void HubPagesHaveUniqueTitlesAndOrders()
@@ -63,14 +62,13 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         [Test]
-        public void BothTemplateMenusListEveryTemplate()
+        public void ObjectMenuListsEveryTemplate()
         {
             var registry = TemplateRegistry.All.Select(template => template.Path).OrderBy(path => path).ToArray();
 
             // Scene setup items (rig, Match) sit at the top level; every template is in a submenu.
             var objects = MenuPaths("ObjectMenu", ObjectMenu).Where(path => path.Contains('/'));
             CollectionAssert.AreEqual(registry, objects.OrderBy(path => path).ToArray());
-            CollectionAssert.AreEqual(registry, MenuPaths("PrefabTemplateMenu", PrefabMenu).OrderBy(path => path).ToArray());
         }
 
         [Test]

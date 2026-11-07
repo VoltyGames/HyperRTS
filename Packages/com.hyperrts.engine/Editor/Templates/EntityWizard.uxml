@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="EntityWizard.uss" />
+  <ui:VisualElement class="hrts-entity-wizard">
+    <uie:ToolbarSearchField name="search" class="hrts-entity-wizard__search" />
+    <ui:TreeView name="choices" class="hrts-entity-wizard__choices" fixed-item-height="20" selection-type="Single" />
+    <ui:TextField name="name" label="Name" tooltip="Prefab name, such as USA_M1A2; the HUD name reads it with spaces." />
+    <ui:Label name="folder" class="hrts-note hrts-entity-wizard__folder" />
+    <ui:VisualElement class="hrts-buttons">
+      <ui:Button name="create" text="Create" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

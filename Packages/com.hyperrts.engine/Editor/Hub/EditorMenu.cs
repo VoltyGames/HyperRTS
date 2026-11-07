@@ -1,20 +1,23 @@
 namespace HyperRTS.Editor.Hub
 {
-    /// <summary>Paths and priorities of the HyperRTS menu, in the order the menu shows them.</summary>
+    /// <summary>
+    /// Paths and priorities of the HyperRTS menu, in the order the menu shows them. The hotkeys are defaults; rebind
+    /// them under Main Menu in Edit ▸ Shortcuts.
+    /// </summary>
     public static class EditorMenu
     {
         public const string Root = "HyperRTS/";
 
-        public const string Tools = Root + "Tools";
+        public const string Tools = Root + "Tools %#t";
         public const int ToolsPriority = 0;
 
-        public const string MapEditor = Root + "Map Editor";
+        public const string MapEditor = Root + "Map Editor %#m";
         public const int MapEditorPriority = 1;
 
         public const string EffectPreview = Root + "Effect Preview";
         public const int EffectPreviewPriority = 2;
 
-        public const string Documentation = Root + "Documentation/";
+        public const string Documentation = Root + "Documentation";
         public const int DocumentationPriority = 100;
     }
 }

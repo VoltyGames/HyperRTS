@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row">
+    <ui:Image name="icon" class="hrts-entity-wizard__icon" />
+    <ui:Label name="label" />
+  </ui:VisualElement>
+</ui:UXML>

@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Templates
     {
         public const string Menu = "GameObject/HyperRTS/";
 
-        [MenuItem(Menu + "Engine Rig (Camera + HUD)", false, 10)]
+        [MenuItem(Menu + "Engine Rig", false, 10)]
         private static void CreateEngineRig(MenuCommand cmd)
         {
             var rig = EditorAssets.RigPrefab;
