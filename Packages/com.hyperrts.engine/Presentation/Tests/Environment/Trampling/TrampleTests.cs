@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Trampling
             Assert.AreEqual(2f * full.Trample, low.Trample, 1e-6f);
             Assert.AreEqual(2f * full.Remains, low.Remains, 1e-6f);
             Assert.Less(full.Tracks, full.Trample, "ruts need finer texels than flattened grass");
-            Assert.Throws<ArgumentOutOfRangeException>(() => TrampleSurfaces.Texels(TrampleQuality.Off),
+            Assert.Throws<ArgumentOutOfRangeException>(() => TrampleSurfaces.Texels(TrampleQuality.None),
                 "nothing allocated at Off");
         }
 

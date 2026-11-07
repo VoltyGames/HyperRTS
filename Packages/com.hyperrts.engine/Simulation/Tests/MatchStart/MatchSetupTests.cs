@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             ResourceMath.Add(_world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1)), supplies, 1000);
             var setup = Setup(Slot(1, PlayerControl.LocalHuman), Slot(2));
             setup.StartingResourceScale = 2.5f;
-            setup.Fog = FogOverride.Off;
+            setup.Fog = FogOverride.Revealed;
             MatchSetupRequest.Set(setup);
 
             _world.Tick();

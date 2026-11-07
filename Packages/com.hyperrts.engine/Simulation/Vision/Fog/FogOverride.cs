@@ -4,7 +4,11 @@
     public enum FogOverride : byte
     {
         Map = 0,
-        On = 1,
-        Off = 2,
+
+        /// <summary>Fog of war hides what no unit sees.</summary>
+        Fogged = 1,
+
+        /// <summary>No fog: the whole map shows.</summary>
+        Revealed = 2,
     }
 }

@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Environment.Trampling
         public TrampleStamps Stamps { get; } = new();
 
         /// <summary>Whether the trample maps are drawn at the current quality.</summary>
-        public static bool MapsOn => PresentationQuality.Current.Trampling != TrampleQuality.Off;
+        public static bool MapsOn => PresentationQuality.Current.Trampling != TrampleQuality.None;
 
         /// <summary>The stamps of <paramref name="world"/>, or null while it has no stamp system.</summary>
         public static TrampleStamps Find(World world) =>

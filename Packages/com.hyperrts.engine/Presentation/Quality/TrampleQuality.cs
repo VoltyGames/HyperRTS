@@ -4,7 +4,7 @@ namespace HyperRTS.Presentation.Quality
     public enum TrampleQuality
     {
         /// <summary>No maps: grass stands and the ground stays clean.</summary>
-        Off,
+        None,
 
         /// <summary>Twice the texel size of <see cref="Full"/>.</summary>
         Low,

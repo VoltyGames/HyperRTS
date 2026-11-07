@@ -198,7 +198,7 @@ namespace HyperRTS.Simulation.MatchStart
             }
 
             var map = entityManager.GetComponentData<MapSettings>(match);
-            map.FogOfWar = fog == FogOverride.On;
+            map.FogOfWar = fog == FogOverride.Fogged;
             entityManager.SetComponentData(match, map);
         }
 
