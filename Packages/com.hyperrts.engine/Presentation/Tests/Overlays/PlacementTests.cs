@@ -1,6 +1,6 @@
+using HyperRTS.Input.Placement;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Overlays;
 using HyperRTS.Presentation.Overlays.Ghosts;
 using HyperRTS.Simulation.Common;

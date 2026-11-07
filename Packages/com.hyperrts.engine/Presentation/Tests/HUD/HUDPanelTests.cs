@@ -55,7 +55,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         {
             Assert.DoesNotThrow(() => new ResourceBar(Slot("top-bar"), Layouts));
             Assert.DoesNotThrow(() => new Minimap(Slot("minimap")));
-            Assert.DoesNotThrow(() => new CommandCard(Slot("commands"), Layouts, CommandCatalogue.Create()));
+            Assert.DoesNotThrow(() => new CommandCard(Slot("commands"), Layouts, CommandCatalog.Create()));
         }
 
         [Test]

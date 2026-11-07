@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.HUD
 
         [SerializeField]
         [Tooltip("Every command the card can show: its label, icon, hotkey and slot.")]
-        private CommandCatalogue commandCatalogue;
+        private CommandCatalog commandCatalog;
 
         [SerializeField]
         [Tooltip("HUD layout sheet (HUD.uss): positions, sizes and spacing.")]
@@ -69,7 +69,7 @@ namespace HyperRTS.Presentation.HUD
         {
             Adopt(new Minimap(hud.Require<VisualElement>("minimap")));
             Adopt(new SelectionPanel(hud.Require<VisualElement>("selection"), panelLayouts));
-            Adopt(new CommandCard(hud.Require<VisualElement>("commands"), panelLayouts, commandCatalogue));
+            Adopt(new CommandCard(hud.Require<VisualElement>("commands"), panelLayouts, commandCatalog));
             Adopt(new ResourceBar(hud.Require<VisualElement>("top-bar"), panelLayouts));
             Adopt(new GameOverBanner(hud.Require<VisualElement>("game-over")));
             Adopt(new LineCost(hud.Require<CostRow>("line-cost")));

@@ -93,7 +93,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             var name = HUDText.AbilityName(ability.Name.ToString());
-            var spec = _kit.Catalogue.FindAbility(card, ability.Id, name);
+            var spec = _kit.Catalog.FindAbility(card, ability.Id, name);
             if (spec == null)
             {
                 return;

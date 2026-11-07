@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Fog;
-using HyperRTS.Presentation.Rendering.Materials;
+using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Common;

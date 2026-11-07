@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Environment.Trampling;
+using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 

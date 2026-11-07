@@ -1,4 +1,4 @@
-using HyperRTS.Network.Players;
+using HyperRTS.Network.Joining;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Burst;

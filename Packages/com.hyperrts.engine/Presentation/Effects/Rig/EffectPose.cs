@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Impacts;
+using HyperRTS.Presentation.Environment.Ground.ImpactMarks;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Heights;

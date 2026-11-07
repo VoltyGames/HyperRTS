@@ -83,7 +83,7 @@ namespace HyperRTS.Presentation.HUD.Commands
                     continue;
                 }
 
-                var spec = _kit.Catalogue.FindOrder(EntityInfo.GetTypeId(entityManager, entity), order, argument);
+                var spec = _kit.Catalog.FindOrder(EntityInfo.GetTypeId(entityManager, entity), order, argument);
                 if (spec == null)
                 {
                     return null;

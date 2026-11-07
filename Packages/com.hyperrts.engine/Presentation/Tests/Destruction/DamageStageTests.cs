@@ -1,4 +1,3 @@
-using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;

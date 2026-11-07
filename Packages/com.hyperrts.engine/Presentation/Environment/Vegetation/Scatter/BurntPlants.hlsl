@@ -2,7 +2,7 @@
 #ifndef HYPERRTS_BURNT_PLANTS_INCLUDED
 #define HYPERRTS_BURNT_PLANTS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/TrampleGlobals.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/TrampleGlobals.hlsl"
 
 #define ASH_CLEARS 0.7 // ash at which every plant is gone; a crater's lighter ash only thins them
 

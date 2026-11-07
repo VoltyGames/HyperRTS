@@ -1,6 +1,6 @@
 using HyperRTS.Network.Commands;
 using HyperRTS.Network.Cues;
-using HyperRTS.Network.Players;
+using HyperRTS.Network.Joining;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues;

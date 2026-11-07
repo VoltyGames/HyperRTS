@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Presentation.Environment.Trampling;
+using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common.Authoring;

@@ -136,7 +136,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             var entityManager = context.EntityManager;
             var name = HUDText.EntityName(entityManager, prefab);
             var info = entityManager.GetComponentData<EntityInfo>(prefab);
-            var spec = _kit.Catalogue.FindPrefab(card, info.TypeId, name);
+            var spec = _kit.Catalog.FindPrefab(card, info.TypeId, name);
             if (spec == null)
             {
                 return;

@@ -54,9 +54,9 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             var card = EntityInfo.GetTypeId(context.EntityManager, _squads[0]);
-            var catalogue = _kit.Catalogue;
-            var retreat = catalogue.FindOrder(card, CommandType.Retreat, 0);
-            var reinforce = catalogue.FindOrder(card, CommandType.Reinforce, 0);
+            var catalog = _kit.Catalog;
+            var retreat = catalog.FindOrder(card, CommandType.Retreat, 0);
+            var reinforce = catalog.FindOrder(card, CommandType.Reinforce, 0);
             if (retreat == null || reinforce == null)
             {
                 _squads.Clear();

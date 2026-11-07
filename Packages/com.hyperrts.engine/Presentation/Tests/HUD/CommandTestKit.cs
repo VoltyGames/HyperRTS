@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Tests.HUD
 {
-    /// <summary>Specs, catalogues and kits made in code for the command card tests; <see cref="Destroy"/> frees them.</summary>
+    /// <summary>Specs, catalogs and kits made in code for the command card tests; <see cref="Destroy"/> frees them.</summary>
     internal static class CommandTestKit
     {
         private static readonly List<Object> Made = new();
@@ -39,9 +39,9 @@ namespace HyperRTS.Presentation.Tests.HUD
         public static CommandKit Kit(params CommandSpec[] specs)
         {
             Made.AddRange(specs);
-            var catalogue = CommandCatalogue.Create(specs);
-            Made.Add(catalogue);
-            return new CommandKit(HUDPanelTests.Layouts.CommandButton, catalogue);
+            var catalog = CommandCatalog.Create(specs);
+            Made.Add(catalog);
+            return new CommandKit(HUDPanelTests.Layouts.CommandButton, catalog);
         }
 
         /// <summary>A caption button of its own.</summary>

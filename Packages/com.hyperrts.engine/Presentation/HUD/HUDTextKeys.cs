@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Common.Infantry;
 
 namespace HyperRTS.Presentation.HUD

@@ -20,7 +20,7 @@ Shader "Hidden/HyperRTS/Crater Height"
             #pragma fragment CraterHeightFragment
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
 
             Texture2D<float> _OriginalHeights;
             float4 _HeightRegion;  // first heightmap texel of the region in x and z

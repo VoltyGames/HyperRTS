@@ -1,5 +1,4 @@
 using System;
-using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Resources.Gathering;
 using NUnit.Framework;

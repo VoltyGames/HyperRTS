@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Animation.Rigs;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Environment.Trampling;
+using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;

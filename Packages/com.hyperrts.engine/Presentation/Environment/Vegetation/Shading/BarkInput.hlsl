@@ -13,7 +13,7 @@
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/DetailMap.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/SurfaceType.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wind.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
 
 CBUFFER_START(UnityPerMaterial)
 float4 _BaseMap_ST;

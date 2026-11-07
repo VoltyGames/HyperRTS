@@ -10,8 +10,8 @@
 @import url("Panels/SelectionPanel.uss");
 @import url("Panels/SquadView.uss");
 @import url("Panels/ProductionQueueView.uss");
-@import url("GameOverBanner.uss");
-@import url("StrategicCountdowns.uss");
+@import url("Panels/GameOverBanner.uss");
+@import url("Panels/StrategicCountdowns.uss");
 @import url("Commands/LineCost.uss");
-@import url("PlacementHint.uss");
-@import url("SelectionDragBoxUI.uss");
+@import url("Panels/PlacementHint.uss");
+@import url("Panels/SelectionDragBoxUI.uss");

@@ -1,6 +1,7 @@
 using System;
 using HyperRTS.Presentation.Environment.Ground;
-using HyperRTS.Presentation.Environment.Trampling;
+using HyperRTS.Presentation.Environment.Ground.Craters;
+using HyperRTS.Presentation.Environment.Ground.Stamps;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter

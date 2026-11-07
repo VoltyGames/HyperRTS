@@ -12,7 +12,7 @@ SamplerState sampler_LinearClamp;
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/Scatter.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassInstance.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/CraterSink.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BurntPlants.hlsl"
 
 #define CHANNEL_X 0u

@@ -1,10 +1,10 @@
+using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
-using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;

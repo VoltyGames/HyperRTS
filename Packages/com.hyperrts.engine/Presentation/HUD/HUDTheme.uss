@@ -10,8 +10,8 @@
 @import url("Commands/CommandCardTheme.uss");
 @import url("Commands/CostRowTheme.uss");
 @import url("HUDTooltipTheme.uss");
-@import url("GameOverBannerTheme.uss");
-@import url("StrategicCountdownsTheme.uss");
+@import url("Panels/GameOverBannerTheme.uss");
+@import url("Panels/StrategicCountdownsTheme.uss");
 @import url("Commands/LineCostTheme.uss");
-@import url("PlacementHintTheme.uss");
-@import url("SelectionDragBoxUITheme.uss");
+@import url("Panels/PlacementHintTheme.uss");
+@import url("Panels/SelectionDragBoxUITheme.uss");

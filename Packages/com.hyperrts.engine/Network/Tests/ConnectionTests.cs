@@ -1,6 +1,6 @@
 using HyperRTS.Network.Common;
 using HyperRTS.Network.Cues;
-using HyperRTS.Network.Players;
+using HyperRTS.Network.Joining;
 using HyperRTS.Network.Replication;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;

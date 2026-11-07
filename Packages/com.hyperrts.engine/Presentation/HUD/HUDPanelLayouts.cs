@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 using UnityEngine.UIElements;

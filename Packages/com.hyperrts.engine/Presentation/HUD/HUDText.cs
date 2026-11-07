@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;

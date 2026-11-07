@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Network.Players;
+using HyperRTS.Network.Joining;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;

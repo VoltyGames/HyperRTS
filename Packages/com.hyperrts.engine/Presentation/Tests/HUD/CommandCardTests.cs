@@ -190,7 +190,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         private CommandCard NewCard(params CommandSpec[] specs)
         {
             var kit = CommandTestKit.Kit(specs);
-            var card = new CommandCard(HUDPanelTests.Slot("commands"), HUDPanelTests.Layouts, kit.Catalogue,
+            var card = new CommandCard(HUDPanelTests.Slot("commands"), HUDPanelTests.Layouts, kit.Catalog,
                 new SpecSource(kit, _specs, _pressed));
             return Refreshed(card);
         }

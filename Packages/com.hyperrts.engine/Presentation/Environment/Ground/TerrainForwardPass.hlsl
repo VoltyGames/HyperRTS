@@ -5,7 +5,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Trampling/Trample.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainWetness.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainRemains.hlsl"
 

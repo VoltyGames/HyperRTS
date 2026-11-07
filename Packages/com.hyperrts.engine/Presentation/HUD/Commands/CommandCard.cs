@@ -27,10 +27,10 @@ namespace HyperRTS.Presentation.HUD.Commands
         private bool _cancel;
 
         /// <summary>The engine's sources, then <paramref name="extra"/>.</summary>
-        public CommandCard(VisualElement root, HUDPanelLayouts layouts, CommandCatalogue catalogue,
+        public CommandCard(VisualElement root, HUDPanelLayouts layouts, CommandCatalog catalog,
             params ICommandSource[] extra) : base(root)
         {
-            _kit = new CommandKit(layouts.CommandButton, catalogue);
+            _kit = new CommandKit(layouts.CommandButton, catalog);
             _blank = layouts.CommandBlank;
             _tooltip = new HUDTooltip(layouts.TooltipStat);
             _sources = new List<ICommandSource>

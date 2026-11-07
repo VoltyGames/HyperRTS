@@ -8,15 +8,15 @@ namespace HyperRTS.Presentation.HUD.Commands
     /// <summary>The specs and the button template that <see cref="ICommandSource"/>s build their entries from.</summary>
     public sealed class CommandKit
     {
-        public CommandKit(VisualTreeAsset buttonParts, CommandCatalogue catalogue)
+        public CommandKit(VisualTreeAsset buttonParts, CommandCatalog catalog)
         {
             ButtonParts = buttonParts;
-            Catalogue = catalogue;
+            Catalog = catalog;
         }
 
         public VisualTreeAsset ButtonParts { get; }
 
-        public CommandCatalogue Catalogue { get; }
+        public CommandCatalog Catalog { get; }
 
         /// <summary>
         /// A button for <paramref name="spec"/>. The spec's label and icon win over <paramref name="name"/> and

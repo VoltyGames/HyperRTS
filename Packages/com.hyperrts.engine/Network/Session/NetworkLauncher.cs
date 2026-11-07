@@ -1,5 +1,5 @@
 ﻿using System;
-using HyperRTS.Network.Players;
+using HyperRTS.Network.Joining;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 

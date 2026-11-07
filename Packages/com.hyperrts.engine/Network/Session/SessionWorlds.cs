@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Network.Common;
-using HyperRTS.Network.Players;
+using HyperRTS.Network.Joining;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;

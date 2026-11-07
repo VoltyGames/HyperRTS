@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
@@ -13,7 +12,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine.UIElements;
 using HyperRTS.Presentation.HUD.Commands;
-using HyperRTS.Presentation.HUD.Panels;
 
 namespace HyperRTS.Presentation.Tests.HUD
 {

@@ -46,7 +46,8 @@ Rendering, HUD, effects and audio. `MatchView` is a once-per-frame read model fo
 relations and colours. It and other presenters read singletons through `LiveSingleton`; `MatchView` re-reads colours only
 when a `ChangeWatch` sees a `Player` or colour override written or their count move.
 
-`Environment/` is split by topic, each folder its own namespace: `Ground` (terrain, roads, craters), `Trampling`,
+`Environment/` is split by topic, each folder its own namespace: `Ground` (terrain and roads, with `Stamps` for
+trampling, trenches, track marks and death remains, `Craters` and `ImpactMarks`),
 `Fire`, `Weather` (atmosphere, sky, wetness, wind, gusts, haze, cloud shadows), `Water`, `Vegetation` (`Grass`,
 `RowCrops`, `Scatter`, `Shading`), `Horizon` and `Ambient`. `EdgeNoise.png`, which several of them share, stays at the top; their cell grids
 are the simulation's `CellGrid`.
@@ -55,8 +56,8 @@ are the simulation's `CellGrid`.
 dust and rotor wash, and loop effects), `Lights` (effect and loop lights, smoke shadows) and `Shaders` (the Custom HLSL
 includes and the two effect shader graphs). In `Rendering/`, the instance batches and `EntityExtent` sit in `Overlays/`,
 the fog of war renderer feature and its passes in `Fog/`, and the hide, model variant, garrison part and paint core in
-`Rendering/Parts/` (namespace `HyperRTS.Presentation.Rendering.Parts`). `Rendering/Materials/` holds the `LitTeam`
-shader with its team colour, faction palette, grime and building lights; contact shadows and the unit silhouette stay
+`Rendering/Parts/` (namespace `HyperRTS.Presentation.Rendering.Parts`), with the damage and resource stage swaps. `Rendering/LitTeam/` holds the `LitTeam`
+shader with its team colour, team strip, faction palette, grime and building lights; contact shadows and the unit silhouette stay
 at the `Rendering/` root.
 
 ### HUD
@@ -148,7 +149,7 @@ prerequisite in the warning colour. The tooltip shows on hover and on keyboard o
 The card is data. A `CommandSpec` asset describes one button: what it is for (`CommandTarget`: a prefab to build, train or
 research, an ability by name, or an order with its argument), the card it sits on (a builder or producer prefab, empty for
 every card), a label key and icon (empty takes the prefab's or ability's own), a `Key` hotkey, and its page and slot.
-A `CommandCatalogue` on `HUDController` lists them. A spec with a card beats one without for the same target, which is how
+A `CommandCatalog` on `HUDController` lists them. A spec with a card beats one without for the same target, which is how
 one faction differs from another. Sources look specs up by target and card, log an error for a gap and skip the button.
 
 The card places entries by slot (0 to 14, left to right then top to bottom) and fills the gaps with blanks. A slot already taken moves the

@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Environment.Ground.ImpactMarks;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
@@ -9,7 +10,6 @@ using System.Linq;
 using System.Reflection;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
-using HyperRTS.Presentation.Impacts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
@@ -19,7 +19,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Tests.Common
 {
-    /// <summary>Shared presentation plumbing: the behaviour base, the per-type data catalogue and faction relations.</summary>
+    /// <summary>Shared presentation plumbing: the behaviour base, the per-type data catalog and faction relations.</summary>
     public class CommonTests
     {
         private const int TypeId = 42;

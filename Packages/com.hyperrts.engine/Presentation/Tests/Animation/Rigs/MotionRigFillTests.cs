@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
 using System.Linq;
 using HyperRTS.Simulation.Buildings;

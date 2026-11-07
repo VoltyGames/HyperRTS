@@ -2,7 +2,6 @@ using HyperRTS.Presentation.Animation.Figures;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
-using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Core;

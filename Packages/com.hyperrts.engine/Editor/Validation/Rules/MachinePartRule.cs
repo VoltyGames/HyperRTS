@@ -1,4 +1,4 @@
-using HyperRTS.Presentation.Animation.Rigs;
+using HyperRTS.Presentation.Animation.Machines;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
