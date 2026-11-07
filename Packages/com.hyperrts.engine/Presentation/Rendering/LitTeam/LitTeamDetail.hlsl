@@ -42,8 +42,8 @@ void ApplyDetail(float3 positionWS, float3 normalWS, float4 tangentWS, inout Sur
     blend *= blend;
     blend /= blend.x + blend.y + blend.z;
 
-    // Overlay around grey: 0.5 leaves the albedo as it is.
-    half3 grain = SampleDetailAlbedo(p, dx, dy, blend);
+    // Overlay around grey: 0.5 as authored leaves the albedo as it is. The map imports as sRGB colour, so undo the decode.
+    half3 grain = LinearToSRGB(SampleDetailAlbedo(p, dx, dy, blend));
     surface.albedo *= lerp(half3(1.0, 1.0, 1.0), grain * 2.0, _DetailAlbedoStrength * fade);
 
 #if defined(_NORMALMAP)

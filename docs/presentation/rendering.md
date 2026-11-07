@@ -12,7 +12,7 @@ developers writing shaders.
 `TeamColorOverride` swaps them. The validator flags units and buildings without a team colour material. LitTeam takes
 opaque or alpha-tested metallic workflow only, and `LitTeamGUI` keeps its keywords in step with the maps.
 
-**Detail maps.** The `_DETAIL` toggle adds a grey detail albedo (0.5 leaves the colour alone) and a detail normal,
+**Detail maps.** The `_DETAIL` toggle adds a grey detail albedo, imported as sRGB colour (0.5 as authored leaves the colour alone), and a detail normal,
 projected in object space from three sides at `_DetailTiling` repeats per metre, so grain has the same density on every
 island of an atlased mesh. Both fade out between `_DetailFadeStart` and `_DetailFadeEnd` metres from the camera. They
 cost six texture samples in the forward pass only, nothing with the toggle off. The detail normal needs the normal path,
