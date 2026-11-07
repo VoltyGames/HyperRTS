@@ -1,6 +1,7 @@
 # Architecture
 
-How the engine is split, the rules every system follows, which world runs what, and the order of a frame.
+How the engine is split, which world runs what, and the order of a frame. The gameplay rules every system follows are
+in [CLAUDE.md](../CLAUDE.md#gameplay-contract).
 
 ## Assemblies
 
@@ -10,56 +11,43 @@ The simulation has no rendering, input or UI, so it runs on a dedicated server a
 | --- | --- |
 | `HyperRTS.Simulation` | Components, systems, authoring, phase groups |
 | `HyperRTS.Network` | Sessions, join, command RPCs, replication, fog relevancy |
-| `HyperRTS.Presentation` | HUD, overlays, fog rendering, team colours, audio. |
+| `HyperRTS.Presentation` | HUD, overlays, fog rendering, team colours, audio |
 | `HyperRTS.Input` | Camera and input, turned into `PlayerCommand`s |
 | `HyperRTS.Editor` | Tools window, inspectors, validation, debug tools, scene builder |
-| `HyperRTS.Editor.Maps` | Map Editor and the map build pipeline; builds on `HyperRTS.Editor` |
+| `HyperRTS.Editor.Maps` | Map Editor and the map build pipeline |
 
-`Network` and `Presentation` build on `Simulation`. `Input` builds on `Presentation`. `Editor` and the tests sit on
-top. A server build leaves out client systems by world filter, not by assembly.
+`Network` and `Presentation` build on `Simulation`, `Input` on `Presentation`, and `Editor` and the tests on top. A
+server build leaves out client systems by world filter, not by assembly.
 
 ## Modules
 
-The simulation is split into modules. Each is one folder with the namespace `HyperRTS.Simulation.<Module>`, and sits
-in one of the [tiers](modules.md#tiers).
+The simulation is split into modules, one folder each with the namespace `HyperRTS.Simulation.<Module>`, in one of
+the [tiers](simulation/README.md#tiers).
 
 - A module uses its own tier or lower ones, never in a cycle. Put a shared type in `Common` or the lower module.
 - To order two systems, put `[UpdateBefore]` or `[UpdateAfter]` on the one whose module uses the other's.
-- `*Authoring.cs` files may use any module. They hold only the authoring class and its `Baker`.
+- `*Authoring.cs` files may use any module and hold only the authoring class and its `Baker`.
 
-`ModuleLayoutTests` enforces these rules. Per-module reference: [modules](modules.md).
-
-## Gameplay contract
-
-| Rule | How |
-| --- | --- |
-| Intent is a command | Input, AI and network append `PlayerCommand`s to the player entity |
-| Orders go through `OrderWriter` | The system owning an order type disables `ActiveOrder` when done |
-| Move by destination | Set and enable `MoveDestination`. It is disabled on arrival |
-| Combat owns movement | While `AttackTarget` is enabled, combat writes `MoveDestination` |
-| Ownership | `Owner` on every ownable entity, 0 for neutral. `OwnerRelations` decides hostility |
-| Damage goes through the queue | `EventWriter<DamageEvent>`, so armor, splash and kill credit apply. Build hits with `DamageProfile.Hit` or the `DamageEvent` factories |
-| Spawn baked prefabs | `PrefabSpawner.Spawn(ecb, prefab, position, rotation, owner)` |
+`ModuleLayoutTests` enforces these rules.
 
 ## Worlds
 
 | World | Exists in | Runs |
 | --- | --- | --- |
 | Local | Single player, replays | Everything |
-| Host | A player-hosted match | Everything a server and a client run, but `[RemoteClientOnly]` systems |
+| Host | A player-hosted match | Everything, but `[RemoteClientOnly]` systems |
 | Server | Dedicated server | Gameplay, AI, commands, relevancy |
 | Client | A joining player | Selection, input, fog view, presentation, HUD |
 
 Systems run in local and server worlds by default. A client-side system adds
-`[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`, which already
-defaults to the local and client worlds. Single player needs `OverrideAutomaticNetcodeBootstrap` in the
-scene, which `EngineRig.prefab` carries. `NetworkSession` creates and replaces worlds at runtime. See
-[networking](networking.md).
+`[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`, which already runs
+in local and client worlds. Single player needs `OverrideAutomaticNetcodeBootstrap` in the scene, which
+`EngineRig.prefab` carries. `NetworkSession` creates and replaces worlds at runtime; see [networking](networking.md).
 
 ## Frame order
 
-Every gameplay system sits in a phase group from `Simulation/Common/SystemGroups.cs`, never in `SimulationSystemGroup` directly.
-Only network plumbing such as join and relevancy sits there.
+Every gameplay system sits in a phase group from `Simulation/Common/SystemGroups.cs`, never in
+`SimulationSystemGroup` directly. Only network plumbing such as join and relevancy sits there.
 
 | Group | Runs |
 | --- | --- |
@@ -73,10 +61,9 @@ Only network plumbing such as join and relevancy sits there.
 | `PresentationSystemGroup` | Team colours, fog visibility, sound playback |
 
 - A system that reads `PlayerCommand`s must be in `OrderSystemGroup`.
-- Movement runs before transforms, so a move shows the same frame.
 - All damage lands before `DeathSystem` marks entities `Dead`. They are destroyed at the end of the frame.
 
-**Window ▸ Entities ▸ Systems** shows the full live order.
+**Window ▸ Entities ▸ Systems** shows the live order.
 
 ## Entities at startup
 
@@ -84,5 +71,5 @@ Only network plumbing such as join and relevancy sits there.
   runtime spawns render like placed ones.
 - SubScenes stream in over the first frames. Guard on singletons with `RequireForUpdate`, and never treat "nothing
   exists yet" as a game state.
-- Never add a system that spawns gameplay entities on its own. It would also run in test worlds. Spawn from a
-  command or an explicit call.
+- Never add a system that spawns gameplay entities on its own: it would also run in test worlds. Spawn from a command
+  or an explicit call.

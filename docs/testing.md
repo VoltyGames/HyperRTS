@@ -1,13 +1,17 @@
 # Testing
 
 The engine's tests are EditMode tests in `HyperRTS.Simulation.Tests`, `HyperRTS.Network.Tests`,
-`HyperRTS.Presentation.Tests`, `HyperRTS.Editor.Tests` and
-`HyperRTS.Editor.Maps.Tests`. Run them from **Window ▸ General ▸ Test Runner**.
+`HyperRTS.Presentation.Tests`, `HyperRTS.Editor.Tests` and `HyperRTS.Editor.Maps.Tests`. Run them from **Window ▸
+General ▸ Test Runner**, or from the command line with the project closed:
+
+```sh
+Unity -batchmode -projectPath <project> -runTests -testPlatform EditMode -testResults results.xml
+```
 
 ## TestWorld
 
-`TestWorld` is an isolated world with every simulation system, stepped at 30 fps. Test through systems: issue
-commands, run time, then check components.
+`TestWorld` is an isolated world with every simulation system, stepped at 30 fps. Test through systems: issue commands,
+run time, then check components.
 
 ```csharp
 using var world = new TestWorld();
@@ -18,70 +22,36 @@ world.Run(3f);
 Assert.That(world.Get<LocalTransform>(unit).Position.x, Is.EqualTo(10f).Within(0.5f));
 ```
 
-Most test classes derive from `SimulationFixture`, which creates the `TestWorld` and the match before each test and
-disposes it after. Reach the world through `World`, and override `Teams` (default `{ 1, 2 }`, one team per player) for
-another match shape.
+Most test classes derive from `SimulationFixture`, which creates the world and match before each test and disposes
+them after. Reach the world through `World`; override `Teams` (default `{ 1, 2 }`) for another match shape. A class
+whose setup differs keeps its own `[SetUp]` and `TestWorld` field.
 
-`GridDump` renders a window of a grid as ASCII, north up, for a failed assert: `GridDump.Path` shows the nav cells
-round a path (`#` blocked, `~` water, `=` deck, `S` start, `*` waypoint, `G` goal) and `GridDump.Fog` a team's fog
-round a point. Pass it in a lazy failure message, `Assert.That(x, Is.True, () => GridDump.Fog(...))`, or queue it
-with `DumpOnFailure(() => ...)` in a `SimulationFixture` test, which writes it to the test output only when the test
-failed.
-
-```csharp
-public class AimTests : SimulationFixture
-{
-    [Test]
-    public void Shot_HitsTheEnemy()
-    {
-        var gun = World.SpawnUnit(1, float3.zero);
-        World.Set(gun, new Health { Current = 5f, Max = 10f });
-        World.Run(1f);
-    }
-}
-```
-
-Write through the world's helpers rather than its `EntityManager`: `Set<T>`, `Add<T>`, `Buffer<T>`,
-`SetEnabled<T>`, `Writer(entity)` (an `EntityWriter`) and `Query(types)`, which the caller disposes. A class whose
-setup differs keeps its own `[SetUp]` and `TestWorld` field.
-
-`SpawnUnit` and `SpawnBuilding` build entities the way the bakers do, without a mesh. `MakePrefab` turns one into a
-prefab for producers. `CreateMatch` also builds the nav grid and match rules, which systems require.
-
-- Wait on a state with `RunUntil(condition, maxSeconds)` rather than a fixed `Run`; it returns whether the state came.
-- `Own<T>` hands the world a Unity object to destroy on dispose.
-- Give a unit an order with `Issue(unit, order, queue)`, which goes through `OrderWriter` like the game does.
-- Kits add setup per area: `CombatTestKit` (`Kill`, `IsIdle`), `EconomyTestKit` (supplies, unit prefabs, producers),
-  `ContainerTestKit`, `AircraftTestKit` and `CueTestKit` (queued cues and type ids).
-- Presentation tests build their world through `PresentationWorldKit`, with players made by `PlayerSetup.Add`.
-- `HostTestKit` (in `HyperRTS.Network.Tests`, which references the Simulation tests for `TestWorld`) builds a single-world host the way `NetworkSession` does and a client joined to it over IPC, each
-  wrapped in a `TestWorld` for setup. It ticks both at 60 Hz with a fixed time step.
+- Write through the world's helpers, not its `EntityManager`: `Set<T>`, `Add<T>`, `Buffer<T>`, `SetEnabled<T>`,
+  `Writer(entity)` and `Query(types)` (the caller disposes it).
+- `SpawnUnit` and `SpawnBuilding` build entities as the bakers do, without a mesh; `MakePrefab` turns one into a
+  prefab for producers. `CreateMatch` also builds the nav grid and match rules, which systems require.
+- Wait on a state with `RunUntil(condition, maxSeconds)` rather than a fixed `Run`. Give orders with
+  `Issue(unit, order, queue)`, which goes through `OrderWriter` like the game. `Own<T>` hands the world a Unity object
+  to destroy on dispose.
+- Kits add setup per area: `CombatTestKit`, `EconomyTestKit`, `ContainerTestKit`, `AircraftTestKit`, `CueTestKit`.
+  Presentation tests build their world with `PresentationWorldKit` and `PlayerSetup.Add`. `HostTestKit` (in
+  `HyperRTS.Network.Tests`) builds a single-world host as `NetworkSession` does and a client joined over IPC.
+- `GridDump.Path` and `GridDump.Fog` render a window of a grid as ASCII for a failed assert: pass it in a lazy message,
+  `Assert.That(x, Is.True, () => GridDump.Fog(...))`, or queue it with `DumpOnFailure(() => ...)`.
 
 ## Validation in CI
 
-`ValidationTests.ProjectHasNoValidationErrors` runs every validation rule over the project's prefabs and open
-scenes. A map is only checked while it is open. `RuleFiresTests` builds a broken case for every rule and checks
-that it reports, so a new rule needs a row there. `ModuleLayoutTests` checks the
-[module rules](architecture.md#modules).
+`ValidationTests.ProjectHasNoValidationErrors` runs every [validation rule](editor/README.md#validation) over the project's
+prefabs and open scenes (a map is checked only while open). `RuleFiresTests` builds a broken case for every rule, so a
+new rule needs a row there. `ModuleLayoutTests` checks the [module rules](architecture.md#modules).
 
 ## Benchmarks
 
 Timing tests are `[Test, Performance]` cases in the `Benchmark` category (`NavBenchmarkTests`, `VisionBenchmarkTests`,
-`CombatBenchmarkTests`), built on the Performance Testing package that Entities already pulls in. They cover path
-searches, flow fields, drive plans, steering 500 units, indexing and querying 1000 units, fog stamps and a 500 a side
-battle. `BenchmarkKit.Median` wraps `Measure.Method` with a warm-up, 20 measured runs, an untimed prepare and finish
-step, and the profiler markers to record (`GridAStar.Search`, `FogMergeJob.Merge` and so on). It returns the median,
-and each test keeps one coarse assert on it at twice its budget, so a regression fails. Systems the benchmarks cover
-have markers named `<Type>.<Step>`. A per-entity job opens and closes its marker in `IJobEntityChunkBeginEnd`, once a
-chunk; heavier per-item work uses `ProfilerMarker.Auto()`.
-
-## Command line
-
-Close the project in the editor, then run:
-
-```sh
-Unity -batchmode -projectPath <project> -runTests -testPlatform EditMode -testResults results.xml
-```
+`CombatBenchmarkTests`), built on the Performance Testing package. `BenchmarkKit.Median` wraps `Measure.Method` with a
+warm-up, 20 measured runs, untimed prepare and finish steps and the profiler markers to record. Each test keeps one
+coarse assert at twice its budget, so a regression fails. Covered systems have markers named `<Type>.<Step>`; a
+per-entity job opens its marker in `IJobEntityChunkBeginEnd`, heavier work uses `ProfilerMarker.Auto()`.
 
 ## Not covered yet
 

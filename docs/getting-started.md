@@ -8,9 +8,9 @@ are slots on the `Match` component, and an entity's **Owner** is a slot number: 
 
 ## 1. Create the scene
 
-Open **HyperRTS ▸ Map Editor** and click **New blank scene...** in the gallery and pick the map size and player count. You get the `EngineRig`
-camera and HUD rig, a ground plane, a light, a `MatchState` for multiplayer and a SubScene holding the `Match`.
-Tick the SubScene's checkbox to edit it.
+Open **HyperRTS ▸ Map Editor**, click **New blank scene...** in the gallery and pick the map size and player count. You
+get the `EngineRig` camera and HUD rig, a ground plane, a light, a `MatchState` and a SubScene holding the `Match`. Tick
+the SubScene's checkbox to edit it.
 
 ## 2. Define resources
 
@@ -52,7 +52,7 @@ Run **HyperRTS ▸ Tools ▸ Validate** to list setup problems. Most have a one-
 ## 6. Players and AI
 
 Set each slot's **Control** to `LocalHuman`, `AI` or `Remote`. An AI slot picks a **Difficulty** and can follow an
-**AI Build Order** asset. AI players need the map's bot hints, which the [map builder](maps.md) writes. Without them
+**AI Build Order** asset. AI players need the map's bot hints, which the [map builder](maps/README.md) writes. Without them
 they stay idle.
 
 A player is defeated after losing every entity flagged **Counts For Victory**.
@@ -80,5 +80,5 @@ a queued item to cancel it for a refund.
 ## Next
 
 - Game code on top of the engine: [extending](extending.md).
-- Every component and system: [modules](modules.md).
+- Every component and system: [modules](simulation/README.md).
 - Multiplayer: [networking](networking.md).

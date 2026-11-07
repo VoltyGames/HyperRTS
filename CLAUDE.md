@@ -12,7 +12,7 @@ sample game.
 Assemblies layer so the simulation runs headless: `Network` and `Presentation` build on `Simulation`, `Input` on
 `Presentation`, Editor and tests on top. `HyperRTS.Simulation` never references Graphics, InputSystem or
 UIElements, and a headless server never runs `Presentation/`. See [architecture](docs/architecture.md) and
-[modules](docs/modules.md).
+[modules](docs/simulation/README.md).
 
 ## Gameplay contract
 
@@ -26,14 +26,14 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 ## Conventions
 
 - Namespaces follow folders: `HyperRTS.<Layer>.<Module>`.
-- Simulation modules sit in [tiers](docs/modules.md#tiers): Base, Foundation, Gameplay, Orchestration. A module uses
+- Simulation modules sit in [tiers](docs/simulation/README.md#tiers): Base, Foundation, Gameplay, Orchestration. A module uses
   its own tier or lower ones, a tier never forms a cycle, and a shared component goes in `Common` or the lower
   module. Authoring files may reference any module. `ModuleLayoutTests` enforces this; add a new module to `Tiers`.
 - Authoring classes, game ones too, derive from `AuthoringBehaviour`. One `*Authoring.cs` holds the class and its
   nested `Baker`; runtime components get their own files, which `ModuleLayoutTests` also checks. Each authoring
   class carries `[AddComponentMenu]`, `[Icon]`, `[HelpURL]`,
   `[DisallowMultipleComponent]` and a `[Tooltip]` per field, with paths from `HyperRTSMenu`, `HyperRTSIcons` and
-  `HyperRTSDocs` ([editor](docs/editor.md)).
+  `HyperRTSDocs` ([editor](docs/editor/README.md)).
 - Bakers write through `this.Writer()` (an `EntityWriter` on the baked entity), with a static `Add…` on the
   authoring class or a shared `*Setup` taking `EntityWriter`, so tests build the same entities.
 - Component fields are PascalCase, authoring fields camelCase. Acronyms are all caps (`RTS`, `HUD`, `UI`, `AI`); USS
@@ -112,7 +112,9 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 
 ## Docs
 
-[Getting started](docs/getting-started.md), [architecture](docs/architecture.md), [modules](docs/modules.md),
-[extending](docs/extending.md), [networking](docs/networking.md), [editor](docs/editor.md), [maps](docs/maps.md)
-(code in [map tools](docs/modules/map-tools.md)) and [testing](docs/testing.md). Check the [roadmap](docs/roadmap.md)
-before starting new work.
+The [docs index](docs/README.md) lists every page: guides, then `simulation/`, `presentation/`, `editor/` and `maps/`,
+matching the layers. Check the [roadmap](docs/roadmap.md) before starting new work.
+
+A doc says what the code can't: purpose, how the parts fit, how to extend, gotchas. Field meanings go in tooltips
+and tuned values stay in the data. When a system changes, rewrite its section for the system as it is now and delete
+what it replaced; never append a note. Pages stay under 2500 words, with no em or en dashes or arrow glyphs.

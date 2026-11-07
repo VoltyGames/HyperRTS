@@ -8,19 +8,17 @@ prefabs. The simulation runs headless for tests and dedicated servers.
 
 | Area | Included |
 | --- | --- |
-| Control | Click, box and double-click selection, control groups, smart right-click, queued orders, attack-move, patrol, escort |
-| Movement | Grid A* pathfinding, formations, terrain height, ground, naval, amphibious and air units, bridges |
-| Economy | Any number of resources, harvesters, finite or regrowing nodes, power |
-| Bases | Building placement and construction, production and research queues, rally points, prerequisites, population, repair, sell |
-| Combat | Auto-targeting, stances, instant and projectile weapons, splash, damage types, directional armour, ammo, veterancy |
-| Mechanics | Upgrades, auras, abilities and player powers, capture, garrisons, transports, aircraft, stealth and detection |
+| Control | Selection, control groups, smart right-click, queued orders, attack-move, patrol, escort |
+| Movement | Grid pathfinding, formations, ground, naval, amphibious and air units, bridges |
+| Economy and bases | Any number of resources, harvesters, power, construction, production and research queues, prerequisites |
+| Combat | Auto-targeting, stances, projectile and instant weapons, splash, damage types, directional armour, veterancy |
+| Mechanics | Upgrades, auras, abilities, capture, garrisons, transports, stealth and detection |
 | Vision | Per-team fog of war with terrain line of sight |
-| Players | Teams, colours, human, AI and remote slots, victory and defeat, skirmish AI with build orders and difficulties |
-| Multiplayer | Server-authoritative: host, dedicated server, relay, join and rejoin, per-client fog of war |
-| Presentation | UI Toolkit HUD, team colour shader, unit silhouettes through cover, fog rendering, water and foliage shaders, pooled audio |
-| Replays | Recording, playback, seek |
-| Maps | JSON map specs built into terrain, roads, rivers and scenes, symmetric by sector, with bot hints and a balance report |
-| Editor | Tools window, Map Editor with live preview, unit templates, validator with quick fixes, Play-mode cheats and debug overlay |
+| Players | Teams, human, AI and remote slots, victory and defeat, skirmish AI with build orders and difficulties |
+| Multiplayer | Server-authoritative: host, dedicated server, relay, rejoin, per-client fog of war |
+| Presentation | UI Toolkit HUD, team colours, fog rendering, bone-animated infantry, pooled audio, replays |
+| Maps | JSON map specs built into terrain, roads, rivers and scenes, with a balance report |
+| Editor | Tools window, Map Editor, validator with quick fixes, Play-mode cheats and debug overlay |
 
 ## Try it
 
@@ -30,7 +28,7 @@ start in the south-west base against an AI in the north-east. Controls are in
 
 ## Use it in a game
 
-Add this repo as a git submodule, for example at `HyperRTS/` in the game's root. Then reference the package from
+Add this repo as a git submodule, for example at `HyperRTS/`, and reference the package from
 `Packages/manifest.json`:
 
 ```json
@@ -41,18 +39,8 @@ Then follow [getting started](docs/getting-started.md).
 
 ## Docs
 
-| Doc | For |
-| --- | --- |
-| [Getting started](docs/getting-started.md) | A first playable skirmish in the editor, no code |
-| [Architecture](docs/architecture.md) | Assemblies, worlds, frame order, the gameplay contract |
-| [Modules](docs/modules.md) | Components and systems of every module |
-| [Extending](docs/extending.md) | Writing game code: mechanics, HUD, AI, front end |
-| [Networking](docs/networking.md) | Sessions, join, replication, relay, dedicated server |
-| [Editor](docs/editor.md) | Tools window, authoring conventions, validation, debug tools |
-| [Maps](docs/maps.md) | Map Editor, spec format, build pipeline, map library |
-| [Map tools](docs/modules/map-tools.md) | The map builder's code and extension points |
-| [Testing](docs/testing.md) | `TestWorld`, test kits, validation in CI |
-| [Roadmap](docs/roadmap.md) | Status and open work |
+The [docs index](docs/README.md) covers it all. Start with [getting started](docs/getting-started.md) and
+[architecture](docs/architecture.md); the [roadmap](docs/roadmap.md) has status and open work.
 
 ## Requirements
 

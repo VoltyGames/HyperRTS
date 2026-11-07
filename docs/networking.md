@@ -2,33 +2,19 @@
 
 HyperRTS multiplayer is server-authoritative Netcode for Entities. The server runs the simulation. Clients send
 commands and receive only the state their team can see. Single player keeps one local world and none of this runs.
-
-## Worlds
-
-| World | Runs | Created by |
-| --- | --- | --- |
-| Local | Everything, in single player | The default world |
-| Host | Server and client in one world, for a player-hosted match | `NetworkSession.StartHost` |
-| Server | Gameplay, AI, commands, relevancy | `NetworkSession.StartServer` |
-| Client | Selection, input, fog view, presentation, HUD | `NetworkSession.StartClient` |
-
-Systems run on the server and in single player by default, so a new gameplay system needs nothing. A system the
-client also needs opts in with `[WorldSystemFilter(SimulationWorlds.Presented)]`, or `SimulationWorlds.All` if the
-server needs it too. Systems under `PresentationSystemGroup` already run only in single player and on clients.
+For the worlds table and which systems run where, see [architecture](architecture.md#worlds).
 
 ## Host
 
-A host is one Netcode single-world host: it serves remote clients and is the local player's client, like the local
-world with networking on top. It holds every ghost, so its player sees state as single player does: presentation
-fog hides enemies, commands go straight onto the player entity and cues play from the world's own queue.
+A host is one Netcode single-world host: it serves remote clients and is the local player's client. It holds every
+ghost, so its player sees state as single player does: commands go straight onto the player entity and cues play from
+the world's own queue.
 
 - Its player's connection is Netcode's `LocalConnection`, which has no `NetworkStreamConnection`. `ServerJoinSystem`
   seats it from the world's `JoinPreference` and `JoinToken`, without a request.
-- Systems marked `[RemoteClientOnly]` mirror a remote server, so the host world leaves them out: command sending,
-  cue and scenery receiving, prefab reference resolving, late spawn effects, prediction toggling and the status
-  system.
+- Systems marked `[RemoteClientOnly]` mirror a remote server (command sending, cue and scenery receiving, prefab
+  reference resolving, prediction toggling), so the host world leaves them out.
 - Cue, scenery and fog relevancy senders only serve connections with a `NetworkStreamConnection`.
-- A host reads `Connected` once it listens, like a dedicated server.
 
 ## Starting a match
 
@@ -44,21 +30,18 @@ streams into it.
 | `StartLocal(scene)` | A fresh single-player world with the given scene |
 | `Stop()` | Back to single player |
 
-A start returns `false` when it can't begin, for example on a bad address or a port in use. The running worlds are
-then left untouched.
+A start returns `false` when it can't begin (a bad address, a port in use) and leaves the running worlds untouched.
 
-Each start takes an optional `SessionScene`:
+Each start takes an optional `SessionScene`: `ReloadActive` (the default, for a map played from its own scene),
+`Load(path)`, or `Keep`, which loads nothing so a lobby can connect while its menu stays up. Every peer then calls
+`LoadScene(path)` to stream the map in, and `SceneLoad` reports progress.
 
-- `ReloadActive` is the default, for a map played from its own scene.
-- `Load(path)` loads another scene.
-- `Keep` loads nothing. A lobby connects this way while its menu stays up. Every peer then calls `LoadScene(path)`
-  to stream the map in, and `SceneLoad` reports progress.
+Every peer sets the same `MatchSetupRequest` before the map loads to configure slots, teams, AI, resources, fog and
+weather. See [Match](simulation/core.md#match). In Play mode, start sessions from **HyperRTS ▸ Tools ▸ Play**.
 
-To configure slots, teams, colours, AI, resources, fog and weather, every peer sets the same `MatchSetupRequest`
-before the map loads. See [Match](modules/core.md#match).
-
-In Play mode, start sessions from **HyperRTS ▸ Tools ▸ Play**. Player builds use command-line flags. Relay needs
-runtime data from the game, so it has neither.
+`NetworkSession.Status` is `Idle`, `Connecting`, `Connected` or `Disconnected`. Poll it from a MonoBehaviour
+`Update`, outside any world update, so the reaction can stop the session. After a failure the status stays
+`Disconnected`, with Netcode's `DisconnectReason`, until the game calls `Stop()` or starts a new session.
 
 ## Command line and dedicated server
 
@@ -72,72 +55,46 @@ runtime data from the game, so it has neither.
 | `-observe` | Client only: join as an observer |
 | `-exit-on-end` | Server only: quit when the match ends |
 | `-time-limit <minutes>` | Server only: quit after this much server time |
-| `-report <path>` | Server only, with one of the two above: write a JSON report on quit |
+| `-report <path>` | Server only, with one of the two above: write a JSON cost report on quit |
 
-A bad flag or a failed start logs the reason and quits with exit code 1. A typical dedicated server:
+A bad flag or a failed start logs the reason and exits with 1. A typical dedicated server:
 
 ```text
 -batchmode -nographics -server -scene <map> -exit-on-end -report <path>
 ```
 
-It exits with 0 when the match ends and 2 on the time limit. In batch mode the launcher turns vSync off and caps the
-frame rate at the 60 Hz simulation tick, so the process doesn't spin.
+It exits with 0 when the match ends and 2 on the time limit.
 
-Without a graphics device, presentation stays off. Every presentation and input MonoBehaviour derives from
-`PresentationBehaviour`, which disables itself in `Awake`. `HeadlessModeSystem` switches off the presentation group.
-A server or headless client only simulates and networks.
+Without a graphics device, presentation stays off: every presentation and input MonoBehaviour derives from
+`PresentationBehaviour`, which disables itself in `Awake`, and `HeadlessModeSystem` switches off the presentation
+group. A server with nobody connected never starts its match, because Netcode enables prespawned ghosts only once the
+first client is in game. A cost run needs at least one observer.
 
-A server with nobody connected never starts its match. The match state is a prespawned ghost, and Netcode enables
-prespawns only once the first client is in game. A cost run therefore needs at least one observer.
-
-## Server cost
-
-`ServerMonitor` watches a server started with `-exit-on-end` or `-time-limit`. From match start it samples once a
-second:
-
-- CPU time per wall second, where 100 % is one busy core
-- process memory and Unity's total used memory
-- connections and entities in the server world
-- kilobits per second sent
-
-The `-report` JSON holds the mean, p95 and max of each sample, plus the outcome, server and match minutes, the
-winning team, each player's `PlayerStats` and the number of errors logged.
+`ServerMonitor` watches a server started with `-exit-on-end` or `-time-limit`. Each second from match start it
+samples CPU, memory, connections, entities and kbps sent. The `-report` JSON holds the mean, p95 and max of each,
+plus the outcome, durations, winning team, each player's `PlayerStats` and the logged error count.
 
 ## Relay
 
 Player-hosted matches behind NAT connect through a relay. The engine takes a Unity Transport `RelayServerData` and
-depends on no service. The game gets the allocation from Unity Relay, Steam or its own backend and shares the join
-code through its lobby.
+depends on no service: the game gets the allocation from its provider and shares the join code through its lobby.
 
 ```csharp
-// Host: create an allocation, publish its join code.
 NetworkSession.StartRelayHost(allocation.ToRelayServerData("dtls"));
-// Client: join an allocation with that code.
 NetworkSession.StartRelayClient(joinAllocation.ToRelayServerData("dtls"));
 ```
 
-The host's own player is part of the host world, so it never pays the relay round trip. A relay other than Unity Relay,
-such as Steam Networking Sockets, plugs in as its own `INetworkStreamDriverConstructor`. Keep it in the game: the
-engine ships no third-party SDK.
-
-## Connection status
-
-`NetworkSession.Status` is `Idle`, `Connecting`, `Connected` or `Disconnected`. Poll it from a MonoBehaviour
-`Update`, outside any world update, so the reaction can stop the session. A dedicated server is `Connected` once it
-listens.
-
-After a failure or close the status stays `Disconnected`, with Netcode's `DisconnectReason`, until the game calls
-`Stop()` or starts a new session. The UI can then show why the connection ended.
+The host's own player is in the host world, so it never pays the relay round trip. Another relay, such as Steam
+Networking Sockets, plugs in as its own `INetworkStreamDriverConstructor` kept in the game: the engine ships no
+third-party SDK.
 
 ## Match start
 
-The server holds a networked match until every human slot has a connection, so the AI and the fastest loaders get
-no head start. While it waits, the order phase runs so player ghosts spawn and joins complete. Movement, combat,
-production and the AI wait, and every player command is dropped.
-
-After the Match's **Join Timeout**, 60 s by default, it starts anyway. A match of only AI starts as soon as its
-player ghosts spawn. Starting sets `MatchState.Started`, which client loading screens wait for. Single player never
-holds.
+The server holds a networked match until every human slot has a connection, so the AI and the fastest loaders get no
+head start. While it waits, player ghosts spawn and joins complete, but movement, combat, production and the AI wait
+and player commands are dropped. After the Match's **Join Timeout** (60 s by default) it starts anyway. An AI-only
+match starts as soon as its player ghosts spawn. Starting sets `MatchState.Started`, which client loading screens
+wait for. Single player never holds.
 
 ## Join and reconnect
 
@@ -145,21 +102,19 @@ holds.
 2. The server picks a slot: the one this token owns, else the preferred slot if never claimed, else the first
    never-claimed human slot. With none left, or if the client asked to observe, it joins as an observer. Observers
    have owner 0 and see everything.
-3. The server sets the slot's player ghost's `GhostOwner` to the connection, and Netcode enables
-   `GhostOwnerIsLocal` on that client, which tags the ghost `LocalPlayer`, so input and HUD work unchanged. An
-   observer owns no ghost, so the server answers it with `ObserverAccepted` and the client makes a `LocalObserver`.
+3. The server sets the slot's player ghost's `GhostOwner` to the connection, and Netcode tags the ghost
+   `LocalPlayer` on that client, so input and HUD work unchanged. An observer owns no ghost: the server answers with
+   `ObserverAccepted` and the client makes a `LocalObserver`.
 
-A connection only carries RPCs until it joins: the client adds `NetworkStreamInGame` as it sends its request and
-the server as it seats it. The global `NetcodeConfig` asset therefore needs **Automatic State Replication** off, and
-`NetworkSession` throws when it is on.
+A connection only carries RPCs until it joins. The global `NetcodeConfig` asset therefore needs **Automatic State
+Replication** off, and `NetworkSession` throws when it is on.
 
-**Identity.** `NetworkSession.Token` is a random number made once per process. The server stores it with the slot
-the client claims. When the connection drops, the slot keeps the token and waits for its owner, with its units idle.
-Strangers only take slots nobody has claimed. If the owner returns before the old connection times out, the new
-connection takes over and the stale one is closed.
+**Identity.** `NetworkSession.Token` is a random number made once per process, stored with the slot the client
+claims. When the connection drops, the slot keeps the token and waits for its owner, with its units idle. If the
+owner returns before the old connection times out, the new one takes over and the stale one is closed.
 
-**Rejoin.** `NetworkSession.Rejoin(scene)` reconnects to the last `StartClient` endpoint. `CanRejoin` says whether
-there is one. The client asks for the slot it held before, and an observer stays an observer. Pass the map with
+**Rejoin.** `NetworkSession.Rejoin(scene)` reconnects to the last `StartClient` endpoint (`CanRejoin` says whether
+there is one), asking for the slot held before; an observer stays an observer. Pass the map with
 `SessionScene.Load`, because a SubScene only streams into worlds that exist when it loads. A relay session rejoins
 through a new allocation and `StartRelayClient`.
 
@@ -167,88 +122,71 @@ through a new allocation and `StartRelayClient`.
 
 - **Ghosts.** Units, buildings, resource nodes and projectiles need a `GhostAuthoringComponent` on the prefab root.
   The templates add it, and **HyperRTS ▸ Tools ▸ Validate** offers a *Make Ghost* fix.
-- **Match.** The Match object stays a plain scene object. Its replicated state lives on the `MatchState` ghost
-  prefab, which the scene wizard places in every map. The players it bakes become ghosts at runtime, one per slot.
-- **Map buildings.** Neutral buildings, capture points and resource stacks placed in the map are prespawned ghosts.
-  Give them Static optimization so they send only when they change. Their ruins are ghosts the server spawns.
-- **Scenery.** Trees, fences, bridges and wrecks are not ghosts. The server sends each change as a scenery id and a
-  state byte, and every client spawns the remains itself. A fall the client saw tips over. One found later
-  shows already lying down. Remains carry their scenery's id, so a change with `Cleared` set removes the piece, or
-  its remains once destroyed, with nothing left behind, as a building site does. A sectioned piece also sends its
-  broken mask (`SectionedBuilding.Broken`), 19 bytes a change and 64 changes an RPC, and a team hears of a new mask, like a
-  new state, only once it sees the spot. Rubble from broken walls is scenery each world places itself, with an id
-  from its spot. A sectioned building that is a ghost sends the mask as a ghost field instead.
-- **Late sight.** A ghost first seen more than a second after it spawned skips its spawn effect, so only witnessed
-  collapses throw dust.
 - **Fields.** Components the client reads carry `[GhostField]`, and enableable ones `[GhostEnabledBit]`. Static data
   comes from the client's own copy of the prefab.
+- **Match.** The Match object stays a plain scene object. Its replicated state lives on the `MatchState` ghost
+  prefab, which the scene wizard places in every map. The players it bakes become ghosts at runtime, one per slot.
+- **Map buildings.** Neutral buildings, capture points and resource stacks placed in the map are prespawned ghosts
+  with Static optimization, so they send only when they change.
+- **Scenery.** Trees, fences, bridges and wrecks are not ghosts. The server sends each change as a scenery id and a
+  state byte (plus the broken mask of a sectioned piece), and every client spawns the remains itself. A fall the
+  client saw tips over; one found later shows already lying down. A team hears of a change only once it sees the
+  spot.
+- **Late sight.** A ghost first seen more than a second after it spawned skips its spawn effect.
 - **Prefab references.** Prefabs can't cross the wire, so buffers that name one also carry its type id, and the
-  client looks the prefab up in the `PrefabRegistry`. A game buffer does the same by implementing
-  `IPrefabReference` and resolving in its own client system with `PrefabReferences.Resolve<T>`.
-
-A new component the HUD or overlays read needs `[GhostField]` on the fields that change.
+  client looks it up in the `PrefabRegistry`. A game buffer does the same by implementing `IPrefabReference` and
+  resolving with `PrefabReferences.Resolve<T>` in its own client system.
 
 ## Bandwidth
 
-The server ticks at 60 Hz and sends snapshots at `NetworkSession.SnapshotRate`, 20 Hz. Netcode fills each snapshot
-up to about 1.4 KB and sends the longest-waiting ghosts first. A full snapshot makes updates older, not bigger.
+The server ticks at 60 Hz and sends snapshots at `NetworkSession.SnapshotRate`, 20 Hz. Netcode fills each snapshot to
+about 1.4 KB and sends the longest-waiting ghosts first, so a full snapshot makes updates older, not bigger.
 
-Measured on a 400 m map, a server and a client world in the Editor, with 500 tanks from the Play page's **Armies** cheat:
+Measured with 500 tanks from the Play page's **Armies** cheat on a 400 m map:
 
 | Case | Snapshot rate | Client receives | Unit update age |
 | --- | --- | --- | --- |
 | 500 tanks marching, fog on, ~340 visible | 60 Hz | 600 to 780 kbps | 6 ticks max |
-| 640 units visible, fog off | 60 Hz | 690 to 750 kbps, capped | 9 ticks max |
 | 650 units visible, fog off | 20 Hz | ~240 kbps | 13 ticks max |
 | 1,060 units visible, fog off | 20 Hz | ~230 kbps, capped | 28 ticks max, ~470 ms |
-| 500 tanks in combat, fog on or off | 20 Hz | peak 316 kbps | 18 ticks max |
+| 500 tanks in combat | 20 Hz | peak 316 kbps | 18 ticks max |
 
-At 20 Hz a client needs about 0.3 Mbps in a large battle, so a player hosting a 4v4 uploads about 2.2 Mbps. Combat
-adds about 80 kbps of cues on top of the capped snapshots. Commands no longer carry their units: a group goes once
-as a selection, about 8 bytes a unit, and every command after it is a few dozen bytes.
-
-Fog relevancy runs as a parallel Burst job over ghosts and viewing connections every tick, under the profiler marker
-`FogRelevancySystem.Hide`.
+A client needs about 0.3 Mbps in a large battle, so a player hosting a 4v4 uploads about 2.2 Mbps. Fog relevancy runs
+as a parallel Burst job every tick, under the profiler marker `FogRelevancySystem.Hide`.
 
 ## Commands
 
-Clients never run a `PlayerCommand`. They send it to the server as a `CommandRpc` with its target and, for a single
-unit or producer, that unit. A command for a group addresses the selection the client sent before it:
+Clients never run a `PlayerCommand`. They send it as a `CommandRpc` with its target and, for a single unit or
+producer, that unit. A command for a group addresses the selection the client sent before it:
 
 - `CommandSendSystem` sends the group as `SelectionRpc`s only when it differs from the last one sent, 127 units an
-  RPC: the first replaces the server's copy, the rest append, so any number of units fits.
-- The server keeps each remote player's selection in its `PlayerSelection` buffer, with only the units it owns, and
-  lists it as the command's group. A seat taken by a new connection starts with an empty selection.
-- Netcode serializes each RPC type in its own system, so a command waits one tick behind a new selection, and each
-  carries the selection's version for the server to match them in the same tick.
+  RPC: the first replaces the server's copy, the rest append.
+- The server keeps each remote player's selection in its `PlayerSelection` buffer, with only the units it owns. A
+  seat taken by a new connection starts empty.
+- Each RPC type serializes in its own system, so a command waits one tick behind a new selection. Each carries the
+  selection's version so the server can match them.
 
 A unit that despawned meanwhile arrives as `Entity.Null`, never as a different unit. The server writes commands to
-the sender's player entity in arrival order. Cost, prerequisites and cooldowns are checked by the same systems as in
-single player.
+the sender's player entity in arrival order, and cost, prerequisites and cooldowns are checked by the same systems as
+in single player.
 
-Receivers take RPCs through `RpcInbox<T>`, which destroys their request entities, and senders queue them with
-`Rpc.Send`; `Entity.Null` there means every remote connection.
+Receivers take RPCs through `RpcInbox<T>`, which destroys their request entities. Senders queue them with
+`Rpc.Send`; `Entity.Null` means every remote connection. All RPCs share Netcode's one reliable ordered pipeline,
+since Netcode 7.2 generates no serializer for out-of-band RPCs.
 
-Every RPC rides Netcode's one reliable ordered pipeline. Its out-of-band pipeline would keep cues and scenery from
-delaying commands, but Netcode 7.2's source generator makes no serializer for an `IOutOfBandRpcCommand`, so it waits
-for a version that does.
-
-## Fog of war
+## Fog of war and cues
 
 Each client receives only the owned ghosts its team can see, so a map hack has nothing to reveal. Undetected
-stealthed enemies count as unseen, even with fog off. Ghosts without a `Owner`, such as players and the match,
-always replicate. Observers see everything. A client remembers enemy buildings where it last saw them, so a ghost
-leaving relevancy doesn't vanish from its map.
+stealthed enemies count as unseen, even with fog off. Ghosts without an `Owner`, such as players and the match,
+always replicate. Observers see everything. A client remembers enemy buildings where it last saw them.
 
-## Cues
-
-The server never plays sounds or effects. Every transient event, such as a shot, impact, death or voice line, is a
-`CueEvent`. The server sends each client the cues its team may see, under the same fog and stealth rule, packed at
-18 bytes each. The client plays them exactly as single player does.
+The server never plays sounds or effects. Every transient event (shot, impact, death, voice line) is a `CueEvent`,
+sent to each client under the same fog and stealth rule at 18 bytes each. The client plays them as single player
+does.
 
 ## Limits
 
-- No client-side prediction: a command shows after a round trip, as in most server-based RTS games.
+- No client-side prediction: a command shows after a round trip.
 - No host migration: if the host leaves, the match ends.
 - No automatic reconnect: after `Disconnected` the game calls `Rejoin`, `StartRelayClient` or `Stop()`.
 - The token lives as long as the process. A client that restarts gets a new one and rejoins as an observer.

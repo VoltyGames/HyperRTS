@@ -1,10 +1,10 @@
-# Modules
+# Simulation
 
-The engine's gameplay is split into modules, each owning a set of components and the systems that run them. This
-page shows how they fit together. Each group of modules has its own page. For assemblies, worlds and frame order see
-[architecture](architecture.md).
+[Docs](../README.md) ▸ Simulation
 
-Simulation modules live in `Simulation/<Module>/`. Input and presentation run on clients only.
+The engine's gameplay is split into modules in `Simulation/<Module>/`, each owning a set of components and the systems
+that run them. They run on the server and in single player, headless too. This page shows how they fit together; each
+group of modules has its own page. For assemblies, worlds and frame order see [architecture](../architecture.md).
 
 A player's intent flows through the modules in four steps:
 
@@ -29,10 +29,11 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 
 | Page | Modules |
 | --- | --- |
-| [Core](modules/core.md) | Common, GameEntities, MatchStart, Match, Orders, Commands, Selection |
-| [Movement](modules/movement.md) | Navigation, Movement, Air, Transport |
-| [Combat](modules/combat.md) | Combat, Death, Squads, Destruction, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
-| [Economy](modules/economy.md) | Resources, Buildings, Power, Production, Capture, Airdrops |
-| [Support](modules/support.md) | AI, Cues, Replays, Strikes |
-| [Client](modules/client.md) | Interaction, Input, Presentation |
-| [Map tools](modules/map-tools.md) | The map builder, Map Editor and map library |
+| [Core](core.md) | Common, Stats, GameEntities, MatchStart, Match, Orders, Commands, Selection |
+| [Movement](movement.md) | Navigation, Movement, Air, Transport |
+| [Driving](driving.md) | Locomotion, Chassis, Drive planner |
+| [Combat](combat.md) | Combat, Destruction, Stats, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
+| [Weapons](weapons.md) | Trajectories, Salvos, Ammo, Aim, Deploying, Interception, Remains |
+| [Squads](squads.md) | Squads, Suppression, Retreat, Reinforce, Cover |
+| [Economy](economy.md) | Resources, Buildings, Power, Production, Capture, Airdrops |
+| [Support](support.md) | AI, Cues (audio and effects), Replays, Strikes |

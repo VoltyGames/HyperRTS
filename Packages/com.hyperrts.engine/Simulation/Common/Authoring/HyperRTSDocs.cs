@@ -1,40 +1,41 @@
 namespace HyperRTS.Simulation.Common.Authoring
 {
-    /// <summary>Doc URLs for <c>[HelpURL]</c>; the module constants point at their section of a modules page.</summary>
+    /// <summary>Doc URLs for <c>[HelpURL]</c>; each module constant points at its section of a simulation or presentation page.</summary>
     public static class HyperRTSDocs
     {
         public const string Index = "https://github.com/VoltyGames/HyperRTS/tree/main/docs";
         public const string Root = "https://github.com/VoltyGames/HyperRTS/blob/main/docs/";
         public const string GettingStarted = Root + "getting-started.md";
-        private const string Pages = Root + "modules/";
+        private const string SimulationPages = Root + "simulation/";
+        private const string PresentationPages = Root + "presentation/";
         public const string Networking = Root + "networking.md";
 
-        public const string Abilities = Pages + "combat.md#abilities";
-        public const string AI = Pages + "support.md#ai";
-        public const string Air = Pages + "movement.md#air";
-        public const string Airdrops = Pages + "economy.md#airdrops";
-        public const string Animation = Pages + "support.md#animation";
-        public const string Audio = Pages + "support.md#audio";
-        public const string Auras = Pages + "combat.md#auras";
-        public const string Buildings = Pages + "economy.md#buildings";
-        public const string Capture = Pages + "economy.md#capture";
-        public const string Combat = Pages + "combat.md#combat";
-        public const string Destruction = Pages + "combat.md#destruction";
-        public const string Docks = Pages + "economy.md#docks";
-        public const string Effects = Pages + "support.md#effects";
-        public const string Input = Pages + "client.md#input";
-        public const string Match = Pages + "core.md#match";
-        public const string Movement = Pages + "movement.md#movement";
-        public const string Navigation = Pages + "movement.md#navigation";
-        public const string Presentation = Pages + "client.md#presentation";
-        public const string Production = Pages + "economy.md#production";
-        public const string Resources = Pages + "economy.md#resources";
-        public const string Selection = Pages + "core.md#selection";
-        public const string Status = Pages + "combat.md#status-effects";
-        public const string StrategicAssets = Pages + "support.md#strategic-assets";
-        public const string Transport = Pages + "movement.md#transport";
-        public const string Upgrades = Pages + "combat.md#upgrades";
-        public const string Veterancy = Pages + "combat.md#veterancy";
-        public const string Vision = Pages + "combat.md#vision";
+        public const string Abilities = SimulationPages + "combat.md#abilities";
+        public const string AI = SimulationPages + "support.md#ai";
+        public const string Air = SimulationPages + "movement.md#air";
+        public const string Airdrops = SimulationPages + "economy.md#airdrops";
+        public const string Animation = PresentationPages + "animation.md#animation";
+        public const string Audio = SimulationPages + "support.md#audio";
+        public const string Auras = SimulationPages + "combat.md#auras";
+        public const string Buildings = SimulationPages + "economy.md#buildings";
+        public const string Capture = SimulationPages + "economy.md#capture";
+        public const string Combat = SimulationPages + "combat.md#combat";
+        public const string Destruction = SimulationPages + "combat.md#destruction";
+        public const string Docks = SimulationPages + "economy.md#docks";
+        public const string Effects = PresentationPages + "effects.md#effects";
+        public const string Input = PresentationPages + "README.md#input";
+        public const string Match = SimulationPages + "core.md#match";
+        public const string Movement = SimulationPages + "movement.md#movement";
+        public const string Navigation = SimulationPages + "movement.md#navigation";
+        public const string Presentation = PresentationPages + "README.md#presentation";
+        public const string Production = SimulationPages + "economy.md#production";
+        public const string Resources = SimulationPages + "economy.md#resources";
+        public const string Selection = SimulationPages + "core.md#selection";
+        public const string Status = SimulationPages + "combat.md#status-effects";
+        public const string StrategicAssets = SimulationPages + "support.md#strategic-assets";
+        public const string Transport = SimulationPages + "movement.md#transport";
+        public const string Upgrades = SimulationPages + "combat.md#upgrades";
+        public const string Veterancy = SimulationPages + "combat.md#veterancy";
+        public const string Vision = SimulationPages + "combat.md#vision";
     }
 }

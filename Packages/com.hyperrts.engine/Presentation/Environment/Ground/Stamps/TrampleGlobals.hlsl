@@ -1,4 +1,4 @@
-// The trample map globals TrampleSurfaces publishes. Channel layout: docs/modules/client.md, Trample maps.
+// The trample map globals TrampleSurfaces publishes. Channel layout: docs/presentation/environment.md, Trample maps.
 #ifndef HYPERRTS_INTERACTION_GLOBALS_INCLUDED
 #define HYPERRTS_INTERACTION_GLOBALS_INCLUDED
 

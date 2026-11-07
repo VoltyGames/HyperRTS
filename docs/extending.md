@@ -13,7 +13,8 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
   `[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`.
 - A component the client reads needs `[GhostField]` on the fields that change.
 - Authoring classes derive from `AuthoringBehaviour` to get the engine inspector and validation.
-- Bakers add components through `this.Writer()`, an `EntityWriter` that a static `Add...` on the authoring class takes, so tests build the same entity with `new EntityWriter(entityManager, entity)`.
+- Bakers add components through `this.Writer()`, an `EntityWriter` that a static `Add...` on the authoring class
+  takes, so tests build the same entity with `new EntityWriter(entityManager, entity)`.
 
 ## Mechanics
 
@@ -21,42 +22,39 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 | --- | --- |
 | A new behaviour | A component, its authoring and a Burst `ISystem` |
 | A new command | A `CommandType` from `GameFirst` (128) up, read with a `CommandReader` in `OrderSystemGroup` |
+| A new order | See [a new order](#a-new-order) |
+| A new stat | See [a new stat](#a-new-stat) |
 | Custom right-click | Add a `SmartOrderRule` to the unit in its baker |
 | React to production or capture | Read `GameEvents` after `ProductionSystemGroup` |
-| Change an owner | `OwnerChanged.Transfer` |
 | React to deaths | Query `Dead` entities after `DeathSystem`. `LastAttacker` names the killer |
+| Change an owner | `OwnerChanged.Transfer` |
 | Damage or heal | `EventWriter<DamageEvent>`, built with a `DamageProfile`'s `Hit` or `DamageEvent.Direct`. A negative amount heals |
-| A weapon | `WeaponAuthoring`: `stats` is the primary, `extraWeapons` more. Code reads them as the `WeaponMount` buffer, primary first |
-| A new projectile kind | A `ProjectileKind` flag from `GameFirst` (16) up, set on the weapon's `projectileKind` and listed in an interceptor weapon's `interceptKinds` |
-| Custom ability effects | Read `AbilityActivation` after `AbilitySystem` |
-| Aura effects | Read the entity's `AuraPresence` |
+| A weapon | `WeaponAuthoring`: `stats` is the primary, `extraWeapons` more. Code reads the `WeaponMount` buffer, primary first |
+| A new projectile kind | A `ProjectileKind` flag from `GameFirst` (16) up, set on the weapon and listed in an interceptor's `interceptKinds` |
+| Ability or aura effects | Read `AbilityActivation` after `AbilitySystem`, or the entity's `AuraPresence` |
 | Disable an entity | Set a bit from `OfflineReason.Custom` up in `Offline.Reasons`. Units need `Offline` baked, disabled |
 | Change a stat | Add a `StatModifier`. On the player entity it changes player-wide stats such as income |
-| A new stat | See [a new stat](#a-new-stat) |
 | A sound or effect | `CueWriter.Play` before the lifecycle phase ends |
 | Spawn from code | `ecb.Instantiate`. `PrefabRegistry` finds prefabs by `TypeId` |
 
 ### A new order
 
-1. Pick an `OrderType` value from `GameFirst` (128) up in your own code. The engine never defines one there.
+1. Pick an `OrderType` from `GameFirst` (128) up in your own code.
 2. Register its traits once from a system update with `OrderTraitTable.Register`: `EngagesWhileMoving`,
-   `AttackMove`, `Formation`, `MovesToPosition` (the move order runs it) or `Loops`. `OrderWriter.Issue` rejects
-   a game type with none registered.
-3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, handing it a `MoveControl` built
-   from the job's `MoveDestination` and `Arrival`, or set `MoveDestination` directly.
+   `AttackMove`, `Formation`, `MovesToPosition` or `Loops`. `OrderWriter.Issue` rejects a game type with none.
+3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, or set `MoveDestination` directly.
 4. Disable `ActiveOrder` when the order is done.
 
 ### A new stat
 
-1. Pick a `Stat` value from `GameFirst` (128) up in your own code, such as `const Stat Jamming = (Stat)128`.
-2. Mark the float field it drives with `[StatField(Jamming)]` on your component. The component must sit on a unit or
-   building when it spawns: `StatBaseSystem` records the field as the base then, and `StatSystem` rewrites it whenever
-   the entity's modifiers change. One field per stat; a second, or a field that is not a float, throws on startup.
-3. Grant it like any stat: a `StatBonus` on an upgrade, veterancy rank, aura or status effect, or a `StatModifier`
-   from code.
+1. Pick a `Stat` from `GameFirst` (128) up, such as `const Stat Jamming = (Stat)128`.
+2. Mark the float field it drives with `[StatField(Jamming)]`. The component must be on a unit or building at spawn:
+   `StatBaseSystem` records the field as the base then, and `StatSystem` rewrites it when the entity's modifiers
+   change. One field per stat; a second, or a non-float field, throws on startup.
+3. Grant it with a `StatBonus` on an upgrade, veterancy rank, aura or status effect, or a `StatModifier` from code.
 
-A stat read at the moment of use instead of stored, like `Income` or `DamageTaken`, needs no field: evaluate it where
-it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
+A stat read at the moment of use, like `Income` or `DamageTaken`, needs no field: call
+`StatMath.Evaluate(modifiers, stat, baseValue)` where it is used.
 
 ## Mapping a Generals-style design
 
@@ -76,33 +74,15 @@ it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
 ## HUD
 
 - **Panels:** derive `HUDPanel` with a UXML shell beside it, subclass `HUDController` and add panels in
-  `CreatePanels`, into the slots the `PanelLayouts.Root` tree names such as `bottom`. Engine panels take
-  `PanelLayouts`. Put the subclass on your HUD prefab.
+  `CreatePanels`, into the slots the `PanelLayouts.Root` tree names such as `bottom`. Put the subclass on your HUD
+  prefab.
 - **Text:** subclass `HUDText` and set `HUDText.Current` before the HUD builds. Keys are listed in
-  [client](modules/client.md#presentation).
+  [client](presentation/README.md#presentation).
 - **Style:** `HUD.uss` holds layout and `HUDTheme.uss` the look, both read from custom properties declared on
-  `.hud-root`. Both are indexes that import one sheet per panel, beside its UXML (`Panels/SquadView.uss` and
-  `Panels/SquadViewTheme.uss`, for example). Assign your own sheet as `HUDController.themeSheet`: it imports the engine `HUDTheme.uss` and overrides
-  the properties it wants on `.hud-root`, plus any rule of its own.
-  - Layout, in `HUD.uss`: `--hud-inset` (edge gap of the top bar and bottom row), `--hud-panel-padding`,
-    `--hud-minimap-size`, `--hud-bottom-height` (command card height), `--hud-icon-size` (selected unit icon),
-    `--hud-slot-size` (queue slot), `--hud-group-size` (group tile), `--hud-resource-icon-size`, `--hud-resource-gap`.
-  - Text and lines: `--hud-text`, `--hud-text-muted`, `--hud-resource-amount` (resource amount colour), `--hud-line`
-    (panel border), `--hud-line-strong` (slot and tooltip border).
-  - Fills: `--hud-panel-bg`, `--hud-tooltip-bg`, `--hud-overlay-bg` (banner, countdowns, line cost, hint),
-    `--hud-badge-bg` (count and lock badges), `--hud-tile-bg` (icon tile shown while it has no picture).
-  - Corners: `--hud-radius` (panels, tooltip), `--hud-radius-small` (tiles, cards, slots), `--hud-radius-tiny` (bars,
-    badges).
-  - Command cards: `--hud-card-bg`, `--hud-card-bg-hover`, `--hud-card-bg-active`, `--hud-card-line`,
-    `--hud-card-line-hover`, `--hud-card-picture-bg` and `--hud-card-picture-bg-hover` (cards with a picture),
-    `--hud-card-active-line`, `--hud-card-active-bg`, `--hud-card-queued-line`, `--hud-card-queued-bg`.
-  - Signals: `--hud-warn` (low power, unpowered, ready countdown), `--hud-danger` (full storage, short cost, defeat).
-  - Bars: `--hud-bar-health`, `--hud-bar-build`, `--hud-bar-progress`; each `HUDBar` fill reads `--bar-fill`, so a
-    rule can set that on any bar.
-  - Drag box, declared on `.hud-drag-box` because it sits beside `.hud-root`: `--hud-drag-fill`, `--hud-drag-line`,
-    `--hud-drag-corner`.
-  - The font is not a property, since the engine sets none: set `-unity-font-definition` on `.hud-root` and on the
-    labels a game wants in another face.
+  `.hud-root` (`--hud-panel-bg`, `--hud-line`, `--hud-warn`, `--hud-card-bg` and so on). Each imports one sheet per
+  panel, beside its UXML. Assign your own sheet as `HUDController.themeSheet`: it imports the engine
+  `HUDTheme.uss`, overrides the properties it wants on `.hud-root` and adds rules of its own. The engine sets no
+  font, so set `-unity-font-definition` on `.hud-root` and on labels that want another face.
 - **Team colours:** write a `TeamColorOverride` singleton, for example for colour-blind palettes.
 
 ## AI
@@ -110,7 +90,7 @@ it is used with `StatMath.Evaluate(modifiers, stat, baseValue)`.
 `SkirmishAISystem` only writes `PlayerCommand`s. Tune it with difficulty presets on `Match` and `AIBuildOrder`
 assets. It needs the map's bot hints, which the map builder writes. To replace it, disable the system and write your
 own commands for players with `AIPlayer`. Put every AI system in `AISystemGroup`, so the join hold and replays pause
-it with the rest of gameplay through `GameplayPhaseGroup`.
+it with the rest of gameplay.
 
 ## Front-end integration
 
@@ -131,9 +111,7 @@ A game shell drives a match through these calls:
 
 ## Editor
 
-- Validation rules show up in the inspector, **HyperRTS ▸ Tools ▸ Validate** and the CI test. See
-  [validation](editor.md#validation) for the kinds.
+- Validation rules show up in the inspector, **HyperRTS ▸ Tools ▸ Validate** and the CI test; see
+  [validation](editor/README.md#validation).
 - Debug layers subclass `DebugLayer` or `CellTextureLayer`.
 - `SceneBuilder.Build` creates a scene from code.
-
-See [editor](editor.md).
