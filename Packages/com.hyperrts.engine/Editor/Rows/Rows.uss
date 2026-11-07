@@ -1,0 +1,35 @@
+/* Hierarchy row decorations: a severity dot and the entity's component icon on the right, the owner colour edge on the left. */
+
+.hrts-row-marks {
+  flex-direction: row;
+  align-items: center;
+}
+
+.hrts-row-marks__icon {
+  width: 16px;
+  height: 16px;
+  margin: 0 2px;
+}
+
+.hrts-row-marks__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  margin-right: 3px;
+}
+
+.hrts-row-marks__dot--error {
+  background-color: rgb(222, 64, 52);
+}
+
+.hrts-row-marks__dot--warning {
+  background-color: rgb(196, 136, 0);
+}
+
+.hrts-row-owner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}

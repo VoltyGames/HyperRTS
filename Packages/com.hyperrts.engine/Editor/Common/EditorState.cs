@@ -31,6 +31,12 @@ namespace HyperRTS.Editor.Common
 
         public bool mapAutoPreview = true;
 
+        /// <summary>Hierarchy rows of entity objects show their component icon, owner colour and issue dot.</summary>
+        public bool hierarchyRowIcons = true;
+
+        /// <summary>The Project grid shows a unit prefab's command card icon over its thumbnail.</summary>
+        public bool projectUnitIcons = true;
+
         /// <summary>Full type names of the debug layers switched on.</summary>
         public List<string> debugLayers = new();
 

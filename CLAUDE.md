@@ -52,7 +52,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 - Input System only, never `UnityEngine.Input`.
 - UI is UI Toolkit everywhere, in UXML beside its script (`MapGallery.uxml` beside `MapGallery.cs`). Code only looks
   elements up, wires them and builds rows from templates or Painter2D. No IMGUI; uGUI only where Animation Clips or
-  Timeline need it; Scene view `Handles` are the exception. Per-unit markers such as health bars are instanced meshes.
+  Timeline need it; Scene view `Handles` and the Project window row decorations (`Editor/Rows/ProjectRows`), which Unity offers
+  only in IMGUI, are the two exceptions. Per-unit markers such as health bars are instanced meshes.
 - Name a method after what it returns or does (`TierIndex`), never a bare `Of` or `XOf`.
 - No long `&&` or `||` chains: a block body with an early `return` per rule and named locals. One- or two-term `=>`
   bodies are fine.

@@ -218,6 +218,12 @@ controls are `Section` (a titled block, `title="Bot matches"`), `ValueList` (nam
 template such as `MapGalleryCard.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
 `HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
 
+Glyphs are [Lucide](https://lucide.dev) SVGs in `Editor/Icons/Glyphs/`, imported as vector images by
+`GlyphImportRules`: give an element the classes `hrts-glyph hrts-glyph--<name>` (from `Icons/Glyphs.uss`) and it takes
+the editor text colour. To add one, copy the icon from the `lucide-static` package's `icons/` folder to
+`Glyphs/<PascalName>.svg`, delete its licence comment and `class` attribute, set `stroke="#ffffff"` and add its class
+to `Glyphs.uss`.
+
 An effect recipe's `EffectRecipeInspector` adds **Build graph** and the graph's state above the layers.
 
 To edit a JSON file in an inspector or window, derive from `JsonDocument`: a hidden ScriptableObject that holds the
@@ -230,11 +236,23 @@ or `Record` for code; each finished edit saves, an undo saves the file back, and
 
 `EditorState`, a `ScriptableSingleton` saved in `UserSettings/HyperRTS.asset`, keeps every remembered
 editor setting, per user and project: the Tools window's last page, the Build page's last tab, Validate's **Selection only**, the Map Editor's
-auto preview, the debug layers switched on, the inspector header groups folded shut, the cheat amounts, the launcher choice, the soak test settings and the Effect Preview
+auto preview, the Hierarchy and Project row switches, the debug layers switched on, the inspector header groups folded shut, the cheat amounts, the launcher choice, the soak test settings and the Effect Preview
 controls. A layout binds its fields with `binding-path` and `EditorState.Bind(root)`, which saves each change;
 defaults, `[Min]` and `[Range]` live on the fields, never in the UXML. Code that sets a value calls `Save()`. Values
 that must reset each session stay in `SessionState`: the last validation's counts behind the Validate badge, the
 replay waiting for Play mode and the local package import stamp.
+
+## Hierarchy and Project rows
+
+`Editor/Rows/` decorates two built-in windows. The Hierarchy uses the Hierarchy window's UI Toolkit item events
+(`HierarchyWindow.BindViewItem` and `UnbindViewItem`, styled by `Rows.uss`): a row of an object with a
+`ProducibleAuthoring` shows that component's icon at the right edge, a 2 px edge in the owner's match colour (none for
+owner 0) and a red or amber dot when a component rule finds an error or warning on any of its authoring components. Row
+data is built on first bind and cleared on hierarchy change, undo and any object change, which decorates the bound rows
+again. The Project window offers only `projectWindowItemOnGUI`, so its decoration is the second exception to the
+no-IMGUI rule, after Scene view `Handles`: in the Project grid view, a prefab whose root `ProducibleAuthoring` has an
+`icon` shows it over the thumbnail with a small prefab badge; the list view is untouched. Preferences > HyperRTS has the
+two switches, **Hierarchy row icons** and **Project unit icons**.
 
 ## Effect preview
 
