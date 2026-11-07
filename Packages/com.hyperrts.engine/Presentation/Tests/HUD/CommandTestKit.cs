@@ -3,6 +3,7 @@ using System.Linq;
 using HyperRTS.Presentation.HUD.Commands;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Upgrades;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Object = UnityEngine.Object;
@@ -10,8 +11,9 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Presentation.Tests.HUD
 {
     /// <summary>Specs, catalogs and kits made in code for the command card tests; <see cref="Destroy"/> frees them.</summary>
-    internal static class CommandTestKit
+    internal static partial class CommandTestKit
     {
+        [AutoStaticsCleanup]
         private static readonly List<Object> Made = new();
 
         /// <summary>A kit with one prefab spec per name, in the first slots.</summary>

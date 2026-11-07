@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Unity.Entities;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Simulation.Stats
 {
@@ -20,6 +21,7 @@ namespace HyperRTS.Simulation.Stats
         public Stat Stat { get; }
 
         /// <summary>Every marked field, by component; component types are fixed once loaded, so they are scanned once.</summary>
+        [NoAutoStaticsCleanup]
         internal static readonly IReadOnlyList<(Type Component, FieldInfo Field, Stat Stat)> Marked = Scan();
 
         private static List<(Type, FieldInfo, Stat)> Scan()

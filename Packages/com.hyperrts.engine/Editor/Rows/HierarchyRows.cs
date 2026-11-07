@@ -9,6 +9,7 @@ using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Production;
 using Unity.Hierarchy;
 using Unity.Hierarchy.Editor;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -22,11 +23,15 @@ namespace HyperRTS.Editor.Rows
     /// </summary>
     internal static class HierarchyRows
     {
+        // The Hierarchy window and its decorated rows outlive Play mode, so this state does too.
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<EntityId, HierarchyRow> Rows = new();
 
         // Each bound item's view and the elements added to it, so a rebind or unbind removes them.
+        [NoAutoStaticsCleanup]
         private static readonly Dictionary<HierarchyViewItem, (HierarchyView View, VisualElement Marks, VisualElement Edge)> Bound = new();
 
+        [NoAutoStaticsCleanup]
         private static bool _refreshQueued;
 
         [InitializeOnLoadMethod]
