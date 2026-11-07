@@ -56,7 +56,7 @@ namespace HyperRTS.Editor.Authoring
             icon.AddToClassList("hrts-chip__icon");
             chip.Add(icon);
 
-            var name = new Label(ObjectNames.NicifyVariableName(component.GetType().Name.Replace("Authoring", "")));
+            var name = new Label(EntitySummary.ComponentName(component.GetType()));
             name.AddToClassList("hrts-chip__name");
             chip.Add(name);
 
@@ -65,9 +65,7 @@ namespace HyperRTS.Editor.Authoring
             {
                 var dot = new VisualElement();
                 dot.AddToClassList("hrts-chip__dot");
-                dot.AddToClassList(issues.Any(issue => issue.Severity == MessageType.Error)
-                    ? "hrts-chip__dot--error"
-                    : "hrts-chip__dot--warning");
+                dot.AddToClassList(issues.Worst == MessageType.Error ? "hrts-chip__dot--error" : "hrts-chip__dot--warning");
                 chip.Add(dot);
             }
 

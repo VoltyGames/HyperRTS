@@ -1,5 +1,5 @@
 /*
- * Editor glyphs from Lucide (ISC, see Credits.md): add hrts-glyph and one hrts-glyph--<name> class to a VisualElement.
+ * Editor glyphs from Lucide (ISC, see Credits.md): GlyphElements adds hrts-glyph and one hrts-glyph--<name> class to a VisualElement.
  * The tint follows the editor text colour, so the light skin works; a state class can recolour it.
  */
 

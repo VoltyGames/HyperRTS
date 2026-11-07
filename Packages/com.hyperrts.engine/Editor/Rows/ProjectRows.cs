@@ -17,6 +17,7 @@ namespace HyperRTS.Editor.Rows
         private const float BadgeSize = 16f;
 
         private readonly Dictionary<string, Texture2D> _icons = new();
+        private Texture _prefabBadge;
 
         [InitializeOnLoadMethod]
         private static void Install()
@@ -26,9 +27,9 @@ namespace HyperRTS.Editor.Rows
             EditorApplication.projectChanged += rows.Clear;
         }
 
-        public void Clear() => _icons.Clear();
+        private void Clear() => _icons.Clear();
 
-        public Texture2D FindIcon(string guid)
+        private Texture2D FindIcon(string guid)
         {
             if (_icons.TryGetValue(guid, out var icon))
             {
@@ -56,7 +57,8 @@ namespace HyperRTS.Editor.Rows
             var thumbnail = new Rect(row.x, row.y, row.width, row.height - LabelHeight);
             GUI.DrawTexture(thumbnail, icon, ScaleMode.ScaleToFit);
             var badge = new Rect(thumbnail.xMax - BadgeSize, thumbnail.yMax - BadgeSize, BadgeSize, BadgeSize);
-            GUI.DrawTexture(badge, EditorGUIUtility.IconContent("Prefab Icon").image, ScaleMode.ScaleToFit);
+            _prefabBadge ??= EditorGUIUtility.IconContent("Prefab Icon").image;
+            GUI.DrawTexture(badge, _prefabBadge, ScaleMode.ScaleToFit);
         }
 
         private static Texture2D LoadIcon(string path)

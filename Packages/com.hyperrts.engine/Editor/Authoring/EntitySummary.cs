@@ -106,7 +106,8 @@ namespace HyperRTS.Editor.Authoring
                 .Where(component => component != entity && component is not PickBoxAuthoring)
                 .Select(component => ComponentName(component.GetType())));
 
-        private static string ComponentName(System.Type type) =>
+        /// <summary>A component type's name without "Authoring", as the inspector chips and Add Component list show it.</summary>
+        public static string ComponentName(System.Type type) =>
             ObjectNames.NicifyVariableName(type.Name.Replace("Authoring", ""));
     }
 }

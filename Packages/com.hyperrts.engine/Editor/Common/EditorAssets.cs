@@ -86,23 +86,20 @@ namespace HyperRTS.Editor.Common
         }
 
         /// <summary>Prefabs using any authoring script, engine or game; others are never loaded, so their missing scripts stay quiet.</summary>
-        public static List<GameObject> AuthoringPrefabs()
+        public static List<GameObject> AuthoringPrefabs() =>
+            PrefabsUsing(IsAuthoring, "Assets").Select(AssetDatabase.LoadAssetAtPath<GameObject>).ToList();
+
+        /// <summary>Paths of the prefabs in <paramref name="folders"/> that depend on a runtime script whose class passes <paramref name="uses"/>, found without loading any prefab.</summary>
+        public static List<string> PrefabsUsing(Func<System.Type, bool> uses, params string[] folders)
         {
             var scripts = new HashSet<string>(MonoImporter.GetAllRuntimeMonoScripts()
-                .Where(script => IsAuthoring(script.GetClass()))
+                .Where(script => uses(script.GetClass()))
                 .Select(AssetDatabase.GetAssetPath));
 
-            var result = new List<GameObject>();
-            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" }))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (AssetDatabase.GetDependencies(path, true).Any(scripts.Contains))
-                {
-                    result.Add(AssetDatabase.LoadAssetAtPath<GameObject>(path));
-                }
-            }
-
-            return result;
+            return AssetDatabase.FindAssets("t:Prefab", folders)
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(path => AssetDatabase.GetDependencies(path, true).Any(scripts.Contains))
+                .ToList();
         }
 
         private static bool IsAuthoring(System.Type type) => type != null && typeof(AuthoringBehaviour).IsAssignableFrom(type);

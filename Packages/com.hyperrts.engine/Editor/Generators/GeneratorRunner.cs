@@ -35,36 +35,23 @@ namespace HyperRTS.Editor.Generators
         }
 
         /// <summary>Runs every generator in order; also the batch-mode entry (-executeMethod).</summary>
-        public static void RunAll()
-        {
-            var all = All();
-            try
-            {
-                for (var i = 0; i < all.Count; i++)
-                {
-                    EditorUtility.DisplayProgressBar("HyperRTS", all[i].Name, (float)i / all.Count);
-                    Run(all[i]);
-                }
-            }
-            finally
-            {
-                EditorUtility.ClearProgressBar();
-            }
-
-            Debug.Log($"HyperRTS: ran {all.Count} generators.");
-        }
+        public static void RunAll() => RunInOrder(All(), "generators");
 
         /// <summary>Runs, in order, the generators that are out of date.</summary>
         public static void RunOutOfDate()
         {
             var log = GeneratorRunLog.Load();
-            var stale = All().Where(generator => generator.IsOutOfDate(log)).ToList();
+            RunInOrder(All().Where(generator => generator.IsOutOfDate(log)).ToList(), "out of date generators");
+        }
+
+        private static void RunInOrder(IReadOnlyList<Generator> generators, string what)
+        {
             try
             {
-                for (var i = 0; i < stale.Count; i++)
+                for (var i = 0; i < generators.Count; i++)
                 {
-                    EditorUtility.DisplayProgressBar("HyperRTS", stale[i].Name, (float)i / stale.Count);
-                    Run(stale[i]);
+                    EditorUtility.DisplayProgressBar("HyperRTS", generators[i].Name, (float)i / generators.Count);
+                    Run(generators[i]);
                 }
             }
             finally
@@ -72,7 +59,7 @@ namespace HyperRTS.Editor.Generators
                 EditorUtility.ClearProgressBar();
             }
 
-            Debug.Log($"HyperRTS: ran {stale.Count} out of date generators.");
+            Debug.Log($"HyperRTS: ran {generators.Count} {what}.");
         }
 
         /// <summary>Runs one generator and records how it ended in the <see cref="GeneratorRunLog"/>.</summary>

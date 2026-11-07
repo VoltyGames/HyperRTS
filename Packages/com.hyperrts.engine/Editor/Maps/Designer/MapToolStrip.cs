@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Icons;
 using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -34,10 +35,7 @@ namespace HyperRTS.Editor.Maps.Designer
             foreach (MapToolMode mode in Enum.GetValues(typeof(MapToolMode)))
             {
                 var button = new ToolbarButton(() => _toolbox?.SetMode(mode)) { tooltip = MapToolOptions.Tip(mode) };
-                var glyph = new VisualElement { pickingMode = PickingMode.Ignore };
-                glyph.AddToClassList("hrts-glyph");
-                glyph.AddToClassList("hrts-glyph--" + Glyphs[mode]);
-                button.Add(glyph);
+                button.Add(GlyphElements.CreateGlyph(Glyphs[mode], PickingMode.Ignore));
                 _buttons[mode] = button;
                 Add(button);
             }

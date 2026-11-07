@@ -26,6 +26,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private readonly Button _play;
         private IReadOnlyList<LaunchMap> _maps;
         private IReadOnlyList<LaunchSide> _sides;
+        private LaunchMap _map;
 
         /// <summary>Wires a cloned LaunchSection.uxml.</summary>
         public LaunchSection(VisualElement root, VisualTreeAsset slotRow)
@@ -46,15 +47,16 @@ namespace HyperRTS.Editor.PlayMode.Launch
 
             _maps = _game.Maps;
             _sides = _game.Sides;
-            if (!_game.TryFindMap(_choice.map, out _))
+            if (!_game.TryFindMap(_choice.map, out _map))
             {
-                _choice.map = _maps[0].Id;
+                _map = _maps[0];
+                _choice.map = _map.Id;
                 _choice.slots.Clear();
             }
 
-            if (_choice.slots.Count != CurrentMap.Slots)
+            if (_choice.slots.Count != _map.Slots)
             {
-                _choice.Deal(CurrentMap.Slots);
+                _choice.Deal(_map.Slots);
             }
 
             BindChoices(root);
@@ -64,30 +66,22 @@ namespace HyperRTS.Editor.PlayMode.Launch
             Refresh();
         }
 
-        private LaunchMap CurrentMap
-        {
-            get
-            {
-                _game.TryFindMap(_choice.map, out var map);
-                return map;
-            }
-        }
-
         private void BindChoices(VisualElement root)
         {
             var map = root.Require<DropdownField>("map");
             map.choices = _maps.Select(entry => entry.Name).ToList();
-            map.SetValueWithoutNotify(CurrentMap.Name);
+            map.SetValueWithoutNotify(_map.Name);
             map.RegisterValueChangedCallback(_ =>
             {
-                _choice.map = _maps[map.index].Id;
+                _map = _maps[map.index];
+                _choice.map = _map.Id;
                 Deal();
             });
 
             var mode = Dropdown(root, "mode", Modes, (int)_choice.mode);
             mode.RegisterValueChangedCallback(_ =>
             {
-                _choice.mode = (LaunchMode)mode.index;
+                _choice.mode = (MatchMode)mode.index;
                 Deal();
             });
 
@@ -126,7 +120,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
 
         private void Deal()
         {
-            _choice.Deal(CurrentMap.Slots);
+            _choice.Deal(_map.Slots);
             RebuildSlots();
             Refresh();
         }
@@ -183,7 +177,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private void Refresh()
         {
             EditorState.instance.Save();
-            var problem = _choice.start == LaunchStart.Map ? _choice.Problem(CurrentMap.Slots) : "";
+            var problem = _choice.start == LaunchStart.Map ? _choice.Problem(_map.Slots) : "";
             _problem.text = problem;
             _problem.SetHidden(problem.Length == 0);
             _play.SetEnabled(problem.Length == 0);

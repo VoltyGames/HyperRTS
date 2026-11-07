@@ -29,7 +29,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private static void ShowMenu(LaunchGame game, LaunchChoice choice, Rect area)
         {
             var menu = new GenericMenu();
-            var problem = game.TryFindMap(choice.map, out var map) ? choice.Problem(map.Slots) : "No map";
+            var problem = choice.Problem(game);
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 menu.AddDisabledItem(new GUIContent("Play (leave Play mode first)"));

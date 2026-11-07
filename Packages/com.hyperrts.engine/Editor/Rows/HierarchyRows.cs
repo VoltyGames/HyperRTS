@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation;
@@ -26,22 +27,40 @@ namespace HyperRTS.Editor.Rows
         // Each bound item's view and the elements added to it, so a rebind or unbind removes them.
         private static readonly Dictionary<HierarchyViewItem, (HierarchyView View, VisualElement Marks, VisualElement Edge)> Bound = new();
 
+        private static bool _refreshQueued;
+
         [InitializeOnLoadMethod]
         private static void Install()
         {
             HierarchyWindow.BindView += (_, view) => view.StyleContainer.styleSheets.Add(EditorAssets.Sheet("Rows"));
             HierarchyWindow.BindViewItem += (_, view, item) => Decorate(view, item);
             HierarchyWindow.UnbindViewItem += (_, _, item) => Strip(item);
-            EditorApplication.hierarchyChanged += Refresh;
-            Undo.undoRedoPerformed += Refresh;
-            ObjectChangeEvents.changesPublished += (ref ObjectChangeEventStream _) => Refresh();
+            EditorApplication.hierarchyChanged += QueueRefresh;
+            Undo.undoRedoPerformed += QueueRefresh;
+            ObjectChangeEvents.changesPublished += (ref ObjectChangeEventStream _) => QueueRefresh();
+        }
+
+        // One edit raises several of these events, and a drag raises them every frame, so they share one refresh.
+        private static void QueueRefresh()
+        {
+            if (_refreshQueued)
+            {
+                return;
+            }
+
+            _refreshQueued = true;
+            EditorApplication.delayCall += () =>
+            {
+                _refreshQueued = false;
+                Refresh();
+            };
         }
 
         /// <summary>Drops the row data and decorates every bound row again, as after a preference change.</summary>
         public static void Refresh()
         {
             Rows.Clear();
-            foreach (var (item, bound) in new List<KeyValuePair<HierarchyViewItem, (HierarchyView View, VisualElement Marks, VisualElement Edge)>>(Bound))
+            foreach (var (item, bound) in Bound.ToList())
             {
                 Decorate(bound.View, item);
             }
@@ -121,9 +140,10 @@ namespace HyperRTS.Editor.Rows
             var worst = MessageType.None;
             foreach (var component in gameObject.GetComponents<AuthoringBehaviour>())
             {
-                foreach (var issue in ProjectValidator.Check(component))
+                var severity = ProjectValidator.Check(component).Worst;
+                if (severity > worst)
                 {
-                    worst = (MessageType)Mathf.Max((int)worst, (int)issue.Severity);
+                    worst = severity;
                 }
             }
 

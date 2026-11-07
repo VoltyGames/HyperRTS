@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Tests.PlayMode
         [Test]
         public void DealPutsYouFirstWithBotsOnTheOtherTeamAndClosesTheRest()
         {
-            var choice = new LaunchChoice { mode = LaunchMode.TwoVsTwo };
+            var choice = new LaunchChoice { mode = MatchMode.TwoVsTwo };
 
             choice.Deal(6);
 
@@ -26,11 +26,11 @@ namespace HyperRTS.Editor.Tests.PlayMode
         [Test]
         public void DealKeepsASlotsSideWhenTheModeChanges()
         {
-            var choice = new LaunchChoice { mode = LaunchMode.OneVsOne };
+            var choice = new LaunchChoice { mode = MatchMode.OneVsOne };
             choice.Deal(4);
             choice.slots[1].side = 3;
 
-            choice.mode = LaunchMode.FreeForAll;
+            choice.mode = MatchMode.FreeForAll;
             choice.Deal(4);
 
             Assert.That(choice.slots[1].side, Is.EqualTo(3));
@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.Tests.PlayMode
         [Test]
         public void ProblemRejectsOneTeamAndTwoHumansOffline()
         {
-            var choice = new LaunchChoice { mode = LaunchMode.OneVsOne };
+            var choice = new LaunchChoice { mode = MatchMode.OneVsOne };
             choice.Deal(2);
 
             choice.slots[1].team = 1;
@@ -57,7 +57,7 @@ namespace HyperRTS.Editor.Tests.PlayMode
         [Test]
         public void LabelNamesTheBotDifficultyOrMixedBots()
         {
-            var choice = new LaunchChoice { mode = LaunchMode.TwoVsTwo };
+            var choice = new LaunchChoice { mode = MatchMode.TwoVsTwo };
             choice.Deal(4);
             Assert.That(choice.Label("Chornozem"), Is.EqualTo("Chornozem 2v2 vs Normal"));
 

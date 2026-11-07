@@ -99,7 +99,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
             label.text = report.Passed && report.warnings.Count == 0
                 ? "Passed"
-                : $"{report.errors.Count} errors, {report.warnings.Count} warnings";
+                : report.Counts;
         }
 
         private void Build(string specPath)

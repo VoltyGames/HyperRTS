@@ -1,5 +1,3 @@
-using HyperRTS.Editor.Generators;
-
 namespace HyperRTS.Editor.Generators
 {
     /// <summary>A generator as the <c>generate</c> command returns it.</summary>
@@ -14,16 +12,20 @@ namespace HyperRTS.Editor.Generators
         public string error;
         public bool outOfDate;
 
-        public static GeneratorEntry From(Generator generator, GeneratorRunLog log) => new()
+        public static GeneratorEntry From(Generator generator, GeneratorRunLog log)
         {
-            name = generator.Name,
-            group = generator.Group,
-            description = generator.Description,
-            sources = generator.Sources,
-            outputs = generator.Outputs,
-            lastRun = log.Find(generator.Name)?.time,
-            error = log.Find(generator.Name)?.error,
-            outOfDate = generator.IsOutOfDate(log),
-        };
+            var last = log.Find(generator.Name);
+            return new GeneratorEntry
+            {
+                name = generator.Name,
+                group = generator.Group,
+                description = generator.Description,
+                sources = generator.Sources,
+                outputs = generator.Outputs,
+                lastRun = last?.time,
+                error = last?.error,
+                outOfDate = generator.IsOutOfDate(log),
+            };
+        }
     }
 }

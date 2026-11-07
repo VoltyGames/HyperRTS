@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Validation
         private static readonly IAssetRule[] AssetRules = TypeDiscovery.Instances<IAssetRule>();
 
         /// <summary>Every component rule that applies to one component.</summary>
-        public static List<ValidationIssue> Check(Component component)
+        public static ValidationIssues Check(Component component)
         {
             var issues = new ValidationIssues();
             foreach (var rule in ComponentRules)

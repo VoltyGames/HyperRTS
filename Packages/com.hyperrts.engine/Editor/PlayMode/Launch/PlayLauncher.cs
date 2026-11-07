@@ -1,3 +1,4 @@
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -8,14 +9,10 @@ namespace HyperRTS.Editor.PlayMode.Launch
     [InitializeOnLoad]
     internal static class PlayLauncher
     {
-        // SessionState survives the domain reload that entering Play mode may bring; a static would not.
-        private const string PendingKey = "HyperRTS.PlayLauncher.Pending";
+        [NoAutoStaticsCleanup]
+        private static readonly PendingPlay Pending;
 
-        static PlayLauncher()
-        {
-            EditorApplication.playModeStateChanged += BeginPending;
-            DropPendingUnlessEnteringPlay();
-        }
+        static PlayLauncher() => Pending = new PendingPlay("HyperRTS.PlayLauncher.Pending", Begin);
 
         public static void Play(LaunchGame game, LaunchChoice choice)
         {
@@ -25,37 +22,9 @@ namespace HyperRTS.Editor.PlayMode.Launch
             }
 
             EditorSceneManager.OpenScene(game.MenuScene);
-            if (choice.start == LaunchStart.Map)
-            {
-                SessionState.SetString(PendingKey, JsonUtility.ToJson(choice));
-            }
-
-            EditorApplication.EnterPlaymode();
-            EditorApplication.update += DropPendingUnlessEnteringPlay;
+            Pending.Enter(choice.start == LaunchStart.Map ? JsonUtility.ToJson(choice) : "");
         }
 
-        private static void BeginPending(PlayModeStateChange change)
-        {
-            var json = SessionState.GetString(PendingKey, "");
-            if (change != PlayModeStateChange.EnteredPlayMode || json.Length == 0)
-            {
-                return;
-            }
-
-            SessionState.EraseString(PendingKey);
-            LaunchGame.Find().Start(JsonUtility.FromJson<LaunchChoice>(json));
-        }
-
-        // Entering Play can be refused (compile errors); drop the choice then so a later Play doesn't start it.
-        private static void DropPendingUnlessEnteringPlay()
-        {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                return;
-            }
-
-            EditorApplication.update -= DropPendingUnlessEnteringPlay;
-            SessionState.EraseString(PendingKey);
-        }
+        private static void Begin(string json) => LaunchGame.Find().Start(JsonUtility.FromJson<LaunchChoice>(json));
     }
 }

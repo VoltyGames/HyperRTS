@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.PlayMode
         private Button _save;
         private VisualElement _replays;
         private Label _noReplays;
-        private List<string> _shownReplays = new();
+        private System.DateTime? _shownReplays;
 
         public override string Title => "Play";
 
@@ -167,11 +167,13 @@ namespace HyperRTS.Editor.PlayMode
 
         private void ShowReplays()
         {
-            var recent = ReplayPlayback.RecentRecordings();
-            _noReplays.SetHidden(recent.Count > 0);
-            if (!recent.SequenceEqual(_shownReplays))
+            // The page polls, so the folder is only listed again once a recording is added or removed.
+            var changed = ReplayPlayback.RecordingsChanged;
+            if (changed != _shownReplays)
             {
-                _shownReplays = recent;
+                _shownReplays = changed;
+                var recent = ReplayPlayback.RecentRecordings();
+                _noReplays.SetHidden(recent.Count > 0);
                 _replays.Clear();
                 recent.ForEach(path => _replays.Add(ReplayRow(path)));
             }

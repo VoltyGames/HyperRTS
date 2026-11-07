@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Icons;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEngine.UIElements;
@@ -90,10 +91,7 @@ namespace HyperRTS.Editor.Hub
         {
             var page = _pages[index];
             item.Require<Label>("title").text = page.Title;
-            var glyph = item.Require<VisualElement>("glyph");
-            glyph.ClearClassList();
-            glyph.AddToClassList("hrts-glyph");
-            glyph.AddToClassList("hrts-glyph--" + page.Glyph);
+            item.Require<VisualElement>("glyph").SetGlyph(page.Glyph);
             var badge = item.Require<Label>("badge");
             badge.text = _badges[index].Count.ToString();
             badge.EnableInClassList("hrts-badge--error", _badges[index].HasErrors);

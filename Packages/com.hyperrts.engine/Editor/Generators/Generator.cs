@@ -11,6 +11,8 @@ namespace HyperRTS.Editor.Generators
     /// </summary>
     public abstract class Generator
     {
+        private string _scriptPath;
+
         public abstract string Name { get; }
 
         /// <summary>Heading the step is listed under (the engine or the game's name).</summary>
@@ -44,7 +46,9 @@ namespace HyperRTS.Editor.Generators
         }
 
         /// <summary>The path of this type's own script, for a step whose settings are constants in its code.</summary>
-        protected string ScriptPath()
+        protected string ScriptPath() => _scriptPath ??= FindScript();
+
+        private string FindScript()
         {
             var name = GetType().Name;
             return AssetDatabase.FindAssets($"{name} t:MonoScript")

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Icons;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
@@ -160,10 +161,7 @@ namespace HyperRTS.Editor.Authoring
             button.AddToClassList("hrts-glyph-button");
             if (glyph.Length > 0)
             {
-                var icon = new VisualElement();
-                icon.AddToClassList("hrts-glyph");
-                icon.AddToClassList("hrts-glyph--" + glyph);
-                button.Add(icon);
+                button.Add(GlyphElements.CreateGlyph(glyph));
             }
 
             button.Add(new Label(label));

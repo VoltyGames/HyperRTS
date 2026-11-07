@@ -14,6 +14,24 @@ namespace HyperRTS.Editor.Validation
         public void Warn(Object context, string message, string fixLabel = null, Action fix = null, string path = null) =>
             Add(new ValidationIssue(MessageType.Warning, message, context, fixLabel, fix, path: path));
 
+        /// <summary>The most severe issue's severity, or None when there are no issues.</summary>
+        public MessageType Worst
+        {
+            get
+            {
+                var worst = MessageType.None;
+                foreach (var issue in this)
+                {
+                    if (issue.Severity > worst)
+                    {
+                        worst = issue.Severity;
+                    }
+                }
+
+                return worst;
+            }
+        }
+
         /// <summary>
         /// Each issue once, with the same issue (rule and message) on prefab variants folded under the topmost prefab
         /// in the chain that has it.

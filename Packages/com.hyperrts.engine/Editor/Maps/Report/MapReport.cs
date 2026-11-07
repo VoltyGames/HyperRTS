@@ -35,6 +35,9 @@ namespace HyperRTS.Editor.Maps.Report
 
         public bool Passed => errors.Count == 0;
 
+        /// <summary>"2 errors, 3 warnings": the counts the Map Editor's gallery and issue tab head with.</summary>
+        public string Counts => $"{errors.Count} errors, {warnings.Count} warnings";
+
         public static string Folder => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "MapReports"));
 
         public static string JsonPath(string map) => Path.Combine(Folder, map + ".json");

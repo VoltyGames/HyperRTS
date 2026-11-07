@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _empty.SetHidden(report != null);
             Count = report == null ? 0 : report.errors.Count + report.warnings.Count;
             _none.SetHidden(report == null || Count > 0);
-            _summary.text = report == null ? "Issues" : $"{report.errors.Count} errors, {report.warnings.Count} warnings";
+            _summary.text = report == null ? "Issues" : report.Counts;
             if (report != null)
             {
                 AddRows(report.errors, report.errorFeatures, true);

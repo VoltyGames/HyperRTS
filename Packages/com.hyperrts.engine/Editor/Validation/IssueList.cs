@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Validation
         {
             if (Grouped)
             {
-                ShowTree(issues.Select(issue => new IssueGroup(issue)).ToList());
+                Show(issues.Select(issue => new IssueGroup(issue)).ToList());
                 return;
             }
 
@@ -50,9 +50,7 @@ namespace HyperRTS.Editor.Validation
         }
 
         /// <summary>Shows the groups as the rule and asset tree, with each group's variants under its row.</summary>
-        public void Show(IReadOnlyList<IssueGroup> groups) => ShowTree(groups);
-
-        private void ShowTree(IReadOnlyList<IssueGroup> groups)
+        public void Show(IReadOnlyList<IssueGroup> groups)
         {
             var tree = Tree();
             var id = 0;
@@ -212,38 +210,46 @@ namespace HyperRTS.Editor.Validation
         /// <summary>One tree row: a rule heading, an asset heading, an issue or an issue on a variant.</summary>
         private sealed class Node
         {
-            private Node(string rule, bool isAsset, Object asset, bool isIssue, ValidationIssue issue, string variantText, bool isVariant)
+            private readonly NodeKind _kind;
+
+            private Node(NodeKind kind, string rule = null, Object asset = null, ValidationIssue issue = default, string variantText = "")
             {
+                _kind = kind;
                 Rule = rule;
-                IsAsset = isAsset;
                 Asset = asset;
-                IsIssue = isIssue;
                 Issue = issue;
                 VariantText = variantText;
-                IsVariant = isVariant;
             }
 
             public string Rule { get; }
 
-            public bool IsAsset { get; }
+            public bool IsAsset => _kind == NodeKind.Asset;
 
             public Object Asset { get; }
 
-            public bool IsIssue { get; }
+            public bool IsIssue => _kind is NodeKind.Issue or NodeKind.Variant;
 
             public ValidationIssue Issue { get; }
 
             public string VariantText { get; }
 
-            public bool IsVariant { get; }
+            public bool IsVariant => _kind == NodeKind.Variant;
 
-            public static Node ForRule(string heading) => new(heading, false, null, false, default, "", false);
+            public static Node ForRule(string heading) => new(NodeKind.Rule, rule: heading);
 
-            public static Node ForAsset(Object asset) => new(null, true, asset, false, default, "", false);
+            public static Node ForAsset(Object asset) => new(NodeKind.Asset, asset: asset);
 
-            public static Node ForIssue(IssueGroup group) => new(null, false, null, true, group.Issue, group.VariantText, false);
+            public static Node ForIssue(IssueGroup group) => new(NodeKind.Issue, issue: group.Issue, variantText: group.VariantText);
 
-            public static Node ForVariant(ValidationIssue issue) => new(null, false, null, true, issue, "", true);
+            public static Node ForVariant(ValidationIssue issue) => new(NodeKind.Variant, issue: issue);
+        }
+
+        private enum NodeKind
+        {
+            Rule,
+            Asset,
+            Issue,
+            Variant,
         }
     }
 }

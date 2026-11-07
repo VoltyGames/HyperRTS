@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Icons;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
@@ -160,7 +161,7 @@ namespace HyperRTS.Editor.Maps.Designer
             var group = feature.Index < 0;
             var hidden = !_layers.IsVisible(kind);
             item.EnableInClassList(HiddenClass, hidden);
-            ShowGlyph(item.Require<VisualElement>("glyph"), kind.Glyph).style.unityBackgroundImageTintColor = kind.Color;
+            item.Require<VisualElement>("glyph").SetGlyph(kind.Glyph).style.unityBackgroundImageTintColor = kind.Color;
             var label = item.Require<Label>("label");
             label.text = group ? $"{kind.Label} ({kind.Count(_spec)})" : kind.Describe(_spec, feature.Index);
             label.EnableInClassList("hrts-map-layer__label--group", group);
@@ -175,8 +176,8 @@ namespace HyperRTS.Editor.Maps.Designer
             }
 
             var locked = _layers.IsLocked(kind);
-            ShowGlyph(show, hidden ? "eye-off" : "eye").EnableInClassList(DimClass, hidden);
-            ShowGlyph(padlock, locked ? "lock" : "lock-open").EnableInClassList(DimClass, !locked);
+            show.SetGlyph(hidden ? "eye-off" : "eye").EnableInClassList(DimClass, hidden);
+            padlock.SetGlyph(locked ? "lock" : "lock-open").EnableInClassList(DimClass, !locked);
             show.userData = kind;
             padlock.userData = kind;
             Listen(show, ToggleShown);
@@ -202,19 +203,6 @@ namespace HyperRTS.Editor.Maps.Designer
             var kind = (MapFeatureKind)((VisualElement)evt.currentTarget).userData;
             _layers.SetLocked(kind, !_layers.IsLocked(kind));
             evt.StopPropagation();
-        }
-
-        // A recycled row may hold another glyph, so the old class goes first.
-        private static VisualElement ShowGlyph(VisualElement element, string glyph)
-        {
-            var old = element.GetClasses().Where(name => name.StartsWith("hrts-glyph--", StringComparison.Ordinal)).ToList();
-            foreach (var name in old)
-            {
-                element.RemoveFromClassList(name);
-            }
-
-            element.AddToClassList("hrts-glyph--" + glyph);
-            return element;
         }
 
         private void Pick()

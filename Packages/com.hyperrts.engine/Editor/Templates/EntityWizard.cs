@@ -22,6 +22,7 @@ namespace HyperRTS.Editor.Templates
         private TreeView _choices;
         private TextField _name;
         private Button _create;
+        private List<(EntityChoice Heading, List<EntityChoice> Choices)> _all;
 
         [MenuItem("Assets/Create/HyperRTS/Entity...", false, 0)]
         private static void Open()
@@ -49,6 +50,7 @@ namespace HyperRTS.Editor.Templates
             _create.clicked += Create;
             root.Require<ToolbarSearchField>("search").RegisterValueChangedCallback(change => Fill(change.newValue));
             root.Require<Label>("folder").text = $"Saves in {_folder}";
+            _all = EntityChoice.All().ToList();
             Fill("");
         }
 
@@ -56,7 +58,7 @@ namespace HyperRTS.Editor.Templates
         {
             var items = new List<TreeViewItemData<EntityChoice>>();
             var id = 0;
-            foreach (var (heading, choices) in EntityChoice.All())
+            foreach (var (heading, choices) in _all)
             {
                 var shown = choices
                     .Where(choice => choice.Label.Contains(search, System.StringComparison.OrdinalIgnoreCase))

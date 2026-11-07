@@ -43,12 +43,12 @@ namespace HyperRTS.Editor.Authoring
         }
 
         /// <summary>The Add Component folder (without the HyperRTS root) and name of a component type; types without a menu go in "Other".</summary>
-        public static (string Folder, string Name) MenuEntry(Type type)
+        private static (string Folder, string Name) MenuEntry(Type type)
         {
             var menu = type.GetCustomAttribute<AddComponentMenu>()?.componentMenu;
             if (menu == null)
             {
-                return (NoFolder, ObjectNames.NicifyVariableName(type.Name.Replace("Authoring", "")));
+                return (NoFolder, EntitySummary.ComponentName(type));
             }
 
             var slash = menu.LastIndexOf('/');

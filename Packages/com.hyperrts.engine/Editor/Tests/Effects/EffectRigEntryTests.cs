@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Editor.Effects.Preview;
 using NUnit.Framework;
 
@@ -10,6 +11,7 @@ namespace HyperRTS.Editor.Tests.Effects
         [TestCase("Assets/Game/Prefabs/Effects/FX_Fire.prefab", "Fire")]
         [TestCase("Assets/Game/Prefabs/Effects/Sparks/Welding.prefab", "Sparks")]
         [TestCase("Assets/Game/Prefabs/Effects/Embers_01.prefab", "Effects")]
-        public void KindIsTheSecondFxFieldOrTheFolder(string path, string kind) => Assert.That(EffectRigEntry.KindOf(path), Is.EqualTo(kind));
+        public void KindIsTheSecondFxFieldOrTheFolder(string path, string kind) =>
+            Assert.That(new EffectRigEntry(path, new List<string>()).Kind, Is.EqualTo(kind));
     }
 }

@@ -24,7 +24,6 @@ namespace HyperRTS.Editor.Effects.Preview
         private EffectRig _rig;
         private GraphStream _stream;
         private VisualEffect[] _graphs = Array.Empty<VisualEffect>();
-        private float _pathTime;
 
         public EffectPreviewPlayer(Scene scene) => _scene = scene;
 
@@ -36,6 +35,9 @@ namespace HyperRTS.Editor.Effects.Preview
         public bool Paused { get; set; }
 
         public bool HasRig => _rig != null;
+
+        /// <summary>Unpaused seconds since the last <see cref="Play"/>; the stream's place on its path.</summary>
+        public float SincePlay { get; private set; }
 
         /// <summary>Wind blowing towards a heading in degrees from +Z, at a strength in the units the graphs read.</summary>
         public void SetWind(float degrees, float strength) => _environment.SetWind(degrees, strength);
@@ -86,7 +88,7 @@ namespace HyperRTS.Editor.Effects.Preview
             _rig.Burst(Pivot, Quaternion.identity, Scale, 1f);
             _stream = _rig.StartStream();
             RefreshGraphs();
-            _pathTime = 0f;
+            SincePlay = 0f;
             MoveStream(0f);
         }
 
@@ -105,7 +107,7 @@ namespace HyperRTS.Editor.Effects.Preview
 
             if (!Paused)
             {
-                _pathTime += deltaTime;
+                SincePlay += deltaTime;
                 MoveStream(deltaTime);
             }
 
@@ -119,7 +121,7 @@ namespace HyperRTS.Editor.Effects.Preview
         public void Simulate(float seconds)
         {
             var steps = (uint)Mathf.Max(1, Mathf.RoundToInt(seconds / StepSeconds));
-            _pathTime += seconds;
+            SincePlay += seconds;
             MoveStream(seconds);
             foreach (var effect in _graphs)
             {
@@ -163,7 +165,7 @@ namespace HyperRTS.Editor.Effects.Preview
         {
             if (_stream != null)
             {
-                _stream.Move(PathPoint(_pathTime - deltaTime), PathPoint(_pathTime), Quaternion.identity, deltaTime, 1f, Scale);
+                _stream.Move(PathPoint(SincePlay - deltaTime), PathPoint(SincePlay), Quaternion.identity, deltaTime, 1f, Scale);
             }
         }
 

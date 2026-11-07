@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using HyperRTS.Simulation.Replays;
 using Unity.Entities;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -19,18 +20,17 @@ namespace HyperRTS.Editor.PlayMode
         private const string Folder = "Logs/Replays";
         private const int Recent = 8;
 
-        // SessionState survives the domain reload that entering Play mode may bring; a static would not.
-        private const string PendingKey = "HyperRTS.ReplayPlayback.Pending";
+        [NoAutoStaticsCleanup]
+        private static readonly PendingPlay Pending;
 
-        static ReplayPlayback()
-        {
-            EditorApplication.playModeStateChanged += BeginPending;
-            DropPendingUnlessEnteringPlay();
-        }
+        static ReplayPlayback() => Pending = new PendingPlay("HyperRTS.ReplayPlayback.Pending", Begin);
 
         public static bool CanSave => TryGetRecordingWorld(out _);
 
         public static bool CanPlay => !Application.isPlaying;
+
+        /// <summary>When a recording was last added to or removed from the folder.</summary>
+        public static DateTime RecordingsChanged => Directory.Exists(Folder) ? Directory.GetLastWriteTimeUtc(Folder) : DateTime.MinValue;
 
         /// <summary>The newest recordings, newest first.</summary>
         public static List<string> RecentRecordings()
@@ -75,36 +75,15 @@ namespace HyperRTS.Editor.PlayMode
                 EditorSceneManager.OpenScene(scene);
             }
 
-            SessionState.SetString(PendingKey, path);
-            EditorApplication.EnterPlaymode();
-            EditorApplication.update += DropPendingUnlessEnteringPlay;
+            Pending.Enter(path);
         }
 
-        private static void BeginPending(PlayModeStateChange change)
+        private static void Begin(string path)
         {
-            var path = SessionState.GetString(PendingKey, "");
-            if (change != PlayModeStateChange.EnteredPlayMode || path.Length == 0)
-            {
-                return;
-            }
-
-            SessionState.EraseString(PendingKey);
             if (PlayWorld.TryGetAuthoritative(out var entityManager))
             {
                 ReplayViewer.Begin(entityManager.World, ReplaySerializer.Load(path));
             }
-        }
-
-        // Entering Play can be refused (compile errors); drop the replay then so a later Play doesn't start it.
-        private static void DropPendingUnlessEnteringPlay()
-        {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                return;
-            }
-
-            EditorApplication.update -= DropPendingUnlessEnteringPlay;
-            SessionState.EraseString(PendingKey);
         }
 
         private static bool TryGetRecordingWorld(out World world)

@@ -9,24 +9,24 @@ namespace HyperRTS.Editor.PlayMode.Launch
     public class LaunchChoice
     {
         public string map = "";
-        public LaunchMode mode = LaunchMode.TwoVsTwo;
+        public MatchMode mode = MatchMode.TwoVsTwo;
         public LaunchStart start;
         public LaunchNetwork network;
         public List<LaunchSlot> slots = new();
 
         /// <summary>The short name of a mode, such as "2v2".</summary>
-        public static string ModeName(LaunchMode mode) => mode switch
+        public static string ModeName(MatchMode mode) => mode switch
         {
-            LaunchMode.FreeForAll => "FFA",
-            LaunchMode.OneVsOne => "1v1",
-            LaunchMode.TwoVsTwo => "2v2",
-            LaunchMode.ThreeVsThree => "3v3",
-            LaunchMode.FourVsFour => "4v4",
+            MatchMode.FreeForAll => "FFA",
+            MatchMode.OneVsOne => "1v1",
+            MatchMode.TwoVsTwo => "2v2",
+            MatchMode.ThreeVsThree => "3v3",
+            MatchMode.FourVsFour => "4v4",
             _ => throw new ArgumentOutOfRangeException(nameof(mode)),
         };
 
         /// <summary>Slots per team, or 0 when every slot plays alone.</summary>
-        private static int TeamSize(LaunchMode mode) => mode == LaunchMode.FreeForAll ? 0 : (int)mode;
+        private static int TeamSize(MatchMode mode) => mode == MatchMode.FreeForAll ? 0 : (int)mode;
 
         /// <summary>
         /// Fits the table to a map with <paramref name="mapSlots"/> slots and deals the teams for the mode: you in the first
@@ -41,7 +41,8 @@ namespace HyperRTS.Editor.PlayMode.Launch
 
             slots.RemoveRange(mapSlots, slots.Count - mapSlots);
             var size = TeamSize(mode);
-            var players = size == 0 ? mapSlots : Math.Min(mapSlots, size * 2);
+            var alone = size == 0;
+            var players = alone ? mapSlots : Math.Min(mapSlots, size * 2);
             for (var i = 0; i < slots.Count; i++)
             {
                 slots[i].kind = i switch
@@ -50,11 +51,13 @@ namespace HyperRTS.Editor.PlayMode.Launch
                     _ when i < players => LaunchSlotKind.Bot,
                     _ => LaunchSlotKind.Closed,
                 };
-                var alone = size == 0;
-                slots[i].team = alone ? i + 1 : i / size + 1;
                 if (i >= players)
                 {
                     slots[i].team = 0;
+                }
+                else
+                {
+                    slots[i].team = alone ? i + 1 : i / size + 1;
                 }
             }
         }
@@ -71,6 +74,9 @@ namespace HyperRTS.Editor.PlayMode.Launch
                 _ => $"{label} vs mixed bots",
             };
         }
+
+        /// <summary>Why the table can't start on <paramref name="game"/>'s chosen map, or "" when it can.</summary>
+        public string Problem(LaunchGame game) => game.TryFindMap(map, out var found) ? Problem(found.Slots) : "No map";
 
         /// <summary>Why the table can't start, or "" when it can.</summary>
         public string Problem(int mapSlots)

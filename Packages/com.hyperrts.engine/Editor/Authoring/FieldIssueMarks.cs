@@ -11,9 +11,10 @@ namespace HyperRTS.Editor.Authoring
     /// <summary>Marks the inspector field an issue names with a severity edge and shows the message under it.</summary>
     public sealed class FieldIssueMarks
     {
+        private const string MessageClass = "hrts-field-issue";
+
         private readonly VisualElement _root;
         private readonly List<VisualElement> _marked = new();
-        private readonly List<VisualElement> _messages = new();
 
         public FieldIssueMarks(VisualElement root)
         {
@@ -24,9 +25,17 @@ namespace HyperRTS.Editor.Authoring
         public void Show(IEnumerable<ValidationIssue> issues)
         {
             Clear();
+            var drawn = new Dictionary<string, PropertyField>();
+            _root.Query<PropertyField>().ForEach(field =>
+            {
+                if (!string.IsNullOrEmpty(field.bindingPath))
+                {
+                    drawn.TryAdd(field.bindingPath, field);
+                }
+            });
             foreach (var onField in issues.Where(issue => !string.IsNullOrEmpty(issue.Path)).GroupBy(issue => issue.Path))
             {
-                var field = FindField(onField.Key);
+                var field = FindField(drawn, onField.Key);
                 if (field != null)
                 {
                     Mark(field, onField.ToList());
@@ -35,14 +44,13 @@ namespace HyperRTS.Editor.Authoring
         }
 
         // A path into a list entry or a block that is not drawn (yet) marks the nearest field that holds it.
-        private PropertyField FindField(string path)
+        private static PropertyField FindField(Dictionary<string, PropertyField> drawn, string path)
         {
             while (path.Length > 0)
             {
-                var drawn = _root.Query<PropertyField>().Where(field => field.bindingPath == path).First();
-                if (drawn != null)
+                if (drawn.TryGetValue(path, out var field))
                 {
-                    return drawn;
+                    return field;
                 }
 
                 path = path.Substring(0, Mathf.Max(path.LastIndexOf('.'), 0));
@@ -58,10 +66,9 @@ namespace HyperRTS.Editor.Authoring
             _marked.Add(field);
 
             var message = new Label(string.Join("\n", issues.Select(issue => issue.Message).Distinct()));
-            message.AddToClassList("hrts-field-issue");
+            message.AddToClassList(MessageClass);
             message.AddToClassList(isError ? "hrts-field-issue--error" : "hrts-field-issue--warning");
             field.parent.Insert(field.parent.IndexOf(field) + 1, message);
-            _messages.Add(message);
         }
 
         private void Clear()
@@ -72,13 +79,8 @@ namespace HyperRTS.Editor.Authoring
                 field.RemoveFromClassList("hrts-field--warning");
             }
 
-            foreach (var message in _messages)
-            {
-                message.RemoveFromHierarchy();
-            }
-
+            _root.Query(className: MessageClass).ToList().ForEach(message => message.RemoveFromHierarchy());
             _marked.Clear();
-            _messages.Clear();
         }
     }
 }

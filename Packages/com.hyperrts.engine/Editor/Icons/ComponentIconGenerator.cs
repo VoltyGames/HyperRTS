@@ -137,10 +137,9 @@ namespace HyperRTS.Editor.Icons
 
         public override void Run()
         {
-            var listed = Modules.SelectMany(module => module.Components).ToHashSet();
             var unlisted = Directory.GetFiles(SourceFolder, "*.svg")
                 .Select(Path.GetFileNameWithoutExtension)
-                .Where(name => !listed.Contains(name))
+                .Where(name => !IsListed(name))
                 .ToList();
             if (unlisted.Count > 0)
             {
@@ -156,22 +155,11 @@ namespace HyperRTS.Editor.Icons
             }
 
             AssetDatabase.Refresh();
-            Debug.Log($"Generated {listed.Count} component icons.");
+            Debug.Log($"Generated {Modules.Sum(module => module.Components.Length)} component icons.");
         }
 
-        /// <summary>The tile colour of the module that lists <paramref name="component"/>.</summary>
-        public static Color FindTile(string component)
-        {
-            foreach (var (tile, components) in Modules)
-            {
-                if (components.Contains(component))
-                {
-                    return tile;
-                }
-            }
-
-            throw new InvalidOperationException($"Component icons: no module lists {component}.");
-        }
+        /// <summary>Whether a module tile lists <paramref name="component"/>.</summary>
+        public static bool IsListed(string component) => Modules.Any(module => module.Components.Contains(component));
 
         /// <summary>Draws the SVG's white glyph on a rounded tile and writes it, imported as a GUI texture, to <paramref name="pngPath"/>.</summary>
         public static void WriteIcon(string svgPath, Color tile, string pngPath)

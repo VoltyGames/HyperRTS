@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Icons;
 using HyperRTS.Editor.PlayMode.DebugDraw;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.AI;
@@ -24,7 +25,7 @@ namespace HyperRTS.Editor.PlayMode
             root.Require<Button>("hide-all").clicked += () =>
             {
                 DebugLayerHost.HideAll();
-                foreach (var (toggle, _) in toggles)
+                foreach (var toggle in toggles)
                 {
                     toggle.SetValueWithoutNotify(false);
                 }
@@ -49,9 +50,9 @@ namespace HyperRTS.Editor.PlayMode
             return root;
         }
 
-        private static List<(Toggle, DebugLayer)> BuildLayers(VisualElement host)
+        private static List<Toggle> BuildLayers(VisualElement host)
         {
-            var toggles = new List<(Toggle, DebugLayer)>();
+            var toggles = new List<Toggle>();
             string group = null;
             foreach (var layer in DebugLayerHost.Layers)
             {
@@ -71,13 +72,10 @@ namespace HyperRTS.Editor.PlayMode
                 });
                 var row = new VisualElement { tooltip = layer.Detail };
                 row.AddToClassList("hrts-debug-overlay__row");
-                var glyph = new VisualElement();
-                glyph.AddToClassList("hrts-glyph");
-                glyph.AddToClassList("hrts-glyph--" + layer.Glyph);
-                row.Add(glyph);
+                row.Add(GlyphElements.CreateGlyph(layer.Glyph));
                 row.Add(toggle);
                 host.Add(row);
-                toggles.Add((toggle, layer));
+                toggles.Add(toggle);
             }
 
             return toggles;

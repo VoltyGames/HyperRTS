@@ -219,8 +219,8 @@ template such as `MapGalleryCard.uxml` with `CloneRoot()`. Toggle visibility wit
 `HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
 
 Glyphs are [Lucide](https://lucide.dev) SVGs in `Editor/Icons/Glyphs/`, imported as vector images by
-`GlyphImportRules`: give an element the classes `hrts-glyph hrts-glyph--<name>` (from `Icons/Glyphs.uss`) and it takes
-the editor text colour. To add one, copy the icon from the `lucide-static` package's `icons/` folder to
+`GlyphImportRules`: `GlyphElements.CreateGlyph(name)` makes an element, or `SetGlyph(name)` swaps a recycled row's,
+with the classes `hrts-glyph hrts-glyph--<name>` (from `Icons/Glyphs.uss`), and it takes the editor text colour. To add one, copy the icon from the `lucide-static` package's `icons/` folder to
 `Glyphs/<PascalName>.svg`, delete its licence comment and `class` attribute, set `stroke="#ffffff"` and add its class
 to `Glyphs.uss`.
 
@@ -257,14 +257,14 @@ two switches, **Hierarchy row icons** and **Project unit icons**.
 ## Effects page
 
 **HyperRTS ▸ Tools ▸ Effects** lists every prefab whose root has an `EffectRig`, in the project and the engine, under
-its kind: the second field of an `FX_<Kind>_...` name, or the prefab's folder when the name does not start with `FX_`.
-A search box filters by name. Picking a row plays the rig at the Scene view pivot, the way the pool plays it, on a loop
-(`EffectRigEntry` finds them, `EffectPreviewPlayer` plays one). The right pane has Replay, Pause, Loop with its
-interval, Scale and the wind strength and heading, then the rig's recipes (the `<Graph>.effect.asset` files beside its
-VFX graphs and its variants' graphs) each with its state (**Built**, **Out of date** or **Missing**, from
-`EffectGraphBuilder.State`), **Select** and **Build graph**. **Capture frames** runs `EffectCapture` for the rig, as the
-`effect capture` command does, and reveals `Logs/EffectCaptures/<Rig>/`. The rig's validation problems
-(`EffectRig.Problems`) list under it.
+its kind: the second field of an `FX_<Kind>_...` name, or the prefab's folder when the name does not start with `FX_`. A
+search box filters by name. Picking a row plays the rig at the Scene view pivot, the way the pool plays it, on a loop
+(`EffectRigEntry` finds them, `EffectRigList` lists them, `EffectPlayback` loops the picked one through
+`EffectPreviewPlayer`). The right pane has Replay, Pause, Loop with its interval, Scale and the wind strength and
+heading, then the rig's recipes (the `<Graph>.effect.asset` files beside its VFX graphs and its variants' graphs) each
+with its state (**Built**, **Out of date** or **Missing**, from `EffectGraphBuilder.State`), **Select** and **Build
+graph**. **Capture frames** runs `EffectCapture` for the rig, as the `effect capture` command does, and reveals
+`Logs/EffectCaptures/<Rig>/`. The rig's validation problems (`EffectRig.Problems`) list under it.
 
 **Follow selection** (remembered) selects the row of an effect rig prefab or recipe chosen in the Project window and
 ignores any other selection. The last effect is remembered too. The recipe inspector's **Preview** button opens the page
