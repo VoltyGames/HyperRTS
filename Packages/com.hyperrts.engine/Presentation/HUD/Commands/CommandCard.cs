@@ -13,7 +13,6 @@ namespace HyperRTS.Presentation.HUD.Commands
     /// </summary>
     public sealed class CommandCard : HUDPanel
     {
-        public const int Columns = 5;
         public const int Slots = 15;
 
         private readonly CommandKit _kit;

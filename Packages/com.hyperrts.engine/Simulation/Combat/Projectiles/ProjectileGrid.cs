@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Cells;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -57,22 +58,19 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             var inbound = Closest.None;
             var min = Cell(center - weapon.Range);
             var max = Cell(center + weapon.Range);
-            for (var x = min.x; x <= max.x; x++)
+            foreach (var cell in new CellRange(min, max))
             {
-                for (var y = min.y; y <= max.y; y++)
+                foreach (var entry in _cells.GetValuesForKey(cell))
                 {
-                    foreach (var entry in _cells.GetValuesForKey(new int2(x, y)))
+                    if (!weapon.Engages(entry.Kind) || !relations.IsHostile(faction, entry.Faction))
                     {
-                        if (!weapon.Engages(entry.Kind) || !relations.IsHostile(faction, entry.Faction))
-                        {
-                            continue;
-                        }
+                        continue;
+                    }
 
-                        near.Consider(0, entry.Entity, math.distancesq(entry.Position, center));
-                        if (math.distancesq(entry.Aim, center) <= radiusSq)
-                        {
-                            inbound.Consider(0, entry.Entity, math.distancesq(entry.Position, center));
-                        }
+                    near.Consider(0, entry.Entity, math.distancesq(entry.Position, center));
+                    if (math.distancesq(entry.Aim, center) <= radiusSq)
+                    {
+                        inbound.Consider(0, entry.Entity, math.distancesq(entry.Position, center));
                     }
                 }
             }

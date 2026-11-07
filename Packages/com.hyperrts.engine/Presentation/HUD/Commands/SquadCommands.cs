@@ -19,13 +19,8 @@ namespace HyperRTS.Presentation.HUD.Commands
     {
         private const string ActiveClass = "hud-command--active";
 
-        private readonly LiveQuery _retreatPoints = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<RetreatPoint>(), ComponentType.ReadOnly<Faction>(),
-            ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
-
-        private readonly LiveQuery _reinforcePoints = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<ReinforcePoint>(), ComponentType.ReadOnly<Faction>(),
-            ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
+        private readonly LiveQuery _retreatPoints = PointQuery<RetreatPoint>();
+        private readonly LiveQuery _reinforcePoints = PointQuery<ReinforcePoint>();
 
         private readonly CommandKit _kit;
         private readonly List<Entity> _squads = new();
@@ -199,5 +194,10 @@ namespace HyperRTS.Presentation.HUD.Commands
                 return;
             }
         }
+
+        // The live, online points of one kind that a squad can retreat to or reinforce at.
+        private static LiveQuery PointQuery<T>() => new(entityManager => entityManager.CreateEntityQuery(
+            ComponentType.ReadOnly<T>(), ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
     }
 }
