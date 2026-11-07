@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using UnityEngine;
 
@@ -15,7 +16,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Metres between the centres of a tramline's two wheel lines.")]
         public float gauge;
 
-        [Tooltip("Half a wheel line's width (metres); no plant stands nearer its centre.")]
+        [Tooltip("Half a wheel line's width; no plant stands nearer its centre.")]
+        [Unit("m")]
         public float halfWidth;
 
         [Tooltip("Metres across the rows from the lattice origin to a tramline's centre.")]

@@ -18,23 +18,28 @@ namespace HyperRTS.Simulation.Movement
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public partial class LocomotionAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Speed gained per second, in m/s2.")]
+        [Tooltip("Speed gained per second.")]
+        [Unit("m/s²")]
         [Min(0.1f)]
         public float acceleration = 2.5f;
 
-        [Tooltip("Speed shed per second when braking, in m/s2.")]
+        [Tooltip("Speed shed per second when braking.")]
+        [Unit("m/s²")]
         [Min(0.1f)]
         public float braking = 6f;
 
-        [Tooltip("Fastest the hull yaws, in degrees per second: tracks turn at it, wheels hold it as their grip at speed.")]
+        [Tooltip("Fastest the hull yaws: tracks turn at it, wheels hold it as their grip at speed.")]
+        [Unit("°/s")]
         [Min(1f)]
         public float turnRate = 50f;
 
-        [Tooltip("How fast the steered wheels turn, in degrees per second. Wheels only.")]
+        [Tooltip("How fast the steered wheels turn. Wheels only.")]
+        [Unit("°/s")]
         [Min(1f)]
         public float steerRate = 45f;
 
-        [Tooltip("Tightest circle the rear axle drives, in metres. 0 turns at any speed. Ignored when it pivots.")]
+        [Tooltip("Tightest circle the rear axle drives. 0 turns at any speed. Ignored when it pivots.")]
+        [Unit("m")]
         [Min(0f)]
         public float turnRadius;
 
@@ -52,11 +57,13 @@ namespace HyperRTS.Simulation.Movement
         [Range(1, 2)]
         public int steeringAxles = 1;
 
-        [Tooltip("Top speed in reverse, in m/s.")]
+        [Tooltip("Top speed in reverse.")]
+        [Unit("m/s")]
         [Min(0.1f)]
         public float reverseSpeed = 2.5f;
 
-        [Tooltip("Longest leg it backs along, in metres, when turning round would clearly take longer. 0 never reverses.")]
+        [Tooltip("Longest leg it backs along when turning round would clearly take longer. 0 never reverses.")]
+        [Unit("m")]
         [Min(0f)]
         public float reverseRun = 10f;
 

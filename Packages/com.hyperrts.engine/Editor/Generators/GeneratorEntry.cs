@@ -12,16 +12,18 @@ namespace HyperRTS.Editor.Generators
         public string outputs;
         public string lastRun;
         public string error;
+        public bool outOfDate;
 
-        public static GeneratorEntry From(Generator generator, GeneratorRun last) => new()
+        public static GeneratorEntry From(Generator generator, GeneratorRunLog log) => new()
         {
             name = generator.Name,
             group = generator.Group,
             description = generator.Description,
             sources = generator.Sources,
             outputs = generator.Outputs,
-            lastRun = last?.time,
-            error = last?.error,
+            lastRun = log.Find(generator.Name)?.time,
+            error = log.Find(generator.Name)?.error,
+            outOfDate = generator.IsOutOfDate(log),
         };
     }
 }

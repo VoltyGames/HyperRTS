@@ -52,7 +52,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
         [Tooltip("Ground vehicles: degrees the body squats, dives or rolls per m/s² of acceleration.")]
         public float swayPerAcceleration = 0.6f;
 
-        [Tooltip("Ground vehicles: the most the body sways on its springs, in degrees.")]
+        [Tooltip("Ground vehicles: the most the body sways on its springs.")]
+        [Unit("°")]
         public float maxSway = 3f;
 
         [Tooltip("Ground vehicles: how fast the springs bounce, in hertz.")]
@@ -61,7 +62,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
         [Tooltip("Ground vehicles: spring damping ratio, where 1 settles without overshoot.")]
         public float springDamping = 0.45f;
 
-        [Tooltip("Ground vehicles: degrees per second a shot rocks the body away from the gun.")]
+        [Tooltip("Ground vehicles: how fast a shot rocks the body away from the gun.")]
+        [Unit("°/s")]
         public float recoilRate = 12f;
 
         /// <summary>Primary and extra weapons, interceptors among them: the <c>WeaponPose</c> indices a slot may follow.</summary>

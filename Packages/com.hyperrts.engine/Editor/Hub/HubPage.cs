@@ -11,8 +11,11 @@ namespace HyperRTS.Editor.Hub
         /// <summary>Sidebar position, lowest first.</summary>
         public abstract int Order { get; }
 
-        /// <summary>Short text on the sidebar entry (an error count), or null for none.</summary>
-        public virtual string Badge => null;
+        /// <summary>The glyph beside the title: a name from Icons/Glyphs.uss, such as "shield-check".</summary>
+        public abstract string Glyph { get; }
+
+        /// <summary>The count pill on the sidebar entry, or <see cref="PageBadge.None"/>.</summary>
+        public virtual PageBadge Badge => PageBadge.None;
 
         /// <summary>Builds the page's content each time the page is shown; it leaves the panel when the page hides.</summary>
         public abstract VisualElement Build();

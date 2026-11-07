@@ -24,11 +24,12 @@ namespace HyperRTS.Editor.Validation.Rules
         }
 
         /// <summary>Warns on <paramref name="owner"/> unless <paramref name="target"/> is a ghost; the fix makes it one.</summary>
-        protected static void WarnIfNotGhost(Component owner, GameObject target, string message, ValidationIssues issues)
+        protected static void WarnIfNotGhost(Component owner, GameObject target, string message, ValidationIssues issues,
+            string path = null)
         {
             if (!IsGhost(target))
             {
-                issues.Warn(owner, message, "Make Ghost", () => Undo.AddComponent<GhostAuthoringComponent>(target));
+                issues.Warn(owner, message, "Make Ghost", () => Undo.AddComponent<GhostAuthoringComponent>(target), path);
             }
         }
 

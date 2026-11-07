@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using Unity.Entities;
 using UnityEngine;
@@ -11,7 +12,8 @@ namespace HyperRTS.Simulation.Squads.Cover
         [Tooltip("Cover entity a heavy blast on open ground leaves, with Cover Spots filled as a ring. Empty: no craters give cover.")]
         public GameObject prefab;
 
-        [Tooltip("Smallest splash radius in metres of a blast that digs a crater. Small arms and light shells dig none.")]
+        [Tooltip("Smallest splash radius of a blast that digs a crater. Small arms and light shells dig none.")]
+        [Unit("m")]
         [Min(0f)]
         public float minRadius;
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Generators;
 using UnityEditor;
@@ -30,6 +31,8 @@ namespace HyperRTS.Editor.Environment
         public override string Description => "Tileable soil grain normal, occlusion and albedo.";
 
         public override string Sources => "Seed and settings in TerrainMicroTexture.cs";
+
+        public override IEnumerable<string> Inputs => new[] { ScriptPath() };
 
         public override string Outputs => Path;
 

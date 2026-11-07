@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Movement
         /// Measures <see cref="wheelbase"/> and <see cref="rearAxle"/> from the model's Wheel_L01... wheels: the first
         /// <see cref="steeringAxles"/> axles from the front steer, the rest make the rear axle.
         /// </summary>
-        [InspectorButton("Fill from wheels")]
+        [InspectorButton("Fill from wheels", Glyph = "wand-sparkles")]
         public void FillFromWheels()
         {
             var axles = Axles();

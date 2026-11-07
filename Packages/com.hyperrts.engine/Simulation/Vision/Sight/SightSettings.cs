@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Vision.Detection;
 using System;
 using UnityEngine;
@@ -28,7 +29,8 @@ namespace HyperRTS.Simulation.Vision.Sight
         [Min(0f)]
         public float maxRange;
 
-        [Tooltip("Concealed infantry show to enemy ground units this close, in metres.")]
+        [Tooltip("Concealed infantry show to enemy ground units this close.")]
+        [Unit("m")]
         [Min(0f)]
         public float revealDistance;
 

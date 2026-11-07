@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
         public Bay[] bays = Array.Empty<Bay>();
 
         /// <summary>Lists every <c>Bay_NN</c> child in name order with its <c>Bay_NN_Exit</c> sibling, keeping run-ins.</summary>
-        [InspectorButton("Fill bays")]
+        [InspectorButton("Fill bays", Glyph = "wand-sparkles")]
         public void FillBays()
         {
             var stops = GetComponentsInChildren<Transform>(true).Where(child => StopName.IsMatch(child.name))

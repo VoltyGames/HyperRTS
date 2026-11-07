@@ -14,15 +14,16 @@ namespace HyperRTS.Editor.Validation.Rules
         public override bool AppliesTo(Component component) => !CheckedFields.Find(component.GetType()).IsEmpty;
 
         protected override void Check(Component component, ValidationIssues issues) =>
-            CheckBlock(component, component, CheckedFields.Find(component.GetType()), "", issues);
+            CheckBlock(component, component, CheckedFields.Find(component.GetType()), "", "", issues);
 
-        // The location prefix names the list entry a nested field sits in, such as "Extra weapons 2: ".
+        // The location prefix names the list entry a nested field sits in, such as "Extra weapons 2: ";
+        // the path prefix is the same place as a property path, such as "extraWeapons.Array.data[1].".
         private static void CheckBlock(Component owner, object block, CheckedFields fields, string location,
-            ValidationIssues issues)
+            string path, ValidationIssues issues)
         {
             foreach (var field in fields.Checked)
             {
-                CheckField(owner, field, field.Field.GetValue(block), location, issues);
+                CheckField(owner, field, field.Field.GetValue(block), location, path + field.Field.Name, issues);
             }
 
             foreach (var (field, inner) in fields.Nested)
@@ -32,7 +33,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 {
                     if (value != null)
                     {
-                        CheckBlock(owner, value, inner, location, issues);
+                        CheckBlock(owner, value, inner, location, $"{path}{field.Name}.", issues);
                     }
 
                     continue;
@@ -43,35 +44,36 @@ namespace HyperRTS.Editor.Validation.Rules
                 {
                     if (list[i] != null)
                     {
-                        CheckBlock(owner, list[i], inner, $"{location}{name} {i + 1}: ", issues);
+                        CheckBlock(owner, list[i], inner, $"{location}{name} {i + 1}: ", $"{path}{field.Name}.Array.data[{i}].",
+                            issues);
                     }
                 }
             }
         }
 
         private static void CheckField(Component owner, CheckedField field, object value, string location,
-            ValidationIssues issues)
+            string path, ValidationIssues issues)
         {
             var list = value as IList;
             if (field.NoEmptyEntries != null)
             {
-                CheckEmptyEntries(owner, field, list, location, issues);
+                CheckEmptyEntries(owner, field, list, location, path, issues);
             }
 
             if (list == null)
             {
-                CheckReference(owner, field, value as Object, null, location, issues);
+                CheckReference(owner, field, value as Object, null, location, path, issues);
                 return;
             }
 
             foreach (var entry in list)
             {
-                CheckReference(owner, field, entry as Object, list, location, issues);
+                CheckReference(owner, field, entry as Object, list, location, path, issues);
             }
         }
 
         private static void CheckEmptyEntries(Component owner, CheckedField field, IList list, string location,
-            ValidationIssues issues)
+            string path, ValidationIssues issues)
         {
             foreach (var entry in list)
             {
@@ -81,13 +83,13 @@ namespace HyperRTS.Editor.Validation.Rules
                 }
 
                 issues.Warn(owner, $"{location}The {field.Name} list has {field.EmptyEntries}, which are ignored.", "Remove Empty",
-                    () => QuickFixes.RemoveEmpty(owner, list, field.IsEmpty));
+                    () => QuickFixes.RemoveEmpty(owner, list, field.IsEmpty), path);
                 return;
             }
         }
 
         private static void CheckReference(Component owner, CheckedField field, Object reference, IList list,
-            string location, ValidationIssues issues)
+            string location, string path, ValidationIssues issues)
         {
             if (reference == null)
             {
@@ -96,17 +98,17 @@ namespace HyperRTS.Editor.Validation.Rules
 
             if (field.PrefabAsset != null)
             {
-                CheckPrefabAsset(owner, field.PrefabAsset.Label, reference, list, location, issues);
+                CheckPrefabAsset(owner, field.PrefabAsset.Label, reference, list, location, path, issues);
             }
 
             if (field.GhostPrefab != null)
             {
-                CheckGhost(owner, field, reference, location, issues);
+                CheckGhost(owner, field, reference, location, path, issues);
             }
         }
 
         private static void CheckPrefabAsset(Component owner, string label, Object reference, IList list,
-            string location, ValidationIssues issues)
+            string location, string path, ValidationIssues issues)
         {
             if (PrefabUtility.IsPartOfPrefabAsset(reference))
             {
@@ -117,15 +119,15 @@ namespace HyperRTS.Editor.Validation.Rules
             var hasSource = PrefabUtility.GetCorrespondingObjectFromSource(reference) != null;
             if (list != null && hasSource)
             {
-                issues.Warn(owner, message, "Use Prefab", () => QuickFixes.UsePrefab(owner, list, reference));
+                issues.Warn(owner, message, "Use Prefab", () => QuickFixes.UsePrefab(owner, list, reference), path);
                 return;
             }
 
-            issues.Warn(owner, message);
+            issues.Warn(owner, message, path: path);
         }
 
         private static void CheckGhost(Component owner, CheckedField field, Object reference, string location,
-            ValidationIssues issues)
+            string path, ValidationIssues issues)
         {
             if (field.GhostPrefab.OnlyOnGhosts && !IsGhost(owner))
             {
@@ -134,7 +136,7 @@ namespace HyperRTS.Editor.Validation.Rules
 
             var target = reference is Component component ? component.gameObject : (GameObject)reference;
             WarnIfNotGhost(owner, target,
-                $"{location}{field.GhostPrefab.Label} '{target.name}' is not a ghost, so clients won't see it.", issues);
+                $"{location}{field.GhostPrefab.Label} '{target.name}' is not a ghost, so clients won't see it.", issues, path);
         }
     }
 }

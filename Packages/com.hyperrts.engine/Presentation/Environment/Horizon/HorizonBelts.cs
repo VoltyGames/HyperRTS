@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +38,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
         [Min(0f)]
         public float depth = 3f;
 
-        [Tooltip("Width of the gap where a track crosses a belt (metres).")]
+        [Tooltip("Width of the gap where a track crosses a belt.")]
+        [Unit("m")]
         [Min(0f)]
         public float gapWidth = 12f;
 

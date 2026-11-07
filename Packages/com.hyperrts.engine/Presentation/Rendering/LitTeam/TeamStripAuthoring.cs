@@ -13,10 +13,12 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class TeamStripAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Bottom of the band, in metres above the model's origin (its own space).")]
+        [Tooltip("Bottom of the band, above the model's origin (its own space).")]
+        [Unit("m")]
         public float bottom = 2f;
 
-        [Tooltip("Top of the band, in metres above the model's origin (its own space).")]
+        [Tooltip("Top of the band, above the model's origin (its own space).")]
+        [Unit("m")]
         public float top = 2.4f;
 
         public class Baker : Baker<TeamStripAuthoring>

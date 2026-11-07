@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -29,7 +30,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         [Tooltip("Tint of plants in dry patches.")]
         public Color dry = Color.white;
 
-        [Tooltip("Plants per square metre at full coverage.")]
+        [Tooltip("Plants at full coverage.")]
+        [Unit("/m²")]
         public float density = 1f;
 
         [Tooltip("How strongly the plants gather into clumps and tufts: 0 spreads them evenly.")]

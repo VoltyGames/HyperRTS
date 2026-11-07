@@ -27,21 +27,52 @@ namespace HyperRTS.Editor.Authoring
         /// <summary>Each <c>[ShowIf]</c> field's property path with its condition's, which names a sibling field.</summary>
         public static IEnumerable<(string Field, string Condition)> Conditions(Type type, string prefix = "")
         {
+            foreach (var (path, showIf) in Marked<ShowIfAttribute>(type, prefix))
+            {
+                yield return (path, path.Substring(0, path.LastIndexOf('.') + 1) + showIf.Field);
+            }
+        }
+
+        /// <summary>Each field marked <typeparamref name="T"/>, as its property path and attribute; nested blocks too.</summary>
+        public static IEnumerable<(string Path, T Attribute)> Marked<T>(Type type, string prefix = "") where T : Attribute
+        {
             foreach (var field in type.GetFields(InstanceFields))
             {
-                var showIf = field.GetCustomAttribute<ShowIfAttribute>();
-                if (showIf != null)
+                var attribute = field.GetCustomAttribute<T>();
+                if (attribute != null)
                 {
-                    yield return (prefix + field.Name, prefix + showIf.Field);
+                    yield return (prefix + field.Name, attribute);
                 }
                 else if (IsNestedBlock(field))
                 {
-                    foreach (var nested in Conditions(field.FieldType, $"{prefix}{field.Name}."))
+                    foreach (var nested in Marked<T>(field.FieldType, $"{prefix}{field.Name}."))
                     {
                         yield return nested;
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Runs <paramref name="apply"/> on the property field bound to <paramref name="path"/> once it is drawn, and
+        /// again after each layout until it returns true: a nested block draws its fields only once the inspector binds.
+        /// </summary>
+        public static void WhenDrawn(VisualElement root, string path, Func<PropertyField, bool> apply)
+        {
+            if (TryApply(root, path, apply))
+            {
+                return;
+            }
+
+            EventCallback<GeometryChangedEvent> late = null;
+            late = _ =>
+            {
+                if (TryApply(root, path, apply))
+                {
+                    root.UnregisterCallback(late);
+                }
+            };
+            root.RegisterCallback(late);
         }
 
         /// <summary>True when the condition field is set: a true bool, a number above 0 or an assigned object.</summary>
@@ -86,34 +117,18 @@ namespace HyperRTS.Editor.Authoring
         {
             var condition = serializedObject.FindProperty(conditionPath) ?? throw new ArgumentException(
                 $"[ShowIf] on {type.Name}.{path} names '{conditionPath}', which is not a serialized field.");
-            if (TryTrack(root, path, condition))
+            WhenDrawn(root, path, field =>
             {
-                return;
-            }
-
-            // A nested block draws its fields only once the inspector binds, so wait for a layout that has them.
-            EventCallback<GeometryChangedEvent> late = null;
-            late = _ =>
-            {
-                if (TryTrack(root, path, condition))
-                {
-                    root.UnregisterCallback(late);
-                }
-            };
-            root.RegisterCallback(late);
+                Apply(field, condition);
+                field.TrackPropertyValue(condition, changed => Apply(field, changed));
+                return true;
+            });
         }
 
-        private static bool TryTrack(VisualElement root, string path, SerializedProperty condition)
+        private static bool TryApply(VisualElement root, string path, Func<PropertyField, bool> apply)
         {
             var field = root.Query<PropertyField>().Where(drawn => drawn.bindingPath == path).First();
-            if (field == null)
-            {
-                return false;
-            }
-
-            Apply(field, condition);
-            field.TrackPropertyValue(condition, changed => Apply(field, changed));
-            return true;
+            return field != null && apply(field);
         }
 
         private static void Apply(VisualElement field, SerializedProperty condition) =>

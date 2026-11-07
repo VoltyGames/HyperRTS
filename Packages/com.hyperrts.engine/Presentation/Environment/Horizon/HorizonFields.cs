@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +41,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
         [Tooltip("Degrees the grid is turned, as the map's farmland.")]
         public float angle;
 
-        [Tooltip("Weedy strip along each field edge (metres).")]
+        [Tooltip("Weedy strip along each field edge.")]
+        [Unit("m")]
         [Min(0f)]
         public float marginWidth = 5f;
 
@@ -60,7 +62,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
         [Range(0f, 1f)]
         public float trackShare = 0.3f;
 
-        [Tooltip("Full width of a dirt track (metres).")]
+        [Tooltip("Full width of a dirt track.")]
+        [Unit("m")]
         [Min(0f)]
         public float trackWidth = 6f;
 

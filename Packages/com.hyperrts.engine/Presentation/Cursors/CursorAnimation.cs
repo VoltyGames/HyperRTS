@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Common;
@@ -11,7 +12,8 @@ namespace HyperRTS.Presentation.Cursors
     {
         public CursorKind kind;
 
-        [Tooltip("Frames per second.")]
+        [Tooltip("Playback rate of the animation.")]
+        [Unit("fps")]
         [Min(0.01f)]
         public float fps = 12f;
 

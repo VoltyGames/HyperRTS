@@ -27,6 +27,8 @@ namespace HyperRTS.Editor.PlayMode
 
         public override string Title => "Play";
 
+        public override string Glyph => "play";
+
         public override int Order => 40;
 
         public override VisualElement Build()

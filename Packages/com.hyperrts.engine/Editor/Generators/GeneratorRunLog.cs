@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using UnityEngine;
 
@@ -38,7 +39,7 @@ namespace HyperRTS.Editor.Generators
             log.runs.Add(new GeneratorRun
             {
                 generator = generator,
-                time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                time = DateTime.Now.ToString(GeneratorRun.TimeFormat, CultureInfo.InvariantCulture),
                 error = error,
             });
             Directory.CreateDirectory(Folder);

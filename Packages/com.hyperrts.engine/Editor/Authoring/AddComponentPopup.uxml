@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="Authoring.uss" />
+  <ui:VisualElement class="hrts-popup">
+    <uie:ToolbarSearchField name="search" class="hrts-popup__search" />
+    <ui:ScrollView name="list" class="hrts-popup__list" />
+  </ui:VisualElement>
+</ui:UXML>

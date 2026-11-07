@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Generators;
@@ -14,6 +16,10 @@ namespace HyperRTS.Editor.Tests.Tools
     public class ToolsWindowTests : TemplateFixture
     {
         private const string ObjectMenu = "GameObject/HyperRTS/";
+        private const string Folder = "Assets/_ToolsWindowTests";
+
+        [TearDown]
+        public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
 
         [Test]
         public void HubPagesHaveUniqueTitlesAndOrders()
@@ -38,6 +44,44 @@ namespace HyperRTS.Editor.Tests.Tools
             {
                 Assert.That(page.Build(), Is.Not.Null, page.Title);
             }
+        }
+
+        [Test]
+        public void BuildTabsHaveUniqueTitlesAndOrders()
+        {
+            var tabs = BuildTabTypes().Select(type => (BuildTab)Activator.CreateInstance(type)).ToArray();
+
+            Assert.That(tabs, Is.Not.Empty);
+            Assert.That(tabs.Select(tab => tab.Title), Is.Unique, "Build tabs sharing a Title");
+            Assert.That(tabs.Select(tab => tab.Order), Is.Unique, "Build tabs sharing an Order");
+        }
+
+        [Test]
+        public void EngineBuildTabsBuild()
+        {
+            var tabs = BuildTabTypes()
+                .Where(type => type.Assembly == typeof(HubPage).Assembly)
+                .Select(type => (BuildTab)Activator.CreateInstance(type));
+            foreach (var tab in tabs)
+            {
+                Assert.That(tab.Build(), Is.Not.Null, tab.Title);
+            }
+        }
+
+        [Test]
+        public void GeneratorIsOutOfDateWhenAnInputIsNewerThanItsRun()
+        {
+            AssetDatabase.CreateFolder("Assets", "_ToolsWindowTests");
+            var input = Folder + "/input.txt";
+            File.WriteAllText(input, "x");
+            var ran = DateTime.Now;
+            var run = new GeneratorRun { generator = "test", time = ran.ToString(GeneratorRun.TimeFormat, CultureInfo.InvariantCulture) };
+
+            File.SetLastWriteTime(input, ran.AddMinutes(-5));
+            Assert.That(run.IsOlderThan(new[] { Folder }), Is.False);
+
+            File.SetLastWriteTime(input, ran.AddMinutes(5));
+            Assert.That(run.IsOlderThan(new[] { Folder }), Is.True);
         }
 
         [Test]
@@ -79,6 +123,9 @@ namespace HyperRTS.Editor.Tests.Tools
                 Assert.AreEqual(template.Label, Track(template.Create()).name, template.Path);
             }
         }
+
+        private static Type[] BuildTabTypes() =>
+            TypeCache.GetTypesDerivedFrom<BuildTab>().Where(type => !type.IsAbstract).ToArray();
 
         private static Type[] Controls() => TypeCache.GetTypesWithAttribute<UxmlElementAttribute>()
             .Where(type => type.Assembly == typeof(HubPage).Assembly)

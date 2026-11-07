@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
@@ -11,28 +12,67 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Short text descriptions of an entity, shared by the inspector header and the catalog.</summary>
+    /// <summary>An entity's role, stats and cost as text, shared by the inspector card and the catalog.</summary>
     public static class EntitySummary
     {
-        /// <summary>For example "Unit · Weapon, Builder · 12 DPS · 150 Supplies".</summary>
-        public static string Line(GameEntityAuthoring entity)
+        /// <summary>For example "Unit · Weapon, Builder": the kind, then its other authoring components.</summary>
+        public static string Role(GameEntityAuthoring entity)
         {
-            var parts = new List<string> { ComponentName(entity.GetType()) };
             var modules = Modules(entity);
-            if (modules.Length > 0)
+            var kind = ComponentName(entity.GetType());
+            return modules.Length > 0 ? $"{kind} · {modules}" : kind;
+        }
+
+        /// <summary>The label and value of each stat the entity has, such as Health, Speed or DPS.</summary>
+        public static List<(string Label, string Value)> Stats(GameEntityAuthoring entity)
+        {
+            var stats = new List<(string, string)>();
+            var cost = CostText(entity);
+            if (cost.Length > 0)
             {
-                parts.Add(modules);
+                stats.Add(("Cost", cost));
             }
 
+            if (entity.buildTime > 0f)
+            {
+                stats.Add(("Build time", $"{entity.buildTime:0.#} s"));
+            }
+
+            stats.Add(("Health", $"{entity.maxHealth:0.#}"));
+            if (entity.TryGetComponent(out ArmorAuthoring armor) && ArmorText(armor).Length > 0)
+            {
+                stats.Add(("Armor", ArmorText(armor)));
+            }
+
+            if (entity is UnitAuthoring unit)
+            {
+                stats.Add(("Speed", $"{unit.moveSpeed:0.#} m/s"));
+            }
+
+            stats.Add(("Vision", $"{entity.visionRange:0.#} m"));
             if (entity.TryGetComponent(out WeaponAuthoring weapon))
             {
-                parts.Add($"{Dps(weapon):0.#} DPS");
+                stats.Add(("DPS", $"{Dps(weapon):0.#}"));
+                stats.Add(("Range", $"{Range(weapon):0.#} m"));
             }
 
-            var cost = CostText(entity);
-            parts.Add(cost.Length > 0 ? cost : "free");
-            return string.Join(" · ", parts);
+            return stats;
         }
+
+        /// <summary>Damage taken as front, side and rear percentages; else how many damage types it changes.</summary>
+        public static string ArmorText(ArmorAuthoring armor)
+        {
+            if (armor.IsDirectional)
+            {
+                return $"{armor.front * 100f:0} / {armor.side * 100f:0} / {armor.rear * 100f:0} %";
+            }
+
+            return armor.modifiers.Count > 0 ? $"{armor.modifiers.Count} damage types" : "";
+        }
+
+        /// <summary>The longest reach of the primary and every extra weapon.</summary>
+        public static float Range(WeaponAuthoring weapon) =>
+            weapon.extraWeapons.Aggregate(weapon.stats.range, (longest, slot) => Mathf.Max(longest, slot.stats.range));
 
         /// <summary>The primary's and every extra weapon's damage per second, added up.</summary>
         public static float Dps(WeaponAuthoring weapon) =>

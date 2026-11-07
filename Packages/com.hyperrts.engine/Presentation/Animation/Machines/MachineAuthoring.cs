@@ -25,7 +25,8 @@ namespace HyperRTS.Presentation.Animation.Machines
         [Min(0.1f)]
         public float rampSeconds = 2f;
 
-        [Tooltip("Firing and Releasing: seconds it keeps running after the last shot or release (a door counts its opening time).")]
+        [Tooltip("Firing and Releasing: how long it keeps running after the last shot or release (a door counts its opening time).")]
+        [Unit("s")]
         [Min(0f)]
         public float keepRunningSeconds = 1f;
 

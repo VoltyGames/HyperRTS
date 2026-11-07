@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using UnityEngine;
 
@@ -10,11 +11,13 @@ namespace HyperRTS.Presentation.Environment.Horizon
         [Tooltip("World height of open ground.")]
         public float height;
 
-        [Tooltip("How far the ground swells above and below its height (metres).")]
+        [Tooltip("How far the ground swells above and below its height.")]
+        [Unit("m")]
         [Min(0f)]
         public float swell = 3f;
 
-        [Tooltip("Wavelength of the swells (metres).")]
+        [Tooltip("Wavelength of the swells.")]
+        [Unit("m")]
         [Min(1f)]
         public float scale = 300f;
 

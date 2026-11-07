@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Simulation.Match;
 using UnityEngine;
@@ -23,7 +24,8 @@ namespace HyperRTS.Simulation.AI
         [Min(0f)]
         public float selfAbilityTriggerRange = 10f;
 
-        [Tooltip("Clear margin (metres) kept around each new building so units don't get boxed in.")]
+        [Tooltip("Clear margin kept around each new building so units don't get boxed in.")]
+        [Unit("m")]
         [Min(0f)]
         public float buildingGap = 4f;
 

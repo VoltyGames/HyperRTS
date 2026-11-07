@@ -18,7 +18,8 @@ namespace HyperRTS.Simulation.Vision.Sight
         [Tooltip("Blocked footprint (X by Z) centred on this transform. Fit To Model in the context menu fills it.")]
         public Vector2 size = new(4f, 4f);
 
-        [Tooltip("Solid top above this transform, in metres: the roof or the wall's top. 0 for cover sight seeps through.")]
+        [Tooltip("Solid top above this transform: the roof or the wall's top. 0 for cover sight seeps through.")]
+        [Unit("m")]
         [Min(0f)]
         public float height = 3f;
 
@@ -26,7 +27,8 @@ namespace HyperRTS.Simulation.Vision.Sight
         [Min(0f)]
         public float density;
 
-        [Tooltip("Top of the porous part above this transform, in metres, such as a tree's crown.")]
+        [Tooltip("Top of the porous part above this transform, such as a tree's crown.")]
+        [Unit("m")]
         [Min(0f)]
         public float porousTop;
 
@@ -34,7 +36,7 @@ namespace HyperRTS.Simulation.Vision.Sight
         public bool conceals;
 
         /// <summary>Sets the size and height to the box round the active meshes, centred on this transform.</summary>
-        [InspectorButton("Fit to model")]
+        [InspectorButton("Fit to model", Glyph = "wand-sparkles")]
         public void FitToModel()
         {
             var reach = Vector3.zero;

@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Destruction
         // Closer than this, the remains' mass gives no clear direction.
         private const float MinReach = 0.25f;
 
-        [InspectorButton("Measure from model")]
+        [InspectorButton("Measure from model", Glyph = "wand-sparkles")]
         private static void MeasureFromModel(ToppleAuthoring topple)
         {
             if (topple.trunkMaterial == null)

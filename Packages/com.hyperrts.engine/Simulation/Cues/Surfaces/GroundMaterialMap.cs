@@ -16,7 +16,8 @@ namespace HyperRTS.Simulation.Cues.Surfaces
         [Tooltip("Cells deep, south to north.")]
         public int height;
 
-        [Tooltip("Width of one cell (metres).")]
+        [Tooltip("Width of one cell.")]
+        [Unit("m")]
         public float spacing = 1f;
 
         [Tooltip("Row-major SurfaceMaterial bytes from the south-west corner.")]

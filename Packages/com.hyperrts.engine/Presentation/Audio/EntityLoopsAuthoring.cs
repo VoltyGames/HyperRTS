@@ -21,7 +21,8 @@ namespace HyperRTS.Presentation.Audio
         [Tooltip("Under way; fades in and pitches up with speed.")]
         public SoundCue engineMove;
 
-        [Tooltip("Speed in m/s at which the move loop is full and the idle loop silent.")]
+        [Tooltip("Speed at which the move loop is full and the idle loop silent.")]
+        [Unit("m/s")]
         [Min(0.1f)]
         public float fullSpeed = 8f;
 

@@ -54,7 +54,8 @@ namespace HyperRTS.Presentation.Animation.Figures
         [Tooltip("The figures, one per Squad member in the same order.")]
         public List<Figure> figures = new();
 
-        [Tooltip("Horizontal speed in m/s from which figures run instead of walk.")]
+        [Tooltip("Horizontal speed from which figures run instead of walk.")]
+        [Unit("m/s")]
         [Min(0.3f)]
         public float runSpeed = 3f;
 

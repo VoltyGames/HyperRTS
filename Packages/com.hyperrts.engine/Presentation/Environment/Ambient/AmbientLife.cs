@@ -33,7 +33,8 @@ namespace HyperRTS.Presentation.Environment.Ambient
         [Tooltip("Flying height above the ground in metres, min and max.")]
         public Vector2 height = new(15f, 40f);
 
-        [Tooltip("Width of a bird quad in metres.")]
+        [Tooltip("Width of a bird quad.")]
+        [Unit("m")]
         [Min(0.01f)]
         public float birdSize = 0.5f;
 
@@ -61,7 +62,8 @@ namespace HyperRTS.Presentation.Environment.Ambient
         [Tooltip("Seconds one dust devil lasts, min and max.")]
         public Vector2 dustDevilLifetime = new(12f, 25f);
 
-        [Tooltip("Drift speed downwind in metres per second.")]
+        [Tooltip("Drift speed downwind.")]
+        [Unit("m/s")]
         [Min(0f)]
         public float dustDevilSpeed = 3f;
 

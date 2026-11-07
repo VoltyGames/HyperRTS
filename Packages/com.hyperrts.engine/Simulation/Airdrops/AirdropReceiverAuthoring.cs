@@ -41,7 +41,8 @@ namespace HyperRTS.Simulation.Airdrops
         [Min(1f)]
         public float altitude = 30f;
 
-        [Tooltip("Metres per second the crate sinks under its parachutes.")]
+        [Tooltip("How fast the crate sinks under its parachutes.")]
+        [Unit("m/s")]
         [Min(0.1f)]
         public float fallSpeed = 6f;
 

@@ -18,7 +18,8 @@ namespace HyperRTS.Simulation.Death
         [Tooltip("From the trunk's base at the origin to its top in the standing model; its length sets the fall speed.")]
         public Vector3 trunk = Vector3.up;
 
-        [Tooltip("Heading in degrees from +Z toward +X that the canopy points in the remains model.")]
+        [Tooltip("Heading from +Z toward +X that the canopy points in the remains model.")]
+        [Unit("°")]
         public float lie;
 
         [Tooltip("The material of the trunk faces in the standing model's LOD0, which Measure from model reads. Editor only.")]

@@ -26,11 +26,13 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         [Min(1f)]
         public float dryingSeconds = Grime.Standard.DryingSeconds;
 
-        [Tooltip("Dust lost per second in water.")]
+        [Tooltip("Dust lost in water.")]
+        [Unit("/s")]
         [Min(0f)]
         public float dustWashPerSecond = Grime.Standard.DustWashPerSecond;
 
-        [Tooltip("Mud lost per second in water.")]
+        [Tooltip("Mud lost in water.")]
+        [Unit("/s")]
         [Min(0f)]
         public float mudWashPerSecond = Grime.Standard.MudWashPerSecond;
 

@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-generators__row">
+    <ui:VisualElement class="hrts-row__grow">
+      <ui:VisualElement class="hrts-generators__heading">
+        <ui:Label name="name" class="hrts-generators__name" />
+        <ui:Label name="out-of-date" class="hrts-generators__stale" text="Out of date" />
+        <ui:Label name="last-run" class="hrts-generators__last-run" />
+      </ui:VisualElement>
+      <ui:Label name="description" class="hrts-generators__description" />
+      <ui:Foldout name="files" text="Files" value="false">
+        <ui:Label name="sources" class="hrts-generators__description" />
+        <ui:Label name="outputs" class="hrts-generators__description" />
+      </ui:Foldout>
+    </ui:VisualElement>
+    <ui:Button name="run" class="hrts-generators__run" text="Run" />
+  </ui:VisualElement>
+</ui:UXML>

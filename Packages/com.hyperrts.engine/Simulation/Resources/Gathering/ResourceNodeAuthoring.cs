@@ -20,7 +20,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
         [Min(1)]
         public int amount = 1000;
 
-        [Tooltip("Amount restored per second; 0 means the node is removed when depleted.")]
+        [Tooltip("Amount restored; 0 means the node is removed when depleted.")]
+        [Unit("/s")]
         [Min(0f)]
         public float regrowthPerSecond;
 

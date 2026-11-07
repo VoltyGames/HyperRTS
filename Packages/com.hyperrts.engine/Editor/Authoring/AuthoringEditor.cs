@@ -12,7 +12,10 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Default inspector with a validation badge on top, for every authoring component (engine or game).</summary>
+    /// <summary>
+    /// Inspector for every authoring component (engine or game): an issue strip on top, the fields with each
+    /// <c>[Header]</c> as a foldout, unit suffixes, issue marks on the fields at fault, and the buttons.
+    /// </summary>
     [CustomEditor(typeof(AuthoringBehaviour), true)]
     [CanEditMultipleObjects]
     public class AuthoringEditor : UnityEditor.Editor
@@ -20,6 +23,7 @@ namespace HyperRTS.Editor.Authoring
         private const BindingFlags Methods = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         private IssueBadge _issues;
+        private FieldIssueMarks _marks;
         private HelpBox _buttonError;
 
         public override VisualElement CreateInspectorGUI()
@@ -28,8 +32,10 @@ namespace HyperRTS.Editor.Authoring
             _issues = root.Require<IssueBadge>("issues");
             _issues.Fixed += OnChanged;
             BuildHeader(root.Require<VisualElement>("header"));
-            InspectorElement.FillDefaultInspector(root.Require<VisualElement>("fields"), serializedObject, this);
+            BuildFields(root.Require<VisualElement>("fields"));
             ConditionalFields.Bind(root, serializedObject);
+            UnitSuffixes.Bind(root, target.GetType());
+            _marks = new FieldIssueMarks(root);
             BuildButtons(root.Require<VisualElement>("buttons"));
             _buttonError = root.Require<HelpBox>("button-error");
             BuildFooter(root.Require<VisualElement>("footer"));
@@ -65,7 +71,9 @@ namespace HyperRTS.Editor.Authoring
             }
 
             Refresh();
-            _issues.Show(Validate());
+            var issues = Validate();
+            _issues.Show(issues);
+            _marks.Show(issues);
         }
 
         // Every selected object, so a multi-selection shows each one's problems.
@@ -83,18 +91,87 @@ namespace HyperRTS.Editor.Authoring
             return issues;
         }
 
+        // Properties are laid out here rather than by FillDefaultInspector so a [Header] can start a foldout.
+        private void BuildFields(VisualElement fields)
+        {
+            var container = fields;
+            var type = target.GetType();
+            var property = serializedObject.GetIterator();
+            for (var enter = true; property.NextVisible(enter); enter = false)
+            {
+                if (property.propertyPath == "m_Script")
+                {
+                    continue;
+                }
+
+                var header = FindHeader(type, property.name);
+                if (header != null)
+                {
+                    container = AddGroup(fields, $"{type.Name}/{header.header}", header.header);
+                }
+
+                container.Add(new PropertyField(property.Copy()));
+            }
+        }
+
+        private static HeaderAttribute FindHeader(Type type, string field)
+        {
+            for (var declaring = type; declaring != null && declaring != typeof(MonoBehaviour); declaring = declaring.BaseType)
+            {
+                var found = declaring.GetField(field, Methods | BindingFlags.DeclaredOnly);
+                if (found != null)
+                {
+                    return found.GetCustomAttribute<HeaderAttribute>();
+                }
+            }
+
+            return null;
+        }
+
+        private static Foldout AddGroup(VisualElement fields, string key, string title)
+        {
+            var group = new Foldout { text = title, value = !EditorState.instance.IsGroupClosed(key) };
+            group.AddToClassList("hrts-group");
+            // Foldouts inside the fields bubble their changes up, so only this one counts.
+            group.RegisterValueChangedCallback(change =>
+            {
+                if (change.target == group)
+                {
+                    EditorState.instance.SetGroupClosed(key, !change.newValue);
+                }
+            });
+            fields.Add(group);
+            return group;
+        }
+
         private void BuildButtons(VisualElement buttons)
         {
-            foreach (var (label, method) in Buttons(target.GetType()))
+            foreach (var (label, glyph, method) in Buttons(target.GetType()))
             {
-                buttons.Add(new Button(() => Press(label, method)) { text = label });
+                buttons.Add(CreateButton(label, glyph, () => Press(label, method)));
             }
 
             buttons.SetHidden(buttons.childCount == 0);
         }
 
+        private static Button CreateButton(string label, string glyph, Action click)
+        {
+            var button = new Button(click);
+            button.AddToClassList("hrts-glyph-button");
+            if (glyph.Length > 0)
+            {
+                var icon = new VisualElement();
+                icon.AddToClassList("hrts-glyph");
+                icon.AddToClassList("hrts-glyph--" + glyph);
+                button.Add(icon);
+            }
+
+            button.Add(new Label(label));
+            return button;
+        }
+
         /// <summary>The component's own [InspectorButton] methods, then the static editor ones that take it.</summary>
-        private static IEnumerable<(string Label, MethodInfo Method)> Buttons(Type type)
+        private static IEnumerable<(string Label, string Glyph, MethodInfo Method)> Buttons(Type type)
         {
             foreach (var method in type.GetMethods(Methods))
             {
@@ -109,14 +186,15 @@ namespace HyperRTS.Editor.Authoring
                     throw new InvalidOperationException($"[InspectorButton] {type.Name}.{method.Name} must take no parameters.");
                 }
 
-                yield return (button.Label, method);
+                yield return (button.Label, button.Glyph, method);
             }
 
             foreach (var method in TypeCache.GetMethodsWithAttribute<InspectorButtonAttribute>())
             {
                 if (TakesComponent(method, type))
                 {
-                    yield return (method.GetCustomAttribute<InspectorButtonAttribute>().Label, method);
+                    var button = method.GetCustomAttribute<InspectorButtonAttribute>();
+                    yield return (button.Label, button.Glyph, method);
                 }
             }
         }

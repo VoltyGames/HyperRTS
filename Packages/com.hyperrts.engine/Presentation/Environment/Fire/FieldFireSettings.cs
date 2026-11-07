@@ -28,7 +28,8 @@ namespace HyperRTS.Presentation.Environment.Fire
         [Range(0f, 1f)]
         public float wetnessLimit = 0.3f;
 
-        [Tooltip("Smallest splash radius in metres that lights dry ground, so only high explosive does.")]
+        [Tooltip("Smallest splash radius that lights dry ground, so only high explosive does.")]
+        [Unit("m")]
         [Min(0f)]
         public float smallestBlast = 1.5f;
 

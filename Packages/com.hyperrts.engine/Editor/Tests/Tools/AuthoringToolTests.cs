@@ -7,13 +7,17 @@ using System;
 using System.Linq;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Templates;
+using HyperRTS.Editor.Validation;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Tests.Tools
 {
@@ -52,15 +56,61 @@ namespace HyperRTS.Editor.Tests.Tools
                 (Stat(Hit(nameof(DamageSettings.edgeFactor))), Stat(Hit(nameof(DamageSettings.radius)))));
 
         [Test]
-        public void SummariesListRoleModulesDamageCostAndTime()
+        public void SummariesListRoleModulesStatsAndTime()
         {
             var soldier = Track(EntityTemplates.CombatUnit()).GetComponent<GameEntityAuthoring>();
             var upgrade = Track(EntityTemplates.Upgrade()).GetComponent<UpgradeAuthoring>();
             upgrade.buildTime = 30f;
 
-            Assert.AreEqual("Unit · Weapon · 10 DPS · free", EntitySummary.Line(soldier));
+            Assert.AreEqual("Unit · Weapon", EntitySummary.Role(soldier));
+            var stats = EntitySummary.Stats(soldier).ToDictionary(stat => stat.Label, stat => stat.Value);
+            Assert.AreEqual("10", stats["DPS"]);
+            Assert.IsTrue(stats.ContainsKey("Health") && stats.ContainsKey("Range") && stats.ContainsKey("Speed"));
+            Assert.IsFalse(stats.ContainsKey("Cost"), "a free unit lists no cost");
             Assert.AreEqual("free · 30s", EntitySummary.ProducibleText(upgrade));
             Assert.AreEqual("", EntitySummary.ProducibleText(null));
+        }
+
+        [Test]
+        public void HeadersStartFoldoutsAndFieldsBeforeThemStayOutside()
+        {
+            var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
+            var editor = UnityEditor.Editor.CreateEditor(weapon);
+            try
+            {
+                var root = ((AuthoringEditor)editor).CreateInspectorGUI();
+
+                var groups = root.Query<Foldout>(className: "hrts-group").ToList();
+                CollectionAssert.AreEqual(new[] { "Engagement", "Extra weapons" }, groups.Select(group => group.text).ToArray());
+                var stats = root.Query<PropertyField>().Where(field => field.bindingPath == nameof(WeaponAuthoring.stats)).First();
+                Assert.IsNotNull(stats);
+                Assert.IsNull(stats.GetFirstAncestorOfType<Foldout>(), "the field before the first header stays outside");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(editor);
+            }
+        }
+
+        [Test]
+        public void UnitAttributesAreFoundInNestedBlocks()
+        {
+            var units = ConditionalFields.Marked<UnitAttribute>(typeof(WeaponAuthoring)).ToDictionary(found => found.Path, found => found.Attribute.Unit);
+
+            Assert.AreEqual("m", units[Stat(nameof(WeaponStats.range))]);
+            Assert.AreEqual("°/s", units[Stat(nameof(WeaponStats.traverseSpeed))]);
+        }
+
+        [Test]
+        public void FieldIssuesNameTheirPathInsideListEntries()
+        {
+            var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
+            weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
+            weapon.extraWeapons[0].stats.projectilePrefab = Track(new GameObject("Shell"));
+
+            var issue = ProjectValidator.Check(weapon).Single(found => found.Message.Contains("scene object"));
+
+            Assert.AreEqual("extraWeapons.Array.data[0].stats.projectilePrefab", issue.Path);
         }
 
         // The opposite face stays put, so moving the max (+1) or min (-1) face by d shifts the centre by d / 2.

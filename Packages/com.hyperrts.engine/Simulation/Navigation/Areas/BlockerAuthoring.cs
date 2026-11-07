@@ -12,11 +12,13 @@ namespace HyperRTS.Simulation.Navigation.Areas
     [DisallowMultipleComponent]
     public class BlockerAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Half the blocker's width in metres: match the hull it lies in.")]
+        [Tooltip("Half the blocker's width: match the hull it lies in.")]
+        [Unit("m")]
         [Min(0.01f)]
         public float radius = 1f;
 
-        [Tooltip("Full blocker length along this transform's forward, in metres. 0 (or up to the diameter) keeps a circle.")]
+        [Tooltip("Full blocker length along this transform's forward. 0 (or up to the diameter) keeps a circle.")]
+        [Unit("m")]
         [Min(0f)]
         public float hullLength;
 

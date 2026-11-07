@@ -10,12 +10,12 @@ namespace HyperRTS.Editor.Hub
     /// <summary>HyperRTS ▸ Tools: one dockable window with a sidebar of every <see cref="HubPage"/>.</summary>
     public class ToolsWindow : EditorWindow
     {
-        private const string WindowTitle = "HyperRTS Tools";
+        private const string WindowTitle = "HyperRTS";
 
         private const long BadgeMilliseconds = 2000;
 
         private HubPage[] _pages = Array.Empty<HubPage>();
-        private string[] _badges = Array.Empty<string>();
+        private PageBadge[] _badges = Array.Empty<PageBadge>();
         private HubPage _current;
         private ListView _sidebar;
         private VisualElement _content;
@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.Hub
             var root = rootVisualElement;
             EditorAssets.Layout(typeof(ToolsWindow)).CloneTree(root);
             _pages = TypeDiscovery.Instances<HubPage>().OrderBy(page => page.Order).ToArray();
-            _badges = new string[_pages.Length];
+            _badges = new PageBadge[_pages.Length];
 
             _sidebar = root.Require<ListView>("sidebar");
             var item = EditorAssets.Layout(typeof(ToolsWindow), "SidebarItem");
@@ -88,10 +88,16 @@ namespace HyperRTS.Editor.Hub
 
         private void BindSidebarItem(VisualElement item, int index)
         {
-            item.Require<Label>("title").text = _pages[index].Title;
+            var page = _pages[index];
+            item.Require<Label>("title").text = page.Title;
+            var glyph = item.Require<VisualElement>("glyph");
+            glyph.ClearClassList();
+            glyph.AddToClassList("hrts-glyph");
+            glyph.AddToClassList("hrts-glyph--" + page.Glyph);
             var badge = item.Require<Label>("badge");
-            badge.text = _badges[index];
-            badge.SetHidden(string.IsNullOrEmpty(_badges[index]));
+            badge.text = _badges[index].Count.ToString();
+            badge.EnableInClassList("hrts-badge--error", _badges[index].HasErrors);
+            badge.SetHidden(_badges[index].IsNone);
         }
 
         private static void RememberPage(Type page)
@@ -124,7 +130,7 @@ namespace HyperRTS.Editor.Hub
             for (var i = 0; i < _pages.Length; i++)
             {
                 var badge = _pages[i].Badge;
-                if (badge != _badges[i])
+                if (!badge.Equals(_badges[i]))
                 {
                     _badges[i] = badge;
                     changed = true;

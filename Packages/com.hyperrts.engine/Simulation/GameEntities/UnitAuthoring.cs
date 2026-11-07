@@ -29,7 +29,8 @@ namespace HyperRTS.Simulation.GameEntities
         public int population = 1;
 
         [Header("Movement")]
-        [Tooltip("Top speed in world units per second.")]
+        [Tooltip("Top speed.")]
+        [Unit("m/s")]
         [Min(0f)]
         public float moveSpeed = 5f;
 

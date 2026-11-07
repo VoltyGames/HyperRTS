@@ -26,7 +26,8 @@ namespace HyperRTS.Presentation.Overlays
         [Min(0f)]
         public float markerMargin = 0.35f;
 
-        [Tooltip("Line width in metres; never thinner than one and a half pixels.")]
+        [Tooltip("Line width; never thinner than one and a half pixels.")]
+        [Unit("m")]
         [Min(0.01f)]
         public float markerLine = 0.16f;
 

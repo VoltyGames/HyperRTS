@@ -13,11 +13,13 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public class TrackMarksAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Width of one track or tyre in metres.")]
+        [Tooltip("Width of one track or tyre.")]
+        [Unit("m")]
         [Min(0.05f)]
         public float width = 0.6f;
 
-        [Tooltip("Distance between the left and right track centres in metres.")]
+        [Tooltip("Distance between the left and right track centres.")]
+        [Unit("m")]
         [Min(0.1f)]
         public float gauge = 2.8f;
 

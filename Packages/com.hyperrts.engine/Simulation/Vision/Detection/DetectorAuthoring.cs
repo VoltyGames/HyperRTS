@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Vision.Detection
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class DetectorAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Detection radius in world units, separate from the vision range.")]
+        [Tooltip("Detection radius, separate from the vision range.")]
+        [Unit("m")]
         [Min(0f)]
         public float radius = 10f;
 

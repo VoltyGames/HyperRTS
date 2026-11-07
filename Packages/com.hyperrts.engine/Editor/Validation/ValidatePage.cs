@@ -22,26 +22,18 @@ namespace HyperRTS.Editor.Validation
 
         public override string Title => "Validate";
 
+        public override string Glyph => "shield-check";
+
         public override int Order => 30;
 
-        /// <summary>Errors and warnings from the last validation as "3E 12W", or null when there were none.</summary>
-        public override string Badge
+        /// <summary>Errors and warnings from the last validation.</summary>
+        public override PageBadge Badge
         {
             get
             {
                 var errors = SessionState.GetInt(ProjectValidator.ErrorsKey, 0);
                 var warnings = SessionState.GetInt(ProjectValidator.WarningsKey, 0);
-                if (errors == 0 && warnings == 0)
-                {
-                    return null;
-                }
-
-                if (warnings == 0)
-                {
-                    return $"{errors}E";
-                }
-
-                return errors == 0 ? $"{warnings}W" : $"{errors}E {warnings}W";
+                return new PageBadge(errors + warnings, errors > 0);
             }
         }
 

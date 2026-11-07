@@ -55,10 +55,10 @@ namespace HyperRTS.Simulation.Squads.Cover
         [Tooltip("The kind the fillers give every spot they write.")]
         public CoverKind fillKind = CoverKind.Heavy;
 
-        [InspectorButton("Fill both sides")]
+        [InspectorButton("Fill both sides", Glyph = "wand-sparkles")]
         public void FillBothSidesFromFields() => FillBothSides(fillSize, fillSpacing, fillGap, fillKind);
 
-        [InspectorButton("Fill ring")]
+        [InspectorButton("Fill ring", Glyph = "wand-sparkles")]
         public void FillRingFromFields() => FillRing(fillRadius, fillSpacing, fillGap, fillKind);
 
         /// <summary>Replaces the spots with rows along both long faces of a box <paramref name="size"/>, each facing across the prop, toward the far side it covers.</summary>

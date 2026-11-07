@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Hub;
 using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -9,19 +8,19 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Generators
 {
     /// <summary>
-    /// Tools ▸ Generate: every available <see cref="Generator"/> by group with what it reads and writes and its last
-    /// run, each runnable alone or all in order.
+    /// The Build page's Generators tab: every available <see cref="Generator"/> by group with its last run, whether
+    /// it is out of date, and what it reads and writes; each runs alone or all the out of date ones in order.
     /// </summary>
-    public sealed class GeneratePage : HubPage
+    public sealed class GeneratorsTab : BuildTab
     {
-        public override string Title => "Generate";
+        public override string Title => "Generators";
 
-        public override int Order => 90;
+        public override int Order => 10;
 
         public override VisualElement Build()
         {
             var root = Layout().Instantiate();
-            root.Require<ToolbarButton>("run-all").clicked += () => RunThenFill(GeneratorRunner.RunAll, root);
+            root.Require<ToolbarButton>("run-out-of-date").clicked += () => RunThenFill(GeneratorRunner.RunOutOfDate, root);
             Fill(root);
             return root;
         }
@@ -65,10 +64,11 @@ namespace HyperRTS.Editor.Generators
             row.Require<Label>("description").text = generator.Description;
             row.Require<Label>("sources").text = $"Reads: {generator.Sources}";
             row.Require<Label>("outputs").text = $"Writes: {generator.Outputs}";
+            row.Require<Label>("out-of-date").SetHidden(!generator.IsOutOfDate(log));
             var last = log.Find(generator.Name);
             var lastRun = row.Require<Label>("last-run");
             lastRun.text = last == null ? "Not run in this project yet" : last.ToString();
-            lastRun.EnableInClassList("hrts-generate__last-run--failed", last is { Failed: true });
+            lastRun.EnableInClassList("hrts-generators__last-run--failed", last is { Failed: true });
             row.Require<Button>("run").clicked += () => RunThenFill(() => GeneratorRunner.Run(generator), root);
             return row;
         }

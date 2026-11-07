@@ -17,11 +17,13 @@ namespace HyperRTS.Simulation.Resources.Gathering
         [Min(1)]
         public int capacity = 10;
 
-        [Tooltip("Amount gathered per second while at a node.")]
+        [Tooltip("Amount gathered while at a node.")]
+        [Unit("/s")]
         [Min(0.01f)]
         public float gatherRate = 2f;
 
-        [Tooltip("How far from a depleted node it looks for another of the same type, in world units.")]
+        [Tooltip("How far from a depleted node it looks for another of the same type.")]
+        [Unit("m")]
         [Min(0f)]
         public float replacementRange = 30f;
 

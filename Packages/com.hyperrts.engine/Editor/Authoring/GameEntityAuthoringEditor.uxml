@@ -1,3 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <ui:HelpBox name="summary" class="hrts-summary" message-type="None" />
+  <HyperRTS.Editor.Authoring.EntityCard name="card" />
+  <HyperRTS.Editor.Authoring.ModuleStrip name="modules" />
 </ui:UXML>

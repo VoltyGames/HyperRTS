@@ -15,5 +15,8 @@ namespace HyperRTS.Simulation.Common.Authoring
         }
 
         public string Label { get; }
+
+        /// <summary>Name of a glyph (such as "wand-sparkles") drawn left of the label; empty for none.</summary>
+        public string Glyph { get; set; } = "";
     }
 }

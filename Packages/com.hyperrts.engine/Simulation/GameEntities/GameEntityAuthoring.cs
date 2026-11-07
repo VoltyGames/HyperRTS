@@ -19,11 +19,13 @@ namespace HyperRTS.Simulation.GameEntities
         [Min(1f)]
         public float maxHealth = 100f;
 
-        [Tooltip("Sight radius in world units, used by fog of war and auto-targeting.")]
+        [Tooltip("Sight radius, used by fog of war and auto-targeting.")]
+        [Unit("m")]
         [Min(0f)]
         public float visionRange = 12f;
 
-        [Tooltip("Eye height above the ground in world units; higher eyes see over more terrain.")]
+        [Tooltip("Eye height above the ground; higher eyes see over more terrain.")]
+        [Unit("m")]
         [Min(0f)]
         public float eyeHeight = 2f;
 

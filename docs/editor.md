@@ -18,7 +18,9 @@ context menu under **Assets ▸ HyperRTS** (Build Effect Graph, Bake Bone Animat
 
 ## Tools window
 
-**HyperRTS ▸ Tools** is one dockable window with a page per tool.
+**HyperRTS ▸ Tools** is one dockable window titled HyperRTS, with a page per tool. Each sidebar entry has a glyph, the
+title and a count pill that is red when any of its count is an error and amber otherwise (Validate shows its errors
+and warnings).
 
 | Page | Does |
 | --- | --- |
@@ -26,19 +28,19 @@ context menu under **Assets ▸ HyperRTS** (Build Effect Graph, Bake Bone Animat
 | **Catalog** | Every unit and building in one editable stats table, and the tech tree |
 | **Validate** | Every rule's issues in prefabs, assets and open scenes, grouped by rule and asset, with quick fixes |
 | **Play** | Cheats, network tools, bot matches and replays. See [Play-mode debugging](#play-mode-debugging) |
-| **Generate** | Every generator with what it reads and writes and its last run, each with **Run**, plus **Run all** |
+| **Build** | Tabs for the generators, the game's art commands and player builds. See [Build page](#build-page) |
 
 **New blank scene...** asks for map size, player count and an optional starting base. It builds a scene with
 light, ground, the `EngineRig` rig and a SubScene holding the `Match`. See [scenes from code](#scenes-from-code).
 
-To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order` and return the content from
+To add a page, subclass `HubPage` in any editor assembly. Set `Title`, `Glyph` (a name from `Icons/Glyphs.uss`, such as `shield-check`) and `Order` and return the content from
 `Build()`: clone the page's layout with `Layout().Instantiate()`, which finds `<Page>.uxml` beside the script in its
 package or in `Assets` (`Layout("Row")` finds `<Page>Row.uxml`), and wire its elements by name with
 `Require<T>(name)`. The layout's root is a `PageShell`: a `uie:Toolbar` written as its first child goes in the toolbar
 slot and the rest in a scrolling body (`scroll="false"` for a page whose list or tree scrolls itself). `empty-text`
 and `ShowEmpty` show the empty-state note, and `ShowBusy` a busy note while a long task runs. The page leaves the panel
 when it hides, so subscribe to editor events with `root.WhileAttached(on, off)`; scheduled polls stop on their own. An
-optional `Badge` shows short text such as the Validate page's `3E 12W` (errors and warnings).
+optional `Badge` returns a `PageBadge` (a count and whether any is an error), as Validate's does.
 `ToolsWindow.Show<TPage>()` opens the window on a page.
 
 ## Commands
@@ -76,17 +78,27 @@ parameters `[CliArg]`. Return a small result (counts, issues, file paths) and na
 returning it. Throw to fail: the message reaches the caller. An `async Task<T>` method runs off the main thread
 while it awaits.
 
+### Build page
+
+The **Build** page holds one tab per `BuildTab`, found like pages. Subclass it in any editor assembly, set `Title` and
+`Order` and return the content from `Build()`, with `Layout()` finding `<Tab>.uxml` as a page does. A tab builds when
+it is shown and drops its content when it hides. The last tab is remembered. The engine has **Generators** (10); the
+game adds its own, such as art commands and player builds.
+
 ## Generators
 
 A `Generator` is one step that creates generated assets. Subclass it in the engine or a game and it appears on the
-Generate page. It has a unique `Name`, a `Group` heading, an `Order`, a one-line `Description`, its `Sources` and
-`Outputs` (paths, or a short description when they are many) and a `Run()` method. A step that uses another's output
+Build page's Generators tab. It has a unique `Name`, a `Group` heading, an `Order`, a one-line `Description`, its `Sources` and
+`Outputs` (paths, or a short description when they are many), its `Inputs` (asset paths of the files or folders it
+reads, where a folder counts every file below it) and a `Run()` method. A step whose settings are constants in its
+script lists that script with `ScriptPath()`. A step that uses another's output
 must come after it. An import hook that keeps an output current calls its generator through `GeneratorRunner.Run`,
 so an import and a manual run do the same work. Each run's time and result go to `Library/HyperRTS/GeneratorRuns.json`,
 which the page and `generator run --list true` show.
 
-**Run all** runs every generator in order and saves assets after each. The `generator run` [command](#commands) runs one
-or all of them. In batch mode, call `HyperRTS.Editor.Generators.GeneratorRunner.RunAll` with `-executeMethod`. To
+A generator is **Out of date** when it never ran here, failed last time, or an input file was written after its last
+run. **Run out of date** runs only those, in order, and saves assets after each. The `generator run` [command](#commands)
+runs one, all, or with `--stale true` only the out of date ones. In batch mode, call `HyperRTS.Editor.Generators.GeneratorRunner.RunAll` with `-executeMethod`. To
 change generated output, change the generator and run it again.
 
 The engine has four: **Component icons**, **Environment textures** (the cloud shadow cookie, road edge noise,
@@ -141,7 +153,9 @@ public class WeaponAuthoring : AuthoringBehaviour
 ```
 
 - Derive from `AuthoringBehaviour`, in games too, so the inspector and validation pick the component up.
-- Give every field a `[Tooltip]`. Guard values with `[Min]` or `[Range]`.
+- Give every field a `[Tooltip]`. Guard values with `[Min]` or `[Range]`. Put a number's unit in
+  `[Unit("m")]` (`"s"`, `"m/s"`, `"°"`, `"/s"`), not in the tooltip, which stays a sentence. `[Header]` starts a
+  foldout group in the inspector, so give each group of fields one.
 - Bakers write through `EntityWriter` methods, so tests build the same entities.
 - Paths come from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. A new module adds a line to the first two
   and an accent colour in the **Component icons** generator.
@@ -150,15 +164,29 @@ public class WeaponAuthoring : AuthoringBehaviour
 - Field checks need no rule of their own: `[PrefabAsset("Production option")]` wants a prefab asset, not a scene
   object; `[GhostPrefab("Hull")]` wants a ghost prefab, as the server spawns it; `[NoEmptyEntries]` (with
   `Key = nameof(...)` for entries that are structs) flags list entries the baker skips. `FieldAttributeRule` reads
-  them in nested blocks and lists too, with Use Prefab, Make Ghost and Remove Empty fixes.
+  them in nested blocks and lists too, with Use Prefab, Make Ghost and Remove Empty fixes. A rule that finds the
+  problem in one field passes its property path to `ValidationIssues.Warn` or `Error` (`path:`), and the inspector
+  marks that field.
 
 ## Inspectors
 
-`AuthoringEditor` is the inspector for every `AuthoringBehaviour`. A header badge counts the selection's
-validation issues; click it for the list and quick fixes. Units and buildings start with a summary line, such as
-"Unit · Weapon, Builder · 12 DPS · 150 Supplies".
+`AuthoringEditor` is the inspector for every `AuthoringBehaviour`. A slim strip on top counts the selection's
+validation issues; click it for the list and quick fixes. Below it the fields are laid out by the editor, not
+`FillDefaultInspector`: each `[Header]` starts a foldout (its open state is remembered per component type and header in
+`EditorState.closedGroups`) and fields before the first header stay outside. A `[Unit]` field shows its unit dim inside
+the input (`UnitSuffixes`). An issue that names a property path (`ValidationIssue.Path`) puts a red or yellow edge on that
+field with the message under it (`FieldIssueMarks`); the nearest drawn field holds an issue inside a closed list. Issues
+without a path stay in the strip's list.
 
-`[InspectorButton("Fill from model")]` on a parameterless method of the component draws a button under its fields,
+Units and buildings (`GameEntityAuthoringEditor`, single selection) start with an `EntityCard`: icon, name, role such as
+"Unit · Weapon, Builder", the owner's colour and a grid of the stats the object has (cost, build time, health, armor,
+speed, vision, DPS, range), read by `EntitySummary.Stats`. Under it the `ModuleStrip` has a chip per authoring component
+with its icon and a dot for its worst issue. A click shows only that component's inspector and folds the others, a second
+click shows them all; the last chip, **+**, opens `AddComponentPopup`, a searchable list of the components the object
+lacks grouped by their Add Component folder.
+
+`[InspectorButton("Fill from model", Glyph = "wand-sparkles")]` on a parameterless method of the component draws a button
+row under its fields, with the glyph (a name from `Editor/Icons/Glyphs.uss`) left of the label,
 or on a static editor method whose one parameter is the component, for work that needs editor code (`SectionsFill`,
 `ToppleMeasure`). A click runs it on every selected object as one undo step over the object's hierarchy, and an
 `InvalidOperationException` it throws shows as an error under the buttons.
@@ -195,8 +223,8 @@ or `Record` for code; each finished edit saves, an undo saves the file back, and
 ## Editor state
 
 `EditorState`, a `ScriptableSingleton` saved in `UserSettings/HyperRTS.asset`, keeps every remembered
-editor setting, per user and project: the Tools window's last page, Validate's **Selection only**, the Map Editor's
-auto preview, the debug layers switched on, the cheat amounts, the bot match settings and the Effect Preview
+editor setting, per user and project: the Tools window's last page, the Build page's last tab, Validate's **Selection only**, the Map Editor's
+auto preview, the debug layers switched on, the inspector header groups folded shut, the cheat amounts, the bot match settings and the Effect Preview
 controls. A layout binds its fields with `binding-path` and `EditorState.Bind(root)`, which saves each change;
 defaults, `[Min]` and `[Range]` live on the fields, never in the UXML. Code that sets a value calls `Save()`. Values
 that must reset each session stay in `SessionState`: the last validation's counts behind the Validate badge, the

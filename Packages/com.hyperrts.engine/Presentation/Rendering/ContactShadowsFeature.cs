@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Presentation.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -28,10 +29,12 @@ namespace HyperRTS.Presentation.Rendering
         [Tooltip("How dark a contact shadow is, 0 to 1, scaled by the sun's shadow strength.")]
         public float strength = 1f;
 
-        [Tooltip("View depth in metres where contact shadows start to fade, since a short trace is under a pixel far off.")]
+        [Tooltip("View depth where contact shadows start to fade, since a short trace is under a pixel far off.")]
+        [Unit("m")]
         public float fadeStart = 60f;
 
-        [Tooltip("View depth in metres past which contact shadows are gone.")]
+        [Tooltip("View depth past which contact shadows are gone.")]
+        [Unit("m")]
         public float fadeEnd = 80f;
 
         [Tooltip("Lowest quality level index the shadows run at, so cheaper levels skip them.")]

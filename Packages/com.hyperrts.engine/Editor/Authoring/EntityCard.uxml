@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-card">
+    <ui:VisualElement class="hrts-row">
+      <ui:Image name="icon" class="hrts-card__icon" />
+      <ui:VisualElement class="hrts-row__grow">
+        <ui:Label name="name" class="hrts-card__name" />
+        <ui:Label name="role" class="hrts-card__role" />
+      </ui:VisualElement>
+      <ui:VisualElement name="owner" class="hrts-card__owner" />
+    </ui:VisualElement>
+    <ui:VisualElement name="stats" class="hrts-card__stats" />
+  </ui:VisualElement>
+</ui:UXML>

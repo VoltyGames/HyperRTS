@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using System;
 using Unity.Entities;
 using UnityEngine;
@@ -8,7 +9,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
     [Serializable]
     public class WheelSlot : PartSlot
     {
-        [Tooltip("Rolling radius in metres; Fill from model measures it from the mesh.")]
+        [Tooltip("Rolling radius; Fill from model measures it from the mesh.")]
+        [Unit("m")]
         [Min(0.01f)]
         public float radius = 0.4f;
 

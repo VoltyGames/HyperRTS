@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
 using System;
 using UnityEngine;
@@ -21,7 +22,8 @@ namespace HyperRTS.Simulation.Squads
         [Min(0f)]
         public float decayDelay;
 
-        [Tooltip("Suppression lost a second once it falls.")]
+        [Tooltip("Suppression lost once it falls.")]
+        [Unit("/s")]
         [Min(0f)]
         public float decayRate;
 
@@ -65,7 +67,8 @@ namespace HyperRTS.Simulation.Squads
         public float reinforceTime;
 
         [Header("Formation")]
-        [Tooltip("Metres of ring a halted squad gives each living member, so the ring grows with the squad. 3.5 puts four members 2.2 m out.")]
+        [Tooltip("Ring length a halted squad gives each living member, so the ring grows with the squad. 3.5 puts four members 2.2 m out.")]
+        [Unit("m")]
         [Min(0.1f)]
         public float memberSpacing;
 
@@ -77,11 +80,13 @@ namespace HyperRTS.Simulation.Squads
         [Min(0f)]
         public float wedgeWidth;
 
-        [Tooltip("Furthest a member stands from a squad that moves or halts, in metres. It also caps the cover search and the ring.")]
+        [Tooltip("Furthest a member stands from a squad that moves or halts. It also caps the cover search and the ring.")]
+        [Unit("m")]
         [Min(0f)]
         public float maxSpread;
 
-        [Tooltip("Furthest a digging member stands from its squad, in metres.")]
+        [Tooltip("Furthest a digging member stands from its squad.")]
+        [Unit("m")]
         [Min(0f)]
         public float workSpread;
 

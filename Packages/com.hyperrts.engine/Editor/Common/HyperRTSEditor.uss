@@ -1,3 +1,5 @@
+@import url("../Icons/Glyphs.uss");
+
 /*
  * The shared editor layout: pages, sections, figures, rows, buttons, notes and the hide toggles, plus the colour
  * tokens every feature sheet uses. Root windows, inspectors and drawers link it; a feature keeps its own sheet.

@@ -1,0 +1,49 @@
+/* The Generators tab. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-generators__row {
+    flex-direction: row;
+    align-items: flex-start;
+    margin: 1px 0;
+    padding: 3px;
+    border-bottom-width: 1px;
+    border-color: var(--hrts-border);
+}
+
+.hrts-generators__heading {
+    flex-direction: row;
+    align-items: center;
+}
+
+.hrts-generators__name {
+    -unity-font-style: bold;
+}
+
+.hrts-generators__stale {
+    margin-left: 6px;
+    padding: 0 5px;
+    border-radius: 8px;
+    background-color: var(--hrts-warning);
+    color: rgb(255, 255, 255);
+    font-size: 10px;
+}
+
+.hrts-generators__description {
+    white-space: normal;
+    opacity: 0.75;
+}
+
+.hrts-generators__last-run {
+    margin-left: 6px;
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+.hrts-generators__last-run--failed {
+    color: var(--hrts-error);
+    opacity: 1;
+}
+
+.hrts-generators__run {
+    width: 60px;
+    flex-shrink: 0;
+}

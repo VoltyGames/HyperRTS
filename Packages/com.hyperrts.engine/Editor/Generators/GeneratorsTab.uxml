@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <Style src="GeneratePage.uss" />
+  <Style src="GeneratorsTab.uss" />
   <HyperRTS.Editor.Hub.PageShell>
     <uie:Toolbar>
-      <uie:ToolbarButton name="run-all" text="Run all" />
+      <uie:ToolbarButton name="run-out-of-date" text="Run out of date" />
       <uie:ToolbarSpacer class="hrts-fill" />
     </uie:Toolbar>
     <ui:VisualElement name="groups" />

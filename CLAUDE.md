@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 HyperRTS is a reusable RTS engine on Unity DOTS, not a game: prefer generic, data-driven code. The repo is public,
-so no third-party assets go in.
+so no third-party assets go in, except editor icons under a permissive licence, each listed with its licence in
+`Packages/com.hyperrts.engine/Editor/Icons/Credits.md`.
 
 ## Layout
 

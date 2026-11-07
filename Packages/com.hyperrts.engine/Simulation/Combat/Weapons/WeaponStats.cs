@@ -35,7 +35,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Tooltip("More muzzles after the first, such as a launcher's other tubes; shots leave from each in turn.")]
         public List<Transform> extraMuzzles = new();
 
-        [Tooltip("Projectile speed in world units per second.")]
+        [Tooltip("Projectile speed.")]
+        [Unit("m/s")]
         [Min(0.1f)]
         [ShowIf(nameof(projectilePrefab))]
         public float projectileSpeed = 25f;
@@ -65,11 +66,13 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Tooltip("Part the muzzle elevates about, such as the barrel; none raises only the aim, not the muzzle.")]
         public Transform barrel;
 
-        [Tooltip("Degrees per second the weapon traverses; a turreted weapon fires once it has turned onto the target.")]
+        [Tooltip("How fast the weapon traverses; a turreted weapon fires once it has turned onto the target.")]
+        [Unit("°/s")]
         [Min(1f)]
         public float traverseSpeed = 40f;
 
-        [Tooltip("Degrees per second the weapon elevates.")]
+        [Tooltip("How fast the weapon elevates.")]
+        [Unit("°/s")]
         [Min(1f)]
         public float elevationSpeed = 25f;
 
@@ -86,7 +89,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public float aimTolerance = 2f;
 
         [Header("Targeting")]
-        [Tooltip("Firing range in world units, measured edge to edge.")]
+        [Tooltip("Firing range, measured edge to edge.")]
+        [Unit("m")]
         [Min(0.1f)]
         public float range = 6f;
 
@@ -136,7 +140,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Min(0.05f)]
         public float salvoInterval = 0.25f;
 
-        [Tooltip("Shots land at random within this many metres of the aim point; a homing shot with a spread gives up its lock and flies to its point, so leave it 0 on missiles.")]
+        [Tooltip("Shots land at random within this distance of the aim point; a homing shot with a spread gives up its lock and flies to its point, so leave it 0 on missiles.")]
+        [Unit("m")]
         [Min(0f)]
         public float spread;
 

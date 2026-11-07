@@ -31,7 +31,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// Fills the slots and the weapons' pivots from parts named by the art (Turret, Barrel, Wheel_L01 and so on) in
         /// every model under it.
         /// </summary>
-        [InspectorButton("Fill from model")]
+        [InspectorButton("Fill from model", Glyph = "wand-sparkles")]
         public void FillFromModel()
         {
             var all = GetComponentsInChildren<Transform>(true).Where(IsBelow).ToList();

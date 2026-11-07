@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Generators;
@@ -44,6 +45,8 @@ namespace HyperRTS.Editor.Environment
             "Cloud shadow cookie, road edge noise, terrain noise and water ripple normals.";
 
         public override string Sources => "Seeds and settings in EnvironmentTextures.cs";
+
+        public override IEnumerable<string> Inputs => new[] { ScriptPath() };
 
         public override string Outputs => $"{CloudCookiePath}, {EdgeNoisePath}, {TerrainNoisePath}, {WaterRipplesPath}";
 

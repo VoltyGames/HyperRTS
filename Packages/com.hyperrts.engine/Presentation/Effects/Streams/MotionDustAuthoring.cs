@@ -19,11 +19,13 @@ namespace HyperRTS.Presentation.Effects.Streams
         [Tooltip("Child transform the dust rises from (behind the rear wheels or tracks); none is the root.")]
         public Transform socket;
 
-        [Tooltip("Below this speed in m/s a vehicle creeping or jostled in a crowd raises none.")]
+        [Tooltip("Below this speed a vehicle creeping or jostled in a crowd raises none.")]
+        [Unit("m/s")]
         [Min(0f)]
         public float minSpeed = 1.5f;
 
-        [Tooltip("Speed in m/s at which the dust streams at full rate.")]
+        [Tooltip("Speed at which the dust streams at full rate.")]
+        [Unit("m/s")]
         [Min(0.1f)]
         public float fullSpeed = 8f;
 

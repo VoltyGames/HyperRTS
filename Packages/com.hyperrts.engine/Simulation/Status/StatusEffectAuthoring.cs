@@ -39,7 +39,8 @@ namespace HyperRTS.Simulation.Status
         [Tooltip("Stat bonuses per stack.")]
         public List<StatBonus> bonuses = new();
 
-        [Tooltip("Damage per second per stack, credited to whoever applied the effect.")]
+        [Tooltip("Damage per stack, credited to whoever applied the effect.")]
+        [Unit("/s")]
         [Min(0f)]
         public float damagePerSecond;
 

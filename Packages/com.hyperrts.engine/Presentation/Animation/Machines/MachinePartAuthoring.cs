@@ -18,7 +18,8 @@ namespace HyperRTS.Presentation.Animation.Machines
         [Tooltip("Local axis for Spin, Swing, Downwind, Raise and Point, or the direction for Slide and Extend.")]
         public Vector3 axis = Vector3.right;
 
-        [Tooltip("Degrees per second of the machine's cycle; give every part of one machine the same speed.")]
+        [Tooltip("Speed of the machine's cycle; give every part of one machine the same speed.")]
+        [Unit("°/s")]
         public float speed = 45f;
 
         [Tooltip("Swing: largest angle either way of the offset (degrees). Slide: the same in metres. Raise and Extend: degrees or metres at full speed (a door that slides open uses Extend with its travel).")]

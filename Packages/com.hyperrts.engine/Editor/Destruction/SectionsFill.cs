@@ -21,10 +21,10 @@ namespace HyperRTS.Editor.Destruction
 
         public SectionsFill(SectionsAuthoring owner) => _owner = owner;
 
-        [InspectorButton("Fill from parts")]
+        [InspectorButton("Fill from parts", Glyph = "wand-sparkles")]
         private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
 
-        [InspectorButton("Fill from structure")]
+        [InspectorButton("Fill from structure", Glyph = "wand-sparkles")]
         private static void FillFromStructure(SectionsAuthoring sections) => new SectionsFill(sections).FromStructure();
 
         /// <summary>

@@ -17,7 +17,8 @@ namespace HyperRTS.Presentation.Effects.Lights
         [Tooltip("Colour of the light.")]
         public Color color = new(1f, 0.55f, 0.25f);
 
-        [Tooltip("Light range in metres.")]
+        [Tooltip("Light range.")]
+        [Unit("m")]
         public float range = 14f;
 
         [Tooltip("Intensity at full loop strength, between flickers.")]

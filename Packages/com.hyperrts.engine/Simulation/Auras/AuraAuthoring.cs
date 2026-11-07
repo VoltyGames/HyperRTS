@@ -23,7 +23,8 @@ namespace HyperRTS.Simulation.Auras
         [Tooltip("Aura type; entities in several auras of one name are affected once. Games match it by AuraId.")]
         public string auraName = "Aura";
 
-        [Tooltip("Radius in world units.")]
+        [Tooltip("Radius.")]
+        [Unit("m")]
         [Min(0.1f)]
         public float radius = 15f;
 
@@ -33,11 +34,13 @@ namespace HyperRTS.Simulation.Auras
         [Tooltip("Bonuses while inside; negative percents weaken (e.g. -0.3 Range for jamming).")]
         public List<StatBonus> bonuses = new();
 
-        [Tooltip("Health restored per second while inside.")]
+        [Tooltip("Health restored while inside.")]
+        [Unit("/s")]
         [Min(0f)]
         public float healPerSecond;
 
-        [Tooltip("Damage dealt per second while inside.")]
+        [Tooltip("Damage dealt while inside.")]
+        [Unit("/s")]
         [Min(0f)]
         public float damagePerSecond;
 

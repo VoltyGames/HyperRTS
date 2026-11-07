@@ -25,7 +25,8 @@ namespace HyperRTS.Simulation.Destruction
         [Tooltip("Part between the caps (with a MeshFilter); scales along the long axis only.")]
         public Transform span;
 
-        [Tooltip("Set by the map builder on a placed instance: how far each cap sits out (root-space metres). 0 on the prefab.")]
+        [Tooltip("Set by the map builder on a placed instance: how far each cap sits out (root space). 0 on the prefab.")]
+        [Unit("m")]
         public float extension;
 
         /// <summary>What keeps this prefab from stretching; empty when it can.</summary>

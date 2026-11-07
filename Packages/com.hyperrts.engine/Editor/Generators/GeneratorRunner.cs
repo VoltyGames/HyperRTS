@@ -54,6 +54,27 @@ namespace HyperRTS.Editor.Generators
             Debug.Log($"HyperRTS: ran {all.Count} generators.");
         }
 
+        /// <summary>Runs, in order, the generators that are out of date.</summary>
+        public static void RunOutOfDate()
+        {
+            var log = GeneratorRunLog.Load();
+            var stale = All().Where(generator => generator.IsOutOfDate(log)).ToList();
+            try
+            {
+                for (var i = 0; i < stale.Count; i++)
+                {
+                    EditorUtility.DisplayProgressBar("HyperRTS", stale[i].Name, (float)i / stale.Count);
+                    Run(stale[i]);
+                }
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+
+            Debug.Log($"HyperRTS: ran {stale.Count} out of date generators.");
+        }
+
         /// <summary>Runs one generator and records how it ended in the <see cref="GeneratorRunLog"/>.</summary>
         public static void Run(Generator generator)
         {

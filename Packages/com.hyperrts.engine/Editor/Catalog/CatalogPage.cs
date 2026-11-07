@@ -29,6 +29,8 @@ namespace HyperRTS.Editor.Catalog
 
         public override string Title => "Catalog";
 
+        public override string Glyph => "library";
+
         public override int Order => 20;
 
         public override VisualElement Build()

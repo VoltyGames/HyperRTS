@@ -21,7 +21,8 @@ namespace HyperRTS.Presentation.Effects.Rig
     [DisallowMultipleComponent]
     public partial class EffectRig : PresentationBehaviour
     {
-        [Tooltip("Not played beyond this many metres from the camera.")]
+        [Tooltip("Not played beyond this distance from the camera.")]
+        [Unit("m")]
         public float maxDistance = 150f;
 
         [Tooltip("Random scale range of each burst.")]

@@ -8,12 +8,13 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring
 {
-    /// <summary>Unit and building inspector: summary, setup warnings and a draggable vision handle.</summary>
+    /// <summary>Unit and building inspector: entity card, component strip, setup warnings and a draggable vision handle.</summary>
     [CustomEditor(typeof(GameEntityAuthoring), true)]
     [CanEditMultipleObjects]
     public class GameEntityAuthoringEditor : AuthoringEditor
     {
-        private HelpBox _summary;
+        private EntityCard _card;
+        private ModuleStrip _modules;
 
         protected override void BuildHeader(VisualElement header)
         {
@@ -23,14 +24,17 @@ namespace HyperRTS.Editor.Authoring
             }
 
             EditorAssets.Layout(typeof(GameEntityAuthoringEditor)).CloneTree(header);
-            _summary = header.Require<HelpBox>("summary");
+            _card = header.Require<EntityCard>("card");
+            _modules = header.Require<ModuleStrip>("modules");
         }
 
         protected override void Refresh()
         {
-            if (_summary != null)
+            if (_card != null)
             {
-                _summary.text = EntitySummary.Line((GameEntityAuthoring)target);
+                var entity = (GameEntityAuthoring)target;
+                _card.Show(entity);
+                _modules.Show(entity.gameObject);
             }
         }
 

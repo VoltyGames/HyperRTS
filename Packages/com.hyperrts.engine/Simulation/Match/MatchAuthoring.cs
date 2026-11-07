@@ -33,7 +33,8 @@ namespace HyperRTS.Simulation.Match
         [Min(0.25f)]
         public float navCellSize = 1f;
 
-        [Tooltip("Least clear gap (metres) between buildings that don't touch, so vehicles fit between them. 0 = no rule.")]
+        [Tooltip("Least clear gap between buildings that don't touch, so vehicles fit between them. 0 = no rule.")]
+        [Unit("m")]
         [Min(0f)]
         public float buildingGap;
 
@@ -76,7 +77,8 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Record a replay from the start of the match; save it with HyperRTS ▸ Replays ▸ Save Recording.")]
         public bool recordReplay;
 
-        [Tooltip("Networked matches: seconds to wait for every human player to load before starting without them.")]
+        [Tooltip("Networked matches: how long to wait for every human player to load before starting without them.")]
+        [Unit("s")]
         [Min(1f)]
         public float joinTimeout = 60f;
 

@@ -25,6 +25,8 @@ namespace HyperRTS.Editor.Maps.Tools
 
         public override string Title => "Maps";
 
+        public override string Glyph => "map";
+
         public override int Order => 10;
 
         public override VisualElement Build()

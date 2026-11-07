@@ -69,7 +69,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Range(0.3f, 1f)]
         public float edgeGrowth = 1f;
 
-        [Tooltip("Bare margin in metres round field edges, roads and placed objects.")]
+        [Tooltip("Bare margin round field edges, roads and placed objects.")]
+        [Unit("m")]
         public float edgeMargin = 0.6f;
 
         [Tooltip("Share of the field's 30 m stretches holding a patch flattened by wind and rain, where plants lie over one way. 0 for none.")]
@@ -79,7 +80,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         [Tooltip("Smallest and largest lodged patch across (metres).")]
         public Vector2 lodgedSize = new(3f, 15f);
 
-        [Tooltip("Tallest plant height in metres, for culling and the canopy's shade.")]
+        [Tooltip("Tallest plant height, for culling and the canopy's shade.")]
+        [Unit("m")]
         public float height = 2f;
 
         [Header("Distances")]

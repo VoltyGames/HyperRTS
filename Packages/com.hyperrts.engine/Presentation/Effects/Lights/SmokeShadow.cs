@@ -14,7 +14,8 @@ namespace HyperRTS.Presentation.Effects.Lights
     [DisallowMultipleComponent]
     public class SmokeShadow : PresentationBehaviour
     {
-        [Tooltip("Half the column's width in metres.")]
+        [Tooltip("Half the column's width.")]
+        [Unit("m")]
         public float radius = 4f;
 
         [Tooltip("Metres the column rises above the loop's socket before it thins out.")]

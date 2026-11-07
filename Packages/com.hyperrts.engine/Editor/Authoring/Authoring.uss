@@ -1,8 +1,4 @@
-/* Inspector extras: the entity summary, the issue badge and producible options. Colour tokens are in Common/HyperRTSEditor.uss. */
-
-.hrts-summary {
-    margin: 0 0 4px 0;
-}
+/* Inspector extras: the entity card and module strip, header groups, field marks, the issue badge and producible options. Colour tokens are in Common/HyperRTSEditor.uss. */
 
 .hrts-issue-badge {
     margin: 0 0 4px 0;
@@ -10,10 +6,11 @@
 
 .hrts-issue-badge__button {
     flex-direction: row;
-    align-self: flex-start;
+    align-self: stretch;
     margin: 0;
-    padding: 1px 6px;
-    border-radius: 8px;
+    padding: 0 6px;
+    height: 18px;
+    border-radius: 2px;
 }
 
 .hrts-issue-badge__button--open {
@@ -65,4 +62,201 @@
     -unity-text-align: middle-left;
     color: var(--hrts-dim-text);
     font-size: 10px;
+}
+
+.hrts-card {
+    margin: 0 0 4px 0;
+    padding: 6px;
+    border-width: 1px;
+    border-color: var(--hrts-border);
+    border-radius: 3px;
+    background-color: rgba(128, 128, 128, 0.1);
+}
+
+.hrts-card__icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.hrts-card__name {
+    -unity-font-style: bold;
+    font-size: 14px;
+    margin: 0;
+}
+
+.hrts-card__role {
+    color: var(--hrts-dim-text);
+    margin: 0;
+}
+
+.hrts-card__owner {
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    border-width: 1px;
+    border-color: var(--hrts-border);
+    align-self: flex-start;
+    flex-shrink: 0;
+}
+
+.hrts-card__stats {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.hrts-card__stat {
+    min-width: 72px;
+    margin: 0 12px 3px 0;
+}
+
+.hrts-card__stat-name {
+    color: var(--hrts-dim-text);
+    font-size: 10px;
+    margin: 0;
+    padding: 0;
+}
+
+.hrts-card__stat-value {
+    margin: 0;
+    padding: 0;
+}
+
+.hrts-strip {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 0 0 4px 0;
+}
+
+.hrts-chip {
+    flex-direction: row;
+    align-items: center;
+    margin: 0 3px 3px 0;
+    padding: 1px 6px 1px 4px;
+    border-radius: 9px;
+}
+
+.hrts-chip--sole {
+    border-color: var(--unity-colors-highlight-background);
+}
+
+.hrts-chip--add {
+    padding: 1px 8px;
+}
+
+.hrts-chip__icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 3px;
+}
+
+.hrts-chip__name {
+    padding: 0;
+    margin: 0;
+}
+
+.hrts-chip__dot {
+    width: 7px;
+    height: 7px;
+    margin-left: 4px;
+    border-radius: 4px;
+}
+
+.hrts-chip__dot--error {
+    background-color: var(--hrts-error);
+}
+
+.hrts-chip__dot--warning {
+    background-color: var(--hrts-warning);
+}
+
+.hrts-group {
+    margin-top: 2px;
+}
+
+.hrts-group > Toggle > Label {
+    -unity-font-style: bold;
+}
+
+/* The foldout title replaces the PropertyField's own [Header] label. */
+.hrts-group .unity-header-drawer__label {
+    display: none;
+}
+
+.hrts-field--error {
+    border-left-width: 2px;
+    border-left-color: var(--hrts-error);
+}
+
+.hrts-field--warning {
+    border-left-width: 2px;
+    border-left-color: var(--hrts-warning);
+}
+
+.hrts-field-issue {
+    margin: 0 0 2px 3px;
+    white-space: normal;
+    font-size: 10px;
+}
+
+.hrts-field-issue--error {
+    color: var(--hrts-error);
+}
+
+.hrts-field-issue--warning {
+    color: var(--hrts-warning);
+}
+
+.hrts-unit-field .unity-base-field__input {
+    padding-right: 26px;
+}
+
+.hrts-unit {
+    position: absolute;
+    right: 4px;
+    top: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-right;
+    color: var(--hrts-dim-text);
+    font-size: 10px;
+}
+
+.hrts-glyph-button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.hrts-glyph-button > .hrts-glyph {
+    margin-right: 4px;
+}
+
+.hrts-popup {
+    flex-grow: 1;
+    padding: 4px;
+}
+
+.hrts-popup__search {
+    margin: 0 0 4px 0;
+}
+
+.hrts-popup__list {
+    flex-grow: 1;
+}
+
+.hrts-popup__group {
+    -unity-font-style: bold;
+    color: var(--hrts-dim-text);
+    margin: 4px 0 1px 2px;
+}
+
+.hrts-popup__item {
+    -unity-text-align: middle-left;
+    margin: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
 }

@@ -48,7 +48,8 @@ namespace HyperRTS.Simulation.Strikes
         [Tooltip("What each bomb deals at its centre and round it.")]
         public DamageSettings hit = new() { damage = 800f, radius = 6f };
 
-        [Tooltip("Metres per second each bomb falls toward its aim.")]
+        [Tooltip("How fast each bomb falls toward its aim.")]
+        [Unit("m/s")]
         [Min(1f)]
         public float speed = 40f;
 
