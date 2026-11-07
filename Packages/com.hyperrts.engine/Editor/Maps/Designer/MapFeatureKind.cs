@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly FieldInfo _list;
         private readonly FieldInfo _radius;
         private readonly FieldInfo _kind;
+        private readonly FieldInfo _name;
 
         /// <summary>The kind of the <see cref="MapSpec"/> list <paramref name="list"/>, as its entry class's <see cref="MapFeatureAttribute"/> describes it.</summary>
         public MapFeatureKind(FieldInfo list)
@@ -30,11 +31,13 @@ namespace HyperRTS.Editor.Maps.Designer
             ElementType = list.FieldType.GetGenericArguments()[0];
             var feature = MapFeatureAttribute.Require(ElementType);
             Color = feature.Color;
+            Noun = char.ToUpperInvariant(feature.Name[0]) + feature.Name[1..];
             Order = feature.Order;
             Geometry = FindGeometry(feature);
             _radius = Geometry == MapFeatureGeometry.Circle ? Require(feature.Radius, typeof(float)) : null;
             // Every spec class that has one names it alike.
             _kind = Optional(nameof(MapPropSpec.kind), typeof(string));
+            _name = Optional(nameof(MapLookSpec.name), typeof(string));
             PositionField = HasPoints ? null : Single(typeof(MapPoint)).Name;
             PointsField = HasPoints ? Single(typeof(List<MapPoint>)).Name : null;
             RadiusField = _radius?.Name;
@@ -48,6 +51,18 @@ namespace HyperRTS.Editor.Maps.Designer
         public MapFeatureGeometry Geometry { get; }
 
         public Color Color { get; }
+
+        /// <summary>One feature of the list in singular ("Road"), for a feature with no name or kind.</summary>
+        public string Noun { get; }
+
+        /// <summary>The glyph class suffix of the kind's geometry, for the layers panel.</summary>
+        public string Glyph => Geometry switch
+        {
+            MapFeatureGeometry.Point => "map-pin",
+            MapFeatureGeometry.Circle => "circle",
+            MapFeatureGeometry.Polyline => "spline",
+            _ => "square-dashed",
+        };
 
         /// <summary>The class of the list's entries (MapRoadSpec...).</summary>
         public Type ElementType { get; }
@@ -88,11 +103,21 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>Shared features are placed once, not copied by the symmetry.</summary>
         public bool IsShared(MapSpec spec, int index) => List(spec)[index] is MapFeatureSpec { shared: true };
 
-        /// <summary>A list row's name: its number and its palette or climate kind.</summary>
+        /// <summary>A list row's label: the feature's name, else its kind, else the kind's noun, then its centre in metres.</summary>
         public string Describe(MapSpec spec, int index)
         {
-            var kind = _kind == null ? null : (string)_kind.GetValue(List(spec)[index]);
-            return string.IsNullOrEmpty(kind) ? $"{index + 1}" : $"{index + 1}  {kind}";
+            var element = List(spec)[index];
+            var name = Text(_name, element) ?? Text(_kind, element) ?? Noun;
+            var points = new List<Vector2>();
+            ReadPoints(spec, index, points);
+            var centre = points.Count == 0 ? Vector2.zero : points.Aggregate(Vector2.zero, (sum, p) => sum + p) / points.Count;
+            return FormattableString.Invariant($"{name}  ({centre.x:0}, {centre.y:0})");
+        }
+
+        private static string Text(FieldInfo field, object element)
+        {
+            var text = (string)field?.GetValue(element);
+            return string.IsNullOrEmpty(text) ? null : text;
         }
 
         /// <summary>

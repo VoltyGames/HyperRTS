@@ -10,8 +10,8 @@ namespace HyperRTS.Presentation.Environment.Weather
     /// Unity's built-in fog stays off, since URP's fog replaces it.
     /// </summary>
     [ExecuteAlways]
-    [AddComponentMenu(HyperRTSMenu.Environment + "Atmosphere")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Atmosphere")]
+    [Icon(HyperRTSIcons.Atmosphere)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class Atmosphere : PresentationBehaviour

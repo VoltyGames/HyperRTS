@@ -1,10 +1,23 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="ValidatePage.uss" />
   <HyperRTS.Editor.Hub.PageShell name="shell" scroll="false">
     <uie:Toolbar>
       <uie:ToolbarButton name="validate" text="Validate" />
+      <uie:ToolbarButton name="errors" class="hrts-severity-chip">
+        <ui:VisualElement class="hrts-glyph hrts-glyph--circle-x hrts-severity-chip__glyph hrts-severity-chip__glyph--error" />
+        <ui:Label name="errors-count" class="hrts-severity-chip__count" />
+      </uie:ToolbarButton>
+      <uie:ToolbarButton name="warnings" class="hrts-severity-chip">
+        <ui:VisualElement class="hrts-glyph hrts-glyph--triangle-alert hrts-severity-chip__glyph hrts-severity-chip__glyph--warning" />
+        <ui:Label name="warnings-count" class="hrts-severity-chip__count" />
+      </uie:ToolbarButton>
+      <uie:ToolbarButton name="fix-all" class="hrts-severity-chip" tooltip="Applies the fix of every issue listed, as one undo step.">
+        <ui:VisualElement class="hrts-glyph hrts-glyph--wand-sparkles hrts-severity-chip__glyph" />
+        <ui:Label text="Fix all" class="hrts-severity-chip__count" />
+      </uie:ToolbarButton>
       <uie:ToolbarToggle name="selection-only" text="Selection only" binding-path="validateSelectionOnly" />
       <uie:ToolbarSpacer class="hrts-fill" />
-      <ui:Label name="counts" class="hrts-toolbar-label" />
+      <uie:ToolbarSearchField name="search" />
     </uie:Toolbar>
     <HyperRTS.Editor.Validation.IssueList name="issues" grouped="true" />
   </HyperRTS.Editor.Hub.PageShell>

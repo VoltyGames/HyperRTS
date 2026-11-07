@@ -10,7 +10,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     /// <summary>Connected regions of the first movement class, one colour each, with white where a region ends.</summary>
     public sealed class SectorsLayer : CellTextureLayer
     {
-        public override string Label => "Sectors (regions of first class)";
+        public override string Label => "Sectors";
+
+        public override string Detail => "Regions of the first movement class";
+
+        public override string Group => "Movement";
+
+        public override string Glyph => "layout-grid";
 
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {

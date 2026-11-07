@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Destruction
     /// Swaps between child models as health drops (intact, damaged, wrecked), playing an effect at each step. The
     /// final collapse is the death spawn (a ruin with a Spawn Effect), not a stage.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Damage Stages")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Damage Stages")]
+    [Icon(HyperRTSIcons.DamageStagesAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class DamageStagesAuthoring : AuthoringBehaviour

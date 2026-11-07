@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Environment.Horizon
     /// world's edge. Built in memory, in edit mode too; nothing in it collides, navigates or casts a shadow.
     /// </summary>
     [ExecuteAlways]
-    [AddComponentMenu(HyperRTSMenu.Environment + "Horizon")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Horizon")]
+    [Icon(HyperRTSIcons.Horizon)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class Horizon : PresentationBehaviour

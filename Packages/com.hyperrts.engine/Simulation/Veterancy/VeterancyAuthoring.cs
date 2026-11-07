@@ -9,8 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Veterancy
 {
     /// <summary>Lets a unit earn experience from kills and rank up; each rank adds its stat bonuses.</summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Veterancy")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Veterancy")]
+    [Icon(HyperRTSIcons.VeterancyAuthoring)]
     [HelpURL(HyperRTSDocs.Veterancy)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Effects.Preview;
 using HyperRTS.Editor.PlayMode;
+using HyperRTS.Editor.PlayMode.Launch;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -23,6 +24,11 @@ namespace HyperRTS.Editor.Common
 
         public bool validateSelectionOnly;
 
+        /// <summary>Validate's severity chips: whether errors and warnings are listed.</summary>
+        public bool validateErrors = true;
+
+        public bool validateWarnings = true;
+
         public bool mapAutoPreview = true;
 
         /// <summary>Full type names of the debug layers switched on.</summary>
@@ -36,6 +42,8 @@ namespace HyperRTS.Editor.Common
 
         [Min(1)]
         public int armiesPerSide = 250;
+
+        public LaunchChoice launch = new();
 
         public BotMatches.Settings bots = new();
 
@@ -64,12 +72,12 @@ namespace HyperRTS.Editor.Common
             Save();
         }
 
-        public bool IsLayerOn(string layer) => debugLayers.Contains(layer);
+        public bool IsLayerShown(string layer) => debugLayers.Contains(layer);
 
-        public void SetLayer(string layer, bool on)
+        public void ShowLayer(string layer, bool shown)
         {
             debugLayers.Remove(layer);
-            if (on)
+            if (shown)
             {
                 debugLayers.Add(layer);
             }

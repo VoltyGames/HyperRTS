@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-map-card">
+    <ui:Image name="overview" class="hrts-map-card__overview" />
+    <ui:VisualElement class="hrts-map-card__body">
+      <ui:VisualElement class="hrts-row">
+        <ui:Label name="name" class="hrts-map-card__name" />
+        <ui:Label name="stale" class="hrts-map-card__stale" text="Out of date" tooltip="The spec was saved after the last build." />
+      </ui:VisualElement>
+      <ui:Label name="info" class="hrts-hint" />
+      <ui:Label name="issues" />
+      <ui:VisualElement class="hrts-buttons">
+        <ui:Button name="open" text="Open" tooltip="Edit the spec in the Map Editor." />
+        <ui:Button name="open-scene" text="Open scene" tooltip="Open the built scene." />
+        <ui:Button name="build" text="Build" tooltip="Build the scene and report from the spec." />
+      </ui:VisualElement>
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:UXML>

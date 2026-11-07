@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.Environment)]
+    [Icon(HyperRTSIcons.RowCropRenderer)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class RowCropRenderer : ScatterRenderer<RowCropBatch>

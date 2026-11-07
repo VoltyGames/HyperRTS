@@ -83,7 +83,7 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
         private float Clock() =>
             SystemAPI.TryGetSingleton(out ReplayPlayback replay) ? replay.Time : (float)SystemAPI.Time.ElapsedTime;
 
-        private TrampleStamps Scars() => TrampleStampSystem.MapsOn
+        private TrampleStamps Scars() => TrampleStampSystem.MapsDrawn
             ? TrampleStampSystem.Find(World)
             : null;
 

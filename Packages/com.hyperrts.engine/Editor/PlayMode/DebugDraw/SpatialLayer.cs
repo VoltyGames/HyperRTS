@@ -10,6 +10,12 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     {
         public override string Label => "Spatial cells";
 
+        public override string Detail => "Spatial index cells that hold at least one entity";
+
+        public override string Group => "Movement";
+
+        public override string Glyph => "scan";
+
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {
             if (!TryGetSingleton(entityManager, out SpatialIndex index) || index.CellStarts.Length <= index.Grid.Count)

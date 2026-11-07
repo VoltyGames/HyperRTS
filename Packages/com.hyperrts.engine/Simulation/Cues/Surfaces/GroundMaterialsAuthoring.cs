@@ -8,8 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Cues.Surfaces
 {
     /// <summary>Bakes the map's <see cref="GroundMaterialMap"/> into the <see cref="GroundMaterials"/> singleton. One per match.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Ground Materials")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Ground Materials")]
+    [Icon(HyperRTSIcons.GroundMaterialsAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class GroundMaterialsAuthoring : AuthoringBehaviour

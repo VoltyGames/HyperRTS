@@ -1,0 +1,29 @@
+/* Severity chips and the Fix all button on the Validate toolbar. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-severity-chip {
+  flex-direction: row;
+  align-items: center;
+}
+
+.hrts-severity-chip--off {
+  opacity: 0.45;
+}
+
+.hrts-severity-chip__glyph {
+  width: 14px;
+  height: 14px;
+  margin-right: 3px;
+}
+
+.hrts-severity-chip__glyph--error {
+  -unity-background-image-tint-color: var(--hrts-error);
+}
+
+.hrts-severity-chip__glyph--warning {
+  -unity-background-image-tint-color: var(--hrts-warning);
+}
+
+.hrts-severity-chip__count {
+  margin: 0;
+  padding: 0;
+}

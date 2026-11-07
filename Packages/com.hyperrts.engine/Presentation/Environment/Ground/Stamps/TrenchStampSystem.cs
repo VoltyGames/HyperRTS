@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         protected override void OnUpdate()
         {
             var stamps = TrampleStampSystem.Find(World);
-            if (stamps == null || !TrampleStampSystem.MapsOn)
+            if (stamps == null || !TrampleStampSystem.MapsDrawn)
             {
                 return;
             }

@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
     /// Swaps between child models as a resource node empties (a full pile, then smaller ones), and back up as a
     /// renewable node regrows.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Resource Stages")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Stages")]
+    [Icon(HyperRTSIcons.ResourceStagesAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ResourceNodeAuthoring))]

@@ -3,10 +3,6 @@
   <ui:ScrollView class="hrts-map-report__content">
     <ui:Label name="empty" class="hrts-note" text="No preview or build yet." />
     <ui:VisualElement name="report">
-      <HyperRTS.Editor.Common.TitledSection name="issues">
-        <ui:VisualElement name="issue-rows" />
-        <ui:Label name="no-issues" class="hrts-note" text="No issues." />
-      </HyperRTS.Editor.Common.TitledSection>
       <HyperRTS.Editor.Common.TitledSection name="land" title="Land">
         <HyperRTS.Editor.Common.ValueList name="land-figures" />
       </HyperRTS.Editor.Common.TitledSection>

@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         public TrampleStamps Stamps { get; } = new();
 
         /// <summary>Whether the trample maps are drawn at the current quality.</summary>
-        public static bool MapsOn => PresentationQuality.Current.Trampling != TrampleQuality.None;
+        public static bool MapsDrawn => PresentationQuality.Current.Trampling != TrampleQuality.None;
 
         /// <summary>The stamps of <paramref name="world"/>, or null while it has no stamp system.</summary>
         public static TrampleStamps Find(World world) =>
@@ -63,7 +63,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         protected override void OnUpdate()
         {
             Stamps.Clear();
-            if (!MapsOn)
+            if (!MapsDrawn)
             {
                 _grounded.Forget();
                 _afloat.Forget();

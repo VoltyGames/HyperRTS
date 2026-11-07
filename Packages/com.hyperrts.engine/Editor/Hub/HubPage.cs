@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Hub
         /// <summary>Builds the page's content each time the page is shown; it leaves the panel when the page hides.</summary>
         public abstract VisualElement Build();
 
-        /// <summary>The page's <c>&lt;Page&gt;&lt;part&gt;.uxml</c>, such as MapsPageRow.uxml, from its own package or Assets.</summary>
+        /// <summary>The page's <c>&lt;Page&gt;&lt;part&gt;.uxml</c>, such as GeneratorsTabRow.uxml, from its own package or Assets.</summary>
         protected VisualTreeAsset Layout(string part = "") => EditorAssets.Layout(GetType(), part);
     }
 }

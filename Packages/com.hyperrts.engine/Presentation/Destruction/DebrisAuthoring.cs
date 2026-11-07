@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>Throws client-side debris pieces when this ruin appears or when this building's parts break.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Debris")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Debris")]
+    [Icon(HyperRTSIcons.DebrisAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class DebrisAuthoring : AuthoringBehaviour

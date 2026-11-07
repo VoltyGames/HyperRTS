@@ -13,7 +13,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     /// <summary>A selected unit's sight area: green where it sees the ground, blue where only a tall target shows, yellow within close range.</summary>
     public sealed class SightAreaLayer : CellTextureLayer
     {
-        public override string Label => "Sight area (selected unit)";
+        public override string Label => "Sight area";
+
+        public override string Detail => "What the selected unit sees";
+
+        public override string Group => "Vision";
+
+        public override string Glyph => "scan-eye";
 
         // Selection only exists in the world the player looks at.
         public override WorldSystemFilterFlags Source => SimulationWorlds.Presented;

@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Resources.Income
 {
     /// <summary>Passive income for whoever owns this entity (capturable oil derricks, supply outposts).</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Resource Income")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Income")]
+    [Icon(HyperRTSIcons.ResourceIncomeAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     public class ResourceIncomeAuthoring : AuthoringBehaviour

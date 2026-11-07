@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Cues.Surfaces
 {
     /// <summary>What this unit, building or tree is made of, so shots that hit it throw up the matching debris.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Hit Material")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Cues/Hit Material")]
+    [Icon(HyperRTSIcons.HitMaterialAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class HitMaterialAuthoring : AuthoringBehaviour

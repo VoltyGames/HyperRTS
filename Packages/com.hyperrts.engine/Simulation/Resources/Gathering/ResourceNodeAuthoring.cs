@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Resources.Gathering
 {
     /// <summary>A neutral, harvestable deposit (supply pile, gold mine). Needs a collider to be right-clicked.</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Resource Node")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Node")]
+    [Icon(HyperRTSIcons.ResourceNodeAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     [RequiresGhost]

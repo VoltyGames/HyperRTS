@@ -8,8 +8,8 @@ namespace HyperRTS.Presentation.Effects.Lights
     /// A flickering point light a looping rig asks for, such as a fire's glow. Goes on the rig's root; the nearest
     /// streamed loops get one of <see cref="LoopLights"/>' pooled lights on High detail.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Loop Light")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Loop Light")]
+    [Icon(HyperRTSIcons.LoopLight)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class LoopLight : PresentationBehaviour

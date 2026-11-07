@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Death
 {
     /// <summary>The remains of a thrown turret (a <see cref="TurretTossAuthoring.turret"/>): the death fills in the throw clients show.</summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Tossed Turret")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Tossed Turret")]
+    [Icon(HyperRTSIcons.TossedTurretAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class TossedTurretAuthoring : AuthoringBehaviour

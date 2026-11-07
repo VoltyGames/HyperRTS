@@ -12,8 +12,8 @@ namespace HyperRTS.Simulation.Death
     /// A vehicle that throws its turret when it dies to a catastrophic hit (a magazine going up). Its wreck is then
     /// the hull without a turret, and the turret lands nearby as remains that block their cell.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Turret Toss")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Turret Toss")]
+    [Icon(HyperRTSIcons.TurretTossAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a unit")]

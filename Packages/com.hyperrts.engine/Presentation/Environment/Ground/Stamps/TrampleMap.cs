@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Ground.Stamps
 {
     /// <summary>Fades the match's trample maps and draws their stamps. Presentation only, so clients may differ.</summary>
-    [AddComponentMenu(HyperRTSMenu.Rig + "Trample Map")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Trample Map")]
+    [Icon(HyperRTSIcons.TrampleMap)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class TrampleMap : PresentationBehaviour
@@ -53,7 +53,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         {
             stamps = null;
             view = null;
-            if (!TrampleStampSystem.MapsOn)
+            if (!TrampleStampSystem.MapsDrawn)
             {
                 return false;
             }

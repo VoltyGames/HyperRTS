@@ -62,6 +62,20 @@ namespace HyperRTS.Editor.PlayMode
             public List<MatchResult> matches = new();
         }
 
+        /// <summary>One finished match, for the Play page's table.</summary>
+        public class Result
+        {
+            public string run;
+            public int match;
+            public string winner;
+            public float minutes;
+            public string sides;
+        }
+
+        /// <summary>Every match finished since the editor opened, oldest first.</summary>
+        [NoAutoStaticsCleanup]
+        public static readonly List<Result> Results = new();
+
         [AutoStaticsCleanup]
         private static Report _report;
         [AutoStaticsCleanup]
@@ -241,6 +255,25 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             Debug.Log($"[HyperRTS] Bot match {_current + 1}: {Describe(result)}");
+            Results.Add(new Result
+            {
+                run = _report.started,
+                match = _current + 1,
+                winner = Winner(result),
+                minutes = minutes,
+                sides = string.Join(" v ", result.players.GroupBy(player => player.team)
+                    .Select(team => string.Join("+", team.Select(player => player.side)))),
+            });
+        }
+
+        private static string Winner(MatchResult result)
+        {
+            if (result.timedOut)
+            {
+                return "none (time limit)";
+            }
+
+            return result.winningSides.Count == 0 ? "draw" : $"side {string.Join("+", result.winningSides)}";
         }
 
         private static string Describe(MatchResult result)

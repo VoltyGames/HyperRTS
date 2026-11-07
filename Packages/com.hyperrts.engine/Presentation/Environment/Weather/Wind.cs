@@ -13,8 +13,8 @@ namespace HyperRTS.Presentation.Environment.Weather
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(WindZone))]
-    [AddComponentMenu(HyperRTSMenu.Environment + "Wind")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Wind")]
+    [Icon(HyperRTSIcons.Wind)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed partial class Wind : PresentationBehaviour

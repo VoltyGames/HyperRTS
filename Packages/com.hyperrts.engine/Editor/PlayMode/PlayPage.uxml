@@ -1,17 +1,18 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
-  <HyperRTS.Editor.Hub.PageShell name="shell" empty-text="Enter Play mode to use cheats, networking and recording.">
-    <ui:Instance template="CheatsSection" name="cheats" />
-    <HyperRTS.Editor.Common.TitledSection title="Network">
+  <Style src="PlayPage.uss" />
+  <ui:Template name="LaunchSection" src="Launch/LaunchSection.uxml" />
+  <HyperRTS.Editor.Hub.PageShell name="shell">
+    <ui:Instance template="LaunchSection" name="launch" />
+    <HyperRTS.Editor.Common.TitledSection name="network" title="Network">
+      <ui:Label name="traffic" class="hrts-note" />
       <ui:VisualElement class="hrts-buttons">
         <ui:Button name="host" text="Host" />
         <ui:Button name="join" text="Join Localhost" />
         <ui:Button name="server" text="Dedicated Server" />
         <ui:Button name="stop" text="Stop" />
       </ui:VisualElement>
-      <ui:Label name="traffic" class="hrts-note" />
     </HyperRTS.Editor.Common.TitledSection>
-    <HyperRTS.Editor.Common.TitledSection title="Bot matches">
+    <HyperRTS.Editor.Common.TitledSection name="soak" title="Soak test">
       <uie:PropertyField binding-path="bots.matches" label="Matches" />
       <uie:PropertyField binding-path="bots.players" label="Players" />
       <uie:PropertyField binding-path="bots.difficulty" label="Difficulty" />
@@ -22,12 +23,12 @@
         <ui:Button name="stop-bots" text="Stop" />
       </ui:VisualElement>
       <ui:Label name="bot-status" class="hrts-note" />
+      <ui:VisualElement name="results" />
     </HyperRTS.Editor.Common.TitledSection>
     <HyperRTS.Editor.Common.TitledSection title="Replays">
-      <ui:VisualElement class="hrts-buttons">
-        <ui:Button name="save" text="Save Recording..." />
-        <ui:Button name="play" text="Play Replay..." />
-      </ui:VisualElement>
+      <ui:Button name="save" text="Save recording" />
+      <ui:Label name="no-replays" class="hrts-note hrts-hint" text="No recordings yet. Save one in Play mode." />
+      <ui:VisualElement name="replays" />
     </HyperRTS.Editor.Common.TitledSection>
   </HyperRTS.Editor.Hub.PageShell>
 </ui:UXML>

@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Vision.Detection
 {
     /// <summary>Hides this unit or building from hostile teams unless one of their detectors covers it.</summary>
-    [AddComponentMenu(HyperRTSMenu.Vision + "Stealth")]
-    [Icon(HyperRTSIcons.Vision)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Vision/Stealth")]
+    [Icon(HyperRTSIcons.StealthAuthoring)]
     [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

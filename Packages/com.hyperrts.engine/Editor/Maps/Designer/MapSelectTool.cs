@@ -38,14 +38,16 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public void Down(Vector2 local, EventModifiers modifiers, int clickCount)
         {
+            // A feature picked in the list stays selected when its category is locked, but the canvas can't edit it.
             var current = Current;
+            var editable = !current.IsNone && _context.Layers.CanPick(current.Kind);
             var adding = (modifiers & EventModifiers.Alt) != 0;
-            if (adding && !current.IsNone && InsertVertex(current, local))
+            if (adding && editable && InsertVertex(current, local))
             {
                 return;
             }
 
-            _handle = current.IsNone ? -1 : MapHitTest.HandleAt(Document.Spec, _context.View, current, local);
+            _handle = editable ? MapHitTest.HandleAt(Document.Spec, _context.View, current, local) : -1;
             var removing = (modifiers & (EventModifiers.Control | EventModifiers.Command)) != 0;
             if (removing && _handle >= 0)
             {
@@ -55,7 +57,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
             if (_handle < 0)
             {
-                _context.Selection.Set(MapHitTest.FeatureAt(Document.Spec, _context.View, local));
+                _context.Selection.Set(MapHitTest.FeatureAt(Document.Spec, _context.View, _context.Layers, local));
                 _handle = WholeFeature;
             }
 

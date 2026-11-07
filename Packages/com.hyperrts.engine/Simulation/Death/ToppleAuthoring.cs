@@ -8,8 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Death
 {
     /// <summary>Destructible scenery that falls away from what killed it, such as a tree.</summary>
-    [AddComponentMenu(HyperRTSMenu.Destruction + "Topple")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Topple")]
+    [Icon(HyperRTSIcons.ToppleAuthoring)]
     [HelpURL(HyperRTSDocs.Destruction)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(DestructibleAuthoring), "a Destructible")]

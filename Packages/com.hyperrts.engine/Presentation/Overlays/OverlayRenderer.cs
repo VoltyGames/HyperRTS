@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Overlays
     /// Draws ground markers, health bars, capture dials, garrison pips, the placement outline and rally points and the
     /// cover preview with instanced meshes, and keeps the placement ghost's model copies.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Rig + "Overlay Renderer")]
-    [Icon(HyperRTSIcons.UI)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Overlay Renderer")]
+    [Icon(HyperRTSIcons.OverlayRenderer)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public class OverlayRenderer : PresentationBehaviour

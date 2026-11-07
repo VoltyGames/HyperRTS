@@ -42,24 +42,27 @@ namespace HyperRTS.Editor.Authoring
             return root;
         }
 
-        /// <summary>The Add Component folder and name of a component type; types outside the menu go in "Other".</summary>
+        /// <summary>The Add Component folder (without the HyperRTS root) and name of a component type; types without a menu go in "Other".</summary>
         public static (string Folder, string Name) MenuEntry(Type type)
         {
             var menu = type.GetCustomAttribute<AddComponentMenu>()?.componentMenu;
-            if (string.IsNullOrEmpty(menu))
+            if (menu == null)
             {
                 return (NoFolder, ObjectNames.NicifyVariableName(type.Name.Replace("Authoring", "")));
             }
 
             var slash = menu.LastIndexOf('/');
-            return slash < 0 ? (NoFolder, menu) : (menu.Substring(0, slash), menu.Substring(slash + 1));
+            return slash < 0 ? (NoFolder, menu) : (menu.Substring(0, slash).Replace(HyperRTSMenu.Root, ""), menu.Substring(slash + 1));
         }
+
+        /// <summary>A component with an empty Add Component menu is added from its parent's inspector instead.</summary>
+        public static bool IsHidden(Type type) => type.GetCustomAttribute<AddComponentMenu>()?.componentMenu == "";
 
         private IEnumerable<(string Folder, string Name, Type Type)> Missing()
         {
             foreach (var type in TypeCache.GetTypesDerivedFrom<AuthoringBehaviour>())
             {
-                if (type.IsAbstract || type.IsGenericType || _target.GetComponent(type) != null)
+                if (type.IsAbstract || type.IsGenericType || IsHidden(type) || _target.GetComponent(type) != null)
                 {
                     continue;
                 }

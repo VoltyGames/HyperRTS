@@ -25,11 +25,19 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
 
         [NoAutoStaticsCleanup]
         private static readonly DebugLayer[] AllLayers =
-            TypeDiscovery.Instances<DebugLayer>().OrderBy(layer => layer.Label).ToArray();
+            TypeDiscovery.Instances<DebugLayer>().OrderBy(layer => layer.Group).ThenBy(layer => layer.Label).ToArray();
 
         public static IReadOnlyList<DebugLayer> Layers => AllLayers;
 
-        private static bool Active => Array.Exists(AllLayers, layer => layer.Enabled);
+        public static void HideAll()
+        {
+            foreach (var layer in AllLayers)
+            {
+                layer.Shown = false;
+            }
+        }
+
+        private static bool Active => Array.Exists(AllLayers, layer => layer.Shown);
 
         // Entity changes don't repaint the Scene view on their own.
         private static void RepaintWhileActive()
@@ -53,7 +61,7 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
 
             foreach (var layer in AllLayers)
             {
-                if (layer.Enabled && PlayWorld.TryGet(layer.Source, out var entityManager))
+                if (layer.Shown && PlayWorld.TryGet(layer.Source, out var entityManager))
                 {
                     layer.Draw(entityManager);
                 }

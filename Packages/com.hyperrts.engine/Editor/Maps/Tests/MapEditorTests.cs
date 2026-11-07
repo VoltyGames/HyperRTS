@@ -56,10 +56,46 @@ namespace HyperRTS.Editor.Maps.Tests
             var view = new MapCanvasView { Size = new Vector2(200, 200) };
 
             Assert.AreEqual(new MapFeatureRef(MapFeatureKinds.Find("props"), 0),
-                MapHitTest.FeatureAt(spec, view, view.ToLocal(new Vector2(10, 10))));
+                MapHitTest.FeatureAt(spec, view, new MapLayers(), view.ToLocal(new Vector2(10, 10))));
             Assert.AreEqual(new MapFeatureRef(MapFeatureKinds.Find("woods"), 0),
-                MapHitTest.FeatureAt(spec, view, view.ToLocal(new Vector2(-30, 20))));
-            Assert.IsTrue(MapHitTest.FeatureAt(spec, view, view.ToLocal(new Vector2(90, 90))).IsNone);
+                MapHitTest.FeatureAt(spec, view, new MapLayers(), view.ToLocal(new Vector2(-30, 20))));
+            Assert.IsTrue(MapHitTest.FeatureAt(spec, view, new MapLayers(), view.ToLocal(new Vector2(90, 90))).IsNone);
+        }
+
+        [Test]
+        public void HitTestSkipsHiddenAndLockedCategories()
+        {
+            var spec = new MapSpec();
+            spec.woods.Add(new MapWoodSpec { points = { new(-50, -50), new(50, -50), new(50, 50), new(-50, 50) } });
+            spec.props.Add(new MapPropSpec { pos = new MapPoint(10, 10) });
+            var view = new MapCanvasView { Size = new Vector2(200, 200) };
+            var props = MapFeatureKinds.Find("props");
+            var woods = new MapFeatureRef(MapFeatureKinds.Find("woods"), 0);
+            var onProp = view.ToLocal(new Vector2(10, 10));
+            var layers = new MapLayers();
+
+            layers.SetLocked(props, true);
+            Assert.AreEqual(woods, MapHitTest.FeatureAt(spec, view, layers, onProp));
+
+            layers.SetLocked(props, false);
+            layers.SetVisible(MapFeatureKinds.Find("woods"), false);
+            layers.SetVisible(props, false);
+            Assert.IsTrue(MapHitTest.FeatureAt(spec, view, layers, onProp).IsNone);
+        }
+
+        [Test]
+        public void ListLabelsNameTheFeatureAndItsPosition()
+        {
+            var spec = new MapSpec();
+            spec.props.Add(new MapPropSpec { pos = new MapPoint(10, -20), kind = "Barrel" });
+            spec.props.Add(new MapPropSpec { pos = new MapPoint(1, 2) });
+            spec.looks.Add(new MapLookSpec { name = "dusk", pos = new MapPoint(3, 4) });
+            spec.woods.Add(new MapWoodSpec { points = { new(0, 0), new(40, 0), new(40, 20), new(0, 20) } });
+
+            Assert.AreEqual("Barrel  (10, -20)", MapFeatureKinds.Find("props").Describe(spec, 0));
+            Assert.AreEqual("Prop  (1, 2)", MapFeatureKinds.Find("props").Describe(spec, 1));
+            Assert.AreEqual("dusk  (3, 4)", MapFeatureKinds.Find("looks").Describe(spec, 0));
+            StringAssert.StartsWith("Wood  (20, 10)", MapFeatureKinds.Find("woods").Describe(spec, 0));
         }
 
         [Test]

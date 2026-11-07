@@ -11,8 +11,8 @@ namespace HyperRTS.Presentation.Audio
     /// Keeps the audio listener on the ground point the camera looks at, facing the camera's heading, so distance
     /// falloff and panning match what's on screen. Put it on the only <see cref="AudioListener"/> in the scene.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Rig + "Sound Listener")]
-    [Icon(HyperRTSIcons.Audio)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Sound Listener")]
+    [Icon(HyperRTSIcons.SoundListener)]
     [HelpURL(HyperRTSDocs.Audio)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]

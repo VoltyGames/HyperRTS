@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:Label name="summary" class="hrts-section__title" />
+  <ui:ScrollView class="hrts-fill">
+    <ui:Label name="empty" class="hrts-note" text="No preview or build yet." />
+    <ui:Label name="none" class="hrts-note" text="No issues." />
+    <ui:VisualElement name="rows" />
+  </ui:ScrollView>
+</ui:UXML>

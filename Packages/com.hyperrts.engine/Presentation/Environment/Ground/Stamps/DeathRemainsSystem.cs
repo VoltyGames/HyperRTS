@@ -37,7 +37,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         {
             CompleteDependency();
             var cues = SystemAPI.GetSingletonBuffer<CueEvent>(true);
-            if (!TrampleStampSystem.MapsOn || cues.IsEmpty)
+            if (!TrampleStampSystem.MapsDrawn || cues.IsEmpty)
             {
                 return;
             }

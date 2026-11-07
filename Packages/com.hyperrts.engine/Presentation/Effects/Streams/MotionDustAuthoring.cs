@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>Dust this vehicle raises as it moves, by the ground material under it and its speed.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Motion Dust")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Motion Dust")]
+    [Icon(HyperRTSIcons.MotionDustAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class MotionDustAuthoring : AuthoringBehaviour

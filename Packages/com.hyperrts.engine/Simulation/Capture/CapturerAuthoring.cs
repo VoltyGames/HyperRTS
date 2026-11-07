@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Capture
 {
     /// <summary>Lets a unit capture buildings that have a Capturable component.</summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Capturer")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Capturer")]
+    [Icon(HyperRTSIcons.CapturerAuthoring)]
     [HelpURL(HyperRTSDocs.Capture)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

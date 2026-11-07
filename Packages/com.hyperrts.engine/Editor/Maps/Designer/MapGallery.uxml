@@ -1,0 +1,16 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <uie:Toolbar>
+    <uie:ToolbarButton name="build-all" tooltip="Build every map in the project.">
+      <ui:VisualElement class="hrts-glyph hrts-glyph--hammer" picking-mode="Ignore" />
+      <ui:Label text="Build all" picking-mode="Ignore" />
+    </uie:ToolbarButton>
+    <uie:ToolbarButton name="new-scene" tooltip="Create an empty scene with the engine rig, sized and set up for a number of players.">
+      <ui:Label text="New blank scene..." picking-mode="Ignore" />
+    </uie:ToolbarButton>
+    <uie:ToolbarSpacer class="hrts-fill" />
+  </uie:Toolbar>
+  <ui:Label name="empty" class="hrts-note hrts-hidden" text="No map specs (*.map.json) in the project." />
+  <ui:ScrollView class="hrts-fill">
+    <ui:VisualElement name="cards" class="hrts-map-cards" />
+  </ui:ScrollView>
+</ui:UXML>

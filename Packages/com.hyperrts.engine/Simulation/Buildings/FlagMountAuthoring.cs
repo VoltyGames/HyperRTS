@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>Flies the owner's flag over this building, lowering it and hoisting the capturer's as a capture runs.</summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Flag Mount")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Flag Mount")]
+    [Icon(HyperRTSIcons.FlagMountAuthoring)]
     [HelpURL(HyperRTSDocs.Buildings)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

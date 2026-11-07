@@ -8,8 +8,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     /// Dents the terrain under this building's footprint once it is built, as a ditch along its long side. Clients
     /// only: the simulation's ground never changes. Models and cover spots come from the prefab as for any building.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Environment + "Trench")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Trench")]
+    [Icon(HyperRTSIcons.TrenchAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(Simulation.Buildings.BuildingAuthoring), "a Building")]

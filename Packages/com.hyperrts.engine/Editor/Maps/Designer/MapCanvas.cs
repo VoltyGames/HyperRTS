@@ -19,12 +19,12 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private MapSpecDocument _document;
         private MapFeatureSelection _selection;
+        private MapLayers _layers;
         private readonly MapCanvasView _view = new();
         private readonly MapToolContext _context;
         private MapCanvasTools _tools;
         private readonly MapCanvasBackdrop _image;
         private readonly VisualElement _overlay;
-        private readonly Label _scale;
         private readonly Label _error;
 
         private MapSymmetry _symmetry;
@@ -33,6 +33,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private bool _panning;
         private Vector2 _lastPointer;
         private bool _ghosts = true;
+        private (Vector2 Position, Color Color)? _marker;
 
         public MapCanvas()
         {
@@ -40,7 +41,6 @@ namespace HyperRTS.Editor.Maps.Designer
             EditorAssets.Layout(typeof(MapCanvas)).CloneTree(this);
             _image = this.Require<MapCanvasBackdrop>("image");
             _overlay = this.Require<VisualElement>("overlay");
-            _scale = this.Require<Label>("scale");
             _error = this.Require<Label>("error");
             _context = new MapToolContext(_view, message => Warned?.Invoke(message));
 
@@ -55,18 +55,33 @@ namespace HyperRTS.Editor.Maps.Designer
         /// <summary>A tool's passing warning, such as what a deletion changed.</summary>
         public event Action<string> Warned;
 
+        /// <summary>The pointer moved over the map; the position is in metres.</summary>
+        public event Action<Vector2> CursorMoved;
+
+        /// <summary>The pan or zoom changed.</summary>
+        public event Action ViewChanged;
+
+        /// <summary>Pixels per metre.</summary>
+        public float Zoom => _view.Scale;
+
+        /// <summary>The distance between grid lines in metres.</summary>
+        public float GridMetres => MapCanvasPainter.GridStep(_view);
+
         /// <summary>
         /// Shows <paramref name="document"/>, fitted, for the tools in <paramref name="toolbox"/> to edit, with
-        /// <paramref name="selection"/> drawn and set by them.
+        /// <paramref name="selection"/> drawn and set by them and <paramref name="layers"/> deciding what is drawn and picked.
         /// </summary>
-        public void Bind(MapSpecDocument document, MapFeatureSelection selection, MapToolbox toolbox)
+        public void Bind(MapSpecDocument document, MapFeatureSelection selection, MapToolbox toolbox, MapLayers layers)
         {
             var first = _document == null;
             _tools?.Active.Cancel();
             _document = document;
             _selection = selection;
+            _layers = layers;
+            _marker = null;
             _context.Document = document;
             _context.Selection = selection;
+            _context.Layers = layers;
             _image.Follow(_document.MapName);
             _fitted = false;
             if (first)
@@ -147,9 +162,23 @@ namespace HyperRTS.Editor.Maps.Designer
             OnViewChanged();
         }
 
+        /// <summary>Rings the middle of <paramref name="feature"/> in <paramref name="color"/> until the next <see cref="ClearMark"/>.</summary>
+        public void Mark(MapFeatureRef feature, Color color)
+        {
+            _marker = (MapFeatureBounds.Measure(_document.Spec, feature).center, color);
+            _overlay.MarkDirtyRepaint();
+        }
+
+        public void ClearMark()
+        {
+            _marker = null;
+            _overlay.MarkDirtyRepaint();
+        }
+
+        /// <summary>Zooms to show the whole playable area.</summary>
         public void Fit()
         {
-            _view.Fit(TerrainBounds);
+            _view.Fit(PlayableBounds);
             _fitted = _view.Size.x > 0f;
             OnViewChanged();
         }
@@ -168,11 +197,16 @@ namespace HyperRTS.Editor.Maps.Designer
 
             if (_symmetry != null && _ghosts)
             {
-                MapFeaturePainter.DrawGhosts(painter, spec, _view, _symmetry);
+                MapFeaturePainter.DrawGhosts(painter, spec, _view, _symmetry, _layers);
             }
 
-            MapFeaturePainter.DrawFeatures(painter, spec, _view);
-            MapFeaturePainter.DrawSelection(painter, spec, _view, _selection.Current);
+            MapFeaturePainter.DrawFeatures(painter, spec, _view, _layers);
+            MapFeaturePainter.DrawSelection(painter, spec, _view, _selection.Current, _layers);
+            if (_marker.HasValue)
+            {
+                MapCanvasPainter.DrawMarker(painter, _view, _marker.Value.Position, _marker.Value.Color);
+            }
+
             _tools.Active.Paint(painter);
         }
 
@@ -195,8 +229,8 @@ namespace HyperRTS.Editor.Maps.Designer
             _image.style.top = image.y;
             _image.style.width = image.width;
             _image.style.height = image.height;
-            _scale.text = $"Grid {MapCanvasPainter.GridStep(_view):0.#} m";
             _overlay.MarkDirtyRepaint();
+            ViewChanged?.Invoke();
         }
 
         private void OnWheel(WheelEvent evt)
@@ -224,6 +258,11 @@ namespace HyperRTS.Editor.Maps.Designer
         private void OnPointerMove(PointerMoveEvent evt)
         {
             Vector2 position = evt.localPosition;
+            if (_document != null)
+            {
+                CursorMoved?.Invoke(_view.ToWorld(position));
+            }
+
             if (_panning)
             {
                 _view.PanBy(position - _lastPointer);

@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Validation.Rules
 
             if (entity.GetComponentInChildren<Renderer>() == null)
             {
-                issues.Info(entity, "No renderer: this will be invisible.");
+                issues.Warn(entity, "No renderer: this will be invisible.");
             }
 
             if (entity.prerequisites.Exists(prerequisite => prerequisite is UnitAuthoring))

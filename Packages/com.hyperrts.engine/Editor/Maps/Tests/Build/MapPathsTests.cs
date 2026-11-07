@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace HyperRTS.Editor.Maps.Tests.Build
 {
-    /// <summary>Commands find a map by name or spec path.</summary>
+    /// <summary>Commands find a map by name or spec path; the gallery marks a map out of date.</summary>
     public class MapPathsTests
     {
         private static readonly string[] Specs = { "Assets/Maps/Kalyna/Kalyna.map.json", "Assets/Maps/Duel/Duel.map.json" };
@@ -21,6 +21,16 @@ namespace HyperRTS.Editor.Maps.Tests.Build
 
             StringAssert.Contains("'Kalina'", error.Message);
             StringAssert.Contains("Kalyna, Duel", error.Message);
+        }
+
+        [Test]
+        public void MapIsOutOfDateOnlyWhenTheSpecWasSavedAfterTheBuild()
+        {
+            var built = new DateTime(2026, 11, 7, 12, 0, 0, DateTimeKind.Utc);
+
+            Assert.IsTrue(MapPaths.IsOutOfDate(built.AddMinutes(1), built));
+            Assert.IsFalse(MapPaths.IsOutOfDate(built.AddMinutes(-1), built));
+            Assert.IsFalse(MapPaths.IsOutOfDate(built, null), "A map never built is not out of date, just unbuilt.");
         }
     }
 }

@@ -9,8 +9,8 @@ namespace HyperRTS.Simulation.Air
     /// Makes the unit an aircraft: it moves on the Air layer, flying straight over everything at its cruise height,
     /// and can take a pad at the Airfield that builds it.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Flight")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Flight")]
+    [Icon(HyperRTSIcons.FlightAuthoring)]
     [HelpURL(HyperRTSDocs.Air)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

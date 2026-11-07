@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Audio
 {
     /// <summary>Continuous sounds a unit or building plays while shown: engine, rotor, turret, work and hum.</summary>
-    [AddComponentMenu(HyperRTSMenu.Audio + "Entity Loops")]
-    [Icon(HyperRTSIcons.Audio)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Audio/Entity Loops")]
+    [Icon(HyperRTSIcons.EntityLoopsAuthoring)]
     [HelpURL(HyperRTSDocs.Audio)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

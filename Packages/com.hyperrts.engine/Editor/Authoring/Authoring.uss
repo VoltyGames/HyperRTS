@@ -31,10 +31,6 @@
   color: var(--hrts-warning);
 }
 
-.hrts-issue-badge__notes {
-  color: var(--hrts-note);
-}
-
 .hrts-option {
   flex-direction: row;
   align-items: center;

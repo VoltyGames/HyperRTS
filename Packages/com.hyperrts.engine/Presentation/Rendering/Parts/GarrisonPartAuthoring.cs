@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Rendering.Parts
     /// A mesh under a container drawn only while one of the listed passengers is aboard, such as the machine gun a
     /// bunker shows for a rifle squad and hides for an anti-tank team or when empty.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Garrison Part")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu("")]
+    [Icon(HyperRTSIcons.GarrisonPartAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public class GarrisonPartAuthoring : AuthoringBehaviour

@@ -14,8 +14,8 @@ namespace HyperRTS.Simulation.Destruction
     /// Makes map scenery wreckable by anyone (fences, trees, wrecks, bridges). On a building or unit it only marks it destructible.
     /// Scenery in a SubScene is no ghost, so multiplayer sends its state by <see cref="SceneryId"/>.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Destruction + "Destructible")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Destructible")]
+    [Icon(HyperRTSIcons.DestructibleAuthoring)]
     [HelpURL(HyperRTSDocs.Destruction)]
     [DisallowMultipleComponent]
     public class DestructibleAuthoring : AuthoringBehaviour

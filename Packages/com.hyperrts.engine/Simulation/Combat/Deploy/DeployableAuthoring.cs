@@ -9,8 +9,8 @@ namespace HyperRTS.Simulation.Combat.Deploy
     /// A unit that deploys to fire and packs up to move, through the Deploy and Pack Up commands. Its weapons marked
     /// Needs Deploy hold fire until it is deployed, and it refuses moves until it has packed up.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Deployable")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Deployable")]
+    [Icon(HyperRTSIcons.DeployableAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

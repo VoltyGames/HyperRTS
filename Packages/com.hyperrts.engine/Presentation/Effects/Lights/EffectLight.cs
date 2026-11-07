@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Lights
 {
     /// <summary>A brief point-light flash a rig's burst asks for, drawn by a pooled light on High detail.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Effect Light")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Effect Light")]
+    [Icon(HyperRTSIcons.EffectLight)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class EffectLight : PresentationBehaviour

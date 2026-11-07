@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Resources.Gathering
 {
     /// <summary>Lets a unit gather from resource nodes and carry cargo to a drop-off.</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Harvester")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Harvester")]
+    [Icon(HyperRTSIcons.HarvesterAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

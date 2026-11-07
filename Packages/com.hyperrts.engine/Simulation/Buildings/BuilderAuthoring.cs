@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>Lets a unit place and construct the listed buildings (worker, dozer).</summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Builder")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Builder")]
+    [Icon(HyperRTSIcons.BuilderAuthoring)]
     [HelpURL(HyperRTSDocs.Buildings)]
     [DisallowMultipleComponent]
     public class BuilderAuthoring : AuthoringBehaviour

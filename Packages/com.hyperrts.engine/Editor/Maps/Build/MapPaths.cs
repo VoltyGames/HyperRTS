@@ -1,9 +1,11 @@
+using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Scenes;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 
 namespace HyperRTS.Editor.Maps.Build
 {
@@ -84,6 +86,31 @@ namespace HyperRTS.Editor.Maps.Build
 
         /// <summary>The SubScene prefab instances the last build made, which the next one deletes.</summary>
         public string BuildObjects => $"{Generated}/{Name}_BuildObjects.txt";
+
+        /// <summary>True when the spec was saved after the last build's report was written; false when never built.</summary>
+        public bool OutOfDate
+        {
+            get
+            {
+                var report = MapReport.JsonPath(Name);
+                DateTime? built = File.Exists(report) ? File.GetLastWriteTimeUtc(report) : null;
+                return IsOutOfDate(File.GetLastWriteTimeUtc(Spec), built);
+            }
+        }
+
+        public static bool IsOutOfDate(DateTime specSaved, DateTime? built) => built.HasValue && specSaved > built.Value;
+
+        /// <summary>Opens the built scene after asking to save the open ones; false when the user cancels.</summary>
+        public bool OpenScene()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return false;
+            }
+
+            EditorSceneManager.OpenScene(Scene, OpenSceneMode.Single);
+            return true;
+        }
 
         /// <summary>Creates the <see cref="Generated"/> folder before the first output is written.</summary>
         public void EnsureGenerated()

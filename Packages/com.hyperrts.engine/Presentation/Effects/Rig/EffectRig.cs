@@ -15,8 +15,8 @@ namespace HyperRTS.Presentation.Effects.Rig
     /// Root of an effect rig prefab: child VFX Graphs played by hand from a pool. Bursts send each graph its Burst event
     /// at a pose; streams play their own copies of the stream graphs along a path. Author it +Y up, +Z forward.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Effect Rig")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Effect Rig")]
+    [Icon(HyperRTSIcons.EffectRig)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public partial class EffectRig : PresentationBehaviour

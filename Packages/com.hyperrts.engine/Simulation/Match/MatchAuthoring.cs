@@ -19,8 +19,8 @@ namespace HyperRTS.Simulation.Match
     /// Match rules for a map: playable area, grids and players. Place exactly one in the SubScene, as a plain object:
     /// its players become ghosts of their own, and the replicated state lives on <see cref="MatchStateAuthoring"/>.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Match + "Match")]
-    [Icon(HyperRTSIcons.Match)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Match/Match")]
+    [Icon(HyperRTSIcons.MatchAuthoring)]
     [HelpURL(HyperRTSDocs.Match)]
     [DisallowMultipleComponent]
     public class MatchAuthoring : AuthoringBehaviour

@@ -24,10 +24,9 @@ and warnings).
 
 | Page | Does |
 | --- | --- |
-| **Maps** | Lists every map spec with its last build result, and builds them. **New blank scene...** starts a scene |
 | **Catalog** | Every unit and building in one editable stats table, and the tech tree |
 | **Validate** | Every rule's issues in prefabs, assets and open scenes, grouped by rule and asset, with quick fixes |
-| **Play** | Cheats, network tools, bot matches and replays. See [Play-mode debugging](#play-mode-debugging) |
+| **Play** | The launcher outside Play mode; network, soak tests and replays in it. See [Play-mode debugging](#play-mode-debugging) |
 | **Build** | Tabs for the generators, the game's art commands and player builds. See [Build page](#build-page) |
 
 **New blank scene...** asks for map size, player count and an optional starting base. It builds a scene with
@@ -101,7 +100,7 @@ run. **Run out of date** runs only those, in order, and saves assets after each.
 runs one, all, or with `--stale true` only the out of date ones. In batch mode, call `HyperRTS.Editor.Generators.GeneratorRunner.RunAll` with `-executeMethod`. To
 change generated output, change the generator and run it again.
 
-The engine has four: **Component icons**, **Environment textures** (the cloud shadow cookie, road edge noise,
+The engine has four: **Component icons** (each authoring component's glyph on its module tile), **Environment textures** (the cloud shadow cookie, road edge noise,
 terrain noise and water ripple normals), **Terrain micro detail** and **Effect graphs**. The first three write into
 the package, so they only show when it is embedded or local.
 
@@ -138,8 +137,8 @@ its section of the module reference.
 ## Authoring conventions
 
 ```csharp
-[AddComponentMenu(HyperRTSMenu.Combat + "Weapon")]
-[Icon(HyperRTSIcons.Combat)]
+[AddComponentMenu(HyperRTSMenu.Entity + "Combat/Weapon")]
+[Icon(HyperRTSIcons.WeaponAuthoring)]
 [HelpURL(HyperRTSDocs.Combat)]
 [DisallowMultipleComponent]
 public class WeaponAuthoring : AuthoringBehaviour
@@ -157,8 +156,15 @@ public class WeaponAuthoring : AuthoringBehaviour
   `[Unit("m")]` (`"s"`, `"m/s"`, `"°"`, `"/s"`), not in the tooltip, which stays a sentence. `[Header]` starts a
   foldout group in the inspector, so give each group of fields one.
 - Bakers write through `EntityWriter` methods, so tests build the same entities.
-- Paths come from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. A new module adds a line to the first two
-  and an accent colour in the **Component icons** generator.
+- Paths come from `HyperRTSMenu`, `HyperRTSIcons` and `HyperRTSDocs`. The Add Component path is
+  `HyperRTSMenu.Entity`, `Look` or `Scene` (what the component is placed on) plus `"<Module>/<Name>"`. A component
+  that only lives under a parent takes `[AddComponentMenu("")]`, which hides it from Add Component, and its parent
+  gets an `[InspectorButton]` that adds it as a child (`PartButtons`).
+- Each component has its own icon: a white glyph from [game-icons.net](../Packages/com.hyperrts.engine/Editor/Icons/Credits.md)
+  in `Editor/Icons/Components/Source/<ComponentClass>.svg` (with the black background path removed and a row in
+  `Credits.md`), a `HyperRTSIcons` constant named after the class, and its name in a module's list in
+  `ComponentIconGenerator`, which sets the tile colour. Run **Component icons** to draw the PNG. A game does the same
+  with its own generator, which calls `ComponentIconGenerator.WriteIcon`.
 - `[Owner]` on an int field shows a dropdown of the Match's players.
 - `[RequiresAuthoring(typeof(T), "why")]` declares a component needed alongside. Validation offers to add it.
 - Field checks need no rule of their own: `[PrefabAsset("Production option")]` wants a prefab asset, not a scene
@@ -183,7 +189,7 @@ Units and buildings (`GameEntityAuthoringEditor`, single selection) start with a
 speed, vision, DPS, range), read by `EntitySummary.Stats`. Under it the `ModuleStrip` has a chip per authoring component
 with its icon and a dot for its worst issue. A click shows only that component's inspector and folds the others, a second
 click shows them all; the last chip, **+**, opens `AddComponentPopup`, a searchable list of the components the object
-lacks grouped by their Add Component folder.
+lacks grouped by their Add Component folder (hidden part components are skipped).
 
 `[InspectorButton("Fill from model", Glyph = "wand-sparkles")]` on a parameterless method of the component draws a button
 row under its fields, with the glyph (a name from `Editor/Icons/Glyphs.uss`) left of the label,
@@ -201,15 +207,15 @@ A component needs its own editor only for UI a button can't give, or handles. Su
 `BuildHeader`, `BuildFooter` or `Refresh`. For handles, use `GroundHandles.EditBox` or `EditRadius` in
 `OnSceneGUI`; each drag is one undo step. Editor layouts are `.uxml` files beside their scripts. Only root windows, inspectors and drawers link the shared
 `Editor/Common/HyperRTSEditor.uss` with a `<Style>` tag; pages, parts and row templates take it from the window they
-show in, and link only their feature's own sheet (`MapsPage.uss`, `Catalog.uss`). A `[UxmlElement]` control with a
+show in, and link only their feature's own sheet (`MapEditor.uss`, `Catalog.uss`). A `[UxmlElement]` control with a
 sheet of its own adds it in its constructor with `EditorAssets.Sheet(name)`, as `IssueList` adds `Issues.uss`. The
 shared sheet holds the layout classes and the colour tokens the feature sheets use: `--hrts-border` and
-`--hrts-dim-text` alias Unity's editor theme variables, so the light skin follows, and `--hrts-error`,
-`--hrts-warning` and `--hrts-note` read on both skins. Lists and trees use Unity's own selection colour. The shared
+`--hrts-dim-text` alias Unity's editor theme variables, so the light skin follows, and `--hrts-error` and
+`--hrts-warning` read on both skins. Lists and trees use Unity's own selection colour. The shared
 controls are `Section` (a titled block, `title="Bot matches"`), `ValueList` (name and value rows, filled with
 `Set`) and `PageShell`. `EditorAssets.Layout(type, part)` finds
 `<Type><part>.uxml` in the type's package, caches it and throws when it is missing. Rows built from data clone a row
-template such as `MapsPageRow.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
+template such as `MapGalleryCard.uxml` with `CloneRoot()`. Toggle visibility with `SetHidden` and `SetInvisible` from
 `HUDElements`, which set the `hrts-hidden` and `hrts-invisible` classes, not inline styles.
 
 An effect recipe's `EffectRecipeInspector` adds **Build graph** and the graph's state above the layers.
@@ -224,7 +230,7 @@ or `Record` for code; each finished edit saves, an undo saves the file back, and
 
 `EditorState`, a `ScriptableSingleton` saved in `UserSettings/HyperRTS.asset`, keeps every remembered
 editor setting, per user and project: the Tools window's last page, the Build page's last tab, Validate's **Selection only**, the Map Editor's
-auto preview, the debug layers switched on, the inspector header groups folded shut, the cheat amounts, the bot match settings and the Effect Preview
+auto preview, the debug layers switched on, the inspector header groups folded shut, the cheat amounts, the launcher choice, the soak test settings and the Effect Preview
 controls. A layout binds its fields with `binding-path` and `EditorState.Bind(root)`, which saves each change;
 defaults, `[Min]` and `[Range]` live on the fields, never in the UXML. Code that sets a value calls `Save()`. Values
 that must reset each session stay in `SessionState`: the last validation's counts behind the Validate badge, the
@@ -259,9 +265,14 @@ rules run only in the full pass, after the component rules. The prefab and asset
 the next import, delete or move. An error or a warning can carry a quick fix, which is one undo step. Closed SubScenes
 are not checked.
 
-The Validate page groups the issues by rule, errors first, then by asset. **Selection only** shows just the issues
-on the selected objects, their children and their prefab assets. Its sidebar badge counts errors and warnings, such
-as `3E 12W`.
+There are two severities, error (what must hold) and warning; there are no notes, so a hint belongs in the field's
+tooltip. The Validate page groups the issues by rule, errors first, then by asset. An issue that a base prefab and its
+variants share (same rule and message) shows once, on the topmost prefab that has it, as "and 2 variants" with the
+variants listed under it (`ValidationIssues.GroupVariants`). The toolbar has an errors chip and a warnings chip, each
+with its count and toggling that severity (remembered in `EditorState`), a search field over message, asset and rule,
+**Fix all**, which applies every listed issue's fix as one undo step, and **Selection only**, which shows just the
+issues on the selected objects, their children and their prefab assets. Clicking a row selects and pings its asset or
+scene object, and its tooltip names the rule. The sidebar badge counts errors and warnings, such as `3E 12W`.
 
 ## Scenes from code
 
@@ -285,7 +296,10 @@ builder throws on a bad path, player count or size. For maps built from JSON spe
 
 ## Play-mode debugging
 
-The **HyperRTS Debug** overlay in the Scene view toggles these layers; each is a `DebugLayer` discovered by type:
+The **HyperRTS Debug** overlay in the Scene view toggles these layers; each is a `DebugLayer` discovered by type. A layer
+has a short `Label`, a `Detail` for the row's tooltip, a `Group` heading (Movement or Vision) and a `Glyph`. The
+toggles stay switchable outside Play mode (they are remembered and draw once Play starts), **Hide all** hides them, and
+the AI table of think timer and attack wave size per player shows only in Play:
 
 | Layer | Shows |
 | --- | --- |
@@ -309,17 +323,33 @@ arrays. A Burst job fills one texture, which is drawn as a single quad, so a lay
 whatever the grid size. For anything else subclass `DebugLayer`. Layers read the authoritative world unless they
 override `Source`.
 
-The **Play** page drives a running match:
+The second Scene view overlay, **HyperRTS Cheats**, works in Play mode (outside it shows a one-line hint):
+
+| Control | Does |
+| --- | --- |
+| Player, Resources, Instant build, Control this player | Act on the chosen player |
+| Fog of war, Game speed | Switch fog and slow or speed the game |
+| Spawn, Armies per side | Any prefab at the view, or two hostile armies of it as a load test |
+
+Cheats act on the authoritative world, through the normal game systems. Using one drops the replay recording.
+
+The **Play** page changes with the mode. Outside Play it is the launcher: map, mode (1v1 to 4v4 or free for all, which
+deals the slot table), start (straight into the map or through the main menu), network (offline, host or dedicated
+server), the slot table (player, side, team, bot difficulty) and the game's own switches. **Play** opens the game's
+menu scene and enters Play mode, then hands the choice to the game. In Play mode it shows:
 
 | Section | Does |
 | --- | --- |
-| Cheats | Resources, instant build, fog toggle, game speed, control another player |
-| Spawn | Any prefab at the view, or two hostile armies of it as a load test |
-| Network | Host, join localhost, run a dedicated server, and watch the client's traffic |
-| Bot matches | AI against AI on the open map, match after match, with results in `Logs/BotMatches/` |
-| Replays | Save the current recording, or play a replay file |
+| Network | The session status and traffic; host, join localhost, run a dedicated server of the Play-mode scene |
+| Soak test | AI against AI on the open map, match after match, with a table of this editor session's results (winner, length, sides) and reports in `Logs/BotMatches/` |
+| Replays | Save the current recording into `Logs/Replays/`; the newest recordings with **Play** (outside Play mode) and **Reveal** |
 
-Cheats act on the authoritative world, through the normal game systems. Using one drops the replay recording.
+The main toolbar beside Play shows the choice as `Chornozem 2v2 vs Normal`; its menu starts the match or opens the
+launcher. The launch element is `LaunchToolbar`.
+
+A game joins the launcher with two subclasses in an editor assembly, found like a `HubPage`. `LaunchGame` lists the
+maps and sides, names the menu scene and starts the `LaunchChoice` in Play mode, through whatever its own match
+launcher needs. `LaunchSetting` adds an on or off switch with a label and tooltip, such as a debug view of text.
 
 ## Prefabs
 

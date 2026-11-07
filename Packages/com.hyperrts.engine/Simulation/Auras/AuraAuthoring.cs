@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Auras
     /// An aura around this entity: stat bonuses, healing or damage for whoever is inside, plus a presence record games
     /// read for their own effects (jamming, network links, air cover). Auras with the same name never stack.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Aura")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Aura")]
+    [Icon(HyperRTSIcons.AuraAuthoring)]
     [HelpURL(HyperRTSDocs.Auras)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

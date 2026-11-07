@@ -10,7 +10,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     {
         private const float Alpha = 0.35f;
 
-        public override string Label => "Nav grid (blocked, water, decks)";
+        public override string Label => "Nav grid";
+
+        public override string Detail => "Blocked, water and deck cells";
+
+        public override string Group => "Movement";
+
+        public override string Glyph => "grid-3x3";
 
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {

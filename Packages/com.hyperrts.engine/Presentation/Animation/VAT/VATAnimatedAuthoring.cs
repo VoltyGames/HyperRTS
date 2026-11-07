@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Animation.VAT
     /// <summary>
     /// Plays vertex animation texture clips on this renderer: a HyperRTS/LitTeam material with _VAT_RIGID on.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Animation + "VAT Animated")]
-    [Icon(HyperRTSIcons.Animation)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Animation/VAT Animated")]
+    [Icon(HyperRTSIcons.VATAnimatedAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]

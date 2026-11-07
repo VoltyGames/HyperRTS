@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Animation.Bones
     /// Plays bone animation clips on this renderer: a mesh from a bone kit, on a HyperRTS/LitTeam material with
     /// _BONES on.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Animation + "Bone Animated")]
-    [Icon(HyperRTSIcons.Animation)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Animation/Bone Animated")]
+    [Icon(HyperRTSIcons.BoneAnimatedAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
     /// <summary>A crop sown in rows that <see cref="RowCropRenderer"/> grows on the GPU: its models, materials and planting.</summary>
-    [Icon(HyperRTSIcons.Environment)]
+    [Icon(HyperRTSIcons.RowCrop)]
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class RowCrop : ScriptableObject
     {

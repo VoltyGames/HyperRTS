@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Environment.Fire
     /// Which ground burns and how, for <see cref="FieldFireSystem"/>: shells that land on dry stubble, grass or ripe
     /// crops set fires that spread with the wind and leave ash. Client visuals only; the fires harm nothing.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Environment + "Field Fires")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Field Fires")]
+    [Icon(HyperRTSIcons.FieldFireSettings)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class FieldFireSettings : PresentationBehaviour

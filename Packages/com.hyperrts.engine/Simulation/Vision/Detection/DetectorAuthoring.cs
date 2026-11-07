@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Vision.Detection
 {
     /// <summary>Reveals hostile stealthed entities within a radius to this entity's team.</summary>
-    [AddComponentMenu(HyperRTSMenu.Vision + "Detector")]
-    [Icon(HyperRTSIcons.Vision)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Vision/Detector")]
+    [Icon(HyperRTSIcons.DetectorAuthoring)]
     [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

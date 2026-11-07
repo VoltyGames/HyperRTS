@@ -4,8 +4,65 @@
   flex-grow: 1;
 }
 
-.hrts-map-toolbar__picker {
-  min-width: 160px;
+.hrts-map-editor__open {
+  flex-grow: 1;
+}
+
+/* Gallery */
+
+.hrts-map-cards {
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 6px;
+}
+
+.hrts-map-card {
+  width: 280px;
+  margin: 6px;
+  border-width: 1px;
+  border-radius: 4px;
+  border-color: var(--hrts-border);
+  background-color: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.hrts-map-card__overview {
+  height: 160px;
+  background-color: rgb(32, 34, 36);
+}
+
+.hrts-map-card__body {
+  padding: 6px;
+}
+
+.hrts-map-card__name {
+  flex-grow: 1;
+  -unity-font-style: bold;
+}
+
+.hrts-map-card__stale {
+  padding: 0 6px;
+  border-radius: 8px;
+  background-color: var(--hrts-warning);
+  color: rgb(255, 255, 255);
+  font-size: 10px;
+  -unity-text-align: middle-center;
+}
+
+.hrts-map-card__issues--error {
+  color: var(--hrts-error);
+}
+
+.hrts-map-card__issues--warning {
+  color: var(--hrts-warning);
+}
+
+/* Toolbar and tool options */
+
+.hrts-map-toolbar__name {
+  margin: 0 8px;
+  -unity-font-style: bold;
+  -unity-text-align: middle-left;
 }
 
 .hrts-map-tools {
@@ -13,30 +70,87 @@
   margin-left: 6px;
 }
 
-.hrts-map-tools__kind {
-  min-width: 110px;
-  margin: 0 2px;
+.hrts-map-tools > * {
+  padding: 2px 6px;
 }
 
-.hrts-map-editor__body {
+.hrts-map-tool--active {
+  background-color: rgba(70, 130, 220, 0.45);
+}
+
+.hrts-map-options {
   flex-direction: row;
-  flex-grow: 1;
-}
-
-.hrts-map-list {
-  width: 200px;
   flex-shrink: 0;
-  border-right-width: 1px;
+  align-items: center;
+  padding: 2px 6px;
+  border-bottom-width: 1px;
   border-color: var(--hrts-border);
 }
 
-.hrts-map-list__group {
-  -unity-font-style: bold;
+.hrts-map-options__kind {
+  min-width: 150px;
+  margin: 0 8px 0 0;
+}
+
+.hrts-map-options > .hrts-hint {
+  flex-shrink: 1;
+  white-space: normal;
+}
+
+.hrts-map-toolbar__strip {
+  flex-direction: row;
+  align-items: center;
+}
+
+.hrts-map-toolbar__busy {
+  color: var(--hrts-warning);
+}
+
+/* Layers panel */
+
+.hrts-map-list {
+  min-width: 140px;
+}
+
+.hrts-map-list__search {
+  margin: 3px;
+}
+
+.hrts-map-layer {
+  flex-direction: row;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.hrts-map-layer__label {
+  flex-grow: 1;
+  flex-shrink: 1;
+  margin-left: 4px;
+  overflow: hidden;
   -unity-text-align: middle-left;
 }
 
-.hrts-map-list__item {
-  -unity-text-align: middle-left;
+.hrts-map-layer__label--group {
+  -unity-font-style: bold;
+}
+
+.hrts-map-layer--hidden .hrts-map-layer__label {
+  color: var(--hrts-dim-text);
+}
+
+.hrts-map-layer__toggle {
+  margin: 0 2px;
+}
+
+.hrts-map-layer__toggle--dim {
+  opacity: 0.35;
+}
+
+/* Canvas */
+
+.hrts-map-editor__centre {
+  flex-grow: 1;
+  min-width: 240px;
 }
 
 .hrts-map-canvas {
@@ -58,13 +172,6 @@
   bottom: 0;
 }
 
-.hrts-map-canvas__scale {
-  position: absolute;
-  left: 6px;
-  bottom: 4px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
 .hrts-map-canvas__error {
   position: absolute;
   left: 6px;
@@ -73,17 +180,30 @@
   white-space: normal;
 }
 
+.hrts-map-status {
+  flex-direction: row;
+  align-items: center;
+  padding: 1px 6px;
+  border-top-width: 1px;
+  border-color: var(--hrts-border);
+}
+
+.hrts-map-status__item {
+  margin-right: 14px;
+  font-size: 10px;
+}
+
+/* Right tabs */
+
+.hrts-map-editor__side {
+  min-width: 240px;
+  flex-grow: 1;
+}
+
 .hrts-map-inspector {
   flex-grow: 1;
   flex-shrink: 1;
   padding: 4px;
-}
-
-.hrts-map-editor__side {
-  width: 300px;
-  flex-shrink: 0;
-  border-left-width: 1px;
-  border-color: var(--hrts-border);
 }
 
 .hrts-map-inspector__details {
@@ -95,28 +215,30 @@
   margin-top: 4px;
 }
 
-.hrts-map-report {
-  max-height: 50%;
-  flex-shrink: 0;
+.hrts-map-issues {
+  flex-grow: 1;
   padding: 4px;
-  border-top-width: 1px;
-  border-color: var(--hrts-border);
+}
+
+.hrts-map-issue {
+  margin: 1px 0;
+}
+
+.hrts-map-issue__message {
+  flex-grow: 1;
+  margin: 0;
+}
+
+.hrts-map-issue--located:hover {
+  background-color: rgba(70, 130, 220, 0.25);
+}
+
+.hrts-map-report {
+  flex-grow: 1;
+  padding: 4px;
 }
 
 .hrts-map-report__content {
+  flex-grow: 1;
   flex-shrink: 1;
-}
-
-.hrts-map-report__show {
-  width: 48px;
-  margin: 0 0 0 2px;
-}
-
-.hrts-map-toolbar__strip {
-  flex-direction: row;
-  align-items: center;
-}
-
-.hrts-map-toolbar__busy {
-  color: var(--hrts-warning);
 }

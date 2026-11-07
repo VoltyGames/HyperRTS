@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Build;
-using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Views;
 using HyperRTS.Presentation.HUD;
@@ -14,19 +13,15 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// The Map Editor's report under the inspector: the newest preview's or build's issues (each linked to its
-    /// feature), the preview's land figures and the last build's metrics, with Open scene and Recapture views.
+    /// The Map Editor's Report tab: the newest preview's or build's land figures and the last build's metrics, with
+    /// Open scene and Recapture views. Its issues go to the Issues tab.
     /// </summary>
     [UxmlElement]
     public sealed partial class MapReportPanel : VisualElement
     {
-        private readonly VisualTreeAsset _issueRow = EditorAssets.Layout(typeof(MapReportPanel), "Issue");
         private readonly Label _source;
         private readonly Label _empty;
         private readonly VisualElement _report;
-        private readonly TitledSection _issuesSection;
-        private readonly VisualElement _issueRows;
-        private readonly Label _noIssues;
         private readonly VisualElement _landSection;
         private readonly ValueList _landFigures;
         private readonly VisualElement _metricsSection;
@@ -42,13 +37,9 @@ namespace HyperRTS.Editor.Maps.Designer
         public MapReportPanel()
         {
             EditorAssets.Layout(typeof(MapReportPanel)).CloneTree(this);
-            styleSheets.Add(EditorAssets.Sheet("Issues"));
             _source = this.Require<Label>("source");
             _empty = this.Require<Label>("empty");
             _report = this.Require<VisualElement>("report");
-            _issuesSection = this.Require<TitledSection>("issues");
-            _issueRows = this.Require<VisualElement>("issue-rows");
-            _noIssues = this.Require<Label>("no-issues");
             _landSection = this.Require<VisualElement>("land");
             _landFigures = this.Require<ValueList>("land-figures");
             _metricsSection = this.Require<VisualElement>("metrics");
@@ -59,10 +50,8 @@ namespace HyperRTS.Editor.Maps.Designer
             _recapture.clicked += Recapture;
         }
 
-        /// <summary>Asks to select and frame the feature an issue names.</summary>
-        public event Action<MapIssueFeature> ShowFeature;
-
-        private string ScenePath => new MapPaths(_document.Path, _document.Spec.name).Scene;
+        /// <summary>The newest preview's or build's report, or null before either.</summary>
+        public MapReport Issues => _issues;
 
         /// <summary>Follows <paramref name="document"/> and reads the reports its last preview and build wrote.</summary>
         public void Bind(MapSpecDocument document)
@@ -113,7 +102,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void Refresh()
         {
-            var built = File.Exists(ScenePath);
+            var built = File.Exists(new MapPaths(_document.Path, _document.Spec.name).Scene);
             _openScene.SetEnabled(built);
             _recapture.SetEnabled(built);
             var hasReport = _issues != null;
@@ -133,7 +122,6 @@ namespace HyperRTS.Editor.Maps.Designer
 
             var kind = _issues == _build ? "Build" : "Preview";
             _source.text = $"{kind} report, {_issues.built}";
-            ShowIssues(_issues);
             if (showLand)
             {
                 ShowLand(land);
@@ -142,33 +130,6 @@ namespace HyperRTS.Editor.Maps.Designer
             if (showMetrics)
             {
                 ShowMetrics(_build.metrics);
-            }
-        }
-
-        /// <summary>Errors then warnings. Issues that name a feature get a Show button.</summary>
-        private void ShowIssues(MapReport report)
-        {
-            _issuesSection.Title = $"Issues ({report.errors.Count} errors, {report.warnings.Count} warnings)";
-            _issueRows.Clear();
-            AddIssues(report.errors, report.errorFeatures, HelpBoxMessageType.Error);
-            AddIssues(report.warnings, report.warningFeatures, HelpBoxMessageType.Warning);
-            _noIssues.SetHidden(report.errors.Count + report.warnings.Count > 0);
-        }
-
-        private void AddIssues(List<string> messages, List<MapIssueFeature> features, HelpBoxMessageType kind)
-        {
-            for (var i = 0; i < messages.Count; i++)
-            {
-                var feature = features[i];
-                var row = _issueRow.CloneRoot();
-                var message = row.Require<HelpBox>("message");
-                message.text = messages[i];
-                message.messageType = kind;
-                var show = row.Require<Button>("show");
-                show.tooltip = $"Select and frame {feature}";
-                show.clicked += () => ShowFeature?.Invoke(feature);
-                show.SetHidden(feature.IsNone);
-                _issueRows.Add(row);
             }
         }
 
@@ -220,13 +181,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private static string Seconds(float seconds) => seconds.ToString("0' s'", CultureInfo.InvariantCulture);
 
-        private void OpenScene()
-        {
-            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            {
-                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            }
-        }
+        private void OpenScene() => new MapPaths(_document.Path, _document.Spec.name).OpenScene();
 
         private void Recapture()
         {

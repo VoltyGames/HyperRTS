@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Environment.Ambient
     /// The scene's ambient life: bird flocks circling over the map and dust devils drifting downwind. Client visuals
     /// only (<see cref="BirdFlockSystem"/>, <see cref="DustDevilSystem"/>); a zero count turns a feature off.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Environment + "Ambient Life")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Ambient Life")]
+    [Icon(HyperRTSIcons.AmbientLife)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed partial class AmbientLife : PresentationBehaviour

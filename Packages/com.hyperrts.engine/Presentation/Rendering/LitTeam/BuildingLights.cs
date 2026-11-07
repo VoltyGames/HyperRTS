@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         /// <summary>Brightness of a flicker's dim beats, so it stutters rather than blinks off.</summary>
         private const float Dim = 0.15f;
 
-        public bool On;
+        public bool Lit;
 
         /// <summary>Seconds of flicker left.</summary>
         public float Flicker;
@@ -31,19 +31,19 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         public float Value;
 
         /// <summary>Lights as they stand when first seen, without a flicker.</summary>
-        public static BuildingLights Seen(bool on) => new() { On = on, Value = on ? 1f : 0f };
+        public static BuildingLights Seen(bool lit) => new() { Lit = lit, Value = lit ? 1f : 0f };
 
-        /// <summary>Follows <paramref name="on"/>; true when <see cref="Value"/> changed and needs writing.</summary>
-        public bool Advance(bool on, float deltaTime)
+        /// <summary>Follows <paramref name="lit"/>; true when <see cref="Value"/> changed and needs writing.</summary>
+        public bool Advance(bool lit, float deltaTime)
         {
-            if (on != On)
+            if (lit != Lit)
             {
-                On = on;
+                Lit = lit;
                 Flicker = FlickerSeconds;
             }
 
             Flicker = math.max(Flicker - deltaTime, 0f);
-            var value = Flicker > 0f ? Beat(Flicker) : Seen(On).Value;
+            var value = Flicker > 0f ? Beat(Flicker) : Seen(Lit).Value;
             var changed = value != Value;
             Value = value;
             return changed;

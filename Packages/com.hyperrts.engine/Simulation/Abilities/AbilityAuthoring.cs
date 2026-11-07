@@ -15,8 +15,8 @@ namespace HyperRTS.Simulation.Abilities
     /// Cooldown abilities used from the command card (grenades, smoke, airstrikes, superweapons). On a building with
     /// unlimited range an ability works as a support power.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Ability")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Ability")]
+    [Icon(HyperRTSIcons.AbilityAuthoring)]
     [HelpURL(HyperRTSDocs.Abilities)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Abilities
             public GameEntityAuthoring requires;
 
             [Header("Built-in effects")]
-            [Tooltip("Prefab spawned at the target (mine, beacon, incoming aircraft), owned by the caster's player.")]
+            [Tooltip("Prefab spawned at the target (mine, beacon, incoming aircraft), owned by the caster's player. An ability with no spawn prefab and no damage only raises its event for game code.")]
             [PrefabAsset("Spawn prefab")]
             public GameObject spawnPrefab;
 

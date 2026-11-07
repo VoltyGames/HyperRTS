@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.Environment)]
+    [Icon(HyperRTSIcons.GrassRenderer)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class GrassRenderer : ScatterRenderer<GrassBatch>

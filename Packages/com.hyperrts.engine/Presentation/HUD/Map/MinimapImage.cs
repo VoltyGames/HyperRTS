@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.HUD.Map
     /// per scene.
     /// </summary>
     [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.UI)]
+    [Icon(HyperRTSIcons.MinimapImage)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class MinimapImage : PresentationBehaviour

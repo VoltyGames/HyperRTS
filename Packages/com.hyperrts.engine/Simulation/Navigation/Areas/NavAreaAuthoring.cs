@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.Navigation.Areas
     /// Overrides a box of the pathfinding grid: water, a blocked area or a walkable deck (bridge). Destroying the
     /// entity restores the cells and units re-path.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Navigation + "Nav Area")]
-    [Icon(HyperRTSIcons.Navigation)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Navigation/Nav Area")]
+    [Icon(HyperRTSIcons.NavAreaAuthoring)]
     [HelpURL(HyperRTSDocs.Navigation)]
     [DisallowMultipleComponent]
     public class NavAreaAuthoring : AuthoringBehaviour

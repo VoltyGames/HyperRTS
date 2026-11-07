@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Scenes
 {
-    /// <summary>The New Blank Scene dialog over <see cref="SceneBuilder"/>, opened from Tools ▸ Maps.</summary>
+    /// <summary>The New Blank Scene dialog over <see cref="SceneBuilder"/>, opened from the Map Editor gallery.</summary>
     public class SceneWizard : EditorWindow
     {
         private const string DialogTitle = "New Blank Scene";

@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Cues.Announcements
     /// The match's announcers: which <see cref="AnnouncerSet"/> each side's players hear for alerts such as unit lost,
     /// base under attack and low power. Place one in the match's subscene.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Audio + "Announcer")]
-    [Icon(HyperRTSIcons.Audio)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Match/Announcer")]
+    [Icon(HyperRTSIcons.AnnouncerAuthoring)]
     [HelpURL(HyperRTSDocs.Audio)]
     [DisallowMultipleComponent]
     public class AnnouncerAuthoring : AuthoringBehaviour

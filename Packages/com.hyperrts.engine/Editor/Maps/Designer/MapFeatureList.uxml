@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <uie:ToolbarSearchField name="search" class="hrts-map-list__search" tooltip="Filter the features by name, kind or position." />
+  <ui:TreeView name="tree" class="hrts-fill" />
+</ui:UXML>

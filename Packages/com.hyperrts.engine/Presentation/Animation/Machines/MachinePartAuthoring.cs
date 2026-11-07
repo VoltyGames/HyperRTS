@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation.Machines
 {
     /// <summary>A moving child of a Machine: a spinning crank, a rocking beam, a sliding crane, a rod or a ram.</summary>
-    [AddComponentMenu(HyperRTSMenu.Animation + "Machine Part")]
-    [Icon(HyperRTSIcons.Animation)]
+    [AddComponentMenu("")]
+    [Icon(HyperRTSIcons.MachinePartAuthoring)]
     [HelpURL(HyperRTSDocs.Animation)]
     [DisallowMultipleComponent]
     public class MachinePartAuthoring : AuthoringBehaviour

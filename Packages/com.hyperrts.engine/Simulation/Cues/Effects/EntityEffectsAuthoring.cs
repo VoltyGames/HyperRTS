@@ -9,8 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Cues.Effects
 {
     /// <summary>Effect rigs a unit or building plays when it fires, dies or uses an ability.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Entity Effects")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Entity Effects")]
+    [Icon(HyperRTSIcons.EntityEffectsAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

@@ -16,8 +16,8 @@ namespace HyperRTS.Simulation.Squads
     /// Makes a unit a squad of soldiers who each carry one weapon and take their own hits, while the squad stays one
     /// entity for orders, movement and capture. The unit's max health is shared evenly among the members.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Squad")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Squad")]
+    [Icon(HyperRTSIcons.SquadAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

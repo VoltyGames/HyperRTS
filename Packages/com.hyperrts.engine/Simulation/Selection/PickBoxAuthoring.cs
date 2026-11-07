@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Selection
 {
     /// <summary>The box clicks, hovers and right-clicks pick this entity by; drag it in the Scene view.</summary>
-    [AddComponentMenu(HyperRTSMenu.Selection + "Pick Box")]
-    [Icon(HyperRTSIcons.Selection)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Selection/Pick Box")]
+    [Icon(HyperRTSIcons.PickBoxAuthoring)]
     [HelpURL(HyperRTSDocs.Selection)]
     [DisallowMultipleComponent]
     public class PickBoxAuthoring : AuthoringBehaviour

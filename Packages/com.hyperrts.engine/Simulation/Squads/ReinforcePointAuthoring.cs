@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.Squads
     /// Marks a structure or vehicle where friendly squads bring back dead members with the Reinforce command, while
     /// they stand within its range and it is working.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Reinforce Point")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Reinforce Point")]
+    [Icon(HyperRTSIcons.ReinforcePointAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class ReinforcePointAuthoring : AuthoringBehaviour

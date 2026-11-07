@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="CheatsOverlay.uss" />
+  <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
+  <ui:VisualElement class="hrts-cheats-overlay">
+    <ui:Label name="hint" class="hrts-hint" text="Cheats work in Play mode." />
+    <ui:Instance template="CheatsSection" name="cheats" />
+  </ui:VisualElement>
+</ui:UXML>

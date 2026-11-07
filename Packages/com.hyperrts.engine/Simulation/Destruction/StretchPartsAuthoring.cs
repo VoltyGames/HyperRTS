@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Destruction
     /// A prop the map builder stretches by moving its end caps out and lengthening only the span between them.
     /// A plain MonoBehaviour, not an <see cref="Common.AuthoringBehaviour"/>, so it doesn't make a prop an entity.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Destruction + "Stretch Parts")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Stretch Parts")]
+    [Icon(HyperRTSIcons.StretchPartsAuthoring)]
     [HelpURL(HyperRTSDocs.Destruction)]
     [DisallowMultipleComponent]
     public class StretchPartsAuthoring : MonoBehaviour

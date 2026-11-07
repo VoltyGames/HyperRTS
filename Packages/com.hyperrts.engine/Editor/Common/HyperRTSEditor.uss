@@ -11,7 +11,6 @@
   --hrts-dim-text: var(--unity-colors-label-text-disabled);
   --hrts-error: rgb(222, 64, 52);
   --hrts-warning: rgb(196, 136, 0);
-  --hrts-note: rgb(64, 128, 222);
 }
 
 .hrts-page {
@@ -90,6 +89,18 @@
 
 .hrts-hint {
   color: var(--hrts-dim-text);
+}
+
+/* A toolbar button may hold a glyph beside its label. */
+.unity-toolbar-button,
+.unity-toolbar-toggle {
+  flex-direction: row;
+  align-items: center;
+}
+
+.unity-toolbar-button > .hrts-glyph,
+.unity-toolbar-toggle .hrts-glyph {
+  margin-right: 3px;
 }
 
 /* Last, so a toggle wins over any rule above that sets display or visibility. */

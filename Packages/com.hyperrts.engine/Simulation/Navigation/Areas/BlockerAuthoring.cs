@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Navigation.Areas
 {
     /// <summary>Makes remains such as a wreck a fixed blocker units go round, until Decay starts to bury it.</summary>
-    [AddComponentMenu(HyperRTSMenu.Navigation + "Blocker")]
-    [Icon(HyperRTSIcons.Navigation)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Navigation/Blocker")]
+    [Icon(HyperRTSIcons.BlockerAuthoring)]
     [HelpURL(HyperRTSDocs.Movement)]
     [DisallowMultipleComponent]
     public class BlockerAuthoring : AuthoringBehaviour

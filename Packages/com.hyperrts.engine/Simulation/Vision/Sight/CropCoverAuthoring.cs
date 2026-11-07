@@ -8,8 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>Bakes the map's <see cref="CropCoverMap"/> into the <see cref="CropCover"/> singleton. One per match.</summary>
-    [AddComponentMenu(HyperRTSMenu.Vision + "Crop Cover")]
-    [Icon(HyperRTSIcons.Vision)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Vision/Crop Cover")]
+    [Icon(HyperRTSIcons.CropCoverAuthoring)]
     [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     public class CropCoverAuthoring : AuthoringBehaviour

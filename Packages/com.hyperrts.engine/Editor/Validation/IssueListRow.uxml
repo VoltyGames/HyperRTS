@@ -4,6 +4,7 @@
     <ui:Button name="asset" class="hrts-issue__asset" />
     <ui:Button name="context" class="hrts-issue__context" />
     <ui:HelpBox name="message" class="hrts-issue__message" />
+    <ui:Label name="variants" class="hrts-issue__variants" />
     <ui:Button name="fix" class="hrts-issue__fix" />
   </ui:VisualElement>
 </ui:UXML>

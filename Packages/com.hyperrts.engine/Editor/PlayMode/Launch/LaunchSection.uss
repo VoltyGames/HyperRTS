@@ -1,0 +1,28 @@
+/* The launcher form on the Play page. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-launch__head {
+  margin-top: 6px;
+  color: var(--hrts-dim-text);
+}
+
+.hrts-launch__number {
+  width: 32px;
+  margin-left: 3px;
+}
+
+.hrts-launch__kind {
+  width: 80px;
+}
+
+.hrts-launch__side {
+  flex-grow: 1;
+  flex-basis: 0;
+}
+
+.hrts-launch__team {
+  width: 44px;
+}
+
+.hrts-launch__difficulty {
+  width: 80px;
+}

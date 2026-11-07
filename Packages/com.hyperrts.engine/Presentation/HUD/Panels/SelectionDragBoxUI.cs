@@ -10,8 +10,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD.Panels
 {
     /// <summary>Drag-box marquee with corner accents, placed from <see cref="SelectionDragState"/>.</summary>
-    [AddComponentMenu(HyperRTSMenu.Rig + "Selection Drag Box UI")]
-    [Icon(HyperRTSIcons.Selection)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Selection Drag Box UI")]
+    [Icon(HyperRTSIcons.SelectionDragBoxUI)]
     [HelpURL(HyperRTSDocs.Selection)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HUDController))]

@@ -14,8 +14,8 @@ namespace HyperRTS.Presentation.Fog
     /// Publishes the fog-of-war grid and its look as shader globals, easing each cell toward its target so the fog's edge
     /// moves smoothly.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Rig + "Fog of War Renderer")]
-    [Icon(HyperRTSIcons.Vision)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Fog of War Renderer")]
+    [Icon(HyperRTSIcons.FogOfWarRenderer)]
     [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     public partial class FogOfWarRenderer : PresentationBehaviour

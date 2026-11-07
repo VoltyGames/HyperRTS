@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.AI
     /// Lets bots dig this line-placed building in at their defence points, as cover or as a barrier in front of it.
     /// Builders must list it among their build options.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "AI Field Work")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/AI Field Work")]
+    [Icon(HyperRTSIcons.AIFieldWorkAuthoring)]
     [HelpURL(HyperRTSDocs.AI)]
     [DisallowMultipleComponent]
     public class AIFieldWorkAuthoring : AuthoringBehaviour

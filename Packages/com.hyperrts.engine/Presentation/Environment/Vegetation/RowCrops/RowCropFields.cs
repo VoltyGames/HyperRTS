@@ -6,7 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
     /// <summary>A map's baked row crops: field-id picture, row lattices, crops and the tiles that hold any.</summary>
-    [Icon(HyperRTSIcons.Environment)]
+    [Icon(HyperRTSIcons.RowCropFields)]
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class RowCropFields : ScatterField
     {

@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Combat.Damage
     /// Scales incoming damage per <see cref="DamageType"/> (e.g. tanks take 25% from bullets) and by the side the hit
     /// comes from (thin rear armor).
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Armor")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Armor")]
+    [Icon(HyperRTSIcons.ArmorAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class ArmorAuthoring : AuthoringBehaviour

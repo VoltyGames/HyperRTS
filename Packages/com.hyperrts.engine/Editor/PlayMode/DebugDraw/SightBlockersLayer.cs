@@ -10,6 +10,12 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     {
         public override string Label => "Sight blockers";
 
+        public override string Detail => "Cells that block line of sight";
+
+        public override string Group => "Vision";
+
+        public override string Glyph => "brick-wall";
+
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {
             if (!TryGetSingleton(entityManager, out SightBlockers blockers) || !blockers.IsCreated)

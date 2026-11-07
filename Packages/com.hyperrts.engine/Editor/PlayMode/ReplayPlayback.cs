@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using HyperRTS.Simulation.Replays;
 using Unity.Entities;
 using UnityEditor;
@@ -7,11 +11,13 @@ using UnityEngine.SceneManagement;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>Saves the Play-mode recording, or opens a replay's scene and plays it back once Play mode starts.</summary>
+    /// <summary>Saves the Play-mode recording into Logs/Replays, or opens a replay's scene and plays it back once Play mode starts.</summary>
     [InitializeOnLoad]
     internal static class ReplayPlayback
     {
         private const string Extension = "hrreplay";
+        private const string Folder = "Logs/Replays";
+        private const int Recent = 8;
 
         // SessionState survives the domain reload that entering Play mode may bring; a static would not.
         private const string PendingKey = "HyperRTS.ReplayPlayback.Pending";
@@ -26,6 +32,21 @@ namespace HyperRTS.Editor.PlayMode
 
         public static bool CanPlay => !Application.isPlaying;
 
+        /// <summary>The newest recordings, newest first.</summary>
+        public static List<string> RecentRecordings()
+        {
+            if (!Directory.Exists(Folder))
+            {
+                return new List<string>();
+            }
+
+            return Directory.GetFiles(Folder, "*." + Extension)
+                .OrderByDescending(File.GetLastWriteTime)
+                .Take(Recent)
+                .Select(path => path.Replace("\\", "/"))
+                .ToList();
+        }
+
         public static void SaveRecording()
         {
             if (!TryGetRecordingWorld(out var world))
@@ -33,20 +54,17 @@ namespace HyperRTS.Editor.PlayMode
                 return;
             }
 
-            var path = EditorUtility.SaveFilePanel("Save Replay", "", "Replay", Extension);
-            if (!string.IsNullOrEmpty(path))
-            {
-                // The scene opened to play; SubScenes load after it.
-                var scene = SceneManager.GetSceneAt(0).path;
-                ReplaySerializer.Save(ReplayRecorder.Snapshot(world, scene), path);
-                Debug.Log($"Replay saved to {path}");
-            }
+            // The scene opened to play; SubScenes load after it.
+            var scene = SceneManager.GetSceneAt(0).path;
+            Directory.CreateDirectory(Folder);
+            var path = $"{Folder}/{Path.GetFileNameWithoutExtension(scene)}-{DateTime.Now:yyyyMMdd-HHmmss}.{Extension}";
+            ReplaySerializer.Save(ReplayRecorder.Snapshot(world, scene), path);
+            Debug.Log($"Replay saved to {path}");
         }
 
-        public static void PlayReplay()
+        public static void PlayReplay(string path)
         {
-            var path = EditorUtility.OpenFilePanel("Play Replay", "", Extension);
-            if (string.IsNullOrEmpty(path) || !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
                 return;
             }

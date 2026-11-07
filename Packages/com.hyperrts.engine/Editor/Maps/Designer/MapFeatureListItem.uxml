@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-map-layer">
+    <ui:VisualElement name="glyph" class="hrts-glyph" picking-mode="Ignore" />
+    <ui:Label name="label" class="hrts-map-layer__label" />
+    <ui:VisualElement name="show" class="hrts-glyph hrts-map-layer__toggle" tooltip="Show or hide this category on the map. Hidden features are not drawn or picked." />
+    <ui:VisualElement name="lock" class="hrts-glyph hrts-map-layer__toggle" tooltip="Lock this category: its features are drawn but a click on the map does not pick them." />
+  </ui:VisualElement>
+</ui:UXML>

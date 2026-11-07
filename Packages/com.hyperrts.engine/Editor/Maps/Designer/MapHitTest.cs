@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
     /// Finds what is under the cursor on the Map Editor canvas: a selected feature's handle, else the topmost
-    /// point, line or outline, else the topmost polygon or circle interior.
+    /// point, line or outline, else the topmost polygon or circle interior. Hidden and locked categories are skipped.
     /// </summary>
     public static class MapHitTest
     {
@@ -62,19 +62,25 @@ namespace HyperRTS.Editor.Maps.Designer
             return MapVertexRules.SegmentAt(Points, closed, local, LinePixels);
         }
 
-        public static MapFeatureRef FeatureAt(MapSpec spec, MapCanvasView view, Vector2 local)
+        public static MapFeatureRef FeatureAt(MapSpec spec, MapCanvasView view, MapLayers layers, Vector2 local)
         {
-            var edge = Find(spec, view, local, false);
-            return edge.IsNone ? Find(spec, view, local, true) : edge;
+            var edge = Find(spec, view, layers, local, false);
+            return edge.IsNone ? Find(spec, view, layers, local, true) : edge;
         }
 
-        private static MapFeatureRef Find(MapSpec spec, MapCanvasView view, Vector2 local, bool interiors)
+        private static MapFeatureRef Find(MapSpec spec, MapCanvasView view, MapLayers layers, Vector2 local,
+            bool interiors)
         {
             var world = view.ToWorld(local);
             var kinds = MapFeatureKinds.All;
             for (var k = kinds.Count - 1; k >= 0; k--)
             {
                 var kind = kinds[k];
+                if (!layers.CanPick(kind))
+                {
+                    continue;
+                }
+
                 for (var i = kind.Count(spec) - 1; i >= 0; i--)
                 {
                     kind.ReadPoints(spec, i, Points);

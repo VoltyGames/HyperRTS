@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Resources.Gathering
 {
     /// <summary>Carriers that bring resources to whoever owns this building, from the map edge behind it.</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Delivery Source")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Delivery Source")]
+    [Icon(HyperRTSIcons.DeliverySourceAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

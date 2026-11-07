@@ -8,8 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Airdrops
 {
     /// <summary>A structure that an aircraft from its owner's map edge drops a crate of resources on, every interval.</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Airdrop Receiver")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Airdrop Receiver")]
+    [Icon(HyperRTSIcons.AirdropReceiverAuthoring)]
     [HelpURL(HyperRTSDocs.Airdrops)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

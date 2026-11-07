@@ -1,7 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <ui:DropdownField name="picker" class="hrts-map-toolbar__picker" />
+  <uie:ToolbarButton name="maps" tooltip="Back to the map gallery.">
+    <ui:VisualElement class="hrts-glyph hrts-glyph--map" picking-mode="Ignore" />
+    <ui:Label text="Maps" picking-mode="Ignore" />
+  </uie:ToolbarButton>
+  <ui:Label name="map-name" class="hrts-map-toolbar__name" />
   <HyperRTS.Editor.Maps.Designer.MapToolStrip name="tools" />
   <uie:ToolbarSpacer class="hrts-fill" />
-  <uie:ToolbarToggle name="ghosts" text="Ghosts" value="true" />
+  <uie:ToolbarToggle name="ghosts" text="Ghosts" value="true" tooltip="Show the symmetry's other copies of each feature." />
   <HyperRTS.Editor.Maps.Designer.MapPreviewStrip name="strip" class="hrts-map-toolbar__strip" />
 </ui:UXML>

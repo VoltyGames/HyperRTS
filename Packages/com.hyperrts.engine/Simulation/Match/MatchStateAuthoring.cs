@@ -1,4 +1,4 @@
-﻿using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Match
     /// the players, which must become ghosts of their own. Every map holds one; the scene wizard places it.
     /// </summary>
     [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.Match)]
+    [Icon(HyperRTSIcons.MatchStateAuthoring)]
     [HelpURL(HyperRTSDocs.Networking)]
     [DisallowMultipleComponent]
     [RequiresGhost]

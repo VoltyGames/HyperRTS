@@ -17,7 +17,7 @@ the match camera.
 | --- | --- | --- |
 | Edit | **HyperRTS ▸ Map Editor** or any text editor | The spec |
 | Preview | The Map Editor, the `map preview` [command](editor.md#commands) or batch `.Preview` | Layout image, issues and land figures |
-| Build | **Build** in the Map Editor or on **HyperRTS ▸ Tools ▸ Maps**, `map build` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
+| Build | **Build** in the Map Editor, `map build` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
 | Views | Every build with graphics, **Recapture views** in the Map Editor, or `map capture` | Screenshots in `Logs/MapReports/<Map>/`, and their contrast in the report |
 | Looks | `map look`, in Play mode | The spec's `looks` at the closest, middle and farthest zoom in every weather, with GI settled, in `Logs/MapReports/<Map>/look/<Weather>/` and a `summary.json` |
 
@@ -29,8 +29,14 @@ overview. Low figures mean flat, front-lit ground.
 
 ## Map Editor
 
-**HyperRTS ▸ Map Editor** lays out one spec on a top-down canvas. Open a spec by double-clicking a `.map.json` or
-with **Open** on **HyperRTS ▸ Tools ▸ Maps**.
+**HyperRTS ▸ Map Editor** opens on a gallery of the project's maps, then lays out one spec on a top-down canvas.
+Open a spec by double-clicking a `.map.json` or with **Open** on its card; **Maps** in the toolbar returns to the
+gallery.
+
+A card shows the map's overview picture, mode, size and the last build's errors and warnings. **Out of date** marks a
+spec saved since its last build. A card's **Open scene** opens the built scene and **Build** builds the map. The
+gallery's toolbar has **Build all** and **New blank scene...**, which opens the empty-scene dialog (map size, player
+count and starting base).
 
 The file stays the source. Every finished edit, undo and redo saves it at once, so there is never unsaved work, and
 a save changes only what was edited: untouched values keep their text and a new feature leaves out its default
@@ -39,23 +45,25 @@ Unity imports it; that reload clears the undo history.
 
 | Part | Shows |
 | --- | --- |
-| Toolbar | Spec picker, the tools, **Ghosts** for the symmetry copies, **Auto preview**, **Preview** and **Build** |
-| Feature list | Every feature grouped by kind. Click one to select it |
-| Canvas | The latest preview under a metre grid, with bounds, sector edges, features, ghosts and the selection's handles |
-| Inspector | The selected feature's fields, with dropdowns for library keys. A change saves at once |
-| Report panel | Issues, land figures and build metrics, with **Open scene** and **Recapture views** |
+| Toolbar | **Maps**, the map's name, an icon button per tool, **Ghosts** for the symmetry copies, **Auto preview**, **Preview** and **Build** |
+| Options strip | What the active tool does, and for a drawing tool the feature kind it adds |
+| Layers panel | Every feature grouped by category, each with a glyph in its canvas colour and a label from its name, kind and position. The search field filters them. A category has an eye (hidden: not drawn or picked) and a lock (drawn, but a click on the map does not pick it). A separator drags to resize the panel |
+| Canvas | The latest preview under a metre grid, with bounds, sector edges, features, ghosts and the selection's handles. The map fits the view when it opens |
+| Status bar | The cursor in metres, the zoom, the grid size and the time of the last preview |
+| Feature tab | The selected feature's fields, with dropdowns for library keys. A change saves at once |
+| Issues tab | The newest preview's or build's errors and warnings. Clicking one that names a feature selects and frames it and rings it on the canvas |
+| Report tab | Land figures and build metrics, with **Open scene** and **Recapture views** |
 
 | Tool | Key | Does |
 | --- | --- | --- |
 | Select | V | Click selects, drag moves, drag a handle to move a point or a circle's radius. Alt+click on the selected line or area adds a point, Ctrl+click a point removes it, Delete removes the feature |
-| Point | P | Each click adds the kind picked beside the tools (a spawn, prop, hill...) at the cursor |
+| Point | P | Each click adds the kind picked in the options strip (a spawn, prop, hill...) at the cursor |
 | Line | L | Clicks add points; Enter or a double-click finishes (2 or more), Escape drops it |
 | Area | A | The same for areas (3 or more points) |
 
 A new feature copies the last one of its kind, or takes the defaults in an empty list. Each gesture is one undo step.
 Escape returns to Select. On the canvas, middle-drag or Space+drag pans, the wheel zooms and F fits the map. With
-**Auto preview** on, the map previews when it opens and after each change, at most once a second. An issue that names
-a feature has a **Show** button that frames it. **Build** saves open scenes, builds, reopens your scene and shows the
+**Auto preview** on, the map previews when it opens and after each change, at most once a second. **Build** saves open scenes, builds, reopens your scene and shows the
 report.
 
 ### Authoring rules

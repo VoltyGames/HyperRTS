@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Validation
             return issues;
         }
 
-        public static List<ValidationIssue> Run()
+        public static ValidationIssues Run()
         {
             var prefabs = PrefabSet.InProject();
             var issues = new ValidationIssues();
@@ -63,8 +63,10 @@ namespace HyperRTS.Editor.Validation
             }
 
             issues.AddRange(OpenScenes());
-            SessionState.SetInt(ErrorsKey, issues.FindAll(issue => issue.Severity == MessageType.Error).Count);
-            SessionState.SetInt(WarningsKey, issues.FindAll(issue => issue.Severity == MessageType.Warning).Count);
+            // The badge counts what the Validate page lists: a base prefab's issue once, with its variants.
+            var groups = issues.GroupVariants();
+            SessionState.SetInt(ErrorsKey, groups.Tally(MessageType.Error));
+            SessionState.SetInt(WarningsKey, groups.Tally(MessageType.Warning));
             return issues;
         }
 

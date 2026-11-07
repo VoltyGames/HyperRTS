@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Resources.Income
 {
     /// <summary>Tops up the owner's finite income reserves of one resource while this entity is owned and online.</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Reserve Refill")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Reserve Refill")]
+    [Icon(HyperRTSIcons.ReserveRefillAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     public class ReserveRefillAuthoring : AuthoringBehaviour

@@ -22,7 +22,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
         private const float AxleSize = 0.25f;
         private static readonly Color Manoeuvre = new(1f, 0.55f, 0f);
 
-        public override string Label => "Paths and targets";
+        public override string Label => "Paths";
+
+        public override string Detail => "Paths and targets of moving units";
+
+        public override string Group => "Movement";
+
+        public override string Glyph => "route";
 
         public override void Draw(EntityManager entityManager)
         {

@@ -8,7 +8,7 @@ are slots on the `Match` component, and an entity's **Owner** is a slot number: 
 
 ## 1. Create the scene
 
-Run **HyperRTS ▸ Tools ▸ Maps ▸ New blank scene...** and pick the map size and player count. You get the `EngineRig`
+Open **HyperRTS ▸ Map Editor** and click **New blank scene...** in the gallery and pick the map size and player count. You get the `EngineRig`
 camera and HUD rig, a ground plane, a light, a `MatchState` for multiplayer and a SubScene holding the `Match`.
 Tick the SubScene's checkbox to edit it.
 
@@ -26,10 +26,10 @@ icon. Then give each player slot on `Match` its **Starting Resources**.
 
    | Component | Gives the unit |
    | --- | --- |
-   | `Combat ▸ Weapon` | An attack. Without a projectile prefab it hits instantly |
-   | `Combat ▸ Armor` | Damage multipliers per **Damage Type** asset |
-   | `Resources ▸ Harvester` | Gathering |
-   | `Buildings ▸ Builder` | Constructing the buildings in **Build Options** |
+   | `Entity ▸ Combat ▸ Weapon` | An attack. Without a projectile prefab it hits instantly |
+   | `Entity ▸ Combat ▸ Armor` | Damage multipliers per **Damage Type** asset |
+   | `Entity ▸ Resources ▸ Harvester` | Gathering |
+   | `Entity ▸ Buildings ▸ Builder` | Constructing the buildings in **Build Options** |
 
 4. Drag it into a project folder to make a prefab. Keep the scene copy only if it should start on the map.
 

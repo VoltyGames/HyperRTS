@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Buildings.Construction
     /// Dresses a building as a construction site while it is built (fencing, crane, pallets, work lights), streams a
     /// work rig from the site's <c>Work_01</c> onward empties while construction moves, and plays a rig on completion.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Construction Site")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Construction Site")]
+    [Icon(HyperRTSIcons.ConstructionSiteAuthoring)]
     [HelpURL(HyperRTSDocs.Buildings)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

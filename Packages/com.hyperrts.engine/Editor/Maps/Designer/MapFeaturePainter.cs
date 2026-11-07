@@ -24,11 +24,17 @@ namespace HyperRTS.Editor.Maps.Designer
         [NoAutoStaticsCleanup]
         private static readonly List<Vector2> Local = new();
 
-        /// <summary>The symmetry's other copies of every feature that isn't shared, faded.</summary>
-        public static void DrawGhosts(Painter2D painter, MapSpec spec, MapCanvasView view, MapSymmetry symmetry)
+        /// <summary>The symmetry's other copies of every shown feature that isn't shared, faded.</summary>
+        public static void DrawGhosts(Painter2D painter, MapSpec spec, MapCanvasView view, MapSymmetry symmetry,
+            MapLayers layers)
         {
             foreach (var kind in MapFeatureKinds.All)
             {
+                if (!layers.IsVisible(kind))
+                {
+                    continue;
+                }
+
                 var color = Fade(kind.Color, GhostAlpha);
                 for (var i = 0; i < kind.Count(spec); i++)
                 {
@@ -47,10 +53,15 @@ namespace HyperRTS.Editor.Maps.Designer
             }
         }
 
-        public static void DrawFeatures(Painter2D painter, MapSpec spec, MapCanvasView view)
+        public static void DrawFeatures(Painter2D painter, MapSpec spec, MapCanvasView view, MapLayers layers)
         {
             foreach (var kind in MapFeatureKinds.All)
             {
+                if (!layers.IsVisible(kind))
+                {
+                    continue;
+                }
+
                 for (var i = 0; i < kind.Count(spec); i++)
                 {
                     kind.ReadPoints(spec, i, World);
@@ -61,9 +72,10 @@ namespace HyperRTS.Editor.Maps.Designer
         }
 
         /// <summary>The selected feature outlined in white.</summary>
-        public static void DrawSelection(Painter2D painter, MapSpec spec, MapCanvasView view, MapFeatureRef selected)
+        public static void DrawSelection(Painter2D painter, MapSpec spec, MapCanvasView view, MapFeatureRef selected,
+            MapLayers layers)
         {
-            if (selected.IsNone)
+            if (selected.IsNone || !layers.IsVisible(selected.Kind))
             {
                 return;
             }

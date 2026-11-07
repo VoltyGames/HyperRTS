@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Cues.Effects
 {
     /// <summary>Leaves rubble, ash, fuel or wet mud on the ground where this unit or building dies, for the rest of the match.</summary>
-    [AddComponentMenu(HyperRTSMenu.Cues + "Death Remains")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Cues/Death Remains")]
+    [Icon(HyperRTSIcons.DeathRemainsAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

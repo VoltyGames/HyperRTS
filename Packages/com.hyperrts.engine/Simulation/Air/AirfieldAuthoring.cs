@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Air
     /// Landing pads on a building, one aircraft each. Aircraft built here take a free pad of their kind (production
     /// waits while none is free); others claim one with a Return to Base order. Aircraft dock, landed, on their pad.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Airfield")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Airfield")]
+    [Icon(HyperRTSIcons.AirfieldAuthoring)]
     [HelpURL(HyperRTSDocs.Air)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

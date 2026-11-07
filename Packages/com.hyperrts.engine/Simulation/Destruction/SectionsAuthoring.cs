@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Destruction
     /// Makes a building out of sections that break on their own: hits land where they hit, what loses its supports
     /// falls, broken ground-floor walls open paths and leave rubble, and the building's health is the sum of theirs.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Destruction + "Sections")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Sections")]
+    [Icon(HyperRTSIcons.SectionsAuthoring)]
     [HelpURL(HyperRTSDocs.Destruction)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Building")]

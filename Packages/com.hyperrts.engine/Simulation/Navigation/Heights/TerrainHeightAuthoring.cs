@@ -11,8 +11,8 @@ namespace HyperRTS.Simulation.Navigation.Heights
     /// Bakes a Terrain's heights so units follow the ground and hills block sight. Put it on the Terrain, or, when
     /// the Terrain stays outside the SubScene, on an object at the Terrain's position. One per match.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Navigation + "Terrain Height")]
-    [Icon(HyperRTSIcons.Navigation)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Navigation/Terrain Height")]
+    [Icon(HyperRTSIcons.TerrainHeightAuthoring)]
     [HelpURL(HyperRTSDocs.Navigation)]
     [DisallowMultipleComponent]
     public class TerrainHeightAuthoring : AuthoringBehaviour

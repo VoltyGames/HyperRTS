@@ -76,6 +76,36 @@ namespace HyperRTS.Editor.Tests.Validation
             }
         }
 
+        // A variant inherits its base's cause, so the base lists the issue once, "and 1 variant"; a variant's own issue stays.
+        [Test]
+        public void VariantsShareTheBasePrefabsIssue()
+        {
+            const string folder = "Assets/_ValidationGroupTests";
+            AssetDatabase.CreateFolder("Assets", "_ValidationGroupTests");
+            try
+            {
+                var template = Track(EntityTemplates.Unit());
+                var basePrefab = PrefabUtility.SaveAsPrefabAsset(template, folder + "/Base.prefab");
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(basePrefab);
+                var variant = PrefabUtility.SaveAsPrefabAsset(instance, folder + "/Variant.prefab");
+                UnityEngine.Object.DestroyImmediate(instance);
+                var issues = new ValidationIssues();
+                issues.Warn(variant.GetComponent<UnitAuthoring>(), "No renderer");
+                issues.Warn(basePrefab.GetComponent<UnitAuthoring>(), "No renderer");
+                issues.Warn(variant.GetComponent<UnitAuthoring>(), "Own problem");
+
+                var groups = issues.GroupVariants();
+
+                Assert.AreEqual(2, groups.Count);
+                Assert.AreEqual("and 1 variant", groups[0].VariantText);
+                Assert.AreEqual("Own problem", groups[1].Issue.Message);
+            }
+            finally
+            {
+                AssetDatabase.DeleteAsset(folder);
+            }
+        }
+
         private static IEnumerable<Func<GameObject>> Templates() => new Func<GameObject>[]
         {
             EntityTemplates.CombatUnit, EntityTemplates.Worker, EntityTemplates.Harvester, EntityTemplates.Producer,

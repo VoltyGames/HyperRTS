@@ -12,7 +12,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     {
         private const float Band = 32f;
 
-        public override string Label => "Flow field (latest group)";
+        public override string Label => "Flow field";
+
+        public override string Detail => "The flow field of the latest ordered group";
+
+        public override string Group => "Movement";
+
+        public override string Glyph => "wind";
 
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {

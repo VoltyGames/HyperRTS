@@ -14,8 +14,8 @@ namespace HyperRTS.Presentation.Environment.Weather
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(Light), typeof(UniversalAdditionalLightData))]
-    [AddComponentMenu(HyperRTSMenu.Environment + "Cloud Shadows")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Cloud Shadows")]
+    [Icon(HyperRTSIcons.CloudShadows)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class CloudShadows : PresentationBehaviour

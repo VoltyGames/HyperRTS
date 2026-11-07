@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row">
+    <ui:Label name="number" class="hrts-launch__number" />
+    <ui:DropdownField name="kind" class="hrts-launch__kind" />
+    <ui:DropdownField name="side" class="hrts-launch__side" />
+    <ui:IntegerField name="team" class="hrts-launch__team" />
+    <ui:DropdownField name="difficulty" class="hrts-launch__difficulty" />
+  </ui:VisualElement>
+</ui:UXML>

@@ -9,7 +9,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     /// <summary>The distance to the nearest wall for the first field key, red at a wall to blue at <see cref="NavField.MaxDistance"/>.</summary>
     public sealed class WallDistanceLayer : CellTextureLayer
     {
-        public override string Label => "Wall distance (first field key)";
+        public override string Label => "Wall distance";
+
+        public override string Detail => "Distance to the nearest wall for the first field key";
+
+        public override string Group => "Movement";
+
+        public override string Glyph => "ruler";
 
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {

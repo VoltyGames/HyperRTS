@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>Dust this rotorcraft's downwash kicks up from the ground under it as it flies low.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Rotor Wash")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Rotor Wash")]
+    [Icon(HyperRTSIcons.RotorWashAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class RotorWashAuthoring : AuthoringBehaviour

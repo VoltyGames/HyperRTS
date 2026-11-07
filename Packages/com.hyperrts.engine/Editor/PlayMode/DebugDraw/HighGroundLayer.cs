@@ -8,7 +8,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     /// <summary>Cells standing above the ground round them, blue for a small sight bonus to red for the largest.</summary>
     public sealed class HighGroundLayer : CellTextureLayer
     {
-        public override string Label => "High ground (sight bonus)";
+        public override string Label => "High ground";
+
+        public override string Detail => "Cells that give a sight bonus";
+
+        public override string Group => "Vision";
+
+        public override string Glyph => "mountain";
 
         protected override bool Paint(EntityManager entityManager, CellTexture texture)
         {

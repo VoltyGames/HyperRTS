@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Ground.Stamps
 {
     /// <summary>Lets a vehicle leave ruts and flatten grass where the local player sees it drive.</summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Track Marks")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Track Marks")]
+    [Icon(HyperRTSIcons.TrackMarksAuthoring)]
     [HelpURL(HyperRTSDocs.Movement)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

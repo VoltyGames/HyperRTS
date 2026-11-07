@@ -10,8 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Input.Cameras
 {
     /// <summary>RTS camera that orbits a ground focus point: pan, edge scroll, zoom by height, yaw and map clamping.</summary>
-    [AddComponentMenu(HyperRTSMenu.Rig + "Camera Controller")]
-    [Icon(HyperRTSIcons.Cameras)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Camera Controller")]
+    [Icon(HyperRTSIcons.CameraController)]
     [HelpURL(HyperRTSDocs.Input)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]

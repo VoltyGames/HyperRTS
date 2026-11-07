@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Checks
                 var report = MapReport.Load(name);
                 if (report == null)
                 {
-                    issues.Error(null, $"Map '{name}' has a spec but no report; build it from Tools ▸ Maps or the map command line.");
+                    issues.Error(null, $"Map '{name}' has a spec but no report; build it from the Map Editor or the map command line.");
                     continue;
                 }
 

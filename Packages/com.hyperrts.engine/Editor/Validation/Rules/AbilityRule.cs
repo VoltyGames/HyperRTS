@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using HyperRTS.Simulation.Abilities;
 
 namespace HyperRTS.Editor.Validation.Rules
@@ -16,11 +15,6 @@ namespace HyperRTS.Editor.Validation.Rules
                 {
                     issues.Warn(authoring, $"Two abilities are named '{ability.name}'; the name is the ability's id.");
                 }
-            }
-
-            if (authoring.abilities.Any(ability => ability.spawnPrefab == null && ability.hit.damage == 0f))
-            {
-                issues.Info(authoring, "An ability without built-in effects only raises its event for game code.");
             }
         }
     }

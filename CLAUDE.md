@@ -50,7 +50,7 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   `ecb.CreateEntity` returns the real entity at record time.
 - Systems take time from `SystemAPI.Time`, never `UnityEngine.Time`; UI and MonoBehaviours may.
 - Input System only, never `UnityEngine.Input`.
-- UI is UI Toolkit everywhere, in UXML beside its script (`MapsPage.uxml` beside `MapsPage.cs`). Code only looks
+- UI is UI Toolkit everywhere, in UXML beside its script (`MapGallery.uxml` beside `MapGallery.cs`). Code only looks
   elements up, wires them and builds rows from templates or Painter2D. No IMGUI; uGUI only where Animation Clips or
   Timeline need it; Scene view `Handles` are the exception. Per-unit markers such as health bars are instanced meshes.
 - Name a method after what it returns or does (`TierIndex`), never a bare `Of` or `XOf`.
@@ -85,7 +85,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   near-copy, and skip a case another test already covers.
 - A new authoring rule is an `AuthoringRule<T>` in `Editor/Validation/Rules/`. The inspector,
   **HyperRTS ▸ Tools ▸ Validate** and the tests pick it up.
-- In Play, the Scene view's **HyperRTS Debug** overlay and **HyperRTS ▸ Tools ▸ Play** inspect and drive the world.
+- In Play, the Scene view's **HyperRTS Debug** and **HyperRTS Cheats** overlays and the Tools window's Play page
+  (the launcher, network, soak tests and replays) inspect and drive the world.
 
 ## Gotchas
 

@@ -14,7 +14,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>The Play page's cheats: resources, fog, instant build, spawning, player switching and game speed.</summary>
+    /// <summary>The cheats overlay's controls: resources, fog, instant build, spawning, player switching and game speed.</summary>
     internal class CheatsSection
     {
         private readonly HelpBox _status;

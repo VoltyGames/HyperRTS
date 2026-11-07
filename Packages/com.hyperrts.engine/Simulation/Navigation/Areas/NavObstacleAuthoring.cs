@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.Navigation.Areas
     /// Blocks a box of the pathfinding grid (rocks, cliffs). Buildings block their footprint already; water and
     /// bridges are Nav Areas.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Navigation + "Nav Obstacle")]
-    [Icon(HyperRTSIcons.Navigation)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Navigation/Nav Obstacle")]
+    [Icon(HyperRTSIcons.NavObstacleAuthoring)]
     [HelpURL(HyperRTSDocs.Navigation)]
     [DisallowMultipleComponent]
     public class NavObstacleAuthoring : AuthoringBehaviour

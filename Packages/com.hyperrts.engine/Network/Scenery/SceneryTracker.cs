@@ -89,9 +89,9 @@ namespace HyperRTS.Network.Scenery
         }
 
         /// <summary>With fog off every team sees everything. Changes made this <paramref name="frame"/> count as witnessed.</summary>
-        public void Reveal(in FogOfWar fog, bool fogOn, uint frame, NativeList<ScenerySighting> sightings)
+        public void Reveal(in FogOfWar fog, bool fogEnabled, uint frame, NativeList<ScenerySighting> sightings)
         {
-            var everything = !fogOn || !fog.IsCreated;
+            var everything = !fogEnabled || !fog.IsCreated;
             for (var i = _stale.Length - 1; i >= 0; i--)
             {
                 var slot = _stale[i];

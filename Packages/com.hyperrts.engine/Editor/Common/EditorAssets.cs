@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Common
         private static readonly Dictionary<string, Object> Found = new();
 
         /// <summary>
-        /// The layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapsPageRow.uxml, in
+        /// The layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapGalleryCard.uxml, in
         /// the owner's package, or in Assets for a game type.
         /// </summary>
         public static VisualTreeAsset Layout(Type owner, string part = "") =>

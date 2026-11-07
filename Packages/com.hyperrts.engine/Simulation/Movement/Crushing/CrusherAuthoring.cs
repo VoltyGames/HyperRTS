@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Movement.Crushing
 {
     /// <summary>Lets a vehicle flatten destructible scenery (fences, hay bales, small trees) it drives over.</summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Crusher")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Crusher")]
+    [Icon(HyperRTSIcons.CrusherAuthoring)]
     [HelpURL(HyperRTSDocs.Movement)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

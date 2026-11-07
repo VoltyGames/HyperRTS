@@ -10,8 +10,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
     /// A mesh of a track in a <see cref="MotionRigAuthoring"/>, which gets the properties the shader bends it with.
     /// Fill from model adds it to each mesh of a track.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Animation + "Track Mesh")]
-    [Icon(HyperRTSIcons.Animation)]
+    [AddComponentMenu("")]
+    [Icon(HyperRTSIcons.TrackMeshAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public class TrackMeshAuthoring : AuthoringBehaviour

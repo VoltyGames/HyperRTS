@@ -11,7 +11,7 @@ namespace HyperRTS.Presentation.Environment.Ground
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.Environment)]
+    [Icon(HyperRTSIcons.GroundColor)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class GroundColor : PresentationBehaviour

@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.AI
     /// idle.
     /// </summary>
     [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.Match)]
+    [Icon(HyperRTSIcons.AIMapHintsAuthoring)]
     [HelpURL(HyperRTSDocs.AI)]
     [DisallowMultipleComponent]
     public class AIMapHintsAuthoring : AuthoringBehaviour

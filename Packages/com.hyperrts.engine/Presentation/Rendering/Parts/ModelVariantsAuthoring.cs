@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Rendering.Parts
 {
     /// <summary>Shows one of several child models, picked by position, so repeated buildings such as walls vary.</summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Model Variants")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Model Variants")]
+    [Icon(HyperRTSIcons.ModelVariantsAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public class ModelVariantsAuthoring : AuthoringBehaviour

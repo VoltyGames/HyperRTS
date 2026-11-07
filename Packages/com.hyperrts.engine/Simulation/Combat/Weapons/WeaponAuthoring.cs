@@ -15,8 +15,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// Lets a unit or building attack. Without a projectile prefab hits land instantly (melee, hitscan). The stats
     /// are the primary weapon, which sets how the unit engages; extra weapons fire beside it.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Weapon")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Weapon")]
+    [Icon(HyperRTSIcons.WeaponAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

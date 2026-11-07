@@ -9,6 +9,9 @@ namespace HyperRTS.Editor.Maps.Designer
     {
         private const float MinGridPixels = 40f;
 
+        private const float MarkerRadius = 14f;
+        private const float MarkerReach = 24f;
+
         private static readonly float[] GridSteps = { 1f, 2f, 5f, 10f, 20f, 50f, 100f, 200f, 500f, 1000f };
         private static readonly Color GridColor = new(1f, 1f, 1f, 0.08f);
         private static readonly Color BoundsColor = new(1f, 1f, 1f, 0.85f);
@@ -47,6 +50,22 @@ namespace HyperRTS.Editor.Maps.Designer
                 painter.LineTo(view.ToLocal(new Vector2(terrain.xMax, z)));
             }
 
+            painter.Stroke();
+        }
+
+        /// <summary>A ring with a cross hair at a map point, to point at what an issue is about.</summary>
+        public static void DrawMarker(Painter2D painter, MapCanvasView view, Vector2 world, Color color)
+        {
+            var centre = view.ToLocal(world);
+            painter.strokeColor = color;
+            painter.lineWidth = 3f;
+            MapFeaturePainter.Circle(painter, centre, MarkerRadius);
+            painter.Stroke();
+            painter.BeginPath();
+            painter.MoveTo(centre + new Vector2(-MarkerReach, 0f));
+            painter.LineTo(centre + new Vector2(MarkerReach, 0f));
+            painter.MoveTo(centre + new Vector2(0f, -MarkerReach));
+            painter.LineTo(centre + new Vector2(0f, MarkerReach));
             painter.Stroke();
         }
 

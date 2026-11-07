@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Status
     /// A timed status effect: stat bonuses (Damage Taken ones may name a damage type) and damage over time. Put it on
     /// its own prefab and reference that from an ability or game code.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Status Effect")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Status Effect")]
+    [Icon(HyperRTSIcons.StatusEffectAuthoring)]
     [HelpURL(HyperRTSDocs.Status)]
     [DisallowMultipleComponent]
     public class StatusEffectAuthoring : AuthoringBehaviour

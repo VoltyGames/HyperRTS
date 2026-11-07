@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
@@ -35,7 +36,7 @@ namespace HyperRTS.Editor.Validation
         {
             if (Grouped)
             {
-                ShowTree(issues);
+                ShowTree(issues.Select(issue => new IssueGroup(issue)).ToList());
                 return;
             }
 
@@ -43,27 +44,36 @@ namespace HyperRTS.Editor.Validation
             foreach (var issue in issues)
             {
                 var row = MakeRow();
-                BindRow(row, Node.ForIssue(issue));
+                BindRow(row, Node.ForIssue(new IssueGroup(issue)));
                 Add(row);
             }
         }
 
-        private void ShowTree(IReadOnlyList<ValidationIssue> issues)
+        /// <summary>Shows the groups as the rule and asset tree, with each group's variants under its row.</summary>
+        public void Show(IReadOnlyList<IssueGroup> groups) => ShowTree(groups);
+
+        private void ShowTree(IReadOnlyList<IssueGroup> groups)
         {
             var tree = Tree();
             var id = 0;
             var roots = new List<TreeViewItemData<Node>>();
             var assetIds = new List<int>();
             _rules.Clear();
-            var rules = issues.GroupBy(issue => issue.Rule)
-                .OrderByDescending(rule => rule.Count(issue => issue.Severity == MessageType.Error))
+            var rules = groups.GroupBy(group => group.Issue.Rule)
+                .OrderByDescending(rule => rule.Count(group => group.Issue.Severity == MessageType.Error))
                 .ThenBy(rule => rule.Key);
             foreach (var rule in rules)
             {
                 var assets = new List<TreeViewItemData<Node>>();
-                foreach (var asset in rule.GroupBy(issue => issue.Context).OrderBy(asset => AssetName(asset.Key)))
+                foreach (var asset in rule.GroupBy(group => group.Issue.Context).OrderBy(asset => AssetName(asset.Key)))
                 {
-                    var rows = asset.Select(issue => new TreeViewItemData<Node>(id++, Node.ForIssue(issue))).ToList();
+                    var rows = new List<TreeViewItemData<Node>>();
+                    foreach (var group in asset)
+                    {
+                        var variants = group.Variants.Select(issue => new TreeViewItemData<Node>(id++, Node.ForVariant(issue))).ToList();
+                        rows.Add(new TreeViewItemData<Node>(id++, Node.ForIssue(group), variants));
+                    }
+
                     assetIds.Add(id);
                     assets.Add(new TreeViewItemData<Node>(id++, Node.ForAsset(asset.Key), rows));
                 }
@@ -128,7 +138,20 @@ namespace HyperRTS.Editor.Validation
             row.Require<Button>("asset").clicked += () => EditorAssets.Reveal(((Node)row.userData).Asset);
             row.Require<Button>("context").clicked += () => EditorAssets.Reveal(((Node)row.userData).Issue.Context);
             row.Require<Button>("fix").clicked += () => RunFix(((Node)row.userData).Issue.Fix);
+            row.RegisterCallback<ClickEvent>(SelectIssue);
             return row;
+        }
+
+        // A click on the row itself, not on one of its buttons, selects and pings what the issue is about.
+        private void SelectIssue(ClickEvent click)
+        {
+            var node = (Node)((VisualElement)click.currentTarget).userData;
+            var hit = (VisualElement)click.target;
+            var onButton = hit is Button || hit.GetFirstAncestorOfType<Button>() != null;
+            if (Grouped && node.IsIssue && node.Issue.Context != null && !onButton)
+            {
+                EditorAssets.Reveal(node.Issue.Context);
+            }
         }
 
         private void BindRow(VisualElement row, Node node)
@@ -144,13 +167,19 @@ namespace HyperRTS.Editor.Validation
 
             var issue = node.Issue;
             var context = row.Require<Button>("context");
-            context.SetHidden(!node.IsIssue || !ShowContext);
+            context.SetHidden(!node.IsIssue || !ShowContext && !node.IsVariant);
             context.text = issue.Context != null ? issue.Context.name : "-";
             context.SetEnabled(issue.Context != null);
             var message = row.Require<HelpBox>("message");
             message.SetHidden(!node.IsIssue);
             message.text = issue.Message;
             message.messageType = Kind(issue.Severity);
+            var rowTip = node.IsIssue && issue.Rule != null ? $"Rule: {issue.Rule}" : "";
+            row.tooltip = rowTip;
+            message.tooltip = rowTip;
+            var variants = row.Require<Label>("variants");
+            variants.SetHidden(node.VariantText.Length == 0);
+            variants.text = node.VariantText;
             var fix = row.Require<Button>("fix");
             fix.SetHidden(issue.Fix == null);
             fix.text = issue.FixLabel;
@@ -158,28 +187,12 @@ namespace HyperRTS.Editor.Validation
 
         private static string AssetName(Object context) => context != null ? context.name : "project";
 
-        private static string CountText(IEnumerable<ValidationIssue> issues)
+        private static string CountText(IEnumerable<IssueGroup> groups)
         {
-            var errors = issues.Count(issue => issue.Severity == MessageType.Error);
-            var warnings = issues.Count(issue => issue.Severity == MessageType.Warning);
-            var notes = issues.Count() - errors - warnings;
-            var parts = new List<string>();
-            if (errors > 0)
-            {
-                parts.Add($"{errors} errors");
-            }
-
-            if (warnings > 0)
-            {
-                parts.Add($"{warnings} warnings");
-            }
-
-            if (notes > 0)
-            {
-                parts.Add($"{notes} notes");
-            }
-
-            return "(" + string.Join(", ", parts) + ")";
+            var errors = groups.Count(group => group.Issue.Severity == MessageType.Error);
+            var warnings = groups.Count(group => group.Issue.Severity == MessageType.Warning);
+            var parts = new[] { IssueBadge.CountText(errors, "error"), IssueBadge.CountText(warnings, "warning") };
+            return "(" + string.Join(", ", parts.Where(part => part.Length > 0)) + ")";
         }
 
         // A fix can add, remove or replace objects, so re-validate once it has settled.
@@ -193,20 +206,21 @@ namespace HyperRTS.Editor.Validation
         {
             MessageType.Error => HelpBoxMessageType.Error,
             MessageType.Warning => HelpBoxMessageType.Warning,
-            MessageType.Info => HelpBoxMessageType.Info,
             _ => HelpBoxMessageType.None,
         };
 
-        /// <summary>One tree row: a rule heading, an asset heading or an issue.</summary>
+        /// <summary>One tree row: a rule heading, an asset heading, an issue or an issue on a variant.</summary>
         private sealed class Node
         {
-            private Node(string rule, bool isAsset, Object asset, bool isIssue, ValidationIssue issue)
+            private Node(string rule, bool isAsset, Object asset, bool isIssue, ValidationIssue issue, string variantText, bool isVariant)
             {
                 Rule = rule;
                 IsAsset = isAsset;
                 Asset = asset;
                 IsIssue = isIssue;
                 Issue = issue;
+                VariantText = variantText;
+                IsVariant = isVariant;
             }
 
             public string Rule { get; }
@@ -219,11 +233,17 @@ namespace HyperRTS.Editor.Validation
 
             public ValidationIssue Issue { get; }
 
-            public static Node ForRule(string heading) => new(heading, false, null, false, default);
+            public string VariantText { get; }
 
-            public static Node ForAsset(Object asset) => new(null, true, asset, false, default);
+            public bool IsVariant { get; }
 
-            public static Node ForIssue(ValidationIssue issue) => new(null, false, null, true, issue);
+            public static Node ForRule(string heading) => new(heading, false, null, false, default, "", false);
+
+            public static Node ForAsset(Object asset) => new(null, true, asset, false, default, "", false);
+
+            public static Node ForIssue(IssueGroup group) => new(null, false, null, true, group.Issue, group.VariantText, false);
+
+            public static Node ForVariant(ValidationIssue issue) => new(null, false, null, true, issue, "", true);
         }
     }
 }

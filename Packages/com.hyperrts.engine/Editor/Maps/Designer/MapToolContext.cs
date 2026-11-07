@@ -18,6 +18,9 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public MapFeatureSelection Selection { get; set; }
 
+        /// <summary>Which categories the canvas shows and lets tools pick; the canvas sets it when it binds one.</summary>
+        public MapLayers Layers { get; set; } = new();
+
         public MapCanvasView View { get; }
 
         /// <summary>Shows a passing warning over the canvas, such as what a deletion changed.</summary>

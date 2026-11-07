@@ -162,7 +162,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         {
             var burntOut = _fires.BurntOut;
             SystemAPI.GetSingletonRW<FieldFireState>().ValueRW.BurntCells += burntOut.Count;
-            if (!TrampleStampSystem.MapsOn || burntOut.Count == 0)
+            if (!TrampleStampSystem.MapsDrawn || burntOut.Count == 0)
             {
                 return;
             }

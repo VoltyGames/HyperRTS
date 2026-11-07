@@ -1,37 +1,30 @@
 using System;
-using System.Linq;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Maps.Designer
 {
-    /// <summary>The Map Editor's toolbar: spec picker, the tool strip, the symmetry ghosts toggle and the preview strip.</summary>
+    /// <summary>The Map Editor's toolbar: back to the gallery, the open map's name, the tool strip, the symmetry ghosts toggle and the preview strip.</summary>
     [UxmlElement]
     public sealed partial class MapEditorToolbar : Toolbar
     {
-        private readonly DropdownField _picker;
+        private readonly Label _name;
         private readonly ToolbarToggle _ghosts;
 
         public MapEditorToolbar()
         {
             EditorAssets.Layout(typeof(MapEditorToolbar)).CloneTree(this);
-            _picker = this.Require<DropdownField>("picker");
-            _picker.choices = MapPaths.All().OrderBy(MapPaths.MapName).ToList();
-            _picker.formatSelectedValueCallback = Label;
-            _picker.formatListItemCallback = Label;
-            _picker.SetValueWithoutNotify(null);
-            _picker.RegisterValueChangedCallback(evt => SpecPicked?.Invoke(evt.newValue));
-
+            this.Require<ToolbarButton>("maps").clicked += () => GalleryClicked?.Invoke();
+            _name = this.Require<Label>("map-name");
             _ghosts = this.Require<ToolbarToggle>("ghosts");
             _ghosts.RegisterValueChangedCallback(evt => GhostsToggled?.Invoke(evt.newValue));
             Tools = this.Require<MapToolStrip>("tools");
             Strip = this.Require<MapPreviewStrip>("strip");
         }
 
-        public event Action<string> SpecPicked;
+        public event Action GalleryClicked;
 
         public event Action<bool> GhostsToggled;
 
@@ -41,18 +34,7 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public MapPreviewStrip Strip { get; }
 
-        /// <summary>Shows the open spec in the picker.</summary>
-        public void Show(MapSpecDocument document)
-        {
-            if (!_picker.choices.Contains(document.Path))
-            {
-                _picker.choices.Add(document.Path);
-            }
-
-            _picker.SetValueWithoutNotify(document.Path);
-        }
-
-        // The picker formats its empty value too, before any spec is open.
-        private static string Label(string spec) => spec == null ? "Open a map…" : MapPaths.MapName(spec);
+        /// <summary>Shows the open spec's map name.</summary>
+        public void Show(MapSpecDocument document) => _name.text = document.MapName;
     }
 }

@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Resources.Income
 {
     /// <summary>Pays the owner a share of the cost of every own or hostile unit that dies while this entity is online.</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Casualty Income")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Casualty Income")]
+    [Icon(HyperRTSIcons.CasualtyIncomeAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     public class CasualtyIncomeAuthoring : AuthoringBehaviour

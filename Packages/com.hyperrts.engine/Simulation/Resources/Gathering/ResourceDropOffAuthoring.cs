@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Resources.Gathering
 {
     /// <summary>Harvesters of the same owner deposit cargo here (supply center, town hall).</summary>
-    [AddComponentMenu(HyperRTSMenu.Resources + "Resource Drop-Off")]
-    [Icon(HyperRTSIcons.Resources)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Drop-Off")]
+    [Icon(HyperRTSIcons.ResourceDropOffAuthoring)]
     [HelpURL(HyperRTSDocs.Resources)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

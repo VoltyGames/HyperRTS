@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Transport
 {
     /// <summary>Lets a unit board transports and garrison buildings.</summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Passenger")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Passenger")]
+    [Icon(HyperRTSIcons.PassengerAuthoring)]
     [HelpURL(HyperRTSDocs.Transport)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

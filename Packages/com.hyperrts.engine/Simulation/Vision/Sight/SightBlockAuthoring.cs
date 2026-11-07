@@ -9,8 +9,8 @@ namespace HyperRTS.Simulation.Vision.Sight
     /// Blocks sight over a box centred on this transform: solid below its height (a house, a wall, a wreck), porous
     /// below its porous top (a tree crown, smoke), and concealing still infantry if set (ruins, trenches).
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Vision + "Sight Block")]
-    [Icon(HyperRTSIcons.Vision)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Vision/Sight Block")]
+    [Icon(HyperRTSIcons.SightBlockAuthoring)]
     [HelpURL(HyperRTSDocs.Vision)]
     [DisallowMultipleComponent]
     public class SightBlockAuthoring : AuthoringBehaviour

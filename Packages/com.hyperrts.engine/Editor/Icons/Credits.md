@@ -53,3 +53,126 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## game-icons.net
+
+The SVGs in `Components/Source/` are glyphs from [game-icons.net](https://game-icons.net), licensed under
+[Creative Commons Attribution 3.0](https://creativecommons.org/licenses/by/3.0/) (CC BY 3.0). Icons made by Lorc,
+Delapouite, Skoll, Sbed, HeavenlyDog, Caro Asercion and DarkZaitzev. The black background square is removed so only
+the white glyph remains; the **Component icons** generator draws each glyph on its module's coloured tile. Each
+file is named after the component it marks.
+
+| Component | Glyph | Author |
+| --- | --- | --- |
+| AIFieldWorkAuthoring | skoll/trench-spade | Skoll |
+| AIMapHintsAuthoring | lorc/treasure-map | Lorc |
+| AbilityAuthoring | lorc/power-lightning | Lorc |
+| AirdropReceiverAuthoring | lorc/parachute | Lorc |
+| AirfieldAuthoring | delapouite/control-tower | Delapouite |
+| AmbientLife | delapouite/seagull | Delapouite |
+| AnnouncerAuthoring | delapouite/megaphone | Delapouite |
+| ArmorAuthoring | lorc/armor-vest | Lorc |
+| Atmosphere | delapouite/sun-cloud | Delapouite |
+| AuraAuthoring | lorc/aura | Lorc |
+| BlockerAuthoring | delapouite/barricade | Delapouite |
+| BoneAnimatedAuthoring | skoll/skeleton | Skoll |
+| BuildLimitAuthoring | lorc/padlock | Lorc |
+| BuilderAuthoring | lorc/claw-hammer | Lorc |
+| BuildingAuthoring | delapouite/house | Delapouite |
+| CameraController | delapouite/video-camera | Delapouite |
+| CapturableAuthoring | delapouite/tower-flag | Delapouite |
+| CapturerAuthoring | delapouite/flag-objective | Delapouite |
+| CasualtyIncomeAuthoring | delapouite/receive-money | Delapouite |
+| CloudShadows | lorc/fluffy-cloud | Lorc |
+| ConstructionSiteAuthoring | lorc/cargo-crane | Lorc |
+| ContainerAuthoring | delapouite/cargo-crate | Delapouite |
+| CoverSpotAuthoring | heavenly-dog/defensive-wall | HeavenlyDog |
+| CropCoverAuthoring | lorc/wheat | Lorc |
+| CrusherAuthoring | caro-asercion/steamroller | Caro Asercion |
+| DamageStagesAuthoring | delapouite/broken-wall | Delapouite |
+| DeathRemainsAuthoring | lorc/tombstone | Lorc |
+| DebrisAuthoring | delapouite/falling-rocks | Delapouite |
+| DecayAuthoring | lorc/hourglass | Lorc |
+| DeliverySourceAuthoring | delapouite/mine-wagon | Delapouite |
+| DeployableAuthoring | delapouite/transform | Delapouite |
+| DestructibleAuthoring | delapouite/brick-wall | Delapouite |
+| DetectorAuthoring | lorc/radar-sweep | Lorc |
+| DockAuthoring | delapouite/harbor-dock | Delapouite |
+| EffectLight | lorc/light-bulb | Lorc |
+| EffectRig | lorc/firework-rocket | Lorc |
+| EffectTrailAuthoring | lorc/comet-spark | Lorc |
+| EntityEffectsAuthoring | delapouite/sparkles | Delapouite |
+| EntityLoopsAuthoring | lorc/cycle | Lorc |
+| EntitySoundsAuthoring | delapouite/speaker | Delapouite |
+| FieldFireSettings | delapouite/burning-forest | Delapouite |
+| FlagMountAuthoring | lorc/flying-flag | Lorc |
+| FlightAuthoring | delapouite/jet-fighter | Delapouite |
+| FogOfWarRenderer | delapouite/fog | Delapouite |
+| GarrisonPartAuthoring | skoll/machine-gun | Skoll |
+| GrassField | delapouite/grass | Delapouite |
+| GrassRenderer | delapouite/high-grass | Delapouite |
+| GrimeAuthoring | lorc/dust-cloud | Lorc |
+| GroundColor | delapouite/paint-bucket | Delapouite |
+| GroundMaterialsAuthoring | delapouite/hills | Delapouite |
+| HUDController | lorc/compass | Lorc |
+| HarvesterAuthoring | delapouite/farm-tractor | Delapouite |
+| HitMaterialAuthoring | delapouite/shield-impact | Delapouite |
+| Horizon | delapouite/sunrise | Delapouite |
+| ImpactEffectsAuthoring | lorc/explosion-rays | Lorc |
+| ImpactMarksAuthoring | delapouite/bullet-impacts | Delapouite |
+| LocomotionAuthoring | delapouite/car-wheel | Delapouite |
+| LoopEffectsAuthoring | lorc/star-cycle | Lorc |
+| LoopLight | lorc/lantern-flame | Lorc |
+| MachineAuthoring | delapouite/oil-pump | Delapouite |
+| MachinePartAuthoring | lorc/cog | Lorc |
+| MatchAuthoring | lorc/trophy | Lorc |
+| MatchStateAuthoring | delapouite/podium | Delapouite |
+| MinimapImage | lorc/world | Lorc |
+| ModelVariantsAuthoring | lorc/cubes | Lorc |
+| MotionDustAuthoring | lorc/windy-stripes | Lorc |
+| MotionRigAuthoring | lorc/gears | Lorc |
+| NavAreaAuthoring | delapouite/river | Delapouite |
+| NavObstacleAuthoring | lorc/rock | Lorc |
+| OverlayRenderer | delapouite/stack | Delapouite |
+| PassengerAuthoring | delapouite/backpack | Delapouite |
+| PickBoxAuthoring | delapouite/arrow-cursor | Delapouite |
+| ProducerAuthoring | delapouite/factory | Delapouite |
+| ReinforcePointAuthoring | sbed/medical-pack | Sbed |
+| ReserveRefillAuthoring | lorc/recycle | Lorc |
+| ResourceDropOffAuthoring | delapouite/warehouse | Delapouite |
+| ResourceIncomeAuthoring | delapouite/coins-pile | Delapouite |
+| ResourceNodeAuthoring | delapouite/gold-mine | Delapouite |
+| ResourceStagesAuthoring | delapouite/gold-stack | Delapouite |
+| RetreatPointAuthoring | delapouite/exit-door | Delapouite |
+| RotorWashAuthoring | delapouite/helicopter | Delapouite |
+| RowCrop | lorc/sprout | Lorc |
+| RowCropFields | delapouite/grain | Delapouite |
+| RowCropRenderer | delapouite/plant-seed | Delapouite |
+| SectionsAuthoring | delapouite/puzzle | Delapouite |
+| SelectionDragBoxUI | sbed/select | Sbed |
+| SightBlockAuthoring | delapouite/blindfold | Delapouite |
+| SmokeShadow | darkzaitzev/smoke-bomb | DarkZaitzev |
+| SoundListener | delapouite/sound-on | Delapouite |
+| SpawnEffectAuthoring | lorc/portal | Lorc |
+| SquadAuthoring | delapouite/three-friends | Delapouite |
+| SquadFiguresAuthoring | delapouite/private | Delapouite |
+| StatusEffectAuthoring | lorc/poison-gas | Lorc |
+| StealthAuthoring | lorc/ninja-mask | Lorc |
+| StrategicAssetAuthoring | skoll/nuclear-bomb | Skoll |
+| StretchPartsAuthoring | delapouite/resize | Delapouite |
+| TeamStripAuthoring | delapouite/vertical-banner | Delapouite |
+| TerrainHeightAuthoring | lorc/mountains | Lorc |
+| ToppleAuthoring | skoll/logging | Skoll |
+| TossedTurretAuthoring | sbed/turret | Sbed |
+| TrackMarksAuthoring | delapouite/tire-tracks | Delapouite |
+| TrackMeshAuthoring | skoll/tank-tread | Skoll |
+| TrampleMap | lorc/footprint | Lorc |
+| TrenchAuthoring | delapouite/dig-hole | Delapouite |
+| TurretTossAuthoring | lorc/mine-explosion | Lorc |
+| UnitAuthoring | lorc/tank | Lorc |
+| UpgradeAuthoring | delapouite/upgrade | Delapouite |
+| VATAnimatedAuthoring | delapouite/film-strip | Delapouite |
+| VeterancyAuthoring | skoll/rank-3 | Skoll |
+| WeaponAuthoring | sbed/rifle | Sbed |
+| WeatherSet | lorc/raining | Lorc |
+| Wind | delapouite/windsock | Delapouite |

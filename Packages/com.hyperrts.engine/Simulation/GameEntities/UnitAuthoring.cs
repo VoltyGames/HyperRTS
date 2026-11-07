@@ -17,8 +17,8 @@ namespace HyperRTS.Simulation.GameEntities
     /// A movable, orderable unit. Add a collider so it can be clicked, plus optional modules
     /// (Weapon, Harvester, Builder) for what it can do.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Unit")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Unit")]
+    [Icon(HyperRTSIcons.UnitAuthoring)]
     [HelpURL(HyperRTSDocs.Movement)]
     [DisallowMultipleComponent]
     public class UnitAuthoring : GameEntityAuthoring

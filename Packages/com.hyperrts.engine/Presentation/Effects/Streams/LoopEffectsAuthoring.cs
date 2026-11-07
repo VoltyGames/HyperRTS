@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>Rigs that stream while the entity is shown: exhaust, chimney smoke, a burning wreck.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Loop Effects")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Loop Effects")]
+    [Icon(HyperRTSIcons.LoopEffectsAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class LoopEffectsAuthoring : AuthoringBehaviour

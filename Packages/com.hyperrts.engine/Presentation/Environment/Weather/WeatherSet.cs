@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Environment.Weather
     /// The weathers a map offers. Its only child is the default weather's atmosphere instance, baked into the scene;
     /// when play starts, a <see cref="MatchSetup.Weather"/> naming another entry replaces that child with its prefab.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Environment + "Weather Set")]
-    [Icon(HyperRTSIcons.Environment)]
+    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Weather Set")]
+    [Icon(HyperRTSIcons.WeatherSet)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public sealed class WeatherSet : PresentationBehaviour

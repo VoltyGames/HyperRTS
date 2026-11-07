@@ -16,7 +16,6 @@ namespace HyperRTS.Editor.Authoring
         private readonly Button _badge;
         private readonly Label _errors;
         private readonly Label _warnings;
-        private readonly Label _notes;
         private readonly IssueList _list;
         private bool _expanded;
 
@@ -28,7 +27,6 @@ namespace HyperRTS.Editor.Authoring
             _badge.clicked += Toggle;
             _errors = this.Require<Label>("errors");
             _warnings = this.Require<Label>("warnings");
-            _notes = this.Require<Label>("notes");
             _list = this.Require<IssueList>("list");
             _list.Fixed += () => Fixed?.Invoke();
         }
@@ -41,7 +39,6 @@ namespace HyperRTS.Editor.Authoring
             this.SetHidden(issues.Count == 0);
             SetCount(_errors, Tally(issues, MessageType.Error), "error");
             SetCount(_warnings, Tally(issues, MessageType.Warning), "warning");
-            SetCount(_notes, Tally(issues, MessageType.Info), "note");
             _list.Show(issues);
         }
 

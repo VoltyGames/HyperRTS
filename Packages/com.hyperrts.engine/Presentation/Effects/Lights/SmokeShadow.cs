@@ -8,8 +8,8 @@ namespace HyperRTS.Presentation.Effects.Lights
     /// The sun shadow of a looping rig's smoke column. Goes on the rig's root; the nearest streamed loops are drawn into
     /// the sun's cloud cookie by <see cref="Environment.CloudShadows"/> from Medium detail up.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Smoke Shadow")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Smoke Shadow")]
+    [Icon(HyperRTSIcons.SmokeShadow)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class SmokeShadow : PresentationBehaviour

@@ -16,8 +16,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
     /// Client-side motion of a unit or building model's parts: turrets, barrels, wheels, rotors and body tilt.
     /// <see cref="FillFromModel"/> finds the parts by their art names.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Animation + "Motion Rig")]
-    [Icon(HyperRTSIcons.Animation)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Animation/Motion Rig")]
+    [Icon(HyperRTSIcons.MotionRigAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public partial class MotionRigAuthoring : AuthoringBehaviour

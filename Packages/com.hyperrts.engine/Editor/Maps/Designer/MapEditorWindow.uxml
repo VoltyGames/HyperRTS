@@ -2,15 +2,30 @@
   <Style src="../../Common/HyperRTSEditor.uss" />
   <Style src="MapEditor.uss" />
   <ui:VisualElement class="hrts-map-editor">
-    <HyperRTS.Editor.Maps.Designer.MapEditorToolbar name="toolbar" />
-    <ui:Label name="hint" class="hrts-note" text="Pick a map spec in the toolbar, or double-click a .map.json file." />
-    <ui:VisualElement name="body" class="hrts-map-editor__body hrts-hidden">
-      <HyperRTS.Editor.Maps.Designer.MapFeatureList name="features" class="hrts-map-list" />
-      <HyperRTS.Editor.Maps.Designer.MapCanvas name="canvas" class="hrts-map-canvas" />
-      <ui:VisualElement class="hrts-map-editor__side">
-        <HyperRTS.Editor.Maps.Designer.MapFeatureInspector name="inspector" class="hrts-map-inspector" />
-        <HyperRTS.Editor.Maps.Designer.MapReportPanel name="report" class="hrts-map-report" />
-      </ui:VisualElement>
+    <HyperRTS.Editor.Maps.Designer.MapGallery name="gallery" class="hrts-fill" />
+    <ui:VisualElement name="editor" class="hrts-map-editor__open hrts-hidden">
+      <HyperRTS.Editor.Maps.Designer.MapEditorToolbar name="toolbar" />
+      <HyperRTS.Editor.Maps.Designer.MapToolOptions name="options" />
+      <ui:TwoPaneSplitView name="layers-split" class="hrts-fill" fixed-pane-initial-dimension="280" orientation="Horizontal">
+        <HyperRTS.Editor.Maps.Designer.MapFeatureList name="features" class="hrts-map-list" />
+        <ui:TwoPaneSplitView name="side-split" class="hrts-fill" fixed-pane-index="1" fixed-pane-initial-dimension="320" orientation="Horizontal">
+          <ui:VisualElement class="hrts-map-editor__centre">
+            <HyperRTS.Editor.Maps.Designer.MapCanvas name="canvas" class="hrts-map-canvas" />
+            <HyperRTS.Editor.Maps.Designer.MapStatusBar name="status" />
+          </ui:VisualElement>
+          <ui:TabView name="tabs" class="hrts-map-editor__side">
+            <ui:Tab label="Feature">
+              <HyperRTS.Editor.Maps.Designer.MapFeatureInspector name="inspector" class="hrts-map-inspector" />
+            </ui:Tab>
+            <ui:Tab name="issues-tab" label="Issues">
+              <HyperRTS.Editor.Maps.Designer.MapIssueList name="issues" class="hrts-map-issues" />
+            </ui:Tab>
+            <ui:Tab label="Report">
+              <HyperRTS.Editor.Maps.Designer.MapReportPanel name="report" class="hrts-map-report" />
+            </ui:Tab>
+          </ui:TabView>
+        </ui:TwoPaneSplitView>
+      </ui:TwoPaneSplitView>
     </ui:VisualElement>
   </ui:VisualElement>
 </ui:UXML>

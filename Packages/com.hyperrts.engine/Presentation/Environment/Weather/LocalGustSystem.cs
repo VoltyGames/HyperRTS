@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         protected override void OnUpdate()
         {
-            if (!TrampleStampSystem.MapsOn)
+            if (!TrampleStampSystem.MapsDrawn)
             {
                 _blasts.Clear();
                 Shader.SetGlobalFloat(CountId, 0f);

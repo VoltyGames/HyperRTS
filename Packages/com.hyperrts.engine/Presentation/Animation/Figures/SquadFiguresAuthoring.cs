@@ -11,8 +11,8 @@ namespace HyperRTS.Presentation.Animation.Figures
     /// Draws a squad unit as bone-animated figures, one per Squad member. Each figure is a child whose Bone Animated
     /// renderers share one clip table, and its Figure Clip Set picks the clips it plays.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Animation + "Squad Figures")]
-    [Icon(HyperRTSIcons.Animation)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Animation/Squad Figures")]
+    [Icon(HyperRTSIcons.SquadFiguresAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public partial class SquadFiguresAuthoring : AuthoringBehaviour

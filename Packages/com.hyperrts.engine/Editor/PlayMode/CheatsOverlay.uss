@@ -1,0 +1,9 @@
+/* The Scene view cheats overlay. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-cheats-overlay {
+  min-width: 260px;
+}
+
+.hrts-cheats {
+  flex-grow: 1;
+}

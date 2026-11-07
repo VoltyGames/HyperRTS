@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>Caps how many of this unit or building each player may have (a superweapon, a hero unit).</summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Build Limit")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Build Limit")]
+    [Icon(HyperRTSIcons.BuildLimitAuthoring)]
     [HelpURL(HyperRTSDocs.Production)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

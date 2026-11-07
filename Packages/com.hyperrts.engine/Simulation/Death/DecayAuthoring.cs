@@ -9,8 +9,8 @@ namespace HyperRTS.Simulation.Death
     /// Clears remains (a wreck) after a while: they are buried, fading their loop effects, then the
     /// authoritative world destroys them. Put it on a ghost so clients follow.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Decay")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Decay")]
+    [Icon(HyperRTSIcons.DecayAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class DecayAuthoring : AuthoringBehaviour

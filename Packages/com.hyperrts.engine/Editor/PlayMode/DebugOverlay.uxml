@@ -3,7 +3,8 @@
   <Style src="DebugOverlay.uss" />
   <ui:VisualElement class="hrts-debug-overlay">
     <ui:VisualElement name="layers" />
-    <ui:Label name="ai" class="hrts-debug-overlay__ai" />
-    <ui:Button name="cheats" text="Cheats..." />
+    <ui:Button name="hide-all" text="Hide all" />
+    <ui:Label name="hint" class="hrts-hint hrts-debug-overlay__hint" text="Layers draw in Play mode." />
+    <ui:VisualElement name="ai" class="hrts-debug-overlay__ai" />
   </ui:VisualElement>
 </ui:UXML>

@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>A rig streamed along this projectile's path (rocket smoke, a tracer glow).</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Effect Trail")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Effect Trail")]
+    [Icon(HyperRTSIcons.EffectTrailAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     public class EffectTrailAuthoring : AuthoringBehaviour

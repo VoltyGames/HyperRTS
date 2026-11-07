@@ -11,8 +11,8 @@ namespace HyperRTS.Simulation.Squads.Cover
     /// The places on a prop where soldiers take cover. Each spot has a position, the way a soldier in it faces
     /// (toward the side the fire comes from) and a kind. The fillers write the list for you; edit it by hand after.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Cover Spots")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Cover Spots")]
+    [Icon(HyperRTSIcons.CoverSpotAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class CoverSpotAuthoring : AuthoringBehaviour

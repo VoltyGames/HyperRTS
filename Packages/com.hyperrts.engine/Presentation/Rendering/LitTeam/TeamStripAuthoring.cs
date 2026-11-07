@@ -6,8 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
     /// <summary>Limits the owner's colour to a height band, for models painted in team-colour strips (map buildings).</summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Team Strip")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Team Strip")]
+    [Icon(HyperRTSIcons.TeamStripAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]

@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Cues.Effects
 {
     /// <summary>What this unit's or building's shots throw up where they land, by the material struck.</summary>
-    [AddComponentMenu(HyperRTSMenu.Effects + "Impact Effects")]
-    [Icon(HyperRTSIcons.Effects)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Impact Effects")]
+    [Icon(HyperRTSIcons.ImpactEffectsAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(WeaponAuthoring), "a Weapon")]

@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Navigation.Docks
     /// Drive-through bays where vehicles stop to load or unload at a building or resource node. Units without a
     /// chassis walk to the edge instead.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Navigation + "Dock")]
-    [Icon(HyperRTSIcons.Navigation)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Navigation/Dock")]
+    [Icon(HyperRTSIcons.DockAuthoring)]
     [HelpURL(HyperRTSDocs.Docks)]
     [DisallowMultipleComponent]
     public class DockAuthoring : AuthoringBehaviour

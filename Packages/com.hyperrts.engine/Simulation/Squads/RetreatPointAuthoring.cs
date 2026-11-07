@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.Squads
     /// Marks a structure or vehicle squads retreat to. The Retreat command sends a squad to the nearest friendly one
     /// that is working, and the retreat ends when the squad is within the radius.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Retreat Point")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Retreat Point")]
+    [Icon(HyperRTSIcons.RetreatPointAuthoring)]
     [HelpURL(HyperRTSDocs.Combat)]
     [DisallowMultipleComponent]
     public class RetreatPointAuthoring : AuthoringBehaviour

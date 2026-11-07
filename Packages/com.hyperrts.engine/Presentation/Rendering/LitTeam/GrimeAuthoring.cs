@@ -8,8 +8,8 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
     /// Makes a ground vehicle collect dust, mud, wet and soot on its HyperRTS/LitTeam meshes. Put it on the unit root,
     /// never on structures.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Grime")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Grime")]
+    [Icon(HyperRTSIcons.GrimeAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
     public class GrimeAuthoring : AuthoringBehaviour

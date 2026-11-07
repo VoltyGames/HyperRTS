@@ -80,7 +80,7 @@ namespace HyperRTS.Network.Replication
                 Concealments = _concealment,
                 Viewers = viewers.AsArray(),
                 Relations = SystemAPI.GetSingleton<OwnerRelations>(),
-                FogOn = SystemAPI.GetSingleton<MapSettings>().FogOfWar,
+                FogEnabled = SystemAPI.GetSingleton<MapSettings>().FogOfWar,
                 Hidden = hidden.AsParallelWriter(),
             }.ScheduleParallel(_ghosts, state.Dependency);
         }
@@ -107,7 +107,7 @@ namespace HyperRTS.Network.Replication
             [ReadOnly] public ConcealmentLookup Concealments;
             [ReadOnly] public NativeArray<Viewer> Viewers;
             public OwnerRelations Relations;
-            public bool FogOn;
+            public bool FogEnabled;
             public NativeParallelHashMap<RelevantGhostForConnection, int>.ParallelWriter Hidden;
 
             // Per chunk, not per ghost, so the marker costs little.
@@ -125,7 +125,7 @@ namespace HyperRTS.Network.Replication
             {
                 // With fog off only stealth hides anything.
                 var concealment = Concealments.Find(entity);
-                if (!FogOn && concealment == Concealment.None)
+                if (!FogEnabled && concealment == Concealment.None)
                 {
                     return;
                 }

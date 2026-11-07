@@ -1,0 +1,19 @@
+/* The tables on the Play page. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-play__row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.hrts-play__head {
+  color: var(--hrts-dim-text);
+}
+
+.hrts-play__cell {
+  width: 56px;
+}
+
+.hrts-play__wide {
+  flex-grow: 1;
+  flex-basis: 0;
+}

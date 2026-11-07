@@ -8,26 +8,24 @@ using Unity.Scripting.LifecycleManagement;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// The Map Editor toolbar's tool group: Select, Point, Line and Area toggles (V, P, L, A; Escape returns to
-    /// Select) and, while a drawing tool is active, the feature kind it adds.
+    /// The Map Editor toolbar's tool group: an icon button each for Select, Point, Line and Area (V, P, L, A while
+    /// the canvas has focus; Escape returns to Select). The active tool's options sit in <see cref="MapToolOptions"/>.
     /// </summary>
     [UxmlElement]
     public sealed partial class MapToolStrip : VisualElement
     {
+        private const string ActiveClass = "hrts-map-tool--active";
+
         [NoAutoStaticsCleanup]
-        private static readonly Dictionary<MapToolMode, string> Tips = new()
+        private static readonly Dictionary<MapToolMode, string> Glyphs = new()
         {
-            [MapToolMode.Select] = MapSelectTool.Help,
-            [MapToolMode.Point] = "Point (P): each click adds the picked point or circle feature, copying the last " +
-                "one's fields. Shared ones snap to the symmetry axis or centre.",
-            [MapToolMode.Line] = "Line (L): click to add vertices; Enter or double-click finishes (2+ points), " +
-                "Escape cancels.",
-            [MapToolMode.Area] = "Area (A): click to add vertices; Enter or double-click finishes (3+ points), " +
-                "Escape cancels.",
+            [MapToolMode.Select] = "mouse-pointer-2",
+            [MapToolMode.Point] = "map-pin",
+            [MapToolMode.Line] = "spline",
+            [MapToolMode.Area] = "square-dashed",
         };
 
-        private readonly Dictionary<MapToolMode, ToolbarToggle> _toggles = new();
-        private readonly PopupField<MapFeatureKind> _kind;
+        private readonly Dictionary<MapToolMode, ToolbarButton> _buttons = new();
         private MapToolbox _toolbox;
 
         public MapToolStrip()
@@ -35,26 +33,17 @@ namespace HyperRTS.Editor.Maps.Designer
             AddToClassList("hrts-map-tools");
             foreach (MapToolMode mode in Enum.GetValues(typeof(MapToolMode)))
             {
-                var toggle = new ToolbarToggle { text = mode.ToString(), tooltip = Tips[mode] };
-                toggle.RegisterValueChangedCallback(_ =>
-                {
-                    _toolbox?.SetMode(mode);
-                    Show();
-                });
-                _toggles[mode] = toggle;
-                Add(toggle);
+                var button = new ToolbarButton(() => _toolbox?.SetMode(mode)) { tooltip = MapToolOptions.Tip(mode) };
+                var glyph = new VisualElement { pickingMode = PickingMode.Ignore };
+                glyph.AddToClassList("hrts-glyph");
+                glyph.AddToClassList("hrts-glyph--" + Glyphs[mode]);
+                button.Add(glyph);
+                _buttons[mode] = button;
+                Add(button);
             }
-
-            _kind = new PopupField<MapFeatureKind>(new List<MapFeatureKind>(), -1, Label, Label)
-            {
-                tooltip = "The feature kind the tool adds.",
-            };
-            _kind.AddToClassList("hrts-map-tools__kind");
-            _kind.RegisterValueChangedCallback(evt => _toolbox?.SetKind(evt.newValue));
-            Add(_kind);
         }
 
-        /// <summary>Shows and sets <paramref name="toolbox"/>; the window binds it once.</summary>
+        /// <summary>Follows <paramref name="toolbox"/> to mark the active tool; the window binds it once.</summary>
         public void Bind(MapToolbox toolbox)
         {
             _toolbox = toolbox;
@@ -62,20 +51,12 @@ namespace HyperRTS.Editor.Maps.Designer
             Show();
         }
 
-        private static string Label(MapFeatureKind kind) => kind == null ? string.Empty : kind.Label;
-
-        /// <summary>Checks the active tool's toggle and lists the kinds it adds.</summary>
         private void Show()
         {
-            foreach (var (mode, toggle) in _toggles)
+            foreach (var (mode, button) in _buttons)
             {
-                toggle.SetValueWithoutNotify(mode == _toolbox.Mode);
+                button.EnableInClassList(ActiveClass, mode == _toolbox.Mode);
             }
-
-            var kinds = MapToolbox.KindsFor(_toolbox.Mode);
-            _kind.SetHidden(kinds.Count == 0);
-            _kind.choices = new List<MapFeatureKind>(kinds);
-            _kind.SetValueWithoutNotify(_toolbox.Kind);
         }
     }
 }

@@ -13,8 +13,8 @@ namespace HyperRTS.Simulation.Strikes
     /// Turns one of this structure's abilities into a strategic asset: the ability's cooldown is the map-wide charge,
     /// and firing it sends a bomber in from the owner's map edge to drop guided bombs on the target zone.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Combat + "Strategic Asset")]
-    [Icon(HyperRTSIcons.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Strategic Asset")]
+    [Icon(HyperRTSIcons.StrategicAssetAuthoring)]
     [HelpURL(HyperRTSDocs.StrategicAssets)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

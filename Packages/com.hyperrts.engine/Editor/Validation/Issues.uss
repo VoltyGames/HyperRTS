@@ -34,3 +34,9 @@
   -unity-text-align: middle-left;
   margin: 2px 0;
 }
+
+.hrts-issue__variants {
+  -unity-text-align: middle-left;
+  color: var(--hrts-dim-text);
+  margin: 0 4px;
+}

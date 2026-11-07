@@ -10,8 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>Lets a building train the listed units and research upgrades through one queue (barracks, lab).</summary>
-    [AddComponentMenu(HyperRTSMenu.Buildings + "Producer")]
-    [Icon(HyperRTSIcons.Buildings)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Producer")]
+    [Icon(HyperRTSIcons.ProducerAuthoring)]
     [HelpURL(HyperRTSDocs.Production)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]

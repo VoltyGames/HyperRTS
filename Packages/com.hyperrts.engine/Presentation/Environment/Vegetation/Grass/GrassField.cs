@@ -6,7 +6,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 {
     /// <summary>A map's baked grass and small plants: a coverage slice per plant, the plants and the tiles that grow any.</summary>
-    [Icon(HyperRTSIcons.Environment)]
+    [Icon(HyperRTSIcons.GrassField)]
     [HelpURL(HyperRTSDocs.Presentation)]
     public sealed class GrassField : ScatterField
     {

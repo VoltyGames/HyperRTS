@@ -15,32 +15,104 @@
   -unity-background-image-tint-color: var(--hrts-glyph);
 }
 
+.hrts-glyph--brick-wall {
+  background-image: url("Glyphs/BrickWall.svg");
+}
+
+.hrts-glyph--circle {
+  background-image: url("Glyphs/Circle.svg");
+}
+
 .hrts-glyph--circle-x {
   background-image: url("Glyphs/CircleX.svg");
+}
+
+.hrts-glyph--cloud-fog {
+  background-image: url("Glyphs/CloudFog.svg");
+}
+
+.hrts-glyph--eye {
+  background-image: url("Glyphs/Eye.svg");
+}
+
+.hrts-glyph--eye-off {
+  background-image: url("Glyphs/EyeOff.svg");
 }
 
 .hrts-glyph--folder-open {
   background-image: url("Glyphs/FolderOpen.svg");
 }
 
+.hrts-glyph--grid-3x3 {
+  background-image: url("Glyphs/Grid3x3.svg");
+}
+
 .hrts-glyph--hammer {
   background-image: url("Glyphs/Hammer.svg");
+}
+
+.hrts-glyph--layers {
+  background-image: url("Glyphs/Layers.svg");
+}
+
+.hrts-glyph--layout-grid {
+  background-image: url("Glyphs/LayoutGrid.svg");
 }
 
 .hrts-glyph--library {
   background-image: url("Glyphs/Library.svg");
 }
 
+.hrts-glyph--lock {
+  background-image: url("Glyphs/Lock.svg");
+}
+
+.hrts-glyph--lock-open {
+  background-image: url("Glyphs/LockOpen.svg");
+}
+
 .hrts-glyph--map {
   background-image: url("Glyphs/Map.svg");
+}
+
+.hrts-glyph--map-pin {
+  background-image: url("Glyphs/MapPin.svg");
+}
+
+.hrts-glyph--mountain {
+  background-image: url("Glyphs/Mountain.svg");
+}
+
+.hrts-glyph--mouse-pointer-2 {
+  background-image: url("Glyphs/MousePointer2.svg");
 }
 
 .hrts-glyph--play {
   background-image: url("Glyphs/Play.svg");
 }
 
+.hrts-glyph--plus {
+  background-image: url("Glyphs/Plus.svg");
+}
+
 .hrts-glyph--refresh-cw {
   background-image: url("Glyphs/RefreshCw.svg");
+}
+
+.hrts-glyph--route {
+  background-image: url("Glyphs/Route.svg");
+}
+
+.hrts-glyph--ruler {
+  background-image: url("Glyphs/Ruler.svg");
+}
+
+.hrts-glyph--scan {
+  background-image: url("Glyphs/Scan.svg");
+}
+
+.hrts-glyph--scan-eye {
+  background-image: url("Glyphs/ScanEye.svg");
 }
 
 .hrts-glyph--search {
@@ -51,10 +123,22 @@
   background-image: url("Glyphs/ShieldCheck.svg");
 }
 
+.hrts-glyph--spline {
+  background-image: url("Glyphs/Spline.svg");
+}
+
+.hrts-glyph--square-dashed {
+  background-image: url("Glyphs/SquareDashed.svg");
+}
+
 .hrts-glyph--triangle-alert {
   background-image: url("Glyphs/TriangleAlert.svg");
 }
 
 .hrts-glyph--wand-sparkles {
   background-image: url("Glyphs/WandSparkles.svg");
+}
+
+.hrts-glyph--wind {
+  background-image: url("Glyphs/Wind.svg");
 }

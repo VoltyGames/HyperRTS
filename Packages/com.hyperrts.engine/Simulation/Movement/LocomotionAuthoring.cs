@@ -11,8 +11,8 @@ namespace HyperRTS.Simulation.Movement
     /// Gives a ground vehicle handling and its <see cref="Navigation.Chassis"/>: acceleration, braking, steering,
     /// turning and reversing. Without it a unit steps straight at full speed, as infantry do.
     /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Units + "Locomotion")]
-    [Icon(HyperRTSIcons.Units)]
+    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Locomotion")]
+    [Icon(HyperRTSIcons.LocomotionAuthoring)]
     [HelpURL(HyperRTSDocs.Movement)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]

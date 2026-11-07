@@ -9,7 +9,13 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
     /// <summary>Fog cells the local player's team currently sees.</summary>
     public sealed class FogLayer : CellTextureLayer
     {
-        public override string Label => "Fog (visible to local)";
+        public override string Label => "Fog";
+
+        public override string Detail => "Cells visible to the local player";
+
+        public override string Group => "Vision";
+
+        public override string Glyph => "cloud-fog";
 
         // The local fog view only exists in the world the player looks at.
         public override WorldSystemFilterFlags Source => SimulationWorlds.Presented;
