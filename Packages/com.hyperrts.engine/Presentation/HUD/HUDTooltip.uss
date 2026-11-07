@@ -1,36 +1,36 @@
 /* Tooltip, above the right edge of the panel that owns it */
 
 .hud-tooltip {
-    position: absolute;
-    right: 0;
-    bottom: 100%;
-    width: 280px;
-    margin-bottom: 8px;
-    padding: 8px 10px;
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  width: 280px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
 }
 
 .hud-tooltip__title,
 .hud-tooltip__line {
-    padding: 0;
-    margin: 0;
-    white-space: normal;
+  padding: 0;
+  margin: 0;
+  white-space: normal;
 }
 
 .hud-tooltip__line {
-    margin-top: 3px;
+  margin-top: 3px;
 }
 
 .hud-tooltip__costs {
-    margin: 4px 0 2px -2px;
+  margin: 4px 0 2px -2px;
 }
 
 .hud-tooltip__stat {
-    flex-direction: row;
-    justify-content: space-between;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .hud-tooltip__stat-name,
 .hud-tooltip__stat-value {
-    padding: 0;
-    margin: 0;
+  padding: 0;
+  margin: 0;
 }

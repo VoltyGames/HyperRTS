@@ -1,56 +1,60 @@
 .hud-root {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    --hud-inset: 8px;
-    --hud-panel-padding: 8px;
-    --hud-minimap-size: 208px;
-    --hud-bottom-height: 246px;
-    --hud-icon-size: 72px;
-    --hud-slot-size: 48px;
-    --hud-group-size: 52px;
-    --hud-resource-icon-size: 20px;
-    --hud-resource-gap: 16px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  --hud-inset: 8px;
+  --hud-panel-padding: 8px;
+  --hud-minimap-size: 208px;
+  --hud-bottom-height: 246px;
+  --hud-icon-size: 72px;
+  --hud-slot-size: 48px;
+  --hud-group-size: 52px;
+  --hud-resource-icon-size: 20px;
+  --hud-resource-gap: 16px;
 }
 
-.hrts-hidden { display: none; }
+.hrts-hidden {
+  display: none;
+}
 
 /* Keeps the element's space, so neighbouring panels don't shift. */
 
-.hrts-invisible { visibility: hidden; }
+.hrts-invisible {
+  visibility: hidden;
+}
 
 .hud-panel {
-    padding: var(--hud-panel-padding);
+  padding: var(--hud-panel-padding);
 }
 
 .hud-icon {
-    align-items: center;
-    justify-content: center;
-    -unity-background-scale-mode: scale-to-fit;
+  align-items: center;
+  justify-content: center;
+  -unity-background-scale-mode: scale-to-fit;
 }
 
 .hud-icon__initials {
-    padding: 0;
-    margin: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .hud-bar {
-    height: 8px;
-    overflow: hidden;
+  height: 8px;
+  overflow: hidden;
 }
 
 .hud-bar__fill {
-    height: 100%;
-    width: 0;
+  height: 100%;
+  width: 0;
 }
 
 .hud-bottom {
-    position: absolute;
-    left: var(--hud-inset);
-    right: var(--hud-inset);
-    bottom: var(--hud-inset);
-    flex-direction: row;
-    align-items: flex-end;
+  position: absolute;
+  left: var(--hud-inset);
+  right: var(--hud-inset);
+  bottom: var(--hud-inset);
+  flex-direction: row;
+  align-items: flex-end;
 }

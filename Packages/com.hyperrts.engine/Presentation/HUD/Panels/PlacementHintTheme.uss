@@ -1,6 +1,6 @@
 .hud-placement-hint {
-    background-color: var(--hud-overlay-bg);
-    border-radius: var(--hud-radius-small);
-    color: rgb(220, 226, 235);
-    font-size: 12px;
+  background-color: var(--hud-overlay-bg);
+  border-radius: var(--hud-radius-small);
+  color: rgb(220, 226, 235);
+  font-size: 12px;
 }

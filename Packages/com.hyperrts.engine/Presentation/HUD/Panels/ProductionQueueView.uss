@@ -1,18 +1,18 @@
 .hud-slot {
-    width: var(--hud-slot-size);
-    height: var(--hud-slot-size);
-    margin: 0 6px 0 0;
-    padding: 0;
+  width: var(--hud-slot-size);
+  height: var(--hud-slot-size);
+  margin: 0 6px 0 0;
+  padding: 0;
 }
 
 .hud-slot__icon {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .hud-slot__progress {
-    position: absolute;
-    left: 3px;
-    right: 3px;
-    bottom: 3px;
-    height: 5px;
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  height: 5px;
 }

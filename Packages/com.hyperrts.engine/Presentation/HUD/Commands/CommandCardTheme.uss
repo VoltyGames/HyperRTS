@@ -1,113 +1,113 @@
 .hud-command {
-    color: var(--hud-text);
-    background-color: var(--hud-card-bg);
-    border-width: 1px;
-    border-color: var(--hud-card-line);
-    border-radius: var(--hud-radius-small);
-    font-size: 11px;
+  color: var(--hud-text);
+  background-color: var(--hud-card-bg);
+  border-width: 1px;
+  border-color: var(--hud-card-line);
+  border-radius: var(--hud-radius-small);
+  font-size: 11px;
 }
 
 /* Solid, so a transparent icon reads as well as a full-bleed one. */
 
 .hud-command--picture {
-    background-color: var(--hud-card-picture-bg);
+  background-color: var(--hud-card-picture-bg);
 }
 
 .hud-command:hover {
-    background-color: var(--hud-card-bg-hover);
-    border-color: var(--hud-card-line-hover);
+  background-color: var(--hud-card-bg-hover);
+  border-color: var(--hud-card-line-hover);
 }
 
 .hud-command--picture:hover {
-    background-color: var(--hud-card-picture-bg-hover);
+  background-color: var(--hud-card-picture-bg-hover);
 }
 
 .hud-command:active {
-    background-color: var(--hud-card-bg-active);
+  background-color: var(--hud-card-bg-active);
 }
 
 .hud-command--active {
-    border-color: var(--hud-card-active-line);
-    background-color: var(--hud-card-active-bg);
+  border-color: var(--hud-card-active-line);
+  background-color: var(--hud-card-active-bg);
 }
 
 .hud-command--queued {
-    border-color: var(--hud-card-queued-line);
-    background-color: var(--hud-card-queued-bg);
+  border-color: var(--hud-card-queued-line);
+  background-color: var(--hud-card-queued-bg);
 }
 
 .hud-command--unaffordable .hud-command__icon,
 .hud-command--too-poor .hud-command__icon {
-    opacity: 0.75;
+  opacity: 0.75;
 }
 
 .hud-command--locked .hud-command__icon,
 .hud-command--no-point .hud-command__icon,
 .hud-command--researched .hud-command__icon {
-    filter: grayscale(1);
-    opacity: 0.4;
+  filter: grayscale(1);
+  opacity: 0.4;
 }
 
 .hud-command--maxed .hud-command__icon,
 .hud-command--full-strength .hud-command__icon {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 .hud-command--maxed .hud-command__limit,
 .hud-costs--short .hud-costs__amount {
-    color: var(--hud-danger);
+  color: var(--hud-danger);
 }
 
 .hud-command__lock {
-    color: var(--hud-text);
-    background-color: var(--hud-badge-bg);
+  color: var(--hud-text);
+  background-color: var(--hud-badge-bg);
 }
 
 .hud-command__chevron {
-    color: var(--hud-text);
+  color: var(--hud-text);
 }
 
 .hud-command__caption {
-    font-size: 12px;
-    -unity-font-style: bold;
+  font-size: 12px;
+  -unity-font-style: bold;
 }
 
 .hud-command__unpowered {
-    color: var(--hud-warn);
+  color: var(--hud-warn);
 }
 
 .hud-command__sweep {
-    --sweep-color: rgba(0, 0, 0, 0.55);
+  --sweep-color: rgba(0, 0, 0, 0.55);
 }
 
 .hud-command__strip {
-    --fade-color: rgba(0, 0, 0, 0.85);
+  --fade-color: rgba(0, 0, 0, 0.85);
 }
 
 .hud-command__count {
-    font-size: 12px;
-    -unity-font-style: bold;
-    background-color: var(--hud-badge-bg);
-    border-radius: var(--hud-radius-tiny);
+  font-size: 12px;
+  -unity-font-style: bold;
+  background-color: var(--hud-badge-bg);
+  border-radius: var(--hud-radius-tiny);
 }
 
 .hud-command__limit {
-    font-size: 10px;
-    -unity-font-style: bold;
+  font-size: 10px;
+  -unity-font-style: bold;
 }
 
 .hud-command__cooldown {
-    font-size: 12px;
-    -unity-font-style: bold;
-    color: rgb(255, 210, 120);
+  font-size: 12px;
+  -unity-font-style: bold;
+  color: rgb(255, 210, 120);
 }
 
 .hud-command__hotkey {
-    font-size: 11px;
-    -unity-font-style: bold;
-    color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  -unity-font-style: bold;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .hud-command__name {
-    font-size: 10px;
+  font-size: 10px;
 }

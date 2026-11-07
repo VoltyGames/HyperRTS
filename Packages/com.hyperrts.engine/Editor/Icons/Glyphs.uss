@@ -4,57 +4,57 @@
  */
 
 :root {
-    --hrts-glyph: var(--unity-colors-label-text);
+  --hrts-glyph: var(--unity-colors-label-text);
 }
 
 .hrts-glyph {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    -unity-background-scale-mode: scale-to-fit;
-    -unity-background-image-tint-color: var(--hrts-glyph);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  -unity-background-scale-mode: scale-to-fit;
+  -unity-background-image-tint-color: var(--hrts-glyph);
 }
 
 .hrts-glyph--circle-x {
-    background-image: url("Glyphs/CircleX.svg");
+  background-image: url("Glyphs/CircleX.svg");
 }
 
 .hrts-glyph--folder-open {
-    background-image: url("Glyphs/FolderOpen.svg");
+  background-image: url("Glyphs/FolderOpen.svg");
 }
 
 .hrts-glyph--hammer {
-    background-image: url("Glyphs/Hammer.svg");
+  background-image: url("Glyphs/Hammer.svg");
 }
 
 .hrts-glyph--library {
-    background-image: url("Glyphs/Library.svg");
+  background-image: url("Glyphs/Library.svg");
 }
 
 .hrts-glyph--map {
-    background-image: url("Glyphs/Map.svg");
+  background-image: url("Glyphs/Map.svg");
 }
 
 .hrts-glyph--play {
-    background-image: url("Glyphs/Play.svg");
+  background-image: url("Glyphs/Play.svg");
 }
 
 .hrts-glyph--refresh-cw {
-    background-image: url("Glyphs/RefreshCw.svg");
+  background-image: url("Glyphs/RefreshCw.svg");
 }
 
 .hrts-glyph--search {
-    background-image: url("Glyphs/Search.svg");
+  background-image: url("Glyphs/Search.svg");
 }
 
 .hrts-glyph--shield-check {
-    background-image: url("Glyphs/ShieldCheck.svg");
+  background-image: url("Glyphs/ShieldCheck.svg");
 }
 
 .hrts-glyph--triangle-alert {
-    background-image: url("Glyphs/TriangleAlert.svg");
+  background-image: url("Glyphs/TriangleAlert.svg");
 }
 
 .hrts-glyph--wand-sparkles {
-    background-image: url("Glyphs/WandSparkles.svg");
+  background-image: url("Glyphs/WandSparkles.svg");
 }

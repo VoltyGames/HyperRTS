@@ -1,0 +1,12 @@
+{
+  "overrides": [
+    {
+      "files": ["*.uss", "*.tss"],
+      "options": {
+        "parser": "css",
+        "tabWidth": 2,
+        "printWidth": 100
+      }
+    }
+  ]
+}

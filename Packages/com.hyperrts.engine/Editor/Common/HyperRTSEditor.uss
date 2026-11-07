@@ -7,96 +7,96 @@
 
 /* Theme colours alias Unity's editor variables so the light skin follows; severity colours read on both skins. */
 :root {
-    --hrts-border: var(--unity-colors-default-border);
-    --hrts-dim-text: var(--unity-colors-label-text-disabled);
-    --hrts-error: rgb(222, 64, 52);
-    --hrts-warning: rgb(196, 136, 0);
-    --hrts-note: rgb(64, 128, 222);
+  --hrts-border: var(--unity-colors-default-border);
+  --hrts-dim-text: var(--unity-colors-label-text-disabled);
+  --hrts-error: rgb(222, 64, 52);
+  --hrts-warning: rgb(196, 136, 0);
+  --hrts-note: rgb(64, 128, 222);
 }
 
 .hrts-page {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .hrts-page__toolbar {
-    /* A list or tree in the body would otherwise squeeze the toolbar flat. */
-    flex-shrink: 0;
+  /* A list or tree in the body would otherwise squeeze the toolbar flat. */
+  flex-shrink: 0;
 }
 
 .hrts-page__body {
-    padding: 4px;
-    flex-grow: 1;
+  padding: 4px;
+  flex-grow: 1;
 }
 
 .hrts-page__busy {
-    margin: 2px 4px;
-    color: var(--hrts-warning);
+  margin: 2px 4px;
+  color: var(--hrts-warning);
 }
 
 .hrts-section {
-    margin-top: 8px;
+  margin-top: 8px;
 }
 
 .hrts-section__title {
-    -unity-font-style: bold;
-    margin: 0 0 2px 3px;
+  -unity-font-style: bold;
+  margin: 0 0 2px 3px;
 }
 
 .hrts-figure__name {
-    width: 90px;
-    margin-left: 3px;
+  width: 90px;
+  margin-left: 3px;
 }
 
 .hrts-row {
-    flex-direction: row;
-    align-items: center;
+  flex-direction: row;
+  align-items: center;
 }
 
 .hrts-row__grow {
-    flex-grow: 1;
-    flex-shrink: 1;
+  flex-grow: 1;
+  flex-shrink: 1;
 }
 
 .hrts-swatch {
-    width: 12px;
-    height: 12px;
-    margin: 0 4px 0 3px;
-    border-radius: 2px;
-    flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin: 0 4px 0 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .hrts-buttons {
-    flex-direction: row;
-    margin-top: 4px;
+  flex-direction: row;
+  margin-top: 4px;
 }
 
 .hrts-buttons > * {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .hrts-fill {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .hrts-toolbar-label {
-    -unity-text-align: middle-right;
-    font-size: 10px;
-    margin-right: 4px;
+  -unity-text-align: middle-right;
+  font-size: 10px;
+  margin-right: 4px;
 }
 
 .hrts-note {
-    margin: 4px;
+  margin: 4px;
 }
 
 .hrts-hint {
-    color: var(--hrts-dim-text);
+  color: var(--hrts-dim-text);
 }
 
 /* Last, so a toggle wins over any rule above that sets display or visibility. */
 .hrts-hidden {
-    display: none;
+  display: none;
 }
 
 .hrts-invisible {
-    visibility: hidden;
+  visibility: hidden;
 }

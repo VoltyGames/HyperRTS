@@ -1,13 +1,13 @@
 /* The Build page: its tabs fill the page. Colour tokens are in Common/HyperRTSEditor.uss. */
 
 .hrts-build {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .hrts-build .unity-tab {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .hrts-build .unity-tab__content-container {
-    flex-grow: 1;
+  flex-grow: 1;
 }

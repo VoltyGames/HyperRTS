@@ -1,150 +1,150 @@
 /* Five 72px cards a row with 2px margins and exactly three rows: a set height, since a wrapping row measures taller. */
 
 .hud-commands {
-    width: 398px;
-    height: var(--hud-bottom-height);
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
+  width: 398px;
+  height: var(--hud-bottom-height);
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
 }
 
 .hud-command {
-    width: 72px;
-    height: 72px;
-    margin: 2px;
-    padding: 0;
-    overflow: hidden;
-    align-items: center;
-    justify-content: center;
-    white-space: normal;
+  width: 72px;
+  height: 72px;
+  margin: 2px;
+  padding: 0;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
 }
 
 .hud-command:disabled {
-    opacity: 0.4;
+  opacity: 0.4;
 }
 
 /* The left padding keeps the label clear of the hotkey in the corner. */
 
 .hud-command--text {
-    height: 34px;
-    padding: 2px 4px 2px 14px;
+  height: 34px;
+  padding: 2px 4px 2px 14px;
 }
 
 /* Fills the grid so the page card lands in the last slot. */
 
 .hud-command--blank {
-    visibility: hidden;
+  visibility: hidden;
 }
 
 .hud-command__chevron {
-    width: 20px;
-    height: 20px;
-    margin-bottom: 4px;
+  width: 20px;
+  height: 20px;
+  margin-bottom: 4px;
 }
 
 .hud-command__caption {
-    padding: 0;
-    margin: 0;
-    -unity-text-align: middle-center;
+  padding: 0;
+  margin: 0;
+  -unity-text-align: middle-center;
 }
 
 /* Two classes, to beat .hud-icon's scale-to-fit. */
 
 .hud-command .hud-command__icon {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    -unity-background-scale-mode: scale-and-crop;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  -unity-background-scale-mode: scale-and-crop;
 }
 
 .hud-command__sweep {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* A small badge, so the greyed picture still shows; the padding is its dark backing. */
 
 .hud-command__lock {
-    display: none;
-    width: 14px;
-    height: 14px;
-    padding: 2px;
-    margin-bottom: 2px;
-    border-radius: 3px;
+  display: none;
+  width: 14px;
+  height: 14px;
+  padding: 2px;
+  margin-bottom: 2px;
+  border-radius: 3px;
 }
 
 .hud-command--locked .hud-command__lock {
-    display: flex;
+  display: flex;
 }
 
 .hud-command__badges {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    align-items: flex-end;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  align-items: flex-end;
 }
 
 .hud-command__count {
-    min-width: 16px;
-    padding: 0 3px;
-    margin: 0;
-    -unity-text-align: middle-center;
+  min-width: 16px;
+  padding: 0 3px;
+  margin: 0;
+  -unity-text-align: middle-center;
 }
 
 .hud-command__unpowered {
-    width: 11px;
-    height: 15px;
-    margin-top: 2px;
+  width: 11px;
+  height: 15px;
+  margin-top: 2px;
 }
 
 .hud-command__cooldown {
-    position: absolute;
-    top: 3px;
-    right: 5px;
+  position: absolute;
+  top: 3px;
+  right: 5px;
 }
 
 .hud-command__hotkey {
-    position: absolute;
-    top: 2px;
-    left: 4px;
+  position: absolute;
+  top: 2px;
+  left: 4px;
 }
 
 /* Only on cards without a picture, where the name stands in for the initials, which hide. */
 
 .hud-command .hud-icon__initials {
-    display: none;
+  display: none;
 }
 
 .hud-command__name {
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    top: 4px;
-    bottom: 24px;
-    padding: 0;
-    margin: 0;
-    -unity-text-align: middle-center;
-    white-space: normal;
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 4px;
+  bottom: 24px;
+  padding: 0;
+  margin: 0;
+  -unity-text-align: middle-center;
+  white-space: normal;
 }
 
 .hud-command__strip {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 24px;
-    padding: 0 4px 1px 3px;
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
+  padding: 0 4px 1px 3px;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
 }
 
 .hud-command__limit {
-    padding: 0;
-    margin: 0;
+  padding: 0;
+  margin: 0;
 }

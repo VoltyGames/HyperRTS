@@ -72,3 +72,8 @@ indent_size = 2
 ##########################################
 [*.md]
 trim_trailing_whitespace = false
+
+# Unity style sheets (USS, TSS): two-space, formatted by Prettier as CSS (.prettierrc.json)
+[*.{uss,tss}]
+indent_size = 2
+charset = utf-8

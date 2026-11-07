@@ -1,15 +1,15 @@
 .hud-banner__title {
-    font-size: 72px;
-    -unity-font-style: bold;
-    background-color: var(--hud-overlay-bg);
-    border-radius: 8px;
-    letter-spacing: 8px;
+  font-size: 72px;
+  -unity-font-style: bold;
+  background-color: var(--hud-overlay-bg);
+  border-radius: 8px;
+  letter-spacing: 8px;
 }
 
 .hud-banner__title--victory {
-    color: rgb(120, 230, 130);
+  color: rgb(120, 230, 130);
 }
 
 .hud-banner__title--defeat {
-    color: var(--hud-danger);
+  color: var(--hud-danger);
 }

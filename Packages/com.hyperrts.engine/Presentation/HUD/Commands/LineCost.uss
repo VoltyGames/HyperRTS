@@ -1,9 +1,9 @@
 /* Line cost, above and right of the dragged line's end; PlaceBeside moves both by translate */
 
 .hud-line-cost {
-    position: absolute;
-    left: 0;
-    top: 0;
-    margin: -8px 0 0 16px;
-    padding: 2px 6px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: -8px 0 0 16px;
+  padding: 2px 6px;
 }

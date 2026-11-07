@@ -1,7 +1,7 @@
 .hud-costs {
-    flex-direction: row;
+  flex-direction: row;
 }
 
 .hud-costs__amount {
-    padding: 0 2px;
+  padding: 0 2px;
 }

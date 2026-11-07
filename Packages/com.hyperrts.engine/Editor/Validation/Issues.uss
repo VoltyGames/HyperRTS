@@ -1,36 +1,36 @@
 /* Validation issue rows and the rule and asset headings of the grouped tree. Colour tokens are in Common/HyperRTSEditor.uss. */
 
 .hrts-issue {
-    flex-direction: row;
-    align-items: stretch;
-    margin: 1px 0;
+  flex-direction: row;
+  align-items: stretch;
+  margin: 1px 0;
 }
 
 .hrts-issue__context {
-    width: 140px;
-    margin: 0 2px 0 0;
+  width: 140px;
+  margin: 0 2px 0 0;
 }
 
 .hrts-issue__message {
-    flex-grow: 1;
-    flex-shrink: 1;
-    margin: 0;
+  flex-grow: 1;
+  flex-shrink: 1;
+  margin: 0;
 }
 
 .hrts-issue__fix {
-    width: 100px;
-    margin: 0 0 0 2px;
-    white-space: normal;
+  width: 100px;
+  margin: 0 0 0 2px;
+  white-space: normal;
 }
 
 .hrts-issue__rule {
-    -unity-font-style: bold;
-    -unity-text-align: middle-left;
-    flex-grow: 1;
+  -unity-font-style: bold;
+  -unity-text-align: middle-left;
+  flex-grow: 1;
 }
 
 .hrts-issue__asset {
-    -unity-font-style: bold;
-    -unity-text-align: middle-left;
-    margin: 2px 0;
+  -unity-font-style: bold;
+  -unity-text-align: middle-left;
+  margin: 2px 0;
 }

@@ -1,13 +1,13 @@
 /* The box sits beside .hud-root, so it carries its own properties. */
 
 .hud-drag-box {
-    --hud-drag-fill: rgba(200, 225, 255, 0.1);
-    --hud-drag-line: rgba(200, 225, 255, 0.9);
-    --hud-drag-corner: rgb(225, 238, 255);
-    background-color: var(--hud-drag-fill);
-    border-color: var(--hud-drag-line);
+  --hud-drag-fill: rgba(200, 225, 255, 0.1);
+  --hud-drag-line: rgba(200, 225, 255, 0.9);
+  --hud-drag-corner: rgb(225, 238, 255);
+  background-color: var(--hud-drag-fill);
+  border-color: var(--hud-drag-line);
 }
 
 .hud-drag-box__corner {
-    border-color: var(--hud-drag-corner);
+  border-color: var(--hud-drag-corner);
 }

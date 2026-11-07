@@ -1,262 +1,262 @@
 /* Inspector extras: the entity card and module strip, header groups, field marks, the issue badge and producible options. Colour tokens are in Common/HyperRTSEditor.uss. */
 
 .hrts-issue-badge {
-    margin: 0 0 4px 0;
+  margin: 0 0 4px 0;
 }
 
 .hrts-issue-badge__button {
-    flex-direction: row;
-    align-self: stretch;
-    margin: 0;
-    padding: 0 6px;
-    height: 18px;
-    border-radius: 2px;
+  flex-direction: row;
+  align-self: stretch;
+  margin: 0;
+  padding: 0 6px;
+  height: 18px;
+  border-radius: 2px;
 }
 
 .hrts-issue-badge__button--open {
-    border-color: var(--hrts-border);
+  border-color: var(--hrts-border);
 }
 
 .hrts-issue-badge__count {
-    -unity-font-style: bold;
-    margin: 0 3px;
-    padding: 0;
+  -unity-font-style: bold;
+  margin: 0 3px;
+  padding: 0;
 }
 
 .hrts-issue-badge__errors {
-    color: var(--hrts-error);
+  color: var(--hrts-error);
 }
 
 .hrts-issue-badge__warnings {
-    color: var(--hrts-warning);
+  color: var(--hrts-warning);
 }
 
 .hrts-issue-badge__notes {
-    color: var(--hrts-note);
+  color: var(--hrts-note);
 }
 
 .hrts-option {
-    flex-direction: row;
-    align-items: center;
-    flex-grow: 1;
+  flex-direction: row;
+  align-items: center;
+  flex-grow: 1;
 }
 
 .hrts-option__field {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-width: 80px;
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 80px;
 }
 
 .hrts-option__icon {
-    width: 18px;
-    height: 18px;
-    margin: 0 4px;
-    flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .hrts-option__summary {
-    width: 45%;
-    flex-shrink: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    -unity-text-align: middle-left;
-    color: var(--hrts-dim-text);
-    font-size: 10px;
+  width: 45%;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -unity-text-align: middle-left;
+  color: var(--hrts-dim-text);
+  font-size: 10px;
 }
 
 .hrts-card {
-    margin: 0 0 4px 0;
-    padding: 6px;
-    border-width: 1px;
-    border-color: var(--hrts-border);
-    border-radius: 3px;
-    background-color: rgba(128, 128, 128, 0.1);
+  margin: 0 0 4px 0;
+  padding: 6px;
+  border-width: 1px;
+  border-color: var(--hrts-border);
+  border-radius: 3px;
+  background-color: rgba(128, 128, 128, 0.1);
 }
 
 .hrts-card__icon {
-    width: 40px;
-    height: 40px;
-    margin-right: 8px;
-    flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .hrts-card__name {
-    -unity-font-style: bold;
-    font-size: 14px;
-    margin: 0;
+  -unity-font-style: bold;
+  font-size: 14px;
+  margin: 0;
 }
 
 .hrts-card__role {
-    color: var(--hrts-dim-text);
-    margin: 0;
+  color: var(--hrts-dim-text);
+  margin: 0;
 }
 
 .hrts-card__owner {
-    width: 14px;
-    height: 14px;
-    border-radius: 7px;
-    border-width: 1px;
-    border-color: var(--hrts-border);
-    align-self: flex-start;
-    flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  border-width: 1px;
+  border-color: var(--hrts-border);
+  align-self: flex-start;
+  flex-shrink: 0;
 }
 
 .hrts-card__stats {
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin-top: 6px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: 6px;
 }
 
 .hrts-card__stat {
-    min-width: 72px;
-    margin: 0 12px 3px 0;
+  min-width: 72px;
+  margin: 0 12px 3px 0;
 }
 
 .hrts-card__stat-name {
-    color: var(--hrts-dim-text);
-    font-size: 10px;
-    margin: 0;
-    padding: 0;
+  color: var(--hrts-dim-text);
+  font-size: 10px;
+  margin: 0;
+  padding: 0;
 }
 
 .hrts-card__stat-value {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .hrts-strip {
-    flex-direction: row;
-    flex-wrap: wrap;
-    margin: 0 0 4px 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin: 0 0 4px 0;
 }
 
 .hrts-chip {
-    flex-direction: row;
-    align-items: center;
-    margin: 0 3px 3px 0;
-    padding: 1px 6px 1px 4px;
-    border-radius: 9px;
+  flex-direction: row;
+  align-items: center;
+  margin: 0 3px 3px 0;
+  padding: 1px 6px 1px 4px;
+  border-radius: 9px;
 }
 
 .hrts-chip--sole {
-    border-color: var(--unity-colors-highlight-background);
+  border-color: var(--unity-colors-highlight-background);
 }
 
 .hrts-chip--add {
-    padding: 1px 8px;
+  padding: 1px 8px;
 }
 
 .hrts-chip__icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 3px;
+  width: 14px;
+  height: 14px;
+  margin-right: 3px;
 }
 
 .hrts-chip__name {
-    padding: 0;
-    margin: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .hrts-chip__dot {
-    width: 7px;
-    height: 7px;
-    margin-left: 4px;
-    border-radius: 4px;
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  border-radius: 4px;
 }
 
 .hrts-chip__dot--error {
-    background-color: var(--hrts-error);
+  background-color: var(--hrts-error);
 }
 
 .hrts-chip__dot--warning {
-    background-color: var(--hrts-warning);
+  background-color: var(--hrts-warning);
 }
 
 .hrts-group {
-    margin-top: 2px;
+  margin-top: 2px;
 }
 
 .hrts-group > Toggle > Label {
-    -unity-font-style: bold;
+  -unity-font-style: bold;
 }
 
 /* The foldout title replaces the PropertyField's own [Header] label. */
 .hrts-group .unity-header-drawer__label {
-    display: none;
+  display: none;
 }
 
 .hrts-field--error {
-    border-left-width: 2px;
-    border-left-color: var(--hrts-error);
+  border-left-width: 2px;
+  border-left-color: var(--hrts-error);
 }
 
 .hrts-field--warning {
-    border-left-width: 2px;
-    border-left-color: var(--hrts-warning);
+  border-left-width: 2px;
+  border-left-color: var(--hrts-warning);
 }
 
 .hrts-field-issue {
-    margin: 0 0 2px 3px;
-    white-space: normal;
-    font-size: 10px;
+  margin: 0 0 2px 3px;
+  white-space: normal;
+  font-size: 10px;
 }
 
 .hrts-field-issue--error {
-    color: var(--hrts-error);
+  color: var(--hrts-error);
 }
 
 .hrts-field-issue--warning {
-    color: var(--hrts-warning);
+  color: var(--hrts-warning);
 }
 
 .hrts-unit-field .unity-base-field__input {
-    padding-right: 26px;
+  padding-right: 26px;
 }
 
 .hrts-unit {
-    position: absolute;
-    right: 4px;
-    top: 0;
-    bottom: 0;
-    margin: 0;
-    padding: 0;
-    -unity-text-align: middle-right;
-    color: var(--hrts-dim-text);
-    font-size: 10px;
+  position: absolute;
+  right: 4px;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0;
+  -unity-text-align: middle-right;
+  color: var(--hrts-dim-text);
+  font-size: 10px;
 }
 
 .hrts-glyph-button {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
 
 .hrts-glyph-button > .hrts-glyph {
-    margin-right: 4px;
+  margin-right: 4px;
 }
 
 .hrts-popup {
-    flex-grow: 1;
-    padding: 4px;
+  flex-grow: 1;
+  padding: 4px;
 }
 
 .hrts-popup__search {
-    margin: 0 0 4px 0;
+  margin: 0 0 4px 0;
 }
 
 .hrts-popup__list {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 .hrts-popup__group {
-    -unity-font-style: bold;
-    color: var(--hrts-dim-text);
-    margin: 4px 0 1px 2px;
+  -unity-font-style: bold;
+  color: var(--hrts-dim-text);
+  margin: 4px 0 1px 2px;
 }
 
 .hrts-popup__item {
-    -unity-text-align: middle-left;
-    margin: 0;
-    border-width: 0;
-    background-color: rgba(0, 0, 0, 0);
+  -unity-text-align: middle-left;
+  margin: 0;
+  border-width: 0;
+  background-color: rgba(0, 0, 0, 0);
 }

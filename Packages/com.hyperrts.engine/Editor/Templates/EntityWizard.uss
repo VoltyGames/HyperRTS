@@ -1,33 +1,33 @@
 /* The New Entity wizard: search, the grouped list of bases and templates, then the name. */
 
 .hrts-entity-wizard {
-    flex-grow: 1;
-    padding: 4px;
+  flex-grow: 1;
+  padding: 4px;
 }
 
 .hrts-entity-wizard__search {
-    width: auto;
-    margin-bottom: 4px;
+  width: auto;
+  margin-bottom: 4px;
 }
 
 .hrts-entity-wizard__choices {
-    flex-grow: 1;
-    margin-bottom: 4px;
-    border-width: 1px;
-    border-color: var(--hrts-border);
+  flex-grow: 1;
+  margin-bottom: 4px;
+  border-width: 1px;
+  border-color: var(--hrts-border);
 }
 
 .hrts-entity-wizard__icon {
-    width: 16px;
-    height: 16px;
-    margin-right: 4px;
-    flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .hrts-entity-wizard__heading {
-    -unity-font-style: bold;
+  -unity-font-style: bold;
 }
 
 .hrts-entity-wizard__folder {
-    color: var(--hrts-dim-text);
+  color: var(--hrts-dim-text);
 }
