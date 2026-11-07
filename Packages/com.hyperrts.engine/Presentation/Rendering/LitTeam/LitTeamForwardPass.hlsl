@@ -5,6 +5,7 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamGrime.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDetail.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
 
 void LitTeamPassFragment(
@@ -24,6 +25,14 @@ void LitTeamPassFragment(
 
     SurfaceData surfaceData;
     InitializeStandardLitSurfaceData(input.uv, surfaceData);
+#if defined(_DETAIL)
+    #if defined(_NORMALMAP)
+    float4 tangentWS = input.tangentWS;
+    #else
+    float4 tangentWS = float4(1.0, 0.0, 0.0, 1.0);
+    #endif
+    ApplyDetail(input.positionWS, input.normalWS.xyz, tangentWS, surfaceData);
+#endif
     surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, uv0, input.positionWS);
     ApplyGrime(input.positionWS, surfaceData);
 

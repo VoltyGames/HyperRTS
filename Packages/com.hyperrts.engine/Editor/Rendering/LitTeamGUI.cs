@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Rendering
 {
     /// <summary>
     /// The HyperRTS/LitTeam material inspector: its properties as plain fields, with each map's keyword following the
-    /// map, as URP's Lit inspector does, so a material edited by hand renders what it shows.
+    /// map, as URP's Lit inspector does (the Detail toggle sets its own keyword), so a material edited by hand renders what it shows.
     /// </summary>
     public sealed class LitTeamGUI : ShaderGUI
     {
@@ -34,7 +34,8 @@ namespace HyperRTS.Editor.Rendering
 
         public override void ValidateMaterial(Material material)
         {
-            Follow(material, "_NORMALMAP", material.GetTexture(BumpMap) != null);
+            // The detail normal tilts the tangent-space normal, so detail turns the normal path on.
+            Follow(material, "_NORMALMAP", material.GetTexture(BumpMap) != null || material.IsKeywordEnabled("_DETAIL"));
             Follow(material, "_METALLICSPECGLOSSMAP", material.GetTexture(MetallicGlossMap) != null);
             Follow(material, "_OCCLUSIONMAP", material.GetTexture(OcclusionMap) != null);
             var glows = material.GetColor(EmissionColor).maxColorComponent > 0f;

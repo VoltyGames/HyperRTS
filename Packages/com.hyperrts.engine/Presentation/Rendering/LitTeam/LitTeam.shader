@@ -1,4 +1,4 @@
-// URP Lit (minus GBuffer, so Forward or Forward+; opaque or alpha tested, metallic workflow, no detail maps or
+// URP Lit (minus GBuffer, so Forward or Forward+; opaque or alpha tested, metallic workflow, no UV-mapped detail maps or
 // parallax) with the albedo repainted in _TeamColor.
 //   _TeamColor  linear RGB, A how much shows (0 untinted, so neutral needs no special case)
 //   _TeamMask   R where team colour goes, on UV0
@@ -12,6 +12,8 @@
 //   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
 //   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
 //               _TrackLift0 and _TrackLift1, the lift in metres at 8 stations front to back, it bends the lower run (LitTeamTrack.hlsl)
+//   _DETAIL     keyword: detail albedo and normal projected in object space (triplanar) at _DetailTiling repeats per metre,
+//               faded out between _DetailFadeStart and _DetailFadeEnd metres from the camera (LitTeamDetail.hlsl)
 //   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
 //               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
 // TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
@@ -41,6 +43,16 @@ Shader "HyperRTS/LitTeam"
         [Header(Grime)]
         _Grime("Grime (dust, mud, wet, soot)", Vector) = (0, 0, 0, 0)
         _GrimeBand("Grime Band (ground y in object space, mud top, dust top above it, m)", Vector) = (0, 0.7, 1.6, 0)
+
+        [Header(Detail)]
+        [Toggle(_DETAIL)] _Detail("Detail Maps (world scale, fade with camera distance)", Float) = 0
+        [NoScaleOffset] _DetailAlbedo("Detail Albedo (grey 0.5 is neutral)", 2D) = "grey" {}
+        [NoScaleOffset] _DetailNormal("Detail Normal", 2D) = "bump" {}
+        _DetailTiling("Detail Tiling (repeats per metre)", Float) = 3
+        _DetailAlbedoStrength("Detail Albedo Strength", Range(0, 1)) = 0.5
+        _DetailNormalStrength("Detail Normal Strength", Range(0, 2)) = 1
+        _DetailFadeStart("Detail Fade Start (camera distance, m)", Float) = 12
+        _DetailFadeEnd("Detail Fade End (camera distance, m)", Float) = 30
 
         [Header(Track)]
         _TrackLift0("Track Lift (stations 0 to 3, m)", Vector) = (0, 0, 0, 0)
@@ -122,6 +134,7 @@ Shader "HyperRTS/LitTeam"
             #pragma shader_feature_local_fragment _EMISSION
             #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
             #pragma shader_feature_local_fragment _OCCLUSIONMAP
+            #pragma shader_feature_local_fragment _DETAIL
 
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ForwardLightingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ObjectLightingKeywords.hlsl"

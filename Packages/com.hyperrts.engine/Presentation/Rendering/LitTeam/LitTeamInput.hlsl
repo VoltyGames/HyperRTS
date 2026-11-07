@@ -1,6 +1,6 @@
 // HyperRTS/LitTeam inputs: the material properties and accessors URP's Lit passes read (laid out like URP's
-// LitInput.hlsl, minus detail maps, parallax, the specular workflow and transparency) plus the team colour, its mask,
-// its height band, the rigid animation clip, the bone animation clips and their fades, the build progress, grime and track lift. Every LitTeam pass includes this, so the SRP
+// LitInput.hlsl, minus URP's UV-mapped detail maps, parallax, the specular workflow and transparency) plus the team colour, its mask,
+// its height band, the rigid animation clip, the bone animation clips and their fades, the build progress, grime, track lift and the world-scale detail maps. Every LitTeam pass includes this, so the SRP
 // Batcher sees one UnityPerMaterial layout.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
@@ -48,6 +48,11 @@ float _Reveal;
 float _BuildDropHeight;
 float _BuildDropSlice;
 float _BuildDropFrom;
+float _DetailTiling;
+float _DetailAlbedoStrength;
+float _DetailNormalStrength;
+float _DetailFadeStart;
+float _DetailFadeEnd;
 half _LightsOn;
 half _Cutoff;
 half _Smoothness;
