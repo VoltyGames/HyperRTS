@@ -117,6 +117,12 @@ namespace HyperRTS.Editor.PlayMode
 
             foreach (var candidate in World.All)
             {
+                // A SubScene's loading world is written by its load job, and never records.
+                if ((candidate.Flags & WorldFlags.Streaming) != 0)
+                {
+                    continue;
+                }
+
                 if (ReplayRecorder.IsRecording(candidate))
                 {
                     world = candidate;
