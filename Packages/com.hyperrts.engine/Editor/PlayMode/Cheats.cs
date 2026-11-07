@@ -1,6 +1,7 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Production;

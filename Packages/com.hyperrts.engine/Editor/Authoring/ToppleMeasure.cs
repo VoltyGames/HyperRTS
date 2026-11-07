@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;
 using UnityEngine;
 

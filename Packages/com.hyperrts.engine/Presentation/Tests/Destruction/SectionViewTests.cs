@@ -1,8 +1,8 @@
 using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Vision.Fog;

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Squads;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Checks

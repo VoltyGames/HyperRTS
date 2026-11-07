@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Vision.Sight;
 using System.Runtime.InteropServices;

@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;

@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using System.Runtime.InteropServices;
+using HyperRTS.Simulation.Common.Players;
 using Unity.Mathematics;
 using Unity.Transforms;
 

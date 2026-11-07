@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Cues.Voice;
@@ -5,7 +6,6 @@ using HyperRTS.Simulation.Vision.Detection;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Simulation.Vision.Sight;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;

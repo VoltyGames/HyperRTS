@@ -1,5 +1,8 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
+using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Squads.Cover;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Simulation.Vision.Sight;
 using System;

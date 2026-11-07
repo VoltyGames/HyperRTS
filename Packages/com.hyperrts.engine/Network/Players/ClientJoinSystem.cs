@@ -1,5 +1,5 @@
 using HyperRTS.Network.Common;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;

@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using System;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Selection;

@@ -1,8 +1,8 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Stats;
 using NUnit.Framework;
 using Unity.Mathematics;

@@ -1,6 +1,7 @@
 using HyperRTS.Network.Common;
 using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;

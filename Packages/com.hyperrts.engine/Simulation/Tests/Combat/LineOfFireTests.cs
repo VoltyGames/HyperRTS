@@ -1,7 +1,7 @@
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Projectiles;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Sight;

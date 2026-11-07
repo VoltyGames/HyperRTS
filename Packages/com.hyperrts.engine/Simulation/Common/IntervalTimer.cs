@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Common.Players;
+
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>A repeating timer kept in a component's <c>Elapsed</c> field.</summary>

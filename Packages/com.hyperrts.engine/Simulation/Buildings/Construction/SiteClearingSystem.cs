@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Spatial;

@@ -1,15 +1,16 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Movement;
+using HyperRTS.Simulation.Strikes;
 using HyperRTS.Simulation.Vision.Detection;
 using NUnit.Framework;
 using Unity.Entities;

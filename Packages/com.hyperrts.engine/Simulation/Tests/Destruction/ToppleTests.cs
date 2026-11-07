@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;
 using NUnit.Framework;
 using Unity.Collections;

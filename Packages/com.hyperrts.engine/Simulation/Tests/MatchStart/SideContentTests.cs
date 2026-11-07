@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Replays;

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 using Unity.Netcode;
 
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Capture
         /// <summary>Someone other than <paramref name="owner"/> has started taking the building.</summary>
         public readonly bool IsUnderWay(byte owner)
         {
-            if (Faction == Common.Faction.Neutral || Faction == owner)
+            if (Faction == Common.Players.Faction.Neutral || Faction == owner)
             {
                 return false;
             }

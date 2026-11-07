@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;

@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Movement.Crushing;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Vision;

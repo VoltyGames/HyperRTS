@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Air

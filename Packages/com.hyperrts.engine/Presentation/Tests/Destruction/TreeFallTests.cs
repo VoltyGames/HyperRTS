@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Destruction;
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;

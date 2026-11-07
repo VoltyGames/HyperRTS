@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
-using HyperRTS.Simulation.Squads;
+using HyperRTS.Simulation.Squads.Cover;
 using HyperRTS.Simulation.Vision.Sight;
 using NUnit.Framework;
 using Unity.Entities;

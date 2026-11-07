@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Transport;
 using Unity.Entities;
 

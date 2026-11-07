@@ -1,5 +1,6 @@
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Stats;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Auras;

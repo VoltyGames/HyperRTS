@@ -1,14 +1,13 @@
 using HyperRTS.Presentation.Animation.Figures;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
-using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;

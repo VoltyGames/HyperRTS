@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Movement;
+using HyperRTS.Simulation.Movement.Crushing;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;

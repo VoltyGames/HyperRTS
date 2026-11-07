@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Surfaces;
-using HyperRTS.Simulation.Squads;
+using HyperRTS.Simulation.Squads.Cover;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

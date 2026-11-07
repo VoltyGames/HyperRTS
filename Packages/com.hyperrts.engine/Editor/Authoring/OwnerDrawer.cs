@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;

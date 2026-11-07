@@ -1,8 +1,8 @@
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Areas;
 using NUnit.Framework;
 using Unity.Entities;

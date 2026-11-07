@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision.Fog;
 using NUnit.Framework;
 using Unity.Entities;

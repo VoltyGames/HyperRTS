@@ -1,8 +1,9 @@
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;

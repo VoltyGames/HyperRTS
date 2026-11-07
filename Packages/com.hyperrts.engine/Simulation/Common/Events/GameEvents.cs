@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -66,7 +67,7 @@ namespace HyperRTS.Simulation.Common.Events
         /// <summary>Raises the event for an owned entity; a neutral one raises none.</summary>
         public static void Raise(ref EventWriter<EntityDamaged> writer, Entity entity, byte owner)
         {
-            if (owner != Common.Faction.Neutral)
+            if (owner != Common.Players.Faction.Neutral)
             {
                 writer.Add(new EntityDamaged { Entity = entity, Faction = owner });
             }

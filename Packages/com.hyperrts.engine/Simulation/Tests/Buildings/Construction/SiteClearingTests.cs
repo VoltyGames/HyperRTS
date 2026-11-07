@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Buildings.Placement;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Grid;
 using NUnit.Framework;

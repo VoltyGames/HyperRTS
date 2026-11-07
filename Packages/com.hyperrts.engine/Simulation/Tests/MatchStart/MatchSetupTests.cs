@@ -1,9 +1,11 @@
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
+using HyperRTS.Simulation.Vision.Fog;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Airdrops;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Strikes;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;

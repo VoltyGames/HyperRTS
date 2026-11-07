@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Combat.Death;
+using HyperRTS.Simulation.Death;
 using Unity.Mathematics;
 using UnityEngine;
 

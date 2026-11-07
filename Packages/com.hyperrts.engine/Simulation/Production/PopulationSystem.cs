@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Resources.Gathering;
 using Unity.Burst;
 using Unity.Collections;

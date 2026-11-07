@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Presentation.Common;

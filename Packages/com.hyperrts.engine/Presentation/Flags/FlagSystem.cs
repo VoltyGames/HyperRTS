@@ -3,6 +3,7 @@ using HyperRTS.Presentation.Rendering.Materials;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
 using Unity.Collections;

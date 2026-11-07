@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;

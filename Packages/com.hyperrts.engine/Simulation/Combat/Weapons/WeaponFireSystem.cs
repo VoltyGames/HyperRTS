@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Vision.Detection;

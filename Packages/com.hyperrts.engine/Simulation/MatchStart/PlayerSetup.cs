@@ -1,12 +1,11 @@
-using HyperRTS.Simulation.Airdrops;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
+using HyperRTS.Simulation.Strikes;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

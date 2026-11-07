@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Surfaces;

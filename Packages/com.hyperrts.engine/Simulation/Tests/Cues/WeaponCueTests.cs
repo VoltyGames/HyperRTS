@@ -1,9 +1,9 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Cues.Voice;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;

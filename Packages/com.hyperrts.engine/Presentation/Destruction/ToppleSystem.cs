@@ -1,8 +1,8 @@
 using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Rendering.Parts;
-using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Death;
+using HyperRTS.Simulation.Movement.Crushing;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
 using Unity.Collections;

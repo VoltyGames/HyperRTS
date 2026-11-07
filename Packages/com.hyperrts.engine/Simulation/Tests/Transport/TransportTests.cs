@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Events;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Navigation.Agents;

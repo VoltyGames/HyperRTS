@@ -7,7 +7,7 @@ using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Death;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;

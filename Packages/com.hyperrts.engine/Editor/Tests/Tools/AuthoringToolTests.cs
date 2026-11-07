@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Stats;
 using System;
 using System.Linq;

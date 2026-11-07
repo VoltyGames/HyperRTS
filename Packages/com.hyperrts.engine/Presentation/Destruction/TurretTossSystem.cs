@@ -2,7 +2,7 @@ using HyperRTS.Presentation.Animation;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Death;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

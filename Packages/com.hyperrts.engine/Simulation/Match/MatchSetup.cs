@@ -1,4 +1,5 @@
-﻿using Unity.Collections;
+﻿using HyperRTS.Simulation.Vision.Fog;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Match

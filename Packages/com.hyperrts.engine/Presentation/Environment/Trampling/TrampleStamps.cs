@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Cues.Effects;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Movement;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment.Trampling

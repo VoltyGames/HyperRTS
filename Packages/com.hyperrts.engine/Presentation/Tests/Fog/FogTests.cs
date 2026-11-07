@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Fog;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Fog;
 using NUnit.Framework;

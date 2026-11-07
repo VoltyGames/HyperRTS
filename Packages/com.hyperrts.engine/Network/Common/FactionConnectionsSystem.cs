@@ -1,5 +1,6 @@
 using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

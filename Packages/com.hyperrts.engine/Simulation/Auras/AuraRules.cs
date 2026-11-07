@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Collections;
 using Unity.Entities;

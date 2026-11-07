@@ -1,6 +1,6 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Common.Players;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Overlays

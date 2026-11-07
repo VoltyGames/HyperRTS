@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Orders;

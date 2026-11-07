@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Common;

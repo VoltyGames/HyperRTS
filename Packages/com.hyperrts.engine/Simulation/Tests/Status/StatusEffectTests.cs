@@ -1,8 +1,9 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Status;

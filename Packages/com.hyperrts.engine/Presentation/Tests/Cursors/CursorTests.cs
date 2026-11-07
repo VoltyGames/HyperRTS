@@ -3,6 +3,7 @@ using HyperRTS.Presentation.Cursors;
 using HyperRTS.Simulation.Capture;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Tests;

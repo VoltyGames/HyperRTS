@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering.Materials;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Common.Players;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

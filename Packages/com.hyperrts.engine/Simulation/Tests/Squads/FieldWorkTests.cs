@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
+using HyperRTS.Simulation.Squads.Cover;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

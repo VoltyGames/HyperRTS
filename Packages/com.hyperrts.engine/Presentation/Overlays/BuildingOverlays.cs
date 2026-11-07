@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision.Fog;
 using System;
 using HyperRTS.Presentation.Common;

@@ -22,7 +22,7 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 | --- | --- |
 | Base | Common, Stats |
 | Foundation | Navigation, Vision, Selection, Orders, Cues |
-| Gameplay | Combat, Destruction, Transport, Air, Movement, Resources, Production, Upgrades, Buildings, Power, Abilities, Auras, Veterancy, Capture, Match, Status, Airdrops, Squads |
+| Gameplay | Combat, Destruction, Transport, Air, Movement, Resources, Production, Upgrades, Buildings, Power, Abilities, Auras, Veterancy, Capture, Match, Status, Airdrops, Squads, Death, Strikes |
 | Orchestration | AI, GameEntities, MatchStart, Commands, Replays |
 
 ## Pages
@@ -31,8 +31,8 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 | --- | --- |
 | [Core](modules/core.md) | Common, GameEntities, MatchStart, Match, Orders, Commands, Selection |
 | [Movement](modules/movement.md) | Navigation, Movement, Air, Transport |
-| [Combat](modules/combat.md) | Combat, Squads, Destruction, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
+| [Combat](modules/combat.md) | Combat, Death, Squads, Destruction, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
 | [Economy](modules/economy.md) | Resources, Buildings, Power, Production, Capture, Airdrops |
-| [Support](modules/support.md) | AI, Cues, Replays, strategic assets (Airdrops) |
+| [Support](modules/support.md) | AI, Cues, Replays, Strikes |
 | [Client](modules/client.md) | Interaction, Input, Presentation |
 | [Map tools](modules/map-tools.md) | The map builder, Map Editor and map library |

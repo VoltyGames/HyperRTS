@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Common;
 using System;
+using HyperRTS.Simulation.Common.Players;
 
 namespace HyperRTS.Network.Players
 {

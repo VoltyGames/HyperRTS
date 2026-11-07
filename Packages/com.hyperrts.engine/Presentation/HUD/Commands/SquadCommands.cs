@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Squads;

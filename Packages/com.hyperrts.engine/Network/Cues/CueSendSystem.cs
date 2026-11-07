@@ -1,5 +1,6 @@
 using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;

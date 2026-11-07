@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Navigation.Areas;
-using HyperRTS.Simulation.Squads;
+using HyperRTS.Simulation.Squads.Cover;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Death;
 
 namespace HyperRTS.Editor.Validation.Rules
 {

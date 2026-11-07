@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using Unity.Mathematics;

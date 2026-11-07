@@ -1,7 +1,7 @@
-using HyperRTS.Simulation.Common;
 using System;
 using System.IO;
 using System.IO.Compression;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;

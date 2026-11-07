@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Orders;
 using Unity.Collections;

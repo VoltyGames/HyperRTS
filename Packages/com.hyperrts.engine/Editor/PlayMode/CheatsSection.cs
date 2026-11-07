@@ -4,6 +4,7 @@ using HyperRTS.Network.Session;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using Unity.Collections;

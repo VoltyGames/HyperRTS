@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Common.Authoring

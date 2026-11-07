@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Airdrops;
+using HyperRTS.Simulation.Strikes;
 using HyperRTS.Simulation.Vision.Detection;
 
 namespace HyperRTS.Editor.Validation.Rules

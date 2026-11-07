@@ -6,6 +6,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Selection;

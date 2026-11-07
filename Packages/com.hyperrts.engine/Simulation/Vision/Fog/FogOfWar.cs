@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision.Detection;
 using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;

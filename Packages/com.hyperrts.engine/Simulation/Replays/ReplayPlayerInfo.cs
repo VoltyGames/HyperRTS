@@ -1,4 +1,4 @@
-﻿using HyperRTS.Simulation.Common;
+﻿using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using Unity.Mathematics;
 

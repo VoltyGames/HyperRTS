@@ -2,6 +2,7 @@ using System;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Rendering.Materials;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Collections;

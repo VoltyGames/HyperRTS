@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using HyperRTS.Editor.Common;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using Unity.Scenes;

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Production
 
             foreach (var producer in queues.ToEntityArray(Allocator.Temp))
             {
-                if (entityManager.GetComponentData<Common.Faction>(producer).Value != faction)
+                if (entityManager.GetComponentData<Common.Players.Faction>(producer).Value != faction)
                 {
                     continue;
                 }

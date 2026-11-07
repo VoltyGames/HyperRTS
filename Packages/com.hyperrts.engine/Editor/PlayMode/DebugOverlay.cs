@@ -4,7 +4,7 @@ using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.PlayMode.DebugDraw;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using UnityEditor;
 using UnityEditor.Overlays;

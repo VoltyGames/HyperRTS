@@ -1,4 +1,5 @@
 ﻿using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.MatchStart;
 using Unity.Collections;
 using Unity.Entities;

@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Collections;

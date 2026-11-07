@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;

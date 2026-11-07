@@ -1,6 +1,7 @@
-using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Entities;
