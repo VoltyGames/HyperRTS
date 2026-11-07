@@ -77,7 +77,7 @@ namespace HyperRTS.Input.Cameras
         public void FocusOn(Vector3 worldPoint)
         {
             var focus = ClampToMap(worldPoint);
-            focus.y = MatchTerrain().Height(new float2(focus.x, focus.z));
+            focus.y = GroundAt(focus);
             _groundVelocity = 0f;
             PlaceAt(focus, _height);
         }
@@ -219,7 +219,7 @@ namespace HyperRTS.Input.Cameras
             var position = forward.y > -1e-5f
                 ? new Vector3(focus.x, focus.y + height, focus.z)
                 : focus - forward * (height / -forward.y);
-            var terrainY = MatchTerrain().Height(new float2(position.x, position.z));
+            var terrainY = GroundAt(position);
             position.y = ClearedHeight(position.y, terrainY, terrainClearance);
             transform.position = position;
             ShareTreeFade();

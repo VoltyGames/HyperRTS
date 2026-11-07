@@ -17,7 +17,7 @@ half ViewFadeAt(float3 positionWS)
 {
     float3 camera = _HyperRTSFadeCamera.xyz;
     float3 toFocus = _HyperRTSFadeFocus.xyz - camera;
-    float span = max(sqrt(dot(toFocus, toFocus)), 1e-2);
+    float span = max(length(toFocus), 1e-2);
     float along = clamp(dot(positionWS - camera, toFocus) / (span * span), 0.0, 1.0 + _HyperRTSFadeReach / span);
     float lineDistance = distance(positionWS, camera + toFocus * along);
     half aroundCamera = 1.0 - smoothstep(_HyperRTSFadeCamera.w * 0.5, _HyperRTSFadeCamera.w, distance(positionWS, camera));

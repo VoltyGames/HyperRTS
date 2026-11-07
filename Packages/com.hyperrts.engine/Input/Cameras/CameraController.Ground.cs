@@ -56,11 +56,13 @@ namespace HyperRTS.Input.Cameras
             return terrain;
         }
 
+        /// <summary>The terrain height under <paramref name="point"/>.</summary>
+        private float GroundAt(Vector3 point) => MatchTerrain().Height(new float2(point.x, point.z));
+
         /// <summary>The ground height under <paramref name="focus"/>, eased from the last one.</summary>
         private float SmoothedGround(Vector3 focus)
         {
-            var target = MatchTerrain().Height(new float2(focus.x, focus.z));
-            return Mathf.SmoothDamp(_focus.y, target, ref _groundVelocity, groundSmoothTime, float.PositiveInfinity,
+            return Mathf.SmoothDamp(_focus.y, GroundAt(focus), ref _groundVelocity, groundSmoothTime, float.PositiveInfinity,
                 Time.unscaledDeltaTime);
         }
     }
