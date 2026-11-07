@@ -6,11 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>
-    /// The fixed definition of a cooldown ability on a unit, building or player entity (support power). Built-in
-    /// effects are optional: a prefab spawned at the target, damage (negative heals) around it and a status effect on
-    /// an entity target. Every use is published as an <see cref="AbilityActivation"/> for game systems. It never
-    /// changes and doesn't replicate: clients bake it from the same prefab, and the running cooldown is the
-    /// replicated <see cref="AbilityCooldown"/> with the same id.
+    /// The fixed definition of a cooldown ability on a unit, building or player entity, with optional built-in effects.
+    /// Every use is published as an <see cref="AbilityActivation"/>; the running cooldown is the replicated <see cref="AbilityCooldown"/> with the same id.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct Ability : IBufferElementData

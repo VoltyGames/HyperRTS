@@ -2,8 +2,8 @@ namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>
     /// One fog cell of <see cref="SightBlockers"/>: its ground and what blocks sight on it, packed together because a
-    /// sight line reads them all at every step. Heights are in <see cref="SightBlockers.Step"/>s above the ground,
-    /// densities in <see cref="SightBlockers.DensityStep"/>s.
+    /// sight line reads them all at every step. Units are <see cref="SightBlockers.Step"/> and
+    /// <see cref="SightBlockers.DensityStep"/>.
     /// </summary>
     public struct SightCell
     {

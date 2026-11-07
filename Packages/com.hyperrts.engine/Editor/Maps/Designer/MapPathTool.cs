@@ -6,9 +6,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// The Map Editor's Line and Area tools: each click adds a snapped vertex, with a rubber band to the cursor; Enter
-    /// or a double-click finishes the feature (a line needs two points, an area three) and selects it, Escape drops
-    /// it. The feature copies its list's last one like the Point tool does. One undo step per finished feature.
+    /// The Map Editor's Line and Area tools: click adds a vertex, Enter or double-click finishes the feature, Escape
+    /// drops it. One undo step per feature.
     /// </summary>
     public sealed class MapPathTool : IMapTool
     {

@@ -7,9 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// A plot's fences: the front fence along the street with one gap holding the gate (in line with the house),
-    /// and side fences along the yard and garden. A side that abuts a plot already fenced is left to that plot, so a
-    /// shared border gets one fence. Fences are lines, not clearance-tested: they stand on the plot's own edge.
+    /// A plot's fences: front fence with a gate gap, and side fences. A side next to an already fenced plot is left
+    /// to it. Fences are not clearance-tested.
     /// </summary>
     internal sealed class MapPlotFences
     {

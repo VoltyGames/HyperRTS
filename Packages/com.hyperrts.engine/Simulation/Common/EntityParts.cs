@@ -5,9 +5,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Common
 {
     /// <summary>
-    /// The entities one object is made of, to destroy it whole. Instantiated prefabs list theirs in
-    /// <see cref="LinkedEntityGroup"/>, which destroying the root takes along; SubScene objects have no group, so
-    /// their transform children (models, damage stages) are listed here too.
+    /// The entities one object is made of, to destroy it whole. SubScene objects have no
+    /// <see cref="LinkedEntityGroup"/>, so their transform children (models, damage stages) are listed here too.
     /// </summary>
     public static class EntityParts
     {

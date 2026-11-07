@@ -8,10 +8,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// The Map Editor's map view: the latest preview image under a metre grid, the bounds and sector edges, every
-    /// feature with its symmetry ghosts, and the selection's handles. Middle-drag or Space+drag pans, the wheel
-    /// zooms to the cursor, F fits the map. The left button and other keys go to the active tool
-    /// (<see cref="MapCanvasTools"/>).
+    /// The Map Editor's map view: preview image, grid, features, symmetry ghosts and handles. Middle-drag or
+    /// Space+drag pans, the wheel zooms, F fits; other input goes to the active tool (<see cref="MapCanvasTools"/>).
     /// </summary>
     [UxmlElement]
     public sealed partial class MapCanvas : VisualElement

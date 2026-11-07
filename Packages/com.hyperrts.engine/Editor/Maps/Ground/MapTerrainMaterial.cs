@@ -30,9 +30,9 @@ namespace HyperRTS.Editor.Maps.Ground
         };
 
         /// <summary>
-        /// <paramref name="groundTint"/> is linear over the whole terrain: RGB tint (0.5 neutral), A wetness.
-        /// <paramref name="rows"/> is linear too: RG the row direction remapped to 0..1, (0.5, 0.5) for none.
-        /// <paramref name="groundColor"/> is the ground from above (<see cref="MapGroundColor"/>), the albedo GI reads.
+        /// All three textures are linear: <paramref name="groundTint"/> is RGB tint (0.5 neutral) and A wetness,
+        /// <paramref name="rows"/> is RG row direction, <paramref name="groundColor"/> is the ground from above (<see
+        /// cref="MapGroundColor"/>).
         /// </summary>
         public static Material Write(string path, MapClimate climate, TerrainData data, Texture2D groundTint, Texture2D groundColor,
             Texture2D rows)

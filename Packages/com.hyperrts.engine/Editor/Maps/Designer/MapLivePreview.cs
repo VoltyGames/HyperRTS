@@ -7,9 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// Previews the Map Editor's document; with <see cref="Auto"/> on, also when it opens and after every change (an
-    /// edit, undo or reload), at most once a second. The checks, measuring and drawing run on the main thread, the
-    /// planning on a worker (<see cref="MapPreview.RunAsync"/>).
+    /// Previews the Map Editor's document, with <see cref="Auto"/> on also after every change, at most once a second.
+    /// Planning runs on a worker (<see cref="MapPreview.RunAsync"/>), the rest on the main thread.
     /// </summary>
     public sealed class MapLivePreview
     {

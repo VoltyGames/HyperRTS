@@ -13,9 +13,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
-    /// The map library: one <c>&lt;Key&gt;.&lt;type&gt;.asset</c> per item anywhere in the project. Each item loads on
-    /// first use as a copy owned by this library, so a build may fill in its derived fields; disposing the library
-    /// destroys the copies.
+    /// The map library: one <c>&lt;Key&gt;.&lt;type&gt;.asset</c> per item in the project. Each item loads as a copy
+    /// owned by the library, which disposing destroys.
     /// </summary>
     public sealed class MapLibrary : IDisposable
     {

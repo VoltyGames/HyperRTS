@@ -6,9 +6,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>
-    /// One weather's sky: skybox, ambient and reflection light, ground wetness, and the dust and mud colours vehicles
-    /// pick up. Sits on the root of an atmosphere prefab with its sun, wind and post volume, whose profile carries URP's
-    /// Fog override. Unity's built-in fog stays off, since URP's fog replaces it.
+    /// One weather's sky, ambient light, ground wetness and vehicle dust and mud colours, on the root of an atmosphere prefab.
+    /// Unity's built-in fog stays off, since URP's fog replaces it.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu(HyperRTSMenu.Environment + "Atmosphere")]

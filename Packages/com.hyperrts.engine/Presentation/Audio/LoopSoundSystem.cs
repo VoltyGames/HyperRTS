@@ -13,9 +13,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
-    /// Plays each shown entity's <see cref="EntityLoopSound"/>s from replicated state, attached to the entity in 3D:
-    /// engines by speed, rotors by the rig's <see cref="RotorSpin"/>, turrets while they turn, work and ambient hums. Fogged, dead and distant
-    /// entities fall silent, and <see cref="LoopMixer"/> keeps the nearest within each cue's instance limit.
+    /// Plays each shown entity's <see cref="EntityLoopSound"/>s in 3D from replicated state. Fogged, dead and distant
+    /// entities fall silent, and <see cref="LoopMixer"/> enforces each cue's instance limit.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

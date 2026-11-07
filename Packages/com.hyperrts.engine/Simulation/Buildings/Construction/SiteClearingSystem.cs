@@ -12,11 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Buildings.Construction
 {
     /// <summary>
-    /// A building under construction marks <see cref="SceneryCleared"/> the open <see cref="Destructible"/> scenery its
-    /// footprint overlaps (trees, fences, pipes crossing the edge) and the scenery remains on it, so they go with no
-    /// remains, effects or sounds. A tree goes when its canopy reaches over the site. Scenery with its own obstacle
-    /// blocks placement instead. Scenery and sites stand still, so only a new site or new scenery is checked again;
-    /// remains appear any time and are checked every frame.
+    /// Marks the open <see cref="Destructible"/> scenery under a building site as <see cref="SceneryCleared"/>, so it goes with no remains, effects or sounds.
+    /// Only a new site or new scenery is checked again, since both stand still.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

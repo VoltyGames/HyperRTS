@@ -11,9 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// What grows or lies on each surface by itself (lone trees, bank willows, rim rocks, bales in rows, scrub);
-    /// lands that plant their own trees are skipped. Spots are chosen in the authored sector and copied. Props falling
-    /// in the backdrop become scenery when they have a scenery model.
+    /// What grows or lies on each surface by itself (lone trees, willows, rocks, bales, scrub), skipping lands that
+    /// plant their own trees. Backdrop props become scenery when they have a scenery model.
     /// </summary>
     public sealed class MapSurfacePlanter : MapLandPass
     {

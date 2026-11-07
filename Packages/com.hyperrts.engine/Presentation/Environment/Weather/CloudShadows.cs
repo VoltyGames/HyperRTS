@@ -9,9 +9,8 @@ using UnityEngine.Rendering.Universal;
 namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>
-    /// Drifts cloud and smoke shadows across the battlefield: each frame it draws the tileable cloud picture, sliding
-    /// with the wind, and the nearest <see cref="SmokeShadows"/> columns into a cookie around the camera that the sun
-    /// projects. Goes on the directional light; the pipeline asset must support light cookies.
+    /// Drifts cloud and smoke shadows across the battlefield as a cookie on the sun. Goes on the directional light; the
+    /// pipeline asset must support light cookies.
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(Light), typeof(UniversalAdditionalLightData))]

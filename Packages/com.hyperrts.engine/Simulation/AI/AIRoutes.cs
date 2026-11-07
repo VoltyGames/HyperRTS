@@ -25,8 +25,7 @@ namespace HyperRTS.Simulation.AI
 
         /// <summary>
         /// Index (below <paramref name="count"/>, which must be above 0) of the lane for a bot's attack: a seeded
-        /// choice from the bot's owner, the owner it attacks and how many attacks it has sent, so bots differ from
-        /// each other and a bot varies its route from one attack to the next.
+        /// choice from the bot's owner, its target owner and attacks sent, so bots differ and one varies its route.
         /// </summary>
         public static int PickLane(uint seed, byte owner, byte enemy, int attack, int count)
         {

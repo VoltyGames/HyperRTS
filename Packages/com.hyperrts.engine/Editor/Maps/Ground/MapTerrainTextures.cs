@@ -9,9 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// The texture arrays HyperRTS/Terrain samples for a climate's layers, kept in a Generated folder next to the
-    /// climate's library asset and named after it: albedo with the mask's height in alpha, normal maps, and occlusion (R) with smoothness (G). Each is
-    /// rebuilt only when its source textures or the layers change.
+    /// The texture arrays HyperRTS/Terrain samples for a climate's layers, kept in a Generated folder beside the
+    /// climate's asset and rebuilt only when their sources change.
     /// </summary>
     public static class MapTerrainTextures
     {

@@ -10,11 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// The terrain's ground tint at a map point. RGB 0.5 is neutral; A is wetness. Fields and woods each get their own
-    /// tint and a slow gradient across them (strengths from the climate's <see cref="MapClimateGroundTint"/>), blended over
-    /// the same border band as the ground textures; soil colour at 20 to 150 m vary light, warmth and moisture within them;
-    /// 10 to 90 m noise breaks up everything; hollows, river banks (a wet band of the climate's `bankWidth` over a fainter `dampWidth`), ravine floors and drainage lines read darker and
-    /// damper.
+    /// The terrain's ground tint at a map point: RGB 0.5 is neutral and A is wetness. Fields, woods, soil, noise,
+    /// hollows, banks and drainage lines all shift it (strengths from <see cref="MapClimateGroundTint"/>).
     /// </summary>
     public sealed class MapGroundTint
     {

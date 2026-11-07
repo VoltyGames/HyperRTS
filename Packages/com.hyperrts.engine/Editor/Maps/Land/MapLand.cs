@@ -6,9 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Land
 {
     /// <summary>
-    /// Land use of the whole terrain on a 1 m grid: each cell holds the region that claimed it first. Planners claim
-    /// in priority order (water, roads, bases, ravines, settlements, woods, belts, farmland, meadow), so a later
-    /// claim never overwrites an earlier one.
+    /// Land use of the whole terrain on a 1 m grid. Planners claim cells in priority order, so a later claim never
+    /// overwrites an earlier one.
     /// </summary>
     public sealed class MapLand
     {

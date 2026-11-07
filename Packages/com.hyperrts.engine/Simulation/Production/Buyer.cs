@@ -18,9 +18,7 @@ namespace HyperRTS.Simulation.Production
         public BuildCounts Counts;
 
         /// <summary>
-        /// Snapshots <paramref name="owner"/> as a buyer for this frame, collecting what it has queued at every
-        /// producer in <paramref name="queues"/> (<see cref="ResearchRules.QueueQuery"/>) and its build-limited
-        /// entities in <paramref name="limited"/> (<see cref="BuildCounts.Query"/>).
+        /// Snapshots <paramref name="owner"/> as a buyer for this frame, with its queued and build-limited entities.
         /// </summary>
         public static Buyer Snapshot(EntityManager entityManager, EntityQuery queues, EntityQuery limited,
             byte owner, CompletedBuildings buildings, DynamicBuffer<CompletedResearch> research)

@@ -5,9 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Lights
 {
     /// <summary>
-    /// The smoke columns nearest the camera, from streamed loops whose rigs carry a <see cref="SmokeShadow"/>, written
-    /// each frame as shader globals that <see cref="Environment.CloudShadows"/> draws into the sun's cookie. Medium
-    /// detail and up.
+    /// The smoke columns nearest the camera, written each frame as shader globals for <see cref="Environment.CloudShadows"/>.
+    /// Medium detail and up.
     /// </summary>
     public sealed class SmokeShadows
     {

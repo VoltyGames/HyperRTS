@@ -12,9 +12,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads.Cover
 {
     /// <summary>
-    /// Puts the members of a halted squad in cover: each without a spot takes the best free <see cref="CoverSpot"/>
-    /// near the squad and counts as covered once it stands there. A member without a spot on a concealing cell is in
-    /// light cover.
+    /// Puts the members of a halted squad in cover: each takes the best free <see cref="CoverSpot"/> near the squad, or light cover on a concealing cell.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]

@@ -46,8 +46,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
 
         /// <summary>
         /// Not a wall: pathing ignores the box but placement keeps it clear. With a <c>Destructible</c> crush rating it
-        /// closes the box to units that cannot crush that much, as scenery does (tank traps); without, it closes
-        /// nothing (a trench).
+        /// closes the box to units that cannot crush that much (tank traps); without, it closes nothing (a trench).
         /// </summary>
         public bool Open;
 

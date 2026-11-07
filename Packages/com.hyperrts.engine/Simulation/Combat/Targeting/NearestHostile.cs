@@ -9,9 +9,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
-    /// Finds the closest hostile a weapon can hit, worth its damage (<see cref="Weapon.MinEffect"/>), beyond its
-    /// <see cref="Weapon.MinRange"/>, inside its <see cref="Weapon.FiringArc"/>, spotted by the shooter's team and, for direct fire, with a clear line to it. A
-    /// shooter firing <c>inPlace</c> takes only targets within its <see cref="TargetLookup.Reach"/>.
+    /// Finds the closest hostile a weapon can hit: in range and firing arc, spotted by the shooter's team and, for direct fire, in clear line.
     /// </summary>
     public struct NearestHostile : ISpatialVisitor
     {

@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
-    /// Warnings about the authored roads in the built map: dead ends (an end that meets no road, the map edge, the
-    /// symmetry seam, a base or a settlement) and bends tighter than half their class's curve radius. A feature found in
-    /// every copy of the sector is reported once, at its authored-sector place.
+    /// Warnings about dead-end roads and bends tighter than half their class's curve radius. A feature found in every
+    /// copy of the sector is reported once.
     /// </summary>
     public sealed class MapRoadChecks
     {

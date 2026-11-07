@@ -6,9 +6,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Horizon
 {
     /// <summary>
-    /// The horizon's ground mesh: loops of vertices round the terrain's rectangle, rounded at the corners, from just
-    /// under the terrain's edge out to the ring's width. Loops spread further apart with distance, where the camera
-    /// sees the ground ever more edge-on, so a few thousand metres take a few tens of thousands of vertices.
+    /// The horizon's ground mesh: a ring round the terrain whose loops spread further apart with distance.
     /// </summary>
     public static class HorizonRing
     {

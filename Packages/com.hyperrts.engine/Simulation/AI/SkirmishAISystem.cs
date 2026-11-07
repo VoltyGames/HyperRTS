@@ -21,9 +21,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.AI
 {
     /// <summary>
-    /// Skirmish AI for <see cref="AIPlayer"/>s: builds, produces, harvests, uses abilities, manages squads and sends
-    /// armies along the map's attack lanes (see <see cref="AIMapHints"/>). It only issues <see cref="PlayerCommand"/>s,
-    /// like a human player.
+    /// Skirmish AI for <see cref="AIPlayer"/>s: builds, produces, harvests, uses abilities, manages squads and attacks
+    /// along the map's lanes (see <see cref="AIMapHints"/>). It only issues <see cref="PlayerCommand"/>s, like a human
+    /// player.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(AISystemGroup))]

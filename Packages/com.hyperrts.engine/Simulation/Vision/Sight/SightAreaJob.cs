@@ -14,10 +14,10 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>
-    /// Draws each viewer's <see cref="SightArea"/> again when its place, eye, reach or team changed, a grid was built
-    /// anew or blockers changed round it: sight occluded by terrain and <see cref="SightBlockers"/>, reaching further
-    /// from <see cref="HighGround"/>, and the close layer round ground units. A passenger inside a container with a
-    /// <see cref="PassengerEye"/> sees from above its roof. Each viewer writes only its own area, so it runs in parallel.
+    /// Redraws each viewer's <see cref="SightArea"/> when its place, eye, reach or team changed, or a grid or blockers
+    /// did: terrain and <see cref="SightBlockers"/> occlude, <see cref="HighGround"/> reaches further, and ground units
+    /// get a close layer. A passenger with a <see cref="PassengerEye"/> sees from above its container's roof. Each
+    /// viewer writes only its own area, so it runs in parallel.
     /// </summary>
     [BurstCompile]
     internal partial struct SightAreaJob : IJobEntity

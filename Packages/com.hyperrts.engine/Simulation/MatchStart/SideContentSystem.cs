@@ -10,9 +10,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.MatchStart
 {
     /// <summary>
-    /// Once the <see cref="MatchSetup"/> is applied (or at once when the scene plays as baked), gives every player its
-    /// side's AI build order and spawns its side's start kit at its <see cref="PlayerSpawn"/>, on the ground. Closed
-    /// slots have no player by then, so they get nothing. Not Burst: it runs once and a missing side throws.
+    /// Once the match is set up, gives every player its side's AI build order and spawns its start kit at its <see cref="PlayerSpawn"/>.
+    /// Not Burst: it runs once and a missing side throws.
     /// </summary>
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     [UpdateAfter(typeof(MatchSetupSystem))]

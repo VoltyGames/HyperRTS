@@ -96,9 +96,8 @@ namespace HyperRTS.Editor.Maps.Designer
         }
 
         /// <summary>
-        /// Appends a feature at <paramref name="points"/> and returns its index. It copies the list's last feature
-        /// (kind, width, shared...) or, in an empty list, takes the type's defaults. Lists on the feature other than
-        /// its points (a river's crossings) start empty: they belong to the old feature's geometry.
+        /// Appends a feature at <paramref name="points"/> and returns its index. It copies the list's last feature,
+        /// or takes the type's defaults in an empty list.
         /// </summary>
         public int Add(MapSpec spec, IReadOnlyList<Vector2> points)
         {

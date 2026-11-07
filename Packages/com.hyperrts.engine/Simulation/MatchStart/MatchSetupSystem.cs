@@ -14,9 +14,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.MatchStart
 {
     /// <summary>
-    /// Applies the <see cref="MatchSetup"/> (from <see cref="MatchSetupRequest"/>) to the baked players once, the same
-    /// way in every world, so server and clients build identical player ghosts. Authoritative worlds also remove
-    /// everything closed slots own. Not Burst: it runs once and reads the managed request.
+    /// Applies the <see cref="MatchSetup"/> to the baked players once, the same way in every world, and removes what closed slots own.
+    /// Not Burst: it runs once and reads the managed request.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.All)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]

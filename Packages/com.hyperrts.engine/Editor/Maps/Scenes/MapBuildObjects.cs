@@ -9,9 +9,9 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
-    /// The SubScene roots a build owns: those named <c>[Generated]</c>, and the prefab instances it recorded in
-    /// <c>&lt;Map&gt;_BuildObjects.txt</c>. An instance is recorded by its PrefabInstance, whose ID survives the
-    /// prefab's internal IDs changing, which drops the instance's name override. Everything else stays.
+    /// The SubScene roots a build owns: those named <c>[Generated]</c> and the prefab instances recorded in
+    /// <c>&lt;Map&gt;_BuildObjects.txt</c>, found by PrefabInstance ID because it survives prefab changes. Everything
+    /// else stays.
     /// </summary>
     public sealed class MapBuildObjects
     {

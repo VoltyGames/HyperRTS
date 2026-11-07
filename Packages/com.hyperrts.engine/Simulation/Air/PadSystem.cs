@@ -11,9 +11,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// Keeps landing pads and their aircraft in step and runs Return to Base orders: the aircraft flies to its pad
-    /// (claiming a free one at the ordered airfield first) and docks. Pads free up when their aircraft dies or moves
-    /// to another airfield; aircraft whose airfield is destroyed or captured lose their home and stay airborne.
+    /// Keeps landing pads and their aircraft in step and runs Return to Base orders: the aircraft flies to its pad and docks.
+    /// Aircraft whose airfield is destroyed or captured lose their home.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

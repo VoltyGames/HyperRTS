@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.Navigation.Fields
 {
     /// <summary>
     /// Signed metres from each cell centre to the nearest wall, positive in the open, per
-    /// <see cref="MovementClass.FieldKey"/>. Each sector rebuilds over a window with a halo, so its values never depend
-    /// on which others were rebuilt.
+    /// <see cref="MovementClass.FieldKey"/>. Sectors rebuild over a window with a halo, so values never depend on which
+    /// others were rebuilt.
     /// </summary>
     public struct NavField
     {

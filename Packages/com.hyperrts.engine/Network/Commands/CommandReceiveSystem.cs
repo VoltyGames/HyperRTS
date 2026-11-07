@@ -13,10 +13,8 @@ using Unity.Netcode;
 namespace HyperRTS.Network.Commands
 {
     /// <summary>
-    /// Turns received <see cref="CommandRpc"/>s into <see cref="PlayerCommand"/>s on the sender's player, in arrival
-    /// order. Each <see cref="SelectionRpc"/> updates the sender's <see cref="PlayerSelection"/>, keeping only units
-    /// it owns, and a group command lists that selection in <see cref="PlayerCommandSubject"/>. Observers' commands,
-    /// and every command before <see cref="MatchState.Started"/>, are dropped.
+    /// Turns received <see cref="CommandRpc"/>s into <see cref="PlayerCommand"/>s on the sender's player, in arrival order.
+    /// Observers' commands, and every command before <see cref="MatchState.Started"/>, are dropped.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]

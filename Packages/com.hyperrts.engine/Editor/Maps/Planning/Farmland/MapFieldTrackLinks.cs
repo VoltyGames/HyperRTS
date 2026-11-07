@@ -5,9 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
     /// <summary>
-    /// Ties field-end tracks into the road net: ends within the kit's <see cref="MapFarmlandKit.trackJoinDistance"/> join
-    /// onto the nearest road, and runs that still lead nowhere are dropped. The symmetry seam doesn't count, since its
-    /// mirror copy leads nowhere either.
+    /// Ties field-end tracks into the road net (within <see cref="MapFarmlandKit.trackJoinDistance"/>) and drops runs
+    /// that lead nowhere. The symmetry seam doesn't count.
     /// </summary>
     public sealed class MapFieldTrackLinks
     {

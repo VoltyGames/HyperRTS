@@ -14,10 +14,8 @@ using Unity.Transforms;
 namespace HyperRTS.Network.Replication
 {
     /// <summary>
-    /// Server-side fog of war: owned ghosts hidden from a client's team (by fog or undetected stealth) are marked
-    /// irrelevant to it, so a hacked client has nothing hidden to reveal. Ghosts without an owner (players, the match)
-    /// always replicate, and so do <see cref="Destructible"/> map buildings, which fog never hides whoever holds them
-    /// (irrelevant, they would vanish from the map). Observers see all.
+    /// Server-side fog of war: ghosts hidden from a client's team are marked irrelevant to it, so a hacked client has nothing
+    /// to reveal. Ownerless ghosts, <see cref="Destructible"/> buildings and observers see everything.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]

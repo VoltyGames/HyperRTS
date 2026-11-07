@@ -11,8 +11,8 @@ namespace HyperRTS.Simulation.Vision.Detection
 {
     /// <summary>
     /// Turns <see cref="Stealth"/> into <see cref="Stealthed"/>, or <see cref="Concealed"/> for stealth that needs
-    /// concealing cover: hidden while stealth is enabled, unless the entity fired within its reveal time, moves while
-    /// still-only, or stands outside cover it needs. Firing restarts the timer in <c>WeaponFireSystem</c>.
+    /// cover: hidden while enabled, unless the entity fired within its reveal time, moves while still-only, or stands
+    /// outside cover it needs. <c>WeaponFireSystem</c> restarts the timer on firing.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

@@ -9,9 +9,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Resources.Income
 {
     /// <summary>
-    /// Pays <see cref="ResourceIncome"/> to the owners of income entities: neutral ones restart their timer, offline
-    /// ones pause it. <see cref="OccupantIncome"/> scales a payment by passengers and <see cref="ResourceReserve"/>
-    /// caps it at what is left.
+    /// Pays <see cref="ResourceIncome"/> to the owners of income entities: neutral ones restart their timer, offline ones pause it.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]

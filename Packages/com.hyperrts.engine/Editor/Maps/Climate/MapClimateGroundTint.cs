@@ -4,9 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Climate
 {
     /// <summary>
-    /// How strongly the terrain's ground tint map varies a climate's ground (<see cref="Ground.MapGroundTint"/>): each field's and
-    /// wood's own tint, a slow gradient across it, soil colour, hollows and drainage lines. Light, warmth and green
-    /// shift the neutral 0.5 tint.
+    /// How strongly the ground tint map (<see cref="Ground.MapGroundTint"/>) varies a climate's ground.
     /// </summary>
     [Serializable]
     public sealed class MapClimateGroundTint

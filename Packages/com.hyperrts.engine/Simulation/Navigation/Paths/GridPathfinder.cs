@@ -17,8 +17,8 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         /// <summary>
         /// Snaps the start to open ground it can squeeze to (<see cref="NavAccess.TryFindStart"/>) and the goal to the
-        /// nearest cell in the start's region, and picks the route: straight when in sight, stay when no such cell is
-        /// near, else a search.
+        /// nearest cell in the start's region, then picks the route: straight when in sight, stay when no cell is near,
+        /// else a search.
         /// </summary>
         public static PathQuery Prepare(in NavAccess access, float3 start, float3 goal)
         {
@@ -61,8 +61,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         /// <summary>
         /// The fine A* inside the abstract path's sectors and a ring round them, smoothed into the points; returns the
-        /// cells expanded. The corridor's components connect start to goal by 4-connected steps A* allows, so it
-        /// always finds the path.
+        /// cells expanded. It always finds the path, as the corridor connects start to goal by 4-connected steps.
         /// </summary>
         public static int Route(in NavAccess access, in PathQuery query, NativeArray<int> sectors,
             NativeList<float3> points)

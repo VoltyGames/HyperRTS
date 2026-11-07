@@ -12,9 +12,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Strikes
 {
     /// <summary>
-    /// Runs strategic assets on their abilities: holds the charge while <see cref="MatchRules.StrategicAssets"/> is
-    /// off, starts it over for a new owner, publishes each player's <see cref="StrategicCharge"/> and launches a
-    /// <see cref="BombingFlight"/> for each firing. <c>AbilitySystem</c> already pauses the charge while offline.
+    /// Runs strategic assets on their abilities: tracks each player's <see cref="StrategicCharge"/> and launches a <see cref="BombingFlight"/> for each firing.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

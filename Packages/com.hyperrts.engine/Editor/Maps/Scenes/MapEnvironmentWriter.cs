@@ -118,9 +118,8 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         /// <summary>
-        /// The farmland round the map out to the spec's <c>horizonWidth</c>: the first farmland's kit (or the climate's
-        /// first) in fields of the kit's size at the farmland's angle, so the ring carries the map's own grid on, with
-        /// belts drawn by the strips of the kit's belt kit and the climate's other belt kits.
+        /// The farmland ring round the map out to the spec's <c>horizonWidth</c>, in the first farmland's kit (or the
+        /// climate's first) on the map's own grid, with belts from the kit's belt kits.
         /// </summary>
         private static void CreateHorizon(MapScene scene, MapGeneration generation, Terrain terrain)
         {

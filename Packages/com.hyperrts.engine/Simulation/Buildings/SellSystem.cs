@@ -12,9 +12,8 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>
-    /// Sells the commanded or selected owned buildings: refunds <see cref="MatchRules.SellRefund"/> of a finished
-    /// building's cost (all of an unfinished one's) plus its queued production, then removes it without a wreck.
-    /// Only <see cref="BuildingRules.IsSellable"/> buildings sell: not a neutral garrison its occupants hold.
+    /// Sells the commanded or selected owned buildings for a refund of their cost and queued production, without a wreck.
+    /// Only <see cref="BuildingRules.IsSellable"/> buildings sell.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

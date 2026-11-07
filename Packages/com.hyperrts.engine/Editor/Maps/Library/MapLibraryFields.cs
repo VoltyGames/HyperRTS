@@ -6,9 +6,8 @@ using HyperRTS.Editor.Common;
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
-    /// Walks the serialized strings of an item or a spec (nested classes and lists included) and hands each to a
-    /// visitor with its field and JSON path (<c>rivers[0].crossings[1].prop</c>), so callers can follow
-    /// <see cref="MapKeyAttribute"/> fields.
+    /// Walks the serialized strings of an item or a spec and hands each to a visitor with its field and JSON path, so
+    /// callers can follow <see cref="MapKeyAttribute"/> fields.
     /// </summary>
     public static class MapLibraryFields
     {

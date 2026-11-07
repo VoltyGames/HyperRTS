@@ -12,9 +12,8 @@ using UnityEngine.VFX;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// The one door into VFX Graph's internal editor model (UnityEditor.VFX), which has no public authoring API. All
-    /// reflection lives here, so an Editor upgrade that renames the model breaks this file alone. Models are passed
-    /// around as plain objects.
+    /// The one door into VFX Graph's internal editor model, which has no public authoring API. All reflection lives
+    /// here so an Editor upgrade breaks this file alone.
     /// </summary>
     public sealed class GraphModel
     {

@@ -8,10 +8,8 @@ using Unity.Netcode;
 namespace HyperRTS.Network.Joining
 {
     /// <summary>
-    /// Binds joining connections to human slots (observers when none is left or they asked to watch) and frees the
-    /// slot of a dropped connection, keeping it for its owner's token so only the owner can reconnect to it. A seat
-    /// sets the player ghost's <see cref="GhostOwner"/>; an observer gets <see cref="ObserverAccepted"/>. A host's
-    /// own <see cref="LocalConnection"/> joins here too.
+    /// Binds joining connections to human slots (observers when none is left) and frees a dropped connection's slot, keeping
+    /// it for its owner's token to reconnect.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]

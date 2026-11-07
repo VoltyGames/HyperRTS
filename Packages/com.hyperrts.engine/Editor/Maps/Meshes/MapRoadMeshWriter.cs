@@ -12,11 +12,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Editor.Maps.Meshes
 {
     /// <summary>
-    /// Road surfaces as ribbon meshes over the final terrain: every road in the shapes (authored roads and the tracks
-    /// planners laid, in every copy) with a class material, one mesh per road class. Meshes are saved as sub-assets of
-    /// the map's road asset. Where roads overlap, the higher class rank draws on top: each class's renderer takes its
-    /// rank as sorting order, which the render pipeline sorts before render queue, so the shared class materials stay
-    /// untouched.
+    /// Road surfaces as one ribbon mesh per road class, saved as sub-assets of the map's road asset. A higher class
+    /// rank draws on top through the renderer's sorting order, leaving shared materials untouched.
     /// </summary>
     public static class MapRoadMeshWriter
     {

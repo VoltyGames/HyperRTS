@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>
         /// How deep the footprints overlap where their straight paths pass closest between <paramref name="from"/> and
         /// <paramref name="to"/> seconds, so a fast pair can't slip through between samples. The mover takes only its
-        /// share of the change to <paramref name="candidate"/>, trusting the other with the rest.
+        /// share of the change to <paramref name="candidate"/>.
         /// </summary>
         public readonly float Overlap(float2 position, float2 axis, float2 velocity, float2 candidate, float from,
             float to)

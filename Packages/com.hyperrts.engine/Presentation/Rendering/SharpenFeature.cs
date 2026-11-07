@@ -6,9 +6,7 @@ using UnityEngine.Rendering.Universal;
 namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
-    /// Contrast-adaptive sharpening of the finished frame, after post-processing and any upscaler: temporal
-    /// anti-aliasing and DLSS at native resolution soften ground textures and leaves, and this restores their edges
-    /// without ringing on flat areas.
+    /// Contrast-adaptive sharpening of the finished frame, restoring the edges that temporal anti-aliasing and DLSS soften.
     /// </summary>
     public sealed class SharpenFeature : ScriptableRendererFeature
     {

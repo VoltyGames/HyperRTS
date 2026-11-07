@@ -16,10 +16,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Buildings.Construction
 {
     /// <summary>
-    /// Runs Build orders: builders walk to an allied site and add <c>Rate / BuildTime</c> progress per second while
-    /// in reach; a squad adds it for each living member and sends them to dig (<see cref="SquadWork"/>). Any site
-    /// at full progress (built, or raised by a cheat or game effect) then completes: it disables
-    /// <see cref="ConstructionProgress"/> and raises <see cref="BuildingCompleted"/>. Sites never progress on their own.
+    /// Runs Build orders: builders walk to an allied site and add progress while in reach, and a squad adds it for each living member.
+    /// A site at full progress completes and raises <see cref="BuildingCompleted"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]

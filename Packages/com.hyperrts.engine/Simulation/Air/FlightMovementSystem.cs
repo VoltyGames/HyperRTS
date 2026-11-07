@@ -15,9 +15,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// Flies aircraft straight at their <see cref="MoveDestination"/>, over everything, steering round other aircraft
-    /// and climbing to their <see cref="Flight"/> altitude (landing while <see cref="Docked"/>, where the crowd can't
-    /// shift them off the pad). Idle ones that can't hover circle. Ends moves as <see cref="MovementSystem"/> does.
+    /// Flies aircraft straight at their <see cref="MoveDestination"/> at their <see cref="Flight"/> altitude, steering round other aircraft.
+    /// Idle ones that can't hover circle.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup))]

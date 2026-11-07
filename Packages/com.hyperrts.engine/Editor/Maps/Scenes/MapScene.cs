@@ -11,9 +11,8 @@ using UnityEngine.SceneManagement;
 namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
-    /// A map's scene and SubScene open for a build, cleared of what the last build generated and with the match set
-    /// up. Generated content lives under the main scene's <c>[Generated]</c> root and in the SubScene roots
-    /// <see cref="MapBuildObjects"/> owns. <c>[Dressing]</c> is never touched.
+    /// A map's scene and SubScene open for a build, cleared of the last build's generated content (under
+    /// <c>[Generated]</c> and <see cref="MapBuildObjects"/>). <c>[Dressing]</c> is never touched.
     /// </summary>
     public sealed class MapScene
     {

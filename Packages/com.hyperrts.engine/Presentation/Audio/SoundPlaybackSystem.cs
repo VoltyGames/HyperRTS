@@ -10,9 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
-    /// Plays the sounds of the frame's <see cref="CueEvent"/>s from a pool of audio sources: random clip, volume and pitch, 3D at
-    /// the event position. Skips what the local player can't hear (fog, other players' voices) and 3D sounds out of
-    /// the cue's range of the <see cref="AudioListener"/>.
+    /// Plays the frame's <see cref="CueEvent"/>s from a pool of audio sources, skipping what the local player can't hear
+    /// or is out of range of the <see cref="AudioListener"/>.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

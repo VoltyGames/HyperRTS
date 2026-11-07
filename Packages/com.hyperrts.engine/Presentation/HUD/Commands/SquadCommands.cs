@@ -12,9 +12,7 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
-    /// Retreat and Reinforce for selected squads. Retreat needs a friendly retreat point; Reinforce needs a dead
-    /// soldier, a friendly reinforce point in range and the price of one soldier. A button that can't act stays on the
-    /// card, refused, and its tooltip says why.
+    /// Retreat and Reinforce for selected squads. A button that can't act stays on the card, refused, and its tooltip says why.
     /// </summary>
     public sealed class SquadCommands : ICommandSource
     {

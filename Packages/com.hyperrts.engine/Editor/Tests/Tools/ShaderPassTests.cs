@@ -11,9 +11,8 @@ using Unity.Scripting.LifecycleManagement;
 namespace HyperRTS.Editor.Tests.Tools
 {
     /// <summary>
-    /// Every hand-written engine shader lit by URP has a Meta pass, so Surface Cache GI bounces its own colour rather
-    /// than URP's fallback material's. Opaque and cutout shaders also take part in the shadow, depth and motion vector
-    /// prepasses, and every shader that declares DOTS instancing compiles with it.
+    /// Every URP-lit engine shader has a Meta pass; opaque and cutout shaders join the shadow, depth and motion
+    /// vector prepasses; DOTS-instanced shaders compile with it.
     /// </summary>
     public class ShaderPassTests
     {

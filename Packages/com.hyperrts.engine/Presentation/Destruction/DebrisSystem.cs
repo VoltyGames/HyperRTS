@@ -8,9 +8,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Throws each appearing ruin's <see cref="Debris"/>, flies, bounces and draws every piece in its
-    /// <see cref="DebrisField"/>, and keeps settled pieces in <see cref="LastingDebris"/>. Medium effects throw fewer
-    /// pieces and keep fewer, Low none.
+    /// Throws, flies and draws the <see cref="Debris"/> of each appearing ruin, and keeps settled pieces in
+    /// <see cref="LastingDebris"/>. Medium effects throw fewer pieces, Low none.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

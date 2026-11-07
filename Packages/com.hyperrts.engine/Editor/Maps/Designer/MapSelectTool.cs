@@ -7,10 +7,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// The Map Editor's Select tool: click selects, dragging a feature moves it, dragging a handle moves that vertex
-    /// (or a circle's radius), Alt+click on the selected line or area's edge adds a vertex there (and drags it),
-    /// Ctrl+click on a vertex removes it while the feature keeps its minimum, Delete removes the selection. Shared
-    /// points and circles stay on the symmetry axis or centre. Each gesture is one undo step, saved when it ends.
+    /// The Map Editor's Select tool: click selects, drags move a feature or handle, Alt+click adds a vertex,
+    /// Ctrl+click removes one, Delete removes the selection. Each gesture is one undo step.
     /// </summary>
     public sealed class MapSelectTool : IMapTool
     {

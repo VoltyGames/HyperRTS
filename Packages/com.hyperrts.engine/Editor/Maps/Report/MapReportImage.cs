@@ -15,9 +15,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Report
 {
     /// <summary>
-    /// The report's top-down overview: ground colours with hill shading, water, blocked ground in red, the counted
-    /// attack paths, bases in their slot colours, resources, gameplay objects and crossings. A preview has no nav grid
-    /// or paths yet and draws the land use with its trees instead.
+    /// The report's top-down overview: ground, water, blocked ground, attack paths, bases, resources and crossings. A
+    /// preview has no nav grid, so it draws land use and trees instead.
     /// </summary>
     public static class MapReportImage
     {

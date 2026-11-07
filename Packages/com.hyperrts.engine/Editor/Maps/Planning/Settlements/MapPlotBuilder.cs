@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// Fills an accepted plot: the house set back from the front and facing the street, outbuildings in the yard,
-    /// orchard trees at the back, optional extras by zone and the fences. Every choice is made at an authored-sector
-    /// point from the settlement's seeded stream and placed in every copy.
+    /// Fills an accepted plot with house, outbuildings, orchard, extras and fences, chosen at authored-sector points
+    /// and placed in every copy.
     /// </summary>
     internal sealed class MapPlotBuilder
     {

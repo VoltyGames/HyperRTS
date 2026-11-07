@@ -11,9 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Fog
 {
     /// <summary>
-    /// Publishes the fog-of-war grid and its look as shader globals for <see cref="FogOfWarFeature"/> and the
-    /// transparents that fog themselves. Each restamp sets a target opacity per cell, which the shown grid eases toward
-    /// over the fade time, so the fog's edge moves smoothly.
+    /// Publishes the fog-of-war grid and its look as shader globals, easing each cell toward its target so the fog's edge
+    /// moves smoothly.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Rig + "Fog of War Renderer")]
     [Icon(HyperRTSIcons.Vision)]

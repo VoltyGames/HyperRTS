@@ -160,8 +160,8 @@ namespace HyperRTS.Simulation.Common.Infantry
 
         /// <summary>
         /// The shares of a hit from <paramref name="from"/> this member takes: its cover's shares, or all of it with no
-        /// cover or from outside the spot's front arc. <paramref name="piercing"/> is the share of the protection the
-        /// hit ignores.
+        /// cover or from outside the spot's front arc. <paramref name="piercing"/> is the share of protection the hit
+        /// ignores.
         /// </summary>
         public readonly Exposure ExposureTo(in CoverRules rules, float3 squad, float3 from, float piercing)
         {

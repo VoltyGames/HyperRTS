@@ -11,9 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Look
 {
     /// <summary>
-    /// Plays a built map and renders each of its spec's look points at the closest, middle and farthest zoom in every
-    /// weather, once the frame's GI has built up, into <c>Logs/MapReports/&lt;Map&gt;/look/&lt;Weather&gt;/</c>. Ends
-    /// with <c>summary.json</c> there and leaves Play mode.
+    /// Plays a built map and renders each look point at three zooms in every weather into
+    /// <c>Logs/MapReports/&lt;Map&gt;/look/&lt;Weather&gt;/</c>, then leaves Play mode.
     /// </summary>
     internal static partial class MapLookCapture
     {
@@ -31,9 +30,9 @@ namespace HyperRTS.Editor.Maps.Look
 
         /// <summary>
         /// Opens the map's scene and starts the captures in Play mode. <paramref name="weathers"/> is a comma list of
-        /// weather keys, empty for all; <paramref name="graded"/> false turns the weathers' Color Lookup off;
-        /// <paramref name="quality"/> a quality level name, empty for the current one; <paramref name="cost"/> measures
-        /// frame times per feature in the first weather, into <c>cost.json</c>, instead of taking images.
+        /// weather keys (empty for all), <paramref name="graded"/> false turns Color Lookup off, <paramref
+        /// name="quality"/> names a quality level (empty for current), <paramref name="cost"/> measures frame times
+        /// into <c>cost.json</c> instead.
         /// </summary>
         public static string Start(string specPath, string weathers, bool graded, string quality, bool cost)
         {

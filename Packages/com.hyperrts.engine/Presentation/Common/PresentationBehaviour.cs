@@ -3,10 +3,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Common
 {
     /// <summary>
-    /// Base of every presentation and input MonoBehaviour. Without a graphics device (<see cref="GraphicsSupport"/>)
-    /// it switches itself off in Awake, before OnEnable or any update can run, and never releases what it never made.
-    /// Subclasses override <see cref="OnAwake"/>, <see cref="OnDisabled"/> and <see cref="OnDestroyed"/> instead of
-    /// Awake, OnDisable and OnDestroy.
+    /// Base of every presentation and input MonoBehaviour: it switches itself off in Awake without a graphics device.
+    /// Override <see cref="OnAwake"/>, <see cref="OnDisabled"/> and <see cref="OnDestroyed"/> instead of the Unity methods.
     /// </summary>
     public abstract class PresentationBehaviour : MonoBehaviour
     {

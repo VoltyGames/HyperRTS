@@ -5,9 +5,8 @@ using HyperRTS.Editor.Maps.Spec;
 namespace HyperRTS.Editor.Maps.Refine
 {
     /// <summary>
-    /// Turns the authored sector's coarse lines into natural shapes before the symmetry copies them: meandering
-    /// rivers, curving roads that join each other, forking ravines. Works on the loaded spec in place; the file on
-    /// disk keeps the coarse lines.
+    /// Turns the authored sector's coarse lines into natural rivers, roads and ravines before the symmetry copies
+    /// them. Works on the loaded spec; the file on disk keeps the coarse lines.
     /// </summary>
     public static class MapRefiner
     {

@@ -134,9 +134,9 @@ namespace HyperRTS.Simulation.Navigation.Grid
             box.IsAxisAligned || box.Contains(Grid.Center(cell), Grid.CellSize * 0.5f);
 
         /// <summary>
-        /// Whether an agent could path between two points: they share a region, scenery aside. A closed start counts
-        /// from where its path would begin, a closed end from the open cell nearest it. Aircraft reach everywhere; a
-        /// unit whose class isn't registered yet reaches nothing.
+        /// Whether an agent could path between two points, scenery aside: they share a region. A closed start or end
+        /// counts from the nearest open cell; aircraft reach everywhere, and a unit with an unregistered class reaches
+        /// nothing.
         /// </summary>
         public readonly bool IsReachable(in NavAgent agent, float3 from, float3 to)
         {

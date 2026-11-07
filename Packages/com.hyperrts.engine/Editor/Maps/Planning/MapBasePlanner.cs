@@ -7,9 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// The ground of each base, a rectangular yard turned with its spawn like a farm or machine yard on a road, its
-    /// edges a little uneven and its corners worn round; and the pads (gravel, concrete, trampled dirt) under the props
-    /// whose entry asks for one: a rectangle or oval turned with the prop, its edge wandering by the entry's pad wander.
+    /// The ground of each base, a worn rectangular yard turned with its spawn, and the pads under props whose entry
+    /// asks for one.
     /// </summary>
     public sealed class MapBasePlanner : MapLandPass
     {

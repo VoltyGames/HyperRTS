@@ -10,9 +10,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.GameEntities
 {
     /// <summary>
-    /// Rewrites every live stat from its recorded base and the <see cref="StatModifier"/>s whenever they change: the
-    /// fields marked with <see cref="StatFieldAttribute"/>, weapon mounts and health, which keeps its fraction when the
-    /// cap moves.
+    /// Rewrites every live stat from its recorded base and its <see cref="StatModifier"/>s whenever they change.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]

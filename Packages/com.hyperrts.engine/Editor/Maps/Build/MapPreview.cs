@@ -6,9 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Build
 {
     /// <summary>
-    /// A map's layout in seconds without touching a scene: the refined features, ground shape, land use, placements
-    /// and trees, drawn to <c>Logs/MapReports/&lt;Map&gt;.preview.png</c> with the issues and land figures in
-    /// <c>.preview.json</c>. Rush times and paths need the full build.
+    /// A map's layout in seconds without touching a scene, drawn to <c>Logs/MapReports/&lt;Map&gt;.preview.png</c>
+    /// with issues in <c>.preview.json</c>. Rush times and paths need the full build.
     /// </summary>
     public static class MapPreview
     {

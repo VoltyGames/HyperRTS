@@ -12,9 +12,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Views
 {
     /// <summary>
-    /// Standard screenshots of the open map from the match camera: the first bases, every crossing and settlement of the authored sector
-    /// (wide and close), and an overview, into <c>Logs/MapReports/&lt;Map&gt;/</c>. Agents and reviewers look at
-    /// these instead of flying a camera by hand.
+    /// Standard screenshots of the open map from the match camera (bases, crossings, settlements, overview) into
+    /// <c>Logs/MapReports/&lt;Map&gt;/</c>, for agents and reviewers.
     /// </summary>
     public static class MapViews
     {

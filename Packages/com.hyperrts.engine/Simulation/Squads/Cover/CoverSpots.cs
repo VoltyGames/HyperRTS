@@ -47,9 +47,8 @@ namespace HyperRTS.Simulation.Squads.Cover
     }
 
     /// <summary>
-    /// Singleton: every <see cref="CoverSpot"/> in the world, sorted into a uniform grid over the map, each with the
-    /// <see cref="Reservation"/> of the member standing on or walking to it. <see cref="CoverSpotSystem"/> builds it
-    /// again only when cover appears, vanishes or moves; a spot's number changes then, its key does not.
+    /// Singleton: every <see cref="CoverSpot"/> in a uniform grid over the map, with the <see cref="Reservation"/> of the member using it.
+    /// <see cref="CoverSpotSystem"/> rebuilds it only when cover appears, vanishes or moves.
     /// </summary>
     public struct CoverSpots : IComponentData
     {

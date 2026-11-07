@@ -5,9 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Meshes
 {
     /// <summary>
-    /// Which road ends fade out in the mesh: free ends, and ends where a road meets one of its own rank or higher
-    /// (it fades out under it). An end that carries on into another road's end (a seam, a split road) or runs onto a
-    /// lower-ranked road stays solid.
+    /// Which road ends fade out in the mesh: free ends, and ends meeting a road of the same or higher rank. Ends that
+    /// carry on into another road or meet a lower rank stay solid.
     /// </summary>
     public static class MapRoadFades
     {

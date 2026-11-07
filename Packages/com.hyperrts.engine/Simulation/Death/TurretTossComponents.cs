@@ -6,10 +6,7 @@ using Unity.Netcode;
 namespace HyperRTS.Simulation.Death
 {
     /// <summary>
-    /// A unit that throws its turret when a catastrophic hit kills it: a lethal <see cref="TossType"/> or overkill
-    /// past <see cref="Overkill"/> of its maximum health. The wreck is then <see cref="Hull"/> and the turret lands as
-    /// <see cref="Turret"/> within <see cref="Arc"/> radians of the way the hit pushed, <see cref="MinDistance"/> to
-    /// <see cref="MaxDistance"/> metres away.
+    /// A unit that throws its turret when a catastrophic hit kills it. The wreck is the <see cref="Hull"/> and the turret lands as <see cref="Turret"/> in the direction of the hit.
     /// </summary>
     public struct TurretToss : IComponentData
     {

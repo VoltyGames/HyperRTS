@@ -9,9 +9,8 @@ using Unity.Rendering;
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
     /// <summary>
-    /// Writes each building's <see cref="BuildingLights"/> to <see cref="LightsOn"/> on every mesh under it: dark while
-    /// <see cref="Offline"/> (under construction included), lit otherwise, with a flicker on each change. The
-    /// <see cref="ConstructionSite"/> dressing keeps its own work lights on.
+    /// Writes each building's <see cref="BuildingLights"/> to <see cref="LightsOn"/> on its meshes: dark while
+    /// <see cref="Offline"/>, lit otherwise, with a flicker on each change.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]

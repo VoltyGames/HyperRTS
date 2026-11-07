@@ -14,10 +14,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>
-    /// Streams each drawn, finished entity's <see cref="LoopEffect"/>s at their sockets while in range (half range on Low):
-    /// gated by health, and faded out once a timed loop's duration since the entity was first seen runs out or as
-    /// <see cref="Decay"/> remains are buried. Hands the streamed loops to <see cref="LoopLights"/> and
-    /// <see cref="SmokeShadows"/>.
+    /// Streams each drawn entity's <see cref="LoopEffect"/>s at their sockets while in range, fading them with timers and
+    /// <see cref="Decay"/>. Hands the streamed loops to <see cref="LoopLights"/> and <see cref="SmokeShadows"/>.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

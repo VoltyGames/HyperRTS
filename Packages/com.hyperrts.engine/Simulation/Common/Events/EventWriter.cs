@@ -20,10 +20,9 @@ namespace HyperRTS.Simulation.Common.Events
         }
 
         /// <summary>
-        /// Call each update before scheduling. Jobs copy the writer, so it can't hold the queue's query; the queue
-        /// entity lives as long as the world, so it is found once, on the first update, since its owner may create it
-        /// after this system's OnCreate. The query is the EntityManager's, not the system's, and is disposed, so the
-        /// system asks for no query mid-update.
+        /// Call each update before scheduling. Jobs copy the writer, so the queue entity is found once, on the first
+        /// update (its owner may create it after this system's OnCreate); the system asks for no query mid-update
+        /// because the query is the EntityManager's and is disposed.
         /// </summary>
         public void Update(ref SystemState state)
         {

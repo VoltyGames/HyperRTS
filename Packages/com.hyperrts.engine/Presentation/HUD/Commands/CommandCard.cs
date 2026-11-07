@@ -7,9 +7,8 @@ using Unity.Entities;
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
-    /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s. Each entry comes from a
-    /// <see cref="CommandSpec"/> that gives its slot, page and hotkey; a taken slot moves to the next free one, spilling
-    /// to the next page, whose last slot turns the page.
+    /// Actions for the owned part of the selection, gathered from <see cref="ICommandSource"/>s into slots by their
+    /// <see cref="CommandSpec"/>. A taken slot moves to the next free one, spilling to the next page.
     /// </summary>
     public sealed class CommandCard : HUDPanel
     {

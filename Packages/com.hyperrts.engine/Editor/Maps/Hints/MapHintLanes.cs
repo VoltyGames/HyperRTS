@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Hints
 {
     /// <summary>
-    /// Attack lanes between bases: the distinct ground paths <see cref="MapPathCounter"/> finds from one base to
-    /// another, as waypoints along each. Every base gets lanes to its nearest enemy bases only, so a map of many slots
-    /// stays small.
+    /// Attack lanes between bases: the distinct ground paths <see cref="MapPathCounter"/> finds, only to each base's
+    /// nearest enemy bases.
     /// </summary>
     public static class MapHintLanes
     {

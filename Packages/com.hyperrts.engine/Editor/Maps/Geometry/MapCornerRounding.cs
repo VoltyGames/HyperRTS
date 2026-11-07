@@ -4,9 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Geometry
 {
     /// <summary>
-    /// Rounds the corners of a polyline into circular arcs. An arc never takes more than half of either segment it
-    /// leaves, so a corner between short segments gets a tighter arc than asked for rather than overlapping its
-    /// neighbours; the end points stay where they are.
+    /// Rounds the corners of a polyline into circular arcs. An arc takes at most half of either segment, so short
+    /// segments get a tighter arc than asked for.
     /// </summary>
     public static class MapCornerRounding
     {

@@ -16,10 +16,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
 {
     /// <summary>
-    /// Lays the frame's impact <see cref="CueEvent"/>s on open ground as their shooter type's <see cref="ImpactMark"/>s:
-    /// pooled URP decal projectors at terrain height, along the ground's slope, turned and sized at random, fading
-    /// with age; past a kind's cap the oldest is reused. Craters, scorch and remains also scar the trample maps. Skips
-    /// impacts the local player can't see. During a replay, marks age on its clock and clear when it seeks back.
+    /// Lays impact <see cref="CueEvent"/>s on open ground as pooled decal <see cref="ImpactMark"/>s that fade with age. Skips
+    /// impacts the local player can't see.
     /// </summary>
     // After TrampleStampSystem, which clears the stamps craters join.
     [WorldSystemFilter(SimulationWorlds.Presented)]

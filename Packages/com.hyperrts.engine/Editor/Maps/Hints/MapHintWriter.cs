@@ -13,9 +13,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Hints
 {
     /// <summary>
-    /// Writes the map's bot hints into the entities scene: computes expansion order, attack lanes and defence points
-    /// from the nav grid and layout (<see cref="MapHintBuilder"/>) and bakes them as an <see cref="AIMapHintsAuthoring"/>
-    /// object, which the skirmish AI needs to play the map.
+    /// Writes the map's bot hints (expansions, attack lanes, defence points) into the entities scene as an <see
+    /// cref="AIMapHintsAuthoring"/> object, computed by <see cref="MapHintBuilder"/>.
     /// </summary>
     public static class MapHintWriter
     {

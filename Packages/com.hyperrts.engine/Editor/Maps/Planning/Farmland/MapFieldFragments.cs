@@ -4,9 +4,8 @@ using HyperRTS.Editor.Maps.Geometry;
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
     /// <summary>
-    /// The connected pieces of each field (roads, rivers and ravines cut fields into pieces), measured so slivers can be
-    /// left to the margin: how many cells a piece has, and how far its innermost cell lies from the piece's edge (half
-    /// the widest strip across it).
+    /// The connected pieces of each field, measured by cell count and innermost distance to the edge so slivers can
+    /// be left to the margin.
     /// </summary>
     public static class MapFieldFragments
     {

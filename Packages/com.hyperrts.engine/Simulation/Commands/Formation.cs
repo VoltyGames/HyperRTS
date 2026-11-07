@@ -5,9 +5,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
-    /// Box formation around a goal, facing the group's travel direction. Units keep their relative places:
-    /// the front-most units take the front row, and each row is filled left to right. Each unit gets a slot its own
-    /// size, and a row is as deep as its deepest member.
+    /// Box formation around a goal, facing the group's travel direction. The front-most units take the front row, each
+    /// row fills left to right, and each unit gets a slot its own size.
     /// </summary>
     public static class Formation
     {

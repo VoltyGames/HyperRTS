@@ -10,9 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Common.Json
 {
     /// <summary>
-    /// The one layout map specs and effect recipes are written in: indented by two spaces, points, colours and short
-    /// scalar arrays on one line, floats in their shortest form, so saves diff cleanly. Parses with Newtonsoft,
-    /// keeping member order and strings as strings (no date guessing).
+    /// The one layout map specs and effect recipes are written in, so saves diff cleanly. Parses with Newtonsoft,
+    /// keeping member order and strings as strings.
     /// </summary>
     public static class JsonFormat
     {
@@ -63,9 +62,9 @@ namespace HyperRTS.Editor.Common.Json
             ReadInto(json, what, source, () => Parse(JsonUtility.ToJson(target)), target);
 
         /// <summary>
-        /// Overwrites each of <paramref name="targets"/> from <paramref name="json"/>, then rejects any field the tree
-        /// <paramref name="known"/> builds from them lacks. Every problem throws an <see cref="InvalidOperationException"/>
-        /// naming <paramref name="source"/>. Returns the parsed root.
+        /// Overwrites <paramref name="targets"/> from <paramref name="json"/> and returns the parsed root. Throws an
+        /// <see cref="InvalidOperationException"/> naming <paramref name="source"/> for a field <paramref
+        /// name="known"/> lacks.
         /// </summary>
         public static JToken ReadInto(string json, string what, string source, Func<JToken> known, params object[] targets)
         {

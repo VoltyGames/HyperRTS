@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Refine
 {
     /// <summary>
-    /// Rounds authored roads into curves (corners filleted to the road class's <c>curve</c> radius) and joins road ends
-    /// to the roads they meet (<see cref="MapRoadJoiner"/>). Works in the authored sector, before the symmetry copies
-    /// it; ends on the seam or at the playable edge stay put, their copy or the backdrop continues them.
+    /// Rounds authored roads into curves and joins road ends to the roads they meet (<see cref="MapRoadJoiner"/>).
+    /// Ends on the seam or playable edge stay put.
     /// </summary>
     public static class MapRoadRefiner
     {

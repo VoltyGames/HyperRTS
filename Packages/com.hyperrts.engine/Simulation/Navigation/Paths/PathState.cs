@@ -73,9 +73,9 @@ namespace HyperRTS.Simulation.Navigation.Paths
         }
 
         /// <summary>
-        /// Passes corners within <paramref name="touch"/>, and nearer ones once the next is in sight: a crowd can't all
-        /// touch the same corner and a vehicle cuts it. A <see cref="PathWaypoint.Tight"/> one is never cut: it passes
-        /// once touched, or once behind the unit where the gear doesn't change.
+        /// Passes corners within <paramref name="touch"/>, and nearer ones once the next is in sight, so a crowd
+        /// doesn't queue at one corner. A <see cref="PathWaypoint.Tight"/> one is never cut: it passes once touched, or
+        /// once behind the unit where the gear doesn't change.
         /// </summary>
         public void SkipCorners(in NavAccess access, float2 position, float touch, float reach,
             DynamicBuffer<PathWaypoint> waypoints)
@@ -192,8 +192,8 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         /// <summary>
         /// Re-aims the path's end at a moved goal in sight of the corner before it, or of the unit on the last leg.
-        /// False when it needs a search: out of sight, moved over a quarter of the path left, which may have opened a
-        /// shorter way, or the end of a planned manoeuvre.
+        /// False when it needs a search: out of sight, moved over a quarter of the path left, or the end of a planned
+        /// manoeuvre.
         /// </summary>
         public bool TryFollowGoal(in NavAccess access, float3 position, float3 goal,
             DynamicBuffer<PathWaypoint> waypoints)

@@ -12,9 +12,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
-    /// Checks a spec before it is refined: its size, terrain and amounts are sane and every kind it names is in the
-    /// climate, the palette (through <see cref="MapSpecKeyCheck"/>) or the rules. Where features lie (sector, bounds,
-    /// symmetry) is the expander's to check.
+    /// Checks a spec before it is refined: sane size, terrain and amounts, and every named kind known (<see
+    /// cref="MapSpecKeyCheck"/>). Where features lie is the expander's to check.
     /// </summary>
     public sealed class MapSpecCheck : MapKeyCheck
     {

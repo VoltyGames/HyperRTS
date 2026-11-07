@@ -6,9 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Meshes
 {
     /// <summary>
-    /// River ribbons and pond sheets at water level, tucked under the banks. River UV is in metres (U across, V
-    /// downstream) so the shader scrolls with the current; vertex colour marks fords (<see cref="MapWaterFords"/>). A
-    /// pond's UV is its map position and its vertex blue marks still water.
+    /// River ribbons and pond sheets at water level, tucked under the banks. River UV is in metres so the shader
+    /// scrolls with the current; vertex colour marks fords (<see cref="MapWaterFords"/>) and still water.
     /// </summary>
     public sealed class MapWaterMesh
     {

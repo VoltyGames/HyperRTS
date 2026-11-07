@@ -11,9 +11,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// HyperRTS ▸ Map Editor: a map spec on a top-down canvas, laid out with the canvas tools, with the feature list on
-    /// the left and the selected feature's fields on the right. Every edit saves to the spec file at once, and a file
-    /// written from outside reloads. Double-clicking a <c>.map.json</c> opens it here.
+    /// The Map Editor window: a map spec on a top-down canvas with a feature list and the selected feature's fields.
+    /// Every edit saves at once, and double-clicking a <c>.map.json</c> opens it.
     /// </summary>
     public sealed class MapEditorWindow : EditorWindow
     {

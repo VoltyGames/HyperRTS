@@ -7,10 +7,9 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
-    /// Runs orders with <see cref="OrderTraits.MovesToPosition"/>: points locomotion at the order goal while combat
-    /// isn't engaged, and completes the order once locomotion reports its <see cref="Arrival"/>, at the goal,
-    /// against an arrived groupmate or stalled. A finished <see cref="OrderTraits.Loops"/> order goes to the back
-    /// of the queue.
+    /// Runs orders with <see cref="OrderTraits.MovesToPosition"/>: points locomotion at the goal while combat isn't
+    /// engaged, and completes the order on <see cref="Arrival"/> (at the goal, against an arrived groupmate, or
+    /// stalled). A finished <see cref="OrderTraits.Loops"/> order goes to the back of the queue.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

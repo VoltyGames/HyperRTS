@@ -6,10 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Common.Json
 {
     /// <summary>
-    /// A JSON file open for editing, held in a hidden ScriptableObject so edits go through <see cref="Serialized"/>
-    /// with Undo and default property fields. The file stays the source: every finished edit, undo and redo saves at
-    /// once, changing only what was edited, and a file written from outside reloads when Unity imports it
-    /// (<see cref="JsonDocumentImport"/>).
+    /// A JSON file open for editing through <see cref="Serialized"/> with Undo. Every edit saves at once, and a file
+    /// written from outside reloads (<see cref="JsonDocumentImport"/>).
     /// </summary>
     public abstract class JsonDocument : ScriptableObject
     {

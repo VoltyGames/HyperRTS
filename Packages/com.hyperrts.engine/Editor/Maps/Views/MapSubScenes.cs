@@ -9,9 +9,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Views
 {
     /// <summary>
-    /// Streams the open scene's SubScenes into the editor world and ticks it until they are loaded, entity rendering
-    /// has registered every mesh and the number of drawn entities has held still, so a capture shows the map's
-    /// entities, including those systems spawn after the load, even while the editor is unfocused.
+    /// Streams the open scene's SubScenes into the editor world and ticks it until entities are loaded and drawing
+    /// has settled, so a capture shows them even when the editor is unfocused.
     /// </summary>
     public static class MapSubScenes
     {

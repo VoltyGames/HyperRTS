@@ -10,9 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
-    /// Paints the terrain layers from the land use: each texel blends the two surfaces of its nearest border across
-    /// that border's band (<see cref="MapEdgeField"/>; the terrain shader's height blend sharpens them naturally); each
-    /// surface gets its noise-shaped mixes of other layers and tramlines, and steep ground its slope surface.
+    /// Paints the terrain layers from the land use, blending the two surfaces of each texel's nearest border across
+    /// its band (<see cref="MapEdgeField"/>).
     /// </summary>
     public sealed class MapGroundTexturePainter
     {

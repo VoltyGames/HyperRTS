@@ -11,9 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
-    /// Makes map scenery wreckable by anyone (fences, trees, wrecks, bridges). On a building or unit it only marks
-    /// it destructible (its own health and death spawn apply); on its own it adds health, death and remains. Scenery
-    /// placed in a SubScene is no ghost: multiplayer sends its state by <see cref="SceneryId"/>.
+    /// Makes map scenery wreckable by anyone (fences, trees, wrecks, bridges). On a building or unit it only marks it destructible.
+    /// Scenery in a SubScene is no ghost, so multiplayer sends its state by <see cref="SceneryId"/>.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Destruction + "Destructible")]
     [Icon(HyperRTSIcons.Combat)]

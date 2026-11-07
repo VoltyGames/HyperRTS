@@ -8,9 +8,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Transport.Garrison
 {
     /// <summary>
-    /// Hands a <see cref="NeutralGarrison"/> building to the owner of its passengers, so enemies can fight over it,
-    /// and back to neutral once it empties. The change goes through <see cref="OwnerChanged.Transfer"/>, so the
-    /// building also drops its selection when it changes hands.
+    /// Hands a <see cref="NeutralGarrison"/> building to the owner of its passengers so enemies can fight over it, and back to neutral once it empties.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]

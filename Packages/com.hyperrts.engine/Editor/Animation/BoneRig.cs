@@ -8,10 +8,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Animation
 {
     /// <summary>
-    /// A temporary instance of a bone set's rig model, posed by its clips. Its skeleton node's skinned mesh names the
-    /// skeleton; every bone's skin matrix maps that mesh's rest vertices to where the clip's frame puts them, in the model root's
-    /// space, so the baked meshes need no skin and no object transform. Clips are sampled on the parent of the root
-    /// bone, which is where a Generic clip's bone paths start.
+    /// A temporary instance of a bone set's rig model, posed by its clips so the baked meshes need no skin and no
+    /// object transform.
     /// </summary>
     internal sealed class BoneRig : IDisposable
     {
@@ -113,10 +111,8 @@ namespace HyperRTS.Editor.Animation
         }
 
         /// <summary>
-        /// A copy of a skinned node's mesh, moved into the skeleton mesh's rest space, with its skin moved into vertex
-        /// channels. <paramref name="model"/> may be the rig or any model bound to the same skeleton at the same rest pose:
-        /// its bones match by name, and its bind poses may differ from the skeleton's only by one move of the whole mesh,
-        /// such as its node's axis conversion.
+        /// A skinned node's mesh moved into the skeleton mesh's rest space, with its skin in vertex channels.
+        /// <paramref name="model"/> may be any model bound to the same skeleton at the same rest pose.
         /// </summary>
         public Mesh SkinnedMesh(GameObject model, string node)
         {

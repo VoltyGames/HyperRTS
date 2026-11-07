@@ -7,9 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Ground.Craters
 {
     /// <summary>
-    /// Dents the active terrain under the crater bowls and trenches stamped last frame, reading the heights back at most every
-    /// <see cref="SyncSeconds"/> on a frame with no new crater. Restores the terrain on a replay seek, when the maps
-    /// go or change, and when the terrain or this world goes. Visual only: the simulation's ground never changes.
+    /// Dents the active terrain under stamped crater bowls and trenches, and restores it on a replay seek or map change.
+    /// Visual only: the simulation's ground never changes.
     /// </summary>
     // Before TrampleStampSystem clears last frame's stamps, which TrampleMap has drawn by now.
     [WorldSystemFilter(SimulationWorlds.Presented)]

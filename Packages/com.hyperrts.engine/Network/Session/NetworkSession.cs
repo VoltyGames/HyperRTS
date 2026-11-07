@@ -100,9 +100,8 @@ namespace HyperRTS.Network.Session
         }
 
         /// <summary>
-        /// Joins the last <see cref="StartClient"/> server again after a dropped connection. The scene must reload the
-        /// map, since a SubScene only streams into worlds that exist when it loads. Relay sessions use
-        /// <see cref="StartRelayClient"/> instead.
+        /// Joins the last <see cref="StartClient"/> server again after a drop. The scene must reload the map, as a SubScene only
+        /// streams into worlds that exist when it loads.
         /// </summary>
         public static bool Rejoin(SessionScene scene)
         {

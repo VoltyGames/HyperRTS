@@ -5,9 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
-    /// Rest pose of a prop's stretch parts in their shared parent's space: a start cap and an end cap along one axis
-    /// with a span between them. Stretching moves the caps out by an extension (root-space metres), keeping their
-    /// size, and scales the span along the axis only so it still meets both.
+    /// Rest pose of a prop's stretch parts: a start cap and an end cap with a span between them.
+    /// Stretching moves the caps out and scales the span so it still meets both.
     /// </summary>
     public struct StretchLayout
     {

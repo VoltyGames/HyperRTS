@@ -9,9 +9,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Environment.Ground.Stamps
 {
     /// <summary>
-    /// Stamps each built <see cref="Trench"/> the local player sees into the scar map once, where
-    /// <see cref="CraterTerrainSystem"/> dents the terrain from it. A trench never seen built leaves no dent, and the
-    /// scar outlives the building. Runs again for every trench after the maps reset.
+    /// Stamps each built <see cref="Trench"/> the local player sees into the scar map, where
+    /// <see cref="CraterTerrainSystem"/> dents the terrain from it.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

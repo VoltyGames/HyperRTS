@@ -8,9 +8,7 @@ using Random = Unity.Mathematics.Random;
 namespace HyperRTS.Editor.Environment
 {
     /// <summary>
-    /// Tiling ripple slopes from a wind-wave spectrum: every whole-cycle wave up to a cut-off, its amplitude from a
-    /// Phillips spectrum leaning weakly with the wind and a random phase, summed by an inverse FFT. Slopes come from the
-    /// spectrum itself, so the normals tile exactly.
+    /// Tiling ripple slopes from a wind-wave spectrum, summed by an inverse FFT so the normals tile exactly.
     /// </summary>
     public static class WaterSpectrum
     {

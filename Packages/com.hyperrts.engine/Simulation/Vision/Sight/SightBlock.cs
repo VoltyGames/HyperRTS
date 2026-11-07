@@ -6,9 +6,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>
-    /// A box, turned with its entity, that blocks sight: solid below <see cref="Height"/> (a house, a wall, a wreck),
-    /// porous below <see cref="PorousTop"/> (a tree crown, smoke), or both. Disabled once it stops blocking, as when a
-    /// wreck is buried.
+    /// A box, turned with its entity, that blocks sight: solid below <see cref="Height"/> (a house, a wall), porous
+    /// below <see cref="PorousTop"/> (a tree crown, smoke), or both. Disabled once it stops blocking, as when a wreck
+    /// is buried.
     /// </summary>
     public struct SightBlock : IComponentData, IEnableableComponent
     {

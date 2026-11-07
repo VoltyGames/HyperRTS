@@ -11,8 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Rig
 {
     /// <summary>
-    /// Bursts the frame's <see cref="CueEvent"/>s from the pool: the source type's slot rig at the socket, facing the
-    /// event's direction, or for impacts the shooter's <see cref="SurfaceEffects"/> rig for the material struck. Skips what the local player can't see and what is beyond a rig's range.
+    /// Bursts the frame's <see cref="CueEvent"/>s from the pool at their sockets, using the shooter's <see cref="SurfaceEffects"/>
+    /// rig for impacts. Skips what the local player can't see or is beyond a rig's range.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

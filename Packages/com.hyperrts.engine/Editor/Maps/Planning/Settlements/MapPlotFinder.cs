@@ -7,9 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// Marches along both sides of each street at the kit's frontage (± its width variation), laying a plot rectangle at each step
-    /// and keeping the ones the settlement can hold, nearest the centre first. Everything is decided in the authored
-    /// sector; land claims and neighbouring plots are checked later, as plots are accepted.
+    /// Marches along both sides of each street laying plot rectangles at the kit's frontage and keeping those the
+    /// settlement can hold, nearest the centre first. Land claims are checked later.
     /// </summary>
     internal sealed class MapPlotFinder
     {
@@ -80,9 +79,8 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         }
 
         /// <summary>
-        /// The plot at full depth, else cut shorter (to <see cref="Shortest"/> of it) until its corners and the land
-        /// under it are clear, the way real plots stop at a stream, a ravine or a pad. The reason is the shortest try's
-        /// when none fits.
+        /// The plot at full depth, else cut shorter (to <see cref="Shortest"/> of it) until its corners and land are
+        /// clear. The reason is the shortest try's when none fits.
         /// </summary>
         private (MapPlot Plot, string Reason) Fit(Vector2 front, Vector2 direction, Vector2 normal, float frontage,
             float depth)

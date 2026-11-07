@@ -123,10 +123,9 @@ namespace HyperRTS.Editor.Destruction
         };
 
         /// <summary>
-        /// The sections as authoring entries under <paramref name="owner"/>: each model is the object of that exact name,
-        /// and box, facing, material (through the owner's name map), floor, anchored, exterior and supports come from
-        /// the file. Share, deck and needs-all-supports stay from the owner's entry for the same model, else the share
-        /// is guessed as Fill From Parts does. Holed, pieces, stub and heap models are set to scale 0.
+        /// The sections as authoring entries under <paramref name="owner"/>, read from the file. Share, deck and
+        /// needs-all-supports stay from the owner's entry for the same model. Holed, pieces, stub and heap models are
+        /// set to scale 0.
         /// </summary>
         public List<SectionsAuthoring.Entry> Entries(SectionsAuthoring owner)
         {

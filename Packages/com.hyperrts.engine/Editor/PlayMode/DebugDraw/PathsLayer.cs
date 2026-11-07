@@ -13,9 +13,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
     /// <summary>
-    /// Each unit's remaining waypoints, planned manoeuvres in orange with reverse legs dashed and gear changes as
-    /// dots, each vehicle's rear axle, a dotted line to its attack target, and dock bays: run-in in green, exit in
-    /// yellow and a line to the occupant. A corner label totals the pathfinder's work.
+    /// Each unit's remaining waypoints, planned manoeuvres, rear axles, attack target lines and dock bays, with a
+    /// corner label totalling the pathfinder's work.
     /// </summary>
     public sealed class PathsLayer : DebugLayer
     {

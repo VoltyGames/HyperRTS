@@ -7,8 +7,7 @@ namespace HyperRTS.Editor.Common.Json
 {
     /// <summary>
     /// Carries the change between two full writes of a document into its file's own JSON, so a save touches only what
-    /// was edited: unchanged values keep their text, fields the file leaves at their defaults stay out, and a list
-    /// that gained or lost entries is spliced rather than rewritten.
+    /// was edited.
     /// </summary>
     public static class JsonChanges
     {
@@ -16,9 +15,8 @@ namespace HyperRTS.Editor.Common.Json
         private static readonly IReadOnlyDictionary<string, JToken> NoDefaults = new Dictionary<string, JToken>();
 
         /// <summary>
-        /// <paramref name="file"/> with the edits from <paramref name="before"/> to <paramref name="after"/>. An entry
-        /// added to a list under the document root named in <paramref name="entryDefaults"/> leaves out the fields
-        /// equal to that default entry, as a hand-written one would.
+        /// <paramref name="file"/> with the edits from <paramref name="before"/> to <paramref name="after"/>. New
+        /// list entries leave out fields equal to <paramref name="entryDefaults"/>.
         /// </summary>
         public static JToken Apply(JToken file, JToken before, JToken after, IReadOnlyDictionary<string, JToken> entryDefaults)
         {

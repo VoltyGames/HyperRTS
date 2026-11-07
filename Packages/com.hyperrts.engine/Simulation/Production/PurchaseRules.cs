@@ -6,9 +6,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>
-    /// The one rule for buying a unit, building or research, shared by player orders, placement, the AI and the HUD:
-    /// its prerequisites are met, research is neither done nor queued, its build limit is not reached, and the player
-    /// can pay.
+    /// The one rule for buying a unit, building or research, shared by orders, placement, the AI and the HUD.
     /// </summary>
     public static class PurchaseRules
     {

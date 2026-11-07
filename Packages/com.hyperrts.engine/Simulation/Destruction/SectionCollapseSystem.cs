@@ -7,9 +7,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
-    /// After a section breaks, floods the supports up from the anchored sections and drops what no longer reaches
-    /// the ground, one support level every <see cref="SectionedBuilding.FallDelay"/>. A fall breaks the section, takes
-    /// its health off the building's and marks its floor fallen in <see cref="IntactFloors"/>.
+    /// After a section breaks, drops the sections no longer connected to the ground, one support level every <see cref="SectionedBuilding.FallDelay"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]

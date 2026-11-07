@@ -17,9 +17,8 @@ namespace HyperRTS.Simulation.AI
         private const int Facings = 2;
 
         /// <summary>
-        /// Closest free spot to <paramref name="home"/>'s center, ring by ring; candidates are a building plus
-        /// <paramref name="gap"/> apart, the gap stays clear around the spot, and the spot passes the map's
-        /// building gap to every site as the server checks it.
+        /// Closest free spot to <paramref name="home"/>'s center, ring by ring, with <paramref name="gap"/> kept clear
+        /// around it and the map's building gap passed to every site as the server checks it.
         /// </summary>
         public static bool TryFindSpot(in MapSettings map, in NavGrid grid, NativeArray<NavBox> sites,
             in BuildingSpot home, float gap, out BuildingSpot spot)

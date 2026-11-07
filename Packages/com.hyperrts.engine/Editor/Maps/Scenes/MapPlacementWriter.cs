@@ -10,9 +10,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Scenes
 {
     /// <summary>
-    /// Instantiates every placement at the SubScene root, gameplay prefabs with their owner and resource amount. Every
-    /// placement is an entity (<see cref="MapPlacements.CheckEntities"/>). Everything stands on the finished ground
-    /// (<see cref="MapPlacementPose"/>).
+    /// Instantiates every placement at the SubScene root, gameplay prefabs with owner and resource amount, standing
+    /// on the finished ground (<see cref="MapPlacementPose"/>). Each is an entity (<see
+    /// cref="MapPlacements.CheckEntities"/>).
     /// </summary>
     public static class MapPlacementWriter
     {

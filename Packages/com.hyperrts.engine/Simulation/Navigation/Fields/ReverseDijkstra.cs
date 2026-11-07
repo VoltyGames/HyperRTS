@@ -6,9 +6,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation.Fields
 {
     /// <summary>
-    /// Dijkstra from a goal outward over cells numbered 0 to the count, settling each cell's cost to the goal. The
-    /// queue is buckets half the cheapest step wide, so a bucket never grows while it is read and settles are exact.
-    /// The graph decides which neighbours a settled cell offers, and at what cost.
+    /// Dijkstra from a goal outward over cells numbered 0 to the count, settling each cell's cost to the goal. Buckets
+    /// half the cheapest step wide keep settles exact; the graph decides each cell's neighbours and costs.
     /// </summary>
     public struct ReverseDijkstra : IDisposable
     {

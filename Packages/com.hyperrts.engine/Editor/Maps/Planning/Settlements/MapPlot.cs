@@ -6,9 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// One settlement plot in authored-sector space: a rectangle whose front edge lies beside the street, with
-    /// <c>u</c> running along the street (centred on the plot) and <c>v</c> back from the front fence. The yard,
-    /// garden and back are bands of <c>v</c>.
+    /// One settlement plot in authored-sector space: a rectangle with <c>u</c> along the street and <c>v</c> back
+    /// from the front fence.
     /// </summary>
     internal sealed class MapPlot
     {

@@ -6,9 +6,8 @@ using Unity.Netcode;
 namespace HyperRTS.Network.Commands
 {
     /// <summary>
-    /// A <c>PlayerCommand</c> on the wire. Netcode sends entities as ghost references (id and spawn tick), so a
-    /// despawned ghost arrives as <c>Entity.Null</c> rather than as a newer ghost reusing its id. Prefabs travel as
-    /// <c>EntityInfo.TypeId</c>. A command for a group addresses the <see cref="SelectionRpc"/> it was sent after.
+    /// A <c>PlayerCommand</c> on the wire. A despawned ghost arrives as <c>Entity.Null</c>, and a group command addresses the
+    /// <see cref="SelectionRpc"/> it was sent after.
     /// </summary>
     public struct CommandRpc : IRpcCommand
     {

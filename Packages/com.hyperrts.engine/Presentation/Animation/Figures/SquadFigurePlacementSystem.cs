@@ -9,9 +9,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation.Figures
 {
     /// <summary>
-    /// Stands each living <see cref="SquadFigure"/> where its <see cref="SquadMember"/> is, eased, and turns it to its
-    /// cover, in the same transform pass as its squad so the two never differ by a frame. The clips are
-    /// <see cref="SquadFigureSystem"/>'s.
+    /// Stands each living <see cref="SquadFigure"/> where its <see cref="SquadMember"/> is, in the same transform pass as its
+    /// squad so the two never differ by a frame.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.Presented)]

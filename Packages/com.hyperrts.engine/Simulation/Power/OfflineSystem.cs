@@ -6,9 +6,8 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Power
 {
     /// <summary>
-    /// Sets <see cref="OfflineReason.UnderConstruction"/> from <see cref="ConstructionProgress"/> next to the reasons
-    /// power and games set, and enables <see cref="Offline"/> while any reason holds. Runs after power so combat sees
-    /// this frame's state.
+    /// Sets <see cref="OfflineReason.UnderConstruction"/> and enables <see cref="Offline"/> while any reason holds.
+    /// Runs after power so combat sees this frame's state.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderLast = true)]

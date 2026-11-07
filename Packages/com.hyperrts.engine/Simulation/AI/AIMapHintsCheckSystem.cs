@@ -8,9 +8,8 @@ using UnityEngine.SceneManagement;
 namespace HyperRTS.Simulation.AI
 {
     /// <summary>
-    /// The skirmish AI plays only on maps that carry <see cref="AIMapHints"/>. Once a match has a map and AI players,
-    /// this logs one error naming the map when the hints are missing (or lack an AI player's slot) instead of the
-    /// bots quietly doing something else.
+    /// Logs one error naming the map when a match with AI players has no <see cref="AIMapHints"/> (or lacks an AI
+    /// player's slot), since the skirmish AI plays only on maps that carry them.
     /// </summary>
     [UpdateInGroup(typeof(AISystemGroup), OrderFirst = true)]
     public partial struct AIMapHintsCheckSystem : ISystem

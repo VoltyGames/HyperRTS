@@ -8,9 +8,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Power
 {
     /// <summary>
-    /// Totals each player's <see cref="PowerGrid"/> from completed buildings and sets
-    /// <see cref="OfflineReason.Unpowered"/> on consumers while the owner draws more than it produces. Runs before
-    /// combat so weapons see it.
+    /// Totals each player's <see cref="PowerGrid"/> and sets <see cref="OfflineReason.Unpowered"/> on consumers while it draws more than it produces.
+    /// Runs before combat so weapons see it.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderLast = true)]

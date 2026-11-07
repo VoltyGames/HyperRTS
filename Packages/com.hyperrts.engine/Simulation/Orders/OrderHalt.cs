@@ -6,9 +6,8 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
-    /// Stops what the previous order left running (movement, its arrival, an attack, move bookkeeping) before a new
-    /// order starts.
-    /// Parallel jobs may use it on the entity they are processing only.
+    /// Stops what the previous order left running (movement, arrival, attack, move bookkeeping) before a new order
+    /// starts. Parallel jobs may use it only on the entity they are processing.
     /// </summary>
     public struct OrderHalt
     {

@@ -6,9 +6,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
-    /// A map library item, one asset named <c>&lt;Key&gt;.&lt;type&gt;.asset</c> (<c>Stubble.surface.asset</c> is the
-    /// surface <c>Stubble</c>). <see cref="MapLibrary"/> hands out a copy per load, with its key and asset path set, so
-    /// a build can fill the copy's derived fields without touching the asset.
+    /// A map library item, one asset named <c>&lt;Key&gt;.&lt;type&gt;.asset</c>. <see cref="MapLibrary"/> hands out
+    /// a copy per load so a build can fill its derived fields.
     /// </summary>
     public abstract class MapLibraryItem : ScriptableObject, IMapKeyed
     {

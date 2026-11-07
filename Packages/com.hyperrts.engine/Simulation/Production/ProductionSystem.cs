@@ -13,9 +13,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>
-    /// Trains the head of each completed producer's queue while the owner has population room, then spawns it at the
-    /// spawn offset, raises <see cref="UnitProduced"/> and sends it to the rally point. Aircraft that use pads wait for
-    /// a free pad at an airfield and spawn docked on it. Finished research is recorded on the owner instead.
+    /// Trains the head of each completed producer's queue while the owner has population room, then spawns it and sends it to the rally point.
+    /// Finished research is recorded on the owner.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]

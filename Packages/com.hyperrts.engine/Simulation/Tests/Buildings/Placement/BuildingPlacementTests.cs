@@ -13,9 +13,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Buildings.Placement
 {
     /// <summary>
-    /// Placing a building: quarter turns snap edges onto cells, free yaws land on the half-cell lattice, turned
-    /// neighbours sit flush, the building gap refuses narrow lanes, and only enemy units on
-    /// the spot rule it out.
+    /// Building placement: snapping to cells, turned neighbours, the building gap and enemy units on the spot.
     /// </summary>
     public class BuildingPlacementTests : SimulationFixture
     {

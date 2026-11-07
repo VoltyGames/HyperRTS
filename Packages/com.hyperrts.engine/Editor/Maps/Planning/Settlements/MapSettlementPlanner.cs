@@ -5,11 +5,9 @@ using System.Collections.Generic;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// Settlements: up to <c>count</c> plots lining both sides of the roads within the radius, nearest the centre
-    /// first, each with its yard, garden and back claimed on the kit's surfaces, a house facing the street,
-    /// outbuildings, orchard, extras, fences and gate; poles and pipe run along the streets. Everything is chosen in
-    /// the authored sector and placed and claimed in every copy. Runs after roads, banks, bases, pads and ravines and
-    /// before woods, belts and farmland, so it takes only land they left free.
+    /// Settlements: up to <c>count</c> plots lining the roads within the radius, each with house, yard, outbuildings,
+    /// fences and street furniture. Runs after roads, banks, bases, pads and ravines and before woods, belts and
+    /// farmland.
     /// </summary>
     public sealed class MapSettlementPlanner : MapLandPass
     {

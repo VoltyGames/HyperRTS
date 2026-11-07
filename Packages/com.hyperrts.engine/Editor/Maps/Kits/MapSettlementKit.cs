@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Kits
 {
     /// <summary>
-    /// How a settlement type lays out its plots along a street: a house behind the front fence and gate, outbuildings
-    /// behind it, a vegetable garden, an orchard or meadow at the back, fences between plots, and street furniture.
-    /// Building and fence keys are props; surfaces and trees are climate keys.
+    /// How a settlement type lays out its plots along a street. Building and fence keys are props; surfaces and trees
+    /// are climate keys.
     /// </summary>
     [MapLibraryItem("settlement")]
     [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Settlement Kit", fileName = "New.settlement")]

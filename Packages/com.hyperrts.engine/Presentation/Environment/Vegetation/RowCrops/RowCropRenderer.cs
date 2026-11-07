@@ -8,9 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
     /// <summary>
-    /// Grows a map's row crops on the GPU from <see cref="RowCropFields"/> for each camera about to render, in edit
-    /// mode too, and draws them per distance band. Each camera keeps its own buffers and regrows only when its view,
-    /// the quality settings or the trample map change.
+    /// Grows a map's row crops on the GPU for each camera about to render, in edit mode too, and draws them per distance band.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("")]

@@ -9,9 +9,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 {
     /// <summary>
-    /// Scatters a map's grass and small plants on the GPU from a <see cref="GrassField"/> for each camera about to
-    /// render, in edit mode too, and draws them in a shadowed near band and an unshadowed far band. Each camera keeps
-    /// its own buffers and rescatters only when its view or the quality settings change.
+    /// Scatters a map's grass and small plants on the GPU for each camera about to render, in edit mode too, in a shadowed
+    /// near band and an unshadowed far band.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu("")]

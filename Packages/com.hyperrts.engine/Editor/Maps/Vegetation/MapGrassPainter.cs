@@ -12,10 +12,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Vegetation
 {
     /// <summary>
-    /// Grass, crops and small plants from the land use: each surface's plants cover the share it asks for, wild ground
-    /// broken into clumps and clearings by noise (crops grow evenly), and weeds gathered in stands of their own; reeds
-    /// stand in the shallows along the banks. Nothing grows on roads, tramlines, deep water or placed objects, and it
-    /// thins in round them.
+    /// Grass, crops and small plants from the land use, with wild ground in noisy clumps and clearings and crops
+    /// even. Nothing grows on roads, tramlines, deep water or placed objects.
     /// </summary>
     public static class MapGrassPainter
     {

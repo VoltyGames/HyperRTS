@@ -9,9 +9,8 @@ using Unity.Entities;
 namespace HyperRTS.Network.Replication
 {
     /// <summary>
-    /// Client: entity and asset references can't cross the network, so replicated buffers carry type ids and this
-    /// fills the references back in from the client's own prefabs and assets whenever a snapshot changes them.
-    /// Games resolve their own <see cref="IPrefabReference"/> buffers the same way with <see cref="PrefabReferences"/>.
+    /// Client: fills entity and asset references back in from type ids, as references can't cross the network. Games resolve
+    /// their own <see cref="IPrefabReference"/> buffers with <see cref="PrefabReferences"/>.
     /// </summary>
     [RemoteClientOnly]
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]

@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// Shelterbelts and hedgerows: a strip of ground along a polyline with rows of trees, shrubs in the gaps and on
-    /// the edges, and breaks where tracks cut through. Plans the spec's belts; farmland lays its field-end belts
-    /// through <see cref="PlanLine"/>.
+    /// Shelterbelts and hedgerows: a strip of trees and shrubs along a polyline, with breaks where tracks cut
+    /// through. Farmland uses <see cref="PlanLine"/> for its field-end belts.
     /// </summary>
     public sealed class MapBeltPlanner : MapLandPass
     {

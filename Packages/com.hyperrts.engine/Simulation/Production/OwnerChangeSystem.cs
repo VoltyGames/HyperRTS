@@ -12,9 +12,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>
-    /// Clears what the old owner left on an entity that changed hands this frame (<see cref="OwnerChanged"/>): its
-    /// production queue is refunded to the old owner, it stops every order, movement and attack, and its rally point
-    /// and selection are dropped.
+    /// Clears what the old owner left on an entity that changed hands (<see cref="OwnerChanged"/>): refunds its queue and drops its orders, rally point and selection.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]

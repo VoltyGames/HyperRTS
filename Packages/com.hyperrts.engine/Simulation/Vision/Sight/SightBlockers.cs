@@ -12,8 +12,8 @@ namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>
     /// Singleton on the <see cref="FogOfWar"/> grid: what blocks sight on each cell. Solid <see cref="SightBlock"/>s
-    /// raise its ground; porous ones and crops take a share of sight per metre crossed below their top; some conceal.
-    /// Heights are above the cell's ground in <see cref="Step"/> metre steps, densities in <see cref="DensityStep"/>s.
+    /// raise its ground; porous ones and crops take a share of sight per metre below their top; some conceal. Heights
+    /// are in <see cref="Step"/> metres, densities in <see cref="DensityStep"/>s.
     /// </summary>
     public struct SightBlockers : IComponentData
     {

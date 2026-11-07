@@ -14,10 +14,10 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
-    /// Picks the order a unit gets for a command from its capabilities and the target: Smart first tries the unit's
-    /// <see cref="SmartOrderRule"/>s, then chooses attack/gather/build/repair/enter/capture/land/move; explicit commands
-    /// fall back to Move when the unit can't comply (Return to Base is skipped by units without a pad). A rooted
-    /// <see cref="Deployable"/> takes only attacks, so the player must pack it up before it moves.
+    /// Picks the order a unit gets for a command from its capabilities and the target: Smart tries the unit's
+    /// <see cref="SmartOrderRule"/>s, then attack, gather, build, repair, enter, capture, land or move; explicit
+    /// commands fall back to Move when the unit can't comply. A rooted <see cref="Deployable"/> takes only attacks, so
+    /// the player must pack it up first.
     /// </summary>
     public struct OrderResolver
     {

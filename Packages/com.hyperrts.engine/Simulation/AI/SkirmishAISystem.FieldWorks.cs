@@ -22,9 +22,9 @@ namespace HyperRTS.Simulation.AI
         private const float FieldWorkStrip = 2.5f;
 
         /// <summary>
-        /// Digs in at each of the slot's defence points: <see cref="AIPlayer.FieldWorkLines"/> cover lines across the
-        /// approach, stepping back toward the base, and with <see cref="AIPlayer.FieldWorkBarrier"/> a barrier line
-        /// in front. A line that already has a work on it is not laid again.
+        /// Digs in at each of the slot's defence points: <see cref="AIPlayer.FieldWorkLines"/> cover lines stepping
+        /// back toward the base, and with <see cref="AIPlayer.FieldWorkBarrier"/> a barrier line in front. A line that
+        /// already has a work is not laid again.
         /// </summary>
         private void BuildFieldWorks(ref SystemState state, in Turn turn, in Snapshot snapshot)
         {

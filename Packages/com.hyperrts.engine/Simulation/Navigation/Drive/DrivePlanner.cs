@@ -96,10 +96,9 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private readonly float HullLength => _agent.HalfLength * 2f;
 
         /// <summary>
-        /// Replaces <paramref name="waypoints"/> with the drawn <paramref name="points"/>, the stretches it had to plan
-        /// made tight, spending at most <paramref name="budget"/> expansions. Past it, a plan that
-        /// <paramref name="defers"/> stops, writes nothing and is <see cref="WaitsForBudget"/>; one that doesn't
-        /// leaves the rest as drawn. False when deferred.
+        /// Replaces <paramref name="waypoints"/> with the drawn <paramref name="points"/>, planning tight stretches
+        /// within <paramref name="budget"/> expansions. Past it, a plan that <paramref name="defers"/> writes nothing
+        /// and is <see cref="WaitsForBudget"/>; others leave the rest as drawn. False when deferred.
         /// </summary>
         public bool Plan(in PathRequest request, in NavAccess access, NativeList<float3> points,
             DynamicBuffer<PathWaypoint> waypoints, int budget, bool defers)

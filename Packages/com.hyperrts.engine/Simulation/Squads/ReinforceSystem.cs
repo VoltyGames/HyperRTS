@@ -11,9 +11,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
-    /// Handles the Reinforce command: squads with dead members in range of a friendly working <see
-    /// cref="ReinforcePoint"/> bring them back one at a time, paying <see cref="SquadRules.ReinforceCost"/> each. It
-    /// ends when no one is dead, the squad leaves range or the player can't pay.
+    /// Handles the Reinforce command: squads with dead members in range of a friendly <see cref="ReinforcePoint"/> bring them back one at a time for <see cref="SquadRules.ReinforceCost"/> each.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

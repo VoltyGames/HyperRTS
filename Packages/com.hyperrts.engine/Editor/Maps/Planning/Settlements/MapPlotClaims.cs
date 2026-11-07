@@ -7,9 +7,8 @@ using HyperRTS.Editor.Maps.Palette;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// A settlement's plots and the land: whether anything but open ground and road verge lies under a plot, and
-    /// claiming its yard, garden and back in every copy of the sector. Cells are decided from the authored-sector point,
-    /// so copies match.
+    /// Checks that only open ground and road verge lie under a plot, and claims its yard, garden and back in every
+    /// copy of the sector.
     /// </summary>
     internal sealed class MapPlotClaims
     {

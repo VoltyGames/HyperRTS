@@ -11,9 +11,7 @@ using Unity.Rendering;
 namespace HyperRTS.Presentation.Fog
 {
     /// <summary>
-    /// Hides roots riding <see cref="Inside"/> a container, with all their parts, and fades roots in and out of the fog:
-    /// one the local player saw fades out over <see cref="FadeTime"/> once <see cref="FogHidden"/>, then stops drawing;
-    /// one coming into sight draws at once and fades in. A root first spotted in the fog is hidden at once.
+    /// Hides roots riding <see cref="Inside"/> a container and fades roots in and out of the fog over <see cref="FadeTime"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

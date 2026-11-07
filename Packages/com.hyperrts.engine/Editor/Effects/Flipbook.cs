@@ -3,9 +3,8 @@ using System;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// A texture sheet of columns by rows frames. Each particle plays from one fraction of the sheet to another over
-    /// its life, holds one random frame from that share, or with randomStart starts on a random frame and plays that
-    /// share of the sheet over its life, wrapping round.
+    /// A texture sheet of columns by rows frames that each particle plays, holds on one random frame, or plays from a
+    /// random start.
     /// </summary>
     [Serializable]
     public struct Flipbook

@@ -28,10 +28,8 @@ namespace HyperRTS.Editor.Destruction
         private static void FillFromStructure(SectionsAuthoring sections) => new SectionsFill(sections).FromStructure();
 
         /// <summary>
-        /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling (hidden at scale 0), and guesses what
-        /// the inspector then lets you correct: the box, anchored when it reaches the ground, exterior when it is a wall, a full
-        /// share for a wall and half for the rest, and supports from the sections it touches below. Materials and floors
-        /// already set stay.
+        /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling and guesses box, anchored, exterior,
+        /// share and supports for you to correct. Materials and floors already set stay.
         /// </summary>
         public void FromParts()
         {

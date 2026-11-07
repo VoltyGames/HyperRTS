@@ -57,9 +57,8 @@ namespace HyperRTS.Editor.Maps.Land
         }
 
         /// <summary>
-        /// Spreads distances over a row-major grid, from the south-west corner and back from the north-east:
-        /// <paramref name="carry"/> gets each cell, a neighbour this pass has already reached and the step between
-        /// them (1 straight, 1.4142 diagonal), to carry that neighbour's distance over.
+        /// Spreads distances over a row-major grid in two passes; <paramref name="carry"/> gets each cell, an already
+        /// reached neighbour and the step between them (1 straight, 1.4142 diagonal).
         /// </summary>
         public static void Spread(MapGrid grid, Action<int, int, float> carry)
         {

@@ -12,9 +12,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Deploy
 {
     /// <summary>
-    /// Sets a <see cref="Deployable"/> up to fire an ordered attack on a target in range. One deployed with the target
-    /// outside its weapon's firing arc packs up; a packed one turns to face the target and deploys, so its arc is
-    /// centred on it. Only weapons with a firing arc, and only ordered targets: the unit picks its own inside the arc.
+    /// Packs up and turns a <see cref="Deployable"/> so an ordered target in range sits in the centre of its weapon's firing arc.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

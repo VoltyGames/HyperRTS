@@ -4,8 +4,8 @@ namespace HyperRTS.Simulation.Common.Cells
 {
     /// <summary>
     /// Walks the cells a straight line crosses on a <see cref="CellGrid"/>, in order and on or off the grid (Amanatides
-    /// and Woo). Each cell comes with the shares of the line, 0 at the start and 1 at the end, where it enters and
-    /// leaves; a line through a corner steps diagonally, skipping the two cells beside it.
+    /// and Woo), with the line shares (0 at the start, 1 at the end) where each cell is entered and left. A line
+    /// through a corner steps diagonally.
     /// </summary>
     public struct GridRay
     {

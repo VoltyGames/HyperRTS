@@ -6,9 +6,8 @@ using Unity.Netcode;
 namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
-    /// A building made of <see cref="Section"/>s: hits land on the sections they reach, sections cut off from the
-    /// ground fall, and the building's health is the sum of its sections'. Masks hold one bit per section. Only
-    /// <see cref="Broken"/> reaches clients, as a ghost field on a ghost and through scenery changes on scenery.
+    /// A building made of <see cref="Section"/>s: hits land on the sections they reach, cut-off sections fall, and its health is the sum of theirs.
+    /// Only <see cref="Broken"/> reaches clients.
     /// </summary>
     public partial struct SectionedBuilding : IComponentData
     {

@@ -90,8 +90,8 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
         /// <summary>
         /// Where a path from <paramref name="start"/> in <paramref name="startCell"/> begins: the cell when open, else
-        /// the nearest open cell it can squeeze to in the goal's region, then in any region, then the nearest open
-        /// cell, which is how a unit inside a footprint gets out.
+        /// the nearest open cell it can squeeze to (goal's region first), which is how a unit inside a footprint gets
+        /// out.
         /// </summary>
         public bool TryFindStart(int2 startCell, float3 start, float3 goal, out int2 from)
         {

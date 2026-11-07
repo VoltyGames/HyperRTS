@@ -12,9 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>
-    /// Builds <see cref="SightBlockers"/> on the fog grid, with the map's <see cref="CropCover"/>, and restamps its
-    /// blocks when the set of enabled <see cref="SightBlock"/>s, their places or their values change. A new map,
-    /// terrain or crop cover builds it again.
+    /// Builds <see cref="SightBlockers"/> on the fog grid with the map's <see cref="CropCover"/>, and restamps it when
+    /// enabled <see cref="SightBlock"/>s, their places or values change. A new map, terrain or crop cover rebuilds it.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]

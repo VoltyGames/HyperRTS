@@ -11,10 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Farmland
 {
     /// <summary>
-    /// Farmland: land nothing else took, split into fields on a grid. Field ends get a shelterbelt with a dirt track
-    /// beside it; each field gets a crop from the kit's mix, a weedy margin and a headland at each end where the rows
-    /// turn, and pieces too small or too narrow to farm become the kit's leftover ground. Everything is decided in the authored sector, so every copy of a field
-    /// grows the same crop.
+    /// Farmland: land nothing else took, split into fields on a grid with a crop, margin and headlands each, and
+    /// shelterbelts at field ends. Decided in the authored sector, so every copy of a field grows the same crop.
     /// </summary>
     public sealed class MapFarmlandPlanner : MapLandPass
     {

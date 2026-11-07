@@ -9,10 +9,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Palette
 {
     /// <summary>
-    /// The game's map vocabulary: what each spec <c>kind</c> places, what each side starts with, and the
-    /// settlement kits. Exactly one <c>*.palette.asset</c> per project; its entries are every library prop and its
-    /// settlement kits every library settlement (see <see cref="MapLibrary.Palette"/>). Prefabs with HyperRTS authoring
-    /// go into the SubScene; the rest are scenery.
+    /// The game's map vocabulary: what each spec <c>kind</c> places, what each side starts with, and the settlement
+    /// kits. Exactly one per project (see <see cref="MapLibrary.Palette"/>). Prefabs with HyperRTS authoring go into
+    /// the SubScene, the rest are scenery.
     /// </summary>
     [MapLibraryItem("palette")]
     [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Palette", fileName = "New.palette")]

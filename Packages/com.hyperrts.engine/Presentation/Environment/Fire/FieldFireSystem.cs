@@ -21,9 +21,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Fire
 {
     /// <summary>
-    /// Runs the map's <see cref="FieldFires"/>: lights them from blasts the local player sees on dry ground and burns
-    /// them on with the wind, fog or not, so clients agree. Only what the local player sees gets ash and scorch, a fire
-    /// effect per cluster and battle haze. Client visuals only; idle without a <see cref="FieldFireSettings"/> or terrain.
+    /// Runs the map's <see cref="FieldFires"/>: lights them from blasts and burns them on with the wind, the same on every
+    /// client. Only what the local player sees gets ash, scorch and effects.
     /// </summary>
     // After TrampleStampSystem, which clears the stamps these join.
     [WorldSystemFilter(SimulationWorlds.Presented)]

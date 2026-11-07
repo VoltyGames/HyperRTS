@@ -13,9 +13,8 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Navigation.Fields
 {
     /// <summary>
-    /// Registers every <see cref="NavAgent"/>'s <see cref="MovementClass"/> and rebuilds the <see cref="NavField"/> and
-    /// <see cref="NavSectors"/> of the sectors <see cref="NavGridSystem"/> marked dirty. Only worlds that move units
-    /// run it.
+    /// Rebuilds the <see cref="NavField"/> and <see cref="NavSectors"/> of sectors <see cref="NavGridSystem"/> marked
+    /// dirty, and registers each agent's <see cref="MovementClass"/>. Only worlds that move units run it.
     /// </summary>
     [UpdateInGroup(typeof(MovementSystemGroup))]
     [UpdateAfter(typeof(NavGridSystem))]

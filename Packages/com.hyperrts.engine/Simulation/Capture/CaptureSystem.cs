@@ -12,10 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Capture
 {
     /// <summary>
-    /// Runs Capture orders: capturers walk to the building and add <c>Rate / CaptureTime</c> progress per second.
-    /// A different player starting over resets it. On completion the building is transferred
-    /// (<see cref="OwnerChanged.Transfer"/>; it changes owner at the end of the frame) and a single-use capturer is
-    /// consumed.
+    /// Runs Capture orders: capturers walk to the building and add progress. A different player starting over resets it.
+    /// On completion the building changes owner at the end of the frame (<see cref="OwnerChanged.Transfer"/>).
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]

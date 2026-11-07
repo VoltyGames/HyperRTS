@@ -8,10 +8,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Editor.Maps.Meshes
 {
     /// <summary>
-    /// One road class's ribbons laid over the terrain, turned into one mesh: rows every couple of metres, vertices
-    /// across each road at ±width/2 and between, lifted a few centimetres over the final ground and lit with the
-    /// ground's normal. UV X runs across (0 to 1), UV Y is metres along the road, and vertex alpha fades the ends the
-    /// road should fade at; the shader reads no other colour.
+    /// One road class's ribbons over the terrain as one mesh. UV X runs across the road, UV Y is metres along it, and
+    /// vertex alpha fades the ends.
     /// </summary>
     public sealed class MapRoadMesh
     {
@@ -46,9 +44,8 @@ namespace HyperRTS.Editor.Maps.Meshes
         public int Count => Vertices.Count;
 
         /// <summary>
-        /// Adds a road's ribbon; rows whose centre
-        /// is <paramref name="hidden"/> (over water, under a bridge) are left out and break the ribbon there, and every
-        /// visible run fades in and out at a break as at a fading end.
+        /// Adds a road's ribbon. Rows whose centre is <paramref name="hidden"/> (water, bridge) are left out and
+        /// break the ribbon, fading at the break.
         /// </summary>
         public void AddRibbon(MapRoad road, bool fadeStart, bool fadeEnd, Func<Vector2, bool> hidden)
         {

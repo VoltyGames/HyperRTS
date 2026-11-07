@@ -54,8 +54,8 @@ namespace HyperRTS.Editor.Maps.Geometry
         public float Distance(Vector2 point) => Distance(point, out _);
 
         /// <summary>
-        /// Distance to the line with the closest point's distance along it, both exactly as
-        /// <see cref="MapGeometry.DistanceToPolyline(IReadOnlyList{Vector2}, Vector2, out float)"/> finds them, or
+        /// Distance to the line and the closest point's distance along it, as <see
+        /// cref="MapGeometry.DistanceToPolyline(IReadOnlyList{Vector2}, Vector2, out float)"/> finds them, or
         /// infinity outside the line's reach.
         /// </summary>
         public float Distance(Vector2 point, out float along)

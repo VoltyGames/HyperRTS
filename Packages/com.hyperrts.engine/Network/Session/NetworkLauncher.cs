@@ -7,8 +7,7 @@ namespace HyperRTS.Network.Session
 {
     /// <summary>
     /// Starts a session from the command line (<see cref="LaunchOptions"/>): <c>-server</c>, <c>-host</c> or
-    /// <c>-connect &lt;address&gt;</c> [<c>-observe</c>], with optional <c>-port</c> and <c>-scene</c>. A server may add
-    /// <c>-exit-on-end</c>, <c>-time-limit &lt;minutes&gt;</c> and <c>-report &lt;path&gt;</c>. Player builds only.
+    /// <c>-connect &lt;address&gt;</c>. Player builds only.
     /// </summary>
     public static partial class NetworkLauncher
     {

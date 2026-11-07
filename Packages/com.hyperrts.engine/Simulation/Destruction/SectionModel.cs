@@ -14,9 +14,7 @@ namespace HyperRTS.Simulation.Destruction
     }
 
     /// <summary>
-    /// The models that show a <see cref="Section"/>, at the same index: standing, holed, breaking and broken. A section
-    /// without pieces swaps straight from <see cref="Intact"/> to <see cref="Broken"/>; one with them breaks as a clip of
-    /// <see cref="Pieces"/> beside its <see cref="Stub"/>, then leaves the <see cref="Heap"/>.
+    /// The models that show a <see cref="Section"/>, at the same index: standing, holed, breaking and broken.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct SectionModel : IBufferElementData

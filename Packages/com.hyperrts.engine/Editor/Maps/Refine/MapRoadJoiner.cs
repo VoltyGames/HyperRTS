@@ -7,10 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Refine
 {
     /// <summary>
-    /// Joins a road end that stops short of another sector road onto it: the end snaps to the nearest point of that
-    /// road and the last stretch is re-laid as a curve that meets it at 60° or more (a road reaching the end of
-    /// another simply continues it). Roads join in descending rank, so a lower-ranked road meets a finished
-    /// higher-ranked one.
+    /// Joins a road end that stops short of another road onto it, meeting at 60 degrees or more. Roads join in
+    /// descending rank, so a lower-ranked road meets a finished higher-ranked one.
     /// </summary>
     public static class MapRoadJoiner
     {

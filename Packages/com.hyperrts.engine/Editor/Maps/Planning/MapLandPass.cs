@@ -9,9 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning
 {
     /// <summary>
-    /// One step of land planning: it claims the land it is for, taking only what earlier passes left, and may place
-    /// props and plant trees. Choices are made in the authored sector and copied by the symmetry. Constructors only
-    /// keep the context; the work happens in <see cref="Plan"/>, in <see cref="MapLandPlanner"/>'s order.
+    /// One step of land planning: claims the land earlier passes left and may place props and trees, chosen in the
+    /// authored sector. Work happens in <see cref="Plan"/>, in <see cref="MapLandPlanner"/>'s order.
     /// </summary>
     public abstract class MapLandPass
     {

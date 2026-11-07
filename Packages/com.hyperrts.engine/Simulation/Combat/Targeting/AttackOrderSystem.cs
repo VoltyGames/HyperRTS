@@ -9,9 +9,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
-    /// Runs <see cref="OrderType.Attack"/> orders: points <see cref="AttackTarget"/> at the order's target and
-    /// completes the order once that target is dead, gone, no longer hostile, hidden by stealth or out of the
-    /// weapon's reach (an aircraft for a ground-only gun), or when the weapon runs out of ammo.
+    /// Runs <see cref="OrderType.Attack"/> orders: points <see cref="AttackTarget"/> at the order's target and completes the order once the target is dead, gone, hidden, out of reach or the weapon is out of ammo.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

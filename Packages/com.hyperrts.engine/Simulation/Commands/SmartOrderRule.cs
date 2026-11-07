@@ -4,9 +4,9 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
-    /// A right-click rule a game adds to a unit: a Smart command on a target that has <see cref="TargetComponent"/>
-    /// and stands in one of <see cref="Relations"/> to the unit gives <see cref="Order"/>. Rules are checked in buffer
-    /// order, before the engine's own Smart choices. Build them with <see cref="For{TTarget}"/> in a baker.
+    /// A right-click rule a game adds to a unit: a Smart command on a target with <see cref="TargetComponent"/> in one
+    /// of <see cref="Relations"/> to the unit gives <see cref="Order"/>. Rules are checked in buffer order, before the
+    /// engine's own choices; build them with <see cref="For{TTarget}"/> in a baker.
     /// </summary>
     [InternalBufferCapacity(1)]
     public struct SmartOrderRule : IBufferElementData

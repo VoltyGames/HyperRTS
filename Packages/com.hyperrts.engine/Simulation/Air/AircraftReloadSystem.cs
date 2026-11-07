@@ -8,9 +8,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// The reload cycle: aircraft whose limited weapons all run empty get one Return to Base order, which the player
-    /// may override, and docked aircraft reload their <see cref="AmmoRefill.Docked"/> weapons, each
-    /// <see cref="WeaponMount"/> at its own pace. Games refuel and repair docked aircraft the same way.
+    /// Sends aircraft with all limited weapons empty back to base, and reloads docked aircraft.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

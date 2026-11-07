@@ -19,9 +19,8 @@ using UnityEngine.SceneManagement;
 namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
-    /// The nav grid a built map gives the simulation, made in the editor with the runtime's stamps: the baked terrain
-    /// classified, then the SubScene's nav areas, obstacles and building footprints stamped on top. Tools read it
-    /// as one <see cref="ToolsClass"/> with no wall margin, so rush times stay geometric.
+    /// The nav grid a built map gives the simulation, made in the editor with the runtime's stamps. Tools read it as
+    /// <see cref="ToolsClass"/> with no wall margin, so rush times stay geometric.
     /// </summary>
     public sealed class MapNavGrid : IDisposable
     {

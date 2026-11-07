@@ -1,9 +1,8 @@
 namespace HyperRTS.Simulation.Cues
 {
     /// <summary>
-    /// What an entity's sound and effect are for. Voices, <see cref="ProductionDone"/> and announcements reach only the
-    /// owner (<see cref="CueRules.IsOwnerOnly"/>). <see cref="Impact"/> is where a shot landed: its sound, the shooter's
-    /// impact effects and marks. Values from <see cref="GameFirst"/> up belong to games.
+    /// What an entity's sound and effect are for. Voices, <see cref="ProductionDone"/> and announcements reach only the owner (<see cref="CueRules.IsOwnerOnly"/>).
+    /// Values from <see cref="GameFirst"/> up belong to games.
     /// </summary>
     public enum CueSlot : byte
     {

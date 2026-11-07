@@ -7,11 +7,10 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>
-    /// Draws a viewer's <see cref="SightArea"/>: a vision circle that terrain and blockers can occlude. Rays fanned
-    /// round the viewer walk outward through each cell they cross, keeping the steepest sight line so far, and a cell
-    /// is seen only when nothing nearer rises above it. Woods, crops and smoke the eye is below take a share of sight
-    /// per metre crossed, and a ray stops once they have taken it all. Neighbouring rays stay closer than a cell is wide
-    /// across them, so they cross every cell in the circle and the cost stays proportional to its area.
+    /// Draws a viewer's <see cref="SightArea"/>: a vision circle that terrain and blockers can occlude. Rays walk
+    /// outward keeping the steepest sight line so far, and a cell is seen only when nothing nearer rises above it;
+    /// woods, crops and smoke take a share of sight per metre. Rays stay closer than a cell is wide, so cost stays
+    /// proportional to the circle's area.
     /// </summary>
     internal struct SightLines
     {

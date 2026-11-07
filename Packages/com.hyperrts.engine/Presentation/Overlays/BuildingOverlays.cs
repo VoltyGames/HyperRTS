@@ -18,9 +18,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Over buildings, always on top and the same size at every zoom: a capture dial filling in the capturer's colour
-    /// while a capture is under way, and a pip per garrison slot, filled in the holder's colour, while anyone is
-    /// inside. Hidden where the building is fogged.
+    /// Capture dials and garrison pips over buildings, always on top and the same size at every zoom. Hidden where the
+    /// building is fogged.
     /// </summary>
     public sealed class BuildingOverlays : IDisposable
     {

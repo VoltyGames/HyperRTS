@@ -9,9 +9,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Tests.Animation
 {
     /// <summary>
-    /// A bone set's parts come from other models on the same skeleton: a skinned part whose node turns differently
-    /// moves into the skeleton mesh's space, one at another rest pose fails, and a weapon sits with its origin on its
-    /// socket node and follows the bone above it.
+    /// Parts from other models on the same skeleton: a differently turned skinned part is moved into the skeleton's
+    /// space, one at another rest pose fails, and a weapon follows its socket's bone.
     /// </summary>
     public class BoneRigTests
     {

@@ -8,8 +8,7 @@ namespace HyperRTS.Editor.Maps.Ground
 {
     /// <summary>
     /// The land-use borders as the ground painters see them, so texture, grass and tint end on one line. Each border
-    /// takes the crisper of its two surfaces' edge styles (a ploughed edge stays sharp against a meadow; two meadows
-    /// blend wide), smoothed over a few metres so the style changes without a step where three regions meet.
+    /// takes the crisper of its two surfaces' edge styles.
     /// </summary>
     public sealed class MapEdgeField
     {

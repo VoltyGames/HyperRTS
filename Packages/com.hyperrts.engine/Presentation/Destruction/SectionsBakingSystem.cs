@@ -8,8 +8,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Turns the holed, pieces, stub, heap and broken section models, authored at scale 0 so editor views show the
-    /// standing building, into full-size meshes hidden by <see cref="HideReason.Section"/>, which <see cref="SectionViewSystem"/> then flips.
+    /// Turns the section models, authored at scale 0 so editor views show the standing building, into full-size meshes hidden by
+    /// <see cref="HideReason.Section"/>, which <see cref="SectionViewSystem"/> then flips.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     [UpdateAfter(typeof(HiddenByBakingSystem))]

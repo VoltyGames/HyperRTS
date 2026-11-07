@@ -15,9 +15,7 @@ using Random = Unity.Mathematics.Random;
 namespace HyperRTS.Presentation.Environment.Ambient
 {
     /// <summary>
-    /// Forms <see cref="AmbientLife"/> dust devils on allowed, crop-free ground near the camera's focus and streams
-    /// their rig as they drift downwind. Client visuals only; idle without an AmbientLife, with none allowed, or on Low
-    /// effect detail.
+    /// Forms <see cref="AmbientLife"/> dust devils on allowed ground near the camera and drifts them downwind. Client visuals only.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

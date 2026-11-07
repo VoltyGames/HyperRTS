@@ -9,9 +9,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Horizon
 {
     /// <summary>
-    /// Tree lines on the horizon: cut-out strips standing along a share of the long row edges that carry no track, from
-    /// <see cref="clearance"/> past the terrain's edge out to the ring's end, broken where field-end tracks cross. Each
-    /// stretch is two staggered layers of upright quads drawn with one of <see cref="strips"/>, picked by hash.
+    /// Tree lines along some long row edges of the horizon, drawn as staggered strips of upright quads.
     /// </summary>
     [Serializable]
     public sealed class HorizonBelts

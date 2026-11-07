@@ -6,9 +6,7 @@ using Unity.Netcode;
 namespace HyperRTS.Simulation.MatchStart
 {
     /// <summary>
-    /// Netcode keeps prespawned ghosts (scene objects with a GhostAuthoringComponent, like the Match) disabled until
-    /// its prespawn systems register them, which only run in client and server worlds. Single player has neither, so
-    /// this enables them there and they play as plain entities.
+    /// Enables prespawned ghosts in single player, where netcode's prespawn systems never run, so they play as plain entities.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.All)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]

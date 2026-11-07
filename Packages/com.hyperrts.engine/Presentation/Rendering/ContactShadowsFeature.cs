@@ -6,9 +6,8 @@ using UnityEngine.Rendering.Universal;
 namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
-    /// Short, sharp sun shadows where small things meet the ground: traces the depth buffer toward the sun and darkens
-    /// URP's screen-space shadow texture, so every lit shader gets them. Needs URP's Screen Space Shadows feature and a
-    /// forward renderer.
+    /// Short sun shadows where small things meet the ground, traced from the depth buffer into URP's screen-space shadows.
+    /// Needs URP's Screen Space Shadows feature and a forward renderer.
     /// </summary>
     public sealed class ContactShadowsFeature : ScriptableRendererFeature
     {

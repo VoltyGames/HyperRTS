@@ -9,9 +9,7 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>
-    /// Streams each drawn vehicle's <see cref="MotionDust"/>: the rig for the ground material under its socket,
-    /// stronger with its drawn speed along its facing up to the full-rate speed. Measured from the drawn motion so it
-    /// rises on network clients too; sideways crowd pushes raise little.
+    /// Streams each drawn vehicle's <see cref="MotionDust"/>, stronger with its drawn speed, so network clients see it too.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>
         /// Times <paramref name="work"/> with the Performance Testing package, which records the profiler
         /// <paramref name="markers"/> too, and returns the median in milliseconds. <paramref name="prepare"/> and
-        /// <paramref name="finish"/> run outside the timing before and after every run, warm-up included.
+        /// <paramref name="finish"/> run outside the timing before and after every run.
         /// </summary>
         public static double Median(string name, Action work, Action prepare = null, Action finish = null,
             params string[] markers)

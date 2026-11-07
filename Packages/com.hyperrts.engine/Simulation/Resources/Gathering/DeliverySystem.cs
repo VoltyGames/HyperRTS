@@ -12,9 +12,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Resources.Gathering
 {
     /// <summary>
-    /// Sends <see cref="DeliverySource"/> waves from the map edge and pays each <see cref="DeliveryCarrier"/> that
-    /// reaches its source, scaled by the owner's <c>Stat.Income</c>. Killed carriers pay nothing; carriers whose
-    /// source is gone are removed.
+    /// Sends <see cref="DeliverySource"/> waves from the map edge and pays each <see cref="DeliveryCarrier"/> that reaches its source.
+    /// Killed carriers pay nothing.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]

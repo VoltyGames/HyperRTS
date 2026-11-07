@@ -4,9 +4,8 @@ using HyperRTS.Simulation.GameEntities;
 namespace HyperRTS.Editor.Validation.Rules
 {
     /// <summary>
-    /// Map scenery isn't a ghost: every client spawns its remains itself from the scenery's state, so remains that are
-    /// ghosts would show twice. Scenery that is a ghost (one the server spawns) needs ghost remains instead. Map
-    /// buildings are ghosts too; <see cref="GameEntityRule"/> checks their death spawn.
+    /// Map scenery isn't a ghost, so its remains must not be ghosts either or they would show twice; scenery that is
+    /// a ghost needs ghost remains. <see cref="GameEntityRule"/> checks map buildings.
     /// </summary>
     public sealed class SceneryRemainsRule : AuthoringRule<DestructibleAuthoring>
     {

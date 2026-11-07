@@ -8,9 +8,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Editor.Maps.Nav
 {
     /// <summary>
-    /// The runtime's A* (<see cref="GridAStar"/>) as <see cref="MapNavGrid.ToolsClass"/>, with no wall margin, so map
-    /// metrics such as rush times and attack paths match in-game pathing by length. It searches the whole map, not a
-    /// corridor, so lengths stay the true shortest.
+    /// The runtime's A* (<see cref="GridAStar"/>) as <see cref="MapNavGrid.ToolsClass"/>, searching the whole map so
+    /// lengths are the true shortest and match in-game pathing.
     /// </summary>
     public static class MapPathfinder
     {

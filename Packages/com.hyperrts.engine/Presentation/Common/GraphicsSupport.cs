@@ -4,9 +4,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Common
 {
     /// <summary>
-    /// Whether this player can present at all: a server or headless client (<c>-nographics</c>) has no graphics device,
-    /// so shaders, materials and compute kernels never load and presentation stays off
-    /// (<see cref="PresentationBehaviour"/>, <see cref="HeadlessModeSystem"/>).
+    /// Whether this player has a graphics device to present with; a server or <c>-nographics</c> client has none.
     /// </summary>
     public static class GraphicsSupport
     {

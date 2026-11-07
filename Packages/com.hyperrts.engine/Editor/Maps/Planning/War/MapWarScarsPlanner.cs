@@ -10,9 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.War
 {
     /// <summary>
-    /// Scars the land for the spec's war age from the climate's war kit: shredded belt and wood-edge trees, wrecks
-    /// near cover, trenches along belts, old craters dug into the ground and burnt patches. Chosen in the authored
-    /// sector and copied, on open land clear of roads, bases, pads, resources and settlements.
+    /// Scars the land for the spec's war age from the climate's war kit: shredded trees, wrecks, trenches, craters
+    /// and burnt patches on open land clear of roads, bases, pads, resources and settlements.
     /// </summary>
     public sealed class MapWarScarsPlanner : MapLandPass
     {

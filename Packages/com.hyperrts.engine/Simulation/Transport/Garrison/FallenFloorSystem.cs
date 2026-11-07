@@ -11,10 +11,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Transport.Garrison
 {
     /// <summary>
-    /// Each standing floor of a container with <see cref="IntactFloors"/> holds an even share of its slots, filled
-    /// ground floor first in boarding order. When a floor falls its passengers take a hit of
-    /// <see cref="FallHit"/> of their maximum health and get out, and its slots stay shut
-    /// (<see cref="Container.LostSlots"/>) until it is rebuilt.
+    /// Gives each standing floor of a container an even share of its slots. When a floor falls its passengers take a hit and get out, and its slots stay shut until it is rebuilt.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]

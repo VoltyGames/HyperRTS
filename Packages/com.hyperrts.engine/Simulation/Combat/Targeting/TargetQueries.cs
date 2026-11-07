@@ -6,9 +6,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
-    /// The singleton queries a <see cref="TargetLookup"/> reads each update. Systems create them in OnCreate and pass
-    /// them in: the lookup travels into jobs, which can't carry a query, and a system asking for a query in OnUpdate
-    /// pays a lookup each frame. Holding them also makes the system's jobs wait for the fog restamp.
+    /// The singleton queries a <see cref="TargetLookup"/> reads. Systems create them in OnCreate because the lookup travels into jobs, which can't carry a query.
     /// </summary>
     public struct TargetQueries
     {

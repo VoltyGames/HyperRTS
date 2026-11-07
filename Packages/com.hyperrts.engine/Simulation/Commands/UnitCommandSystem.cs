@@ -17,8 +17,8 @@ namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
     /// Turns unit <see cref="PlayerCommand"/>s into orders for the commanded unit or the player's selected units,
-    /// spreading ground moves into a <see cref="Formation"/> on the <see cref="NavGrid"/>. Producers are not handled
-    /// here.
+    /// spreading ground moves into a <see cref="Formation"/> on the <see cref="NavGrid"/>. Producers are handled
+    /// elsewhere.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]

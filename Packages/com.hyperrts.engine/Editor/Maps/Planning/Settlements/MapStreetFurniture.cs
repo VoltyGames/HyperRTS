@@ -6,9 +6,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.Settlements
 {
     /// <summary>
-    /// What lines a settlement's streets: poles every pole spacing on the left of each road and pipe sections end
-    /// to end on the right, a little off the road edge, wherever the verge is clear, in runs of at least the kit's
-    /// minimum section count with arches over driveways and crossing roads. Chosen in the authored sector and copied.
+    /// What lines a settlement's streets: poles on the left of each road and pipe sections on the right, in runs of
+    /// at least the kit's minimum, where the verge is clear.
     /// </summary>
     internal sealed class MapStreetFurniture
     {

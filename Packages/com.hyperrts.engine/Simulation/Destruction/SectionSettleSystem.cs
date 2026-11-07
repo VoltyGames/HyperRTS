@@ -7,9 +7,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
-    /// Follows a building's broken mask in every world, whether its own damage broke the sections or the server's
-    /// changes did: sections on the ground open and close their <see cref="NavObstaclePart"/>s and deck sections their
-    /// <see cref="NavAreaPart"/>s (one per section, in order), and newly broken outer walls leave a heap of rubble, map scenery with an id of its own that multiplayer can crush or clear.
+    /// Follows a building's broken mask in every world: opens and closes the navigation parts of broken sections and leaves rubble where outer walls fell.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]

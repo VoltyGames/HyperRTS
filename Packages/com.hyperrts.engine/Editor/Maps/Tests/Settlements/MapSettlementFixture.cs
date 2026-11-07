@@ -20,9 +20,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Maps.Tests.Settlements
 {
     /// <summary>
-    /// A 240 m rotate-180 map with one village on a straight east-west road at z = -60 (in the authored half),
-    /// built in code: a climate with the village surfaces, a palette with one prefab per kit key, and the land planners
-    /// that run before settlements. Dispose destroys the assets it made.
+    /// A 240 m rotate-180 map with one village on an east-west road, built in code with the land planners that run
+    /// before settlements. Dispose destroys its assets.
     /// </summary>
     internal sealed class MapSettlementFixture : IDisposable
     {

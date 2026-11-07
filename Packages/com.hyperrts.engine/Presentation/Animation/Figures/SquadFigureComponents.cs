@@ -3,9 +3,7 @@ using Unity.Entities;
 namespace HyperRTS.Presentation.Animation.Figures
 {
     /// <summary>
-    /// A squad drawn as several bone-animated figures under one unit: figure i shows squad member i, standing at its
-    /// offset. Its legs play idle, walk or run for its own motion and posture, its upper body fires over them, and it
-    /// dies when the member does. Client only.
+    /// A squad drawn as several bone-animated figures, figure i showing squad member i. Client only.
     /// </summary>
     public struct SquadFigures : IComponentData
     {

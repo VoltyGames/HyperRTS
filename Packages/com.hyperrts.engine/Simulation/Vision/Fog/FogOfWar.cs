@@ -9,10 +9,9 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Vision.Fog
 {
     /// <summary>
-    /// Singleton fog-of-war grid over the map, as one bit plane per team for each layer: what is visible right now, at
-    /// ground height and at the height of a <see cref="TallTarget"/>, what has ever been seen, what a detector covers
-    /// and what a ground unit is close to. With fog disabled every cell is visible to everyone, but stealth and
-    /// concealment still need detection.
+    /// Singleton fog-of-war grid, one bit plane per team for each layer: visible now (at ground height and at
+    /// <see cref="TallTarget"/> height), ever seen, detected and close to a ground unit. With fog disabled every cell
+    /// is visible, but stealth still needs detection.
     /// </summary>
     public struct FogOfWar : IComponentData
     {

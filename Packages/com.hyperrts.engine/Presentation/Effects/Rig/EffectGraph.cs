@@ -5,9 +5,7 @@ using UnityEngine.VFX;
 namespace HyperRTS.Presentation.Effects.Rig
 {
     /// <summary>
-    /// One VFX Graph of a rig. Each burst sends its Burst event carrying the pose (position, normal, forward and scale),
-    /// so bursts on the same frame keep their own, and the Density property thins it by effect detail. A graph drops
-    /// events until it has run once, so bursts in the frame it was spawned wait for the next.
+    /// One VFX Graph of a rig. Bursts sent before the graph has run once are dropped, so those in its spawn frame wait.
     /// </summary>
     public sealed class EffectGraph
     {

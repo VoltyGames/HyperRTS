@@ -8,8 +8,8 @@ namespace HyperRTS.Simulation.AI
 {
     /// <summary>
     /// The map's hints for the skirmish AI: expansion order and defence points per slot, attack lanes between enemy
-    /// slots. A map builder writes it (never by hand); one per match, as a plain object in the SubScene. The AI
-    /// needs it: a match with AI players on a map without it logs an error and the bots stay idle.
+    /// slots. A map builder writes it, one per match, in the SubScene; without it an error is logged and the bots stay
+    /// idle.
     /// </summary>
     [AddComponentMenu("")]
     [Icon(HyperRTSIcons.Match)]

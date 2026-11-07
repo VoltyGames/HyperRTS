@@ -9,10 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Fire
 {
     /// <summary>
-    /// Grass and crop fires on a 1 m grid over the map. Fronts spread cell to cell, faster downwind, and less likely the
-    /// nearer they get to their ignition's reach, so each shell leaves a blotch. Each cell burns for a while and stays
-    /// burnt, and fires stop at bare cells. Every random choice hashes the lighting impact's seed, the
-    /// cell and the burning cell's age, so clients that see the same impacts burn closely the same fields.
+    /// Grass and crop fires on a 1 m grid that spread downwind and burn out. Every random choice is hashed, so clients that
+    /// see the same impacts burn the same fields.
     /// </summary>
     public sealed class FieldFires
     {

@@ -7,9 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 {
     /// <summary>
-    /// A scatter compute shader's grow and count kernels and what every grow kernel reads: the uploaded items, the tile
-    /// size, the heightmap, and each camera's view with the building mask, crater depth and ash. Subclasses add their
-    /// own inputs. Everything is bound before each dispatch, as reimporting the shader drops its bindings.
+    /// What a scatter compute shader reads: the items, tile size, heightmap and each camera's view. Everything is bound before
+    /// each dispatch, as reimporting the shader drops its bindings.
     /// </summary>
     internal abstract class ScatterComputeInputs : IDisposable
     {

@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Tests
 {
     /// <summary>
     /// Renders a window of a grid as ASCII, north up, for a failed assert: <see cref="Path"/> shows nav cells with a
-    /// path on them and <see cref="Fog"/> a team's fog round a point. Pass the text in a failure message, or to
+    /// path on them, <see cref="Fog"/> a team's fog round a point. Pass the text in a failure message or to
     /// <see cref="SimulationFixture.DumpOnFailure"/>.
     /// </summary>
     public static class GridDump

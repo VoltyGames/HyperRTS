@@ -8,9 +8,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// One layer of an effect graph, one VFX system: its bursts, how particles start and move, and how they draw.
-    /// Offsets, speeds and sizes are in rig space (+Y up, metres, unscaled), angles in degrees and colours as the
-    /// colour picker shows them. Life curves run over a particle's life from 0 to 1.
+    /// One layer of an effect graph, one VFX system. Offsets, speeds and sizes are in rig space (+Y up, metres),
+    /// angles in degrees; life curves run from 0 to 1.
     /// </summary>
     [Serializable]
     public sealed class EffectLayer

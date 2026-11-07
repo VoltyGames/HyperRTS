@@ -13,9 +13,8 @@ namespace HyperRTS.Simulation.Vision.Fog
 {
     /// <summary>
     /// Creates the <see cref="FogOfWar"/> grid from <see cref="MapSettings"/> (again when the map's area changes) and
-    /// restamps it a few times per second: viewers whose sight changed draw their <see cref="SightArea"/> again in
-    /// parallel, each team's planes are rebuilt from its areas, and detection is stamped. With fog disabled the grid
-    /// stays fully visible, but detection and the close layer still run.
+    /// restamps it a few times per second: changed <see cref="SightArea"/>s redraw in parallel, team planes rebuild and
+    /// detection is stamped. With fog disabled the grid stays fully visible.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(SimulationWorlds.All)]

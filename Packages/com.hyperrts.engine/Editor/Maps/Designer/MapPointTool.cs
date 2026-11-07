@@ -5,9 +5,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Maps.Designer
 {
     /// <summary>
-    /// The Map Editor's Point tool: each click adds a feature of the picked point or circle kind at the cursor and
-    /// selects it. The new feature copies the list's last one (kind, amount, radius, shared...), else takes the type's
-    /// defaults; a shared one lands on the symmetry axis or centre. One undo step per feature.
+    /// The Map Editor's Point tool: each click adds a feature of the picked kind that copies the list's last one. One
+    /// undo step per feature.
     /// </summary>
     public sealed class MapPointTool : IMapTool
     {

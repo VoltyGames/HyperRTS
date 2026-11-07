@@ -7,10 +7,8 @@ using Unity.Netcode;
 namespace HyperRTS.Network.Joining
 {
     /// <summary>
-    /// Asks for a slot once the match has loaded. The server owns the granted slot's player ghost to this
-    /// connection, and the ghost Netcode flags <see cref="GhostOwnerIsLocal"/> becomes the <see cref="LocalPlayer"/>
-    /// that input and HUD read; an observer is told with <see cref="ObserverAccepted"/>. On a host,
-    /// <see cref="ServerJoinSystem"/> seats the player instead of a request.
+    /// Asks for a slot once the match has loaded, and takes the granted player ghost as the <see cref="LocalPlayer"/>.
+    /// On a host, <see cref="ServerJoinSystem"/> seats the player instead.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]

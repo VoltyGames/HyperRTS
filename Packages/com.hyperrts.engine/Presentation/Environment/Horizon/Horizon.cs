@@ -8,10 +8,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Horizon
 {
     /// <summary>
-    /// Farmland round the map out to <see cref="width"/>, so a camera tilted toward the horizon sees fields fading into
-    /// the sky instead of the world's edge. Built when enabled, in edit mode too, and kept in memory only: a ground ring
-    /// painted with the map terrain's layers in fields and tree-line strips along some row edges. Nothing in it
-    /// collides, navigates or casts a shadow.
+    /// Farmland round the map out to <see cref="width"/>, so a tilted camera sees fields fading into the sky instead of the
+    /// world's edge. Built in memory, in edit mode too; nothing in it collides, navigates or casts a shadow.
     /// </summary>
     [ExecuteAlways]
     [AddComponentMenu(HyperRTSMenu.Environment + "Horizon")]

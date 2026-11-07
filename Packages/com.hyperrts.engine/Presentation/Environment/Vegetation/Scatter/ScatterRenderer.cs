@@ -7,9 +7,8 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 {
     /// <summary>
-    /// Base of the renderers that scatter instances on the GPU across a map's tiles for each camera about to render,
-    /// in edit mode too. It owns the build and release, the per-camera batches, the tile culling and when to regrow;
-    /// a subclass owns its inputs, its batches and the jobs each visible tile queues.
+    /// Base of the renderers that scatter instances on the GPU across a map's tiles for each camera about to render, in edit
+    /// mode too.
     /// </summary>
     public abstract class ScatterRenderer<TBatch> : PresentationBehaviour where TBatch : ScatterBatch
     {

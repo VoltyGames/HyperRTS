@@ -10,10 +10,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Effects
 {
     /// <summary>
-    /// Writes a rig's VFX Graph from its <see cref="EffectRecipe"/>: the Burst event, the Density property, the
-    /// stream events and properties when a layer has a rate, and one system per layer, each placed where its spawn
-    /// came from, thinned by Density and shaded by the fog of war. The graph is generated output, stamped with its
-    /// recipe so a stale one is found.
+    /// Writes a rig's VFX Graph from its <see cref="EffectRecipe"/>, one system per layer. The graph is generated
+    /// output, stamped with its recipe so a stale one is found.
     /// </summary>
     public static class EffectGraphBuilder
     {

@@ -6,10 +6,9 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Navigation.Spatial
 {
     /// <summary>
-    /// Singleton uniform grid of living units and buildings over the map, rebuilt each frame by
-    /// <see cref="SpatialIndexSystem"/>: entries sorted by cell, so a query scans each row of cells in one run and
-    /// meets neighbours in the same order every time. Read it with <c>SystemAPI.GetSingleton</c> so job dependencies
-    /// chain.
+    /// Singleton uniform grid of living units and buildings, rebuilt each frame by <see cref="SpatialIndexSystem"/>.
+    /// Entries sort by cell so queries meet neighbours in the same order every time; read it with
+    /// <c>SystemAPI.GetSingleton</c> so job dependencies chain.
     /// </summary>
     public struct SpatialIndex : IComponentData
     {

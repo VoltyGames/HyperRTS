@@ -14,10 +14,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>
-    /// Ticks ability cooldowns and runs UseAbility orders: the caster walks into range of its point or entity target,
-    /// then fires. The order ends on firing, or when the ability, its required building or the target is no longer
-    /// usable. Like weapons, cooldowns hold while the caster is under construction or unpowered, so a superweapon
-    /// only starts charging once it is finished.
+    /// Ticks ability cooldowns and runs UseAbility orders: the caster walks into range, then fires.
+    /// Cooldowns hold while the caster is under construction or unpowered.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]

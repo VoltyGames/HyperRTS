@@ -8,9 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Horizon
 {
     /// <summary>
-    /// The horizon's farmland on a grid of cells the kit's field size, turned to the map's farmland. Grid rows split in
-    /// two across and cells split in two along or merge in pairs, so fields vary in length and width; dirt tracks run
-    /// along a share of field ends and row edges. All of it hashed from the seed; HorizonGround.shader paints it.
+    /// The horizon's farmland as a grid of fields of varied size with dirt tracks, all hashed from the seed.
     /// </summary>
     [Serializable]
     public sealed class HorizonFields
@@ -172,9 +170,6 @@ namespace HyperRTS.Presentation.Environment.Horizon
 
         /// <summary>
         /// Hands HorizonGround.shader the grid and a texture of <paramref name="cells"/>, which the caller destroys.
-        /// Row 0 lists the crops, each its layer and share of the weights. Each grid row then takes two texel rows, one
-        /// per part: the row (slide, start, end), its side margins, then per cell two fields of two texels each, (layer,
-        /// shade, start, end) and (start margin, end margin, block shade), in metres from the cell's corner.
         /// </summary>
         public Texture2D Apply(Material material, int seed, RectInt cells)
         {

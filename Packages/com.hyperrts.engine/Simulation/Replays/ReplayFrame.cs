@@ -1,9 +1,7 @@
 namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
-    /// One sample: a range of <see cref="ReplayStream.Entities"/> and <see cref="ReplayStream.Removed"/>. A keyframe
-    /// lists every entity alive; a delta only those that spawned or changed, plus the keys removed since. Its
-    /// <see cref="ReplayStream.Cues"/> are the cues played since the previous sample.
+    /// One replay sample: a keyframe lists every entity alive, a delta only those that spawned or changed, plus the keys removed since.
     /// </summary>
     public struct ReplayFrame
     {

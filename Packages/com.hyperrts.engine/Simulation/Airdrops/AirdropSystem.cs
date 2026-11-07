@@ -14,9 +14,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Airdrops
 {
     /// <summary>
-    /// Sends each working <see cref="AirdropReceiver"/>'s aircraft on its <see cref="DropRoute"/> and flies every
-    /// <see cref="AirdropFlight"/>: it drops a crate over its receiver, turns away without one if the receiver is
-    /// lost, and despawns once off the map.
+    /// Flies each <see cref="AirdropFlight"/> along its <see cref="DropRoute"/>: it drops a crate over its receiver, or turns away if the receiver is lost, then despawns off the map.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]

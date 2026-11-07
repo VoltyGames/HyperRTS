@@ -96,9 +96,8 @@ namespace HyperRTS.Presentation.Quality
         }
 
         /// <summary>
-        /// Throws naming the first bad knob before anything is written, then sets the terrain keywords, the render
-        /// scale and <see cref="Current"/>. Shadows and the rest of the pipeline come from the quality level's URP
-        /// asset, so set the quality level first.
+        /// Throws naming the first bad knob before anything is written. Set the quality level first, as shadows and the rest of
+        /// the pipeline come from its URP asset.
         /// </summary>
         public static void Apply(in PresentationQuality quality)
         {

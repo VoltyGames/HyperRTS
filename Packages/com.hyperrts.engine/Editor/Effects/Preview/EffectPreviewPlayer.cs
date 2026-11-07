@@ -12,9 +12,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Effects.Preview
 {
     /// <summary>
-    /// Plays one effect rig the way the pool does, in edit mode: a hidden instance in a scene, each graph bursting at
-    /// the pivot with full density, streams running back and forth along a short path, fog clear. The Effect Preview
-    /// window runs it with the editor's frames; the capture pauses it and steps it by hand.
+    /// Plays one effect rig the way the pool does, in edit mode, with bursts at the pivot, streams moving along a
+    /// short path and fog clear.
     /// </summary>
     public sealed class EffectPreviewPlayer : IDisposable
     {
