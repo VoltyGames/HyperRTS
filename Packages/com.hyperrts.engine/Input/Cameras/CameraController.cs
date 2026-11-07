@@ -91,7 +91,11 @@ namespace HyperRTS.Input.Cameras
 
         private void OnEnable() => InputActionsProvider.Enable(_actions.Camera);
 
-        protected override void OnDisabled() => InputActionsProvider.Disable(_actions.Camera);
+        protected override void OnDisabled()
+        {
+            InputActionsProvider.Disable(_actions.Camera);
+            StopTreeFade();
+        }
 
         private void Start()
         {
@@ -218,6 +222,7 @@ namespace HyperRTS.Input.Cameras
             var terrainY = MatchTerrain().Height(new float2(position.x, position.z));
             position.y = ClearedHeight(position.y, terrainY, terrainClearance);
             transform.position = position;
+            ShareTreeFade();
         }
 
         private Vector3 ClampToMap(Vector3 point)

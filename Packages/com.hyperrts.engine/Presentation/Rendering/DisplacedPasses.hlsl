@@ -1,5 +1,6 @@
 // Shadow, depth, depth-normals and motion vector passes for a shader that moves its vertices. Define first: Attributes,
 // Displace(input, frame, objectToWorld, out positionWS, out normalWS, out uv) and ClipDisplaced(uv, positionCS).
+// DISPLACED_VIEW_FADE(positionCS) may dither away the colour and depth passes' pixels, never the shadow's.
 // DISPLACED_FACING_NORMALS turns back-face normals toward the eye in the depth-normals texture.
 #ifndef HYPERRTS_DISPLACED_PASSES_INCLUDED
 #define HYPERRTS_DISPLACED_PASSES_INCLUDED
@@ -7,6 +8,10 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wind.hlsl"
+
+#if !defined(DISPLACED_VIEW_FADE)
+    #define DISPLACED_VIEW_FADE(positionCS)
+#endif
 
 struct DisplacedVaryings
 {
@@ -76,6 +81,7 @@ half4 DepthFrag(DisplacedVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
     ClipDisplaced(input.uv, input.positionCS);
+    DISPLACED_VIEW_FADE(input.positionCS);
     return input.positionCS.z;
 }
 
@@ -83,6 +89,7 @@ half4 DepthNormalsFrag(DisplacedVaryings input, FRONT_FACE_TYPE face : FRONT_FAC
 {
     UNITY_SETUP_INSTANCE_ID(input);
     ClipDisplaced(input.uv, input.positionCS);
+    DISPLACED_VIEW_FADE(input.positionCS);
     half3 normalWS = normalize(input.normalWS);
 #if defined(DISPLACED_FACING_NORMALS)
     normalWS *= IS_FRONT_VFACE(face, 1.0, -1.0);
@@ -94,6 +101,7 @@ float4 MotionFrag(DisplacedMotionVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
     ClipDisplaced(input.uv, input.positionCS);
+    DISPLACED_VIEW_FADE(input.positionCS);
     return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0.0, 0.0);
 }
 

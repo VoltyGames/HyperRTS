@@ -61,5 +61,13 @@ namespace HyperRTS.Presentation.Tests.Cameras
             Assert.AreEqual(11.5f, CameraController.ClearedHeight(5f, 10f, 1.5f), 1e-4f);
             Assert.AreEqual(20f, CameraController.ClearedHeight(20f, 10f, 1.5f), 1e-4f);
         }
+
+        [Test]
+        public void TreeFade_RunsFromFullAtTheCloseZoomToNoneAtMidZoom()
+        {
+            Assert.AreEqual(1f, CameraController.TreeFadeAmount(4f, 6f, 14f), 1e-4f);
+            Assert.AreEqual(0.5f, CameraController.TreeFadeAmount(10f, 6f, 14f), 1e-4f);
+            Assert.AreEqual(0f, CameraController.TreeFadeAmount(30f, 6f, 14f), 1e-4f);
+        }
     }
 }

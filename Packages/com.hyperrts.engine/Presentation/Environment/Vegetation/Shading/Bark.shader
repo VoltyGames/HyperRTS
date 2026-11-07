@@ -55,6 +55,7 @@ Shader "HyperRTS/Bark"
             #pragma instancing_options renderinglayer
 
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkViewFade.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
             ENDHLSL
@@ -99,6 +100,7 @@ Shader "HyperRTS/Bark"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkViewFade.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
             ENDHLSL
@@ -122,6 +124,7 @@ Shader "HyperRTS/Bark"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkViewFade.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitDepthNormalsPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/BarkPasses.hlsl"
             ENDHLSL

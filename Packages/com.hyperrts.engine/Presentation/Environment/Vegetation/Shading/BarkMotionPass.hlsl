@@ -3,9 +3,7 @@
 #ifndef HYPERRTS_BARK_MOTION_PASS_INCLUDED
 #define HYPERRTS_BARK_MOTION_PASS_INCLUDED
 
-#if defined(LOD_FADE_CROSSFADE)
-    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
-#endif
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/ViewFade.hlsl"
 
 struct Attributes
 {
@@ -30,9 +28,8 @@ void Displace(Attributes input, WindFrame frame, float4x4 objectToWorld, out flo
 
 void ClipDisplaced(float2 uv, float4 positionCS)
 {
-#if defined(LOD_FADE_CROSSFADE)
     LODFadeCrossFade(positionCS);
-#endif
+    TreeViewFade(positionCS);
 }
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/DisplacedPasses.hlsl"

@@ -32,6 +32,15 @@ half3 PlantTint(half dry, half random)
     return straw * (1.0 - _HueVariation + random * _HueVariation * 2.0);
 }
 
+// Tree leaves dither away near the match camera. The shadow caster never calls it.
+#if defined(_TREE_WIND)
+    #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/ViewFade.hlsl"
+    #define DISPLACED_VIEW_FADE(positionCS) TreeViewFade(positionCS)
+    #define PLANT_VIEW_FADE(positionCS) TreeViewFade(positionCS)
+#else
+    #define PLANT_VIEW_FADE(positionCS)
+#endif
+
 // LOD crossfade dither. positionCS is the fragment's SV_POSITION.
 void PlantCrossFade(float4 positionCS)
 {
@@ -75,6 +84,7 @@ half4 ForwardFrag(ForwardVaryings input, bool front : SV_IsFrontFace) : SV_Targe
     half4 albedo = texel * _BaseColor;
     clip(albedo.a - _Cutoff);
     PlantCrossFade(input.positionCS);
+    PLANT_VIEW_FADE(input.positionCS);
     albedo.rgb *= input.tint.rgb * (1.0 - PLANT_RAIN_DARKENING * _HyperRTSWetness);
 
     // The root fades into the ground's colour.
