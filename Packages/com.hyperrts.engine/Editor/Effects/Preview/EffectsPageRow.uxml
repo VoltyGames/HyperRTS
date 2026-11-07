@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row">
+    <ui:VisualElement name="glyph" class="hrts-glyph" />
+    <ui:Label name="name" class="hrts-effects__name" />
+  </ui:VisualElement>
+</ui:UXML>

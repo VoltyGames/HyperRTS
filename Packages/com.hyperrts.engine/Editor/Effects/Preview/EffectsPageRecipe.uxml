@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row">
+    <ui:Label name="name" class="hrts-row__grow" />
+    <ui:Label name="state" class="hrts-effects__state" />
+    <ui:Button name="select" text="Select" />
+    <ui:Button name="build" text="Build graph" />
+  </ui:VisualElement>
+</ui:UXML>

@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.VFX;
@@ -128,25 +125,6 @@ namespace HyperRTS.Editor.Effects.Preview
             {
                 effect.pause = true;
                 effect.Simulate(StepSeconds, steps);
-            }
-        }
-
-        /// <summary>The recipe behind each graph of the rig, found beside its VFX asset; graphs with none are left out.</summary>
-        public IEnumerable<string> Recipes()
-        {
-            foreach (var effect in _graphs)
-            {
-                var graph = AssetDatabase.GetAssetPath(effect.visualEffectAsset);
-                if (string.IsNullOrEmpty(graph))
-                {
-                    continue;
-                }
-
-                var recipe = Path.ChangeExtension(graph, null) + EffectRecipe.Extension;
-                if (File.Exists(recipe))
-                {
-                    yield return recipe;
-                }
             }
         }
 

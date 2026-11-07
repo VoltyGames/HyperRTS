@@ -33,8 +33,17 @@
   white-space: normal;
 }
 
+/* The tabs take the page's height, not the table's, and the table scrolls inside them under fixed headers. */
 .hrts-tabs,
 .hrts-tabs .unity-tab-view__content-container,
-.hrts-tabs .unity-tab__content-container {
+.hrts-tabs .unity-tab__content-container,
+.hrts-tabs .unity-tab {
   flex-grow: 1;
+  flex-basis: 0;
+  min-height: 0;
+}
+
+.hrts-tabs .unity-tab-view__header,
+.hrts-tabs .unity-multi-column-view__header-container {
+  flex-shrink: 0;
 }

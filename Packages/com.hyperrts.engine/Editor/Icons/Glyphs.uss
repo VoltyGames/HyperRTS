@@ -123,6 +123,10 @@
   background-image: url("Glyphs/ShieldCheck.svg");
 }
 
+.hrts-glyph--sparkles {
+  background-image: url("Glyphs/Sparkles.svg");
+}
+
 .hrts-glyph--spline {
   background-image: url("Glyphs/Spline.svg");
 }

@@ -41,7 +41,8 @@ namespace HyperRTS.Editor.Hub
         [UxmlAttribute]
         public bool Scroll
         {
-            get => _body.parent == _scroll.contentContainer;
+            // The hierarchy parent: a ScrollView reports itself as the logical parent of its content.
+            get => _body.hierarchy.parent == _scroll.contentContainer;
             set
             {
                 if (value == Scroll)

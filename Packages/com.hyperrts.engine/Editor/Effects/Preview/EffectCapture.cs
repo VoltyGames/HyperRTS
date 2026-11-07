@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Effects.Preview
 {
     /// <summary>
-    /// Plays a rig above the open scene as the Effect Preview does and renders it at chosen times after the burst, from a
+    /// Plays a rig above the open scene as the Effects page does and renders it at chosen times after the burst, from a
     /// fixed RTS-like camera and sun over a grey ground, into <c>Logs/EffectCaptures/&lt;Rig&gt;/</c>.
     /// </summary>
     public static class EffectCapture

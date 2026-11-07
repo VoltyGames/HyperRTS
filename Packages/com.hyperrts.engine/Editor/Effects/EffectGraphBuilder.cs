@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Presentation.Effects;
+using HyperRTS.Presentation.Effects.Rig;
 using UnityEditor;
 using UnityEditor.Rendering;
 using UnityEngine;
+using UnityEngine.VFX;
 
 namespace HyperRTS.Editor.Effects
 {
@@ -73,17 +75,46 @@ namespace HyperRTS.Editor.Effects
                 ?? throw new ArgumentException($"HyperRTS: no effect recipe is named '{graph}'.");
         }
 
+        /// <summary>Whether the graph of the recipe at <paramref name="recipePath"/> exists and matches the recipe.</summary>
+        public static GraphState State(string recipePath)
+        {
+            var importer = AssetImporter.GetAtPath(EffectRecipe.GraphPath(recipePath));
+            if (importer == null)
+            {
+                return GraphState.Missing;
+            }
+
+            return importer.userData == EffectRecipe.Stamp(recipePath) ? GraphState.Built : GraphState.OutOfDate;
+        }
+
         /// <summary>What is wrong with the graph of the recipe at <paramref name="recipePath"/>, null when it is current.</summary>
         public static string Problem(string recipePath)
         {
             var graphPath = EffectRecipe.GraphPath(recipePath);
-            var importer = AssetImporter.GetAtPath(graphPath);
-            if (importer == null)
+            return State(recipePath) switch
             {
-                return $"{recipePath} has no graph {graphPath}; build it";
+                GraphState.Missing => $"{recipePath} has no graph {graphPath}; build it",
+                GraphState.OutOfDate => $"{graphPath} is older than {recipePath}; rebuild it",
+                _ => null,
+            };
+        }
+
+        /// <summary>The recipes of the graphs on a rig prefab and its variants, each once; graphs with no recipe beside them are left out.</summary>
+        public static List<string> RecipesFor(GameObject rig)
+        {
+            var parts = new List<GameObject> { rig };
+            if (rig.TryGetComponent<EffectRig>(out var root))
+            {
+                parts.AddRange(root.variants.Where(variant => variant != null));
             }
 
-            return importer.userData == EffectRecipe.Stamp(recipePath) ? null : $"{graphPath} is older than {recipePath}; rebuild it";
+            return parts.SelectMany(part => part.GetComponentsInChildren<VisualEffect>(true))
+                .Select(effect => AssetDatabase.GetAssetPath(effect.visualEffectAsset))
+                .Where(graph => graph.Length > 0)
+                .Select(graph => Path.ChangeExtension(graph, null) + EffectRecipe.Extension)
+                .Where(File.Exists)
+                .Distinct()
+                .ToList();
         }
 
         private static EffectRecipe Load(string recipePath) =>

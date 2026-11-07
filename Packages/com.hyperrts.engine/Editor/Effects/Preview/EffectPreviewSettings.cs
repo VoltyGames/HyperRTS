@@ -3,11 +3,14 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Effects.Preview
 {
-    /// <summary>The Effect Preview's remembered controls, kept in the editor state.</summary>
+    /// <summary>The Effects page's remembered controls, kept in the editor state.</summary>
     [Serializable]
     public class EffectPreviewSettings
     {
         public bool follow = true;
+
+        /// <summary>Asset path of the effect rig shown last.</summary>
+        public string lastEffect = "";
 
         public bool loop = true;
 

@@ -1,0 +1,34 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="EffectsPage.uss" />
+  <HyperRTS.Editor.Hub.PageShell name="shell" scroll="false" empty-text="No effect rig prefabs in the project. Make one from a prefab with an Effect Rig on its root.">
+    <uie:Toolbar>
+      <uie:ToolbarSearchField name="search" class="hrts-fill" />
+      <uie:ToolbarToggle name="follow" text="Follow selection" binding-path="effectPreview.follow" />
+    </uie:Toolbar>
+    <ui:TwoPaneSplitView name="split" class="hrts-effects__split" fixed-pane-initial-dimension="260" orientation="Horizontal">
+      <ui:TreeView name="list" class="hrts-effects__list" fixed-item-height="20" />
+      <ui:ScrollView name="detail">
+        <ui:Label class="hrts-note hrts-hint" text="Plays the effect at the Scene view pivot, the way the game's pool plays it." />
+        <ui:Label name="hint" class="hrts-note" />
+        <ui:VisualElement name="controls" class="hrts-effects__controls">
+          <ui:Label name="title" class="hrts-effects__title" />
+          <ui:VisualElement class="hrts-buttons">
+            <ui:Button name="replay" text="Replay" />
+            <ui:Toggle name="pause" text="Pause" class="hrts-effects__toggle" />
+            <ui:Toggle name="loop" text="Loop" binding-path="effectPreview.loop" class="hrts-effects__toggle" />
+          </ui:VisualElement>
+          <uie:PropertyField binding-path="effectPreview.interval" label="Loop every (s)" />
+          <uie:PropertyField name="scale" binding-path="effectPreview.scale" label="Scale" />
+          <uie:PropertyField name="wind-strength" binding-path="effectPreview.windStrength" label="Wind strength" />
+          <uie:PropertyField name="wind-heading" binding-path="effectPreview.windHeading" label="Wind heading" />
+          <HyperRTS.Editor.Common.TitledSection title="Recipes">
+            <ui:VisualElement name="recipes" />
+            <ui:Label name="no-recipes" class="hrts-hint" text="No recipe builds this effect's graphs." />
+          </HyperRTS.Editor.Common.TitledSection>
+          <ui:Button name="capture" text="Capture frames" />
+          <HyperRTS.Editor.Validation.IssueList name="issues" />
+        </ui:VisualElement>
+      </ui:ScrollView>
+    </ui:TwoPaneSplitView>
+  </HyperRTS.Editor.Hub.PageShell>
+</ui:UXML>

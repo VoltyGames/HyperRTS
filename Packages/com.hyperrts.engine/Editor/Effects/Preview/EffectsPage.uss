@@ -1,0 +1,48 @@
+/* The Effects page. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+/* Sized by the window, not its content, so the list and the detail scroll inside it. */
+.hrts-effects__split {
+  flex-grow: 1;
+  flex-basis: 0;
+  min-height: 0;
+}
+
+/* The split sets the list's width, which a collection view's zero flex-basis would override. */
+.hrts-effects__list {
+  flex-basis: auto;
+  flex-shrink: 0;
+}
+
+.hrts-effects__controls {
+  padding: 4px;
+}
+
+.hrts-effects__title {
+  -unity-font-style: bold;
+  margin-bottom: 4px;
+}
+
+.hrts-effects__toggle {
+  flex-grow: 0;
+  margin-left: 8px;
+}
+
+.hrts-effects__name {
+  margin-left: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hrts-effects__state {
+  margin: 0 6px;
+  color: var(--hrts-dim-text);
+}
+
+.hrts-effects__state--stale {
+  color: var(--hrts-warning);
+}
+
+.hrts-effects__state--missing {
+  color: var(--hrts-error);
+}

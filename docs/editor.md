@@ -10,7 +10,6 @@ follows the [UI rule](../CLAUDE.md#conventions).
 | --- | --- |
 | **HyperRTS ▸ Tools** (Ctrl+Shift+T) | Opens the Tools window |
 | **HyperRTS ▸ Map Editor** (Ctrl+Shift+M) | Opens the [Map Editor](maps.md#map-editor). Double-clicking a `.map.json` opens it too |
-| **HyperRTS ▸ Effect Preview** | Opens the [Effect Preview](#effect-preview) |
 | **HyperRTS ▸ Documentation** | Opens these docs in the browser. Each component's help button opens its own section |
 
 Rebind the hotkeys under **Main Menu** in **Edit ▸ Shortcuts**. Commands on one kind of asset sit in that asset's
@@ -25,6 +24,7 @@ and warnings).
 | Page | Does |
 | --- | --- |
 | **Catalog** | Every unit and building in one editable stats table, and the tech tree |
+| **Effects** | Every effect rig prefab by kind, played at the Scene view pivot, with its recipes. See [Effects page](#effects-page) |
 | **Validate** | Every rule's issues in prefabs, assets and open scenes, grouped by rule and asset, with quick fixes |
 | **Play** | The launcher outside Play mode; network, soak tests and replays in it. See [Play-mode debugging](#play-mode-debugging) |
 | **Build** | Tabs for the generators, the game's art commands and player builds. See [Build page](#build-page) |
@@ -224,7 +224,7 @@ the editor text colour. To add one, copy the icon from the `lucide-static` packa
 `Glyphs/<PascalName>.svg`, delete its licence comment and `class` attribute, set `stroke="#ffffff"` and add its class
 to `Glyphs.uss`.
 
-An effect recipe's `EffectRecipeInspector` adds **Build graph** and the graph's state above the layers.
+An effect recipe's `EffectRecipeInspector` adds **Build graph**, **Preview** and the graph's state above the layers.
 
 To edit a JSON file in an inspector or window, derive from `JsonDocument`: a hidden ScriptableObject that holds the
 parsed value for Undo and property fields. Override `Read`, `Write`, `WriteOver` (the edit written over the file's
@@ -236,7 +236,7 @@ or `Record` for code; each finished edit saves, an undo saves the file back, and
 
 `EditorState`, a `ScriptableSingleton` saved in `UserSettings/HyperRTS.asset`, keeps every remembered
 editor setting, per user and project: the Tools window's last page, the Build page's last tab, Validate's **Selection only**, the Map Editor's
-auto preview, the Hierarchy and Project row switches, the debug layers switched on, the inspector header groups folded shut, the cheat amounts, the launcher choice, the soak test settings and the Effect Preview
+auto preview, the Hierarchy and Project row switches, the debug layers switched on, the inspector header groups folded shut, the cheat amounts, the launcher choice, the soak test settings and the Effects page
 controls. A layout binds its fields with `binding-path` and `EditorState.Bind(root)`, which saves each change;
 defaults, `[Min]` and `[Range]` live on the fields, never in the UXML. Code that sets a value calls `Save()`. Values
 that must reset each session stay in `SessionState`: the last validation's counts behind the Validate badge, the
@@ -254,14 +254,24 @@ no-IMGUI rule, after Scene view `Handles`: in the Project grid view, a prefab wh
 `icon` shows it over the thumbnail with a small prefab badge; the list view is untouched. Preferences > HyperRTS has the
 two switches, **Hierarchy row icons** and **Project unit icons**.
 
-## Effect preview
+## Effects page
 
-**HyperRTS ▸ Effect Preview** plays an effect rig at the Scene view pivot, the way the pool plays it, on a loop. It
-follows the rig selected in the Project window, with replay, loop interval, pause, scale and wind controls, and
-holds the fog of war clear while open; closing it puts the wind and fog globals back. Saving a recipe of the rig, by
-hand or in its inspector, rebuilds that graph and plays again. `EffectPreviewPlayer` plays the rig and
-`EffectCapture` renders it for the `effect capture` command, above the open scene, so its light and fog still tint
-the picture.
+**HyperRTS ▸ Tools ▸ Effects** lists every prefab whose root has an `EffectRig`, in the project and the engine, under
+its kind: the second field of an `FX_<Kind>_...` name, or the prefab's folder when the name does not start with `FX_`.
+A search box filters by name. Picking a row plays the rig at the Scene view pivot, the way the pool plays it, on a loop
+(`EffectRigEntry` finds them, `EffectPreviewPlayer` plays one). The right pane has Replay, Pause, Loop with its
+interval, Scale and the wind strength and heading, then the rig's recipes (the `<Graph>.effect.asset` files beside its
+VFX graphs and its variants' graphs) each with its state (**Built**, **Out of date** or **Missing**, from
+`EffectGraphBuilder.State`), **Select** and **Build graph**. **Capture frames** runs `EffectCapture` for the rig, as the
+`effect capture` command does, and reveals `Logs/EffectCaptures/<Rig>/`. The rig's validation problems
+(`EffectRig.Problems`) list under it.
+
+**Follow selection** (remembered) selects the row of an effect rig prefab or recipe chosen in the Project window and
+ignores any other selection. The last effect is remembered too. The recipe inspector's **Preview** button opens the page
+on the first rig that uses that recipe. The effect plays and holds the fog of war clear only while the page is shown:
+leaving the page or closing the window stops it and puts the wind and fog globals back. Saving a recipe of the rig, by
+hand or in its inspector, rebuilds that graph and plays again. `EffectCapture` renders above the open scene, so its
+light and fog still tint the picture.
 
 ## Validation
 
