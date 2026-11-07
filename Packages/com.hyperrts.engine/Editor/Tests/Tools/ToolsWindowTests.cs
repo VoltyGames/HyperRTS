@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Tests.Tools
             var registry = TemplateRegistry.All.Select(template => template.Path).OrderBy(path => path).ToArray();
 
             // Scene setup items (rig, Match) sit at the top level; every template is in a submenu.
-            var objects = MenuPaths("HyperRTSObjectMenu", ObjectMenu).Where(path => path.Contains('/'));
+            var objects = MenuPaths("ObjectMenu", ObjectMenu).Where(path => path.Contains('/'));
             CollectionAssert.AreEqual(registry, objects.OrderBy(path => path).ToArray());
             CollectionAssert.AreEqual(registry, MenuPaths("PrefabTemplateMenu", PrefabMenu).OrderBy(path => path).ToArray());
         }

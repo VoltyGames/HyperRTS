@@ -20,7 +20,7 @@ namespace HyperRTS.Input.Selection
         private const float DoubleClickSeconds = 0.3f;
         private const float DoubleClickPixels = 16f;
 
-        private RTSInputActions _actions;
+        private MatchInputActions _actions;
         private InputAction[] _groupKeys;
         private Camera _camera;
 

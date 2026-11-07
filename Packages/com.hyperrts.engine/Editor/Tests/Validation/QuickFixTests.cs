@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Vision.Sight;
 using System.Linq;
-using HyperRTS.Editor.Authoring;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Air;

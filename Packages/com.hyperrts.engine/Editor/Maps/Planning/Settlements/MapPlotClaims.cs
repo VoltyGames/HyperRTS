@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;

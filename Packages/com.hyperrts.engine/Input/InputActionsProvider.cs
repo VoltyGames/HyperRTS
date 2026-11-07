@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 namespace HyperRTS.Input
 {
     /// <summary>
-    /// The one <see cref="RTSInputActions"/> instance the input systems and the camera share. Maps are enabled per
+    /// The one <see cref="MatchInputActions"/> instance the input systems and the camera share. Maps are enabled per
     /// user, so one system stopping never switches off a map another still reads. Menus and rebinding
     /// <see cref="Suspend"/> every map until they <see cref="Resume"/>.
     /// </summary>
@@ -17,9 +17,9 @@ namespace HyperRTS.Input
         [AutoStaticsCleanup]
         private static readonly HashSet<object> Suspenders = new();
         [NoAutoStaticsCleanup]
-        private static RTSInputActions _actions;
+        private static MatchInputActions _actions;
 
-        public static RTSInputActions Actions => _actions ??= new RTSInputActions();
+        public static MatchInputActions Actions => _actions ??= new MatchInputActions();
 
         public static bool IsSuspended => Suspenders.Count > 0;
 

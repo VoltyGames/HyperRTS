@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;

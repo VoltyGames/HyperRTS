@@ -14,7 +14,7 @@ namespace HyperRTS.Input.Commands
     [UpdateBefore(typeof(PlacementInputSystem))]
     public partial class CancelInputSystem : InputMapSystem
     {
-        private RTSInputActions _actions;
+        private MatchInputActions _actions;
 
         protected override void OnCreate()
         {

@@ -74,7 +74,7 @@ namespace HyperRTS.Input.Cameras
         private readonly LiveSingleton<CameraFocusRequest> _focusRequest = new();
         private readonly LiveSingleton<ScrollEdge> _scrollEdge = new();
 
-        private RTSInputActions _actions;
+        private MatchInputActions _actions;
         private float _yaw;
         private float _height;
         private float _targetHeight;

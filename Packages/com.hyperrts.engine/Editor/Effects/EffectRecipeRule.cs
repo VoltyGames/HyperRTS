@@ -1,6 +1,5 @@
 using System;
 using HyperRTS.Editor.Validation;
-using HyperRTS.Editor.Validation.Rules;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Effects

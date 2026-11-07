@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Common.Json;
 using HyperRTS.Editor.Maps.Spec;
 using NUnit.Framework;
 

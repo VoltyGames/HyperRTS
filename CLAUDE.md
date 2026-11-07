@@ -96,7 +96,7 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 - Entities built through `EntityWriter` in tests have no mesh; rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames: guard on singletons with `RequireForUpdate`, and never treat
   "nothing exists yet" as a game state (`VictorySystem` shows how).
-- Keep `OverrideAutomaticNetcodeBootstrap`, on `RTSWorld.prefab`, in scenes. `NetworkSession` makes the worlds: one
+- Keep `OverrideAutomaticNetcodeBootstrap`, on `EngineRig.prefab`, in scenes. `NetworkSession` makes the worlds: one
   local world for single player, one Netcode single-world host, a server world for a dedicated server and a client
   world for a joining player.
 - A client system that mirrors a remote server, such as sending commands or receiving cues, carries

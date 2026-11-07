@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Resources;
@@ -17,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Palette
     [CreateAssetMenu(menuName = HyperRTSMenu.MapLibrary + "Palette", fileName = "New.palette")]
     public sealed class MapPalette : MapLibraryItem
     {
-        [Tooltip("Camera and HUD rig every map gets (the game's variant of the RTSWorld rig).")]
+        [Tooltip("Camera and HUD rig every map gets (the game's variant of the EngineRig rig).")]
         public GameObject rig;
 
         [Tooltip("Prefab per spec kind (props, resources, bridges, line and scatter props, settlement buildings).")]

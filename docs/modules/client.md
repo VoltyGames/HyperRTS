@@ -26,7 +26,7 @@ UI state that input, the HUD and overlays share, created once per presented worl
 
 | Type | Role |
 | --- | --- |
-| `RTSInputActions` | The Selection, Commands and Camera action maps. [Bindings](../getting-started.md#play) |
+| `MatchInputActions` | The Selection, Commands and Camera action maps. [Bindings](../getting-started.md#play) |
 | `InputActionsProvider` | The one shared actions instance, with `Suspend` and `Resume` |
 | `InputMapSystem` | Base of the systems below: enables its input map while it runs |
 | `SelectionInputSystem` | Mouse gestures to `SelectionInput` |

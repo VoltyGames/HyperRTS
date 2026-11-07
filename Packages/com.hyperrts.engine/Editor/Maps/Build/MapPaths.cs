@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Maps.Build
 
         public string Scene => $"{Generated}/{Name}.unity";
 
-        /// <summary>The SubScene <see cref="RTSSceneBuilder"/> saves next to the scene.</summary>
+        /// <summary>The SubScene <see cref="SceneBuilder"/> saves next to the scene.</summary>
         public string SubScene => $"{Generated}/{Name}_Entities.unity";
 
         public string Terrain => $"{Generated}/{Name}_Terrain.asset";

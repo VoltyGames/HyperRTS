@@ -1,4 +1,3 @@
-using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
 using Unity.Entities;

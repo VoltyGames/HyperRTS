@@ -4,6 +4,7 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Planning;
+using HyperRTS.Editor.Maps.Vegetation;
 using NUnit.Framework;
 using UnityEngine;
 

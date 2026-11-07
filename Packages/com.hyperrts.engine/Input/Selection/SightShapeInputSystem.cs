@@ -10,7 +10,7 @@ namespace HyperRTS.Input.Selection
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class SightShapeInputSystem : InputMapSystem
     {
-        private RTSInputActions _actions;
+        private MatchInputActions _actions;
 
         protected override void OnCreate()
         {

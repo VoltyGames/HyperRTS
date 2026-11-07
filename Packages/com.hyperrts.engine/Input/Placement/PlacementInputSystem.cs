@@ -26,7 +26,7 @@ namespace HyperRTS.Input.Placement
         // Metres the cursor moves from the press before a held click turns the ghost, so a plain click never does.
         private const float TurnDragDistance = 2f;
 
-        private RTSInputActions _actions;
+        private MatchInputActions _actions;
         private WorldPointer _pointer;
         private PlacementRotation _rotation;
         private bool _keysPublished;
@@ -101,7 +101,7 @@ namespace HyperRTS.Input.Placement
         }
 
         // Read once per placement so a rebound key shows on the next one.
-        private void PublishKeys(RTSInputActions.CommandsActions commands)
+        private void PublishKeys(MatchInputActions.CommandsActions commands)
         {
             if (_keysPublished)
             {
@@ -117,7 +117,7 @@ namespace HyperRTS.Input.Placement
         }
 
         /// <summary>RotateBuilding held turns with the pointer's sideways motion; a tap adds a step.</summary>
-        private void Rotate(RTSInputActions.CommandsActions commands)
+        private void Rotate(MatchInputActions.CommandsActions commands)
         {
             var pointerX = commands.Point.ReadValue<Vector2>().x;
             var key = commands.RotateBuilding;

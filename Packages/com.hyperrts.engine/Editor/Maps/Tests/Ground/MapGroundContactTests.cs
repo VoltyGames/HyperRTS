@@ -1,13 +1,13 @@
 using HyperRTS.Editor.Maps.Common;
 using System.Linq;
 using HyperRTS.Editor.Maps.Climate;
-using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Scenes;
+using HyperRTS.Editor.Maps.Vegetation;
 using NUnit.Framework;
 using UnityEngine;
 

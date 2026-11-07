@@ -8,7 +8,7 @@ are slots on the `Match` component, and an entity's **Owner** is a slot number: 
 
 ## 1. Create the scene
 
-Run **HyperRTS ▸ Tools ▸ Maps ▸ New blank scene...** and pick the map size and player count. You get the `RTSWorld`
+Run **HyperRTS ▸ Tools ▸ Maps ▸ New blank scene...** and pick the map size and player count. You get the `EngineRig`
 camera and HUD rig, a ground plane, a light, a `MatchState` for multiplayer and a SubScene holding the `Match`.
 Tick the SubScene's checkbox to edit it.
 

@@ -26,7 +26,7 @@ follows the [UI rule](../CLAUDE.md#conventions).
 | **Generate** | Every generator with what it reads and writes and its last run, each with **Run**, plus **Run all** |
 
 **New blank scene...** asks for map size, player count and an optional starting base. It builds a scene with
-light, ground, the `RTSWorld` rig and a SubScene holding the `Match`. See [scenes from code](#scenes-from-code).
+light, ground, the `EngineRig` rig and a SubScene holding the `Match`. See [scenes from code](#scenes-from-code).
 
 To add a page, subclass `HubPage` in any editor assembly. Set `Title` and `Order` and return the content from
 `Build()`: clone the page's layout with `Layout().Instantiate()`, which finds `<Page>.uxml` beside the script in its
@@ -41,9 +41,10 @@ optional `Badge` shows short text such as the Validate page's `3E 12W` (errors a
 ## Commands
 
 Each Tools window action an agent needs is also a command of the `com.unity.pipeline` package, run from any shell
-with `unity command <group> <name> [args]` while the Editor is open. A command is a thin `[CliCommand]` wrapper in an
-`Editor/Commands/` folder (the map commands sit in `Editor/Maps/Tools/`): the work lives in a method on the type that owns it, and the Tools window button and the
-command both call that method. Long commands run as detached jobs (`unity command --detach`).
+with `unity command <group> <name> [args]` while the Editor is open. A command is a thin `[CliCommand]` wrapper class beside
+the feature it drives (`Animation/BoneCommands`, `Validation/ValidationCommands`, the map commands in `Maps/Tools/`):
+the work lives in a method on the type that owns it, and the Tools window button and the command both call that
+method. Long commands run as detached jobs (`unity command --detach`).
 
 | Command | Calls | Returns |
 | --- | --- | --- |
@@ -66,7 +67,7 @@ stop while it is in the background, so it fails after 45 s without one. The comm
 their arguments. `map build` fails while an open scene has unsaved changes, since a build opens its
 own scene and a command can't answer the save dialog.
 
-To add a command, write a static method in an `Editor/Commands/` class of any editor assembly that references
+To add a command, write a static method in a `<Group>Commands` class beside its feature, in any editor assembly that references
 `Unity.Pipeline.Attributes`, tag it `[CliCommand("<group>", "<name>", "what it does", Tags = new[] { "<area>" })]` and its
 parameters `[CliArg]`. Return a small result (counts, issues, file paths) and name the full report file rather than
 returning it. Throw to fail: the message reaches the caller. An `async Task<T>` method runs off the main thread
@@ -103,7 +104,7 @@ references, so a moved asset stays linked. The recipe format and the builder are
 
 ## Creation menus
 
-**GameObject ▸ HyperRTS** creates the `RTSWorld` rig, a Match, and templates for units, buildings, upgrades and
+**GameObject ▸ HyperRTS** creates the `EngineRig` rig, a Match, and templates for units, buildings, upgrades and
 map objects. **Assets ▸ Create ▸ HyperRTS ▸ Prefabs** creates the same templates as prefab assets.
 **Assets ▸ Create ▸ HyperRTS** also creates data assets: Resource Type, Damage Type, Impact Mark, Sound Cue and AI
 Build Order.
@@ -185,10 +186,10 @@ or `Record` for code; each finished edit saves, an undo saves the file back, and
 
 ## Editor state
 
-`HyperRTSEditorState`, a `ScriptableSingleton` saved in `UserSettings/HyperRTS.asset`, keeps every remembered
+`EditorState`, a `ScriptableSingleton` saved in `UserSettings/HyperRTS.asset`, keeps every remembered
 editor setting, per user and project: the Tools window's last page, Validate's **Selection only**, the Map Editor's
 auto preview, the debug layers switched on, the cheat amounts, the bot match settings and the Effect Preview
-controls. A layout binds its fields with `binding-path` and `HyperRTSEditorState.Bind(root)`, which saves each change;
+controls. A layout binds its fields with `binding-path` and `EditorState.Bind(root)`, which saves each change;
 defaults, `[Min]` and `[Range]` live on the fields, never in the UXML. Code that sets a value calls `Save()`. Values
 that must reset each session stay in `SessionState`: the last validation's counts behind the Validate badge, the
 replay waiting for Play mode and the local package import stamp.
@@ -229,16 +230,16 @@ as `3E 12W`.
 ## Scenes from code
 
 `Editor/Scenes/` holds the scene builder, spec and wizard.
-`RTSSceneBuilder` builds a playable scene and its `<Scene>_Entities.unity` SubScene.
+`SceneBuilder` builds a playable scene and its `<Scene>_Entities.unity` SubScene.
 
 ```csharp
-RTSSceneBuilder.Build(new RTSSceneSpec
+SceneBuilder.Build(new SceneSpec
 {
     ScenePath = "Assets/Maps/Duel.unity",
     MapSize = new Vector2(240f, 240f),
     Players = 2,
     StartingBase = commandCentre,
-    Rig = myRigVariant,                       // null = engine RTSWorld
+    Rig = myRigVariant,                       // null = engine EngineRig
     Furnish = subScene => PlaceResources(subScene.Scene, subScene.Bases),
 });
 ```
@@ -288,7 +289,7 @@ Cheats act on the authoritative world, through the normal game systems. Using on
 
 | Prefab | Holds |
 | --- | --- |
-| `Prefabs/RTSWorld.prefab` | Camera with `CameraController`, the HUD, `OverrideAutomaticNetcodeBootstrap` |
+| `Prefabs/EngineRig.prefab` | Camera with `CameraController`, the HUD, `OverrideAutomaticNetcodeBootstrap` |
 | `Prefabs/MatchState.prefab` | The ghost replicating `MatchState`. One per map SubScene |
 | `Prefabs/UI/HUD.prefab` | `PanelRenderer` with `HUDController` (`HUDPanelLayouts`), overlays, fog and the drag box |
 

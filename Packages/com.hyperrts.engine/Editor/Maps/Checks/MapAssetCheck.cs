@@ -1,10 +1,11 @@
 using HyperRTS.Editor.Maps.Common;
+using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Linq;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Editor.Maps.Texturing;
 using HyperRTS.Simulation.GameEntities;
 
 namespace HyperRTS.Editor.Maps.Checks

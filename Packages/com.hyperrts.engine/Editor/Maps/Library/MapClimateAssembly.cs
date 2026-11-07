@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Ground;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Editor.Maps.Texturing;
 
 namespace HyperRTS.Editor.Maps.Library
 {

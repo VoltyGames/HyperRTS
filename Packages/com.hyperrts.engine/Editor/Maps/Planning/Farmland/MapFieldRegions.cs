@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Common;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Land;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland

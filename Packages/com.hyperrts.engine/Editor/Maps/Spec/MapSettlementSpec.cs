@@ -1,6 +1,6 @@
 using System;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
-using HyperRTS.Editor.Maps.Palette;
 
 namespace HyperRTS.Editor.Maps.Spec
 {

@@ -1,5 +1,5 @@
 using HyperRTS.Editor.Maps.Climate;
-using HyperRTS.Editor.Maps.Texturing;
+using HyperRTS.Editor.Maps.Ground;
 using NUnit.Framework;
 using UnityEngine;
 

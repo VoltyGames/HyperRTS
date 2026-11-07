@@ -134,6 +134,6 @@ A game shell drives a match through these calls:
 - Validation rules show up in the inspector, **HyperRTS ▸ Tools ▸ Validate** and the CI test. See
   [validation](editor.md#validation) for the kinds.
 - Debug layers subclass `DebugLayer` or `CellTextureLayer`.
-- `RTSSceneBuilder.Build` creates a scene from code.
+- `SceneBuilder.Build` creates a scene from code.
 
 See [editor](editor.md).

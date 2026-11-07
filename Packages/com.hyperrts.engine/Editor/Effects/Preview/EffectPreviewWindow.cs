@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Effects.Preview
             _picker.SetValueWithoutNotify(_rig);
             _picker.RegisterValueChangedCallback(evt => Show(evt.newValue as GameObject));
 
-            HyperRTSEditorState.Bind(root);
+            EditorState.Bind(root);
             root.Require<Toggle>("pause").RegisterValueChangedCallback(change => _player.Paused = change.newValue);
             root.Require<PropertyField>("scale").RegisterValueChangeCallback(_ => _player.Scale = Settings.scale);
             root.Require<PropertyField>("wind-strength").RegisterValueChangeCallback(_ => ApplyWind());
@@ -140,7 +140,7 @@ namespace HyperRTS.Editor.Effects.Preview
             _sinceBurst = 0f;
         }
 
-        private static EffectPreviewSettings Settings => HyperRTSEditorState.instance.effectPreview;
+        private static EffectPreviewSettings Settings => EditorState.instance.effectPreview;
 
         private void ApplyWind() => _player.SetWind(Settings.windHeading, Settings.windStrength);
 

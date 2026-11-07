@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Destruction;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Death;

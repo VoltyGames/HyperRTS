@@ -35,11 +35,11 @@ namespace HyperRTS.Editor.Maps.Designer
 
         public static bool Auto
         {
-            get => HyperRTSEditorState.instance.mapAutoPreview;
+            get => EditorState.instance.mapAutoPreview;
             set
             {
-                HyperRTSEditorState.instance.mapAutoPreview = value;
-                HyperRTSEditorState.instance.Save();
+                EditorState.instance.mapAutoPreview = value;
+                EditorState.instance.Save();
             }
         }
 

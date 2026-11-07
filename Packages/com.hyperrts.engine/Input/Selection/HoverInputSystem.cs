@@ -13,7 +13,7 @@ namespace HyperRTS.Input.Selection
     [UpdateAfter(typeof(CommandInputSystem))]
     public partial class HoverInputSystem : SystemBase
     {
-        private RTSInputActions _actions;
+        private MatchInputActions _actions;
         private WorldPointer _pointer;
 
         protected override void OnCreate()

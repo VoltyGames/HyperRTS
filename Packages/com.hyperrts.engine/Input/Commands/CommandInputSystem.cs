@@ -18,7 +18,7 @@ namespace HyperRTS.Input.Commands
     [UpdateAfter(typeof(SelectionSystem))]
     public partial class CommandInputSystem : InputMapSystem
     {
-        private RTSInputActions _actions;
+        private MatchInputActions _actions;
         private WorldPointer _pointer;
 
         protected override void OnCreate()

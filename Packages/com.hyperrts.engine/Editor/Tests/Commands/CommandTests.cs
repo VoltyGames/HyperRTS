@@ -1,5 +1,4 @@
 using System.Linq;
-using HyperRTS.Editor.Commands;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using NUnit.Framework;

@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Hub
                 return;
             }
 
-            var saved = HyperRTSEditorState.instance.toolsPage;
+            var saved = EditorState.instance.toolsPage;
             var index = Array.FindIndex(_pages, page => page.GetType().FullName == saved);
             _sidebar.SetSelection(Math.Max(index, 0));
         }
@@ -96,8 +96,8 @@ namespace HyperRTS.Editor.Hub
 
         private static void RememberPage(Type page)
         {
-            HyperRTSEditorState.instance.toolsPage = page.FullName;
-            HyperRTSEditorState.instance.Save();
+            EditorState.instance.toolsPage = page.FullName;
+            EditorState.instance.Save();
         }
 
         // Clearing detaches the page, which drops its callbacks and polling.

@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Validation
         public override VisualElement Build()
         {
             var root = Layout().Instantiate();
-            HyperRTSEditorState.Bind(root);
+            EditorState.Bind(root);
             root.Require<ToolbarButton>("validate").clicked += Refresh;
             _counts = root.Require<Label>("counts");
             _shell = root.Require<PageShell>("shell");
@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Validation
             return root;
         }
 
-        private static bool SelectionOnly => HyperRTSEditorState.instance.validateSelectionOnly;
+        private static bool SelectionOnly => EditorState.instance.validateSelectionOnly;
 
         private void Refresh()
         {

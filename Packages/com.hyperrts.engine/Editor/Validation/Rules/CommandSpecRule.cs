@@ -64,7 +64,7 @@ namespace HyperRTS.Editor.Validation.Rules
         {
             var bound = new Dictionary<string, string>();
             var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(
-                AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets("RTSInputActions t:InputActionAsset").Single()));
+                AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets("MatchInputActions t:InputActionAsset").Single()));
             foreach (var binding in asset.actionMaps.SelectMany(map => map.bindings))
             {
                 var isKey = binding.path.StartsWith(KeyboardPrefix) && binding.action != RotateBuilding;

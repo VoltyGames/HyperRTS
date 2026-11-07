@@ -1,4 +1,5 @@
 using HyperRTS.Editor.Maps.Common;
+using HyperRTS.Editor.Maps.Vegetation;
 using HyperRTS.Editor.Tests;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;

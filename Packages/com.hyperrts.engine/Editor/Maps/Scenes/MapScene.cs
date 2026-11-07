@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             var (paths, layout) = (generation.Project.Paths, generation.Layout);
             if (!File.Exists(paths.Scene))
             {
-                RTSSceneBuilder.Build(new RTSSceneSpec
+                SceneBuilder.Build(new SceneSpec
                 {
                     ScenePath = paths.Scene,
                     MapSize = layout.Size,

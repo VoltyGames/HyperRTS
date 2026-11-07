@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Common.Json;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Designer;
 using HyperRTS.Editor.Maps.Spec;

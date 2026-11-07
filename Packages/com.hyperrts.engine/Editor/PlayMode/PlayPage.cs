@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.PlayMode
         public override VisualElement Build()
         {
             var root = Layout().Instantiate();
-            HyperRTSEditorState.Bind(root);
+            EditorState.Bind(root);
             _shell = root.Require<PageShell>("shell");
             _cheats = new CheatsSection(root.Require<VisualElement>("cheats"));
             BindNetwork(root);
@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.PlayMode
         private void BindBots(VisualElement root)
         {
             _runBots = root.Require<Button>("run-bots");
-            _runBots.clicked += () => BotMatches.Start(HyperRTSEditorState.instance.bots);
+            _runBots.clicked += () => BotMatches.Start(EditorState.instance.bots);
             _stopBots = root.Require<Button>("stop-bots");
             _stopBots.clicked += BotMatches.Stop;
             _botStatus = root.Require<Label>("bot-status");

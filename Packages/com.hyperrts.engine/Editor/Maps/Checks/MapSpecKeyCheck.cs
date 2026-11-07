@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Common;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;

@@ -53,7 +53,7 @@ in one of the [tiers](modules.md#tiers).
 Systems run in local and server worlds by default. A client-side system adds
 `[WorldSystemFilter(SimulationWorlds.Presented)]`, unless it sits under `PresentationSystemGroup`, which already
 defaults to the local and client worlds. Single player needs `OverrideAutomaticNetcodeBootstrap` in the
-scene, which `RTSWorld.prefab` carries. `NetworkSession` creates and replaces worlds at runtime. See
+scene, which `EngineRig.prefab` carries. `NetworkSession` creates and replaces worlds at runtime. See
 [networking](networking.md).
 
 ## Frame order

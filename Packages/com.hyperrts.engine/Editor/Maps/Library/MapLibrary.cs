@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Checks;
 using Unity.Scripting.LifecycleManagement;

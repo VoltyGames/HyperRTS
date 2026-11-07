@@ -12,8 +12,8 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
         /// <summary>Remembered per layer type in the editor state, so toggles survive domain reloads and restarts.</summary>
         public bool Enabled
         {
-            get => HyperRTSEditorState.instance.IsLayerOn(GetType().FullName);
-            set => HyperRTSEditorState.instance.SetLayer(GetType().FullName, value);
+            get => EditorState.instance.IsLayerOn(GetType().FullName);
+            set => EditorState.instance.SetLayer(GetType().FullName, value);
         }
 
         /// <summary>The world drawn: server-side truth by default; <see cref="SimulationWorlds.Presented"/> for client-only state.</summary>

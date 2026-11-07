@@ -1,14 +1,13 @@
 using HyperRTS.Editor.Maps.Common;
+using HyperRTS.Editor.Maps.Vegetation;
 using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Checks;
-using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
-using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Planning;
 using HyperRTS.Editor.Maps.Planning.War;

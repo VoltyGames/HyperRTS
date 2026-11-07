@@ -1,5 +1,5 @@
-using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
+using HyperRTS.Editor.Maps.Kits;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.Farmland

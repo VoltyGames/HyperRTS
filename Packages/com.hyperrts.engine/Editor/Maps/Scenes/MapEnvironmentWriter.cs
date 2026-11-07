@@ -3,7 +3,7 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
-using HyperRTS.Editor.Maps.Texturing;
+using HyperRTS.Editor.Maps.Vegetation;
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Horizon;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;

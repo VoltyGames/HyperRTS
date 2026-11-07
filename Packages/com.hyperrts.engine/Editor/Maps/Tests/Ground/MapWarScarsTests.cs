@@ -2,6 +2,7 @@ using HyperRTS.Editor.Maps.Common;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;

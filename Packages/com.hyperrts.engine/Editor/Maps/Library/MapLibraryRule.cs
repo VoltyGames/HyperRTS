@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Validation;
-using HyperRTS.Editor.Validation.Rules;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Library

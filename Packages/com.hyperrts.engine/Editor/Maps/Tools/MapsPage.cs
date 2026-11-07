@@ -31,7 +31,7 @@ namespace HyperRTS.Editor.Maps.Tools
         {
             var root = Layout().Instantiate();
             root.Require<ToolbarButton>("build-all").clicked += BuildAll;
-            root.Require<ToolbarButton>("new-scene").clicked += RTSSceneWizard.Open;
+            root.Require<ToolbarButton>("new-scene").clicked += SceneWizard.Open;
             _shell = root.Require<PageShell>("shell");
             _specs = root.Require<VisualElement>("specs");
             _row = Layout("Row");

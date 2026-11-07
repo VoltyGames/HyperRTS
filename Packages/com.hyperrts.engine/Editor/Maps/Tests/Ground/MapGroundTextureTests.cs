@@ -6,7 +6,6 @@ using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Land;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Editor.Maps.Texturing;
 using NUnit.Framework;
 using UnityEngine;
 

@@ -4,6 +4,7 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Heights;
+using HyperRTS.Editor.Maps.Vegetation;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Planning.War

@@ -1,5 +1,6 @@
 using HyperRTS.Editor.Maps.Common;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using UnityEngine;

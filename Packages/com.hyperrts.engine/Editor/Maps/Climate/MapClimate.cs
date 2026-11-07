@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
