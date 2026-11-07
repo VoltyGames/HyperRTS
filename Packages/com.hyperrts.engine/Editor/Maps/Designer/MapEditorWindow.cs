@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.Maps.Designer
     {
         private const string WindowTitle = "Map Editor";
         private const double WarningSeconds = 5.0;
+        private const long GalleryRefreshMilliseconds = 500;
 
         [SerializeField] private string _specPath;
 
@@ -30,6 +31,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly MapToolbox _toolbox = new();
         private readonly MapLayers _layers = new();
         private MapGallery _gallery;
+        private IVisualElementScheduledItem _galleryRefresh;
         private VisualElement _editor;
         private MapEditorToolbar _toolbar;
         private MapFeatureList _list;
@@ -104,9 +106,10 @@ namespace HyperRTS.Editor.Maps.Designer
 
         private void OnProjectChange()
         {
+            // A map build writes many assets, so the gallery refreshes once their changes have stopped for a moment.
             if (_document == null && _gallery != null)
             {
-                _gallery.Refresh();
+                (_galleryRefresh ??= _gallery.schedule.Execute(_gallery.Refresh)).ExecuteLater(GalleryRefreshMilliseconds);
             }
         }
 

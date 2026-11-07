@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Netcode;
@@ -21,6 +22,10 @@ namespace HyperRTS.Editor.PlayMode
         /// <summary>The world the local player looks at: the host or client when one runs, else the single-player world.</summary>
         public static bool TryGetPresented(out EntityManager entityManager) =>
             TryGet(SimulationWorlds.Presented, out entityManager);
+
+        /// <summary>Every running game world, without thin clients or the worlds SubScenes load into.</summary>
+        public static IEnumerable<World> Running =>
+            Application.isPlaying ? World.All.Where(world => GetRole(world) != 0) : Enumerable.Empty<World>();
 
         /// <summary>The first running world with one of <paramref name="roles"/>, preferring a networked one.</summary>
         public static bool TryGet(WorldSystemFilterFlags roles, out EntityManager entityManager)

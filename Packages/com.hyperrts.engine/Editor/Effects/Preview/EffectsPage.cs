@@ -90,7 +90,7 @@ namespace HyperRTS.Editor.Effects.Preview
         {
             _playback = new EffectPlayback();
             EditorApplication.update += ShowRequested;
-            EditorApplication.projectChanged += OnProjectChange;
+            EffectPreviewImport.EffectsChanged += QueueReload;
             Selection.selectionChanged += OnSelectionChanged;
             EffectPreviewImport.Imported += OnImported;
             Show(FindRig(Settings.lastEffect));
@@ -99,7 +99,7 @@ namespace HyperRTS.Editor.Effects.Preview
         private void Unsubscribe()
         {
             EditorApplication.update -= ShowRequested;
-            EditorApplication.projectChanged -= OnProjectChange;
+            EffectPreviewImport.EffectsChanged -= QueueReload;
             Selection.selectionChanged -= OnSelectionChanged;
             EffectPreviewImport.Imported -= OnImported;
             _playback.Dispose();
@@ -108,7 +108,7 @@ namespace HyperRTS.Editor.Effects.Preview
         }
 
         // An import raises many changes, so the list reloads once they have stopped for a moment.
-        private void OnProjectChange() => (_reload ??= _root.schedule.Execute(Reload)).ExecuteLater(ReloadDelayMilliseconds);
+        private void QueueReload() => (_reload ??= _root.schedule.Execute(Reload)).ExecuteLater(ReloadDelayMilliseconds);
 
         private void Reload()
         {

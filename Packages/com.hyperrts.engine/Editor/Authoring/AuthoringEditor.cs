@@ -22,16 +22,18 @@ namespace HyperRTS.Editor.Authoring
     public class AuthoringEditor : UnityEditor.Editor
     {
         private const BindingFlags Methods = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        private const long ChangeDelayMilliseconds = 100;
 
         private IssueBadge _issues;
         private FieldIssueMarks _marks;
         private HelpBox _buttonError;
+        private IVisualElementScheduledItem _change;
 
         public override VisualElement CreateInspectorGUI()
         {
             var root = EditorAssets.Layout(typeof(AuthoringEditor)).Instantiate();
             _issues = root.Require<IssueBadge>("issues");
-            _issues.Fixed += OnChanged;
+            _issues.Fixed += QueueChange;
             BuildHeader(root.Require<VisualElement>("header"));
             BuildFields(root.Require<VisualElement>("fields"));
             ConditionalFields.Bind(root, serializedObject);
@@ -42,7 +44,9 @@ namespace HyperRTS.Editor.Authoring
             BuildFooter(root.Require<VisualElement>("footer"));
 
             // Rules also read sibling components and the hierarchy, so field edits alone don't cover every change.
-            root.TrackSerializedObjectValue(serializedObject, _ => OnChanged());
+            _change = root.schedule.Execute(OnChanged);
+            _change.Pause();
+            root.TrackSerializedObjectValue(serializedObject, _ => QueueChange());
             root.WhileAttached(Subscribe, Unsubscribe);
             OnChanged();
             return root;
@@ -62,6 +66,10 @@ namespace HyperRTS.Editor.Authoring
         protected virtual void Refresh()
         {
         }
+
+        // One edit raises a value change, a hierarchy change and an undo record, and a drag raises them every frame,
+        // so they share one refresh once they pause.
+        private void QueueChange() => _change.ExecuteLater(ChangeDelayMilliseconds);
 
         private void OnChanged()
         {
@@ -241,14 +249,14 @@ namespace HyperRTS.Editor.Authoring
 
         private void Subscribe()
         {
-            EditorApplication.hierarchyChanged += OnChanged;
-            Undo.undoRedoPerformed += OnChanged;
+            EditorApplication.hierarchyChanged += QueueChange;
+            Undo.undoRedoPerformed += QueueChange;
         }
 
         private void Unsubscribe()
         {
-            EditorApplication.hierarchyChanged -= OnChanged;
-            Undo.undoRedoPerformed -= OnChanged;
+            EditorApplication.hierarchyChanged -= QueueChange;
+            Undo.undoRedoPerformed -= QueueChange;
         }
     }
 }

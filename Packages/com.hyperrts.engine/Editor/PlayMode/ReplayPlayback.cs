@@ -88,28 +88,8 @@ namespace HyperRTS.Editor.PlayMode
 
         private static bool TryGetRecordingWorld(out World world)
         {
-            world = null;
-            if (!Application.isPlaying)
-            {
-                return false;
-            }
-
-            foreach (var candidate in World.All)
-            {
-                // A SubScene's loading world is written by its load job, and never records.
-                if ((candidate.Flags & WorldFlags.Streaming) != 0)
-                {
-                    continue;
-                }
-
-                if (ReplayRecorder.IsRecording(candidate))
-                {
-                    world = candidate;
-                    return true;
-                }
-            }
-
-            return false;
+            world = PlayWorld.Running.FirstOrDefault(ReplayRecorder.IsRecording);
+            return world != null;
         }
     }
 }
