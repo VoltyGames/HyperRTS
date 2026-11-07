@@ -49,10 +49,10 @@ namespace HyperRTS.Simulation.AI
 
         private static void CheckSlot(int slot, string what)
         {
-            if (slot < 1 || slot > Faction.Max)
+            if (slot < 1 || slot > Owner.Max)
             {
                 throw new ArgumentOutOfRangeException(nameof(slot),
-                    $"The AI map hints have a {what} {slot}; slots run from 1 to {Faction.Max}.");
+                    $"The AI map hints have a {what} {slot}; slots run from 1 to {Owner.Max}.");
             }
         }
 

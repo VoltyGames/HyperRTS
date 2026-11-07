@@ -75,11 +75,11 @@ namespace HyperRTS.Simulation.Resources.Gathering
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
 
             private void Execute([ChunkIndexInQuery] int chunk, Entity entity, ref DeliverySource source,
-                in Faction faction)
+                in Owner owner)
             {
                 var offline = OfflineLookup.HasEnabled(entity);
                 // One wave even if a long frame covered several intervals: carriers spawned together would overlap.
-                if (IntervalTimer.Due(ref source.Elapsed, source.Interval, DeltaTime, faction.Value, offline) == 0)
+                if (IntervalTimer.Due(ref source.Elapsed, source.Interval, DeltaTime, owner.Value, offline) == 0)
                 {
                     return;
                 }
@@ -90,16 +90,16 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 for (var i = 0; i < source.Count; i++)
                 {
                     var position = DeliveryMath.WavePosition(Map, edge, outward, i, source.Count, source.Spacing);
-                    Spawn(chunk, entity, source, position, transform.Position, faction);
+                    Spawn(chunk, entity, source, position, transform.Position, owner);
                 }
             }
 
             private void Spawn(int chunk, Entity target, in DeliverySource source, float3 position, float3 goal,
-                in Faction faction)
+                in Owner owner)
             {
                 var heading = new float3(goal.x - position.x, 0f, goal.z - position.z);
                 var carrier = Spawner.Spawn(Ecb, chunk, source.Carrier, position,
-                    quaternion.LookRotationSafe(heading, math.up()), faction.Value);
+                    quaternion.LookRotationSafe(heading, math.up()), owner.Value);
                 Ecb.AddComponent(chunk, carrier, new DeliveryCarrier
                 {
                     Source = target, Type = source.Type, Amount = source.Amount,
@@ -123,7 +123,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
             public ComponentLookup<PlayerStats> StatsLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
 
-            private void Execute(Entity entity, in DeliveryCarrier carrier, in Faction faction)
+            private void Execute(Entity entity, in DeliveryCarrier carrier, in Owner owner)
             {
                 var sourceGone = !SourceLookup.TryGetComponent(carrier.Source, out var source)
                                  || DeadLookup.HasEnabled(carrier.Source);
@@ -140,13 +140,13 @@ namespace HyperRTS.Simulation.Resources.Gathering
                     return;
                 }
 
-                Pay(carrier, faction);
+                Pay(carrier, owner);
                 Ecb.DestroyEntity(entity);
             }
 
-            private void Pay(in DeliveryCarrier carrier, in Faction faction)
+            private void Pay(in DeliveryCarrier carrier, in Owner owner)
             {
-                var player = faction.Value == Faction.Neutral ? Entity.Null : Players[faction.Value];
+                var player = owner.Value == Owner.Neutral ? Entity.Null : Players[owner.Value];
                 var paid = ResourcePayout.Scaled(ModifierLookup, player, carrier.Amount);
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, carrier.Type, paid);
             }

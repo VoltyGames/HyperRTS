@@ -8,18 +8,18 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Squads
 {
     /// <summary>
-    /// The working points of one kind, copied out of the world for one look: which a faction may use, which cover a
+    /// The working points of one kind, copied out of the world for one look: which an owner may use, which cover a
     /// position and the nearest. Systems, the AI and the HUD all ask the same questions of it.
     /// </summary>
     public struct SquadPoints
     {
         private NativeArray<Entity> _entities;
-        private NativeArray<Faction> _owners;
+        private NativeArray<Owner> _owners;
         private NativeArray<LocalTransform> _places;
         private NativeArray<float> _reaches;
 
         /// <summary>
-        /// Reads every point the query matches; it must hold <typeparamref name="T"/>, <see cref="Faction"/> and
+        /// Reads every point the query matches; it must hold <typeparamref name="T"/>, <see cref="Owner"/> and
         /// <see cref="LocalTransform"/> and leave out <see cref="Dead"/> and <see cref="Offline"/> ones.
         /// </summary>
         public static SquadPoints From<T>(EntityQuery query) where T : unmanaged, IComponentData, ISquadPoint
@@ -34,27 +34,27 @@ namespace HyperRTS.Simulation.Squads
             return new SquadPoints
             {
                 _entities = query.ToEntityArray(Allocator.Temp),
-                _owners = query.ToComponentDataArray<Faction>(Allocator.Temp),
+                _owners = query.ToComponentDataArray<Owner>(Allocator.Temp),
                 _places = query.ToComponentDataArray<LocalTransform>(Allocator.Temp),
                 _reaches = reaches,
             };
         }
 
-        /// <summary>Whether the faction or an ally has a point.</summary>
-        public readonly bool HasAllied(byte faction, in FactionRelations relations) =>
-            Find(float3.zero, faction, relations, false) >= 0;
+        /// <summary>Whether the owner or an ally has a point.</summary>
+        public readonly bool HasAllied(byte owner, in OwnerRelations relations) =>
+            Find(float3.zero, owner, relations, false) >= 0;
 
-        /// <summary>Whether <paramref name="here"/> is within the reach of a point the faction may use.</summary>
-        public readonly bool Covers(float3 here, byte faction, in FactionRelations relations) =>
-            Find(here, faction, relations, true) >= 0;
+        /// <summary>Whether <paramref name="here"/> is within the reach of a point the owner may use.</summary>
+        public readonly bool Covers(float3 here, byte owner, in OwnerRelations relations) =>
+            Find(here, owner, relations, true) >= 0;
 
-        /// <summary>The nearest point the faction may use wherever it is, or null.</summary>
-        public readonly Entity NearestAllied(float3 here, byte faction, in FactionRelations relations) =>
-            At(Find(here, faction, relations, false));
+        /// <summary>The nearest point the owner may use wherever it is, or null.</summary>
+        public readonly Entity NearestAllied(float3 here, byte owner, in OwnerRelations relations) =>
+            At(Find(here, owner, relations, false));
 
-        /// <summary>The nearest point the faction may use that covers <paramref name="here"/>, or null.</summary>
-        public readonly Entity NearestCovering(float3 here, byte faction, in FactionRelations relations) =>
-            At(Find(here, faction, relations, true));
+        /// <summary>The nearest point the owner may use that covers <paramref name="here"/>, or null.</summary>
+        public readonly Entity NearestCovering(float3 here, byte owner, in OwnerRelations relations) =>
+            At(Find(here, owner, relations, true));
 
         /// <summary>Whether <paramref name="point"/> still works and <paramref name="here"/> is within its reach.</summary>
         public readonly bool Reaches(Entity point, float3 here)
@@ -71,14 +71,14 @@ namespace HyperRTS.Simulation.Squads
         private readonly bool IsWithin(int index, float3 here) =>
             math.distancesq(here.xz, _places[index].Position.xz) <= _reaches[index] * _reaches[index];
 
-        private readonly int Find(float3 here, byte faction, in FactionRelations relations, bool mustCover)
+        private readonly int Find(float3 here, byte owner, in OwnerRelations relations, bool mustCover)
         {
             var found = -1;
             var best = float.MaxValue;
             for (var i = 0; i < _entities.Length; i++)
             {
                 var distance = math.distancesq(here.xz, _places[i].Position.xz);
-                var usable = relations.IsAllied(faction, _owners[i].Value) && (!mustCover || IsWithin(i, here));
+                var usable = relations.IsAllied(owner, _owners[i].Value) && (!mustCover || IsWithin(i, here));
                 if (usable && distance < best)
                 {
                     best = distance;

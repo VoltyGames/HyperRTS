@@ -26,13 +26,13 @@ namespace HyperRTS.Simulation.Squads
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Owner>().WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Retreat), selected);
             _writer = new OrderWriter(ref state);
-            _points = SystemAPI.QueryBuilder().WithAll<RetreatPoint, Faction, LocalTransform>()
+            _points = SystemAPI.QueryBuilder().WithAll<RetreatPoint, Owner, LocalTransform>()
                 .WithNone<Dead, Offline>().Build();
             state.RequireForUpdate<SquadMember>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Squads
         {
             state.CompleteDependency();
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var points = SquadPoints.From<RetreatPoint>(_points);
             foreach (var each in _commands.Read(ref state))
             {
@@ -74,11 +74,11 @@ namespace HyperRTS.Simulation.Squads
         }
 
         /// <summary>Sends the squad to its nearest retreat point; false when there is none.</summary>
-        private bool Retreat(ref SystemState state, Entity squad, in FactionRelations relations, in SquadPoints points)
+        private bool Retreat(ref SystemState state, Entity squad, in OwnerRelations relations, in SquadPoints points)
         {
-            var faction = SystemAPI.GetComponent<Faction>(squad).Value;
+            var owner = SystemAPI.GetComponent<Owner>(squad).Value;
             var here = SystemAPI.GetComponent<LocalTransform>(squad).Position;
-            var point = points.NearestAllied(here, faction, relations);
+            var point = points.NearestAllied(here, owner, relations);
             if (point == Entity.Null)
             {
                 return false;
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Squads
         }
 
         /// <summary>Ends the retreat on arrival; a lost or offline point sends the squad to the next one.</summary>
-        private void Continue(ref SystemState state, Entity squad, in FactionRelations relations, in SquadPoints points)
+        private void Continue(ref SystemState state, Entity squad, in OwnerRelations relations, in SquadPoints points)
         {
             var target = SystemAPI.GetComponent<ActiveOrder>(squad).Value.Target;
             if (points.Contains(target))

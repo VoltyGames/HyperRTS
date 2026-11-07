@@ -79,30 +79,30 @@ namespace HyperRTS.Editor.PlayMode
         }
 
         /// <summary>
-        /// Finishes every construction site and the current production of one faction, through the construction and
+        /// Finishes every construction site and the current production of one owner, through the construction and
         /// production systems next frame, so completion events, sounds and stats still happen.
         /// </summary>
-        public static void InstantBuild(EntityManager entityManager, byte faction)
+        public static void InstantBuild(EntityManager entityManager, byte owner)
         {
-            using var sites = entityManager.CreateEntityQuery(typeof(ConstructionProgress), typeof(Faction));
+            using var sites = entityManager.CreateEntityQuery(typeof(ConstructionProgress), typeof(Owner));
             foreach (var site in sites.ToEntityArray(Allocator.Temp))
             {
-                if (entityManager.GetComponentData<Faction>(site).Value == faction)
+                if (entityManager.GetComponentData<Owner>(site).Value == owner)
                 {
                     entityManager.SetComponentData(site, new ConstructionProgress { Value = 1f });
                 }
             }
 
-            using var producers = entityManager.CreateEntityQuery(typeof(Producer), typeof(ProductionQueueItem), typeof(Faction));
+            using var producers = entityManager.CreateEntityQuery(typeof(Producer), typeof(ProductionQueueItem), typeof(Owner));
             foreach (var entity in producers.ToEntityArray(Allocator.Temp))
             {
-                FinishProduction(entityManager, entity, faction);
+                FinishProduction(entityManager, entity, owner);
             }
         }
 
-        private static void FinishProduction(EntityManager entityManager, Entity entity, byte faction)
+        private static void FinishProduction(EntityManager entityManager, Entity entity, byte owner)
         {
-            var owned = entityManager.GetComponentData<Faction>(entity).Value == faction;
+            var owned = entityManager.GetComponentData<Owner>(entity).Value == owner;
             if (!owned || entityManager.GetBuffer<ProductionQueueItem>(entity, true).Length == 0)
             {
                 return;
@@ -114,9 +114,9 @@ namespace HyperRTS.Editor.PlayMode
         }
 
         /// <summary>Spawns <paramref name="prefab"/> at <paramref name="position"/>, facing as the prefab does.</summary>
-        public static Entity Spawn(EntityManager entityManager, Entity prefab, byte faction, float3 position) =>
+        public static Entity Spawn(EntityManager entityManager, Entity prefab, byte owner, float3 position) =>
             entityManager.Spawn(prefab, position, entityManager.GetComponentData<LocalTransform>(prefab).Rotation,
-                faction);
+                owner);
 
         /// <summary>Where the game camera looks on the ground, or the map centre without a camera.</summary>
         public static float3 ViewCenter(EntityManager entityManager)

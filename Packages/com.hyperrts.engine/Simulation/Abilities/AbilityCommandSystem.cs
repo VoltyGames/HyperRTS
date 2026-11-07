@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Abilities
         public void OnCreate(ref SystemState state)
         {
             EventQueues.Create<AbilityEvents>(ref state, typeof(AbilityActivation));
-            var selected = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Selected, Owner>().WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, TypeSet.Range(CommandType.UseAbility, CommandType.UsePower),
                 selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Abilities
             _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _caster = new AbilityCaster(ref state);
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.Abilities
 
             var context = new Context
             {
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Completed = new CompletedBuildings(_completed, Allocator.Temp),
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
@@ -77,26 +77,26 @@ namespace HyperRTS.Simulation.Abilities
                 }
                 else
                 {
-                    UsePower(ref state, aimed.Player, aimed.Faction, aimed.Command, context);
+                    UsePower(ref state, aimed.Player, aimed.Owner, aimed.Command, context);
                 }
             }
         }
 
         private struct Context
         {
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public CompletedBuildings Completed;
             public EntityCommandBuffer Ecb;
         }
 
         private void UseAbility(ref SystemState state, in IssuedCommand issued, in Context context)
         {
-            var faction = issued.Faction;
+            var owner = issued.Owner;
             var command = issued.Command;
             var closest = Closest.None;
             foreach (var caster in _commands.Subjects(ref state, issued))
             {
-                var index = UsableIndex(ref state, caster, faction, command, context);
+                var index = UsableIndex(ref state, caster, owner, command, context);
                 if (index < 0)
                 {
                     continue;
@@ -106,7 +106,7 @@ namespace HyperRTS.Simulation.Abilities
                 var from = SystemAPI.GetComponent<LocalTransform>(caster).Position;
                 if (ability.Target == AbilityTarget.None)
                 {
-                    Cast(ref state, caster, index, faction, command, context);
+                    Cast(ref state, caster, index, owner, command, context);
                     continue;
                 }
 
@@ -116,12 +116,12 @@ namespace HyperRTS.Simulation.Abilities
 
             if (closest.Found)
             {
-                Cast(ref state, closest.Entity, closest.Index, faction, command, context);
+                Cast(ref state, closest.Entity, closest.Index, owner, command, context);
             }
         }
 
         /// <summary>The ability's slot when this caster may use it on the command's target now; otherwise -1.</summary>
-        private int UsableIndex(ref SystemState state, Entity caster, byte faction, in PlayerCommand command,
+        private int UsableIndex(ref SystemState state, Entity caster, byte owner, in PlayerCommand command,
             in Context context)
         {
             if (!CanCast(ref state, caster))
@@ -138,7 +138,7 @@ namespace HyperRTS.Simulation.Abilities
 
             var states = SystemAPI.GetBuffer<AbilityCooldown>(caster);
             var stateIndex = AbilityRules.FindCooldown(states, command.Argument);
-            return stateIndex >= 0 && IsUsable(ref state, abilities[index], states[stateIndex], faction, command, context)
+            return stateIndex >= 0 && IsUsable(ref state, abilities[index], states[stateIndex], owner, command, context)
                 ? index
                 : -1;
         }
@@ -147,13 +147,13 @@ namespace HyperRTS.Simulation.Abilities
         private bool CanCast(ref SystemState state, Entity caster) =>
             SystemAPI.HasBuffer<Ability>(caster) && AbilityRules.CanCast(state.EntityManager, caster);
 
-        private bool IsUsable(ref SystemState state, in Ability ability, in AbilityCooldown abilityState, byte faction,
+        private bool IsUsable(ref SystemState state, in Ability ability, in AbilityCooldown abilityState, byte owner,
             in PlayerCommand command, in Context context) =>
-            AbilityRules.IsAvailable(ability, abilityState, faction, context.Completed) &&
-            AbilityRules.IsValidTarget(ability, command.Target, faction, _targets, SystemAPI.GetComponentLookup<Faction>(true),
+            AbilityRules.IsAvailable(ability, abilityState, owner, context.Completed) &&
+            AbilityRules.IsValidTarget(ability, command.Target, owner, _targets, SystemAPI.GetComponentLookup<Owner>(true),
                 context.Relations);
 
-        private void Cast(ref SystemState state, Entity caster, int index, byte faction, in PlayerCommand command,
+        private void Cast(ref SystemState state, Entity caster, int index, byte owner, in PlayerCommand command,
             in Context context)
         {
             var abilities = SystemAPI.GetBuffer<Ability>(caster);
@@ -175,12 +175,12 @@ namespace HyperRTS.Simulation.Abilities
             {
                 var states = SystemAPI.GetBuffer<AbilityCooldown>(caster);
                 var cooldown = AbilityRules.FindCooldown(states, ability.Id);
-                _caster.Cast(ability, ref states.ElementAt(cooldown), Activation(ability, caster, faction, command.Target, aim),
+                _caster.Cast(ability, ref states.ElementAt(cooldown), Activation(ability, caster, owner, command.Target, aim),
                     context.Ecb);
             }
         }
 
-        private void UsePower(ref SystemState state, Entity player, byte faction, in PlayerCommand command,
+        private void UsePower(ref SystemState state, Entity player, byte owner, in PlayerCommand command,
             in Context context)
         {
             if (!SystemAPI.HasBuffer<Ability>(player))
@@ -193,20 +193,20 @@ namespace HyperRTS.Simulation.Abilities
             var index = AbilityRules.FindAbility(abilities, command.Argument);
             var stateIndex = AbilityRules.FindCooldown(states, command.Argument);
             if (index < 0 || stateIndex < 0 ||
-                !IsUsable(ref state, abilities[index], states[stateIndex], faction, command, context))
+                !IsUsable(ref state, abilities[index], states[stateIndex], owner, command, context))
             {
                 return;
             }
 
             var aim = AbilityRules.Aim(abilities[index], command.Position, command.Target, command.Position, _targets);
             _caster.Cast(abilities[index], ref states.ElementAt(stateIndex),
-                Activation(abilities[index], player, faction, command.Target, aim), context.Ecb);
+                Activation(abilities[index], player, owner, command.Target, aim), context.Ecb);
         }
 
-        private static AbilityActivation Activation(in Ability ability, Entity caster, byte faction, Entity target,
+        private static AbilityActivation Activation(in Ability ability, Entity caster, byte owner, Entity target,
             float3 position) => new()
         {
-            Caster = caster, Faction = faction, AbilityId = ability.Id, Target = target, Position = position,
+            Caster = caster, Owner = owner, AbilityId = ability.Id, Target = target, Position = position,
         };
     }
 }

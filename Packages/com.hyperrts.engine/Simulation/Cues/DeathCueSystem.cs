@@ -36,8 +36,8 @@ namespace HyperRTS.Simulation.Cues
         {
             public CueWriter Cues;
 
-            private void Execute(Entity entity, in LocalTransform transform, in Faction faction) =>
-                Cues.Play(entity, CueSlot.Death, transform, transform.Forward(), faction.Value);
+            private void Execute(Entity entity, in LocalTransform transform, in Owner owner) =>
+                Cues.Play(entity, CueSlot.Death, transform, transform.Forward(), owner.Value);
         }
     }
 }

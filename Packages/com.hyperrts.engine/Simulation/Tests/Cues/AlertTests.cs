@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             Hit(unit);
             World.Tick();
             Assert.AreEqual(1, World.Queued(CueSlot.UnderFire).Length);
-            Assert.AreEqual(1, World.Queued(CueSlot.UnderFire)[0].Faction);
+            Assert.AreEqual(1, World.Queued(CueSlot.UnderFire)[0].Owner);
 
             World.Run(World.Singleton<VoiceRules>().UnderFireInterval + 1f);
             Hit(unit);
@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var lost = Announced(0.5f, AnnouncementKind.UnitLost);
 
             Assert.AreEqual(1, lost.Count);
-            Assert.AreEqual(1, lost[0].Faction);
+            Assert.AreEqual(1, lost[0].Owner);
             Assert.AreEqual(EntityInfo.TypeIdFromName("Rifleman"), lost[0].TypeId);
             Assert.IsTrue(CueRules.IsOwnerOnly(CueSlot.Announce));
         }
@@ -148,7 +148,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         public void BuildingHits_AreAnnouncedOncePerInterval()
         {
             var depot = World.SpawnBuilding(1, float3.zero, Footprint);
-            var hit = new DamageEvent { Target = depot, SourceFaction = 2, Profile = new DamageProfile { Amount = 1f } };
+            var hit = new DamageEvent { Target = depot, SourceOwner = 2, Profile = new DamageProfile { Amount = 1f } };
 
             var heard = new List<CueEvent>();
             for (var i = 0; i < 10; i++)
@@ -205,7 +205,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var low = Announced(1f, AnnouncementKind.LowPower);
 
             Assert.AreEqual(1, low.Count, "once, when it falls short");
-            Assert.AreEqual(1, low[0].Faction);
+            Assert.AreEqual(1, low[0].Owner);
         }
 
         [Test]
@@ -244,7 +244,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         private void Hit(Entity target) =>
-            World.QueueDamage(new DamageEvent { Target = target, SourceFaction = 2, Profile = new DamageProfile { Amount = 1f } });
+            World.QueueDamage(new DamageEvent { Target = target, SourceOwner = 2, Profile = new DamageProfile { Amount = 1f } });
 
         private List<CueEvent> Announced(float seconds) => World.QueuedOver(seconds, CueSlot.Announce);
 

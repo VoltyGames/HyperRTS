@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Air
         public void OnUpdate(ref SystemState state)
         {
             new ExpireJob().ScheduleParallel();
-            var airfields = new Airfields { Pads = SystemAPI.GetBufferLookup<LandingPad>(false), Factions = SystemAPI.GetComponentLookup<Faction>(true), Sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true) };
+            var airfields = new Airfields { Pads = SystemAPI.GetBufferLookup<LandingPad>(false), Owners = SystemAPI.GetComponentLookup<Owner>(true), Sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true) };
             new HomeJob { Airfields = airfields }.Schedule();
             new ReturnJob { Airfields = airfields, Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true) }.Schedule();
         }
@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Air
             public Airfields Airfields;
 
             private void Execute(Entity entity, ref HomePad home, EnabledRefRW<Docked> docked,
-                EnabledRefRO<MoveDestination> moving, in Faction faction)
+                EnabledRefRO<MoveDestination> moving, in Owner owner)
             {
                 // Any move lifts a docked aircraft off its pad.
                 if (docked.ValueRO && moving.ValueRO)
@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Air
                     return;
                 }
 
-                if (!Airfields.IsOwn(home.Airfield, faction.Value) || !Airfields.Claim(entity, home))
+                if (!Airfields.IsOwn(home.Airfield, owner.Value) || !Airfields.Claim(entity, home))
                 {
                     home.Release();
                     docked.ValueRW = false;
@@ -82,7 +82,7 @@ namespace HyperRTS.Simulation.Air
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, ref HomePad home,
-                EnabledRefRW<Docked> docked, in NavAgent agent, in Faction faction)
+                EnabledRefRW<Docked> docked, in NavAgent agent, in Owner owner)
             {
                 if (order.Value.Type != OrderType.ReturnToBase)
                 {
@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Air
                 var airfield = order.Value.Target;
                 if (airfield != Entity.Null && airfield != home.Airfield)
                 {
-                    Airfields.TryRehome(entity, ref home, airfield, faction.Value);
+                    Airfields.TryRehome(entity, ref home, airfield, owner.Value);
                 }
 
                 if (home.Airfield == Entity.Null)
@@ -118,11 +118,11 @@ namespace HyperRTS.Simulation.Air
         private struct Airfields
         {
             public BufferLookup<LandingPad> Pads;
-            [ReadOnly] public ComponentLookup<Faction> Factions;
+            [ReadOnly] public ComponentLookup<Owner> Owners;
             [ReadOnly] public ComponentLookup<ConstructionProgress> Sites;
 
-            public bool IsOwn(Entity airfield, byte faction) =>
-                AirfieldRules.IsOwnedAirfield(Pads, Factions, Sites, airfield, faction);
+            public bool IsOwn(Entity airfield, byte owner) =>
+                AirfieldRules.IsOwnedAirfield(Pads, Owners, Sites, airfield, owner);
 
             /// <summary>Takes the home pad if free; false when another aircraft holds it.</summary>
             public bool Claim(Entity aircraft, in HomePad home)
@@ -137,9 +137,9 @@ namespace HyperRTS.Simulation.Air
             }
 
             /// <summary>Moves the aircraft's home to a free pad of its kind at the airfield; the old pad frees next frame.</summary>
-            public void TryRehome(Entity aircraft, ref HomePad home, Entity airfield, byte faction)
+            public void TryRehome(Entity aircraft, ref HomePad home, Entity airfield, byte owner)
             {
-                if (!IsOwn(airfield, faction))
+                if (!IsOwn(airfield, owner))
                 {
                     return;
                 }

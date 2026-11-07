@@ -37,13 +37,13 @@ namespace HyperRTS.Simulation.Airdrops
         }
 
         /// <summary>
-        /// Spawns <paramref name="prefab"/> for <paramref name="faction"/> at the entry, cruising
+        /// Spawns <paramref name="prefab"/> for <paramref name="owner"/> at the entry, cruising
         /// <paramref name="altitude"/> up, on a <see cref="DropFlight"/> along this route.
         /// </summary>
         public readonly Entity Launch(EntityCommandBuffer ecb, in PrefabSpawner spawner, Entity prefab, Flight flight,
-            float altitude, byte faction)
+            float altitude, byte owner)
         {
-            var aircraft = spawner.Spawn(ecb, prefab, Entry, Facing, faction);
+            var aircraft = spawner.Spawn(ecb, prefab, Entry, Facing, owner);
             flight.Altitude = altitude;
             ecb.SetComponent(aircraft, flight);
             ecb.AddComponent(aircraft, new DropFlight { Route = this });

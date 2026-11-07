@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Match
         [GhostField] public MatchPhase Phase;
         [GhostField] public byte WinningTeam;
 
-        /// <summary>Bit per faction that has owned a <see cref="VictoryCritical"/> entity; only those can lose.</summary>
+        /// <summary>Bit per owner that has owned a <see cref="VictoryCritical"/> entity; only those can lose.</summary>
         [GhostField] public uint Contenders;
 
         /// <summary>Networked matches: set by the server once every human slot has joined (or the wait ran out).</summary>

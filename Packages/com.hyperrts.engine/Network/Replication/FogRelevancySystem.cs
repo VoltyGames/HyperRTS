@@ -34,18 +34,18 @@ namespace HyperRTS.Network.Replication
         private struct Viewer
         {
             public int NetworkId;
-            public byte Faction;
+            public byte Owner;
         }
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _ghosts = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, GhostInstance>()
+            _ghosts = SystemAPI.QueryBuilder().WithAll<LocalTransform, Owner, GhostInstance>()
                 .WithNone<Destructible>().Build();
             _concealment = new ConcealmentLookup(ref state);
             state.RequireForUpdate<GhostRelevancy>();
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -81,13 +81,13 @@ namespace HyperRTS.Network.Replication
                 Fog = fog,
                 Concealments = _concealment,
                 Viewers = viewers.AsArray(),
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 FogOn = SystemAPI.GetSingleton<MapSettings>().FogOfWar,
                 Hidden = hidden.AsParallelWriter(),
             }.ScheduleParallel(_ghosts, state.Dependency);
         }
 
-        /// <summary>In-game connections holding a slot, with its faction; observers see all, so are left out.</summary>
+        /// <summary>In-game connections holding a slot, with its owner; observers see all, so are left out.</summary>
         private NativeList<Viewer> Viewers(ref SystemState state)
         {
             var viewers = new NativeList<Viewer>(8, state.WorldUpdateAllocator);
@@ -95,8 +95,8 @@ namespace HyperRTS.Network.Replication
             foreach (var (id, link) in SystemAPI.Query<RefRO<NetworkId>, RefRO<ConnectionPlayer>>()
                          .WithAll<NetworkStreamInGame, NetworkStreamConnection>())
             {
-                var faction = SystemAPI.GetComponent<Player>(link.ValueRO.Player).Faction;
-                viewers.Add(new Viewer { NetworkId = id.ValueRO.Value, Faction = faction });
+                var owner = SystemAPI.GetComponent<Player>(link.ValueRO.Player).Owner;
+                viewers.Add(new Viewer { NetworkId = id.ValueRO.Value, Owner = owner });
             }
 
             return viewers;
@@ -108,7 +108,7 @@ namespace HyperRTS.Network.Replication
             [ReadOnly] public FogOfWar Fog;
             [ReadOnly] public ConcealmentLookup Concealments;
             [ReadOnly] public NativeArray<Viewer> Viewers;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public bool FogOn;
             public NativeParallelHashMap<RelevantGhostForConnection, int>.ParallelWriter Hidden;
 
@@ -123,7 +123,7 @@ namespace HyperRTS.Network.Replication
             public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask, bool chunkWasExecuted) => HideMarker.End();
 
-            private void Execute(Entity entity, in LocalTransform transform, in Faction owner, in GhostInstance ghost)
+            private void Execute(Entity entity, in LocalTransform transform, in Owner owner, in GhostInstance ghost)
             {
                 // With fog off only stealth hides anything.
                 var concealment = Concealments.Find(entity);
@@ -135,7 +135,7 @@ namespace HyperRTS.Network.Replication
                 var tall = Concealments.IsTall(entity);
                 foreach (var viewer in Viewers)
                 {
-                    if (Fog.IsHiddenFrom(Relations, viewer.Faction, owner.Value, transform.Position, concealment, tall))
+                    if (Fog.IsHiddenFrom(Relations, viewer.Owner, owner.Value, transform.Position, concealment, tall))
                     {
                         Hidden.TryAdd(new RelevantGhostForConnection(viewer.NetworkId, ghost.ghostId), 1);
                     }

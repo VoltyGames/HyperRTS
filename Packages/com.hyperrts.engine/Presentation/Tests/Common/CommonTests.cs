@@ -19,7 +19,7 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Tests.Common
 {
-    /// <summary>Shared presentation plumbing: the behaviour base, the per-type data catalog and faction relations.</summary>
+    /// <summary>Shared presentation plumbing: the behaviour base, the per-type data catalog and owner relations.</summary>
     public class CommonTests
     {
         private const int TypeId = 42;
@@ -132,7 +132,7 @@ namespace HyperRTS.Presentation.Tests.Common
         [Test]
         public void GetRelation_ClassifiesOwnAllyEnemyNeutral()
         {
-            var relations = new FactionRelations();
+            var relations = new OwnerRelations();
             relations.Teams.Add(0);
             relations.Teams.Add(1);
             relations.Teams.Add(1);
@@ -141,7 +141,7 @@ namespace HyperRTS.Presentation.Tests.Common
             Assert.AreEqual(Relation.Own, relations.GetRelation(1, 1));
             Assert.AreEqual(Relation.Ally, relations.GetRelation(1, 2));
             Assert.AreEqual(Relation.Enemy, relations.GetRelation(1, 3));
-            Assert.AreEqual(Relation.Neutral, relations.GetRelation(1, Faction.Neutral));
+            Assert.AreEqual(Relation.Neutral, relations.GetRelation(1, Owner.Neutral));
         }
 
         // Authoring is baked away and never runs, so it keeps the AuthoringBehaviour base instead.
@@ -165,12 +165,12 @@ namespace HyperRTS.Presentation.Tests.Common
         public void VoicesPlayLocally_ForTheirOwnerOnly_WithoutAFogView()
         {
             var noFog = new LocalFogView { Viewer = 1, Active = false };
-            var own = new CueEvent { Slot = CueSlot.Select, Faction = 1 };
-            var other = new CueEvent { Slot = CueSlot.Select, Faction = 2 };
+            var own = new CueEvent { Slot = CueSlot.Select, Owner = 1 };
+            var other = new CueEvent { Slot = CueSlot.Select, Owner = 2 };
 
             Assert.IsTrue(CueVisibility.IsSeenLocally(own, noFog, default, default));
             Assert.IsFalse(CueVisibility.IsSeenLocally(other, noFog, default, default), "another player's voice stays private");
-            Assert.IsTrue(CueVisibility.IsSeenLocally(new CueEvent { Slot = CueSlot.Fire, Faction = 2 }, noFog, default,
+            Assert.IsTrue(CueVisibility.IsSeenLocally(new CueEvent { Slot = CueSlot.Fire, Owner = 2 }, noFog, default,
                 default), "world cues play for all without fog");
         }
     }

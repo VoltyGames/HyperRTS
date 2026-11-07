@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.AI
             return false;
         }
 
-        /// <summary>The slots <paramref name="from"/> has at least one lane to, as a set of <see cref="Faction.Bit"/>s.</summary>
+        /// <summary>The slots <paramref name="from"/> has at least one lane to, as a set of <see cref="Owner.Bit"/>s.</summary>
         public uint LaneEnemies(byte from)
         {
             var enemies = 0u;
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.AI
             {
                 if (_lanes[i].From == from)
                 {
-                    enemies |= Faction.Bit(_lanes[i].To);
+                    enemies |= Owner.Bit(_lanes[i].To);
                 }
             }
 

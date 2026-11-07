@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         {
             var cue = new CueEvent
             {
-                TypeId = 1234, Slot = CueSlot.Fire, Faction = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
+                TypeId = 1234, Slot = CueSlot.Fire, Owner = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
                 Direction = math.normalize(new float3(1f, 0.5f, -1f)), Concealment = Concealment.Concealed, Tall = true,
             };
 
@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Tests.Cues
 
             Assert.AreEqual(cue.TypeId, read.TypeId);
             Assert.AreEqual(cue.Slot, read.Slot);
-            Assert.AreEqual(cue.Faction, read.Faction);
+            Assert.AreEqual(cue.Owner, read.Owner);
             Assert.That(math.distance(cue.Position, read.Position), Is.LessThan(QuantizedPosition.Step));
             Assert.That(math.dot(cue.Direction, read.Direction), Is.GreaterThan(0.999f));
             Assert.AreEqual(Concealment.Concealed, read.Concealment);
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         {
             var impact = new CueEvent
             {
-                TypeId = 1234, Slot = CueSlot.Impact, Position = new float3(3f, 0f, 4f), Radius = 2.5f, Faction = 3,
+                TypeId = 1234, Slot = CueSlot.Impact, Position = new float3(3f, 0f, 4f), Radius = 2.5f, Owner = 3,
                 Surface = ImpactSurface.Structure, Material = SurfaceMaterial.Concrete,
             };
 

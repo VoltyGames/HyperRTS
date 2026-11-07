@@ -3,36 +3,36 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Common.Players
 {
-    /// <summary>Team per faction (index = faction). Different non-neutral teams are hostile.</summary>
-    public struct FactionRelations : IComponentData
+    /// <summary>Team per owner (index = owner). Different non-neutral teams are hostile.</summary>
+    public struct OwnerRelations : IComponentData
     {
         /// <summary>Fog keeps one bit per team in a <c>ushort</c> cell (bit 0, neutral, never stamps).</summary>
         public const int MaxTeams = sizeof(ushort) * 8;
 
         public FixedList32Bytes<byte> Teams;
 
-        public readonly byte GetTeam(byte faction) => faction < Teams.Length ? Teams[faction] : (byte)0;
+        public readonly byte GetTeam(byte owner) => owner < Teams.Length ? Teams[owner] : (byte)0;
 
-        /// <summary>Puts <paramref name="faction"/> on <paramref name="team"/>; throws for a slot or team past the limits.</summary>
-        public void SetTeam(byte faction, int team)
+        /// <summary>Puts <paramref name="owner"/> on <paramref name="team"/>; throws for a slot or team past the limits.</summary>
+        public void SetTeam(byte owner, int team)
         {
-            if (faction > Faction.Max)
+            if (owner > Owner.Max)
             {
-                throw new System.ArgumentException($"Slot {faction} is past the last faction, {Faction.Max}.");
+                throw new System.ArgumentException($"Slot {owner} is past the last owner, {Owner.Max}.");
             }
 
             // A team past the fog's bits would silently never see anything.
             if (team < 0 || team >= MaxTeams)
             {
-                throw new System.ArgumentException($"Slot {faction} has team {team}; teams go from 0 to {MaxTeams - 1}.");
+                throw new System.ArgumentException($"Slot {owner} has team {team}; teams go from 0 to {MaxTeams - 1}.");
             }
 
-            while (Teams.Length <= faction)
+            while (Teams.Length <= owner)
             {
                 Teams.Add(0);
             }
 
-            Teams[faction] = (byte)team;
+            Teams[owner] = (byte)team;
         }
 
         public readonly bool IsHostile(byte a, byte b)
@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Common.Players
         /// <summary>How <paramref name="other"/> relates to <paramref name="local"/>, for colour-coding.</summary>
         public readonly Relation GetRelation(byte local, byte other)
         {
-            if (other == Faction.Neutral)
+            if (other == Owner.Neutral)
             {
                 return Relation.Neutral;
             }

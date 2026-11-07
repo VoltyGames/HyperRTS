@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Cues
         public short Z;
         public ushort Radius;
         public byte Slot;
-        public byte Faction;
+        public byte Owner;
 
         /// <summary>Heading in 256ths of a turn, clockwise from +Z.</summary>
         public byte Yaw;
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Cues
                 Z = QuantizedPosition.Quantize(cue.Position.z),
                 Radius = (ushort)math.clamp(math.round(cue.Radius / QuantizedPosition.Step), 0, ushort.MaxValue),
                 Slot = (byte)cue.Slot,
-                Faction = cue.Faction,
+                Owner = cue.Owner,
                 Yaw = HeadingByte.Encode(direction.xz),
                 Pitch = (byte)math.round(pitch * PitchSteps),
                 SurfaceConcealment = (byte)((int)cue.Surface | (int)cue.Concealment << ConcealmentShift | tall),
@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Cues
                 TypeId = TypeId,
                 Slot = (CueSlot)Slot,
                 Variant = impact ? (byte)0 : Detail,
-                Faction = Faction,
+                Owner = Owner,
                 Position = QuantizedPosition.Dequantize(X, Y, Z),
                 Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
                 Concealment = (Concealment)((SurfaceConcealment >> ConcealmentShift) & 3),

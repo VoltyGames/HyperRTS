@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Cues
         /// Plays <paramref name="source"/>'s cue for the slot and variant (prefab or instance), at its effect socket
         /// placed by <paramref name="transform"/> when it has a rig; false if it has neither sound nor effect for it.
         /// </summary>
-        public bool Play(Entity source, CueSlot slot, in LocalTransform transform, float3 direction, byte faction,
+        public bool Play(Entity source, CueSlot slot, in LocalTransform transform, float3 direction, byte owner,
             byte variant = 0)
         {
             var position = transform.Position;
@@ -67,17 +67,17 @@ namespace HyperRTS.Simulation.Cues
                 position = transform.TransformPoint(socket);
             }
 
-            return PlayAt(source, slot, position, direction, faction, variant);
+            return PlayAt(source, slot, position, direction, owner, variant);
         }
 
         /// <summary>Plays <paramref name="source"/>'s cue at <paramref name="position"/>, such as a muzzle turned with its turret.</summary>
-        public bool PlayAt(Entity source, CueSlot slot, float3 position, float3 direction, byte faction,
+        public bool PlayAt(Entity source, CueSlot slot, float3 position, float3 direction, byte owner,
             byte variant = 0)
         {
             var typeId = TypeIdFor(source, slot, variant);
             return Add(new CueEvent
             {
-                TypeId = typeId, Slot = slot, Variant = variant, Faction = faction, Position = position,
+                TypeId = typeId, Slot = slot, Variant = variant, Owner = owner, Position = position,
                 Direction = direction, Concealment = _concealment.Find(source), Tall = _concealment.IsTall(source),
             });
         }
@@ -109,13 +109,13 @@ namespace HyperRTS.Simulation.Cues
         }
 
         /// <summary>
-        /// Queues an announcer alert for <paramref name="faction"/>'s player. It needs no sound on the source, since
+        /// Queues an announcer alert for <paramref name="owner"/>'s player. It needs no sound on the source, since
         /// the listener's announcer picks the line; <paramref name="typeId"/> names the subject, 0 for none.
         /// </summary>
-        public void Announce(AnnouncementKind kind, byte faction, float3 position, int typeId) =>
+        public void Announce(AnnouncementKind kind, byte owner, float3 position, int typeId) =>
             _events.Add(new CueEvent
             {
-                TypeId = typeId, Slot = CueSlot.Announce, Variant = kind.Value, Faction = faction, Position = position,
+                TypeId = typeId, Slot = CueSlot.Announce, Variant = kind.Value, Owner = owner, Position = position,
                 Direction = math.forward(),
             });
 

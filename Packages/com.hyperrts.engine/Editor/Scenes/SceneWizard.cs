@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Scenes
             _mapSize = root.Require<Vector2Field>("map-size");
             _mapSize.value = defaults.MapSize;
             _players = root.Require<SliderInt>("players");
-            _players.highValue = FactionRelations.MaxTeams - 1;
+            _players.highValue = OwnerRelations.MaxTeams - 1;
             _players.value = defaults.Players;
             _startingBase = root.Require<ObjectField>("starting-base");
             _startingBase.objectType = typeof(GameEntityAuthoring);

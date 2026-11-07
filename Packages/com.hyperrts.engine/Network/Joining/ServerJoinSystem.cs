@@ -92,13 +92,13 @@ namespace HyperRTS.Network.Joining
                 entities.Add(entity);
                 slots.Add(new SlotClaim.Slot
                 {
-                    Faction = player.ValueRO.Faction,
+                    Owner = player.ValueRO.Owner,
                     NetworkId = owner.ValueRO.NetworkId,
                     Token = connection.ValueRO.Token,
                 });
             }
 
-            var index = SlotClaim.Choose(slots.AsArray().AsReadOnlySpan(), wanted.Faction, wanted.Token);
+            var index = SlotClaim.Choose(slots.AsArray().AsReadOnlySpan(), wanted.Owner, wanted.Token);
             if (index < 0)
             {
                 return Entity.Null;

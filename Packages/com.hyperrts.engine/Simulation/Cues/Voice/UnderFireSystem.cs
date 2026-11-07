@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Cues.Voice
         public void OnCreate(ref SystemState state)
         {
             _cues = new CueWriter(ref state);
-            _nextByPlayer = new NativeArray<double>(Faction.Max + 1, Allocator.Persistent);
+            _nextByPlayer = new NativeArray<double>(Owner.Max + 1, Allocator.Persistent);
             state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<VoiceRules>();
         }
@@ -88,15 +88,15 @@ namespace HyperRTS.Simulation.Cues.Voice
             private void CallOut(in EntityDamaged hit)
             {
                 var alive = Health[hit.Entity].Current > 0f;
-                if (!alive || Now < NextByPlayer[hit.Faction])
+                if (!alive || Now < NextByPlayer[hit.Owner])
                 {
                     return;
                 }
 
                 var place = Transforms[hit.Entity];
-                if (Cues.Play(hit.Entity, CueSlot.UnderFire, place, place.Forward(), hit.Faction))
+                if (Cues.Play(hit.Entity, CueSlot.UnderFire, place, place.Forward(), hit.Owner))
                 {
-                    NextByPlayer[hit.Faction] = Now + Rules.UnderFireInterval;
+                    NextByPlayer[hit.Owner] = Now + Rules.UnderFireInterval;
                 }
             }
         }

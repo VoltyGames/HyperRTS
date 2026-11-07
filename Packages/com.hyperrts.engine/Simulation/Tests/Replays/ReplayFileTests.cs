@@ -29,10 +29,10 @@ namespace HyperRTS.Simulation.Tests.Replays
             Result = new MatchState { Phase = MatchPhase.Ended, WinningTeam = 2 },
             Players =
             {
-                new ReplayPlayerInfo { Faction = 1, Team = 1, Name = "Ivanov", Color = new float4(1f), Side = 3 },
+                new ReplayPlayerInfo { Owner = 1, Team = 1, Name = "Ivanov", Color = new float4(1f), Side = 3 },
                 new ReplayPlayerInfo
                 {
-                    Faction = 3, Team = 2, Name = "", Color = new float4(0.5f), Side = 1, Control = PlayerControl.AI,
+                    Owner = 3, Team = 2, Name = "", Color = new float4(0.5f), Side = 1, Control = PlayerControl.AI,
                     Difficulty = AIDifficulty.Hard,
                 },
             },
@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Tests.Replays
             Assert.AreEqual("Rain", setup.Weather.ToString(), "playback shows the recorded weather");
             Assert.AreEqual(PlayerControl.LocalHuman, setup.Slots[0].Control);
             Assert.AreEqual("Ivanov", setup.Slots[0].Name.ToString());
-            Assert.IsFalse(setup.Slots[1].Open, "faction 2 wasn't in the match");
+            Assert.IsFalse(setup.Slots[1].Open, "owner 2 wasn't in the match");
             Assert.AreEqual(1, setup.Slots[2].Side);
             Assert.AreEqual(2, setup.Slots[2].Team);
             Assert.AreEqual(PlayerControl.AI, setup.Slots[2].Control, "bots stay bots, so each viewer names them");

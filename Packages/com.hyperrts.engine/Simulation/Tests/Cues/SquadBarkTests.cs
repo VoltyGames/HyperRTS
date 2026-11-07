@@ -28,9 +28,9 @@ namespace HyperRTS.Simulation.Tests.Cues
             members.Enabled = false;
         }
 
-        private Entity Squad(byte faction = 1, int size = 4, bool settle = true)
+        private Entity Squad(byte owner = 1, int size = 4, bool settle = true)
         {
-            var squad = World.SpawnSquad(faction, float3.zero, size, speed: 0f);
+            var squad = World.SpawnSquad(owner, float3.zero, size, speed: 0f);
             var sounds = EntitySoundsAuthoring.Add(World.Writer(squad));
             var cue = World.Own(ScriptableObject.CreateInstance<SoundCue>());
             foreach (var slot in Slots)
@@ -148,7 +148,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void AnotherPlayersSquad_DoesNotBark()
         {
-            var enemy = Squad(faction: 2);
+            var enemy = Squad(owner: 2);
             Suppress(enemy, 0.95f);
 
             CollectionAssert.IsEmpty(Barks());

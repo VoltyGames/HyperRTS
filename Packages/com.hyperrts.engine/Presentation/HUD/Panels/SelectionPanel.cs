@@ -66,8 +66,8 @@ namespace HyperRTS.Presentation.HUD.Panels
                 var entity = selected[0];
                 var entityManager = context.EntityManager;
                 _icon.Bind(entityManager, entity);
-                _icon.style.borderBottomColor = entityManager.HasComponent<Faction>(entity)
-                    ? context.View.GetColor(entityManager.GetComponentData<Faction>(entity).Value)
+                _icon.style.borderBottomColor = entityManager.HasComponent<Owner>(entity)
+                    ? context.View.GetColor(entityManager.GetComponentData<Owner>(entity).Value)
                     : new StyleColor(StyleKeyword.Null);
                 _name.text = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
             }

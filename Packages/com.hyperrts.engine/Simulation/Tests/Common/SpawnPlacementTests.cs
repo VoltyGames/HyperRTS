@@ -118,7 +118,7 @@ namespace HyperRTS.Simulation.Tests.Common
             var placed = _world.Get<LocalTransform>(projectile);
             Assert.AreEqual(2f, placed.Scale, 1e-5f);
             Assert.Greater(math.abs(placed.Rotation.value.y), 0.1f, "turned toward the target");
-            Assert.AreEqual(1, _world.Get<Faction>(projectile).Value);
+            Assert.AreEqual(1, _world.Get<Owner>(projectile).Value);
             AssertPlaced(projectile, stretch);
         }
 
@@ -136,7 +136,7 @@ namespace HyperRTS.Simulation.Tests.Common
             Assert.AreEqual(new float3(3f, 0f, 7f), placed.Position);
             Assert.AreEqual(rotation, placed.Rotation);
             Assert.AreEqual(1.5f, placed.Scale, 1e-5f);
-            Assert.AreEqual(2, _world.Get<Faction>(spawned).Value);
+            Assert.AreEqual(2, _world.Get<Owner>(spawned).Value);
             AssertPlaced(spawned, stretch);
         }
 
@@ -156,7 +156,7 @@ namespace HyperRTS.Simulation.Tests.Common
             _world.QueueDamage(new DamageEvent
             {
                 Position = pose.Position,
-                SourceFaction = 1,
+                SourceOwner = 1,
                 Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile { Amount = 100f, Radius = 2f, EdgeFactor = 1f },
             });
@@ -210,7 +210,7 @@ namespace HyperRTS.Simulation.Tests.Common
                 Type = CommandType.UseAbility, Unit = silo, Position = new float3(60f, 0f, 60f), Argument = strike.Id,
             });
             var spawned = Single(TickUntilSpawned(5, ComponentType.ReadOnly<LocalTransform>(),
-                ComponentType.ReadOnly<Faction>(), ComponentType.Exclude<EntityInfo>()));
+                ComponentType.ReadOnly<Owner>(), ComponentType.Exclude<EntityInfo>()));
 
             var placed = _world.Get<LocalTransform>(spawned);
             Assert.AreEqual(new float3(60f, 0f, 60f), placed.Position);

@@ -15,18 +15,18 @@ namespace HyperRTS.Simulation.Tests
         public const float MemberHealth = 25f;
 
         /// <summary>A squad of members at <see cref="MemberHealth"/> each, firing the given mounts.</summary>
-        public static Entity SpawnSquad(this TestWorld world, byte faction, float3 position, byte[] weapons,
+        public static Entity SpawnSquad(this TestWorld world, byte owner, float3 position, byte[] weapons,
             float speed = 5f)
         {
             var health = MemberHealth * weapons.Length;
-            var squad = world.SpawnUnit(faction, position, speed: speed, maxHealth: health);
+            var squad = world.SpawnUnit(owner, position, speed: speed, maxHealth: health);
             SquadAuthoring.Add(world.Writer(squad), health, weapons);
             return squad;
         }
 
-        public static Entity SpawnSquad(this TestWorld world, byte faction, float3 position, int size = 4,
+        public static Entity SpawnSquad(this TestWorld world, byte owner, float3 position, int size = 4,
             float speed = 5f) =>
-            world.SpawnSquad(faction, position, new byte[size], speed);
+            world.SpawnSquad(owner, position, new byte[size], speed);
 
         public static Entity SpawnArmedSquad(this TestWorld world, float3 position, params byte[] weapons)
         {
@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Tests
 
         /// <summary>
         /// Queues a hit at <paramref name="at"/> that lands on <paramref name="target"/> (or splashes within
-        /// <paramref name="radius"/> of it), from a shooter <paramref name="from"/> metres past it and of faction 2.
+        /// <paramref name="radius"/> of it), from a shooter <paramref name="from"/> metres past it and of owner 2.
         /// </summary>
         public static void HitSquad(this TestWorld world, Entity target, float amount = 0f, float3 at = default,
             float radius = 0f, float edge = 1f, float suppression = 0f, float piercing = 0f, float3 from = default) =>
@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Tests
                 Target = target,
                 Position = at,
                 Origin = at + from,
-                SourceFaction = 2,
+                SourceOwner = 2,
                 Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile
                 {

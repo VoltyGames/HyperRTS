@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Abilities
             EntityCommandBuffer ecb)
         {
             var caster = activation.Caster;
-            var faction = activation.Faction;
+            var owner = activation.Owner;
             var target = activation.Target;
             var position = activation.Position;
             state.Remaining = ability.Cooldown;
@@ -52,14 +52,14 @@ namespace HyperRTS.Simulation.Abilities
 
             if (ability.SpawnPrefab != Entity.Null)
             {
-                _spawner.Spawn(ecb, ability.SpawnPrefab, position, faction);
+                _spawner.Spawn(ecb, ability.SpawnPrefab, position, owner);
             }
 
             if (ability.StatusEffect != Entity.Null && ability.Target == AbilityTarget.Entity)
             {
                 _status.Add(new StatusRequest
                 {
-                    Target = target, Definition = ability.StatusEffect, Source = caster, SourceFaction = faction,
+                    Target = target, Definition = ability.StatusEffect, Source = caster, SourceOwner = owner,
                 });
             }
 
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Abilities
             {
                 var struck = ability.Target == AbilityTarget.Entity ? target : Entity.Null;
                 var origin = _transforms.TryGetComponent(caster, out var from) ? from.Position : position;
-                _damage.Add(ability.Damage.Hit(caster, faction, origin, struck, position, WeaponTargets.Surface));
+                _damage.Add(ability.Damage.Hit(caster, owner, origin, struck, position, WeaponTargets.Surface));
             }
         }
     }

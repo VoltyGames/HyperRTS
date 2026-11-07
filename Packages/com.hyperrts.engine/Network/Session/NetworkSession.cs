@@ -245,14 +245,14 @@ namespace HyperRTS.Network.Session
                 ComponentType.ReadOnly<Player>());
             if (seated.TryGetSingleton(out Player player))
             {
-                Preference = JoinPreference.Rejoining(player.Faction);
+                Preference = JoinPreference.Rejoining(player.Owner);
                 return;
             }
 
             using var watching = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalObserver>());
             if (!watching.IsEmpty)
             {
-                Preference = JoinPreference.Rejoining(Faction.Neutral);
+                Preference = JoinPreference.Rejoining(Owner.Neutral);
                 return;
             }
 

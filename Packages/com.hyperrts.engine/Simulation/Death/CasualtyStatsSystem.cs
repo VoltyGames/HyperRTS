@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Death
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
-            _dying = SystemAPI.QueryBuilder().WithAll<Dead, Faction>().WithAny<UnitTag, BuildingTag>().Build();
+            _dying = SystemAPI.QueryBuilder().WithAll<Dead, Owner>().WithAny<UnitTag, BuildingTag>().Build();
             state.RequireForUpdate<PlayerStats>();
         }
 
@@ -53,12 +53,12 @@ namespace HyperRTS.Simulation.Death
             [ReadOnly] public ComponentLookup<LastAttacker> AttackerLookup;
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
 
-            private void Execute(Entity entity, in Faction faction)
+            private void Execute(Entity entity, in Owner owner)
             {
                 var building = BuildingLookup.HasComponent(entity);
-                if (StatsLookup.TryGetRefRW(Players[faction.Value], out var owner))
+                if (StatsLookup.TryGetRefRW(Players[owner.Value], out var ownerStats))
                 {
-                    ref var stats = ref owner.ValueRW;
+                    ref var stats = ref ownerStats.ValueRW;
                     if (building)
                     {
                         stats.BuildingsLost++;
@@ -69,17 +69,17 @@ namespace HyperRTS.Simulation.Death
                     }
                 }
 
-                CreditKiller(entity, faction.Value, building);
+                CreditKiller(entity, owner.Value, building);
             }
 
             private void CreditKiller(Entity entity, byte victim, bool building)
             {
-                if (!AttackerLookup.TryGetComponent(entity, out var attacker) || attacker.Faction == victim)
+                if (!AttackerLookup.TryGetComponent(entity, out var attacker) || attacker.Owner == victim)
                 {
                     return;
                 }
 
-                if (!StatsLookup.TryGetRefRW(Players[attacker.Faction], out var killer))
+                if (!StatsLookup.TryGetRefRW(Players[attacker.Owner], out var killer))
                 {
                     return;
                 }

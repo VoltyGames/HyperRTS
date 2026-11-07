@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Replays
         public short Y;
         public short Z;
         public ushort Yaw;
-        public byte Faction;
+        public byte Owner;
         public byte Health;
 
         /// <summary>Bit i is set while squad member i lives (<c>SquadMember.LivingMask</c>); 0 for an entity without members.</summary>
@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Replays
         public readonly bool UnderConstruction => Progress != Finished;
         public readonly float ConstructionValue => Progress / 254f;
 
-        public static ReplayEntity Capture(int key, int typeId, byte faction, in LocalTransform transform,
+        public static ReplayEntity Capture(int key, int typeId, byte owner, in LocalTransform transform,
             float healthFraction, ushort living)
         {
             var forward = math.mul(transform.Rotation, math.forward());
@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Replays
                 Y = QuantizedPosition.Quantize(transform.Position.y),
                 Z = QuantizedPosition.Quantize(transform.Position.z),
                 Yaw = (ushort)((int)math.round(yaw / YawStep) & 0xFFFF),
-                Faction = faction,
+                Owner = owner,
                 Health = (byte)math.round(math.saturate(healthFraction) * 255f),
                 Living = living,
                 Progress = Finished,
@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Replays
         /// <summary>Whether nothing but the key differs, so the entity can be left out of a delta.</summary>
         public readonly bool SameState(in ReplayEntity other)
         {
-            if (TypeId != other.TypeId || Faction != other.Faction)
+            if (TypeId != other.TypeId || Owner != other.Owner)
             {
                 return false;
             }

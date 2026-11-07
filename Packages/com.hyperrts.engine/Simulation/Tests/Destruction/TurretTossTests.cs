@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
         private Entity MakeRemains(byte mark)
         {
             var remains = _world.EntityManager.CreateEntity(typeof(LocalTransform));
-            _world.Add(remains, new Faction { Value = mark });
+            _world.Add(remains, new Owner { Value = mark });
             return _world.MakePrefab(remains);
         }
 
@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             {
                 Target = tank,
                 Origin = at + new float3(0f, 0f, -10f),
-                SourceFaction = 2,
+                SourceOwner = 2,
                 Profile = new DamageProfile { Amount = amount, Type = type },
             });
             _world.Tick();
@@ -146,14 +146,14 @@ namespace HyperRTS.Simulation.Tests.Destruction
             return best;
         }
 
-        // Prefabs carry a faction no unit has, so copies of each can be told apart.
+        // Prefabs carry an owner no unit has, so copies of each can be told apart.
         private int Remains(byte mark)
         {
-            using var all = _world.All<Faction>();
+            using var all = _world.All<Owner>();
             var count = 0;
             foreach (var entity in all)
             {
-                count += _world.Get<Faction>(entity).Value == mark ? 1 : 0;
+                count += _world.Get<Owner>(entity).Value == mark ? 1 : 0;
             }
 
             return count;

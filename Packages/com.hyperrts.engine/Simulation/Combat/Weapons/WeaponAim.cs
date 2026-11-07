@@ -51,11 +51,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
             if (HasMuzzle)
             {
                 cues.PlayAt(firing.Shooter, CueSlot.Fire, LaunchPoint(firing.Place, firing.Pose), direction,
-                    firing.Faction, firing.PoseIndex);
+                    firing.Owner, firing.PoseIndex);
                 return;
             }
 
-            cues.Play(firing.Shooter, CueSlot.Fire, firing.Place, direction, firing.Faction, firing.PoseIndex);
+            cues.Play(firing.Shooter, CueSlot.Fire, firing.Place, direction, firing.Owner, firing.PoseIndex);
         }
 
         /// <summary>Where the weapon aims on a target standing at <paramref name="target"/>.</summary>

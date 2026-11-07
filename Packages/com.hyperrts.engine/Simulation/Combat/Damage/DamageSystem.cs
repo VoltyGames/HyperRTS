@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Combat.Damage
 
             EventQueues.Create<DamageQueue>(ref state, typeof(DamageEvent));
             state.RequireForUpdate<SpatialIndex>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SimulationFrame>();
             state.RequireForUpdate<CoverRules>();
             state.RequireForUpdate<SquadRules>();
@@ -55,14 +55,14 @@ namespace HyperRTS.Simulation.Combat.Damage
             new ResolveJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Health = SystemAPI.GetComponentLookup<Health>(false),
                 Attackers = SystemAPI.GetComponentLookup<LastAttacker>(false),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Factors = _factors,
                 Destructibles = SystemAPI.GetComponentLookup<Destructible>(true),
                 LethalHits = SystemAPI.GetComponentLookup<LethalHit>(false),
-                Factions = SystemAPI.GetComponentLookup<Faction>(true),
+                Owners = SystemAPI.GetComponentLookup<Owner>(true),
                 Damaged = _damaged,
                 Shelters = SystemAPI.GetComponentLookup<Shelter>(true),
                 ShelterHits = SystemAPI.GetBufferLookup<ShelterHit>(false),
@@ -78,14 +78,14 @@ namespace HyperRTS.Simulation.Combat.Damage
         private partial struct ResolveJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public ComponentLookup<Health> Health;
             public ComponentLookup<LastAttacker> Attackers;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             public DamageFactors Factors;
             [ReadOnly] public ComponentLookup<Destructible> Destructibles;
             public ComponentLookup<LethalHit> LethalHits;
-            [ReadOnly] public ComponentLookup<Faction> Factions;
+            [ReadOnly] public ComponentLookup<Owner> Owners;
             public EventWriter<EntityDamaged> Damaged;
             [ReadOnly] public ComponentLookup<Shelter> Shelters;
             public BufferLookup<ShelterHit> ShelterHits;
@@ -164,10 +164,10 @@ namespace HyperRTS.Simulation.Combat.Damage
 
                 if (hit.Profile.Amount < 0f)
                 {
-                    return Relations.IsAllied(hit.SourceFaction, victim.Faction);
+                    return Relations.IsAllied(hit.SourceOwner, victim.Owner);
                 }
 
-                return hit.Profile.FriendlyFire || Relations.IsHostile(hit.SourceFaction, victim.Faction)
+                return hit.Profile.FriendlyFire || Relations.IsHostile(hit.SourceOwner, victim.Owner)
                     || Destructibles.HasComponent(victim.Entity);
             }
 
@@ -228,9 +228,9 @@ namespace HyperRTS.Simulation.Combat.Damage
                     LethalHits[target] = new LethalHit { Type = hit.Profile.Type, Overkill = overkill, Heading = heading };
                 }
 
-                if (Attackers.HasComponent(target) && hit.SourceFaction != 0)
+                if (Attackers.HasComponent(target) && hit.SourceOwner != 0)
                 {
-                    Attackers[target] = new LastAttacker { Source = hit.Source, Faction = hit.SourceFaction };
+                    Attackers[target] = new LastAttacker { Source = hit.Source, Owner = hit.SourceOwner };
                 }
             }
 
@@ -252,7 +252,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             /// <summary>Armor that soaks the whole hit raises no event.</summary>
             private void Report(Entity target, float amount)
             {
-                if (amount <= 0f || !Factions.TryGetComponent(target, out var owner))
+                if (amount <= 0f || !Owners.TryGetComponent(target, out var owner))
                 {
                     return;
                 }

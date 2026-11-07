@@ -1,7 +1,7 @@
 # HyperRTS
 
 A real-time strategy engine for Unity DOTS: Entities, Burst, Jobs and Netcode for Entities. It provides the systems
-an RTS needs, and a game supplies the units, factions, maps and rules. Content is authored with components and
+an RTS needs, and a game supplies the units, sides, maps and rules. Content is authored with components and
 prefabs. The simulation runs headless for tests and dedicated servers.
 
 ## Features

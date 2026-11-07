@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _moves = new MoveLookup(ref state);
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             new EngageJob
             {
                 Targets = _targets,
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Traits = traits,
                 Moves = _moves,
@@ -60,13 +60,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
         private partial struct EngageJob : IJobEntity
         {
             public TargetLookup Targets;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
             public MoveLookup Moves;
 
             private void Execute(Entity entity, in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts,
-                in VisionRange vision, in Faction faction, ref CombatStance stance, ref AttackTarget attack,
+                in VisionRange vision, in Owner owner, ref CombatStance stance, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking)
             {
                 var order = CurrentOrder(entity);
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
                 var target = attack.Value;
                 var ordered = order.Type == OrderType.Attack && order.Target == target;
-                if (Releases(entity, transform.Position, mounts, vision, faction, stance, ordered, ref attack, out var band))
+                if (Releases(entity, transform.Position, mounts, vision, owner, stance, ordered, ref attack, out var band))
                 {
                     Release(entity, order, stance, ref attack, attacking);
                     return;
@@ -110,14 +110,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
             /// its firing arc or past the leash, or inside its minimum range. Otherwise sets the gap and range band.
             /// </summary>
             private bool Releases(Entity entity, float3 position, in DynamicBuffer<WeaponMount> mounts,
-                in VisionRange vision, in Faction faction, in CombatStance stance, bool ordered, ref AttackTarget attack,
+                in VisionRange vision, in Owner owner, in CombatStance stance, bool ordered, ref AttackTarget attack,
                 out RangeBand band)
             {
                 var primary = mounts[0];
                 var weapon = primary.Weapon;
                 var target = attack.Value;
                 band = default;
-                if (Loses(primary, faction, target, ordered))
+                if (Loses(primary, owner, target, ordered))
                 {
                     return true;
                 }
@@ -167,13 +167,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             /// <summary>Gone, hidden, out of the weapon's reach or out of ammo.</summary>
-            private bool Loses(in WeaponMount primary, in Faction faction, Entity target, bool ordered)
+            private bool Loses(in WeaponMount primary, in Owner owner, Entity target, bool ordered)
             {
                 // Only orders point units at scenery, so an ordered target need only be attackable.
                 var targets = primary.Weapon.Targets;
                 var keep = ordered
-                    ? Targets.IsAttackable(target, faction.Value, Relations, targets)
-                    : Targets.IsValidTarget(target, faction.Value, Relations, targets);
+                    ? Targets.IsAttackable(target, owner.Value, Relations, targets)
+                    : Targets.IsValidTarget(target, owner.Value, Relations, targets);
                 if (!keep)
                 {
                     return true;

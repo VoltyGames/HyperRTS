@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Status
         /// <summary>Who applied it last; damage over time credits them.</summary>
         [GhostField(SendData = false)] public Entity Source;
 
-        [GhostField(SendData = false)] public byte SourceFaction;
+        [GhostField(SendData = false)] public byte SourceOwner;
         [GhostField(SendData = false)] public int Stacks;
     }
 }

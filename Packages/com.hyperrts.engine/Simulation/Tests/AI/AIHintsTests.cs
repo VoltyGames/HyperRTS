@@ -190,7 +190,7 @@ namespace HyperRTS.Simulation.Tests.AI
 
             Assert.AreEqual(2, view.LaneCount(2, 1));
             Assert.AreEqual(0, view.LaneCount(1, 1));
-            Assert.AreEqual(Faction.Bit(1), view.LaneEnemies(2));
+            Assert.AreEqual(Owner.Bit(1), view.LaneEnemies(2));
             var south = view.Lane(2, 1, 1);
             Assert.AreEqual(2, south.Count);
             Assert.AreEqual(new float2(-10f, 40f), view.Waypoint(south, 0));
@@ -207,7 +207,7 @@ namespace HyperRTS.Simulation.Tests.AI
 
             Assert.Throws<ArgumentException>(() => data.AddSlot(1, None, None));
             Assert.Throws<ArgumentOutOfRangeException>(() => data.AddSlot(0, None, None));
-            Assert.Throws<ArgumentOutOfRangeException>(() => data.AddLane(1, Faction.Max + 1, None));
+            Assert.Throws<ArgumentOutOfRangeException>(() => data.AddLane(1, Owner.Max + 1, None));
             Assert.Throws<ArgumentException>(() => data.AddLane(1, 1, None));
         }
     }

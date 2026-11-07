@@ -37,9 +37,9 @@ in one of the [tiers](modules.md#tiers).
 | Orders go through `OrderWriter` | The system owning an order type disables `ActiveOrder` when done |
 | Move by destination | Set and enable `MoveDestination`. It is disabled on arrival |
 | Combat owns movement | While `AttackTarget` is enabled, combat writes `MoveDestination` |
-| Ownership | `Faction` on every ownable entity, 0 for neutral. `FactionRelations` decides hostility |
+| Ownership | `Owner` on every ownable entity, 0 for neutral. `OwnerRelations` decides hostility |
 | Damage goes through the queue | `EventWriter<DamageEvent>`, so armor, splash and kill credit apply. Build hits with `DamageProfile.Hit` or the `DamageEvent` factories |
-| Spawn baked prefabs | `PrefabSpawner.Spawn(ecb, prefab, position, rotation, faction)` |
+| Spawn baked prefabs | `PrefabSpawner.Spawn(ecb, prefab, position, rotation, owner)` |
 
 ## Worlds
 

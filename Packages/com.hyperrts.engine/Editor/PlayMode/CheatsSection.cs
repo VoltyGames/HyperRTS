@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.PlayMode
             _control = root.Require<Button>("control");
             _control.clicked += () => Act((manager, player, _) => Cheats.MakeLocal(manager, player));
             root.Require<Button>("instant-build").clicked +=
-                () => Act((manager, _, faction) => Cheats.InstantBuild(manager, faction));
+                () => Act((manager, _, owner) => Cheats.InstantBuild(manager, owner));
 
             _fog = root.Require<Toggle>("fog");
             _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => Cheats.SetFog(manager, change.newValue)));
@@ -96,7 +96,7 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             var player = SelectedPlayer(players);
-            cheat(manager, player, manager.GetComponentData<Player>(player).Faction);
+            cheat(manager, player, manager.GetComponentData<Player>(player).Owner);
             StopRecording(manager.World);
         }
 
@@ -113,12 +113,12 @@ namespace HyperRTS.Editor.PlayMode
             }
         }
 
-        private void SpawnAtView() => Act((manager, _, faction) =>
+        private void SpawnAtView() => Act((manager, _, owner) =>
         {
             var prefabs = Cheats.Prefabs(manager);
             if (_prefab.index >= 0 && _prefab.index < prefabs.Length)
             {
-                Cheats.Spawn(manager, prefabs[_prefab.index], faction, Cheats.ViewCenter(manager));
+                Cheats.Spawn(manager, prefabs[_prefab.index], owner, Cheats.ViewCenter(manager));
             }
         });
 

@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Deployable, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Deployable, Selected, Owner>().WithNone<Dead>().Build();
             var types = TypeSet.Single(CommandType.Deploy).With(CommandType.PackUp);
             _commands = new CommandReader(ref state, types, selected);
             _writer = new OrderWriter(ref state);

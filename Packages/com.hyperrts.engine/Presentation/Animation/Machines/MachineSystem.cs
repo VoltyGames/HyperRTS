@@ -32,7 +32,7 @@ namespace HyperRTS.Presentation.Animation.Machines
             state.Dependency = new ClockJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                Factions = SystemAPI.GetComponentLookup<Faction>(true),
+                Owners = SystemAPI.GetComponentLookup<Owner>(true),
                 Offlines = SystemAPI.GetComponentLookup<Offline>(true),
                 Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
@@ -56,7 +56,7 @@ namespace HyperRTS.Presentation.Animation.Machines
         private partial struct ClockJob : IJobEntity
         {
             public float DeltaTime;
-            [ReadOnly] public ComponentLookup<Faction> Factions;
+            [ReadOnly] public ComponentLookup<Owner> Owners;
             [ReadOnly] public ComponentLookup<Offline> Offlines;
             [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
@@ -72,7 +72,7 @@ namespace HyperRTS.Presentation.Animation.Machines
                     return;
                 }
 
-                var owned = Factions.TryGetComponent(entity, out var faction) && faction.Value != Faction.Neutral;
+                var owned = Owners.TryGetComponent(entity, out var owner) && owner.Value != Owner.Neutral;
                 clock.Advance((!clock.OwnedOnly || owned) && Runs(ref clock), DeltaTime);
             }
 

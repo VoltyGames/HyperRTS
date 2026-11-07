@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// The fire step every weapon takes, ending in one volley of <paramref name="shots"/> rounds with one reveal,
         /// one shot counted and one fire cue.
         /// </summary>
-        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
+        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte owner, int shots)
         {
             if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy) || OutsideArc(shooter, weapon, target))
             {
@@ -88,7 +88,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return false;
             }
 
-            Fire(shooter, ref weapon, pose, target, faction, shots);
+            Fire(shooter, ref weapon, pose, target, owner, shots);
             weapon.StartCooldown();
             return true;
         }
@@ -138,7 +138,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// Fires a volley at <see cref="WeaponPose"/> index <paramref name="pose"/>: the reveal, the shot count and the
         /// fire cue happen once, the hit or launch once per round.
         /// </summary>
-        private void Fire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte faction, int shots)
+        private void Fire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte owner, int shots)
         {
             if (_stealth.TryGetRefRW(shooter, out var stealth))
             {
@@ -159,7 +159,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 fired.PitchAngle = 0f;
             }
 
-            var firing = new Firing(shooter, faction, pose, place, fired);
+            var firing = new Firing(shooter, owner, pose, place, fired);
             for (var round = 0; round < shots; round++)
             {
                 var shot = TakeMuzzle(shooter, ref weapon);
@@ -201,7 +201,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         private void Strike(in Firing firing, in Weapon weapon, bool cue, Entity target, float3 targetPosition)
         {
             var origin = weapon.Aim.HitOrigin(firing.Place, firing.Pose);
-            var hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, target, targetPosition, weapon.Targets);
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin, target, targetPosition, weapon.Targets);
             _damage.Add(hit);
             if (cue)
             {
@@ -231,7 +231,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _projectiles[target] = projectile;
             _ecb.DestroyEntity(target);
             var origin = weapon.Aim.HitOrigin(firing.Place, firing.Pose);
-            var hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, target, targetPosition, weapon.Targets);
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin, target, targetPosition, weapon.Targets);
             AddImpact(firing, hit, origin, targetPosition);
         }
 
@@ -288,11 +288,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
             // Smoke thick enough to hide the target breaks a guided round's lock; it flies on to the aim point.
             var locked = weapon.KeepsLock && !(_blockers.IsCreated && _blockers.Haze(origin, aim) >= 1f);
-            var hit = weapon.Damage.Hit(firing.Shooter, firing.Faction, origin, locked ? target : Entity.Null, aim, weapon.Targets);
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin, locked ? target : Entity.Null, aim, weapon.Targets);
             var flight = weapon.Launched(hit, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), origin, aim);
             var heading = flight.Arcs ? flight.Heading() : aim - origin;
             var projectile = _spawner.Spawn(_ecb, weapon.ProjectilePrefab, origin,
-                quaternion.LookRotationSafe(heading, math.up()), firing.Faction);
+                quaternion.LookRotationSafe(heading, math.up()), firing.Owner);
             _ecb.AddComponent(projectile, flight);
         }
     }

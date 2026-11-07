@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.AI
         public int NextOption;
 
         /// <summary>
-        /// Seed of the attack lane choice (see <see cref="AIRoutes.PickLane"/>). Bots differ by faction and vary by
+        /// Seed of the attack lane choice (see <see cref="AIRoutes.PickLane"/>). Bots differ by owner and vary by
         /// <see cref="Attacks"/> whatever it is; a game sets it from its match seed to vary matches too.
         /// </summary>
         public uint RouteSeed;

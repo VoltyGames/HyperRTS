@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Veterancy
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MatchRules>();
         }
 
@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Veterancy
 
             new CreditJob
             {
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 ExperiencePerCost = SystemAPI.GetSingleton<MatchRules>().ExperiencePerCost,
                 Experience = SystemAPI.GetComponentLookup<Experience>(false),
                 HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
@@ -44,15 +44,15 @@ namespace HyperRTS.Simulation.Veterancy
         [WithAll(typeof(Dead))]
         private partial struct CreditJob : IJobEntity
         {
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public float ExperiencePerCost;
             public ComponentLookup<Experience> Experience;
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
 
-            private void Execute(in LastAttacker attacker, in DynamicBuffer<ResourceCost> cost, in Faction faction)
+            private void Execute(in LastAttacker attacker, in DynamicBuffer<ResourceCost> cost, in Owner owner)
             {
                 var value = ExperiencePerCost * ResourceMath.Total(cost);
-                if (value <= 0f || !Relations.IsHostile(attacker.Faction, faction.Value))
+                if (value <= 0f || !Relations.IsHostile(attacker.Owner, owner.Value))
                 {
                     return;
                 }

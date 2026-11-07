@@ -17,7 +17,7 @@ using Unity.Netcode;
 namespace HyperRTS.Network.Tests
 {
     /// <summary>
-    /// Joining and staying connected: which slot a join gets, when the match stops waiting, per-faction RPCs, prefab
+    /// Joining and staying connected: which slot a join gets, when the match stops waiting, per-owner RPCs, prefab
     /// references from type ids and prediction only while in game.
     /// </summary>
     public class ConnectionTests
@@ -63,13 +63,13 @@ namespace HyperRTS.Network.Tests
         }
 
         [Test]
-        public void Factions_AreListedOnce_AndRpcsReachEveryConnectionOfTheFaction()
+        public void Owners_AreListedOnce_AndRpcsReachEveryConnectionOfTheOwner()
         {
             using var world = new TestWorld();
             var entities = world.EntityManager;
             var allies = new[] { entities.CreateEntity(), entities.CreateEntity() };
             var observer = entities.CreateEntity();
-            var viewers = FactionConnections.Create(Allocator.Temp);
+            var viewers = OwnerConnections.Create(Allocator.Temp);
             viewers.Add(1, allies[0]);
             viewers.Add(0, observer);
             viewers.Add(1, allies[1]);
@@ -80,13 +80,13 @@ namespace HyperRTS.Network.Tests
             ecb.Playback(entities);
             ecb.Dispose();
 
-            CollectionAssert.AreEqual(new byte[] { 1, 0 }, viewers.Factions.AsArray().ToArray());
+            CollectionAssert.AreEqual(new byte[] { 1, 0 }, viewers.Owners.AsArray().ToArray());
             using var query = entities.CreateEntityQuery(typeof(CueRpc), typeof(SendRpcCommandRequest));
             var requests = query.ToComponentDataArray<SendRpcCommandRequest>(Allocator.Temp);
             Assert.AreEqual(4, requests.Length, "two RPCs to each of the two allies");
             foreach (var request in requests)
             {
-                Assert.AreNotEqual(observer, request.TargetConnection, "the observer views as another faction");
+                Assert.AreNotEqual(observer, request.TargetConnection, "the observer views as another owner");
             }
 
             viewers.Dispose();
@@ -173,15 +173,15 @@ namespace HyperRTS.Network.Tests
         public void Rejoining_KeepsTheGrantedSeat(byte granted, bool observe)
         {
             var rejoin = JoinPreference.Rejoining(granted);
-            Assert.AreEqual(granted, rejoin.Faction);
+            Assert.AreEqual(granted, rejoin.Owner);
             Assert.AreEqual(observe, rejoin.Observe);
         }
 
-        private static SlotClaim.Slot Open(byte faction) => new() { Faction = faction };
+        private static SlotClaim.Slot Open(byte owner) => new() { Owner = owner };
 
-        private static SlotClaim.Slot Dropped(byte faction, ulong token) => new() { Faction = faction, Token = token };
+        private static SlotClaim.Slot Dropped(byte owner, ulong token) => new() { Owner = owner, Token = token };
 
-        private static SlotClaim.Slot Held(byte faction, int networkId, ulong token) =>
-            new() { Faction = faction, NetworkId = networkId, Token = token };
+        private static SlotClaim.Slot Held(byte owner, int networkId, ulong token) =>
+            new() { Owner = owner, NetworkId = networkId, Token = token };
     }
 }

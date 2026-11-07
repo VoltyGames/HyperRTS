@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Tests.Commands
             World.EntityManager.AddComponent<Harvester>(harvester);
             var node = World.EntityManager.CreateEntity();
             World.Add(node, LocalTransform.FromPosition(new float3(6f, 0f, 0f)));
-            World.Add(node, new Faction { Value = Faction.Neutral });
+            World.Add(node, new Owner { Value = Owner.Neutral });
             World.EntityManager.AddComponent<ResourceNode>(node);
 
             SmartOn(node);

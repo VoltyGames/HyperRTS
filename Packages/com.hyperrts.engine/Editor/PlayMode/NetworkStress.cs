@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.PlayMode
         {
             if (!TryFindOpposingBases(entityManager, out var first, out var second))
             {
-                Debug.LogWarning("[HyperRTS] The armies cheat needs two hostile factions with buildings.");
+                Debug.LogWarning("[HyperRTS] The armies cheat needs two hostile owners with buildings.");
                 return;
             }
 
@@ -150,11 +150,11 @@ namespace HyperRTS.Editor.PlayMode
                 var row = i / columns;
                 var position = front + right * (column * Spacing) + forward * (row * Spacing);
                 position.y = terrain.Height(position.xz);
-                spawned[i] = Cheats.Spawn(entityManager, prefab, home.Faction, position);
+                spawned[i] = Cheats.Spawn(entityManager, prefab, home.Owner, position);
             }
 
             // Spawning is structural, so the buffers are fetched once the batch exists.
-            var player = FindPlayer(entityManager, home.Faction);
+            var player = FindPlayer(entityManager, home.Owner);
             var command = new PlayerCommand { Type = CommandType.AttackMove, Position = enemy.Position };
             PlayerCommands.Address(ref command, entityManager.GetBuffer<PlayerCommandSubject>(player), spawned);
             entityManager.GetBuffer<PlayerCommand>(player).Add(command);
@@ -162,12 +162,12 @@ namespace HyperRTS.Editor.PlayMode
 
         private readonly struct Base
         {
-            public readonly byte Faction;
+            public readonly byte Owner;
             public readonly float3 Position;
 
-            public Base(byte faction, float3 position)
+            public Base(byte owner, float3 position)
             {
-                Faction = faction;
+                Owner = owner;
                 Position = position;
             }
         }
@@ -176,42 +176,42 @@ namespace HyperRTS.Editor.PlayMode
         private static bool TryFindOpposingBases(EntityManager entityManager, out Base first, out Base second)
         {
             first = second = default;
-            using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<BuildingTag, Faction, LocalTransform>()
+            using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<BuildingTag, Owner, LocalTransform>()
                 .Build(entityManager);
             using var buildings = query.ToEntityArray(Allocator.Temp);
             var lowest = byte.MaxValue;
             foreach (var building in buildings)
             {
-                var faction = entityManager.GetComponentData<Faction>(building).Value;
-                if (faction != 0 && faction < lowest)
+                var owner = entityManager.GetComponentData<Owner>(building).Value;
+                if (owner != 0 && owner < lowest)
                 {
-                    lowest = faction;
-                    first = new Base(faction, entityManager.GetComponentData<LocalTransform>(building).Position);
+                    lowest = owner;
+                    first = new Base(owner, entityManager.GetComponentData<LocalTransform>(building).Position);
                 }
             }
 
-            PlayWorld.TryGetSingleton(entityManager, out FactionRelations relations);
+            PlayWorld.TryGetSingleton(entityManager, out OwnerRelations relations);
             var farthest = 0f;
             foreach (var building in buildings)
             {
-                var faction = entityManager.GetComponentData<Faction>(building).Value;
+                var owner = entityManager.GetComponentData<Owner>(building).Value;
                 var position = entityManager.GetComponentData<LocalTransform>(building).Position;
                 var distance = math.distance(first.Position.xz, position.xz);
-                if (relations.IsHostile(first.Faction, faction) && distance > farthest)
+                if (relations.IsHostile(first.Owner, owner) && distance > farthest)
                 {
                     farthest = distance;
-                    second = new Base(faction, position);
+                    second = new Base(owner, position);
                 }
             }
 
             return farthest > 0f;
         }
 
-        private static Entity FindPlayer(EntityManager entityManager, byte faction)
+        private static Entity FindPlayer(EntityManager entityManager, byte owner)
         {
             foreach (var player in Cheats.Players(entityManager))
             {
-                if (entityManager.GetComponentData<Player>(player).Faction == faction)
+                if (entityManager.GetComponentData<Player>(player).Owner == owner)
                 {
                     return player;
                 }

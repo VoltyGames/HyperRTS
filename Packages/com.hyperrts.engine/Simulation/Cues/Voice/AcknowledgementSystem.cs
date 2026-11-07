@@ -26,13 +26,13 @@ namespace HyperRTS.Simulation.Cues.Voice
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction, LocalTransform, EntitySound>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner, LocalTransform, EntitySound>().Build();
             var answered = TypeSet.Range(CommandType.Smart, CommandType.Attack).With(CommandType.ReturnToBase)
                 .With(CommandType.Patrol).With(CommandType.Escort);
             _commands = new CommandReader(ref state, answered, selected);
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<LocalPlayer>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<VoiceRules>();
         }
 
@@ -46,8 +46,8 @@ namespace HyperRTS.Simulation.Cues.Voice
             }
 
             var player = SystemAPI.GetSingletonEntity<LocalPlayer>();
-            var faction = SystemAPI.GetComponent<Player>(player).Faction;
-            var issued = new IssuedCommand { Player = player, Faction = faction };
+            var owner = SystemAPI.GetComponent<Player>(player).Owner;
+            var issued = new IssuedCommand { Player = player, Owner = owner };
             var slot = Requested(ref state, ref issued);
             if (slot == CueSlot.None)
             {
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             _cues.Update(ref state);
             foreach (var unit in _commands.Subjects(ref state, issued))
             {
-                if (TryAnswer(ref state, unit, slot, issued.Faction))
+                if (TryAnswer(ref state, unit, slot, issued.Owner))
                 {
                     _next = now + SystemAPI.GetSingleton<VoiceRules>().AcknowledgementInterval;
                     return;
@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             var slot = CueSlot.None;
             foreach (var each in _commands.Read(ref state, local.Player))
             {
-                var answer = Answer(ref state, each.Command, local.Faction);
+                var answer = Answer(ref state, each.Command, local.Owner);
                 if (answer != CueSlot.None)
                 {
                     slot = answer;
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             return IsSelecting(input.Command) ? CueSlot.Select : CueSlot.None;
         }
 
-        private CueSlot Answer(ref SystemState state, in PlayerCommand command, byte faction)
+        private CueSlot Answer(ref SystemState state, in PlayerCommand command, byte owner)
         {
             switch (command.Type)
             {
@@ -104,30 +104,30 @@ namespace HyperRTS.Simulation.Cues.Voice
                 case CommandType.Escort:
                     return CueSlot.Attack;
                 case CommandType.Smart:
-                    return IsHostile(ref state, command.Target, faction) ? CueSlot.Attack : CueSlot.Move;
+                    return IsHostile(ref state, command.Target, owner) ? CueSlot.Attack : CueSlot.Move;
                 default:
                     return CueSlot.None;
             }
         }
 
-        private bool IsHostile(ref SystemState state, Entity target, byte faction)
+        private bool IsHostile(ref SystemState state, Entity target, byte owner)
         {
-            if (!SystemAPI.HasComponent<Faction>(target))
+            if (!SystemAPI.HasComponent<Owner>(target))
             {
                 return false;
             }
 
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
-            return relations.IsHostile(faction, SystemAPI.GetComponent<Faction>(target).Value);
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
+            return relations.IsHostile(owner, SystemAPI.GetComponent<Owner>(target).Value);
         }
 
         private static bool IsSelecting(SelectionCommand gesture) =>
             gesture != SelectionCommand.None && gesture != SelectionCommand.AssignGroup;
 
-        private bool TryAnswer(ref SystemState state, Entity unit, CueSlot slot, byte faction)
+        private bool TryAnswer(ref SystemState state, Entity unit, CueSlot slot, byte owner)
         {
             var transform = SystemAPI.GetComponent<LocalTransform>(unit);
-            return _cues.Play(unit, slot, transform, transform.Forward(), faction);
+            return _cues.Play(unit, slot, transform, transform.Forward(), owner);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Layout
 
         public float Yaw { get; }
 
-        /// <summary>Player slot from 1, the faction number of the start kit's owner.</summary>
+        /// <summary>Player slot from 1, the owner number of the start kit's owner.</summary>
         public int Slot { get; }
 
         public int Team { get; }

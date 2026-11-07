@@ -20,11 +20,11 @@ namespace HyperRTS.Simulation.Cues
         /// Owner-only cues reach their owner; everything else reaches whoever could see its source there, by the same
         /// fog and cover rule as entities. Without a fog grid every non-voice cue does.
         /// </summary>
-        public static bool IsVisible(in CueEvent cue, byte viewer, in FogOfWar fog, in FactionRelations relations)
+        public static bool IsVisible(in CueEvent cue, byte viewer, in FogOfWar fog, in OwnerRelations relations)
         {
             if (IsOwnerOnly(cue.Slot))
             {
-                return cue.Faction == viewer;
+                return cue.Owner == viewer;
             }
 
             if (!fog.IsCreated)
@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Cues
                 return true;
             }
 
-            return !fog.IsHiddenFrom(relations, viewer, cue.Faction, cue.Position, cue.Concealment, cue.Tall);
+            return !fog.IsHiddenFrom(relations, viewer, cue.Owner, cue.Position, cue.Concealment, cue.Tall);
         }
     }
 }

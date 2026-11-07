@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Tests.Transport
     {
         /// <summary>Smart-clicks <paramref name="container"/> for <paramref name="unit"/>'s owner, as boarding does.</summary>
         public static void Enter(this TestWorld world, Entity unit, Entity container) =>
-            world.Command(world.Get<Faction>(unit).Value,
+            world.Command(world.Get<Owner>(unit).Value,
                 new PlayerCommand { Type = CommandType.Smart, Unit = unit, Target = container });
 
         public static bool IsInside(this TestWorld world, Entity unit) => world.IsEnabled<Inside>(unit);

@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Resources.Income
 {
     /// <summary>
     /// Pays every owned, online <see cref="CasualtyIncome"/> its share of each unit that died this frame belonging to
-    /// its owner or a hostile faction. Dead entities only exist for the frame they die in, so each pays once.
+    /// its owner or a hostile owner. Dead entities only exist for the frame they die in, so each pays once.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
@@ -23,10 +23,10 @@ namespace HyperRTS.Simulation.Resources.Income
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<CasualtyIncome>();
-            _dying = SystemAPI.QueryBuilder().WithAll<Dead, Faction, UnitTag, ResourceCost>().Build();
-            _earners = SystemAPI.QueryBuilder().WithAll<CasualtyIncome, Faction>().Build();
+            _dying = SystemAPI.QueryBuilder().WithAll<Dead, Owner, UnitTag, ResourceCost>().Build();
+            _earners = SystemAPI.QueryBuilder().WithAll<CasualtyIncome, Owner>().Build();
         }
 
         [BurstCompile]
@@ -40,12 +40,12 @@ namespace HyperRTS.Simulation.Resources.Income
             new CasualtyJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Earners = _earners.ToEntityArray(state.WorldUpdateAllocator),
                 StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
                 IncomeLookup = SystemAPI.GetComponentLookup<CasualtyIncome>(true),
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
             }.Schedule(_dying);
         }
@@ -55,33 +55,33 @@ namespace HyperRTS.Simulation.Resources.Income
         private partial struct CasualtyJob : IJobEntity
         {
             public PlayerRegistry Players;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             [ReadOnly] public NativeArray<Entity> Earners;
             public BufferLookup<ResourceStock> StockLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
             [ReadOnly] public ComponentLookup<CasualtyIncome> IncomeLookup;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
 
-            private void Execute(in Faction faction, in DynamicBuffer<ResourceCost> cost)
+            private void Execute(in Owner owner, in DynamicBuffer<ResourceCost> cost)
             {
                 foreach (var earner in Earners)
                 {
-                    var owner = FactionLookup[earner].Value;
-                    if (!Collects(earner, owner, faction.Value))
+                    var earnerOwner = OwnerLookup[earner].Value;
+                    if (!Collects(earner, earnerOwner, owner.Value))
                     {
                         continue;
                     }
 
                     var income = IncomeLookup[earner];
                     var paid = (int)(GetCost(cost, income.Type) * income.Share);
-                    ResourcePayout.Pay(ref StockLookup, ref StatsLookup, Players[owner], income.Type, paid);
+                    ResourcePayout.Pay(ref StockLookup, ref StatsLookup, Players[earnerOwner], income.Type, paid);
                 }
             }
 
             private bool Collects(Entity earner, byte owner, byte victim)
             {
-                if (owner == Faction.Neutral || OfflineLookup.HasEnabled(earner))
+                if (owner == Owner.Neutral || OfflineLookup.HasEnabled(earner))
                 {
                     return false;
                 }

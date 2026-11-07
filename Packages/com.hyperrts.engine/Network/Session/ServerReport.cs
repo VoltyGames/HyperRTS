@@ -74,18 +74,18 @@ namespace HyperRTS.Network.Session
                 using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<Player, PlayerSide, PlayerStats>()
                     .Build(entityManager);
                 using var players = query.ToEntityArray(Allocator.Temp);
-                using var relations = entityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
-                relations.TryGetSingleton(out FactionRelations teams);
+                using var relations = entityManager.CreateEntityQuery(ComponentType.ReadOnly<OwnerRelations>());
+                relations.TryGetSingleton(out OwnerRelations teams);
                 var results = new List<PlayerResult>(players.Length);
                 foreach (var player in players)
                 {
-                    var faction = entityManager.GetComponentData<Player>(player).Faction;
+                    var owner = entityManager.GetComponentData<Player>(player).Owner;
                     var stats = entityManager.GetComponentData<PlayerStats>(player);
                     results.Add(new PlayerResult
                     {
-                        slot = faction,
+                        slot = owner,
                         side = entityManager.GetComponentData<PlayerSide>(player).Value,
-                        team = teams.GetTeam(faction),
+                        team = teams.GetTeam(owner),
                         unitsBuilt = stats.UnitsBuilt,
                         unitsLost = stats.UnitsLost,
                         unitsKilled = stats.UnitsKilled,

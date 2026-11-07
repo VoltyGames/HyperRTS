@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<BuildingTag, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<BuildingTag, Selected, Owner>().WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Sell), selected);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MatchRules>();

@@ -201,13 +201,13 @@ namespace HyperRTS.Presentation.Tests.Destruction
 
         private void Impact(float3 position) => _kit.PushCue(new CueEvent
         {
-            Slot = CueSlot.Impact, Position = position, Faction = 2, Direction = math.up(),
+            Slot = CueSlot.Impact, Position = position, Owner = 2, Direction = math.up(),
         });
 
-        // Cells 0 to 10 m are in team 1's sight, cells 10 to 20 m are not; factions 1 and 2 are enemies.
+        // Cells 0 to 10 m are in team 1's sight, cells 10 to 20 m are not; owners 1 and 2 are enemies.
         private void AddFog()
         {
-            var relations = new FactionRelations();
+            var relations = new OwnerRelations();
             relations.SetTeam(1, 1);
             relations.SetTeam(2, 2);
             _em.CreateSingleton(relations);

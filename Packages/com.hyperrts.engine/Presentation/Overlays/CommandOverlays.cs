@@ -36,7 +36,7 @@ namespace HyperRTS.Presentation.Overlays
         private readonly LiveQuery _rallies = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(),
             ComponentType.ReadOnly<RallyPoint>(),
-            ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalToWorld>()));
 
         // Footprint outlines and rally lines: flat strips on the ground, tested against depth.
@@ -64,12 +64,12 @@ namespace HyperRTS.Presentation.Overlays
             }
 
             var query = _rallies.In(entityManager);
-            using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
+            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
             using var rallies = query.ToComponentDataArray<RallyPoint>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < rallies.Length; i++)
             {
-                if (factions[i].Value == view.Local.Faction)
+                if (owners[i].Value == view.Local.Owner)
                 {
                     AddRally(transforms[i].Position, rallies[i].Position, style.rally);
                 }

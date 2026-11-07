@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Orders
     public struct IssuedCommand
     {
         public Entity Player;
-        public byte Faction;
+        public byte Owner;
         public PlayerCommand Command;
     }
 }

@@ -142,7 +142,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             MatchSetupRequest.Set(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
             _world.Tick();
 
-            _world.Set(_world.Player(2), new Player { Faction = 2, Name = "Renamed" });
+            _world.Set(_world.Player(2), new Player { Owner = 2, Name = "Renamed" });
             _world.Tick();
 
             Assert.AreEqual("Renamed", _world.Get<Player>(_world.Player(2)).Name.ToString());
@@ -160,7 +160,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         }
 
         [Test]
-        public void BotsOfDifferentFactions_GetDifferentNonzeroRouteSeeds_TheSameOnEveryRun()
+        public void BotsOfDifferentOwners_GetDifferentNonzeroRouteSeeds_TheSameOnEveryRun()
         {
             var first = RouteSeeds(12345u);
             var again = RouteSeeds(12345u);
@@ -192,10 +192,10 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             return (world.Get<AIPlayer>(world.Player(1)).RouteSeed, world.Get<AIPlayer>(world.Player(2)).RouteSeed);
         }
 
-        private FactionRelations Relations()
+        private OwnerRelations Relations()
         {
-            using var query = _world.Query(typeof(FactionRelations));
-            return query.GetSingleton<FactionRelations>();
+            using var query = _world.Query(typeof(OwnerRelations));
+            return query.GetSingleton<OwnerRelations>();
         }
     }
 }

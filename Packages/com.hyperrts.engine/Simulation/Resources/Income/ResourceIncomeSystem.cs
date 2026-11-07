@@ -54,9 +54,9 @@ namespace HyperRTS.Simulation.Resources.Income
             [ReadOnly] public BufferLookup<Cargo> CargoLookup;
             public ComponentLookup<ResourceReserve> ReserveLookup;
 
-            private void Execute(Entity entity, ref ResourceIncome income, in Faction faction)
+            private void Execute(Entity entity, ref ResourceIncome income, in Owner owner)
             {
-                var player = faction.Value == Faction.Neutral ? Entity.Null : Players[faction.Value];
+                var player = owner.Value == Owner.Neutral ? Entity.Null : Players[owner.Value];
                 if (!StockLookup.HasBuffer(player))
                 {
                     income.Elapsed = 0f;

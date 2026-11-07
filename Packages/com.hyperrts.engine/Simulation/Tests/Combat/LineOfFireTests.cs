@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             return smoke;
         }
 
-        private void Attack(Entity unit, Entity target) => World.Command(World.Get<Faction>(unit).Value,
+        private void Attack(Entity unit, Entity target) => World.Command(World.Get<Owner>(unit).Value,
             new PlayerCommand { Type = CommandType.Attack, Unit = unit, Target = target, Position = World.GetPosition(target) });
 
         private int Projectiles()

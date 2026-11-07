@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var fire = Find(World.QueuedOver(0.5f), CueSlot.Fire);
 
             Assert.AreEqual(World.GetTypeId(shooter), fire.TypeId);
-            Assert.AreEqual(1, fire.Faction);
+            Assert.AreEqual(1, fire.Owner);
             Assert.That(math.distance(new float3(2f, 1f, 0f), fire.Position), Is.LessThan(1e-3f),
                 "the muzzle turns with the shooter");
             Assert.That(math.distance(new float3(1f, 0f, 0f), fire.Direction), Is.LessThan(1e-3f));

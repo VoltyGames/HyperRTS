@@ -19,24 +19,24 @@ namespace HyperRTS.Simulation.Replays
             var last = 0;
             foreach (var player in replay.Players)
             {
-                last = player.Faction > last ? player.Faction : last;
+                last = player.Owner > last ? player.Owner : last;
             }
 
             var viewer = FirstHuman(replay);
-            for (var faction = 1; faction <= last; faction++)
+            for (var owner = 1; owner <= last; owner++)
             {
-                setup.Slots.Add(Slot(replay, (byte)faction, viewer));
+                setup.Slots.Add(Slot(replay, (byte)owner, viewer));
             }
 
             return setup;
         }
 
-        private static SlotSetup Slot(Replay replay, byte faction, int viewer)
+        private static SlotSetup Slot(Replay replay, byte owner, int viewer)
         {
             for (var i = 0; i < replay.Players.Count; i++)
             {
                 var player = replay.Players[i];
-                if (player.Faction != faction)
+                if (player.Owner != owner)
                 {
                     continue;
                 }

@@ -11,12 +11,12 @@ namespace HyperRTS.Network.Cues
 {
     /// <summary>
     /// Server: sends each client the frame's cues it may hear or see (<see cref="CueRules.IsVisible"/>), batched into
-    /// <see cref="CueRpc"/>s once per viewer faction.
+    /// <see cref="CueRpc"/>s once per viewer owner.
     /// </summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
-    [UpdateAfter(typeof(FactionConnectionsSystem))]
+    [UpdateAfter(typeof(OwnerConnectionsSystem))]
     public partial struct CueSendSystem : ISystem
     {
         /// <summary>
@@ -28,8 +28,8 @@ namespace HyperRTS.Network.Cues
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<CueQueue>();
-            state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<FactionConnections>();
+            state.RequireForUpdate<OwnerRelations>();
+            state.RequireForUpdate<OwnerConnections>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -42,14 +42,14 @@ namespace HyperRTS.Network.Cues
                 return;
             }
 
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             SystemAPI.TryGetSingleton(out FogOfWar fog);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var visible = new NativeList<CueEvent>(cues.Length, Allocator.Temp);
             var rpcs = new NativeList<CueRpc>(MaxRpcsPerTick, Allocator.Temp);
-            var viewers = SystemAPI.GetSingleton<FactionConnections>();
-            foreach (var viewer in viewers.Factions)
+            var viewers = SystemAPI.GetSingleton<OwnerConnections>();
+            foreach (var viewer in viewers.Owners)
             {
                 visible.Clear();
                 foreach (var cue in cues)

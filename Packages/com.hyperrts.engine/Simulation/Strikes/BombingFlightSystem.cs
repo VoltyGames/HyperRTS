@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Strikes
         {
             state.RequireForUpdate<BombingFlight>();
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             _spawner = new PrefabSpawner(ref state);
             _cues = new CueWriter(ref state);
@@ -88,12 +88,12 @@ namespace HyperRTS.Simulation.Strikes
         {
             var route = SystemAPI.GetComponent<DropFlight>(bomber).Route;
             var load = SystemAPI.GetComponent<BombingFlight>(bomber).Bombs;
-            var faction = SystemAPI.GetComponent<Faction>(bomber).Value;
+            var owner = SystemAPI.GetComponent<Owner>(bomber).Value;
             var transform = SystemAPI.GetComponent<LocalTransform>(bomber);
             var origin = transform.TransformPoint(SystemAPI.GetComponent<DropRun>(bomber).ReleasePoint);
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
-            var count = load.CountAfter(Defences(ref state, route.Target, faction, relations));
-            var targets = Structures(ref state, route.Target, load.ZoneRadius, faction, relations);
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
+            var count = load.CountAfter(Defences(ref state, route.Target, owner, relations));
+            var targets = Structures(ref state, route.Target, load.ZoneRadius, owner, relations);
             var impact = _cues.TypeIdFor(bomber, CueSlot.Impact);
             for (var i = 0; i < count; i++)
             {
@@ -102,12 +102,12 @@ namespace HyperRTS.Simulation.Strikes
                     ? route.StickPoint(load.ZoneRadius, i, count)
                     : SystemAPI.GetComponent<LocalTransform>(target).Position;
                 var bomb = _spawner.Spawn(ecb, load.Prefab, origin,
-                    quaternion.LookRotationSafe(aim - origin, math.up()), faction);
+                    quaternion.LookRotationSafe(aim - origin, math.up()), owner);
                 ecb.AddComponent(bomb, new Projectile
                 {
                     Speed = load.Speed,
                     ImpactTypeId = impact,
-                    Hit = load.Damage.Hit(bomber, faction, origin, target, aim, WeaponTargets.Surface),
+                    Hit = load.Damage.Hit(bomber, owner, origin, target, aim, WeaponTargets.Surface),
                     Course = ShotCourse.Direct,
                     Start = origin,
                 });
@@ -115,14 +115,14 @@ namespace HyperRTS.Simulation.Strikes
         }
 
         /// <summary>Enemy anti-air weapons that are working and reach the target point; interceptors don't count.</summary>
-        private int Defences(ref SystemState state, float3 point, byte faction, in FactionRelations relations)
+        private int Defences(ref SystemState state, float3 point, byte owner, in OwnerRelations relations)
         {
             var count = 0;
-            foreach (var (mounts, transform, owner) in SystemAPI
-                         .Query<DynamicBuffer<WeaponMount>, RefRO<LocalTransform>, RefRO<Faction>>()
+            foreach (var (mounts, transform, targetOwner) in SystemAPI
+                         .Query<DynamicBuffer<WeaponMount>, RefRO<LocalTransform>, RefRO<Owner>>()
                          .WithNone<Dead, Offline>())
             {
-                if (!relations.IsHostile(faction, owner.ValueRO.Value))
+                if (!relations.IsHostile(owner, targetOwner.ValueRO.Value))
                 {
                     continue;
                 }
@@ -147,15 +147,15 @@ namespace HyperRTS.Simulation.Strikes
         }
 
         /// <summary>Enemy structures in the zone, nearest the aim point first.</summary>
-        private NativeList<NearStructure> Structures(ref SystemState state, float3 point, float radius, byte faction,
-            in FactionRelations relations)
+        private NativeList<NearStructure> Structures(ref SystemState state, float3 point, float radius, byte owner,
+            in OwnerRelations relations)
         {
             var found = new NativeList<NearStructure>(Allocator.Temp);
-            foreach (var (transform, owner, entity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<Faction>>()
+            foreach (var (transform, targetOwner, entity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<Owner>>()
                          .WithAll<BuildingTag>().WithNone<Dead>().WithEntityAccess())
             {
                 var distance = math.distance(transform.ValueRO.Position.xz, point.xz);
-                if (distance <= radius && relations.IsHostile(faction, owner.ValueRO.Value))
+                if (distance <= radius && relations.IsHostile(owner, targetOwner.ValueRO.Value))
                 {
                     found.Add(new NearStructure { Distance = distance, Entity = entity });
                 }

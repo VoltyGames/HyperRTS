@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _targetQueries = TargetQueries.Create(ref state);
             _projectiles = SystemAPI.QueryBuilder().WithAll<Projectile, LocalTransform>().Build();
             state.RequireForUpdate<SpatialIndex>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SimulationFrame>();
         }
 
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             new WeaponTargetJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Targets = _targets,
                 Scans = new ScanSchedule(SystemAPI.GetSingleton<SimulationFrame>()),
                 Projectiles = grid,

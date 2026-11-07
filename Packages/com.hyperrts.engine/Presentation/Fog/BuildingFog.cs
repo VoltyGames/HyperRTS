@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.Fog
     /// </summary>
     public static class BuildingFog
     {
-        public static bool IsHidden(in LocalFogView view, in FogOfWar fog, in FactionRelations relations, byte owner,
+        public static bool IsHidden(in LocalFogView view, in FogOfWar fog, in OwnerRelations relations, byte owner,
             float3 position)
         {
             if (!view.Active)

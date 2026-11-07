@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Airdrops
                 TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Spawner = _spawner,
                 ReceiverLookup = SystemAPI.GetComponentLookup<AirdropReceiver>(true),
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
             }.Schedule();
 
@@ -81,19 +81,19 @@ namespace HyperRTS.Simulation.Airdrops
             [ReadOnly] public ComponentLookup<PlayerSpawn> SpawnLookup;
             [ReadOnly] public ComponentLookup<Flight> FlightLookup;
 
-            private void Execute(Entity entity, ref AirdropReceiver receiver, in Faction faction)
+            private void Execute(Entity entity, ref AirdropReceiver receiver, in Owner owner)
             {
                 var offline = OfflineLookup.HasEnabled(entity);
-                if (IntervalTimer.Due(ref receiver.Elapsed, receiver.Interval, DeltaTime, faction.Value, offline) == 0)
+                if (IntervalTimer.Due(ref receiver.Elapsed, receiver.Interval, DeltaTime, owner.Value, offline) == 0)
                 {
                     return;
                 }
 
-                var start = SpawnLookup[Players[faction.Value]].Position;
+                var start = SpawnLookup[Players[owner.Value]].Position;
                 var landing = TransformLookup[entity].TransformPoint(receiver.Landing);
                 var route = DropRoute.Plan(Map, start, landing, receiver.Altitude);
                 var aircraft = route.Launch(Ecb, Spawner, receiver.Aircraft, FlightLookup[receiver.Aircraft],
-                    receiver.Altitude, faction.Value);
+                    receiver.Altitude, owner.Value);
                 Ecb.AddComponent(aircraft, new AirdropFlight { Receiver = entity });
             }
         }
@@ -109,12 +109,12 @@ namespace HyperRTS.Simulation.Airdrops
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             public PrefabSpawner Spawner;
             [ReadOnly] public ComponentLookup<AirdropReceiver> ReceiverLookup;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public ComponentLookup<Dead> DeadLookup;
 
             private void Execute(Entity entity, ref DropFlight flight, in AirdropFlight delivery, ref DropRun run,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in MovementSpeed speed,
-                in Faction faction)
+                in Owner owner)
             {
                 var transform = TransformLookup[entity];
                 if (flight.HasLeft(Map, transform.Position))
@@ -123,11 +123,11 @@ namespace HyperRTS.Simulation.Airdrops
                     return;
                 }
 
-                flight.Leaving |= !IsWorking(delivery.Receiver, faction.Value);
+                flight.Leaving |= !IsWorking(delivery.Receiver, owner.Value);
                 if (flight.Fly(transform, speed.Value, ref run, ref destination, out var release))
                 {
                     var crate = ReceiverLookup[delivery.Receiver];
-                    var spawned = Spawner.Spawn(Ecb, crate.Crate, release, faction.Value);
+                    var spawned = Spawner.Spawn(Ecb, crate.Crate, release, owner.Value);
                     Ecb.AddComponent(spawned, new AirdropCrate
                     {
                         Receiver = delivery.Receiver, FallSpeed = crate.FallSpeed, Ground = flight.Route.Target.y,
@@ -138,9 +138,9 @@ namespace HyperRTS.Simulation.Airdrops
             }
 
             /// <summary>Still standing and still the aircraft owner's; a lost or captured one gets nothing.</summary>
-            private bool IsWorking(Entity receiver, byte faction) =>
+            private bool IsWorking(Entity receiver, byte owner) =>
                 ReceiverLookup.HasComponent(receiver) && !DeadLookup.HasEnabled(receiver)
-                && FactionLookup[receiver].Value == faction;
+                && OwnerLookup[receiver].Value == owner;
         }
     }
 }

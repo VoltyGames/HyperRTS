@@ -193,7 +193,7 @@ namespace HyperRTS.Presentation.Environment.Fire
 
         // The impact's own landing spot and source, the same on every client that sees it.
         private static uint Seed(in CueEvent cue) =>
-            math.hash(new int4((int2)math.floor(cue.Position.xz * 16f), cue.TypeId, cue.Faction));
+            math.hash(new int4((int2)math.floor(cue.Position.xz * 16f), cue.TypeId, cue.Owner));
 
         private void Clear()
         {

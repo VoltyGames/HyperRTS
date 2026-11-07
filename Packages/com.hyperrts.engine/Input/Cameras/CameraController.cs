@@ -243,7 +243,7 @@ namespace HyperRTS.Input.Cameras
                 return false;
             }
 
-            if (!_home.TryGetLocalFaction(entityManager, out var faction))
+            if (!_home.TryGetLocalOwner(entityManager, out var owner))
             {
                 return false;
             }
@@ -253,7 +253,7 @@ namespace HyperRTS.Input.Cameras
                 _homeDeadline = Time.unscaledTime + homeSearchSeconds;
             }
 
-            var found = _home.TryFind(entityManager, faction, out home);
+            var found = _home.TryFind(entityManager, owner, out home);
             var expired = Time.unscaledTime >= _homeDeadline;
             _homeDone = found || expired;
             return found;

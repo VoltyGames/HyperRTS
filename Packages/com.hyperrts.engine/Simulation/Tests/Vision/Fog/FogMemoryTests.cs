@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Tests.Vision.Fog
             World.Run(3f);
 
             Assert.AreEqual(World.Get<EntityInfo>(building).TypeId, memory.State.TypeId);
-            Assert.AreEqual(2, memory.State.Faction);
+            Assert.AreEqual(2, memory.State.Owner);
             Assert.AreEqual(BuildingAt, memory.State.Transform.Position);
             Assert.AreEqual(1, CountMemories(World), "the memory stays while its place is in the fog");
         }
@@ -145,9 +145,9 @@ namespace HyperRTS.Simulation.Tests.Vision.Fog
             Assert.AreEqual(0, CountMemories(World));
         }
 
-        private Entity SightedBuilding(byte faction)
+        private Entity SightedBuilding(byte owner)
         {
-            var building = World.SpawnBuilding(faction, BuildingAt, new float2(4f, 4f));
+            var building = World.SpawnBuilding(owner, BuildingAt, new float2(4f, 4f));
             World.Run(0.5f);
             return building;
         }

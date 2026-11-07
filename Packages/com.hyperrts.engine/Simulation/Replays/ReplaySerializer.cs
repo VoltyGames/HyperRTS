@@ -183,7 +183,7 @@ namespace HyperRTS.Simulation.Replays
             writer.Write(replay.Players.Count);
             foreach (var player in replay.Players)
             {
-                writer.Write(player.Faction);
+                writer.Write(player.Owner);
                 writer.Write(player.Team);
                 writer.Write(player.Name ?? "");
                 writer.Write(player.Color.x);
@@ -225,7 +225,7 @@ namespace HyperRTS.Simulation.Replays
             {
                 replay.Players.Add(new ReplayPlayerInfo
                 {
-                    Faction = reader.ReadByte(),
+                    Owner = reader.ReadByte(),
                     Team = reader.ReadByte(),
                     Name = reader.ReadString(),
                     Color = new float4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),

@@ -144,7 +144,7 @@ holds.
 1. Once the map is loaded, the client sends a join request with its preferred slot and its token.
 2. The server picks a slot: the one this token owns, else the preferred slot if never claimed, else the first
    never-claimed human slot. With none left, or if the client asked to observe, it joins as an observer. Observers
-   have faction 0 and see everything.
+   have owner 0 and see everything.
 3. The server sets the slot's player ghost's `GhostOwner` to the connection, and Netcode enables
    `GhostOwnerIsLocal` on that client, which tags the ghost `LocalPlayer`, so input and HUD work unchanged. An
    observer owns no ghost, so the server answers it with `ObserverAccepted` and the client makes a `LocalObserver`.
@@ -236,7 +236,7 @@ for a version that does.
 ## Fog of war
 
 Each client receives only the owned ghosts its team can see, so a map hack has nothing to reveal. Undetected
-stealthed enemies count as unseen, even with fog off. Ghosts without a `Faction`, such as players and the match,
+stealthed enemies count as unseen, even with fog off. Ghosts without a `Owner`, such as players and the match,
 always replicate. Observers see everything. A client remembers enemy buildings where it last saw them, so a ghost
 leaving relevancy doesn't vanish from its map.
 

@@ -24,6 +24,6 @@ namespace HyperRTS.Simulation.Auras
         /// <summary>The entity projecting the aura (the lowest index when several overlap).</summary>
         public Entity Source;
 
-        public byte SourceFaction;
+        public byte SourceOwner;
     }
 }

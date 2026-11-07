@@ -67,13 +67,13 @@ namespace HyperRTS.Simulation.MatchStart
             foreach (var player in players)
             {
                 RequireSide(sides, entityManager.GetComponentData<PlayerSide>(player).Value,
-                    entityManager.GetComponentData<Player>(player).Faction);
+                    entityManager.GetComponentData<Player>(player).Owner);
             }
 
             var spawned = 0u;
             foreach (var player in players)
             {
-                var faction = entityManager.GetComponentData<Player>(player).Faction;
+                var owner = entityManager.GetComponentData<Player>(player).Owner;
                 var side = entityManager.GetComponentData<PlayerSide>(player).Value;
                 if (entityManager.HasBuffer<AIBuildStep>(player))
                 {
@@ -81,18 +81,18 @@ namespace HyperRTS.Simulation.MatchStart
                 }
 
                 // A ghost prefab and its instance are one player: one kit.
-                if ((spawned & Faction.Bit(faction)) != 0)
+                if ((spawned & Owner.Bit(owner)) != 0)
                 {
                     continue;
                 }
 
-                spawned |= Faction.Bit(faction);
+                spawned |= Owner.Bit(owner);
                 var spawn = entityManager.GetComponentData<PlayerSpawn>(player);
-                SpawnKit(entityManager, kit, side, faction, spawn, terrain);
+                SpawnKit(entityManager, kit, side, owner, spawn, terrain);
             }
         }
 
-        private static void RequireSide(NativeArray<MatchSide> sides, byte side, byte faction)
+        private static void RequireSide(NativeArray<MatchSide> sides, byte side, byte owner)
         {
             foreach (var entry in sides)
             {
@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.MatchStart
             }
 
             throw new System.InvalidOperationException(
-                $"Player {faction} plays side {side}, which the Match's sides don't list.");
+                $"Player {owner} plays side {side}, which the Match's sides don't list.");
         }
 
         private static void SetBuildOrder(DynamicBuffer<AIBuildStep> buildOrder, NativeArray<SideBuildStep> steps,
@@ -120,7 +120,7 @@ namespace HyperRTS.Simulation.MatchStart
         }
 
         private static void SpawnKit(EntityManager entityManager, NativeArray<SideStartItem> kit, byte side,
-            byte faction, in PlayerSpawn spawn, in TerrainHeight terrain)
+            byte owner, in PlayerSpawn spawn, in TerrainHeight terrain)
         {
             foreach (var item in kit)
             {
@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.MatchStart
                 var right = new float2(cos, -sin);
                 var ground = spawn.Position.xz + right * item.Offset.x + forward * item.Offset.y;
                 var position = new float3(ground.x, terrain.Height(ground), ground.y);
-                entityManager.Spawn(item.Prefab, position, quaternion.RotateY(frame + item.Yaw), faction);
+                entityManager.Spawn(item.Prefab, position, quaternion.RotateY(frame + item.Yaw), owner);
             }
         }
     }

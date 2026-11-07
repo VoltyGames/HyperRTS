@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Production
     /// <summary>What one player's purchases are checked against, snapshotted once for many checks.</summary>
     public struct Buyer
     {
-        public byte Faction;
+        public byte Owner;
         public CompletedBuildings Buildings;
         public DynamicBuffer<CompletedResearch> Research;
 
@@ -18,25 +18,25 @@ namespace HyperRTS.Simulation.Production
         public BuildCounts Counts;
 
         /// <summary>
-        /// Snapshots <paramref name="faction"/> as a buyer for this frame, collecting what it has queued at every
+        /// Snapshots <paramref name="owner"/> as a buyer for this frame, collecting what it has queued at every
         /// producer in <paramref name="queues"/> (<see cref="ResearchRules.QueueQuery"/>) and its build-limited
         /// entities in <paramref name="limited"/> (<see cref="BuildCounts.Query"/>).
         /// </summary>
         public static Buyer Snapshot(EntityManager entityManager, EntityQuery queues, EntityQuery limited,
-            byte faction, CompletedBuildings buildings, DynamicBuffer<CompletedResearch> research)
+            byte owner, CompletedBuildings buildings, DynamicBuffer<CompletedResearch> research)
         {
             var buyer = new Buyer
             {
-                Faction = faction,
+                Owner = owner,
                 Buildings = buildings,
                 Research = research,
                 QueuedResearch = new NativeHashSet<Entity>(8, Allocator.Temp),
-                Counts = BuildCounts.Snapshot(limited, faction),
+                Counts = BuildCounts.Snapshot(limited, owner),
             };
 
             foreach (var producer in queues.ToEntityArray(Allocator.Temp))
             {
-                if (entityManager.GetComponentData<Common.Players.Faction>(producer).Value != faction)
+                if (entityManager.GetComponentData<Common.Players.Owner>(producer).Value != owner)
                 {
                     continue;
                 }

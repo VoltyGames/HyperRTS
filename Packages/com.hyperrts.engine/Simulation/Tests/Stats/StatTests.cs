@@ -151,7 +151,7 @@ namespace HyperRTS.Simulation.Tests.Stats
             var friend = Victim(1, new float3(-30f, 0f, 0f), cost: 100);
             foreach (var victim in new[] { enemy, friend })
             {
-                World.Set(victim, new LastAttacker { Source = veteran, Faction = 1 });
+                World.Set(victim, new LastAttacker { Source = veteran, Owner = 1 });
                 World.Kill(victim);
             }
 
@@ -175,9 +175,9 @@ namespace HyperRTS.Simulation.Tests.Stats
             return unit;
         }
 
-        private Entity Victim(byte faction, float3 position, int cost)
+        private Entity Victim(byte owner, float3 position, int cost)
         {
-            var victim = World.SpawnUnit(faction, position);
+            var victim = World.SpawnUnit(owner, position);
             World.SetCost(victim, _supplies, cost);
             return victim;
         }

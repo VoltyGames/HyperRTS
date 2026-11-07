@@ -123,7 +123,7 @@ namespace HyperRTS.Network.Tests
         }
 
         /// <summary>A unit prefab made a ghost in both worlds, as <see cref="PlayerGhostSystem"/> does players.</summary>
-        public Entity GhostUnitPrefab(byte faction, string name)
+        public Entity GhostUnitPrefab(byte owner, string name)
         {
             var config = new GhostPrefabCreation.Config
             {
@@ -135,7 +135,7 @@ namespace HyperRTS.Network.Tests
             var prefab = Entity.Null;
             foreach (var world in new[] { Client, Host })
             {
-                prefab = world.SpawnUnit(faction, float3.zero, name: name);
+                prefab = world.SpawnUnit(owner, float3.zero, name: name);
                 GhostPrefabCreation.ConvertToGhostPrefab(world.EntityManager, prefab, config);
             }
 
@@ -149,10 +149,10 @@ namespace HyperRTS.Network.Tests
             Application.runInBackground = _ranInBackground;
         }
 
-        private static void Prefer(TestWorld world, byte faction)
+        private static void Prefer(TestWorld world, byte owner)
         {
             using var query = world.Query(typeof(JoinPreference));
-            query.SetSingleton(new JoinPreference { Faction = faction });
+            query.SetSingleton(new JoinPreference { Owner = owner });
         }
 
         private static bool HasLocalPlayer(TestWorld world)

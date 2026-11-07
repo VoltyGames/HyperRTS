@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
                 Position = position,
                 Aim = projectile.Hit.Position,
                 Kind = projectile.Kind,
-                Faction = projectile.Hit.SourceFaction,
+                Owner = projectile.Hit.SourceOwner,
             };
             var here = Cell(position);
             var there = Cell(entry.Aim);
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         /// The nearest hostile projectile of a kind <paramref name="weapon"/> engages inside its range, else the nearest
         /// one aimed inside it; <c>Entity.Null</c> for none.
         /// </summary>
-        public readonly Entity Nearest(float3 center, in Weapon weapon, byte faction, in FactionRelations relations)
+        public readonly Entity Nearest(float3 center, in Weapon weapon, byte owner, in OwnerRelations relations)
         {
             var radiusSq = weapon.Range * weapon.Range;
             var near = Closest.Within(radiusSq);
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             {
                 foreach (var entry in _cells.GetValuesForKey(cell))
                 {
-                    if (!weapon.Engages(entry.Kind) || !relations.IsHostile(faction, entry.Faction))
+                    if (!weapon.Engages(entry.Kind) || !relations.IsHostile(owner, entry.Owner))
                     {
                         continue;
                     }
@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
             public float3 Position;
             public float3 Aim;
             public ProjectileKind Kind;
-            public byte Faction;
+            public byte Owner;
         }
     }
 }

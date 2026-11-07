@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
         public void OnCreate(ref SystemState state)
         {
             _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, LocalTransform>().Build();
-            _dropOffs = SystemAPI.QueryBuilder().WithAll<ResourceDropOff, LocalTransform, Faction>()
+            _dropOffs = SystemAPI.QueryBuilder().WithAll<ResourceDropOff, LocalTransform, Owner>()
                 .WithNone<ConstructionProgress, Dead>().Build();
             state.RequireForUpdate<PlayerRegistry>();
             _reach = new TargetReach(ref state);
@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 Reach = _reach,
                 Bays = _bays,
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
@@ -88,7 +88,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
             public BufferLookup<ResourceStock> StockLookup;
             public TargetReach Reach;
             public DockBays Bays;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
             [ReadOnly] public NavGrid Grid;
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
             private void Execute(Entity entity, ref Harvester harvester, ref HarvestState harvest,
                 ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, RefRW<MoveDestination> destination,
                 EnabledRefRW<MoveDestination> moving, ref Arrival arrival, EnabledRefRW<Arrival> arrived,
-                in LocalTransform transform, in NavAgent agent, in Faction faction)
+                in LocalTransform transform, in NavAgent agent, in Owner owner)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Gather)
                 {
@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                     }
                     else if (ReachedDropOff(entity, ref harvest, move, busy, transform, agent))
                     {
-                        Deliver(ref harvester, ref harvest, faction.Value);
+                        Deliver(ref harvester, ref harvest, owner.Value);
                     }
 
                     return;
@@ -182,10 +182,10 @@ namespace HyperRTS.Simulation.Resources.Gathering
             private bool ReachedDropOff(Entity entity, ref HarvestState harvest, MoveControl move,
                 EnabledRefRW<ActiveOrder> busy, in LocalTransform transform, in NavAgent agent)
             {
-                var faction = FactionLookup[entity].Value;
-                if (!IsDropOff(harvest.DropOff, faction))
+                var owner = OwnerLookup[entity].Value;
+                if (!IsDropOff(harvest.DropOff, owner))
                 {
-                    harvest.DropOff = ChooseDropOff(entity, transform, agent, faction);
+                    harvest.DropOff = ChooseDropOff(entity, transform, agent, owner);
                 }
 
                 var dropOff = harvest.DropOff;
@@ -199,9 +199,9 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 return !ActiveOrder.StopsShort(walk, busy, move.Moving);
             }
 
-            private void Deliver(ref Harvester harvester, ref HarvestState harvest, byte faction)
+            private void Deliver(ref Harvester harvester, ref HarvestState harvest, byte owner)
             {
-                var player = Players[faction];
+                var player = Players[owner];
                 var delivered = ResourcePayout.Scaled(ModifierLookup, player, harvester.CargoAmount);
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
@@ -232,11 +232,11 @@ namespace HyperRTS.Simulation.Resources.Gathering
             }
 
             /// <summary>Still a finished, living drop-off of this owner.</summary>
-            private readonly bool IsDropOff(Entity entity, byte faction) =>
-                DropOffs.Contains(entity) && FactionLookup[entity].Value == faction;
+            private readonly bool IsDropOff(Entity entity, byte owner) =>
+                DropOffs.Contains(entity) && OwnerLookup[entity].Value == owner;
 
             /// <summary>The reachable owned drop-off with the lowest edge gap plus the path its turn takes.</summary>
-            private Entity ChooseDropOff(Entity entity, in LocalTransform transform, in NavAgent agent, byte faction)
+            private Entity ChooseDropOff(Entity entity, in LocalTransform transform, in NavAgent agent, byte owner)
             {
                 var position = transform.Position;
                 var facing = math.normalizesafe(transform.Forward().xz);
@@ -245,7 +245,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 for (var i = 0; i < DropOffs.Length; i++)
                 {
                     var candidate = DropOffs[i];
-                    if (FactionLookup[candidate].Value != faction)
+                    if (OwnerLookup[candidate].Value != owner)
                     {
                         continue;
                     }

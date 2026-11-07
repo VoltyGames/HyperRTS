@@ -14,11 +14,11 @@ namespace HyperRTS.Simulation.AI
         /// </summary>
         private void Deploy(ref SystemState state, in Turn turn)
         {
-            foreach (var (deployable, attack, faction, unit) in SystemAPI
-                         .Query<RefRO<Deployable>, RefRO<AttackTarget>, RefRO<Faction>>()
+            foreach (var (deployable, attack, owner, unit) in SystemAPI
+                         .Query<RefRO<Deployable>, RefRO<AttackTarget>, RefRO<Owner>>()
                          .WithPresent<AttackTarget>().WithNone<Dead>().WithEntityAccess())
             {
-                if (faction.ValueRO.Value != turn.Faction)
+                if (owner.ValueRO.Value != turn.Owner)
                 {
                     continue;
                 }

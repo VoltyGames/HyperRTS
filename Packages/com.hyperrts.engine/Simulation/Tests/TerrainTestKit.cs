@@ -45,15 +45,15 @@ namespace HyperRTS.Simulation.Tests
             return obstacle;
         }
 
-        public static Entity SpawnShip(this TestWorld world, byte faction, float3 position, float radius = 0.5f)
+        public static Entity SpawnShip(this TestWorld world, byte owner, float3 position, float radius = 0.5f)
         {
-            var ship = world.SpawnUnit(faction, position, speed: 8f, radius: radius, name: "Ship");
+            var ship = world.SpawnUnit(owner, position, speed: 8f, radius: radius, name: "Ship");
             world.Set(ship, new NavAgent { Radius = radius, Layer = NavLayer.Naval });
             return ship;
         }
 
         public static void MoveTo(this TestWorld world, Entity unit, float3 goal) =>
-            world.Command(world.Get<Faction>(unit).Value,
+            world.Command(world.Get<Owner>(unit).Value,
                 new PlayerCommand { Type = CommandType.Move, Unit = unit, Position = goal });
 
         public static NavGrid Grid(this TestWorld world)

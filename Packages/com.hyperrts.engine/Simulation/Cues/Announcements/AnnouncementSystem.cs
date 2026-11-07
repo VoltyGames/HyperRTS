@@ -66,19 +66,19 @@ namespace HyperRTS.Simulation.Cues.Announcements
             {
                 foreach (var unit in produced)
                 {
-                    Announce(AnnouncementKind.UnitReady, unit.Faction, unit.Position, unit.Prefab);
+                    Announce(AnnouncementKind.UnitReady, unit.Owner, unit.Position, unit.Prefab);
                 }
 
                 foreach (var building in built)
                 {
                     var position = Transforms[building.Building].Position;
-                    Announce(AnnouncementKind.ConstructionComplete, building.Faction, position, building.Building);
+                    Announce(AnnouncementKind.ConstructionComplete, building.Owner, position, building.Building);
                 }
 
                 foreach (var research in researched)
                 {
                     var position = Transforms[research.Producer].Position;
-                    Announce(AnnouncementKind.UpgradeComplete, research.Faction, position, research.Prefab);
+                    Announce(AnnouncementKind.UpgradeComplete, research.Owner, position, research.Prefab);
                 }
 
                 foreach (var hit in damaged)
@@ -86,17 +86,17 @@ namespace HyperRTS.Simulation.Cues.Announcements
                     if (Buildings.HasComponent(hit.Entity))
                     {
                         var position = Transforms[hit.Entity].Position;
-                        Announce(AnnouncementKind.BaseUnderAttack, hit.Faction, position, hit.Entity);
+                        Announce(AnnouncementKind.BaseUnderAttack, hit.Owner, position, hit.Entity);
                     }
                 }
             }
 
-            private void Announce(AnnouncementKind kind, byte faction, float3 position, Entity subject)
+            private void Announce(AnnouncementKind kind, byte owner, float3 position, Entity subject)
             {
-                if (Gate.TryPass(kind, faction, Now))
+                if (Gate.TryPass(kind, owner, Now))
                 {
                     var typeId = Info.TryGetComponent(subject, out var info) ? info.TypeId : 0;
-                    Cues.Announce(kind, faction, position, typeId);
+                    Cues.Announce(kind, owner, position, typeId);
                 }
             }
         }
@@ -109,12 +109,12 @@ namespace HyperRTS.Simulation.Cues.Announcements
             public CueWriter Cues;
             public AnnouncementGate Gate;
 
-            private void Execute(in LocalTransform transform, in Faction faction, in EntityInfo info)
+            private void Execute(in LocalTransform transform, in Owner owner, in EntityInfo info)
             {
-                var owned = faction.Value != Faction.Neutral;
-                if (owned && Gate.TryPass(AnnouncementKind.UnitLost, faction.Value, Now))
+                var owned = owner.Value != Owner.Neutral;
+                if (owned && Gate.TryPass(AnnouncementKind.UnitLost, owner.Value, Now))
                 {
-                    Cues.Announce(AnnouncementKind.UnitLost, faction.Value, transform.Position, info.TypeId);
+                    Cues.Announce(AnnouncementKind.UnitLost, owner.Value, transform.Position, info.TypeId);
                 }
             }
         }

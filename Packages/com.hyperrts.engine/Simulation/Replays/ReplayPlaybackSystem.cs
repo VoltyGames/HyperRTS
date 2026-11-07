@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Replays
         public const float SeekCueSeconds = 30f;
 
         private ComponentLookup<LocalTransform> _transforms;
-        private ComponentLookup<Faction> _factions;
+        private ComponentLookup<Owner> _owners;
         private ComponentLookup<Health> _health;
         private BufferLookup<SquadMember> _members;
         private ComponentLookup<ConstructionProgress> _construction;
@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Replays
         public void OnCreate(ref SystemState state)
         {
             _transforms = state.GetComponentLookup<LocalTransform>();
-            _factions = state.GetComponentLookup<Faction>();
+            _owners = state.GetComponentLookup<Owner>();
             _health = state.GetComponentLookup<Health>();
             _members = state.GetBufferLookup<SquadMember>();
             _construction = state.GetComponentLookup<ConstructionProgress>();
@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Replays
         /// <summary>Claims the scene's entities for the recorded ones, removes the rest and spawns what is missing.</summary>
         private void TakeOver(ref SystemState state, ref ReplayPlaybackState data)
         {
-            var scene = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().Build();
+            var scene = SystemAPI.QueryBuilder().WithAll<EntityInfo, Owner, LocalTransform>().Build();
             var unclaimed = new NativeList<Entity>(Allocator.Temp);
             ReplaySceneMatch.Match(data.From, scene.ToEntityArray(Allocator.Temp),
                 scene.ToComponentDataArray<EntityInfo>(Allocator.Temp),
@@ -165,7 +165,7 @@ namespace HyperRTS.Simulation.Replays
         private void Show(ref SystemState state, in ReplayPlaybackState data, float time)
         {
             _transforms.Update(ref state);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             _health.Update(ref state);
             _members.Update(ref state);
             _construction.Update(ref state);
@@ -197,9 +197,9 @@ namespace HyperRTS.Simulation.Replays
                 _transforms[entity] = from.Interpolate(to, blend, transform.Scale);
             }
 
-            if (_factions.TryGetComponent(entity, out var faction) && faction.Value != from.Faction)
+            if (_owners.TryGetComponent(entity, out var owner) && owner.Value != from.Owner)
             {
-                _factions[entity] = new Faction { Value = from.Faction };
+                _owners[entity] = new Owner { Value = from.Owner };
             }
 
             if (_health.TryGetComponent(entity, out var health))

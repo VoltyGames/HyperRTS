@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             });
         }
 
-        private StrategicCharge ReadCharge(byte faction) => World.Get<StrategicCharge>(World.Player(faction));
+        private StrategicCharge ReadCharge(byte owner) => World.Get<StrategicCharge>(World.Player(owner));
 
         private Entity[] Bombers() => World.All<BombingFlight>().ToArray();
 
@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
         public void LosingTheStructure_StopsTheCountdown_AndANewOwnerStartsOver()
         {
             World.Run(4f);
-            World.Set(_asset, new Faction { Value = 2 });
+            World.Set(_asset, new Owner { Value = 2 });
             World.Tick();
             Assert.IsFalse(ReadCharge(1).HasAsset, "the old owner lost it");
             Assert.AreEqual(Charge, ReadCharge(2).Remaining, 0.1f, "captured, it starts over");

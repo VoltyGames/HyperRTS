@@ -21,9 +21,9 @@ namespace HyperRTS.Simulation.Match
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _critical = SystemAPI.QueryBuilder().WithAll<VictoryCritical, Faction>().WithNone<Dead>().Build();
+            _critical = SystemAPI.QueryBuilder().WithAll<VictoryCritical, Owner>().WithNone<Dead>().Build();
             state.RequireForUpdate<MatchState>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -36,15 +36,15 @@ namespace HyperRTS.Simulation.Match
             }
 
             var alive = 0u;
-            foreach (var owner in _critical.ToComponentDataArray<Faction>(Allocator.Temp))
+            foreach (var owner in _critical.ToComponentDataArray<Owner>(Allocator.Temp))
             {
-                alive |= Faction.Bit(owner.Value);
+                alive |= Owner.Bit(owner.Value);
             }
 
             match.Contenders |= alive;
             foreach (var (player, entity) in SystemAPI.Query<RefRO<Player>>().WithNone<Defeated>().WithEntityAccess())
             {
-                var bit = Faction.Bit(player.ValueRO.Faction);
+                var bit = Owner.Bit(player.ValueRO.Owner);
                 if ((match.Contenders & bit) != 0 && (alive & bit) == 0)
                 {
                     SystemAPI.SetComponentEnabled<Defeated>(entity, true);
@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Ends the match once someone has lost and no two survivors are hostile; no survivors is a draw.</summary>
         private void Resolve(ref SystemState state, ref MatchState match)
         {
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var anyDefeated = false;
             byte winner = 0;
             foreach (var (player, entity) in SystemAPI.Query<RefRO<Player>>().WithPresent<Defeated>().WithEntityAccess())
@@ -68,9 +68,9 @@ namespace HyperRTS.Simulation.Match
                 }
                 else if (winner == 0)
                 {
-                    winner = relations.GetTeam(player.ValueRO.Faction);
+                    winner = relations.GetTeam(player.ValueRO.Owner);
                 }
-                else if (winner != relations.GetTeam(player.ValueRO.Faction))
+                else if (winner != relations.GetTeam(player.ValueRO.Owner))
                 {
                     return;
                 }

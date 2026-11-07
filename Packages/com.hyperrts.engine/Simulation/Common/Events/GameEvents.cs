@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Common.Events
     {
         public Entity Producer;
         public Entity Prefab;
-        public byte Faction;
+        public byte Owner;
         public float3 Position;
     }
 
@@ -25,11 +25,11 @@ namespace HyperRTS.Simulation.Common.Events
     public struct BuildingCompleted : IBufferElementData
     {
         public Entity Building;
-        public byte Faction;
+        public byte Owner;
     }
 
     /// <summary>
-    /// An entity changed hands this frame (capture, a game's mind control). Its <see cref="Faction"/> switches to
+    /// An entity changed hands this frame (capture, a game's mind control). Its <see cref="Owner"/> switches to
     /// <see cref="To"/> when the frame's commands play back; write it with <see cref="Transfer"/>.
     /// </summary>
     [InternalBufferCapacity(0)]
@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Common.Events
         public static void Transfer(EntityCommandBuffer ecb, ref EventWriter<OwnerChanged> events, Entity entity,
             byte from, byte to)
         {
-            ecb.SetComponent(entity, new Faction { Value = to });
+            ecb.SetComponent(entity, new Owner { Value = to });
             events.Add(new OwnerChanged { Entity = entity, From = from, To = to });
         }
     }
@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Common.Events
     {
         public Entity Producer;
         public Entity Prefab;
-        public byte Faction;
+        public byte Owner;
     }
 
     /// <summary>An owned entity lost health to a hit this frame; one per hit, so a splash adds one per victim.</summary>
@@ -62,14 +62,14 @@ namespace HyperRTS.Simulation.Common.Events
     public struct EntityDamaged : IBufferElementData
     {
         public Entity Entity;
-        public byte Faction;
+        public byte Owner;
 
         /// <summary>Raises the event for an owned entity; a neutral one raises none.</summary>
         public static void Raise(ref EventWriter<EntityDamaged> writer, Entity entity, byte owner)
         {
-            if (owner != Common.Players.Faction.Neutral)
+            if (owner != Common.Players.Owner.Neutral)
             {
-                writer.Add(new EntityDamaged { Entity = entity, Faction = owner });
+                writer.Add(new EntityDamaged { Entity = entity, Owner = owner });
             }
         }
     }

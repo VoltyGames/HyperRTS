@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Production
             {
                 foreach (var produced in units)
                 {
-                    if (Stats.TryGetRefRW(Players[produced.Faction], out var stats))
+                    if (Stats.TryGetRefRW(Players[produced.Owner], out var stats))
                     {
                         stats.ValueRW.UnitsBuilt++;
                     }
@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Production
 
                 foreach (var completed in buildings)
                 {
-                    if (Stats.TryGetRefRW(Players[completed.Faction], out var stats))
+                    if (Stats.TryGetRefRW(Players[completed.Owner], out var stats))
                     {
                         stats.ValueRW.BuildingsBuilt++;
                     }

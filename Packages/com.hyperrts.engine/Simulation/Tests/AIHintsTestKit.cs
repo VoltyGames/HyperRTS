@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Tests
             world.EntityManager.DestroyEntity(query);
         }
 
-        /// <summary>A slot per team entry (faction = index + 1) and one lane without waypoints between each pair of enemies.</summary>
+        /// <summary>A slot per team entry (owner = index + 1) and one lane without waypoints between each pair of enemies.</summary>
         public static AIMapHintsData DirectHints(params byte[] teams)
         {
             var data = new AIMapHintsData();

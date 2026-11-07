@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
         public void OwnedMeshesAndChildren_AreTinted_NeutralLeftAlone()
         {
             var unit = Spawn(1, out var child);
-            var neutral = Spawn(Faction.Neutral, out _);
+            var neutral = Spawn(Owner.Neutral, out _);
 
             Run();
 
@@ -58,7 +58,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
             var building = Spawn(1, out var child);
             Run();
 
-            SetOwner(building, Faction.Neutral);
+            SetOwner(building, Owner.Neutral);
             Run();
             Assert.IsFalse(_em.HasComponent<TeamColor>(building));
             Assert.IsFalse(_em.HasComponent<TeamColor>(child), "back to its authored look");
@@ -76,7 +76,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
             Run();
             Assert.AreEqual(new float4(2f, 2.4f, 0f, 0f), _em.GetComponentData<TeamStrip>(child).Value);
 
-            SetOwner(building, Faction.Neutral);
+            SetOwner(building, Owner.Neutral);
             Run();
 
             Assert.IsFalse(_em.HasComponent<TeamStrip>(child));
@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
             Run();
             Assert.IsFalse(_em.HasComponent<TeamColor>(unit), "no player 3 yet");
 
-            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 3, Color = Green });
+            _em.AddComponentData(_em.CreateEntity(), new Player { Owner = 3, Color = Green });
             Run();
 
             Assert.AreEqual(Green, Tint(unit));
@@ -107,7 +107,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
 
             SetOwner(unit, 3);
             Run();
-            _em.AddComponentData(_em.CreateEntity(), new Player { Faction = 3, Color = Green });
+            _em.AddComponentData(_em.CreateEntity(), new Player { Owner = 3, Color = Green });
             Run();
 
             Assert.AreEqual(Green, Tint(unit));
@@ -121,11 +121,11 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
             AssertColor(view, Color.red, 2);
 
             var colorOverride = new TeamColorOverride();
-            colorOverride.Colors.Add(new FactionColor { Faction = 2, Color = Green });
+            colorOverride.Colors.Add(new OwnerColor { Owner = 2, Color = Green });
             var singleton = _em.CreateSingleton(colorOverride);
             view.Refresh(_kit.World);
             AssertColor(view, Color.green, 2);
-            AssertColor(view, Color.blue, 1, "factions the override doesn't list keep their colour");
+            AssertColor(view, Color.blue, 1, "owners the override doesn't list keep their colour");
 
             _em.DestroyEntity(singleton);
             view.Refresh(_kit.World);
@@ -133,14 +133,14 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
         }
 
         // Colours go through linear-to-gamma, so Color's approximate equality compares them.
-        private static void AssertColor(MatchView view, Color expected, byte faction, string message = null) =>
-            Assert.IsTrue(expected == view.GetColor(faction), message ?? $"faction {faction}: {view.GetColor(faction)}");
+        private static void AssertColor(MatchView view, Color expected, byte owner, string message = null) =>
+            Assert.IsTrue(expected == view.GetColor(owner), message ?? $"owner {owner}: {view.GetColor(owner)}");
 
         // An owned root with one child mesh in its group, as baking leaves it.
-        private Entity Spawn(byte faction, out Entity child)
+        private Entity Spawn(byte owner, out Entity child)
         {
             var root = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo));
-            _em.AddComponentData(root, new Faction { Value = faction });
+            _em.AddComponentData(root, new Owner { Value = owner });
             _em.AddComponentData(root, new LocalToWorld { Value = float4x4.identity });
             child = _em.CreateEntity(typeof(MaterialMeshInfo));
             _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
@@ -148,7 +148,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
             return root;
         }
 
-        private void SetOwner(Entity root, byte faction) => _em.SetComponentData(root, new Faction { Value = faction });
+        private void SetOwner(Entity root, byte owner) => _em.SetComponentData(root, new Owner { Value = owner });
 
         private float4 Tint(Entity entity) => _em.GetComponentData<TeamColor>(entity).Value;
 

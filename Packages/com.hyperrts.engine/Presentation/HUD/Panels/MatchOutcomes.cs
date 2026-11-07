@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.HUD.Panels
                 return MatchOutcome.Ended;
             }
 
-            var localTeam = view.Relations.GetTeam(view.Local.Faction);
+            var localTeam = view.Relations.GetTeam(view.Local.Owner);
             return match.WinningTeam == localTeam ? MatchOutcome.Victory : MatchOutcome.Defeat;
         }
     }

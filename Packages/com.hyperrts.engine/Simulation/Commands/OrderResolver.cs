@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Commands
     /// </summary>
     public struct OrderResolver
     {
-        private ComponentLookup<Faction> _factions;
+        private ComponentLookup<Owner> _owners;
         private TargetLookup _targets;
         private BufferLookup<WeaponMount> _mounts;
         private ComponentLookup<Harvester> _harvesters;
@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Commands
 
         public OrderResolver(ref SystemState state)
         {
-            _factions = state.GetComponentLookup<Faction>(true);
+            _owners = state.GetComponentLookup<Owner>(true);
             _targets = new TargetLookup(ref state);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
             _harvesters = state.GetComponentLookup<Harvester>(true);
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Commands
         /// <summary><paramref name="queries"/> are the system's, created once in OnCreate.</summary>
         public void Update(ref SystemState state, in TargetQueries queries)
         {
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             _targets.Update(ref state, queries);
             _mounts.Update(ref state);
             _harvesters.Update(ref state);
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Commands
         }
 
         /// <summary>The order type the unit gets; callers fill in where and what it acts on.</summary>
-        public Order Resolve(CommandType command, Entity unit, Entity target, in FactionRelations relations)
+        public Order Resolve(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
         {
             var order = command == CommandType.Smart && TryRule(unit, target, relations, out var ruled)
                 ? ruled
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Commands
             return Refused(unit, order) ? default : order;
         }
 
-        private OrderType ResolveType(CommandType command, Entity unit, Entity target, in FactionRelations relations)
+        private OrderType ResolveType(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
         {
             return command switch
             {
@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Commands
             };
         }
 
-        private OrderType ResolveAttackMove(Entity unit, Entity target, in FactionRelations relations)
+        private OrderType ResolveAttackMove(Entity unit, Entity target, in OwnerRelations relations)
         {
             // Attack-move clicked on an enemy or on scenery attacks it directly.
             if (CanForceAttack(unit, target, relations))
@@ -121,7 +121,7 @@ namespace HyperRTS.Simulation.Commands
             return TryGetPrimary(unit, out _) ? OrderType.AttackMove : OrderType.Move;
         }
 
-        private OrderType ResolveSmart(Entity unit, Entity target, in FactionRelations relations)
+        private OrderType ResolveSmart(Entity unit, Entity target, in OwnerRelations relations)
         {
             if (CanAttack(unit, target, relations))
             {
@@ -156,7 +156,7 @@ namespace HyperRTS.Simulation.Commands
             return CanCapture(unit, target, relations) ? OrderType.Capture : OrderType.Move;
         }
 
-        private bool TryRule(Entity unit, Entity target, in FactionRelations relations, out Order order)
+        private bool TryRule(Entity unit, Entity target, in OwnerRelations relations, out Order order)
         {
             order = default;
             if (target == Entity.Null || !_rules.TryGetBuffer(unit, out var rules))
@@ -164,8 +164,8 @@ namespace HyperRTS.Simulation.Commands
                 return false;
             }
 
-            var owner = _factions.TryGetComponent(target, out var faction) ? faction.Value : Faction.Neutral;
-            var relation = relations.GetRelation(_factions[unit].Value, owner);
+            var targetOwner = _owners.TryGetComponent(target, out var owner) ? owner.Value : Owner.Neutral;
+            var relation = relations.GetRelation(_owners[unit].Value, targetOwner);
             foreach (var rule in rules)
             {
                 if (!rule.Relations.Includes(relation))
@@ -188,24 +188,24 @@ namespace HyperRTS.Simulation.Commands
         private bool Refused(Entity unit, in Order order) =>
             order.Type != OrderType.Attack && Deployable.IsImmobile(_deployables, unit);
 
-        private bool CanEscort(Entity unit, Entity target, in FactionRelations relations)
+        private bool CanEscort(Entity unit, Entity target, in OwnerRelations relations)
         {
             if (target == unit || !_units.HasComponent(target) || !_targets.IsAlive(target))
             {
                 return false;
             }
 
-            return relations.IsAllied(_factions[unit].Value, _factions[target].Value);
+            return relations.IsAllied(_owners[unit].Value, _owners[target].Value);
         }
 
-        private bool CanAttack(Entity unit, Entity target, in FactionRelations relations) =>
+        private bool CanAttack(Entity unit, Entity target, in OwnerRelations relations) =>
             TryGetPrimary(unit, out var weapon) &&
-            _targets.IsValidTarget(target, _factions[unit].Value, relations, weapon.Targets);
+            _targets.IsValidTarget(target, _owners[unit].Value, relations, weapon.Targets);
 
         /// <summary>Explicit attack orders may also target destructible scenery; smart clicks never do.</summary>
-        private bool CanForceAttack(Entity unit, Entity target, in FactionRelations relations) =>
+        private bool CanForceAttack(Entity unit, Entity target, in OwnerRelations relations) =>
             TryGetPrimary(unit, out var weapon) &&
-            _targets.IsAttackable(target, _factions[unit].Value, relations, weapon.Targets);
+            _targets.IsAttackable(target, _owners[unit].Value, relations, weapon.Targets);
 
         private bool TryGetPrimary(Entity unit, out Weapon weapon)
         {
@@ -216,22 +216,22 @@ namespace HyperRTS.Simulation.Commands
         private bool CanGather(Entity unit, Entity target) =>
             _harvesters.HasComponent(unit) && _nodes.HasComponent(target);
 
-        private bool CanBuild(Entity unit, Entity target, in FactionRelations relations) =>
+        private bool CanBuild(Entity unit, Entity target, in OwnerRelations relations) =>
             _builders.HasComponent(unit) &&
-            BuildingRules.IsAlliedSite(_construction, _factions, relations, target, _factions[unit].Value);
+            BuildingRules.IsAlliedSite(_construction, _owners, relations, target, _owners[unit].Value);
 
-        private bool CanRepair(Entity unit, Entity target, in FactionRelations relations) =>
+        private bool CanRepair(Entity unit, Entity target, in OwnerRelations relations) =>
             _builders.HasComponent(unit) &&
-            _repairs.NeedsRepair(target, _factions[unit].Value, relations);
+            _repairs.NeedsRepair(target, _owners[unit].Value, relations);
 
-        private bool CanCapture(Entity unit, Entity target, in FactionRelations relations) =>
-            _capturers.HasComponent(unit) && _capture.CanCapture(target, _factions[unit].Value, relations);
+        private bool CanCapture(Entity unit, Entity target, in OwnerRelations relations) =>
+            _capturers.HasComponent(unit) && _capture.CanCapture(target, _owners[unit].Value, relations);
 
         private bool CanLandAt(Entity unit, Entity target) =>
             _padUsers.HasComponent(unit) &&
-            AirfieldRules.IsOwnedAirfield(_pads, _factions, _construction, target, _factions[unit].Value);
+            AirfieldRules.IsOwnedAirfield(_pads, _owners, _construction, target, _owners[unit].Value);
 
-        private bool CanEnter(Entity unit, Entity target, in FactionRelations relations) =>
+        private bool CanEnter(Entity unit, Entity target, in OwnerRelations relations) =>
             _boarding.CanBoard(unit, target, relations);
     }
 }

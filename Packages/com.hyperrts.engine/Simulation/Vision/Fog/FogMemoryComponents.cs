@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Vision.Fog
     {
         public FogMemoryKey Key;
         public int TypeId;
-        public byte Faction;
+        public byte Owner;
         public LocalTransform Transform;
         public float Health;
         public float Construction;

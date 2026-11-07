@@ -8,18 +8,18 @@ using Unity.Netcode;
 
 namespace HyperRTS.Network.Common
 {
-    /// <summary>Server: regroups the in-game remote connections into <see cref="FactionConnections"/> before the senders.</summary>
+    /// <summary>Server: regroups the in-game remote connections into <see cref="OwnerConnections"/> before the senders.</summary>
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
-    public partial struct FactionConnectionsSystem : ISystem
+    public partial struct OwnerConnectionsSystem : ISystem
     {
-        private FactionConnections _connections;
+        private OwnerConnections _connections;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _connections = FactionConnections.Create(Allocator.Persistent);
+            _connections = OwnerConnections.Create(Allocator.Persistent);
             state.EntityManager.CreateSingleton(_connections);
         }
 
@@ -33,20 +33,20 @@ namespace HyperRTS.Network.Common
             foreach (var (_, connection) in SystemAPI.Query<RefRO<NetworkId>>()
                          .WithAll<NetworkStreamInGame, NetworkStreamConnection>().WithEntityAccess())
             {
-                _connections.Add(ViewerFaction(ref state, connection), connection);
+                _connections.Add(ViewerOwner(ref state, connection), connection);
             }
         }
 
         // Observers hold no slot and view as neutral, whose team 0 sees and hears everything.
-        private byte ViewerFaction(ref SystemState state, Entity connection)
+        private byte ViewerOwner(ref SystemState state, Entity connection)
         {
             if (!SystemAPI.HasComponent<ConnectionPlayer>(connection))
             {
-                return Faction.Neutral;
+                return Owner.Neutral;
             }
 
             var player = SystemAPI.GetComponent<ConnectionPlayer>(connection).Player;
-            return SystemAPI.GetComponent<Player>(player).Faction;
+            return SystemAPI.GetComponent<Player>(player).Owner;
         }
     }
 }

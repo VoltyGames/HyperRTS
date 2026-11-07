@@ -45,23 +45,23 @@ namespace HyperRTS.Simulation.Strikes
                 charge.ValueRW = default;
             }
 
-            foreach (var (asset, abilities, states, faction) in SystemAPI
-                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>, RefRO<Faction>>()
+            foreach (var (asset, abilities, states, owner) in SystemAPI
+                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>, RefRO<Owner>>()
                          .WithNone<Dead>())
             {
                 var id = asset.ValueRO.AbilityId;
                 var ability = abilities[AbilityRules.FindAbility(abilities, id)];
                 ref var cooldown = ref states.ElementAt(AbilityRules.FindCooldown(states, id));
-                var owner = faction.ValueRO.Value;
-                if (!enabled || owner != asset.ValueRO.Owner)
+                var holder = owner.ValueRO.Value;
+                if (!enabled || holder != asset.ValueRO.Owner)
                 {
                     cooldown.Remaining = ability.Cooldown;
-                    asset.ValueRW.Owner = owner;
+                    asset.ValueRW.Owner = holder;
                 }
 
-                if (enabled && owner != Faction.Neutral)
+                if (enabled && holder != Owner.Neutral)
                 {
-                    Publish(ref state, players[owner], ability, cooldown);
+                    Publish(ref state, players[holder], ability, cooldown);
                 }
             }
 
@@ -99,10 +99,10 @@ namespace HyperRTS.Simulation.Strikes
                     continue;
                 }
 
-                var start = SystemAPI.GetComponent<PlayerSpawn>(players[used.Faction]).Position;
+                var start = SystemAPI.GetComponent<PlayerSpawn>(players[used.Owner]).Position;
                 var route = DropRoute.Plan(map, start, used.Position, asset.Altitude);
                 var flight = SystemAPI.GetComponent<Flight>(asset.Aircraft);
-                var aircraft = route.Launch(ecb, _spawner, asset.Aircraft, flight, asset.Altitude, used.Faction);
+                var aircraft = route.Launch(ecb, _spawner, asset.Aircraft, flight, asset.Altitude, used.Owner);
                 ecb.AddComponent(aircraft,
                     new BombingFlight { RevealSeconds = asset.RevealSeconds, Bombs = asset.Bombs });
             }

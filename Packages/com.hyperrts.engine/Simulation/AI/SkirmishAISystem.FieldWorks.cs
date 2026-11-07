@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.AI
         private void BuildFieldWorks(ref SystemState state, in Turn turn, in Snapshot snapshot)
         {
             var ai = SystemAPI.GetComponent<AIPlayer>(turn.Player);
-            if (ai.FieldWorkLines <= 0 || !snapshot.Hints.TryGetSlot(turn.Faction, out var slot))
+            if (ai.FieldWorkLines <= 0 || !snapshot.Hints.TryGetSlot(turn.Owner, out var slot))
             {
                 return;
             }
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.AI
                 var across = new float2(-outward.y, outward.x);
                 var along = math.dot(PlacementLine.Front(across), outward) > 0f ? across : -across;
                 var centre = point + outward * distance;
-                if (HasFieldWork(snapshot, turn.Faction, role, centre, along, outward))
+                if (HasFieldWork(snapshot, turn.Owner, role, centre, along, outward))
                 {
                     continue;
                 }
@@ -90,14 +90,14 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
-        /// <summary>Whether the faction already has a work of <paramref name="role"/> (site or built) on the line's strip.</summary>
-        private static bool HasFieldWork(in Snapshot snapshot, byte faction, FieldWorkRole role, float2 centre,
+        /// <summary>Whether the owner already has a work of <paramref name="role"/> (site or built) on the line's strip.</summary>
+        private static bool HasFieldWork(in Snapshot snapshot, byte owner, FieldWorkRole role, float2 centre,
             float2 along, float2 outward)
         {
             var works = snapshot.FieldWorks;
             for (var i = 0; i < works.Length; i++)
             {
-                if (!works.IsOwnedBy(i, faction) || snapshot.FieldWorkData[i].Role != role)
+                if (!works.IsOwnedBy(i, owner) || snapshot.FieldWorkData[i].Role != role)
                 {
                     continue;
                 }
@@ -127,7 +127,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var builder = builders.Entities[i];
                 var idle = !SystemAPI.IsComponentEnabled<ActiveOrder>(builder);
-                if (!idle || !builders.IsOwnedBy(i, turn.Faction) || turn.Busy.Contains(builder)
+                if (!idle || !builders.IsOwnedBy(i, turn.Owner) || turn.Busy.Contains(builder)
                     || IsRecovering(ref state, builder, turn, snapshot))
                 {
                     continue;

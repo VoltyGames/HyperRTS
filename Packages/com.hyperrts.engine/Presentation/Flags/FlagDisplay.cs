@@ -3,7 +3,7 @@ using HyperRTS.Simulation.Common.Players;
 
 namespace HyperRTS.Presentation.Flags
 {
-    /// <summary>Which faction's flag a building flies and how high, from its owner and any capture under way.</summary>
+    /// <summary>Which owner's flag a building flies and how high, from its owner and any capture under way.</summary>
     public static class FlagDisplay
     {
         /// <summary>
@@ -14,13 +14,13 @@ namespace HyperRTS.Presentation.Flags
         {
             if (!capture.IsUnderWay(owner))
             {
-                hoist = owner == Faction.Neutral ? 0f : 1f;
+                hoist = owner == Owner.Neutral ? 0f : 1f;
                 return owner;
             }
 
-            var capturer = capture.Faction;
+            var capturer = capture.Owner;
             var done = capture.Value >= 1f ? 1f : capture.Value;
-            if (owner == Faction.Neutral)
+            if (owner == Owner.Neutral)
             {
                 hoist = done;
                 return capturer;

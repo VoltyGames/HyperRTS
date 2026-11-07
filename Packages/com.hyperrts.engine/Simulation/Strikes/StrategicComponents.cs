@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Strikes
 
         public BombLoad Bombs;
 
-        /// <summary>The faction the charge belongs to; a new owner starts it over.</summary>
+        /// <summary>The owner the charge belongs to; a new owner starts it over.</summary>
         public byte Owner;
     }
 

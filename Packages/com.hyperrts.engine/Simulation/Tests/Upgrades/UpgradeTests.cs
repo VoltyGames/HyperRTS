@@ -127,7 +127,7 @@ namespace HyperRTS.Simulation.Tests.Upgrades
                 World.EntityManager.DestroyEntity(World.Player(1));
             }
 
-            World.Set(unit, new Faction { Value = 2 });
+            World.Set(unit, new Owner { Value = 2 });
             World.Tick(frames: 2);
 
             Assert.AreEqual(100f, World.Get<Health>(unit).Max);

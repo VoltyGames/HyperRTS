@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.AreEqual(1, landed.Count, "one shot, reported for its frame only");
             Assert.AreEqual(_world.GetTypeId(gun), landed[0].TypeId);
             Assert.AreEqual(new float3(3f, 0f, 0f), landed[0].Position);
-            Assert.AreEqual(1, landed[0].Faction);
+            Assert.AreEqual(1, landed[0].Owner);
             Assert.AreEqual(ImpactSurface.Ground, landed[0].Surface);
         }
 

@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             var result = new NativeList<float3>(Allocator.Temp);
             foreach (var site in World.All<ConstructionProgress>())
             {
-                if (World.Get<Faction>(site).Value == 1)
+                if (World.Get<Owner>(site).Value == 1)
                 {
                     result.Add(World.Get<LocalTransform>(site).Position);
                 }

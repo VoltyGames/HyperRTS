@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Tests.Transport
 
         private Entity House(float3 position, float yawDegrees = 0f, int capacity = 4)
         {
-            var house = World.SpawnBuilding(Faction.Neutral, position, Footprint);
+            var house = World.SpawnBuilding(Owner.Neutral, position, Footprint);
             var turned = LocalTransform.FromPositionRotation(position, quaternion.RotateY(math.radians(yawDegrees)));
             World.Set(house, turned);
             var writer = World.Writer(house);
@@ -43,9 +43,9 @@ namespace HyperRTS.Simulation.Tests.Transport
             return house;
         }
 
-        private Entity Rifleman(byte faction, float3 position)
+        private Entity Rifleman(byte owner, float3 position)
         {
-            var unit = World.SpawnUnit(faction, position);
+            var unit = World.SpawnUnit(owner, position);
             var writer = World.Writer(unit);
             TransportSetup.AddPassenger(writer, 1);
             World.AddWeapon(unit, range: 7f, damage: 8f);
@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Tests.Transport
 
         private int Occupants(Entity house) => World.Buffer<Cargo>(house).Length;
 
-        private byte Owner(Entity house) => World.Get<Faction>(house).Value;
+        private byte HouseOwner(Entity house) => World.Get<Owner>(house).Value;
 
         /// <summary>
         /// Grids as the maps build them (2 m cells) park a unit up to three metres from a footprint, depending on
@@ -81,11 +81,11 @@ namespace HyperRTS.Simulation.Tests.Transport
             World.Enter(second, house);
             World.Enter(third, house);
 
-            World.RunUntil(() => Occupants(house) == 3 && Owner(house) == 1, 20f);
+            World.RunUntil(() => Occupants(house) == 3 && HouseOwner(house) == 1, 20f);
 
             Assert.AreEqual(3, Occupants(house));
             Assert.IsTrue(World.IsInside(first) && World.IsInside(second) && World.IsInside(third));
-            Assert.AreEqual(1, Owner(house), "it belongs to its garrison");
+            Assert.AreEqual(1, HouseOwner(house), "it belongs to its garrison");
         }
 
         [TestCase(1f)]
@@ -97,7 +97,7 @@ namespace HyperRTS.Simulation.Tests.Transport
             var first = Rifleman(1, new float3(10f, 0f, 0f));
             World.Enter(first, house);
             World.Run(5f);
-            Assert.AreEqual(1, Owner(house));
+            Assert.AreEqual(1, HouseOwner(house));
 
             var second = Rifleman(1, new float3(10f, 0f, 3f));
             World.Enter(second, house);
@@ -143,14 +143,14 @@ namespace HyperRTS.Simulation.Tests.Transport
             var rifleman = Rifleman(1, new float3(10f, 0f, 0f));
             World.Enter(rifleman, house);
             World.Run(5f);
-            Assert.AreEqual(1, Owner(house));
+            Assert.AreEqual(1, HouseOwner(house));
 
             World.Command(1, new PlayerCommand { Type = CommandType.Sell, Unit = house });
             World.Tick(frames: 3);
 
             Assert.IsTrue(World.EntityManager.Exists(house));
             Assert.IsTrue(World.IsInside(rifleman));
-            Assert.AreEqual(1, Owner(house));
+            Assert.AreEqual(1, HouseOwner(house));
         }
 
         [Test]
@@ -173,7 +173,7 @@ namespace HyperRTS.Simulation.Tests.Transport
             World.Tick(frames: 3);
 
             Assert.AreEqual(0, Occupants(house));
-            Assert.AreEqual(Faction.Neutral, Owner(house), "empty, it is nobody's again");
+            Assert.AreEqual(Owner.Neutral, HouseOwner(house), "empty, it is nobody's again");
             Assert.IsFalse(World.IsEnabled<Selected>(house), "a neutral building isn't a selection");
             for (var i = 0; i < garrison.Length; i++)
             {

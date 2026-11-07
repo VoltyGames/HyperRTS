@@ -18,17 +18,17 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public Entity Best;
         public float BestDistance;
 
-        private FactionRelations _relations;
+        private OwnerRelations _relations;
         private TargetLookup _targets;
         private Weapon _weapon;
-        private byte _faction;
+        private byte _owner;
         private byte _team;
         private float3 _center;
         private float _radius;
         private Entity _shooter;
         private bool _inPlace;
 
-        public NearestHostile(in FactionRelations relations, in TargetLookup targets, in Weapon weapon, byte faction,
+        public NearestHostile(in OwnerRelations relations, in TargetLookup targets, in Weapon weapon, byte owner,
             Entity shooter, float3 center)
         {
             _shooter = shooter;
@@ -38,8 +38,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _relations = relations;
             _targets = targets;
             _weapon = weapon;
-            _faction = faction;
-            _team = relations.GetTeam(faction);
+            _owner = owner;
+            _team = relations.GetTeam(owner);
             _center = center;
             _radius = targets.Radius(shooter);
         }
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         public void Visit(in SpatialEntry entry)
         {
-            if (!_relations.IsHostile(_faction, entry.Faction) || !Weapon.CanHit(_weapon.Targets, entry.Layer))
+            if (!_relations.IsHostile(_owner, entry.Owner) || !Weapon.CanHit(_weapon.Targets, entry.Layer))
             {
                 return;
             }

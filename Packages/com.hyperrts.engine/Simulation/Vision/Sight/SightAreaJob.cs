@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Vision.Sight
         private static readonly ProfilerMarker DrawMarker = new("SightAreaJob.Draw");
 
         [ReadOnly] public FogOfWar Fog;
-        public FactionRelations Relations;
+        public OwnerRelations Relations;
         public TerrainHeight Terrain;
         [ReadOnly] public SightBlockers Blockers;
         [ReadOnly] public HighGround HighGround;
@@ -38,9 +38,9 @@ namespace HyperRTS.Simulation.Vision.Sight
         [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
 
         private void Execute(Entity entity, ref SightArea area, DynamicBuffer<SightAreaBits> bits,
-            in VisionRange vision, in Faction faction)
+            in VisionRange vision, in Owner owner)
         {
-            var team = Relations.GetTeam(faction.Value);
+            var team = Relations.GetTeam(owner.Value);
             if (vision.Value <= 0f || !FogOfWar.Stamps(team))
             {
                 area = new SightArea { Radius = -1 };

@@ -83,7 +83,7 @@ namespace HyperRTS.Presentation.Fog
 
             var root = entityManager.Instantiate(visualPrefab);
             entityManager.SetComponentData(root, record.Transform);
-            entityManager.AddComponentData(root, new TeamColorSource { Faction = record.Faction });
+            entityManager.AddComponentData(root, new TeamColorSource { Owner = record.Owner });
             return root;
         }
     }

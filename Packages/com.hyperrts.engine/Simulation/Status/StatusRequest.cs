@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Status
         public Entity Definition;
 
         public Entity Source;
-        public byte SourceFaction;
+        public byte SourceOwner;
     }
 
     /// <summary>Tags the singleton holding this frame's <see cref="StatusRequest"/>s.</summary>

@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Tests.Cues
 
             var fire = Find(heard, CueSlot.Fire);
             Assert.AreEqual(World.GetTypeId(shooter), fire.TypeId);
-            Assert.AreEqual(1, fire.Faction);
+            Assert.AreEqual(1, fire.Owner);
             Assert.AreEqual(float3.zero, fire.Position);
             Assert.AreEqual(new float3(3f, 0f, 0f), Find(heard, CueSlot.Impact).Position);
         }
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var death = Find(World.QueuedOver(1f), CueSlot.Death);
 
             Assert.AreEqual(typeId, death.TypeId);
-            Assert.AreEqual(2, death.Faction);
+            Assert.AreEqual(2, death.Owner);
             Assert.AreEqual(new float3(3f, 0f, 0f), death.Position);
         }
 
@@ -108,7 +108,7 @@ namespace HyperRTS.Simulation.Tests.Cues
             var ready = Find(World.QueuedOver(1f), CueSlot.Ready);
 
             Assert.AreEqual(World.GetTypeId(prefab), ready.TypeId);
-            Assert.AreEqual(1, ready.Faction);
+            Assert.AreEqual(1, ready.Owner);
             Assert.AreEqual(new float3(0f, 0f, -4f), ready.Position);
         }
 
@@ -153,10 +153,10 @@ namespace HyperRTS.Simulation.Tests.Cues
             World.Tick();
             World.EntityManager.CompleteAllTrackedJobs();
             var fog = Single<FogOfWar>();
-            var relations = Single<FactionRelations>();
-            var voice = new CueEvent { Slot = CueSlot.Ready, Faction = 1 };
-            var hiddenShot = new CueEvent { Slot = CueSlot.Fire, Faction = 1 };
-            var seenShot = new CueEvent { Slot = CueSlot.Fire, Faction = 1, Position = new float3(52f, 0f, 50f) };
+            var relations = Single<OwnerRelations>();
+            var voice = new CueEvent { Slot = CueSlot.Ready, Owner = 1 };
+            var hiddenShot = new CueEvent { Slot = CueSlot.Fire, Owner = 1 };
+            var seenShot = new CueEvent { Slot = CueSlot.Fire, Owner = 1, Position = new float3(52f, 0f, 50f) };
 
             Assert.IsTrue(CueRules.IsVisible(voice, 1, fog, relations));
             Assert.IsFalse(CueRules.IsVisible(voice, 2, fog, relations), "voices are private");

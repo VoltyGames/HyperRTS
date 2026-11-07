@@ -11,14 +11,14 @@ namespace HyperRTS.Simulation.Capture
     {
         [ReadOnly] private ComponentLookup<Capturable> _capturables;
         [ReadOnly] private ComponentLookup<Health> _health;
-        [ReadOnly] private ComponentLookup<Faction> _factions;
+        [ReadOnly] private ComponentLookup<Owner> _owners;
         [ReadOnly] private BufferLookup<Cargo> _cargo;
 
         public CaptureLookup(ref SystemState state)
         {
             _capturables = state.GetComponentLookup<Capturable>(true);
             _health = state.GetComponentLookup<Health>(true);
-            _factions = state.GetComponentLookup<Faction>(true);
+            _owners = state.GetComponentLookup<Owner>(true);
             _cargo = state.GetBufferLookup<Cargo>(true);
         }
 
@@ -26,12 +26,12 @@ namespace HyperRTS.Simulation.Capture
         {
             _capturables.Update(ref state);
             _health.Update(ref state);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             _cargo.Update(ref state);
         }
 
-        /// <summary>A living, empty capturable building not allied with <paramref name="faction"/>.</summary>
-        public bool CanCapture(Entity target, byte faction, in FactionRelations relations)
+        /// <summary>A living, empty capturable building not allied with <paramref name="owner"/>.</summary>
+        public bool CanCapture(Entity target, byte owner, in OwnerRelations relations)
         {
             if (!_capturables.HasComponent(target))
             {
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Capture
                 return false;
             }
 
-            return Health.IsAlive(_health, target) && !relations.IsAllied(faction, _factions[target].Value);
+            return Health.IsAlive(_health, target) && !relations.IsAllied(owner, _owners[target].Value);
         }
     }
 }

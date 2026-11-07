@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Tests.Replays
             Assert.AreEqual(EntityInfo.TypeIdFromName("Mortar"), impact.TypeId);
             Assert.AreEqual(TargetPosition.x, impact.Position.x, QuantizedPosition.Step);
             Assert.AreEqual(ImpactSurface.Ground, impact.Surface);
-            Assert.AreEqual(1, impact.Faction);
+            Assert.AreEqual(1, impact.Owner);
         }
 
         [Test]

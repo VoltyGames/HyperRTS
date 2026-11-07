@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Cues
         public byte Variant;
 
         /// <summary>Owner of the source; decides who hears and sees it through fog and voice rules.</summary>
-        public byte Faction;
+        public byte Owner;
 
         /// <summary>World position of the slot's effect socket, else of the source; where a shot landed for impacts.</summary>
         public float3 Position;

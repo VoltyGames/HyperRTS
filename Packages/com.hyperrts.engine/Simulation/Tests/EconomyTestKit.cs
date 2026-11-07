@@ -86,8 +86,8 @@ namespace HyperRTS.Simulation.Tests
             return building;
         }
 
-        public static Entity SpawnProvider(this TestWorld world, byte faction, float3 position, int population) =>
-            world.SpawnBuilding(faction, position, new float2(2f, 2f), populationProvided: population);
+        public static Entity SpawnProvider(this TestWorld world, byte owner, float3 position, int population) =>
+            world.SpawnBuilding(owner, position, new float2(2f, 2f), populationProvided: population);
 
         public static Entity AddIncome(this TestWorld world, Entity entity, ResourceType type, int amount,
             float interval)
@@ -115,27 +115,27 @@ namespace HyperRTS.Simulation.Tests
         public static void SetCost(this TestWorld world, Entity prefab, ResourceType type, int amount) =>
             world.Buffer<ResourceCost>(prefab).Add(new ResourceCost { Type = type, Amount = amount });
 
-        public static void AddResources(this TestWorld world, byte faction, ResourceType type, int amount) =>
-            ResourceMath.Add(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type, amount);
+        public static void AddResources(this TestWorld world, byte owner, ResourceType type, int amount) =>
+            ResourceMath.Add(world.EntityManager.GetBuffer<ResourceStock>(world.Player(owner)), type, amount);
 
-        public static int GetResources(this TestWorld world, byte faction, ResourceType type) =>
-            ResourceMath.GetAmount(world.EntityManager.GetBuffer<ResourceStock>(world.Player(faction)), type);
+        public static int GetResources(this TestWorld world, byte owner, ResourceType type) =>
+            ResourceMath.GetAmount(world.EntityManager.GetBuffer<ResourceStock>(world.Player(owner)), type);
 
         public static void Order(this TestWorld world, Entity unit, OrderType type, Entity target) =>
             world.Issue(unit, new Order { Type = type, Target = target });
 
-        public static void Produce(this TestWorld world, byte faction, Entity producer, Entity prefab) =>
-            world.Command(faction, new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
+        public static void Produce(this TestWorld world, byte owner, Entity producer, Entity prefab) =>
+            world.Command(owner, new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
 
         public static void PlaceBuilding(this TestWorld world, Entity builder, Entity prefab, float3 position) =>
-            world.Command(world.Get<Faction>(builder).Value, new PlayerCommand
+            world.Command(world.Get<Owner>(builder).Value, new PlayerCommand
             {
                 Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position,
                 Yaw = PlacementMath.CameraYaw,
             });
 
         public static void PlaceLine(this TestWorld world, Entity builder, Entity prefab, float3 start, float3 end) =>
-            world.Command(world.Get<Faction>(builder).Value, new PlayerCommand
+            world.Command(world.Get<Owner>(builder).Value, new PlayerCommand
             {
                 Type = CommandType.PlaceLine, Unit = builder, Prefab = prefab, Position = start, End = end,
             });
@@ -150,18 +150,18 @@ namespace HyperRTS.Simulation.Tests
             return query.ToEntityArray(Allocator.Temp);
         }
 
-        /// <summary>Live entities of <paramref name="prefab"/>'s type owned by <paramref name="faction"/>.</summary>
-        public static List<Entity> Owned(this TestWorld world, Entity prefab, byte faction) =>
-            world.Owned(world.Get<EntityInfo>(prefab).TypeId, faction);
+        /// <summary>Live entities of <paramref name="prefab"/>'s type owned by <paramref name="owner"/>.</summary>
+        public static List<Entity> Owned(this TestWorld world, Entity prefab, byte owner) =>
+            world.Owned(world.Get<EntityInfo>(prefab).TypeId, owner);
 
-        /// <summary>Live entities of an entity type owned by <paramref name="faction"/>.</summary>
-        public static List<Entity> Owned(this TestWorld world, int typeId, byte faction)
+        /// <summary>Live entities of an entity type owned by <paramref name="owner"/>.</summary>
+        public static List<Entity> Owned(this TestWorld world, int typeId, byte owner)
         {
             var result = new List<Entity>();
             foreach (var entity in world.All<EntityInfo>())
             {
                 var ofType = world.Get<EntityInfo>(entity).TypeId == typeId;
-                if (ofType && world.Get<Faction>(entity).Value == faction)
+                if (ofType && world.Get<Owner>(entity).Value == owner)
                 {
                     result.Add(entity);
                 }

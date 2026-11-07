@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Match
 {
-    /// <summary>One player slot in <see cref="MatchAuthoring"/>; its list position + 1 is the faction number.</summary>
+    /// <summary>One player slot in <see cref="MatchAuthoring"/>; its list position + 1 is the owner number.</summary>
     [Serializable]
     public class PlayerSlot
     {
@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Match
         public string name = "Player";
 
         [Tooltip("Players on the same team are allies.")]
-        [Range(1, FactionRelations.MaxTeams - 1)]
+        [Range(1, OwnerRelations.MaxTeams - 1)]
         public int team = 1;
 
         [Tooltip("Team colour applied to owned units and buildings.")]

@@ -31,10 +31,10 @@ namespace HyperRTS.Presentation.Cursors
         {
             _resolver = new OrderResolver(ref state);
             _targetQueries = TargetQueries.Create(ref state);
-            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithNone<Dead>().Build();
+            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner>().WithNone<Dead>().Build();
             _localPlayer = SystemAPI.QueryBuilder().WithAll<LocalPlayer, Player>().Build();
             state.RequireForUpdate<CursorIntent>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -75,21 +75,21 @@ namespace HyperRTS.Presentation.Cursors
         private CursorKind RightClick(ref SystemState state, Entity hovered)
         {
             var selectable = SystemAPI.GetComponentLookup<Selectable>(true).HasComponent(hovered);
-            if (_selected.IsEmpty || !_localPlayer.TryGetSingleton(out Player local) || !SystemAPI.HasSingleton<FactionRelations>())
+            if (_selected.IsEmpty || !_localPlayer.TryGetSingleton(out Player local) || !SystemAPI.HasSingleton<OwnerRelations>())
             {
                 return selectable ? CursorKind.Select : CursorKind.Default;
             }
 
             state.CompleteDependency();
             _resolver.Update(ref state, _targetQueries);
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var best = CursorKind.Default;
             var producers = false;
             var moves = false;
             using var selected = _selected.ToEntityArray(Allocator.Temp);
             foreach (var entity in selected)
             {
-                if (SystemAPI.GetComponent<Faction>(entity).Value != local.Faction)
+                if (SystemAPI.GetComponent<Owner>(entity).Value != local.Owner)
                 {
                     continue;
                 }

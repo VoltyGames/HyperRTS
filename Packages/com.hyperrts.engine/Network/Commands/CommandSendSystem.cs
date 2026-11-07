@@ -33,7 +33,7 @@ namespace HyperRTS.Network.Commands
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction, GhostInstance>().Build();
+            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner, GhostInstance>().Build();
             _sent = new NativeList<Entity>(64, Allocator.Persistent);
             _held = new NativeList<CommandRpc>(4, Allocator.Persistent);
             state.RequireForUpdate<LocalPlayer>();
@@ -61,14 +61,14 @@ namespace HyperRTS.Network.Commands
             }
 
             var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(player);
-            var faction = SystemAPI.GetComponent<Player>(player).Faction;
+            var owner = SystemAPI.GetComponent<Player>(player).Owner;
             var holding = false;
             foreach (var command in commands)
             {
                 var rpc = ToRpc(ref state, command);
                 if (rpc.Unit == Entity.Null)
                 {
-                    holding |= Select(ref state, ecb, command, listed, faction);
+                    holding |= Select(ref state, ecb, command, listed, owner);
                 }
 
                 rpc.Selection = _version;
@@ -100,12 +100,12 @@ namespace HyperRTS.Network.Commands
 
         /// <summary>Sends this player's units among the command's group if they changed; true when it sent them.</summary>
         private bool Select(ref SystemState state, EntityCommandBuffer ecb, in PlayerCommand command,
-            DynamicBuffer<PlayerCommandSubject> listed, byte faction)
+            DynamicBuffer<PlayerCommandSubject> listed, byte owner)
         {
             var units = new NativeList<Entity>(Allocator.Temp);
             foreach (var subject in PlayerCommands.Collect(command, listed, _selected))
             {
-                if (IsOwned(ref state, subject, faction))
+                if (IsOwned(ref state, subject, owner))
                 {
                     units.Add(subject);
                 }
@@ -125,8 +125,8 @@ namespace HyperRTS.Network.Commands
             return true;
         }
 
-        private bool IsOwned(ref SystemState state, Entity entity, byte faction) =>
-            SystemAPI.HasComponent<Faction>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
+        private bool IsOwned(ref SystemState state, Entity entity, byte owner) =>
+            SystemAPI.HasComponent<Owner>(entity) && SystemAPI.GetComponent<Owner>(entity).Value == owner;
 
         /// <summary>The target's <see cref="SceneryId"/> when it is map scenery rather than a ghost, else 0.</summary>
         private ulong SceneryTarget(ref SystemState state, Entity target)

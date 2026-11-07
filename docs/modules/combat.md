@@ -133,7 +133,7 @@ velocity (over 0.5 m/s), for the member slots, the cover search and the posture.
   the `Retreating` enable bit (a ghost bit, baked off on squads) on while the order runs, and the AI, the HUD, the
   health bar and the barks read it.
 - **One rule set.** `SquadPoints` (module `Squads`) copies the working points of one kind out of the world and answers
-  which a faction may use (allied, not `Dead`, not `Offline`), which cover a position and the nearest.
+  which an owner may use (allied, not `Dead`, not `Offline`), which cover a position and the nearest.
   `SquadOrderRule` gives the `SquadRefusal` for a squad (`FullStrength`, `NoPoint`, `TooPoor`) and the free-without-
   `ResourceCost` pay and refund; `SquadRules.ReinforceShare(members)` is a member's share of the price. The two
   systems, the AI and `SquadCommands` all call them.
@@ -368,8 +368,8 @@ without `clips` fail `SectionsRule`. See [client](client.md#destruction) for how
   broken outer wall, with a scenery id from its spot, so tanks flatten it and every world agrees on it.
 - **Repair.** A heal rebuilds the latest broken section that can stand first (an anchored one, or one with a
   standing support). It comes back once full, then the next, and standing sections are mended last.
-- **Repairable.** Ticking `repairable` on `SectionsAuthoring` (a bridge) lets any faction's builders repair a
-  neutral building through `RepairSystem`, which needs neither a faction nor a finished site (see
+- **Repairable.** Ticking `repairable` on `SectionsAuthoring` (a bridge) lets any owner's builders repair a
+  neutral building through `RepairSystem`, which needs neither an owner nor a finished site (see
   `RepairLookup.NeedsRepair`). A builder restores `rate × section health / repairSeconds` a second (10 s by default)
   to the section the heal reaches next. The building's health follows its sections and never drops below 1, so with
   every section broken it stays as a wreck instead of dying.

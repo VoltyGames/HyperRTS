@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.AI
                 return;
             }
 
-            if (TryFindTarget(ref state, turn.Faction, center, ai.LimitedByFog, snapshot, out var goal))
+            if (TryFindTarget(ref state, turn.Owner, center, ai.LimitedByFog, snapshot, out var goal))
             {
                 SendAlongLane(ref state, turn, snapshot, wave, center, goal);
                 return;
@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>
-        /// Adds the faction's idle units that can hit the ground to <paramref name="wave"/>; returns their centre.
+        /// Adds the owner's idle units that can hit the ground to <paramref name="wave"/>; returns their centre.
         /// Builders other than squads stay out, and so do units given a job this think and squads still recovering.
         /// </summary>
         private float3 GatherWave(ref SystemState state, in Turn turn, in Snapshot snapshot, NativeList<int> wave)
@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var entity = army.Entities[i];
                 var armed = WeaponMount.TryGetPrimary(mounts[entity], out var primary);
-                if (armed && army.IsOwnedBy(i, turn.Faction) && Weapon.CanHit(primary.Targets, NavLayer.Ground)
+                if (armed && army.IsOwnedBy(i, turn.Owner) && Weapon.CanHit(primary.Targets, NavLayer.Ground)
                     && IsFreeForWave(ref state, entity, turn, snapshot))
                 {
                     wave.Add(i);
@@ -120,10 +120,10 @@ namespace HyperRTS.Simulation.AI
             var target = goal.Position;
             var enemy = goal.Enemy;
             ref var ai = ref SystemAPI.GetComponentRW<AIPlayer>(turn.Player).ValueRW;
-            var pick = AIRoutes.PickLane(ai.RouteSeed, turn.Faction, enemy, ai.Attacks,
-                hints.LaneCount(turn.Faction, enemy));
+            var pick = AIRoutes.PickLane(ai.RouteSeed, turn.Owner, enemy, ai.Attacks,
+                hints.LaneCount(turn.Owner, enemy));
             ai.Attacks++;
-            var lane = hints.Lane(turn.Faction, enemy, pick);
+            var lane = hints.Lane(turn.Owner, enemy, pick);
             var first = hints.NearestWaypoint(lane, center.xz);
             var command = WaveCommand(turn, snapshot.Army, wave, target);
             for (var k = first; k < lane.Count; k++)
@@ -146,18 +146,18 @@ namespace HyperRTS.Simulation.AI
         /// Nearest hostile critical building, else the nearest hostile unit, among enemies the map has a lane to;
         /// undetected stealth is skipped, and with <paramref name="limitedByFog"/> so is what the team hasn't seen.
         /// </summary>
-        private bool TryFindTarget(ref SystemState state, byte faction, float3 from, bool limitedByFog,
+        private bool TryFindTarget(ref SystemState state, byte owner, float3 from, bool limitedByFog,
             in Snapshot snapshot, out Goal goal)
         {
-            var team = snapshot.Relations.GetTeam(faction);
+            var team = snapshot.Relations.GetTeam(owner);
             var targets = snapshot.Targets;
-            var reachable = snapshot.Hints.LaneEnemies(faction);
+            var reachable = snapshot.Hints.LaneEnemies(owner);
             var nearestBase = Closest.None;
             var nearestUnit = Closest.None;
             for (var i = 0; i < targets.Length; i++)
             {
                 var entity = targets.Entities[i];
-                if (!IsAttackable(entity, targets.Owners[i].Value, faction, reachable, snapshot))
+                if (!IsAttackable(entity, targets.Owners[i].Value, owner, reachable, snapshot))
                 {
                     continue;
                 }
@@ -185,15 +185,15 @@ namespace HyperRTS.Simulation.AI
             return best >= 0;
         }
 
-        /// <summary>A valid target owned by an enemy in the <paramref name="reachable"/> set of factions.</summary>
-        private bool IsAttackable(Entity entity, byte owner, byte faction, uint reachable, in Snapshot snapshot)
+        /// <summary>A valid target owned by an enemy in the <paramref name="reachable"/> set of owners.</summary>
+        private bool IsAttackable(Entity entity, byte targetOwner, byte owner, uint reachable, in Snapshot snapshot)
         {
-            if ((Faction.Bit(owner) & reachable) == 0)
+            if ((Owner.Bit(targetOwner) & reachable) == 0)
             {
                 return false;
             }
 
-            return _targetLookup.IsValidTarget(entity, faction, snapshot.Relations);
+            return _targetLookup.IsValidTarget(entity, owner, snapshot.Relations);
         }
 
         /// <summary>Units must be in sight; buildings stay known once explored, as they would on a human's map.</summary>

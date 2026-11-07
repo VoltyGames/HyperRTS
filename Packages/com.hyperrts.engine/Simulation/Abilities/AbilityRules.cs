@@ -42,35 +42,35 @@ namespace HyperRTS.Simulation.Abilities
         public static bool CanCast(EntityManager entityManager, Entity caster) => !entityManager.HasEnabled<Offline>(caster);
 
         /// <summary>Ready and its required building owned; with <see cref="IsValidTarget"/> checked on issue and firing.</summary>
-        public static bool IsAvailable(in Ability ability, in AbilityCooldown state, byte faction, in CompletedBuildings completed)
+        public static bool IsAvailable(in Ability ability, in AbilityCooldown state, byte owner, in CompletedBuildings completed)
         {
             if (!state.IsReady)
             {
                 return false;
             }
 
-            return ability.RequiredTypeId == 0 || completed.Owns(faction, ability.RequiredTypeId);
+            return ability.RequiredTypeId == 0 || completed.Owns(owner, ability.RequiredTypeId);
         }
 
         /// <summary>
         /// Entity-targeted abilities need a living target outside any container that matches the filter; the others
         /// accept anything.
         /// </summary>
-        public static bool IsValidTarget(in Ability ability, Entity target, byte faction, in TargetLookup targets,
-            in ComponentLookup<Faction> factions, in FactionRelations relations)
+        public static bool IsValidTarget(in Ability ability, Entity target, byte owner, in TargetLookup targets,
+            in ComponentLookup<Owner> owners, in OwnerRelations relations)
         {
             if (ability.Target != AbilityTarget.Entity)
             {
                 return true;
             }
 
-            if (!factions.TryGetComponent(target, out var owner))
+            if (!owners.TryGetComponent(target, out var targetOwner))
             {
                 return false;
             }
 
-            var hostile = relations.IsHostile(faction, owner.Value);
-            if (!MatchesFilter(ability.Filter, hostile, relations.IsAllied(faction, owner.Value)))
+            var hostile = relations.IsHostile(owner, targetOwner.Value);
+            if (!MatchesFilter(ability.Filter, hostile, relations.IsAllied(owner, targetOwner.Value)))
             {
                 return false;
             }
@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.Abilities
             // Enemies follow weapon targeting, so an ability can't find what stealth hides from guns.
             if (hostile)
             {
-                return targets.IsValidTarget(target, faction, relations);
+                return targets.IsValidTarget(target, owner, relations);
             }
 
             return targets.IsAlive(target) && !targets.IsInside(target);

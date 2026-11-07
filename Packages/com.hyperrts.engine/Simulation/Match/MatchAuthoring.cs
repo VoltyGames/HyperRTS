@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Match
         public float joinTimeout = 60f;
 
         [Header("Players")]
-        [Tooltip("Player slots. Slot 1 is faction 1, the 'Owner' number on units and buildings.")]
+        [Tooltip("Player slots. Slot 1 is owner 1, the 'Owner' number on units and buildings.")]
         public List<PlayerSlot> players = new()
         {
             new PlayerSlot { name = "Player", team = 1, color = PlayerSlot.Palette[0] },
@@ -175,18 +175,18 @@ namespace HyperRTS.Simulation.Match
                     StrategicAssets = true,
                 });
 
-                if (authoring.players.Count > Faction.Max)
+                if (authoring.players.Count > Owner.Max)
                 {
                     throw new ArgumentException(
-                        $"The Match has {authoring.players.Count} player slots; at most {Faction.Max} fit.");
+                        $"The Match has {authoring.players.Count} player slots; at most {Owner.Max} fit.");
                 }
 
-                var relations = new FactionRelations();
+                var relations = new OwnerRelations();
                 for (var i = 0; i < authoring.players.Count; i++)
                 {
-                    var faction = (byte)(i + 1);
-                    relations.SetTeam(faction, authoring.players[i].team);
-                    BakePlayer(authoring, authoring.players[i], faction);
+                    var owner = (byte)(i + 1);
+                    relations.SetTeam(owner, authoring.players[i].team);
+                    BakePlayer(authoring, authoring.players[i], owner);
                 }
 
                 AddComponent(entity, relations);
@@ -272,7 +272,7 @@ namespace HyperRTS.Simulation.Match
                 }
             }
 
-            private void BakePlayer(MatchAuthoring authoring, PlayerSlot slot, byte faction)
+            private void BakePlayer(MatchAuthoring authoring, PlayerSlot slot, byte owner)
             {
                 var player = CreateAdditionalEntity(TransformUsageFlags.None, entityName: slot.name);
                 var playerName = new FixedString32Bytes();
@@ -280,7 +280,7 @@ namespace HyperRTS.Simulation.Match
                 float4 color = (Vector4)slot.color.linear;
 
                 var writer = this.Writer(player);
-                var stock = PlayerSetup.Add(writer, faction, playerName, color, populationCap: 0);
+                var stock = PlayerSetup.Add(writer, owner, playerName, color, populationCap: 0);
                 writer.Add(new PlayerSpawn { Position = slot.spawnPosition, Yaw = math.radians(slot.spawnYaw) });
                 SetComponent(player, new PlayerSide { Value = slot.side });
                 slot.AddStartingResources(stock);

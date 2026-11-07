@@ -23,9 +23,9 @@ namespace HyperRTS.Input.Placement
 
         public SeenEnemies(ref SystemState state)
         {
-            _units = new EntityQueryBuilder(Allocator.Temp).WithAll<NavAgent, Faction, LocalTransform, Health>()
+            _units = new EntityQueryBuilder(Allocator.Temp).WithAll<NavAgent, Owner, LocalTransform, Health>()
                 .WithNone<Dead, Inside, FogHidden>().Build(ref state);
-            _relations = new EntityQueryBuilder(Allocator.Temp).WithAll<FactionRelations>().Build(ref state);
+            _relations = new EntityQueryBuilder(Allocator.Temp).WithAll<OwnerRelations>().Build(ref state);
             _local = new EntityQueryBuilder(Allocator.Temp).WithAll<LocalPlayer, Player>().Build(ref state);
         }
 
@@ -50,27 +50,27 @@ namespace HyperRTS.Input.Placement
 
         private readonly Snapshot Read() => new()
         {
-            Relations = _relations.GetSingleton<FactionRelations>(),
-            Faction = _local.GetSingleton<Player>().Faction,
+            Relations = _relations.GetSingleton<OwnerRelations>(),
+            Owner = _local.GetSingleton<Player>().Owner,
             Agents = _units.ToComponentDataArray<NavAgent>(Allocator.Temp),
-            Factions = _units.ToComponentDataArray<Faction>(Allocator.Temp),
+            Owners = _units.ToComponentDataArray<Owner>(Allocator.Temp),
             Transforms = _units.ToComponentDataArray<LocalTransform>(Allocator.Temp),
         };
 
         /// <summary>The seen units copied once, so a line of spots is checked against one read.</summary>
         private struct Snapshot : System.IDisposable
         {
-            public FactionRelations Relations;
-            public byte Faction;
+            public OwnerRelations Relations;
+            public byte Owner;
             public NativeArray<NavAgent> Agents;
-            public NativeArray<Faction> Factions;
+            public NativeArray<Owner> Owners;
             public NativeArray<LocalTransform> Transforms;
 
             public readonly bool Block(in BuildingSpot spot)
             {
                 for (var i = 0; i < Agents.Length; i++)
                 {
-                    if (Agents[i].Layer == NavLayer.Air || !Relations.IsHostile(Faction, Factions[i].Value))
+                    if (Agents[i].Layer == NavLayer.Air || !Relations.IsHostile(Owner, Owners[i].Value))
                     {
                         continue;
                     }
@@ -88,7 +88,7 @@ namespace HyperRTS.Input.Placement
             public void Dispose()
             {
                 Agents.Dispose();
-                Factions.Dispose();
+                Owners.Dispose();
                 Transforms.Dispose();
             }
         }

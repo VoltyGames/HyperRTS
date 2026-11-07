@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Abilities
     public struct AbilityActivation : IBufferElementData
     {
         public Entity Caster;
-        public byte Faction;
+        public byte Owner;
         public int AbilityId;
         public Entity Target;
         public float3 Position;

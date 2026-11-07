@@ -192,10 +192,10 @@ namespace HyperRTS.Simulation.Tests.Buildings
 
             World.Command(1, new PlayerCommand { Type = CommandType.Smart, Unit = engineer, Target = derrick });
             World.Run(1.5f);
-            Assert.AreEqual(0, World.Get<Faction>(derrick).Value, "still capturing");
+            Assert.AreEqual(0, World.Get<Owner>(derrick).Value, "still capturing");
 
             World.Run(3f);
-            Assert.AreEqual(1, World.Get<Faction>(derrick).Value);
+            Assert.AreEqual(1, World.Get<Owner>(derrick).Value);
             Assert.IsFalse(World.EntityManager.Exists(engineer));
         }
 
@@ -205,7 +205,7 @@ namespace HyperRTS.Simulation.Tests.Buildings
             var post = World.SpawnBuilding(0, new float3(10f, 0f, 0f), Footprint);
             var writer = World.Writer(post);
             CaptureSetup.AddCapturable(writer, 100f);
-            World.Set(post, new CaptureProgress { Faction = 2, Value = 0.9f });
+            World.Set(post, new CaptureProgress { Owner = 2, Value = 0.9f });
             var ranger = World.SpawnUnit(1, new float3(5f, 0f, 0f));
             writer = World.Writer(ranger);
             CaptureSetup.AddCapturer(writer, 1f, consumedOnCapture: false);
@@ -214,7 +214,7 @@ namespace HyperRTS.Simulation.Tests.Buildings
             World.Run(2f);
 
             var progress = World.Get<CaptureProgress>(post);
-            Assert.AreEqual(1, progress.Faction);
+            Assert.AreEqual(1, progress.Owner);
             Assert.Less(progress.Value, 0.1f);
         }
 
@@ -237,7 +237,7 @@ namespace HyperRTS.Simulation.Tests.Buildings
             World.Command(1, new PlayerCommand { Type = CommandType.Capture, Unit = engineer, Target = factory });
             World.Run(4f);
 
-            Assert.AreEqual(1, World.Get<Faction>(factory).Value);
+            Assert.AreEqual(1, World.Get<Owner>(factory).Value);
             Assert.AreEqual(before + 30, World.GetResources(2, _supplies), "the old owner gets its queue back");
             Assert.AreEqual(0, World.Buffer<ProductionQueueItem>(factory).Length);
             Assert.IsFalse(World.IsEnabled<Selected>(factory));
@@ -262,7 +262,7 @@ namespace HyperRTS.Simulation.Tests.Buildings
             World.Command(1, new PlayerCommand { Type = CommandType.Capture, Unit = engineer, Target = bunker });
             World.Run(3f);
 
-            Assert.AreEqual(2, World.Get<Faction>(bunker).Value, "the garrison has to be cleared first");
+            Assert.AreEqual(2, World.Get<Owner>(bunker).Value, "the garrison has to be cleared first");
         }
 
         private Entity Capturer(float3 position)

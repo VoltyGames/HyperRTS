@@ -21,13 +21,13 @@ namespace HyperRTS.Presentation.Common
         [AutoStaticsCleanup]
         private static MatchView _default;
 
-        private readonly Color[] _factionColors = new Color[byte.MaxValue + 1];
+        private readonly Color[] _ownerColors = new Color[byte.MaxValue + 1];
         private World _world;
         private int _frame = -1;
         private EntityQuery _localPlayer;
         private EntityQuery _players;
         private readonly LiveSingleton<TeamColorOverride> _colorOverride = new();
-        private readonly LiveSingleton<FactionRelations> _relations = new();
+        private readonly LiveSingleton<OwnerRelations> _relations = new();
         private readonly LiveSingleton<MapSettings> _map = new();
         private readonly LiveSingleton<MatchState> _match = new();
 
@@ -53,7 +53,7 @@ namespace HyperRTS.Presentation.Common
         public Player Local { get; private set; }
 
         public bool HasLocalPlayer => LocalPlayer != Entity.Null;
-        public FactionRelations Relations { get; private set; }
+        public OwnerRelations Relations { get; private set; }
         public bool HasMap { get; private set; }
         public MapSettings Map { get; private set; }
 
@@ -104,10 +104,10 @@ namespace HyperRTS.Presentation.Common
             return true;
         }
 
-        public Relation RelationTo(byte faction) => Relations.GetRelation(Local.Faction, faction);
+        public Relation RelationTo(byte owner) => Relations.GetRelation(Local.Owner, owner);
 
         /// <summary>Owner colour in sRGB, ready for UI and material property blocks.</summary>
-        public Color GetColor(byte faction) => _factionColors[faction];
+        public Color GetColor(byte owner) => _ownerColors[owner];
 
         /// <summary>The building being placed; inactive without the singleton.</summary>
         public PlacementState Placement => _placement.TryGet(EntityManager, out var placement) ? placement : default;
@@ -177,13 +177,13 @@ namespace HyperRTS.Presentation.Common
                 return;
             }
 
-            Array.Fill(_factionColors, Color.gray);
+            Array.Fill(_ownerColors, Color.gray);
             _colorOverride.TryGet(EntityManager, out var colorOverride);
             using var players = _players.ToComponentDataArray<Player>(Allocator.Temp);
             foreach (var player in players)
             {
-                var color = colorOverride.TryGet(player.Faction, out var replaced) ? replaced : player.Color;
-                _factionColors[player.Faction] = new Color(color.x, color.y, color.z, 1f).gamma;
+                var color = colorOverride.TryGet(player.Owner, out var replaced) ? replaced : player.Color;
+                _ownerColors[player.Owner] = new Color(color.x, color.y, color.z, 1f).gamma;
             }
         }
     }

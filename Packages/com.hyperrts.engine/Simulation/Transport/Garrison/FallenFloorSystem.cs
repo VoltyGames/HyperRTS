@@ -71,7 +71,7 @@ namespace HyperRTS.Simulation.Transport.Garrison
                     }
 
                     var unit = cargo[i].Unit;
-                    Damage.Add(DamageEvent.Direct(unit, Exit.Position(entity), attacker.Source, attacker.Faction,
+                    Damage.Add(DamageEvent.Direct(unit, Exit.Position(entity), attacker.Source, attacker.Owner,
                         FallHit * Exit.MaxHealth(unit)));
                     Exit.Unload(entity, cargo, i, Grid);
                 }

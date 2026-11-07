@@ -37,14 +37,14 @@ namespace HyperRTS.Presentation.Overlays
 
         private readonly LiveQuery _captures = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<CaptureProgress>(),
-            ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalToWorld>(),
             ComponentType.Exclude<FogHidden>()));
 
         private readonly LiveQuery _garrisons = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Container>(),
             ComponentType.ReadOnly<Cargo>(),
-            ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalToWorld>(),
             ComponentType.ReadOnly<BuildingTag>(),
             ComponentType.Exclude<FogHidden>()));
@@ -108,7 +108,7 @@ namespace HyperRTS.Presentation.Overlays
             var query = _captures.In(entityManager);
             using var entities = query.ToEntityArray(Allocator.Temp);
             using var captures = query.ToComponentDataArray<CaptureProgress>(Allocator.Temp);
-            using var owners = query.ToComponentDataArray<Faction>(Allocator.Temp);
+            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < entities.Length; i++)
             {
@@ -123,7 +123,7 @@ namespace HyperRTS.Presentation.Overlays
                 var top = Top(entityManager, entities[i], position);
                 var pixel = PixelSize(top);
                 var center = top + Vector3.up * (pixel * (style.markerOffset + style.dialRadius * BackRim));
-                AddDial(center, view.GetColor(capture.Faction), capture.Value, pixel * style.dialRadius, style);
+                AddDial(center, view.GetColor(capture.Owner), capture.Value, pixel * style.dialRadius, style);
             }
         }
 
@@ -147,7 +147,7 @@ namespace HyperRTS.Presentation.Overlays
             var query = _garrisons.In(entityManager);
             using var entities = query.ToEntityArray(Allocator.Temp);
             using var containers = query.ToComponentDataArray<Container>(Allocator.Temp);
-            using var owners = query.ToComponentDataArray<Faction>(Allocator.Temp);
+            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < entities.Length; i++)
             {

@@ -18,8 +18,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 - All player intent, from input or AI, is a `PlayerCommand` on the player entity, consumed in `OrderSystemGroup`.
 - Orders go through `OrderWriter`. The system owning an order type disables `ActiveOrder` when it is done.
 - To move a unit, set and enable `MoveDestination`. Combat owns movement while `AttackTarget` is enabled.
-- Ownable entities carry `Faction` (0 is neutral). Hostility comes from `FactionRelations`.
-- Spawn by instantiating a baked prefab, then `Place` it and set `Faction`. `Place` also writes `LocalToWorld`, since
+- Ownable entities carry `Owner` (0 is neutral). Hostility comes from `OwnerRelations`.
+- Spawn by instantiating a baked prefab, then `Place` it and set `Owner`. `Place` also writes `LocalToWorld`, since
   command buffers play back after the transform systems.
 
 ## Conventions

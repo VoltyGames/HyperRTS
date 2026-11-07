@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Movement
 
             // `ref`, not `in`: each must share one writable handle with its EnabledRefRW.
             private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
-                in Faction faction, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
+                in Owner owner, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
                 ref PathState path, DynamicBuffer<PathWaypoint> waypoints, ref MoveProgress progress,
                 ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity, ref FacingGoal aim,
                 EnabledRefRW<FacingGoal> aiming)
@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.Movement
                 var from = transform.Position.xz;
                 var facing = math.normalizesafe(transform.Forward().xz);
                 var axis = facing * agent.HalfSegment;
-                var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value, wasMoving, destination,
+                var crowd = new CrowdVisitor(entity, from, facing, agent, owner.Value, wasMoving, destination,
                     GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(top), ref crowd);
 

@@ -193,10 +193,10 @@ namespace HyperRTS.Presentation.Tests.Fog
 
         private bool Drawn(Entity entity) => _em.IsComponentEnabled<MaterialMeshInfo>(entity);
 
-        private Entity Spawn(byte faction)
+        private Entity Spawn(byte owner)
         {
             var entity = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo), typeof(HiddenBy));
-            _em.AddComponentData(entity, new Faction { Value = faction });
+            _em.AddComponentData(entity, new Owner { Value = owner });
             _em.AddComponentData(entity, new LocalToWorld { Value = float4x4.identity });
             return entity;
         }

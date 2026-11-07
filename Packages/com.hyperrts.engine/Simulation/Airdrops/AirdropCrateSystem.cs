@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Airdrops
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 ReceiverLookup = SystemAPI.GetComponentLookup<AirdropReceiver>(true),
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
                 StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Airdrops
             public EntityCommandBuffer Ecb;
             public PlayerRegistry Players;
             [ReadOnly] public ComponentLookup<AirdropReceiver> ReceiverLookup;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public ComponentLookup<Dead> DeadLookup;
             public BufferLookup<ResourceStock> StockLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
@@ -68,13 +68,13 @@ namespace HyperRTS.Simulation.Airdrops
 
                 Ecb.DestroyEntity(entity);
                 if (!ReceiverLookup.TryGetComponent(crate.Receiver, out var receiver)
-                    || !FactionLookup.TryGetComponent(crate.Receiver, out var owner)
+                    || !OwnerLookup.TryGetComponent(crate.Receiver, out var owner)
                     || DeadLookup.HasEnabled(crate.Receiver))
                 {
                     return;
                 }
 
-                if (owner.Value == Faction.Neutral)
+                if (owner.Value == Owner.Neutral)
                 {
                     return;
                 }

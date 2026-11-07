@@ -17,11 +17,11 @@ namespace HyperRTS.Simulation.Vision.Fog
     internal partial struct DetectionStampJob : IJobEntity
     {
         public FogOfWar Fog;
-        public FactionRelations Relations;
+        public OwnerRelations Relations;
 
-        private void Execute(in LocalTransform transform, in Detector detector, in Faction faction)
+        private void Execute(in LocalTransform transform, in Detector detector, in Owner owner)
         {
-            var team = Relations.GetTeam(faction.Value);
+            var team = Relations.GetTeam(owner.Value);
             if (detector.Radius > 0f && FogOfWar.Stamps(team))
             {
                 Fog.StampCircle(Fog.Detected, transform.Position, detector.Radius, team);

@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.AI
             var counts = new NativeHashMap<int, int>(64, Allocator.Temp);
             for (var i = 0; i < snapshot.Owned.Length; i++)
             {
-                if (snapshot.Owned.IsOwnedBy(i, turn.Faction))
+                if (snapshot.Owned.IsOwnedBy(i, turn.Owner))
                 {
                     Increment(counts, snapshot.OwnedInfo[i].TypeId);
                 }
@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.AI
 
             foreach (var producer in snapshot.Producers)
             {
-                if (SystemAPI.GetComponent<Faction>(producer).Value != turn.Faction)
+                if (SystemAPI.GetComponent<Owner>(producer).Value != turn.Owner)
                 {
                     continue;
                 }
@@ -160,7 +160,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var producer = snapshot.Producers[i];
                 var length = SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length;
-                if (CanQueueAt(ref state, producer, turn.Faction, prefab, length))
+                if (CanQueueAt(ref state, producer, turn.Owner, prefab, length))
                 {
                     shortest.Consider(i, producer, length);
                 }
@@ -175,9 +175,9 @@ namespace HyperRTS.Simulation.AI
             return true;
         }
 
-        private bool CanQueueAt(ref SystemState state, Entity producer, byte faction, Entity prefab, int queued)
+        private bool CanQueueAt(ref SystemState state, Entity producer, byte owner, Entity prefab, int queued)
         {
-            if (SystemAPI.GetComponent<Faction>(producer).Value != faction)
+            if (SystemAPI.GetComponent<Owner>(producer).Value != owner)
             {
                 return false;
             }

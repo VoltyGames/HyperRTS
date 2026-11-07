@@ -27,8 +27,8 @@ namespace HyperRTS.Simulation.Power
             new FlagJob { Produced = produced, Consumed = consumed }.ScheduleParallel();
         }
 
-        private static PowerGrid GetGrid(NativeArray<float> produced, NativeArray<float> consumed, byte faction) =>
-            new() { Produced = produced[faction], Consumed = consumed[faction] };
+        private static PowerGrid GetGrid(NativeArray<float> produced, NativeArray<float> consumed, byte owner) =>
+            new() { Produced = produced[owner], Consumed = consumed[owner] };
 
         [BurstCompile]
         [WithNone(typeof(ConstructionProgress), typeof(Dead))]
@@ -39,15 +39,15 @@ namespace HyperRTS.Simulation.Power
             [ReadOnly] public ComponentLookup<Offline> Offline;
 
             // A building a game took offline (an EMP) neither supplies nor draws power.
-            private void Execute(Entity entity, in Faction faction, in PowerSupply supply)
+            private void Execute(Entity entity, in Owner owner, in PowerSupply supply)
             {
                 if (Offline.TryGetComponent(entity, out var offline) && offline.HasReasonOtherThan(OfflineReason.Engine))
                 {
                     return;
                 }
 
-                Produced[faction.Value] += math.max(0f, supply.Amount);
-                Consumed[faction.Value] += math.max(0f, -supply.Amount);
+                Produced[owner.Value] += math.max(0f, supply.Amount);
+                Consumed[owner.Value] += math.max(0f, -supply.Amount);
             }
         }
 
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Power
             [ReadOnly] public NativeArray<float> Consumed;
 
             private void Execute(ref PowerGrid grid, in Player player) =>
-                grid = GetGrid(Produced, Consumed, player.Faction);
+                grid = GetGrid(Produced, Consumed, player.Owner);
         }
 
         /// <summary>Sets the reason every frame, so a game overwriting <see cref="Offline"/> can't leave it stale.</summary>
@@ -69,14 +69,14 @@ namespace HyperRTS.Simulation.Power
             [ReadOnly] public NativeArray<float> Produced;
             [ReadOnly] public NativeArray<float> Consumed;
 
-            private void Execute(in Faction faction, in PowerSupply supply, ref Offline offline)
+            private void Execute(in Owner owner, in PowerSupply supply, ref Offline offline)
             {
                 if (supply.Amount >= 0f)
                 {
                     return;
                 }
 
-                var low = GetGrid(Produced, Consumed, faction.Value).IsLow;
+                var low = GetGrid(Produced, Consumed, owner.Value).IsLow;
                 offline.Set(OfflineReason.Unpowered, low);
             }
         }

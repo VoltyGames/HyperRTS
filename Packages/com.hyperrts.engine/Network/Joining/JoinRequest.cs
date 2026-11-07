@@ -7,7 +7,7 @@ namespace HyperRTS.Network.Joining
     public struct JoinRequest : IRpcCommand
     {
         /// <summary>Preferred slot, so a reconnecting client gets its old one back; 0 takes any free slot.</summary>
-        public byte Faction;
+        public byte Owner;
 
         /// <summary>Join as an observer: claim no slot.</summary>
         public bool Observe;
@@ -16,6 +16,6 @@ namespace HyperRTS.Network.Joining
         public ulong Token;
 
         public static JoinRequest From(in JoinPreference preference, ulong token) =>
-            new() { Faction = preference.Faction, Observe = preference.Observe, Token = token };
+            new() { Owner = preference.Owner, Observe = preference.Observe, Token = token };
     }
 }

@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Capture
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
             _ownerChanges = new EventWriter<OwnerChanged>(ref state);
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -46,13 +46,13 @@ namespace HyperRTS.Simulation.Capture
             new CaptureJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Targets = _targets,
                 CapturableLookup = SystemAPI.GetComponentLookup<Capturable>(true),
                 ProgressLookup = SystemAPI.GetComponentLookup<CaptureProgress>(false),
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 Reach = _reach,
                 OwnerChanges = _ownerChanges,
             }.Schedule();
@@ -65,12 +65,12 @@ namespace HyperRTS.Simulation.Capture
         private partial struct CaptureJob : IJobEntity
         {
             public float DeltaTime;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public EntityCommandBuffer Ecb;
             public CaptureLookup Targets;
             [ReadOnly] public ComponentLookup<Capturable> CapturableLookup;
             public ComponentLookup<CaptureProgress> ProgressLookup;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             public TargetReach Reach;
             public EventWriter<OwnerChanged> OwnerChanges;
 
@@ -84,8 +84,8 @@ namespace HyperRTS.Simulation.Capture
                 }
 
                 var target = order.Value.Target;
-                var faction = FactionLookup[entity].Value;
-                if (!Targets.CanCapture(target, faction, Relations))
+                var owner = OwnerLookup[entity].Value;
+                if (!Targets.CanCapture(target, owner, Relations))
                 {
                     ActiveOrder.Finish(busy, moving);
                     return;
@@ -97,12 +97,12 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                if (!Advance(target, faction, capturer.Rate))
+                if (!Advance(target, owner, capturer.Rate))
                 {
                     return;
                 }
 
-                OwnerChanged.Transfer(Ecb, ref OwnerChanges, target, FactionLookup[target].Value, faction);
+                OwnerChanged.Transfer(Ecb, ref OwnerChanges, target, OwnerLookup[target].Value, owner);
                 busy.ValueRW = false;
                 if (capturer.ConsumedOnCapture)
                 {
@@ -111,12 +111,12 @@ namespace HyperRTS.Simulation.Capture
             }
 
             /// <summary>Adds this frame's work and returns true once the capture completes.</summary>
-            private bool Advance(Entity target, byte faction, float rate)
+            private bool Advance(Entity target, byte owner, float rate)
             {
                 ref var progress = ref ProgressLookup.GetRefRW(target).ValueRW;
-                if (progress.Faction != faction)
+                if (progress.Owner != owner)
                 {
-                    progress = new CaptureProgress { Faction = faction };
+                    progress = new CaptureProgress { Owner = owner };
                 }
 
                 progress.Value += DeltaTime * rate / CapturableLookup[target].CaptureTime;

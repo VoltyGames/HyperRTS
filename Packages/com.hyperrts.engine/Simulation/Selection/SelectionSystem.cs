@@ -68,12 +68,12 @@ namespace HyperRTS.Simulation.Selection
             {
                 Input = input,
                 Clicked = Raycast(ref state, in input),
-                LocalFaction = LocalFaction(ref state),
+                LocalOwner = LocalOwner(ref state),
                 PreferredRank = -1,
                 Hidden = _ranking.Hidden,
                 Inside = _ranking.Inside,
                 Info = SystemAPI.GetComponentLookup<EntityInfo>(true),
-                Factions = SystemAPI.GetComponentLookup<Faction>(true),
+                Owners = SystemAPI.GetComponentLookup<Owner>(true),
                 Units = _ranking.Units,
                 Buildings = SystemAPI.GetComponentLookup<BuildingTag>(true),
                 Groups = SystemAPI.GetComponentLookup<ControlGroup>(true),
@@ -83,11 +83,11 @@ namespace HyperRTS.Simulation.Selection
             if (input.Command == SelectionCommand.DoubleClick && test.Info.HasComponent(test.Clicked))
             {
                 test.DoubleClickType = test.Info[test.Clicked].TypeId;
-                test.DoubleClickFaction = test.GetFaction(test.Clicked);
+                test.DoubleClickOwner = test.GetOwner(test.Clicked);
             }
 
             // Ctrl-drag removes everything in the box, so only plain and Shift drags filter by rank.
-            if (input.Command == SelectionCommand.DragRelease && !input.Subtract && test.LocalFaction >= 0)
+            if (input.Command == SelectionCommand.DragRelease && !input.Subtract && test.LocalOwner >= 0)
             {
                 test.PreferredRank = PreferredRank(ref state, in test);
             }
@@ -117,11 +117,11 @@ namespace HyperRTS.Simulation.Selection
             }
         }
 
-        private int LocalFaction(ref SystemState state)
+        private int LocalOwner(ref SystemState state)
         {
             if (SystemAPI.TryGetSingletonEntity<LocalPlayer>(out var local) && SystemAPI.HasComponent<Player>(local))
             {
-                return SystemAPI.GetComponent<Player>(local).Faction;
+                return SystemAPI.GetComponent<Player>(local).Owner;
             }
 
             return -1;

@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Tests
         }
 
         /// <summary>
-        /// Creates map, rules, relations, AI tunings, one player per team entry (faction = index + 1, first is local)
+        /// Creates map, rules, relations, AI tunings, one player per team entry (owner = index + 1, first is local)
         /// and the nav grid, plus AI map hints that <see cref="AIHintsTestKit.CreateHints"/> replaces.
         /// </summary>
         public void CreateMatch(params byte[] teams) => CreateMatch(teams, 200f);
@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.AddComponentData(match, SquadSettings.Standard.Rules);
             EntityManager.AddComponentData(match, VoiceSettings.Standard.Rules);
 
-            var relations = new FactionRelations();
+            var relations = new OwnerRelations();
             relations.Teams.Add(0);
             for (var i = 0; i < teams.Length; i++)
             {
@@ -212,23 +212,23 @@ namespace HyperRTS.Simulation.Tests
             EntityManager.CompleteAllTrackedJobs();
         }
 
-        public Entity Player(byte faction)
+        public Entity Player(byte owner)
         {
             using var query = EntityManager.CreateEntityQuery(typeof(Player));
             using var players = query.ToEntityArray(Allocator.Temp);
             foreach (var player in players)
             {
-                if (Get<Player>(player).Faction == faction)
+                if (Get<Player>(player).Owner == owner)
                 {
                     return player;
                 }
             }
 
-            throw new ArgumentException($"No player with faction {faction}.");
+            throw new ArgumentException($"No player with owner {owner}.");
         }
 
-        public void Command(byte faction, PlayerCommand command) =>
-            EntityManager.GetBuffer<PlayerCommand>(Player(faction)).Add(command);
+        public void Command(byte owner, PlayerCommand command) =>
+            EntityManager.GetBuffer<PlayerCommand>(Player(owner)).Add(command);
 
         /// <summary>Gives the unit an order through <see cref="OrderWriter"/>, as the command systems do.</summary>
         public void Issue(Entity unit, in Order order, bool queue = false)
@@ -238,10 +238,10 @@ namespace HyperRTS.Simulation.Tests
                 .Issue(ref World.Unmanaged.ResolveSystemStateRef(system), unit, order, queue);
         }
 
-        public Entity SpawnUnit(byte faction, float3 position, float speed = 5f, float radius = 0.5f,
+        public Entity SpawnUnit(byte owner, float3 position, float speed = 5f, float radius = 0.5f,
             float maxHealth = 100f, string name = "Unit")
         {
-            var unit = CreateGameEntity(faction, position, maxHealth, name, out var writer);
+            var unit = CreateGameEntity(owner, position, maxHealth, name, out var writer);
             var agent = new NavAgent { Radius = radius };
             agent.WallMargin = agent.HullWallMargin;
             UnitAuthoring.Add(writer, speed, agent);
@@ -258,10 +258,10 @@ namespace HyperRTS.Simulation.Tests
             }
         }
 
-        public Entity SpawnBuilding(byte faction, float3 position, float2 footprint, bool complete = true,
+        public Entity SpawnBuilding(byte owner, float3 position, float2 footprint, bool complete = true,
             float buildTime = 10f, string name = "Building", int populationProvided = 0, float power = 0f)
         {
-            var building = CreateGameEntity(faction, position, 500f, name, out var writer, buildTime);
+            var building = CreateGameEntity(owner, position, 500f, name, out var writer, buildTime);
             BuildingSetup.Add(writer, footprint, populationProvided, complete, power);
             return building;
         }
@@ -273,7 +273,7 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        private Entity CreateGameEntity(byte faction, float3 position, float maxHealth, string name,
+        private Entity CreateGameEntity(byte owner, float3 position, float maxHealth, string name,
             out EntityWriter writer, float buildTime = 5f)
         {
             var entity = EntityManager.CreateEntity();
@@ -282,7 +282,7 @@ namespace HyperRTS.Simulation.Tests
             GameEntitySetup.Add(writer, new GameEntitySpec
             {
                 Info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name },
-                Owner = faction,
+                Owner = owner,
                 MaxHealth = maxHealth,
                 VisionRange = 10f,
                 EyeHeight = 2f,
@@ -293,11 +293,11 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        private void CreatePlayer(byte faction, bool local)
+        private void CreatePlayer(byte owner, bool local)
         {
             var player = EntityManager.CreateEntity();
             var writer = new EntityWriter(EntityManager, player);
-            PlayerSetup.Add(writer, faction, $"P{faction}", float4.zero, populationCap: 100);
+            PlayerSetup.Add(writer, owner, $"P{owner}", float4.zero, populationCap: 100);
 
             if (local)
             {

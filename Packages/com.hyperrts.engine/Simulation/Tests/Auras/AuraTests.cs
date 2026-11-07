@@ -16,10 +16,10 @@ namespace HyperRTS.Simulation.Tests.Auras
     /// <summary>Area auras: who they affect, presence, bonuses, healing, damage, no stacking.</summary>
     public class AuraTests : SimulationFixture
     {
-        private Entity SpawnAura(byte faction, float3 position, string name, AuraTargets affects, float heal = 0f,
+        private Entity SpawnAura(byte owner, float3 position, string name, AuraTargets affects, float heal = 0f,
             float damage = 0f, params StatModifier[] bonuses)
         {
-            var source = World.SpawnBuilding(faction, position, new float2(2f, 2f));
+            var source = World.SpawnBuilding(owner, position, new float2(2f, 2f));
             var id = EntityInfo.TypeIdFromName(name);
             for (var i = 0; i < bonuses.Length; i++)
             {
@@ -126,12 +126,12 @@ namespace HyperRTS.Simulation.Tests.Auras
         [Test]
         public void Auras_AffectUnitsAndBuildings_ButNotScenery()
         {
-            var relations = default(FactionRelations);
+            var relations = default(OwnerRelations);
             var everything = AuraTargets.Own | AuraTargets.AllKinds;
-            Assert.IsTrue(AuraRules.Affects(everything, 1, new SpatialEntry { Faction = 1, IsUnit = true }, relations));
-            Assert.IsTrue(AuraRules.Affects(everything, 1, new SpatialEntry { Faction = 1, IsBuilding = true },
+            Assert.IsTrue(AuraRules.Affects(everything, 1, new SpatialEntry { Owner = 1, IsUnit = true }, relations));
+            Assert.IsTrue(AuraRules.Affects(everything, 1, new SpatialEntry { Owner = 1, IsBuilding = true },
                 relations));
-            Assert.IsFalse(AuraRules.Affects(everything, 1, new SpatialEntry { Faction = 1 }, relations), "scenery");
+            Assert.IsFalse(AuraRules.Affects(everything, 1, new SpatialEntry { Owner = 1 }, relations), "scenery");
         }
     }
 }

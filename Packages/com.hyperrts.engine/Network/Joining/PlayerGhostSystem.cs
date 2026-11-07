@@ -57,10 +57,10 @@ namespace HyperRTS.Network.Joining
             entityManager.AddComponent<GhostOwnerIsLocal>(player);
             entityManager.SetComponentEnabled<GhostOwnerIsLocal>(player, false);
 
-            var faction = entityManager.GetComponentData<Player>(player).Faction;
+            var owner = entityManager.GetComponentData<Player>(player).Owner;
             GhostPrefabCreation.ConvertToGhostPrefab(entityManager, player, new GhostPrefabCreation.Config
             {
-                Name = $"HyperRTS Player {faction}",
+                Name = $"HyperRTS Player {owner}",
                 Importance = 100,
                 SupportedGhostModes = GhostModeMask.Interpolated,
                 DefaultGhostMode = GhostMode.Interpolated,

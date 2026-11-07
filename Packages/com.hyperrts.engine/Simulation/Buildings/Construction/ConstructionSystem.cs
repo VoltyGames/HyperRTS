@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
             _completed = new EventWriter<BuildingCompleted>(ref state);
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -46,11 +46,11 @@ namespace HyperRTS.Simulation.Buildings.Construction
             new BuildJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 SiteLookup = SystemAPI.GetComponentLookup<ConstructionProgress>(false),
                 ProducibleLookup = SystemAPI.GetComponentLookup<Producible>(true),
                 Reach = _reach,
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 CrewLookup = SystemAPI.GetBufferLookup<SquadMember>(true),
                 WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(false),
                 ObstacleLookup = SystemAPI.GetComponentLookup<NavObstacle>(true),
@@ -70,11 +70,11 @@ namespace HyperRTS.Simulation.Buildings.Construction
         private partial struct BuildJob : IJobEntity
         {
             public float DeltaTime;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public ComponentLookup<ConstructionProgress> SiteLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             public TargetReach Reach;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public BufferLookup<SquadMember> CrewLookup;
             public ComponentLookup<SquadWork> WorkLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
@@ -82,7 +82,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
 
             private void Execute(Entity builderEntity, in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
-                in LocalTransform transform, in NavAgent agent, in Faction faction)
+                in LocalTransform transform, in NavAgent agent, in Owner owner)
             {
                 WorkLookup.DisableIfPresent(builderEntity);
                 if (!busy.ValueRO || order.Value.Type != OrderType.Build)
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 }
 
                 var site = order.Value.Target;
-                if (!IsAlliedSite(site, faction.Value))
+                if (!IsAlliedSite(site, owner.Value))
                 {
                     ActiveOrder.Finish(busy, moving);
                     return;
@@ -135,14 +135,14 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 WorkLookup.SetComponentEnabled(builder, true);
             }
 
-            private bool IsAlliedSite(Entity site, byte faction)
+            private bool IsAlliedSite(Entity site, byte owner)
             {
                 if (!Reach.Exists(site))
                 {
                     return false;
                 }
 
-                return BuildingRules.IsAlliedSite(SiteLookup, FactionLookup, Relations, site, faction);
+                return BuildingRules.IsAlliedSite(SiteLookup, OwnerLookup, Relations, site, owner);
             }
 
             /// <summary>Adds this frame's work and returns true once the site is at full progress.</summary>
@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
             public EventWriter<BuildingCompleted> Completed;
 
             private void Execute(Entity site, ref ConstructionProgress progress,
-                EnabledRefRW<ConstructionProgress> underConstruction, in Faction faction)
+                EnabledRefRW<ConstructionProgress> underConstruction, in Owner owner)
             {
                 if (progress.Value < 1f)
                 {
@@ -176,7 +176,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 }
 
                 underConstruction.ValueRW = false;
-                Completed.Add(new BuildingCompleted { Building = site, Faction = faction.Value });
+                Completed.Add(new BuildingCompleted { Building = site, Owner = owner.Value });
             }
         }
     }

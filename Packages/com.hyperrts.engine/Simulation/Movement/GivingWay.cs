@@ -31,12 +31,12 @@ namespace HyperRTS.Simulation.Movement
         }
 
         /// <summary>
-        /// Whether the parked unit steps aside for a mover of <paramref name="moverFaction"/>: only an idle ally does,
+        /// Whether the parked unit steps aside for a mover of <paramref name="moverOwner"/>: only an idle ally does,
         /// as an order, a target or Hold Position holds its ground. Flight holds a landed aircraft itself.
         /// </summary>
-        public readonly bool Yields(Entity parked, byte parkedFaction, byte moverFaction)
+        public readonly bool Yields(Entity parked, byte parkedOwner, byte moverOwner)
         {
-            if (parkedFaction != moverFaction)
+            if (parkedOwner != moverOwner)
             {
                 return false;
             }

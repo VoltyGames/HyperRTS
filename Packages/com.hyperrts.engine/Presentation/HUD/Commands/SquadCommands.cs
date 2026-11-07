@@ -85,7 +85,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             var entityManager = context.EntityManager;
-            var faction = context.ShownFaction;
+            var owner = context.ShownOwner;
             var relations = context.View.Relations;
             var reinforcePoints = SquadPoints.From<ReinforcePoint>(_reinforcePoints.In(entityManager));
             var allRetreating = true;
@@ -107,12 +107,12 @@ namespace HyperRTS.Presentation.HUD.Commands
                 allReinforcing = false;
                 var here = entityManager.GetComponentData<LocalTransform>(squad).Position;
                 var refusal = SquadOrderRule.FindReinforceRefusal(entityManager.GetBuffer<SquadMember>(squad, true),
-                    reinforcePoints.Covers(here, faction, relations), rules, Cost(entityManager, squad), context.Stock);
+                    reinforcePoints.Covers(here, owner, relations), rules, Cost(entityManager, squad), context.Stock);
                 reinforceReason = NearestToAble(reinforceReason, refusal);
             }
 
             var retreatPoints = SquadPoints.From<RetreatPoint>(_retreatPoints.In(entityManager));
-            _retreatReason = SquadOrderRule.FindRetreatRefusal(retreatPoints.HasAllied(faction, relations));
+            _retreatReason = SquadOrderRule.FindRetreatRefusal(retreatPoints.HasAllied(owner, relations));
             _reinforceReason = allReinforcing ? SquadRefusal.None : reinforceReason;
             Show(_retreat, _retreatReason, allRetreating);
             Show(_reinforce, _reinforceReason, allReinforcing);
@@ -198,7 +198,7 @@ namespace HyperRTS.Presentation.HUD.Commands
 
         // The live, online points of one kind that a squad can retreat to or reinforce at.
         private static LiveQuery PointQuery<T>() => new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<T>(), ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<T>(), ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
     }
 }

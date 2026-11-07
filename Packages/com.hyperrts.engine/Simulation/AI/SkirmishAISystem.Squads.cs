@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < squads.Length; i++)
             {
                 var squad = squads.Entities[i];
-                if (!squads.IsOwnedBy(i, turn.Faction) || turn.Busy.Contains(squad))
+                if (!squads.IsOwnedBy(i, turn.Owner) || turn.Busy.Contains(squad))
                 {
                     continue;
                 }
@@ -60,9 +60,9 @@ namespace HyperRTS.Simulation.AI
             }
 
             var points = snapshot.RetreatPoints;
-            var hasPoint = points.HasAllied(turn.Faction, snapshot.Relations);
+            var hasPoint = points.HasAllied(turn.Owner, snapshot.Relations);
             var refused = SquadOrderRule.FindRetreatRefusal(hasPoint) != SquadRefusal.None;
-            if (refused || points.Covers(position, turn.Faction, snapshot.Relations))
+            if (refused || points.Covers(position, turn.Owner, snapshot.Relations))
             {
                 return false;
             }
@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.AI
             }
 
             var position = SystemAPI.GetComponent<LocalTransform>(squad).Position;
-            var inRange = snapshot.ReinforcePoints.Covers(position, turn.Faction, snapshot.Relations);
+            var inRange = snapshot.ReinforcePoints.Covers(position, turn.Owner, snapshot.Relations);
             var cost = SystemAPI.HasBuffer<ResourceCost>(squad)
                 ? SystemAPI.GetBuffer<ResourceCost>(squad)
                 : default;

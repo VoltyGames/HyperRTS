@@ -15,10 +15,10 @@ namespace HyperRTS.Simulation.Cues.Announcements
 
         public AnnouncementGate(Allocator allocator) => _next = new NativeHashMap<ushort, double>(16, allocator);
 
-        /// <summary>True, closing the gate for <see cref="Interval"/>, when the faction may hear this kind now.</summary>
-        public bool TryPass(AnnouncementKind kind, byte faction, double now)
+        /// <summary>True, closing the gate for <see cref="Interval"/>, when the owner may hear this kind now.</summary>
+        public bool TryPass(AnnouncementKind kind, byte owner, double now)
         {
-            var key = (ushort)(faction << 8 | kind.Value);
+            var key = (ushort)(owner << 8 | kind.Value);
             if (_next.TryGetValue(key, out var next) && now < next)
             {
                 return false;

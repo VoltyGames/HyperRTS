@@ -168,12 +168,12 @@ namespace HyperRTS.Simulation.Buildings.Placement
             Box.Gap(position - axis, position + axis) < radius;
 
         /// <summary>
-        /// A ground or naval unit hostile to <paramref name="faction"/> stands on the spot, seen or not. Friendly units
+        /// A ground or naval unit hostile to <paramref name="owner"/> stands on the spot, seen or not. Friendly units
         /// drive off by themselves.
         /// </summary>
-        public bool IsBlockedByEnemies(in SpatialIndex index, in FactionRelations relations, byte faction)
+        public bool IsBlockedByEnemies(in SpatialIndex index, in OwnerRelations relations, byte owner)
         {
-            var finder = new EnemyFinder { Spot = this, Relations = relations, Faction = faction };
+            var finder = new EnemyFinder { Spot = this, Relations = relations, Owner = owner };
             index.QueryHulls(Center, math.length(Footprint) * 0.5f, ref finder);
             return finder.Found;
         }
@@ -181,8 +181,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
         private struct EnemyFinder : ISpatialVisitor
         {
             public BuildingSpot Spot;
-            public FactionRelations Relations;
-            public byte Faction;
+            public OwnerRelations Relations;
+            public byte Owner;
             public bool Found;
 
             public void Visit(in SpatialEntry entry)
@@ -192,7 +192,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                     return;
                 }
 
-                if (Relations.IsHostile(Faction, entry.Faction))
+                if (Relations.IsHostile(Owner, entry.Owner))
                 {
                     Found = Spot.Overlaps(entry.Position.xz, entry.SegmentAxis, entry.Radius);
                 }

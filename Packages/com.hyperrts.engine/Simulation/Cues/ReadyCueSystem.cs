@@ -45,26 +45,26 @@ namespace HyperRTS.Simulation.Cues
                 foreach (var produced in units)
                 {
                     var spawn = LocalTransform.FromPosition(produced.Position);
-                    Cues.Play(produced.Prefab, CueSlot.Ready, spawn, spawn.Forward(), produced.Faction);
-                    Done(produced.Producer, produced.Faction);
+                    Cues.Play(produced.Prefab, CueSlot.Ready, spawn, spawn.Forward(), produced.Owner);
+                    Done(produced.Producer, produced.Owner);
                 }
 
                 foreach (var research in researched)
                 {
-                    Done(research.Producer, research.Faction);
+                    Done(research.Producer, research.Owner);
                 }
 
                 foreach (var completed in buildings)
                 {
                     var building = Transforms[completed.Building];
-                    Cues.Play(completed.Building, CueSlot.Ready, building, building.Forward(), completed.Faction);
+                    Cues.Play(completed.Building, CueSlot.Ready, building, building.Forward(), completed.Owner);
                 }
             }
 
-            private void Done(Entity producer, byte faction)
+            private void Done(Entity producer, byte owner)
             {
                 var place = Transforms[producer];
-                Cues.Play(producer, CueSlot.ProductionDone, place, place.Forward(), faction);
+                Cues.Play(producer, CueSlot.ProductionDone, place, place.Forward(), owner);
             }
         }
     }

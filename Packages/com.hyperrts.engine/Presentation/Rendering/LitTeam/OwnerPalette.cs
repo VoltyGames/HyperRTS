@@ -6,17 +6,17 @@ using Unity.Mathematics;
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
     /// <summary>
-    /// The colour this client shows each faction in, indexed by faction: its player's, or the
-    /// <see cref="TeamColorOverride"/>'s; <c>w == 0</c> marks a faction without a player.
+    /// The colour this client shows each owner in, indexed by owner: its player's, or the
+    /// <see cref="TeamColorOverride"/>'s; <c>w == 0</c> marks an owner without a player.
     /// </summary>
-    public struct FactionPalette
+    public struct OwnerPalette
     {
         public const int Size = byte.MaxValue + 1;
 
         private EntityQuery _players;
         private EntityQuery _override;
 
-        public static FactionPalette Create(ref SystemState state) => new()
+        public static OwnerPalette Create(ref SystemState state) => new()
         {
             // The builder, not GetEntityQuery's params array: Burst-compiled OnCreates call this.
             _players = new EntityQueryBuilder(Allocator.Temp).WithAll<Player>().Build(ref state),
@@ -31,12 +31,12 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
             foreach (var player in players)
             {
                 var color = player.Color;
-                if (hasOverride && colorOverride.TryGet(player.Faction, out var overridden))
+                if (hasOverride && colorOverride.TryGet(player.Owner, out var overridden))
                 {
                     color = overridden;
                 }
 
-                colors[player.Faction] = new float4(color.xyz, 1f);
+                colors[player.Owner] = new float4(color.xyz, 1f);
             }
 
             return colors;

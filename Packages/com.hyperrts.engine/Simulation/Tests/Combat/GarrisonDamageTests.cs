@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             {
                 Target = target,
                 Origin = new float3(30f, 0f, 0f),
-                SourceFaction = 2,
+                SourceOwner = 2,
                 Profile = new DamageProfile { Amount = amount, Type = type, GarrisonFactor = DamageType.Garrison(type) },
             });
 

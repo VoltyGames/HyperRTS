@@ -9,7 +9,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
-    /// <summary>Gives owned meshes their faction's <see cref="TeamColor"/> and the root's <see cref="TeamStrip"/> band for
+    /// <summary>Gives owned meshes their owner's <see cref="TeamColor"/> and the root's <see cref="TeamStrip"/> band for
     /// LitTeam's mask; neutral entities lose them and ones whose player hasn't arrived yet are retried.</summary>
     [BurstCompile]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -21,22 +21,22 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         private EntityQuery _changedOverride;
         private EntityQuery _uncoloredSources;
         private int _playerVersion;
-        private int _factionVersion;
+        private int _ownerVersion;
         private int _sourceVersion;
         private int _overrideVersion;
-        private FactionPalette _palette;
+        private OwnerPalette _palette;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _uncolored = SystemAPI.QueryBuilder().WithAll<Faction>().WithNone<TeamColored>().Build();
-            _recolored = SystemAPI.QueryBuilder().WithAll<Faction, TeamColored>().Build();
-            _recolored.SetChangedVersionFilter(ComponentType.ReadOnly<Faction>());
+            _uncolored = SystemAPI.QueryBuilder().WithAll<Owner>().WithNone<TeamColored>().Build();
+            _recolored = SystemAPI.QueryBuilder().WithAll<Owner, TeamColored>().Build();
+            _recolored.SetChangedVersionFilter(ComponentType.ReadOnly<Owner>());
             _colored = SystemAPI.QueryBuilder().WithAll<TeamColored>().Build();
             _changedOverride = SystemAPI.QueryBuilder().WithAll<TeamColorOverride>().Build();
             _changedOverride.SetChangedVersionFilter(ComponentType.ReadOnly<TeamColorOverride>());
             _uncoloredSources = SystemAPI.QueryBuilder().WithAll<TeamColorSource>().WithNone<TeamColored>().Build();
-            _palette = FactionPalette.Create(ref state);
+            _palette = OwnerPalette.Create(ref state);
             state.RequireForUpdate<Player>();
             state.RequireForUpdate<BeginPresentationEntityCommandBufferSystem.Singleton>();
         }
@@ -49,7 +49,7 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
                 // Everything repaints: ColorNewJob picks the roots up again.
                 state.CompleteDependency();
                 state.EntityManager.RemoveComponent<TeamColored>(_colored);
-                _factionVersion = -1;
+                _ownerVersion = -1;
             }
 
             var newWork = HasNewWork(ref state);
@@ -87,7 +87,7 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         }
 
         // Entities whose player hasn't arrived only get another try once players, owned entities or sources come or
-        // go, so a faction that never gets a player doesn't cost a pass every frame.
+        // go, so an owner that never gets a player doesn't cost a pass every frame.
         private bool HasNewWork(ref SystemState state)
         {
             if (_uncolored.IsEmpty && _uncoloredSources.IsEmpty)
@@ -96,15 +96,15 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
             }
 
             var players = state.EntityManager.GetComponentOrderVersion<Player>();
-            var owned = state.EntityManager.GetComponentOrderVersion<Faction>();
+            var owned = state.EntityManager.GetComponentOrderVersion<Owner>();
             var sources = state.EntityManager.GetComponentOrderVersion<TeamColorSource>();
-            if (players == _playerVersion && owned == _factionVersion && sources == _sourceVersion)
+            if (players == _playerVersion && owned == _ownerVersion && sources == _sourceVersion)
             {
                 return false;
             }
 
             _playerVersion = players;
-            _factionVersion = owned;
+            _ownerVersion = owned;
             _sourceVersion = sources;
             return true;
         }
@@ -121,15 +121,15 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
             private static ComponentTypeSet TeamTypes =>
                 new(ComponentType.ReadWrite<TeamColor>(), ComponentType.ReadWrite<TeamStrip>());
 
-            /// <summary>False while the faction has no player yet; neutral entities keep their authored materials.</summary>
-            public bool Paint(Entity root, byte faction)
+            /// <summary>False while the owner has no player yet; neutral entities keep their authored materials.</summary>
+            public bool Paint(Entity root, byte owner)
             {
-                if (faction == Faction.Neutral)
+                if (owner == Owner.Neutral)
                 {
                     return true;
                 }
 
-                var color = Colors[faction];
+                var color = Colors[owner];
                 if (color.w == 0f)
                 {
                     return false;
@@ -181,11 +181,11 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         {
             public TeamPainter Painter;
 
-            private void Execute(Entity entity, in Faction faction)
+            private void Execute(Entity entity, in Owner owner)
             {
-                if (Painter.Paint(entity, faction.Value))
+                if (Painter.Paint(entity, owner.Value))
                 {
-                    Painter.Commands.AddComponent(entity, new TeamColored { Faction = faction.Value });
+                    Painter.Commands.AddComponent(entity, new TeamColored { Owner = owner.Value });
                 }
             }
         }
@@ -198,34 +198,34 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
 
             private void Execute(Entity entity, in TeamColorSource source)
             {
-                if (Painter.Paint(entity, source.Faction))
+                if (Painter.Paint(entity, source.Owner))
                 {
-                    Painter.Commands.AddComponent(entity, new TeamColored { Faction = source.Faction });
+                    Painter.Commands.AddComponent(entity, new TeamColored { Owner = source.Owner });
                 }
             }
         }
 
         [BurstCompile]
-        [WithChangeFilter(typeof(Faction))]
+        [WithChangeFilter(typeof(Owner))]
         private partial struct RecolorJob : IJobEntity
         {
             public TeamPainter Painter;
 
-            private void Execute(Entity entity, in Faction faction, ref TeamColored colored)
+            private void Execute(Entity entity, in Owner owner, ref TeamColored colored)
             {
-                if (colored.Faction == faction.Value)
+                if (colored.Owner == owner.Value)
                 {
                     return;
                 }
 
-                colored.Faction = faction.Value;
-                if (faction.Value == Faction.Neutral)
+                colored.Owner = owner.Value;
+                if (owner.Value == Owner.Neutral)
                 {
                     Painter.Unpaint(entity);
                     return;
                 }
 
-                if (!Painter.Paint(entity, faction.Value))
+                if (!Painter.Paint(entity, owner.Value))
                 {
                     // The new owner's player hasn't arrived: hand the entity back to ColorNewJob to retry.
                     Painter.Commands.RemoveComponent<TeamColored>(entity);

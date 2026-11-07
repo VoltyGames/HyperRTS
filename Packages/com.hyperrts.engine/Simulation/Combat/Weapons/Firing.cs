@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
     public readonly struct Firing
     {
         public readonly Entity Shooter;
-        public readonly byte Faction;
+        public readonly byte Owner;
 
         /// <summary>Index of the <see cref="WeaponPose"/> this weapon turns on.</summary>
         public readonly byte PoseIndex;
@@ -15,10 +15,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public readonly LocalTransform Place;
         public readonly WeaponPose Pose;
 
-        public Firing(Entity shooter, byte faction, byte poseIndex, in LocalTransform place, in WeaponPose pose)
+        public Firing(Entity shooter, byte owner, byte poseIndex, in LocalTransform place, in WeaponPose pose)
         {
             Shooter = shooter;
-            Faction = faction;
+            Owner = owner;
             PoseIndex = poseIndex;
             Place = place;
             Pose = pose;

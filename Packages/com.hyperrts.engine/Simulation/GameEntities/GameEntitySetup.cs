@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.GameEntities
             IReadOnlyList<ResourceCost> cost = null, IReadOnlyList<Prerequisite> prerequisites = null)
         {
             writer.Add(spec.Info);
-            writer.Add(new Faction { Value = spec.Owner });
+            writer.Add(new Owner { Value = spec.Owner });
             writer.Add(new Health { Current = spec.MaxHealth, Max = spec.MaxHealth });
             writer.Add<Dead>();
             writer.SetEnabled<Dead>(false);
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.GameEntities
             writer.AddBuffer<StatModifier>();
             writer.AddBuffer<AuraPresence>();
             writer.AddBuffer<ActiveStatus>();
-            writer.Add(new AppliedUpgrades { Faction = spec.Owner });
+            writer.Add(new AppliedUpgrades { Owner = spec.Owner });
             VisionSetup.AddVision(writer, spec.VisionRange, spec.EyeHeight);
             writer.Add(new Producible { BuildTime = spec.BuildTime, Population = spec.Population });
             writer.AddBuffer(cost);

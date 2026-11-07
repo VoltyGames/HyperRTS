@@ -25,12 +25,12 @@ namespace HyperRTS.Simulation.Squads
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Owner>().WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Reinforce), selected);
-            _points = SystemAPI.QueryBuilder().WithAll<ReinforcePoint, Faction, LocalTransform>()
+            _points = SystemAPI.QueryBuilder().WithAll<ReinforcePoint, Owner, LocalTransform>()
                 .WithNone<Dead, Offline>().Build();
             state.RequireForUpdate<SquadRules>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Squads
         {
             state.CompleteDependency();
             var rules = SystemAPI.GetSingleton<SquadRules>();
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var points = SquadPoints.From<ReinforcePoint>(_points);
             foreach (var each in _commands.Read(ref state))
             {
@@ -62,16 +62,16 @@ namespace HyperRTS.Simulation.Squads
         }
 
         private void Begin(ref SystemState state, Entity squad, Entity player, in SquadRules rules,
-            in FactionRelations relations, in SquadPoints points)
+            in OwnerRelations relations, in SquadPoints points)
         {
             if (!SystemAPI.HasComponent<Reinforcing>(squad) || SystemAPI.IsComponentEnabled<Reinforcing>(squad))
             {
                 return;
             }
 
-            var faction = SystemAPI.GetComponent<Faction>(squad).Value;
+            var owner = SystemAPI.GetComponent<Owner>(squad).Value;
             var here = SystemAPI.GetComponent<LocalTransform>(squad).Position;
-            var point = points.NearestCovering(here, faction, relations);
+            var point = points.NearestCovering(here, owner, relations);
             var refusal = SquadOrderRule.FindReinforceRefusal(SystemAPI.GetBuffer<SquadMember>(squad),
                 point != Entity.Null, rules, Cost(ref state, squad), SystemAPI.GetBuffer<ResourceStock>(player));
             if (refusal == SquadRefusal.None)

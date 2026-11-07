@@ -155,7 +155,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             var defence = Defence(Site());
             var bomb = Shot(new float3(6f, 4f, 0f), ProjectileKind.Bomb);
-            var friendly = Shot(new float3(0f, 4f, 6f), faction: 1);
+            var friendly = Shot(new float3(0f, 4f, 6f), owner: 1);
             var distant = Shot(new float3(0f, 4f, -40f));
 
             World.Run(1f);
@@ -302,7 +302,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         // A slow hostile rocket heading away along its line unless aimed, so it stays where it is for the test.
-        private Entity Shot(float3 position, ProjectileKind kind = ProjectileKind.Rocket, byte faction = 2,
+        private Entity Shot(float3 position, ProjectileKind kind = ProjectileKind.Rocket, byte owner = 2,
             float3? aim = null)
         {
             var shot = World.EntityManager.CreateEntity();
@@ -311,7 +311,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             {
                 Speed = 0.1f,
                 Kind = kind,
-                Hit = new DamageEvent { Position = aim ?? position * 3f, SourceFaction = faction },
+                Hit = new DamageEvent { Position = aim ?? position * 3f, SourceOwner = owner },
             });
             return shot;
         }

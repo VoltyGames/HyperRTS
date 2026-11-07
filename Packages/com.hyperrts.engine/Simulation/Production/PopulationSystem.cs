@@ -33,8 +33,8 @@ namespace HyperRTS.Simulation.Production
         {
             public NativeArray<int> Used;
 
-            private void Execute(in Faction faction, in Producible producible) =>
-                Used[faction.Value] += producible.Population;
+            private void Execute(in Owner owner, in Producible producible) =>
+                Used[owner.Value] += producible.Population;
         }
 
         [BurstCompile]
@@ -43,8 +43,8 @@ namespace HyperRTS.Simulation.Production
         {
             public NativeArray<int> Cap;
 
-            private void Execute(in Faction faction, in PopulationProvider provider) =>
-                Cap[faction.Value] += provider.Value;
+            private void Execute(in Owner owner, in PopulationProvider provider) =>
+                Cap[owner.Value] += provider.Value;
         }
 
         [BurstCompile]
@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public NativeArray<int> Cap;
 
             private void Execute(ref Population population, in Player player) =>
-                population = new Population { Used = Used[player.Faction], Cap = Cap[player.Faction] };
+                population = new Population { Used = Used[player.Owner], Cap = Cap[player.Owner] };
         }
     }
 }

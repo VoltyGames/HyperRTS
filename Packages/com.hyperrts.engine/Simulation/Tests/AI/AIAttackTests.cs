@@ -197,15 +197,15 @@ namespace HyperRTS.Simulation.Tests.AI
             return entity;
         }
 
-        private static Entity[] Squad(TestWorld world, byte faction, AIPlayer ai, float3 at)
+        private static Entity[] Squad(TestWorld world, byte owner, AIPlayer ai, float3 at)
         {
-            var writer = world.Writer(world.Player(faction));
+            var writer = world.Writer(world.Player(owner));
             AIPlayerSetup.Add(writer, ai);
 
             var squad = new Entity[5];
             for (var i = 0; i < squad.Length; i++)
             {
-                squad[i] = world.AddWeapon(world.SpawnUnit(faction, at + new float3(i * 2f, 0f, 0f)));
+                squad[i] = world.AddWeapon(world.SpawnUnit(owner, at + new float3(i * 2f, 0f, 0f)));
             }
 
             return squad;

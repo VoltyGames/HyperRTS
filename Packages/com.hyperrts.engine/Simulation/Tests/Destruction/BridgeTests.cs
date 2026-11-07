@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             Target = bridge,
             Origin = Span(span) + new float3(0f, 20f, 0f),
             Position = Span(span),
-            SourceFaction = 2,
+            SourceOwner = 2,
             Profile = new DamageProfile { Amount = 100f },
         });
 

@@ -11,14 +11,14 @@ namespace HyperRTS.Simulation.Buildings
     {
         [ReadOnly] private ComponentLookup<Health> _health;
         [ReadOnly] private ComponentLookup<ConstructionProgress> _sites;
-        [ReadOnly] private ComponentLookup<Faction> _factions;
+        [ReadOnly] private ComponentLookup<Owner> _owners;
         [ReadOnly] private ComponentLookup<Repairable> _repairables;
 
         public RepairLookup(ref SystemState state)
         {
             _health = state.GetComponentLookup<Health>(true);
             _sites = state.GetComponentLookup<ConstructionProgress>(true);
-            _factions = state.GetComponentLookup<Faction>(true);
+            _owners = state.GetComponentLookup<Owner>(true);
             _repairables = state.GetComponentLookup<Repairable>(true);
         }
 
@@ -26,15 +26,15 @@ namespace HyperRTS.Simulation.Buildings
         {
             _health.Update(ref state);
             _sites.Update(ref state);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             _repairables.Update(ref state);
         }
 
         /// <summary>
-        /// A damaged, living building to repair: a finished one allied with <paramref name="faction"/>, or a
+        /// A damaged, living building to repair: a finished one allied with <paramref name="owner"/>, or a
         /// <see cref="Repairable"/> one, which belongs to nobody and anyone's builders mend.
         /// </summary>
-        public readonly bool NeedsRepair(Entity target, byte faction, in FactionRelations relations)
+        public readonly bool NeedsRepair(Entity target, byte owner, in OwnerRelations relations)
         {
             if (!Health.IsAlive(_health, target) || _health[target].Current >= _health[target].Max)
             {
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Buildings
 
             // Sites are built, not repaired.
             var finished = _sites.HasComponent(target) && !_sites.IsComponentEnabled(target);
-            return finished && _factions.TryGetComponent(target, out var owner) && relations.IsAllied(faction, owner.Value);
+            return finished && _owners.TryGetComponent(target, out var targetOwner) && relations.IsAllied(owner, targetOwner.Value);
         }
     }
 }

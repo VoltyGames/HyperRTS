@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Production
     {
         /// <summary>Every production queue with its owner, for <see cref="Buyer.Snapshot"/>.</summary>
         public static EntityQueryBuilder QueueQuery(Allocator allocator) =>
-            new EntityQueryBuilder(allocator).WithAll<ProductionQueueItem, Faction>();
+            new EntityQueryBuilder(allocator).WithAll<ProductionQueueItem, Owner>();
 
         /// <summary>False for research already in <paramref name="completed"/> or in <paramref name="queued"/>, as snapshotted by <see cref="Buyer.Snapshot"/>.</summary>
         public static bool CanQueue(EntityManager entityManager, DynamicBuffer<CompletedResearch> completed,

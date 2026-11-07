@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Faction, Selected>()
+            var selected = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Owner, Selected>()
                 .WithNone<Dead>().Build();
             var types = TypeSet.Single(CommandType.PlaceBuilding).With(CommandType.PlaceLine);
             _commands = new CommandReader(ref state, types, selected);
@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate<SpatialIndex>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -88,11 +88,11 @@ namespace HyperRTS.Simulation.Buildings.Placement
                     continue;
                 }
 
-                if (!buyers.TryGetValue(request.Faction, out var buyer))
+                if (!buyers.TryGetValue(request.Owner, out var buyer))
                 {
-                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, request.Faction, buildings,
+                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, request.Owner, buildings,
                         SystemAPI.GetBuffer<CompletedResearch>(request.Player));
-                    buyers.Add(request.Faction, buyer);
+                    buyers.Add(request.Owner, buyer);
                 }
 
                 var orders = new NativeList<Order>(Allocator.Temp);
@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
             var spot = asked.Snap(map).Grounded(grid);
-            if (!IsFree(ref state, spot, map, grid, request.Faction, sites))
+            if (!IsFree(ref state, spot, map, grid, request.Owner, sites))
             {
                 return false;
             }
@@ -164,17 +164,17 @@ namespace HyperRTS.Simulation.Buildings.Placement
         {
             var prefab = request.Command.Prefab;
             buyer.AddPurchase(state.EntityManager, prefab);
-            var building = SpawnSite(ref state, prefab, spot.Center, spot.Rotation, request.Faction, ecb);
+            var building = SpawnSite(ref state, prefab, spot.Center, spot.Rotation, request.Owner, ecb);
             sites.Add(spot.Box);
             return new Order { Type = OrderType.Build, Target = building, Position = spot.Center };
         }
 
         /// <summary>An unbuilt instance of <paramref name="prefab"/>; builders raise it through Build orders.</summary>
-        private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, quaternion rotation, byte faction,
+        private Entity SpawnSite(ref SystemState state, Entity prefab, float3 center, quaternion rotation, byte owner,
             EntityCommandBuffer ecb)
         {
             var facing = math.mul(rotation, SystemAPI.GetComponent<LocalTransform>(prefab).Rotation);
-            var building = _spawner.Spawn(ecb, prefab, center, facing, faction);
+            var building = _spawner.Spawn(ecb, prefab, center, facing, owner);
             ecb.SetComponent(building, new ConstructionProgress { Value = 0f });
             ecb.SetComponentEnabled<ConstructionProgress>(building, true);
             // Offline from the first frame, before OfflineSystem sees the site.
@@ -231,15 +231,15 @@ namespace HyperRTS.Simulation.Buildings.Placement
         /// it like any bad spot.
         /// </summary>
         private bool IsFree(ref SystemState state, in BuildingSpot spot, in MapSettings map, in NavGrid grid,
-            byte faction, NativeList<NavBox> sites)
+            byte owner, NativeList<NavBox> sites)
         {
             if (!spot.CanPlace(map, grid, sites.AsArray()))
             {
                 return false;
             }
 
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
-            return !spot.IsBlockedByEnemies(SystemAPI.GetSingleton<SpatialIndex>(), relations, faction);
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
+            return !spot.IsBlockedByEnemies(SystemAPI.GetSingleton<SpatialIndex>(), relations, owner);
         }
     }
 }

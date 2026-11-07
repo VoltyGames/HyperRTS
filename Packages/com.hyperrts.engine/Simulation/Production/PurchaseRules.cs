@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Production
             }
 
             var required = entityManager.GetBuffer<Prerequisite>(prefab, true);
-            var met = buyer.Buildings.MeetsPrerequisites(required, buyer.Faction, buyer.Research);
+            var met = buyer.Buildings.MeetsPrerequisites(required, buyer.Owner, buyer.Research);
             return met ? PurchaseRefusal.None : PurchaseRefusal.MissingPrerequisite;
         }
 

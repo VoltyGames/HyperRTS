@@ -7,13 +7,13 @@ namespace HyperRTS.Network.Joining
     public struct JoinPreference : IComponentData
     {
         /// <summary>0 takes any free slot.</summary>
-        public byte Faction;
+        public byte Owner;
 
         /// <summary>Watch the match instead of claiming a slot.</summary>
         public bool Observe;
 
         /// <summary>What to ask for when rejoining the seat <paramref name="granted"/>, 0 for an observer.</summary>
         public static JoinPreference Rejoining(byte granted) =>
-            new() { Faction = granted, Observe = granted == 0 };
+            new() { Owner = granted, Observe = granted == 0 };
     }
 }

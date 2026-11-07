@@ -20,13 +20,13 @@ namespace HyperRTS.Simulation.Capture
     /// <summary>Capture under way: who is capturing and how far (0..1); resets when another player starts.</summary>
     public struct CaptureProgress : IComponentData
     {
-        [GhostField] public byte Faction;
+        [GhostField] public byte Owner;
         [GhostField(Quantization = 1000)] public float Value;
 
         /// <summary>Someone other than <paramref name="owner"/> has started taking the building.</summary>
         public readonly bool IsUnderWay(byte owner)
         {
-            if (Faction == Common.Players.Faction.Neutral || Faction == owner)
+            if (Owner == Common.Players.Owner.Neutral || Owner == owner)
             {
                 return false;
             }

@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Vision.Fog
     public partial struct LocalFogViewSystem : ISystem
     {
         private int _fogVersion;
-        private int _factionOrder;
+        private int _ownerOrder;
         private ConcealmentLookup _concealment;
 
         [BurstCompile]
@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             state.EntityManager.CreateSingleton<LocalFogView>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<FogOfWar>();
             _concealment = new ConcealmentLookup(ref state);
         }
@@ -41,14 +41,14 @@ namespace HyperRTS.Simulation.Vision.Fog
             var restamped = hides && fog.Version != _fogVersion;
             var changed = restamped || view.Active != published.Active || view.Viewer != published.Viewer;
 
-            // Faction's order version covers spawns, which must not show until the next restamp.
-            var factionOrder = state.EntityManager.GetComponentOrderVersion<Faction>();
-            if (!changed && factionOrder == _factionOrder)
+            // Owner's order version covers spawns, which must not show until the next restamp.
+            var ownerOrder = state.EntityManager.GetComponentOrderVersion<Owner>();
+            if (!changed && ownerOrder == _ownerOrder)
             {
                 return;
             }
 
-            _factionOrder = factionOrder;
+            _ownerOrder = ownerOrder;
             if (changed)
             {
                 _fogVersion = fog.Version;
@@ -99,17 +99,17 @@ namespace HyperRTS.Simulation.Vision.Fog
         /// The view is active with fog on; entities are hidden whenever there is a team to see as (stealth), unless
         /// everything is revealed.
         /// </summary>
-        private LocalFogView Evaluate(ref SystemState state, out FogOfWar fog, out FactionRelations relations,
+        private LocalFogView Evaluate(ref SystemState state, out FogOfWar fog, out OwnerRelations relations,
             out bool hides)
         {
             var revealAll = SystemAPI.GetSingleton<LocalFogView>().RevealAll;
-            var view = new LocalFogView { Viewer = Faction.Neutral, RevealAll = revealAll };
+            var view = new LocalFogView { Viewer = Owner.Neutral, RevealAll = revealAll };
             foreach (var player in SystemAPI.Query<RefRO<Player>>().WithAll<LocalPlayer>())
             {
-                view.Viewer = player.ValueRO.Faction;
+                view.Viewer = player.ValueRO.Owner;
             }
 
-            relations = SystemAPI.GetSingleton<FactionRelations>();
+            relations = SystemAPI.GetSingleton<OwnerRelations>();
             fog = SystemAPI.GetSingleton<FogOfWar>();
             view.Team = relations.GetTeam(view.Viewer);
             hides = view.Team != 0 && !revealAll;
@@ -124,18 +124,18 @@ namespace HyperRTS.Simulation.Vision.Fog
         private partial struct HideJob : IJobEntity
         {
             [ReadOnly] public FogOfWar Fog;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public byte Viewer;
             [ReadOnly] public ComponentLookup<FogHidden> Hidden;
             [ReadOnly] public ConcealmentLookup Concealments;
             public EntityCommandBuffer.ParallelWriter Commands;
 
-            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Faction faction,
+            private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Owner owner,
                 in LocalTransform transform)
             {
                 var concealment = Concealments.Find(entity);
                 var tall = Concealments.IsTall(entity);
-                var hide = Fog.IsHiddenFrom(in Relations, Viewer, faction.Value, transform.Position, concealment, tall);
+                var hide = Fog.IsHiddenFrom(in Relations, Viewer, owner.Value, transform.Position, concealment, tall);
                 if (hide == Hidden.HasComponent(entity))
                 {
                     return;

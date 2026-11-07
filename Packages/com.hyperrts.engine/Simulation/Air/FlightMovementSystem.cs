@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Air
 
             // `ref`, not `in`: each must share one writable handle with its EnabledRefRW.
             private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
-                in Faction faction, in Flight flight, ref MoveDestination destination,
+                in Owner owner, in Flight flight, ref MoveDestination destination,
                 EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
                 ref MoveProgress progress, ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity,
                 ref FacingGoal aim, EnabledRefRW<FacingGoal> aiming)
@@ -93,7 +93,7 @@ namespace HyperRTS.Simulation.Air
                 var landed = Docked.HasEnabled(entity);
                 var from = transform.Position.xz;
                 var facing = math.normalizesafe(transform.Forward().xz);
-                var crowd = new CrowdVisitor(entity, from, facing, agent, faction.Value,
+                var crowd = new CrowdVisitor(entity, from, facing, agent, owner.Value,
                     wasMoving, destination, GivingWay);
                 Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
                 var driver = new Driver(locomotion, agent, speed.Value, DeltaTime)

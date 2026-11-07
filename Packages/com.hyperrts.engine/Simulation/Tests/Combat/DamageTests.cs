@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var writer = World.Writer(tank);
             writer.Add(new ArmorFacing { Front = 0.5f, Side = 1f, Rear = 2f });
 
-            World.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceFaction = 1, Profile = new DamageProfile { Amount = 20f } });
+            World.QueueDamage(new DamageEvent { Target = tank, Origin = new float3(x, y, z), SourceOwner = 1, Profile = new DamageProfile { Amount = 20f } });
             World.Tick();
 
             Assert.AreEqual(100f - 20f * multiplier, World.GetHealth(tank), 1e-3f);
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Buffer<StatModifier>(target)
                 .Add(new StatModifier { Stat = Stat.DamageTaken, Percent = -0.25f, Source = source });
 
-            World.QueueDamage(new DamageEvent { Target = target, Source = shooter, SourceFaction = 1, Profile = new DamageProfile { Amount = 40f } });
+            World.QueueDamage(new DamageEvent { Target = target, Source = shooter, SourceOwner = 1, Profile = new DamageProfile { Amount = 40f } });
             World.Tick();
 
             Assert.AreEqual(70f, World.GetHealth(target), 1e-3f);
@@ -114,7 +114,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             Position = position,
             Origin = position,
             Layers = WeaponTargets.Surface,
-            SourceFaction = 1,
+            SourceOwner = 1,
             Profile = new DamageProfile { Amount = 40f, Radius = radius, EdgeFactor = 0.5f, FriendlyFire = friendlyFire },
         };
     }

@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             World.Tick();
             foreach (var site in World.All<ConstructionProgress>())
             {
-                if (World.Get<Faction>(site).Value == 1)
+                if (World.Get<Owner>(site).Value == 1)
                 {
                     return site;
                 }
@@ -185,7 +185,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             var count = 0;
             foreach (var site in World.All<ConstructionProgress>())
             {
-                count += World.Get<Faction>(site).Value == 1 ? 1 : 0;
+                count += World.Get<Owner>(site).Value == 1 ? 1 : 0;
             }
 
             return count;
@@ -194,11 +194,11 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         [TestCase(2, 2f, 1f, false, TestName = "EnemyUnitOnTheSpot_RulesItOut")]
         [TestCase(1, 2f, 1f, true, TestName = "FriendlyUnitOnTheSpot_DrivesOff")]
         [TestCase(2, 8f, 0f, true, TestName = "EnemyUnitBesideTheSpot_DoesNotCount")]
-        public void UnitOnTheSpot_OnlyAnEnemyRulesItOut(int faction, float x, float z, bool places)
+        public void UnitOnTheSpot_OnlyAnEnemyRulesItOut(int owner, float x, float z, bool places)
         {
             var spot = new float3(20f, 0f, 20f);
             var prefab = FactoryPrefab(new float2(6f, 6f));
-            World.SpawnUnit((byte)faction, spot + new float3(x, 0f, z));
+            World.SpawnUnit((byte)owner, spot + new float3(x, 0f, z));
             // One tick first, so the spatial index holds the unit.
             World.Tick();
 

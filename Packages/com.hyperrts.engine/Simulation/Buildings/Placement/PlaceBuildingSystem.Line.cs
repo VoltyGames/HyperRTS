@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             for (var i = 0; i < line.Count; i++)
             {
                 var spot = line.Segment(i).Grounded(grid);
-                if (!IsFree(ref state, spot, map, grid, request.Faction, sites))
+                if (!IsFree(ref state, spot, map, grid, request.Owner, sites))
                 {
                     continue;
                 }

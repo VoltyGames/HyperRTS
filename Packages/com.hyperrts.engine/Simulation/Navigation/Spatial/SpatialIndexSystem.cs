@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
 
         public void OnCreate(ref SystemState state)
         {
-            _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Faction, Health>().WithNone<Dead, Inside>().Build();
+            _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Owner, Health>().WithNone<Dead, Inside>().Build();
 
             _snapshots = new NativeList<SpatialEntry>(1024, Allocator.Persistent);
             // Systems ordered before the first build, such as placement, query it: until then it is one empty cell.
@@ -113,7 +113,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 in v128 chunkEnabledMask, bool chunkWasExecuted) => IndexMarker.End();
 
             private void Execute([EntityIndexInQuery] int slot, Entity entity, in LocalTransform transform,
-                in Faction faction)
+                in Owner owner)
             {
                 // Without an agent or a destination it is round, unspaced, still, on the ground and in no group.
                 var isUnit = AgentLookup.TryGetComponent(entity, out var agent);
@@ -127,7 +127,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     Entity = entity,
                     Position = transform.Position,
                     Radius = EntityRadius.Get(entity, AgentLookup, ObstacleLookup),
-                    Faction = faction.Value,
+                    Owner = owner.Value,
                     IsUnit = isUnit,
                     IsMoving = moving,
                     IsArrived = ArrivalLookup.HasEnabled(entity) && arrival.Reason != ArrivalReason.AtGroupmate,

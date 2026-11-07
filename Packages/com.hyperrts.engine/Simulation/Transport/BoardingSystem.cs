@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Transport
             _boarding = new Boarding(ref state, false);
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Transport
 
             new BoardJob
             {
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Boarding = _boarding,
                 ContainerLookup = SystemAPI.GetComponentLookup<Container>(true),
                 Reach = _reach,
@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Transport
         [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct BoardJob : IJobEntity
         {
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public Boarding Boarding;
             [ReadOnly] public ComponentLookup<Container> ContainerLookup;
             public TargetReach Reach;

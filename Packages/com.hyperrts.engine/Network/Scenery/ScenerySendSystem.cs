@@ -17,7 +17,7 @@ namespace HyperRTS.Network.Scenery
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
-    [UpdateAfter(typeof(FactionConnectionsSystem))]
+    [UpdateAfter(typeof(OwnerConnectionsSystem))]
     public partial struct ScenerySendSystem : ISystem
     {
         private EntityQuery _scenery;
@@ -35,8 +35,8 @@ namespace HyperRTS.Network.Scenery
                 .Build();
             _tracker = new SceneryTracker(Allocator.Persistent);
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<FactionRelations>();
-            state.RequireForUpdate<FactionConnections>();
+            state.RequireForUpdate<OwnerRelations>();
+            state.RequireForUpdate<OwnerConnections>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -119,11 +119,11 @@ namespace HyperRTS.Network.Scenery
         /// <summary>Match teams as bits, with team 0 for observers.</summary>
         private ushort Teams(ref SystemState state)
         {
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var teams = 1;
             foreach (var player in SystemAPI.Query<RefRO<Player>>())
             {
-                teams |= 1 << relations.GetTeam(player.ValueRO.Faction);
+                teams |= 1 << relations.GetTeam(player.ValueRO.Owner);
             }
 
             return (ushort)teams;
@@ -131,20 +131,20 @@ namespace HyperRTS.Network.Scenery
 
         private void Send(ref SystemState state, NativeList<ScenerySighting> sightings)
         {
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
-            var viewers = SystemAPI.GetSingleton<FactionConnections>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
+            var viewers = SystemAPI.GetSingleton<OwnerConnections>();
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var changes = new NativeList<SceneryChange>(Allocator.Temp);
             var seen = new NativeList<SceneryRpc>(Allocator.Temp);
             var known = new NativeList<SceneryRpc>(Allocator.Temp);
-            foreach (var faction in viewers.Factions)
+            foreach (var owner in viewers.Owners)
             {
-                var team = relations.GetTeam(faction);
+                var team = relations.GetTeam(owner);
                 seen.Clear();
                 FillSightings(sightings, team, true, changes, seen);
                 FillSightings(sightings, team, false, changes, seen);
-                foreach (var connection in viewers.Connections.GetValuesForKey(faction))
+                foreach (var connection in viewers.Connections.GetValuesForKey(owner))
                 {
                     if (SystemAPI.HasComponent<ScenerySynced>(connection))
                     {

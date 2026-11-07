@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Transport
         [ReadOnly] private ComponentLookup<Passenger> _passengers;
         [ReadOnly] private ComponentLookup<Health> _health;
         [ReadOnly] private ComponentLookup<ConstructionProgress> _sites;
-        [ReadOnly] private ComponentLookup<Faction> _factions;
+        [ReadOnly] private ComponentLookup<Owner> _owners;
         [ReadOnly] private ComponentLookup<NeutralGarrison> _garrisons;
         [ReadOnly] private ComponentLookup<IntactFloors> _floors;
 
@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Transport
             _passengers = state.GetComponentLookup<Passenger>(true);
             _health = state.GetComponentLookup<Health>(true);
             _sites = state.GetComponentLookup<ConstructionProgress>(true);
-            _factions = state.GetComponentLookup<Faction>(true);
+            _owners = state.GetComponentLookup<Owner>(true);
             _garrisons = state.GetComponentLookup<NeutralGarrison>(true);
             _floors = state.GetComponentLookup<IntactFloors>(true);
         }
@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Transport
             _passengers.Update(ref state);
             _health.Update(ref state);
             _sites.Update(ref state);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             _garrisons.Update(ref state);
             _floors.Update(ref state);
         }
@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Transport
         /// A living, finished container with room for <paramref name="unit"/>, allied with it or an empty neutral
         /// garrison building.
         /// </summary>
-        public bool CanBoard(Entity unit, Entity container, in FactionRelations relations)
+        public bool CanBoard(Entity unit, Entity container, in OwnerRelations relations)
         {
             if (unit == container || !_passengers.TryGetComponent(unit, out var passenger))
             {
@@ -83,9 +83,9 @@ namespace HyperRTS.Simulation.Transport
                 return false;
             }
 
-            var owner = _factions[container].Value;
-            var free = owner == Faction.Neutral && _garrisons.HasComponent(container);
-            return free || relations.IsAllied(_factions[unit].Value, owner);
+            var owner = _owners[container].Value;
+            var free = owner == Owner.Neutral && _garrisons.HasComponent(container);
+            return free || relations.IsAllied(_owners[unit].Value, owner);
         }
 
         public bool IsInside(Entity entity) => _inside.HasEnabled(entity);

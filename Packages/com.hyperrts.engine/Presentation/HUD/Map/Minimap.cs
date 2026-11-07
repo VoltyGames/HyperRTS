@@ -108,7 +108,7 @@ namespace HyperRTS.Presentation.HUD.Map
         // Units and structures differ only by NavObstacle, which sets their marker size.
         private static LiveQuery Markers(ComponentType obstacle) => new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<EntityInfo>(),
-            ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalToWorld>(),
             obstacle,
             ComponentType.Exclude<FogHidden>(),
@@ -144,11 +144,11 @@ namespace HyperRTS.Presentation.HUD.Map
             NativeList<MinimapMarker> markers)
         {
             var query = liveQuery.In(view.EntityManager);
-            using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
+            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-            for (var i = 0; i < factions.Length; i++)
+            for (var i = 0; i < owners.Length; i++)
             {
-                AddMarker(markers, transforms[i].Position.xz, view.GetColor(factions[i].Value), radius, square);
+                AddMarker(markers, transforms[i].Position.xz, view.GetColor(owners[i].Value), radius, square);
             }
         }
 
@@ -157,7 +157,7 @@ namespace HyperRTS.Presentation.HUD.Map
             using var memories = _memories.In(view.EntityManager).ToComponentDataArray<FogMemory>(Allocator.Temp);
             foreach (var memory in memories)
             {
-                var color = view.GetColor(memory.State.Faction);
+                var color = view.GetColor(memory.State.Owner);
                 var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
                 AddMarker(markers, memory.State.Transform.Position.xz, shaded, _style.StructureRadius, true);
             }

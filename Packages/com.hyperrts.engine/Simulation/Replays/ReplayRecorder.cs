@@ -74,8 +74,8 @@ namespace HyperRTS.Simulation.Replays
 
         private static void AddPlayers(EntityManager entityManager, Replay replay)
         {
-            using var relationsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<FactionRelations>());
-            relationsQuery.TryGetSingleton(out FactionRelations relations);
+            using var relationsQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<OwnerRelations>());
+            relationsQuery.TryGetSingleton(out OwnerRelations relations);
             using var playerQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>(),
                 ComponentType.ReadOnly<PlayerSide>());
             using var entities = playerQuery.ToEntityArray(Allocator.Temp);
@@ -87,8 +87,8 @@ namespace HyperRTS.Simulation.Replays
                 var player = players[i];
                 var info = new ReplayPlayerInfo
                 {
-                    Faction = player.Faction,
-                    Team = relations.GetTeam(player.Faction),
+                    Owner = player.Owner,
+                    Team = relations.GetTeam(player.Owner),
                     Name = player.Name.ToString(),
                     Color = player.Color,
                     Side = sides[i].Value,
@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Replays
                 replay.Players.Add(info);
             }
 
-            replay.Players.Sort((a, b) => a.Faction.CompareTo(b.Faction));
+            replay.Players.Sort((a, b) => a.Owner.CompareTo(b.Owner));
         }
 
         private static PlayerControl Control(EntityManager entityManager, Entity player)

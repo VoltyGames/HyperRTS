@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 MaxAmount = amount,
                 RegrowthPerSecond = regrowthPerSecond,
             });
-            writer.Add(new Faction { Value = Faction.Neutral });
+            writer.Add(new Owner { Value = Owner.Neutral });
         }
 
         public class Baker : Baker<ResourceNodeAuthoring>

@@ -105,7 +105,7 @@ namespace HyperRTS.Input.Commands
             }
 
             // Enemies hidden by fog must not be targetable, or a click would reveal and attack them.
-            return entityManager.HasComponent<Faction>(entity) && !entityManager.HasComponent<FogHidden>(entity);
+            return entityManager.HasComponent<Owner>(entity) && !entityManager.HasComponent<FogHidden>(entity);
         }
     }
 }

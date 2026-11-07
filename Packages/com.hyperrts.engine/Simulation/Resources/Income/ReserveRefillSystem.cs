@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Resources.Income
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<ReserveRefill>();
-            _reserves = SystemAPI.QueryBuilder().WithAll<ResourceReserve, ResourceIncome, Faction>().Build();
+            _reserves = SystemAPI.QueryBuilder().WithAll<ResourceReserve, ResourceIncome, Owner>().Build();
         }
 
         [BurstCompile]
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Resources.Income
                 Reserves = _reserves.ToEntityArray(state.WorldUpdateAllocator),
                 ReserveLookup = SystemAPI.GetComponentLookup<ResourceReserve>(false),
                 IncomeLookup = SystemAPI.GetComponentLookup<ResourceIncome>(true),
-                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
             }.Schedule();
         }
@@ -47,16 +47,16 @@ namespace HyperRTS.Simulation.Resources.Income
             [ReadOnly] public NativeArray<Entity> Reserves;
             public ComponentLookup<ResourceReserve> ReserveLookup;
             [ReadOnly] public ComponentLookup<ResourceIncome> IncomeLookup;
-            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
 
-            private void Execute(Entity entity, ref ReserveRefill refill, in Faction faction)
+            private void Execute(Entity entity, ref ReserveRefill refill, in Owner owner)
             {
                 var offline = OfflineLookup.HasEnabled(entity);
-                var due = IntervalTimer.Due(ref refill.Elapsed, refill.Interval, DeltaTime, faction.Value, offline);
+                var due = IntervalTimer.Due(ref refill.Elapsed, refill.Interval, DeltaTime, owner.Value, offline);
                 if (due > 0)
                 {
-                    TopUp(faction.Value, refill.Type, due * refill.Amount);
+                    TopUp(owner.Value, refill.Type, due * refill.Amount);
                 }
             }
 
@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Resources.Income
             {
                 foreach (var target in Reserves)
                 {
-                    var sameOwner = FactionLookup[target].Value == owner;
+                    var sameOwner = OwnerLookup[target].Value == owner;
                     if (!sameOwner || !IncomeLookup[target].Type.Equals(type))
                     {
                         continue;

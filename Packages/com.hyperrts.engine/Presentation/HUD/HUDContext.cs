@@ -63,7 +63,7 @@ namespace HyperRTS.Presentation.HUD
 
         public bool HasShownPlayer => ShownPlayer != Entity.Null;
 
-        public byte ShownFaction { get; private set; }
+        public byte ShownOwner { get; private set; }
 
         /// <summary>False when the shown player is not the local one: the card then shows but its buttons are disabled.</summary>
         public bool CanCommand => View.HasLocalPlayer && ShownPlayer == View.LocalPlayer;
@@ -103,7 +103,7 @@ namespace HyperRTS.Presentation.HUD
         {
             var picked = _picked != Entity.Null && EntityManager.Exists(_picked);
             ShownPlayer = picked ? _picked : View.LocalPlayer;
-            ShownFaction = HasShownPlayer ? EntityManager.GetComponentData<Player>(ShownPlayer).Faction : default;
+            ShownOwner = HasShownPlayer ? EntityManager.GetComponentData<Player>(ShownPlayer).Owner : default;
         }
 
         private void ReadSelection()
@@ -121,14 +121,14 @@ namespace HyperRTS.Presentation.HUD
         }
 
         public bool IsOwned(Entity entity) =>
-            EntityManager.HasComponent<Faction>(entity)
-            && EntityManager.GetComponentData<Faction>(entity).Value == ShownFaction;
+            EntityManager.HasComponent<Owner>(entity)
+            && EntityManager.GetComponentData<Owner>(entity).Value == ShownOwner;
 
         public DynamicBuffer<ResourceStock> Stock => EntityManager.GetBuffer<ResourceStock>(ShownPlayer, true);
 
         /// <summary>The shown player as a buyer this frame, shared by every button that checks a purchase.</summary>
         public Buyer SnapshotBuyer() =>
-            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), _limited.In(EntityManager), ShownFaction,
+            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), _limited.In(EntityManager), ShownOwner,
                 new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
                 EntityManager.GetBuffer<CompletedResearch>(ShownPlayer, true));
 
@@ -154,7 +154,7 @@ namespace HyperRTS.Presentation.HUD
             foreach (var prerequisite in EntityManager.GetBuffer<Prerequisite>(prefab, true))
             {
                 var required = registry.Find(prerequisite.TypeId);
-                var unmet = !buyer.Buildings.IsMet(buyer.Faction, prerequisite.TypeId, buyer.Research);
+                var unmet = !buyer.Buildings.IsMet(buyer.Owner, prerequisite.TypeId, buyer.Research);
                 if (unmet && required != Entity.Null)
                 {
                     missing.Add(required);
@@ -211,14 +211,14 @@ namespace HyperRTS.Presentation.HUD
 
         private int StateHash(Entity entity)
         {
-            var faction = 0;
-            if (EntityManager.HasComponent<Faction>(entity))
+            var owner = 0;
+            if (EntityManager.HasComponent<Owner>(entity))
             {
-                faction = EntityManager.GetComponentData<Faction>(entity).Value;
+                owner = EntityManager.GetComponentData<Owner>(entity).Value;
             }
 
             var building = EntityManager.HasEnabled<ConstructionProgress>(entity) ? 1 : 0;
-            return (int)math.hash(new int4(entity.Index, entity.Version, faction, building));
+            return (int)math.hash(new int4(entity.Index, entity.Version, owner, building));
         }
     }
 }

@@ -21,13 +21,13 @@ namespace HyperRTS.Simulation.Combat.Weapons
     public partial struct WeaponTargetJob : IJobEntity
     {
         [ReadOnly] public SpatialIndex Index;
-        public FactionRelations Relations;
+        public OwnerRelations Relations;
         public TargetLookup Targets;
         public ScanSchedule Scans;
         [ReadOnly] public ProjectileGrid Projectiles;
 
         private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in LocalTransform transform,
-            in AttackTarget attack, EnabledRefRO<AttackTarget> attacking, in CombatStance stance, in Faction faction)
+            in AttackTarget attack, EnabledRefRO<AttackTarget> attacking, in CombatStance stance, in Owner owner)
         {
             var shared = attacking.ValueRO ? attack.Value : Entity.Null;
             var scanning = Scans.IsDue(entity) && stance.Value != Stance.Passive;
@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 var mount = mounts[i];
                 if (mount.Weapon.ShootsProjectiles)
                 {
-                    mount.Target = Incoming(transform.Position, mount, faction.Value);
+                    mount.Target = Incoming(transform.Position, mount, owner.Value);
                 }
                 else if (i == 0)
                 {
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 }
                 else
                 {
-                    mount.Target = Aim(entity, transform.Position, mount, shared, scanning, faction.Value);
+                    mount.Target = Aim(entity, transform.Position, mount, shared, scanning, owner.Value);
                 }
 
                 mounts[i] = mount;
@@ -52,8 +52,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>The nearest hostile projectile it engages inside its range, else the nearest headed for that range.</summary>
-        private Entity Incoming(float3 position, in WeaponMount mount, byte faction) =>
-            mount.Ready ? Projectiles.Nearest(position, mount.Weapon, faction, Relations) : Entity.Null;
+        private Entity Incoming(float3 position, in WeaponMount mount, byte owner) =>
+            mount.Ready ? Projectiles.Nearest(position, mount.Weapon, owner, Relations) : Entity.Null;
 
         /// <summary>Engagement's reach, since a longer-ranged extra weapon can put the unit in range before the primary reaches.</summary>
         private Entity Primary(in WeaponMount mount, in AttackTarget attack, bool attacking)
@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         private Entity Aim(Entity entity, float3 position, in WeaponMount mount, Entity shared, bool scanning,
-            byte faction)
+            byte owner)
         {
             if (!mount.Ready)
             {
@@ -85,19 +85,19 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return Entity.Null;
             }
 
-            if (KeepsTarget(entity, position, mount, faction))
+            if (KeepsTarget(entity, position, mount, owner))
             {
                 return mount.Target;
             }
 
-            return scanning ? Scan(entity, position, mount.Weapon, faction) : Entity.Null;
+            return scanning ? Scan(entity, position, mount.Weapon, owner) : Entity.Null;
         }
 
         /// <summary>Its own target is still hostile, unhidden and in its reach.</summary>
-        private bool KeepsTarget(Entity entity, float3 position, in WeaponMount mount, byte faction)
+        private bool KeepsTarget(Entity entity, float3 position, in WeaponMount mount, byte owner)
         {
             var target = mount.Target;
-            if (target == Entity.Null || !Targets.IsValidTarget(target, faction, Relations))
+            if (target == Entity.Null || !Targets.IsValidTarget(target, owner, Relations))
             {
                 return false;
             }
@@ -105,9 +105,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
             return InReach(entity, position, mount.Weapon, target);
         }
 
-        private Entity Scan(Entity entity, float3 position, in Weapon weapon, byte faction)
+        private Entity Scan(Entity entity, float3 position, in Weapon weapon, byte owner)
         {
-            var finder = new NearestHostile(Relations, Targets, weapon, faction, entity, position);
+            var finder = new NearestHostile(Relations, Targets, weapon, owner, entity, position);
             finder.Search(Index, Targets.ScanReach(entity, weapon), true);
             var found = finder.Best != Entity.Null;
             return found && CanShoot(entity, position, weapon, finder.Best) ? finder.Best : Entity.Null;

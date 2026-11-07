@@ -246,7 +246,7 @@ namespace HyperRTS.Presentation.Tests.Cursors
 
         private Entity Post()
         {
-            var post = _world.SpawnBuilding(Faction.Neutral, new float3(10f, 0f, 0f), Footprint);
+            var post = _world.SpawnBuilding(Owner.Neutral, new float3(10f, 0f, 0f), Footprint);
             var writer = _world.Writer(post);
             CaptureSetup.AddCapturable(writer, 2f);
             return post;

@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             state.RequireForUpdate<SpatialIndex>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<FogOfWar>();
             state.RequireForUpdate<SimulationFrame>();
         }
@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             new AcquireJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Targets = _targets,
                 Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
                 Traits = traits,
@@ -59,14 +59,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
         private partial struct AcquireJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public TargetLookup Targets;
             [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
             public OrderTraitTable Traits;
             public ScanSchedule Scans;
 
             private void Execute(Entity entity, in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts,
-                in CombatStance stance, in VisionRange vision, in Faction faction, ref AttackTarget attack,
+                in CombatStance stance, in VisionRange vision, in Owner owner, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking)
             {
                 if (!Scans.IsDue(entity) || attacking.ValueRO || stance.Value == Stance.Passive)
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 var weapon = primary.Weapon;
                 var holding = stance.Value == Stance.HoldPosition;
                 var range = holding ? Targets.ScanReach(entity, weapon) : stance.ScanRange(vision.Value, weapon.Range);
-                var finder = new NearestHostile(Relations, Targets, weapon, faction.Value, entity, transform.Position);
+                var finder = new NearestHostile(Relations, Targets, weapon, owner.Value, entity, transform.Position);
                 finder.Search(Index, range, holding);
 
                 if (finder.Best != Entity.Null)

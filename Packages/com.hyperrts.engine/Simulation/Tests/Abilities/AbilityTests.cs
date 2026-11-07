@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
             Assert.AreEqual(strike.Id, Events()[0].AbilityId);
             using var beacons = World.Query(
                 ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<EntityInfo>(),
-                ComponentType.ReadOnly<Faction>());
+                ComponentType.ReadOnly<Owner>());
             using var positions = beacons.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             Assert.AreEqual(1, positions.Length);
             Assert.AreEqual(60f, positions[0].Position.x, 1e-3f);

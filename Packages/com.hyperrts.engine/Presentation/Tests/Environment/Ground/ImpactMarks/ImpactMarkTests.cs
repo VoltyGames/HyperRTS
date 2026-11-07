@@ -67,7 +67,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
         private void Land(float3 position, ImpactSurface surface = ImpactSurface.Ground, int typeId = Mortar) =>
             _kit.PushCue(new CueEvent
             {
-                TypeId = typeId, Slot = CueSlot.Impact, Position = position, Faction = 1, Surface = surface,
+                TypeId = typeId, Slot = CueSlot.Impact, Position = position, Owner = 1, Surface = surface,
             });
 
         private void Run(double time)

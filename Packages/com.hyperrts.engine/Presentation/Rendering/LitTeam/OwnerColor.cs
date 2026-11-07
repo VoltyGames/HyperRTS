@@ -3,10 +3,10 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
-    /// <summary>A faction and the linear RGBA colour this client shows it in.</summary>
-    public struct FactionColor
+    /// <summary>An owner and the linear RGBA colour this client shows it in.</summary>
+    public struct OwnerColor
     {
-        public byte Faction;
+        public byte Owner;
         public float4 Color;
     }
 }

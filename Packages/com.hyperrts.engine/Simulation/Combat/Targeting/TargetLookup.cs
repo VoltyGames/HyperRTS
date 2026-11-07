@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<Health> _health;
-        [ReadOnly] private ComponentLookup<Faction> _factions;
+        [ReadOnly] private ComponentLookup<Owner> _owners;
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         [ReadOnly] private ComponentLookup<Inside> _inside;
@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             this = default;
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _health = state.GetComponentLookup<Health>(true);
-            _factions = state.GetComponentLookup<Faction>(true);
+            _owners = state.GetComponentLookup<Owner>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
             _inside = state.GetComponentLookup<Inside>(true);
@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         {
             _transforms.Update(ref state);
             _health.Update(ref state);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             _agents.Update(ref state);
             _obstacles.Update(ref state);
             _inside.Update(ref state);
@@ -80,24 +80,24 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public bool IsAlive(Entity entity) => Health.IsAlive(_health, entity);
 
         /// <summary>Alive, hostile, not tucked inside a container and not hidden from the attacker by stealth.</summary>
-        public bool IsValidTarget(Entity target, byte attackerFaction, in FactionRelations relations)
+        public bool IsValidTarget(Entity target, byte attackerOwner, in OwnerRelations relations)
         {
-            if (!IsAlive(target) || IsInside(target) || !_factions.TryGetComponent(target, out var faction))
+            if (!IsAlive(target) || IsInside(target) || !_owners.TryGetComponent(target, out var owner))
             {
                 return false;
             }
 
-            var hostile = relations.IsHostile(attackerFaction, faction.Value);
-            return hostile && !IsHiddenByConcealment(target, relations.GetTeam(attackerFaction));
+            var hostile = relations.IsHostile(attackerOwner, owner.Value);
+            return hostile && !IsHiddenByConcealment(target, relations.GetTeam(attackerOwner));
         }
 
         /// <summary>
         /// What an explicit attack order may target: a valid hostile target, or any living <see cref="Destructible"/>
         /// map scenery the weapon can hit. Units never pick scenery on their own.
         /// </summary>
-        public bool IsAttackable(Entity target, byte attackerFaction, in FactionRelations relations, WeaponTargets targets)
+        public bool IsAttackable(Entity target, byte attackerOwner, in OwnerRelations relations, WeaponTargets targets)
         {
-            if (IsValidTarget(target, attackerFaction, relations, targets))
+            if (IsValidTarget(target, attackerOwner, relations, targets))
             {
                 return true;
             }
@@ -107,9 +107,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
         }
 
         /// <summary>A valid target (see above) that a weapon reaching <paramref name="targets"/> can hit.</summary>
-        public bool IsValidTarget(Entity target, byte attackerFaction, in FactionRelations relations,
+        public bool IsValidTarget(Entity target, byte attackerOwner, in OwnerRelations relations,
             WeaponTargets targets) =>
-            IsValidTarget(target, attackerFaction, relations) && CanHit(target, targets);
+            IsValidTarget(target, attackerOwner, relations) && CanHit(target, targets);
 
         public bool CanHit(Entity target, WeaponTargets targets)
         {

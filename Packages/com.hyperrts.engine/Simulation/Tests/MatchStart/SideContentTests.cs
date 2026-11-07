@@ -51,12 +51,12 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             kit.Add(new SideStartItem { Side = 1, Prefab = truck, Offset = new float2(2f, 5f), Yaw = math.PI / 2f });
             entityManager.AddBuffer<SideBuildStep>(match)
                 .Add(new SideBuildStep { Side = 1, Prefab = basePrefab, Count = 2 });
-            for (byte faction = 1; faction <= 3; faction++)
+            for (byte owner = 1; owner <= 3; owner++)
             {
-                var player = world.Player(faction);
+                var player = world.Player(owner);
                 entityManager.AddComponentData(player, new PlayerSpawn
                 {
-                    Position = Spawns[faction - 1], Yaw = Yaws[faction - 1],
+                    Position = Spawns[owner - 1], Yaw = Yaws[owner - 1],
                 });
                 entityManager.SetComponentData(player, new PlayerSide { Value = 1 });
                 entityManager.AddBuffer<AIBuildStep>(player).Add(new AIBuildStep { Prefab = truck, Count = 9 });
@@ -82,9 +82,9 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         private static int CountType(TestWorld world, Entity prefab)
         {
             var count = 0;
-            for (byte faction = 0; faction <= 3; faction++)
+            for (byte owner = 0; owner <= 3; owner++)
             {
-                count += world.Owned(prefab, faction).Count;
+                count += world.Owned(prefab, owner).Count;
             }
 
             return count;

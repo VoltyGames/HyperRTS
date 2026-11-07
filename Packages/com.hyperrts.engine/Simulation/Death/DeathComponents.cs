@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Death
     public struct LastAttacker : IComponentData
     {
         public Entity Source;
-        public byte Faction;
+        public byte Owner;
     }
 
     /// <summary>Prefab instantiated where the entity dies (wreck, debris, explosion).</summary>

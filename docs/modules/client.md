@@ -57,7 +57,7 @@ dust and rotor wash, and loop effects), `Lights` (effect and loop lights, smoke 
 includes and the two effect shader graphs). In `Rendering/`, the instance batches and `EntityExtent` sit in `Overlays/`,
 the fog of war renderer feature and its passes in `Fog/`, and the hide, model variant, garrison part and paint core in
 `Rendering/Parts/` (namespace `HyperRTS.Presentation.Rendering.Parts`), with the damage and resource stage swaps. `Rendering/LitTeam/` holds the `LitTeam`
-shader with its team colour, team strip, faction palette, grime and building lights; contact shadows and the unit silhouette stay
+shader with its team colour, team strip, owner palette, grime and building lights; contact shadows and the unit silhouette stay
 at the `Rendering/` root.
 
 ### HUD
@@ -150,7 +150,7 @@ The card is data. A `CommandSpec` asset describes one button: what it is for (`C
 research, an ability by name, or an order with its argument), the card it sits on (a builder or producer prefab, empty for
 every card), a label key and icon (empty takes the prefab's or ability's own), a `Key` hotkey, and its page and slot.
 A `CommandCatalog` on `HUDController` lists them. A spec with a card beats one without for the same target, which is how
-one faction differs from another. Sources look specs up by target and card, log an error for a gap and skip the button.
+one side differs from another. Sources look specs up by target and card, log an error for a gap and skip the button.
 
 The card places entries by slot (0 to 14, left to right then top to bottom) and fills the gaps with blanks. A slot already taken moves the
 entry to the next free one, and past the last slot to the next page. With more than one page the last slot of every page is
@@ -217,7 +217,7 @@ when there are none. Craters are server only, so the preview does not show them.
 
 `HyperRTS/LitTeam` is URP Lit that repaints the albedo in the owner's colour. It paints where the `_TeamMask`
 texture's red channel allows, on UV0, and inside the `TeamStripAuthoring` height band if there is one.
-`FactionPalette` holds this client's colours. `TeamColorOverride` swaps them, for example for colour-blind players
+`OwnerPalette` holds this client's colours. `TeamColorOverride` swaps them, for example for colour-blind players
 or own, ally and enemy colours. The validator flags units and buildings without a team colour material.
 
 Ground vehicles with `GrimeAuthoring` collect grime. `GrimeSystem` advances each unit's `Grime` from the distance it drove, the

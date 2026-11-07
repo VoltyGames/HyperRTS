@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         {
             _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             new AttackOrderJob
             {
                 Targets = _targets,
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
             }.ScheduleParallel();
         }
 
@@ -44,10 +44,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
         private partial struct AttackOrderJob : IJobEntity
         {
             public TargetLookup Targets;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> hasOrder, ref AttackTarget attack,
-                EnabledRefRW<AttackTarget> attacking, in Faction faction, in DynamicBuffer<WeaponMount> mounts)
+                EnabledRefRW<AttackTarget> attacking, in Owner owner, in DynamicBuffer<WeaponMount> mounts)
             {
                 if (order.Value.Type != OrderType.Attack)
                 {
@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
                 var target = order.Value.Target;
                 var primary = mounts[0];
-                var valid = Targets.IsAttackable(target, faction.Value, Relations, primary.Weapon.Targets);
+                var valid = Targets.IsAttackable(target, owner.Value, Relations, primary.Weapon.Targets);
                 if (!valid || primary.Ammo.Empty)
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.

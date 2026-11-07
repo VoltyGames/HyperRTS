@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Status
                 status.EndsAt = Now + definition.Duration;
                 status.Definition = request.Definition;
                 status.Source = request.Source;
-                status.SourceFaction = request.SourceFaction;
+                status.SourceOwner = request.SourceOwner;
                 var stacks = definition.NextStacks(status.Stacks);
                 if (stacks != status.Stacks)
                 {
@@ -158,7 +158,7 @@ namespace HyperRTS.Simulation.Status
                     if (definition.DamagePerSecond > 0f)
                     {
                         // Damage over time has no direction, so it comes from the target itself.
-                        Damage.Add(DamageEvent.Direct(entity, transform.Position, status.Source, status.SourceFaction,
+                        Damage.Add(DamageEvent.Direct(entity, transform.Position, status.Source, status.SourceOwner,
                             definition.DamagePerSecond * status.Stacks * DeltaTime).Typed(definition.Damage));
                     }
                 }

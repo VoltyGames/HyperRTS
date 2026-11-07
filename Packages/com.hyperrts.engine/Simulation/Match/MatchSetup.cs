@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Match
 {
     /// <summary>
     /// Lobby or skirmish choices applied over the baked match before its first gameplay frame. Slot i configures
-    /// faction i + 1; baked slots past the end of <see cref="Slots"/> are closed.
+    /// owner i + 1; baked slots past the end of <see cref="Slots"/> are closed.
     /// </summary>
     public struct MatchSetup : IComponentData
     {
@@ -24,12 +24,12 @@ namespace HyperRTS.Simulation.Match
         /// <summary>The map weather's key the scene switches to when it loads; empty keeps the map's own.</summary>
         public FixedString32Bytes Weather;
 
-        /// <summary>Bit per closed faction, filled in when the setup is applied.</summary>
-        public uint ClosedFactions;
+        /// <summary>Bit per closed owner, filled in when the setup is applied.</summary>
+        public uint ClosedOwners;
 
         /// <summary>
         /// Match seed shared by every peer and recorded in replays; the AI module derives each bot's attack lane choice
-        /// from it and the bot's faction.
+        /// from it and the bot's owner.
         /// </summary>
         public uint Seed;
 
@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Match
 
         public static MatchSetup Create() => new() { StartingResourceScale = 1f, StrategicAssets = true };
 
-        public readonly bool IsOpen(byte faction) =>
-            faction >= 1 && faction <= Slots.Length && Slots[faction - 1].Open;
+        public readonly bool IsOpen(byte owner) =>
+            owner >= 1 && owner <= Slots.Length && Slots[owner - 1].Open;
     }
 }

@@ -16,10 +16,10 @@ namespace HyperRTS.Simulation.MatchStart
     public static class PlayerSetup
     {
         /// <summary>Returns the player's empty stockpile.</summary>
-        public static DynamicBuffer<ResourceStock> Add(EntityWriter writer, byte faction,
+        public static DynamicBuffer<ResourceStock> Add(EntityWriter writer, byte owner,
             in FixedString32Bytes name, float4 color, int populationCap)
         {
-            writer.Add(new Player { Faction = faction, Name = name, Color = color });
+            writer.Add(new Player { Owner = owner, Name = name, Color = color });
             writer.Add<PlayerSide>();
             writer.Add<PlayerStats>();
             writer.Add(new Population { Cap = populationCap });

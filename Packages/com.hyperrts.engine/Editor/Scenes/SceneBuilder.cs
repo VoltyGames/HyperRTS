@@ -60,9 +60,9 @@ namespace HyperRTS.Editor.Scenes
                 throw new ArgumentException($"Scene path '{spec.ScenePath}' must be a project path ending in .unity.");
             }
 
-            if (spec.Players < 1 || spec.Players >= FactionRelations.MaxTeams)
+            if (spec.Players < 1 || spec.Players >= OwnerRelations.MaxTeams)
             {
-                throw new ArgumentException($"Players must be 1 to {FactionRelations.MaxTeams - 1}, not {spec.Players}.");
+                throw new ArgumentException($"Players must be 1 to {OwnerRelations.MaxTeams - 1}, not {spec.Players}.");
             }
 
             if (spec.MapSize.x <= 0f || spec.MapSize.y <= 0f)

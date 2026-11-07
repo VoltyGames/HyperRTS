@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         public Entity Entity;
         public float3 Position;
         public float Radius;
-        public byte Faction;
+        public byte Owner;
 
         /// <summary>Has a <see cref="NavAgent"/>, so it moves and crowds other units.</summary>
         public bool IsUnit;

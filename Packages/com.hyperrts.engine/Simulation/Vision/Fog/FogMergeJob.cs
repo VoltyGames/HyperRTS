@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Vision.Fog
 
         private readonly void Clear(NativeArray<ulong> plane, int low, int high)
         {
-            for (var team = 0; team < FactionRelations.MaxTeams; team++)
+            for (var team = 0; team < OwnerRelations.MaxTeams; team++)
             {
                 var start = team * Fog.PlaneWords;
                 for (var i = low * Fog.RowWords; i < high * Fog.RowWords; i++)

@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Destruction
             float2 block, SceneryId id)
         {
             writer.Add(new Health { Current = maxHealth, Max = maxHealth });
-            writer.Add(new Faction { Value = Faction.Neutral });
+            writer.Add(new Owner { Value = Owner.Neutral });
             writer.Add<Dead>();
             writer.SetEnabled<Dead>(false);
             writer.Add<LastAttacker>();

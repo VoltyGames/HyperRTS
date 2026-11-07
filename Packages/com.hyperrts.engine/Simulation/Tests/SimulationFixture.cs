@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Tests
     {
         protected TestWorld World { get; private set; }
 
-        /// <summary>Team of each player, in order; players are factions 1, 2 and so on.</summary>
+        /// <summary>Team of each player, in order; players are owners 1, 2 and so on.</summary>
         protected virtual byte[] Teams => new byte[] { 1, 2 };
 
         [SetUp]

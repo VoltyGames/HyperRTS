@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             Assert.AreEqual(0, World.Get<Population>(World.Player(1)).Used, "carriers use no population");
             foreach (var carrier in carriers)
             {
-                Assert.AreEqual(1, World.Get<Faction>(carrier).Value);
+                Assert.AreEqual(1, World.Get<Owner>(carrier).Value);
                 Assert.AreEqual(40f, World.Get<MoveDestination>(carrier).Value.x, 0.01f);
             }
         }
@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             Assert.AreEqual(0, Carriers().Length, "offline");
 
             World.SetOffline(source, false);
-            World.Set(source, new Faction { Value = Faction.Neutral });
+            World.Set(source, new Owner { Value = Owner.Neutral });
             World.Run(CarrierInterval + 1f);
             Assert.AreEqual(0, Carriers().Length, "neutral");
         }
@@ -150,7 +150,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             Assert.Less(position.z, -95f, "entered on the south edge");
             Assert.AreEqual(60f, position.x, 2f, "level with the owner's start");
             Assert.AreEqual(20f, position.y, 0.5f, "at cruise altitude");
-            Assert.AreEqual(1, World.Get<Faction>(flights[0]).Value);
+            Assert.AreEqual(1, World.Get<Owner>(flights[0]).Value);
             Assert.AreEqual(40f, World.Get<MoveDestination>(flights[0]).Value.x, 1f, "just past the receiver");
 
             Assert.IsTrue(World.RunUntil(() => Crates().Length > 0, 6f), "dropped over the receiver");

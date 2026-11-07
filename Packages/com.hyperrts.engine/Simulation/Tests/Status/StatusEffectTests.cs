@@ -151,12 +151,12 @@ namespace HyperRTS.Simulation.Tests.Status
             Effect("Marked", new StatusEffectDefinition { Duration = duration, Rule = rule, MaxStacks = maxStacks },
                 new[] { new StatBonus { stat = Stat.DamageTaken, percent = 0.3f, damageType = _precision } });
 
-        private void Apply(Entity target, Entity effect, Entity source = default, byte sourceFaction = 0)
+        private void Apply(Entity target, Entity effect, Entity source = default, byte sourceOwner = 0)
         {
             using var query = World.Query(typeof(StatusQueue));
             World.EntityManager.GetBuffer<StatusRequest>(query.GetSingletonEntity()).Add(new StatusRequest
             {
-                Target = target, Definition = effect, Source = source, SourceFaction = sourceFaction,
+                Target = target, Definition = effect, Source = source, SourceOwner = sourceOwner,
             });
             World.Tick();
         }

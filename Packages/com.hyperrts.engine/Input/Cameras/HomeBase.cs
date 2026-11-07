@@ -16,29 +16,29 @@ namespace HyperRTS.Input.Cameras
             entityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalPlayer>(), ComponentType.ReadOnly<Player>()));
 
         private readonly LiveQuery _buildings = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<BuildingTag>(), ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<BuildingTag>(), ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalTransform>()));
 
         /// <summary>False until the local player exists (the map is still streaming in, or a network join is pending).</summary>
-        public bool TryGetLocalFaction(EntityManager entityManager, out byte faction)
+        public bool TryGetLocalOwner(EntityManager entityManager, out byte owner)
         {
             var found = _localPlayer.In(entityManager).TryGetSingleton(out Player local);
-            faction = local.Faction;
+            owner = local.Owner;
             return found;
         }
 
-        /// <summary>False when <paramref name="faction"/> owns no buildings.</summary>
-        public bool TryFind(EntityManager entityManager, byte faction, out Vector3 centre)
+        /// <summary>False when <paramref name="owner"/> owns no buildings.</summary>
+        public bool TryFind(EntityManager entityManager, byte owner, out Vector3 centre)
         {
             centre = default;
             var query = _buildings.In(entityManager);
-            using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
+            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             var sum = float3.zero;
             var count = 0;
-            for (var i = 0; i < factions.Length; i++)
+            for (var i = 0; i < owners.Length; i++)
             {
-                if (factions[i].Value == faction)
+                if (owners[i].Value == owner)
                 {
                     sum += transforms[i].Position;
                     count++;

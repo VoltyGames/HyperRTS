@@ -3,9 +3,9 @@ using Unity.Entities;
 
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
-    /// <summary>Faction whose colour was last applied to this root; client-only bookkeeping.</summary>
+    /// <summary>Owner whose colour was last applied to this root; client-only bookkeeping.</summary>
     public struct TeamColored : IComponentData
     {
-        public byte Faction;
+        public byte Owner;
     }
 }

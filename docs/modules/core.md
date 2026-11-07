@@ -11,9 +11,9 @@ The base tier: ownership, identity, health and shared helpers.
 
 | Type | Role |
 | --- | --- |
-| `Faction` | Owner of an entity. 0 is neutral, the maximum is 29 |
-| `FactionRelations` | Singleton with each faction's team. Answers `IsHostile`, `IsAllied` and `GetRelation` |
-| `Player`, `PlayerRegistry` | A player's faction, name and colour. The registry maps faction to player |
+| `Owner` | Owner of an entity. 0 is neutral, the maximum is 29 |
+| `OwnerRelations` | Singleton with each owner's team. Answers `IsHostile`, `IsAllied` and `GetRelation` |
+| `Player`, `PlayerRegistry` | A player's owner, name and colour. The registry maps owner to player |
 | `PlayerSide` | The game's army or nation id. Picks the player's start kit and AI build order |
 | `LocalPlayer`, `Defeated` | The player this client controls. Enabled once a player loses |
 | `PlayerStats` | Replicated totals: trained, built, delivered, lost, destroyed |
@@ -31,7 +31,7 @@ The base tier: ownership, identity, health and shared helpers.
 | `OwnerChanged.Transfer` | The one way to change an owner. Raises `OwnerChanged` |
 | `EntityInfo`, `PrefabRegistry` | Type id, name and icon. The registry maps type id to prefab |
 | `EntityWriter` | Writes component sets, so bakers and tests build the same entities |
-| `PrefabSpawner` | Instantiates a baked prefab from a job, places it with its `LocalToWorld` (stretch included) and sets its `Faction`. `SpawnExtensions` does the same on an `EntityManager` |
+| `PrefabSpawner` | Instantiates a baked prefab from a job, places it with its `LocalToWorld` (stretch included) and sets its `Owner`. `SpawnExtensions` does the same on an `EntityManager` |
 | `EventWriter<T>`, `EventQueues` | Appends to a per-frame queue singleton (damage, status, cues, game events) from one job thread. `EventQueues.Create` makes the named queue |
 | `IntervalTimer` | A repeating timer: `Due` resets it while neutral and holds it while offline |
 | `AuthoringBehaviour` | Base of all authoring components. It lives in the `Common.Authoring` sub-namespace with `EntityWriter` and the authoring attributes |
@@ -67,7 +67,7 @@ prespawned ghosts in single player.
 
 One `MatchAuthoring` per map sets its size, fog, player slots, sides, AI tuning, replays and join timeout, and references one `InfantryTuning` asset (cover, squad, voice and crater numbers; baking fails without it). Each slot
 has a name, team, colour, control type, starting stock, spawn point and side. Slot index + 1 is the player's
-faction.
+owner.
 
 A side holds a start kit and an AI build order. At match start every player gets its side's kit, spawned around its
 spawn point, and its side's build order. A side the Match doesn't list is an error.

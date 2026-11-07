@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Replays
     /// <summary>A player as recorded in a replay header.</summary>
     public struct ReplayPlayerInfo
     {
-        public byte Faction;
+        public byte Owner;
         public byte Team;
         public string Name;
 

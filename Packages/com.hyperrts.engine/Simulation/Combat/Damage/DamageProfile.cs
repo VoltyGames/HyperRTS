@@ -44,14 +44,14 @@ namespace HyperRTS.Simulation.Combat.Damage
             math.lerp(1f, EdgeFactor, math.saturate(gap / math.max(Radius, 1e-4f)));
 
         /// <summary>The hit on <paramref name="target"/> at <paramref name="position"/>, its splash reaching <paramref name="layers"/>.</summary>
-        public readonly DamageEvent Hit(Entity source, byte faction, float3 origin, Entity target, float3 position,
+        public readonly DamageEvent Hit(Entity source, byte owner, float3 origin, Entity target, float3 position,
             WeaponTargets layers) => new()
         {
             Target = target,
             Position = position,
             Origin = origin,
             Source = source,
-            SourceFaction = faction,
+            SourceOwner = owner,
             Profile = this,
             Layers = layers,
         };

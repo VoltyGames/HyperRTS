@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Fog
         private readonly LiveSingleton<SightShapeView> _view = new();
         private readonly LiveQuery _selected = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(), ComponentType.ReadOnly<SightArea>(),
-            ComponentType.ReadOnly<SightAreaBits>(), ComponentType.ReadOnly<Faction>()));
+            ComponentType.ReadOnly<SightAreaBits>(), ComponentType.ReadOnly<Owner>()));
         private Texture2D _mask;
 
         /// <summary>Paints and publishes the outline, or hides it when not shown.</summary>
@@ -84,7 +84,7 @@ namespace HyperRTS.Presentation.Fog
             foreach (var unit in units)
             {
                 var area = entityManager.GetComponentData<SightArea>(unit);
-                if (entityManager.GetComponentData<Faction>(unit).Value != viewer || area.Radius < 0)
+                if (entityManager.GetComponentData<Owner>(unit).Value != viewer || area.Radius < 0)
                 {
                     continue;
                 }

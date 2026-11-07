@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Movement
         public float2 Heading;
         public float Spacing;
         public NavLayer Layer;
-        public byte Faction;
+        public byte Owner;
         public bool Moving;
         public float2 Goal;
         public int Group;
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Movement
         private FixedList512Bytes<AvoidanceNeighbour> _neighbours;
         private HullClearance _room;
 
-        public CrowdVisitor(Entity self, float2 position, float2 facing, in NavAgent agent, byte faction, bool moving,
+        public CrowdVisitor(Entity self, float2 position, float2 facing, in NavAgent agent, byte owner, bool moving,
             in MoveDestination destination, in GivingWay rule)
         {
             Self = self;
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Movement
             SegmentAxis = facing * agent.HalfSegment;
             Spacing = agent.Spacing;
             Layer = agent.Layer;
-            Faction = faction;
+            Owner = owner;
             Moving = moving;
             Goal = destination.Value.xz;
             Heading = moving ? math.normalizesafe(Goal - position) : float2.zero;
@@ -166,7 +166,7 @@ namespace HyperRTS.Simulation.Movement
             {
                 Push += direction * (overlap * 0.5f);
             }
-            else if (Rule.Yields(Self, Faction, entry.Faction))
+            else if (Rule.Yields(Self, Owner, entry.Owner))
             {
                 Push += StepAside(direction, entry) * (overlap * 0.5f);
             }
@@ -179,7 +179,7 @@ namespace HyperRTS.Simulation.Movement
 
         // Steering round an idle ally would stop the mover short in a gap; it presses on and the push moves the ally.
         private readonly bool IsMakingWay(in SpatialEntry entry) =>
-            !entry.IsMoving && Rule.Yields(entry.Entity, entry.Faction, Faction);
+            !entry.IsMoving && Rule.Yields(entry.Entity, entry.Owner, Owner);
 
         // Only in the goal area, or a groupmate parked on the route would end the move there.
         private readonly bool IsArrivedGroupmate(in SpatialEntry entry) =>
@@ -191,7 +191,7 @@ namespace HyperRTS.Simulation.Movement
         /// </summary>
         private readonly float Share(in SpatialEntry entry)
         {
-            if (entry.IsMoving || Rule.Yields(entry.Entity, entry.Faction, Faction))
+            if (entry.IsMoving || Rule.Yields(entry.Entity, entry.Owner, Owner))
             {
                 return 0.5f;
             }

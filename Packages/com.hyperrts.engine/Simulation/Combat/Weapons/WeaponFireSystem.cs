@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _targetQueries = TargetQueries.Create(ref state);
             _shots = new Shooter(ref state);
             state.RequireForUpdate<SpatialIndex>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<FogOfWar>();
             state.RequireForUpdate<SimulationFrame>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             public ComponentLookup<FacingGoal> FacingGoals;
             public Shooter Shots;
 
-            private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in Faction faction)
+            private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in Owner owner)
             {
                 var rate = Paces.TryGetComponent(entity, out var pace) ? pace.FireRate : 1f;
                 for (var i = 0; i < mounts.Length; i++)
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                         mount.Weapon.EndSalvo();
                     }
                     else if (Faces(entity, mount) && Shots.TryFire(entity, ref mount.Weapon, (byte)i, mount.Target,
-                                 faction.Value, mount.Carriers))
+                                 owner.Value, mount.Carriers))
                     {
                         mount.Ammo.Spend();
                     }

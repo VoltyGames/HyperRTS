@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Orders
         private TypeSet _types;
         private EntityQuery _players;
         private EntityQuery _selected;
-        private ComponentLookup<Faction> _factions;
+        private ComponentLookup<Owner> _owners;
 
         /// <summary><paramref name="selected"/> matches what a command without its own subjects addresses.</summary>
         public CommandReader(ref SystemState state, in TypeSet types, EntityQuery selected)
@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Orders
         {
             _types = types;
             _selected = default;
-            _factions = state.GetComponentLookup<Faction>(true);
+            _owners = state.GetComponentLookup<Owner>(true);
             _players = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<Player, PlayerCommand, PlayerCommandSubject>().WithNone<Defeated>().Build(ref state);
         }
@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Orders
         public NativeList<IssuedCommand> Read(ref SystemState state)
         {
             var issued = new NativeList<IssuedCommand>(Allocator.Temp);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             foreach (var player in _players.ToEntityArray(Allocator.Temp))
             {
                 Append(state.EntityManager, player, issued);
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Orders
         public NativeList<IssuedCommand> Read(ref SystemState state, Entity player)
         {
             var issued = new NativeList<IssuedCommand>(Allocator.Temp);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             if (_players.Matches(player))
             {
                 Append(state.EntityManager, player, issued);
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Orders
             for (var i = 0; i < subjects.Length; i++)
             {
                 var entity = subjects[i];
-                if (IsOwned(entity, issued.Faction) && filter.Keeps(entity))
+                if (IsOwned(entity, issued.Owner) && filter.Keeps(entity))
                 {
                     subjects[kept++] = entity;
                 }
@@ -90,18 +90,18 @@ namespace HyperRTS.Simulation.Orders
 
         private readonly void Append(EntityManager entityManager, Entity player, NativeList<IssuedCommand> issued)
         {
-            var faction = entityManager.GetComponentData<Player>(player).Faction;
+            var owner = entityManager.GetComponentData<Player>(player).Owner;
             foreach (var command in entityManager.GetBuffer<PlayerCommand>(player, true))
             {
                 if (_types.Contains(command.Type))
                 {
-                    issued.Add(new IssuedCommand { Player = player, Faction = faction, Command = command });
+                    issued.Add(new IssuedCommand { Player = player, Owner = owner, Command = command });
                 }
             }
         }
 
-        private readonly bool IsOwned(Entity entity, byte faction) =>
-            _factions.TryGetComponent(entity, out var owner) && owner.Value == faction;
+        private readonly bool IsOwned(Entity entity, byte owner) =>
+            _owners.TryGetComponent(entity, out var entityOwner) && entityOwner.Value == owner;
 
         private struct Everyone : ISubjectFilter
         {

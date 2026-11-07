@@ -3,7 +3,7 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.AI
 {
     /// <summary>
-    /// What a map tells the bot in one start slot (faction number): the map's resource fields by walking distance
+    /// What a map tells the bot in one start slot (owner number): the map's resource fields by walking distance
     /// from its base, and where the lanes leading to it pass crossings or narrow ground. Ranges index
     /// <see cref="AIHintPoint"/>.
     /// </summary>

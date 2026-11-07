@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Common.Players
             var registry = new PlayerRegistry();
             foreach (var (player, entity) in SystemAPI.Query<RefRO<Player>>().WithEntityAccess())
             {
-                registry.Set(player.ValueRO.Faction, entity);
+                registry.Set(player.ValueRO.Owner, entity);
             }
 
             SystemAPI.SetSingleton(registry);

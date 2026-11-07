@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Transport.Garrison
             _ownerChanges.Update(ref state);
             state.Dependency = new OwnerJob
             {
-                Factions = SystemAPI.GetComponentLookup<Faction>(true),
+                Owners = SystemAPI.GetComponentLookup<Owner>(true),
                 OwnerChanges = _ownerChanges,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
@@ -46,30 +46,30 @@ namespace HyperRTS.Simulation.Transport.Garrison
         [WithNone(typeof(Dead))]
         private partial struct OwnerJob : IJobEntity
         {
-            [ReadOnly] public ComponentLookup<Faction> Factions;
+            [ReadOnly] public ComponentLookup<Owner> Owners;
             public EventWriter<OwnerChanged> OwnerChanges;
             public EntityCommandBuffer Ecb;
 
-            private void Execute(Entity entity, in Faction faction, in DynamicBuffer<Cargo> cargo)
+            private void Execute(Entity entity, in Owner owner, in DynamicBuffer<Cargo> cargo)
             {
-                var owner = Owner(cargo);
-                if (owner == faction.Value)
+                var passengerOwner = PassengerOwner(cargo);
+                if (passengerOwner == owner.Value)
                 {
                     return;
                 }
 
-                OwnerChanged.Transfer(Ecb, ref OwnerChanges, entity, faction.Value, owner);
+                OwnerChanged.Transfer(Ecb, ref OwnerChanges, entity, owner.Value, passengerOwner);
             }
 
-            /// <summary>The first passenger's faction, or neutral when empty.</summary>
-            private byte Owner(in DynamicBuffer<Cargo> cargo)
+            /// <summary>The first passenger's owner, or neutral when empty.</summary>
+            private byte PassengerOwner(in DynamicBuffer<Cargo> cargo)
             {
                 if (cargo.Length == 0)
                 {
-                    return Faction.Neutral;
+                    return Owner.Neutral;
                 }
 
-                return Factions.TryGetComponent(cargo[0].Unit, out var passenger) ? passenger.Value : Faction.Neutral;
+                return Owners.TryGetComponent(cargo[0].Unit, out var passenger) ? passenger.Value : Owner.Neutral;
             }
         }
     }

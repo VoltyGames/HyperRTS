@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Resources.Income
 
     /// <summary>
     /// While owned and not <c>Offline</c>, pays the owner <see cref="Share"/> of the <see cref="Type"/> cost of every
-    /// unit that dies belonging to the owner or a hostile faction (rounded down).
+    /// unit that dies belonging to the owner or a hostile owner (rounded down).
     /// </summary>
     public struct CasualtyIncome : IComponentData
     {

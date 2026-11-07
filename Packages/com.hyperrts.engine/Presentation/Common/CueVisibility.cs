@@ -16,16 +16,16 @@ namespace HyperRTS.Presentation.Common
         private readonly EntityQuery _relations;
         private readonly EntityQuery _fog;
         private LocalFogView _view;
-        private FactionRelations _factions;
+        private OwnerRelations _owners;
         private FogOfWar _fogOfWar;
 
         public CueVisibility(ref SystemState state)
         {
             _views = state.GetEntityQuery(ComponentType.ReadOnly<LocalFogView>());
-            _relations = state.GetEntityQuery(ComponentType.ReadOnly<FactionRelations>());
+            _relations = state.GetEntityQuery(ComponentType.ReadOnly<OwnerRelations>());
             _fog = state.GetEntityQuery(ComponentType.ReadOnly<FogOfWar>());
             _view = default;
-            _factions = default;
+            _owners = default;
             _fogOfWar = default;
         }
 
@@ -36,11 +36,11 @@ namespace HyperRTS.Presentation.Common
             _relations.CompleteDependency();
             _fog.CompleteDependency();
             _views.TryGetSingleton(out _view);
-            _relations.TryGetSingleton(out _factions);
+            _relations.TryGetSingleton(out _owners);
             _fog.TryGetSingleton(out _fogOfWar);
         }
 
-        public readonly bool IsSeen(in CueEvent cue) => IsSeenLocally(cue, _view, _fogOfWar, _factions);
+        public readonly bool IsSeen(in CueEvent cue) => IsSeenLocally(cue, _view, _fogOfWar, _owners);
 
         /// <summary>Whether the local player sees the ground at <paramref name="position"/>.</summary>
         public readonly bool IsSeen(float3 position) => IsGroundSeenLocally(position, _view, _fogOfWar);
@@ -54,11 +54,11 @@ namespace HyperRTS.Presentation.Common
         /// inactive (no fog, or everything revealed).
         /// </summary>
         public static bool IsSeenLocally(in CueEvent cue, in LocalFogView view, in FogOfWar fog,
-            in FactionRelations relations)
+            in OwnerRelations relations)
         {
             if (CueRules.IsOwnerOnly(cue.Slot))
             {
-                return cue.Faction == view.Viewer;
+                return cue.Owner == view.Viewer;
             }
 
             if (!view.Active)

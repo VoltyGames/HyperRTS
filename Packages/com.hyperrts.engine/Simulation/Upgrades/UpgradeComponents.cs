@@ -4,13 +4,13 @@ using Unity.Entities;
 
 namespace HyperRTS.Simulation.Upgrades
 {
-    /// <summary>How many of <see cref="Faction"/>'s researched upgrades this entity already carries.</summary>
+    /// <summary>How many of <see cref="Owner"/>'s researched upgrades this entity already carries.</summary>
     public struct AppliedUpgrades : IComponentData
     {
         public int Count;
 
         /// <summary>The owner they came from; a new owner's upgrades replace them.</summary>
-        public byte Faction;
+        public byte Owner;
     }
 
     /// <summary>One modifier an upgrade grants; <see cref="AppliesTo"/> is an entity type id, 0 for every type.</summary>

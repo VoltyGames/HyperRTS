@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Buildings
             _reach = new TargetReach(ref state);
             _repairs = new RepairLookup(ref state);
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Buildings
             new RepairJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Damage = _damage,
                 HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 ProducibleLookup = SystemAPI.GetComponentLookup<Producible>(true),
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Buildings
         private partial struct RepairJob : IJobEntity
         {
             public float DeltaTime;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public EventWriter<DamageEvent> Damage;
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
@@ -78,7 +78,7 @@ namespace HyperRTS.Simulation.Buildings
 
             private void Execute(Entity entity, in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
                 RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
-                in LocalTransform transform, in NavAgent agent, in Faction faction)
+                in LocalTransform transform, in NavAgent agent, in Owner owner)
             {
                 if (!busy.ValueRO || order.Value.Type != OrderType.Repair)
                 {
@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var target = order.Value.Target;
-                if (!CanRepair(target, faction.Value))
+                if (!CanRepair(target, owner.Value))
                 {
                     ActiveOrder.Finish(busy, moving);
                     return;
@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var perSecond = PerSecond(target, builder);
-                Damage.Add(DamageEvent.Direct(target, position, entity, faction.Value, -DeltaTime * perSecond));
+                Damage.Add(DamageEvent.Direct(target, position, entity, owner.Value, -DeltaTime * perSecond));
             }
 
             /// <summary>A repairable building takes a fixed time per section; any other as long as it took to build.</summary>
@@ -115,14 +115,14 @@ namespace HyperRTS.Simulation.Buildings
                 return builder.Rate * HealthLookup[target].Max / buildTime;
             }
 
-            private bool CanRepair(Entity target, byte faction)
+            private bool CanRepair(Entity target, byte owner)
             {
                 if (!Reach.Exists(target))
                 {
                     return false;
                 }
 
-                return Repairs.NeedsRepair(target, faction, Relations);
+                return Repairs.NeedsRepair(target, owner, Relations);
             }
         }
     }

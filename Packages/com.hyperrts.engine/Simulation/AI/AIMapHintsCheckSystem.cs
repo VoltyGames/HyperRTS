@@ -37,9 +37,9 @@ namespace HyperRTS.Simulation.AI
                 SystemAPI.GetBuffer<AILaneHint>(hints), SystemAPI.GetBuffer<AIHintPoint>(hints));
             foreach (var player in SystemAPI.Query<RefRO<Player>>().WithAll<AIPlayer>())
             {
-                if (!view.TryGetSlot(player.ValueRO.Faction, out _))
+                if (!view.TryGetSlot(player.ValueRO.Owner, out _))
                 {
-                    Debug.LogError($"Map '{map}' has no AI map hints for slot {player.ValueRO.Faction}, so that AI player stays idle.");
+                    Debug.LogError($"Map '{map}' has no AI map hints for slot {player.ValueRO.Owner}, so that AI player stays idle.");
                 }
             }
         }

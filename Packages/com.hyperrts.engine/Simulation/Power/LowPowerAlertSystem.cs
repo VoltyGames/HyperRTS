@@ -56,12 +56,12 @@ namespace HyperRTS.Simulation.Power
 
             private void Execute(in PowerGrid grid, in Player player)
             {
-                var faction = player.Faction;
-                var fell = grid.IsLow && !WasLow[faction];
-                WasLow[faction] = grid.IsLow;
-                if (fell && Gate.TryPass(AnnouncementKind.LowPower, faction, Now))
+                var owner = player.Owner;
+                var fell = grid.IsLow && !WasLow[owner];
+                WasLow[owner] = grid.IsLow;
+                if (fell && Gate.TryPass(AnnouncementKind.LowPower, owner, Now))
                 {
-                    Cues.Announce(AnnouncementKind.LowPower, faction, float3.zero, 0);
+                    Cues.Announce(AnnouncementKind.LowPower, owner, float3.zero, 0);
                 }
             }
         }

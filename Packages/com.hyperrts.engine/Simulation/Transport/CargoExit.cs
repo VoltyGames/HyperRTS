@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Transport
         private ComponentLookup<Health> _health;
         private ComponentLookup<LastAttacker> _attackers;
         [ReadOnly] private ComponentLookup<Container> _containers;
-        [ReadOnly] private ComponentLookup<Faction> _factions;
+        [ReadOnly] private ComponentLookup<Owner> _owners;
 
         public CargoExit(ref SystemState state)
         {
@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Transport
             _health = state.GetComponentLookup<Health>();
             _attackers = state.GetComponentLookup<LastAttacker>();
             _containers = state.GetComponentLookup<Container>(true);
-            _factions = state.GetComponentLookup<Faction>(true);
+            _owners = state.GetComponentLookup<Owner>(true);
         }
 
         public void Update(ref SystemState state)
@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Transport
             _health.Update(ref state);
             _attackers.Update(ref state);
             _containers.Update(ref state);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
         }
 
         /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Transport
                 {
                     _health.GetRefRW(item.Unit).ValueRW.Current = 0f;
                     _attackers[item.Unit] = killer;
-                    if (_factions.TryGetComponent(item.Unit, out var owner))
+                    if (_owners.TryGetComponent(item.Unit, out var owner))
                     {
                         EntityDamaged.Raise(ref damaged, item.Unit, owner.Value);
                     }

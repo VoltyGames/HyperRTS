@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Auras
             _damage = new EventWriter<DamageEvent>(ref state);
             _auraQuery = SystemAPI.QueryBuilder().WithAll<Aura>().Build();
             state.RequireForUpdate<SpatialIndex>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         public void OnDestroy(ref SystemState state)
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Auras
             new CollectJob
             {
                 Index = SystemAPI.GetSingleton<SpatialIndex>(),
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Hits = _hits,
             }.Schedule();
             new ApplyJob
@@ -102,17 +102,17 @@ namespace HyperRTS.Simulation.Auras
         private partial struct CollectJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public NativeParallelMultiHashMap<Entity, AuraPresence> Hits;
 
-            private void Execute(Entity entity, in Aura aura, in LocalTransform transform, in Faction faction)
+            private void Execute(Entity entity, in Aura aura, in LocalTransform transform, in Owner owner)
             {
                 var collector = new AuraCollector
                 {
                     Relations = Relations,
                     Affects = aura.Affects,
                     Hits = Hits,
-                    Presence = new AuraPresence { AuraId = aura.AuraId, Source = entity, SourceFaction = faction.Value },
+                    Presence = new AuraPresence { AuraId = aura.AuraId, Source = entity, SourceOwner = owner.Value },
                 };
                 Index.Query(transform.Position, aura.Radius, ref collector);
             }
@@ -120,14 +120,14 @@ namespace HyperRTS.Simulation.Auras
 
         private struct AuraCollector : ISpatialVisitor
         {
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public AuraTargets Affects;
             public NativeParallelMultiHashMap<Entity, AuraPresence> Hits;
             public AuraPresence Presence;
 
             public void Visit(in SpatialEntry entry)
             {
-                if (AuraRules.Affects(Affects, Presence.SourceFaction, entry, Relations))
+                if (AuraRules.Affects(Affects, Presence.SourceOwner, entry, Relations))
                 {
                     Hits.Add(entry.Entity, Presence);
                 }
@@ -196,13 +196,13 @@ namespace HyperRTS.Simulation.Auras
                 var origin = Transforms[item.Source].Position;
                 if (aura.HealPerSecond > 0f)
                 {
-                    Damage.Add(DamageEvent.Direct(entity, position, item.Source, item.SourceFaction,
+                    Damage.Add(DamageEvent.Direct(entity, position, item.Source, item.SourceOwner,
                         -aura.HealPerSecond * Interval).Typed(aura.Damage).From(origin));
                 }
 
                 if (aura.DamagePerSecond > 0f)
                 {
-                    Damage.Add(DamageEvent.Direct(entity, position, item.Source, item.SourceFaction,
+                    Damage.Add(DamageEvent.Direct(entity, position, item.Source, item.SourceOwner,
                         aura.DamagePerSecond * Interval).Typed(aura.Damage).From(origin));
                 }
             }

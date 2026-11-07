@@ -11,12 +11,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Animation
 {
     /// <summary>
-    /// The source of one bone animation bake: a rig model, the clips to sample on it, the root and upper-body root bones and the
-    /// meshes to skin, from the rig or from other models bound to the same skeleton, so every kit and weapon of every faction
-    /// shares one bone texture. <b>Bake</b> writes beside the set, in <c>Generated/</c>, the bone texture
-    /// (<c>&lt;Set&gt;_Bones</c>), the clip table (<c>&lt;Set&gt;_Clips</c>) and a mesh for each part
-    /// (<c>&lt;Set&gt;_&lt;Part&gt;</c>), whose bone indices and weights sit in vertex channels. Only those reach builds,
-    /// never the rig model or its clips.
+    /// One rig, its clips and the meshes skinned to it, baked into a shared bone texture, clip table and part meshes
+    /// in <c>Generated/</c>.
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Bone Animation Set", fileName = "BoneAnimationSet")]
     [HelpURL(HyperRTSDocs.Presentation)]

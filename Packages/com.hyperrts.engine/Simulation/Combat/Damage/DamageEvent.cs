@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Combat.Damage
         public float3 Origin;
 
         public Entity Source;
-        public byte SourceFaction;
+        public byte SourceOwner;
 
         /// <summary>What the hit deals: amount, damage type, cover piercing, suppression and splash.</summary>
         public DamageProfile Profile;
@@ -32,14 +32,14 @@ namespace HyperRTS.Simulation.Combat.Damage
         public WeaponTargets Layers;
 
         /// <summary>A plain hit or heal on <paramref name="target"/> alone, untyped and without splash.</summary>
-        public static DamageEvent Direct(Entity target, float3 position, Entity source, byte faction,
+        public static DamageEvent Direct(Entity target, float3 position, Entity source, byte owner,
             float amount) => new()
         {
             Target = target,
             Position = position,
             Origin = position,
             Source = source,
-            SourceFaction = faction,
+            SourceOwner = owner,
             Profile = new DamageProfile { Amount = amount, EdgeFactor = 1f },
         };
 
@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Combat.Damage
         public readonly void AddImpact(ref CueWriter cues, int typeId, float3 direction) =>
             cues.Add(new CueEvent
             {
-                TypeId = typeId, Slot = CueSlot.Impact, Faction = SourceFaction, Position = Position,
+                TypeId = typeId, Slot = CueSlot.Impact, Owner = SourceOwner, Position = Position,
                 Direction = direction, Radius = Profile.Radius, Target = Target,
             });
     }

@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.AI
         [Serializable]
         public class SlotHints
         {
-            [Tooltip("Player slot: the faction number from 1.")]
+            [Tooltip("Player slot: the owner number from 1.")]
             public int slot;
 
             [Tooltip("Resource node positions (x, z) by walking distance from the slot's base, main field first.")]

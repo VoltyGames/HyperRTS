@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Overlays
         private readonly LiveQuery _squads = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Selected>(),
             ComponentType.ReadOnly<SquadMember>(),
-            ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalTransform>()));
 
         private readonly LiveSingleton<CoverSpots> _spots = new();
@@ -94,13 +94,13 @@ namespace HyperRTS.Presentation.Overlays
         private bool TryFindSquadCenter(MatchView view, out float2 center)
         {
             var query = _squads.In(view.EntityManager);
-            using var factions = query.ToComponentDataArray<Faction>(Allocator.Temp);
+            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
             using var transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             var sum = float2.zero;
             var count = 0;
-            for (var i = 0; i < factions.Length; i++)
+            for (var i = 0; i < owners.Length; i++)
             {
-                if (factions[i].Value == view.Local.Faction)
+                if (owners[i].Value == view.Local.Owner)
                 {
                     sum += transforms[i].Position.xz;
                     count++;

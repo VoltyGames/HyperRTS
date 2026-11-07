@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Abilities
             _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _caster = new AbilityCaster(ref state);
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -55,10 +55,10 @@ namespace HyperRTS.Simulation.Abilities
             state.Dependency = gathered;
             new CastJob
             {
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Completed = completed,
                 Targets = _targets,
-                Factions = SystemAPI.GetComponentLookup<Faction>(true),
+                Owners = SystemAPI.GetComponentLookup<Owner>(true),
                 Caster = _caster,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
@@ -90,10 +90,10 @@ namespace HyperRTS.Simulation.Abilities
         [WithPresent(typeof(MoveDestination))]
         private partial struct CastJob : IJobEntity
         {
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             [ReadOnly] public CompletedBuildings Completed;
             public TargetLookup Targets;
-            [ReadOnly] public ComponentLookup<Faction> Factions;
+            [ReadOnly] public ComponentLookup<Owner> Owners;
             public AbilityCaster Caster;
             public EntityCommandBuffer Ecb;
 
@@ -106,11 +106,11 @@ namespace HyperRTS.Simulation.Abilities
                     return;
                 }
 
-                var faction = Factions[entity].Value;
+                var owner = Owners[entity].Value;
                 var index = AbilityRules.FindAbility(abilities, order.Value.Argument);
                 var target = order.Value.Target;
                 var stateIndex = index < 0 ? -1 : AbilityRules.FindCooldown(states, abilities[index].Id);
-                if (stateIndex < 0 || !IsUsable(abilities[index], states[stateIndex], target, faction))
+                if (stateIndex < 0 || !IsUsable(abilities[index], states[stateIndex], target, owner))
                 {
                     ActiveOrder.Finish(busy, moving);
                     return;
@@ -126,13 +126,13 @@ namespace HyperRTS.Simulation.Abilities
                 ActiveOrder.Finish(busy, moving);
                 Caster.Cast(abilities[index], ref states.ElementAt(stateIndex), new AbilityActivation
                 {
-                    Caster = entity, Faction = faction, AbilityId = abilities[index].Id, Target = target, Position = aim,
+                    Caster = entity, Owner = owner, AbilityId = abilities[index].Id, Target = target, Position = aim,
                 }, Ecb);
             }
 
-            private bool IsUsable(in Ability ability, in AbilityCooldown state, Entity target, byte faction) =>
-                AbilityRules.IsAvailable(ability, state, faction, Completed) &&
-                AbilityRules.IsValidTarget(ability, target, faction, Targets, Factions, Relations);
+            private bool IsUsable(in Ability ability, in AbilityCooldown state, Entity target, byte owner) =>
+                AbilityRules.IsAvailable(ability, state, owner, Completed) &&
+                AbilityRules.IsValidTarget(ability, target, owner, Targets, Owners, Relations);
         }
     }
 }

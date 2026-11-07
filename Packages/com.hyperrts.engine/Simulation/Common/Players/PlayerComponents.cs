@@ -5,10 +5,10 @@ using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Common.Players
 {
-    /// <summary>Identity of a player entity; its team comes from <see cref="FactionRelations.GetTeam"/>.</summary>
+    /// <summary>Identity of a player entity; its team comes from <see cref="OwnerRelations.GetTeam"/>.</summary>
     public struct Player : IComponentData
     {
-        [GhostField] public byte Faction;
+        [GhostField] public byte Owner;
         [GhostField] public FixedString32Bytes Name;
 
         /// <summary>Linear RGBA team colour.</summary>

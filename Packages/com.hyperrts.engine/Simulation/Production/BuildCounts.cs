@@ -12,20 +12,20 @@ namespace HyperRTS.Simulation.Production
 
         /// <summary>Living instances of limited types; instances keep the prefab's <see cref="BuildLimit"/>.</summary>
         public static EntityQueryBuilder Query(Allocator allocator) =>
-            new EntityQueryBuilder(allocator).WithAll<BuildLimit, EntityInfo, Faction>().WithNone<Dead>();
+            new EntityQueryBuilder(allocator).WithAll<BuildLimit, EntityInfo, Owner>().WithNone<Dead>();
 
         /// <summary>
-        /// Counts <paramref name="faction"/>'s instances in <paramref name="limited"/>; <see cref="Buyer.Snapshot"/> adds
+        /// Counts <paramref name="owner"/>'s instances in <paramref name="limited"/>; <see cref="Buyer.Snapshot"/> adds
         /// its queued items.
         /// </summary>
-        public static BuildCounts Snapshot(EntityQuery limited, byte faction)
+        public static BuildCounts Snapshot(EntityQuery limited, byte owner)
         {
             var counts = new BuildCounts { _counts = new NativeHashMap<int, int>(4, Allocator.Temp) };
             var infos = limited.ToComponentDataArray<EntityInfo>(Allocator.Temp);
-            var owners = limited.ToComponentDataArray<Faction>(Allocator.Temp);
+            var owners = limited.ToComponentDataArray<Owner>(Allocator.Temp);
             for (var i = 0; i < infos.Length; i++)
             {
-                if (owners[i].Value == faction)
+                if (owners[i].Value == owner)
                 {
                     counts.Change(infos[i].TypeId, 1);
                 }

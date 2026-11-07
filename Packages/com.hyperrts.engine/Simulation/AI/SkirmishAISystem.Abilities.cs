@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < casters.Length; i++)
             {
                 var caster = casters.Entities[i];
-                if (!casters.IsOwnedBy(i, turn.Faction) || !AbilityRules.CanCast(state.EntityManager, caster))
+                if (!casters.IsOwnedBy(i, turn.Owner) || !AbilityRules.CanCast(state.EntityManager, caster))
                 {
                     continue;
                 }
@@ -87,10 +87,10 @@ namespace HyperRTS.Simulation.AI
         private bool TryAim(ref SystemState state, in Ability ability, in Caster caster, in Turn turn,
             in Snapshot snapshot, out Aim aim)
         {
-            var faction = turn.Faction;
+            var owner = turn.Owner;
             var from = caster.From;
             aim = new Aim { Target = Entity.Null, Position = from };
-            if (ability.RequiredTypeId != 0 && !snapshot.Completed.Owns(faction, ability.RequiredTypeId))
+            if (ability.RequiredTypeId != 0 && !snapshot.Completed.Owns(owner, ability.RequiredTypeId))
             {
                 return false;
             }
@@ -98,10 +98,10 @@ namespace HyperRTS.Simulation.AI
             if (ability.Target == AbilityTarget.None)
             {
                 var range = math.max(ability.Damage.Radius, SystemAPI.GetComponent<AIPlayer>(turn.Player).SelfAbilityTriggerRange);
-                return HostileWithin(faction, from, range, snapshot);
+                return HostileWithin(owner, from, range, snapshot);
             }
 
-            var index = BestTarget(ref state, ability, caster, faction, snapshot);
+            var index = BestTarget(ref state, ability, caster, owner, snapshot);
             if (index < 0)
             {
                 return false;
@@ -114,7 +114,7 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>Index in the snapshot's targets of the nearest entity the ability suits, or -1.</summary>
-        private int BestTarget(ref SystemState state, in Ability ability, in Caster caster, byte faction,
+        private int BestTarget(ref SystemState state, in Ability ability, in Caster caster, byte owner,
             in Snapshot snapshot)
         {
             var from = caster.From;
@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                if (Suits(ref state, ability, entity, faction, snapshot))
+                if (Suits(ref state, ability, entity, owner, snapshot))
                 {
                     closest.Consider(i, entity, distance);
                 }
@@ -145,9 +145,9 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>Heals (allied filter or negative damage) go to hurt allies; everything else at enemies.</summary>
-        private bool Suits(ref SystemState state, in Ability ability, Entity entity, byte faction, in Snapshot snapshot)
+        private bool Suits(ref SystemState state, in Ability ability, Entity entity, byte owner, in Snapshot snapshot)
         {
-            if (!AbilityRules.IsValidTarget(ability, entity, faction, _targetLookup, _factions, snapshot.Relations))
+            if (!AbilityRules.IsValidTarget(ability, entity, owner, _targetLookup, _owners, snapshot.Relations))
             {
                 return false;
             }
@@ -155,21 +155,21 @@ namespace HyperRTS.Simulation.AI
             var supportive = ability.Filter == AbilityTargetFilter.Allied || ability.Damage.Amount < 0f;
             if (!supportive)
             {
-                return _targetLookup.IsValidTarget(entity, faction, snapshot.Relations);
+                return _targetLookup.IsValidTarget(entity, owner, snapshot.Relations);
             }
 
             var health = SystemAPI.GetComponent<Health>(entity);
-            var allied = snapshot.Relations.IsAllied(faction, _factions[entity].Value);
+            var allied = snapshot.Relations.IsAllied(owner, _owners[entity].Value);
             return allied && health.Current < health.Max;
         }
 
-        private bool HostileWithin(byte faction, float3 from, float range, in Snapshot snapshot)
+        private bool HostileWithin(byte owner, float3 from, float range, in Snapshot snapshot)
         {
             var targets = snapshot.Targets;
             for (var i = 0; i < targets.Length; i++)
             {
                 var near = targets.DistanceSq(i, from) <= range * range;
-                if (near && _targetLookup.IsValidTarget(targets.Entities[i], faction, snapshot.Relations))
+                if (near && _targetLookup.IsValidTarget(targets.Entities[i], owner, snapshot.Relations))
                 {
                     return true;
                 }

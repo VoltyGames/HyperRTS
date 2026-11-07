@@ -21,11 +21,11 @@ namespace HyperRTS.Presentation.Tests
 
         public EntityManager EntityManager => World.EntityManager;
 
-        public Entity AddPlayer(byte faction, float4 color = default, bool local = false, byte side = 0)
+        public Entity AddPlayer(byte owner, float4 color = default, bool local = false, byte side = 0)
         {
             var player = EntityManager.CreateEntity();
             var writer = new EntityWriter(EntityManager, player);
-            PlayerSetup.Add(writer, faction, $"P{faction}", color, populationCap: 0);
+            PlayerSetup.Add(writer, owner, $"P{owner}", color, populationCap: 0);
             EntityManager.SetComponentData(player, new PlayerSide { Value = side });
             if (local)
             {

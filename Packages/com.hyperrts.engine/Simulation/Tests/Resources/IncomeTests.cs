@@ -27,8 +27,8 @@ namespace HyperRTS.Simulation.Tests.Resources
             _supplies = World.CreateSupplies();
         }
 
-        private Entity SpawnBuilding(byte faction, float x) =>
-            World.SpawnBuilding(faction, new float3(x, 0f, 0f), new float2(4f, 4f));
+        private Entity SpawnBuilding(byte owner, float x) =>
+            World.SpawnBuilding(owner, new float3(x, 0f, 0f), new float2(4f, 4f));
 
         private Entity SpawnDropOff(float3 position)
         {
@@ -40,17 +40,17 @@ namespace HyperRTS.Simulation.Tests.Resources
         private Entity SpawnHarvester(float3 position, float replacementRange = 30f) =>
             World.MakeHarvester(World.SpawnUnit(1, position), 10, 10f, replacementRange);
 
-        private Entity SpawnReserve(byte faction, float x, int capacity, float interval = 1f)
+        private Entity SpawnReserve(byte owner, float x, int capacity, float interval = 1f)
         {
-            var derrick = World.AddIncome(SpawnBuilding(faction, x), _supplies, 10, interval);
+            var derrick = World.AddIncome(SpawnBuilding(owner, x), _supplies, 10, interval);
             var writer = World.Writer(derrick);
             writer.Add(new ResourceReserve { Remaining = capacity, Capacity = capacity });
             return derrick;
         }
 
-        private Entity SpawnRefill(byte faction, float x, int amount)
+        private Entity SpawnRefill(byte owner, float x, int amount)
         {
-            var depot = SpawnBuilding(faction, x);
+            var depot = SpawnBuilding(owner, x);
             var writer = World.Writer(depot);
             writer.Add(new ReserveRefill { Type = _supplies, Amount = amount, Interval = 1f });
             return depot;
@@ -62,9 +62,9 @@ namespace HyperRTS.Simulation.Tests.Resources
             writer.Add(new CasualtyIncome { Type = _supplies, Share = 0.5f });
         }
 
-        private void Kill(byte faction, int cost)
+        private void Kill(byte owner, int cost)
         {
-            var unit = World.SpawnUnit(faction, new float3(0f, 0f, 20f));
+            var unit = World.SpawnUnit(owner, new float3(0f, 0f, 20f));
             World.SetCost(unit, _supplies, cost);
             World.Kill(unit);
         }

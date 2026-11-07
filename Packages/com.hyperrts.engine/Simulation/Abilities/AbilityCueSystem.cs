@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Abilities
                     var direction = Direction(cast);
                     var aim = LocalTransform.FromPositionRotation(cast.Position,
                         quaternion.LookRotationSafe(direction, math.up()));
-                    Cues.Play(cast.Caster, CueSlot.Ability, aim, direction, cast.Faction);
+                    Cues.Play(cast.Caster, CueSlot.Ability, aim, direction, cast.Owner);
                     Speak(cast);
                 }
             }
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Abilities
             {
                 if (Transforms.TryGetComponent(cast.Caster, out var caster))
                 {
-                    Cues.Play(cast.Caster, CueSlot.AbilityVoice, caster, caster.Forward(), cast.Faction);
+                    Cues.Play(cast.Caster, CueSlot.AbilityVoice, caster, caster.Forward(), cast.Owner);
                 }
             }
 

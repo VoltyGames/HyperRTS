@@ -64,7 +64,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         /// <summary>One countdown line, rewritten only when its player, whole second or readiness changes.</summary>
         private sealed class Row
         {
-            private int _faction = -1;
+            private int _owner = -1;
             private int _seconds = -1;
             private bool _ready;
 
@@ -78,7 +78,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             public void Show(in Player player, in StrategicCharge charge, HUDContext context)
             {
                 var seconds = Mathf.CeilToInt(charge.Remaining);
-                var samePlayer = player.Faction == _faction;
+                var samePlayer = player.Owner == _owner;
                 var unchanged = samePlayer && charge.IsReady == _ready && (charge.IsReady || seconds == _seconds);
                 if (unchanged)
                 {
@@ -87,8 +87,8 @@ namespace HyperRTS.Presentation.HUD.Panels
 
                 if (!samePlayer)
                 {
-                    _faction = player.Faction;
-                    Label.style.color = context.View.GetColor(player.Faction);
+                    _owner = player.Owner;
+                    Label.style.color = context.View.GetColor(player.Owner);
                 }
 
                 _seconds = seconds;

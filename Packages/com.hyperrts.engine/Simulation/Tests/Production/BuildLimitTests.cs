@@ -26,9 +26,9 @@ namespace HyperRTS.Simulation.Tests.Production
         private Entity HeroPrefab(int max) =>
             World.AddBuildLimit(World.UnitPrefab(_supplies, 100, buildTime: 30f, name: "Hero"), max);
 
-        private Entity LiveHero(byte faction, Entity prefab)
+        private Entity LiveHero(byte owner, Entity prefab)
         {
-            var hero = World.SpawnUnit(faction, new float3(-20f, 0f, 0f), name: "Hero");
+            var hero = World.SpawnUnit(owner, new float3(-20f, 0f, 0f), name: "Hero");
             return World.AddBuildLimit(hero, World.Get<BuildLimit>(prefab).Max);
         }
 

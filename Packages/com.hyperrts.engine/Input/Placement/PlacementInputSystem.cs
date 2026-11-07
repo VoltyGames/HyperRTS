@@ -52,7 +52,7 @@ namespace HyperRTS.Input.Placement
             RequireForUpdate<LocalPlayer>();
             RequireForUpdate<MapSettings>();
             RequireForUpdate<NavGrid>();
-            RequireForUpdate<FactionRelations>();
+            RequireForUpdate<OwnerRelations>();
         }
 
         protected override InputActionMap Map => _actions.Commands;

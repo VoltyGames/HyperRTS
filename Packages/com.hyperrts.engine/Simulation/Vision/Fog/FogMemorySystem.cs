@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Vision.Fog
         {
             state.RequireForUpdate<LocalFogView>();
             state.RequireForUpdate<FogOfWar>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             _concealment = new ConcealmentLookup(ref state);
         }
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             state.Dependency = new SightJob
             {
                 Sight = sight,
-                Relations = SystemAPI.GetSingleton<FactionRelations>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Viewer = view.Viewer,
                 Seen = seen,
                 Latest = SystemAPI.GetComponentLookup<LatestSeen>(),
@@ -118,7 +118,7 @@ namespace HyperRTS.Simulation.Vision.Fog
         private partial struct SightJob : IJobEntity
         {
             public FogSight Sight;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public byte Viewer;
             public NativeHashSet<FogMemoryKey> Seen;
             public ComponentLookup<LatestSeen> Latest;
@@ -126,11 +126,11 @@ namespace HyperRTS.Simulation.Vision.Fog
             [ReadOnly] public ComponentLookup<ConstructionProgress> Construction;
             [ReadOnly] public ComponentLookup<GhostInstance> Ghosts;
 
-            private void Execute(Entity entity, in EntityInfo info, in Faction faction, in LocalTransform transform,
+            private void Execute(Entity entity, in EntityInfo info, in Owner owner, in LocalTransform transform,
                 in Health health)
             {
                 var key = FogMemoryKey.Identify(entity, Ghosts);
-                var hostile = Relations.IsHostile(Viewer, faction.Value);
+                var hostile = Relations.IsHostile(Viewer, owner.Value);
                 var visible = Sight.Fog.CanSee(Sight.Team, transform.Position, Concealments.Find(entity),
                     Concealments.IsTall(entity));
                 // A friendly root is seen too, so the memory of a building since captured by a friend goes.
@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                     Seen.Add(key);
                     if (hostile)
                     {
-                        Record(entity, CaptureState(entity, key, info, faction, transform, health));
+                        Record(entity, CaptureState(entity, key, info, owner, transform, health));
                     }
 
                     return;
@@ -152,7 +152,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                 }
             }
 
-            private SeenState CaptureState(Entity entity, FogMemoryKey key, in EntityInfo info, in Faction faction,
+            private SeenState CaptureState(Entity entity, FogMemoryKey key, in EntityInfo info, in Owner owner,
                 in LocalTransform transform, in Health health)
             {
                 Construction.TryGetComponent(entity, out var progress);
@@ -160,7 +160,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                 {
                     Key = key,
                     TypeId = info.TypeId,
-                    Faction = faction.Value,
+                    Owner = owner.Value,
                     Transform = transform,
                     Health = health.Fraction,
                     Construction = progress.Value,

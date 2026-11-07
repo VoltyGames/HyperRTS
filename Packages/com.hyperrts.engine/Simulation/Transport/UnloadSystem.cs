@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Container, Selected, Faction>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Container, Selected, Owner>().WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Unload), selected);
             _exit = new CargoExit(ref state);
             state.RequireForUpdate<NavGrid>();

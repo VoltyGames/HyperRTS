@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Tests.Vision
         [Test]
         public void Fog_StampsTheHighestTeam()
         {
-            const byte lastTeam = FactionRelations.MaxTeams - 1;
+            const byte lastTeam = OwnerRelations.MaxTeams - 1;
             using var world = new TestWorld();
             world.CreateMatch(lastTeam, Team1);
             world.SpawnUnit(1, float3.zero);
@@ -59,13 +59,13 @@ namespace HyperRTS.Simulation.Tests.Vision
         }
 
         [Test]
-        public void SetTeam_RejectsTeamsPastTheFogBits_AndSlotsPastTheLastFaction()
+        public void SetTeam_RejectsTeamsPastTheFogBits_AndSlotsPastTheLastOwner()
         {
-            var relations = new FactionRelations();
+            var relations = new OwnerRelations();
 
-            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, FactionRelations.MaxTeams));
+            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, OwnerRelations.MaxTeams));
             Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, -1));
-            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(Faction.Max + 1, 1));
+            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(Owner.Max + 1, 1));
         }
 
         [Test]

@@ -12,7 +12,7 @@ namespace HyperRTS.Network.Joining
         /// <summary>A human slot as the server sees it.</summary>
         public struct Slot
         {
-            public byte Faction;
+            public byte Owner;
 
             /// <summary>0 while no connection holds the slot.</summary>
             public int NetworkId;
@@ -38,7 +38,7 @@ namespace HyperRTS.Network.Joining
                     continue;
                 }
 
-                if (slots[i].Faction == wanted)
+                if (slots[i].Owner == wanted)
                 {
                     return i;
                 }

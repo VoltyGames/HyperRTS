@@ -31,12 +31,12 @@ namespace HyperRTS.Simulation.AI
             var node = -1;
             for (var i = 0; i < harvesters.Length; i++)
             {
-                if (!harvesters.IsOwnedBy(i, turn.Faction) || turn.Busy.Contains(harvesters.Entities[i]))
+                if (!harvesters.IsOwnedBy(i, turn.Owner) || turn.Busy.Contains(harvesters.Entities[i]))
                 {
                     continue;
                 }
 
-                node = node >= 0 ? node : FirstExpansionNode(turn.Faction, snapshot);
+                node = node >= 0 ? node : FirstExpansionNode(turn.Owner, snapshot);
                 if (node < 0)
                 {
                     return;
@@ -56,10 +56,10 @@ namespace HyperRTS.Simulation.AI
         /// The live node (index in the snapshot's nodes) of the first expansion hint that has one: the slot's main
         /// field while it lasts, then each next-nearest by walking distance; -1 when every field is spent.
         /// </summary>
-        private static int FirstExpansionNode(byte faction, in Snapshot snapshot)
+        private static int FirstExpansionNode(byte owner, in Snapshot snapshot)
         {
             var hints = snapshot.Hints;
-            if (!hints.TryGetSlot(faction, out var slot))
+            if (!hints.TryGetSlot(owner, out var slot))
             {
                 return -1;
             }
@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.AI
 
             foreach (var producer in snapshot.Producers)
             {
-                if (!IsIdleProducer(ref state, producer, turn.Faction))
+                if (!IsIdleProducer(ref state, producer, turn.Owner))
                 {
                     continue;
                 }
@@ -123,9 +123,9 @@ namespace HyperRTS.Simulation.AI
             budget.Stock.Dispose();
         }
 
-        private bool IsIdleProducer(ref SystemState state, Entity producer, byte faction)
+        private bool IsIdleProducer(ref SystemState state, Entity producer, byte owner)
         {
-            if (SystemAPI.GetComponent<Faction>(producer).Value != faction)
+            if (SystemAPI.GetComponent<Owner>(producer).Value != owner)
             {
                 return false;
             }

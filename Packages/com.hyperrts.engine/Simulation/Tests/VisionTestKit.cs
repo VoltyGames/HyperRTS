@@ -31,10 +31,10 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        /// <summary>A unit of <paramref name="faction"/> that sees <paramref name="range"/> metres from an eye <paramref name="eye"/> high.</summary>
-        public static Entity SpawnViewer(this TestWorld world, byte faction, float3 position, float range, float eye = 2f)
+        /// <summary>A unit of <paramref name="owner"/> that sees <paramref name="range"/> metres from an eye <paramref name="eye"/> high.</summary>
+        public static Entity SpawnViewer(this TestWorld world, byte owner, float3 position, float range, float eye = 2f)
         {
-            var viewer = world.SpawnUnit(faction, position);
+            var viewer = world.SpawnUnit(owner, position);
             world.Set(viewer, new VisionRange { Value = range, EyeHeight = eye });
             return viewer;
         }

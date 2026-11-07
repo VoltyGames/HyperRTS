@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < builders.Length; i++)
             {
                 var builder = builders.Entities[i];
-                if (!builders.IsOwnedBy(i, turn.Faction) || IsBuilding(ref state, builder))
+                if (!builders.IsOwnedBy(i, turn.Owner) || IsBuilding(ref state, builder))
                 {
                     continue;
                 }
@@ -84,14 +84,14 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < builders.Length; i++)
             {
                 var builder = builders.Entities[i];
-                if (!builders.IsOwnedBy(i, turn.Faction) || SystemAPI.IsComponentEnabled<ActiveOrder>(builder))
+                if (!builders.IsOwnedBy(i, turn.Owner) || SystemAPI.IsComponentEnabled<ActiveOrder>(builder))
                 {
                     continue;
                 }
 
                 var site = turn.Busy.Contains(builder)
                     ? -1
-                    : snapshot.Sites.NearestOwned(turn.Faction, builders.Position(i));
+                    : snapshot.Sites.NearestOwned(turn.Owner, builders.Position(i));
                 if (site < 0)
                 {
                     continue;

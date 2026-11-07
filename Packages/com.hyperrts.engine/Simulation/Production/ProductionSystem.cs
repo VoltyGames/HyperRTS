@@ -89,7 +89,7 @@ namespace HyperRTS.Simulation.Production
             public EventWriter<ResearchCompleted> Researched;
 
             private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
-                in LocalTransform transform, in Faction faction, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
+                in LocalTransform transform, in Owner owner, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
             {
                 if (queue.IsEmpty)
                 {
@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Production
 
                 var prefab = queue[0].Prefab;
                 var producible = ProducibleLookup[prefab];
-                if (!HasRoomFor(faction.Value, producible.Population) || !TryReservePad(entity, prefab, out var pad))
+                if (!HasRoomFor(owner.Value, producible.Population) || !TryReservePad(entity, prefab, out var pad))
                 {
                     return;
                 }
@@ -120,18 +120,18 @@ namespace HyperRTS.Simulation.Production
 
                 if (ResearchLookup.HasComponent(prefab))
                 {
-                    RecordResearch(entity, faction.Value, queue[0]);
+                    RecordResearch(entity, owner.Value, queue[0]);
                 }
                 else
                 {
                     var position = SpawnPoint(entity, producer, transform, pad);
-                    var unit = Spawn(prefab, position, transform, faction, hasRally.ValueRO, rally.Position);
+                    var unit = Spawn(prefab, position, transform, owner, hasRally.ValueRO, rally.Position);
                     DockOnPad(unit, prefab, entity, pad);
-                    SpawnedPopulation[faction.Value] += producible.Population;
+                    SpawnedPopulation[owner.Value] += producible.Population;
                     producer.Released++;
                     Produced.Add(new UnitProduced
                     {
-                        Producer = entity, Prefab = prefab, Faction = faction.Value, Position = position,
+                        Producer = entity, Prefab = prefab, Owner = owner.Value, Position = position,
                     });
                 }
 
@@ -139,23 +139,23 @@ namespace HyperRTS.Simulation.Production
                 producer.Elapsed = 0f;
             }
 
-            private void RecordResearch(Entity producer, byte faction, ProductionQueueItem item)
+            private void RecordResearch(Entity producer, byte owner, ProductionQueueItem item)
             {
                 Researched.Add(new ResearchCompleted
                 {
-                    Producer = producer, Prefab = item.Prefab, Faction = faction,
+                    Producer = producer, Prefab = item.Prefab, Owner = owner,
                 });
 
-                if (CompletedResearchLookup.TryGetBuffer(Players[faction], out var researched))
+                if (CompletedResearchLookup.TryGetBuffer(Players[owner], out var researched))
                 {
                     researched.Add(new CompletedResearch { Prefab = item.Prefab, TypeId = item.TypeId });
                 }
             }
 
-            private bool HasRoomFor(byte faction, int population)
+            private bool HasRoomFor(byte owner, int population)
             {
-                var current = PopulationLookup[Players[faction]];
-                current.Used += SpawnedPopulation[faction];
+                var current = PopulationLookup[Players[owner]];
+                current.Used += SpawnedPopulation[owner];
                 return current.HasRoomFor(population);
             }
 
@@ -186,9 +186,9 @@ namespace HyperRTS.Simulation.Production
             }
 
             private Entity Spawn(Entity prefab, float3 position, in LocalTransform producer,
-                in Faction faction, bool rally, float3 rallyPosition)
+                in Owner owner, bool rally, float3 rallyPosition)
             {
-                var unit = Spawner.Spawn(Ecb, prefab, position, producer.Rotation, faction.Value);
+                var unit = Spawner.Spawn(Ecb, prefab, position, producer.Rotation, owner.Value);
 
                 if (rally)
                 {

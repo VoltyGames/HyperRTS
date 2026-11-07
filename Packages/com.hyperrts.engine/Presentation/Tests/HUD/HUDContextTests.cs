@@ -22,10 +22,10 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void SelectionHash_ChangesWhenASelectedBuildingIsCapturedOrFinished()
         {
             var building = _em.CreateEntity(typeof(Selected), typeof(EntityInfo), typeof(ConstructionProgress));
-            _em.AddComponentData(building, new Faction { Value = 2 });
+            _em.AddComponentData(building, new Owner { Value = 2 });
             var built = Hash();
 
-            _em.SetComponentData(building, new Faction { Value = 1 });
+            _em.SetComponentData(building, new Owner { Value = 1 });
             var captured = Hash();
             _em.SetComponentEnabled<ConstructionProgress>(building, false);
             var finished = Hash();
@@ -53,7 +53,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void Observer_SeesTheMatch_WithoutALocalPlayer()
         {
             _em.DestroyEntity(_em.CreateEntityQuery(typeof(LocalPlayer)).GetSingletonEntity());
-            _em.CreateSingleton(new FactionRelations());
+            _em.CreateSingleton(new OwnerRelations());
 
             Assert.IsTrue(_view.Refresh(_kit.World));
             Assert.IsFalse(_view.HasLocalPlayer);
@@ -73,7 +73,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             Refresh();
 
             Assert.AreEqual(other, _context.ShownPlayer);
-            Assert.AreEqual(2, _context.ShownFaction);
+            Assert.AreEqual(2, _context.ShownOwner);
             Assert.IsFalse(_context.CanCommand);
             Assert.DoesNotThrow(() => _context.Issue(default), "a command for a player you only watch is dropped");
 

@@ -10,7 +10,7 @@ namespace HyperRTS.Network.Scenery
     public struct SceneryTracker : IDisposable
     {
         /// <summary>One slot per fog team. Team 0 is for observers and sees everything.</summary>
-        public const int Teams = FactionRelations.MaxTeams;
+        public const int Teams = OwnerRelations.MaxTeams;
 
         private NativeHashMap<ulong, int> _slots;
         private NativeList<SceneryRecord> _records;

@@ -12,10 +12,10 @@ namespace HyperRTS.Simulation.Selection
         public SelectionInput Input;
         public Entity Clicked;
         public int DoubleClickType;
-        public int DoubleClickFaction;
+        public int DoubleClickOwner;
 
-        /// <summary>Local player's faction, or -1 without a local player (then nothing counts as owned).</summary>
-        public int LocalFaction;
+        /// <summary>Local player's owner, or -1 without a local player (then nothing counts as owned).</summary>
+        public int LocalOwner;
 
         /// <summary>Drag boxes keep only this <see cref="SelectionMath.DragPriority"/>; -1 keeps all.</summary>
         public int PreferredRank;
@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Selection
         public ComponentLookup<FogHidden> Hidden;
         public ComponentLookup<Inside> Inside;
         public ComponentLookup<EntityInfo> Info;
-        public ComponentLookup<Faction> Factions;
+        public ComponentLookup<Owner> Owners;
         public ComponentLookup<UnitTag> Units;
         public ComponentLookup<BuildingTag> Buildings;
         public ComponentLookup<ControlGroup> Groups;
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Selection
                 return false;
             }
 
-            return info.TypeId == DoubleClickType && GetFaction(entity) == DoubleClickFaction;
+            return info.TypeId == DoubleClickType && GetOwner(entity) == DoubleClickOwner;
         }
 
         public bool InDragBox(float3 position) =>
@@ -78,12 +78,12 @@ namespace HyperRTS.Simulation.Selection
             SelectionMath.DragPriority(IsOwned(entity), Units.HasComponent(entity), Buildings.HasComponent(entity));
 
         /// <summary>Control groups hold only the local player's entities (anything without a local player).</summary>
-        public bool CanJoinGroup(Entity entity) => LocalFaction < 0 || IsOwned(entity);
+        public bool CanJoinGroup(Entity entity) => LocalOwner < 0 || IsOwned(entity);
 
-        /// <summary>The entity's faction, or -1 when it has none.</summary>
-        public int GetFaction(Entity entity) => Factions.TryGetComponent(entity, out var faction) ? faction.Value : -1;
+        /// <summary>The entity's owner, or -1 when it has none.</summary>
+        public int GetOwner(Entity entity) => Owners.TryGetComponent(entity, out var owner) ? owner.Value : -1;
 
-        private bool IsOwned(Entity entity) => LocalFaction >= 0 && GetFaction(entity) == LocalFaction;
+        private bool IsOwned(Entity entity) => LocalOwner >= 0 && GetOwner(entity) == LocalOwner;
 
         private bool OnScreen(float3 position) =>
             SelectionMath.WorldToScreenPoint(Input.ViewProjection, position, Input.ScreenSize, out var screen) &&

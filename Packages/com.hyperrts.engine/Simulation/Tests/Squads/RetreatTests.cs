@@ -23,9 +23,9 @@ namespace HyperRTS.Simulation.Tests.Squads
             return squad;
         }
 
-        private Entity Point(byte faction, float3 position)
+        private Entity Point(byte owner, float3 position)
         {
-            var point = World.SpawnBuilding(faction, position, new float2(4f, 4f));
+            var point = World.SpawnBuilding(owner, position, new float2(4f, 4f));
             World.Add(point, new RetreatPoint { Radius = 8f });
             return point;
         }
@@ -162,7 +162,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             {
                 Target = squad,
                 Origin = new float3(0f, 0f, 20f),
-                SourceFaction = 2,
+                SourceOwner = 2,
                 Profile = new DamageProfile { EdgeFactor = 1f, Suppression = 1f },
             });
             World.Tick(frames: 2);

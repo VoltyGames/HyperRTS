@@ -14,10 +14,10 @@ namespace HyperRTS.Simulation.Common
     {
         /// <summary>
         /// Instantiates a baked prefab at a pose, keeping its scale and <see cref="PostTransformMatrix"/>, owned by
-        /// <paramref name="faction"/>. Jobs spawn through <see cref="PrefabSpawner"/>.
+        /// <paramref name="owner"/>. Jobs spawn through <see cref="PrefabSpawner"/>.
         /// </summary>
         public static Entity Spawn(this EntityManager entityManager, Entity prefab, float3 position,
-            quaternion rotation, byte faction)
+            quaternion rotation, byte owner)
         {
             var transform = entityManager.GetComponentData<LocalTransform>(prefab);
             transform.Position = position;
@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Common
             var spawned = entityManager.Instantiate(prefab);
             entityManager.AddComponentData(spawned, transform);
             entityManager.AddComponentData(spawned, World(transform, stretch));
-            entityManager.AddComponentData(spawned, new Faction { Value = faction });
+            entityManager.AddComponentData(spawned, new Owner { Value = owner });
             return spawned;
         }
 

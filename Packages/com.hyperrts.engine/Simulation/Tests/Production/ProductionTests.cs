@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests.Production
             Assert.AreEqual(1, sites.Length);
             var site = sites[0];
             Assert.AreEqual(new float3(6f, 0f, 0f), World.Get<LocalTransform>(site).Position, "snapped to the grid");
-            Assert.AreEqual(1, World.Get<Faction>(site).Value);
+            Assert.AreEqual(1, World.Get<Owner>(site).Value);
             Assert.IsTrue(World.IsEnabled<ConstructionProgress>(site));
             Assert.AreEqual(OrderType.Build, World.Get<ActiveOrder>(builder).Value.Type);
 
@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Tests.Production
             var units = World.All<UnitTag>();
             Assert.AreEqual(1, units.Length);
             Assert.AreEqual(new float3(0f, 0f, -4f), World.Get<LocalTransform>(units[0]).Position);
-            Assert.AreEqual(1, World.Get<Faction>(units[0]).Value);
+            Assert.AreEqual(1, World.Get<Owner>(units[0]).Value);
             Assert.AreEqual(0, World.QueueLength(producer));
             Assert.AreEqual(1, World.Get<PlayerStats>(World.Player(1)).UnitsBuilt);
             Assert.AreEqual(1u, World.Get<Producer>(producer).Released, "every client sees the release");

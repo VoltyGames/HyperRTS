@@ -22,16 +22,16 @@ namespace HyperRTS.Simulation.Buildings
             return !entityManager.HasComponent<NeutralGarrison>(entity);
         }
 
-        /// <summary>An unfinished site owned by a faction allied with <paramref name="faction"/>.</summary>
+        /// <summary>An unfinished site owned by an owner allied with <paramref name="owner"/>.</summary>
         public static bool IsAlliedSite(in ComponentLookup<ConstructionProgress> sites,
-            in ComponentLookup<Faction> factions, in FactionRelations relations, Entity site, byte faction)
+            in ComponentLookup<Owner> owners, in OwnerRelations relations, Entity site, byte owner)
         {
             if (!sites.HasEnabled(site))
             {
                 return false;
             }
 
-            return factions.TryGetComponent(site, out var owner) && relations.IsAllied(faction, owner.Value);
+            return owners.TryGetComponent(site, out var siteOwner) && relations.IsAllied(owner, siteOwner.Value);
         }
     }
 }

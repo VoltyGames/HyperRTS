@@ -33,10 +33,10 @@ namespace HyperRTS.Simulation.Vision.Fog
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _viewers = SystemAPI.QueryBuilder().WithAll<SightArea, SightAreaBits, VisionRange, Faction, LocalTransform>()
+            _viewers = SystemAPI.QueryBuilder().WithAll<SightArea, SightAreaBits, VisionRange, Owner, LocalTransform>()
                 .Build();
             state.RequireForUpdate<MapSettings>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SightBlockers>();
         }
 
@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             _nextUpdate = elapsed + UpdateInterval;
             _stampedWithFog = settings.FogOfWar;
             ref var fog = ref SystemAPI.GetSingletonRW<FogOfWar>().ValueRW;
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             fog.Version++;
 
             // Stealth and concealment apply with fog off too, so detection and the close layer are stamped either way.
@@ -80,7 +80,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                     .Schedule(fog.Visible.Length, 4096, state.Dependency);
         }
 
-        private void DrawSightAreas(ref SystemState state, in FogOfWar fog, in FactionRelations relations,
+        private void DrawSightAreas(ref SystemState state, in FogOfWar fog, in OwnerRelations relations,
             in MapSettings settings)
         {
             SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);

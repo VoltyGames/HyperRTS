@@ -95,7 +95,7 @@ namespace HyperRTS.Network.Commands
 
         private void Select(ref SystemState state, Entity player, in SelectionRpc rpc)
         {
-            var faction = SystemAPI.GetComponent<Player>(player).Faction;
+            var owner = SystemAPI.GetComponent<Player>(player).Owner;
             var selection = SystemAPI.GetBuffer<PlayerSelection>(player);
             if (!rpc.Append)
             {
@@ -104,7 +104,7 @@ namespace HyperRTS.Network.Commands
 
             foreach (var unit in rpc.Units)
             {
-                if (IsOwned(ref state, unit, faction))
+                if (IsOwned(ref state, unit, owner))
                 {
                     selection.Add(new PlayerSelection { Value = unit });
                 }
@@ -113,15 +113,15 @@ namespace HyperRTS.Network.Commands
 
         private void Apply(ref SystemState state, Entity player, in CommandRpc rpc, in PrefabRegistry prefabs)
         {
-            var faction = SystemAPI.GetComponent<Player>(player).Faction;
+            var owner = SystemAPI.GetComponent<Player>(player).Owner;
             var command = rpc.ToCommand();
             command.Target = rpc.TargetScenery != 0 ? FindScenery(ref state, rpc.TargetScenery) : rpc.Target;
             command.Prefab = prefabs.Find(rpc.PrefabTypeId);
             if (rpc.Unit == Entity.Null)
             {
-                ListSelection(ref state, player, faction, ref command);
+                ListSelection(ref state, player, owner, ref command);
             }
-            else if (IsOwned(ref state, rpc.Unit, faction))
+            else if (IsOwned(ref state, rpc.Unit, owner))
             {
                 command.Unit = rpc.Unit;
             }
@@ -134,14 +134,14 @@ namespace HyperRTS.Network.Commands
         }
 
         /// <summary>Lists the selection's units still owned as the command's group.</summary>
-        private void ListSelection(ref SystemState state, Entity player, byte faction, ref PlayerCommand command)
+        private void ListSelection(ref SystemState state, Entity player, byte owner, ref PlayerCommand command)
         {
             var selection = SystemAPI.GetBuffer<PlayerSelection>(player);
             var listed = SystemAPI.GetBuffer<PlayerCommandSubject>(player);
             var start = listed.Length;
             foreach (var unit in selection)
             {
-                if (IsOwned(ref state, unit.Value, faction))
+                if (IsOwned(ref state, unit.Value, owner))
                 {
                     listed.Add(new PlayerCommandSubject { Value = unit.Value });
                 }
@@ -151,8 +151,8 @@ namespace HyperRTS.Network.Commands
             command.SubjectCount = (ushort)(listed.Length - start);
         }
 
-        private bool IsOwned(ref SystemState state, Entity entity, byte faction) =>
-            SystemAPI.HasComponent<Faction>(entity) && SystemAPI.GetComponent<Faction>(entity).Value == faction;
+        private bool IsOwned(ref SystemState state, Entity entity, byte owner) =>
+            SystemAPI.HasComponent<Owner>(entity) && SystemAPI.GetComponent<Owner>(entity).Value == owner;
 
         /// <summary>The map scenery with this id; scenery targets are rare enough to look up by scanning.</summary>
         private Entity FindScenery(ref SystemState state, ulong id)

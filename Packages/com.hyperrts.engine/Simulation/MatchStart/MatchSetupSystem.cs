@@ -31,11 +31,11 @@ namespace HyperRTS.Simulation.MatchStart
         public void OnCreate(ref SystemState state)
         {
             _players = SystemAPI.QueryBuilder().WithAll<Player>().WithNone<GhostInstance>().Build();
-            _owned = SystemAPI.QueryBuilder().WithAll<Faction>().WithNone<Parent>().Build();
-            _owned.SetChangedVersionFilter(ComponentType.ReadOnly<Faction>());
+            _owned = SystemAPI.QueryBuilder().WithAll<Owner>().WithNone<Parent>().Build();
+            _owned.SetChangedVersionFilter(ComponentType.ReadOnly<Owner>());
             // Disabled included: in network worlds the Match is a prespawned ghost Netcode keeps disabled at first,
             // and the setup must land before the players become ghosts.
-            _match = SystemAPI.QueryBuilder().WithAll<FactionRelations, MapSettings>()
+            _match = SystemAPI.QueryBuilder().WithAll<OwnerRelations, MapSettings>()
                 .WithOptions(EntityQueryOptions.IncludeDisabledEntities).Build();
             state.RequireForUpdate(_match);
         }
@@ -60,9 +60,9 @@ namespace HyperRTS.Simulation.MatchStart
                 state.EntityManager.SetComponentData(setupEntity, setup);
             }
 
-            if (setup.ClosedFactions != 0 && SimulationWorlds.IsAuthoritative(state.WorldUnmanaged))
+            if (setup.ClosedOwners != 0 && SimulationWorlds.IsAuthoritative(state.WorldUnmanaged))
             {
-                RemoveClosed(ref state, setup.ClosedFactions);
+                RemoveClosed(ref state, setup.ClosedOwners);
             }
         }
 
@@ -86,23 +86,23 @@ namespace HyperRTS.Simulation.MatchStart
         {
             var entityManager = state.EntityManager;
             var match = _match.GetSingletonEntity();
-            var relations = entityManager.GetComponentData<FactionRelations>(match);
+            var relations = entityManager.GetComponentData<OwnerRelations>(match);
             // Copied out: the structural changes that follow would invalidate the buffer.
             var tunings = entityManager.GetBuffer<AIDifficultyTuning>(match, true).ToNativeArray(Allocator.Temp);
             var players = _players.ToEntityArray(Allocator.Temp);
             foreach (var player in players)
             {
-                var faction = entityManager.GetComponentData<Player>(player).Faction;
-                if (!setup.IsOpen(faction))
+                var owner = entityManager.GetComponentData<Player>(player).Owner;
+                if (!setup.IsOpen(owner))
                 {
-                    setup.ClosedFactions |= Faction.Bit(faction);
-                    relations.SetTeam(faction, 0);
+                    setup.ClosedOwners |= Owner.Bit(owner);
+                    relations.SetTeam(owner, 0);
                     entityManager.DestroyEntity(player);
                     continue;
                 }
 
-                var slot = setup.Slots[faction - 1];
-                relations.SetTeam(faction, slot.Team);
+                var slot = setup.Slots[owner - 1];
+                relations.SetTeam(owner, slot.Team);
                 ApplySlot(entityManager, player, slot, tunings, setup.Seed);
                 ScaleStock(entityManager.GetBuffer<ResourceStock>(player), setup.StartingResourceScale);
             }
@@ -125,7 +125,7 @@ namespace HyperRTS.Simulation.MatchStart
 
             if (slot.Control == PlayerControl.AI)
             {
-                MakeAI(entityManager, player, TuningFor(tunings, slot.Difficulty), AIRoutes.SeedFor(seed, identity.Faction));
+                MakeAI(entityManager, player, TuningFor(tunings, slot.Difficulty), AIRoutes.SeedFor(seed, identity.Owner));
                 return;
             }
 
@@ -219,7 +219,7 @@ namespace HyperRTS.Simulation.MatchStart
             _retryOwned = false;
             foreach (var entity in _owned.ToEntityArray(Allocator.Temp))
             {
-                if ((Faction.Bit(entityManager.GetComponentData<Faction>(entity).Value) & closed) == 0)
+                if ((Owner.Bit(entityManager.GetComponentData<Owner>(entity).Value) & closed) == 0)
                 {
                     continue;
                 }
@@ -233,7 +233,7 @@ namespace HyperRTS.Simulation.MatchStart
                 doomed.Add(entity);
             }
 
-            _owned.SetChangedVersionFilter(ComponentType.ReadOnly<Faction>());
+            _owned.SetChangedVersionFilter(ComponentType.ReadOnly<Owner>());
             entityManager.DestroyEntity(doomed.AsArray());
         }
 

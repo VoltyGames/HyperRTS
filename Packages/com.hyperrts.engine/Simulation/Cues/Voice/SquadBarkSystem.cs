@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Cues.Voice
         {
             _cues = new CueWriter(ref state);
             _unseen = SystemAPI.QueryBuilder()
-                .WithAll<SquadMember, Suppression, Faction, LocalTransform, EntitySound>()
+                .WithAll<SquadMember, Suppression, Owner, LocalTransform, EntitySound>()
                 .WithNone<SquadBarkState>().Build();
             state.RequireForUpdate<LocalPlayer>();
             state.RequireForUpdate<SquadRules>();
@@ -44,13 +44,13 @@ namespace HyperRTS.Simulation.Cues.Voice
             var rules = SystemAPI.GetSingleton<SquadRules>();
             var voice = SystemAPI.GetSingleton<VoiceRules>();
             var player = SystemAPI.GetSingletonEntity<LocalPlayer>();
-            var local = SystemAPI.GetComponent<Player>(player).Faction;
-            foreach (var (bark, suppression, retreating, faction, transform, members, squad) in SystemAPI
-                         .Query<RefRW<SquadBarkState>, RefRO<Suppression>, EnabledRefRO<Retreating>, RefRO<Faction>,
+            var local = SystemAPI.GetComponent<Player>(player).Owner;
+            foreach (var (bark, suppression, retreating, owner, transform, members, squad) in SystemAPI
+                         .Query<RefRW<SquadBarkState>, RefRO<Suppression>, EnabledRefRO<Retreating>, RefRO<Owner>,
                              RefRO<LocalTransform>, DynamicBuffer<SquadMember>>()
                          .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).WithEntityAccess())
             {
-                if (faction.ValueRO.Value != local)
+                if (owner.ValueRO.Value != local)
                 {
                     continue;
                 }

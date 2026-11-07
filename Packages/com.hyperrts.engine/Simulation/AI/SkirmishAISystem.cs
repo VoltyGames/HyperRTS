@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.AI
             public NativeArray<EntityInfo> OwnedInfo;
             public NativeArray<Entity> Producers;
             public CompletedBuildings Completed;
-            public FactionRelations Relations;
+            public OwnerRelations Relations;
             public AIMapHintsView Hints;
 
             /// <summary>Default (not created) in a match without fog, where everything counts as seen.</summary>
@@ -61,7 +61,7 @@ namespace HyperRTS.Simulation.AI
         private struct Turn
         {
             public Entity Player;
-            public byte Faction;
+            public byte Owner;
             public float3 Home;
             public DynamicBuffer<PlayerCommand> Commands;
             public DynamicBuffer<PlayerCommandSubject> Subjects;
@@ -89,41 +89,41 @@ namespace HyperRTS.Simulation.AI
         private EntityQuery _limited;
         private TargetLookup _targetLookup;
         private TargetQueries _targetQueries;
-        private ComponentLookup<Faction> _factions;
+        private ComponentLookup<Owner> _owners;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _idleHarvesters = SystemAPI.QueryBuilder().WithAll<Harvester, Faction, LocalTransform>()
+            _idleHarvesters = SystemAPI.QueryBuilder().WithAll<Harvester, Owner, LocalTransform>()
                 .WithDisabled<ActiveOrder>().WithNone<Dead>().Build();
-            _idleArmy = SystemAPI.QueryBuilder().WithAll<WeaponMount, CombatStance, Faction, LocalTransform>()
+            _idleArmy = SystemAPI.QueryBuilder().WithAll<WeaponMount, CombatStance, Owner, LocalTransform>()
                 .WithDisabled<ActiveOrder>().WithNone<Harvester, Dead, AttackTarget>().Build();
-            _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, Faction, LocalTransform>().Build();
-            _producers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, ProductionQueueItem, Faction>()
+            _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, Owner, LocalTransform>().Build();
+            _producers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, ProductionQueueItem, Owner>()
                 .WithNone<ConstructionProgress, Dead>().Build();
-            _targets = SystemAPI.QueryBuilder().WithAll<Health, Faction, LocalTransform>().WithNone<Dead>().Build();
-            _builders = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Faction, LocalTransform>()
+            _targets = SystemAPI.QueryBuilder().WithAll<Health, Owner, LocalTransform>().WithNone<Dead>().Build();
+            _builders = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Owner, LocalTransform>()
                 .WithPresent<ActiveOrder>().WithNone<Dead>().Build();
-            _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, Faction, LocalTransform>().WithNone<Dead>().Build();
-            _sites = SystemAPI.QueryBuilder().WithAll<BuildingTag, ConstructionProgress, Faction, LocalTransform>()
+            _buildings = SystemAPI.QueryBuilder().WithAll<BuildingTag, Owner, LocalTransform>().WithNone<Dead>().Build();
+            _sites = SystemAPI.QueryBuilder().WithAll<BuildingTag, ConstructionProgress, Owner, LocalTransform>()
                 .WithNone<Dead>().Build();
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
-            _casters = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Faction, LocalTransform>().WithNone<Dead>().Build();
-            _owned = SystemAPI.QueryBuilder().WithAll<EntityInfo, Faction, LocalTransform>().WithNone<Dead>().Build();
-            _squads = SystemAPI.QueryBuilder().WithAll<SquadMember, Suppression, Health, Faction, LocalTransform>()
+            _casters = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Owner, LocalTransform>().WithNone<Dead>().Build();
+            _owned = SystemAPI.QueryBuilder().WithAll<EntityInfo, Owner, LocalTransform>().WithNone<Dead>().Build();
+            _squads = SystemAPI.QueryBuilder().WithAll<SquadMember, Suppression, Health, Owner, LocalTransform>()
                 .WithNone<Dead>().Build();
-            _retreatPoints = SystemAPI.QueryBuilder().WithAll<RetreatPoint, Faction, LocalTransform>()
+            _retreatPoints = SystemAPI.QueryBuilder().WithAll<RetreatPoint, Owner, LocalTransform>()
                 .WithNone<Dead, Offline>().Build();
-            _reinforcePoints = SystemAPI.QueryBuilder().WithAll<ReinforcePoint, Faction, LocalTransform>()
+            _reinforcePoints = SystemAPI.QueryBuilder().WithAll<ReinforcePoint, Owner, LocalTransform>()
                 .WithNone<Dead, Offline>().Build();
-            _fieldWorks = SystemAPI.QueryBuilder().WithAll<AIFieldWork, Faction, LocalTransform>().WithNone<Dead>().Build();
+            _fieldWorks = SystemAPI.QueryBuilder().WithAll<AIFieldWork, Owner, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             _targetLookup = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
-            _factions = state.GetComponentLookup<Faction>(true);
-            state.RequireForUpdate<FactionRelations>();
+            _owners = state.GetComponentLookup<Owner>(true);
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
 
@@ -142,7 +142,7 @@ namespace HyperRTS.Simulation.AI
 
             state.CompleteDependency();
             _targetLookup.Update(ref state, _targetQueries);
-            _factions.Update(ref state);
+            _owners.Update(ref state);
             var snapshot = TakeSnapshot(ref state);
             foreach (var player in due)
             {
@@ -187,7 +187,7 @@ namespace HyperRTS.Simulation.AI
             FieldWorkData = _fieldWorks.ToComponentDataArray<AIFieldWork>(Allocator.Temp),
             Producers = _producers.ToEntityArray(Allocator.Temp),
             Completed = new CompletedBuildings(_completed, Allocator.Temp),
-            Relations = SystemAPI.GetSingleton<FactionRelations>(),
+            Relations = SystemAPI.GetSingleton<OwnerRelations>(),
             Hints = TakeHints(ref state),
             Fog = _targetQueries.Fog.TryGetSingleton(out FogOfWar fog) ? fog : default,
         };
@@ -201,16 +201,16 @@ namespace HyperRTS.Simulation.AI
 
         private void Think(ref SystemState state, Entity player, in Snapshot snapshot)
         {
-            var faction = SystemAPI.GetComponent<Player>(player).Faction;
+            var owner = SystemAPI.GetComponent<Player>(player).Owner;
             var turn = new Turn
             {
                 Player = player,
-                Faction = faction,
-                Home = Home(faction, snapshot),
+                Owner = owner,
+                Home = Home(owner, snapshot),
                 Commands = SystemAPI.GetBuffer<PlayerCommand>(player),
                 Subjects = SystemAPI.GetBuffer<PlayerCommandSubject>(player),
                 Busy = new NativeList<Entity>(Allocator.Temp),
-                Buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, faction, snapshot.Completed,
+                Buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, owner, snapshot.Completed,
                     SystemAPI.GetBuffer<CompletedResearch>(player)),
             };
 
@@ -233,25 +233,25 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>Where the AI builds around: its building with the lowest entity index, else its first unit.</summary>
-        private static float3 Home(byte faction, in Snapshot snapshot)
+        private static float3 Home(byte owner, in Snapshot snapshot)
         {
             var buildings = snapshot.Buildings;
-            var home = FirstOwned(buildings, faction);
+            var home = FirstOwned(buildings, owner);
             if (home >= 0)
             {
                 return buildings.Position(home);
             }
 
-            var owned = FirstOwned(snapshot.Owned, faction);
+            var owned = FirstOwned(snapshot.Owned, owner);
             return owned >= 0 ? snapshot.Owned.Position(owned) : float3.zero;
         }
 
-        private static int FirstOwned(in AIGroup group, byte faction)
+        private static int FirstOwned(in AIGroup group, byte owner)
         {
             var best = -1;
             for (var i = 0; i < group.Length; i++)
             {
-                if (!group.IsOwnedBy(i, faction))
+                if (!group.IsOwnedBy(i, owner))
                 {
                     continue;
                 }

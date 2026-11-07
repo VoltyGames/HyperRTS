@@ -136,10 +136,10 @@ namespace HyperRTS.Editor.PlayMode
             var sides = new byte[players];
             foreach (var player in Cheats.Players(entityManager))
             {
-                var faction = entityManager.GetComponentData<Player>(player).Faction;
-                if (faction >= 1 && faction <= players)
+                var owner = entityManager.GetComponentData<Player>(player).Owner;
+                if (owner >= 1 && owner <= players)
                 {
-                    sides[faction - 1] = entityManager.GetComponentData<PlayerSide>(player).Value;
+                    sides[owner - 1] = entityManager.GetComponentData<PlayerSide>(player).Value;
                 }
             }
 

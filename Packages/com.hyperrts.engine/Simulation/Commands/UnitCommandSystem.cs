@@ -44,14 +44,14 @@ namespace HyperRTS.Simulation.Commands
             _writer = new OrderWriter(ref state);
             _resolver = new OrderResolver(ref state);
             _targetQueries = TargetQueries.Create(ref state);
-            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Faction>().WithPresent<ActiveOrder>()
+            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner>().WithPresent<ActiveOrder>()
                 .WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, UnitCommands, selected);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _stances = state.GetComponentLookup<CombatStance>();
             state.RequireForUpdate<PlayerCommand>();
-            state.RequireForUpdate<FactionRelations>();
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
         }
@@ -73,7 +73,7 @@ namespace HyperRTS.Simulation.Commands
             _agents.Update(ref state);
             _stances.Update(ref state);
 
-            var relations = SystemAPI.GetSingleton<FactionRelations>();
+            var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var map = SystemAPI.GetSingleton<MapSettings>();
             var grid = SystemAPI.GetSingleton<NavGrid>();
             var subjects = new NativeList<Entity>(64, Allocator.Temp);
@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Commands
             return subjects.Length > 0;
         }
 
-        private void Execute(in PlayerCommand command, NativeArray<Entity> subjects, in FactionRelations relations,
+        private void Execute(in PlayerCommand command, NativeArray<Entity> subjects, in OwnerRelations relations,
             in MapSettings map, in NavGrid grid)
         {
             if (TryApplyDirectly(command, subjects))

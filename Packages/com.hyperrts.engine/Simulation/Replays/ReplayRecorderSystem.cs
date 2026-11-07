@@ -131,8 +131,8 @@ namespace HyperRTS.Simulation.Replays
             var health = SystemAPI.GetComponentLookup<Health>(true);
             var construction = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var squads = SystemAPI.GetBufferLookup<SquadMember>(true);
-            foreach (var (info, faction, transform, entity) in SystemAPI
-                         .Query<RefRO<EntityInfo>, RefRO<Faction>, RefRO<LocalTransform>>()
+            foreach (var (info, owner, transform, entity) in SystemAPI
+                         .Query<RefRO<EntityInfo>, RefRO<Owner>, RefRO<LocalTransform>>()
                          .WithNone<Inside>().WithEntityAccess())
             {
                 var known = recording.Last.TryGetValue(entity, out var last);
@@ -140,7 +140,7 @@ namespace HyperRTS.Simulation.Replays
                 var healthFraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
                 var building = construction.HasEnabled(entity);
                 var living = squads.TryGetBuffer(entity, out var members) ? SquadMember.LivingMask(members) : (ushort)0;
-                var current = ReplayEntity.Capture(key, info.ValueRO.TypeId, faction.ValueRO.Value, transform.ValueRO,
+                var current = ReplayEntity.Capture(key, info.ValueRO.TypeId, owner.ValueRO.Value, transform.ValueRO,
                     healthFraction, living);
                 if (building)
                 {

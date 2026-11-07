@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Faction, Selected>()
+            var selected = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Owner, Selected>()
                 .WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, ProducerCommands, selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Production
                 // One buyer per player for the frame, so each purchase counts against the next one's limits.
                 if (each.Player != buyerPlayer)
                 {
-                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, each.Faction, buildings,
+                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, each.Owner, buildings,
                         SystemAPI.GetBuffer<CompletedResearch>(each.Player));
                     buyerPlayer = each.Player;
                 }

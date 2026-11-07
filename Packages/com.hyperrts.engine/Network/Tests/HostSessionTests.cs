@@ -51,11 +51,11 @@ namespace HyperRTS.Network.Tests
             var hostPlayer = HostTestKit.LocalPlayer(_session.Host);
             var clientPlayer = HostTestKit.LocalPlayer(_session.Client);
 
-            var factions = new[]
+            var owners = new[]
             {
-                _session.Host.Get<Player>(hostPlayer).Faction, _session.Client.Get<Player>(clientPlayer).Faction,
+                _session.Host.Get<Player>(hostPlayer).Owner, _session.Client.Get<Player>(clientPlayer).Owner,
             };
-            CollectionAssert.AreEqual(new byte[] { 1, 2 }, factions, string.Join(",", factions));
+            CollectionAssert.AreEqual(new byte[] { 1, 2 }, owners, string.Join(",", owners));
         }
 
         [Test]

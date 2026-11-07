@@ -8,10 +8,10 @@ namespace HyperRTS.Simulation.Auras
     /// <summary>Who an aura affects and how overlapping auras collapse into one presence per aura id.</summary>
     public static class AuraRules
     {
-        public static bool Affects(AuraTargets affects, byte sourceFaction, in SpatialEntry entry,
-            in FactionRelations relations)
+        public static bool Affects(AuraTargets affects, byte sourceOwner, in SpatialEntry entry,
+            in OwnerRelations relations)
         {
-            return (affects & Kind(entry)) != 0 && (affects & Relation(sourceFaction, entry.Faction, relations)) != 0;
+            return (affects & Kind(entry)) != 0 && (affects & Relation(sourceOwner, entry.Owner, relations)) != 0;
         }
 
         private static AuraTargets Kind(in SpatialEntry entry)
@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Auras
             return entry.IsBuilding ? AuraTargets.Buildings : AuraTargets.None;
         }
 
-        private static AuraTargets Relation(byte source, byte target, in FactionRelations relations)
+        private static AuraTargets Relation(byte source, byte target, in OwnerRelations relations)
         {
             if (source == target)
             {

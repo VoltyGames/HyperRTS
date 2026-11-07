@@ -8,7 +8,7 @@ namespace HyperRTS.Simulation.Common.Prefabs
 {
     /// <summary>
     /// Instantiates baked prefabs at a pose from a job, keeping each prefab's scale and
-    /// <see cref="PostTransformMatrix"/>, owned by a faction. Read-only, so it copies into any job.
+    /// <see cref="PostTransformMatrix"/>, owned by an owner. Read-only, so it copies into any job.
     /// </summary>
     public struct PrefabSpawner
     {
@@ -28,25 +28,25 @@ namespace HyperRTS.Simulation.Common.Prefabs
         }
 
         public readonly Entity Spawn(EntityCommandBuffer ecb, Entity prefab, float3 position, quaternion rotation,
-            byte faction)
+            byte owner)
         {
             var spawned = ecb.Instantiate(prefab);
             ecb.Place(spawned, Posed(prefab, position, rotation), Stretch(prefab));
-            // Add rather than Set: unit prefabs bake a Faction, projectile and ability prefabs don't.
-            ecb.AddComponent(spawned, new Faction { Value = faction });
+            // Add rather than Set: unit prefabs bake an Owner, projectile and ability prefabs don't.
+            ecb.AddComponent(spawned, new Owner { Value = owner });
             return spawned;
         }
 
         /// <summary>Keeps the prefab's own rotation: only the position comes from the caller.</summary>
-        public readonly Entity Spawn(EntityCommandBuffer ecb, Entity prefab, float3 position, byte faction) =>
-            Spawn(ecb, prefab, position, _transforms[prefab].Rotation, faction);
+        public readonly Entity Spawn(EntityCommandBuffer ecb, Entity prefab, float3 position, byte owner) =>
+            Spawn(ecb, prefab, position, _transforms[prefab].Rotation, owner);
 
         public readonly Entity Spawn(EntityCommandBuffer.ParallelWriter ecb, int sortKey, Entity prefab,
-            float3 position, quaternion rotation, byte faction)
+            float3 position, quaternion rotation, byte owner)
         {
             var spawned = ecb.Instantiate(sortKey, prefab);
             ecb.Place(sortKey, spawned, Posed(prefab, position, rotation), Stretch(prefab));
-            ecb.AddComponent(sortKey, spawned, new Faction { Value = faction });
+            ecb.AddComponent(sortKey, spawned, new Owner { Value = owner });
             return spawned;
         }
 

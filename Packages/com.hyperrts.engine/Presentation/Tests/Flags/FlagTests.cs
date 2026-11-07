@@ -60,10 +60,10 @@ namespace HyperRTS.Presentation.Tests.Flags
         [TestCase(1, 1, 0.5f, 1, 1f, TestName = "Owner's own progress: owner stays up")]
         public void Display_Resolve(int owner, int capturer, float progress, int shown, float hoist)
         {
-            var capture = new CaptureProgress { Faction = (byte)capturer, Value = progress };
-            var faction = FlagDisplay.Resolve((byte)owner, capture, out var height);
+            var capture = new CaptureProgress { Owner = (byte)capturer, Value = progress };
+            var flown = FlagDisplay.Resolve((byte)owner, capture, out var height);
 
-            Assert.AreEqual(shown, faction);
+            Assert.AreEqual(shown, flown);
             Assert.AreEqual(hoist, height, 1e-5f);
         }
 
@@ -82,7 +82,7 @@ namespace HyperRTS.Presentation.Tests.Flags
         public void CaptureInSecondHalf_RaisesTheCapturersFlag()
         {
             var flag = Building(1, out var building);
-            _em.SetComponentData(building, new CaptureProgress { Faction = 2, Value = 0.75f });
+            _em.SetComponentData(building, new CaptureProgress { Owner = 2, Value = 0.75f });
 
             Run();
 
@@ -136,17 +136,17 @@ namespace HyperRTS.Presentation.Tests.Flags
         {
             var flag = _em.CreateEntity(typeof(FlagState), typeof(FlagColor));
             building = _em.CreateEntity();
-            _em.AddComponentData(building, new Faction { Value = owner });
+            _em.AddComponentData(building, new Owner { Value = owner });
             _em.AddComponentData(building, new LocalToWorld { Value = float4x4.Translate(new float3(0.5f, 0f, 0.5f)) });
             _em.AddComponentData(building, new CaptureProgress());
             _em.AddComponentData(building, new FlagMount { Flag = flag, Drop = 3f });
             return flag;
         }
 
-        // One fog cell nobody sees, with factions 1 and 2 on opposing teams.
+        // One fog cell nobody sees, with owners 1 and 2 on opposing teams.
         private void AddFog()
         {
-            var relations = new FactionRelations();
+            var relations = new OwnerRelations();
             relations.SetTeam(1, 1);
             relations.SetTeam(2, 2);
             _em.CreateSingleton(relations);

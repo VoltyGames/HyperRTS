@@ -47,15 +47,15 @@ namespace HyperRTS.Simulation.Upgrades
             // Each entity writes only its own buffer, and only when its set changes, so stat change filters stay quiet.
             [NativeDisableParallelForRestriction] public BufferLookup<StatModifier> Modifiers;
 
-            private void Execute(Entity entity, ref AppliedUpgrades applied, in EntityInfo info, in Faction faction)
+            private void Execute(Entity entity, ref AppliedUpgrades applied, in EntityInfo info, in Owner owner)
             {
-                if (applied.Faction != faction.Value)
+                if (applied.Owner != owner.Value)
                 {
                     Strip(entity, applied);
-                    applied = new AppliedUpgrades { Faction = faction.Value };
+                    applied = new AppliedUpgrades { Owner = owner.Value };
                 }
 
-                if (!Researched.TryGetBuffer(Players[faction.Value], out var researched))
+                if (!Researched.TryGetBuffer(Players[owner.Value], out var researched))
                 {
                     return;
                 }

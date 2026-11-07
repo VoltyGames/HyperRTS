@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Vision.Fog
         public static FogOfWar Create(in CellGrid grid, Allocator allocator)
         {
             var rowWords = (grid.Size.x + 63) >> 6;
-            var words = rowWords * grid.Size.y * FactionRelations.MaxTeams;
+            var words = rowWords * grid.Size.y * OwnerRelations.MaxTeams;
             return new FogOfWar
             {
                 Visible = new NativeArray<ulong>(words, allocator),
@@ -99,10 +99,10 @@ namespace HyperRTS.Simulation.Vision.Fog
             IsVisible(position, team, tall) && !IsHiddenByConcealment(team, position, concealment);
 
         /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
-        public readonly bool IsHiddenFrom(in FactionRelations relations, byte viewerFaction, byte faction,
+        public readonly bool IsHiddenFrom(in OwnerRelations relations, byte viewerOwner, byte owner,
             float3 position, Concealment concealment, bool tall) =>
-            relations.IsHostile(viewerFaction, faction) &&
-            !CanSee(relations.GetTeam(viewerFaction), position, concealment, tall);
+            relations.IsHostile(viewerOwner, owner) &&
+            !CanSee(relations.GetTeam(viewerOwner), position, concealment, tall);
 
         /// <summary>Whether the team's bit is set for the cell in one of the layers.</summary>
         public readonly bool Has(NativeArray<ulong> plane, int2 cell, byte team) =>
@@ -149,7 +149,7 @@ namespace HyperRTS.Simulation.Vision.Fog
         }
 
         /// <summary>Whether a team stamps the grid: neutral never does. Baking and match setup reject teams past the planes.</summary>
-        public static bool Stamps(byte team) => team != 0 && team < FactionRelations.MaxTeams;
+        public static bool Stamps(byte team) => team != 0 && team < OwnerRelations.MaxTeams;
 
         private readonly int Word(int2 cell, byte team) => team * PlaneWords + cell.y * RowWords + (cell.x >> 6);
 

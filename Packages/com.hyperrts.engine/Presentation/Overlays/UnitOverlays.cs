@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Overlays
     {
         private readonly LiveQuery _living = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Health>(),
-            ComponentType.ReadOnly<Faction>(),
+            ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalToWorld>(),
             ComponentType.Exclude<FogHidden>(),
             ComponentType.Exclude<Inside>()));
@@ -56,7 +56,7 @@ namespace HyperRTS.Presentation.Overlays
             foreach (var chunk in chunks)
             {
                 var entities = chunk.GetNativeArray(handles.Entities);
-                var factions = chunk.GetNativeArray(ref handles.Factions);
+                var owners = chunk.GetNativeArray(ref handles.Owners);
                 var healths = chunk.GetNativeArray(ref handles.Healths);
                 var worlds = chunk.GetNativeArray(ref handles.Worlds);
                 for (var i = 0; i < chunk.Count; i++)
@@ -78,7 +78,7 @@ namespace HyperRTS.Presentation.Overlays
                     var unit = handles.Unit(chunk, i);
                     if (focus.ShowsMarker)
                     {
-                        var color = style.RelationColor(view.RelationTo(factions[i].Value));
+                        var color = style.RelationColor(view.RelationTo(owners[i].Value));
                         var pose = new MarkerPose(worlds[i], unit.Layer);
                         var footprint = MarkerSize(unit, style);
                         var selectedFor = focus.Selected ? _fades.Elapsed(entities[i], now) : 0f;
@@ -144,7 +144,7 @@ namespace HyperRTS.Presentation.Overlays
         private struct UnitHandles
         {
             public readonly EntityTypeHandle Entities;
-            public ComponentTypeHandle<Faction> Factions;
+            public ComponentTypeHandle<Owner> Owners;
             public ComponentTypeHandle<Health> Healths;
             public ComponentTypeHandle<LocalToWorld> Worlds;
             private ComponentTypeHandle<Selected> _selected;
@@ -159,7 +159,7 @@ namespace HyperRTS.Presentation.Overlays
             public UnitHandles(EntityManager entityManager)
             {
                 Entities = entityManager.GetEntityTypeHandle();
-                Factions = Read<Faction>(entityManager);
+                Owners = Read<Owner>(entityManager);
                 Healths = Read<Health>(entityManager);
                 Worlds = Read<LocalToWorld>(entityManager);
                 _selected = Read<Selected>(entityManager);
