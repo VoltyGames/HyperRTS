@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;

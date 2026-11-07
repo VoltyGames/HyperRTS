@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Prefabs;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Network.Common;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;

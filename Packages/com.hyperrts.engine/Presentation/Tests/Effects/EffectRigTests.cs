@@ -1,7 +1,7 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using Unity.Entities;
 using UnityEngine;

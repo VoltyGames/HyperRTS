@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;

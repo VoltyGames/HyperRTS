@@ -1,7 +1,6 @@
 using HyperRTS.Editor.Scenes;
 using System.IO;
 using System.Linq;
-using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Simulation.Match;
 using UnityEditor;

@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Areas;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using UnityEditor;
 using UnityEngine;
 

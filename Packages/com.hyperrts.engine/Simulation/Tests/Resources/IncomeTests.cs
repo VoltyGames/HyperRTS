@@ -2,6 +2,8 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
+using HyperRTS.Simulation.Resources.Income;
 using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using HyperRTS.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

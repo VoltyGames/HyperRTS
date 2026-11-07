@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Power;

@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using UnityEngine;

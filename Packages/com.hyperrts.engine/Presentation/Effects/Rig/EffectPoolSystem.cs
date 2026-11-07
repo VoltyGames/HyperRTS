@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Effects.Rig

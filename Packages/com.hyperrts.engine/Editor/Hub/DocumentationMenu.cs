@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Hub

@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Damage;

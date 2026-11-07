@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Common;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.MatchStart;
 using UnityEngine;

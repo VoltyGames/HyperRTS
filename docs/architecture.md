@@ -8,7 +8,7 @@ The simulation has no rendering, input or UI, so it runs on a dedicated server a
 
 | Assembly | Holds |
 | --- | --- |
-| `HyperRTS.Simulation` | Components, systems, authoring, phase groups. Includes `Core/` |
+| `HyperRTS.Simulation` | Components, systems, authoring, phase groups |
 | `HyperRTS.Network` | Sessions, join, command RPCs, replication, fog relevancy |
 | `HyperRTS.Presentation` | HUD, overlays, fog rendering, team colours, audio. |
 | `HyperRTS.Input` | Camera and input, turned into `PlayerCommand`s |
@@ -58,7 +58,7 @@ scene, which `RTSWorld.prefab` carries. `NetworkSession` creates and replaces wo
 
 ## Frame order
 
-Every gameplay system sits in a phase group from `Core/SystemGroups.cs`, never in `SimulationSystemGroup` directly.
+Every gameplay system sits in a phase group from `Simulation/Common/SystemGroups.cs`, never in `SimulationSystemGroup` directly.
 Only network plumbing such as join and relevancy sits there.
 
 | Group | Runs |

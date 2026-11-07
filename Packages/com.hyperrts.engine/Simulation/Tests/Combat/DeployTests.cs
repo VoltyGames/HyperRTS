@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;

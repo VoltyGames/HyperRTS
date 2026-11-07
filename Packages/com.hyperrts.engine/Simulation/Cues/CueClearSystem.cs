@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
 using Unity.Burst;
 using Unity.Entities;

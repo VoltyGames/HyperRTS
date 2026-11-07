@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Effects

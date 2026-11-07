@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 

@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Stats;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;

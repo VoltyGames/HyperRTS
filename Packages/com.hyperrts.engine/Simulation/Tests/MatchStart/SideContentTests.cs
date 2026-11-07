@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System.Text.RegularExpressions;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;

@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;

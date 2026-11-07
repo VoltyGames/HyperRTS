@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Netcode;
 using Unity.Scripting.LifecycleManagement;

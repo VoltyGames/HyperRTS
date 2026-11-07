@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Destruction

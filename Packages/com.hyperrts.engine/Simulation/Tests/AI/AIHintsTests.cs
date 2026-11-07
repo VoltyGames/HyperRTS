@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Resources;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

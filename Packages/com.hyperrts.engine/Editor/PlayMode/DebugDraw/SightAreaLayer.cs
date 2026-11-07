@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision.Fog;

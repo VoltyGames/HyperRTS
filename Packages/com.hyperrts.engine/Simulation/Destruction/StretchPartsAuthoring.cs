@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 

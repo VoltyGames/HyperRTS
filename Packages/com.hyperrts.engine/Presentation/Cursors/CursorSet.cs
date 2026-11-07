@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Cursors

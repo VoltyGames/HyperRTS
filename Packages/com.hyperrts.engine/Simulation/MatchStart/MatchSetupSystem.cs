@@ -1,7 +1,5 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;

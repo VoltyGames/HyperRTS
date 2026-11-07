@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Network.Common;
 using HyperRTS.Network.Players;
 using HyperRTS.Simulation.Common;

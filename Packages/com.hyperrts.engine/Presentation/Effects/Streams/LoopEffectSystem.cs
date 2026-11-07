@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Quality;

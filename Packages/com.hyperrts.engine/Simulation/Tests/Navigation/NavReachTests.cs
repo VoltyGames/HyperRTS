@@ -8,7 +8,7 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Movement;
 using NUnit.Framework;

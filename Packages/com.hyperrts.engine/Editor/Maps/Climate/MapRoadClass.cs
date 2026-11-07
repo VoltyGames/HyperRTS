@@ -1,6 +1,6 @@
-﻿using HyperRTS.Simulation.Cues.Surfaces;
+﻿using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Cues.Surfaces;
 using System;
-using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 

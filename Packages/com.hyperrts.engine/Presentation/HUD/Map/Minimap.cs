@@ -1,9 +1,9 @@
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Heights;
-using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Entities;

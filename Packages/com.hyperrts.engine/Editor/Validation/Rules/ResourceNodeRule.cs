@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
+
 
 namespace HyperRTS.Editor.Validation.Rules
 {

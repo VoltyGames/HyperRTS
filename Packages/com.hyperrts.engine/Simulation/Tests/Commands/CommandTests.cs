@@ -1,10 +1,9 @@
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
 using Unity.Entities;

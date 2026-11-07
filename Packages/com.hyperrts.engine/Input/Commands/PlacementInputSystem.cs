@@ -1,5 +1,4 @@
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;

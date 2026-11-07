@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Voice;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;

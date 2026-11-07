@@ -1,12 +1,13 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
+using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Transport;
 using Unity.Entities;
 

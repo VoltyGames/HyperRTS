@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common.Infantry;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common;

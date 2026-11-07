@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
-using HyperRTS.Core;
 using Unity.Mathematics;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;

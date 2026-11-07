@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -5,7 +5,7 @@ using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Veterancy;
 using NUnit.Framework;
 using UnityEditor;

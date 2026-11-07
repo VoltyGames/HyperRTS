@@ -1,7 +1,7 @@
-using HyperRTS.Core;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Generators;
 using System.IO;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
 using UnityEngine;
 

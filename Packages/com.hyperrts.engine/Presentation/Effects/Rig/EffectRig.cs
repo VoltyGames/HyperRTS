@@ -1,9 +1,10 @@
 using System;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.VFX;

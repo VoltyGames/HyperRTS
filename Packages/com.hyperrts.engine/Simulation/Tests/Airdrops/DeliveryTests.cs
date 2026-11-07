@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Movement;
+using HyperRTS.Simulation.Resources.Gathering;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

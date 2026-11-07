@@ -1,9 +1,8 @@
-using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Palette

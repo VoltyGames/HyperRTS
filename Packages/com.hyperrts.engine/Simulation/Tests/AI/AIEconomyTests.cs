@@ -9,6 +9,7 @@ using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
 using Unity.Entities;

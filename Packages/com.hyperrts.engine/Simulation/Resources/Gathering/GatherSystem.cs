@@ -1,0 +1,272 @@
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Docks;
+using HyperRTS.Simulation.Navigation.Drive;
+using HyperRTS.Simulation.Navigation.Grid;
+using HyperRTS.Simulation.Navigation.Reach;
+using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Stats;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Entities;
+using Unity.Jobs;
+using Unity.Mathematics;
+using Unity.Transforms;
+
+namespace HyperRTS.Simulation.Resources.Gathering
+{
+    /// <summary>
+    /// Runs Gather orders: walk to the node, fill up, deposit at an owned drop-off chosen once per trip by its edge
+    /// distance and the turn needed to face it, repeat. Vehicles work at dock bays where the target has them.
+    /// </summary>
+    [BurstCompile]
+    [UpdateInGroup(typeof(ProductionSystemGroup))]
+    [UpdateAfter(typeof(DockSystem))]
+    public partial struct GatherSystem : ISystem
+    {
+        private EntityQuery _nodes;
+        private EntityQuery _dropOffs;
+        private TargetReach _reach;
+        private DockBays _bays;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, LocalTransform>().Build();
+            _dropOffs = SystemAPI.QueryBuilder().WithAll<ResourceDropOff, LocalTransform, Faction>()
+                .WithNone<ConstructionProgress, Dead>().Build();
+            state.RequireForUpdate<PlayerRegistry>();
+            _reach = new TargetReach(ref state);
+            _bays = new DockBays(ref state);
+            state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<NavGrid>();
+            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            var allocator = state.WorldUpdateAllocator;
+            var nodes = _nodes.ToEntityListAsync(allocator, state.Dependency, out var nodesReady);
+            var dropOffs = _dropOffs.ToEntityListAsync(allocator, state.Dependency, out var dropOffsReady);
+            state.Dependency = JobHandle.CombineDependencies(nodesReady, dropOffsReady);
+
+            _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
+            _bays.Update(ref state);
+
+            new GatherJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime,
+                Nodes = nodes.AsDeferredJobArray(),
+                DropOffs = dropOffs.AsDeferredJobArray(),
+                Players = SystemAPI.GetSingleton<PlayerRegistry>(),
+                NodeLookup = SystemAPI.GetComponentLookup<ResourceNode>(false),
+                StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
+                Reach = _reach,
+                Bays = _bays,
+                FactionLookup = SystemAPI.GetComponentLookup<Faction>(true),
+                ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
+                StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
+            }.Schedule();
+        }
+
+        /// <summary>Single-threaded: harvesters drain shared nodes and stockpiles.</summary>
+        [BurstCompile]
+        [WithNone(typeof(Dead))]
+        [WithPresent(typeof(MoveDestination), typeof(Arrival))]
+        private partial struct GatherJob : IJobEntity
+        {
+            private const float RetrySeconds = 0.5f;
+
+            public float DeltaTime;
+            [ReadOnly] public NativeArray<Entity> Nodes;
+            [ReadOnly] public NativeArray<Entity> DropOffs;
+            public PlayerRegistry Players;
+            public ComponentLookup<ResourceNode> NodeLookup;
+            public BufferLookup<ResourceStock> StockLookup;
+            public TargetReach Reach;
+            public DockBays Bays;
+            [ReadOnly] public ComponentLookup<Faction> FactionLookup;
+            [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
+            public ComponentLookup<PlayerStats> StatsLookup;
+            [ReadOnly] public NavGrid Grid;
+
+            private void Execute(Entity entity, ref Harvester harvester, ref HarvestState harvest,
+                ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, RefRW<MoveDestination> destination,
+                EnabledRefRW<MoveDestination> moving, ref Arrival arrival, EnabledRefRW<Arrival> arrived,
+                in LocalTransform transform, in NavAgent agent, in Faction faction)
+            {
+                if (!busy.ValueRO || order.Value.Type != OrderType.Gather)
+                {
+                    return;
+                }
+
+                var move = new MoveControl(destination, moving, arrived) { Reason = arrival.Reason };
+                if (harvest.Phase == HarvestPhase.Returning)
+                {
+                    if (harvester.CargoAmount <= 0)
+                    {
+                        Resume(ref harvest, move);
+                    }
+                    else if (ReachedDropOff(entity, ref harvest, move, busy, transform, agent))
+                    {
+                        Deliver(ref harvester, ref harvest, faction.Value);
+                    }
+
+                    return;
+                }
+
+                if (!IsHarvestable(order.Value.Target) && !TryReplaceNode(ref order, harvester, harvest))
+                {
+                    GiveUp(ref harvest, harvester, busy, moving);
+                    return;
+                }
+
+                var node = order.Value.Target;
+                var nodePosition = Reach.Position(node);
+                var toNode = Arrive(node, entity, ref harvest, move, transform, agent);
+                if (!ActiveOrder.StopsShort(toNode, busy, moving))
+                {
+                    Gather(ref harvester, ref harvest, node, nodePosition);
+                }
+            }
+
+            // Nothing left nearby: deliver what is carried, then the order is done.
+            private static void GiveUp(ref HarvestState harvest, in Harvester harvester, EnabledRefRW<ActiveOrder> busy,
+                EnabledRefRW<MoveDestination> moving)
+            {
+                harvest.Phase = HarvestPhase.Returning;
+                harvest.DropOff = Entity.Null;
+                if (harvester.CargoAmount <= 0)
+                {
+                    ActiveOrder.Finish(busy, moving);
+                }
+            }
+
+            private void Gather(ref Harvester harvester, ref HarvestState harvest, Entity entity, float3 position)
+            {
+                ref var node = ref NodeLookup.GetRefRW(entity).ValueRW;
+                if (harvester.CargoAmount == 0 || !harvester.CargoType.Equals(node.Type))
+                {
+                    harvester.CargoType = node.Type;
+                    harvester.CargoAmount = 0;
+                }
+
+                harvest.NodePosition = position;
+                harvest.Progress += harvester.GatherRate * DeltaTime;
+
+                var whole = (int)harvest.Progress;
+                harvest.Progress -= whole;
+                var taken = math.min(whole, math.min(node.Amount, harvester.Capacity - harvester.CargoAmount));
+                node.Amount -= taken;
+                harvester.CargoAmount += taken;
+
+                if (harvester.CargoAmount >= harvester.Capacity)
+                {
+                    harvest.Phase = HarvestPhase.Returning;
+                    harvest.Progress = 0f;
+                    harvest.DropOff = Entity.Null;
+                }
+            }
+
+            // Empty-handed goes straight back to work.
+            private static void Resume(ref HarvestState harvest, MoveControl move)
+            {
+                harvest.Phase = HarvestPhase.Gathering;
+                move.Moving.ValueRW = false;
+            }
+
+            // True once the harvester stands at its drop-off; with none, it waits until one is built.
+            private bool ReachedDropOff(Entity entity, ref HarvestState harvest, MoveControl move,
+                EnabledRefRW<ActiveOrder> busy, in LocalTransform transform, in NavAgent agent)
+            {
+                var faction = FactionLookup[entity].Value;
+                if (!IsDropOff(harvest.DropOff, faction))
+                {
+                    harvest.DropOff = ChooseDropOff(entity, transform, agent, faction);
+                }
+
+                var dropOff = harvest.DropOff;
+                if (dropOff == Entity.Null)
+                {
+                    move.Moving.ValueRW = false;
+                    return false;
+                }
+
+                var walk = Arrive(dropOff, entity, ref harvest, move, transform, agent);
+                return !ActiveOrder.StopsShort(walk, busy, move.Moving);
+            }
+
+            private void Deliver(ref Harvester harvester, ref HarvestState harvest, byte faction)
+            {
+                var player = Players[faction];
+                var delivered = ResourcePayout.Scaled(ModifierLookup, player, harvester.CargoAmount);
+                ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
+                harvester.CargoAmount = 0;
+                harvest.Phase = HarvestPhase.Gathering;
+            }
+
+            private bool IsHarvestable(Entity node) =>
+                NodeLookup.TryGetComponent(node, out var data) && data.Amount > 0 && Reach.Exists(node);
+
+            /// <summary>Retargets to the nearest node of the carried type near the depleted one.</summary>
+            private bool TryReplaceNode(ref ActiveOrder order, in Harvester harvester, in HarvestState harvest)
+            {
+                var closest = Closest.Within(harvester.ReplacementRange * harvester.ReplacementRange);
+                for (var i = 0; i < Nodes.Length; i++)
+                {
+                    var candidate = Nodes[i];
+                    var node = NodeLookup[candidate];
+                    if (node.Amount <= 0 || !node.Type.Equals(harvester.CargoType))
+                    {
+                        continue;
+                    }
+
+                    closest.Consider(i, candidate, DistanceSq(candidate, harvest.NodePosition));
+                }
+
+                order.Value.Target = closest.Entity;
+                return closest.Found;
+            }
+
+            /// <summary>Still a finished, living drop-off of this owner.</summary>
+            private readonly bool IsDropOff(Entity entity, byte faction) =>
+                DropOffs.Contains(entity) && FactionLookup[entity].Value == faction;
+
+            /// <summary>The reachable owned drop-off with the lowest edge gap plus the path its turn takes.</summary>
+            private Entity ChooseDropOff(Entity entity, in LocalTransform transform, in NavAgent agent, byte faction)
+            {
+                var position = transform.Position;
+                var facing = math.normalizesafe(transform.Forward().xz);
+                var turnLength = agent.Chassis.TurnLength(agent.HalfLength);
+                var closest = Closest.None;
+                for (var i = 0; i < DropOffs.Length; i++)
+                {
+                    var candidate = DropOffs[i];
+                    if (FactionLookup[candidate].Value != faction)
+                    {
+                        continue;
+                    }
+
+                    // Scores first so only a drop-off that would win pays for the reachability search.
+                    var footprint = Reach.Footprint(candidate);
+                    var edge = footprint.EdgePoint(position.xz, agent.Radius);
+                    var toEdge = math.normalizesafe(edge - position.xz);
+                    var turn = math.acos(math.clamp(math.dot(facing, toEdge), -1f, 1f));
+                    var cost = footprint.Gap(position.xz) + turn * turnLength;
+                    if (closest.IsCloserThanBest(cost, candidate) &&
+                        Grid.IsReachable(agent, position, new float3(edge.x, position.y, edge.y)))
+                    {
+                        closest.Consider(i, candidate, cost);
+                    }
+                }
+
+                return closest.Entity;
+            }
+
+            private readonly float DistanceSq(Entity entity, float3 position) =>
+                math.distancesq(Reach.Position(entity).xz, position.xz);
+        }
+    }
+}

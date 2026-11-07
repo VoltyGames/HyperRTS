@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Cues;
 using Unity.Entities;

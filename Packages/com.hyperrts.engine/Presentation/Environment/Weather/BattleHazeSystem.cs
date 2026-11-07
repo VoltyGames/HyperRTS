@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Effects.Streams;

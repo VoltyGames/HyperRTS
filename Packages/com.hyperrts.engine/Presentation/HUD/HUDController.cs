@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.HUD.Commands;
 using HyperRTS.Presentation.HUD.Map;
 using HyperRTS.Presentation.HUD.Panels;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 using UnityEngine.UIElements;
 

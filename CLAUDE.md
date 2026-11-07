@@ -24,7 +24,7 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 
 ## Conventions
 
-- Namespaces follow folders: `HyperRTS.<Layer>.<Module>`, and `HyperRTS.Core` in `Core/`.
+- Namespaces follow folders: `HyperRTS.<Layer>.<Module>`.
 - Simulation modules sit in [tiers](docs/modules.md#tiers): Base, Foundation, Gameplay, Orchestration. A module uses
   its own tier or lower ones, a tier never forms a cycle, and a shared component goes in `Common` or the lower
   module. Authoring files may reference any module. `ModuleLayoutTests` enforces this; add a new module to `Tiers`.

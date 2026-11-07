@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

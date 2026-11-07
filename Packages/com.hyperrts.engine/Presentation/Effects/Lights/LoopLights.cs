@@ -1,5 +1,5 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Streams;
+using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Lights

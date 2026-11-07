@@ -4,7 +4,6 @@ using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Overlays;
 using HyperRTS.Presentation.Overlays.Ghosts;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;

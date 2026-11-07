@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Simulation.Vision.Sight;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;

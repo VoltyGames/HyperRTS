@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;

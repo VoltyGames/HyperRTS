@@ -1,8 +1,8 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Tests.Effects;
+using HyperRTS.Simulation.Common;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;

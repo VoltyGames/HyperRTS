@@ -1,10 +1,9 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Transport;
+using HyperRTS.Simulation.Transport.Garrison;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

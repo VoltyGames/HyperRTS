@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Core;
 using HyperRTS.Input.Cameras;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Entities;

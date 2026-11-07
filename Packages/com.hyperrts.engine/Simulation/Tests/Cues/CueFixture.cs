@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Sounds;

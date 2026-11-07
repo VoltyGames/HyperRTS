@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision.Fog;
 using System;
-using HyperRTS.Core;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Replays

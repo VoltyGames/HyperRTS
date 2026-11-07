@@ -1,5 +1,5 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Environment.Trampling;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

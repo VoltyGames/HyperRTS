@@ -5,6 +5,8 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
+using HyperRTS.Simulation.Resources.Income;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;

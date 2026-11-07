@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Core;
 using HyperRTS.Editor.Maps.Library;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Climate

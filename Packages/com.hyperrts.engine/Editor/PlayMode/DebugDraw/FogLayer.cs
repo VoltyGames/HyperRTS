@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Collections;
 using Unity.Entities;

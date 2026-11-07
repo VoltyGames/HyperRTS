@@ -1,7 +1,7 @@
 using HyperRTS.Input.Cameras;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Heights;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;

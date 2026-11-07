@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System;
-using HyperRTS.Core;
 using HyperRTS.Simulation.Buildings;
 using Unity.Entities;
 using UnityEngine;

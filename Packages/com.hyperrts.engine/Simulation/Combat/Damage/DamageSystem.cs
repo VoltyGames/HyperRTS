@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Combat.Death;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;

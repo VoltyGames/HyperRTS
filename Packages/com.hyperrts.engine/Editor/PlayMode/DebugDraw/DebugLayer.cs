@@ -1,5 +1,5 @@
-using HyperRTS.Core;
 using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 
 namespace HyperRTS.Editor.PlayMode.DebugDraw

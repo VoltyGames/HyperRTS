@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Sounds;

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 using Object = UnityEngine.Object;
 

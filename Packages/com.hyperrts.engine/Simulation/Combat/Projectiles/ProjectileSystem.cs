@@ -1,7 +1,7 @@
-﻿using HyperRTS.Core;
-using HyperRTS.Simulation.Combat.Damage;
+﻿using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Cues;
 using Unity.Burst;

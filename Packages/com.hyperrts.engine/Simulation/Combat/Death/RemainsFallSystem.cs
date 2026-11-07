@@ -1,4 +1,4 @@
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
 using Unity.Collections;

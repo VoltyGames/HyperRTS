@@ -1,11 +1,9 @@
-using HyperRTS.Core;
 using HyperRTS.Network.Common;
 using HyperRTS.Network.Cues;
 using HyperRTS.Network.Players;
 using HyperRTS.Network.Replication;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Tests;

@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Targeting;
@@ -9,7 +8,7 @@ using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;

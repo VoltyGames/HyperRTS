@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Production;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Upgrades;

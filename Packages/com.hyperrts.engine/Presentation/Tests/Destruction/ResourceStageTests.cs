@@ -1,8 +1,7 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

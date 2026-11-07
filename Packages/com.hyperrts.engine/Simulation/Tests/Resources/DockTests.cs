@@ -9,6 +9,7 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Movement;
+using HyperRTS.Simulation.Resources.Gathering;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

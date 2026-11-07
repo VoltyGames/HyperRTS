@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues.Effects;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Environment.Trampling;
 using HyperRTS.Presentation.Quality;

@@ -22,7 +22,7 @@ using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Movement;

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 using UnityEngine.Rendering;
 

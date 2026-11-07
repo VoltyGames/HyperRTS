@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.GameEntities;

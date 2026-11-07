@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Resources.Income;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;

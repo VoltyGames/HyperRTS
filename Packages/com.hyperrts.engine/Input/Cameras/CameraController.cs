@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Core;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;

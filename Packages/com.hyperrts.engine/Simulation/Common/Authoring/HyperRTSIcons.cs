@@ -1,0 +1,23 @@
+namespace HyperRTS.Simulation.Common.Authoring
+{
+    /// <summary>Editor icon paths per module (HyperRTS ▸ Generate Component Icons).</summary>
+    public static class HyperRTSIcons
+    {
+        private const string Dir = "Packages/com.hyperrts.engine/Editor/Icons/";
+        public const string Animation = Dir + "Animation.png";
+        public const string Audio = Dir + "Audio.png";
+        public const string Buildings = Dir + "Buildings.png";
+        public const string Cameras = Dir + "Cameras.png";
+        public const string Combat = Dir + "Combat.png";
+        public const string Effects = Dir + "Effects.png";
+        public const string Environment = Dir + "Environment.png";
+        public const string Match = Dir + "Match.png";
+        public const string Navigation = Dir + "Navigation.png";
+        public const string Research = Dir + "Research.png";
+        public const string Resources = Dir + "Resources.png";
+        public const string Selection = Dir + "Selection.png";
+        public const string UI = Dir + "UI.png";
+        public const string Units = Dir + "Units.png";
+        public const string Vision = Dir + "Vision.png";
+    }
+}

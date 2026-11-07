@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Animation.Clips;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Animation.VAT

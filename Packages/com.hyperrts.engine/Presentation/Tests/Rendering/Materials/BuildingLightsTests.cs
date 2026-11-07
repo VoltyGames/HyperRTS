@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Rendering.Materials;
 using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Authoring;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Core;

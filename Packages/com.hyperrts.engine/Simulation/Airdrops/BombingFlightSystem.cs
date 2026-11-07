@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Vision.Detection;
 using System;
-using HyperRTS.Core;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;

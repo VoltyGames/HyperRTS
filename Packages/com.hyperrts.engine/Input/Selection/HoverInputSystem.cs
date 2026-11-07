@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Core;
 using HyperRTS.Input.Commands;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

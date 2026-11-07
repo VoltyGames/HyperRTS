@@ -1,4 +1,3 @@
-using HyperRTS.Core;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;

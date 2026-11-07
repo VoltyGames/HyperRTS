@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass

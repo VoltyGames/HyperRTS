@@ -1,7 +1,7 @@
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Sounds;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Cues.Announcements

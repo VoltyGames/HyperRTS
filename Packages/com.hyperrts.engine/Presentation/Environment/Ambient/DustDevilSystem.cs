@@ -1,6 +1,6 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
-using HyperRTS.Core;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;

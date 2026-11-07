@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Core;
+using HyperRTS.Simulation.Common;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;

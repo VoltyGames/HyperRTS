@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Paths;
