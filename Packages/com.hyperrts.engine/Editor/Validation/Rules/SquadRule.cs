@@ -1,9 +1,10 @@
 using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Squads;
 
 namespace HyperRTS.Editor.Validation.Rules
 {
-    /// <summary>A squad has members, each carrying a weapon the unit has, and every weapon has a carrier, counting upgraded ones.</summary>
+    /// <summary>A squad has members, no more than a replay records, each carrying a weapon the unit has, and every weapon has a carrier, counting upgraded ones.</summary>
     public sealed class SquadRule : AuthoringRule<SquadAuthoring>
     {
         protected override void Check(SquadAuthoring squad, ValidationIssues issues)
@@ -12,6 +13,11 @@ namespace HyperRTS.Editor.Validation.Rules
             {
                 issues.Error(squad, $"{squad.name} has a Squad with no members.");
                 return;
+            }
+
+            if (squad.members.Count > SquadMember.MaskedMembers)
+            {
+                issues.Error(squad, $"{squad.name} has {squad.members.Count} squad members, but a replay records at most {SquadMember.MaskedMembers}.");
             }
 
             if (!squad.TryGetComponent<WeaponAuthoring>(out var armed))
