@@ -44,7 +44,7 @@ without an entry fires silently. `WeaponTargetSystem` gives each weapon its targ
 the primary the attack target once it is in reach), right after engagement picks it, and `WeaponFireSystem` fires them all through `Shooter.TryFire`.
 
 Direct fire and rockets (`ShotCourse.NeedsLineOfFire`, read through `Weapon.NeedsLineOfFire`) need a clear line from the
-shooter's eye to the target's top (`SightLines.TopOf`, 1 m, or 3 m for a `TallTarget`, as sight judges it), over the ground and solid sight blocks in every cell the line crosses (`SightBlockers.TryFindObstruction`;
+shooter's eye to the target's top (`SightLines.TargetTop`, 1 m, or 3 m for a `TallTarget`, as sight judges it), over the ground and solid sight blocks in every cell the line crosses (`SightBlockers.TryFindObstruction`;
 the shooter's own block, its garrison's and the target's don't count). Scans skip blocked targets. A weapon that
 hits at once waits for a clear line, so an ordered attack closes in until it has one. One that fires rounds
 (`FiresRounds`) shoots anyway, and `Shooter` turns the round onto the obstacle, hitting it where the line meets

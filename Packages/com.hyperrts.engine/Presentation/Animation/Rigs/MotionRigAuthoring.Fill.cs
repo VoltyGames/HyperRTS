@@ -108,13 +108,13 @@ namespace HyperRTS.Presentation.Animation.Rigs
         private IEnumerable<Transform> RoadWheels(Transform track)
         {
             var side = TrackName.Match(track.name).Groups[1].Value;
-            var model = ModelOf(track);
+            var model = FindModel(track);
             return wheels.Select(slot => slot.part)
-                .Where(wheel => RoadWheelName.Match(wheel.name).Groups[1].Value == side && ModelOf(wheel) == model);
+                .Where(wheel => RoadWheelName.Match(wheel.name).Groups[1].Value == side && FindModel(wheel) == model);
         }
 
         // The model under the rig that holds a part, such as the intact or the damaged one.
-        private Transform ModelOf(Transform part)
+        private Transform FindModel(Transform part)
         {
             while (part.parent != transform)
             {

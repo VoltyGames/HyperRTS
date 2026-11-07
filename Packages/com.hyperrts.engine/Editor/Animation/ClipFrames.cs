@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Animation
         public int Count { get; }
 
         /// <summary>Seconds into the source clip that frame <paramref name="frame"/> shows.</summary>
-        public float TimeOf(int frame) => Clip.source.length * frame / _steps;
+        public float StepTime(int frame) => Clip.source.length * frame / _steps;
 
         public NamedClip AsClip(int startRow, float fps, float groundSpeed) => new()
         {

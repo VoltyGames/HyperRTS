@@ -202,7 +202,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             var holder = Holder(shooter);
             _vision.TryGetComponent(shooter, out var vision);
             var from = position + new float3(0f, vision.EyeHeight, 0f);
-            var to = Position(target) + new float3(0f, SightLines.TopOf(IsTall(target)), 0f);
+            var to = Position(target) + new float3(0f, SightLines.TargetTop(IsTall(target)), 0f);
             return _blockers.TryFindObstruction(from, to, holder, target, out _, out _);
         }
 

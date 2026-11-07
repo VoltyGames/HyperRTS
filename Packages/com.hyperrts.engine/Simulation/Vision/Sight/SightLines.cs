@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Vision.Sight
         public const float TallTargetHeight = 3f;
 
         /// <summary>How far above its ground a target's top stands, which sight and direct fire both aim for.</summary>
-        public static float TopOf(bool tall) => tall ? TallTargetHeight : TargetHeight;
+        public static float TargetTop(bool tall) => tall ? TallTargetHeight : TargetHeight;
 
         // Neighbouring rays' gap at their far end, as a share of a cell's width across them.
         private const float RayGap = 0.9f;

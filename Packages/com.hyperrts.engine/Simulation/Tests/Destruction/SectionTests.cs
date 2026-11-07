@@ -81,7 +81,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             return house;
         }
 
-        private Section SectionOf(Entity house, int index) => World.Buffer<Section>(house)[index];
+        private Section HouseSection(Entity house, int index) => World.Buffer<Section>(house)[index];
 
         private bool IsBroken(Entity house, int index) =>
             (World.Get<SectionedBuilding>(house).Broken & (1ul << index)) != 0;
@@ -106,8 +106,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
             Shoot(house, new float3(0f, 1.5f, 30f), new float3(0f, 1.5f, 0f), 30f);
             World.Tick();
 
-            Assert.AreEqual(70f, SectionOf(house, Front).Health, 1e-3f);
-            Assert.AreEqual(100f, SectionOf(house, Back).Health);
+            Assert.AreEqual(70f, HouseSection(house, Front).Health, 1e-3f);
+            Assert.AreEqual(100f, HouseSection(house, Back).Health);
             Assert.AreEqual(470f, World.GetHealth(house), 1e-3f, "building health is the sum of its sections");
         }
 
@@ -128,12 +128,12 @@ namespace HyperRTS.Simulation.Tests.Destruction
             });
             World.Tick();
 
-            var right = SectionOf(house, Right);
+            var right = HouseSection(house, Right);
             var expected = 30f * new DamageProfile { Radius = 3f, EdgeFactor = 0.5f }.SplashFactor(right.Gap(centre));
             Assert.AreEqual(100f - expected, right.Health, 1e-3f);
-            Assert.Less(SectionOf(house, Roof).Health, 100f, "the roof's edge is in reach");
-            Assert.Greater(SectionOf(house, Roof).Health, right.Health, "and farther, so it takes less");
-            Assert.AreEqual(100f, SectionOf(house, Front).Health, "out of reach");
+            Assert.Less(HouseSection(house, Roof).Health, 100f, "the roof's edge is in reach");
+            Assert.Greater(HouseSection(house, Roof).Health, right.Health, "and farther, so it takes less");
+            Assert.AreEqual(100f, HouseSection(house, Front).Health, "out of reach");
         }
 
         [Test]
@@ -147,8 +147,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
             Shoot(shot, new float3(30f, 1.5f, 30f), new float3(30f, 1.5f, 0f), 20f, _smallArms);
             World.Tick();
 
-            Assert.AreEqual(70f, SectionOf(shelled, Front).Health, 1e-3f);
-            Assert.AreEqual(95f, SectionOf(shot, Front).Health, 1e-3f);
+            Assert.AreEqual(70f, HouseSection(shelled, Front).Health, 1e-3f);
+            Assert.AreEqual(95f, HouseSection(shot, Front).Health, 1e-3f);
         }
 
         [Test]
@@ -206,7 +206,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
 
             Assert.IsFalse(IsBroken(house, Right), "the latest comes back first");
             Assert.IsTrue(IsBroken(house, Front), "the earlier stays down until it is full");
-            Assert.AreEqual(10f, SectionOf(house, Front).Health, 1e-3f);
+            Assert.AreEqual(10f, HouseSection(house, Front).Health, 1e-3f);
             Assert.AreEqual(410f, World.GetHealth(house), 1e-3f);
         }
 

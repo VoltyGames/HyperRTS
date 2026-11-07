@@ -92,7 +92,7 @@ namespace HyperRTS.Editor.Maps.Report
             {
                 if (frame.Contains(at))
                 {
-                    kinds |= KindOf(land.Region(x, z)?.Kind ?? MapLandKind.Open);
+                    kinds |= ShareIndex(land.Region(x, z)?.Kind ?? MapLandKind.Open);
                 }
             });
             var (low, high) = (float.MaxValue, float.MinValue);
@@ -110,7 +110,7 @@ namespace HyperRTS.Editor.Maps.Report
             return high - low >= minRelief ? kinds | Relief : kinds;
         }
 
-        private static int KindOf(MapLandKind kind)
+        private static int ShareIndex(MapLandKind kind)
         {
             switch (kind)
             {

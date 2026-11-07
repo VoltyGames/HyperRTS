@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Animation
             {
                 for (var i = 0; i < plan.Count; i++)
                 {
-                    frames._frames.Add(rig.Pose(plan.Clip.source, plan.TimeOf(i), plan.Clip.inPlace));
+                    frames._frames.Add(rig.Pose(plan.Clip.source, plan.StepTime(i), plan.Clip.inPlace));
                 }
             }
 
