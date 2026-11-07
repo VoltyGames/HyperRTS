@@ -72,7 +72,7 @@ A player is defeated after losing every entity flagged **Counts For Victory**.
 | Ctrl+1 to Ctrl+5 | Assign a control group |
 | 1 to 5 | Recall a control group |
 | Shift+1 to Shift+5 | Add to a control group |
-| Arrows, screen edge, scroll, middle drag, Home | Pan, zoom, rotate, reset the camera |
+| Arrows, screen edge, scroll, middle drag, Delete and Page Down, Home | Pan, zoom, rotate, turn left and right, reset the camera |
 
 The command card trains, researches, places buildings, uses abilities and sets stances. Shift keeps placing. Click
 a queued item to cancel it for a refund.

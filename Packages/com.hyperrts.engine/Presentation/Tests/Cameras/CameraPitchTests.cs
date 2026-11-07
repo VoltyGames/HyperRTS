@@ -45,5 +45,21 @@ namespace HyperRTS.Presentation.Tests.Cameras
             Assert.AreEqual(52f, _controller.PitchAt(47f), 1e-4f);
             Assert.That(_controller.PitchAt(20f), Is.InRange(18f, 47f));
         }
+
+        [Test]
+        public void Zoom_ChangesHeightByAShare_AndStopsAtTheLimits()
+        {
+            Assert.AreEqual(8.5f, CameraController.ZoomedHeight(10f, 1f, 0.15f, 4f, 80f), 1e-4f);
+            Assert.AreEqual(11.5f, CameraController.ZoomedHeight(10f, -1f, 0.15f, 4f, 80f), 1e-4f);
+            Assert.AreEqual(4f, CameraController.ZoomedHeight(4.2f, 3f, 0.15f, 4f, 80f), 1e-4f);
+            Assert.AreEqual(80f, CameraController.ZoomedHeight(79f, -1f, 0.15f, 4f, 80f), 1e-4f);
+        }
+
+        [Test]
+        public void Clearance_LiftsTheCameraOnlyWhenTheTerrainIsTooClose()
+        {
+            Assert.AreEqual(11.5f, CameraController.ClearedHeight(5f, 10f, 1.5f), 1e-4f);
+            Assert.AreEqual(20f, CameraController.ClearedHeight(20f, 10f, 1.5f), 1e-4f);
+        }
     }
 }

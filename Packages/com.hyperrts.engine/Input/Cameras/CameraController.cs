@@ -21,7 +21,7 @@ namespace HyperRTS.Input.Cameras
         private const float DegreesPerPixel = 1f / 500f;
 
         [Header("Movement")]
-        [Tooltip("Pan speed (arrow keys, screen edges) in units per second at minimum zoom; scales with height.")]
+        [Tooltip("Pan speed (arrow keys, screen edges) in units per second for every 10 units of camera height.")]
         public float moveSpeed = 10f;
 
         [Tooltip("Player preference scaling the pan speed; set at runtime by a settings menu.")]
@@ -31,26 +31,15 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Yaw in degrees per 500 pixels of middle-mouse drag.")]
         public float rotationSpeed = 100f;
 
+        [Tooltip("Yaw in degrees per second while a Turn key is held.")]
+        public float turnSpeed = 90f;
+
         [Header("Edge Scrolling")]
         [Tooltip("Pan when the cursor touches a screen edge.")]
         public bool edgeScrolling = true;
 
         [Tooltip("Width in pixels of the screen border that triggers edge scrolling.")]
         public float edgeSize = 8f;
-
-        [Header("Zoom")]
-        [Tooltip("Height change per mouse-scroll notch.")]
-        public float zoomStep = 4f;
-
-        [Tooltip("Closest zoom (minimum camera height).")]
-        public float minZoom = 10f;
-
-        [Tooltip("Farthest zoom (maximum camera height).")]
-        public float maxZoom = 50f;
-
-        [Tooltip("Seconds the camera takes to ease to a new zoom height; 0 jumps at once.")]
-        [Min(0f)]
-        public float zoomSmoothTime = 0.12f;
 
         [Header("Default View")]
         [Tooltip("Position the camera resets to (Home key).")]
@@ -79,11 +68,19 @@ namespace HyperRTS.Input.Cameras
         private float _height;
         private float _targetHeight;
         private float _zoomVelocity;
+        private Vector3 _focus;
+        private float _groundVelocity;
         private Camera _camera;
         private float _farClip;
 
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
-        public void FocusOn(Vector3 worldPoint) => PlaceAt(ClampToMap(worldPoint), _height);
+        public void FocusOn(Vector3 worldPoint)
+        {
+            var focus = ClampToMap(worldPoint);
+            focus.y = MatchTerrain().Height(new float2(focus.x, focus.z));
+            _groundVelocity = 0f;
+            PlaceAt(focus, _height);
+        }
 
         protected override void OnAwake()
         {
@@ -111,11 +108,12 @@ namespace HyperRTS.Input.Cameras
         [ContextMenu("Reset View To Default")]
         private void ResetViewToDefault()
         {
-            var focus = ViewGround.Focus(default, defaultPosition, defaultRotation * Vector3.forward,
+            var focus = ViewGround.Focus(MatchTerrain(), defaultPosition, defaultRotation * Vector3.forward,
                 float.PositiveInfinity);
             _yaw = defaultRotation.eulerAngles.y;
-            _targetHeight = Mathf.Clamp(defaultPosition.y, minZoom, maxZoom);
+            _targetHeight = Mathf.Clamp(defaultPosition.y - focus.y, minZoom, maxZoom);
             _zoomVelocity = 0f;
+            _groundVelocity = 0f;
             PlaceAt(focus, _targetHeight);
         }
 
@@ -147,14 +145,13 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
-            var focus = Focus();
-            var speed = moveSpeed * speedMultiplier * Mathf.Max(1f, _height / Mathf.Max(minZoom, 0.01f));
-            focus += PanDirection() * (speed * Time.unscaledDeltaTime);
+            var speed = moveSpeed * speedMultiplier * _height / 10f;
+            var focus = ClampToMap(_focus + PanDirection() * (speed * Time.unscaledDeltaTime));
 
             var scroll = camera.Zoom.ReadValue<float>();
             if (scroll != 0f)
             {
-                _targetHeight = Mathf.Clamp(_targetHeight - Mathf.Sign(scroll) * zoomStep, minZoom, maxZoom);
+                _targetHeight = ZoomedHeight(_targetHeight, scroll, zoomFraction, minZoom, maxZoom);
             }
 
             if (camera.Rotate.IsPressed())
@@ -162,9 +159,12 @@ namespace HyperRTS.Input.Cameras
                 _yaw += camera.Look.ReadValue<Vector2>().x * rotationSpeed * DegreesPerPixel;
             }
 
+            _yaw += camera.Turn.ReadValue<float>() * turnSpeed * Time.unscaledDeltaTime;
+
+            focus.y = SmoothedGround(focus);
             var height = Mathf.SmoothDamp(_height, _targetHeight, ref _zoomVelocity, zoomSmoothTime,
                 float.PositiveInfinity, Time.unscaledDeltaTime);
-            PlaceAt(ClampToMap(focus), height);
+            PlaceAt(focus, height);
         }
 
         /// <summary>World-space XZ pan from the arrow keys plus edge scrolling, relative to the camera's yaw.</summary>
@@ -198,27 +198,26 @@ namespace HyperRTS.Input.Cameras
             return new Vector2(state.Direction.x, state.Direction.y);
         }
 
-        /// <summary>The y = 0 ground point the camera looks at; zoom and panning keep the camera relative to it.</summary>
-        private Vector3 Focus() =>
-            ViewGround.Focus(default, transform.position, transform.forward, float.PositiveInfinity);
-
         /// <summary>
-        /// Looks at <paramref name="focus"/> from <paramref name="height"/>, pitched for that height.
-        /// The focus stays put, so zooming never slides the view.
+        /// Looks at <paramref name="focus"/> (its y is the ground there) from <paramref name="height"/> above it,
+        /// pitched for that height. The focus stays put, so zooming never slides the view.
         /// </summary>
         private void PlaceAt(Vector3 focus, float height)
         {
-            focus.y = 0f;
+            _focus = focus;
             _height = height;
             var pitch = PitchAt(height);
             _camera.farClipPlane = Mathf.Lerp(_farClip, Mathf.Max(farClipAtTilt, _farClip), TiltAt(height));
             transform.rotation = Quaternion.Euler(pitch, _yaw, 0f);
             var forward = transform.forward;
 
-            // The inverse of Focus: a view ray that never meets the ground looks at the point below the camera.
-            transform.position = forward.y > -1e-5f
-                ? new Vector3(focus.x, height, focus.z)
+            // A view ray that never meets the ground looks at the point below the camera.
+            var position = forward.y > -1e-5f
+                ? new Vector3(focus.x, focus.y + height, focus.z)
                 : focus - forward * (height / -forward.y);
+            var terrainY = MatchTerrain().Height(new float2(position.x, position.z));
+            position.y = ClearedHeight(position.y, terrainY, terrainClearance);
+            transform.position = position;
         }
 
         private Vector3 ClampToMap(Vector3 point)

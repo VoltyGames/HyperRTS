@@ -24,7 +24,10 @@ struct, one line in `ClientSingletonSystem` and its readers.
 `MatchInputActions` holds the Selection, Commands and Camera action maps ([bindings](../getting-started.md#play)),
 shared through `InputActionsProvider` (`Suspend` and `Resume`). Each input system enables its own map while it runs.
 `PlacementInputSystem` handles [facing](../simulation/economy.md#facing) and
-[line placement](../simulation/economy.md#line-placement); `CameraController` pans, scrolls, zooms and rotates.
+[line placement](../simulation/economy.md#line-placement); `CameraController` pans, zooms and rotates. Its height is above the terrain at the focus: the focus height eases along the
+`TerrainHeight`, each scroll notch changes the height by `zoomFraction` of it, the view tilts toward the horizon below
+`tiltBelowHeight`, and the camera never sits closer than `terrainClearance` to the ground beneath it. Delete and Page Down
+turn it at `turnSpeed`, and a middle-button drag yaws it.
 
 Clicks over the HUD, while placing, or while a command is pending never reach selection. Escape undoes the topmost
 client mode through `InteractionState.Cancel`: placement, then a pending command, then the card page. A front end that

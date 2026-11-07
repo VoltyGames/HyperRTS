@@ -217,7 +217,7 @@ MonoBehaviour:
   rotationSpeed: 100
   edgeScrolling: 1
   edgeSize: 8
-  zoomStep: 4
+  zoomFraction: 0.15
   minZoom: 10
   maxZoom: 50
   zoomSmoothTime: 0.12

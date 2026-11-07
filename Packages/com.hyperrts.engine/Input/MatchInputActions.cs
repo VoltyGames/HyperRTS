@@ -678,6 +678,16 @@ namespace HyperRTS.Input
                     ""priority"": 0
                 },
                 {
+                    ""name"": ""Turn"",
+                    ""type"": ""Value"",
+                    ""id"": ""5b0d7f1c-3a42-5c8e-9d16-7e2a4b8c1f03"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true,
+                    ""priority"": 0
+                },
+                {
                     ""name"": ""Point"",
                     ""type"": ""Value"",
                     ""id"": ""946b25b5-f321-557c-a16e-172bc9203dff"",
@@ -789,6 +799,39 @@ namespace HyperRTS.Input
                     ""isPartOfComposite"": false
                 },
                 {
+                    ""name"": ""Turn"",
+                    ""id"": ""2e9a4c6b-71d3-5f08-b4a5-c93e1d7a6082"",
+                    ""path"": ""1DAxis"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Turn"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""negative"",
+                    ""id"": ""8c14e7a2-5b09-5d3f-a6c1-04f9b2d83e57"",
+                    ""path"": ""<Keyboard>/delete"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Turn"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""d3f6a81e-9c47-5b20-8e15-6a0c7b4e92d1"",
+                    ""path"": ""<Keyboard>/pageDown"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Turn"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": """",
                     ""id"": ""92b6e10e-cba7-5678-98cb-9b5242089a3f"",
                     ""path"": ""<Mouse>/position"",
@@ -837,6 +880,7 @@ namespace HyperRTS.Input
             m_Camera_Rotate = m_Camera.FindAction("Rotate", throwIfNotFound: true);
             m_Camera_Look = m_Camera.FindAction("Look", throwIfNotFound: true);
             m_Camera_Reset = m_Camera.FindAction("Reset", throwIfNotFound: true);
+            m_Camera_Turn = m_Camera.FindAction("Turn", throwIfNotFound: true);
             m_Camera_Point = m_Camera.FindAction("Point", throwIfNotFound: true);
         }
 
@@ -1337,6 +1381,7 @@ namespace HyperRTS.Input
         private readonly InputAction m_Camera_Rotate;
         private readonly InputAction m_Camera_Look;
         private readonly InputAction m_Camera_Reset;
+        private readonly InputAction m_Camera_Turn;
         private readonly InputAction m_Camera_Point;
         /// <summary>
         /// Provides access to input actions defined in input action map "Camera".
@@ -1369,6 +1414,10 @@ namespace HyperRTS.Input
             /// Provides access to the underlying input action "Camera/Reset".
             /// </summary>
             public InputAction @Reset => m_Wrapper.m_Camera_Reset;
+            /// <summary>
+            /// Provides access to the underlying input action "Camera/Turn".
+            /// </summary>
+            public InputAction @Turn => m_Wrapper.m_Camera_Turn;
             /// <summary>
             /// Provides access to the underlying input action "Camera/Point".
             /// </summary>
@@ -1414,6 +1463,9 @@ namespace HyperRTS.Input
                 @Reset.started += instance.OnReset;
                 @Reset.performed += instance.OnReset;
                 @Reset.canceled += instance.OnReset;
+                @Turn.started += instance.OnTurn;
+                @Turn.performed += instance.OnTurn;
+                @Turn.canceled += instance.OnTurn;
                 @Point.started += instance.OnPoint;
                 @Point.performed += instance.OnPoint;
                 @Point.canceled += instance.OnPoint;
@@ -1443,6 +1495,9 @@ namespace HyperRTS.Input
                 @Reset.started -= instance.OnReset;
                 @Reset.performed -= instance.OnReset;
                 @Reset.canceled -= instance.OnReset;
+                @Turn.started -= instance.OnTurn;
+                @Turn.performed -= instance.OnTurn;
+                @Turn.canceled -= instance.OnTurn;
                 @Point.started -= instance.OnPoint;
                 @Point.performed -= instance.OnPoint;
                 @Point.canceled -= instance.OnPoint;
@@ -1691,6 +1746,13 @@ namespace HyperRTS.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnReset(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Turn" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnTurn(InputAction.CallbackContext context);
             /// <summary>
             /// Method invoked when associated input action "Point" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>
