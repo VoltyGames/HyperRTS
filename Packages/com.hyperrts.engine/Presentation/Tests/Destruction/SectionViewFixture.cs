@@ -95,7 +95,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             _em.AddComponentData(house, new HiddenBy());
             _em.AddBuffer<Child>(house);
             _em.AddBuffer<LinkedEntityGroup>(house).Add(house);
-            _em.AddBuffer<SectionCopy>(house);
+            _em.AddBuffer<ModelCopy>(house);
             var sides = new[]
             {
                 new float3(4f, 1f, 0f), new float3(-4f, 1f, 0f), new float3(0f, 1f, 4f), new float3(0f, 1f, -4f),
@@ -168,7 +168,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         // The copy of a prefab model showing on the house, or none.
         protected Entity Copy(Entity model)
         {
-            foreach (var copy in _em.GetBuffer<SectionCopy>(_house))
+            foreach (var copy in _em.GetBuffer<ModelCopy>(_house))
             {
                 if (copy.Model == model)
                 {

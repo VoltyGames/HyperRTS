@@ -1,15 +1,20 @@
+using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Tests.Destruction
 {
-    /// <summary>A tree's models stepping from whole to stripped to snapped as its health drops.</summary>
+    /// <summary>
+    /// A tree's models stepping from whole to stripped to snapped as its health drops; the later ones are copied in
+    /// from their prefabs while they show.
+    /// </summary>
     public class DamageStageTests
     {
         private static readonly float[] Thresholds = { 1f, 0.6f, 0.3f };
@@ -59,26 +64,107 @@ namespace HyperRTS.Presentation.Tests.Destruction
             SetHealth(tree, 260f);
             _stages.Update();
             AssertOnlyShown(models, 0);
+            Assert.AreEqual(0, _em.GetBuffer<ModelCopy>(tree).Length, "the stripped and snapped copies are gone");
+        }
+
+        [Test]
+        public void Copy_TakesTheTreesPaint()
+        {
+            var tree = Tree(260f, out var models);
+            var paint = new TeamColor { Value = new float4(0.2f, 0.4f, 0.6f, 1f) };
+            _em.AddComponentData(models[0], paint);
+            _stages.Update();
+
+            SetHealth(tree, 100f);
+            _stages.Update();
+
+            Assert.AreEqual(paint.Value, _em.GetComponentData<TeamColor>(Copy(tree, models[1])).Value);
+        }
+
+        [Test]
+        public void Instance_CopiesUnderItsOwnPartsAndPlace()
+        {
+            var prefab = _em.CreateEntity(typeof(HiddenBy), typeof(Prefab));
+            _em.AddComponentData(prefab, new LocalToWorld { Value = float4x4.identity });
+            _em.AddComponentData(prefab, new Health { Current = 260f, Max = 260f });
+            _em.AddComponentData(prefab, new ShownDamageStage { Index = -1 });
+            var crown = _em.CreateEntity(typeof(Prefab));
+            _em.AddComponentData(crown, new Parent { Value = prefab });
+            _em.AddComponentData(crown, new LocalToWorld { Value = float4x4.Translate(new float3(0f, 3f, 0f)) });
+            var whole = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy), typeof(Prefab));
+            _em.AddComponentData(whole, new Parent { Value = crown });
+            var stripped = StageModel(crown);
+            _em.AddComponentData(stripped, new LocalToWorld { Value = float4x4.Translate(new float3(0f, 3f, 0f)) });
+            _em.AddBuffer<DamageStage>(prefab).AddRange(new NativeArray<DamageStage>(new[]
+            {
+                new DamageStage { Below = 1f, Visual = whole }, new DamageStage { Below = 0.6f, Visual = stripped },
+            }, Allocator.Temp));
+            _em.AddBuffer<LinkedEntityGroup>(prefab).AddRange(
+                new NativeArray<Entity>(new[] { prefab, crown, whole }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+            _em.AddBuffer<ModelCopy>(prefab);
+
+            var tree = _em.Instantiate(prefab);
+            _em.SetComponentData(tree, new LocalToWorld { Value = float4x4.Translate(new float3(50f, 0f, 0f)) });
+            var ownCrown = _em.GetBuffer<LinkedEntityGroup>(tree)[1].Value;
+            _em.SetComponentData(ownCrown, new LocalToWorld { Value = float4x4.Translate(new float3(50f, 3f, 0f)) });
+            _stages.Update();
+            SetHealth(tree, 100f);
+            _stages.Update();
+
+            var copy = Copy(tree, stripped);
+            Assert.AreEqual(ownCrown, _em.GetComponentData<Parent>(copy).Value, "under the instance's own crown");
+            Assert.AreEqual(new float3(50f, 3f, 0f), _em.GetComponentData<LocalToWorld>(copy).Position,
+                "drawn where the tree stands before the transforms run");
         }
 
         private Entity Tree(float health, out Entity[] models)
         {
-            var tree = _em.CreateEntity(typeof(HiddenBy), typeof(LocalToWorld));
+            // Like a map tree, which has no hide reasons of its own.
+            var tree = _em.CreateEntity();
+            _em.AddComponentData(tree, new LocalToWorld { Value = float4x4.identity });
             _em.AddComponentData(tree, new Health { Current = health, Max = 260f });
             _em.AddComponentData(tree, new ShownDamageStage { Index = -1 });
-            var group = new NativeList<LinkedEntityGroup>(Allocator.Temp) { tree };
-            var stages = new NativeList<DamageStage>(Allocator.Temp);
             models = new Entity[Thresholds.Length];
+            models[0] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+            _em.AddComponentData(models[0], new Parent { Value = tree });
+            for (var i = 1; i < Thresholds.Length; i++)
+            {
+                models[i] = StageModel(tree);
+            }
+
+            var stages = new NativeList<DamageStage>(Allocator.Temp);
             for (var i = 0; i < Thresholds.Length; i++)
             {
-                models[i] = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
                 stages.Add(new DamageStage { Below = Thresholds[i], Visual = models[i] });
-                group.Add(models[i]);
             }
 
             _em.AddBuffer<DamageStage>(tree).AddRange(stages.AsArray());
-            _em.AddBuffer<LinkedEntityGroup>(tree).AddRange(group.AsArray());
+            _em.AddBuffer<LinkedEntityGroup>(tree).AddRange(
+                new NativeArray<Entity>(new[] { tree, models[0] }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+            _em.AddBuffer<ModelCopy>(tree);
             return tree;
+        }
+
+        // A later stage, baked as a prefab of its own under the given part.
+        private Entity StageModel(Entity parent)
+        {
+            var model = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy), typeof(Prefab));
+            _em.AddComponentData(model, new Parent { Value = parent });
+            _em.AddBuffer<LinkedEntityGroup>(model).Add(model);
+            return model;
+        }
+
+        private Entity Copy(Entity tree, Entity model)
+        {
+            foreach (var copy in _em.GetBuffer<ModelCopy>(tree))
+            {
+                if (copy.Model == model)
+                {
+                    return copy.Copy;
+                }
+            }
+
+            return Entity.Null;
         }
 
         private void SetHealth(Entity tree, float current)
@@ -90,9 +176,12 @@ namespace HyperRTS.Presentation.Tests.Destruction
 
         private void AssertOnlyShown(Entity[] models, int shown)
         {
-            for (var i = 0; i < models.Length; i++)
+            var tree = _em.GetComponentData<Parent>(models[0]).Value;
+            Assert.AreEqual(shown == 0, _em.IsComponentEnabled<MaterialMeshInfo>(models[0]), "model 0");
+            for (var i = 1; i < models.Length; i++)
             {
-                Assert.AreEqual(i == shown, _em.IsComponentEnabled<MaterialMeshInfo>(models[i]), $"model {i}");
+                var copy = Copy(tree, models[i]);
+                Assert.AreEqual(i == shown, copy != Entity.Null && _em.IsComponentEnabled<MaterialMeshInfo>(copy), $"model {i}");
             }
         }
     }

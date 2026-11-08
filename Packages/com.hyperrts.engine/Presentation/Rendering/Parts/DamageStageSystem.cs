@@ -9,7 +9,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Rendering.Parts
 {
     /// <summary>
-    /// Shows the <see cref="DamageStage"/> model matching health and bursts the stage's rig on entering it.
+    /// Shows the <see cref="DamageStage"/> model matching health and bursts the stage's rig on entering it. The first
+    /// stage hides in place; later ones are copied in from their prefabs while they show.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -30,6 +31,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
         {
             CompleteDependency();
             _switch.Update(ref CheckedStateRef);
+            var copies = ModelCopies.Create();
             foreach (var (health, stages, shown, place, entity) in SystemAPI
                          .Query<RefRO<Health>, DynamicBuffer<DamageStage>, RefRW<ShownDamageStage>, RefRO<LocalToWorld>>()
                          .WithChangeFilter<Health>().WithEntityAccess())
@@ -42,7 +44,11 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 }
 
                 shown.ValueRW.Index = index;
-                _switch.ShowStage(entity, stages.AsNativeArray(), index);
+                _switch.SetBranch(entity, stages[0].Visual, HideReason.Stage, index != 0);
+                for (var i = 1; i < stages.Length; i++)
+                {
+                    copies.Set(entity, stages[i].Visual, i == index);
+                }
 
                 // The first frame only sets the look; a spawned or loaded wreck doesn't replay its damage.
                 if (previous >= 0 && index > previous && stages[index].Effect.IsValid())
@@ -50,6 +56,8 @@ namespace HyperRTS.Presentation.Rendering.Parts
                     _pool.Play(stages[index].Effect.Value, place.ValueRO.Position, place.ValueRO.Rotation);
                 }
             }
+
+            copies.Apply(EntityManager);
         }
     }
 }

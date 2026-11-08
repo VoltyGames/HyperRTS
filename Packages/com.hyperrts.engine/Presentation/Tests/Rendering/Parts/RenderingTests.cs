@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
-using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
@@ -58,7 +57,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
             _em.AddComponentData(shard, new Parent { Value = broken });
             _em.AddBuffer<SectionModel>(building).Add(new SectionModel { Intact = intact, Broken = broken });
 
-            Update<SectionsBakingSystem>();
+            Update<ModelCopyBakingSystem>();
 
             Assert.AreEqual(1f, _em.GetComponentData<LocalTransform>(broken).Scale);
             Assert.IsTrue(_em.HasComponent<Prefab>(broken) && _em.HasComponent<Prefab>(shard));
@@ -79,10 +78,30 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
                 new NativeArray<Entity>(new[] { building, intact, broken }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
             _em.AddBuffer<SectionModel>(building).Add(new SectionModel { Intact = intact, Broken = broken });
 
-            Update<SectionsBakingSystem>();
+            Update<ModelCopyBakingSystem>();
 
             CollectionAssert.AreEqual(new[] { building, intact }, Group(building));
             CollectionAssert.AreEqual(new[] { broken }, Group(broken));
+        }
+
+        [Test]
+        public void LaterDamageStages_BakeAsPrefabs_AtTheirOwnScale()
+        {
+            var tree = _em.CreateEntity();
+            var whole = Piece(1f, tree);
+            var snapped = Piece(2f, tree);
+            _em.AddBuffer<DamageStage>(tree).AddRange(new NativeArray<DamageStage>(new[]
+            {
+                new DamageStage { Below = 1f, Visual = whole }, new DamageStage { Below = 0.3f, Visual = snapped },
+            }, Allocator.Temp));
+
+            Update<ModelCopyBakingSystem>();
+
+            Assert.IsFalse(_em.HasComponent<Prefab>(whole));
+            Assert.IsTrue(_em.HasComponent<Prefab>(snapped));
+            Assert.AreEqual(2f, _em.GetComponentData<LocalTransform>(snapped).Scale);
+            CollectionAssert.AreEqual(new[] { tree, whole }, Group(tree));
+            Assert.IsTrue(_em.HasBuffer<ModelCopy>(tree));
         }
 
         [Test]

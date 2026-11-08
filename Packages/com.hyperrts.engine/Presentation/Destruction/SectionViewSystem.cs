@@ -56,7 +56,7 @@ namespace HyperRTS.Presentation.Destruction
             _switch.Update(ref CheckedStateRef);
             var impacts = SeenImpacts();
             var now = (float)SystemAPI.Time.ElapsedTime;
-            var copies = SectionCopies.Create();
+            var copies = ModelCopies.Create();
             foreach (var (building, sections, models, looks, shown, place, entity) in SystemAPI
                          .Query<RefRO<SectionedBuilding>, DynamicBuffer<Section>, DynamicBuffer<SectionModel>,
                              DynamicBuffer<SectionLook>, RefRW<ShownSections>, RefRO<LocalToWorld>>().WithEntityAccess())
@@ -293,7 +293,7 @@ namespace HyperRTS.Presentation.Destruction
             public DynamicBuffer<SectionLook> Looks;
             public LocalToWorld Place;
             public float Now;
-            public SectionCopies Copies;
+            public ModelCopies Copies;
         }
     }
 }

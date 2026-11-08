@@ -73,6 +73,12 @@ An entity shows the damage stage model for its health and bursts that stage's ef
 over as a rod pivoting at the stump, bounce once and settle, or lie down at once if the fall was out of sight. The
 tipping turns child models recorded in a `FallPart` buffer; the root keeps the simulation's final pose.
 
+**Model copies.** Models a root shows only now and then (every damage stage but the first, every section model but the
+intact one) bake as entity prefabs (`ModelCopyBakingSystem`), so a whole tree or building costs only the models on
+screen. `ModelCopies` copies one in under the part it was authored under while it shows and destroys it when it hides.
+A copy takes the root's hide reasons and the values painters put on its meshes (team colour, fog fade, lights, build
+progress, grime), and the root's `LinkedEntityGroup` lists it, so the root is destroyed whole.
+
 **Debris.** `DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with
 breakable parts it throws them from each part that breaks. `DebrisSystem` flies them on the client and lays them flat.
 The set's material needs GPU instancing (checked at bake).
@@ -83,10 +89,8 @@ matrices through the DOTS instancing path, so debris materials use a DOTS-instan
 
 **Sections.** A building with `SectionsAuthoring` ([combat](../simulation/combat.md#sections)) gives each section models
 (`SectionModel`): intact, holed variants, rigid pieces, a stub and a heap, or just a broken model. Models other than the
-intact one are saved at scale 0, so editor views show the standing building, and bake as full-size entity prefabs.
-`SectionCopies` copies one in under the building while it shows and destroys the copy when it hides, so a standing
-building costs only its intact models. The building's `LinkedEntityGroup` lists its copies, so it is destroyed whole.
-`SectionViewSystem` shows each section in one of four cosmetic states following the simulation's broken mask:
+intact one are saved at scale 0, so editor views show the standing building, and bake as prefabs copied in while they
+show (see model copies above). `SectionViewSystem` shows each section in one of four cosmetic states following the simulation's broken mask:
 
 - **Standing:** the intact model, or the holed variant nearest the latest impact the local player saw.
 - **Breaking:** a break this client saw plays the pieces' clip once (`SectionClips`), blown in or out by the side the

@@ -3,51 +3,51 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Presentation.Destruction
+namespace HyperRTS.Presentation.Rendering.Parts
 {
     /// <summary>
-    /// Turns every section model but the intact one, authored at scale 0 so editor views show the standing building,
-    /// into a full-size entity prefab that <see cref="SectionViewSystem"/> copies in while it shows. The building's
-    /// <see cref="LinkedEntityGroup"/> lists the rest of it, so it is destroyed whole with its copies.
+    /// Turns the models a root shows only now and then into entity prefabs that <see cref="ModelCopies"/> copies in
+    /// while they show: every section model but the intact one, authored at scale 0 so editor views show the standing
+    /// building, and every damage stage but the first. The root's <see cref="LinkedEntityGroup"/> lists the rest of
+    /// it, so it is destroyed whole with its copies.
     /// </summary>
-    // After the groups bake, so a prefab building's group can drop the section prefabs.
+    // After the groups bake, so a prefab root's group can drop the model prefabs.
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     [UpdateInGroup(typeof(PostBakingSystemGroup))]
-    public partial struct SectionsBakingSystem : ISystem
+    public partial struct ModelCopyBakingSystem : ISystem
     {
-        private EntityQuery _buildings;
+        private EntityQuery _roots;
         private EntityQuery _parented;
 
         public void OnCreate(ref SystemState state)
         {
             const EntityQueryOptions options = EntityQueryOptions.IncludePrefab | EntityQueryOptions.IncludeDisabledEntities |
                                                EntityQueryOptions.IgnoreComponentEnabledState;
-            _buildings = new EntityQueryBuilder(Allocator.Temp).WithAll<SectionModel>().WithOptions(options).Build(ref state);
+            _roots = new EntityQueryBuilder(Allocator.Temp).WithAny<SectionModel, DamageStage>().WithOptions(options)
+                .Build(ref state);
             _parented = new EntityQueryBuilder(Allocator.Temp).WithAll<Parent>().WithOptions(options).Build(ref state);
         }
 
         public void OnUpdate(ref SystemState state)
         {
             state.CompleteDependency();
-            using var buildings = _buildings.ToEntityArray(Allocator.Temp);
-            if (buildings.Length == 0)
+            using var roots = _roots.ToEntityArray(Allocator.Temp);
+            if (roots.Length == 0)
             {
                 return;
             }
 
             var owners = new NativeHashSet<Entity>(64, Allocator.Temp);
             var models = new NativeHashSet<Entity>(64, Allocator.Temp);
-            foreach (var building in buildings)
+            foreach (var root in roots)
             {
-                owners.Add(building);
-                foreach (var model in state.EntityManager.GetBuffer<SectionModel>(building, true))
-                {
-                    model.ForEachPrefab(prefab =>
-                    {
-                        owners.Add(prefab);
-                        models.Add(prefab);
-                    });
-                }
+                owners.Add(root);
+                Models(ref state, root, models);
+            }
+
+            foreach (var model in models)
+            {
+                owners.Add(model);
             }
 
             var members = Members(ref state, owners);
@@ -63,13 +63,47 @@ namespace HyperRTS.Presentation.Destruction
                 MakePrefab(ref state, model, members);
             }
 
-            foreach (var building in buildings)
+            foreach (var root in roots)
             {
-                Group(ref state, building, members, prefabParts);
+                Group(ref state, root, members, prefabParts);
+                if (!state.EntityManager.HasBuffer<ModelCopy>(root))
+                {
+                    state.EntityManager.AddBuffer<ModelCopy>(root);
+                }
             }
         }
 
-        /// <summary>Every entity under a building or section model, keyed by the nearest of them above it.</summary>
+        private static void Models(ref SystemState state, Entity root, NativeHashSet<Entity> models)
+        {
+            var em = state.EntityManager;
+            if (em.HasBuffer<SectionModel>(root))
+            {
+                var found = new NativeList<Entity>(Allocator.Temp);
+                foreach (var model in em.GetBuffer<SectionModel>(root, true))
+                {
+                    model.ForEachPrefab(prefab => found.Add(prefab));
+                }
+
+                foreach (var model in found)
+                {
+                    models.Add(model);
+                }
+            }
+
+            if (em.HasBuffer<DamageStage>(root))
+            {
+                var stages = em.GetBuffer<DamageStage>(root, true);
+                for (var i = 1; i < stages.Length; i++)
+                {
+                    if (stages[i].Visual != stages[0].Visual && stages[i].Visual != root)
+                    {
+                        models.Add(stages[i].Visual);
+                    }
+                }
+            }
+        }
+
+        /// <summary>Every entity under a root or model, keyed by the nearest of them above it.</summary>
         private NativeParallelMultiHashMap<Entity, Entity> Members(ref SystemState state, NativeHashSet<Entity> owners)
         {
             var parents = SystemAPI.GetComponentLookup<Parent>(true);
@@ -101,8 +135,11 @@ namespace HyperRTS.Presentation.Destruction
         {
             var em = state.EntityManager;
             var transform = em.GetComponentData<LocalTransform>(model);
-            transform.Scale = 1f;
-            em.SetComponentData(model, transform);
+            if (transform.Scale == 0f)
+            {
+                transform.Scale = 1f;
+                em.SetComponentData(model, transform);
+            }
 
             var group = new NativeList<Entity>(Allocator.Temp) { model };
             foreach (var member in members.GetValuesForKey(model))
@@ -118,24 +155,24 @@ namespace HyperRTS.Presentation.Destruction
             linked.AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
         }
 
-        // A building baked as a prefab already lists everything; a scene building gets a group of its own parts.
-        private static void Group(ref SystemState state, Entity building, NativeParallelMultiHashMap<Entity, Entity> members,
+        // A root baked as a prefab already lists everything; a SubScene root gets a group of its own parts.
+        private static void Group(ref SystemState state, Entity root, NativeParallelMultiHashMap<Entity, Entity> members,
             NativeHashSet<Entity> prefabParts)
         {
             var em = state.EntityManager;
-            if (!em.HasBuffer<LinkedEntityGroup>(building))
+            if (!em.HasBuffer<LinkedEntityGroup>(root))
             {
-                var group = new NativeList<Entity>(Allocator.Temp) { building };
-                foreach (var member in members.GetValuesForKey(building))
+                var group = new NativeList<Entity>(Allocator.Temp) { root };
+                foreach (var member in members.GetValuesForKey(root))
                 {
                     group.Add(member);
                 }
 
-                em.AddBuffer<LinkedEntityGroup>(building).AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
+                em.AddBuffer<LinkedEntityGroup>(root).AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
                 return;
             }
 
-            var linked = em.GetBuffer<LinkedEntityGroup>(building);
+            var linked = em.GetBuffer<LinkedEntityGroup>(root);
             for (var i = linked.Length - 1; i > 0; i--)
             {
                 if (prefabParts.Contains(linked[i].Value))
