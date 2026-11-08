@@ -102,11 +102,8 @@ namespace HyperRTS.Editor.Maps.Views
         /// <summary>Looks down at the view's focus from its height, at the pitch the match camera has there.</summary>
         public static void Aim(Camera camera, MapView view, CameraController controller)
         {
-            var pitch = controller.PitchAt(view.Height);
-            var rotation = Quaternion.Euler(pitch, view.Yaw, 0f);
-            var distance = view.Height / Mathf.Sin(pitch * Mathf.Deg2Rad);
-            var focus = new Vector3(view.Focus.x, 0f, view.Focus.y);
-            camera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
+            var pose = controller.ViewAt(new Vector3(view.Focus.x, 0f, view.Focus.y), view.Height, view.Yaw);
+            camera.transform.SetPositionAndRotation(pose.position, pose.rotation);
         }
     }
 }

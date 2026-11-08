@@ -1,8 +1,6 @@
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
-using HyperRTS.Presentation.Environment.Horizon;
 using System.Collections.Generic;
-using System.Linq;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
@@ -54,28 +52,5 @@ namespace HyperRTS.Editor.Maps.Kits
 
         [Tooltip("Surfaces for the pieces too small or narrow to farm (fallow, pasture), one picked per field; empty leaves them margin.")]
         public List<MapCropShare> leftovers = new();
-
-        /// <summary>The horizon's fields farmed as this kit farms, on a grid turned by <paramref name="angle"/> degrees.</summary>
-        public HorizonFields CreateHorizonFields(MapClimate climate, float angle)
-        {
-            var fields = new HorizonFields
-            {
-                size = fieldSize,
-                angle = angle,
-                marginWidth = marginWidth,
-                marginLayer = climate.SurfaceLayer(marginSurface),
-                crops = crops.Select(crop => new HorizonCrop { layer = climate.SurfaceLayer(crop.surface), weight = crop.weight }).ToList(),
-            };
-            if (string.IsNullOrEmpty(trackClass))
-            {
-                fields.trackShare = 0f;
-            }
-            else
-            {
-                fields.trackWidth = climate.RoadClass(trackClass).width;
-            }
-
-            return fields;
-        }
     }
 }

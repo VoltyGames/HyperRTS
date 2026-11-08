@@ -1,4 +1,4 @@
-// HyperRTS/Terrain's UV turn, shared with the horizon's fields so both lay a layer the same way.
+// HyperRTS/Terrain's UV turn, shared by the hex tiling and the layer parameters.
 #ifndef HYPERRTS_TERRAIN_ROTATION_INCLUDED
 #define HYPERRTS_TERRAIN_ROTATION_INCLUDED
 

@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Cameras
 {
-    /// <summary>The match camera's pitch with zoom and its tilt toward the horizon at the closest zooms.</summary>
-    public class CameraPitchTests
+    /// <summary>The match camera's pitch and pose with zoom, its zoom steps, terrain clearance and tree fade.</summary>
+    public class CameraControllerTests
     {
         private GameObject _rig;
         private CameraController _controller;
@@ -20,30 +20,29 @@ namespace HyperRTS.Presentation.Tests.Cameras
             _controller.maxZoom = 80f;
             _controller.pitchAtMinZoom = 44f;
             _controller.pitchAtMaxZoom = 60f;
-            _controller.pitchAtTilt = 18f;
         }
 
         [TearDown]
         public void TearDown() => Object.DestroyImmediate(_rig);
 
         [Test]
-        public void WithoutTilt_PitchRunsLinearlyBetweenTheZoomLimits()
+        public void Pitch_RunsLinearlyBetweenTheZoomLimits()
         {
             Assert.AreEqual(44f, _controller.PitchAt(14f), 1e-4f);
             Assert.AreEqual(52f, _controller.PitchAt(47f), 1e-4f);
             Assert.AreEqual(60f, _controller.PitchAt(80f), 1e-4f);
-            Assert.AreEqual(0f, _controller.TiltAt(14f));
+            Assert.AreEqual(44f, _controller.PitchAt(4f), 1e-4f);
         }
 
         [Test]
-        public void Tilt_ReachesItsPitchAtTheClosestZoom_AndLeavesHigherZoomsAlone()
+        public void View_SitsAtTheHeightAboveTheFocus_AndLooksAtIt()
         {
-            _controller.tiltBelowHeight = 25f;
-            Assert.AreEqual(18f, _controller.PitchAt(14f), 1e-4f);
-            Assert.AreEqual(1f, _controller.TiltAt(14f), 1e-4f);
-            Assert.AreEqual(0f, _controller.TiltAt(25f), 1e-4f);
-            Assert.AreEqual(52f, _controller.PitchAt(47f), 1e-4f);
-            Assert.That(_controller.PitchAt(20f), Is.InRange(18f, 47f));
+            var focus = new Vector3(5f, 2f, -3f);
+            var view = CameraController.View(focus, 20f, 45f, 90f);
+            Assert.AreEqual(22f, view.position.y, 1e-3f);
+            var back = view.position + view.rotation * Vector3.forward * (20f * Mathf.Sqrt(2f));
+            Assert.Less(Vector3.Distance(focus, back), 1e-3f);
+            Assert.Less(view.position.x, focus.x, "A yaw of 90 looks along +x, so the camera stands on the -x side.");
         }
 
         [Test]

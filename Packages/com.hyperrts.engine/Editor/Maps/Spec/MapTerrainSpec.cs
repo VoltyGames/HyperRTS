@@ -29,11 +29,5 @@ namespace HyperRTS.Editor.Maps.Spec
         /// looks off the world. Rivers and roads that reach the edge run on into it; areas and rows may be drawn there.
         /// </summary>
         public float backdropWidth;
-
-        /// <summary>
-        /// Metres of farmland past the terrain's edge, so a camera tilted at its closest zoom sees a horizon instead of
-        /// the world's edge: 800 to 1200, or 0 for none. A <c>Horizon</c> builds it when the scene loads.
-        /// </summary>
-        public float horizonWidth;
     }
 }

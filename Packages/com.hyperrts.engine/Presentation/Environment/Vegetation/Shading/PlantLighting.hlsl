@@ -1,4 +1,4 @@
-// Plant lighting shared by PlantShading.hlsl and HyperRTS/HorizonBelt: wrapped sun, light through the leaf, sheen and
+// Plant lighting shared by PlantShading.hlsl: wrapped sun, light through the leaf, sheen and
 // point lights. Include after the shader's input file, which declares the UnityPerMaterial _Smoothness, _Translucency
 // and _ScreenOcclusion, PLANT_WRAP and PLANT_TWO_SIDED.
 // PLANT_VERTEX_LIGHTS lights point and spot lights per vertex instead of per pixel.

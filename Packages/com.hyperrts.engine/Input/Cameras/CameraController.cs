@@ -2,7 +2,6 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -42,11 +41,14 @@ namespace HyperRTS.Input.Cameras
         public float edgeSize = 8f;
 
         [Header("Default View")]
-        [Tooltip("Position the camera resets to (Home key).")]
-        public Vector3 defaultPosition = new(0, 35, -50);
+        [Tooltip("Height above the focus the match opens at and the Reset key (Home) returns to.")]
+        public float defaultHeight = 30f;
 
-        [Tooltip("Rotation the camera resets to (Home key); only its yaw is used, pitch follows the zoom.")]
-        public Quaternion defaultRotation = Quaternion.Euler(30, 0, 0);
+        [Tooltip("Yaw in degrees the match opens at and the Reset key (Home) returns to.")]
+        public float defaultYaw;
+
+        [Tooltip("Ground point (x, z) the camera looks at when the match opens, until it finds the local player's base.")]
+        public Vector2 startFocus;
 
         [Tooltip("Open the match centred on the local player's buildings, if they have any once they join.")]
         public bool startAtHome = true;
@@ -70,8 +72,6 @@ namespace HyperRTS.Input.Cameras
         private float _zoomVelocity;
         private Vector3 _focus;
         private float _groundVelocity;
-        private Camera _camera;
-        private float _farClip;
 
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
         public void FocusOn(Vector3 worldPoint)
@@ -82,12 +82,7 @@ namespace HyperRTS.Input.Cameras
             PlaceAt(focus, _height);
         }
 
-        protected override void OnAwake()
-        {
-            _actions = InputActionsProvider.Actions;
-            _camera = GetComponent<Camera>();
-            _farClip = _camera.farClipPlane;
-        }
+        protected override void OnAwake() => _actions = InputActionsProvider.Actions;
 
         private void OnEnable() => InputActionsProvider.Enable(_actions.Camera);
 
@@ -99,58 +94,39 @@ namespace HyperRTS.Input.Cameras
 
         private void Start()
         {
-            ResetViewToDefault();
+            ResetView();
+            _height = _targetHeight;
+            FocusOn(new Vector3(startFocus.x, 0f, startFocus.y));
         }
 
-        [ContextMenu("Capture Current Transform As Default")]
-        private void CaptureCurrentTransformAsDefault()
+        /// <summary>Turns back to the default yaw and eases to the default height, looking at the same ground.</summary>
+        private void ResetView()
         {
-            defaultPosition = transform.position;
-            defaultRotation = transform.rotation;
-        }
-
-        [ContextMenu("Reset View To Default")]
-        private void ResetViewToDefault()
-        {
-            var focus = ViewGround.Focus(MatchTerrain(), defaultPosition, defaultRotation * Vector3.forward,
-                float.PositiveInfinity);
-            _yaw = defaultRotation.eulerAngles.y;
-            _targetHeight = Mathf.Clamp(defaultPosition.y - focus.y, minZoom, maxZoom);
+            _yaw = defaultYaw;
+            _targetHeight = Mathf.Clamp(defaultHeight, minZoom, maxZoom);
             _zoomVelocity = 0f;
-            _groundVelocity = 0f;
-            PlaceAt(focus, _targetHeight);
         }
 
         private void Update()
         {
-            var camera = _actions.Camera;
-            if (camera.Reset.WasPressedThisFrame())
+            if (TryTakeFocusRequest(out var point) || TryFindHomeOnce(out point))
             {
-                ResetViewToDefault();
-                return;
-            }
-
-            if (TryTakeFocusRequest(out var requested))
-            {
-                FocusOn(requested);
-                return;
-            }
-
-            if (TryFindHomeOnce(out var home))
-            {
-                FocusOn(home);
+                FocusOn(point);
                 return;
             }
 
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
+            var camera = _actions.Camera;
             if (!camera.enabled)
             {
                 EdgeDirection(false);
                 return;
             }
 
-            var speed = moveSpeed * speedMultiplier * _height / 10f;
-            var focus = ClampToMap(_focus + PanDirection() * (speed * Time.unscaledDeltaTime));
+            if (camera.Reset.WasPressedThisFrame())
+            {
+                ResetView();
+            }
 
             var scroll = camera.Zoom.ReadValue<float>();
             if (scroll != 0f)
@@ -165,6 +141,8 @@ namespace HyperRTS.Input.Cameras
 
             _yaw += camera.Turn.ReadValue<float>() * turnSpeed * Time.unscaledDeltaTime;
 
+            var speed = moveSpeed * speedMultiplier * _height / 10f;
+            var focus = ClampToMap(_focus + PanDirection() * (speed * Time.unscaledDeltaTime));
             focus.y = SmoothedGround(focus);
             var height = Mathf.SmoothDamp(_height, _targetHeight, ref _zoomVelocity, zoomSmoothTime,
                 float.PositiveInfinity, Time.unscaledDeltaTime);
@@ -175,9 +153,8 @@ namespace HyperRTS.Input.Cameras
         private Vector3 PanDirection()
         {
             var input = _actions.Camera.Pan.ReadValue<Vector2>() + EdgeDirection(true);
-            var forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-            var right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
-            return Vector3.ClampMagnitude(right * input.x + forward * input.y, 1f);
+            var turn = Quaternion.Euler(0f, _yaw, 0f);
+            return Vector3.ClampMagnitude(turn * new Vector3(input.x, 0f, input.y), 1f);
         }
 
         /// <summary>The edge the pointer scrolls against, published for the cursor; input may pause it.</summary>
@@ -187,8 +164,7 @@ namespace HyperRTS.Input.Cameras
             var state = default(ScrollEdge);
             var shared = hasWorld && _scrollEdge.TryGet(entityManager, out state);
             state.Direction = int2.zero;
-            var scrolls = pointerLive && edgeScrolling && Application.isFocused;
-            if (scrolls && !state.Paused)
+            if (pointerLive && edgeScrolling && Application.isFocused && !state.Paused)
             {
                 var screen = new float2(Screen.width, Screen.height);
                 state.Direction = ScrollEdge.At(_actions.Camera.Point.ReadValue<Vector2>(), screen, edgeSize);
@@ -204,24 +180,15 @@ namespace HyperRTS.Input.Cameras
 
         /// <summary>
         /// Looks at <paramref name="focus"/> (its y is the ground there) from <paramref name="height"/> above it,
-        /// pitched for that height. The focus stays put, so zooming never slides the view.
+        /// pitched for that height and lifted clear of the terrain. The focus stays put, so zooming never slides the view.
         /// </summary>
         private void PlaceAt(Vector3 focus, float height)
         {
             _focus = focus;
             _height = height;
-            var pitch = PitchAt(height);
-            _camera.farClipPlane = Mathf.Lerp(_farClip, Mathf.Max(farClipAtTilt, _farClip), TiltAt(height));
-            transform.rotation = Quaternion.Euler(pitch, _yaw, 0f);
-            var forward = transform.forward;
-
-            // A view ray that never meets the ground looks at the point below the camera.
-            var position = forward.y > -1e-5f
-                ? new Vector3(focus.x, focus.y + height, focus.z)
-                : focus - forward * (height / -forward.y);
-            var terrainY = GroundAt(position);
-            position.y = ClearedHeight(position.y, terrainY, terrainClearance);
-            transform.position = position;
+            var view = ViewAt(focus, height, _yaw);
+            view.position.y = ClearedHeight(view.position.y, GroundAt(view.position), terrainClearance);
+            transform.SetPositionAndRotation(view.position, view.rotation);
             ShareTreeFade();
         }
 
@@ -235,12 +202,8 @@ namespace HyperRTS.Input.Cameras
         private bool TryFindHomeOnce(out Vector3 home)
         {
             home = default;
-            if (_homeDone || !startAtHome || !DefaultWorld.TryGetEntityManager(out var entityManager))
-            {
-                return false;
-            }
-
-            if (!_home.TryGetLocalOwner(entityManager, out var owner))
+            if (_homeDone || !startAtHome || !DefaultWorld.TryGetEntityManager(out var entityManager)
+                || !_home.TryGetLocalOwner(entityManager, out var owner))
             {
                 return false;
             }
@@ -251,8 +214,7 @@ namespace HyperRTS.Input.Cameras
             }
 
             var found = _home.TryFind(entityManager, owner, out home);
-            var expired = Time.unscaledTime >= _homeDeadline;
-            _homeDone = found || expired;
+            _homeDone = found || Time.unscaledTime >= _homeDeadline;
             return found;
         }
 
@@ -260,12 +222,8 @@ namespace HyperRTS.Input.Cameras
         private bool TryTakeFocusRequest(out Vector3 point)
         {
             point = default;
-            if (!DefaultWorld.TryGetEntityManager(out var entityManager))
-            {
-                return false;
-            }
-
-            if (!_focusRequest.TryGet(entityManager, out var request) || !request.Pending)
+            if (!DefaultWorld.TryGetEntityManager(out var entityManager)
+                || !_focusRequest.TryGet(entityManager, out var request) || !request.Pending)
             {
                 return false;
             }

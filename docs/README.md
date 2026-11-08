@@ -38,7 +38,7 @@ What a player sees and touches, on clients only. [Interaction, input, audio and 
 | [HUD](presentation/hud.md) | HUD, cursors, unit overlays |
 | [Animation](presentation/animation.md) | Bone and vertex animation, machines, motion rig, squad figures |
 | [Rendering](presentation/rendering.md) | Team colour, build reveal, visibility, fog of war, flags, destruction, shaders |
-| [Environment](presentation/environment.md) | Atmosphere, horizon, wind, water, trample maps, field fires, ambient life |
+| [Environment](presentation/environment.md) | Atmosphere, wind, water, trample maps, field fires, ambient life |
 | [Vegetation](presentation/vegetation.md) | Row crops, the scatter host, foliage lighting |
 | [Effects](presentation/effects.md) | Effect rigs, VFX Graph conventions, pools, loop lights |
 

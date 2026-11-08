@@ -223,8 +223,9 @@ MonoBehaviour:
   zoomSmoothTime: 0.12
   pitchAtMinZoom: 44
   pitchAtMaxZoom: 60
-  defaultPosition: {x: 0, y: 35, z: -50}
-  defaultRotation: {x: 0.25881904, y: 0, z: 0, w: 0.9659258}
+  defaultHeight: 30
+  defaultYaw: 0
+  startFocus: {x: 0, y: 0}
   startAtHome: 1
   homeSearchSeconds: 3
 --- !u!1001 &5325597525576703505

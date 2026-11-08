@@ -44,12 +44,11 @@ map centre, X points east, Z points north, and angles run clockwise from north. 
 | `size` | Playable width (X) and depth (Z) |
 | `symmetry` | See [symmetry](#symmetry) |
 | `seed` | Seeds every random stream and noise field |
-| `terrain` | `height`, `relief` and `reliefScale` (swell amplitude and wavelength), `waterLevel`, `maxHeight`, `resolution` (2^n + 1, larger for bigger maps), `backdropWidth`, `horizonWidth` |
+| `terrain` | `height`, `relief` and `reliefScale` (swell amplitude and wavelength), `waterLevel`, `maxHeight`, `resolution` (2^n + 1, larger for bigger maps), `backdropWidth` |
 
 Base `height` is lowered to world y = 0. The backdrop is unplayable land past the playable edge; gameplay points
 (spawns, resources, props, hills, settlements) stay inside half the `size`, while lines and polygons may reach into
-the backdrop. `horizonWidth` is the farmland past the terrain edge that a tilted camera's horizon sees; a `Horizon`
-builds it in memory when the scene loads, and 0 turns it off.
+the backdrop.
 
 ### Symmetry
 

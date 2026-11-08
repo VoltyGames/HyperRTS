@@ -5,7 +5,6 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Meshes;
 using HyperRTS.Editor.Maps.Vegetation;
 using HyperRTS.Presentation.Environment.Ground;
-using HyperRTS.Presentation.Environment.Horizon;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Weather;
@@ -20,7 +19,7 @@ using HyperRTS.Presentation.HUD.Map;
 
 namespace HyperRTS.Editor.Maps.Scenes
 {
-    /// <summary>Writes the map's world around the gameplay: terrain, horizon, ground colour, row crops, grass, rivers, sky, ford decks and minimap.</summary>
+    /// <summary>Writes the map's world around the gameplay: terrain, ground colour, row crops, grass, rivers, sky, ford decks and minimap.</summary>
     public static class MapEnvironmentWriter
     {
         private const string RowCropsCompute =
@@ -30,8 +29,6 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         private const string GrassShader =
             "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/FoliageGrass.shader";
-
-        private const string HorizonGroundShader = "Packages/com.hyperrts.engine/Presentation/Environment/Horizon/HorizonGround.shader";
 
         /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
@@ -60,7 +57,6 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var (layout, climate) = (generation.Layout, generation.Project.Climate);
             var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
-            CreateHorizon(scene, generation, terrain);
             CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
             CreateRowCrops(scene, generation.Project.Paths.RowCrops, terrain);
             CreateGrass(scene, generation.Project.Paths.Grass, terrain);
@@ -115,40 +111,6 @@ namespace HyperRTS.Editor.Maps.Scenes
 
             minimap.image = image;
             EditorUtility.SetDirty(minimap);
-        }
-
-        /// <summary>
-        /// The farmland ring round the map out to the spec's <c>horizonWidth</c>, in the first farmland's kit (or the
-        /// climate's first) on the map's own grid, with belts from the kit's belt kits.
-        /// </summary>
-        private static void CreateHorizon(MapScene scene, MapGeneration generation, Terrain terrain)
-        {
-            var (spec, climate, layout) = (generation.Project.Spec, generation.Project.Climate, generation.Layout);
-            var width = layout.Terrain.horizonWidth;
-            if (width <= 0f)
-            {
-                return;
-            }
-
-            var farmland = spec.farmland.Count > 0 ? spec.farmland[0] : null;
-            var kit = climate.FarmlandKit(farmland != null ? farmland.kind : climate.farmlandKitKeys[0]);
-            var go = new GameObject("Horizon");
-            go.SetActive(false);
-            go.transform.SetParent(scene.Root, false);
-            var horizon = go.AddComponent<Horizon>();
-            horizon.terrain = terrain;
-            horizon.width = width;
-            horizon.seed = spec.seed;
-            horizon.relief = new HorizonRelief
-            {
-                height = layout.TerrainOrigin.y + layout.Terrain.height,
-                swell = layout.Terrain.relief,
-                scale = layout.Terrain.reliefScale,
-            };
-            horizon.fields = kit.CreateHorizonFields(climate, farmland?.angle ?? 0f);
-            horizon.belts = new HorizonBelts { strips = climate.HorizonStrips() };
-            horizon.groundShader = Engine<Shader>(HorizonGroundShader, "horizon ground shader");
-            go.SetActive(true);
         }
 
         /// <summary>Publishes the ground picture to the foliage shaders.</summary>

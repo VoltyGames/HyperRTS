@@ -57,7 +57,6 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string HUDController = Dir + "HUDController.png";
         public const string HarvesterAuthoring = Dir + "HarvesterAuthoring.png";
         public const string HitMaterialAuthoring = Dir + "HitMaterialAuthoring.png";
-        public const string Horizon = Dir + "Horizon.png";
         public const string ImpactEffectsAuthoring = Dir + "ImpactEffectsAuthoring.png";
         public const string ImpactMarksAuthoring = Dir + "ImpactMarksAuthoring.png";
         public const string LocomotionAuthoring = Dir + "LocomotionAuthoring.png";

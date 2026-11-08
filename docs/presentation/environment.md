@@ -2,7 +2,7 @@
 
 [Docs](../README.md) ▸ [Presentation](README.md) ▸ Environment
 
-Sky, fog, weather, wind, water, horizon, and the ground that remembers what happened on it. Plants have their own page,
+Sky, fog, weather, wind, water, and the ground that remembers what happened on it. Plants have their own page,
 [vegetation](vegetation.md). For game developers building a climate and artists authoring tree and water meshes.
 
 ## Atmosphere
@@ -20,19 +20,6 @@ a project using it sets that define. `FogOfWarFeature` keeps orthographic captur
 **Battle haze.** While `PresentationQuality.BattleHaze` is on, `BattleHazeSystem` thickens the fog over a fight. Seen
 impacts, burning wrecks and damaged buildings add haze to a coarse grid; it drifts downwind and thins. Other sources call
 `BattleHaze.Add(position, radius, amount)`.
-
-## Horizon
-
-`Horizon` draws farmland round the map out to its `width`, for a camera tilted toward the horizon. A map build adds it
-when its spec has a `horizonWidth`. It is built in memory only, draws to each game and Scene view camera, and has no
-collision, navigation or shadow.
-
-- **Ground.** `HorizonRing` builds a mesh ring that follows the terrain edge then blends into noise relief.
-  `HyperRTS/HorizonGround` paints it with the terrain material's layers, and `HorizonFields` lays fields at the farmland
-  kit's field size.
-- **Sky fade.** Over `HorizonSky.fadeShare` ground and belts take the sky's horizon colour.
-- **Belts.** A belt kit's `horizonStrip` material (`HyperRTS/HorizonBelt`) draws tree belts along row edges. A climate
-  whose kits have no strip draws none.
 
 ## Wind
 

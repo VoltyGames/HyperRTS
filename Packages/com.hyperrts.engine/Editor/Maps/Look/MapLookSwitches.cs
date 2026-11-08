@@ -14,7 +14,6 @@ using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using Horizon = HyperRTS.Presentation.Environment.Horizon.Horizon;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Maps.Look
@@ -35,7 +34,6 @@ namespace HyperRTS.Editor.Maps.Look
         {
             AddBehaviours<GrassRenderer>("grass");
             AddBehaviours<RowCropRenderer>("rowCrops");
-            AddBehaviours<Horizon>("horizon");
             AddTrees();
             AddContactShadows();
             AddFog();
