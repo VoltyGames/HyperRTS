@@ -64,6 +64,7 @@ detached jobs. `unity command --tag hyperrts` lists them with their arguments.
 | `effect capture <rig> [times] [distance]` | Renders a rig to `Logs/EffectCaptures/<Rig>/` at seconds after its burst; fails after 45 s without an Editor frame, so keep the Editor in front |
 | `generator run [name] [--list true] [--stale true]` | Runs one, all, or the out of date [generators](#generators) |
 | `bone bake [set]` | Bakes a `BoneAnimationSet` (none named bakes all) |
+| `rigid bake [set]` | Bakes a `RigidAnimationSet` (none named bakes all) |
 | `project validate` | Error and warning counts, then each issue's rule, message, asset and fix |
 
 `<map>` is a map name or its spec path, `[recipe]` a graph name or `.effect.asset` path; an unknown one fails, naming

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Animation.Clips
 {
-    /// <summary>One clip of a <see cref="ClipTable"/>, as it is saved in the table asset and the bake info file.</summary>
+    /// <summary>One clip of a <see cref="ClipTable"/>, as it is saved in the table asset.</summary>
     [Serializable]
     public class NamedClip
     {

@@ -24,12 +24,12 @@ namespace HyperRTS.Simulation.Destruction
 
                 if (pieces != null && !owner.clips.IsSet)
                 {
-                    return $"Section '{intact.name}' on '{owner.name}' has pieces but the building has no break clips; Fill From Structure sets them.";
+                    return $"Section '{intact.name}' on '{owner.name}' has pieces but the building has no break clips; Fill From Model sets them.";
                 }
 
                 if (halfSize.x <= 0f || halfSize.y <= 0f || halfSize.z <= 0f)
                 {
-                    return $"Section '{intact.name}' on '{owner.name}' has no box; run Fill From Structure or Fill From Parts.";
+                    return $"Section '{intact.name}' on '{owner.name}' has no box; run Fill From Model or Fill From Parts.";
                 }
 
                 if (material == null)

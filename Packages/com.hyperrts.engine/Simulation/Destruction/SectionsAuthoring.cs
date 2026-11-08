@@ -89,18 +89,15 @@ namespace HyperRTS.Simulation.Destruction
         [Serializable]
         public struct MaterialName
         {
-            [Tooltip("The material's name in the structure file.")]
+            [Tooltip("The material's name in the model's sections.")]
             public string name;
             public SectionMaterial material;
         }
 
-        [Tooltip("The building's <Asset>.structure.json from the structure tool. Fill From Structure (context menu) lists the sections from it.")]
-        public TextAsset structure;
-
-        [Tooltip("Which section material each material name in the structure file means.")]
+        [Tooltip("Which section material each material name in the model's sections means.")]
         public MaterialName[] materialNames = Array.Empty<MaterialName>();
 
-        [Tooltip("How the pieces of every section break: blown in, blown out and collapse. Fill From Structure sets them.")]
+        [Tooltip("How the pieces of every section break: blown in, blown out and collapse. Fill From Model sets them from the clip table the pieces play.")]
         public SectionClips clips;
 
         [Tooltip("Heap left at the foot of a broken ground-floor outer wall: crushable scenery tanks flatten.")]
@@ -119,7 +116,7 @@ namespace HyperRTS.Simulation.Destruction
         [Min(0.1f)]
         public float repairSeconds = 10f;
 
-        [Tooltip("The sections, at most 64. Fill From Structure (context menu) lists them from the structure file with its boxes, Fill From Parts from X_Intact and X_Broken children.")]
+        [Tooltip("The sections, at most 64. Fill From Model lists them from the sections kept inside the building's model, Fill From Parts from X_Intact and X_Broken children.")]
         public Entry[] sections = Array.Empty<Entry>();
 
         /// <summary>What stops the sections baking; empty when they are fine.</summary>

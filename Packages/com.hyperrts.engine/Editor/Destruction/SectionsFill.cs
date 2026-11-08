@@ -1,20 +1,28 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using HyperRTS.Presentation.Animation.VAT;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Destruction;
 using Unity.Mathematics;
+using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Destruction
 {
     /// <summary>
-    /// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts or its structure file, and measures the boxes
-    /// their intact models fill in the building's space.
+    /// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts or its model's sections, and measures the
+    /// boxes their intact models fill in the building's space.
     /// </summary>
     public sealed class SectionsFill
     {
         /// <summary>Metres between boxes that still touch, and above the lowest box that still stands on the ground.</summary>
         private const float Contact = 0.05f;
+
+        // The break clips every sectioned model's pieces play, named by its motion model.
+        private const string BlownInClip = "In";
+        private const string BlownOutClip = "Out";
+        private const string CollapseClip = "Collapse";
 
         private readonly SectionsAuthoring _owner;
         private Transform Root => _owner.transform;
@@ -24,8 +32,8 @@ namespace HyperRTS.Editor.Destruction
         [InspectorButton("Fill from parts", Glyph = "wand-sparkles")]
         private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
 
-        [InspectorButton("Fill from structure", Glyph = "wand-sparkles")]
-        private static void FillFromStructure(SectionsAuthoring sections) => new SectionsFill(sections).FromStructure();
+        [InspectorButton("Fill from model", Glyph = "wand-sparkles")]
+        private static void FillFromModel(SectionsAuthoring sections) => new SectionsFill(sections).FromModel();
 
         /// <summary>
         /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling and guesses box, anchored, exterior,
@@ -45,18 +53,52 @@ namespace HyperRTS.Editor.Destruction
             _owner.sections = Guess(found).ToArray();
         }
 
-        /// <summary>Lists the sections from the structure file; see <see cref="SectionStructure.Entries"/>.</summary>
-        public void FromStructure()
+        /// <summary>
+        /// Lists the sections kept inside the building's model (see <see cref="ModelSections.Entries"/>) and takes the
+        /// break clips from the clip table its pieces play.
+        /// </summary>
+        public void FromModel()
         {
-            if (_owner.structure == null)
+            _owner.sections = FindSections().Entries(_owner, Measure).ToArray();
+            _owner.clips = BreakClips();
+        }
+
+        // The one model under the building whose import kept sections.
+        private ModelSections FindSections()
+        {
+            var found = _owner.GetComponentsInChildren<Transform>(true)
+                .Select(child => PrefabUtility.GetCorrespondingObjectFromOriginalSource(child.gameObject))
+                .Where(source => source != null)
+                .Select(AssetDatabase.GetAssetPath)
+                .Distinct()
+                .Select(ModelSections.Find)
+                .Where(sections => sections != null)
+                .ToList();
+            return found.Count == 1
+                ? found[0]
+                : throw new InvalidOperationException($"HyperRTS: '{_owner.name}' holds {found.Count} models with sections; it needs one.");
+        }
+
+        private SectionClips BreakClips()
+        {
+            var tables = _owner.GetComponentsInChildren<VATAnimatedAuthoring>(true).Select(vat => vat.clips).Where(table => table != null).Distinct().ToList();
+            if (tables.Count != 1)
             {
-                throw new InvalidOperationException(
-                    $"HyperRTS: sections on '{_owner.name}' have no structure file to fill from.");
+                throw new InvalidOperationException($"HyperRTS: '{_owner.name}' plays {tables.Count} VAT clip tables on its pieces; it needs one.");
             }
 
-            var file = SectionStructure.Parse(_owner.structure.text, _owner.structure.name);
-            _owner.clips = file.BreakClips();
-            _owner.sections = file.Entries(_owner).ToArray();
+            return new SectionClips
+            {
+                BlownIn = BreakClip(tables[0], BlownInClip),
+                BlownOut = BreakClip(tables[0], BlownOutClip),
+                Collapse = BreakClip(tables[0], CollapseClip),
+            };
+        }
+
+        private static SectionClip BreakClip(VATClipTable table, string clipName)
+        {
+            var range = table.Range(clipName);
+            return new SectionClip { StartRow = range.StartRow, FrameCount = range.FrameCount, Fps = range.Fps };
         }
 
         /// <summary>
@@ -151,7 +193,7 @@ namespace HyperRTS.Editor.Destruction
         }
 
         /// <summary>The bounds of every mesh under <paramref name="node"/>, in the building's space.</summary>
-        private Bounds Measure(Transform node)
+        public Bounds Measure(Transform node)
         {
             var bounds = new Bounds();
             var any = false;

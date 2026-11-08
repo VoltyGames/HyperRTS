@@ -1,9 +1,6 @@
-using HyperRTS.Presentation.Animation.Clips;
-using HyperRTS.Presentation.Animation.VAT;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using Unity.Scripting.LifecycleManagement;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -11,78 +8,80 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Editor.Animation
 {
     /// <summary>
-    /// Import settings for vertex animation texture sets: a model with <c>VAT/&lt;Model&gt;.vat.json</c> beside it
-    /// keeps full-float UV1, and the textures its bake info names import exact.
+    /// Import settings for rigid vertex animation: a model with <c>VAT/&lt;Model&gt;_Motion.fbx</c> beside it keeps
+    /// full-float UV1, and the motion model imports its take unreduced and keeps its pieces and clips inside it.
     /// </summary>
-    public sealed partial class VATImportRules : AssetPostprocessor
+    public sealed class VATImportRules : AssetPostprocessor
     {
-        private const int MaxTextureSize = 16384;
-
-        // Texture names by bake info path, so a folder's textures parse each bake info file once until it changes.
-        [AutoStaticsCleanup]
-        private static readonly Dictionary<string, (DateTime Written, string[] Textures)> Named = new();
+        private RigidMotion _motion;
 
         /// <summary>After a game's own import rules, so these settings win.</summary>
         public override int GetPostprocessOrder() => 1000;
 
-        public static bool IsVATModel(string path) => File.Exists(VATBakeInfo.PathFor(path));
-
-        /// <summary>True for a texture a bake info file in the same VAT folder names as its positions, normals or rotations.</summary>
-        public static bool IsVATTexture(string path)
-        {
-            var folder = Path.GetDirectoryName(path);
-            if (Path.GetFileName(folder) != VATBakeInfo.Folder)
-            {
-                return false;
-            }
-
-            var file = Path.GetFileName(path);
-            foreach (var json in Directory.GetFiles(folder, "*" + VATBakeInfo.Extension))
-            {
-                if (Array.IndexOf(ReadTextures(json), file) >= 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static string[] ReadTextures(string json)
-        {
-            var written = File.GetLastWriteTimeUtc(json);
-            if (!Named.TryGetValue(json, out var named) || named.Written != written)
-            {
-                var bakeInfo = JsonUtility.FromJson<VATBakeInfo>(File.ReadAllText(json));
-                named = (written, new[] { bakeInfo.positions, bakeInfo.rotations });
-                Named[json] = named;
-            }
-
-            return named.Textures;
-        }
+        public static bool IsVATModel(string path) => File.Exists(RigidMotion.PathFor(path));
 
         private void OnPreprocessModel()
         {
+            var importer = (ModelImporter)assetImporter;
+            if (RigidMotion.IsMotionModel(assetPath))
+            {
+                // Every frame is keyed; reduced or Euler curves would move pieces between the keys the bake samples.
+                importer.animationType = ModelImporterAnimationType.Generic;
+                importer.importAnimation = true;
+                importer.resampleCurves = true;
+                importer.animationCompression = ModelImporterAnimationCompression.Off;
+                importer.materialImportMode = ModelImporterMaterialImportMode.None;
+                importer.importBlendShapes = false;
+                importer.importCameras = false;
+                importer.importLights = false;
+                return;
+            }
+
             if (!IsVATModel(assetPath))
             {
                 return;
             }
 
             // A generated lightmap UV would overwrite the texel index in UV1.
-            var importer = (ModelImporter)assetImporter;
             importer.generateSecondaryUV = false;
             importer.meshCompression = ModelImporterMeshCompression.Off;
         }
 
-        // Half-float u loses whole columns past 2048. Only the animated meshes carry the texel index: a sectioned
-        // model's standing and broken meshes stay still.
-        private void OnPostprocessModel(GameObject model)
+        private void OnPostprocessGameObjectWithUserProperties(GameObject node, string[] names, object[] values)
         {
-            if (!IsVATModel(assetPath))
+            if (!RigidMotion.IsMotionModel(assetPath))
             {
                 return;
             }
 
+            if (_motion == null)
+            {
+                _motion = ScriptableObject.CreateInstance<RigidMotion>();
+                _motion.name = "Motion";
+            }
+
+            _motion.Read(node, new FbxProperties(node.name, names, values));
+        }
+
+        private void OnPostprocessModel(GameObject model)
+        {
+            if (_motion != null)
+            {
+                _motion.Check(model, assetPath);
+                context.AddObjectToAsset("motion", _motion);
+                return;
+            }
+
+            if (IsVATModel(assetPath))
+            {
+                KeepFullFloatIndex(model);
+            }
+        }
+
+        // Half-float u loses whole columns past 2048. Only the animated meshes carry the texel index: a sectioned
+        // model's standing and broken meshes stay still.
+        private void KeepFullFloatIndex(GameObject model)
+        {
             var uv = new List<Vector2>();
             var animated = 0;
             foreach (var filter in model.GetComponentsInChildren<MeshFilter>(true))
@@ -105,26 +104,6 @@ namespace HyperRTS.Editor.Animation
             {
                 Debug.LogError($"[HyperRTS] VAT model {assetPath} has no mesh with a UV1 texel index.", model);
             }
-        }
-
-        private void OnPreprocessTexture()
-        {
-            if (!IsVATTexture(assetPath))
-            {
-                return;
-            }
-
-            var importer = (TextureImporter)assetImporter;
-            importer.textureType = TextureImporterType.Default;
-            importer.sRGBTexture = false;
-            importer.mipmapEnabled = false;
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.filterMode = FilterMode.Point;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.isReadable = false;
-            importer.maxTextureSize = MaxTextureSize;
-            // Uncompressed HDR source imports as RGBAHalf.
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
         }
     }
 }

@@ -37,10 +37,19 @@ plays a clip with `PlayingClip.Switch` using `SystemAPI.Time.ElapsedTime`, so pa
 
 ## Rigid vertex animation
 
-`_VAT_RIGID` moves whole pieces instead of vertices (a sectioned building breaking). The structure tool writes
-`VAT/<Model>.vat.json` with a positions and a rotations texture. A `VATClipTable` imports the clips through **Import
-Bake Info**, and `VATAnimatedAuthoring` beside the renderer bakes the start clip and bounds. There is no fade between
-clips.
+`_VAT_RIGID` moves whole pieces instead of vertices (a sectioned building breaking). Its textures hold a column per
+piece and a row per frame: `_Pos` the piece's pivot and `_Rot` its rotation, row 0 at rest. A vertex moves as
+`pos[row] + rotate(rot[row], p - pos[0])`, its column in UV1.
+
+A `RigidAnimationSet` bakes them from two models: the model whose meshes carry the column, and its motion model
+`VAT/<Model>_Motion.fbx`. The motion model has an empty per piece with an integer `column` FBX property, keyed on every
+frame of one take, and an empty per clip with `clip`, `startRow`, `frameCount` and `fps`. `VATImportRules` imports it
+unreduced and keeps its pieces and clips inside it (`RigidMotion`), and gives the model beside it full-float UV1.
+**Assets ▸ HyperRTS ▸ Bake Rigid Animation Set** or `rigid bake` samples the take into half-float EXRs (the set's
+`positions` and `rotations`, else `T_<Set>_Pos.exr` and `_Rot.exr` beside it) and writes the `VATClipTable`'s width,
+clips and bounds. Sampling the curves needs no scene; a channel without a curve keeps its node's pose.
+
+`VATAnimatedAuthoring` beside the renderer bakes the start clip and bounds. There is no fade between clips.
 
 ## Machines
 

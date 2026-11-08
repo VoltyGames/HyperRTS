@@ -71,9 +71,11 @@ exterior. The building's health is the sum of its sections', so the HUD, AI, cap
 
 - **Filling the list.** **Fill from parts** lists sections from `<Name>_Intact` children and their `<Name>_Broken`
   siblings and guesses the rest for you to correct. For a building from the structure tool
-  ([tools](../../../docs/art/generators.md#structure-builds)), **Fill from structure** takes the boxes, materials, floors,
-  supports and break clips from the `<Asset>.structure.json`; set `structure` and map its material names in
-  `materialNames` (no name matching). A refill keeps shares and decks of existing entries. The baker reads the stored
+  ([tools](../../../docs/art/generators.md#structure-builds)), **Fill from model** reads the sections its model's import
+  keeps (`ModelSections`, from the FBX properties `section` and `hole` on the intact and holed meshes): materials,
+  floors, supports, facing and holes. It measures each box from the intact mesh and takes the `In`, `Out` and
+  `Collapse` break clips from the [rigid](../presentation/animation.md#rigid-vertex-animation) clip table the pieces
+  play. Map its material names in `materialNames` (no name matching). A refill keeps shares and decks of existing entries. The baker reads the stored
   prefab, never the file. `SectionsRule` checks pairs, materials, clips and that everything reaches the ground.
 - **Hits.** A direct hit lands in full on the first section its line enters, and its splash on the others in reach.
   The section's material multiplies the damage after the building's armor. A section at 0 breaks.

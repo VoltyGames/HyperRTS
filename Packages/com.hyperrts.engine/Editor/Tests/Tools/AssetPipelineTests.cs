@@ -9,19 +9,17 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Object = UnityEngine.Object;
 using Random = Unity.Mathematics.Random;
 
 namespace HyperRTS.Editor.Tests.Tools
 {
-    /// <summary>Generated environment textures tile and stay balanced, and VAT models import for the LitTeam shader.</summary>
+    /// <summary>Generated environment textures tile and stay balanced, and VAT models and their motion import for the LitTeam shader.</summary>
     public class AssetPipelineTests
     {
         private const string VATFolder = "Assets/_VATImportTests";
         private const string VATModel = VATFolder + "/Quad.obj";
-        private const string VATPositions = VATFolder + "/VAT/Quad_Pos.exr";
+        private const string VATMotion = VATFolder + "/VAT/Quad_Motion.obj";
         private const string Triangle = "v 0 0 0\nv 1 0 0\nv 1 1 0\nvt 0 0\nvt 1 0\nvt 1 1\nf 1/1 2/2 3/3\n";
-        private const string BakeInfo = @"{ ""positions"": ""Quad_Pos.exr"" }";
 
         private Vector3[] _terrain;
         private Vector3[] _ripples;
@@ -89,24 +87,23 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         [Test]
-        public void VATSetImportsWithFullUVsAndExactTexels()
+        public void VATModelImportsWithFullUVsAndItsMotionUnreduced()
         {
             AssetDatabase.CreateFolder("Assets", "_VATImportTests");
             Directory.CreateDirectory(VATFolder + "/VAT");
-            File.WriteAllText(VATFolder + "/VAT/Quad.vat.json", BakeInfo);
+            File.WriteAllText(VATMotion, Triangle);
             File.WriteAllText(VATModel, Triangle);
-            File.WriteAllBytes(VATPositions, SixColumnEXR());
             // An OBJ carries no UV1, which the rule reports.
             LogAssert.Expect(LogType.Error, new Regex("has no mesh with a UV1 texel index"));
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-            var importer = (ModelImporter)AssetImporter.GetAtPath(VATModel);
-            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(VATPositions);
+            var model = (ModelImporter)AssetImporter.GetAtPath(VATModel);
+            var motion = (ModelImporter)AssetImporter.GetAtPath(VATMotion);
 
-            Assert.IsFalse(importer.generateSecondaryUV);
-            Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression);
-            Assert.AreEqual(TextureFormat.RGBAHalf, texture.format);
-            Assert.AreEqual((FilterMode.Point, 1), (texture.filterMode, texture.mipmapCount));
+            Assert.IsFalse(model.generateSecondaryUV);
+            Assert.AreEqual(ModelImporterMeshCompression.Off, model.meshCompression);
+            Assert.AreEqual(ModelImporterAnimationCompression.Off, motion.animationCompression);
+            Assert.IsTrue(motion.resampleCurves);
         }
 
         [Test]
@@ -153,19 +150,6 @@ namespace HyperRTS.Editor.Tests.Tools
 
             Assert.That(acrossU, Is.LessThan(insideU * 1.5f));
             Assert.That(acrossV, Is.LessThan(insideV * 1.5f));
-        }
-
-        private static byte[] SixColumnEXR()
-        {
-            var texture = new Texture2D(6, 2, TextureFormat.RGBAHalf, false, true);
-            try
-            {
-                return texture.EncodeToEXR(Texture2D.EXRFlags.None);
-            }
-            finally
-            {
-                Object.DestroyImmediate(texture);
-            }
         }
     }
 }
