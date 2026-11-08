@@ -83,8 +83,10 @@ matrices through the DOTS instancing path, so debris materials use a DOTS-instan
 
 **Sections.** A building with `SectionsAuthoring` ([combat](../simulation/combat.md#sections)) gives each section models
 (`SectionModel`): intact, holed variants, rigid pieces, a stub and a heap, or just a broken model. Models other than the
-intact one are saved hidden and baked back at full size, hidden by `HideReason.Section`. `SectionViewSystem` shows each
-section in one of four cosmetic states following the simulation's broken mask:
+intact one are saved at scale 0, so editor views show the standing building, and bake as full-size entity prefabs.
+`SectionCopies` copies one in under the building while it shows and destroys the copy when it hides, so a standing
+building costs only its intact models. The building's `LinkedEntityGroup` lists its copies, so it is destroyed whole.
+`SectionViewSystem` shows each section in one of four cosmetic states following the simulation's broken mask:
 
 - **Standing:** the intact model, or the holed variant nearest the latest impact the local player saw.
 - **Breaking:** a break this client saw plays the pieces' clip once (`SectionClips`), blown in or out by the side the

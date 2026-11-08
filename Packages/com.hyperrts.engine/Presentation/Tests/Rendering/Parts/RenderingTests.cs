@@ -49,22 +49,40 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
         }
 
         [Test]
-        public void BrokenPiece_BakesFullSizeAndHidden_WithItsChildMeshes()
+        public void BrokenModel_BakesAsAFullSizePrefab_WithItsChildMeshes()
         {
-            var intact = Piece(1f);
-            var broken = Piece(0f);
-            var shard = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy), typeof(Prefab));
+            var building = _em.CreateEntity();
+            var intact = Piece(1f, building);
+            var broken = Piece(0f, building);
+            var shard = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
             _em.AddComponentData(shard, new Parent { Value = broken });
-            var building = _em.CreateEntity(typeof(Prefab));
             _em.AddBuffer<SectionModel>(building).Add(new SectionModel { Intact = intact, Broken = broken });
 
             Update<SectionsBakingSystem>();
 
             Assert.AreEqual(1f, _em.GetComponentData<LocalTransform>(broken).Scale);
-            Assert.IsFalse(_em.IsComponentEnabled<MaterialMeshInfo>(broken));
-            Assert.IsFalse(_em.IsComponentEnabled<MaterialMeshInfo>(shard));
-            Assert.IsTrue(_em.GetComponentData<HiddenBy>(shard).Has(HideReason.Section));
-            Assert.IsTrue(_em.IsComponentEnabled<MaterialMeshInfo>(intact));
+            Assert.IsTrue(_em.HasComponent<Prefab>(broken) && _em.HasComponent<Prefab>(shard));
+            CollectionAssert.AreEqual(new[] { broken, shard }, Group(broken));
+            CollectionAssert.AreEqual(new[] { building, intact }, Group(building), "a scene building groups the rest");
+            Assert.IsFalse(_em.HasComponent<Prefab>(intact));
+        }
+
+        [Test]
+        public void PrefabBuilding_DropsItsSectionPrefabsFromItsGroup()
+        {
+            var building = _em.CreateEntity(typeof(Prefab));
+            var intact = Piece(1f, building);
+            var broken = Piece(0f, building);
+            _em.AddComponent<Prefab>(intact);
+            _em.AddComponent<Prefab>(broken);
+            _em.AddBuffer<LinkedEntityGroup>(building).AddRange(
+                new NativeArray<Entity>(new[] { building, intact, broken }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+            _em.AddBuffer<SectionModel>(building).Add(new SectionModel { Intact = intact, Broken = broken });
+
+            Update<SectionsBakingSystem>();
+
+            CollectionAssert.AreEqual(new[] { building, intact }, Group(building));
+            CollectionAssert.AreEqual(new[] { broken }, Group(broken));
         }
 
         [Test]
@@ -186,12 +204,16 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
 
         private bool Drawn(Entity entity) => _em.IsComponentEnabled<MaterialMeshInfo>(entity);
 
-        private Entity Piece(float scale)
+        private Entity Piece(float scale, Entity building)
         {
-            var piece = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy), typeof(Prefab));
+            var piece = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
             _em.AddComponentData(piece, LocalTransform.FromScale(scale));
+            _em.AddComponentData(piece, new Parent { Value = building });
             return piece;
         }
+
+        private Entity[] Group(Entity root) =>
+            _em.GetBuffer<LinkedEntityGroup>(root).Reinterpret<Entity>().AsNativeArray().ToArray();
 
         private Entity Rendered(uint layers)
         {

@@ -14,7 +14,8 @@ namespace HyperRTS.Simulation.Destruction
     }
 
     /// <summary>
-    /// The models that show a <see cref="Section"/>, at the same index: standing, holed, breaking and broken.
+    /// The models that show a <see cref="Section"/>, at the same index: standing, holed, breaking and broken. All but
+    /// <see cref="Intact"/> bake as entity prefabs, copied in while they show (<see cref="SectionCopy"/>).
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct SectionModel : IBufferElementData
@@ -55,8 +56,8 @@ namespace HyperRTS.Simulation.Destruction
             return nearest.Index;
         }
 
-        /// <summary>Calls <paramref name="add"/> with every model that starts hidden, everything but <see cref="Intact"/>.</summary>
-        public readonly void ForEachHidden(Action<Entity> add)
+        /// <summary>Calls <paramref name="add"/> with every model baked as a prefab, everything but <see cref="Intact"/>.</summary>
+        public readonly void ForEachPrefab(Action<Entity> add)
         {
             Entity[] hidden = { Broken, Pieces, Stub, Heap, FirstHole.Model, SecondHole.Model, ThirdHole.Model };
             foreach (var model in hidden)
@@ -114,6 +115,16 @@ namespace HyperRTS.Simulation.Destruction
         public float BreakEnd;
 
         public static SectionLook Untouched => new() { ImpactTime = float.NegativeInfinity };
+    }
+
+    /// <summary>
+    /// A copy of a <see cref="SectionModel"/> prefab parented to the building while it shows; presentation keeps it.
+    /// </summary>
+    [InternalBufferCapacity(0)]
+    public struct SectionCopy : IBufferElementData
+    {
+        public Entity Model;
+        public Entity Copy;
     }
 
     /// <summary>The sections on screen; presentation keeps it, and scenery sync resets it for changes nobody saw.</summary>

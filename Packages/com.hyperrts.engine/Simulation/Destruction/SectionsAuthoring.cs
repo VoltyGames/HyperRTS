@@ -181,6 +181,7 @@ namespace HyperRTS.Simulation.Destruction
 
                 writer.AddBuffer(models);
                 writer.AddBuffer(looks);
+                writer.AddBuffer(new List<SectionCopy>());
                 writer.Add(new ShownSections { Effect = authoring.effect, DustWave = authoring.dustWave });
                 if (authoring.clips.IsSet)
                 {

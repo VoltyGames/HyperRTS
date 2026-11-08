@@ -1,90 +1,148 @@
-using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Rendering;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
-    /// Turns the section models, authored at scale 0 so editor views show the standing building, into full-size meshes hidden by
-    /// <see cref="HideReason.Section"/>, which <see cref="SectionViewSystem"/> then flips.
+    /// Turns every section model but the intact one, authored at scale 0 so editor views show the standing building,
+    /// into a full-size entity prefab that <see cref="SectionViewSystem"/> copies in while it shows. The building's
+    /// <see cref="LinkedEntityGroup"/> lists the rest of it, so it is destroyed whole with its copies.
     /// </summary>
+    // After the groups bake, so a prefab building's group can drop the section prefabs.
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
-    [UpdateAfter(typeof(HiddenByBakingSystem))]
+    [UpdateInGroup(typeof(PostBakingSystemGroup))]
     public partial struct SectionsBakingSystem : ISystem
     {
         private EntityQuery _buildings;
-        private EntityQuery _meshes;
+        private EntityQuery _parented;
 
         public void OnCreate(ref SystemState state)
         {
             const EntityQueryOptions options = EntityQueryOptions.IncludePrefab | EntityQueryOptions.IncludeDisabledEntities |
                                                EntityQueryOptions.IgnoreComponentEnabledState;
             _buildings = new EntityQueryBuilder(Allocator.Temp).WithAll<SectionModel>().WithOptions(options).Build(ref state);
-            _meshes = new EntityQueryBuilder(Allocator.Temp).WithAll<MaterialMeshInfo, HiddenBy>().WithOptions(options)
-                .Build(ref state);
+            _parented = new EntityQueryBuilder(Allocator.Temp).WithAll<Parent>().WithOptions(options).Build(ref state);
         }
 
         public void OnUpdate(ref SystemState state)
         {
             state.CompleteDependency();
-            var broken = ScaleUpBrokenPieces(ref state);
-            if (broken.IsEmpty)
+            using var buildings = _buildings.ToEntityArray(Allocator.Temp);
+            if (buildings.Length == 0)
             {
                 return;
             }
 
-            var parents = SystemAPI.GetComponentLookup<Parent>(true);
-            var em = state.EntityManager;
-            using var meshes = _meshes.ToEntityArray(Allocator.Temp);
-            foreach (var mesh in meshes)
-            {
-                if (IsUnder(mesh, broken, parents))
-                {
-                    var hidden = em.GetComponentData<HiddenBy>(mesh);
-                    hidden.Set(HideReason.Section, true);
-                    em.SetComponentData(mesh, hidden);
-                    em.SetComponentEnabled<MaterialMeshInfo>(mesh, false);
-                }
-            }
-        }
-
-        /// <summary>Sets every building's hidden section models back to full scale and returns them.</summary>
-        private NativeHashSet<Entity> ScaleUpBrokenPieces(ref SystemState state)
-        {
-            var transforms = SystemAPI.GetComponentLookup<LocalTransform>();
-            var pieces = new NativeHashSet<Entity>(64, Allocator.Temp);
-            using var buildings = _buildings.ToEntityArray(Allocator.Temp);
+            var owners = new NativeHashSet<Entity>(64, Allocator.Temp);
+            var models = new NativeHashSet<Entity>(64, Allocator.Temp);
             foreach (var building in buildings)
             {
+                owners.Add(building);
                 foreach (var model in state.EntityManager.GetBuffer<SectionModel>(building, true))
                 {
-                    model.ForEachHidden(hidden =>
+                    model.ForEachPrefab(prefab =>
                     {
-                        pieces.Add(hidden);
-                        transforms.GetRefRW(hidden).ValueRW.Scale = 1f;
+                        owners.Add(prefab);
+                        models.Add(prefab);
                     });
                 }
             }
 
-            return pieces;
-        }
-
-        private static bool IsUnder(Entity entity, NativeHashSet<Entity> branches, ComponentLookup<Parent> parents)
-        {
-            while (!branches.Contains(entity))
+            var members = Members(ref state, owners);
+            var prefabParts = new NativeHashSet<Entity>(members.Count(), Allocator.Temp);
+            foreach (var model in models)
             {
-                if (!parents.TryGetComponent(entity, out var parent))
+                prefabParts.Add(model);
+                foreach (var member in members.GetValuesForKey(model))
                 {
-                    return false;
+                    prefabParts.Add(member);
                 }
 
-                entity = parent.Value;
+                MakePrefab(ref state, model, members);
             }
 
-            return true;
+            foreach (var building in buildings)
+            {
+                Group(ref state, building, members, prefabParts);
+            }
+        }
+
+        /// <summary>Every entity under a building or section model, keyed by the nearest of them above it.</summary>
+        private NativeParallelMultiHashMap<Entity, Entity> Members(ref SystemState state, NativeHashSet<Entity> owners)
+        {
+            var parents = SystemAPI.GetComponentLookup<Parent>(true);
+            using var parented = _parented.ToEntityArray(Allocator.Temp);
+            var members = new NativeParallelMultiHashMap<Entity, Entity>(parented.Length, Allocator.Temp);
+            foreach (var entity in parented)
+            {
+                var owner = parents[entity].Value;
+                while (!owners.Contains(owner) && parents.TryGetComponent(owner, out var parent))
+                {
+                    owner = parent.Value;
+                }
+
+                if (owners.Contains(entity))
+                {
+                    continue;
+                }
+
+                if (owners.Contains(owner))
+                {
+                    members.Add(owner, entity);
+                }
+            }
+
+            return members;
+        }
+
+        private static void MakePrefab(ref SystemState state, Entity model, NativeParallelMultiHashMap<Entity, Entity> members)
+        {
+            var em = state.EntityManager;
+            var transform = em.GetComponentData<LocalTransform>(model);
+            transform.Scale = 1f;
+            em.SetComponentData(model, transform);
+
+            var group = new NativeList<Entity>(Allocator.Temp) { model };
+            foreach (var member in members.GetValuesForKey(model))
+            {
+                group.Add(member);
+            }
+
+            em.AddComponent<Prefab>(group.AsArray());
+            var linked = em.HasBuffer<LinkedEntityGroup>(model)
+                ? em.GetBuffer<LinkedEntityGroup>(model)
+                : em.AddBuffer<LinkedEntityGroup>(model);
+            linked.Clear();
+            linked.AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
+        }
+
+        // A building baked as a prefab already lists everything; a scene building gets a group of its own parts.
+        private static void Group(ref SystemState state, Entity building, NativeParallelMultiHashMap<Entity, Entity> members,
+            NativeHashSet<Entity> prefabParts)
+        {
+            var em = state.EntityManager;
+            if (!em.HasBuffer<LinkedEntityGroup>(building))
+            {
+                var group = new NativeList<Entity>(Allocator.Temp) { building };
+                foreach (var member in members.GetValuesForKey(building))
+                {
+                    group.Add(member);
+                }
+
+                em.AddBuffer<LinkedEntityGroup>(building).AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
+                return;
+            }
+
+            var linked = em.GetBuffer<LinkedEntityGroup>(building);
+            for (var i = linked.Length - 1; i > 0; i--)
+            {
+                if (prefabParts.Contains(linked[i].Value))
+                {
+                    linked.RemoveAt(i);
+                }
+            }
         }
     }
 }

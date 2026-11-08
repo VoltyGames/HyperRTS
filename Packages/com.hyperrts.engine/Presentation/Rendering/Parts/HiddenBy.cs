@@ -15,7 +15,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
         /// <summary>Not the damage or resource stage on screen.</summary>
         Stage = 1 << 2,
 
-        /// <summary>The intact model of a broken section, or the broken model of a standing one.</summary>
+        /// <summary>The intact model of a broken or holed section.</summary>
         Section = 1 << 3,
 
         /// <summary>A squad figure out of play.</summary>

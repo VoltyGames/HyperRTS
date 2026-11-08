@@ -15,7 +15,8 @@ namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
     /// Shows each <see cref="Section"/> standing, breaking or broken to match the building's broken mask. Breaks this
-    /// client saw play their clip, effect and debris; a loaded or unseen building shows the end state.
+    /// client saw play their clip, effect and debris; a loaded or unseen building shows the end state. The intact model
+    /// hides in place; the others are copied in from their prefabs while they show.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -55,6 +56,7 @@ namespace HyperRTS.Presentation.Destruction
             _switch.Update(ref CheckedStateRef);
             var impacts = SeenImpacts();
             var now = (float)SystemAPI.Time.ElapsedTime;
+            var copies = SectionCopies.Create();
             foreach (var (building, sections, models, looks, shown, place, entity) in SystemAPI
                          .Query<RefRO<SectionedBuilding>, DynamicBuffer<Section>, DynamicBuffer<SectionModel>,
                              DynamicBuffer<SectionLook>, RefRW<ShownSections>, RefRO<LocalToWorld>>().WithEntityAccess())
@@ -62,9 +64,12 @@ namespace HyperRTS.Presentation.Destruction
                 var context = new Context
                 {
                     Entity = entity, Sections = sections, Models = models, Looks = looks, Place = place.ValueRO, Now = now,
+                    Copies = copies,
                 };
                 Refresh(context, building.ValueRO.Broken, impacts, ref shown.ValueRW);
             }
+
+            copies.Apply(EntityManager);
         }
 
         private NativeList<float3> SeenImpacts()
@@ -183,13 +188,14 @@ namespace HyperRTS.Presentation.Destruction
             var wasBroken = (shown.Broken & bit) != 0ul;
             var look = at.Looks[index];
             var phase = isBroken ? Phase.Broken : Phase.Standing;
+            var clip = default(PlayingClip);
             if (quiet)
             {
                 look = SectionLook.Untouched;
             }
             else if (isBroken && !wasBroken)
             {
-                phase = Break(at, parts, index, ref look, shown);
+                phase = Break(at, index, ref look, shown, out clip);
             }
             else if (!isBroken && wasBroken)
             {
@@ -199,28 +205,22 @@ namespace HyperRTS.Presentation.Destruction
             shown.Breaking = phase == Phase.Breaking ? shown.Breaking | bit : shown.Breaking & ~bit;
             at.Looks[index] = look;
             var hangs = phase == Phase.Broken && at.Sections[index].Hangs(broken);
-            Display(parts, at.Models[index], look, phase, hangs);
+            Display(at, parts, at.Models[index], look, phase, hangs, clip);
         }
 
         /// <summary>Starts a seen break: its effect and debris, and the pieces' clip when it has them.</summary>
-        private Phase Break(Context at, NativeList<Entity> parts, int index, ref SectionLook look, in ShownSections shown)
+        private Phase Break(Context at, int index, ref SectionLook look, in ShownSections shown, out PlayingClip started)
         {
+            started = default;
             Play(at, shown, at.Sections[index]);
-            var model = at.Models[index];
-            if (!model.HasPieces || !SystemAPI.HasComponent<SectionClips>(at.Entity))
+            if (!at.Models[index].HasPieces || !SystemAPI.HasComponent<SectionClips>(at.Entity))
             {
                 return Phase.Broken;
             }
 
             var clip = Pick(SystemAPI.GetComponent<SectionClips>(at.Entity), at.Sections[index], look, at.Now);
             var range = new ClipRange { StartRow = clip.StartRow, FrameCount = clip.FrameCount, Fps = clip.Fps };
-            var meshes = new NativeList<Entity>(Allocator.Temp);
-            _switch.Under(parts, model.Pieces, meshes);
-            foreach (var mesh in meshes)
-            {
-                EntityManager.SetComponentData(mesh, PlayingClip.Started(range, at.Now));
-            }
-
+            started = PlayingClip.Started(range, at.Now);
             look.BreakEnd = at.Now + clip.Seconds;
             return Phase.Breaking;
         }
@@ -237,23 +237,29 @@ namespace HyperRTS.Presentation.Destruction
             return fromOutside ? clips.BlownIn : clips.BlownOut;
         }
 
-        private void Display(NativeList<Entity> parts, in SectionModel model, in SectionLook look, Phase phase, bool hangs)
+        private void Display(Context at, NativeList<Entity> parts, in SectionModel model, in SectionLook look, Phase phase,
+            bool hangs, PlayingClip clip)
         {
             var standing = phase == Phase.Standing;
-            Hide(parts, model.Intact, !standing || look.Hole != 0);
+            _switch.SetBranch(parts, model.Intact, HideReason.Section, !standing || look.Hole != 0);
             for (var i = 0; i < SectionModel.MostHoles; i++)
             {
-                Hide(parts, model.Hole(i).Model, !standing || look.Hole != i + 1);
+                at.Copies.Set(at.Entity, model.Hole(i).Model, standing && look.Hole == i + 1);
             }
 
-            Hide(parts, model.Pieces, phase != Phase.Breaking);
-            Hide(parts, model.Stub, standing || hangs);
-            Hide(parts, model.Heap, phase != Phase.Broken);
-            Hide(parts, model.Broken, standing);
-        }
+            if (phase == Phase.Breaking)
+            {
+                at.Copies.Play(at.Entity, model.Pieces, clip);
+            }
+            else
+            {
+                at.Copies.Set(at.Entity, model.Pieces, false);
+            }
 
-        private void Hide(NativeList<Entity> parts, Entity model, bool hide) =>
-            _switch.SetBranch(parts, model, HideReason.Section, hide);
+            at.Copies.Set(at.Entity, model.Stub, !standing && !hangs);
+            at.Copies.Set(at.Entity, model.Heap, phase == Phase.Broken);
+            at.Copies.Set(at.Entity, model.Broken, !standing);
+        }
 
         /// <summary>The building's break effect and debris from the section that broke, and a dust wave off the ground floor.</summary>
         private void Play(Context at, in ShownSections shown, in Section section)
@@ -287,6 +293,7 @@ namespace HyperRTS.Presentation.Destruction
             public DynamicBuffer<SectionLook> Looks;
             public LocalToWorld Place;
             public float Now;
+            public SectionCopies Copies;
         }
     }
 }
