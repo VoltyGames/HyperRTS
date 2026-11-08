@@ -22,6 +22,8 @@ build):
   a `supportHand` bone swings its gear about the socket in `bothHands` clips, so the support meets that hand.
 - `parts`: meshes to export. A node with a `socket` is gear carried by that socket's bone, so weapons are swappable
   meshes modelled about their grip, in the rig's own axes.
+- `meshLods`: Mesh LOD levels Unity generates below each part mesh, so one renderer per part draws near and far
+  without a LOD Group. They are index ranges over the same vertices, which the bone texture still finds.
 
 **Bake** with **Assets ▸ HyperRTS ▸ Bake Bone Animation Set** or the `bone bake [set]`
 [command](../editor/README.md#commands). It writes `Generated/` beside the set: a bone texture, a `BoneClipTable` and a

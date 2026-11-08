@@ -99,6 +99,10 @@ namespace HyperRTS.Editor.Animation
         [Min(1f)]
         public float fps = 30f;
 
+        [Tooltip("Mesh LOD levels Unity generates below each part mesh, drawn by its one renderer by screen size; 0 for none. The vertices stay, so the bone texture still finds them.")]
+        [Range(0, 8)]
+        public int meshLods;
+
         public string Folder => $"{Path.GetDirectoryName(AssetDatabase.GetAssetPath(this))}/{GeneratedFolder}".Replace('\\', '/');
 
         public string TexturePath => $"{Folder}/{name}_Bones.asset";
@@ -166,7 +170,13 @@ namespace HyperRTS.Editor.Animation
                 build = node => posed.AttachedMesh(model, node, socket.node);
             }
 
-            return BoneMesh.Merge(part.nodes.Select(build).ToList());
+            var mesh = BoneMesh.Merge(part.nodes.Select(build).ToList());
+            if (meshLods > 0)
+            {
+                MeshLodUtility.GenerateMeshLods(mesh, default, meshLods);
+            }
+
+            return mesh;
         }
 
         private BoneClipTable MakeTable(BoneRig posed, List<ClipFrames> plans, List<string> bones, Bounds bounds)
