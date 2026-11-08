@@ -19,7 +19,6 @@ namespace HyperRTS.Editor.Animation
     [HelpURL(HyperRTSDocs.Presentation)]
     public class RigidAnimationSet : ScriptableObject
     {
-        public const string GeneratedLabel = BoneAnimationSet.GeneratedLabel;
         private const int MaxRows = 16384;
         private const int MaxTextureSize = 16384;
 
@@ -108,11 +107,7 @@ namespace HyperRTS.Editor.Animation
                 importer.maxTextureSize = MaxTextureSize;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
             });
-            var labels = AssetDatabase.GetLabels(texture);
-            if (!labels.Contains(GeneratedLabel))
-            {
-                AssetDatabase.SetLabels(texture, labels.Append(GeneratedLabel).ToArray());
-            }
+            GeneratedAssets.Mark(texture);
 
             return texture;
         }

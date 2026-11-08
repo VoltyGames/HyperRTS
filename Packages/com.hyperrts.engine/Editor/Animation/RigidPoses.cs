@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Animation
                         Read(channels, "m_LocalPosition.x", time, node.localPosition.x),
                         Read(channels, "m_LocalPosition.y", time, node.localPosition.y),
                         Read(channels, "m_LocalPosition.z", time, node.localPosition.z));
-                    var rotation = Normalized(new Quaternion(
+                    var rotation = Quaternion.Normalize(new Quaternion(
                         Read(channels, "m_LocalRotation.x", time, node.localRotation.x),
                         Read(channels, "m_LocalRotation.y", time, node.localRotation.y),
                         Read(channels, "m_LocalRotation.z", time, node.localRotation.z),
@@ -170,11 +170,5 @@ namespace HyperRTS.Editor.Animation
 
         private static float Read(Dictionary<string, AnimationCurve> channels, string property, float time, float rest) =>
             channels != null && channels.TryGetValue(property, out var curve) ? curve.Evaluate(time) : rest;
-
-        private static Quaternion Normalized(Quaternion q)
-        {
-            var length = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
-            return length > 0f ? new Quaternion(q.x / length, q.y / length, q.z / length, q.w / length) : Quaternion.identity;
-        }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
@@ -20,7 +21,6 @@ namespace HyperRTS.Editor.Animation
     public class BoneAnimationSet : ScriptableObject
     {
         public const string GeneratedFolder = "Generated";
-        public const string GeneratedLabel = "Generated";
         private const int MaxFrames = 16384;
 
         [Serializable]
@@ -238,11 +238,7 @@ namespace HyperRTS.Editor.Animation
                 asset = AssetDatabase.LoadMainAssetAtPath(path);
             }
 
-            var labels = AssetDatabase.GetLabels(asset);
-            if (!labels.Contains(GeneratedLabel))
-            {
-                AssetDatabase.SetLabels(asset, labels.Append(GeneratedLabel).ToArray());
-            }
+            GeneratedAssets.Mark(asset);
 
             return path;
         }
