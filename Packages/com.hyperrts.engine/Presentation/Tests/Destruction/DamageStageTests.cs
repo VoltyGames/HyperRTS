@@ -154,18 +154,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             return model;
         }
 
-        private Entity Copy(Entity tree, Entity model)
-        {
-            foreach (var copy in _em.GetBuffer<ModelCopy>(tree))
-            {
-                if (copy.Model == model)
-                {
-                    return copy.Copy;
-                }
-            }
-
-            return Entity.Null;
-        }
+        private Entity Copy(Entity tree, Entity model) => ModelCopies.Find(_em, tree, model);
 
         private void SetHealth(Entity tree, float current)
         {

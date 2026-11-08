@@ -41,7 +41,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
             foreach (var change in _changes)
             {
                 var copies = em.GetBuffer<ModelCopy>(change.Root);
-                var index = Find(copies, change.Model);
+                var index = CopyIndex(copies, change.Model);
                 if (change.Show == index >= 0)
                 {
                     continue;
@@ -195,7 +195,15 @@ namespace HyperRTS.Presentation.Rendering.Parts
             em.DestroyEntity(copy);
         }
 
-        private static int Find(DynamicBuffer<ModelCopy> copies, Entity model)
+        /// <summary>The copy of <paramref name="model"/> showing in <paramref name="root"/>, or none.</summary>
+        public static Entity Find(EntityManager em, Entity root, Entity model)
+        {
+            var copies = em.GetBuffer<ModelCopy>(root, true);
+            var index = CopyIndex(copies, model);
+            return index >= 0 ? copies[index].Copy : Entity.Null;
+        }
+
+        private static int CopyIndex(DynamicBuffer<ModelCopy> copies, Entity model)
         {
             for (var i = 0; i < copies.Length; i++)
             {

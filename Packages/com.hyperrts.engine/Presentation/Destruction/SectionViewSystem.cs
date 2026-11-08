@@ -188,14 +188,13 @@ namespace HyperRTS.Presentation.Destruction
             var wasBroken = (shown.Broken & bit) != 0ul;
             var look = at.Looks[index];
             var phase = isBroken ? Phase.Broken : Phase.Standing;
-            var clip = default(PlayingClip);
             if (quiet)
             {
                 look = SectionLook.Untouched;
             }
             else if (isBroken && !wasBroken)
             {
-                phase = Break(at, index, ref look, shown, out clip);
+                phase = Break(at, index, ref look, shown);
             }
             else if (!isBroken && wasBroken)
             {
@@ -205,13 +204,12 @@ namespace HyperRTS.Presentation.Destruction
             shown.Breaking = phase == Phase.Breaking ? shown.Breaking | bit : shown.Breaking & ~bit;
             at.Looks[index] = look;
             var hangs = phase == Phase.Broken && at.Sections[index].Hangs(broken);
-            Display(at, parts, at.Models[index], look, phase, hangs, clip);
+            Display(at, parts, at.Models[index], look, phase, hangs);
         }
 
         /// <summary>Starts a seen break: its effect and debris, and the pieces' clip when it has them.</summary>
-        private Phase Break(Context at, int index, ref SectionLook look, in ShownSections shown, out PlayingClip started)
+        private Phase Break(Context at, int index, ref SectionLook look, in ShownSections shown)
         {
-            started = default;
             Play(at, shown, at.Sections[index]);
             if (!at.Models[index].HasPieces || !SystemAPI.HasComponent<SectionClips>(at.Entity))
             {
@@ -220,7 +218,7 @@ namespace HyperRTS.Presentation.Destruction
 
             var clip = Pick(SystemAPI.GetComponent<SectionClips>(at.Entity), at.Sections[index], look, at.Now);
             var range = new ClipRange { StartRow = clip.StartRow, FrameCount = clip.FrameCount, Fps = clip.Fps };
-            started = PlayingClip.Started(range, at.Now);
+            at.Copies.Play(at.Entity, at.Models[index].Pieces, PlayingClip.Started(range, at.Now));
             look.BreakEnd = at.Now + clip.Seconds;
             return Phase.Breaking;
         }
@@ -238,7 +236,7 @@ namespace HyperRTS.Presentation.Destruction
         }
 
         private void Display(Context at, NativeList<Entity> parts, in SectionModel model, in SectionLook look, Phase phase,
-            bool hangs, PlayingClip clip)
+            bool hangs)
         {
             var standing = phase == Phase.Standing;
             _switch.SetBranch(parts, model.Intact, HideReason.Section, !standing || look.Hole != 0);
@@ -247,14 +245,8 @@ namespace HyperRTS.Presentation.Destruction
                 at.Copies.Set(at.Entity, model.Hole(i).Model, standing && look.Hole == i + 1);
             }
 
-            if (phase == Phase.Breaking)
-            {
-                at.Copies.Play(at.Entity, model.Pieces, clip);
-            }
-            else
-            {
-                at.Copies.Set(at.Entity, model.Pieces, false);
-            }
+            // A break started its pieces playing already, so this keeps them.
+            at.Copies.Set(at.Entity, model.Pieces, phase == Phase.Breaking);
 
             at.Copies.Set(at.Entity, model.Stub, !standing && !hangs);
             at.Copies.Set(at.Entity, model.Heap, phase == Phase.Broken);

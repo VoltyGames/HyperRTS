@@ -59,8 +59,8 @@ namespace HyperRTS.Simulation.Destruction
         /// <summary>Calls <paramref name="add"/> with every model baked as a prefab, everything but <see cref="Intact"/>.</summary>
         public readonly void ForEachPrefab(Action<Entity> add)
         {
-            Entity[] hidden = { Broken, Pieces, Stub, Heap, FirstHole.Model, SecondHole.Model, ThirdHole.Model };
-            foreach (var model in hidden)
+            Entity[] prefabs = { Broken, Pieces, Stub, Heap, FirstHole.Model, SecondHole.Model, ThirdHole.Model };
+            foreach (var model in prefabs)
             {
                 if (model != Entity.Null)
                 {

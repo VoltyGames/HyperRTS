@@ -166,18 +166,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         // The copy of a prefab model showing on the house, or none.
-        protected Entity Copy(Entity model)
-        {
-            foreach (var copy in _em.GetBuffer<ModelCopy>(_house))
-            {
-                if (copy.Model == model)
-                {
-                    return copy.Copy;
-                }
-            }
-
-            return Entity.Null;
-        }
+        protected Entity Copy(Entity model) => ModelCopies.Find(_em, _house, model);
 
         protected void SetBroken(Entity house, ulong broken) =>
             _em.SetComponentData(house, new SectionedBuilding { Broken = broken });

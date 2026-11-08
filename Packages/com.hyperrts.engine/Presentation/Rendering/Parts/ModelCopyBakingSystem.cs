@@ -78,15 +78,9 @@ namespace HyperRTS.Presentation.Rendering.Parts
             var em = state.EntityManager;
             if (em.HasBuffer<SectionModel>(root))
             {
-                var found = new NativeList<Entity>(Allocator.Temp);
                 foreach (var model in em.GetBuffer<SectionModel>(root, true))
                 {
-                    model.ForEachPrefab(prefab => found.Add(prefab));
-                }
-
-                foreach (var model in found)
-                {
-                    models.Add(model);
+                    model.ForEachPrefab(prefab => models.Add(prefab));
                 }
             }
 
@@ -111,15 +105,15 @@ namespace HyperRTS.Presentation.Rendering.Parts
             var members = new NativeParallelMultiHashMap<Entity, Entity>(parented.Length, Allocator.Temp);
             foreach (var entity in parented)
             {
+                if (owners.Contains(entity))
+                {
+                    continue;
+                }
+
                 var owner = parents[entity].Value;
                 while (!owners.Contains(owner) && parents.TryGetComponent(owner, out var parent))
                 {
                     owner = parent.Value;
-                }
-
-                if (owners.Contains(entity))
-                {
-                    continue;
                 }
 
                 if (owners.Contains(owner))
@@ -141,18 +135,24 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 em.SetComponentData(model, transform);
             }
 
-            var group = new NativeList<Entity>(Allocator.Temp) { model };
-            foreach (var member in members.GetValuesForKey(model))
-            {
-                group.Add(member);
-            }
-
+            var group = OwnGroup(model, members);
             em.AddComponent<Prefab>(group.AsArray());
             var linked = em.HasBuffer<LinkedEntityGroup>(model)
                 ? em.GetBuffer<LinkedEntityGroup>(model)
                 : em.AddBuffer<LinkedEntityGroup>(model);
             linked.Clear();
             linked.AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
+        }
+
+        private static NativeList<Entity> OwnGroup(Entity owner, NativeParallelMultiHashMap<Entity, Entity> members)
+        {
+            var group = new NativeList<Entity>(Allocator.Temp) { owner };
+            foreach (var member in members.GetValuesForKey(owner))
+            {
+                group.Add(member);
+            }
+
+            return group;
         }
 
         // A root baked as a prefab already lists everything; a SubScene root gets a group of its own parts.
@@ -162,12 +162,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
             var em = state.EntityManager;
             if (!em.HasBuffer<LinkedEntityGroup>(root))
             {
-                var group = new NativeList<Entity>(Allocator.Temp) { root };
-                foreach (var member in members.GetValuesForKey(root))
-                {
-                    group.Add(member);
-                }
-
+                var group = OwnGroup(root, members);
                 em.AddBuffer<LinkedEntityGroup>(root).AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
                 return;
             }
