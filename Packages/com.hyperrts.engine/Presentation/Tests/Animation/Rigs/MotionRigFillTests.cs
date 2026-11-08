@@ -196,12 +196,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         [Test]
         public void FillFromModel_TiltsAModelWithNoMovingParts()
         {
-            var model = Pivot("Model", _unit.transform);
+            var model = Pivot("Model", _unit.transform, new Vector3(50f, 3f, 20f));
             Pivot("Exhaust_01", model);
-            var hull = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-            hull.name = "Hull_LOD0";
-            hull.SetParent(model, false);
-            hull.localScale = new Vector3(50f, 3f, 20f);
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
             rig.FillFromModel();
@@ -253,26 +249,37 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             Assert.AreEqual(new[] { other }, rig.tracks.Single(slot => slot.part == damagedTrack).wheels.ToArray(), "each model's track keeps to its own wheels");
             Assert.IsFalse(rig.wheels.Single(slot => slot.part == sprocket).followsGround);
             Assert.IsTrue(rig.wheels.Where(slot => slot.part != sprocket).All(slot => slot.followsGround));
-            Assert.IsTrue(track.GetChild(0).TryGetComponent<TrackMeshAuthoring>(out _), "the mesh gets what the shader needs");
+            Assert.IsTrue(track.TryGetComponent<TrackMeshAuthoring>(out _), "the track's mesh gets what the shader needs");
 
             rig.tracks[0].wheels.Clear();
             Assert.That(rig.Problems(), Has.Some.Contain("has no wheels"));
         }
 
-        // A pivot with a cube mesh child of the given size, or an empty one.
+        // A part carrying a box mesh of the given size, as the art exports it, or an empty pivot.
         private static Transform Pivot(string name, Transform parent, Vector3 meshSize = default)
         {
             var pivot = new GameObject(name).transform;
             pivot.SetParent(parent, false);
             if (meshSize != default)
             {
-                var mesh = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
-                mesh.name = name + "_LOD0";
-                mesh.SetParent(pivot, false);
-                mesh.localScale = meshSize;
+                var box = new Mesh { vertices = Corners(meshSize * 0.5f), triangles = new[] { 0, 1, 2 } };
+                box.RecalculateBounds();
+                pivot.gameObject.AddComponent<MeshFilter>().sharedMesh = box;
+                pivot.gameObject.AddComponent<MeshRenderer>();
             }
 
             return pivot;
+        }
+
+        private static Vector3[] Corners(Vector3 half)
+        {
+            var corners = new Vector3[8];
+            for (var i = 0; i < 8; i++)
+            {
+                corners[i] = Vector3.Scale(half, new Vector3((i & 1) * 2 - 1, ((i >> 1) & 1) * 2 - 1, ((i >> 2) & 1) * 2 - 1));
+            }
+
+            return corners;
         }
 
         private static Transform Wheel(string name, Transform hull, float x, float z)

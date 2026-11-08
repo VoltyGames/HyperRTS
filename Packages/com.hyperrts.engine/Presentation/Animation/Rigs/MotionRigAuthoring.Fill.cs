@@ -99,9 +99,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 part = part,
                 wheels = RoadWheels(part).ToList(),
             }).ToList();
-            foreach (var mesh in tracks.SelectMany(track => track.Meshes()).Where(mesh => !mesh.TryGetComponent<TrackMeshAuthoring>(out _)))
+            foreach (var track in tracks.Where(track => !track.part.TryGetComponent<TrackMeshAuthoring>(out _)))
             {
-                mesh.gameObject.AddComponent<TrackMeshAuthoring>();
+                track.part.gameObject.AddComponent<TrackMeshAuthoring>();
             }
         }
 

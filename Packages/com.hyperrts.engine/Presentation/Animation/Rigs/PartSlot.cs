@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Unity.Entities;
 using UnityEngine;
 
@@ -26,28 +25,21 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>The part's runtime entry; directions are measured against the <paramref name="rig"/> root.</summary>
         public abstract MotionRigPart Bake(Transform rig, Entity entity);
 
-        /// <summary>
-        /// Bounds of the pivot's own meshes (its LOD children, not child pivots) in <paramref name="space"/>'s frame.
-        /// </summary>
-        public static Bounds MeshBounds(Transform pivot, Transform space)
+        /// <summary>Bounds of the part's own mesh (not its child parts) in <paramref name="space"/>'s frame.</summary>
+        public static Bounds MeshBounds(Transform part, Transform space)
         {
-            var filters = pivot.Cast<Transform>().Select(child => child.GetComponent<MeshFilter>())
-                .Where(filter => filter != null).ToArray();
-            if (filters.Length == 0)
+            if (!part.TryGetComponent<MeshFilter>(out var filter))
             {
-                throw new InvalidOperationException($"'{pivot.name}' has no mesh to measure.");
+                throw new InvalidOperationException($"'{part.name}' has no mesh to measure: a part carries its own mesh.");
             }
 
-            var bounds = new Bounds(space.InverseTransformPoint(filters[0].transform.position), Vector3.zero);
-            foreach (var filter in filters)
+            var toSpace = space.worldToLocalMatrix * part.localToWorldMatrix;
+            var mesh = filter.sharedMesh.bounds;
+            var bounds = new Bounds(toSpace.MultiplyPoint3x4(mesh.center), Vector3.zero);
+            for (var corner = 0; corner < 8; corner++)
             {
-                var toSpace = space.worldToLocalMatrix * filter.transform.localToWorldMatrix;
-                var mesh = filter.sharedMesh.bounds;
-                for (var corner = 0; corner < 8; corner++)
-                {
-                    var sign = new Vector3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1) * 2f - Vector3.one;
-                    bounds.Encapsulate(toSpace.MultiplyPoint3x4(mesh.center + Vector3.Scale(mesh.extents, sign)));
-                }
+                var sign = new Vector3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1) * 2f - Vector3.one;
+                bounds.Encapsulate(toSpace.MultiplyPoint3x4(mesh.center + Vector3.Scale(mesh.extents, sign)));
             }
 
             return bounds;

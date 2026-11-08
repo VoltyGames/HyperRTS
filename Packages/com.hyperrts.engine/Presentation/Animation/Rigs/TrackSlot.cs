@@ -7,20 +7,16 @@ namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>
     /// A track whose lower run bends over the lift of its road wheels. The wheels must be in the rig's wheel list, and
-    /// each mesh of the track needs a <see cref="TrackMeshAuthoring"/>.
+    /// the track's mesh needs a <see cref="TrackMeshAuthoring"/>.
     /// </summary>
     [Serializable]
     public class TrackSlot
     {
-        [Tooltip("The track pivot, whose LOD children are its meshes.")]
+        [Tooltip("The track part, which carries its own mesh.")]
         public Transform part;
 
         [Tooltip("The road wheels the track runs over, in the rig's wheel list; Fill from model pairs Track_L with Wheel_L.")]
         public List<Transform> wheels = new();
-
-        /// <summary>The track's meshes: its children with a mesh.</summary>
-        public IEnumerable<Transform> Meshes() =>
-            part.Cast<Transform>().Where(child => child.TryGetComponent<MeshFilter>(out _));
 
         /// <summary>Why this track can't bake on <paramref name="rig"/>, or null when it can.</summary>
         public string Problem(MotionRigAuthoring rig)
@@ -50,22 +46,19 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         private string MeshProblem(MotionRigAuthoring rig)
         {
-            foreach (var mesh in Meshes())
+            if (!part.TryGetComponent<MeshFilter>(out _))
             {
-                if (!mesh.TryGetComponent<TrackMeshAuthoring>(out _))
-                {
-                    return $"Track mesh '{mesh.name}' has no Track Mesh component; Fill from model adds it.";
-                }
-
-                var turned = Quaternion.Angle(mesh.rotation, rig.transform.rotation) > 1f;
-                var scaled = Vector3.Distance(mesh.lossyScale, rig.transform.lossyScale) > 0.01f;
-                if (turned || scaled)
-                {
-                    return $"Track mesh '{mesh.name}' must be unrotated and unscaled against '{rig.name}'.";
-                }
+                return $"Track '{part.name}' has no mesh.";
             }
 
-            return Meshes().Any() ? null : $"Track '{part.name}' has no mesh.";
+            if (!part.TryGetComponent<TrackMeshAuthoring>(out _))
+            {
+                return $"Track '{part.name}' has no Track Mesh component; Fill from model adds it.";
+            }
+
+            var turned = Quaternion.Angle(part.rotation, rig.transform.rotation) > 1f;
+            var scaled = Vector3.Distance(part.lossyScale, rig.transform.lossyScale) > 0.01f;
+            return turned || scaled ? $"Track '{part.name}' must be unrotated and unscaled against '{rig.name}'." : null;
         }
 
         /// <summary>
@@ -81,15 +74,15 @@ namespace HyperRTS.Presentation.Animation.Rigs
         }
 
         /// <summary>
-        /// The <c>_TrackSpan</c> in <paramref name="mesh"/>'s object space: front z, back z, the wheels' mean axle
-        /// height and mean radius.
+        /// The <c>_TrackSpan</c> in the track mesh's object space: front z, back z, the wheels' mean axle height and
+        /// mean radius.
         /// </summary>
-        public Vector4 Span(MotionRigAuthoring rig, Transform mesh)
+        public Vector4 Span(MotionRigAuthoring rig)
         {
             var bounds = PartSlot.MeshBounds(part, rig.transform);
             var axle = wheels.Average(wheel => rig.transform.InverseTransformPoint(wheel.position).y);
             var radius = rig.wheels.Where(slot => wheels.Contains(slot.part)).Average(slot => slot.radius);
-            Vector3 ToMesh(float height, float z) => mesh.InverseTransformPoint(rig.transform.TransformPoint(new Vector3(0f, height, z)));
+            Vector3 ToMesh(float height, float z) => part.InverseTransformPoint(rig.transform.TransformPoint(new Vector3(0f, height, z)));
             var level = ToMesh(axle, 0f).y;
             return new Vector4(ToMesh(axle, bounds.max.z).z, ToMesh(axle, bounds.min.z).z, level, ToMesh(axle + radius, 0f).y - level);
         }

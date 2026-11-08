@@ -209,12 +209,12 @@ namespace HyperRTS.Presentation.Animation.Rigs
                         Part = slots.FindIndex(slot => slot.part == placed.Wheel),
                         Station = placed.Station,
                     }));
-                    tracks.AddRange(track.Meshes().Select(mesh => new MotionRigTrack
+                    tracks.Add(new MotionRigTrack
                     {
-                        Mesh = GetEntity(mesh, TransformUsageFlags.Renderable),
+                        Mesh = GetEntity(track.part, TransformUsageFlags.Renderable),
                         FirstWheel = first,
                         WheelCount = wheels.Count - first,
-                    }));
+                    });
                 }
 
                 AddTracks(writer, tracks, wheels);

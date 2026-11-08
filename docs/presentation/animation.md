@@ -64,7 +64,8 @@ without `FlightAuthoring`, fails the bake.
 
 ## Motion rig
 
-`MotionRigAuthoring` on a unit or building root moves the model's pivots on the client. Its slots list turrets, barrels
+`MotionRigAuthoring` on a unit or building root moves the model's parts on the client; each part is one mesh whose
+origin is its pivot. Its slots list turrets, barrels
 and launchers that ease onto a `WeaponPose` index, wheels, rotors, and a tilt root (the hull) that follows the ground.
 Traverse and elevation limits are weapon data; the rig only smooths the simulated pose.
 
@@ -73,7 +74,7 @@ Traverse and elevation limits are weapon data; the rig only smooths the simulate
 `MotionRigRule` checks every slot names a child and a weapon the unit has.
 
 Road wheels (`Wheel_` parts, `followsGround`) lift to the terrain under them. Tracks bend with them through a
-`TrackMeshAuthoring` on each track mesh. Track meshes must sit unrotated and unscaled against the rig.
+`TrackMeshAuthoring` on each track part, which must sit unrotated and unscaled against the rig.
 
 ## Squad figures
 

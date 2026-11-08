@@ -7,8 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>
-    /// A mesh of a track in a <see cref="MotionRigAuthoring"/>, which gets the properties the shader bends it with.
-    /// Fill from model adds it to each mesh of a track.
+    /// A track part of a <see cref="MotionRigAuthoring"/>, whose mesh gets the properties the shader bends it with.
+    /// Fill from model adds it to each track.
     /// </summary>
     [AddComponentMenu("")]
     [Icon(HyperRTSIcons.TrackMeshAuthoring)]
@@ -21,10 +21,10 @@ namespace HyperRTS.Presentation.Animation.Rigs
             public override void Bake(TrackMeshAuthoring authoring)
             {
                 var rig = GetComponentInParent<MotionRigAuthoring>();
-                var track = rig == null ? null : rig.tracks.FirstOrDefault(slot => slot.part == authoring.transform.parent);
+                var track = rig == null ? null : rig.tracks.FirstOrDefault(slot => slot.part == authoring.transform);
                 if (track == null)
                 {
-                    throw new InvalidOperationException($"Track Mesh '{authoring.name}' is not a mesh of a track in a Motion Rig.");
+                    throw new InvalidOperationException($"Track Mesh '{authoring.name}' is not a track part in a Motion Rig.");
                 }
 
                 DependsOn(track.part);
@@ -34,7 +34,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 }
 
                 var entity = GetEntity(TransformUsageFlags.Renderable);
-                AddComponent(entity, new TrackSpan { Value = track.Span(rig, authoring.transform) });
+                AddComponent(entity, new TrackSpan { Value = track.Span(rig) });
                 AddComponent<TrackLift0>(entity);
                 AddComponent<TrackLift1>(entity);
             }
