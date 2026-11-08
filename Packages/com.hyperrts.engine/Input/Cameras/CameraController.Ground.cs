@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Heights;
-using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -47,12 +46,7 @@ namespace HyperRTS.Input.Cameras
         /// <summary>The match's baked terrain; the default (flat y = 0) before a world or terrain exists.</summary>
         private TerrainHeight MatchTerrain()
         {
-            if (!DefaultWorld.TryGetEntityManager(out var entityManager))
-            {
-                return default;
-            }
-
-            _terrain.TryGet(entityManager, out var terrain);
+            _terrain.TryGetInDefaultWorld(out var terrain);
             return terrain;
         }
 

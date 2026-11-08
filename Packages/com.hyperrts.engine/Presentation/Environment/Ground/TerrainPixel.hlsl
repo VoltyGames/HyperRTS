@@ -2,6 +2,8 @@
 #ifndef HYPERRTS_TERRAIN_PIXEL_INCLUDED
 #define HYPERRTS_TERRAIN_PIXEL_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/Triplanar.hlsl"
+
 struct TerrainPixel
 {
     float2 xz;
@@ -31,8 +33,7 @@ float2 RowTurn(float2 uv)
 // Sharpened triplanar weights, faded in from _TriplanarStart degrees of slope, so gentle ground stays top-projected.
 void SideShares(inout TerrainPixel pixel, half3 normalWS)
 {
-    half3 weights = pow(abs(normalWS), 4.0);
-    weights /= weights.x + weights.y + weights.z;
+    half3 weights = TriplanarWeights(normalWS);
     half slope = degrees(acos(saturate(normalWS.y)));
     half steep = saturate((slope - _TriplanarStart) / (_TriplanarFull - _TriplanarStart));
     half sides = weights.x + weights.z;

@@ -225,15 +225,8 @@ namespace HyperRTS.Input.Cameras
             ShareTreeFade();
         }
 
-        private Vector3 ClampToMap(Vector3 point)
-        {
-            if (!DefaultWorld.TryGetEntityManager(out var entityManager))
-            {
-                return point;
-            }
-
-            return _map.TryGet(entityManager, out var map) ? (Vector3)map.Clamp(point) : point;
-        }
+        private Vector3 ClampToMap(Vector3 point) =>
+            _map.TryGetInDefaultWorld(out var map) ? (Vector3)map.Clamp(point) : point;
 
         /// <summary>
         /// The local player's base, searched for over <see cref="homeSearchSeconds"/> when <see cref="startAtHome"/>

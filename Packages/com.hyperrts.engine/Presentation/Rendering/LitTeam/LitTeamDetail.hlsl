@@ -4,6 +4,8 @@
 #ifndef HYPERRTS_LIT_TEAM_DETAIL_INCLUDED
 #define HYPERRTS_LIT_TEAM_DETAIL_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/Triplanar.hlsl"
+
 TEXTURE2D(_DetailAlbedo);   SAMPLER(sampler_DetailAlbedo);
 TEXTURE2D(_DetailNormal);   SAMPLER(sampler_DetailNormal);
 
@@ -37,10 +39,7 @@ void ApplyDetail(float3 positionWS, float3 normalWS, float4 tangentWS, inout Sur
         return;
     }
 
-    float3 sides = abs(TransformWorldToObjectNormal(normalWS));
-    float3 blend = sides * sides;
-    blend *= blend;
-    blend /= blend.x + blend.y + blend.z;
+    float3 blend = TriplanarWeights(TransformWorldToObjectNormal(normalWS));
 
     // Overlay around grey: 0.5 as authored leaves the albedo as it is. The map imports as sRGB colour, so undo the decode.
     half3 grain = LinearToSRGB(SampleDetailAlbedo(p, dx, dy, blend));

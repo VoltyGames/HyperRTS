@@ -13,6 +13,13 @@ namespace HyperRTS.Presentation.Common
         public bool TryGet(EntityManager entityManager, out T value) =>
             _query.In(entityManager).TryGetSingleton(out value);
 
+        /// <summary>The singleton of <see cref="DefaultWorld"/>; false, with the default, before that world or it exists.</summary>
+        public bool TryGetInDefaultWorld(out T value)
+        {
+            value = default;
+            return DefaultWorld.TryGetEntityManager(out var entityManager) && TryGet(entityManager, out value);
+        }
+
         /// <summary>The singleton; throws when the world has none.</summary>
         public T Get(EntityManager entityManager) => _query.In(entityManager).GetSingleton<T>();
 

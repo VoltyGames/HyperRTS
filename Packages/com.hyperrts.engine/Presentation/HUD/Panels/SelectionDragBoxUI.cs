@@ -2,7 +2,6 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common.Authoring;
-using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -50,12 +49,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         }
 
         // False until a world with the singleton exists (edit mode, headless server).
-        private bool TryGetDragState(out SelectionDragState state)
-        {
-            state = default;
-            return DefaultWorld.TryGetEntityManager(out var entityManager)
-                && _drag.TryGet(entityManager, out state);
-        }
+        private bool TryGetDragState(out SelectionDragState state) => _drag.TryGetInDefaultWorld(out state);
 
         // Input reports bottom-left screen pixels; panels are top-left and may be scaled.
         private static Rect ScreenToPanelRect(IPanel panel, float2 a, float2 b)
