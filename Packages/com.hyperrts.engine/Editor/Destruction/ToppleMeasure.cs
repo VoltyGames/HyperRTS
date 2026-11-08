@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Destruction
             topple.trunk = top;
         }
 
-        /// <summary>From the origin of <paramref name="root"/> to the top of the LOD0 faces drawn with <paramref name="trunk"/>.</summary>
+        /// <summary>From the origin of <paramref name="root"/> to the top of the full-detail faces drawn with <paramref name="trunk"/>.</summary>
         public static Vector3 Trunk(Transform root, LODGroup model, Material trunk)
         {
             var points = new List<Vector3>();
@@ -120,6 +120,7 @@ namespace HyperRTS.Editor.Destruction
             var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
             var vertices = mesh.vertices;
             var materials = renderer.sharedMaterials;
+            var levels = new List<MeshLodRange>();
             for (var sub = 0; sub < mesh.subMeshCount; sub++)
             {
                 if (material != null && materials[sub] != material)
@@ -127,9 +128,20 @@ namespace HyperRTS.Editor.Destruction
                     continue;
                 }
 
-                foreach (var index in mesh.GetIndices(sub))
+                // A mesh with Mesh LOD levels keeps them all in one sub-mesh; only the first is the full model.
+                var indices = mesh.GetIndices(sub);
+                var start = 0;
+                var count = indices.Length;
+                if (mesh.lodCount > 1)
                 {
-                    into.Add(root.InverseTransformPoint(renderer.transform.TransformPoint(vertices[index])));
+                    mesh.GetLods(levels, sub);
+                    start = (int)levels[0].indexStart;
+                    count = (int)levels[0].indexCount;
+                }
+
+                for (var i = start; i < start + count; i++)
+                {
+                    into.Add(root.InverseTransformPoint(renderer.transform.TransformPoint(vertices[indices[i]])));
                 }
             }
         }
