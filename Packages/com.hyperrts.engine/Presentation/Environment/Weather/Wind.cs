@@ -1,6 +1,5 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common.Authoring;
-using Unity.Entities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -38,8 +37,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         private WindZone _zone;
         private Texture2D _gustMap;
         private Vector2 _gustOffset;
-        private World _world;
-        private Entity _state;
+        private readonly SceneSingleton<WindState> _state = new();
 
         private void OnEnable()
         {
@@ -55,7 +53,7 @@ namespace HyperRTS.Presentation.Environment.Weather
             var last = _gustOffset;
             _gustOffset = GustField.Scroll(_gustOffset, new Vector2(downwind.x, downwind.z), _zone.windPulseFrequency, Time.deltaTime);
 
-            Publish(new WindState { Downwind = downwind, Strength = _zone.windMain });
+            _state.Write(new WindState { Downwind = downwind, Strength = _zone.windMain });
             Shader.SetGlobalVector(DirectionId, downwind);
             Shader.SetGlobalFloat(StrengthId, _zone.windMain);
             Shader.SetGlobalVector(GustId, new Vector4(_zone.windPulseMagnitude, _zone.windTurbulence, 1f / gustSize, 0f));
@@ -65,7 +63,8 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         protected override void OnDisabled()
         {
-            Unpublish();
+            // Removed rather than zeroed, so readers see still air by the singleton being absent.
+            _state.Remove();
             Shader.SetGlobalFloat(StrengthId, 0f);
             Shader.SetGlobalTexture(GustMapId, Texture2D.blackTexture);
             Shader.SetGlobalFloat(DetailId, (float)WindDetail.None);
@@ -75,35 +74,5 @@ namespace HyperRTS.Presentation.Environment.Weather
         // Shader globals outlive Play mode in the editor.
         [OnEnteringPlayMode]
         private static void Reset() => Shader.SetGlobalFloat(StrengthId, 0f);
-
-        // Retried every frame: the world may not exist yet, or may be a new one.
-        private void Publish(in WindState wind)
-        {
-            if (!MatchView.TryGetDefault(out var view))
-            {
-                return;
-            }
-
-            var manager = view.EntityManager;
-            if (_world != manager.World || !manager.Exists(_state))
-            {
-                _world = manager.World;
-                _state = manager.CreateEntity(typeof(WindState));
-            }
-
-            manager.SetComponentData(_state, wind);
-        }
-
-        // Destroyed rather than zeroed, so readers see still air by the singleton being absent.
-        private void Unpublish()
-        {
-            if (_world is { IsCreated: true } && _world.EntityManager.Exists(_state))
-            {
-                _world.EntityManager.DestroyEntity(_state);
-            }
-
-            _world = null;
-            _state = Entity.Null;
-        }
     }
 }

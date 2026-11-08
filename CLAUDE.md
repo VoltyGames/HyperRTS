@@ -49,6 +49,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 - Structural changes go through an `EntityCommandBuffer`, from jobs through `EndSimulationEntityCommandBufferSystem`.
   `ecb.CreateEntity` returns the real entity at record time.
 - Systems take time from `SystemAPI.Time`, never `UnityEngine.Time`; UI and MonoBehaviours may.
+- Gameplay stays in ECS; GameObjects only show it. A MonoBehaviour reads the match through `MatchView` or
+  `LiveSingleton<T>` and hands data to systems through `SceneSingleton<T>`.
 - Input System only, never `UnityEngine.Input`.
 - UI is UI Toolkit everywhere, in UXML beside its script (`MapGallery.uxml` beside `MapGallery.cs`). Code only looks
   elements up, wires them and builds rows from templates or Painter2D. No IMGUI; uGUI only where Animation Clips or

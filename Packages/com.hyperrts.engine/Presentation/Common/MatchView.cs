@@ -31,12 +31,6 @@ namespace HyperRTS.Presentation.Common
         private readonly LiveSingleton<MapSettings> _map = new();
         private readonly LiveSingleton<MatchState> _match = new();
 
-        // Colours change only when players or the colour override are added, removed or rewritten.
-        private readonly ChangeWatch _colors = new(() => new[]
-        {
-            ComponentType.ReadOnly<Player>(), ComponentType.ReadOnly<TeamColorOverride>(),
-        });
-
         private readonly LiveSingleton<PlacementState> _placement = new();
         private readonly LiveSingleton<PendingCommand> _pending = new();
         private readonly LiveSingleton<CommandCardPage> _commandPage = new();
@@ -155,7 +149,6 @@ namespace HyperRTS.Presentation.Common
         private void Bind(World world)
         {
             _world = world;
-            _colors.Forget();
             EntityManager = world.EntityManager;
             _localPlayer = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalPlayer>(), ComponentType.ReadOnly<Player>());
             _players = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<Player>());
@@ -170,13 +163,9 @@ namespace HyperRTS.Presentation.Common
             }
         }
 
+        // Read every refresh: a match has a handful of players, so a change check would cost more than it saves.
         private void RefreshColors()
         {
-            if (!_colors.Changed(EntityManager))
-            {
-                return;
-            }
-
             Array.Fill(_ownerColors, Color.gray);
             _colorOverride.TryGet(EntityManager, out var colorOverride);
             using var players = _players.ToComponentDataArray<Player>(Allocator.Temp);

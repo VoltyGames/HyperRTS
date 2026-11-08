@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Cues;
-using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Fire
@@ -51,8 +50,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         [Min(0)]
         public int maxEffects = 16;
 
-        private World _world;
-        private Entity _source;
+        private readonly SceneSingleton<FieldFireSource> _source = new();
 
         /// <summary>Throws naming the first field that can't be used.</summary>
         public void Require()
@@ -74,35 +72,9 @@ namespace HyperRTS.Presentation.Environment.Fire
             return blast && dryGround && Hashes.Fraction(seed) < igniteChance;
         }
 
-        // Retried every frame: the world may not exist yet, or may be a new one.
-        private void Update()
-        {
-            if (!MatchView.TryGetDefault(out var view))
-            {
-                return;
-            }
+        private void Update() => _source.Write(new FieldFireSource { Settings = this });
 
-            var manager = view.EntityManager;
-            if (_world == manager.World && manager.Exists(_source))
-            {
-                return;
-            }
-
-            _world = manager.World;
-            _source = manager.CreateEntity(typeof(FieldFireSource));
-            manager.SetComponentData(_source, new FieldFireSource { Settings = this });
-        }
-
-        protected override void OnDisabled()
-        {
-            if (_world is { IsCreated: true } && _world.EntityManager.Exists(_source))
-            {
-                _world.EntityManager.DestroyEntity(_source);
-            }
-
-            _world = null;
-            _source = Entity.Null;
-        }
+        protected override void OnDisabled() => _source.Remove();
 
         private void Require(bool valid, string field, string problem)
         {

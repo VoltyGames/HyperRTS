@@ -9,8 +9,10 @@ may look slightly different. This page covers interaction, input, audio and qual
 
 UI state that input, the HUD and overlays share, created once per presented world, in `Presentation/Interaction/`.
 `DefaultWorld`, `LiveQuery` and `LiveSingleton<T>` (in `Presentation/Common/`) give MonoBehaviours the presented world,
-a query that survives world swaps and a singleton read (`TryGet`) and write (`Set`). A new HUD-to-input channel is a
-struct, one line in `ClientSingletonSystem` and its readers.
+a query that survives world swaps and a singleton read (`TryGet`) and write (`Set`). A scene object that systems need,
+such as `Wind` or `FieldFireSettings`, writes a `SceneSingleton<T>` every frame and removes it when disabled; it lands
+in each new match world on its own. A new HUD-to-input channel is a struct, one line in `ClientSingletonSystem` and its
+readers.
 
 | Singleton | Role |
 | --- | --- |
