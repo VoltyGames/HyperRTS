@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests.Rendering
 {
-    /// <summary>The size rule: level 1 once a mesh spans the first-level pixels, one more level per halving.</summary>
+    /// <summary>The size rule, level 1 once a mesh spans the first-level pixels and one more per halving, and packing levels.</summary>
     public class MeshLodsTests
     {
         [Test]
@@ -30,6 +30,20 @@ namespace HyperRTS.Editor.Tests.Rendering
 
             Assert.IsFalse(mesh.lodSelectionCurve.IsValid());
             Object.DestroyImmediate(mesh);
+        }
+
+        [Test]
+        public void Pack_PutsEachMeshInALevelOfTheFirst()
+        {
+            var fine = Sphere();
+            var coarse = Sphere();
+            var vertices = fine.vertexCount;
+            MeshLods.Pack(new[] { fine, coarse });
+
+            Assert.AreEqual(2, fine.lodCount);
+            Assert.AreEqual(vertices * 2, fine.vertexCount);
+            Object.DestroyImmediate(fine);
+            Object.DestroyImmediate(coarse);
         }
 
         // The level Entities Graphics picks for a mesh whose bounds' diameter spans this many pixels, at threshold 1.

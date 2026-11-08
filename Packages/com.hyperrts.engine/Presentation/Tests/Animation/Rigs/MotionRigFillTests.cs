@@ -262,24 +262,13 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             pivot.SetParent(parent, false);
             if (meshSize != default)
             {
-                var box = new Mesh { vertices = Corners(meshSize * 0.5f), triangles = new[] { 0, 1, 2 } };
-                box.RecalculateBounds();
+                // Parts are measured by their mesh's bounds alone.
+                var box = new Mesh { bounds = new Bounds(Vector3.zero, meshSize) };
                 pivot.gameObject.AddComponent<MeshFilter>().sharedMesh = box;
                 pivot.gameObject.AddComponent<MeshRenderer>();
             }
 
             return pivot;
-        }
-
-        private static Vector3[] Corners(Vector3 half)
-        {
-            var corners = new Vector3[8];
-            for (var i = 0; i < 8; i++)
-            {
-                corners[i] = Vector3.Scale(half, new Vector3((i & 1) * 2 - 1, ((i >> 1) & 1) * 2 - 1, ((i >> 2) & 1) * 2 - 1));
-            }
-
-            return corners;
         }
 
         private static Transform Wheel(string name, Transform hull, float x, float z)

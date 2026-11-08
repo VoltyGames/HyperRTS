@@ -48,7 +48,8 @@ one renderer draws them all and the GPU picks the level. Every level switches by
 level 1 once the mesh's bounds span `MeshLods.FirstLevelPixels` (150) across on screen, level 2 at half that, and so
 on. Unity's own curve keeps a level until its error is under a pixel, which in an RTS view means never. Each quality
 level's `meshLodThreshold` scales the sizes. The Terrain ignores Mesh LOD and always draws level 0. A
-`BoneAnimationSet`'s `meshLods` generates levels for its baked parts.
+`BoneAnimationSet`'s `meshLods` generates levels for its baked parts. `MeshLods.Pack` packs hand-made levels, such as
+trees with leaf cards that generated levels would strip, into one mesh.
 
 ## Fog of war
 

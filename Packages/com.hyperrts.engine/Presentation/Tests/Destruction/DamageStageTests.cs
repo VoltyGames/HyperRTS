@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Reflection;
 using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
@@ -68,17 +70,28 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void Copy_TakesTheTreesPaint()
+        public void Copy_TakesEveryPaintOfTheTree()
         {
             var tree = Tree(260f, out var models);
+            var painted = PaintedTypes();
+            foreach (var type in painted)
+            {
+                _em.AddComponent(models[0], type);
+            }
+
             var paint = new TeamColor { Value = new float4(0.2f, 0.4f, 0.6f, 1f) };
-            _em.AddComponentData(models[0], paint);
+            _em.SetComponentData(models[0], paint);
             _stages.Update();
 
             SetHealth(tree, 100f);
             _stages.Update();
 
-            Assert.AreEqual(paint.Value, _em.GetComponentData<TeamColor>(Copy(tree, models[1])).Value);
+            var copy = Copy(tree, models[1]);
+            Assert.AreEqual(paint.Value, _em.GetComponentData<TeamColor>(copy).Value);
+            foreach (var type in painted)
+            {
+                Assert.IsTrue(_em.HasComponent(copy, type), $"{type} is painted on a root once, so a copy needs it from ModelCopies");
+            }
         }
 
         [Test]
@@ -152,6 +165,24 @@ namespace HyperRTS.Presentation.Tests.Destruction
             _em.AddComponentData(model, new Parent { Value = parent });
             _em.AddBuffer<LinkedEntityGroup>(model).Add(model);
             return model;
+        }
+
+        // Every value a MeshPainter puts on a root's meshes, and the team colour, which TeamColorSystem paints itself.
+        private static ComponentType[] PaintedTypes()
+        {
+            const BindingFlags fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            var painted = typeof(MeshPainter<>).Assembly.GetTypes()
+                .SelectMany(type => type.GetFields(fields))
+                .Select(field => field.FieldType)
+                .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(MeshPainter<>))
+                .Select(type => type.GetGenericArguments()[0])
+                .Append(typeof(TeamColor))
+                .Append(typeof(TeamStrip))
+                .Distinct()
+                .Select(type => new ComponentType(type))
+                .ToArray();
+            Assert.That(painted.Length, Is.GreaterThan(2), "the painters were found");
+            return painted;
         }
 
         private Entity Copy(Entity tree, Entity model) => ModelCopies.Find(_em, tree, model);
