@@ -31,8 +31,8 @@ namespace HyperRTS.Editor.Animation
 
         private static RigidAnimationSet Find(string set)
         {
-            var found = EditorAssets.FindAssets<RigidAnimationSet>().Find(candidate => candidate.name == set || AssetDatabase.GetAssetPath(candidate) == set);
-            return found != null ? found : throw new FileNotFoundException($"No rigid animation set '{set}'.");
+            return EditorAssets.FindAssets<RigidAnimationSet>().Find(candidate => candidate.name == set || AssetDatabase.GetAssetPath(candidate) == set)
+                ?? throw new FileNotFoundException($"No rigid animation set '{set}'.");
         }
     }
 }

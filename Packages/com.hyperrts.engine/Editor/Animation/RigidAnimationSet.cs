@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Animation.VAT;
 using HyperRTS.Simulation.Common.Authoring;
@@ -95,20 +96,18 @@ namespace HyperRTS.Editor.Animation
         {
             File.WriteAllBytes(path, made.EncodeToEXR(Texture2D.EXRFlags.CompressZIP));
             DestroyImmediate(made);
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            importer.textureType = TextureImporterType.Default;
-            importer.sRGBTexture = false;
-            importer.mipmapEnabled = false;
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.filterMode = FilterMode.Point;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.isReadable = false;
-            importer.maxTextureSize = MaxTextureSize;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.SaveAndReimport();
-
-            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            var texture = EditorTextures.Import(path, importer =>
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = false;
+                importer.mipmapEnabled = false;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.filterMode = FilterMode.Point;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.isReadable = false;
+                importer.maxTextureSize = MaxTextureSize;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+            });
             var labels = AssetDatabase.GetLabels(texture);
             if (!labels.Contains(GeneratedLabel))
             {

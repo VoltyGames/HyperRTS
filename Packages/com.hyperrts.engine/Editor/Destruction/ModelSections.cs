@@ -202,9 +202,7 @@ namespace HyperRTS.Editor.Destruction
                 found = child.gameObject;
             }
 
-            return found != null
-                ? found
-                : throw new InvalidOperationException($"HyperRTS: '{owner.name}' has no object named '{modelName}' from its model's sections.");
+            return found ?? throw new InvalidOperationException($"HyperRTS: '{owner.name}' has no object named '{modelName}' from its model's sections.");
         }
 
         private static SectionMaterial FindMaterial(SectionsAuthoring owner, string materialName)
