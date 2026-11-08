@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
 using UnityEngine;
@@ -99,7 +100,7 @@ namespace HyperRTS.Editor.Animation
         [Min(1f)]
         public float fps = 30f;
 
-        [Tooltip("Mesh LOD levels Unity generates below each part mesh, drawn by its one renderer by screen size; 0 for none. The vertices stay, so the bone texture still finds them.")]
+        [Tooltip("Mesh LOD levels Unity generates below each part mesh, switched by the size rule (MeshLods); 0 for none. The vertices stay, so the bone texture still finds them.")]
         [Range(0, 8)]
         public int meshLods;
 
@@ -174,6 +175,7 @@ namespace HyperRTS.Editor.Animation
             if (meshLods > 0)
             {
                 MeshLodUtility.GenerateMeshLods(mesh, default, meshLods);
+                MeshLods.UseSizeRule(mesh);
             }
 
             return mesh;

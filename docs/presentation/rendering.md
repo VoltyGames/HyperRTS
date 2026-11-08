@@ -41,6 +41,15 @@ reason has its own bit. The reasons are `Fog`, `Inside`,
 `Stage`, `Part`, `Figure`, `Site`, `Variant` (see [model variants](../simulation/economy.md#line-placement)) and
 `Section`. Effects, sounds and grass stamps that skip unseen units test `FogHidden` and `Inside` on the root.
 
+## Level of detail
+
+A model draws its levels of detail through Unity's Mesh LOD: every level is an index range over one vertex buffer, so
+one renderer draws them all and the GPU picks the level. Every level switches by one size rule, `MeshLods.UseSizeRule`:
+level 1 once the mesh's bounds span `MeshLods.FirstLevelPixels` (150) across on screen, level 2 at half that, and so
+on. Unity's own curve keeps a level until its error is under a pixel, which in an RTS view means never. Each quality
+level's `meshLodThreshold` scales the sizes. The Terrain ignores Mesh LOD and always draws level 0. A
+`BoneAnimationSet`'s `meshLods` generates levels for its baked parts.
+
 ## Fog of war
 
 An enemy leaving sight fades out over `FogVisibilitySystem.FadeTime` then stops rendering; one coming into sight fades in
