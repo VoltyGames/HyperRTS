@@ -12,15 +12,23 @@ instanced static meshes. The source is a `BoneAnimationSet` asset (editor-only, 
 build):
 
 - `rig`: a model with a Generic or Humanoid rig; `skeleton` names the node holding the skinned mesh.
-- `clips`: name, AnimationClip, loop, `inPlace` and speed. A Generic clip finds bones by path, so clip file and rig must
-  name the same bones under the same parent. `inPlace` strips the root's ground travel and records it as `groundSpeed`.
-- `rootBone` is the hips; `upperRoot` roots the upper body, which plays its own clip.
-- `parts`: meshes to export. A node with a `socket` is a weapon or gear weighted to one bone, so weapons are swappable
-  meshes modelled about their grip.
+- `clips`: name, AnimationClip, loop, `inPlace`, speed and `bothHands`. A Generic clip finds bones by path, so clip
+  file and rig must name the same bones under the same parent. `inPlace` strips the root's ground travel and records
+  it as `groundSpeed`.
+- `rootBone` is the hips and must be the skeleton's first bone; `upperRoot` roots the upper body, which plays its own
+  clip.
+- `sockets`: each is a rig node where gear sits, such as a rifle's grip under the right hand, and bakes as a bone of
+  its own after the skeleton's. A socket with a `support` (a node under it, where the other hand holds the gear) and
+  a `supportHand` bone swings its gear about the socket in `bothHands` clips, so the support meets that hand.
+- `parts`: meshes to export. A node with a `socket` is gear carried by that socket's bone, so weapons are swappable
+  meshes modelled about their grip, in the rig's own axes.
 
 **Bake** with **Assets ▸ HyperRTS ▸ Bake Bone Animation Set** or the `bone bake [set]`
 [command](../editor/README.md#commands). It writes `Generated/` beside the set: a bone texture, a `BoneClipTable` and a
-plain mesh per part. A skinned part whose bind pose differs from the skeleton's fails the bake.
+plain mesh per part, and reloads the meshes and texture so open scenes draw the new bake. A skinned part whose bind
+pose differs from the skeleton's fails the bake. Upper-body bones are written relative to the root bone of their
+frame, so the shader sets the upper body's clip on the hips of the legs' clip, and firing over a walk keeps the torso
+on the walking hips.
 
 The material turns on `_BONES`. `BoneAnimatedAuthoring` on a renderer bakes the start clip and render bounds. Game code
 plays a clip with `PlayingClip.Switch` using `SystemAPI.Time.ElapsedTime`, so pause and replay speed apply.
@@ -76,7 +84,9 @@ with `BoneAnimatedAuthoring` renderers sharing one `BoneClipTable`. Figure i sho
 Each figure has a `FigureClipSet` that picks clips from the table by name: legs and fire per posture, a whole-body clip
 per `MemberAction` and deaths per posture. Every entry is required: an unset one or a missing name fails the bake and
 nothing falls back. `SquadFigureSystem` plays them; a clip with a `groundSpeed` plays at the figure's speed over that,
-so feet don't slide.
+so feet don't slide. `SquadFigurePlacementSystem` turns a figure to its weapon's `WeaponPose` yaw while it fires (a
+launcher or an extra weapon aims on its own; a hull-fixed rifle turns the squad), else to its cover heading, else to
+the squad's facing.
 
 A figure may name one other model: an `upgradedRoot`, swapped in when the member's `Weapon` differs from its
 `BaseWeapon`, or an `emplacedRoot`, shown while the squad is `Emplaced` and the member takes a crew place. Naming both

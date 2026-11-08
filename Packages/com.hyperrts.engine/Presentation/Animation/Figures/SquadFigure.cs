@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>Per second rate at which a figure closes on its member's offset.</summary>
         private const float FollowRate = 12f;
 
-        /// <summary>Per second rate at which a figure turns to its cover heading or back.</summary>
+        /// <summary>Per second rate at which a figure turns to its cover heading, its aim or back.</summary>
         private const float TurnRate = 8f;
 
         /// <summary>Slowest and fastest a stride plays against its clip, so a stray speed neither freezes nor blurs the legs.</summary>
@@ -157,13 +157,18 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         /// <summary>
-        /// Eases <see cref="Facing"/> toward the way <paramref name="member"/> faces in cover, else the baked turn from
-        /// its parent's world rotation <paramref name="parentRotation"/>; jumps there on the first update.
+        /// Eases <see cref="Facing"/> toward its weapon's <paramref name="aim"/> (radians off the squad's heading) while it
+        /// fires, else the way <paramref name="member"/> faces in cover, else the baked turn from its parent's world
+        /// rotation <paramref name="parentRotation"/>; jumps there on the first update.
         /// </summary>
-        public void Turn(quaternion parentRotation, in SquadMember member, float deltaTime)
+        public void Turn(quaternion parentRotation, in SquadMember member, float aim, float deltaTime)
         {
             var target = math.mul(parentRotation, Baked);
-            if (member.Cover != CoverKind.None)
+            if (Firing)
+            {
+                target = math.mul(math.mul(parentRotation, quaternion.RotateY(aim)), Baked);
+            }
+            else if (member.Cover != CoverKind.None)
             {
                 var facing = member.CoverFacing;
                 target = math.mul(quaternion.LookRotationSafe(new float3(facing.x, 0f, facing.y), math.up()), Baked);

@@ -4,29 +4,34 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Animation
 {
-    /// <summary>The skin matrices of every bone for every baked frame: the bone texture's pixels and the all-frame bounds.</summary>
+    /// <summary>
+    /// The skin matrices of every bone for every baked frame: the bone texture's pixels and the all-frame bounds. An
+    /// upper-body bone is written relative to the root bone (bone 0) of its own frame, so the shader can set the upper
+    /// body on the hips of whatever clip the legs play.
+    /// </summary>
     internal sealed class BoneFrames
     {
         private const int TexelsPerBone = 3;
 
         private readonly List<Matrix4x4[]> _frames = new();
+        private bool[] _upper;
 
         /// <summary>Poses the rig at every frame of every plan, in order.</summary>
         public static BoneFrames Sample(BoneRig rig, List<ClipFrames> plans)
         {
-            var frames = new BoneFrames();
+            var frames = new BoneFrames { _upper = rig.UpperBones() };
             foreach (var plan in plans)
             {
                 for (var i = 0; i < plan.Count; i++)
                 {
-                    frames._frames.Add(rig.Pose(plan.Clip.source, plan.StepTime(i), plan.Clip.inPlace));
+                    frames._frames.Add(rig.Pose(plan.Clip.source, plan.StepTime(i), plan.Clip.inPlace, plan.Clip.bothHands));
                 }
             }
 
             return frames;
         }
 
-        /// <summary>Half-float RGBA, a row per frame and three texels a bone holding the matrix's top three rows.</summary>
+        /// <summary>Half-float RGBA, a row per frame and three texels a bone holding the matrix's top three rows; upper-body bones relative to the root bone.</summary>
         public Texture2D Texture(int bones)
         {
             var texture = new Texture2D(bones * TexelsPerBone, _frames.Count, TextureFormat.RGBAHalf, false, true)
@@ -37,9 +42,10 @@ namespace HyperRTS.Editor.Animation
             var pixels = new Color[bones * TexelsPerBone * _frames.Count];
             for (var frame = 0; frame < _frames.Count; frame++)
             {
+                var onRoot = _frames[frame][0].inverse;
                 for (var bone = 0; bone < bones; bone++)
                 {
-                    var m = _frames[frame][bone];
+                    var m = _upper[bone] ? onRoot * _frames[frame][bone] : _frames[frame][bone];
                     for (var k = 0; k < TexelsPerBone; k++)
                     {
                         pixels[(frame * bones + bone) * TexelsPerBone + k] = new Color(m[k, 0], m[k, 1], m[k, 2], m[k, 3]);

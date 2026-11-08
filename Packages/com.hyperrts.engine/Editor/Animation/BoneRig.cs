@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Animation
 {
     /// <summary>
     /// A temporary instance of a bone set's rig model, posed by its clips so the baked meshes need no skin and no
-    /// object transform.
+    /// object transform. Its bones are the skeleton's, root first, then one per socket.
     /// </summary>
     internal sealed class BoneRig : IDisposable
     {
@@ -23,8 +23,10 @@ namespace HyperRTS.Editor.Animation
         private readonly Matrix4x4[] _bindposes;
         private readonly bool[] _upper;
         private readonly Dictionary<string, int> _index = new();
+        private readonly List<SocketBone> _sockets = new();
 
-        public BoneRig(GameObject model, string skeleton, string upperRoot, string rootBone)
+        public BoneRig(GameObject model, string skeleton, string upperRoot, string rootBone,
+            IEnumerable<BoneAnimationSet.Socket> sockets)
         {
             _root = Object.Instantiate(model);
             _root.hideFlags = HideFlags.HideAndDontSave;
@@ -33,19 +35,41 @@ namespace HyperRTS.Editor.Animation
             _rootBone = Find(_root, rootBone);
             _bones = _body.bones;
             _bindposes = _body.sharedMesh.bindposes;
-            var top = Find(_root, upperRoot);
-            _upper = new bool[_bones.Length];
+            if (_bones[0] != _rootBone)
+            {
+                throw new InvalidOperationException($"The skeleton of '{model.name}' starts with '{_bones[0].name}', not its root bone '{rootBone}', which the shader sets the upper body on.");
+            }
+
             for (var i = 0; i < _bones.Length; i++)
             {
                 _index.Add(_bones[i].name, i);
+            }
+
+            foreach (var socket in sockets)
+            {
+                var bone = CreateSocketBone(socket);
+                _index.Add(socket.node, _bones.Length + _sockets.Count);
+                _sockets.Add(bone);
+            }
+
+            var top = Find(_root, upperRoot);
+            _upper = new bool[_bones.Length + _sockets.Count];
+            for (var i = 0; i < _bones.Length; i++)
+            {
                 _upper[i] = _bones[i].IsChildOf(top);
+            }
+
+            for (var i = 0; i < _sockets.Count; i++)
+            {
+                _upper[_bones.Length + i] = _upper[_sockets[i].Carrier];
             }
         }
 
-        public List<string> BoneNames()
-        {
-            return _bones.Select(bone => bone.name).ToList();
-        }
+        public List<string> BoneNames() =>
+            _bones.Select(bone => bone.name).Concat(_sockets.Select(socket => socket.Node.name)).ToList();
+
+        /// <summary>Which bones, in texture order, belong to the upper body.</summary>
+        public bool[] UpperBones() => (bool[])_upper.Clone();
 
         public int BoneIndex(string bone) => _index.TryGetValue(bone, out var found)
             ? found
@@ -54,8 +78,9 @@ namespace HyperRTS.Editor.Animation
         /// <summary>
         /// Every bone's skin matrix with <paramref name="clip"/> sampled at <paramref name="time"/>. In place removes the
         /// root bone's ground travel, the straight line from its first to its last position, and keeps its height and sway.
+        /// With <paramref name="bothHands"/>, each socket with a support swings its gear to meet the other hand.
         /// </summary>
-        public Matrix4x4[] Pose(AnimationClip clip, float time, bool inPlace)
+        public Matrix4x4[] Pose(AnimationClip clip, float time, bool inPlace, bool bothHands)
         {
             // Measured before sampling: the first measure of a clip samples its ends, which would replace this pose.
             var drift = inPlace ? Drift(clip, time) : Vector3.zero;
@@ -63,10 +88,15 @@ namespace HyperRTS.Editor.Animation
             _rootBone.position -= _root.transform.TransformVector(drift);
 
             var toRoot = _root.transform.worldToLocalMatrix;
-            var pose = new Matrix4x4[_bones.Length];
-            for (var i = 0; i < pose.Length; i++)
+            var pose = new Matrix4x4[_upper.Length];
+            for (var i = 0; i < _bones.Length; i++)
             {
                 pose[i] = toRoot * _bones[i].localToWorldMatrix * _bindposes[i];
+            }
+
+            for (var i = 0; i < _sockets.Count; i++)
+            {
+                pose[_bones.Length + i] = toRoot * _sockets[i].Placed(bothHands) * _sockets[i].Bind;
             }
 
             return pose;
@@ -142,23 +172,77 @@ namespace HyperRTS.Editor.Animation
         }
 
         /// <summary>
-        /// A copy of a rigid node's mesh, its origin set on the rig's <paramref name="socket"/> node and carried by the
-        /// skeleton bone at or above it, in the skeleton mesh's rest space.
+        /// A copy of a rigid node's mesh, its origin set on the rig's <paramref name="socket"/> node and carried by that
+        /// socket's own bone, in the skeleton mesh's rest space. The mesh must be in the rig's axes, as the socket node is.
         /// </summary>
         public Mesh AttachedMesh(GameObject model, string node, string socket)
         {
             var source = Find(model, node).GetComponent<MeshFilter>()?.sharedMesh
                 ?? throw new InvalidOperationException($"Node '{node}' of '{model.name}' has no mesh.");
+            var bone = BoneIndex(socket);
+            if (bone < _bones.Length)
+            {
+                throw new InvalidOperationException($"'{socket}' of '{_root.name}' is a skeleton bone, not a socket of the set.");
+            }
+
             var mesh = Object.Instantiate(source);
-            var seat = Find(_root, socket);
-            var weighted = CarryingBone(seat)
-                ?? throw new InvalidOperationException($"Socket node '{socket}' of '{_root.name}' hangs from no skeleton bone.");
-            // Onto the socket, into the bone's own space, then back through its bind pose into the skeleton mesh's rest space.
-            BoneMesh.Move(mesh, _bindposes[weighted].inverse * _bones[weighted].worldToLocalMatrix * seat.localToWorldMatrix);
+            BoneMesh.Move(mesh, _sockets[bone - _bones.Length].Bind.inverse);
             var weights = new BoneWeight[mesh.vertexCount];
             Array.Fill(weights, new BoneWeight { boneIndex0 = 0, weight0 = 1f });
-            Skin(mesh, weights, new[] { weighted });
+            Skin(mesh, weights, new[] { bone });
             return mesh;
+        }
+
+        private SocketBone CreateSocketBone(BoneAnimationSet.Socket socket)
+        {
+            var node = Find(_root, socket.node);
+            var carrier = CarryingBone(node)
+                ?? throw new InvalidOperationException($"Socket node '{socket.node}' of '{_root.name}' hangs from no skeleton bone.");
+            Transform support = null;
+            Transform hand = null;
+            if (!string.IsNullOrEmpty(socket.support))
+            {
+                support = Find(_root, socket.support);
+                if (!support.IsChildOf(node))
+                {
+                    throw new InvalidOperationException($"Support '{socket.support}' of socket '{socket.name}' is not under its node '{socket.node}'.");
+                }
+
+                hand = _bones[BoneIndex(socket.supportHand)];
+            }
+
+            // Like a bind pose: from the skeleton mesh's rest space into the socket node's space.
+            var bind = node.worldToLocalMatrix * _bones[carrier].localToWorldMatrix * _bindposes[carrier];
+            return new SocketBone(node, carrier, support, hand, bind);
+        }
+
+        /// <summary>A socket baked as a bone: its node, the skeleton bone carrying it and, for gear held in both hands, where the other hand holds it.</summary>
+        private readonly struct SocketBone
+        {
+            public readonly Transform Node;
+            public readonly int Carrier;
+            public readonly Transform Support;
+            public readonly Transform Hand;
+            public readonly Matrix4x4 Bind;
+
+            public SocketBone(Transform node, int carrier, Transform support, Transform hand, Matrix4x4 bind)
+            {
+                (Node, Carrier, Support, Hand, Bind) = (node, carrier, support, hand, bind);
+            }
+
+            /// <summary>The node's world matrix, swung about its origin so the support points at the other hand when both hands hold the gear.</summary>
+            public Matrix4x4 Placed(bool bothHands)
+            {
+                var placed = Node.localToWorldMatrix;
+                if (!bothHands || Support == null)
+                {
+                    return placed;
+                }
+
+                var grip = Node.position;
+                var swing = Quaternion.FromToRotation(Support.position - grip, Hand.position - grip);
+                return Matrix4x4.Translate(grip) * Matrix4x4.Rotate(swing) * Matrix4x4.Translate(-grip) * placed;
+            }
         }
 
         // Index of the skeleton bone at or above the node, if any.

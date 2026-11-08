@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Burst;
@@ -27,6 +28,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Parents = SystemAPI.GetComponentLookup<Parent>(true),
+                Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Spots = SystemAPI.GetComponentLookup<LocalTransform>(),
             }.Schedule(state.Dependency);
         }
@@ -37,29 +39,33 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<Parent> Parents;
+            [ReadOnly] public BufferLookup<WeaponPose> Poses;
             public ComponentLookup<LocalTransform> Spots;
 
             private void Execute(Entity entity, DynamicBuffer<SquadFigure> figures, in DynamicBuffer<SquadMember> members)
             {
                 var count = math.min(figures.Length, members.Length);
+                var hasPoses = Poses.TryGetBuffer(entity, out var poses);
                 for (var i = 0; i < count; i++)
                 {
-                    if (!members[i].Alive)
+                    var member = members[i];
+                    if (!member.Alive)
                     {
                         continue;
                     }
 
                     var figure = figures[i];
-                    Stand(entity, ref figure, members[i]);
+                    var aim = figure.Firing && hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].YawRadians : 0f;
+                    Stand(entity, ref figure, member, aim);
                     figures[i] = figure;
                 }
             }
 
             /// <summary>
             /// Eases the figure toward its member's offset and moves it there: world axes turned into its parent's
-            /// frame, at its baked height, turned to its cover.
+            /// frame, at its baked height, turned to its cover or to its weapon's <paramref name="aim"/> while firing.
             /// </summary>
-            private void Stand(Entity squad, ref SquadFigure figure, in SquadMember member)
+            private void Stand(Entity squad, ref SquadFigure figure, in SquadMember member, float aim)
             {
                 var parentToWorld = new float3x3(ParentToWorld(squad, figure.Figure));
                 var worldToParent = math.inverse(parentToWorld);
@@ -68,7 +74,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 var spot = Spots[figure.Figure];
                 spot.Position = new float3(local.x, figure.Height, local.z);
                 var parentRotation = quaternion.LookRotationSafe(parentToWorld.c2, parentToWorld.c1);
-                figure.Turn(parentRotation, member, DeltaTime);
+                figure.Turn(parentRotation, member, aim, DeltaTime);
                 spot.Rotation = math.mul(math.inverse(parentRotation), figure.Facing);
                 Spots[figure.Figure] = spot;
             }

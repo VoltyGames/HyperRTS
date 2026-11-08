@@ -13,8 +13,6 @@ namespace HyperRTS.Presentation.Animation.Figures
     [UpdateInGroup(typeof(PostBakingSystemGroup))]
     public partial struct SquadFigureRendererBakingSystem : ISystem
     {
-        private const int MaxDepth = 8;
-
         private EntityQuery _squads;
         private EntityQuery _renderers;
 
@@ -43,19 +41,30 @@ namespace HyperRTS.Presentation.Animation.Figures
                 }
             }
 
+            var drawn = new NativeHashSet<Entity>(16, Allocator.Temp);
             using var renderers = _renderers.ToEntityArray(Allocator.Temp);
             foreach (var renderer in renderers)
             {
                 var link = renderer;
-                for (var step = 0; step < MaxDepth && link != Entity.Null; step++)
+                while (link != Entity.Null)
                 {
                     if (squadOf.TryGetValue(link, out var squad))
                     {
                         em.GetBuffer<FigureRenderer>(squad).Add(new FigureRenderer { Model = link, Part = renderer });
+                        drawn.Add(link);
                         break;
                     }
 
                     link = em.HasComponent<Parent>(link) ? em.GetComponentData<Parent>(link).Value : Entity.Null;
+                }
+            }
+
+            foreach (var model in squadOf.GetKeyArray(Allocator.Temp))
+            {
+                if (!drawn.Contains(model))
+                {
+                    throw new System.InvalidOperationException(
+                        $"[HyperRTS] Squad figure model '{em.GetName(model)}' has no renderer that plays clips, so it would stay frozen.");
                 }
             }
         }

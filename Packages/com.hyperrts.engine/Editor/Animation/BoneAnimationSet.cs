@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Animation
 {
     /// <summary>
     /// One rig, its clips and the meshes skinned to it, baked into a shared bone texture, clip table and part meshes
-    /// in <c>Generated/</c>.
+    /// in <c>Generated/</c>. Each socket bakes as a bone of its own after the skeleton's.
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Bone Animation Set", fileName = "BoneAnimationSet")]
     [HelpURL(HyperRTSDocs.Presentation)]
@@ -40,6 +40,9 @@ namespace HyperRTS.Editor.Animation
             [Tooltip("Plays this many times faster; over 1 bakes fewer frames.")]
             [Min(0.1f)]
             public float speed = 1f;
+
+            [Tooltip("Both hands hold the gear: every socket with a support swings its gear so the support meets the other hand. Off where a hand lets go, as in a reload, a throw or a fall.")]
+            public bool bothHands;
         }
 
         [Serializable]
@@ -66,6 +69,12 @@ namespace HyperRTS.Editor.Animation
 
             [Tooltip("A node of the rig: a skeleton bone, or an empty under one where gear sits, such as a rifle's grip in the right hand. Gear follows the bone.")]
             public string node;
+
+            [Tooltip("Empty for gear held in one hand. Else a node under Node where the other hand holds the gear, such as a rifle's handguard: in clips held in both hands the gear swings about Node so this node meets Support Hand.")]
+            public string support;
+
+            [Tooltip("The other hand's bone, which Support meets.")]
+            public string supportHand;
         }
 
         [Tooltip("The rig model: the skeleton, the socket nodes and the parts that name no model.")]
@@ -78,7 +87,7 @@ namespace HyperRTS.Editor.Animation
 
         public List<Clip> clips = new();
 
-        [Tooltip("Top bone of the skeleton, such as the hips. Clips play on its parent, and in place clips lose its ground travel.")]
+        [Tooltip("Top bone of the skeleton, such as the hips, and its first bone. Clips play on its parent, in place clips lose its ground travel, and the upper body rides on it.")]
         public string rootBone;
 
         [Tooltip("Bone at the root of the upper body, which plays its own clip; the bones below it join it.")]
@@ -111,7 +120,7 @@ namespace HyperRTS.Editor.Animation
             }
 
             Directory.CreateDirectory(Folder);
-            using var posed = new BoneRig(rig, skeleton, upperRoot, rootBone);
+            using var posed = new BoneRig(rig, skeleton, upperRoot, rootBone, sockets);
             var meshes = parts.Select(part => MakeMesh(posed, part)).ToList();
             var bones = posed.BoneNames();
             var pose = BoneFrames.Sample(posed, plans);
@@ -128,7 +137,22 @@ namespace HyperRTS.Editor.Animation
             }
 
             AssetDatabase.SaveAssets();
+            ReloadDrawnAssets(written);
             return written;
+        }
+
+        // Write copies into the loaded assets, which leaves their GPU copies at the old bake; unloading the saved meshes
+        // and textures makes the next use read the new ones from disk.
+        private static void ReloadDrawnAssets(IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                var asset = AssetDatabase.LoadMainAssetAtPath(path);
+                if (asset is Mesh or Texture)
+                {
+                    Resources.UnloadAsset(asset);
+                }
+            }
         }
 
         private Mesh MakeMesh(BoneRig posed, Part part)

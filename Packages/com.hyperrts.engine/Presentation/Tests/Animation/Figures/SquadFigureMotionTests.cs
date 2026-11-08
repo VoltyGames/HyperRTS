@@ -13,7 +13,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Animation.Figures
 {
-    /// <summary>Where figures stand and how their walk and run clips are timed.</summary>
+    /// <summary>Where figures stand and face, and how their walk and run clips are timed.</summary>
     public class SquadFigureMotionTests : SquadFigureFixture
     {
         [Test]
@@ -158,6 +158,24 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
 
             Assert.AreEqual(kept, Lower(0).Value);
             Assert.AreEqual(10f, kept.z);
+        }
+
+        [Test]
+        public void FiringFigure_TurnsToItsWeaponsAim_AndBackWhenItStops()
+        {
+            var figure = new SquadFigure { Baked = quaternion.identity, Facing = quaternion.identity, Firing = true };
+
+            figure.Turn(quaternion.identity, new SquadMember(), math.PI * 0.5f, 0f);
+            Assert.AreEqual(1f, math.mul(figure.Facing, math.forward()).x, 1e-4f, "a first update faces the aim at once");
+
+            figure.Primed = true;
+            figure.Firing = false;
+            for (var i = 0; i < 60; i++)
+            {
+                figure.Turn(quaternion.identity, new SquadMember(), math.PI * 0.5f, 0.1f);
+            }
+
+            Assert.AreEqual(1f, math.mul(figure.Facing, math.forward()).z, 1e-3f, "done firing, it eases back to the squad's facing");
         }
 
         [Test]

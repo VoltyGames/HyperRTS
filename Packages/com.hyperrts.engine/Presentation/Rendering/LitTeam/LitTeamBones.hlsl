@@ -1,7 +1,8 @@
 // HyperRTS/LitTeam bone animation. With _BONES on, each vertex is skinned by up to four bones. _BoneTex holds a row per
-// frame and three texels per bone, the 3x4 skinning matrix (pose times inverse bind) in object space. A negative
-// weight marks an upper-body bone, which plays _UpperClip; the rest play _LowerClip. A clip switch blends from the
-// frozen pose in _LowerFade or _UpperFade over _BoneFadeTime.
+// frame and three texels per bone, the 3x4 skinning matrix (pose times inverse bind) in object space. Bone 0 is the
+// root (the hips). A negative weight marks an upper-body bone, which plays _UpperClip and is stored relative to its
+// frame's root, so it rides on the root of _LowerClip, which the rest play. A clip switch blends from the frozen pose
+// in _LowerFade or _UpperFade over _BoneFadeTime.
 #ifndef HYPERRTS_LIT_TEAM_BONES_INCLUDED
 #define HYPERRTS_LIT_TEAM_BONES_INCLUDED
 
@@ -53,10 +54,20 @@ float3x4 BonePose(uint bone, BoneSide side)
     return pose;
 }
 
+// outer applied after inner, as 4x4 affine matrices.
+float3x4 Compose(float3x4 outer, float3x4 inner)
+{
+    float3x3 turn = (float3x3)outer;
+    float3x3 turned = mul(turn, (float3x3)inner);
+    float3 moved = mul(turn, float3(inner._m03, inner._m13, inner._m23)) + float3(outer._m03, outer._m13, outer._m23);
+    return float3x4(float4(turned[0], moved.x), float4(turned[1], moved.y), float4(turned[2], moved.z));
+}
+
 void ApplyBones(float4 boneIndex, float4 boneWeight, inout float3 positionOS, inout float3 normalOS)
 {
     BoneSide lower = BoneSideAt(_LowerClip, _LowerFade);
     BoneSide upper = BoneSideAt(_UpperClip, _UpperFade);
+    float3x4 hips = BonePose(0, lower);
     float3 position = 0.0;
     float3 normal = 0.0;
     [unroll] for (uint i = 0; i < 4; i++)
@@ -66,12 +77,16 @@ void ApplyBones(float4 boneIndex, float4 boneWeight, inout float3 positionOS, in
         {
             continue;
         }
-        BoneSide side = lower;
+        uint bone = (uint)(boneIndex[i] + 0.5);
+        float3x4 pose;
         if (weight < 0.0)
         {
-            side = upper;
+            pose = Compose(hips, BonePose(bone, upper));
         }
-        float3x4 pose = BonePose((uint)(boneIndex[i] + 0.5), side);
+        else
+        {
+            pose = BonePose(bone, lower);
+        }
         position += abs(weight) * mul(pose, float4(positionOS, 1.0));
         normal += abs(weight) * mul((float3x3)pose, normalOS);
     }
