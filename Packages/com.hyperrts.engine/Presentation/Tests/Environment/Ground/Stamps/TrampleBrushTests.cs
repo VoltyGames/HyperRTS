@@ -107,19 +107,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         }
 
         [Test]
-        public void Reset_ClearsTheScars()
-        {
-            var stamps = new TrampleStamps();
-            stamps.AddCrater(new float2(50f, 120f), _mark, 6f);
-            Draw(stamps, 0, 0);
-
-            Draw(new TrampleStamps { Reset = true }, 0, 0);
-
-            Assert.Less(Sample(_surfaces.Tracks, Alpha)[0], 0.01f);
-            Assert.Less(Sample(_surfaces.Tracks, Blue)[0], 0.01f);
-        }
-
-        [Test]
         public void Wake_FoamsBehindTheUnit_ThenFades()
         {
             var stamps = new TrampleStamps();

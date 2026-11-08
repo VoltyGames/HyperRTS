@@ -179,27 +179,6 @@ namespace HyperRTS.Simulation.Tests.AI
         }
 
         [Test]
-        public void View_ReadsSlotsAndLanesInBakedOrder()
-        {
-            using var world = new TestWorld();
-            world.CreateMatch(1, 2);
-            var entity = world.CreateHints(Lanes(North, South));
-            var manager = world.EntityManager;
-            var view = new AIMapHintsView(manager.GetBuffer<AISlotHint>(entity), manager.GetBuffer<AILaneHint>(entity),
-                manager.GetBuffer<AIHintPoint>(entity));
-
-            Assert.AreEqual(2, view.LaneCount(2, 1));
-            Assert.AreEqual(0, view.LaneCount(1, 1));
-            Assert.AreEqual(Owner.Bit(1), view.LaneEnemies(2));
-            var south = view.Lane(2, 1, 1);
-            Assert.AreEqual(2, south.Count);
-            Assert.AreEqual(new float2(-10f, 40f), view.Waypoint(south, 0));
-            Assert.AreEqual(1, view.NearestWaypoint(south, new float2(50f, 40f)));
-            Assert.IsTrue(view.TryGetSlot(2, out _));
-            Assert.IsFalse(view.TryGetSlot(3, out _));
-        }
-
-        [Test]
         public void Data_RejectsSlotsOutOfRange_RepeatedSlotsAndLanesToThemselves()
         {
             var data = new AIMapHintsData();

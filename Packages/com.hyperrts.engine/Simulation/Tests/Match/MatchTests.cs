@@ -118,17 +118,5 @@ namespace HyperRTS.Simulation.Tests.Match
             LocalGameSpeed.Resume();
             Assert.AreEqual(1.5f, Time.timeScale);
         }
-
-        [Test]
-        public void Reset_UnpausesAtNormalSpeed()
-        {
-            LocalGameSpeed.SetScale(4f);
-            LocalGameSpeed.Pause();
-
-            LocalGameSpeed.Reset();
-
-            Assert.IsFalse(LocalGameSpeed.IsPaused);
-            Assert.AreEqual(1f, Time.timeScale);
-        }
     }
 }

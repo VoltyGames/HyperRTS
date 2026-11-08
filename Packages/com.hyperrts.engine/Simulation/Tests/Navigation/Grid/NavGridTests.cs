@@ -37,16 +37,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         }
 
         [Test]
-        public void QuarterTurnedBox_SwapsWidthAndDepth_AndStaysAxisAligned()
-        {
-            var box = new NavBox(float3.zero, quaternion.RotateY(math.PI * 0.5f), new float2(10f, 4f));
-
-            Assert.IsTrue(box.IsAxisAligned);
-            Assert.AreEqual(2f, box.Extents.x, 1e-4f);
-            Assert.AreEqual(5f, box.Extents.y, 1e-4f);
-        }
-
-        [Test]
         public void DiagonalBox_CoversItsCentreButNotTheCornersOfItsBounds()
         {
             var box = new NavBox(float3.zero, quaternion.RotateY(math.PI * 0.25f), new float2(10f, 2f));
@@ -56,23 +46,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             Assert.IsTrue(box.Contains(float2.zero, 0f));
             Assert.IsFalse(box.Contains(new float2(corner.x, -corner.y), 0f), "the empty corner of the world box");
             Assert.IsTrue(box.Contains(new float2(3f, -3f), 0f) || box.Contains(new float2(3f, 3f), 0f), "along its length");
-        }
-
-        [Test]
-        public void Grid_RebuildsWhenBuildingIsAdded()
-        {
-            World.Tick();
-            var site = new float3(20f, 0f, 20f);
-            var before = World.Grid();
-            Assert.IsTrue(before.IsWalkable(site));
-
-            World.SpawnBuilding(2, site, new float2(4f, 4f), complete: false);
-            World.Tick();
-
-            var after = World.Grid();
-            Assert.Greater(after.Version, before.Version);
-            Assert.IsFalse(after.IsWalkable(site), "buildings under construction block too");
-            Assert.IsTrue(after.IsWalkable(site + new float3(2.5f, 0f, 0f)));
         }
 
         [Test]

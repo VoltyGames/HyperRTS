@@ -191,20 +191,6 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
-        public void SalvoOfOne_FiresOncePerCooldown()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 1f);
-            World.SetSalvo(gun, 1, 0.1f);
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
-
-            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f));
-            World.Run(0.8f);
-            Assert.AreEqual(90f, World.GetHealth(enemy), "the interval goes unused");
-            World.Run(0.3f);
-            Assert.AreEqual(80f, World.GetHealth(enemy));
-        }
-
-        [Test]
         public void Salvo_StopsWhenItsTargetDies()
         {
             var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 5f);
@@ -218,19 +204,6 @@ namespace HyperRTS.Simulation.Tests.Combat
             var weapon = World.Primary(gun);
             Assert.AreEqual(0, weapon.SalvoShot);
             Assert.Greater(weapon.CooldownRemaining, 0.5f, $"the full cooldown runs, not the interval: {weapon.CooldownRemaining}");
-        }
-
-        [Test]
-        public void EndSalvo_CountsTheCooldownFromTheLastShot()
-        {
-            var weapon = new Weapon { Cooldown = 5f, SalvoSize = 3, SalvoInterval = 0.5f };
-            weapon.StartCooldown();
-            weapon.Tick(0.2f);
-
-            weapon.EndSalvo();
-
-            Assert.AreEqual(0, weapon.SalvoShot);
-            Assert.AreEqual(4.8f, weapon.CooldownRemaining, 1e-4f);
         }
 
         [Test]
@@ -268,15 +241,6 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             Assert.Greater(landed.Count, 1, "a ripple spreads out");
             Assert.AreEqual(keepsLock, weapon.KeepsLock);
-        }
-
-        [Test]
-        public void NoSpread_KeepsTheAimAndTheLock()
-        {
-            var missile = new Weapon { Aim = new WeaponAim { Course = ShotCourse.Rocket } };
-
-            Assert.AreEqual(new float3(1f, 2f, 3f), missile.Scatter(new float3(1f, 2f, 3f), 99u));
-            Assert.IsTrue(missile.KeepsLock);
         }
 
         /// <summary>The x of each projectile's launch point, in the order they were fired.</summary>

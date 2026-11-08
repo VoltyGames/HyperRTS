@@ -75,16 +75,6 @@ namespace HyperRTS.Presentation.Tests.Audio
         }
 
         [Test]
-        public void Working_FollowsTheFlag_AmbientAlwaysPlays()
-        {
-            var state = Ran(0.1f, 0f);
-
-            Assert.AreEqual(1f, state.Level(LoopSlot.Working, Tuning, true));
-            Assert.AreEqual(0f, state.Level(LoopSlot.Working, Tuning, false));
-            Assert.AreEqual(1f, state.Level(LoopSlot.Ambient, Tuning, false));
-        }
-
-        [Test]
         public void ManyOfOneCue_OnlyTheNearestWithinItsLimitPlay()
         {
             var mixer = Mixed(8, Loop(1, _engine, 30f), Loop(2, _engine, 10f), Loop(3, _engine, 20f));

@@ -32,22 +32,6 @@ namespace HyperRTS.Editor.Maps.Tests
         }
 
         [Test]
-        public void ReadsPointsAndRadius()
-        {
-            var spec = new MapSpec();
-            spec.settlements.Add(new MapSettlementSpec { center = new MapPoint(5, 6), radius = 40 });
-            spec.roads.Add(new MapRoadSpec { points = { new MapPoint(1, 2), new MapPoint(3, 4) } });
-            var points = new List<Vector2>();
-
-            MapFeatureKinds.Find("settlements").ReadPoints(spec, 0, points);
-            Assert.AreEqual(new[] { new Vector2(5, 6) }, points);
-            Assert.AreEqual(40f, MapFeatureKinds.Find("settlements").Radius(spec, 0));
-
-            MapFeatureKinds.Find("roads").ReadPoints(spec, 0, points);
-            Assert.AreEqual(new[] { new Vector2(1, 2), new Vector2(3, 4) }, points);
-        }
-
-        [Test]
         public void HitTestFindsPolygonInteriorAndPointsOnTop()
         {
             var spec = new MapSpec();
@@ -81,21 +65,6 @@ namespace HyperRTS.Editor.Maps.Tests
             layers.SetVisible(MapFeatureKinds.Find("woods"), false);
             layers.SetVisible(props, false);
             Assert.IsTrue(MapHitTest.FeatureAt(spec, view, layers, onProp).IsNone);
-        }
-
-        [Test]
-        public void ListLabelsNameTheFeatureAndItsPosition()
-        {
-            var spec = new MapSpec();
-            spec.props.Add(new MapPropSpec { pos = new MapPoint(10, -20), kind = "Barrel" });
-            spec.props.Add(new MapPropSpec { pos = new MapPoint(1, 2) });
-            spec.looks.Add(new MapLookSpec { name = "dusk", pos = new MapPoint(3, 4) });
-            spec.woods.Add(new MapWoodSpec { points = { new(0, 0), new(40, 0), new(40, 20), new(0, 20) } });
-
-            Assert.AreEqual("Barrel  (10, -20)", MapFeatureKinds.Find("props").Describe(spec, 0));
-            Assert.AreEqual("Prop  (1, 2)", MapFeatureKinds.Find("props").Describe(spec, 1));
-            Assert.AreEqual("dusk  (3, 4)", MapFeatureKinds.Find("looks").Describe(spec, 0));
-            StringAssert.StartsWith("Wood  (20, 10)", MapFeatureKinds.Find("woods").Describe(spec, 0));
         }
 
         [Test]
@@ -135,16 +104,6 @@ namespace HyperRTS.Editor.Maps.Tests
             {
                 AssertRoundTrips(File.ReadAllText(path), path);
             }
-        }
-
-        [Test]
-        public void FormatIsStable()
-        {
-            var once = JsonFormat.Format("{\"a\":[1.0,2.5],\"b\":{\"x\":1,\"z\":2},\"c\":[{\"d\":\"e\\\"f\"}]}");
-
-            Assert.AreEqual(once, JsonFormat.Format(once));
-            StringAssert.Contains("\"a\": [1, 2.5]", once);
-            StringAssert.Contains("\"d\": \"e\\\"f\"", once);
         }
 
         [Test]

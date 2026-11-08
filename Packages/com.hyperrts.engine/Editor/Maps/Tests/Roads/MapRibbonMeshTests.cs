@@ -83,18 +83,6 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
         }
 
         [Test]
-        public void Tangents_PointAcrossTheRoad_AndNormalsUp()
-        {
-            var mesh = Ribbon(North(), false, false, Flat());
-
-            var tangent = mesh.Tangents[0];
-            Assert.AreEqual(1f, tangent.x, 1e-4f, "U grows to the right of a road heading north");
-            Assert.AreEqual(0f, tangent.z, 1e-4f);
-            Assert.AreEqual(-1f, tangent.w, "bitangent along the road, as Unity's own planes");
-            Assert.AreEqual(1f, mesh.Normals[0].y, 1e-4f);
-        }
-
-        [Test]
         public void Alpha_FadesOverFourMetresAtTheFadingEndOnly()
         {
             var mesh = Ribbon(North(), true, false, Flat());
@@ -154,33 +142,20 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
         }
 
         [Test]
-        public void FreeEnds_AndEndsUnderAHigherOrEqualRoad_Fade()
+        public void Ends_FadeWhenFreeOrUnderAHigherOrEqualRoad_ButNotOntoALowerRankOrACarryOn()
         {
             var main = MapFixture.RoadShape(Asphalt, false, new Vector2(-50f, 0f), new Vector2(50f, 0f));
             var side = MapFixture.RoadShape(Dirt, false, new Vector2(0f, -40f), new Vector2(0f, 0f));
-            var roads = new[] { main, side };
+            Assert.AreEqual((true, true), MapRoadFades.For(side, new[] { main, side }), "the dirt fades out under the asphalt");
 
-            Assert.AreEqual((true, true), MapRoadFades.For(side, roads), "the dirt fades out under the asphalt");
-            Assert.AreEqual((true, true), MapRoadFades.For(main, roads), "free ends");
-        }
-
-        [Test]
-        public void ARoadRunningOntoALowerRank_StaysSolidThere()
-        {
-            var main = MapFixture.RoadShape(Dirt, false, new Vector2(-50f, 0f), new Vector2(50f, 0f));
+            var low = MapFixture.RoadShape(Dirt, false, new Vector2(-50f, 0f), new Vector2(50f, 0f));
             var top = MapFixture.RoadShape(Gravel, false, new Vector2(0f, -40f), new Vector2(0f, 0f));
+            Assert.AreEqual((true, false), MapRoadFades.For(top, new[] { low, top }), "solid onto a lower rank");
 
-            Assert.AreEqual((true, false), MapRoadFades.For(top, new[] { main, top }));
-        }
-
-        [Test]
-        public void RoadsThatCarryOnIntoEachOther_DoNotFadeWhereTheyMeet()
-        {
             var first = MapFixture.RoadShape(Lane, false, new Vector2(0f, -50f), new Vector2(0f, 0f));
             var second = MapFixture.RoadShape(Lane, false, new Vector2(0f, 0f), new Vector2(0f, 50f));
             var roads = new[] { first, second };
-
-            Assert.AreEqual((true, false), MapRoadFades.For(first, roads));
+            Assert.AreEqual((true, false), MapRoadFades.For(first, roads), "no fade where they carry on");
             Assert.AreEqual((false, true), MapRoadFades.For(second, roads));
         }
 

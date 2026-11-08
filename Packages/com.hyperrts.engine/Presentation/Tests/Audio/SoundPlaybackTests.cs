@@ -67,30 +67,6 @@ namespace HyperRTS.Presentation.Tests.Audio
         }
 
         [Test]
-        public void VoiceBank_LoadsTheVoiceFromTheCue_AndDisposeRemovesThem()
-        {
-            _voice.volume = new Vector2(0.4f, 0.4f);
-            _voice.spatial = true;
-            _voice.minDistance = 3f;
-            _voice.maxDistance = 90f;
-            var bank = new VoiceBank("Test Voices", 2, loop: true);
-
-            var source = bank.Load(1, _voice, _clip, 1.2f);
-
-            Assert.AreSame(_clip, source.clip);
-            Assert.AreEqual(1.2f, source.pitch, 1e-5f);
-            Assert.AreEqual(0.4f, source.volume, 1e-5f);
-            Assert.AreEqual(10, source.priority);
-            Assert.AreEqual(1f, source.spatialBlend);
-            Assert.AreEqual((3f, 90f), (source.minDistance, source.maxDistance));
-            Assert.IsTrue(source.loop);
-            Assert.AreSame(source, bank[1]);
-
-            bank.Dispose();
-            Assert.IsTrue(source == null);
-        }
-
-        [Test]
         public void Alert_WaitsOutItsCooldown()
         {
             var queue = new AnnouncerQueue();

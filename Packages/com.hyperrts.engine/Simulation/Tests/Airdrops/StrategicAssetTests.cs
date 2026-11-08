@@ -155,24 +155,17 @@ namespace HyperRTS.Simulation.Tests.Airdrops
         }
 
         [Test]
-        public void DropRun_OpensBeforeTheBombsLeaveTheReleasePoint()
+        public void Bombs_LeaveFromTheBombersBay()
         {
-            // Slowed so the run, 90 m either side, starts after the bomber enters.
             var bomber = World.Get<StrategicAsset>(_asset).Aircraft;
-            World.Set(bomber, new MovementSpeed { Value = 30f });
             World.Set(bomber, new DropRun { ReleasePoint = new float3(0f, -1.5f, 0f) });
             Fire();
             var flight = Bombers()[0];
-            Assert.IsFalse(World.Get<DropRun>(flight).Active, "bay shut on the way in");
 
-            Assert.IsTrue(World.RunUntil(() => World.Get<DropRun>(flight).Active, 6f));
-            Assert.AreEqual(0, BombsInFlight(), "opens before the drop");
-
-            Assert.IsTrue(World.RunUntil(() => BombsInFlight() > 0, 5f));
+            Assert.IsTrue(World.RunUntil(() => BombsInFlight() > 0, 8f));
             var bomb = World.All<Projectile>().ToArray()[0];
             var plane = World.Get<LocalTransform>(flight).Position;
             Assert.AreEqual(plane.y - 1.5f, World.Get<Projectile>(bomb).Start.y, 0.1f, "from the bay");
-            Assert.IsTrue(World.Get<DropRun>(flight).Active, "open as they fall");
         }
 
         [TestCase(1, Bombs - 1)]

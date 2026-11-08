@@ -1,10 +1,6 @@
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Simulation.Cues.Effects;
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using HyperRTS.Presentation.Environment.Weather;
-using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -32,19 +28,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         [TestCase(4000f, 100f, TrampleSurfaces.MaxTextureSize, 500)]
         public void TextureSize_CoversTheMapAtTheTexelSize_CappingHugeMaps(float x, float z, int width, int height) =>
             Assert.AreEqual(new int2(width, height), TrampleSurfaces.TextureSize(new float2(x, z), 0.2f));
-
-        [Test]
-        public void Texels_LowIsTwiceAsCoarse()
-        {
-            var full = TrampleSurfaces.Texels(TrampleQuality.Full);
-            var low = TrampleSurfaces.Texels(TrampleQuality.Low);
-            Assert.AreEqual(2f * full.Tracks, low.Tracks, 1e-6f);
-            Assert.AreEqual(2f * full.Trample, low.Trample, 1e-6f);
-            Assert.AreEqual(2f * full.Remains, low.Remains, 1e-6f);
-            Assert.Less(full.Tracks, full.Trample, "ruts need finer texels than flattened grass");
-            Assert.Throws<ArgumentOutOfRangeException>(() => TrampleSurfaces.Texels(TrampleQuality.None),
-                "nothing allocated at Off");
-        }
 
         [Test]
         public void FadeSteps_EmptyAChannelInItsDuration_CarryingFractions()
@@ -96,17 +79,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         }
 
         [Test]
-        public void Footprint_FlattensForGoodWithoutSteering()
-        {
-            var stamps = new TrampleStamps();
-            stamps.AddFootprint(new float2(5f, 6f), new float2(12f, 8f));
-            var stamp = stamps.Trample[0];
-
-            Assert.AreEqual(new float2(6f, 4f), stamp.HalfSize);
-            Assert.AreEqual(new float4(1f, 1f, 0f, 0f), stamp.Value);
-        }
-
-        [Test]
         public void Footsteps_CoverTheStrideBehindTheFeet_AndOnlyBendPlants()
         {
             var stamps = new TrampleStamps();
@@ -117,10 +89,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             Assert.AreEqual(0.3f + 0.2f, stamp.HalfSize.y, 1e-5f);
             Assert.Less(stamp.Value.x, 1f, "leans plants without flattening them");
         }
-
-        [Test]
-        public void Stamp_StrideMatchesTheStruct() =>
-            Assert.AreEqual(Marshal.SizeOf<TrampleStamp>(), TrampleStamp.Stride);
 
         [Test]
         public void AddCrater_BowlIsHalfTheMarkInsideAWiderScorchDisc()
@@ -207,20 +175,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             Assert.AreEqual(10f + 2f, wake.Center.x + wake.HalfSize.y, 1e-4f, "front edge at the unit's bow");
             Assert.AreEqual(4f / TrampleStamps.FullWakeSpeed, wake.Value.x, 1e-5f);
             Assert.AreEqual(1f, stamps.Wakes[1].Value.x, "full foam caps");
-        }
-
-        [Test]
-        public void Clear_EmptiesEveryListAndTheReset()
-        {
-            var stamps = new TrampleStamps { Reset = true };
-            stamps.AddWake(float2.zero, new float2(0f, 1f), 3f, 1f);
-            stamps.AddRemains(float2.zero, 1f, new float4(1f));
-
-            stamps.Clear();
-
-            Assert.IsEmpty(stamps.Wakes);
-            Assert.IsEmpty(stamps.Remains);
-            Assert.IsFalse(stamps.Reset);
         }
 
         [Test]

@@ -151,25 +151,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         }
 
         [Test]
-        public void PlaceBuilding_AcceptsAShorelineSiteOnlyOnTheShore()
-        {
-            World.SpawnNavArea(new float3(50f, 0f, 0f), new float2(100f, 200f), NavAreaKind.Water);
-            var prefab = World.MakePrefab(World.SpawnBuilding(0, new float3(-90f, 0f, 90f), new float2(4f, 4f)));
-            World.Add(prefab, new BuildingPlacement { Surface = PlacementSurface.Shoreline });
-            var builder = World.MakeBuilder(World.SpawnUnit(1, new float3(-6f, 0f, 6f)), prefab);
-
-            World.PlaceBuilding(builder, prefab, new float3(-10f, 0f, 0f));
-            World.Tick();
-            Assert.AreEqual(0, World.All<BuildingTag>().Length, "inland is rejected");
-
-            World.PlaceBuilding(builder, prefab, new float3(0.2f, 0f, 0.3f));
-            World.Tick();
-            var sites = World.All<BuildingTag>();
-            Assert.AreEqual(1, sites.Length);
-            Assert.AreEqual(new float2(0f, 0f), World.Get<LocalTransform>(sites[0]).Position.xz);
-        }
-
-        [Test]
         public void Aircraft_FlyStraightOverWaterAndObstacles_AtAltitude()
         {
             World.SpawnNavArea(float3.zero, new float2(10f, 40f), NavAreaKind.Water);

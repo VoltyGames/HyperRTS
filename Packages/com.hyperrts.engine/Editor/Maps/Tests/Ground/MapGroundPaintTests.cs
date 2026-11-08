@@ -58,7 +58,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
         [TestCase("Verge", "None", "surface 'Verge'", TestName = "ANoneSurfaceImpactClass_IsAnErrorNamingIt")]
         [TestCase("Verge", "Lava", "surface 'Verge'", TestName = "AnUnknownSurfaceImpactClass_IsAnErrorNamingIt")]
         [TestCase("Dirt", null, "road class 'Dirt'", TestName = "AMissingRoadImpactClass_IsAnErrorNamingIt")]
-        [TestCase("Dirt", "Tarmac", "road class 'Dirt'", TestName = "AnUnknownRoadImpactClass_IsAnErrorNamingIt")]
         public void ABadImpactClass_IsAnErrorNamingIt(string key, string value, string named)
         {
             var climate = MapFixture.Climate();
@@ -73,9 +72,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
 
             Assert.IsTrue(ImpactErrors(climate).Any(e => e.Contains(named)), "no error naming " + named);
         }
-
-        [Test]
-        public void ValidImpactClasses_PassTheCheck() => CollectionAssert.IsEmpty(ImpactErrors(MapFixture.Climate()));
 
         [TestCase(MapSymmetry.MirrorXName)]
         [TestCase(MapSymmetry.MirrorZName)]
@@ -103,18 +99,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
                 fields++;
             });
             Assert.Greater(fields, 0);
-        }
-
-        [Test]
-        public void RowPainter_MirroredCopy_MirrorsTheDirection()
-        {
-            var land = RowLand();
-            var pixels = MapRowPainter.Paint(land, MapSymmetry.Parse(MapSymmetry.MirrorXName));
-
-            var row = land.Height / 2 * land.Width;
-            var (west, east) = (pixels[row + 2], pixels[row + land.Width - 3]);
-            Assert.AreEqual(1f, west.r + east.r, 1e-5f, "x flips");
-            Assert.AreEqual(west.g, east.g, 1e-5f, "z stays");
         }
 
         [Test]

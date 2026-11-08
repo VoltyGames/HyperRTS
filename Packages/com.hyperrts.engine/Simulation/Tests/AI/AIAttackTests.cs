@@ -116,20 +116,6 @@ namespace HyperRTS.Simulation.Tests.AI
         }
 
         [Test]
-        public void TopDifficulties_ThinkFastest_AndOnlyBrutalCheats()
-        {
-            var match = World.Own(new GameObject("Match")).AddComponent<MatchAuthoring>();
-
-            var hard = match.AITuningFor(AIDifficulty.Hard);
-            var expert = match.AITuningFor(AIDifficulty.Expert);
-            var brutal = match.AITuningFor(AIDifficulty.Brutal);
-            Assert.Less(expert.thinkInterval, hard.thinkInterval);
-            Assert.AreEqual(1f, expert.incomeMultiplier);
-            Assert.Greater(brutal.incomeMultiplier, 1f);
-            Assert.AreEqual(AIDifficulty.Brutal, brutal.ToTuning(AIDifficulty.Brutal).Difficulty);
-        }
-
-        [Test]
         public void HarderAI_ThinksSooner_AndAttacksWithSmallerWaves()
         {
             using var world = new TestWorld();

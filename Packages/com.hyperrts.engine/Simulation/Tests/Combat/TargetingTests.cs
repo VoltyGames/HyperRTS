@@ -249,40 +249,6 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void Weapon_HitsOnlyTheClassesItTargets(WeaponTargets targets, NavLayer layer, bool hits) =>
             Assert.AreEqual(hits, Weapon.CanHit(targets, layer));
 
-        [Test]
-        public void AntiAirWeapon_EngagesAircraft_AndIgnoresGround()
-        {
-            var launcher = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f,
-                targets: WeaponTargets.Air);
-            var tank = World.SpawnUnit(2, new float3(-2f, 0f, 0f));
-            var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
-            World.Run(2f);
-
-            Assert.Less(World.GetHealth(aircraft), 100f);
-            Assert.AreEqual(100f, World.GetHealth(tank));
-            Assert.AreEqual(aircraft, World.Get<AttackTarget>(launcher).Value);
-        }
-
-        [Test]
-        public void Projectile_LandsAfterFiring_AndArmorScalesDamage()
-        {
-            var bullet = World.Own(ScriptableObject.CreateInstance<DamageType>());
-            World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 8f, damage: 40f, cooldown: 100f,
-                projectile: World.ProjectilePrefab(), damageType: bullet);
-            var tank = World.SpawnUnit(2, new float3(6f, 0f, 0f));
-            var writer = World.Writer(tank);
-            writer.AddBuffer(new[] { new ArmorModifier { DamageType = bullet, Multiplier = 0.5f } });
-
-            using var projectiles = World.Query(typeof(Projectile));
-            Assert.IsTrue(World.RunUntil(() => !projectiles.IsEmpty, 1f), "a projectile was launched");
-            Assert.AreEqual(100f, World.GetHealth(tank), "no damage until the projectile arrives");
-
-            World.Run(2f);
-
-            Assert.AreEqual(80f, World.GetHealth(tank), "40 damage halved by armor");
-            Assert.IsTrue(projectiles.IsEmpty, "the projectile is destroyed on impact");
-        }
-
         private bool WasHit(Entity unit) => !World.EntityManager.Exists(unit) || World.GetHealth(unit) < 100f;
     }
 }

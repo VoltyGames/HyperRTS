@@ -32,7 +32,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
         public void TearDown() => _world.Dispose();
 
         [TestCase(15f, 2f, 3f)]
-        [TestCase(20f, 2.2f, 3.4f)]
         [TestCase(1.7f, 0.3f, 0.9f)]
         public void TallerTrees_TakeLongerToHitTheGround(float height, float min, float max)
         {

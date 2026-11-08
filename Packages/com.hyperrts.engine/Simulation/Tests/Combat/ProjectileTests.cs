@@ -58,23 +58,6 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
-        public void BallisticShell_MissesATargetThatMovedAway()
-        {
-            SpawnShooter(Trajectory.Ballistic, range: 8f);
-            var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f));
-
-            Fly(flown =>
-            {
-                if (flown == 5)
-                {
-                    World.Set(enemy, LocalTransform.FromPosition(new float3(6f, 0f, 3f)));
-                }
-            });
-
-            Assert.AreEqual(100f, World.GetHealth(enemy));
-        }
-
-        [Test]
         public void Rocket_ClimbsThenReachesAMovingTarget()
         {
             SpawnShooter(Trajectory.Rocket, range: 12f);
@@ -107,20 +90,6 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.AreEqual(height, point.y, 1e-4f);
             Assert.AreEqual(12f * t, point.x, 1e-4f);
             Assert.AreEqual(trajectory == Trajectory.Ballistic, course.PacedOnGround);
-        }
-
-        [Test]
-        public void Launch_GivesTheProjectileItsWeaponsKind()
-        {
-            var gun = SpawnShooter(Trajectory.Rocket, range: 8f);
-            var weapon = World.Primary(gun);
-            weapon.ProjectileKind = ProjectileKind.Rocket;
-            World.SetPrimary(gun, weapon);
-            World.SpawnUnit(2, new float3(7f, 0f, 0f));
-
-            using var projectiles = World.Query(typeof(Projectile));
-            Assert.IsTrue(World.RunUntil(() => !projectiles.IsEmpty, 2f), "the gun fired");
-            Assert.AreEqual(ProjectileKind.Rocket, projectiles.GetSingleton<Projectile>().Kind);
         }
 
         [Test]

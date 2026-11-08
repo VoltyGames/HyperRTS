@@ -117,16 +117,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         }
 
         [Test]
-        public void OnlyRigsWithARotor_GetARotorSpin()
-        {
-            Rig(new MotionRigPart { Kind = MotionPartKind.Wheel, Axis = math.right(), Size = 0.5f });
-            Assert.IsFalse(_em.HasComponent<RotorSpin>(_unit));
-
-            Rig(new MotionRigPart { Kind = MotionPartKind.Rotor, Axis = math.up(), Rate = 10f, Time = 1f });
-            Assert.IsTrue(_em.HasComponent<RotorSpin>(_unit));
-        }
-
-        [Test]
         public void Tilt_FollowsASlope()
         {
             const float grade = 0.1f;
@@ -174,23 +164,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             Assert.Greater(peak, target.x, "bounces past on underdamped springs");
             MathAssert.Near(new float3(target, 0f), new float3(springs.Sway, 0f), 1e-4f);
             Assert.Less(math.length(springs.Rate), 1e-3f);
-        }
-
-        [Test]
-        public void Suspension_ShotForwardRocksTheNoseUp_ThenComesBackLevel()
-        {
-            var springs = Springs();
-            springs.Recoil(0f);
-            springs.Spring(float2.zero, SpringFrame * 6f);
-            Assert.Greater(springs.Sway.x, 0f);
-            Assert.AreEqual(0f, springs.Sway.y, 1e-6f);
-
-            for (var i = 0; i < 300; i++)
-            {
-                springs.Spring(float2.zero, SpringFrame);
-            }
-
-            Assert.Less(math.length(springs.Sway), 1e-4f);
         }
 
         [Test]

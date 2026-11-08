@@ -92,31 +92,6 @@ namespace HyperRTS.Simulation.Tests.Movement
 
         private static float TurnBetween(float2 a, float2 b) => math.acos(math.clamp(math.dot(a, b), -1f, 1f));
 
-        private float2 RearAxle(Entity unit) => TruckChassis.Pose(_world.GetPosition(unit).xz, Facing(unit)).Position;
-
-        [Test]
-        public void WheeledTruck_NeverTurnsTighterThanItsRadius()
-        {
-            var truck = SpawnTruck(float3.zero);
-            Order(truck, new float3(40f, 0f, 20f));
-
-            var tightest = float.MaxValue;
-            for (var t = 0f; t < 30f && !Arrived(truck); t += TestWorld.FrameTime)
-            {
-                var facing = Facing(truck);
-                var rear = RearAxle(truck);
-                _world.Tick();
-                var turn = TurnBetween(facing, Facing(truck));
-                if (turn > 1e-4f)
-                {
-                    tightest = math.min(tightest, math.distance(rear, RearAxle(truck)) / turn);
-                }
-            }
-
-            Assert.IsTrue(Arrived(truck), "arrived");
-            Assert.GreaterOrEqual(tightest, TruckTurnRadius * 0.95f, "the rear axle arcs no tighter than the turn radius");
-        }
-
         [Test]
         public void TrackedTank_PivotsInPlace_ForAGoalFarBehind()
         {

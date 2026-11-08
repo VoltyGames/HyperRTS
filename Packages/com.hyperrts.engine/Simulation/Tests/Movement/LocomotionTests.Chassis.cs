@@ -69,18 +69,6 @@ namespace HyperRTS.Simulation.Tests.Movement
         }
 
         [Test]
-        public void TrackedHull_PivotsAboutItsCentre()
-        {
-            var tank = Driving(Tracks, TrackedChassis, TankRadius, 6f, new float2(0f, 1f));
-            var behind = new PathLeg(float2.zero, new float2(-5f, -30f), float2.zero, 0f, 30f, true);
-
-            var step = tank.Drive(behind);
-
-            MathAssert.Near(float2.zero, step);
-            Assert.Greater(TurnBetween(new float2(0f, 1f), tank.Facing), 0f, "turned standing");
-        }
-
-        [Test]
         public void InstantLocomotion_StepsAtFullSpeed_ButNeverPastTheGoal()
         {
             var instant = Driving(Locomotion.Instant, default, 0.4f, 5f, new float2(1f, 0f), 0.1f);

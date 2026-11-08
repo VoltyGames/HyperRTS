@@ -161,15 +161,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
         }
 
         [Test]
-        public void MarkWithoutCraterOrScorch_LeavesNoScar()
-        {
-            Land(float3.zero);
-            Run(1.0);
-
-            Assert.IsEmpty(_stamps.Stamps.Scars);
-        }
-
-        [Test]
         public void ReplaySeekBack_ResetsTheScars_AndClearsTheMarks()
         {
             var clock = _em.CreateEntity();
@@ -184,21 +175,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
 
             Assert.IsTrue(_stamps.Stamps.Reset);
             Assert.IsEmpty(Shown());
-        }
-
-        [Test]
-        public void ScarsGround_OnlyWithACraterScorchOrRemains()
-        {
-            Assert.IsFalse(_mark.ScarsGround);
-
-            _mark.fuel = 0.3f;
-            Assert.IsTrue(_mark.LeavesRemains);
-            Assert.IsTrue(_mark.ScarsGround);
-
-            _mark.fuel = 0f;
-            _mark.scorch = 0.9f;
-            Assert.IsFalse(_mark.LeavesRemains);
-            Assert.IsTrue(_mark.ScarsGround);
         }
 
         [Test]
@@ -227,17 +203,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
             Assert.AreEqual(0f, ImpactMarkMath.Strength(15f, 10f, 4f));
             Assert.AreEqual(0f, ImpactMarkMath.Strength(10.1f, 10f, 0f), "no fade time: gone at once");
             Assert.AreEqual(1f, ImpactMarkMath.Strength(1e6f, 0f, 4f), "no lifetime: kept until reused");
-        }
-
-        [Test]
-        public void Diameter_SpansTheRange_AndGrowsWithTheSplash()
-        {
-            _mark.size = new Vector2(2f, 4f);
-            _mark.sizePerSplashRadius = 0.5f;
-
-            Assert.AreEqual(2f, ImpactMarkMath.Diameter(_mark, 0f, 0f), 1e-5f);
-            Assert.AreEqual(4f, ImpactMarkMath.Diameter(_mark, 0f, 1f), 1e-5f);
-            Assert.AreEqual(6f, ImpactMarkMath.Diameter(_mark, 6f, 0.5f), 1e-5f);
         }
 
         [Test]

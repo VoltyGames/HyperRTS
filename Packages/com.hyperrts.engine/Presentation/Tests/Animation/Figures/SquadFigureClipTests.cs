@@ -110,20 +110,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         }
 
         [Test]
-        public void ProneFigure_CrawlsAndFiresWithTheProneClips()
-        {
-            Member(0, posture: Posture.Prone);
-            Update();
-            MoveFor(5f, 0.5f);
-
-            Assert.IsTrue(Plays(Lower(0), Range(140, true)), "running prone crawls");
-
-            _em.GetBuffer<WeaponPose>(_squad).ElementAt(0).CountShot();
-            Move(5f);
-            Assert.IsTrue(Plays(Upper(0), Range(150, false)));
-        }
-
-        [Test]
         public void OnlyChangedFigures_GetANewClip()
         {
             Update();

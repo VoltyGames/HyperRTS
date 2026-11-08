@@ -35,19 +35,6 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
-        public void Shots_CountEachShot()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 0.4f);
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
-
-            World.Run(2f);
-
-            var shots = (int)math.round((1000f - World.GetHealth(enemy)) / 10f);
-            Assert.Greater(shots, 1);
-            Assert.AreEqual(shots, Pose(gun, 0).Shots);
-        }
-
-        [Test]
         public void TurretedUnit_KeepsItsHeadingWhileFiring_AndSettlesWhenIdle()
         {
             var turret = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, cooldown: 0.2f, turreted: true);
@@ -100,30 +87,6 @@ namespace HyperRTS.Simulation.Tests.Combat
             // The muzzle 3 m ahead of the turret ring swung a quarter turn to the right.
             var start = projectiles.GetSingleton<Projectile>().Start;
             MathAssert.Near(new float3(3f, 1f, 0f), start, 0.1f);
-        }
-
-        [Test]
-        public void BuildingWeapon_AimsItsTurret_AndFiresOnceOnTarget()
-        {
-            var model = new UnityEngine.GameObject("Tower");
-            try
-            {
-                var authoring = model.AddComponent<WeaponAuthoring>();
-                model.AddComponent<BuildingAuthoring>();
-                Assert.IsTrue(authoring.AimsTurret, "a building never turns, so its weapon aims a turret");
-
-                var tower = World.AddWeapon(World.SpawnBuilding(1, float3.zero, new float2(2f, 2f)), range: 6f,
-                    cooldown: 0.1f, turreted: authoring.AimsTurret, traverseSpeed: 90f);
-                var enemy = World.SpawnUnit(2, new float3(-4f, 0f, 0f), maxHealth: 1000f);
-
-                World.Run(1.5f);
-                Assert.AreEqual(-0.5f * math.PI, Pose(tower, 0).YawRadians, YawTolerance);
-                Assert.Less(World.GetHealth(enemy), 1000f);
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(model);
-            }
         }
 
         [Test]

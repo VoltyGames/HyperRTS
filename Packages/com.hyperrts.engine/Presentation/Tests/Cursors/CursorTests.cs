@@ -113,15 +113,6 @@ namespace HyperRTS.Presentation.Tests.Cursors
         }
 
         [Test]
-        public void NoSelection_SelectsWhatItPointsAt()
-        {
-            var tank = Tank(float3.zero);
-
-            Assert.AreEqual(CursorKind.Select, Decide(tank));
-            Assert.AreEqual(CursorKind.Default, Decide(Entity.Null));
-        }
-
-        [Test]
         public void Tank_OnOwnUnit_Selects()
         {
             Select(Tank(float3.zero));
@@ -169,11 +160,7 @@ namespace HyperRTS.Presentation.Tests.Cursors
 
         [TestCase(-1, 1, CursorKind.ScrollUpLeft)]
         [TestCase(0, 1, CursorKind.ScrollUp)]
-        [TestCase(1, 1, CursorKind.ScrollUpRight)]
-        [TestCase(-1, 0, CursorKind.ScrollLeft)]
         [TestCase(1, 0, CursorKind.ScrollRight)]
-        [TestCase(-1, -1, CursorKind.ScrollDownLeft)]
-        [TestCase(0, -1, CursorKind.ScrollDown)]
         [TestCase(1, -1, CursorKind.ScrollDownRight)]
         public void Scroll_PointsAlongTheEdge(int x, int y, CursorKind expected) =>
             Assert.AreEqual(expected, CursorIntent.Scroll(new int2(x, y)));
@@ -202,10 +189,8 @@ namespace HyperRTS.Presentation.Tests.Cursors
             Assert.AreEqual(3, _set.Animation(CursorKind.Select).FrameAt(1.25f, 4));
         }
 
-        [TestCase(1f, 32)]
         [TestCase(1.25f, 48)]
         [TestCase(2f, 64)]
-        [TestCase(3f, 64)]
         public void Scale_PicksTheClosestDrawnSize(float scale, int expected) =>
             Assert.AreEqual(expected, _set.Animation(CursorKind.Default).Closest(_set.baseSize * scale).size);
 

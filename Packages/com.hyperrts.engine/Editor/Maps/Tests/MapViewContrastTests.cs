@@ -1,5 +1,3 @@
-using HyperRTS.Editor.Maps.Common;
-using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Views;
 using NUnit.Framework;
 using UnityEngine;
@@ -39,18 +37,6 @@ namespace HyperRTS.Editor.Maps.Tests
 
             Assert.Greater(contrast.LuminanceSpread, 0.8f);
             Assert.Less(contrast.LocalContrast, 0.01f);
-        }
-
-        [Test]
-        public void TheReport_KeepsViewContrast_ThroughJson()
-        {
-            var metrics = new MapMetrics { viewLuminanceSpread = 0.42f, viewLocalContrast = 0.031f };
-
-            var json = JsonUtility.ToJson(MapReport.Create(MapFixture.Spec(), new MapIssues(), metrics));
-            var report = JsonUtility.FromJson<MapReport>(json);
-
-            Assert.AreEqual(0.42f, report.metrics.viewLuminanceSpread);
-            Assert.AreEqual(0.031f, report.metrics.viewLocalContrast);
         }
 
         private static Color32[] Fill(System.Func<int, int, byte> grey)

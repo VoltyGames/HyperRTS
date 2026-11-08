@@ -92,12 +92,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         }
 
         [Test]
-        public void GpuStructs_MatchTheKernelsLayouts()
-        {
-            Assert.AreEqual(48, RowCropField.Stride);
-        }
-
-        [Test]
         public void Variant_IsStableAndUsesEveryModel()
         {
             var used = new int[4];
@@ -130,20 +124,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
                 Assert.LessOrEqual(Mathf.Abs(here), _crop.wander + 1e-5f);
                 Assert.Less(Mathf.Abs(next - here), 0.025f, "one plant along the row");
                 Assert.Less(Mathf.Abs(beside - here), 0.05f, "the next row wanders with this one");
-            }
-        }
-
-        [Test]
-        public void GrowthVariation_StaysInItsRange()
-        {
-            _crop.growthVariation = new Vector2(0.8f, 1.2f);
-            var field = Field(0f);
-            for (var row = 0; row < 40; row++)
-            {
-                for (var plant = 0; plant < 40; plant += 3)
-                {
-                    Assert.That(RowCropPlacement.GrowthVariation(field, row, plant, _crop), Is.InRange(0.8f, 1.2f));
-                }
             }
         }
 

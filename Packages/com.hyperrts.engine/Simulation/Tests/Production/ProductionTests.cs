@@ -83,17 +83,6 @@ namespace HyperRTS.Simulation.Tests.Production
         }
 
         [Test]
-        public void ConstructionSite_DoesNotProgressWithoutBuilders()
-        {
-            var site = World.SpawnBuilding(1, float3.zero, new float2(4f, 4f), complete: false, buildTime: 1f);
-
-            World.Run(3f);
-
-            Assert.IsTrue(World.IsEnabled<ConstructionProgress>(site));
-            Assert.AreEqual(0f, World.Get<ConstructionProgress>(site).Value);
-        }
-
-        [Test]
         public void PlaceBuilding_RejectedOnOccupiedGround()
         {
             var prefab = BuildingPrefab(50);

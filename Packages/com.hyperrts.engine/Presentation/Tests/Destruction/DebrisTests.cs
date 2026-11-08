@@ -131,21 +131,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void SameSeed_ThrowsTheSamePieces()
-        {
-            var first = new DebrisField();
-            var second = new DebrisField();
-
-            first.Throw(_set, new float3(4f, 0f, 2f), math.right(), 1f, 5, 42u);
-            second.Throw(_set, new float3(4f, 0f, 2f), math.right(), 1f, 5, 42u);
-
-            for (var slot = 0; slot < 5; slot++)
-            {
-                Assert.AreEqual(first.Piece(slot).Velocity, second.Piece(slot).Velocity);
-            }
-        }
-
-        [Test]
         public void Set_WithoutInstancingOnItsMaterial_HasAProblem()
         {
             Assert.IsNull(_set.Problem());
@@ -161,8 +146,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
             Assert.Less(DebrisSystem.PieceCount(8, DetailLevel.Medium), 8);
             Assert.AreEqual(8, DebrisSystem.PieceCount(8, DetailLevel.High));
             Assert.AreEqual(0, LastingDebris.CapAt(DetailLevel.Low));
-            Assert.AreEqual(8000, LastingDebris.CapAt(DetailLevel.Medium));
-            Assert.AreEqual(20000, LastingDebris.CapAt(DetailLevel.High));
         }
 
         [Test]

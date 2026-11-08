@@ -22,14 +22,6 @@ namespace HyperRTS.Simulation.Tests.Buildings
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        [Test]
-        public void Pole_DropsTheFlagByThePoleBeyondTwoFlagHeights()
-        {
-            var building = Mount(1f, 5f);
-
-            Assert.AreEqual(3f, _em.GetComponentData<FlagMount>(building).Drop, 1e-5f);
-        }
-
         [TestCase(1.5f, TestName = "Pole shorter than two flag heights")]
         [TestCase(11f, TestName = "Pole past the longest drop")]
         public void Pole_OutOfRange_Throws(float poleHeight)

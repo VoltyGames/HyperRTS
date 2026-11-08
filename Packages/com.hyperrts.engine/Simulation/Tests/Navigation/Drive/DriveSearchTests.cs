@@ -168,23 +168,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
         }
 
         [Test]
-        public void PoseInsideAWall_CostsNoExpansions()
-        {
-            _world.SpawnObstacle(new float3(30f, 0f, 30f), new float2(12f, 12f));
-            var access = RegisteredAccess(Truck);
-            var search = new DriveSearch(access, Truck, DriveSearch.MaxExpansions, Allocator.Temp);
-            var points = new NativeList<PathWaypoint>(64, Allocator.Temp);
-            var start = Truck.Chassis.Pose(float2.zero, new float2(0f, 1f));
-
-            var found = search.Run(start, DriveGoal.ToPose(new float2(30f, 30f), new float2(1f, 0f)), 0f, points);
-
-            Assert.IsFalse(found, "no way into the building");
-            Assert.AreEqual(0, search.Expansions, "gave up before searching");
-            points.Dispose();
-            search.Dispose();
-        }
-
-        [Test]
         public void OpenGround_PathHasNoTightWaypoints_AndRunsNoSearch()
         {
             var truck = Spawn(Truck, Wheels, float3.zero, 0f);

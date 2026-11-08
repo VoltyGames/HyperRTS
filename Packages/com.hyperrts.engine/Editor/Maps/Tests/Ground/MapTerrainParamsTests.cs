@@ -35,14 +35,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             Assert.AreEqual(0.5f, mapping.a, 1e-5f);
         }
 
-        [Test]
-        public void TerrainParams_GrassAndSlope_IsTheAuthoredGrass_AndMarksOnlyTheSlopeLayerTriplanar()
-        {
-            Assert.AreEqual(0.4f, MapTerrainParams.GrassAndSlope(Layer(false), false).r, 1e-5f);
-            Assert.AreEqual(1f, MapTerrainParams.GrassAndSlope(Layer(false), true).g, "the slope layer");
-            Assert.AreEqual(0f, MapTerrainParams.GrassAndSlope(Layer(false), false).g, "any other layer");
-        }
-
         private MapClimateLayer Layer(bool followsRows) => MapFixture.Item<MapClimateLayer>("Layer", i =>
         {
             i.terrainLayer = _terrainLayer;

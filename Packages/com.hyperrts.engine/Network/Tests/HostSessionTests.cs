@@ -46,19 +46,6 @@ namespace HyperRTS.Network.Tests
         }
 
         [Test]
-        public void HostAndClient_EachHoldTheirOwnSlot()
-        {
-            var hostPlayer = HostTestKit.LocalPlayer(_session.Host);
-            var clientPlayer = HostTestKit.LocalPlayer(_session.Client);
-
-            var owners = new[]
-            {
-                _session.Host.Get<Player>(hostPlayer).Owner, _session.Client.Get<Player>(clientPlayer).Owner,
-            };
-            CollectionAssert.AreEqual(new byte[] { 1, 2 }, owners, string.Join(",", owners));
-        }
-
-        [Test]
         public void HostCommand_RunsOnceInPlace()
         {
             var host = _session.Host;

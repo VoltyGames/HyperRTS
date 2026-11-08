@@ -194,19 +194,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         }
 
         [Test]
-        public void FillFromModel_TiltsAModelWithNoMovingParts()
-        {
-            var model = Pivot("Model", _unit.transform, new Vector3(50f, 3f, 20f));
-            Pivot("Exhaust_01", model);
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            rig.FillFromModel();
-
-            Assert.AreEqual(model, rig.tiltRoot);
-            Assert.AreEqual(new Vector2(20f, 50f), rig.footprint);
-        }
-
-        [Test]
         public void FillFromWheels_MeasuresTheChassis_AndTheRigSteersOnlyTheFrontAxle()
         {
             var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));

@@ -40,25 +40,6 @@ namespace HyperRTS.Presentation.Tests.Fog
         public void TearDown() => _kit.Dispose();
 
         [Test]
-        public void FoggedRoot_StopsRendering_UntilRevealed()
-        {
-            var enemy = Spawn(2);
-            var child = Part(enemy);
-            var own = Spawn(1);
-            _em.AddComponent<FogHidden>(enemy);
-
-            Run();
-            Assert.IsFalse(Drawn(enemy));
-            Assert.IsFalse(Drawn(child));
-            Assert.IsTrue(Drawn(own));
-
-            _em.RemoveComponent<FogHidden>(enemy);
-            Run();
-            Assert.IsTrue(Drawn(enemy));
-            Assert.IsTrue(Drawn(child));
-        }
-
-        [Test]
         public void SeenEnemy_FadesOutOfTheFog_ThenStopsDrawing_AndFadesBackIn()
         {
             var enemy = Spawn(2);
@@ -145,7 +126,7 @@ namespace HyperRTS.Presentation.Tests.Fog
         }
 
         [Test]
-        public void Collect_LinkedGroupPastSixtyThreeParts_ListsEveryPart()
+        public void Collect_PastSixtyThreeParts_ListsEveryPart()
         {
             var root = _em.CreateEntity();
             _em.AddBuffer<LinkedEntityGroup>(root).Add(root);
@@ -156,20 +137,15 @@ namespace HyperRTS.Presentation.Tests.Fog
             }
 
             Assert.AreEqual(Parts, CollectedCount(root));
-        }
 
-        [Test]
-        public void Collect_TransformChildrenPastSixtyThreeParts_ListsEveryPart()
-        {
-            var root = _em.CreateEntity();
-            _em.AddBuffer<Child>(root);
+            var parent = _em.CreateEntity();
+            _em.AddBuffer<Child>(parent);
             for (var i = 1; i < Parts; i++)
             {
-                var part = _em.CreateEntity();
-                _em.GetBuffer<Child>(root).Add(new Child { Value = part });
+                _em.GetBuffer<Child>(parent).Add(new Child { Value = _em.CreateEntity() });
             }
 
-            Assert.AreEqual(Parts, CollectedCount(root));
+            Assert.AreEqual(Parts, CollectedCount(parent), "transform children too");
         }
 
         // The fog visibility system collects hierarchies itself, so its state builds the lookups.

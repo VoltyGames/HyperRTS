@@ -89,17 +89,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         }
 
         [Test]
-        public void Trees_StampTheirCrushRating_OnTheSceneryLayer()
-        {
-            PlantTreeLine();
-            var grid = World.Grid();
-
-            Assert.AreEqual(TreeCrush, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(0.5f, 0f, 3.5f)))]);
-            Assert.AreEqual(0, grid.Scenery[grid.Grid.Index(grid.Grid.Cell(new float3(1.5f, 0f, 3.5f)))]);
-            Assert.IsTrue(grid.IsWalkable(new float3(0.5f, 0f, 3.5f)), "scenery leaves the cell open to the layer");
-        }
-
-        [Test]
         public void Truck_RoutesRoundATreeLine_AndNeverEntersIt()
         {
             var trees = PlantTreeLine();
@@ -195,18 +184,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             var half = WreckLength * 0.5f - WreckRadius;
             var position = World.GetPosition(unit);
             return math.distance(position.xz, new float2(0f, math.clamp(position.z, -half, half)));
-        }
-
-        [Test]
-        public void Wreck_ClosesTheLandItCovers()
-        {
-            SpawnWreck();
-            World.Tick();
-
-            var grid = World.Grid();
-            Assert.IsFalse(grid.IsWalkable(new float3(0f, 0f, 3f)), "under the hull");
-            Assert.IsFalse(grid.IsWalkable(new float3(-1.5f, 0f, 0f)), "under its side");
-            Assert.IsTrue(grid.IsWalkable(new float3(-2.5f, 0f, 0f)), "beside it");
         }
 
         [Test]

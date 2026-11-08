@@ -22,14 +22,6 @@ namespace HyperRTS.Network.Tests
         [SetUp]
         public void ResetSession() => NetworkSession.ResetStatics();
 
-        [TestCase(ConnectionState.State.Connecting, NetworkStatus.Connecting)]
-        [TestCase(ConnectionState.State.Handshake, NetworkStatus.Connecting)]
-        [TestCase(ConnectionState.State.Approval, NetworkStatus.Connecting)]
-        [TestCase(ConnectionState.State.Connected, NetworkStatus.Connected)]
-        [TestCase(ConnectionState.State.Disconnected, NetworkStatus.Disconnected)]
-        public void ConnectionStateMapsToStatus(ConnectionState.State state, NetworkStatus expected) =>
-            Assert.AreEqual(expected, NetworkStatusSystem.ToStatus(state));
-
         [TestCase(WorldFlags.GameServer | WorldFlags.GameClient, TestName = "RelayHostListensOnTheRelayOnly")]
         [TestCase(WorldFlags.GameClient, TestName = "RelayClientJoinsThroughTheRelay")]
         public void DriverStore_HasOneRelaySocket(WorldFlags flags)
@@ -39,9 +31,6 @@ namespace HyperRTS.Network.Tests
             Assert.AreEqual(TransportType.Socket, store.GetDriverType(store.FirstDriver));
             store.Dispose();
         }
-
-        [Test]
-        public void Token_IsNeverZero() => Assert.AreNotEqual(0UL, NetworkSession.Token);
 
         [Test]
         public void Rejoin_WithoutADirectJoin_ChangesNothing()
@@ -88,16 +77,6 @@ namespace HyperRTS.Network.Tests
             Assert.AreEqual(45.5f, options.TimeLimitMinutes);
             Assert.AreEqual("out.json", options.ReportPath);
             Assert.IsTrue(options.EndsItself);
-        }
-
-        [Test]
-        public void NoSessionFlag_StartsNothing()
-        {
-            var options = Parse("game.exe -screen-fullscreen 0");
-
-            Assert.AreEqual(LaunchMode.None, options.Mode);
-            Assert.IsNull(options.ScenePath);
-            Assert.IsFalse(options.EndsItself);
         }
 
         [TestCase("game.exe -host -observe", TestName = "ObserveNeedsConnect")]

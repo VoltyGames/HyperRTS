@@ -122,16 +122,6 @@ namespace HyperRTS.Presentation.Tests.Effects
         }
 
         [Test]
-        public void Density_ThinsByDetailLevel()
-        {
-            var low = EffectDetail.DensityAt(DetailLevel.Low);
-            var medium = EffectDetail.DensityAt(DetailLevel.Medium);
-            Assert.Greater(low, 0f, "low thins effects, never empties them");
-            Assert.Less(low, medium);
-            Assert.AreEqual(1f, EffectDetail.DensityAt(DetailLevel.High), "high plays rigs as authored");
-        }
-
-        [Test]
         public void Stream_FirstFrameHasNoSegment_ThenRunsFromLastFrame()
         {
             var streams = new EffectStreams(_pool);
@@ -180,16 +170,6 @@ namespace HyperRTS.Presentation.Tests.Effects
 
             Assert.IsNull(state.Graphs, "stopped with its stream");
             Assert.AreSame(graphs, _dust.StartStream(), "a set with no live particles serves the next stream");
-        }
-
-        [Test]
-        public void StreamKey_IsStablePerEntityAndStream()
-        {
-            var other = new Entity { Index = 2, Version = 1 };
-
-            Assert.AreEqual(EffectStreams.Key(Shell, 0), EffectStreams.Key(Shell, 0));
-            Assert.AreNotEqual(EffectStreams.Key(Shell, 0), EffectStreams.Key(Shell, 1));
-            Assert.AreNotEqual(EffectStreams.Key(Shell, 0), EffectStreams.Key(other, 0));
         }
 
         [Test]

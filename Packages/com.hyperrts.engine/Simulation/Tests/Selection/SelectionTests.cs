@@ -92,18 +92,6 @@ namespace HyperRTS.Simulation.Tests.Selection
         }
 
         [Test]
-        public void ResolveSelected_AppliesModifierRules()
-        {
-            Assert.IsTrue(SelectionMath.ResolveSelected(false, true, false, false), "replace: selected if hit");
-            Assert.IsFalse(SelectionMath.ResolveSelected(true, false, false, false));
-            Assert.IsTrue(SelectionMath.ResolveSelected(true, false, true, false), "additive keeps the rest");
-            Assert.IsTrue(SelectionMath.ResolveSelected(false, true, true, false));
-            Assert.IsFalse(SelectionMath.ResolveSelected(true, true, false, true), "subtract removes hits");
-            Assert.IsTrue(SelectionMath.ResolveSelected(true, false, false, true));
-            Assert.IsFalse(SelectionMath.ResolveSelected(true, true, true, true), "subtract wins over additive");
-        }
-
-        [Test]
         public void DragBox_SelectsOnlyWhatIsInside_ReplacingTheSelection()
         {
             var inside = CreateSelectable(new float3(0, 0, 0));

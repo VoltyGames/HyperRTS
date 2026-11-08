@@ -144,26 +144,22 @@ namespace HyperRTS.Simulation.Tests.Resources
             Assert.Less(math.distance(transform.Position.xz, stop.xz), BayPose.StopReach, "at the stop");
         }
 
-        [Test]
-        public void Bay_Frees_WhenItsTruckDies()
+        [TestCase(true, TestName = "Bay_Frees_WhenItsTruckDies")]
+        [TestCase(false, TestName = "Bay_Frees_WhenItsTruckGetsAnotherOrder")]
+        public void Bay_Frees_WhenItsTruckLeavesTheJob(bool dies)
         {
             var depot = SpawnDepot(1);
             var truck = SpawnTruck(new float3(0f, 0f, -20f));
             Assert.IsTrue(World.RunUntil(() => Occupant(depot, 0) == truck, 2f), "the truck claimed the bay");
 
-            World.Kill(truck);
-
-            Assert.IsTrue(World.RunUntil(() => Occupant(depot, 0) == Entity.Null, 1f), "the bay is free again");
-        }
-
-        [Test]
-        public void Bay_Frees_WhenItsTruckGetsAnotherOrder()
-        {
-            var depot = SpawnDepot(1);
-            var truck = SpawnTruck(new float3(0f, 0f, -20f));
-            Assert.IsTrue(World.RunUntil(() => Occupant(depot, 0) == truck, 2f), "the truck claimed the bay");
-
-            World.Issue(truck, new Order { Type = OrderType.Move, Position = new float3(-20f, 0f, 30f) });
+            if (dies)
+            {
+                World.Kill(truck);
+            }
+            else
+            {
+                World.Issue(truck, new Order { Type = OrderType.Move, Position = new float3(-20f, 0f, 30f) });
+            }
 
             Assert.IsTrue(World.RunUntil(() => Occupant(depot, 0) == Entity.Null, 1f), "the bay is free again");
         }

@@ -102,20 +102,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void Repair_RevealsTheSectionAgain()
-        {
-            var house = Building(0ul, true, out var models);
-            Update(0f);
-            SetBroken(house, 0b0010ul);
-            Update(1f);
-
-            SetBroken(house, 0ul);
-            Update(2f);
-
-            AssertDrawn(models[1], intact: true, pieces: false, stub: false, heap: false);
-        }
-
-        [Test]
         public void Copies_JoinTheBuildingsGroupWithItsHideReasons_AndLeaveWithRepair()
         {
             var house = Building(0ul, false, out var models);

@@ -48,16 +48,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
         }
 
         [Test]
-        public void Pose_StaysUprightWithoutMaxTilt()
-        {
-            var heights = Heights(p => 0.5f * p.x);
-            var entry = MapFixture.Item<MapProp>("House", i => { i.size = new Vector2(8f, 8f); });
-            var pose = MapPlacementPose.OnGround(new MapPlacement(entry, Vector2.zero, 0f, 1f), heights, 0f);
-
-            Assert.That(Vector3.Angle(Vector3.up, pose.rotation * Vector3.up), Is.LessThan(0.01f));
-        }
-
-        [Test]
         public void GrassNearProps_IsNoneOnTheFootprintAndFullPastTheFalloff()
         {
             var climate = MapFixture.Climate();

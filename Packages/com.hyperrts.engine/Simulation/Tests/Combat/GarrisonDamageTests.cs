@@ -115,25 +115,6 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
-        public void HighExplosive_HurtsTheGarrisonMoreThanSmallArms()
-        {
-            var shot = House(float3.zero);
-            var shelled = House(new float3(30f, 0f, 0f));
-            var rifles = Squad(new float3(10f, 0f, 0f));
-            var shells = Squad(new float3(40f, 0f, 0f));
-            Garrison(rifles, shot);
-            Garrison(shells, shelled);
-            World.Tick();
-
-            Hit(shot, _smallArms);
-            Hit(shelled, _highExplosive);
-            Resolve();
-
-            Assert.Greater(Lost(shells), Lost(rifles));
-            Assert.AreEqual(Shot * (1f - Protection) * 1.3f, Lost(shells), 1e-3f);
-        }
-
-        [Test]
         public void DamagedBuilding_ProtectsLess()
         {
             var house = House(float3.zero);

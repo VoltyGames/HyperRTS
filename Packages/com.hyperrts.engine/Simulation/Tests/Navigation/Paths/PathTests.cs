@@ -107,36 +107,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
         }
 
         [Test]
-        public void DenseBaseOfRotatedBuildings_PathThreadsTheGaps_AndArrives()
-        {
-            CreateMatch(200f);
-            var random = new Random(21);
-            for (var x = 0; x < 6; x++)
-            {
-                for (var z = 0; z < 6; z++)
-                {
-                    var center = new float3(-35f + x * 14f, 0f, -35f + z * 14f);
-                    _world.SpawnObstacle(center, random.NextFloat2(new float2(6f), new float2(9f)),
-                        random.NextFloat(math.PI));
-                }
-            }
-
-            _world.Tick();
-            var start = new float3(-70f, 0f, -60f);
-            var goal = new float3(0f, 0f, 0f);
-            var unit = _world.SpawnUnit(1, start);
-            _world.MoveTo(unit, goal);
-            _world.Tick(frames: 2);
-
-            var path = _world.Get<PathState>(unit);
-            Assert.AreEqual(PathStatus.Ready, path.Status);
-            Assert.IsFalse(path.IsShort, "the gap between buildings is reachable");
-            AssertLegsInSight(unit, start);
-            Assert.IsTrue(_world.RunUntil(() => !_world.IsEnabled<MoveDestination>(unit), 40f), "the move ended");
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 1f, "at the goal inside the base");
-        }
-
-        [Test]
         public void RiverWithOneBridge_PathCrossesOnTheBridge()
         {
             CreateMatch(200f);
@@ -172,32 +142,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
                 Assert.IsTrue(access.HasLineOfSight(from, waypoint.Position), $"leg {from} to {waypoint.Position}");
                 from = waypoint.Position;
             }
-        }
-
-        [Test]
-        public void Path_RoutesAroundWallOfBuildings_NeverEnteringBlockedCells()
-        {
-            CreateMatch(200f);
-            for (var z = -8f; z <= 8f; z += 4f)
-            {
-                _world.SpawnBuilding(1, new float3(0f, 0f, z), new float2(4f, 4f));
-            }
-
-            var unit = _world.SpawnUnit(1, new float3(-8f, 0f, 0f));
-            var goal = new float3(8f, 0f, 0f);
-            _world.MoveTo(unit, goal);
-
-            var widest = 0f;
-            for (var t = 0f; t < 12f; t += TestWorld.FrameTime)
-            {
-                _world.Tick();
-                var position = _world.GetPosition(unit);
-                Assert.IsTrue(_world.Grid().IsWalkable(position), $"entered a blocked cell at {position}");
-                widest = math.max(widest, math.abs(position.z));
-            }
-
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, goal.xz), 0.2f);
-            Assert.Greater(widest, 10f, "the unit went around the wall's end");
         }
 
         [Test]

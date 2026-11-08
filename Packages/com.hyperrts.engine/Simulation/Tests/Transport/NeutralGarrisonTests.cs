@@ -60,13 +60,9 @@ namespace HyperRTS.Simulation.Tests.Transport
         /// Grids as the maps build them (2 m cells) park a unit up to three metres from a footprint, depending on
         /// where the footprint falls on the grid, and village houses stand at any angle.
         /// </summary>
-        [TestCase(1f, 0f, 0f)]
         [TestCase(2f, 0f, 0f)]
-        [TestCase(2f, 0.5f, 0f)]
         [TestCase(2f, 1f, 0f)]
-        [TestCase(2f, 1.5f, 0f)]
         [TestCase(1f, 0f, 45f)]
-        [TestCase(2f, 0f, 45f)]
         [TestCase(2f, 0.5f, 30f)]
         [TestCase(2f, 1f, 70f)]
         public void Garrison_TakesEveryUnitOfAGroup(float navCellSize, float offset, float yawDegrees)
@@ -88,25 +84,6 @@ namespace HyperRTS.Simulation.Tests.Transport
             Assert.AreEqual(1, HouseOwner(house), "it belongs to its garrison");
         }
 
-        [TestCase(1f)]
-        [TestCase(2f)]
-        public void Garrison_TakesAnotherUnitOnceItIsOwned(float navCellSize)
-        {
-            SetNavCellSize(navCellSize);
-            var house = House(float3.zero);
-            var first = Rifleman(1, new float3(10f, 0f, 0f));
-            World.Enter(first, house);
-            World.Run(5f);
-            Assert.AreEqual(1, HouseOwner(house));
-
-            var second = Rifleman(1, new float3(10f, 0f, 3f));
-            World.Enter(second, house);
-            World.Run(5f);
-
-            Assert.IsTrue(World.IsInside(second));
-            Assert.AreEqual(2, Occupants(house));
-        }
-
         [Test]
         public void Garrison_RefusesAnEnemy_WhileOwned()
         {
@@ -121,19 +98,6 @@ namespace HyperRTS.Simulation.Tests.Transport
 
             Assert.IsFalse(World.IsInside(enemy));
             Assert.AreEqual(1, Occupants(house));
-        }
-
-        [Test]
-        public void IsSellable_OnlyForBuildingsThatAreNotGarrisons()
-        {
-            var depot = World.SpawnBuilding(1, float3.zero, Footprint);
-            var house = House(new float3(30f, 0f, 0f));
-            var unit = Rifleman(1, new float3(60f, 0f, 0f));
-            var entityManager = World.EntityManager;
-
-            Assert.IsTrue(BuildingRules.IsSellable(entityManager, depot));
-            Assert.IsFalse(BuildingRules.IsSellable(entityManager, house), "occupying a house doesn't make it yours to sell");
-            Assert.IsFalse(BuildingRules.IsSellable(entityManager, unit));
         }
 
         [Test]

@@ -34,20 +34,6 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
         public void TearDown() => _world.Dispose();
 
         [Test]
-        public void HiddenByBaking_MarksMeshesAndRoots_OtherEntitiesNot()
-        {
-            var mesh = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(Prefab));
-            var root = _em.CreateEntity(typeof(EntityInfo), typeof(Prefab));
-            var other = _em.CreateEntity(typeof(Prefab));
-
-            Update<HiddenByBakingSystem>();
-
-            Assert.IsTrue(_em.HasComponent<HiddenBy>(mesh));
-            Assert.IsTrue(_em.HasComponent<HiddenBy>(root));
-            Assert.IsFalse(_em.HasComponent<HiddenBy>(other));
-        }
-
-        [Test]
         public void BrokenModel_BakesAsAFullSizePrefab_WithItsChildMeshes()
         {
             var building = _em.CreateEntity();

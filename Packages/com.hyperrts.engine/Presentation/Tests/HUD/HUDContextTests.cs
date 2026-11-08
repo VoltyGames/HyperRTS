@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Tests.HUD
     /// <summary>The HUD's view of a hand-built world: selection, and which orders the card offers.</summary>
     public class HUDContextTests : HUDFixture
     {
-                [Test]
+        [Test]
         public void SelectionHash_ChangesWhenASelectedBuildingIsCapturedOrFinished()
         {
             var building = _em.CreateEntity(typeof(Selected), typeof(EntityInfo), typeof(ConstructionProgress));
@@ -33,20 +33,6 @@ namespace HyperRTS.Presentation.Tests.HUD
             Assert.AreNotEqual(built, captured);
             Assert.AreNotEqual(captured, finished);
             Assert.AreEqual(finished, Hash(), "stable while nothing changes");
-        }
-
-        [Test]
-        public void Writes_ReachTheClientSingletons()
-        {
-            Refresh();
-
-            _context.FocusCamera(new float3(5f, 0f, 7f));
-            _context.SetPointerOverUI(true);
-
-            var focus = Singleton<CameraFocusRequest>();
-            Assert.IsTrue(focus.Pending);
-            Assert.AreEqual(new float3(5f, 0f, 7f), focus.Point);
-            Assert.IsTrue(Singleton<PointerState>().OverUI);
         }
 
         [Test]

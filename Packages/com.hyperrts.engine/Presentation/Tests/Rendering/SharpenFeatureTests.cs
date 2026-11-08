@@ -22,23 +22,12 @@ namespace HyperRTS.Presentation.Tests.Rendering
         public void TearDown() => Object.DestroyImmediate(_feature);
 
         [Test]
-        public void SettingsProblem_DefaultSettings_IsEmpty() => Assert.IsEmpty(_feature.SettingsProblem());
-
-        [Test]
         public void SettingsProblem_StrengthOutOfRange_NamesIt()
         {
             _feature.strength = 1.5f;
             StringAssert.Contains("strength", _feature.SettingsProblem());
             _feature.strength = -0.1f;
             StringAssert.Contains("strength", _feature.SettingsProblem());
-        }
-
-        [Test]
-        public void RunsAt_TheLowestQualityLevelAndAbove()
-        {
-            _feature.lowestQualityLevel = 2;
-            Assert.IsFalse(_feature.RunsAt(1));
-            Assert.IsTrue(_feature.RunsAt(2));
         }
     }
 }

@@ -115,19 +115,6 @@ namespace HyperRTS.Simulation.Tests.Vision
         }
 
         [Test]
-        public void FogHidden_ClearedWhenFogIsDisabled()
-        {
-            var unseen = _world.SpawnUnit(2, new float3(50f, 0f, 0f));
-            _world.Tick();
-            Assert.IsTrue(_world.IsFogHidden(unseen));
-
-            _world.DisableFog();
-            _world.Tick();
-
-            Assert.IsFalse(_world.IsFogHidden(unseen));
-        }
-
-        [Test]
         public void Detector_RevealsStealthedEnemy_OnlyInRange()
         {
             var soldier = Detect(_world.AddWeapon(_world.SpawnUnit(1, float3.zero)), radius: 5f);

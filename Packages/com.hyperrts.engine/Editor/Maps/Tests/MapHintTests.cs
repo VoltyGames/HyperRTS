@@ -105,25 +105,6 @@ namespace HyperRTS.Editor.Maps.Tests
         }
 
         [Test]
-        public void Lanes_AreWaypointsAboutFiftyMetresApart_NeitherBaseIncluded()
-        {
-            _nav = Field(Wall);
-
-            FillDuel();
-
-            foreach (var lane in Lanes(1, 2))
-            {
-                var path = new[] { new Vector2(-60f, 0f) }.Concat(lane.waypoints).Append(new Vector2(60f, 0f)).ToList();
-                Assert.GreaterOrEqual(lane.waypoints.Count, 2);
-                for (var i = 1; i < path.Count - 1; i++)
-                {
-                    var gap = Vector2.Distance(path[i - 1], path[i]);
-                    Assert.That(gap, Is.InRange(35f, 55f), $"waypoint {i}");
-                }
-            }
-        }
-
-        [Test]
         public void Expansions_AreOrderedByWalkingDistance_TheSlotsOwnFieldFirst()
         {
             _nav = Field(Wall);

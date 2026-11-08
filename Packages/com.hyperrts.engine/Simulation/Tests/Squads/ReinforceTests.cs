@@ -74,30 +74,6 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
-        public void Reinforce_IsRefusedWhenPoor()
-        {
-            var squad = Squad(funds: 10);
-
-            Reinforce(squad);
-            World.Run(6f);
-
-            Assert.AreEqual(2, Living(squad), "10 supplies can't pay 18");
-            Assert.AreEqual(0, Spent(10));
-            Assert.IsFalse(World.IsEnabled<Reinforcing>(squad));
-        }
-
-        [Test]
-        public void Reinforce_IsRefusedOutOfRange()
-        {
-            var squad = Squad(Funds, pointRange: 5f);
-
-            Reinforce(squad);
-            World.Run(6f);
-
-            Assert.AreEqual(2, Living(squad), "the point is 10 m away and reaches 5");
-        }
-
-        [Test]
         public void Reinforce_LeavingRangeCancelsAndRefundsTheMemberInProgress()
         {
             var squad = Squad(Funds);

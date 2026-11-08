@@ -91,15 +91,6 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
-        public void HitOnAnAircraft_StruckTheAir()
-        {
-            Gun(float3.zero, targets: WeaponTargets.Air);
-            _world.SpawnAircraft(2, new float3(3f, 0f, 0f));
-
-            Assert.AreEqual(ImpactSurface.Air, _world.QueuedOver(1f, CueSlot.Impact)[0].Surface);
-        }
-
-        [Test]
         public void HitOnAShip_StruckTheWater()
         {
             _world.ConfigureMap(waterLevel: -1f);

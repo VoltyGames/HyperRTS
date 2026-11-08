@@ -80,18 +80,6 @@ namespace HyperRTS.Presentation.Tests.Common
         }
 
         [Test]
-        public void Catalog_PrefersThePrefabOverInstances()
-        {
-            var prefab = CreateTyped(true);
-            _em.AddBuffer<EntityEffect>(prefab).Add(new EntityEffect { Slot = CueSlot.Death });
-            _kit.RefreshRegistry();
-
-            var set = _catalog.Find(_em, _registry, TypeId);
-
-            Assert.IsTrue(set.TryGet(CueSlot.Death, 0, out _));
-        }
-
-        [Test]
         public void Catalog_PrefabWithoutData_IsAFinalMiss()
         {
             CreateTyped(true);

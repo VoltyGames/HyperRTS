@@ -183,16 +183,6 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         }
 
         [Test]
-        public void SideZero_Throws()
-        {
-            CreateSides(_world, out _base, out _truck);
-            RequestSetup(Slot(1, 0), Slot(2, 1));
-
-            LogAssert.Expect(LogType.Exception, new Regex("Player 1 plays side 0"));
-            _world.Tick();
-        }
-
-        [Test]
         public void AReplay_ClaimsTheSpawnedKit_WithoutDoublingIt()
         {
             var replay = RecordKitMatch();

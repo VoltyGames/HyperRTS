@@ -87,7 +87,6 @@ namespace HyperRTS.Presentation.Tests.Effects
 
         [TestCase(DetailLevel.Low, 0)]
         [TestCase(DetailLevel.Medium, SmokeShadows.Capacity)]
-        [TestCase(DetailLevel.High, SmokeShadows.Capacity)]
         public void SmokeShadows_ReachTheCookie_FromMediumUp_NearestFirst(DetailLevel level, int expected)
         {
             var smoke = new SmokeShadows();

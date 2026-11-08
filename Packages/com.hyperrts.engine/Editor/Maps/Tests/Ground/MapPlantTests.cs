@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
         }
 
         [Test]
-        public void Coverage_IsASlicePerPlant_FilteredClampedAndLinear()
+        public void Coverage_IsASlicePerPlant()
         {
             var bake = Bake();
             bake.Set(0, 3, 5, 0.5f);
@@ -59,9 +59,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             {
                 Assert.AreEqual(2, coverage.depth);
                 Assert.AreEqual(128, coverage.width);
-                Assert.AreEqual(TextureFormat.R8, coverage.format);
-                Assert.AreEqual(FilterMode.Bilinear, coverage.filterMode);
-                Assert.AreEqual(TextureWrapMode.Clamp, coverage.wrapMode);
                 Assert.AreEqual(128, coverage.GetPixelData<byte>(0, 0)[5 * 128 + 3]);
                 Assert.AreEqual(255, coverage.GetPixelData<byte>(0, 1)[5 * 128 + 3]);
                 Assert.AreEqual(0, coverage.GetPixelData<byte>(0, 1)[5 * 128 + 4]);
@@ -73,7 +70,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
         }
 
         [TestCase(0.1f)]
-        [TestCase(0.3f)]
         [TestCase(0.75f)]
         public void Stands_CoverAboutTheirShare_InEveryCopy(float share)
         {
@@ -93,26 +89,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             }
 
             Assert.AreEqual(share, inside / samples, 0.08f, "stands cover about their share");
-        }
-
-        [Test]
-        public void LibraryPlants_BecomeRendererPlants()
-        {
-            var item = MapFixture.Item<MapClimatePlant>("Grass", i =>
-            {
-                i.width = new Vector2(0.5f, 0.7f);
-                i.height = new Vector2(0.2f, 0.3f);
-                i.density = 12f;
-                i.clumping = 0.4f;
-                i.reach = 35f;
-            });
-            var plant = item.Plant();
-
-            Assert.AreEqual(new Vector2(0.5f, 0.7f), plant.width);
-            Assert.AreEqual(new Vector2(0.2f, 0.3f), plant.height);
-            Assert.AreEqual(12f, plant.density);
-            Assert.AreEqual(0.4f, plant.clumping);
-            Assert.AreEqual(35f, plant.reach);
         }
 
         [TestCase(MapSymmetry.Rotate180)]

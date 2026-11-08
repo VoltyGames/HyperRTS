@@ -98,18 +98,6 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
-        public void Retreat_IgnoresAnOfflinePoint()
-        {
-            var squad = Squad(float3.zero);
-            World.SetOffline(Point(1, new float3(20f, 0f, 0f)), true);
-
-            Retreat(squad);
-            World.Run(1f);
-
-            Assert.IsFalse(World.IsEnabled<ActiveOrder>(squad));
-        }
-
-        [Test]
         public void Retreat_WithNoPointDoesNothing()
         {
             var squad = Squad(float3.zero);

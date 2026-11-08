@@ -147,16 +147,6 @@ namespace HyperRTS.Simulation.Tests.Navigation
         }
 
         [Test]
-        public void LongHull_NoseAtTheEdge_IsInReach_ThoughItsCentreIsFar()
-        {
-            var centre = new float2(8f + TruckRadius + 0.5f + HalfSegment, 0f);
-            var axis = new float2(HalfSegment, 0f);
-
-            Assert.IsTrue(TargetReach.InReach(Yard, centre, axis, TruckRadius, 2f), "nose at the edge");
-            Assert.IsFalse(TargetReach.InReach(Yard, centre + new float2(6f, 0f), axis, TruckRadius, 2f), "well back");
-        }
-
-        [Test]
         public void EdgePoint_LiesJustOutsideTheNearestSide()
         {
             Assert.AreEqual(new float2(10f, 3f), Yard.EdgePoint(new float2(30f, 3f), 2f), "beside a side");

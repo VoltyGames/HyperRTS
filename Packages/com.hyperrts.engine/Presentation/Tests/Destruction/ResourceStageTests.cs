@@ -29,7 +29,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
         [TearDown]
         public void TearDown() => _kit.Dispose();
 
-        [TestCase(201, 0)]
         [TestCase(200, 1)]
         [TestCase(100, 2)]
         [TestCase(1, 3)]

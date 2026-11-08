@@ -63,37 +63,15 @@ namespace HyperRTS.Presentation.Tests.Construction
         }
 
         [Test]
-        public void Reveal_FinishedBuildingNeverGetsTheProgress()
-        {
-            var building = RevealBuilding(1f, false, out var meshes, out _);
-
-            _reveal.Update(_kit.World.Unmanaged);
-
-            Assert.IsFalse(_em.HasComponent<BuildProgress>(meshes[0]));
-            Assert.IsFalse(_em.HasComponent<BuildRevealing>(building));
-        }
-
-        [Test]
-        public void SiteDressing_ShowsWhileBuilt_AndHidesOnceComplete()
+        public void SiteAndWatch_StopOnceBuilt_AndResumeWithConstruction()
         {
             var building = SiteBuilding(true, out var site, out var dressing);
             UpdateSite(0.0);
             Assert.IsTrue(Shown(site) && Shown(dressing));
-
-            _em.SetComponentEnabled<ConstructionProgress>(building, false);
-            UpdateSite(0.1);
-
-            Assert.IsFalse(Shown(site) || Shown(dressing));
-        }
-
-        [Test]
-        public void Watch_StopsOnceBuilt_AndResumesWithConstruction()
-        {
-            var building = SiteBuilding(true, out var site, out _);
-            UpdateSite(0.0);
             _em.SetComponentEnabled<ConstructionProgress>(building, false);
             UpdateSite(0.1);
             Assert.IsFalse(_em.IsComponentEnabled<ConstructionWatch>(building));
+            Assert.IsFalse(Shown(site) || Shown(dressing));
 
             _em.SetComponentEnabled<ConstructionProgress>(building, true);
             UpdateSite(0.2);

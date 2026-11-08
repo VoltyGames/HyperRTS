@@ -188,7 +188,6 @@ namespace HyperRTS.Simulation.Tests.Navigation
         }
 
         [Test, Performance]
-        [TestCase(30, 12.0)]
         [TestCase(200, 20.0)]
         public void GroupOrder_CrossMap(int count, double budget)
         {

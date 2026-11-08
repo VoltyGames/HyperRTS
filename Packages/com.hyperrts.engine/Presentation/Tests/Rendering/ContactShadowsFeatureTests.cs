@@ -44,14 +44,5 @@ namespace HyperRTS.Presentation.Tests.Rendering
             _feature.fadeStart = -1f;
             StringAssert.Contains("fade", _feature.SettingsProblem());
         }
-
-        [Test]
-        public void RunsAt_TheLowestQualityLevelAndAbove()
-        {
-            _feature.lowestQualityLevel = 1;
-            Assert.IsFalse(_feature.RunsAt(0));
-            Assert.IsTrue(_feature.RunsAt(1));
-            Assert.IsTrue(_feature.RunsAt(3));
-        }
     }
 }

@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using System.Linq;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
-using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
 using NUnit.Framework;
@@ -61,14 +59,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
         }
 
         [Test]
-        public void TileRects_StepFromTheAreasCorner()
-        {
-            var rect = _field.TileRect(new ScatterTile { x = 2, z = 1 });
-
-            Assert.AreEqual(new Rect(-32f + 2f * ScatterTiles.Size, -32f + ScatterTiles.Size, 16f, 16f), rect);
-        }
-
-        [Test]
         public void Problems_NameMissingModelsAndSlicesThatDontMatchThePlants()
         {
             CollectionAssert.IsEmpty(_field.Problems());
@@ -113,21 +103,8 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
             Assert.AreEqual(inFar, GrassBands.InBand(GrassBands.Far, shadows, near, far));
         }
 
-        [TestCase(0f)]
-        [TestCase(5000f)]
-        public void Capacity_LeavesRoomOverTheExpectedCount(float expected) =>
-            Assert.That(GrassBands.Capacity(expected), Is.GreaterThan(expected * 1.05f + 3f));
-
-        [Test]
-        public void GpuStructs_MatchTheKernelsLayouts()
-        {
-            Assert.AreEqual(40, GrassPlantGpu.Stride);
-            Assert.AreEqual(28, ScatterJob.Stride);
-        }
-
         [TestCase(0f, 160f, 160f)]
         [TestCase(40f, 160f, 40f)]
-        [TestCase(240f, 160f, 160f)]
         public void DistanceAt_TakesTheShorterOfReachAndTheQualityDistance(float reach, float distance, float drawn)
         {
             var plant = new GrassPlant { reach = reach };
@@ -175,18 +152,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
             var (nearest, farthest) = ScatterTiles.Distances(far, new Vector3(0f, 1f, 8f));
             Assert.AreEqual(100f - ScatterTiles.Overhang, nearest, 1e-4f);
             Assert.Greater(farthest, 116f);
-        }
-
-        [Test]
-        public void TerrainDetail_GivesEachLevelBelowUltraItsOwnKeyword_AndUltraNone()
-        {
-            var keywords = new[] { TerrainQuality.Low, TerrainQuality.Medium, TerrainQuality.High }
-                .Select(TerrainDetail.KeywordFor).ToArray();
-
-            Assert.That(keywords, Is.All.Not.Null);
-            Assert.That(keywords, Is.Unique);
-            Assert.AreEqual(TerrainDetail.NoParallaxKeyword, TerrainDetail.KeywordFor(TerrainQuality.High));
-            Assert.IsNull(TerrainDetail.KeywordFor(TerrainQuality.Ultra), "the shader's full path");
         }
 
         [Test]

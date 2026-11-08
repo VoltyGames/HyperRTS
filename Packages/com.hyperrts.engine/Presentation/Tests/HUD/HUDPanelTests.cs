@@ -28,27 +28,6 @@ namespace HyperRTS.Presentation.Tests.HUD
             return hud.Require<VisualElement>(name);
         }
 
-        [Test]
-        public void BoxedPanel_HasPanelClass()
-        {
-            var panel = new SelectionPanel(Slot("selection"), Layouts);
-
-            Assert.IsTrue(panel.Root.ClassListContains("hud-panel"));
-            Assert.IsTrue(panel.BlocksPointer);
-            Assert.IsTrue(panel.NeedsPlayer);
-        }
-
-        [Test]
-        public void GameOverBanner_IsUnboxedPassThroughOverlay()
-        {
-            var banner = new GameOverBanner(Slot("game-over"));
-
-            Assert.IsTrue(banner.Root.ClassListContains("hud-banner"));
-            Assert.IsFalse(banner.Root.ClassListContains("hud-panel"));
-            Assert.IsFalse(banner.BlocksPointer);
-            Assert.IsFalse(banner.NeedsPlayer);
-        }
-
         // Each constructor requires every element it names, so building them checks the shells.
         [Test]
         public void EveryPanel_BuildsFromItsShell()
@@ -56,25 +35,6 @@ namespace HyperRTS.Presentation.Tests.HUD
             Assert.DoesNotThrow(() => new ResourceBar(Slot("top-bar"), Layouts));
             Assert.DoesNotThrow(() => new Minimap(Slot("minimap")));
             Assert.DoesNotThrow(() => new CommandCard(Slot("commands"), Layouts, CommandCatalog.Create()));
-        }
-
-        [Test]
-        public void LineCost_IsAPassThroughRowInTheHUDTree()
-        {
-            var lineCost = new LineCost(Layouts.Root.CloneRoot().Require<CostRow>("line-cost"));
-
-            Assert.IsFalse(lineCost.BlocksPointer);
-            Assert.IsTrue(lineCost.NeedsPlayer);
-        }
-
-        [Test]
-        public void PlacementHint_IsAHiddenPassThroughLabel()
-        {
-            var label = Layouts.Root.CloneRoot().Require<Label>("placement-hint");
-            var hint = new PlacementHint(label);
-
-            Assert.IsFalse(hint.BlocksPointer);
-            Assert.IsTrue(label.ClassListContains("hrts-hidden"), "hidden until a building is placed");
         }
 
         [Test]

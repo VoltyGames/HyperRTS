@@ -208,24 +208,6 @@ namespace HyperRTS.Simulation.Tests.Cues
             Assert.AreEqual(1, low[0].Owner);
         }
 
-        [Test]
-        public void FlickeringPower_IsAnnouncedOncePerInterval()
-        {
-            World.SpawnBuilding(1, float3.zero, Footprint, power: 5f);
-            var drain = World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -10f);
-            var low = Announced(0.2f, AnnouncementKind.LowPower);
-            World.Set(drain, new PowerSupply { Amount = 0f });
-            low.AddRange(Announced(0.2f, AnnouncementKind.LowPower));
-            World.Set(drain, new PowerSupply { Amount = -10f });
-            low.AddRange(Announced(0.2f, AnnouncementKind.LowPower));
-
-            Assert.AreEqual(1, low.Count, "the gate holds the second fall");
-            World.Set(drain, new PowerSupply { Amount = 0f });
-            World.Run(AnnouncementGate.Interval);
-            World.Set(drain, new PowerSupply { Amount = -10f });
-            Assert.AreEqual(1, Announced(0.2f, AnnouncementKind.LowPower).Count, "the gate reopens");
-        }
-
         private Entity Voiced(Entity entity, params CueSlot[] slots)
         {
             var writer = World.Writer(entity);

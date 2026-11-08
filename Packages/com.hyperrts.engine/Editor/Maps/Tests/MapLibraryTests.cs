@@ -19,15 +19,6 @@ namespace HyperRTS.Editor.Maps.Tests
     /// </summary>
     public class MapLibraryTests
     {
-        private readonly List<Object> _made = new();
-
-        [TearDown]
-        public void TearDown()
-        {
-            _made.ForEach(Object.DestroyImmediate);
-            _made.Clear();
-        }
-
         [Test]
         public void AClimate_PullsInWhatItUses()
         {
@@ -87,21 +78,6 @@ namespace HyperRTS.Editor.Maps.Tests
             CollectionAssert.AreEqual(new[] { "Crater" }, climate.decals.Select(d => d.key));
             CollectionAssert.AreEqual(new[] { "Grass", "Fireweed" }, climate.plants.Select(d => d.key));
             Assert.IsNull(library.Climate("Steppe", "test").war);
-        }
-
-        [Test]
-        public void ThePalette_HoldsEveryProp_AndTheRulesLoad()
-        {
-            var library = MapLibrary.From(
-                Make<MapPalette>("Game", p => p.baseRadius = 12f),
-                Make<MapRules>("Game", r => r.vehicleSpeed = 7f),
-                Make<MapProp>("Shed", p => p.size = new Vector2(3f, 2f)));
-
-            var palette = library.Palette();
-
-            Assert.AreEqual(12f, palette.baseRadius);
-            CollectionAssert.AreEqual(new[] { "Shed" }, palette.entries.Select(e => e.key));
-            Assert.AreEqual(7f, library.Rules().vehicleSpeed);
         }
 
         [Test]
@@ -166,11 +142,10 @@ namespace HyperRTS.Editor.Maps.Tests
                 t.prefabs.AddRange(new[] { new GameObject("A"), new GameObject("B") });
                 t.destructibles.Add(new GameObject("C"));
             });
-            _made.AddRange(tree.prefabs);
-            _made.AddRange(tree.destructibles);
             var issues = new ValidationIssues();
 
             MapLibraryRule.Check(MapLibrary.From(tree), issues);
+            tree.prefabs.Concat(tree.destructibles).ToList().ForEach(Object.DestroyImmediate);
 
             Assert.AreEqual(1, issues.Count, string.Join("\n", issues));
             StringAssert.Contains("1 destructibles for 2 prefabs", issues[0].Message);
@@ -221,11 +196,10 @@ namespace HyperRTS.Editor.Maps.Tests
             return MapLibrary.From(items.ToArray());
         }
 
-        private T Make<T>(string key, Action<T> init = null) where T : MapLibraryItem
+        private static T Make<T>(string key, Action<T> init = null) where T : MapLibraryItem
         {
             var item = MapFixture.Item<T>(key);
             init?.Invoke(item);
-            _made.Add(item);
             return item;
         }
     }

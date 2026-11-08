@@ -65,31 +65,16 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.Less(math.distance(World.GetPosition(unit).xz, goal.xz), tolerance, "at its goal");
         }
 
-        [Test]
-        public void HeadOnPair_PassesEachOther_WithoutStallingOrTouching()
+        // Head on, or across at right angles: neither touches nor stops for the other.
+        [TestCase(-10f, 0f, 10f, 0f, 10f, 0f, -10f, 0f)]
+        [TestCase(-10f, 0f, 10f, 0f, 0f, -10f, 0f, 10f)]
+        public void Pair_AvoidsEachOther_WithoutStallingOrTouching(float ax, float az, float agx, float agz,
+            float bx, float bz, float bgx, float bgz)
         {
-            var a = World.SpawnUnit(1, new float3(-10f, 0f, 0f));
-            var b = World.SpawnUnit(2, new float3(10f, 0f, 0f));
-            var goalA = new float3(10f, 0f, 0f);
-            var goalB = new float3(-10f, 0f, 0f);
-            World.MoveTo(a, goalA);
-            World.MoveTo(b, goalB);
-            World.Tick();
-
-            var (closest, _) = Watch(new[] { a, b }, 8f);
-
-            Assert.Greater(closest, 0.98f, "never touched");
-            AssertArrived(a, goalA, 0.3f);
-            AssertArrived(b, goalB, 0.3f);
-        }
-
-        [Test]
-        public void CrossingPair_AtRightAngles_AvoidsWithoutStopping()
-        {
-            var a = World.SpawnUnit(1, new float3(-10f, 0f, 0f));
-            var b = World.SpawnUnit(1, new float3(0f, 0f, -10f));
-            var goalA = new float3(10f, 0f, 0f);
-            var goalB = new float3(0f, 0f, 10f);
+            var a = World.SpawnUnit(1, new float3(ax, 0f, az));
+            var b = World.SpawnUnit(2, new float3(bx, 0f, bz));
+            var goalA = new float3(agx, 0f, agz);
+            var goalB = new float3(bgx, 0f, bgz);
             World.MoveTo(a, goalA);
             World.MoveTo(b, goalB);
             World.Tick();
@@ -169,18 +154,6 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.AreEqual(0f, Shove(dozer, 8f), 1e-4f, "the dozer held its ground");
             Assert.AreEqual(OrderType.Build, World.Get<ActiveOrder>(dozer).Value.Type, "still building");
             Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), 1f, "the truck went round it");
-        }
-
-        [Test]
-        public void MovingUnit_DrivesRoundAParkedEnemyHeadOn_WithoutShovingIt()
-        {
-            var parked = World.SpawnUnit(2, float3.zero);
-            var unit = World.SpawnUnit(1, new float3(-8f, 0f, 0f));
-            var goal = new float3(8f, 0f, 0f);
-            World.MoveTo(unit, goal);
-
-            Assert.AreEqual(0f, Shove(parked, 6f), 1e-4f, "the enemy held its ground");
-            Assert.Less(math.distance(World.GetPosition(unit).xz, goal.xz), 0.2f, "went round it");
         }
 
         [Test]

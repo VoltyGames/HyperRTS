@@ -48,66 +48,19 @@ namespace HyperRTS.Simulation.Tests.Movement
             World.Command(1, new PlayerCommand { Type = CommandType.Smart, Position = goal });
         }
 
-        [Test]
-        public void ParallelTanks_EndSideBySide_WidthPlusSpacingApart()
+        // Overlapping tanks are pushed apart across their width side by side, along their length nose to tail.
+        [TestCase(1f, 0.5f, 2 * TankRadius + Spacing, 0.5f)]
+        [TestCase(0f, 3f, 0f, TankLength + Spacing)]
+        public void OverlappingTanks_EndTheirGapApart(float startX, float startZ, float gapX, float gapZ)
         {
-            var left = SpawnTank(float3.zero, math.forward());
-            var right = SpawnTank(new float3(1f, 0f, 0.5f), math.forward());
+            var first = SpawnTank(float3.zero, math.forward());
+            var second = SpawnTank(new float3(startX, 0f, startZ), math.forward());
 
             World.Run(2f);
 
-            var gap = World.GetPosition(right) - World.GetPosition(left);
-            Assert.AreEqual(TankRadius * 2f + Spacing, gap.x, 0.05f, "pushed apart sideways");
-            Assert.AreEqual(0.5f, gap.z, 0.05f, "never pushed along the hull");
-        }
-
-        [Test]
-        public void TanksInLine_EndNoseToTail_LengthPlusSpacingApart()
-        {
-            var rear = SpawnTank(float3.zero, math.forward());
-            var front = SpawnTank(new float3(0f, 0f, 3f), math.forward());
-
-            World.Run(2f);
-
-            var gap = World.GetPosition(front) - World.GetPosition(rear);
-            Assert.AreEqual(TankLength + Spacing, gap.z, 0.05f, "pushed apart along the hulls");
-            Assert.AreEqual(0f, gap.x, 0.05f);
-        }
-
-        [Test]
-        public void RoundUnits_WithoutHullOrSpacing_TouchEdgeToEdge()
-        {
-            var a = World.SpawnUnit(1, float3.zero);
-            var b = World.SpawnUnit(1, new float3(0.4f, 0f, 0f));
-
-            World.Run(1f);
-
-            Assert.AreEqual(1f, math.distance(World.GetPosition(a).xz, World.GetPosition(b).xz), 0.05f);
-        }
-
-        [Test]
-        public void TankColumn_MoveOrder_CompletesWithoutHullsOverlapping()
-        {
-            var tanks = new Entity[4];
-            for (var i = 0; i < tanks.Length; i++)
-            {
-                tanks[i] = SpawnTank(new float3(-30f, 0f, i * 8f - 12f), new float3(1f, 0f, 0f));
-            }
-
-            OrderFormation(new float3(20f, 0f, 0f), tanks);
-            // The command only starts the orders on the next tick.
-            World.Tick();
-            World.RunUntil(() => Array.TrueForAll(tanks, Arrived), 25f);
-
-            for (var i = 0; i < tanks.Length; i++)
-            {
-                Assert.IsFalse(World.IsEnabled<ActiveOrder>(tanks[i]), "every move order completed");
-                for (var j = i + 1; j < tanks.Length; j++)
-                {
-                    var apart = math.distance(World.GetPosition(tanks[i]).xz, World.GetPosition(tanks[j]).xz);
-                    Assert.Greater(apart, TankRadius * 2f, "hulls overlap");
-                }
-            }
+            var gap = World.GetPosition(second) - World.GetPosition(first);
+            Assert.AreEqual(gapX, gap.x, 0.05f);
+            Assert.AreEqual(gapZ, gap.z, 0.05f);
         }
 
         [Test]

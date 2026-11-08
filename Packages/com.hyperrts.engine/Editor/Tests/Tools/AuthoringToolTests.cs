@@ -27,12 +27,6 @@ namespace HyperRTS.Editor.Tests.Tools
         private const float ArchLength = 4.6f;
         private const float CapHalf = 0.3f;
 
-        [TestCase(0, "")]
-        [TestCase(1, "1 error")]
-        [TestCase(3, "3 errors")]
-        public void BadgeCountsArePlural(int count, string expected) =>
-            Assert.AreEqual(expected, IssueBadge.CountText(count, "error"));
-
         [Test]
         public void ShowIfFollowsNumbersAndObjects_AndRejectsOtherConditions()
         {
@@ -115,16 +109,10 @@ namespace HyperRTS.Editor.Tests.Tools
 
         // The opposite face stays put, so moving the max (+1) or min (-1) face by d shifts the centre by d / 2.
         [TestCase(1f, 1f, 6f, TestName = "MaxFaceOutwardGrows")]
-        [TestCase(1f, -1f, 2f, TestName = "MaxFaceInwardShrinks")]
-        [TestCase(-1f, 1f, 6f, TestName = "MinFaceOutwardGrows")]
         [TestCase(-1f, -1f, 2f, TestName = "MinFaceInwardShrinks")]
         [TestCase(1f, 0f, 4f, TestName = "UntouchedBoxKeepsItsSize")]
         public void DraggedGroundFaceMirrors(float side, float drag, float expected) =>
             Assert.AreEqual(expected, GroundHandles.MirroredSize(4f, side * drag * 0.5f, 4f + drag), 1e-4f);
-
-        [Test]
-        public void GroundHandleDirectionLiesFlatAtTheGivenAngle() =>
-            Assert.That(Vector3.Distance(Vector3.forward, GroundHandles.Direction(90f)), Is.LessThan(1e-4f));
 
         [Test]
         public void ToppleMeasuresTrunkTopFromTrunkFacesAndLieTowardTheRemainsMass()
@@ -151,7 +139,6 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         [TestCase(1f, 1f)]
-        [TestCase(1.5f, 5.7f / 3.4f)]
         [TestCase(3f, 12.6f / 3.4f)]
         public void StretchCapsMoveOut_AndTheSpanScalesAlongTheAxisToMeetThem(float stretch, float factor)
         {

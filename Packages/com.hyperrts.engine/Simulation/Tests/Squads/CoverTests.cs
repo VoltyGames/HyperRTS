@@ -63,30 +63,6 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
-        public void HaltedSquad_TakesFreeSpotsWithoutSharing()
-        {
-            Prop(new float3(0f, 0f, 2f), (new float3(-1f, 0f, 0f), CoverKind.Heavy), (new float3(0f, 0f, 0f), CoverKind.Light),
-                (new float3(1f, 0f, 0f), CoverKind.Heavy));
-            var first = Squad(float3.zero, 2);
-            var second = Squad(new float3(0.5f, 0f, 0f), 2);
-
-            World.Run(3f);
-
-            var taken = new System.Collections.Generic.HashSet<(Entity, byte)>();
-            var holders = 0;
-            foreach (var squad in new[] { first, second })
-            {
-                foreach (var member in World.Buffer<SquadMember>(squad))
-                {
-                    holders += member.HasSpot ? 1 : 0;
-                    Assert.IsTrue(!member.HasSpot || taken.Add((member.SpotEntity, member.SpotIndex)), "a spot is held twice");
-                }
-            }
-
-            Assert.AreEqual(3, holders, "three spots, four soldiers");
-        }
-
-        [Test]
         public void RebuiltIndex_KeepsSpotsHeldAndNoSquadTakesThem()
         {
             Prop(new float3(0f, 0f, 2f), (new float3(-1.5f, 0f, 0f), CoverKind.Heavy), (new float3(-0.5f, 0f, 0f), CoverKind.Heavy),

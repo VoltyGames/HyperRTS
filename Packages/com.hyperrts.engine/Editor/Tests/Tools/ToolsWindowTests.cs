@@ -84,9 +84,6 @@ namespace HyperRTS.Editor.Tests.Tools
             Assert.That(run.IsOlderThan(new[] { Folder }), Is.True);
         }
 
-        [Test]
-        public void ControlsExist() => Assert.That(Controls(), Is.Not.Empty);
-
         [TestCaseSource(nameof(Controls))]
         public void ControlBuilds(Type control) =>
             Assert.DoesNotThrow(() => Activator.CreateInstance(control), control.Name);

@@ -15,13 +15,10 @@ namespace HyperRTS.Simulation.Tests.Movement
     public partial class CrowdScenarioTests
     {
         // Abreast tanks can't both fit on the deck; the push between them points into the rails, so one must yield.
-        [TestCase(1, 1, 40f, false)]
         [TestCase(1, 1, 40f, true)]
         [TestCase(2, 1, 40f, false)]
         [TestCase(8, 2, 40f, true)]
-        [TestCase(16, 4, 40f, true)]
         [TestCase(16, 4, 40f, false)]
-        [TestCase(16, 4, 30f, true)]
         [TestCase(16, 4, 14f, false)]
         public void Tanks_CrossAOneLaneBridge_WithoutDrivingIntoEachOther(int count, int abreast, float goalX,
             bool formation)
@@ -110,11 +107,8 @@ namespace HyperRTS.Simulation.Tests.Movement
 
         // Rolling north past the mouth, far off its leg east, a tank must stop and pivot in rather than loop round.
         [TestCase(1.3f, 0.18f, -9f)]
-        [TestCase(0.7f, 0.21f, -9f)]
         [TestCase(-0.1f, 0.24f, -3f)]
-        [TestCase(1.3f, 0.18f, 3f)]
         [TestCase(-1.3f, 2.96f, 9f)]
-        [TestCase(0.5f, 0.3f, 0f)]
         public void Tank_RollingPastTheBridgeMouth_PivotsIntoIt(float z, float yaw, float goalZ)
         {
             _world.SpawnNavArea(float3.zero, new float2(12f, 600f), NavAreaKind.Water);

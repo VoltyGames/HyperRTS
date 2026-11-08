@@ -149,17 +149,6 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         }
 
         [Test]
-        public void WithoutSetup_TheBakedMatchIsUntouched()
-        {
-            _world.CreateMatch(1, 2, 3);
-
-            _world.Tick();
-
-            Assert.AreEqual(3, PlayerCount());
-            Assert.AreEqual("P3", _world.Get<Player>(_world.Player(3)).Name.ToString());
-        }
-
-        [Test]
         public void BotsOfDifferentOwners_GetDifferentNonzeroRouteSeeds_TheSameOnEveryRun()
         {
             var first = RouteSeeds(12345u);
@@ -170,10 +159,8 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             Assert.AreNotEqual(first.First, first.Second);
             Assert.AreEqual(first, again);
             Assert.AreNotEqual(first.First, RouteSeeds(2u).First, "another match seed gives other route seeds");
+            Assert.AreEqual((0u, 0u), RouteSeeds(0u), "no match seed leaves them unset");
         }
-
-        [Test]
-        public void ZeroMatchSeed_LeavesRouteSeedsUnset() => Assert.AreEqual((0u, 0u), RouteSeeds(0u));
 
         /// <summary>The attack lane seeds two bots get in a fresh match with the given seed.</summary>
         private static (uint First, uint Second) RouteSeeds(uint seed)

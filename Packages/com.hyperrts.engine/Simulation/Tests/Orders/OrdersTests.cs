@@ -147,31 +147,27 @@ namespace HyperRTS.Simulation.Tests.Orders
             Assert.IsFalse(World.IsEnabled<MoveDestination>(unit));
         }
 
-        [Test]
-        public void Patrol_LoopsBetweenStartAndTarget()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Patrol_LoopsBetweenItsEnds(bool queued)
         {
             var unit = World.SpawnUnit(1, float3.zero);
-            Patrol(unit, new float3(10f, 0f, 0f));
-
-            var legs = CountLegs(unit, 10f, position => position.x > 9.5f, position => position.x < 0.5f);
+            int legs;
+            if (queued)
+            {
+                World.MoveTo(unit, new float3(10f, 0f, 0f));
+                Patrol(unit, new float3(10f, 0f, 10f), queue: true);
+                legs = CountLegs(unit, 14f, position => position.z > 9.5f,
+                    position => position.z < 0.5f && position.x > 9.5f);
+            }
+            else
+            {
+                Patrol(unit, new float3(10f, 0f, 0f));
+                legs = CountLegs(unit, 10f, position => position.x > 9.5f, position => position.x < 0.5f);
+            }
 
             Assert.GreaterOrEqual(legs, 3, "out, back and out again");
-            Assert.IsTrue(World.IsEnabled<ActiveOrder>(unit));
             Assert.AreEqual(OrderType.Patrol, World.Get<ActiveOrder>(unit).Value.Type);
-        }
-
-        [Test]
-        public void QueuedPatrol_LoopsBetweenTheEndOfTheQueueAndTheNewPoint()
-        {
-            var unit = World.SpawnUnit(1, float3.zero);
-            World.MoveTo(unit, new float3(10f, 0f, 0f));
-            Patrol(unit, new float3(10f, 0f, 10f), queue: true);
-
-            var legs = CountLegs(unit, 14f, position => position.z > 9.5f,
-                position => position.z < 0.5f && position.x > 9.5f);
-
-            Assert.GreaterOrEqual(legs, 3, "out, back to the move's end and out again");
-            Assert.AreEqual(OrderType.Patrol, World.Get<ActiveOrder>(unit).Value.Type, "still patrolling");
         }
 
         [Test]

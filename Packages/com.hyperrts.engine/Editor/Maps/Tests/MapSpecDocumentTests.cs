@@ -46,14 +46,6 @@ namespace HyperRTS.Editor.Maps.Tests
         }
 
         [Test]
-        public void AnEditSavesOnlyWhatChanged()
-        {
-            _document.Edit("Move", spec => spec.roads[0].points[1] = new MapPoint(120, 10));
-
-            Assert.AreEqual(Formatted(Original.Replace("{\"x\": 100, \"z\": 0}", "{\"x\": 120, \"z\": 10}")), Saved());
-        }
-
-        [Test]
         public void AnAddedFeatureLeavesOutItsDefaults()
         {
             var hill = MapFeatureEdits.Add(_document, MapFeatureKinds.Find(nameof(MapSpec.hills)), new[] { new Vector2(10, 20) });

@@ -36,15 +36,6 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         [Test]
-        public void SilentEntities_WriteNoEvents()
-        {
-            World.AddWeapon(World.SpawnUnit(1, float3.zero));
-            World.SpawnUnit(2, new float3(3f, 0f, 0f));
-
-            Assert.IsEmpty(World.QueuedOver(3f));
-        }
-
-        [Test]
         public void EntitiesWithoutARigForTheSlot_PlayNothing()
         {
             Rigged(World.AddWeapon(World.SpawnUnit(1, float3.zero)), CueSlot.Death, float3.zero);

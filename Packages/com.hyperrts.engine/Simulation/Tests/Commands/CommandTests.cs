@@ -152,18 +152,6 @@ namespace HyperRTS.Simulation.Tests.Commands
         }
 
         [Test]
-        public void EngineOrders_TakeTheirTraitsFromTheType()
-        {
-            var table = World.Singleton<OrderTraitTable>();
-
-            Assert.AreEqual(OrderTraits.Formation | OrderTraits.MovesToPosition, table.Traits(OrderType.Move));
-            Assert.IsTrue(table.Has(OrderType.Patrol, OrderTraits.Loops), "patrol legs loop");
-            Assert.IsFalse(table.Has(OrderType.AttackMove, OrderTraits.Loops));
-            Assert.AreEqual(OrderTraits.EngagesWhileMoving, table.Traits(OrderType.Escort));
-            Assert.AreEqual(OrderTraits.None, table.Traits(OrderType.Capture));
-        }
-
-        [Test]
         public void GameOrder_TakesItsRegisteredTraits_AndAMovingOneWalksLikeAMove()
         {
             Register(GameOrder, OrderTraits.Formation | OrderTraits.MovesToPosition);

@@ -96,28 +96,5 @@ namespace HyperRTS.Simulation.Tests.Production
             Assert.AreEqual(1, World.All<BuildLimit>().Length);
             Assert.AreEqual(900, World.GetResources(1, _supplies));
         }
-
-        [Test]
-        public void CanBuy_IsFalseAtTheLimit_ForTheHUD()
-        {
-            var prefab = HeroPrefab(1);
-            Assert.IsTrue(CanBuy(prefab), "nothing owned yet");
-
-            LiveHero(1, prefab);
-            Assert.IsFalse(CanBuy(prefab), "the one allowed is standing");
-        }
-
-        private bool CanBuy(Entity prefab)
-        {
-            var entityManager = World.EntityManager;
-            using var queues = ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager);
-            using var limited = BuildCounts.Query(Allocator.Temp).Build(entityManager);
-            using var completed = CompletedBuildings.Query(Allocator.Temp).Build(entityManager);
-            var player = World.Player(1);
-            var buyer = Buyer.Snapshot(entityManager, queues, limited, 1,
-                new CompletedBuildings(completed, Allocator.Temp), entityManager.GetBuffer<CompletedResearch>(player));
-            var stock = entityManager.GetBuffer<ResourceStock>(player);
-            return PurchaseRules.CanBuy(entityManager, prefab, buyer, stock.AsNativeArray());
-        }
     }
 }

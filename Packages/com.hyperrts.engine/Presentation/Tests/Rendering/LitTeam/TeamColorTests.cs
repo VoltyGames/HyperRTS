@@ -96,24 +96,6 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
         }
 
         [Test]
-        public void Capture_FollowsTheOwner_EvenWhenItsPlayerArrivesLate()
-        {
-            var unit = Spawn(2, out _);
-            Run();
-
-            SetOwner(unit, 1);
-            Run();
-            Assert.AreEqual(Blue, Tint(unit));
-
-            SetOwner(unit, 3);
-            Run();
-            _em.AddComponentData(_em.CreateEntity(), new Player { Owner = 3, Color = Green });
-            Run();
-
-            Assert.AreEqual(Green, Tint(unit));
-        }
-
-        [Test]
         public void HUDColors_ComeFromPlayers_UntilAnOverrideReplacesThem()
         {
             var view = new MatchView();

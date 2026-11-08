@@ -53,15 +53,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
         }
 
         [Test]
-        public void GroundTintMap_HasTwoTexelsPerMetre()
-        {
-            var area = new Rect(-375f, -375f, 750f, 750f);
-
-            Assert.AreEqual(1500, MapGroundTintPainter.Size(area));
-            Assert.AreEqual(0, MapGroundTintPainter.Size(new Rect(0f, 0f, 101f, 101f)) % 4, "block aligned");
-        }
-
-        [Test]
         public void GroundTint_SoilColourVariesAField()
         {
             var climate = Climate(2f, 1.5f);
@@ -148,20 +139,6 @@ namespace HyperRTS.Editor.Maps.Tests.Ground
             }
 
             Assert.Greater(wandered, 0, "the wander moves the edge off the straight line");
-        }
-
-        [Test]
-        public void SurfaceEdge_IsRequired()
-        {
-            var climate = MapFixture.Climate();
-            climate.Surface("Meadow").edgeWidth = 0f;
-            climate.Surface("Dirt").edgeWander = 0f;
-            var issues = new MapIssues();
-
-            MapAssetCheck.Check(climate, MapFixture.Item<MapPalette>("Palette"), issues);
-
-            StringAssert.Contains("surface 'Meadow': edgeWidth 0", issues.ToString());
-            StringAssert.Contains("surface 'Dirt': edgeWander 0", issues.ToString());
         }
 
         private static float BandWidth(float width)

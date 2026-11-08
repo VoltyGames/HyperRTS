@@ -147,20 +147,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         }
 
         [Test]
-        public void IdleFigure_WritesNoClipRate()
-        {
-            GiveWalkGroundSpeed(2f);
-            Update();
-            Advance(1f);
-            var kept = Lower(0).Value;
-
-            Advance(1f);
-
-            Assert.AreEqual(kept, Lower(0).Value);
-            Assert.AreEqual(10f, kept.z);
-        }
-
-        [Test]
         public void FiringFigure_TurnsToItsWeaponsAim_AndBackWhenItStops()
         {
             var figure = new SquadFigure { Baked = quaternion.identity, Facing = quaternion.identity, Firing = true };

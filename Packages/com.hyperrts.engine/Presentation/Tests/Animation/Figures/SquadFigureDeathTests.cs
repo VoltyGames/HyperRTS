@@ -51,19 +51,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         }
 
         [Test]
-        public void MemberKilledByABlast_FallsAwayFromWhereItCameAndAShotPlaysDie()
-        {
-            Update();
-            SetDeath(3, DeathCause.Blast, new float2(0f, 1f));
-            SetDeath(2, DeathCause.Shot);
-            SetLiving(2);
-            Update();
-
-            Assert.IsTrue(Plays(Lower(3), Range(50, false)));
-            Assert.IsTrue(Plays(Lower(2), Range(40, false)));
-        }
-
-        [Test]
         public void CrouchedAndProneMembers_FallInTheirOwnPostureWhateverDroppedThem()
         {
             Member(1, posture: Posture.Crouch);

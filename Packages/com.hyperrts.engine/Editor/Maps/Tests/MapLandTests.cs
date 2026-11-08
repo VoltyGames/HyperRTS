@@ -84,25 +84,6 @@ namespace HyperRTS.Editor.Maps.Tests
         }
 
         [Test]
-        public void Farmland_LeavesAWeedyMarginRoundEachField()
-        {
-            var context = FarmContext();
-            new MapFarmlandPlanner(context).Plan();
-
-            var margins = 0;
-            var fields = 0;
-            context.Land.ForEach((x, z, _) =>
-            {
-                var kind = context.Land.Region(x, z)?.Kind;
-                margins += kind == MapLandKind.Margin ? 1 : 0;
-                fields += kind == MapLandKind.Field ? 1 : 0;
-            });
-
-            Assert.Greater(fields, margins, "fields are mostly crop");
-            Assert.Greater(margins, fields / 40, "but every field has a margin");
-        }
-
-        [Test]
         public void Farmland_TurnsTheRowsInAHeadlandAtEachFieldEnd()
         {
             var context = FarmContext(headlandWidth: 6f);

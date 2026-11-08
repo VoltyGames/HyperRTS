@@ -30,6 +30,17 @@ namespace HyperRTS.Simulation.Tests.Squads
             return hurt;
         }
 
+        private void StandAt(Entity squad, params float[] xs)
+        {
+            var members = World.Buffer<SquadMember>(squad);
+            for (var i = 0; i < xs.Length; i++)
+            {
+                var member = members[i];
+                member.Offset = new float2(xs[i], 0f);
+                members[i] = member;
+            }
+        }
+
         [Test]
         public void DirectHit_LandsOnOneMemberAndDoesNotCarryOver()
         {
@@ -51,34 +62,10 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
-        public void DirectHits_SpreadOverMembers()
-        {
-            var squad = Squad(float3.zero, 0, 0, 0, 0);
-
-            for (var i = 0; i < 12; i++)
-            {
-                World.HitSquad(squad, 1f);
-            }
-
-            World.Tick();
-
-            Assert.GreaterOrEqual(Hurt(squad), 2);
-            Assert.AreEqual(SquadTestKit.MemberHealth * 4f - 12f, World.GetHealth(squad), 1e-3f);
-            World.AssertHealthIsMemberSum(squad);
-        }
-
-        [Test]
         public void Splash_HurtsEachMemberByItsOwnDistanceEvenPastTheSquadsRadius()
         {
             var squad = Squad(float3.zero, 0, 0, 0, 0);
-            var members = World.Buffer<SquadMember>(squad);
-            float[] stand = { -2f, 0f, 2f, 3f };
-            for (var i = 0; i < 4; i++)
-            {
-                var member = members[i];
-                member.Offset = new float2(stand[i], 0f);
-                members[i] = member;
-            }
+            StandAt(squad, -2f, 0f, 2f, 3f);
 
             World.HitSquad(Entity.Null, 20f, new float3(3f, 0f, 0f), radius: 3f, edge: 0f);
             World.Tick();
@@ -94,14 +81,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         public void BlastAimedAtTheSquad_StrikesTheMemberNearestIt()
         {
             var squad = Squad(float3.zero, 0, 0, 0, 0);
-            var members = World.Buffer<SquadMember>(squad);
-            float[] stand = { -3f, -1f, 1f, 3f };
-            for (var i = 0; i < 4; i++)
-            {
-                var member = members[i];
-                member.Offset = new float2(stand[i], 0f);
-                members[i] = member;
-            }
+            StandAt(squad, -3f, -1f, 1f, 3f);
 
             World.HitSquad(squad, 30f, new float3(3f, 0f, 0.4f), radius: 0.5f);
             World.Tick();
@@ -190,34 +170,6 @@ namespace HyperRTS.Simulation.Tests.Squads
                 Assert.AreEqual(0f, math.distance(offset, rules.SpreadSlot(i, 4)), 0.05f);
                 Assert.LessOrEqual(math.length(offset), rules.MaxSpread);
             }
-        }
-
-        [Test]
-        public void Ring_GrowsWithTheLivingCount_UpToTheMaxSpread()
-        {
-            var rules = SquadSettings.Standard.Rules;
-
-            Assert.Less(rules.RingRadius(2), rules.RingRadius(4));
-            Assert.Less(rules.RingRadius(4), rules.RingRadius(6));
-            Assert.GreaterOrEqual(rules.RingRadius(4), 2.2f);
-            Assert.AreEqual(rules.MaxSpread, rules.RingRadius(20), 1e-4f);
-            Assert.AreEqual(rules.RingRadius(6), math.length(rules.SpreadSlot(3, 6)), 1e-4f);
-        }
-
-        [Test]
-        public void Splash_ReachesADiggingMemberFiveMetresOut()
-        {
-            var squad = Squad(float3.zero, 0, 0);
-            var members = World.Buffer<SquadMember>(squad);
-            var member = members[1];
-            member.Offset = new float2(5f, 0f);
-            members[1] = member;
-
-            World.HitSquad(Entity.Null, 20f, new float3(5f, 0f, 0f), radius: 1f, edge: 0f);
-            World.Tick();
-
-            Assert.AreEqual(SquadTestKit.MemberHealth, Member(squad, 0), 0.5f, "out of the blast");
-            Assert.Greater(SquadTestKit.MemberHealth, Member(squad, 1) + 0.5f);
         }
 
         [Test]

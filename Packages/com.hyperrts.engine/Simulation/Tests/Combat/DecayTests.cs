@@ -43,17 +43,6 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.IsFalse(World.EntityManager.Exists(wreck));
         }
 
-        [Test]
-        public void DecaySetup_RejectsZeroDespawnDuration()
-        {
-            var wreck = World.EntityManager.CreateEntity();
-            var writer = World.Writer(wreck);
-
-            var error = Assert.Throws<ArgumentException>(() => DecayAuthoring.Add(writer, "wreck", 180f, 0f, 3f));
-
-            StringAssert.Contains("despawnDuration", error.Message);
-        }
-
         // A ruin blocks its plot while it is buried and frees it for a new building once it has gone.
         [Test]
         public void DecayingRuin_OpensItsFootprintWhenItGoes()

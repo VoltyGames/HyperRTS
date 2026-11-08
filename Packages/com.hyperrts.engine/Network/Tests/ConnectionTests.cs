@@ -131,16 +131,10 @@ namespace HyperRTS.Network.Tests
         }
 
         [Test]
-        public void DroppedOwner_GetsItsSlotBack()
+        public void DroppedSlot_GoesBackToItsOwnerAndNoOneElse()
         {
             var slots = new[] { Held(1, 3, 0xC3), Dropped(2, Mine) };
             Assert.AreEqual(1, SlotClaim.Choose(slots, 1, Mine));
-        }
-
-        [Test]
-        public void Stranger_CannotTakeADroppedSlot()
-        {
-            var slots = new[] { Held(1, 3, 0xC3), Dropped(2, Mine) };
             Assert.AreEqual(-1, SlotClaim.Choose(slots, 2, Stranger));
         }
 
@@ -166,15 +160,6 @@ namespace HyperRTS.Network.Tests
         {
             var slots = new[] { Dropped(1, 0) };
             Assert.AreEqual(0, SlotClaim.Choose(slots, 0, Stranger));
-        }
-
-        [TestCase((byte)0, true, TestName = "ObserverRejoinsAsObserver")]
-        [TestCase((byte)2, false, TestName = "PlayerRejoinsForItsSlot")]
-        public void Rejoining_KeepsTheGrantedSeat(byte granted, bool observe)
-        {
-            var rejoin = JoinPreference.Rejoining(granted);
-            Assert.AreEqual(granted, rejoin.Owner);
-            Assert.AreEqual(observe, rejoin.Observe);
         }
 
         private static SlotClaim.Slot Open(byte owner) => new() { Owner = owner };

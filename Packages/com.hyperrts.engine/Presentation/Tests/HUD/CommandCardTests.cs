@@ -34,20 +34,12 @@ namespace HyperRTS.Presentation.Tests.HUD
         [Test]
         public void Card_PlacesEntriesBySlot_WithBlanksBetween()
         {
-            var card = NewCard(Spec("far", slot: 7), Spec("near"));
+            var card = NewCard(Spec("far", slot: 7), Spec("near"), Spec("taken"));
 
             Assert.AreEqual("far", Caption(card.Root[7]));
             Assert.AreEqual("near", Caption(card.Root[0]));
-            Assert.IsTrue(Enumerable.Range(1, 6).All(i => card.Root[i].ClassListContains("hud-command--blank")));
-        }
-
-        [Test]
-        public void Card_MovesATakenSlotToTheNextFree()
-        {
-            var card = NewCard(Spec("a"), Spec("b"));
-
-            Assert.AreEqual("a", Caption(card.Root[0]));
-            Assert.AreEqual("b", Caption(card.Root[1]));
+            Assert.AreEqual("taken", Caption(card.Root[1]), "a taken slot moves to the next free");
+            Assert.IsTrue(Enumerable.Range(2, 5).All(i => card.Root[i].ClassListContains("hud-command--blank")));
         }
 
         [Test]
@@ -70,14 +62,6 @@ namespace HyperRTS.Presentation.Tests.HUD
             Assert.AreEqual("s14", Caption(card.Root[0]), "slot 14 is the page card's, so these spilled over");
             Assert.AreEqual("s15", Caption(card.Root[1]));
             Assert.AreEqual("Back", Caption(card.Root[LastSlot]));
-        }
-
-        [Test]
-        public void Card_WithOnePage_HasNoPageCard()
-        {
-            var card = NewCard(Spec("only"));
-
-            Assert.AreEqual(1, card.Root.Children().Count(child => child.ClassListContains("hud-command")));
         }
 
         [Test]

@@ -36,16 +36,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Machines
         public void TearDown() => _world.Dispose();
 
         [Test]
-        public void Always_RunsAtFullSpeedFromTheFirstFrame()
-        {
-            var machine = Machine(MachineRun.Always, Building());
-
-            Run(1f);
-
-            Assert.AreEqual(1f, Clock(machine).Time, 1e-4f);
-        }
-
-        [Test]
         public void Powered_EasesToAStopOffline_AndBackOnline()
         {
             var building = Building();

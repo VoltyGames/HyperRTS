@@ -16,7 +16,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         private const uint LeanChannel = 10;
         private const uint LeanTurnChannel = 11;
         private const uint WanderSalt = 0x5BD1E995u;
-        private const uint GrowthSalt = 0x27D4EB2Fu;
         private const uint StaggerSalt = 0x165667B1u;
 
         /// <summary>A lattice spot before jitter: what decides the tile and the field a plant belongs to.</summary>
@@ -56,13 +55,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation.RowCrops
         {
             var noise = ScatterHash.Noise(field.seed, WanderSalt, Metres(row, plant, crop) / crop.wanderLength);
             return (noise * 2f - 1f) * crop.wander;
-        }
-
-        /// <summary>The scale multiplier of the stretch of field a plant grows in.</summary>
-        public static float GrowthVariation(RowCropField field, int row, int plant, RowCrop crop)
-        {
-            var noise = ScatterHash.Noise(field.seed, GrowthSalt, Metres(row, plant, crop) / crop.growthVariationSize);
-            return Mathf.Lerp(crop.growthVariation.x, crop.growthVariation.y, noise);
         }
 
         /// <summary>Which of <paramref name="count"/> models a plant draws.</summary>

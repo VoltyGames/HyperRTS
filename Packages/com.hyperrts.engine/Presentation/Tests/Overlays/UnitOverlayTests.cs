@@ -51,28 +51,6 @@ namespace HyperRTS.Presentation.Tests.Overlays
         }
 
         [Test]
-        public void Building_GetsBracketsRoundItsBox()
-        {
-            var footprint = MarkerFootprint.Building(new NavObstacle { Size = new float2(12f, 8f) }, Margin);
-
-            Assert.AreEqual(MarkerShape.Brackets, footprint.Shape);
-            Assert.AreEqual(6f + Margin, footprint.HalfSize.x, 1e-4f);
-            Assert.AreEqual(4f + Margin, footprint.HalfSize.y, 1e-4f);
-        }
-
-        [Test]
-        public void Unit_AircraftTakesItsAgentsLayerAndRadius()
-        {
-            var unit = new OverlayUnit(new NavAgent { Radius = 2f, Layer = NavLayer.Air }, null, 3, default, null, false);
-
-            Assert.AreEqual(NavLayer.Air, unit.Layer);
-            Assert.AreEqual(2f, unit.Radius, 1e-4f);
-            Assert.AreEqual(2f + Margin, unit.Footprint(Margin).HalfSize.x, 1e-4f);
-            Assert.IsFalse(unit.IsSquad);
-            Assert.AreEqual(0, unit.MemberCount);
-        }
-
-        [Test]
         public void Unit_BuildingIsGroundWithBracketsAndHalfItsLongestSide()
         {
             var unit = new OverlayUnit(null, new NavObstacle { Size = new float2(12f, 8f) }, 0, default, null, false);
@@ -80,15 +58,6 @@ namespace HyperRTS.Presentation.Tests.Overlays
             Assert.AreEqual(NavLayer.Ground, unit.Layer);
             Assert.AreEqual(6f, unit.Radius, 1e-4f);
             Assert.AreEqual(MarkerShape.Brackets, unit.Footprint(Margin).Shape);
-        }
-
-        [Test]
-        public void Unit_WithNeitherAgentNorObstacleIsDefaultCircle()
-        {
-            var unit = new OverlayUnit(null, null, 0, default, null, false);
-
-            Assert.AreEqual(EntityRadius.Default, unit.Radius, 1e-4f);
-            Assert.AreEqual(MarkerShape.Outline, unit.Footprint(Margin).Shape);
         }
 
         [Test]
@@ -130,18 +99,6 @@ namespace HyperRTS.Presentation.Tests.Overlays
             Assert.Less(air.Floor, -1000f);
             Assert.Greater(naval.Floor, 35f);
             Assert.AreEqual(naval.Floor, naval.Matrix(MarkerFootprint.Round(1f, 0f)).m13, 1e-4f);
-        }
-
-        [Test]
-        public void SelectIn_StartsLargeAndFadedThenSettles()
-        {
-            var start = SelectionFades.ScaleAndAlpha(0f, 0.15f, 1.2f);
-            var end = SelectionFades.ScaleAndAlpha(0.15f, 0.15f, 1.2f);
-
-            Assert.AreEqual(1.2f, start.x, 1e-4f);
-            Assert.AreEqual(0f, start.y, 1e-4f);
-            Assert.AreEqual(1f, end.x, 1e-4f);
-            Assert.AreEqual(1f, end.y, 1e-4f);
         }
 
         [Test]

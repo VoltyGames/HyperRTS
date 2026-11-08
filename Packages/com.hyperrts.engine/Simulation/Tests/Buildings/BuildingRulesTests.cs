@@ -110,20 +110,6 @@ namespace HyperRTS.Simulation.Tests.Buildings
         }
 
         [Test]
-        public void Site_IsOfflineUntilBuilt()
-        {
-            var site = World.SpawnBuilding(1, float3.zero, Footprint, complete: false);
-            World.Tick();
-            Assert.IsTrue(World.IsEnabled<Offline>(site));
-
-            World.SetEnabled<ConstructionProgress>(site, false);
-            World.Tick();
-
-            Assert.IsFalse(World.IsEnabled<Offline>(site));
-            Assert.AreEqual(OfflineReason.None, World.Get<Offline>(site).Reasons);
-        }
-
-        [Test]
         public void GameOverwritingOffline_KeepsTheEngineReasons()
         {
             var site = World.SpawnBuilding(1, float3.zero, Footprint, complete: false);

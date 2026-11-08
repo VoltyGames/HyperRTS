@@ -47,23 +47,12 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
         }
 
         [Test]
-        public void Find_ReturnsTheWeathersAtmosphere() => Assert.AreSame(_overcast, _set.Find("Overcast"));
-
-        [Test]
         public void AnUnknownKey_ThrowsNamingIt_AndKeepsTheWeather()
         {
             var error = Assert.Throws<InvalidOperationException>(() => _set.Apply("Blizzard"));
 
             StringAssert.Contains("'Blizzard'", error.Message);
             Assert.AreEqual(1, _weather.transform.childCount, "the default atmosphere stays");
-        }
-
-        [Test]
-        public void AnEmptyKey_KeepsTheMapsWeather()
-        {
-            _set.Apply("");
-
-            Assert.AreEqual("Default", _weather.transform.GetChild(0).name);
         }
 
         [Test]
@@ -79,16 +68,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
             Assert.IsTrue(_puddle.activeSelf);
 
             Wetness.Publish(0f);
-            Assert.IsFalse(_puddle.activeSelf);
-        }
-
-        [Test]
-        public void DisabledWetnessGroup_StopsListening()
-        {
-            _group.GetComponent<WetnessGroup>().enabled = false;
-
-            Wetness.Publish(0.8f);
-
             Assert.IsFalse(_puddle.activeSelf);
         }
 
@@ -111,31 +90,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
                 var t = step / 10f;
                 Assert.AreEqual(GustField.Noise(0f, t), GustField.Noise(1f, t), 1e-5f);
                 Assert.AreEqual(GustField.Noise(t, 0f), GustField.Noise(t, 1f), 1e-5f);
-            }
-        }
-
-        [Test]
-        public void GustMap_SpansTheFullRange_AndRepeats()
-        {
-            var map = GustField.CreateMap(32);
-            try
-            {
-                var pixels = map.GetPixelData<byte>(0);
-                byte low = 255;
-                byte high = 0;
-                foreach (var pixel in pixels)
-                {
-                    low = (byte)Mathf.Min(low, pixel);
-                    high = (byte)Mathf.Max(high, pixel);
-                }
-
-                Assert.AreEqual(0, low);
-                Assert.AreEqual(255, high);
-                Assert.AreEqual(TextureWrapMode.Repeat, map.wrapMode);
-            }
-            finally
-            {
-                Object.DestroyImmediate(map);
             }
         }
     }

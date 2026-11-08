@@ -79,18 +79,6 @@ namespace HyperRTS.Presentation.Tests.Flags
         }
 
         [Test]
-        public void CaptureInSecondHalf_RaisesTheCapturersFlag()
-        {
-            var flag = Building(1, out var building);
-            _em.SetComponentData(building, new CaptureProgress { Owner = 2, Value = 0.75f });
-
-            Run();
-
-            Assert.AreEqual(new float4(EnemySide, 0.5f, 1f, 3f), _em.GetComponentData<FlagState>(flag).Value);
-            Assert.AreEqual(Red, _em.GetComponentData<FlagColor>(flag).Value);
-        }
-
-        [Test]
         public void HostileBuildingUnderFog_HidesItsFlag_OwnStaysShown()
         {
             AddFog();

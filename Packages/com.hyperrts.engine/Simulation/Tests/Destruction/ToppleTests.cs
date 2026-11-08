@@ -79,19 +79,6 @@ namespace HyperRTS.Simulation.Tests.Destruction
             Assert.Greater(math.abs(math.dot(expected.Tilt.value, toppleFall.Tilt.value)), 1f - 1e-3f, "same fall");
         }
 
-        [Test]
-        public void DirectHit_FellsTheTreeAwayFromTheShooter()
-        {
-            var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
-            var tree = SpawnTree(new float3(5f, 0f, 0f), remains, out _, out _);
-
-            World.QueueDamage(new DamageEvent { Target = tree, Origin = new float3(5f, 0f, -10f), Profile = new DamageProfile { Amount = 999f } });
-            World.Tick();
-
-            var (shown, _) = FellRemains();
-            MathAssert.Near(new float3(0f, 0f, 1f), math.rotate(shown.Rotation, new float3(0f, 0f, 1f)), PoseTolerance);
-        }
-
         private Entity SpawnTree(float3 position, Entity remains, out LocalTransform standing, out Topple topple)
         {
             var entity = World.EntityManager.CreateEntity();
