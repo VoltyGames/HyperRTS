@@ -1,23 +1,5 @@
 // URP Lit (minus GBuffer, so Forward or Forward+; opaque or alpha tested, metallic workflow, no UV-mapped detail maps or
 // parallax) with the albedo repainted in _TeamColor.
-//   _TeamColor  linear RGB, A how much shows (0 untinted, so neutral needs no special case)
-//   _TeamMask   R where team colour goes, on UV0
-//   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
-//   _BONES      keyword: skinning from _BoneTex, bone indices in UV6 and weights in UV7 (negative for upper-body bones);
-//               per instance _LowerClip and _UpperClip, and _LowerFade and _UpperFade, the pose a clip switch fades
-//               out of over _BoneFadeTime seconds (LitTeamBones.hlsl)
-//   _VAT_RIGID  keyword: rigid pieces, each moved by its position in _VATPositions and rotation in _VATRotations at
-//               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamVAT.hlsl)
-//   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
-//   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
-//   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
-//               _TrackLift0 and _TrackLift1, the lift in metres at 8 stations front to back, it bends the lower run (LitTeamTrack.hlsl)
-//   _DETAIL     keyword: detail albedo and normal projected in object space (triplanar) at _DetailTiling repeats per metre,
-//               faded out between _DetailFadeStart and _DetailFadeEnd metres from the camera (LitTeamDetail.hlsl)
-//   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
-//               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
-// TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
-// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, game code writes VATClip and the bone clips.
 Shader "HyperRTS/LitTeam"
 {
     Properties
@@ -114,6 +96,10 @@ Shader "HyperRTS/LitTeam"
         }
         LOD 300
 
+        HLSLINCLUDE
+        #pragma use_dxc
+        ENDHLSL
+
         Pass
         {
             Name "ForwardLit"
@@ -124,25 +110,11 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment LitTeamPassFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
 
-            #pragma shader_feature_local _NORMALMAP
-            #pragma shader_feature_local_fragment _ALPHATEST_ON
-            #pragma shader_feature_local_fragment _EMISSION
-            #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
-            #pragma shader_feature_local_fragment _OCCLUSIONMAP
-            #pragma shader_feature_local_fragment _DETAIL
-
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ForwardLightingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ObjectLightingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LightmapKeywords.hlsl"
-            #pragma multi_compile _ LOD_FADE_CROSSFADE
-
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
-            #pragma instancing_options renderinglayer
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamForwardKeywords.hlsl"
 
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamForwardPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamPasses.hlsl"
@@ -161,7 +133,6 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment ShadowPassFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
@@ -187,7 +158,6 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment DepthOnlyFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
@@ -210,18 +180,10 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment DepthNormalsFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
-            #pragma shader_feature_local _NORMALMAP
-            #pragma shader_feature_local _ALPHATEST_ON
-            #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
-            #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
-            #pragma multi_compile _ _WRITE_SMOOTHNESS
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitDepthNormalsPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamPasses.hlsl"
@@ -248,7 +210,6 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma use_dxc
             #pragma vertex SilhouetteVertex
             #pragma fragment UnitMaskFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
@@ -279,7 +240,6 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma use_dxc
             #pragma vertex SilhouetteVertex
             #pragma fragment SilhouetteFragment
             #define SILHOUETTE_SLACK_ON
@@ -299,7 +259,6 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma use_dxc
             #pragma vertex UniversalVertexMeta
             #pragma fragment UniversalFragmentMetaLit
             #pragma shader_feature_local_fragment _EMISSION
@@ -320,7 +279,6 @@ Shader "HyperRTS/LitTeam"
             // ObjectMotionVectors.hlsl's own pragmas, minus its vertex entry, which DisplacedLitVertex replaces.
             HLSLPROGRAM
             #pragma target 3.5
-            #pragma use_dxc
             #pragma vertex DisplacedLitVertex
             #pragma fragment frag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"

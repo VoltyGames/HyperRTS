@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common.Authoring;
+using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Match
@@ -24,5 +25,21 @@ namespace HyperRTS.Simulation.Match
         [Tooltip("Each think the AI starts the first unmet step it can afford. Once all are met it trains and " +
                  "researches freely.")]
         public List<Step> steps = new();
+
+        public List<(Entity Prefab, int Count)> BakeSteps(IBaker baker)
+        {
+            baker.DependsOn(this);
+            var baked = new List<(Entity, int)>();
+            foreach (var step in steps)
+            {
+                if (step.prefab != null)
+                {
+                    // None: the prefab's own bakers pick its transform usage (upgrades have none).
+                    baked.Add((baker.GetEntity(step.prefab, TransformUsageFlags.None), step.count));
+                }
+            }
+
+            return baked;
+        }
     }
 }

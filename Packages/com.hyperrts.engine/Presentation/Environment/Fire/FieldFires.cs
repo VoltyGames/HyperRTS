@@ -1,10 +1,7 @@
 using HyperRTS.Simulation.Common.Cells;
-using HyperRTS.Simulation.Cues.Surfaces;
-using System;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Fire
 {
@@ -12,7 +9,7 @@ namespace HyperRTS.Presentation.Environment.Fire
     /// Grass and crop fires on a 1 m grid that spread downwind and burn out. Every random choice is hashed, so clients that
     /// see the same impacts burn the same fields.
     /// </summary>
-    public sealed class FieldFires
+    public sealed partial class FieldFires
     {
         public const float CellSize = 1f;
         public const float StepSeconds = 0.25f;
@@ -36,9 +33,6 @@ namespace HyperRTS.Presentation.Environment.Fire
         private const float ReachFalloff = 3f;
         private const uint BurnSalt = 0x9E3779B9u;
         private const uint ReachSalt = 0x85EBCA6Bu;
-
-        // Rows of the alphamap read at once, so a large terrain never copies all its weights in one go.
-        private const int AlphamapRows = 64;
 
         private static readonly int2[] Neighbours =
         {
@@ -157,26 +151,6 @@ namespace HyperRTS.Presentation.Environment.Fire
             }
         }
 
-        /// <summary>Marks dry every cell whose terrain is mostly <paramref name="dryLayers"/> and isn't water.</summary>
-        public void MarkDryTerrain(Terrain terrain, TerrainLayer[] dryLayers, in GroundMaterials ground)
-        {
-            var data = terrain.terrainData;
-            var resolution = data.alphamapResolution;
-            var dry = DryTexels(data, dryLayers);
-            var origin = ((float3)terrain.GetPosition()).xz;
-            var perMetre = resolution / ((float3)data.size).xz;
-            foreach (var cell in _grid.Cells(int2.zero, Size - 1))
-            {
-                var centre = _grid.Center(cell);
-                var texel = (int2)math.floor((centre - origin) * perMetre);
-                var onTerrain = math.all(texel >= 0) && math.all(texel < resolution);
-                if (onTerrain && dry[texel.x + texel.y * resolution] && ground.At(centre) != SurfaceMaterial.Water)
-                {
-                    MarkDry(cell);
-                }
-            }
-        }
-
         /// <summary>Puts every fire out and makes burnt ground dry again: a replay sought back past the fires.</summary>
         public void Clear()
         {
@@ -191,34 +165,6 @@ namespace HyperRTS.Presentation.Environment.Fire
             _flames.Clear();
             _burntOut.Clear();
             _carry = 0f;
-        }
-
-        // Whether each alphamap texel is over half dry layers, row-major from the terrain's south-west corner.
-        private static bool[] DryTexels(TerrainData data, TerrainLayer[] dryLayers)
-        {
-            var resolution = data.alphamapResolution;
-            var burns = Array.ConvertAll(data.terrainLayers, layer => Array.IndexOf(dryLayers, layer) >= 0);
-            var dry = new bool[resolution * resolution];
-            for (var row = 0; row < resolution; row += AlphamapRows)
-            {
-                var rows = Math.Min(AlphamapRows, resolution - row);
-                var weights = data.GetAlphamaps(0, row, resolution, rows);
-                for (var z = 0; z < rows; z++)
-                {
-                    for (var x = 0; x < resolution; x++)
-                    {
-                        var share = 0f;
-                        for (var layer = 0; layer < burns.Length; layer++)
-                        {
-                            share += burns[layer] ? weights[z, x, layer] : 0f;
-                        }
-
-                        dry[x + (row + z) * resolution] = share > 0.5f;
-                    }
-                }
-            }
-
-            return dry;
         }
 
         private void Step(float2 wind)

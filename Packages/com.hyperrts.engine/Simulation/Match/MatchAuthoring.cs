@@ -163,7 +163,6 @@ namespace HyperRTS.Simulation.Match
                 });
                 AddComponent(entity, authoring.sight.Rules);
                 AddInfantryTuning(entity, authoring);
-
                 AddComponent(entity, new MatchRules
                 {
                     LowPowerProductionRate = authoring.lowPowerProductionRate,
@@ -173,6 +172,14 @@ namespace HyperRTS.Simulation.Match
                     StrategicAssets = true,
                 });
 
+                var relations = AddPlayers(authoring);
+                AddComponent(entity, relations);
+                AddTunings(entity, authoring);
+                AddSides(entity, authoring.sides);
+            }
+
+            private OwnerRelations AddPlayers(MatchAuthoring authoring)
+            {
                 if (authoring.players.Count > Owner.Max)
                 {
                     throw new ArgumentException(
@@ -187,9 +194,7 @@ namespace HyperRTS.Simulation.Match
                     BakePlayer(authoring, authoring.players[i], owner);
                 }
 
-                AddComponent(entity, relations);
-                AddTunings(entity, authoring);
-                AddSides(entity, authoring.sides);
+                return relations;
             }
 
             private void AddInfantryTuning(Entity match, MatchAuthoring authoring)
@@ -199,8 +204,8 @@ namespace HyperRTS.Simulation.Match
                     throw new ArgumentException($"The Match on '{authoring.name}' has no Infantry Tuning.");
                 }
 
-                DependsOn(authoring.infantry);
                 var tuning = authoring.infantry;
+                DependsOn(tuning);
                 AddComponent(match, tuning.cover.Rules);
                 AddComponent(match, tuning.squads.Rules);
                 AddComponent(match, tuning.voice.Rules);
@@ -230,33 +235,7 @@ namespace HyperRTS.Simulation.Match
                         throw new ArgumentException($"The Match lists side {content.side} twice.");
                     }
 
-                    AppendToBuffer(match, new MatchSide { Value = content.side });
-                    AddStartKit(match, content);
-                    foreach (var (prefab, count) in Steps(content.buildOrder))
-                    {
-                        AppendToBuffer(match, new SideBuildStep { Side = content.side, Prefab = prefab, Count = count });
-                    }
-                }
-            }
-
-            private void AddStartKit(Entity match, SideContent content)
-            {
-                for (var i = 0; i < content.startKit.Count; i++)
-                {
-                    var item = content.startKit[i];
-                    if (item.prefab == null)
-                    {
-                        throw new ArgumentException($"Side {content.side}'s start kit item {i} has no prefab.");
-                    }
-
-                    AppendToBuffer(match, new SideStartItem
-                    {
-                        Side = content.side,
-                        Prefab = GetEntity(item.prefab, TransformUsageFlags.Dynamic),
-                        Offset = item.offset,
-                        Yaw = math.radians(item.yaw),
-                        FacesCamera = item.facesCamera,
-                    });
+                    content.Bake(this, match);
                 }
             }
 
@@ -276,14 +255,12 @@ namespace HyperRTS.Simulation.Match
                 var playerName = new FixedString32Bytes();
                 playerName.CopyFromTruncated(slot.name);
                 float4 color = (Vector4)slot.color.linear;
-
                 var writer = this.Writer(player);
                 var stock = PlayerSetup.Add(writer, owner, playerName, color, populationCap: 0);
                 writer.Add(new PlayerSpawn { Position = slot.spawnPosition, Yaw = math.radians(slot.spawnYaw) });
                 SetComponent(player, new PlayerSide { Value = slot.side });
                 slot.AddStartingResources(stock);
                 var buildOrder = slot.buildOrder != null ? slot.buildOrder : authoring.defaultBuildOrder;
-
                 if (slot.control == PlayerControl.AI)
                 {
                     var tuning = authoring.AITuningFor(slot.difficulty);
@@ -307,31 +284,15 @@ namespace HyperRTS.Simulation.Match
 
             private void AddBuildOrder(DynamicBuffer<AIBuildStep> steps, AIBuildOrder buildOrder)
             {
-                foreach (var (prefab, count) in Steps(buildOrder))
+                if (buildOrder == null)
+                {
+                    return;
+                }
+
+                foreach (var (prefab, count) in buildOrder.BakeSteps(this))
                 {
                     steps.Add(new AIBuildStep { Prefab = prefab, Count = count });
                 }
-            }
-
-            private List<(Entity Prefab, int Count)> Steps(AIBuildOrder buildOrder)
-            {
-                var steps = new List<(Entity, int)>();
-                if (buildOrder == null)
-                {
-                    return steps;
-                }
-
-                DependsOn(buildOrder);
-                foreach (var step in buildOrder.steps)
-                {
-                    if (step.prefab != null)
-                    {
-                        // None: the prefab's own bakers pick its transform usage (upgrades have none).
-                        steps.Add((GetEntity(step.prefab, TransformUsageFlags.None), step.count));
-                    }
-                }
-
-                return steps;
             }
         }
     }

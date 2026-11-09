@@ -2,6 +2,24 @@
 // LitInput.hlsl, minus URP's UV-mapped detail maps, parallax, the specular workflow and transparency) plus the team colour, its mask,
 // its height band, the rigid animation clip, the bone animation clips and their fades, the build progress, grime, track lift and the world-scale detail maps. Every LitTeam pass includes this, so the SRP
 // Batcher sees one UnityPerMaterial layout.
+//   _TeamColor  linear RGB, A how much shows (0 untinted, so neutral needs no special case)
+//   _TeamMask   R where team colour goes, on UV0
+//   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
+//   _BONES      keyword: skinning from _BoneTex, bone indices in UV6 and weights in UV7 (negative for upper-body bones);
+//               per instance _LowerClip and _UpperClip, and _LowerFade and _UpperFade, the pose a clip switch fades
+//               out of over _BoneFadeTime seconds (LitTeamBones.hlsl)
+//   _VAT_RIGID  keyword: rigid pieces, each moved by its position in _VATPositions and rotation in _VATRotations at
+//               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamVAT.hlsl)
+//   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
+//   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
+//   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
+//               _TrackLift0 and _TrackLift1, the lift in metres at 8 stations front to back, it bends the lower run (LitTeamTrack.hlsl)
+//   _DETAIL     keyword: detail albedo and normal projected in object space (triplanar) at _DetailTiling repeats per metre,
+//               faded out between _DetailFadeStart and _DetailFadeEnd metres from the camera (LitTeamDetail.hlsl)
+//   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
+//               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
+// TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
+// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, game code writes VATClip and the bone clips.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 // URP's LitForwardPass includes "LitInput.hlsl" itself; its guard keeps this file's declarations the only ones.
