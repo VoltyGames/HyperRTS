@@ -15,8 +15,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Buildings.Placement
 {
     /// <summary>
-    /// Dragged lines of wall segments: axes, diagonals, skipped cells, the building gap, running out mid-line and the
-    /// builders' queue.
+    /// Dragged lines of wall segments: axes, diagonals, skipped cells, the building gap (kept to other buildings, not
+    /// between a line's own segments), running out mid-line and the builders' queue.
     /// </summary>
     public class LinePlacementTests : SimulationFixture
     {
@@ -133,6 +133,24 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             Assert.AreEqual(14f, sites[1].x, 1e-4f);
             Assert.AreEqual(16f, sites[2].x, 1e-4f, "flush with its neighbour");
             Assert.AreEqual(700, World.GetResources(1, _supplies));
+        }
+
+        [Test]
+        public void PlaceLine_SegmentsShorterThanTheBuildingGap_LayEveryOne()
+        {
+            var prefab = WallPrefab();
+            var map = World.Singleton<MapSettings>();
+            map.BuildingGap = 4f;
+            World.Set(World.MatchEntity(), map);
+            World.PlaceLine(Builder(prefab, float3.zero), prefab, new float3(4f, 0f, 0.3f), new float3(14.2f, 0f, 0.3f));
+            World.Tick();
+
+            var sites = SitePositions();
+            Assert.AreEqual(6, sites.Length, "the gap keeps lanes to other buildings, not between a line's segments");
+            for (var i = 0; i < sites.Length; i++)
+            {
+                Assert.AreEqual(4f + 2f * i, sites[i].x, 1e-4f);
+            }
         }
 
         [Test]

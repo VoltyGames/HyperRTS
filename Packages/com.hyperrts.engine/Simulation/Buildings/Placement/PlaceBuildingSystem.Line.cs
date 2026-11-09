@@ -15,7 +15,9 @@ namespace HyperRTS.Simulation.Buildings.Placement
     public partial struct PlaceBuildingSystem
     {
         /// <summary>
-        /// Places every free segment from the drag start, stopping at the first the player can't buy.
+        /// Places every free segment from the drag start, stopping at the first the player can't buy. Segments are
+        /// checked against the sites standing before the line, as the ghost shows them: the line is one structure, so
+        /// the building gap keeps lanes to other buildings, never between its own segments.
         /// </summary>
         private void PlaceLine(ref SystemState state, in IssuedCommand request, in Buyer buyer,
             EntityCommandBuffer ecb, NativeList<NavBox> sites, NativeList<Order> orders)
@@ -27,10 +29,11 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var line = new PlacementLine(map, request.Command.Position, request.Command.End, footprint, surface);
             var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
+            var standing = sites.Length;
             for (var i = 0; i < line.Count; i++)
             {
                 var spot = line.Segment(i).Grounded(grid);
-                if (!IsFree(ref state, spot, map, grid, request.Owner, sites))
+                if (!IsFree(ref state, spot, map, grid, request.Owner, sites.AsArray().GetSubArray(0, standing)))
                 {
                     continue;
                 }

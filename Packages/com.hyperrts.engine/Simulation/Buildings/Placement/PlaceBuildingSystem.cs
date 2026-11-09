@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
             var spot = asked.Snap(map).Grounded(grid);
-            if (!IsFree(ref state, spot, map, grid, request.Owner, sites))
+            if (!IsFree(ref state, spot, map, grid, request.Owner, sites.AsArray()))
             {
                 return false;
             }
@@ -231,9 +231,9 @@ namespace HyperRTS.Simulation.Buildings.Placement
         /// it like any bad spot.
         /// </summary>
         private bool IsFree(ref SystemState state, in BuildingSpot spot, in MapSettings map, in NavGrid grid,
-            byte owner, NativeList<NavBox> sites)
+            byte owner, NativeArray<NavBox> sites)
         {
-            if (!spot.CanPlace(map, grid, sites.AsArray()))
+            if (!spot.CanPlace(map, grid, sites))
             {
                 return false;
             }

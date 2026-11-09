@@ -104,6 +104,8 @@ A building with `placedInLines` set, such as a wall, is placed by dragging. `Pla
 the drag, each one footprint long, and only the first snaps so the rest follow gap-free. The HUD's `LineCost` totals the
 valid segments. The `PlaceLine` command (start, end, prefab) is rebuilt on the server, which places each free segment
 as its own site, charged per segment, and stops at the first one the player can't afford or a `BuildLimit` refuses.
+The line is one structure: each segment is checked against the sites standing before the line, as the ghost shows it,
+so the building gap keeps lanes to other buildings but never splits segments shorter than the gap.
 The skirmish AI places lines only through `AIFieldWorkAuthoring`.
 
 ### Dressing
