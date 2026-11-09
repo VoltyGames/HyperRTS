@@ -10,11 +10,17 @@ namespace HyperRTS.Presentation.Interaction
         public CommandCardPage Page;
 
         /// <summary>
-        /// Cancels a building placement, else a targeted command waiting for a click, else turns the command card back
-        /// to its first page; false when there was nothing to undo.
+        /// Finishes a wall being drawn, else cancels a building placement, else a targeted command waiting for a click,
+        /// else turns the command card back to its first page; false when there was nothing to undo.
         /// </summary>
         public bool Cancel()
         {
+            if (Placement.Drawing)
+            {
+                Placement.Drawing = false;
+                return true;
+            }
+
             if (Placement.Active)
             {
                 Placement = new PlacementState();

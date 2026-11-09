@@ -15,7 +15,8 @@ namespace HyperRTS.Input.Placement
 {
     /// <summary>
     /// Drives building placement mode: moves the snapped ghost, turns it through <see cref="PlacementRotation"/> and
-    /// confirms it on release as a PlaceBuilding command, or for a line prefab drags the line as a PlaceLine command.
+    /// confirms it on release as a PlaceBuilding command. A line prefab draws a wall instead: a click starts it, each
+    /// click or drag release lays a leg as a PlaceLine command and turns a corner there, and Command finishes it.
     /// </summary>
     // After CommandInputSystem, so a cancelling right-click can't also become a smart command this frame.
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -23,8 +24,9 @@ namespace HyperRTS.Input.Placement
     [UpdateAfter(typeof(CommandInputSystem))]
     public partial class PlacementInputSystem : InputMapSystem
     {
-        // Metres the cursor moves from the press before a held click turns the ghost, so a plain click never does.
-        private const float TurnDragDistance = 2f;
+        // Metres the cursor moves from the press before a held click turns the ghost or lays a wall leg on release, so
+        // a plain click never does.
+        private const float DragDistance = 2f;
 
         private MatchInputActions _actions;
         private WorldPointer _pointer;
@@ -37,6 +39,16 @@ namespace HyperRTS.Input.Placement
         private PlacementLine _line;
         private Entity _linePrefab;
         private int _lineGridVersion;
+
+        // The wall being drawn: the leg laid last, which the next one joins at a corner, unless it is the first.
+        private PlacementLine _laid;
+        private bool _joined;
+
+        // Confirm went down to start the wall and is still held, so its release past DragDistance lays the leg.
+        private bool _pressHeld;
+
+        // A leg went out this placement, so the next ones queue behind it instead of replacing the builders' orders.
+        private bool _sent;
 
         protected override void OnCreate()
         {
@@ -63,6 +75,7 @@ namespace HyperRTS.Input.Placement
             if (!placement.Active)
             {
                 _keysPublished = false;
+                _sent = false;
                 _rotation = PlacementRotation.Start();
                 PauseEdgeScroll(false);
                 return;
@@ -71,7 +84,7 @@ namespace HyperRTS.Input.Placement
             var commands = _actions.Commands;
             PublishKeys(commands);
             var cancelled = commands.Command.WasPressedThisFrame();
-            if (placement.Prefab == Entity.Null || cancelled)
+            if (placement.Prefab == Entity.Null || (cancelled && !placement.Drawing))
             {
                 SystemAPI.SetSingleton(new PlacementState());
                 return;
@@ -82,13 +95,15 @@ namespace HyperRTS.Input.Placement
             var shift = commands.Queue.IsPressed();
             if (SystemAPI.HasComponent<LinePlacement>(placement.Prefab))
             {
-                // A drag released over the HUD still ends where the cursor last touched the ground.
+                // Command finishes the wall and leaves placement on for the next one.
+                placement.Drawing &= !cancelled;
+                // A leg released over the HUD still ends where the cursor last touched the ground.
                 if (aimed)
                 {
                     MoveLine(ref placement, ground, shift);
                 }
 
-                DragLine(ref placement, aimed, shift);
+                DrawWall(ref placement, aimed, shift);
             }
             else
             {
@@ -111,8 +126,10 @@ namespace HyperRTS.Input.Placement
             _keysPublished = true;
             SystemAPI.SetSingleton(new PlacementKeys
             {
+                Place = commands.Confirm.GetBindingDisplayString(),
                 Rotate = commands.RotateBuilding.GetBindingDisplayString(),
                 Snap = commands.Queue.GetBindingDisplayString(),
+                Finish = commands.Command.GetBindingDisplayString(),
             });
         }
 
@@ -159,7 +176,7 @@ namespace HyperRTS.Input.Placement
         private void DragTurn(ref PlacementState placement, bool aimed, float3 ground, bool shift)
         {
             var pull = ground.xz - placement.DragStart.xz;
-            if (aimed && math.lengthsq(pull) > TurnDragDistance * TurnDragDistance)
+            if (aimed && math.lengthsq(pull) > DragDistance * DragDistance)
             {
                 _rotation.Aim(pull);
             }
@@ -184,8 +201,8 @@ namespace HyperRTS.Input.Placement
             var spot = asked.Snap(map).Grounded(grid);
             placement.Position = spot.Center;
             placement.Yaw = spot.Yaw;
-            using var footprints = _footprints.Read();
-            var clear = spot.CanPlace(map, grid, footprints.AsArray());
+            using var footprints = _footprints.Read(EntityManager);
+            var clear = spot.CanPlace(map, grid, footprints.AsArray(), false);
             placement.Valid = clear && !_enemies.Block(spot);
         }
 
@@ -199,22 +216,23 @@ namespace HyperRTS.Input.Placement
             }
         }
 
+        /// <summary>
+        /// Plans the leg being drawn into the PlacementSegment buffer: from the wall's start, or past the corner where
+        /// the last leg ended; before a wall starts, one segment at the cursor.
+        /// </summary>
         private void MoveLine(ref PlacementState placement, float3 ground, bool shift)
         {
-            var start = placement.Dragging ? placement.DragStart : ground;
-            placement.Position = shift ? PlacementRotation.SnapEnd(start, ground) : ground;
-            var first = Spot(placement.Prefab, start, 0f, out var map, out var grid);
-            var line = new PlacementLine(map, start, placement.Position, first.Footprint, first.Surface);
+            var line = Leg(ref placement, ground, shift, out var map, out var grid);
             var segments = SystemAPI.GetSingletonBuffer<PlacementSegment>();
             if (!IsPlanned(line, placement.Prefab, grid.Version))
             {
                 CompleteDependency();
                 segments.Clear();
-                using var footprints = _footprints.Read();
+                using var footprints = _footprints.Read(EntityManager);
                 for (var i = 0; i < line.Count; i++)
                 {
                     var spot = line.Segment(i).Grounded(grid);
-                    var clear = spot.CanPlace(map, grid, footprints.AsArray());
+                    var clear = spot.CanPlace(map, grid, footprints.AsArray(), true);
                     segments.Add(new PlacementSegment { Spot = spot, Ground = clear });
                 }
 
@@ -225,6 +243,40 @@ namespace HyperRTS.Input.Placement
 
             _enemies.Mark(segments);
             placement.Valid = PlacementSegment.CountValid(segments) > 0;
+        }
+
+        /// <summary>
+        /// The leg to the cursor, Shift snapping its direction, with the placement's
+        /// <see cref="PlacementState.DragStart"/> and <see cref="PlacementState.Position"/> set to its start and end.
+        /// </summary>
+        private PlacementLine Leg(ref PlacementState placement, float3 ground, bool shift, out MapSettings map,
+            out NavGrid grid)
+        {
+            var first = Spot(placement.Prefab, ground, 0f, out map, out grid);
+            if (!placement.Drawing)
+            {
+                placement.Position = ground;
+                return new PlacementLine(map, ground, ground, first.Footprint, first.Surface, LineStart.Snapped);
+            }
+
+            if (!_joined)
+            {
+                placement.Position = shift ? PlacementRotation.SnapEnd(placement.DragStart, ground) : ground;
+                return new PlacementLine(map, placement.DragStart, placement.Position, first.Footprint, first.Surface,
+                    LineStart.Snapped);
+            }
+
+            // A joined leg turns at the corner, so its direction is measured from there.
+            var corner = _laid.Joint;
+            var aim = shift ? PlacementRotation.SnapEnd(corner, ground) : ground;
+            var direction = math.normalizesafe(aim.xz - corner.xz, math.normalize(_laid.Step.xz));
+            var start = _laid.JoinedStart(direction);
+            // Never behind the start, which would turn the leg back over the corner.
+            var reach = math.max(math.dot(aim.xz - start.xz, direction), 0.01f);
+            var end = start.xz + direction * reach;
+            placement.DragStart = start;
+            placement.Position = new float3(end.x, aim.y, end.y);
+            return new PlacementLine(map, start, placement.Position, first.Footprint, first.Surface, LineStart.Joined);
         }
 
         private bool IsPlanned(in PlacementLine line, Entity prefab, int gridVersion) =>
@@ -239,43 +291,68 @@ namespace HyperRTS.Input.Placement
             return new BuildingSpot(position, yaw, SystemAPI.GetComponent<NavObstacle>(prefab).Size, surface);
         }
 
-        private void DragLine(ref PlacementState placement, bool aimed, bool queue)
+        /// <summary>
+        /// A click starts a wall at the cursor. While drawing, a click, or releasing the starting click past
+        /// <see cref="DragDistance"/>, lays the leg and turns a corner there, so the next leg runs on from its end.
+        /// </summary>
+        private void DrawWall(ref PlacementState placement, bool aimed, bool shift)
         {
             var confirm = _actions.Commands.Confirm;
-            if (!placement.Dragging)
+            if (!placement.Drawing)
             {
+                _pressHeld = false;
                 if (aimed && confirm.WasPressedThisFrame())
                 {
-                    placement.Dragging = true;
+                    placement.Drawing = true;
                     placement.DragStart = placement.Position;
+                    _joined = false;
+                    _pressHeld = true;
                 }
 
                 return;
             }
 
-            if (!confirm.WasReleasedThisFrame())
+            if (_pressHeld && confirm.WasReleasedThisFrame())
+            {
+                _pressHeld = false;
+                var drag = placement.Position.xz - placement.DragStart.xz;
+                if (math.lengthsq(drag) > DragDistance * DragDistance)
+                {
+                    LayLeg(ref placement, shift);
+                }
+
+                return;
+            }
+
+            if (aimed && confirm.WasPressedThisFrame())
+            {
+                LayLeg(ref placement, shift);
+            }
+        }
+
+        /// <summary>
+        /// Sends the leg as planned and joins the next one to its end. The first leg queues with Shift; the rest always
+        /// queue, so the builders work through every wall drawn in order.
+        /// </summary>
+        private void LayLeg(ref PlacementState placement, bool shift)
+        {
+            if (!placement.Valid)
             {
                 return;
             }
 
-            if (placement.Valid)
+            AddCommand(new PlayerCommand
             {
-                AddCommand(new PlayerCommand
-                {
-                    Type = CommandType.PlaceLine,
-                    Prefab = placement.Prefab,
-                    Position = placement.DragStart,
-                    End = placement.Position,
-                    Queue = queue,
-                });
-            }
-
-            // Shift keeps drawing lines of the same building.
-            placement.Dragging = false;
-            if (!queue)
-            {
-                placement = new PlacementState();
-            }
+                Type = CommandType.PlaceLine,
+                Prefab = placement.Prefab,
+                Position = placement.DragStart,
+                End = placement.Position,
+                Queue = shift || _sent,
+                Argument = (int)(_joined ? LineStart.Joined : LineStart.Snapped),
+            });
+            _sent = true;
+            _laid = _line;
+            _joined = true;
         }
 
         private void AddCommand(in PlayerCommand command)

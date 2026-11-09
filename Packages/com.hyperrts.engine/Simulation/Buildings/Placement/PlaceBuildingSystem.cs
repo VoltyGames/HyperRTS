@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             // Played back right away so the sites exist before builders read the Build orders below.
             var ecb = new EntityCommandBuffer(Allocator.Temp);
             // Every standing obstacle's box: the nav grid may lag a frame behind newly placed sites.
-            var sites = NavObstacle.ReadBoxes(_obstacles);
+            var sites = PlacedFootprint.Read(state.EntityManager, _obstacles);
             var assignments = new NativeList<Assignment>(Allocator.Temp);
             // One buyer per player for the frame: each site placed counts against the next request's build limits.
             var buyers = new NativeHashMap<byte, Buyer>(4, Allocator.Temp);
@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 if (request.Command.Type == CommandType.PlaceLine)
                 {
                     PlaceLine(ref state, request, buyer, ecb, sites, orders);
-                    NearEndFirst(ref state, builders, orders);
+                    NearEndFirst(ref state, builders, orders, request.Command.Queue);
                 }
                 else if (TryPlace(ref state, request, buyer, ecb, sites, out var order))
                 {
@@ -133,7 +133,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         }
 
         private bool TryPlace(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
-            NativeList<NavBox> sites, out Order order)
+            NativeList<PlacedFootprint> sites, out Order order)
         {
             order = default;
             var prefab = request.Command.Prefab;
@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
             var spot = asked.Snap(map).Grounded(grid);
-            if (!IsFree(ref state, spot, map, grid, request.Owner, sites.AsArray()))
+            if (!IsFree(ref state, spot, map, grid, request.Owner, sites, false))
             {
                 return false;
             }
@@ -154,18 +154,18 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 return false;
             }
 
-            order = Raise(ref state, request, buyer, ecb, sites, spot);
+            order = Raise(ref state, request, buyer, ecb, sites, spot, false);
             return true;
         }
 
         /// <summary>Counts the bought site against the buyer, spawns it and returns the Build order on it.</summary>
         private Order Raise(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
-            NativeList<NavBox> sites, in BuildingSpot spot)
+            NativeList<PlacedFootprint> sites, in BuildingSpot spot, bool inLine)
         {
             var prefab = request.Command.Prefab;
             buyer.AddPurchase(state.EntityManager, prefab);
             var building = SpawnSite(ref state, prefab, spot.Center, spot.Rotation, request.Owner, ecb);
-            sites.Add(spot.Box);
+            sites.Add(new PlacedFootprint(spot.Box, inLine));
             return new Order { Type = OrderType.Build, Target = building, Position = spot.Center };
         }
 
@@ -231,9 +231,9 @@ namespace HyperRTS.Simulation.Buildings.Placement
         /// it like any bad spot.
         /// </summary>
         private bool IsFree(ref SystemState state, in BuildingSpot spot, in MapSettings map, in NavGrid grid,
-            byte owner, NativeArray<NavBox> sites)
+            byte owner, NativeList<PlacedFootprint> sites, bool inLine)
         {
-            if (!spot.CanPlace(map, grid, sites))
+            if (!spot.CanPlace(map, grid, sites.AsArray(), inLine))
             {
                 return false;
             }

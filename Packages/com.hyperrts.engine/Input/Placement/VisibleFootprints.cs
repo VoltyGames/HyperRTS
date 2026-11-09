@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Vision;
@@ -22,6 +23,7 @@ namespace HyperRTS.Input.Placement
         }
 
         /// <summary>The seen footprints copied once, so a line of spots is checked against one read.</summary>
-        public readonly NativeList<NavBox> Read() => NavObstacle.ReadBoxes(_obstacles);
+        public readonly NativeList<PlacedFootprint> Read(EntityManager entityManager) =>
+            PlacedFootprint.Read(entityManager, _obstacles);
     }
 }

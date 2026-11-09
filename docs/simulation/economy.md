@@ -76,17 +76,20 @@ refunds `MatchRules.SellRefund`. `FlagMountAuthoring` flies the owner's flag.
 
 `BuildingSpot` (centre, yaw, unturned footprint, surface) is the one placement value for the ghost, the server and the
 AI. `BuildingSpot.IsValid` decides where it may go: inside the map, with every cell under the turned box free on its
-surface. Anything with an obstacle blocks (buildings, solid ruins, scenery with a `block` size such as walls). Open
-scenery (trees, shrubs, crushable fences, small props) doesn't. A hostile ground or naval unit reaching into the box
-rules the spot out too; the ghost counts only enemies the player sees, the server counts hidden ones as well.
+surface in `NavGrid.Unbuilt`, the cells as ground, areas and blockers leave them before obstacle footprints close
+them. Obstacles (buildings, solid ruins, scenery with a `block` size such as walls) are checked as exact boxes by
+`BuildingSpot.Fits` instead, so neighbours set flush never trip on a cell both of them touch. Open scenery (trees,
+shrubs, crushable fences, small props) doesn't block. A hostile ground or naval unit reaching into the box rules the
+spot out too; the ghost counts only enemies the player sees, the server counts hidden ones as well.
 
 The server's `SiteClearingSystem` marks open scenery under a site's turned box as cleared (trees by their canopy),
 and `DeathSystem` removes it silently. Multiplayer sends this as a `SceneryChange` with `Cleared` set.
 
 `MapSettings.BuildingGap`, baked from `MatchAuthoring.buildingGap` (0 turns it off), keeps lanes vehicles can drive:
-`BuildingSpot.Fits` fails a spot that sits closer than the gap to a footprint it doesn't touch, and
-`BuildingSpot.CanPlace` joins it with `IsValid` for the server (`PlaceBuildingSystem`) and the ghost alike. The ghost
-turns red; under fog the server's answer wins. The skirmish AI pads each spot by `AITuning.buildingGap`.
+`BuildingSpot.Fits` fails a spot that overlaps a `PlacedFootprint` or sits closer than the gap to one it doesn't
+touch. Line pieces keep no gap from each other: walls are barriers by design, and their bends would fail it.
+`BuildingSpot.CanPlace` joins `Fits` with `IsValid` for the server (`PlaceBuildingSystem`) and the ghost alike. The
+ghost turns red; under fog the server's answer wins. The skirmish AI pads each spot by `AITuning.buildingGap`.
 `BuildingSpot.Snap` lands a quarter-turn yaw on cell boundaries and centres other yaws on the half-cell lattice.
 
 ### Facing
@@ -100,13 +103,22 @@ keep their authored rotation. A start kit item turns with its spawn unless it se
 
 ### Line placement
 
-A building with `placedInLines` set, such as a wall, is placed by dragging. `PlacementLine` lays `BuildingSpot`s along
-the drag, each one footprint long, and only the first snaps so the rest follow gap-free. The HUD's `LineCost` totals the
-valid segments. The `PlaceLine` command (start, end, prefab) is rebuilt on the server, which places each free segment
-as its own site, charged per segment, and stops at the first one the player can't afford or a `BuildLimit` refuses.
-The line is one structure: each segment is checked against the sites standing before the line, as the ghost shows it,
-so the building gap keeps lanes to other buildings but never splits segments shorter than the gap.
-The skirmish AI places lines only through `AIFieldWorkAuthoring`.
+A building with `placedInLines` set, such as a wall, trench or wire, is drawn as a wall of legs at any angle. A click
+starts it; each further click, or releasing the first click after a drag, lays the leg to the cursor and turns a
+corner there; Command (right-click) or Escape finishes the wall and leaves placement on for the next. Shift snaps a
+leg to 15 degrees. `PlacementInputSystem` drives it, `PlacementHint` shows the keys and `LineCost` totals the leg's
+valid segments.
+
+`PlacementLine` lays `BuildingSpot`s along a leg, each one footprint long. A wall's first leg snaps its first segment
+to the grid; each later leg is a `PlaceLine` command with `LineStart.Joined` in its `Argument`, starting exactly at
+`PlacementLine.JoinedStart`: on the line through the last leg's end, just far enough along to clear its last segment,
+so the corner touches and stays closed. The server rebuilds each leg and places every free segment as its own site,
+charged per segment, until the player can't afford one or a `BuildLimit` refuses. Legs after the first queue, ordered
+from where the builders' earlier orders leave them.
+
+A builder that finishes a line piece with nothing queued goes on to the nearest unfinished piece of the same wall,
+the owner's line pieces joined edge to edge (`ConstructionSystem`), so a Build order on any one segment builds the
+whole wall. The skirmish AI places lines only through `AIFieldWorkAuthoring`.
 
 ### Dressing
 

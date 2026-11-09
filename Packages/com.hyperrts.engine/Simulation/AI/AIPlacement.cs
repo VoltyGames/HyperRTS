@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.AI
         /// Closest free spot to <paramref name="home"/>'s center, ring by ring, with <paramref name="gap"/> kept clear
         /// around it and the map's building gap passed to every site as the server checks it.
         /// </summary>
-        public static bool TryFindSpot(in MapSettings map, in NavGrid grid, NativeArray<NavBox> sites,
+        public static bool TryFindSpot(in MapSettings map, in NavGrid grid, NativeArray<PlacedFootprint> sites,
             in BuildingSpot home, float gap, out BuildingSpot spot)
         {
             var step = math.cmax(home.Footprint) + gap;
@@ -55,14 +55,14 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>The first quarter yaw at which the spot, padded by the gap, is valid.</summary>
-        private static bool TryFace(in MapSettings map, in NavGrid grid, NativeArray<NavBox> sites,
+        private static bool TryFace(in MapSettings map, in NavGrid grid, NativeArray<PlacedFootprint> sites,
             in BuildingSpot candidate, float gap, out BuildingSpot spot)
         {
             for (var quarter = 0; quarter < Facings; quarter++)
             {
                 var yaw = PlacementMath.CameraYaw + quarter * math.PI * 0.5f;
                 spot = new BuildingSpot(candidate.Center, yaw, candidate.Footprint, candidate.Surface).Snap(map);
-                if (spot.Grown(gap).IsValid(map, grid) && spot.Fits(sites, map.BuildingGap))
+                if (spot.Grown(gap).IsValid(map, grid) && spot.Fits(sites, math.max(gap, map.BuildingGap), false))
                 {
                     return true;
                 }

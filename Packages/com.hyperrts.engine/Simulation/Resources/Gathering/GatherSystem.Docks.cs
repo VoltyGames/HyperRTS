@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
             {
                 if (IsLeaving(target, entity, ref harvest, ref move.Destination.ValueRW, transform, agent))
                 {
-                    Reach.Approach(target, transform, agent, move);
+                    Reach.Approach(target, transform, agent, move, Grid);
                     move.Destination.ValueRW.ExitRun =
                         Bays.Pose(harvest.Dock, harvest.Bay).ExitRun(transform.Position.xz);
                     return ApproachState.Walking;
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
                 if (!agent.UsesBays || !Bays.Has(target))
                 {
-                    return Reach.Approach(target, transform, agent, move);
+                    return Reach.Approach(target, transform, agent, move, Grid);
                 }
 
                 if (!HoldsBay(target, entity, ref harvest, transform))

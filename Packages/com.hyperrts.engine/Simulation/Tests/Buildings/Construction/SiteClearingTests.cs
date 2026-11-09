@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;
+using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using NUnit.Framework;
 using Unity.Entities;
@@ -106,8 +107,12 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
             var blocked = new BuildingSpot(new float3(8f, 0f, 0f), 0f, new float2(2f, 2f), PlacementSurface.Land);
             var map = World.Singleton<MapSettings>();
             var grid = World.Singleton<NavGrid>();
-            Assert.IsTrue(spot.IsValid(in map, in grid), "open ground takes a building");
-            Assert.IsFalse(blocked.IsValid(in map, in grid), "the wall's cells refuse one");
+            using var obstacles = Manager.CreateEntityQuery(ComponentType.ReadOnly<NavObstacle>(),
+                ComponentType.ReadOnly<LocalTransform>());
+            using var footprints = PlacedFootprint.Read(Manager, obstacles);
+            Assert.IsTrue(spot.CanPlace(in map, in grid, footprints.AsArray(), false), "open ground takes a building");
+            Assert.IsFalse(blocked.CanPlace(in map, in grid, footprints.AsArray(), false),
+                "the wall's footprint refuses one");
         }
     }
 }

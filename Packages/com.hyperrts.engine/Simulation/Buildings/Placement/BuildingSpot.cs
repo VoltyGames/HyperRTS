@@ -19,8 +19,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
         // Degrees off a quarter turn that still count as one, so a drag along an axis lands its edges on cells.
         private const float QuarterSnapDegrees = 0.5f;
 
-        // Metres apart that still count as flush, so neighbours placed edge to edge pass the gap rule.
-        private const float FlushTolerance = 0.1f;
+        /// <summary>Metres apart that still count as flush, so neighbours set edge to edge pass the gap rule.</summary>
+        public const float FlushTolerance = 0.1f;
 
         // Metres of float error forgiven at the rule's far end, so a lane of exactly the gap passes.
         private const float GapTolerance = 1e-3f;
@@ -80,7 +80,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
 
         /// <summary>
         /// Inside the map and over free cells of the surface only: plain land or plain water, never a deck or a
-        /// blocked cell. Open scenery such as trees doesn't count: the site clears it.
+        /// blocked cell. Open scenery such as trees doesn't count: the site clears it. Obstacle footprints are left to
+        /// <see cref="Fits"/>, which checks them exactly, so the cells read here are the grid's unbuilt ones.
         /// </summary>
         public bool IsValid(in MapSettings map, in NavGrid grid)
         {
@@ -101,7 +102,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                     continue;
                 }
 
-                var surface = grid.Surface(cell);
+                var surface = grid.UnbuiltSurface(cell);
                 if (Forbids(surface))
                 {
                     return false;
@@ -128,20 +129,25 @@ namespace HyperRTS.Simulation.Buildings.Placement
             }
         }
 
-        /// <summary>Valid ground clear of every site by the map's building gap, as server and ghost check.</summary>
-        public bool CanPlace(in MapSettings map, in NavGrid grid, NativeArray<NavBox> sites) =>
-            IsValid(map, grid) && Fits(sites, map.BuildingGap);
+        /// <summary>
+        /// Valid ground clear of every site by the map's building gap, as server and ghost check. A spot
+        /// <paramref name="inLine"/> is a piece of a line, such as a wall segment.
+        /// </summary>
+        public bool CanPlace(in MapSettings map, in NavGrid grid, NativeArray<PlacedFootprint> sites, bool inLine) =>
+            IsValid(map, grid) && Fits(sites, map.BuildingGap, inLine);
 
         /// <summary>
         /// Clear of every site: overlapping none, though touching is allowed so buildings sit flush at any angle, and
-        /// leaving no gap narrower than <paramref name="gap"/>.
+        /// leaving no gap narrower than <paramref name="gap"/>. Line pieces keep no gap from each other: a wall is a
+        /// barrier by design, and its bends and parallel runs would otherwise fail it.
         /// </summary>
-        public bool Fits(NativeArray<NavBox> sites, float gap)
+        public bool Fits(NativeArray<PlacedFootprint> sites, float gap, bool inLine)
         {
             var box = Box;
             foreach (var site in sites)
             {
-                if (box.Overlaps(site) || LeavesNarrowGap(box, site, gap))
+                var keepsGap = !(inLine && site.InLine);
+                if (box.Overlaps(site.Box) || (keepsGap && LeavesNarrowGap(box, site.Box, gap)))
                 {
                     return false;
                 }

@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
@@ -134,10 +135,12 @@ namespace HyperRTS.Simulation.Tests
                 Yaw = PlacementMath.CameraYaw,
             });
 
-        public static void PlaceLine(this TestWorld world, Entity builder, Entity prefab, float3 start, float3 end) =>
+        public static void PlaceLine(this TestWorld world, Entity builder, Entity prefab, float3 start, float3 end,
+            LineStart join = LineStart.Snapped, bool queue = false) =>
             world.Command(world.Get<Owner>(builder).Value, new PlayerCommand
             {
                 Type = CommandType.PlaceLine, Unit = builder, Prefab = prefab, Position = start, End = end,
+                Argument = (int)join, Queue = queue,
             });
 
         public static void SetBuildTime(this TestWorld world, Entity entity, float seconds, int population = 1) =>

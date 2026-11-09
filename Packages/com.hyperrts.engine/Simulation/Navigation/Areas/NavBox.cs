@@ -103,7 +103,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
         }
 
         /// <summary>Half the box's width along <paramref name="axis"/>.</summary>
-        private float Reach(float2 axis) =>
+        public float Reach(float2 axis) =>
             math.abs(math.dot(Right, axis)) * Half.x + math.abs(math.dot(Forward, axis)) * Half.y;
 
         private bool OverlapsAlong(in NavBox other, float2 offset, float2 axis) =>

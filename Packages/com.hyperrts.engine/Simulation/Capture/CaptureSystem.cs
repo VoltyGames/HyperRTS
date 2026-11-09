@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
@@ -29,6 +30,7 @@ namespace HyperRTS.Simulation.Capture
             _targets = new CaptureLookup(ref state);
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<NavGrid>();
             _ownerChanges = new EventWriter<OwnerChanged>(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
@@ -55,6 +57,7 @@ namespace HyperRTS.Simulation.Capture
                 OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 Reach = _reach,
                 OwnerChanges = _ownerChanges,
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
         }
 
@@ -74,6 +77,7 @@ namespace HyperRTS.Simulation.Capture
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             public TargetReach Reach;
+            [ReadOnly] public NavGrid Grid;
             public EventWriter<OwnerChanged> OwnerChanges;
 
             private void Execute(Entity entity, in Capturer capturer, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
@@ -93,7 +97,8 @@ namespace HyperRTS.Simulation.Capture
                     return;
                 }
 
-                var walk = Reach.Approach(target, transform, agent, new MoveControl(destination, moving, arrived));
+                var walk = Reach.Approach(target, transform, agent,
+                    new MoveControl(destination, moving, arrived), Grid);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

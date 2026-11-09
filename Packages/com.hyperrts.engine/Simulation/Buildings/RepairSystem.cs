@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
@@ -36,6 +37,7 @@ namespace HyperRTS.Simulation.Buildings
             _reach = new TargetReach(ref state);
             _repairs = new RepairLookup(ref state);
             state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate<OwnerRelations>();
         }
 
@@ -57,6 +59,7 @@ namespace HyperRTS.Simulation.Buildings
                 RepairableLookup = SystemAPI.GetComponentLookup<Repairable>(true),
                 Repairs = _repairs,
                 SectionLookup = SystemAPI.GetBufferLookup<Section>(true),
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
         }
 
@@ -72,6 +75,7 @@ namespace HyperRTS.Simulation.Buildings
             [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public ComponentLookup<Producible> ProducibleLookup;
             public TargetReach Reach;
+            [ReadOnly] public NavGrid Grid;
             public RepairLookup Repairs;
             [ReadOnly] public ComponentLookup<Repairable> RepairableLookup;
             [ReadOnly] public BufferLookup<Section> SectionLookup;
@@ -93,7 +97,8 @@ namespace HyperRTS.Simulation.Buildings
                 }
 
                 var position = Reach.Position(target);
-                var walk = Reach.Approach(target, transform, agent, new MoveControl(destination, moving, arrived));
+                var walk = Reach.Approach(target, transform, agent,
+                    new MoveControl(destination, moving, arrived), Grid);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Transport
             _boarding = new Boarding(ref state, false);
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
+            state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate<OwnerRelations>();
         }
 
@@ -47,6 +49,7 @@ namespace HyperRTS.Simulation.Transport
                 AttackLookup = SystemAPI.GetComponentLookup<AttackTarget>(false),
                 SelectedLookup = SystemAPI.GetComponentLookup<Selected>(false),
                 QueueLookup = SystemAPI.GetBufferLookup<QueuedOrder>(false),
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
         }
 
@@ -61,6 +64,7 @@ namespace HyperRTS.Simulation.Transport
             public Boarding Boarding;
             [ReadOnly] public ComponentLookup<Container> ContainerLookup;
             public TargetReach Reach;
+            [ReadOnly] public NavGrid Grid;
             public ComponentLookup<CombatStance> StanceLookup;
             public ComponentLookup<AttackTarget> AttackLookup;
             public ComponentLookup<Selected> SelectedLookup;
@@ -84,7 +88,7 @@ namespace HyperRTS.Simulation.Transport
                 }
 
                 var walk = Reach.Approach(container, Reach.Transform(entity), agent,
-                    new MoveControl(destination, moving, arrived));
+                    new MoveControl(destination, moving, arrived), Grid);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

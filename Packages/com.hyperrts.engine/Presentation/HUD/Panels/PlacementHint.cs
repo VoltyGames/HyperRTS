@@ -6,12 +6,15 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD.Panels
 {
-    /// <summary>How to turn a single building, below and right of its placement ghost.</summary>
+    /// <summary>
+    /// The placement's keys below and right of its ghost: how to turn a single building, or how to draw a wall.
+    /// </summary>
     public sealed class PlacementHint : HUDPanel
     {
         private readonly LiveSingleton<PlacementKeys> _keys = new();
         private readonly Label _hint;
         private PlacementKeys _shownKeys;
+        private bool _shownWall;
 
         public PlacementHint(Label hint)
             : base(hint)
@@ -26,18 +29,21 @@ namespace HyperRTS.Presentation.HUD.Panels
         {
             var placement = context.Placement;
             var keys = _keys.Get(context.EntityManager);
-            var shown = placement.Active && keys.Rotate.Length > 0
-                        && !context.EntityManager.HasComponent<LinePlacement>(placement.Prefab);
+            var shown = placement.Active && keys.Rotate.Length > 0;
             Root.SetHidden(!shown);
             if (!shown)
             {
                 return;
             }
 
-            if (keys.Rotate != _shownKeys.Rotate || keys.Snap != _shownKeys.Snap)
+            var wall = context.EntityManager.HasComponent<LinePlacement>(placement.Prefab);
+            if (!keys.Equals(_shownKeys) || wall != _shownWall)
             {
                 _shownKeys = keys;
-                _hint.text = string.Format(HUDText.Text("hud.rotate-hint"), keys.Rotate, keys.Snap);
+                _shownWall = wall;
+                _hint.text = wall
+                    ? string.Format(HUDText.Text("hud.wall-hint"), keys.Place, keys.Finish, keys.Snap)
+                    : string.Format(HUDText.Text("hud.rotate-hint"), keys.Rotate, keys.Snap);
             }
 
             PlaceBeside(placement.Position, Vector2.zero);

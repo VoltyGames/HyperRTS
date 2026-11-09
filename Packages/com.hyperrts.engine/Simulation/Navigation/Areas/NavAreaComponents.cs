@@ -1,4 +1,3 @@
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -52,20 +51,6 @@ namespace HyperRTS.Simulation.Navigation.Areas
 
         /// <summary>A hash of the footprint stamped at <paramref name="transform"/>, to tell when it changed.</summary>
         public readonly ulong Hash(in LocalTransform transform) => NavBox.Hash(transform, this);
-
-        /// <summary>The turned box of every obstacle <paramref name="query"/> matches, which reads LocalTransform too.</summary>
-        public static NativeList<NavBox> ReadBoxes(EntityQuery query)
-        {
-            var obstacles = query.ToComponentDataArray<NavObstacle>(Allocator.Temp);
-            var transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-            var boxes = new NativeList<NavBox>(obstacles.Length, Allocator.Temp);
-            for (var i = 0; i < obstacles.Length; i++)
-            {
-                boxes.Add(new NavBox(transforms[i].Position, transforms[i].Rotation, obstacles[i].Size));
-            }
-
-            return boxes;
-        }
     }
 
     /// <summary>

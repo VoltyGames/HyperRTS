@@ -63,7 +63,10 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>The issuing player concedes and is defeated; its units stay on the map.</summary>
         Surrender = 23,
 
-        /// <summary>Place a line of <see cref="PlayerCommand.Prefab"/> from Position to <see cref="PlayerCommand.End"/>.</summary>
+        /// <summary>
+        /// Place a line of <see cref="PlayerCommand.Prefab"/> from Position to <see cref="PlayerCommand.End"/>;
+        /// <see cref="PlayerCommand.Argument"/> is a <c>LineStart</c>.
+        /// </summary>
         PlaceLine = 24,
 
         /// <summary>Deployable units halt and deploy, so their deployed-only weapons may fire.</summary>

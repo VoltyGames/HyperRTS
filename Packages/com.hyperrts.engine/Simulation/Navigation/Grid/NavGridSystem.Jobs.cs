@@ -38,6 +38,16 @@ namespace HyperRTS.Simulation.Navigation.Grid
             }
         }
 
+        /// <summary>Keeps the cells as they stand before obstacles close them, for placement.</summary>
+        [BurstCompile]
+        private struct UnbuiltJob : IJob
+        {
+            [ReadOnly] public NativeArray<byte> Cells;
+            public NativeArray<byte> Unbuilt;
+
+            public void Execute() => Unbuilt.CopyFrom(Cells);
+        }
+
         [BurstCompile]
         private struct ChangeJob : IJob
         {

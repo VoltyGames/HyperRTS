@@ -96,7 +96,8 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             }
 
             var scenery = new NativeArray<byte>(count, Allocator.Temp);
-            return new NavGrid { Cells = cells, Scenery = scenery, Grid = new CellGrid(map.Min, map.NavCellSize, size) };
+            var grid = new CellGrid(map.Min, map.NavCellSize, size);
+            return new NavGrid { Unbuilt = cells, Scenery = scenery, Grid = grid };
         }
 
         [Test]
@@ -111,10 +112,10 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             Assert.IsFalse(Spot(new float3(50f, 0f, 50f), footprint).IsValid(in map, in grid), "outside the map");
 
             var blocked = grid.Grid.Cell(new float3(0.5f, 0f, 0.5f));
-            grid.Cells[grid.Grid.Index(blocked)] = (byte)NavSurface.Blocked;
+            grid.Unbuilt[grid.Grid.Index(blocked)] = (byte)NavSurface.Blocked;
             Assert.IsFalse(Spot(float3.zero, footprint).IsValid(in map, in grid), "blocked cell under footprint");
             Assert.IsTrue(Spot(new float3(-4f, 0f, -4f), footprint).IsValid(in map, in grid), "elsewhere is free");
-            grid.Cells.Dispose();
+            grid.Unbuilt.Dispose();
             grid.Scenery.Dispose();
         }
 
@@ -128,9 +129,9 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             grid.Scenery[grid.Grid.Index(tree)] = 1;
             Assert.IsTrue(Spot(float3.zero, footprint).IsValid(in map, in grid), "the site clears a tree");
 
-            grid.Cells[grid.Grid.Index(tree)] = (byte)NavSurface.Blocked;
-            Assert.IsFalse(Spot(float3.zero, footprint).IsValid(in map, in grid), "a house's cells block");
-            grid.Cells.Dispose();
+            grid.Unbuilt[grid.Grid.Index(tree)] = (byte)NavSurface.Blocked;
+            Assert.IsFalse(Spot(float3.zero, footprint).IsValid(in map, in grid), "a blocked cell blocks");
+            grid.Unbuilt.Dispose();
             grid.Scenery.Dispose();
         }
 
@@ -141,7 +142,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             var footprint = new float2(2f, 6f);
             var grid = LandGrid(map);
             var house = grid.Grid.Cell(new float3(2.5f, 0f, 0.5f));
-            grid.Cells[grid.Grid.Index(house)] = (byte)NavSurface.Blocked;
+            grid.Unbuilt[grid.Grid.Index(house)] = (byte)NavSurface.Blocked;
             var quarter = math.PI * 0.5f;
 
             Assert.IsTrue(Spot(float3.zero, footprint).IsValid(in map, in grid), "the narrow side misses the house");
@@ -149,7 +150,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
                 "a quarter turn lays the long side over it");
             Assert.IsFalse(Spot(float3.zero, footprint, math.radians(60f)).IsValid(in map, in grid),
                 "so does a free turn");
-            grid.Cells.Dispose();
+            grid.Unbuilt.Dispose();
             grid.Scenery.Dispose();
         }
 

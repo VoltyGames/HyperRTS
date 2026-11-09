@@ -20,6 +20,12 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public NativeArray<byte> Cells;
 
         /// <summary>
+        /// Each cell's surface before obstacle footprints close it: ground, areas and blockers. Placement reads it and
+        /// checks footprints exactly, so neighbours set flush don't trip on the cells both of them touch.
+        /// </summary>
+        public NativeArray<byte> Unbuilt;
+
+        /// <summary>
         /// Smallest <see cref="NavAgent.SceneryCrushLimit"/> that drives through each cell's scenery; 0 for none.
         /// </summary>
         public NativeArray<byte> Scenery;
@@ -61,6 +67,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
             return new NavGrid
             {
                 Cells = new NativeArray<byte>(count, Allocator.Persistent),
+                Unbuilt = new NativeArray<byte>(count, Allocator.Persistent),
                 Scenery = new NativeArray<byte>(count, Allocator.Persistent),
                 Classes = MovementClasses.Create(Allocator.Persistent),
                 Field = field,
@@ -76,6 +83,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         public void Dispose()
         {
             Cells.Dispose();
+            Unbuilt.Dispose();
             Scenery.Dispose();
             Classes.Dispose();
             Field.Dispose();
@@ -101,6 +109,10 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
         public readonly NavSurface Surface(int2 cell) =>
             Grid.Contains(cell) ? (NavSurface)Cells[Grid.Index(cell)] : NavSurface.Blocked;
+
+        /// <summary>The cell's surface with no obstacle footprint on it, see <see cref="Unbuilt"/>.</summary>
+        public readonly NavSurface UnbuiltSurface(int2 cell) =>
+            Grid.Contains(cell) ? (NavSurface)Unbuilt[Grid.Index(cell)] : NavSurface.Blocked;
 
         public readonly bool IsWalkable(int2 cell, NavLayer layer = NavLayer.Ground) =>
             IsOpen(cell, NavLayers.Surfaces(layer));

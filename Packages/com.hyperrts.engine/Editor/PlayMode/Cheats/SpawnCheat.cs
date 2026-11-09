@@ -86,7 +86,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             private readonly NavGrid _grid;
             private readonly float2 _footprint;
             private readonly PlacementSurface _surface;
-            private readonly NativeList<NavBox> _sites;
+            private readonly NativeList<PlacedFootprint> _sites;
 
             public Placement(EntityManager entityManager, Entity prefab)
             {
@@ -96,7 +96,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 _surface = BuildingPlacement.GetSurface(entityManager, prefab);
                 using var obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>()
                     .WithNone<Dead>().Build(entityManager);
-                _sites = NavObstacle.ReadBoxes(obstacles);
+                _sites = PlacedFootprint.Read(entityManager, obstacles);
             }
 
             // Skips a blocked spot. The building rises as a finished site, so SiteClearingSystem removes the open
@@ -104,7 +104,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             public bool TrySpawn(EntityManager entityManager, Entity prefab, byte owner, float3 position)
             {
                 var spot = new BuildingSpot(position, 0f, _footprint, _surface).Snap(_map).Grounded(_grid);
-                if (!spot.CanPlace(_map, _grid, _sites.AsArray()))
+                var inLine = entityManager.HasComponent<LinePlacement>(prefab);
+                if (!spot.CanPlace(_map, _grid, _sites.AsArray(), inLine))
                 {
                     return false;
                 }
@@ -113,7 +114,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 var building = entityManager.Spawn(prefab, spot.Center, facing, owner);
                 entityManager.SetComponentData(building, new ConstructionProgress { Value = 1f });
                 entityManager.SetComponentEnabled<ConstructionProgress>(building, true);
-                _sites.Add(spot.Box);
+                _sites.Add(new PlacedFootprint(spot.Box, inLine));
                 return true;
             }
         }

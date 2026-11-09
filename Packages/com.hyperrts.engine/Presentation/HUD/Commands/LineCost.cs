@@ -9,7 +9,8 @@ using HyperRTS.Presentation.HUD;
 namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
-    /// A dragged line's total cost above and right of its end, in the short colour while the player can't pay it.
+    /// The cost of the wall leg being drawn above and right of its end, in the short colour while the player can't pay
+    /// it.
     /// </summary>
     public sealed class LineCost : HUDPanel
     {
@@ -29,7 +30,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         public override void Refresh(HUDContext context)
         {
             var placement = context.Placement;
-            var segments = IsDraggingLine(context.EntityManager, placement) ? CountValid(context) : 0;
+            var segments = IsDrawingWall(context.EntityManager, placement) ? CountValid(context) : 0;
             Root.SetHidden(segments == 0);
             if (segments == 0)
             {
@@ -45,15 +46,15 @@ namespace HyperRTS.Presentation.HUD.Commands
             }
 
             _costs.MarkShort(!ResourceMath.CanAfford(context.Stock.AsNativeArray(), costs, _segments));
-            // The drag's end sits under the cursor, so the row follows it without reading device input, lifted by
+            // The leg's end sits under the cursor, so the row follows it without reading device input, lifted by
             // its own height to sit above the point.
             PlaceBeside(placement.Position, new Vector2(0f, -Root.resolvedStyle.height));
         }
 
-        // A single building drags too, to turn, and leaves the last line's segments in the buffer.
-        private static bool IsDraggingLine(EntityManager entityManager, in PlacementState placement)
+        // Before a wall starts, the buffer holds the one segment under the cursor.
+        private static bool IsDrawingWall(EntityManager entityManager, in PlacementState placement)
         {
-            if (!placement.Active || !placement.Dragging)
+            if (!placement.Active || !placement.Drawing)
             {
                 return false;
             }

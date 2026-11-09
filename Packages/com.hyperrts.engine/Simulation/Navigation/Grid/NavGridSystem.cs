@@ -128,9 +128,10 @@ namespace HyperRTS.Simulation.Navigation.Grid
             var areaParts = SystemAPI.GetBufferLookup<NavAreaPart>(true);
             dependency = new AreaJob { Grid = grid, Decks = false, Parts = areaParts }.Schedule(_areas, dependency);
             dependency = new AreaJob { Grid = grid, Decks = true, Parts = areaParts }.Schedule(_areas, dependency);
+            dependency = new BlockerJob { Grid = grid }.Schedule(_blockers, dependency);
+            dependency = new UnbuiltJob { Cells = grid.Cells, Unbuilt = grid.Unbuilt }.Schedule(dependency);
             dependency = new ObstacleJob { Grid = grid, Parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true) }
                 .Schedule(_obstacles, dependency);
-            dependency = new BlockerJob { Grid = grid }.Schedule(_blockers, dependency);
             state.Dependency = new ChangeJob { Grid = grid }.Schedule(dependency);
         }
 
