@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Vision.Fog
     public partial struct LocalFogViewSystem : ISystem
     {
         private int _fogVersion;
-        private int _ownerOrder;
+        private ChangeSignature _owners;
         private ConcealmentLookup _concealment;
 
         [BurstCompile]
@@ -42,13 +42,11 @@ namespace HyperRTS.Simulation.Vision.Fog
             var changed = restamped || view.Active != published.Active || view.Viewer != published.Viewer;
 
             // Owner's order version covers spawns, which must not show until the next restamp.
-            var ownerOrder = state.EntityManager.GetComponentOrderVersion<Owner>();
-            if (!changed && ownerOrder == _ownerOrder)
+            if (!_owners.OrderChanged<Owner>(ref state) && !changed)
             {
                 return;
             }
 
-            _ownerOrder = ownerOrder;
             if (changed)
             {
                 _fogVersion = fog.Version;

@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Maps.Checks
     /// the climate and palette and their items, against the climate and palette a map is built with, naming the bad
     /// value by its path (<c>belts[1].kind 'Hedge' is not a belt in climate 'Steppe'</c>).
     /// </summary>
-    public sealed class MapFieldCheck : MapKeyCheck
+    public sealed class MapFieldCheck : MapCheck
     {
         private MapFieldCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
         {

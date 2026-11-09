@@ -15,8 +15,11 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private readonly List<ScatterJob> _pending = new();
         private readonly ScatterDraws _draws;
 
-        /// <summary>Slots drawing <paramref name="meshes"/>, grown by the kernels, with room for at least <paramref name="minInstances"/>.</summary>
-        private protected ScatterBatch(ScatterComputeInputs kernels, Mesh[] meshes, int minInstances)
+        /// <summary>
+        /// Slots drawing <paramref name="meshes"/>, grown by the kernels, with room for at least
+        /// <paramref name="minInstances"/> instances of <paramref name="instanceStride"/> bytes.
+        /// </summary>
+        private protected ScatterBatch(ScatterComputeInputs kernels, Mesh[] meshes, int instanceStride, int minInstances)
         {
             Compute = kernels.Compute;
             GrowKernel = kernels.GrowKernel;
@@ -29,7 +32,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             }
 
             _draws = new ScatterDraws(meshes);
-            Slots = new ScatterSlots(Blocks, minInstances);
+            Slots = new ScatterSlots(Blocks, instanceStride, minInstances);
         }
 
         private protected ComputeShader Compute { get; }

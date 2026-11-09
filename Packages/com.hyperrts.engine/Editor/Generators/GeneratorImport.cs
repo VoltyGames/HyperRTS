@@ -13,8 +13,10 @@ namespace HyperRTS.Editor.Generators
 
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
-            var read = imported.Concat(deleted).Concat(moved).Concat(movedFrom)
-                .Where(path => GeneratorRunner.All().Any(generator => generator.RunOnImport && generator.Reads(path)))
+            var paths = imported.Concat(deleted).Concat(moved).Concat(movedFrom).ToList();
+            var read = GeneratorRunner.All()
+                .Where(generator => generator.RunOnImport && paths.Any(generator.Reads))
+                .Select(generator => generator.Name)
                 .ToList();
             if (read.Count == 0)
             {
@@ -32,9 +34,9 @@ namespace HyperRTS.Editor.Generators
 
         private static void RunChanged()
         {
-            var changed = Changed.ToList();
+            var changed = GeneratorRunner.All().Where(generator => Changed.Contains(generator.Name)).ToList();
             Changed.Clear();
-            foreach (var generator in GeneratorRunner.All().Where(generator => generator.RunOnImport && changed.Any(generator.Reads)))
+            foreach (var generator in changed)
             {
                 GeneratorRunner.Run(generator);
             }

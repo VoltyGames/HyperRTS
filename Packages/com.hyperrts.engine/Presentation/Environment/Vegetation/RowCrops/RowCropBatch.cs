@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -34,7 +35,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
         private ScatterSettings _settings;
 
         internal RowCropBatch(RowCrop crop, RowCropComputeInputs kernels)
-            : base(kernels, SlotMeshes(crop), MinCapacity)
+            : base(kernels, SlotMeshes(crop), UnsafeUtility.SizeOf<RowCropInstance>(), MinCapacity)
         {
             _crop = crop;
             _variants = crop.variants.Count;

@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -31,7 +32,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         }
 
         private GrassBatch(GrassField field, GrassComputeInputs kernels, Material[] materials, int[] firstSlots)
-            : base(kernels, SlotMeshes(field, firstSlots), MinInstances)
+            : base(kernels, SlotMeshes(field, firstSlots), UnsafeUtility.SizeOf<GrassInstance>(), MinInstances)
         {
             _field = field;
             _materials = materials;

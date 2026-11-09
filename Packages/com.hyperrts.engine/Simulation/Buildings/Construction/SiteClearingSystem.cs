@@ -19,8 +19,8 @@ namespace HyperRTS.Simulation.Buildings.Construction
     [UpdateInGroup(typeof(CombatSystemGroup))]
     public partial struct SiteClearingSystem : ISystem
     {
-        private int _siteOrder;
-        private int _sceneryOrder;
+        private ChangeSignature _sites;
+        private ChangeSignature _scenery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,11 +35,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
         {
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
-            var siteOrder = state.EntityManager.GetComponentOrderVersion<ConstructionProgress>();
-            var sceneryOrder = state.EntityManager.GetComponentOrderVersion<Destructible>();
-            var changed = siteOrder != _siteOrder || sceneryOrder != _sceneryOrder;
-            _siteOrder = siteOrder;
-            _sceneryOrder = sceneryOrder;
+            var changed = _sites.OrderChanged<ConstructionProgress>(ref state) | _scenery.OrderChanged<Destructible>(ref state);
             var sites = new NativeList<NavBox>(8, state.WorldUpdateAllocator);
             new SceneryJob
             {

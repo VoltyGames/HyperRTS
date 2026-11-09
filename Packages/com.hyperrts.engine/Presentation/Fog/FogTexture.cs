@@ -18,6 +18,9 @@ namespace HyperRTS.Presentation.Fog
         private NativeArray<byte> _target;
         private int _version = -1;
 
+        // Whether the texture has reached the last fill; always true for a plain texture.
+        private bool _settled = true;
+
         public FogTexture(string name, TextureFormat format, bool eased)
         {
             _name = name;
@@ -26,9 +29,6 @@ namespace HyperRTS.Presentation.Fog
         }
 
         public Texture2D Texture { get; private set; }
-
-        /// <summary>Whether the texture has reached the last fill; always true for a plain texture.</summary>
-        public bool Settled { get; private set; } = true;
 
         /// <summary>Whether the view changed since the last fill, or there is no texture yet.</summary>
         public bool Stale(in LocalFogView view) => Texture == null || view.Version != _version;
@@ -69,7 +69,7 @@ namespace HyperRTS.Presentation.Fog
                     Texture.Apply(false);
                 }
 
-                Settled = created;
+                _settled = created;
             }
             else
             {
@@ -84,12 +84,12 @@ namespace HyperRTS.Presentation.Fog
         /// <summary>Moves the texture toward the last fill, and settles once it arrives.</summary>
         public void Ease(float deltaTime, float fadeTime)
         {
-            if (Settled)
+            if (_settled)
             {
                 return;
             }
 
-            Settled = FogEase.Step(Texture.GetPixelData<byte>(0), _target, deltaTime, fadeTime);
+            _settled = FogEase.Step(Texture.GetPixelData<byte>(0), _target, deltaTime, fadeTime);
             Texture.Apply(false);
         }
 

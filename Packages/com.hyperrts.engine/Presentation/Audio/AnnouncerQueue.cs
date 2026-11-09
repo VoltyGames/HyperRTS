@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Sounds;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace HyperRTS.Presentation.Audio
     /// </summary>
     public sealed class AnnouncerQueue
     {
-        private readonly Dictionary<AnnouncementKind, double> _next = new();
+        private readonly Dictionary<AnnouncementKind, Throttle> _throttles = new();
         private readonly List<(SoundCue Cue, double Queued)> _waiting = new();
 
         public int Count => _waiting.Count;
@@ -18,14 +19,18 @@ namespace HyperRTS.Presentation.Audio
         /// <summary>Queues the set's line for the alert; false when it is silent or still cooling down.</summary>
         public bool Offer(AnnouncerSet set, AnnouncementKind kind, double now)
         {
-            var silent = !set.TryGetLine(kind, out var line) || line.cue == null;
-            var cooling = _next.TryGetValue(kind, out var next) && now < next;
-            if (silent || cooling)
+            if (!set.TryGetLine(kind, out var line) || line.cue == null)
             {
                 return false;
             }
 
-            _next[kind] = now + line.cooldown;
+            _throttles.TryGetValue(kind, out var throttle);
+            if (!throttle.TryPass(now, line.cooldown))
+            {
+                return false;
+            }
+
+            _throttles[kind] = throttle;
             _waiting.Add((line.cue, now));
             return true;
         }

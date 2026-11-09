@@ -18,19 +18,16 @@ namespace HyperRTS.Presentation.Rendering
 
         public GraphicsBuffer Buffer { get; private set; }
 
-        public int Capacity => Buffer.count;
-
-        /// <summary>Makes room for <paramref name="needed"/> elements, at least doubling; true when the buffer was replaced.</summary>
+        /// <summary>Makes room for <paramref name="needed"/> elements and a quarter more; true when the buffer was replaced.</summary>
         public bool Reserve(int needed)
         {
-            if (needed <= Capacity)
+            if (needed <= Buffer.count)
             {
                 return false;
             }
 
-            var capacity = Mathf.Max(needed, Capacity * 2);
             Buffer.Release();
-            Buffer = new GraphicsBuffer(_target, capacity, _stride);
+            Buffer = new GraphicsBuffer(_target, needed + needed / 4, _stride);
             return true;
         }
 

@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         {
             if (IsFarEndNearer(ref state, builders, orders))
             {
-                Reverse(orders);
+                orders.ReverseFrom(0);
             }
         }
 
@@ -70,14 +70,6 @@ namespace HyperRTS.Simulation.Buildings.Placement
             middle /= builders.Length;
             var first = math.distancesq(middle.xz, orders[0].Position.xz);
             return math.distancesq(middle.xz, orders[orders.Length - 1].Position.xz) < first;
-        }
-
-        private static void Reverse(NativeList<Order> orders)
-        {
-            for (int i = 0, j = orders.Length - 1; i < j; i++, j--)
-            {
-                (orders[i], orders[j]) = (orders[j], orders[i]);
-            }
         }
     }
 }

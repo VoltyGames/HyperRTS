@@ -1,7 +1,5 @@
 using System;
-using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Rendering;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -12,9 +10,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
     /// </summary>
     internal sealed class ScatterSlots : IDisposable
     {
-        // GrassInstance and RowCropInstance are the same size, so one buffer layout serves both.
-        public static readonly int InstanceStride = UnsafeUtility.SizeOf<GrassInstance>();
-
         private static readonly int SlotsId = Shader.PropertyToID("_Slots");
         private static readonly int SlotCountId = Shader.PropertyToID("_SlotCount");
         private static readonly int InstancesId = Shader.PropertyToID("_Instances");
@@ -25,13 +20,13 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private readonly GraphicsBuffer _slots;
         private readonly GrowingBuffer _instances;
 
-        /// <summary>Room for <paramref name="blocks"/>' slots, each drawn from its own block.</summary>
-        public ScatterSlots(MaterialPropertyBlock[] blocks, int minInstances)
+        /// <summary>Room for <paramref name="blocks"/>' slots of <paramref name="instanceStride"/>-byte instances, each drawn from its own block.</summary>
+        public ScatterSlots(MaterialPropertyBlock[] blocks, int instanceStride, int minInstances)
         {
             _blocks = blocks;
             _table = new uint[blocks.Length * 2];
             _slots = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, blocks.Length), sizeof(uint) * 2);
-            _instances = new GrowingBuffer(GraphicsBuffer.Target.Structured, InstanceStride, minInstances);
+            _instances = new GrowingBuffer(GraphicsBuffer.Target.Structured, instanceStride, minInstances);
             BindDraws();
         }
 

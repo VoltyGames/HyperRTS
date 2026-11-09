@@ -11,7 +11,7 @@ using HyperRTS.Simulation.GameEntities;
 namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>Checks before a build that every asset and key the climate and palette name exists.</summary>
-    public sealed class MapAssetCheck : MapKeyCheck
+    public sealed class MapAssetCheck : MapCheck
     {
         private MapAssetCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
         {

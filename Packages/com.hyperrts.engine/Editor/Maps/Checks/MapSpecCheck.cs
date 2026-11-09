@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Checks
     /// Checks a spec before it is refined: sane size, terrain and amounts, and every named kind known (<see
     /// cref="MapFieldCheck"/>). Where features lie is the expander's to check.
     /// </summary>
-    public sealed class MapSpecCheck : MapKeyCheck
+    public sealed class MapSpecCheck : MapCheck
     {
         private const float BridgeOverhang = 4f;
         private readonly MapSpec _spec;

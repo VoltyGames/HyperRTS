@@ -10,9 +10,9 @@ namespace HyperRTS.Editor.Maps.Checks
     /// Base of the map checks: holds the climate, palette and issues they report to. <see cref="MapFieldCheck"/>
     /// reports each key that doesn't resolve, so everything after can look keys up without checking them again.
     /// </summary>
-    public abstract class MapKeyCheck
+    public abstract class MapCheck
     {
-        protected MapKeyCheck(MapClimate climate, MapPalette palette, MapIssues issues)
+        protected MapCheck(MapClimate climate, MapPalette palette, MapIssues issues)
         {
             Climate = climate;
             Palette = palette;
