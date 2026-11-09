@@ -4,7 +4,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
-    /// <summary>One Scene-view visualisation of live simulation state, toggled from the debug overlay. Subclasses are discovered.</summary>
+    /// <summary>One Scene-view visualisation of live simulation state, toggled from the Cheats &amp; Debug window. Subclasses are discovered.</summary>
     public abstract class DebugLayer
     {
         /// <summary>The short row name in the overlay.</summary>

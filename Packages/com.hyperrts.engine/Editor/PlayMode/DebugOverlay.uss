@@ -1,5 +1,0 @@
-/* The Scene view debug overlay. Its contents are styled in DebugSection.uss. */
-
-.hrts-debug-overlay {
-  min-width: 170px;
-}

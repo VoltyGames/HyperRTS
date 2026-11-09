@@ -1,8 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <Style src="../Common/HyperRTSEditor.uss" />
-  <Style src="DebugOverlay.uss" />
-  <ui:Template name="DebugSection" src="DebugSection.uxml" />
-  <ui:VisualElement class="hrts-debug-overlay">
-    <ui:Instance template="DebugSection" name="debug" />
-  </ui:VisualElement>
-</ui:UXML>

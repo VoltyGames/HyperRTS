@@ -174,9 +174,8 @@ builder throws on a bad path, player count or size. Maps built from JSON specs: 
 
 ## Play-mode debugging
 
-The debug layers and cheats show in two places: the **HyperRTS Debug** and **HyperRTS Cheats** Scene view overlays,
-and the **HyperRTS ▸ Cheats & Debug** window, which docks beside the Game view so they stay in reach during Play.
-Both build on `DebugSection` and `CheatsSection`.
+The **HyperRTS ▸ Cheats & Debug** window (`CheatsDebugWindow`) holds the debug layers and the cheats. Dock it beside
+the Game view so it stays in reach during Play.
 
 The debug section toggles `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Toggles are
 remembered and work outside Play mode; **Hide all** clears them.

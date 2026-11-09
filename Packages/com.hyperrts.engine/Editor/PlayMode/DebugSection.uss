@@ -1,4 +1,4 @@
-/* The debug-draw layers and AI table, in the Scene view overlay and the Cheats & Debug window. Colour tokens are in Common/HyperRTSEditor.uss. */
+/* The debug-draw layers and AI table in the Cheats & Debug window. Colour tokens are in Common/HyperRTSEditor.uss. */
 
 .hrts-debug__group {
   -unity-font-style: bold;
