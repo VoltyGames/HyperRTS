@@ -197,7 +197,7 @@ namespace HyperRTS.Input.Placement
             placement.Position = spot.Center;
             placement.Yaw = spot.Yaw;
             using var footprints = _footprints.Read(EntityManager);
-            var clear = spot.CanPlace(map, grid, footprints.AsArray(), false);
+            var clear = spot.CanPlace(map, grid, footprints.AsArray(), inLine: false);
             placement.Valid = clear && !_enemies.Block(spot);
         }
 
@@ -227,7 +227,7 @@ namespace HyperRTS.Input.Placement
                 for (var i = 0; i < line.Count; i++)
                 {
                     var spot = line.Segment(i).Grounded(grid);
-                    var clear = spot.CanPlace(map, grid, footprints.AsArray(), true);
+                    var clear = spot.CanPlace(map, grid, footprints.AsArray(), inLine: true);
                     segments.Add(new PlacementSegment { Spot = spot, Ground = clear });
                 }
 
@@ -309,8 +309,8 @@ namespace HyperRTS.Input.Placement
         }
 
         /// <summary>
-        /// Sends the leg as planned and joins the next one to its end. The first leg queues with Shift; the rest always
-        /// queue, so the builders work through every wall drawn in order.
+        /// Sends the leg as planned and joins the next one to its end. The placement's first leg queues with Shift;
+        /// every later leg, on this wall or the next, always queues, so the builders work through them in order.
         /// </summary>
         private void LayLeg(ref PlacementState placement, bool shift)
         {

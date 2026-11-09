@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
             var spot = asked.Snap(map).Grounded(grid);
-            if (!IsFree(ref state, spot, map, grid, request.Owner, sites, false))
+            if (!IsFree(ref state, spot, map, grid, request.Owner, sites, inLine: false))
             {
                 return false;
             }
@@ -154,7 +154,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 return false;
             }
 
-            order = Raise(ref state, request, buyer, ecb, sites, spot, false);
+            order = Raise(ref state, request, buyer, ecb, sites, spot, inLine: false);
             return true;
         }
 

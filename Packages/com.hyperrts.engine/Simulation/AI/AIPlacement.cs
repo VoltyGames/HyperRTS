@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var yaw = PlacementMath.CameraYaw + quarter * math.PI * 0.5f;
                 spot = new BuildingSpot(candidate.Center, yaw, candidate.Footprint, candidate.Surface).Snap(map);
-                if (spot.Grown(gap).IsValid(map, grid) && spot.Fits(sites, math.max(gap, map.BuildingGap), false))
+                if (spot.Grown(gap).IsValid(map, grid) && spot.Fits(sites, math.max(gap, map.BuildingGap), inLine: false))
                 {
                     return true;
                 }

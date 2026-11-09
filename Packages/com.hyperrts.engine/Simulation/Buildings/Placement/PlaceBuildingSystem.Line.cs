@@ -32,7 +32,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             for (var i = 0; i < line.Count; i++)
             {
                 var spot = line.Segment(i).Grounded(grid);
-                if (!IsFree(ref state, spot, map, grid, request.Owner, sites, true))
+                if (!IsFree(ref state, spot, map, grid, request.Owner, sites, inLine: true))
                 {
                     continue;
                 }
@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                     break;
                 }
 
-                orders.Add(Raise(ref state, request, buyer, ecb, sites, spot, true));
+                orders.Add(Raise(ref state, request, buyer, ecb, sites, spot, inLine: true));
             }
         }
 
