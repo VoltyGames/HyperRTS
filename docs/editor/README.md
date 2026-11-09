@@ -183,7 +183,7 @@ The cheats work in Play mode only, through the normal game systems, and drop the
 | Section | Does |
 | --- | --- |
 | Player | Pick a player; **Play as** it (its AI stops), add resources, finish its construction and production |
-| Units | Spawn any prefab (a searchable list) at the view centre, repair or destroy your selection, start a battle of two hostile armies as a load test |
+| Units | Spawn any prefab at the view centre (buildings follow placement rules), repair or destroy your selection, start a two-army battle as a load test |
 | Match | Switch fog of war; change game speed or pause (single player only) |
 
 Debug layers are `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Switches are

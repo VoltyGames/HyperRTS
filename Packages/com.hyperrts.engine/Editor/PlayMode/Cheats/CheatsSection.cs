@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             _prefab.clicked += PickPrefab;
             _spawn = root.Require<Button>("spawn");
             _spawn.clicked += () => ActOnPrefab((manager, prefab, owner) =>
-                MatchCheats.Spawn(manager, prefab, owner, MatchCheats.ViewCenter(manager), EditorState.instance.spawnCount));
+                SpawnCheat.Spawn(manager, prefab, owner, EditorState.instance.spawnCount));
             _battle = root.Require<Button>("battle");
             _battle.clicked += () => ActOnPrefab((manager, prefab, _) =>
                 BattleCheat.Start(manager, prefab, EditorState.instance.armiesPerSide));
@@ -149,7 +149,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
 
         private void ActOnPrefab(System.Action<EntityManager, Entity, byte> cheat) => Act((manager, _, owner) =>
         {
-            var prefab = MatchCheats.FindPrefab(manager, EditorState.instance.spawnTypeId);
+            var prefab = SpawnCheat.FindPrefab(manager, EditorState.instance.spawnTypeId);
             if (prefab != Entity.Null)
             {
                 cheat(manager, prefab, owner);

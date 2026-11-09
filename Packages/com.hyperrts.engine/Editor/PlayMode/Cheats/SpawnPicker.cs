@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         public static void Open(EntityManager entityManager, Rect below, Action<int> picked)
         {
             var choices = new List<Choice>();
-            foreach (var prefab in MatchCheats.Prefabs(entityManager))
+            foreach (var prefab in SpawnCheat.Prefabs(entityManager))
             {
                 var info = entityManager.GetComponentData<EntityInfo>(prefab);
                 choices.Add(new Choice(info.TypeId, info.Name.ToString(), FindGroup(entityManager, prefab)));
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         /// <summary>The prefab's name for the picker button, or null when it is gone.</summary>
         public static string FindName(EntityManager entityManager, int typeId)
         {
-            var prefab = MatchCheats.FindPrefab(entityManager, typeId);
+            var prefab = SpawnCheat.FindPrefab(entityManager, typeId);
             return prefab == Entity.Null ? null : entityManager.GetComponentData<EntityInfo>(prefab).Name.ToString();
         }
 
