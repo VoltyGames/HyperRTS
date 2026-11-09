@@ -1,12 +1,13 @@
+using Unity.Mathematics;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
 namespace HyperRTS.Editor.Environment
 {
-    /// <summary>Gradient noise, fBm and lowpassed white noise that repeat seamlessly across their tile.</summary>
+    /// <summary>Perlin noise, fBm and lowpassed white noise that repeat seamlessly across their tile.</summary>
     public static class TileableNoise
     {
-        /// <summary>Octaves of gradient noise, each twice as fine and half as strong; roughly -1..1.</summary>
+        /// <summary>Octaves of periodic Perlin noise, each twice as fine and half as strong; roughly -1..1.</summary>
         public static float Fbm(Vector2 position, int period, int octaves, int seed)
         {
             var sum = 0f;
@@ -14,10 +15,10 @@ namespace HyperRTS.Editor.Environment
             var amplitude = 1f;
             for (var octave = 0; octave < octaves; octave++)
             {
-                // Gradient noise is zero on its lattice; shifting each octave keeps those zeros from lining up into a
-                // visible grid (any constant shift still tiles).
-                var shift = new Vector2(0.618f, 0.382f) * octave;
-                sum += Gradient(position + shift, period, seed + octave * 1013) * amplitude;
+                // Perlin noise is zero on its lattice, so each octave gets its own shift to keep those zeros from lining
+                // up into a grid; a whole-cell shift still repeats at the period.
+                var shift = new float2(0.618f * octave + seed * 5 + octave * 13, 0.382f * octave + seed * 11 + octave * 29);
+                sum += noise.pnoise(new float2(position.x, position.y) + shift, new float2(period, period)) * amplitude;
                 total += amplitude;
                 position *= 2f;
                 period *= 2;
@@ -25,19 +26,6 @@ namespace HyperRTS.Editor.Environment
             }
 
             return sum / total;
-        }
-
-        /// <summary>Perlin gradient noise at a point in lattice cells; roughly -1..1.</summary>
-        public static float Gradient(Vector2 position, int period, int seed)
-        {
-            var x = Mathf.FloorToInt(position.x);
-            var y = Mathf.FloorToInt(position.y);
-            var local = position - new Vector2(x, y);
-            var bottom = Mathf.Lerp(Corner(x, y, local, period, seed), Corner(x + 1, y, local - Vector2.right, period, seed),
-                Fade(local.x));
-            var top = Mathf.Lerp(Corner(x, y + 1, local - Vector2.up, period, seed),
-                Corner(x + 1, y + 1, local - Vector2.one, period, seed), Fade(local.x));
-            return Mathf.Lerp(bottom, top, Fade(local.y)) * Mathf.Sqrt(2f);
         }
 
         /// <summary>Box-blurs a square field in place twice (close to a Gaussian), wrapping around so it still tiles.</summary>
@@ -193,22 +181,6 @@ namespace HyperRTS.Editor.Environment
             }
         }
 
-        private static float Corner(int x, int y, Vector2 offset, int period, int seed)
-        {
-            var angle = Hash(Wrap(x, period), Wrap(y, period), seed) * (Mathf.PI * 2f / uint.MaxValue);
-            return Mathf.Cos(angle) * offset.x + Mathf.Sin(angle) * offset.y;
-        }
-
-        private static uint Hash(int x, int y, int seed)
-        {
-            var hash = (uint)x * 0x8DA6B343u ^ (uint)y * 0xD8163841u ^ (uint)seed * 0xCB1AB31Fu;
-            hash ^= hash >> 13;
-            hash *= 0x5BD1E995u;
-            return hash ^ (hash >> 15);
-        }
-
         private static int Wrap(int value, int period) => (value % period + period) % period;
-
-        private static float Fade(float t) => t * t * t * (t * (t * 6f - 15f) + 10f);
     }
 }

@@ -49,6 +49,15 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         [Test]
+        public void FbmRepeatsAtItsPeriod()
+        {
+            var point = new Vector2(0.37f, 1.21f);
+
+            Assert.That(TileableNoise.Fbm(point + Vector2.right * 4f, 4, 4, 3), Is.EqualTo(TileableNoise.Fbm(point, 4, 4, 3)).Within(1e-4f));
+            Assert.That(TileableNoise.Fbm(point + Vector2.up * 4f, 4, 4, 3), Is.EqualTo(TileableNoise.Fbm(point, 4, 4, 3)).Within(1e-4f));
+        }
+
+        [Test]
         public void TerrainSelectorIsUniform_AndBrightnessCentresOnHalf()
         {
             var below = _terrain.Count(t => t.x < 0.25f) / (float)_terrain.Length;
