@@ -132,18 +132,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             _builtMap = settings;
             var grid = FogOfWar.Create(settings.FogGrid(), Allocator.Persistent);
             grid.Generation = 1;
-            if (!exists)
-            {
-                state.EntityManager.CreateSingleton(grid);
-                return true;
-            }
-
-            state.CompleteDependency();
-            ref var fog = ref SystemAPI.GetSingletonRW<FogOfWar>().ValueRW;
-            grid.Version = fog.Version + 1;
-            grid.Generation = fog.Generation + 1;
-            fog.Dispose();
-            fog = grid;
+            state.ReplaceSingleton(ref grid, "FogOfWar");
             return true;
         }
 

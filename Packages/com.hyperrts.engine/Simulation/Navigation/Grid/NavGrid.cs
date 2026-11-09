@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
     /// Singleton surface grid over the map: each cell holds <see cref="NavSurface"/> flags, and an agent may enter
     /// cells sharing a flag with its <see cref="NavLayer"/>. Also answers how high each layer stands.
     /// </summary>
-    public struct NavGrid : IComponentData
+    public struct NavGrid : IComponentData, IReplaceableSingleton<NavGrid>
     {
         public NativeArray<byte> Cells;
 
@@ -82,6 +82,14 @@ namespace HyperRTS.Simulation.Navigation.Grid
             Sectors.Dispose();
             DeckHeights.Dispose();
             Changes.Dispose();
+        }
+
+        // Keeps the version, so paths revalidate, and swaps the classes so the old grid frees the new one's empty ones.
+        public void Inherit(ref NavGrid previous)
+        {
+            Version = previous.Version;
+            (Classes, previous.Classes) = (previous.Classes, Classes);
+            FitAccess();
         }
 
         /// <summary>The distance from segment ab to the cell's square.</summary>

@@ -104,7 +104,7 @@ namespace HyperRTS.Simulation.Movement
             }
 
             var corner = waypoints[0].Position.xz;
-            var remaining = math.distance(position, corner) + path.LengthPastCorner;
+            var remaining = path.Remaining(position, waypoints);
             var isFinal = waypoints.Length == 1;
             var next = isFinal ? float2.zero : math.normalizesafe(waypoints[1].Position.xz - corner);
             var turn = isFinal ? 0f : Turn(corner - position, next);

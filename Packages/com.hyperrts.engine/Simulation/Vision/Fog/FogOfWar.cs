@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision.Detection;
@@ -13,7 +14,7 @@ namespace HyperRTS.Simulation.Vision.Fog
     /// <see cref="TallTarget"/> height), ever seen, detected and close to a ground unit. With fog disabled every cell
     /// is visible, but stealth still needs detection.
     /// </summary>
-    public struct FogOfWar : IComponentData
+    public struct FogOfWar : IComponentData, IReplaceableSingleton<FogOfWar>
     {
         /// <summary>Cells whose ground is in sight, so infantry there are seen.</summary>
         public NativeArray<ulong> Visible;
@@ -67,6 +68,12 @@ namespace HyperRTS.Simulation.Vision.Fog
             Explored.Dispose();
             Detected.Dispose();
             Close.Dispose();
+        }
+
+        public void Inherit(ref FogOfWar previous)
+        {
+            Version = previous.Version + 1;
+            Generation = previous.Generation + 1;
         }
 
         /// <summary>Whether the team sees a target there, judged at a tall target's height when <paramref name="tall"/>.</summary>

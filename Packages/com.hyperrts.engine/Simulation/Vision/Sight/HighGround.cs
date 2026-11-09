@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Collections;
@@ -10,7 +11,7 @@ namespace HyperRTS.Simulation.Vision.Sight
     /// Singleton on the <see cref="FogOfWar"/> grid: how far each cell's ground rises above the mean ground around it,
     /// and what that is worth under the match's <see cref="SightRules"/>.
     /// </summary>
-    public struct HighGround : IComponentData
+    public struct HighGround : IComponentData, IReplaceableSingleton<HighGround>
     {
         /// <summary>Metres each cell's ground stands above the mean within <see cref="SightRules.Radius"/>.</summary>
         public NativeArray<float> Rise;
@@ -19,6 +20,13 @@ namespace HyperRTS.Simulation.Vision.Sight
         public SightRules Rules;
 
         public readonly bool IsCreated => Rise.IsCreated;
+
+        public readonly void Dispose() => Rise.Dispose();
+
+        // Nothing carries over; the rise is recomputed.
+        public readonly void Inherit(ref HighGround previous)
+        {
+        }
 
         public readonly float RiseAt(float3 position)
         {

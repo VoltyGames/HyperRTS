@@ -29,6 +29,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
         private NativeParallelMultiHashMap<int2, int> _members;
         private NativeHashSet<int2> _tried;
         private SectorSearch _search;
+        private NavCorridor _scratch;
 
         // Abstract paths a split shares per start component: ranges into the routes, by component.
         private NativeList<int> _routes;
@@ -48,6 +49,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             _members = new NativeParallelMultiHashMap<int2, int>(math.max(1, requests.Length), Allocator.Temp);
             _tried = new NativeHashSet<int2>(8, Allocator.Temp);
             _search = new SectorSearch(Allocator.Temp);
+            _scratch = new NavCorridor(grid.Field.Layout, Allocator.Temp);
             _routes = new NativeList<int>(256, Allocator.Temp);
             _byComponent = new NativeHashMap<int, int2>(16, Allocator.Temp);
         }
@@ -60,6 +62,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             _members.Dispose();
             _tried.Dispose();
             _search.Dispose();
+            _scratch.Dispose();
             _routes.Dispose();
             _byComponent.Dispose();
         }
@@ -127,13 +130,11 @@ namespace HyperRTS.Simulation.Navigation.Paths
         }
 
         // The corridor the fine search will build round these sectors.
-        private readonly int CorridorCells(int first, int count)
+        private int CorridorCells(int first, int count)
         {
-            var corridor = new NavCorridor(_grid.Field.Layout, Allocator.Temp);
-            corridor.AddWithRings(_plan.Sectors.AsArray().GetSubArray(first, count));
-
-            var cells = corridor.Cells;
-            corridor.Dispose();
+            _scratch.AddWithRings(_plan.Sectors.AsArray().GetSubArray(first, count));
+            var cells = _scratch.Cells;
+            _scratch.Truncate(0);
             return cells;
         }
 

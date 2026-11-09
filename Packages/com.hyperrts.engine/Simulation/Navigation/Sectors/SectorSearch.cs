@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using System;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -137,10 +138,7 @@ namespace HyperRTS.Simulation.Navigation.Sectors
                 }
             }
 
-            for (int i = begin, j = sectors.Length - 1; i < j; i++, j--)
-            {
-                (sectors[i], sectors[j]) = (sectors[j], sectors[i]);
-            }
+            sectors.ReverseFrom(begin);
         }
     }
 }

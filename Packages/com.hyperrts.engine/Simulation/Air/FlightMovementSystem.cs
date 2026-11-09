@@ -46,13 +46,16 @@ namespace HyperRTS.Simulation.Air
 
             new FlyJob
             {
-                Index = index,
+                Movers = new Movers
+                {
+                    Index = index,
+                    GivingWay = _givingWay,
+                    Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
+                    States = SystemAPI.GetComponentLookup<LocomotionState>(false),
+                    DeltaTime = SystemAPI.Time.DeltaTime,
+                },
                 Grid = grid,
-                GivingWay = _givingWay,
                 Docked = SystemAPI.GetComponentLookup<Docked>(true),
-                Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
-                States = SystemAPI.GetComponentLookup<LocomotionState>(false),
-                DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
 
@@ -61,15 +64,9 @@ namespace HyperRTS.Simulation.Air
         [WithPresent(typeof(MoveDestination), typeof(Arrival), typeof(FacingGoal))]
         private partial struct FlyJob : IJobEntity
         {
-            [ReadOnly] public SpatialIndex Index;
+            public Movers Movers;
             [ReadOnly] public NavGrid Grid;
-            public GivingWay GivingWay;
             [ReadOnly] public ComponentLookup<Docked> Docked;
-            [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
-
-            // Each aircraft writes only its own state.
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
-            public float DeltaTime;
 
             // `ref`, not `in`: each must share one writable handle with its EnabledRefRW.
             private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
@@ -78,29 +75,16 @@ namespace HyperRTS.Simulation.Air
                 ref MoveProgress progress, ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity,
                 ref FacingGoal aim, EnabledRefRW<FacingGoal> aiming)
             {
-                var maxStep = speed.Value * DeltaTime;
+                var deltaTime = Movers.DeltaTime;
+                var maxStep = speed.Value * deltaTime;
                 var heading = float2.zero;
-                var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
-                var remembers = States.TryGetComponent(entity, out var drive);
-                if (!remembers)
-                {
-                    // Without state, last frame's movement stands in for last frame's steering choice.
-                    drive.LastChoice = velocity.Value;
-                }
-
-                var wasMoving = moving.ValueRO;
                 var landed = Docked.HasEnabled(entity);
-                var from = transform.Position.xz;
-                var facing = math.normalizesafe(transform.Forward().xz);
-                var crowd = new CrowdVisitor(entity, from, facing, agent, owner.Value,
-                    wasMoving, destination, GivingWay);
-                Index.QueryHulls(crowd.Center, crowd.Reach(speed.Value), ref crowd);
-                var driver = new Driver(locomotion, agent, speed.Value, DeltaTime)
-                {
-                    Position = from, Facing = facing, State = drive,
-                };
-                var leg = PathLeg.Along(driver.Position, destination.Value.xz, waypoints, path);
-                if (moving.ValueRO && driver.HasArrived(leg))
+                var frame = Movers.Begin(entity, transform, agent, owner, destination, moving.ValueRO, speed.Value,
+                    velocity.Value);
+                var from = frame.From;
+                var crowd = frame.Crowd;
+                var leg = PathLeg.Along(from, destination.Value.xz, waypoints, path);
+                if (moving.ValueRO && frame.Driver.HasArrived(leg))
                 {
                     path.Halt(moving, waypoints);
                 }
@@ -108,15 +92,15 @@ namespace HyperRTS.Simulation.Air
                 var step = float2.zero;
                 if (moving.ValueRO)
                 {
-                    step = new Steering(crowd, velocity.Value).Drive(ref driver, leg);
-                    heading = driver.Facing;
+                    step = new Steering(crowd, velocity.Value).Drive(ref frame.Driver, leg);
+                    heading = frame.Driver.Facing;
                 }
                 else
                 {
-                    step = Loiter(transform.Rotation, flight, landed, driver.TopSpeed * DeltaTime, ref heading);
+                    step = Loiter(transform.Rotation, flight, landed, frame.Driver.TopSpeed * deltaTime, ref heading);
                 }
 
-                heading = driver.Aim(heading, !moving.ValueRO, aim, aiming);
+                heading = frame.Driver.Aim(heading, !moving.ValueRO, aim, aiming);
                 Fly(ref transform, from + step + (landed ? float2.zero : crowd.PushWithin(maxStep)), flight, landed);
                 if (moving.ValueRO && crowd.ReachedGroup)
                 {
@@ -124,15 +108,11 @@ namespace HyperRTS.Simulation.Air
                 }
 
                 var reason = crowd.ReachedGroup ? ArrivalReason.AtGroupmate : ArrivalReason.Reached;
-                progress.Report(wasMoving, moving.ValueRO, reason, ref arrival, arrived);
-                if (remembers)
-                {
-                    driver.State.Hit(transform.Position.xz - from, step, false);
-                    States[entity] = driver.State;
-                }
+                progress.Report(frame.WasMoving, moving.ValueRO, reason, ref arrival, arrived);
+                Movers.End(ref frame, transform.Position.xz, step, false);
 
                 Face(ref transform, heading);
-                velocity.Value = (transform.Position.xz - from) / DeltaTime;
+                velocity.Value = (transform.Position.xz - from) / deltaTime;
             }
 
             /// <summary>Goes wherever it steers and climbs toward its altitude over the surface below.</summary>
@@ -140,7 +120,7 @@ namespace HyperRTS.Simulation.Air
             {
                 transform.Position.xz = wanted;
                 var surface = Grid.SurfaceHeight(transform.Position);
-                transform.Position.y = FlightMath.Climb(transform.Position.y, surface, flight, landed, DeltaTime);
+                transform.Position.y = FlightMath.Climb(transform.Position.y, surface, flight, landed, Movers.DeltaTime);
             }
 
             private static void Face(ref LocalTransform transform, float2 heading)

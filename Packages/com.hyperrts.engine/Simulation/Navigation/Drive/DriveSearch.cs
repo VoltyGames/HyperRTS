@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
 using System;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -278,12 +279,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
                 }
             }
 
-            for (int a = first, b = points.Length - 1; a < b; a++, b--)
-            {
-                var swapped = points[a];
-                points[a] = points[b];
-                points[b] = swapped;
-            }
+            points.ReverseFrom(first);
         }
 
         private readonly PathWaypoint Waypoint(float2 center, bool reverse) =>

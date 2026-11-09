@@ -147,8 +147,12 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 {
                     Consider(filter, cell, new int2(i, -r), ref best, ref found);
                     Consider(filter, cell, new int2(i, r), ref best, ref found);
-                    Consider(filter, cell, new int2(-r, i), ref best, ref found);
-                    Consider(filter, cell, new int2(r, i), ref best, ref found);
+                    // The corners already came with the rows.
+                    if (i > -r && i < r)
+                    {
+                        Consider(filter, cell, new int2(-r, i), ref best, ref found);
+                        Consider(filter, cell, new int2(r, i), ref best, ref found);
+                    }
                 }
 
                 if (best != int.MaxValue)

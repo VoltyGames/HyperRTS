@@ -28,9 +28,7 @@ namespace HyperRTS.Simulation.Vision.Sight
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private CropCover _builtCrops;
-        private int _builtOrder;
-        private int _builtCount;
-        private ulong _builtSignature;
+        private ChangeSignature _built;
 
         // The last stamp, to tell which tiles a restamp changed.
         private NativeArray<SightCell> _previous;
@@ -87,28 +85,20 @@ namespace HyperRTS.Simulation.Vision.Sight
         }
 
         // Blocks only differ after an add, removal or archetype change, a block turning on or off, or a write.
-        private bool MayDiffer(ref SystemState state)
-        {
-            var order = state.EntityManager.GetComponentOrderVersion<SightBlock>();
-            var count = _blocks.CalculateEntityCount();
-            var differ = order != _builtOrder || count != _builtCount || !_changed.IsEmpty;
-            _builtOrder = order;
-            _builtCount = count;
-            return differ;
-        }
+        private bool MayDiffer(ref SystemState state) =>
+            _built.OrderChanged<SightBlock>(ref state) | _built.CountChanged(_blocks.CalculateEntityCount()) |
+            !_changed.IsEmpty;
 
         private bool SignatureChanged(ref SystemState state)
         {
-            // An order-independent sum, since an archetype move reorders the chunks.
-            var signature = (ulong)_builtCount;
+            // Seeded with the count, since the sum can't tell a block from none.
+            var signature = (ulong)_built.Count;
             foreach (var (block, transform) in SystemAPI.Query<RefRO<SightBlock>, RefRO<LocalTransform>>())
             {
                 signature += block.ValueRO.Hash(transform.ValueRO);
             }
 
-            var changed = signature != _builtSignature;
-            _builtSignature = signature;
-            return changed;
+            return _built.SumChanged(signature);
         }
 
         /// <summary>Creates the grid, or replaces it when the map's area, terrain or crops changed; true if it did.</summary>
@@ -125,17 +115,8 @@ namespace HyperRTS.Simulation.Vision.Sight
             _builtTerrain = terrain;
             _builtCrops = crops;
             var grid = SightBlockers.Create(map, Allocator.Persistent);
-            if (!exists)
+            if (state.ReplaceSingleton(ref grid, "SightBlockers"))
             {
-                state.EntityManager.CreateSingleton(grid, "SightBlockers");
-            }
-            else
-            {
-                state.CompleteDependency();
-                ref var current = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
-                grid.Generation = current.Generation + 1;
-                current.Dispose();
-                current = grid;
                 _previous.Dispose();
             }
 

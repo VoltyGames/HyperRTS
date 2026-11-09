@@ -52,13 +52,16 @@ namespace HyperRTS.Simulation.Movement
 
             new MoveJob
             {
-                Index = index,
+                Movers = new Movers
+                {
+                    Index = index,
+                    GivingWay = _givingWay,
+                    Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
+                    States = SystemAPI.GetComponentLookup<LocomotionState>(false),
+                    DeltaTime = SystemAPI.Time.DeltaTime,
+                },
                 Grid = grid,
-                GivingWay = _givingWay,
-                Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
                 Paces = SystemAPI.GetComponentLookup<Pace>(true),
-                States = SystemAPI.GetComponentLookup<LocomotionState>(false),
-                DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
 
@@ -67,15 +70,9 @@ namespace HyperRTS.Simulation.Movement
         [WithPresent(typeof(MoveDestination), typeof(Arrival), typeof(FacingGoal))]
         private partial struct MoveJob : IJobEntity, IJobEntityChunkBeginEnd
         {
-            [ReadOnly] public SpatialIndex Index;
+            public Movers Movers;
             [ReadOnly] public NavGrid Grid;
-            public GivingWay GivingWay;
-            [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
             [ReadOnly] public ComponentLookup<Pace> Paces;
-
-            // Each unit writes only its own state.
-            [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
-            public float DeltaTime;
 
             // Per chunk, not per unit, so the marker costs little and the profiler stays readable.
             public bool OnChunkBegin(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
@@ -109,34 +106,18 @@ namespace HyperRTS.Simulation.Movement
                     return;
                 }
 
-                var maxStep = top * DeltaTime;
-                var heading = float2.zero;
-                var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
-                // Instant handling needs no memory between frames, so units without it start each from rest.
-                var remembers = States.TryGetComponent(entity, out var drive);
-                if (!remembers)
-                {
-                    // Without state, last frame's movement stands in for last frame's steering choice.
-                    drive.LastChoice = velocity.Value;
-                }
-
-                // Read before arrival can clear it, as the index saw it, so both sides of a contact agree.
-                var wasMoving = moving.ValueRO;
-                var from = transform.Position.xz;
-                var facing = math.normalizesafe(transform.Forward().xz);
+                var deltaTime = Movers.DeltaTime;
+                var maxStep = top * deltaTime;
+                var frame = Movers.Begin(entity, transform, agent, owner, destination, moving.ValueRO, top,
+                    velocity.Value);
+                var from = frame.From;
+                var facing = frame.Facing;
+                var crowd = frame.Crowd;
                 var axis = facing * agent.HalfSegment;
-                var crowd = new CrowdVisitor(entity, from, facing, agent, owner.Value, wasMoving, destination,
-                    GivingWay);
-                Index.QueryHulls(crowd.Center, crowd.Reach(top), ref crowd);
 
                 var capsule = new NavCapsule(agent.Access(Grid), axis);
-                var driver = new Driver(locomotion, agent, top, DeltaTime)
-                {
-                    Position = from, Facing = facing, State = drive,
-                };
-                var step = Plan(ref driver, ref heading, destination.Value, moving, ref path, waypoints, crowd,
-                    velocity.Value, capsule.Access);
-                heading = driver.Aim(heading, !moving.ValueRO, aim, aiming);
+                var step = Plan(ref frame, destination.Value, moving, ref path, waypoints, capsule.Access);
+                var heading = frame.Driver.Aim(frame.Heading, !moving.ValueRO, aim, aiming);
 
                 // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
                 var depth = capsule.Depth(from, axis);
@@ -149,12 +130,12 @@ namespace HyperRTS.Simulation.Movement
                 var reading = new MoveProgress.Reading(transform.Position.xz, facing, agent.Radius, destination.Value,
                     waypoints, path);
                 var stalled = moving.ValueRO && !crowd.ReachedGroup &&
-                              progress.HasGivenUp(reading, waypoints, ref path, hold, DeltaTime);
+                              progress.HasGivenUp(reading, waypoints, ref path, hold, deltaTime);
 
                 // A planned manoeuvre stuck in walls replans its way out rather than turning out.
-                if (stalled && remembers && !PathState.IsPlannedManoeuvre(waypoints))
+                if (stalled && frame.Remembers && !PathState.IsPlannedManoeuvre(waypoints))
                 {
-                    stalled = !progress.TryTurnOut(ref driver, hold);
+                    stalled = !progress.TryTurnOut(ref frame.Driver, hold);
                 }
 
                 if (moving.ValueRO && (crowd.ReachedGroup || stalled))
@@ -168,15 +149,11 @@ namespace HyperRTS.Simulation.Movement
                     reason = ArrivalReason.AtGroupmate;
                 }
 
-                progress.Report(wasMoving, moving.ValueRO, reason, ref arrival, arrived);
-                if (remembers)
-                {
-                    driver.State.Hit(transform.Position.xz - from, step, !transform.Position.xz.Equals(wanted));
-                    States[entity] = driver.State;
-                }
+                progress.Report(frame.WasMoving, moving.ValueRO, reason, ref arrival, arrived);
+                Movers.End(ref frame, transform.Position.xz, step, !transform.Position.xz.Equals(wanted));
 
                 Face(ref transform, capsule, agent, facing, heading, moving.ValueRO);
-                velocity.Value = (transform.Position.xz - from) / DeltaTime;
+                velocity.Value = (transform.Position.xz - from) / deltaTime;
             }
 
             // A long hull mustn't swing an end into a wall. A mover slides off by the end's sweep, else stays unturned.
@@ -227,10 +204,10 @@ namespace HyperRTS.Simulation.Movement
             }
 
             /// <summary>This frame's step and facing before the crowd's push and the walls have their say.</summary>
-            private readonly float2 Plan(ref Driver driver, ref float2 heading, float3 goal,
-                EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
-                in CrowdVisitor crowd, float2 velocity, in NavAccess access)
+            private static float2 Plan(ref MoveFrame frame, float3 goal, EnabledRefRW<MoveDestination> moving,
+                ref PathState path, DynamicBuffer<PathWaypoint> waypoints, in NavAccess access)
             {
+                ref var driver = ref frame.Driver;
                 var leg = default(PathLeg);
                 if (moving.ValueRO && !Follow(driver, access, goal, ref path, waypoints, out leg))
                 {
@@ -245,14 +222,14 @@ namespace HyperRTS.Simulation.Movement
                 // No corners yet: stop and face the goal rather than drive blind at it.
                 if (path.Status != PathStatus.Ready && waypoints.Length == 0)
                 {
-                    heading = driver.TurnToward(math.normalizesafe(goal.xz - driver.Position));
+                    frame.Heading = driver.TurnToward(math.normalizesafe(goal.xz - driver.Position));
                     return driver.BrakeToStop();
                 }
 
-                var steering = new Steering(crowd, velocity);
+                var steering = new Steering(frame.Crowd, frame.Velocity);
                 steering.AddWalls(access);
                 var step = steering.Drive(ref driver, leg);
-                heading = driver.Facing;
+                frame.Heading = driver.Facing;
                 return step;
             }
 

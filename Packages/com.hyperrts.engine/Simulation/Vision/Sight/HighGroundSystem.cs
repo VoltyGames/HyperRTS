@@ -65,24 +65,10 @@ namespace HyperRTS.Simulation.Vision.Sight
                 Grid = grid,
                 Rules = rules,
             };
-            Replace(ref state, ground, exists);
+            state.ReplaceSingleton(ref ground, "HighGround");
             var radius = (int)math.round(rules.Radius / grid.CellSize);
             state.Dependency = new RiseJob { Ground = ground, Terrain = terrain, Radius = radius }
                 .Schedule(state.Dependency);
-        }
-
-        private void Replace(ref SystemState state, in HighGround ground, bool exists)
-        {
-            if (!exists)
-            {
-                state.EntityManager.CreateSingleton(ground, "HighGround");
-                return;
-            }
-
-            state.CompleteDependency();
-            ref var current = ref SystemAPI.GetSingletonRW<HighGround>().ValueRW;
-            current.Rise.Dispose();
-            current = ground;
         }
 
         private static bool Same(in SightRules a, in SightRules b) =>

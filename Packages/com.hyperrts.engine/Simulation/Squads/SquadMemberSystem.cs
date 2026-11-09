@@ -56,11 +56,7 @@ namespace HyperRTS.Simulation.Squads
                 CountCarriers(members, mounts);
                 if (!InsideLookup.HasEnabled(entity))
                 {
-                    var working = WorkLookup.HasEnabled(entity);
-                    var work = working ? WorkLookup[entity] : default;
-                    var crewing = Deployable.IsEmplaced(Deployables, entity);
-                    var facing = Deployable.Heading(Deployables, entity, transform);
-                    Walk(members, velocity.Value, speed.Value, transform.Position.xz, work, working, crewing, facing);
+                    Walk(entity, members, velocity.Value, speed.Value, transform);
                 }
             }
 
@@ -119,9 +115,14 @@ namespace HyperRTS.Simulation.Squads
                 }
             }
 
-            private void Walk(DynamicBuffer<SquadMember> members, float2 squadVelocity, float speed, float2 squad,
-                in SquadWork work, bool working, bool crewing, float2 facing)
+            private void Walk(Entity entity, DynamicBuffer<SquadMember> members, float2 squadVelocity, float speed,
+                in LocalTransform transform)
             {
+                var squad = transform.Position.xz;
+                var working = WorkLookup.HasEnabled(entity);
+                var work = working ? WorkLookup[entity] : default;
+                var crewing = Deployable.IsEmplaced(Deployables, entity);
+                var facing = Deployable.Heading(Deployables, entity, transform);
                 var living = SquadMember.CountFreeLiving(members, crewing);
                 var moving = SquadMember.IsMoving(squadVelocity);
                 var heading = math.normalizesafe(squadVelocity);

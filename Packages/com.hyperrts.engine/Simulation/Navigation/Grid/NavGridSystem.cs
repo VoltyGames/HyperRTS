@@ -33,13 +33,11 @@ namespace HyperRTS.Simulation.Navigation.Grid
         private NativeArray<byte> _previousScenery;
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
-        private int _builtObstacleVersion;
-        private int _builtBlockerVersion;
-        private int _builtBlockerCount;
-        private ulong _builtFootprintSignature;
-        private int _builtAreaVersion;
-        private int _builtSceneryVersion;
-        private ulong _builtScenerySignature;
+        private ChangeSignature _builtObstacles;
+        private ChangeSignature _builtBlockers;
+        private ChangeSignature _builtAreas;
+        private ChangeSignature _builtFootprints;
+        private ChangeSignature _builtScenery;
         private EntityQuery _openScenery;
 
         [BurstCompile]
@@ -88,9 +86,9 @@ namespace HyperRTS.Simulation.Navigation.Grid
             }
 
             var footprintsChanged = FootprintsMayDiffer(ref state) && SignatureChanged(ref state);
-            var restamp = OrderChanged<NavArea>(ref state, ref _builtAreaVersion) | footprintsChanged | rebuilt;
+            var restamp = _builtAreas.OrderChanged<NavArea>(ref state) | footprintsChanged | rebuilt;
             // Unit spawns and deaths bump the order too, so only a changed set of scenery refills it.
-            var sceneryMayDiffer = OrderChanged<Destructible>(ref state, ref _builtSceneryVersion);
+            var sceneryMayDiffer = _builtScenery.OrderChanged<Destructible>(ref state);
             var restampScenery = (sceneryMayDiffer && ScenerySignatureChanged(ref state)) | rebuilt;
             if (!restamp && !restampScenery)
             {
@@ -138,17 +136,14 @@ namespace HyperRTS.Simulation.Navigation.Grid
         // a part opening or closing, on an obstacle or an area.
         private bool FootprintsMayDiffer(ref SystemState state)
         {
-            var count = _blockers.CalculateEntityCount();
-            var toggled = count != _builtBlockerCount;
-            _builtBlockerCount = count;
-            return OrderChanged<NavObstacle>(ref state, ref _builtObstacleVersion) |
-                   OrderChanged<Blocker>(ref state, ref _builtBlockerVersion) | toggled | !_parts.IsEmpty | !_areaParts.IsEmpty;
+            return _builtObstacles.OrderChanged<NavObstacle>(ref state) |
+                   _builtBlockers.OrderChanged<Blocker>(ref state) |
+                   _builtBlockers.CountChanged(_blockers.CalculateEntityCount()) | !_parts.IsEmpty | !_areaParts.IsEmpty;
         }
 
         /// <summary>Whether the scenery's count, places or ratings differ from the last fill.</summary>
         private bool ScenerySignatureChanged(ref SystemState state)
         {
-            // An order-independent sum, since an archetype move reorders the chunks.
             var signature = (ulong)(_scenery.CalculateEntityCount() + _openScenery.CalculateEntityCount());
             foreach (var (destructible, transform) in SystemAPI.Query<RefRO<Destructible>, RefRO<LocalTransform>>()
                          .WithNone<NavObstacle, NavAgent>())
@@ -162,9 +157,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 signature += obstacle.ValueRO.Open ? obstacle.ValueRO.Hash(transform.ValueRO) + (ulong)destructible.ValueRO.Crush : 0UL;
             }
 
-            var changed = signature != _builtScenerySignature;
-            _builtScenerySignature = signature;
-            return changed;
+            return _builtScenery.SumChanged(signature);
         }
 
         /// <summary>Whether the grid was built from this map and terrain; a new map or late-streamed terrain rebuilds it.</summary>
@@ -176,20 +169,10 @@ namespace HyperRTS.Simulation.Navigation.Grid
             return terrain.Blob.Equals(_builtTerrain.Blob) && sameArea && sameWater && map.MaxSlope == built.MaxSlope;
         }
 
-        /// <summary>True when entities with <typeparamref name="T"/> were added, removed or changed archetype since the last stamp.</summary>
-        private static bool OrderChanged<T>(ref SystemState state, ref int built) where T : unmanaged, IComponentData
-        {
-            var version = state.EntityManager.GetComponentOrderVersion<T>();
-            var changed = version != built;
-            built = version;
-            return changed;
-        }
-
         /// <summary>Whether obstacle and blocker footprints differ from the last stamp, so fog tags alone cost no rebuild.</summary>
         private bool SignatureChanged(ref SystemState state)
         {
-            // An order-independent sum, since an archetype move reorders the chunks.
-            var signature = (ulong)_obstacles.CalculateEntityCount() + ((ulong)_builtBlockerCount << 32);
+            var signature = (ulong)_obstacles.CalculateEntityCount() + ((ulong)_builtBlockers.Count << 32);
             var parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true);
             foreach (var (obstacle, transform, entity) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalTransform>>()
                          .WithEntityAccess())
@@ -219,9 +202,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 signature += blocker.ValueRO.Hash(transform.ValueRO);
             }
 
-            var changed = signature != _builtFootprintSignature;
-            _builtFootprintSignature = signature;
-            return changed;
+            return _builtFootprints.SumChanged(signature);
         }
 
         /// <summary>
@@ -233,7 +214,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
             var cellGrid = map.NavGrid();
             var count = cellGrid.Count;
             var grid = NavGrid.Create(cellGrid, terrain, map.WaterLevel);
-            ReplaceGrid(ref state, ref grid);
+            state.ReplaceSingleton(ref grid, "NavGrid");
 
             if (_base.IsCreated)
             {
@@ -248,24 +229,6 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 Grid = grid, Base = _base, Flood = map.FloodTerrain, MaxGradient = NavGround.MaxGradient(map.MaxSlope),
             };
             state.Dependency = classify.Schedule(count, 1024, state.Dependency);
-        }
-
-        private void ReplaceGrid(ref SystemState state, ref NavGrid grid)
-        {
-            if (!SystemAPI.TryGetSingletonRW<NavGrid>(out var current))
-            {
-                state.EntityManager.CreateSingleton(grid, "NavGrid");
-                return;
-            }
-
-            // Every job reading the old cells must finish before they are freed.
-            state.CompleteDependency();
-            grid.Version = current.ValueRO.Version;
-            // Swapped, so the old grid frees the new one's empty registry and the classes live on.
-            (grid.Classes, current.ValueRW.Classes) = (current.ValueRO.Classes, grid.Classes);
-            grid.FitAccess();
-            current.ValueRW.Dispose();
-            current.ValueRW = grid;
         }
     }
 }

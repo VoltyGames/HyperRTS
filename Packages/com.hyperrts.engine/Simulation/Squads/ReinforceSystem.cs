@@ -19,6 +19,9 @@ namespace HyperRTS.Simulation.Squads
     {
         private CommandReader _commands;
         private EntityQuery _points;
+        private SquadRules _rules;
+        private OwnerRelations _relations;
+        private SquadPoints _squadPoints;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,14 +38,14 @@ namespace HyperRTS.Simulation.Squads
         public void OnUpdate(ref SystemState state)
         {
             state.CompleteDependency();
-            var rules = SystemAPI.GetSingleton<SquadRules>();
-            var relations = SystemAPI.GetSingleton<OwnerRelations>();
-            var points = SquadPoints.From<ReinforcePoint>(_points);
+            _rules = SystemAPI.GetSingleton<SquadRules>();
+            _relations = SystemAPI.GetSingleton<OwnerRelations>();
+            _squadPoints = SquadPoints.From<ReinforcePoint>(_points);
             foreach (var each in _commands.Read(ref state))
             {
                 foreach (var squad in _commands.Subjects(ref state, each))
                 {
-                    Begin(ref state, squad, each.Player, rules, relations, points);
+                    Begin(ref state, squad, each.Player);
                 }
             }
 
@@ -51,16 +54,14 @@ namespace HyperRTS.Simulation.Squads
                          .Query<RefRW<Reinforcing>, EnabledRefRW<Reinforcing>, DynamicBuffer<SquadMember>, RefRW<Health>>()
                          .WithEntityAccess())
             {
-                if (!Advance(ref state, entity, ref reinforcing.ValueRW, members, ref health.ValueRW, rules, points,
-                        deltaTime))
+                if (!Advance(ref state, entity, ref reinforcing.ValueRW, members, ref health.ValueRW, deltaTime))
                 {
                     enabled.ValueRW = false;
                 }
             }
         }
 
-        private void Begin(ref SystemState state, Entity squad, Entity player, in SquadRules rules,
-            in OwnerRelations relations, in SquadPoints points)
+        private void Begin(ref SystemState state, Entity squad, Entity player)
         {
             if (!SystemAPI.HasComponent<Reinforcing>(squad) || SystemAPI.IsComponentEnabled<Reinforcing>(squad))
             {
@@ -69,9 +70,9 @@ namespace HyperRTS.Simulation.Squads
 
             var owner = SystemAPI.GetComponent<Owner>(squad).Value;
             var here = SystemAPI.GetComponent<LocalTransform>(squad).Position;
-            var point = points.NearestCovering(here, owner, relations);
+            var point = _squadPoints.NearestCovering(here, owner, _relations);
             var refusal = SquadOrderRule.FindReinforceRefusal(SystemAPI.GetBuffer<SquadMember>(squad),
-                point != Entity.Null, rules, Cost(ref state, squad), SystemAPI.GetBuffer<ResourceStock>(player));
+                point != Entity.Null, _rules, Cost(ref state, squad), SystemAPI.GetBuffer<ResourceStock>(player));
             if (refusal == SquadRefusal.None)
             {
                 SystemAPI.SetComponent(squad, new Reinforcing { Point = point, Payer = player });
@@ -88,13 +89,12 @@ namespace HyperRTS.Simulation.Squads
 
         /// <summary>Steps the member in progress; false once the reinforcing is over.</summary>
         private bool Advance(ref SystemState state, Entity squad, ref Reinforcing reinforcing,
-            DynamicBuffer<SquadMember> members, ref Health health, in SquadRules rules, in SquadPoints points,
-            float deltaTime)
+            DynamicBuffer<SquadMember> members, ref Health health, float deltaTime)
         {
-            var share = rules.ReinforceShare(members.Length);
+            var share = _rules.ReinforceShare(members.Length);
             var here = SystemAPI.GetComponent<LocalTransform>(squad).Position;
             var stock = SystemAPI.GetBuffer<ResourceStock>(reinforcing.Payer);
-            if (!SquadMember.AnyDead(members) || !points.Reaches(reinforcing.Point, here))
+            if (!SquadMember.AnyDead(members) || !_squadPoints.Reaches(reinforcing.Point, here))
             {
                 if (reinforcing.Paid)
                 {
@@ -114,7 +114,7 @@ namespace HyperRTS.Simulation.Squads
             }
 
             reinforcing.Elapsed += deltaTime;
-            if (reinforcing.Elapsed >= rules.ReinforceTime)
+            if (reinforcing.Elapsed >= _rules.ReinforceTime)
             {
                 SquadMember.Revive(members);
                 health.Current = SquadMember.Total(members);

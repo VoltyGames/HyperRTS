@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
 using System;
 using HyperRTS.Simulation.Navigation.Grid;
@@ -162,10 +163,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 path.Add(_corridor.Cell(index));
             }
 
-            for (int i = 0, j = path.Length - 1; i < j; i++, j--)
-            {
-                (path[i], path[j]) = (path[j], path[i]);
-            }
+            path.ReverseFrom(0);
         }
     }
 }

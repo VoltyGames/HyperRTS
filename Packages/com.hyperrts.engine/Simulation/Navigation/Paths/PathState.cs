@@ -128,6 +128,10 @@ namespace HyperRTS.Simulation.Navigation.Paths
         // Only corners this near are skipped, so a unit keeps to its smoothed path rather than cutting across.
         private static float CornerSkipRange(float radius) => radius * 4f + 1f;
 
+        /// <summary>The path length from <paramref name="position"/> through the waypoints, which must not be empty.</summary>
+        public readonly float Remaining(float2 position, DynamicBuffer<PathWaypoint> waypoints) =>
+            math.distance(position, waypoints[0].Position.xz) + LengthPastCorner;
+
         /// <summary>Drops the first waypoint, keeping <see cref="LengthPastCorner"/> in step.</summary>
         public void PassCorner(DynamicBuffer<PathWaypoint> waypoints)
         {
@@ -204,7 +208,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 return false;
             }
 
-            var left = math.distance(position.xz, waypoints[0].Position.xz) + LengthPastCorner;
+            var left = Remaining(position.xz, waypoints);
             var drift = math.distance(waypoints[last].Position.xz, goal.xz);
             if (last > 0 && drift > left * ChaseDriftShare)
             {

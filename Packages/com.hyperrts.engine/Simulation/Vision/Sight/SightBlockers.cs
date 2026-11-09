@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Vision.Sight
     /// raise its ground; porous ones and crops take a share of sight per metre below their top; some conceal. Heights
     /// are in <see cref="Step"/> metres, densities in <see cref="DensityStep"/>s.
     /// </summary>
-    public struct SightBlockers : IComponentData
+    public struct SightBlockers : IComponentData, IReplaceableSingleton<SightBlockers>
     {
         public const float Step = 0.25f;
         public const float DensityStep = 1f / 250f;
@@ -67,6 +67,8 @@ namespace HyperRTS.Simulation.Vision.Sight
             Owner.Dispose();
             DirtyTiles.Dispose();
         }
+
+        public void Inherit(ref SightBlockers previous) => Generation = previous.Generation + 1;
 
         /// <summary>
         /// Whether the straight line from <paramref name="from"/> to <paramref name="to"/> runs into the ground or a

@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Movement
                 DynamicBuffer<PathWaypoint> waypoints, in PathState path)
             {
                 Remaining = waypoints.Length > 0
-                    ? math.distance(position, waypoints[0].Position.xz) + path.LengthPastCorner
+                    ? path.Remaining(position, waypoints)
                     : math.distance(position, goal.xz);
                 Facing = facing;
                 Radius = radius;
