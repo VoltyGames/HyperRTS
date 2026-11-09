@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Rendering;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -18,7 +19,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private readonly Mesh[] _meshes;
         private readonly GraphicsBuffer _args;
         private readonly GraphicsBuffer _counters;
-        private readonly GrowingBuffer _jobs = new(GraphicsBuffer.Target.Structured, ScatterJob.Stride, 64);
+        private readonly GrowingBuffer _jobs = new(GraphicsBuffer.Target.Structured, UnsafeUtility.SizeOf<ScatterJob>(), 64);
 
         /// <summary>Draws for <paramref name="meshes"/>, one slot each.</summary>
         public ScatterDraws(Mesh[] meshes)

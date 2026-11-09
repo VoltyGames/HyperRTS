@@ -1,11 +1,12 @@
 // Jobs, seeded hashes and noise, band edges, terrain height and the slot layout and counting shared by RowCrops.compute and
-// Grass.compute. The job matches ScatterJob.cs and the hashes and noise ScatterHash.cs, the band edges ScatterBands.cs; ScatterDraws.cs binds the
+// Grass.compute. The hashes and noise match ScatterHash.cs, the band edges ScatterBands.cs; ScatterDraws.cs binds the
 // jobs, counters and args and ScatterSlots.cs the slots.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHeight.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/ScatterJob.cs.hlsl"
 
 struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
 {
@@ -14,14 +15,6 @@ struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
     uint startIndex;
     int baseVertex;
     uint startInstance;
-};
-
-struct ScatterJob // ScatterJob.cs, 28 bytes
-{
-    float2 tileMin;
-    int id;     // the plant or field this job grows
-    int2 first; // first lattice spot that can fall in the tile
-    int2 count; // spots from first
 };
 
 struct ScatterSlot // ScatterSlots.cs: where a slot writes in _Instances and how many it holds

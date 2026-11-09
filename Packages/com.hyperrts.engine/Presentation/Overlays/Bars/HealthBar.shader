@@ -47,6 +47,7 @@ Shader "HyperRTS/Health Bar"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Overlays/Bars/HealthBarInstance.cs.hlsl"
 
             #define PIP 4.0
             #define PIP_STEP 6.0
@@ -68,14 +69,6 @@ Shader "HyperRTS/Health Bar"
                 half4 _HeavyCover;
                 half4 _LightCover;
             CBUFFER_END
-
-            struct HealthBarInstance // HealthBarInstance.cs
-            {
-                float4 bar;  // health fraction, segments, rank, opacity
-                float4 size; // width px, bar height px, squad members, members alive
-                float4 squad; // suppression (-1 not a squad), level, cover kind, retreating
-                float3 anchor;
-            };
 
             StructuredBuffer<HealthBarInstance> _Instances;
 
@@ -110,22 +103,22 @@ Shader "HyperRTS/Health Bar"
             {
                 HealthBarInstance instance = _Instances[input.instanceID];
                 Varyings output;
-                float4 bar = instance.bar;
-                float4 size = instance.size;
+                float4 bar = instance.Bar;
+                float4 size = instance.Size;
                 bool pips = size.z > 0.0 || bar.z > 0.0;
-                float strip = instance.squad.x >= 0.0 ? STRIP_ROW : 0.0;
+                float strip = instance.Squad.x >= 0.0 ? STRIP_ROW : 0.0;
                 float2 box = float2(size.x + 2.0, size.y + 2.0 + strip + (pips ? PIP_ROW : 0.0));
 
                 float2 pixel = input.uv * box;
                 float2 offset = float2(pixel.x - box.x * 0.5, pixel.y + _Offset) * _PixelScale;
-                float4 anchor = TransformWorldToHClip(instance.anchor);
+                float4 anchor = TransformWorldToHClip(instance.Anchor);
                 anchor.xy += offset * 2.0 / _ScreenParams.xy * anchor.w * float2(1.0, _ProjectionParams.x);
 
                 output.positionCS = anchor;
                 output.pixel = pixel;
                 output.bar = bar;
                 output.size = size;
-                output.squad = instance.squad;
+                output.squad = instance.Squad;
                 return output;
             }
 

@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
@@ -18,7 +19,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 
         /// <summary>Uploads the fields.</summary>
         public RowCropComputeInputs(ComputeShader compute, RowCropFields fields, Terrain terrain)
-            : base(compute, "Plant", terrain, fields.fields.Count, RowCropField.Stride)
+            : base(compute, "Plant", terrain, fields.fields.Count, UnsafeUtility.SizeOf<RowCropField>())
         {
             _fields = fields;
             _ids = fields.fieldIds;

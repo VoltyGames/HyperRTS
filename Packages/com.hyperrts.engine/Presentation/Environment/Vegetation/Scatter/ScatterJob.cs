@@ -1,13 +1,12 @@
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 {
-    /// <summary>One visible tile of one grass plant or crop field for a scatter kernel to grow (the layout Scatter.hlsl declares).</summary>
+    /// <summary>One visible tile of one grass plant or crop field for a scatter kernel to grow (Scatter.hlsl includes the generated layout).</summary>
+    [GenerateHLSL(needAccessors: false)]
     public struct ScatterJob
     {
-        public static readonly int Stride = UnsafeUtility.SizeOf<ScatterJob>();
-
         /// <summary>World XZ of the tile's minimum corner.</summary>
         public Vector2 tileMin;
 

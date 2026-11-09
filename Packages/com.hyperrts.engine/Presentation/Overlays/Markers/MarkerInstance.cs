@@ -1,8 +1,10 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Overlays.Markers
 {
     /// <summary>One ground marker as <c>HyperRTS/Ground Marker</c> reads it.</summary>
+    [GenerateHLSL(needAccessors: false)]
     public struct MarkerInstance
     {
         /// <summary>Scales a unit grid to the footprint; its height is the lowest the marker may sit.</summary>

@@ -35,12 +35,7 @@ Shader "HyperRTS/Overlay"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            struct OverlayInstance // OverlayInstance.cs
-            {
-                float4x4 objectToWorld;
-                float4 color;
-            };
+            #include "Packages/com.hyperrts.engine/Presentation/Overlays/OverlayInstance.cs.hlsl"
 
             StructuredBuffer<OverlayInstance> _Instances;
 
@@ -60,9 +55,9 @@ Shader "HyperRTS/Overlay"
             {
                 OverlayInstance instance = _Instances[input.instanceID];
                 Varyings output;
-                float3 positionWS = mul(instance.objectToWorld, float4(input.positionOS.xyz, 1.0)).xyz;
+                float3 positionWS = mul(instance.ObjectToWorld, float4(input.positionOS.xyz, 1.0)).xyz;
                 output.positionCS = TransformWorldToHClip(positionWS);
-                output.color = instance.color;
+                output.color = instance.Color;
                 return output;
             }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Rendering;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -29,7 +30,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private readonly int _remainsPass;
         private readonly int _fadePass;
         private readonly CommandBuffer _commands = new() { name = "HyperRTS Trample Maps" };
-        private readonly GrowingBuffer _buffer = new(GraphicsBuffer.Target.Structured, TrampleStamp.Stride, 256);
+        private readonly GrowingBuffer _buffer = new(GraphicsBuffer.Target.Structured, UnsafeUtility.SizeOf<TrampleStamp>(), 256);
         private int _wakeFadedSteps;
 
         public TrampleBrush(Shader shader)

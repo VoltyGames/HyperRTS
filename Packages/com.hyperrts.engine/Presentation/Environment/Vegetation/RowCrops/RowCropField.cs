@@ -1,15 +1,14 @@
 using System;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.RowCrops
 {
-    /// <summary>One sown field as the GPU reads it (the layout RowCrops.compute declares).</summary>
+    /// <summary>One sown field as the GPU reads it (RowCrops.compute includes the generated layout).</summary>
     [Serializable]
+    [GenerateHLSL(needAccessors: false)]
     public struct RowCropField
     {
-        public static readonly int Stride = UnsafeUtility.SizeOf<RowCropField>();
-
         [Tooltip("World XZ of lattice spot (0, 0).")]
         public Vector2 origin;
 

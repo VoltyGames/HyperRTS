@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -19,7 +20,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         /// <summary>Uploads the plants.</summary>
         public GrassComputeInputs(ComputeShader compute, GrassField field, Terrain terrain)
-            : base(compute, "Scatter", terrain, field.plants.Count, GrassPlantGpu.Stride)
+            : base(compute, "Scatter", terrain, field.plants.Count, UnsafeUtility.SizeOf<GrassPlantGpu>())
         {
             _field = field;
             _coverage = field.coverage;

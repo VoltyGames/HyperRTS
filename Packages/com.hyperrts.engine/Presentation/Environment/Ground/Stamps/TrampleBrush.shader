@@ -15,16 +15,8 @@ Shader "Hidden/HyperRTS/Trample Brush"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/TrampleGlobals.hlsl"
+        #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/TrampleStamp.cs.hlsl"
 
-
-        // Matches TrampleStamp.cs.
-        struct TrampleStamp
-        {
-            float2 center;
-            float2 forward;
-            float2 halfSize;
-            float4 value;
-        };
 
         StructuredBuffer<TrampleStamp> _TrampleStamps;
         int _TrampleStampOffset;
@@ -58,15 +50,15 @@ Shader "Hidden/HyperRTS/Trample Brush"
             };
             TrampleStamp stamp = _TrampleStamps[_TrampleStampOffset + instanceID];
             float2 corner = corners[vertexID];
-            float2 right = float2(stamp.forward.y, -stamp.forward.x);
-            float2 world = stamp.center + right * (corner.x * stamp.halfSize.x) + stamp.forward * (corner.y * stamp.halfSize.y);
+            float2 right = float2(stamp.Forward.y, -stamp.Forward.x);
+            float2 world = stamp.Center + right * (corner.x * stamp.HalfSize.x) + stamp.Forward * (corner.y * stamp.HalfSize.y);
 
             StampVaryings output;
             output.positionCS = MapClip(TrampleUV(world));
             output.local = corner;
-            output.value = stamp.value;
-            output.forward = stamp.forward;
-            output.phase = Random(float3(stamp.center, 0.0)) * TWO_PI;
+            output.value = stamp.Value;
+            output.forward = stamp.Forward;
+            output.phase = Random(float3(stamp.Center, 0.0)) * TWO_PI;
             return output;
         }
 

@@ -6,7 +6,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wind.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropInstance.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropInstance.cs.hlsl"
 
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);

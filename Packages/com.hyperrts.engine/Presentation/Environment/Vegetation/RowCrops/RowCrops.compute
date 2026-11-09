@@ -10,7 +10,7 @@
 SamplerState sampler_LinearClamp;
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropInstance.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropInstance.cs.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/Scatter.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
@@ -40,15 +40,7 @@ SamplerState sampler_LinearClamp;
 #define LODGING_CELL 30.0 // RowCrop.LodgingCell: metres of field lattice holding at most one lodged patch
 #define LODGED_BEND 0.75 // trample bend of fully lodged plants
 
-struct RowCropField // RowCropField.cs, 48 bytes
-{
-    float2 origin;
-    float2 along;
-    float2 across;
-    int crop;
-    int seed;
-    float4 tramlines; // RowCropTramlines: spacing (0 for none), gauge, half width, offset
-};
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCropField.cs.hlsl"
 
 StructuredBuffer<RowCropField> _Fields;
 Texture2D<float4> _FieldIds;

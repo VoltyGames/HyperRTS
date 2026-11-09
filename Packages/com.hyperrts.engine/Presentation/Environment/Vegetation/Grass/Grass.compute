@@ -10,7 +10,7 @@
 SamplerState sampler_LinearClamp;
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/Scatter.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassInstance.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassInstance.cs.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BurntPlants.hlsl"
@@ -42,17 +42,7 @@ SamplerState sampler_LinearClamp;
 #define GROUND_REACH 8.0  // metres to the probes of the ground colour round a plant
 #define BANDS 2u          // GrassBands.Bands: near casts shadows, far doesn't
 
-struct GrassPlantGpu // GrassPlantGpu.cs, 40 bytes
-{
-    float spacing;
-    float clumping;
-    float2 width;
-    float2 height;
-    int variants;
-    int firstSlot;
-    int seed;
-    float reach; // metres, or 0 for the quality distance
-};
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassPlantGpu.cs.hlsl"
 
 StructuredBuffer<GrassPlantGpu> _Plants;
 Texture2DArray<float> _Coverage;

@@ -1,8 +1,10 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>One flat-colour overlay instance as <c>HyperRTS/Overlay</c> reads it.</summary>
+    [GenerateHLSL(needAccessors: false)]
     public struct OverlayInstance
     {
         public Matrix4x4 ObjectToWorld;

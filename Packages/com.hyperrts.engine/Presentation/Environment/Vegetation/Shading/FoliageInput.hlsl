@@ -42,7 +42,7 @@ CBUFFER_END
 #define PLANT_WRAP _Wrap
 
 #if defined(_GRASS_INSTANCES)
-    #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassInstance.hlsl"
+    #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassInstance.cs.hlsl"
 
     // Set per draw by GrassBatch: plants come from _Instances from _SlotOffset by SV_InstanceID.
     StructuredBuffer<GrassInstance> _Instances;

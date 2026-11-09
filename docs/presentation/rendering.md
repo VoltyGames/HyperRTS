@@ -123,6 +123,10 @@ structured buffer the shader reads as `_Instances[SV_InstanceID]`.
 - A transparent shader applies both fogs with `ApplySceneFog` from `SceneFog.hlsl` and needs
   `#pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC`. One that samples the opaque texture first removes URP's
   fog with `RemoveAtmosphereFog`, as water does, so it fogs once.
+- A struct a shader reads from a GPU buffer is a C# struct marked `[GenerateHLSL(needAccessors: false)]`. **Edit ▸
+  Rendering ▸ Generate Shader Includes** writes `<Type>.cs.hlsl` beside it, which the shader includes (fields keep their C#
+  names). Never edit that file; buffer strides are `UnsafeUtility.SizeOf<T>()`. Fields must be floats, ints, uints,
+  `Vector2` to `Vector4` or `Matrix4x4`, so a struct of halves or packed bytes stays hand-written.
 
 ## Contact shadows
 

@@ -1,5 +1,7 @@
 using System;
+using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Rendering;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -10,8 +12,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
     /// </summary>
     internal sealed class ScatterSlots : IDisposable
     {
-        // Matches GrassInstance.hlsl and RowCropInstance.hlsl.
-        public const int InstanceStride = 48;
+        // GrassInstance and RowCropInstance are the same size, so one buffer layout serves both.
+        public static readonly int InstanceStride = UnsafeUtility.SizeOf<GrassInstance>();
 
         private static readonly int SlotsId = Shader.PropertyToID("_Slots");
         private static readonly int SlotCountId = Shader.PropertyToID("_SlotCount");

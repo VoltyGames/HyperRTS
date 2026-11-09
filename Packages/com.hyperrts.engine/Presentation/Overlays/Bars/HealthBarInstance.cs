@@ -1,8 +1,10 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Overlays.Bars
 {
     /// <summary>One health bar as <c>HyperRTS/Health Bar</c> reads it.</summary>
+    [GenerateHLSL(needAccessors: false)]
     public struct HealthBarInstance
     {
         /// <summary>Health fraction, segments, rank and opacity.</summary>

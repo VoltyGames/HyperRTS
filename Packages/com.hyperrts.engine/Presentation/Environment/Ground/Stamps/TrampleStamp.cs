@@ -1,14 +1,14 @@
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.Ground.Stamps
 {
-    /// <summary>One quad drawn into a trample map. Matches <c>TrampleStamp</c> in TrampleBrush.shader.</summary>
+    /// <summary>One quad drawn into a trample map. Read by TrampleBrush.shader through TrampleStamp.cs.hlsl.</summary>
     [StructLayout(LayoutKind.Sequential)]
+    [GenerateHLSL(needAccessors: false)]
     public struct TrampleStamp
     {
-        public const int Stride = 10 * sizeof(float);
-
         /// <summary>World XZ centre.</summary>
         public float2 Center;
 

@@ -26,6 +26,7 @@ Shader "HyperRTS/Bird"
         #pragma use_dxc
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.hyperrts.engine/Presentation/Environment/Ambient/BirdInstance.cs.hlsl"
 
         TEXTURE2D(_BaseMap);
         SAMPLER(sampler_BaseMap);
@@ -34,12 +35,6 @@ Shader "HyperRTS/Bird"
             half4 _BaseColor;
             half _Cutoff;
         CBUFFER_END
-
-        struct BirdInstance // BirdInstance.cs
-        {
-            float4x4 objectToWorld;
-            uint frame;
-        };
 
         StructuredBuffer<BirdInstance> _Instances;
 
@@ -62,10 +57,10 @@ Shader "HyperRTS/Bird"
         Varyings BirdVert(Attributes input)
         {
             BirdInstance bird = _Instances[input.instanceID];
-            float2 cell = float2(bird.frame & 1u, 1u - (bird.frame >> 1u)) * 0.5;
+            float2 cell = float2(bird.Frame & 1u, 1u - (bird.Frame >> 1u)) * 0.5;
             Varyings output;
-            output.positionWS = mul(bird.objectToWorld, float4(input.positionOS.xyz, 1.0)).xyz;
-            output.normalWS = normalize(mul((float3x3)bird.objectToWorld, input.normalOS));
+            output.positionWS = mul(bird.ObjectToWorld, float4(input.positionOS.xyz, 1.0)).xyz;
+            output.normalWS = normalize(mul((float3x3)bird.ObjectToWorld, input.normalOS));
             output.positionCS = TransformWorldToHClip(output.positionWS);
             output.uv = input.uv * 0.5 + cell;
             return output;

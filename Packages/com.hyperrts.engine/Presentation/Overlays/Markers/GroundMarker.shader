@@ -47,13 +47,7 @@ Shader "HyperRTS/Ground Marker"
             CBUFFER_END
 
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHeight.hlsl"
-
-            struct MarkerInstance // MarkerInstance.cs
-            {
-                float4x4 objectToWorld; // scales a unit grid to the footprint; its height is the lowest the marker sits
-                float4 tint;
-                float4 shape; // line width m, fade m, fill opacity, corner radius m (negative for brackets)
-            };
+            #include "Packages/com.hyperrts.engine/Presentation/Overlays/Markers/MarkerInstance.cs.hlsl"
 
             StructuredBuffer<MarkerInstance> _Instances;
 
@@ -82,7 +76,7 @@ Shader "HyperRTS/Ground Marker"
             {
                 MarkerInstance instance = _Instances[input.instanceID];
                 Varyings output;
-                float4x4 m = instance.objectToWorld;
+                float4x4 m = instance.ObjectToWorld;
                 float2 size = float2(length(m._m00_m10_m20), length(m._m02_m12_m22));
                 float2 grown = size + 2.0 * EDGE_PAD;
                 float3 positionOS = float3(input.positionOS.x * grown.x / size.x, 0.0, input.positionOS.z * grown.y / size.y);
@@ -95,8 +89,8 @@ Shader "HyperRTS/Ground Marker"
                 output.positionCS = TransformWorldToHClip(world);
                 output.local = input.positionOS.xz * grown;
                 output.halfSize = size * 0.5;
-                output.tint = instance.tint;
-                output.marker = instance.shape;
+                output.tint = instance.Tint;
+                output.marker = instance.Shape;
                 return output;
             }
 

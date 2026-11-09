@@ -1,13 +1,12 @@
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 {
-    /// <summary>One plant as Grass.compute reads it (the layout the kernel declares).</summary>
+    /// <summary>One plant as Grass.compute reads it (Grass.compute includes the generated layout).</summary>
+    [GenerateHLSL(needAccessors: false)]
     public struct GrassPlantGpu
     {
-        public static readonly int Stride = UnsafeUtility.SizeOf<GrassPlantGpu>();
-
         public float spacing;
         public float clumping;
         public Vector2 width;
