@@ -1,33 +1,5 @@
-/* The Scene view debug overlay. Colour tokens are in Common/HyperRTSEditor.uss. */
+/* The Scene view debug overlay. Its contents are styled in DebugSection.uss. */
 
 .hrts-debug-overlay {
   min-width: 170px;
-}
-
-.hrts-debug-overlay__group {
-  -unity-font-style: bold;
-  margin: 4px 0 1px 2px;
-}
-
-.hrts-debug-overlay__row {
-  flex-direction: row;
-  align-items: center;
-}
-
-.hrts-debug-overlay__name {
-  flex-grow: 1;
-}
-
-.hrts-debug-overlay__cell {
-  min-width: 44px;
-  -unity-text-align: middle-right;
-}
-
-.hrts-debug-overlay__hint {
-  margin-top: 4px;
-  white-space: normal;
-}
-
-.hrts-debug-overlay__ai {
-  margin-top: 4px;
 }

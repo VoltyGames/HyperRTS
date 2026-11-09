@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="DebugSection.uss" />
+  <ui:VisualElement class="hrts-debug">
+    <ui:VisualElement name="layers" />
+    <ui:Button name="hide-all" text="Hide all" />
+    <ui:Label name="hint" class="hrts-hint hrts-debug__hint" text="Layers draw in Play mode." />
+    <ui:VisualElement name="ai" class="hrts-debug__ai" />
+  </ui:VisualElement>
+</ui:UXML>

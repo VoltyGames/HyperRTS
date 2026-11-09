@@ -9,14 +9,18 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using Unity.Collections;
 using Unity.Entities;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>The cheats overlay's controls: resources, fog, instant build, spawning, player switching and game speed.</summary>
+    /// <summary>The Play-mode cheats: resources, fog, instant build, spawning, player switching and game speed.</summary>
     internal class CheatsSection
     {
+        private const long PollMilliseconds = 250;
+
+        private readonly Label _hint;
         private readonly HelpBox _status;
         private readonly VisualElement _controls;
         private readonly DropdownField _player;
@@ -27,9 +31,10 @@ namespace HyperRTS.Editor.PlayMode
         private readonly Toggle _fog;
         private readonly Slider _speed;
 
-        /// <summary>Wires the controls of a cloned CheatsSection.uxml.</summary>
+        /// <summary>Wires the controls of a cloned CheatsSection.uxml and polls them while it is shown.</summary>
         public CheatsSection(VisualElement root)
         {
+            _hint = root.Require<Label>("hint");
             _status = root.Require<HelpBox>("status");
             _controls = root.Require<VisualElement>("controls");
             _player = root.Require<DropdownField>("player");
@@ -51,11 +56,17 @@ namespace HyperRTS.Editor.PlayMode
             root.Require<Button>("attack").clicked += SpawnArmies;
             _speed = root.Require<Slider>("speed");
             _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
+
+            Poll();
+            root.schedule.Execute(Poll).Every(PollMilliseconds);
         }
 
         // Cheats change game state, so they go to the server when hosting, not to the client the HUD shows.
-        public void Poll()
+        private void Poll()
         {
+            var playing = EditorApplication.isPlaying;
+            _hint.SetHidden(playing);
+            _controls.SetHidden(!playing);
             var ready = TryGetPlayers(out var manager, out var players, out var message);
             _status.text = message;
             _status.SetHidden(string.IsNullOrEmpty(message));

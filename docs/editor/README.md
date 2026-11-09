@@ -174,8 +174,12 @@ builder throws on a bad path, player count or size. Maps built from JSON specs: 
 
 ## Play-mode debugging
 
-The **HyperRTS Debug** Scene view overlay toggles `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and
-`Glyph` each). Toggles are remembered and work outside Play mode; **Hide all** clears them.
+The debug layers and cheats show in two places: the **HyperRTS Debug** and **HyperRTS Cheats** Scene view overlays,
+and the **HyperRTS ▸ Cheats & Debug** window, which docks beside the Game view so they stay in reach during Play.
+Both build on `DebugSection` and `CheatsSection`.
+
+The debug section toggles `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Toggles are
+remembered and work outside Play mode; **Hide all** clears them.
 
 | Layer | Shows |
 | --- | --- |
@@ -193,7 +197,7 @@ In Play, an AI table shows each player's think timer and attack wave size. To ad
 job fills one texture drawn as a single quad. For anything else subclass `DebugLayer`. Layers read the authoritative
 world unless they override `Source`.
 
-The **HyperRTS Cheats** overlay works in Play mode only:
+The cheats work in Play mode only:
 
 | Control | Does |
 | --- | --- |

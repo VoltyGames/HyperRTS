@@ -1,0 +1,6 @@
+/* The Cheats & Debug window. Its sections are styled in DebugSection.uss and Common/HyperRTSEditor.uss. */
+
+.hrts-cheats-debug {
+  flex-grow: 1;
+  padding: 4px 6px;
+}

@@ -1,10 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
   <Style src="DebugOverlay.uss" />
+  <ui:Template name="DebugSection" src="DebugSection.uxml" />
   <ui:VisualElement class="hrts-debug-overlay">
-    <ui:VisualElement name="layers" />
-    <ui:Button name="hide-all" text="Hide all" />
-    <ui:Label name="hint" class="hrts-hint hrts-debug-overlay__hint" text="Layers draw in Play mode." />
-    <ui:VisualElement name="ai" class="hrts-debug-overlay__ai" />
+    <ui:Instance template="DebugSection" name="debug" />
   </ui:VisualElement>
 </ui:UXML>

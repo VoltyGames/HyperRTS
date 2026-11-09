@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <ui:VisualElement class="hrts-cheats">
+    <ui:Label name="hint" class="hrts-hint" text="Cheats work in Play mode." />
     <ui:HelpBox name="status" class="hrts-note" message-type="Info" />
     <ui:VisualElement name="controls">
       <ui:DropdownField name="player" label="Player" />

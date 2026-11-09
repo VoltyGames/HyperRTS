@@ -1,0 +1,29 @@
+/* The debug-draw layers and AI table, in the Scene view overlay and the Cheats & Debug window. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+.hrts-debug__group {
+  -unity-font-style: bold;
+  margin: 4px 0 1px 2px;
+}
+
+.hrts-debug__row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.hrts-debug__name {
+  flex-grow: 1;
+}
+
+.hrts-debug__cell {
+  min-width: 44px;
+  -unity-text-align: middle-right;
+}
+
+.hrts-debug__hint {
+  margin-top: 4px;
+  white-space: normal;
+}
+
+.hrts-debug__ai {
+  margin-top: 4px;
+}
