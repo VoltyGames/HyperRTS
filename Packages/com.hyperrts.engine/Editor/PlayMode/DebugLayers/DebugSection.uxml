@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="DebugSection.uss" />
-  <ui:VisualElement class="hrts-debug">
+  <ui:VisualElement>
     <ui:Foldout name="layers-group" text="Debug layers" class="hrts-group">
       <ui:VisualElement name="layers" class="hrts-debug__groups" />
       <ui:VisualElement class="hrts-row">

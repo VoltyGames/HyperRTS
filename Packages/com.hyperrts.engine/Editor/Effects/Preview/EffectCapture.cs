@@ -143,6 +143,8 @@ namespace HyperRTS.Editor.Effects.Preview
             {
                 if (Time.frameCount == start && EditorApplication.timeSinceStartup < deadline)
                 {
+                    // An Edit-mode frame runs only when asked for, and one request can pass before this waits on it.
+                    EditorApplication.QueuePlayerLoopUpdate();
                     return;
                 }
 
