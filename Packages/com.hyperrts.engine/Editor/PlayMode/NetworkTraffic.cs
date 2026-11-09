@@ -38,17 +38,9 @@ namespace HyperRTS.Editor.PlayMode
                 return false;
             }
 
-            if (!PlayWorld.TryGetSingleton(entityManager, out NetworkStreamDriver driver))
-            {
-                return false;
-            }
-
-            if (!PlayWorld.TryGetSingleton(entityManager, out NetworkTime time))
-            {
-                return false;
-            }
-
-            if (!PlayWorld.TryGetSingleton(entityManager, out ClientServerTickRate tickRate))
+            if (!PlayWorld.TryGetSingleton(entityManager, out NetworkStreamDriver driver)
+                || !PlayWorld.TryGetSingleton(entityManager, out NetworkTime time)
+                || !PlayWorld.TryGetSingleton(entityManager, out ClientServerTickRate tickRate))
             {
                 return false;
             }

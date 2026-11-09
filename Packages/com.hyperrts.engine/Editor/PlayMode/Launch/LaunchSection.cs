@@ -177,7 +177,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private void Refresh()
         {
             EditorState.instance.Save();
-            var problem = _choice.entry == LaunchEntry.Map ? _choice.Problem(_map.Slots) : "";
+            var problem = _choice.Problem(_map.Slots);
             _problem.text = problem;
             _problem.SetHidden(problem.Length == 0);
             _play.SetEnabled(problem.Length == 0);

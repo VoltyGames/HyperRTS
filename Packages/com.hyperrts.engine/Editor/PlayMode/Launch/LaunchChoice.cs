@@ -76,11 +76,24 @@ namespace HyperRTS.Editor.PlayMode.Launch
         }
 
         /// <summary>Why the table can't start on <paramref name="game"/>'s chosen map, or "" when it can.</summary>
-        public string Problem(GameLauncher game) => game.TryFindMap(map, out var found) ? Problem(found.Slots) : "No map";
+        public string Problem(GameLauncher game)
+        {
+            if (entry != LaunchEntry.Map)
+            {
+                return "";
+            }
 
-        /// <summary>Why the table can't start, or "" when it can.</summary>
+            return game.TryFindMap(map, out var found) ? Problem(found.Slots) : "No map";
+        }
+
+        /// <summary>Why the table can't start, or "" when it can; the main menu sets the match up itself.</summary>
         public string Problem(int mapSlots)
         {
+            if (entry != LaunchEntry.Map)
+            {
+                return "";
+            }
+
             if (slots.Count != mapSlots)
             {
                 return "The slots don't fit the map.";

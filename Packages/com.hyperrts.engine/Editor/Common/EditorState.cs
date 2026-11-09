@@ -73,25 +73,19 @@ namespace HyperRTS.Editor.Common
 
         public bool IsGroupClosed(string group) => closedGroups.Contains(group);
 
-        public void SetGroupClosed(string group, bool closed)
-        {
-            closedGroups.Remove(group);
-            if (closed)
-            {
-                closedGroups.Add(group);
-            }
-
-            Save();
-        }
+        public void SetGroupClosed(string group, bool closed) => SetListed(closedGroups, group, closed);
 
         public bool IsLayerShown(string layer) => debugLayers.Contains(layer);
 
-        public void ShowLayer(string layer, bool shown)
+        public void ShowLayer(string layer, bool shown) => SetListed(debugLayers, layer, shown);
+
+        // Keeps name in names exactly when listed, and saves.
+        private void SetListed(List<string> names, string name, bool listed)
         {
-            debugLayers.Remove(layer);
-            if (shown)
+            names.Remove(name);
+            if (listed)
             {
-                debugLayers.Add(layer);
+                names.Add(name);
             }
 
             Save();

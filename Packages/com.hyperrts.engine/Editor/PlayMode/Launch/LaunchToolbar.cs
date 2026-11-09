@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
             {
                 menu.AddDisabledItem(new GUIContent("Play (leave Play mode first)"));
             }
-            else if (choice.entry == LaunchEntry.Map && problem.Length > 0)
+            else if (problem.Length > 0)
             {
                 menu.AddDisabledItem(new GUIContent($"Play ({problem})"));
             }

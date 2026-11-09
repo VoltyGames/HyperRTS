@@ -23,8 +23,8 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
 
         public override void Draw(EntityManager entityManager, DebugShapes shapes)
         {
-            var hasFog = TryGetSingleton(entityManager, out FogOfWar fog) && fog.IsCreated;
-            if (!hasFog || !TryGetSingleton(entityManager, out LocalFogView local))
+            if (!TryGetSingleton(entityManager, out FogOfWar fog) || !fog.IsCreated
+                || !TryGetSingleton(entityManager, out LocalFogView local))
             {
                 return;
             }

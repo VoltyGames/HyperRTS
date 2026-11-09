@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
@@ -26,18 +27,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         }
 
         /// <summary>The spawnable prefab with <paramref name="typeId"/>, or <c>Entity.Null</c>.</summary>
-        public static Entity FindPrefab(EntityManager entityManager, int typeId)
-        {
-            foreach (var prefab in Prefabs(entityManager))
-            {
-                if (entityManager.GetComponentData<EntityInfo>(prefab).TypeId == typeId)
-                {
-                    return prefab;
-                }
-            }
-
-            return Entity.Null;
-        }
+        public static Entity FindPrefab(EntityManager entityManager, int typeId) =>
+            PlayWorld.TryGetSingleton(entityManager, out PrefabRegistry registry) ? registry.Find(typeId) : Entity.Null;
 
         /// <summary>Spawns <paramref name="count"/> of <paramref name="prefab"/> on a grid where the camera looks, facing as the prefab does.</summary>
         public static void Spawn(EntityManager entityManager, Entity prefab, byte owner, int count)
