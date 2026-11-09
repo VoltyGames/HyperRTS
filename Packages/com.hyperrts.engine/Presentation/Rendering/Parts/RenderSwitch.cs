@@ -58,9 +58,14 @@ namespace HyperRTS.Presentation.Rendering.Parts
             SetBranch(parts, branch, reason, hide);
         }
 
-        /// <summary>Sets <paramref name="reason"/> on <paramref name="branch"/> and the collected parts under it.</summary>
+        /// <summary>Sets <paramref name="reason"/> on <paramref name="branch"/> and the collected parts under it; no branch does nothing.</summary>
         public void SetBranch(NativeList<Entity> parts, Entity branch, HideReason reason, bool hide)
         {
+            if (branch == Entity.Null)
+            {
+                return;
+            }
+
             foreach (var part in parts)
             {
                 if (IsUnder(part, branch))
