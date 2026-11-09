@@ -44,11 +44,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 }
 
                 shown.ValueRW.Index = index;
-                _switch.SetBranch(entity, stages[0].Visual, HideReason.Stage, index != 0);
-                for (var i = 1; i < stages.Length; i++)
-                {
-                    copies.Set(entity, stages[i].Visual, i == index);
-                }
+                ShowModel(entity, stages, index, ref copies);
 
                 // The first frame only sets the look; a spawned or loaded wreck doesn't replay its damage.
                 if (previous >= 0 && index > previous && stages[index].Effect.IsValid())
@@ -58,6 +54,23 @@ namespace HyperRTS.Presentation.Rendering.Parts
             }
 
             copies.Apply(EntityManager);
+        }
+
+        // Stages without a model leave the shown one alone.
+        private void ShowModel(Entity entity, DynamicBuffer<DamageStage> stages, int index, ref ModelCopies copies)
+        {
+            if (stages[0].Visual != Entity.Null)
+            {
+                _switch.SetBranch(entity, stages[0].Visual, HideReason.Stage, index != 0);
+            }
+
+            for (var i = 1; i < stages.Length; i++)
+            {
+                if (stages[i].Visual != Entity.Null)
+                {
+                    copies.Set(entity, stages[i].Visual, i == index);
+                }
+            }
         }
     }
 }

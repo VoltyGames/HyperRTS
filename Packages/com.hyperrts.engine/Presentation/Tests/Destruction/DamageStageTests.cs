@@ -70,6 +70,28 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
+        public void StagesWithoutModels_StillStep_AndLeaveTheModelAlone()
+        {
+            // Like a garrison building whose stages only play effects.
+            var building = _em.CreateEntity();
+            _em.AddComponentData(building, new LocalToWorld { Value = float4x4.identity });
+            _em.AddComponentData(building, new Health { Current = 260f, Max = 260f });
+            _em.AddComponentData(building, new ShownDamageStage { Index = -1 });
+            _em.AddBuffer<DamageStage>(building).AddRange(new NativeArray<DamageStage>(new[]
+            {
+                new DamageStage { Below = 1f }, new DamageStage { Below = 0.5f },
+            }, Allocator.Temp));
+            _em.AddBuffer<ModelCopy>(building);
+            _stages.Update();
+
+            SetHealth(building, 100f);
+            _stages.Update();
+
+            Assert.AreEqual(1, _em.GetComponentData<ShownDamageStage>(building).Index);
+            Assert.AreEqual(0, _em.GetBuffer<ModelCopy>(building).Length, "no model to copy in");
+        }
+
+        [Test]
         public void Copy_TakesEveryPaintOfTheTree()
         {
             var tree = Tree(260f, out var models);

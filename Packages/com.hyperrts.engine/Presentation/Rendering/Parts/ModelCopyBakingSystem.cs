@@ -89,9 +89,10 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 var stages = em.GetBuffer<DamageStage>(root, true);
                 for (var i = 1; i < stages.Length; i++)
                 {
-                    if (stages[i].Visual != stages[0].Visual && stages[i].Visual != root)
+                    var visual = stages[i].Visual;
+                    if (visual != Entity.Null && visual != stages[0].Visual && visual != root)
                     {
-                        models.Add(stages[i].Visual);
+                        models.Add(visual);
                     }
                 }
             }

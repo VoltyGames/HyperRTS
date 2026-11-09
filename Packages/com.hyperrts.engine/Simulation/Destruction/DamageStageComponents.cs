@@ -9,6 +9,8 @@ namespace HyperRTS.Simulation.Destruction
     public struct DamageStage : IModelStage
     {
         public float Below;
+
+        /// <summary>The stage's model; <c>Entity.Null</c> keeps the current one and only plays <see cref="Effect"/>.</summary>
         public Entity Visual;
 
         /// <summary>Played where the entity stands when it drops into this stage (dust, debris); may be empty.</summary>

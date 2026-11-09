@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Destruction
             [Range(0f, 1f)]
             public float below = 1f;
 
-            [Tooltip("Child object holding this stage's model.")]
+            [Tooltip("Child object holding this stage's model. Leave empty for a stage that keeps the model and only plays its effect.")]
             public GameObject visual;
 
             [Tooltip("Particle effect prefab played when health drops into this stage.")]
@@ -37,18 +37,19 @@ namespace HyperRTS.Simulation.Destruction
         {
             public override void Bake(DamageStagesAuthoring authoring)
             {
+                if (authoring.stages.Count == 0)
+                {
+                    return;
+                }
+
+                // A stage without a model still counts: it plays its effect and raises battle smoke.
                 var stages = new List<DamageStage>();
                 foreach (var stage in authoring.stages)
                 {
-                    if (stage.visual == null)
-                    {
-                        continue;
-                    }
-
                     stages.Add(new DamageStage
                     {
                         Below = stage.below,
-                        Visual = GetEntity(stage.visual, TransformUsageFlags.Dynamic),
+                        Visual = stage.visual != null ? GetEntity(stage.visual, TransformUsageFlags.Dynamic) : Entity.Null,
                         Effect = stage.effect,
                     });
                 }
