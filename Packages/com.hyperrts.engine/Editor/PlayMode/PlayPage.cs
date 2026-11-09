@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.PlayMode
             BindNetwork(root);
             BindBots(root);
             _save = root.Require<Button>("save");
-            _save.clicked += ReplayPlayback.SaveRecording;
+            _save.clicked += SavedReplays.SaveRecording;
             _replays = root.Require<VisualElement>("replays");
             _noReplays = root.Require<Label>("no-replays");
 
@@ -103,7 +103,7 @@ namespace HyperRTS.Editor.PlayMode
             _botStatus.text = BotMatches.Status;
             ShowResults();
 
-            _save.SetEnabled(ReplayPlayback.CanSave);
+            _save.SetEnabled(SavedReplays.CanSave);
             ShowReplays();
         }
 
@@ -116,7 +116,7 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             var status = NetworkSession.Status.ToString();
-            _traffic.text = NetworkStress.TryRead(out var sample) ? $"{status}. {sample}" : status;
+            _traffic.text = NetworkTraffic.TryRead(out var sample) ? $"{status}. {sample}" : status;
         }
 
         private void ShowResults()
@@ -168,17 +168,17 @@ namespace HyperRTS.Editor.PlayMode
         private void ShowReplays()
         {
             // The page polls, so the folder is only listed again once a recording is added or removed.
-            var changed = ReplayPlayback.RecordingsChanged;
+            var changed = SavedReplays.RecordingsChanged;
             if (changed != _shownReplays)
             {
                 _shownReplays = changed;
-                var recent = ReplayPlayback.RecentRecordings();
+                var recent = SavedReplays.RecentRecordings();
                 _noReplays.SetHidden(recent.Count > 0);
                 _replays.Clear();
                 recent.ForEach(path => _replays.Add(ReplayRow(path)));
             }
 
-            _replays.Query<Button>("play-replay").ForEach(button => button.SetEnabled(ReplayPlayback.CanPlay));
+            _replays.Query<Button>("play-replay").ForEach(button => button.SetEnabled(SavedReplays.CanPlay));
         }
 
         private static VisualElement ReplayRow(string path)
@@ -188,7 +188,7 @@ namespace HyperRTS.Editor.PlayMode
             var name = new Label(Path.GetFileNameWithoutExtension(path)) { tooltip = path };
             name.AddToClassList("hrts-play__wide");
             row.Add(name);
-            row.Add(new Button(() => ReplayPlayback.PlayReplay(path)) { name = "play-replay", text = "Play" });
+            row.Add(new Button(() => SavedReplays.PlayReplay(path)) { name = "play-replay", text = "Play" });
             row.Add(new Button(() => EditorUtility.RevealInFinder(path)) { text = "Reveal" });
             return row;
         }

@@ -13,7 +13,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.PlayMode
+namespace HyperRTS.Editor.PlayMode.Cheats
 {
     /// <summary>The Play-mode cheats: the chosen player's control, resources and builds; spawning, repair and battles; fog and game speed.</summary>
     internal class CheatsSection
@@ -44,27 +44,27 @@ namespace HyperRTS.Editor.PlayMode
             _player = root.Require<DropdownField>("player");
             _player.choices = new List<string>();
             _control = root.Require<Button>("control");
-            _control.clicked += () => Act((manager, player, _) => Cheats.MakeLocal(manager, player));
+            _control.clicked += () => Act((manager, player, _) => MatchCheats.MakeLocal(manager, player));
             root.Require<Button>("add").clicked += () => Act((manager, player, _) =>
-                Cheats.AddResources(manager, player, EditorState.instance.cheatResources));
+                MatchCheats.AddResources(manager, player, EditorState.instance.cheatResources));
             root.Require<Button>("instant-build").clicked +=
-                () => Act((manager, _, owner) => Cheats.InstantBuild(manager, owner));
+                () => Act((manager, _, owner) => MatchCheats.InstantBuild(manager, owner));
 
             _prefab = root.Require<Button>("prefab");
             _prefab.clicked += PickPrefab;
             _spawn = root.Require<Button>("spawn");
             _spawn.clicked += () => ActOnPrefab((manager, prefab, owner) =>
-                Cheats.Spawn(manager, prefab, owner, Cheats.ViewCenter(manager), EditorState.instance.spawnCount));
+                MatchCheats.Spawn(manager, prefab, owner, MatchCheats.ViewCenter(manager), EditorState.instance.spawnCount));
             _battle = root.Require<Button>("battle");
             _battle.clicked += () => ActOnPrefab((manager, prefab, _) =>
-                NetworkStress.SpawnArmies(manager, prefab, EditorState.instance.armiesPerSide));
+                BattleCheat.Start(manager, prefab, EditorState.instance.armiesPerSide));
             _repair = root.Require<Button>("repair");
-            _repair.clicked += () => Act((manager, _, _) => Cheats.Repair(manager, Cheats.Selection(manager)));
+            _repair.clicked += () => Act((manager, _, _) => MatchCheats.Repair(manager, MatchCheats.Selection(manager)));
             _destroy = root.Require<Button>("destroy");
-            _destroy.clicked += () => Act((manager, _, _) => Cheats.Destroy(manager, Cheats.Selection(manager)));
+            _destroy.clicked += () => Act((manager, _, _) => MatchCheats.Destroy(manager, MatchCheats.Selection(manager)));
 
             _fog = root.Require<Toggle>("fog");
-            _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => Cheats.SetFog(manager, change.newValue)));
+            _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => MatchCheats.SetFog(manager, change.newValue)));
             _speed = root.Require<Slider>("speed");
             _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
             _pause = root.Require<Button>("pause");
@@ -102,13 +102,13 @@ namespace HyperRTS.Editor.PlayMode
             _spawn.SetEnabled(prefabName != null);
             _battle.SetEnabled(prefabName != null);
 
-            var selected = Cheats.Selection(manager).Length;
+            var selected = MatchCheats.Selection(manager).Length;
             _repair.SetEnabled(selected > 0);
             _destroy.SetEnabled(selected > 0);
             _repair.text = selected > 0 ? $"Repair selected ({selected})" : "Repair selected";
             _destroy.text = selected > 0 ? $"Destroy selected ({selected})" : "Destroy selected";
 
-            _fog.SetValueWithoutNotify(Cheats.FogEnabled(manager));
+            _fog.SetValueWithoutNotify(MatchCheats.FogEnabled(manager));
             var local = !NetworkSession.IsRunning;
             _speed.SetEnabled(local);
             _pause.SetEnabled(local);
@@ -128,7 +128,7 @@ namespace HyperRTS.Editor.PlayMode
                 return false;
             }
 
-            players = Cheats.Players(manager);
+            players = PlayWorld.Players(manager);
             message = players.Length == 0 ? "No players yet: the SubScene is still loading." : "";
             return players.Length > 0;
         }
@@ -149,7 +149,7 @@ namespace HyperRTS.Editor.PlayMode
 
         private void ActOnPrefab(System.Action<EntityManager, Entity, byte> cheat) => Act((manager, _, owner) =>
         {
-            var prefab = Cheats.FindPrefab(manager, EditorState.instance.spawnTypeId);
+            var prefab = MatchCheats.FindPrefab(manager, EditorState.instance.spawnTypeId);
             if (prefab != Entity.Null)
             {
                 cheat(manager, prefab, owner);

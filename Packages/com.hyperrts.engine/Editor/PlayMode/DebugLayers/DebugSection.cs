@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Icons;
-using HyperRTS.Editor.PlayMode.DebugDraw;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common.Players;
@@ -8,7 +7,7 @@ using Unity.Collections;
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.PlayMode
+namespace HyperRTS.Editor.PlayMode.DebugLayers
 {
     /// <summary>The debug layers in their groups, each with a status line while on, and in Play mode a table of the AI players.</summary>
     internal class DebugSection

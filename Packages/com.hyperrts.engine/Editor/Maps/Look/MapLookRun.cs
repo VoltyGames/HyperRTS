@@ -5,6 +5,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Spec;
 using HyperRTS.Editor.Maps.Views;
 using HyperRTS.Editor.PlayMode;
+using HyperRTS.Editor.PlayMode.Cheats;
 using HyperRTS.Input.Cameras;
 using HyperRTS.Presentation.Environment.Weather;
 using UnityEngine;
@@ -161,7 +162,7 @@ namespace HyperRTS.Editor.Maps.Look
             _weatherSet.Apply(shot.weather);
             if (PlayWorld.TryGetAuthoritative(out var entityManager))
             {
-                Cheats.SetFog(entityManager, shot.look.fog);
+                MatchCheats.SetFog(entityManager, shot.look.fog);
             }
 
             var view = new MapView(shot.look.name, shot.look.pos.ToVector2(), shot.zoom, shot.look.yaw);

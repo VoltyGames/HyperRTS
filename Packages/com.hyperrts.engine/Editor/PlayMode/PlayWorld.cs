@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
 using Unity.Scripting.LifecycleManagement;
@@ -40,6 +42,13 @@ namespace HyperRTS.Editor.PlayMode
             entityManager = world.EntityManager;
             entityManager.CompleteAllTrackedJobs();
             return true;
+        }
+
+        /// <summary>Every player entity of the world, in a Temp array.</summary>
+        public static NativeArray<Entity> Players(EntityManager entityManager)
+        {
+            using var query = entityManager.CreateEntityQuery(typeof(Player));
+            return query.ToEntityArray(Allocator.Temp);
         }
 
         public static bool TryGetSingleton<T>(EntityManager entityManager, out T value) where T : unmanaged, IComponentData

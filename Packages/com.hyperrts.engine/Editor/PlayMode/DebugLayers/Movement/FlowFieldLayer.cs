@@ -1,3 +1,4 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
@@ -5,7 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>The cost to the goal over the most recently built group field, repeating blue to red every <see cref="Band"/> cost.</summary>
     public sealed class FlowFieldLayer : DebugLayer

@@ -1,9 +1,10 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
 {
     /// <summary>Cells standing above the ground round them, blue for a small sight bonus to red for the largest.</summary>
     public sealed class HighGroundLayer : DebugLayer

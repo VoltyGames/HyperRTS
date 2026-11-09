@@ -6,7 +6,7 @@ using Unity.Entities;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode
+namespace HyperRTS.Editor.PlayMode.Cheats
 {
     /// <summary>A searchable list of the spawnable prefabs, in units, buildings and other, that reports the chosen <c>EntityInfo.TypeId</c>.</summary>
     internal sealed class SpawnPicker : AdvancedDropdown
@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.PlayMode
         public static void Open(EntityManager entityManager, Rect below, Action<int> picked)
         {
             var choices = new List<Choice>();
-            foreach (var prefab in Cheats.Prefabs(entityManager))
+            foreach (var prefab in MatchCheats.Prefabs(entityManager))
             {
                 var info = entityManager.GetComponentData<EntityInfo>(prefab);
                 choices.Add(new Choice(info.TypeId, info.Name.ToString(), FindGroup(entityManager, prefab)));
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.PlayMode
         /// <summary>The prefab's name for the picker button, or null when it is gone.</summary>
         public static string FindName(EntityManager entityManager, int typeId)
         {
-            var prefab = Cheats.FindPrefab(entityManager, typeId);
+            var prefab = MatchCheats.FindPrefab(entityManager, typeId);
             return prefab == Entity.Null ? null : entityManager.GetComponentData<EntityInfo>(prefab).Name.ToString();
         }
 

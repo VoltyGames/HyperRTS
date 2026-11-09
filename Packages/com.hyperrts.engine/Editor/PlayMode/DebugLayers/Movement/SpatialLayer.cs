@@ -1,9 +1,10 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>Spatial index cells that hold at least one entity.</summary>
     public sealed class SpatialLayer : DebugLayer

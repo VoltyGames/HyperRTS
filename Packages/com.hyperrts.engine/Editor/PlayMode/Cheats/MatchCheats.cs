@@ -15,10 +15,10 @@ using Unity.Transforms;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode
+namespace HyperRTS.Editor.PlayMode.Cheats
 {
     /// <summary>Play-mode cheats applied straight to the authoritative world; editor only, never part of the game.</summary>
-    internal static class Cheats
+    internal static class MatchCheats
     {
         // Spawned groups stand on a square grid this far apart, so they don't start inside each other.
         private const float SpawnSpacing = 6f;
@@ -36,12 +36,6 @@ namespace HyperRTS.Editor.PlayMode
             }
         };
 
-        public static NativeArray<Entity> Players(EntityManager entityManager)
-        {
-            using var query = entityManager.CreateEntityQuery(typeof(Player));
-            return query.ToEntityArray(Allocator.Temp);
-        }
-
         /// <summary>Entity prefabs that can be spawned: everything producers, builders and death spawns reference.</summary>
         public static NativeArray<Entity> Prefabs(EntityManager entityManager)
         {
@@ -53,7 +47,7 @@ namespace HyperRTS.Editor.PlayMode
         /// <summary>Hands control of a player to you; its AI stops so the two don't fight over it. Single player only.</summary>
         public static void MakeLocal(EntityManager entityManager, Entity player)
         {
-            foreach (var other in Players(entityManager))
+            foreach (var other in PlayWorld.Players(entityManager))
             {
                 entityManager.RemoveComponent<LocalPlayer>(other);
             }

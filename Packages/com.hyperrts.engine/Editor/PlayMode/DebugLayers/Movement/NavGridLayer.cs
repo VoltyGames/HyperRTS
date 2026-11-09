@@ -1,9 +1,11 @@
+using HyperRTS.Editor.Authoring;
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>Nav grid cells: blocked (buildings, obstacles, slopes), water, and decks over water or gaps.</summary>
     public sealed class NavGridLayer : DebugLayer

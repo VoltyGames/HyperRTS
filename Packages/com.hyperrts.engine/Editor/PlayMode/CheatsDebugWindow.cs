@@ -1,5 +1,7 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
+using HyperRTS.Editor.PlayMode.Cheats;
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;

@@ -1,3 +1,4 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Docks;
@@ -9,7 +10,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>
     /// Each unit's remaining waypoints, planned manoeuvres, rear axles, attack target lines and dock bays; its status

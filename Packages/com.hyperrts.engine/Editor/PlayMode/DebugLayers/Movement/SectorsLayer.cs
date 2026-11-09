@@ -1,3 +1,4 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Sectors;
@@ -5,7 +6,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>Connected regions of the first movement class, one colour each, with white where a region ends.</summary>
     public sealed class SectorsLayer : DebugLayer

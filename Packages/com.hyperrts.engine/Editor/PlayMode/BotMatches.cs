@@ -148,7 +148,7 @@ namespace HyperRTS.Editor.PlayMode
         private static byte[] BakedSides(EntityManager entityManager, int players)
         {
             var sides = new byte[players];
-            foreach (var player in Cheats.Players(entityManager))
+            foreach (var player in PlayWorld.Players(entityManager))
             {
                 var owner = entityManager.GetComponentData<Player>(player).Owner;
                 if (owner >= 1 && owner <= players)

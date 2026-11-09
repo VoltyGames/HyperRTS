@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="../Common/HyperRTSEditor.uss" />
   <Style src="CheatsDebugWindow.uss" />
-  <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
-  <ui:Template name="DebugSection" src="DebugSection.uxml" />
+  <ui:Template name="CheatsSection" src="Cheats/CheatsSection.uxml" />
+  <ui:Template name="DebugSection" src="DebugLayers/DebugSection.uxml" />
   <ui:ScrollView class="hrts-cheats-debug">
     <ui:Label name="match" class="hrts-cheats-debug__match" />
     <ui:Instance template="CheatsSection" name="cheats" />

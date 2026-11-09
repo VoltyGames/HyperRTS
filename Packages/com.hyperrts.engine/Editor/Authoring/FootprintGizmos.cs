@@ -1,4 +1,3 @@
-using HyperRTS.Editor.PlayMode.DebugDraw;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Docks;

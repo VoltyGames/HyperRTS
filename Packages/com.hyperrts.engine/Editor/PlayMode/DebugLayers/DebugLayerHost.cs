@@ -7,7 +7,7 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers
 {
     /// <summary>Refreshes every shown <see cref="DebugLayer"/> during Play mode and drops their drawings when Play ends.</summary>
     [InitializeOnLoad]

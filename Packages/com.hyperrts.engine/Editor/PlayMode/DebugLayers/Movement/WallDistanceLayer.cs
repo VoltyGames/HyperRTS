@@ -1,10 +1,11 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>The distance to the nearest wall for the first field key, red at a wall to blue at <see cref="NavField.MaxDistance"/>.</summary>
     public sealed class WallDistanceLayer : DebugLayer

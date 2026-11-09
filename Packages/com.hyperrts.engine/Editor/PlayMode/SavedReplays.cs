@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.PlayMode
 {
     /// <summary>Saves the Play-mode recording into Logs/Replays, or opens a replay's scene and plays it back once Play mode starts.</summary>
     [InitializeOnLoad]
-    internal static class ReplayPlayback
+    internal static class SavedReplays
     {
         private const string Extension = "hrreplay";
         private const string Folder = "Logs/Replays";
@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.PlayMode
         [NoAutoStaticsCleanup]
         private static readonly PendingPlay Pending;
 
-        static ReplayPlayback() => Pending = new PendingPlay("HyperRTS.ReplayPlayback.Pending", Begin);
+        static SavedReplays() => Pending = new PendingPlay("HyperRTS.SavedReplays.Pending", Begin);
 
         public static bool CanSave => TryGetRecordingWorld(out _);
 

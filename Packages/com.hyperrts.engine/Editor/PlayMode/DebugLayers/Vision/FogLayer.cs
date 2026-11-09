@@ -1,10 +1,11 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
 {
     /// <summary>Fog cells the local player's team currently sees.</summary>
     public sealed class FogLayer : DebugLayer

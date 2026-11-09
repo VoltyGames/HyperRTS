@@ -9,7 +9,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers
 {
     /// <summary>
     /// What one debug layer draws: lines and one grid of cells draped on the ground, both shown over everything so

@@ -1,5 +1,6 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Simulation.Vision.Sight;
@@ -8,7 +9,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
 {
     /// <summary>A selected unit's sight area: green where it sees the ground, blue where only a tall target shows, yellow within close range.</summary>
     public sealed class SightAreaLayer : DebugLayer

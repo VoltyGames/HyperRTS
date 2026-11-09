@@ -1,9 +1,10 @@
+using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
 {
     /// <summary>What blocks sight: solid in red, porous or crop cover in green, other concealment in yellow.</summary>
     public sealed class SightBlockersLayer : DebugLayer

@@ -2,7 +2,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.PlayMode.DebugLayers
 {
     /// <summary>One view of live simulation state in the Game and Scene views, switched in the Cheats &amp; Debug window. Subclasses are discovered.</summary>
     public abstract class DebugLayer

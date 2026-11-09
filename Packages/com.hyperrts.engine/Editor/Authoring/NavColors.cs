@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Navigation.Areas;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugDraw
+namespace HyperRTS.Editor.Authoring
 {
     /// <summary>Nav surface colours, shared by the nav area handles and the Play-mode nav grid layer.</summary>
     public static class NavColors
