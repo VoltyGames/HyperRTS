@@ -209,7 +209,7 @@ Layers read the authoritative world unless they override `Source`.
 
 The **Play** page is the launcher outside Play mode: map, mode (1v1 to 4v4 or free for all), start (into the map or
 through the main menu), network (offline, host, dedicated server), the slot table and the game's switches. **Play**
-opens the game's menu scene and hands the choice to the game. The toolbar beside Play shows the choice
+(`GameLauncher.Play`) opens the game's menu scene and hands the choice to the game. The toolbar beside Play shows the choice
 (`LaunchToolbar`). In Play mode the page shows:
 
 | Section | Does |
@@ -218,8 +218,8 @@ opens the game's menu scene and hands the choice to the game. The toolbar beside
 | Soak test | AI against AI, match after match, with a results table and reports in `Logs/BotMatches/` |
 | Replays | Save the recording to `Logs/Replays/`; play or reveal the newest |
 
-A game joins the launcher with two subclasses in an editor assembly: `LaunchGame` lists maps and sides, names the menu
-scene and starts a `LaunchChoice`; `LaunchSetting` adds an on or off switch.
+A game joins the launcher with two subclasses in an editor assembly: `GameLauncher` lists maps and sides, names the
+menu scene and starts a `LaunchChoice`; `LaunchSetting` adds an on or off switch.
 
 ## Prefabs
 

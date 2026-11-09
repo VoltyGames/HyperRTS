@@ -14,12 +14,12 @@ namespace HyperRTS.Editor.PlayMode.Launch
     {
         private static readonly string[] SlotKinds = { "Closed", "Human", "Bot" };
         private static readonly string[] Modes = { "Free for all", "1v1", "2v2", "3v3", "4v4" };
-        private static readonly string[] Starts = { "Straight into the map", "Through the main menu" };
+        private static readonly string[] Entries = { "Straight into the map", "Through the main menu" };
         private static readonly string[] Networks = { "Offline", "Host", "Dedicated server" };
         private static readonly AIDifficulty[] Difficulties = (AIDifficulty[])Enum.GetValues(typeof(AIDifficulty));
 
         private readonly LaunchChoice _choice = EditorState.instance.launch;
-        private readonly LaunchGame _game = LaunchGame.Find();
+        private readonly GameLauncher _game = GameLauncher.Find();
         private readonly VisualTreeAsset _slotRow;
         private readonly VisualElement _slots;
         private readonly HelpBox _problem;
@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
 
             BindChoices(root);
             BindSettings(root.Require<VisualElement>("settings"));
-            _play.clicked += () => PlayLauncher.Play(_game, _choice);
+            _play.clicked += () => _game.Play(_choice);
             RebuildSlots();
             Refresh();
         }
@@ -81,14 +81,14 @@ namespace HyperRTS.Editor.PlayMode.Launch
             var mode = Dropdown(root, "mode", Modes, (int)_choice.mode);
             mode.RegisterValueChangedCallback(_ =>
             {
-                _choice.mode = (MatchMode)mode.index;
+                _choice.mode = (TeamLayout)mode.index;
                 Deal();
             });
 
-            var start = Dropdown(root, "start", Starts, (int)_choice.start);
-            start.RegisterValueChangedCallback(_ =>
+            var entry = Dropdown(root, "entry", Entries, (int)_choice.entry);
+            entry.RegisterValueChangedCallback(_ =>
             {
-                _choice.start = (LaunchStart)start.index;
+                _choice.entry = (LaunchEntry)entry.index;
                 Refresh();
             });
 
@@ -177,7 +177,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private void Refresh()
         {
             EditorState.instance.Save();
-            var problem = _choice.start == LaunchStart.Map ? _choice.Problem(_map.Slots) : "";
+            var problem = _choice.entry == LaunchEntry.Map ? _choice.Problem(_map.Slots) : "";
             _problem.text = problem;
             _problem.SetHidden(problem.Length == 0);
             _play.SetEnabled(problem.Length == 0);

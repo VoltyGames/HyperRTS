@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
 using Unity.Scripting.LifecycleManagement;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Launch
 {
@@ -34,16 +37,35 @@ namespace HyperRTS.Editor.PlayMode.Launch
     }
 
     /// <summary>
-    /// The game's half of the Play page launcher: what it can start and how. Subclass it once (like a <c>HubPage</c>) and
-    /// the launcher, the main toolbar and Play with a choice use it.
+    /// Starts a <see cref="LaunchChoice"/> in Play mode: the engine opens the game's menu scene and enters Play, and the
+    /// game says what it can start and starts it. Subclass it once (like a <c>HubPage</c>) and the Play page launcher
+    /// and the main toolbar use it.
     /// </summary>
-    public abstract class LaunchGame
+    [InitializeOnLoad]
+    public abstract class GameLauncher
     {
         [NoAutoStaticsCleanup]
-        private static LaunchGame _found;
+        private static GameLauncher _found;
 
-        /// <summary>The game's launch, or null when no assembly subclasses it.</summary>
-        public static LaunchGame Find() => _found ??= TypeDiscovery.Instances<LaunchGame>().FirstOrDefault();
+        [NoAutoStaticsCleanup]
+        private static readonly PendingPlay Pending;
+
+        static GameLauncher() => Pending = new PendingPlay("HyperRTS.GameLauncher.Pending", Begin);
+
+        /// <summary>The game's launcher, or null when no assembly subclasses it.</summary>
+        public static GameLauncher Find() => _found ??= TypeDiscovery.Instances<GameLauncher>().FirstOrDefault();
+
+        /// <summary>Opens <see cref="MenuScene"/> and enters Play mode; a choice that enters the map is then handed to <see cref="Start"/>.</summary>
+        public void Play(LaunchChoice choice)
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return;
+            }
+
+            EditorSceneManager.OpenScene(MenuScene);
+            Pending.Enter(choice.entry == LaunchEntry.Map ? JsonUtility.ToJson(choice) : "");
+        }
 
         public abstract IReadOnlyList<LaunchMap> Maps { get; }
 
@@ -69,5 +91,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
 
         /// <summary>Starts the match in Play mode, once the game's services are up in <see cref="MenuScene"/>.</summary>
         public abstract void Start(LaunchChoice choice);
+
+        private static void Begin(string json) => Find().Start(JsonUtility.FromJson<LaunchChoice>(json));
     }
 }

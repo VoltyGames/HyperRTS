@@ -4,29 +4,29 @@ using System.Linq;
 
 namespace HyperRTS.Editor.PlayMode.Launch
 {
-    /// <summary>What the launcher starts: remembered in the editor state and handed to <see cref="LaunchGame.Start"/>.</summary>
+    /// <summary>What the launcher starts: remembered in the editor state and handed to <see cref="GameLauncher.Start"/>.</summary>
     [Serializable]
     public class LaunchChoice
     {
         public string map = "";
-        public MatchMode mode = MatchMode.TwoVsTwo;
-        public LaunchStart start;
+        public TeamLayout mode = TeamLayout.TwoVsTwo;
+        public LaunchEntry entry;
         public LaunchNetwork network;
         public List<LaunchSlot> slots = new();
 
         /// <summary>The short name of a mode, such as "2v2".</summary>
-        public static string ModeName(MatchMode mode) => mode switch
+        public static string ModeName(TeamLayout mode) => mode switch
         {
-            MatchMode.FreeForAll => "FFA",
-            MatchMode.OneVsOne => "1v1",
-            MatchMode.TwoVsTwo => "2v2",
-            MatchMode.ThreeVsThree => "3v3",
-            MatchMode.FourVsFour => "4v4",
+            TeamLayout.FreeForAll => "FFA",
+            TeamLayout.OneVsOne => "1v1",
+            TeamLayout.TwoVsTwo => "2v2",
+            TeamLayout.ThreeVsThree => "3v3",
+            TeamLayout.FourVsFour => "4v4",
             _ => throw new ArgumentOutOfRangeException(nameof(mode)),
         };
 
         /// <summary>Slots per team, or 0 when every slot plays alone.</summary>
-        private static int TeamSize(MatchMode mode) => mode == MatchMode.FreeForAll ? 0 : (int)mode;
+        private static int TeamSize(TeamLayout mode) => mode == TeamLayout.FreeForAll ? 0 : (int)mode;
 
         /// <summary>
         /// Fits the table to a map with <paramref name="mapSlots"/> slots and deals the teams for the mode: you in the first
@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         }
 
         /// <summary>Why the table can't start on <paramref name="game"/>'s chosen map, or "" when it can.</summary>
-        public string Problem(LaunchGame game) => game.TryFindMap(map, out var found) ? Problem(found.Slots) : "No map";
+        public string Problem(GameLauncher game) => game.TryFindMap(map, out var found) ? Problem(found.Slots) : "No map";
 
         /// <summary>Why the table can't start, or "" when it can.</summary>
         public string Problem(int mapSlots)

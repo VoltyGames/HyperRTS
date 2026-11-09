@@ -1,11 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="LaunchSection.uss" />
   <HyperRTS.Editor.Common.TitledSection title="Launch">
-    <ui:HelpBox name="missing" class="hrts-note" message-type="Info" message="This project has no game launch: subclass LaunchGame in an editor assembly." />
+    <ui:HelpBox name="missing" class="hrts-note" message-type="Info" message="This project has no game launcher: subclass GameLauncher in an editor assembly." />
     <ui:VisualElement name="form">
       <ui:DropdownField name="map" label="Map" />
       <ui:DropdownField name="mode" label="Mode" />
-      <ui:DropdownField name="start" label="Start" />
+      <ui:DropdownField name="entry" label="Start" />
       <ui:DropdownField name="network" label="Network" />
       <ui:VisualElement class="hrts-row hrts-launch__head">
         <ui:Label text="Slot" class="hrts-launch__number" />

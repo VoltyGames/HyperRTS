@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         [MainToolbarElement(Path, defaultDockPosition = MainToolbarDockPosition.Middle)]
         private static MainToolbarElement Create()
         {
-            var game = LaunchGame.Find();
+            var game = GameLauncher.Find();
             var choice = EditorState.instance.launch;
             var label = "Launch";
             if (game != null && game.TryFindMap(choice.map, out var map))
@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
             return new MainToolbarDropdown(content, area => ShowMenu(game, choice, area)) { displayed = game != null };
         }
 
-        private static void ShowMenu(LaunchGame game, LaunchChoice choice, Rect area)
+        private static void ShowMenu(GameLauncher game, LaunchChoice choice, Rect area)
         {
             var menu = new GenericMenu();
             var problem = choice.Problem(game);
@@ -34,13 +34,13 @@ namespace HyperRTS.Editor.PlayMode.Launch
             {
                 menu.AddDisabledItem(new GUIContent("Play (leave Play mode first)"));
             }
-            else if (choice.start == LaunchStart.Map && problem.Length > 0)
+            else if (choice.entry == LaunchEntry.Map && problem.Length > 0)
             {
                 menu.AddDisabledItem(new GUIContent($"Play ({problem})"));
             }
             else
             {
-                menu.AddItem(new GUIContent("Play"), false, () => PlayLauncher.Play(game, choice));
+                menu.AddItem(new GUIContent("Play"), false, () => game.Play(choice));
             }
 
             menu.AddItem(new GUIContent("Launcher..."), false, ToolsWindow.Show<PlayPage>);
