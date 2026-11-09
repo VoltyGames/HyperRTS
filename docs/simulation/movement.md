@@ -55,9 +55,9 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
   invalidating paths.
 - **Shared surfaces.** Layers that share a surface share cells, so ships pass under a bridge that tanks cross.
 - **Target reach.** `TargetReach` walks a unit up to a target to build, repair, capture, board or gather, to the point
-  just outside the footprint nearest the unit, or when that is no open ground the unit can reach (a neighbour flush
-  against that edge, such as the next wall segment), the nearest such spot by another side. A building's footprint is its `NavObstacle`; a unit's is the box round
-  its `NavAgent` hull. The job hands it a `MoveControl`: destination, enabled bit and `Arrival` bit, written together.
+  just outside the footprint nearest the unit. When a neighbour flush against that edge, such as the next wall
+  segment, leaves no open ground there it can reach, it goes to the nearest such spot by another side. A building's
+  footprint is its `NavObstacle`; a unit's is the box round its `NavAgent` hull. The job hands it a `MoveControl`: destination, enabled bit and `Arrival` bit, written together.
   A walk-up whose locomotion ends short of the target is `ApproachState.Stuck`, and the order finishes. A target that
   moved off is walked to again. A new order clears the last `Arrival`.
 - **Spatial index.** `SpatialIndex` answers range queries over living entities from a grid of 8 m cells rebuilt each

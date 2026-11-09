@@ -5,13 +5,13 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Buildings.Placement
 {
     /// <summary>
-    /// A dragged line of building segments in any direction, each one footprint long and yawed along the line. The
+    /// A line of building segments in any direction, each one footprint long and yawed along the line. The
     /// ghost and the authoritative command build the same line from the same start, end and footprint. A wall drawn
     /// with corners is a run of lines, each joined to the end of the one before.
     /// </summary>
     public readonly struct PlacementLine
     {
-        /// <summary>Most segments one line places, so a drag across the map stays cheap.</summary>
+        /// <summary>Most segments one line places, so a leg across the map stays cheap.</summary>
         public const int MaxSegments = 64;
 
         /// <summary>The segment at the start: snapped on a new line, exact on a joined one.</summary>
@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         public PlacementLine(in MapSettings map, float3 start, float3 end, float2 footprint, PlacementSurface surface,
             LineStart join)
         {
-            // A click without a drag lays one segment along X.
+            // A line with no length lays one segment along X.
             var direction = math.normalizesafe(end.xz - start.xz, new float2(1f, 0f));
             var first = new BuildingSpot(start, Yaw(direction), footprint, surface);
             First = join == LineStart.Joined ? first : first.Snap(map);

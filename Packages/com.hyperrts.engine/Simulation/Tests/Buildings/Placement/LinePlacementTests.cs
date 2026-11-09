@@ -151,7 +151,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
 
             var sites = SitePositions();
             Assert.AreEqual(2, sites.Length);
-            Assert.AreEqual(6f, sites[1].x, 1e-4f, "bought from the drag start");
+            Assert.AreEqual(6f, sites[1].x, 1e-4f, "bought from the leg start");
             Assert.AreEqual(50, World.GetResources(1, Supplies));
         }
 

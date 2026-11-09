@@ -104,9 +104,8 @@ keep their authored rotation. A start kit item turns with its spawn unless it se
 ### Line placement
 
 A building with `placedInLines` set, such as a wall, trench or wire, is drawn as a wall of legs at any angle. A click
-starts it; each further click, or releasing the first click after a drag, lays the leg to the cursor and turns a
-corner there; Command (right-click) or Escape finishes the wall and leaves placement on for the next. Shift snaps a
-leg to 15 degrees. `PlacementInputSystem` drives it, `PlacementHint` shows the keys and `LineCost` totals the leg's
+starts it, each further click lays the leg to the cursor and turns a corner there, and Command (right-click) or Escape
+finishes the wall and leaves placement on for the next. Shift snaps a leg to 15 degrees. `PlacementInputSystem` drives it, `PlacementHint` shows the keys and `LineCost` totals the leg's
 valid segments.
 
 `PlacementLine` lays `BuildingSpot`s along a leg, each one footprint long. A wall's first leg snaps its first segment

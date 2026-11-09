@@ -162,11 +162,11 @@ namespace HyperRTS.Simulation.Buildings.Construction
                     }
 
                     wall.Add(piece);
-                    boxes.Add(Box(piece));
+                    boxes.Add(Reach.Footprint(piece));
                 }
 
                 var joined = new NativeArray<bool>(wall.Length, Allocator.Temp);
-                var reached = new NativeList<NavBox>(Allocator.Temp) { Box(site) };
+                var reached = new NativeList<NavBox>(Allocator.Temp) { Reach.Footprint(site) };
                 var best = Entity.Null;
                 var bestDistance = float.MaxValue;
                 for (var r = 0; r < reached.Length; r++)
@@ -191,12 +191,6 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 }
 
                 return best;
-            }
-
-            private NavBox Box(Entity piece)
-            {
-                var place = TransformLookup[piece];
-                return new NavBox(place.Position, place.Rotation, ObstacleLookup[piece].Size);
             }
 
             private static bool IsJoined(in NavBox a, in NavBox b)

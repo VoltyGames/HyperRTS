@@ -95,10 +95,8 @@ namespace HyperRTS.Simulation.Navigation.Reach
         }
 
         /// <summary>
-        /// Where the unit walks to stand at the footprint: open ground it can reach within <see cref="Reach"/>, by the
-        /// nearest edge or else by the nearest point of another side, so a neighbour flush against that edge (the next
-        /// wall segment, a building) doesn't send it to a spot it can never get to. Without a grid for the unit, the
-        /// nearest edge.
+        /// Where the unit stands at the footprint: reachable open ground by the nearest edge, else by another side
+        /// when a neighbour sits flush against that edge.
         /// </summary>
         private readonly float2 StandPoint(in NavGrid grid, in NavBox footprint, float2 unit, in NavAgent agent)
         {

@@ -16,7 +16,7 @@ namespace HyperRTS.Input.Placement
     /// <summary>
     /// Drives building placement mode: moves the snapped ghost, turns it through <see cref="PlacementRotation"/> and
     /// confirms it on release as a PlaceBuilding command. A line prefab draws a wall instead: a click starts it, each
-    /// click or drag release lays a leg as a PlaceLine command and turns a corner there, and Command finishes it.
+    /// further click lays a leg as a PlaceLine command and turns a corner there, and Command finishes it.
     /// </summary>
     // After CommandInputSystem, so a cancelling right-click can't also become a smart command this frame.
     [WorldSystemFilter(SimulationWorlds.Presented)]
@@ -24,8 +24,7 @@ namespace HyperRTS.Input.Placement
     [UpdateAfter(typeof(CommandInputSystem))]
     public partial class PlacementInputSystem : InputMapSystem
     {
-        // Metres the cursor moves from the press before a held click turns the ghost or lays a wall leg on release, so
-        // a plain click never does.
+        // Metres the cursor moves from the press before a held click turns the ghost, so a plain click never does.
         private const float DragDistance = 2f;
 
         private MatchInputActions _actions;
@@ -40,12 +39,8 @@ namespace HyperRTS.Input.Placement
         private Entity _linePrefab;
         private int _lineGridVersion;
 
-        // The wall being drawn: the leg laid last, which the next one joins at a corner, unless it is the first.
+        // The wall being drawn: the leg laid last, which the next one joins at a corner; empty before the first.
         private PlacementLine _laid;
-        private bool _joined;
-
-        // Confirm went down to start the wall and is still held, so its release past DragDistance lays the leg.
-        private bool _pressHeld;
 
         // A leg went out this placement, so the next ones queue behind it instead of replacing the builders' orders.
         private bool _sent;
@@ -259,7 +254,7 @@ namespace HyperRTS.Input.Placement
                 return new PlacementLine(map, ground, ground, first.Footprint, first.Surface, LineStart.Snapped);
             }
 
-            if (!_joined)
+            if (_laid.Count == 0)
             {
                 placement.Position = shift ? PlacementRotation.SnapEnd(placement.DragStart, ground) : ground;
                 return new PlacementLine(map, placement.DragStart, placement.Position, first.Footprint, first.Surface,
@@ -292,42 +287,25 @@ namespace HyperRTS.Input.Placement
         }
 
         /// <summary>
-        /// A click starts a wall at the cursor. While drawing, a click, or releasing the starting click past
-        /// <see cref="DragDistance"/>, lays the leg and turns a corner there, so the next leg runs on from its end.
+        /// A click starts a wall at the cursor. While drawing, a click lays the leg and turns a corner there, so the
+        /// next leg runs on from its end.
         /// </summary>
         private void DrawWall(ref PlacementState placement, bool aimed, bool shift)
         {
-            var confirm = _actions.Commands.Confirm;
-            if (!placement.Drawing)
+            if (!aimed || !_actions.Commands.Confirm.WasPressedThisFrame())
             {
-                _pressHeld = false;
-                if (aimed && confirm.WasPressedThisFrame())
-                {
-                    placement.Drawing = true;
-                    placement.DragStart = placement.Position;
-                    _joined = false;
-                    _pressHeld = true;
-                }
-
                 return;
             }
 
-            if (_pressHeld && confirm.WasReleasedThisFrame())
-            {
-                _pressHeld = false;
-                var drag = placement.Position.xz - placement.DragStart.xz;
-                if (math.lengthsq(drag) > DragDistance * DragDistance)
-                {
-                    LayLeg(ref placement, shift);
-                }
-
-                return;
-            }
-
-            if (aimed && confirm.WasPressedThisFrame())
+            if (placement.Drawing)
             {
                 LayLeg(ref placement, shift);
+                return;
             }
+
+            placement.Drawing = true;
+            placement.DragStart = placement.Position;
+            _laid = default;
         }
 
         /// <summary>
@@ -348,11 +326,10 @@ namespace HyperRTS.Input.Placement
                 Position = placement.DragStart,
                 End = placement.Position,
                 Queue = shift || _sent,
-                Argument = (int)(_joined ? LineStart.Joined : LineStart.Snapped),
+                Argument = (int)(_laid.Count > 0 ? LineStart.Joined : LineStart.Snapped),
             });
             _sent = true;
             _laid = _line;
-            _joined = true;
         }
 
         private void AddCommand(in PlayerCommand command)

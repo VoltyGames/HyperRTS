@@ -5,10 +5,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Buildings.Placement
 {
-    /// <summary>
-    /// A standing footprint a placement spot must clear, and whether it is a piece of a line such as a wall, which keeps
-    /// no building gap from other line pieces.
-    /// </summary>
+    /// <summary>A standing footprint a placement spot must clear; a line piece keeps no building gap from others.</summary>
     public readonly struct PlacedFootprint
     {
         public readonly NavBox Box;
