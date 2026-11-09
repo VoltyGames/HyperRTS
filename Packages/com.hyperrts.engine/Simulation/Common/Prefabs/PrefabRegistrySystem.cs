@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Common.Prefabs
     {
         private NativeHashMap<int, Entity> _byTypeId;
         private EntityQuery _prefabs;
-        private int _version;
+        private ChangeSignature _built;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -23,7 +23,6 @@ namespace HyperRTS.Simulation.Common.Prefabs
             _prefabs = SystemAPI.QueryBuilder().WithAll<EntityInfo, Prefab>()
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build();
             _byTypeId = new NativeHashMap<int, Entity>(64, Allocator.Persistent);
-            _version = -1;
             state.EntityManager.CreateSingleton(new PrefabRegistry { ByTypeId = _byTypeId });
         }
 
@@ -34,13 +33,11 @@ namespace HyperRTS.Simulation.Common.Prefabs
         public void OnUpdate(ref SystemState state)
         {
             // Prefab's order version moves only when prefabs load, unload or change shape, not as units spawn and die.
-            var version = state.EntityManager.GetComponentOrderVersion<Prefab>();
-            if (version == _version)
+            if (!_built.OrderChanged<Prefab>(ref state))
             {
                 return;
             }
 
-            _version = version;
             _byTypeId.Clear();
             var entities = _prefabs.ToEntityArray(Allocator.Temp);
             var infos = _prefabs.ToComponentDataArray<EntityInfo>(Allocator.Temp);

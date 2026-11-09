@@ -1,4 +1,5 @@
 ﻿using HyperRTS.Presentation.Rendering.Parts;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Burst;
 using Unity.Collections;
@@ -18,10 +19,10 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         private EntityQuery _colored;
         private EntityQuery _changedOverride;
         private EntityQuery _uncoloredSources;
-        private int _playerVersion;
-        private int _ownerVersion;
-        private int _sourceVersion;
-        private int _overrideVersion;
+        private ChangeSignature _players;
+        private ChangeSignature _owned;
+        private ChangeSignature _sources;
+        private ChangeSignature _overrides;
         private OwnerPalette _palette;
         private MeshPainter<TeamColor> _colorParts;
         private MeshPainter<TeamStrip> _stripParts;
@@ -51,7 +52,7 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
                 // Everything repaints: ColorNewJob picks the roots up again.
                 state.CompleteDependency();
                 state.EntityManager.RemoveComponent<TeamColored>(_colored);
-                _ownerVersion = -1;
+                _owned = default;
             }
 
             var newWork = HasNewWork(ref state);
@@ -77,17 +78,8 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
             state.Dependency = new ColorSourceJob { Painter = painter }.Schedule(state.Dependency);
         }
 
-        private bool OverrideChanged(ref SystemState state)
-        {
-            var order = state.EntityManager.GetComponentOrderVersion<TeamColorOverride>();
-            if (order == _overrideVersion && _changedOverride.IsEmpty)
-            {
-                return false;
-            }
-
-            _overrideVersion = order;
-            return true;
-        }
+        private bool OverrideChanged(ref SystemState state) =>
+            _overrides.OrderChanged<TeamColorOverride>(ref state) | !_changedOverride.IsEmpty;
 
         // Entities whose player hasn't arrived only get another try once players, owned entities or sources come or
         // go, so an owner that never gets a player doesn't cost a pass every frame.
@@ -98,18 +90,8 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
                 return false;
             }
 
-            var players = state.EntityManager.GetComponentOrderVersion<Player>();
-            var owned = state.EntityManager.GetComponentOrderVersion<Owner>();
-            var sources = state.EntityManager.GetComponentOrderVersion<TeamColorSource>();
-            if (players == _playerVersion && owned == _ownerVersion && sources == _sourceVersion)
-            {
-                return false;
-            }
-
-            _playerVersion = players;
-            _ownerVersion = owned;
-            _sourceVersion = sources;
-            return true;
+            return _players.OrderChanged<Player>(ref state) | _owned.OrderChanged<Owner>(ref state)
+                | _sources.OrderChanged<TeamColorSource>(ref state);
         }
 
         private struct TeamPainter
