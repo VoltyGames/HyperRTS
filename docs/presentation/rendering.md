@@ -86,7 +86,9 @@ The set's material needs GPU instancing (checked at bake).
 
 A piece at rest moves to `LastingDebris` and stays for the match, up to `LastingDebris.CapAt` per quality level; past the
 cap the oldest buries into the ground. `LastingDebrisDraws` draws it through a `BatchRendererGroup`, which reads
-matrices through the DOTS instancing path, so debris materials use a DOTS-instancing shader such as LitTeam.
+matrices through the DOTS instancing path, so debris materials use a DOTS-instancing shader such as LitTeam. One
+entity per piece would be simpler, but at 20,000 pieces it cost 20% more main-thread time and about 8 ms of render
+thread.
 
 **Sections.** A building with `SectionsAuthoring` ([combat](../simulation/combat.md#sections)) gives each section models
 (`SectionModel`): intact, holed variants, rigid pieces, a stub and a heap, or just a broken model. Models other than the
