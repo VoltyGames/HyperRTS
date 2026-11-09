@@ -105,6 +105,32 @@ namespace HyperRTS.Presentation.Tests.Audio
             Assert.AreEqual(0, queue.Count);
         }
 
+        [Test]
+        public void Variations_NeverRepeatBackToBack_AndAllPlay()
+        {
+            var clips = new[]
+            {
+                AudioClip.Create("A", 441, 1, 44100, false), AudioClip.Create("B", 441, 1, 44100, false),
+                AudioClip.Create("C", 441, 1, 44100, false),
+            };
+            _gun.clips = clips;
+            var played = new HashSet<AudioClip>();
+            AudioClip last = null;
+            for (var i = 0; i < 300; i++)
+            {
+                _gun.Pick(out var clip, out _);
+                Assert.AreNotSame(last, clip, $"draw {i} repeats the last clip");
+                played.Add(clip);
+                last = clip;
+            }
+
+            Assert.AreEqual(clips.Length, played.Count, "every variation plays");
+            foreach (var clip in clips)
+            {
+                Object.DestroyImmediate(clip);
+            }
+        }
+
         private static SoundCue Cue(int maxInstances, int priority)
         {
             var cue = ScriptableObject.CreateInstance<SoundCue>();

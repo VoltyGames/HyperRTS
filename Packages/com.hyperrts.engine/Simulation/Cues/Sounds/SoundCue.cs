@@ -1,15 +1,23 @@
 using HyperRTS.Simulation.Common.Authoring;
+using System;
 using UnityEngine;
 using UnityEngine.Audio;
+using Random = UnityEngine.Random;
 
 namespace HyperRTS.Simulation.Cues.Sounds
 {
-    /// <summary>A playable sound: random clip, volume and pitch, with an instance limit and a priority for mixing.</summary>
+    /// <summary>
+    /// A playable sound: random clip, never the one it played last, random volume and pitch, with an instance limit and
+    /// a priority for mixing.
+    /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Audio + "Sound Cue", fileName = "SoundCue")]
     [HelpURL(HyperRTSDocs.Audio)]
     public class SoundCue : ScriptableObject
     {
-        [Tooltip("Variations; one is picked at random each time the cue plays.")]
+        [NonSerialized]
+        private int _last = -1;
+
+        [Tooltip("Variations; one is picked at random each time the cue plays, never the same one twice in a row.")]
         public AudioClip[] clips = { };
 
         [Tooltip("Random volume between x and y.")]
@@ -40,10 +48,14 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [Min(0.1f)]
         public float maxDistance = 60f;
 
-        /// <summary>Draws one of the clips and a pitch, for a cue that has clips.</summary>
+        /// <summary>Draws one of the clips, never the one drawn last, and a pitch, for a cue that has clips.</summary>
         public void Pick(out AudioClip clip, out float randomPitch)
         {
-            clip = clips[Random.Range(0, clips.Length)];
+            // A step of 1 to n - 1 clips on from the last lands on every other clip alike.
+            _last = _last >= 0 && clips.Length > 1
+                ? (_last + Random.Range(1, clips.Length)) % clips.Length
+                : Random.Range(0, clips.Length);
+            clip = clips[_last];
             randomPitch = Random.Range(pitch.x, pitch.y);
         }
 
