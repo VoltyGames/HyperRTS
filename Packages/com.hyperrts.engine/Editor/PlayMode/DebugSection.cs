@@ -10,37 +10,37 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>The remembered debug-draw layers in groups and, in Play mode, a table of the AI players.</summary>
+    /// <summary>The debug layers in their groups, each with a status line while on, and in Play mode a table of the AI players.</summary>
     internal class DebugSection
     {
-        private const long PollMilliseconds = 500;
+        private const long PollMilliseconds = 250;
 
-        private readonly List<Toggle> _toggles;
+        private readonly List<LayerRow> _rows = new();
         private readonly Label _hint;
+        private readonly VisualElement _aiGroup;
         private readonly VisualElement _ai;
 
-        /// <summary>Wires a cloned DebugSection.uxml and polls the AI table while it is shown.</summary>
+        /// <summary>Wires a cloned DebugSection.uxml and polls the statuses and AI table while it is shown.</summary>
         public DebugSection(VisualElement root)
         {
-            _toggles = BuildLayers(root.Require<VisualElement>("layers"));
+            BuildLayers(root.Require<VisualElement>("layers"));
             root.Require<Button>("hide-all").clicked += HideAll;
             _hint = root.Require<Label>("hint");
+            _aiGroup = root.Require<VisualElement>("ai-group");
             _ai = root.Require<VisualElement>("ai");
 
             Poll();
             root.schedule.Execute(Poll).Every(PollMilliseconds);
         }
 
-        // Another section may have changed a layer since the last poll, so the toggles follow the layers.
         private void Poll()
         {
             var playing = EditorApplication.isPlaying;
             _hint.SetHidden(playing);
-            _ai.SetHidden(!playing);
-            var index = 0;
-            foreach (var layer in DebugLayerHost.Layers)
+            _aiGroup.SetHidden(!playing);
+            foreach (var row in _rows)
             {
-                _toggles[index++].SetValueWithoutNotify(layer.Shown);
+                row.Refresh(playing);
             }
 
             if (playing)
@@ -52,43 +52,30 @@ namespace HyperRTS.Editor.PlayMode
         private void HideAll()
         {
             DebugLayerHost.HideAll();
-            foreach (var toggle in _toggles)
-            {
-                toggle.SetValueWithoutNotify(false);
-            }
-
-            SceneView.RepaintAll();
+            Poll();
         }
 
-        private static List<Toggle> BuildLayers(VisualElement host)
+        private void BuildLayers(VisualElement host)
         {
-            var toggles = new List<Toggle>();
+            VisualElement column = null;
             string group = null;
             foreach (var layer in DebugLayerHost.Layers)
             {
                 if (layer.Group != group)
                 {
                     group = layer.Group;
+                    column = new VisualElement();
+                    column.AddToClassList("hrts-debug__group");
                     var heading = new Label(group);
-                    heading.AddToClassList("hrts-debug__group");
-                    host.Add(heading);
+                    heading.AddToClassList("hrts-debug__heading");
+                    column.Add(heading);
+                    host.Add(column);
                 }
 
-                var toggle = new Toggle(layer.Label) { value = layer.Shown, tooltip = layer.Detail };
-                toggle.RegisterValueChangedCallback(change =>
-                {
-                    layer.Shown = change.newValue;
-                    SceneView.RepaintAll();
-                });
-                var row = new VisualElement { tooltip = layer.Detail };
-                row.AddToClassList("hrts-debug__row");
-                row.Add(GlyphElements.CreateGlyph(layer.Glyph));
-                row.Add(toggle);
-                host.Add(row);
-                toggles.Add(toggle);
+                var row = new LayerRow(layer);
+                column.Add(row.Root);
+                _rows.Add(row);
             }
-
-            return toggles;
         }
 
         private static void ShowAIPlayers(VisualElement table)
@@ -103,11 +90,13 @@ namespace HyperRTS.Editor.PlayMode
             using var players = query.ToEntityArray(Allocator.Temp);
             if (players.Length == 0)
             {
-                table.Add(new Label("No AI players."));
+                var none = new Label("No AI players.");
+                none.AddToClassList("hrts-hint");
+                table.Add(none);
                 return;
             }
 
-            table.Add(Row("AI", "Think", "Wave", "hrts-debug__group"));
+            table.Add(Row("Player", "Next think", "Wave", "hrts-debug__head"));
             foreach (var entity in players)
             {
                 var player = entityManager.GetComponentData<Player>(entity);
@@ -136,6 +125,57 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             return row;
+        }
+
+        /// <summary>One layer's switch and, while it is on in Play, its status line.</summary>
+        private sealed class LayerRow
+        {
+            private readonly DebugLayer _layer;
+            private readonly Toggle _toggle;
+            private readonly Label _status;
+
+            public LayerRow(DebugLayer layer)
+            {
+                _layer = layer;
+                Root = new VisualElement { tooltip = layer.Detail };
+                var line = new VisualElement();
+                line.AddToClassList("hrts-debug__row");
+                line.Add(GlyphElements.CreateGlyph(layer.Glyph));
+                _toggle = new Toggle { text = layer.Label, value = layer.Shown };
+                _toggle.RegisterValueChangedCallback(change => _layer.Shown = change.newValue);
+                line.Add(_toggle);
+                Root.Add(line);
+                _status = new Label();
+                _status.AddToClassList("hrts-debug__status");
+                Root.Add(_status);
+            }
+
+            public VisualElement Root { get; }
+
+            // The layer may have changed elsewhere, so the switch follows it.
+            public void Refresh(bool playing)
+            {
+                _toggle.SetValueWithoutNotify(_layer.Shown);
+                var text = playing && _layer.Shown ? Describe() : null;
+                _status.text = text;
+                _status.SetHidden(string.IsNullOrEmpty(text));
+            }
+
+            private string Describe()
+            {
+                if (!PlayWorld.TryGet(_layer.Source, out var entityManager))
+                {
+                    return "No world to draw from.";
+                }
+
+                var described = _layer.Describe(entityManager);
+                if (described != null)
+                {
+                    return described;
+                }
+
+                return DebugLayerHost.IsEmpty(_layer) ? "Nothing to draw yet." : null;
+            }
         }
     }
 }

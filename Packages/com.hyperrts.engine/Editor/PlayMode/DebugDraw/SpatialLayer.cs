@@ -6,25 +6,24 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
     /// <summary>Spatial index cells that hold at least one entity.</summary>
-    public sealed class SpatialLayer : CellTextureLayer
+    public sealed class SpatialLayer : DebugLayer
     {
         public override string Label => "Spatial cells";
 
-        public override string Detail => "Spatial index cells that hold at least one entity";
+        public override string Detail => "Blue spatial index cells that hold at least one entity.";
 
         public override string Group => "Movement";
 
         public override string Glyph => "scan";
 
-        protected override bool Paint(EntityManager entityManager, CellTexture texture)
+        public override void Draw(EntityManager entityManager, DebugShapes shapes)
         {
             if (!TryGetSingleton(entityManager, out SpatialIndex index) || index.CellStarts.Length <= index.Grid.Count)
             {
-                return false;
+                return;
             }
 
-            texture.Paint(index.Grid, new Colors { Starts = index.CellStarts.AsArray() });
-            return true;
+            shapes.Cells(index.Grid, new Colors { Starts = index.CellStarts.AsArray() });
         }
 
         private struct Colors : ICellColors

@@ -1,4 +1,4 @@
-Shader "Hidden/HyperRTS/DebugCells"
+Shader "Hidden/HyperRTS/DebugShapes"
 {
     Properties
     {
@@ -7,12 +7,13 @@ Shader "Hidden/HyperRTS/DebugCells"
 
     SubShader
     {
-        Tags { "RenderPipeline" = "UniversalPipeline" "RenderType" = "Transparent" "Queue" = "Transparent" }
+        Tags { "RenderPipeline" = "UniversalPipeline" "RenderType" = "Transparent" "Queue" = "Overlay" }
 
         Pass
         {
             Cull Off
             ZWrite Off
+            ZTest Always
             Blend SrcAlpha OneMinusSrcAlpha
 
             HLSLPROGRAM
@@ -30,12 +31,14 @@ Shader "Hidden/HyperRTS/DebugCells"
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
+                half4 color : COLOR;
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                half4 color : COLOR;
             };
 
             Varyings Vertex(Attributes input)
@@ -43,12 +46,14 @@ Shader "Hidden/HyperRTS/DebugCells"
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
+                output.color = input.color;
                 return output;
             }
 
+            // Cells carry no vertex colours (white); lines carry no texture (white).
             half4 Fragment(Varyings input) : SV_Target
             {
-                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) * input.color;
             }
             ENDHLSL
         }

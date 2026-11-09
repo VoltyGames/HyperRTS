@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Network.Session;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
@@ -15,47 +15,61 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>The Play-mode cheats: resources, fog, instant build, spawning, player switching and game speed.</summary>
+    /// <summary>The Play-mode cheats: the chosen player's control, resources and builds; spawning, repair and battles; fog and game speed.</summary>
     internal class CheatsSection
     {
         private const long PollMilliseconds = 250;
 
-        private readonly Label _hint;
+        private readonly VisualElement _root;
         private readonly HelpBox _status;
         private readonly VisualElement _controls;
         private readonly DropdownField _player;
-        private readonly DropdownField _prefab;
-        private readonly IntegerField _amount;
-        private readonly IntegerField _perSide;
         private readonly Button _control;
+        private readonly Button _prefab;
+        private readonly Button _spawn;
+        private readonly Button _battle;
+        private readonly Button _repair;
+        private readonly Button _destroy;
         private readonly Toggle _fog;
         private readonly Slider _speed;
+        private readonly Button _pause;
+        private readonly Label _speedNote;
 
         /// <summary>Wires the controls of a cloned CheatsSection.uxml and polls them while it is shown.</summary>
         public CheatsSection(VisualElement root)
         {
-            _hint = root.Require<Label>("hint");
+            _root = root;
             _status = root.Require<HelpBox>("status");
             _controls = root.Require<VisualElement>("controls");
             _player = root.Require<DropdownField>("player");
             _player.choices = new List<string>();
-            _amount = root.Require<IntegerField>("amount");
-            root.Require<Button>("add").clicked += () => Act((manager, player, _) =>
-                Cheats.AddResources(manager, player, _amount.value));
             _control = root.Require<Button>("control");
             _control.clicked += () => Act((manager, player, _) => Cheats.MakeLocal(manager, player));
+            root.Require<Button>("add").clicked += () => Act((manager, player, _) =>
+                Cheats.AddResources(manager, player, EditorState.instance.cheatResources));
             root.Require<Button>("instant-build").clicked +=
                 () => Act((manager, _, owner) => Cheats.InstantBuild(manager, owner));
 
+            _prefab = root.Require<Button>("prefab");
+            _prefab.clicked += PickPrefab;
+            _spawn = root.Require<Button>("spawn");
+            _spawn.clicked += () => ActOnPrefab((manager, prefab, owner) =>
+                Cheats.Spawn(manager, prefab, owner, Cheats.ViewCenter(manager), EditorState.instance.spawnCount));
+            _battle = root.Require<Button>("battle");
+            _battle.clicked += () => ActOnPrefab((manager, prefab, _) =>
+                NetworkStress.SpawnArmies(manager, prefab, EditorState.instance.armiesPerSide));
+            _repair = root.Require<Button>("repair");
+            _repair.clicked += () => Act((manager, _, _) => Cheats.Repair(manager, Cheats.Selection(manager)));
+            _destroy = root.Require<Button>("destroy");
+            _destroy.clicked += () => Act((manager, _, _) => Cheats.Destroy(manager, Cheats.Selection(manager)));
+
             _fog = root.Require<Toggle>("fog");
             _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => Cheats.SetFog(manager, change.newValue)));
-            _prefab = root.Require<DropdownField>("prefab");
-            _prefab.choices = new List<string>();
-            root.Require<Button>("at-view").clicked += SpawnAtView;
-            _perSide = root.Require<IntegerField>("per-side");
-            root.Require<Button>("attack").clicked += SpawnArmies;
             _speed = root.Require<Slider>("speed");
             _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
+            _pause = root.Require<Button>("pause");
+            _pause.clicked += TogglePause;
+            _speedNote = root.Require<Label>("speed-note");
 
             Poll();
             root.schedule.Execute(Poll).Every(PollMilliseconds);
@@ -65,8 +79,12 @@ namespace HyperRTS.Editor.PlayMode
         private void Poll()
         {
             var playing = EditorApplication.isPlaying;
-            _hint.SetHidden(playing);
-            _controls.SetHidden(!playing);
+            _root.SetHidden(!playing);
+            if (!playing)
+            {
+                return;
+            }
+
             var ready = TryGetPlayers(out var manager, out var players, out var message);
             _status.text = message;
             _status.SetHidden(string.IsNullOrEmpty(message));
@@ -77,19 +95,36 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             SetChoices(_player, PlayerLabels(manager, players));
-            SetChoices(_prefab, PrefabNames(manager, Cheats.Prefabs(manager)));
             _control.SetEnabled(CanControl(manager, SelectedPlayer(players)));
+
+            var prefabName = SpawnPicker.FindName(manager, EditorState.instance.spawnTypeId);
+            _prefab.text = prefabName ?? "Choose a prefab";
+            _spawn.SetEnabled(prefabName != null);
+            _battle.SetEnabled(prefabName != null);
+
+            var selected = Cheats.Selection(manager).Length;
+            _repair.SetEnabled(selected > 0);
+            _destroy.SetEnabled(selected > 0);
+            _repair.text = selected > 0 ? $"Repair selected ({selected})" : "Repair selected";
+            _destroy.text = selected > 0 ? $"Destroy selected ({selected})" : "Destroy selected";
+
             _fog.SetValueWithoutNotify(Cheats.FogEnabled(manager));
+            var local = !NetworkSession.IsRunning;
+            _speed.SetEnabled(local);
+            _pause.SetEnabled(local);
+            _speedNote.SetHidden(local);
             _speed.SetValueWithoutNotify(LocalGameSpeed.Scale);
+            _pause.text = LocalGameSpeed.IsPaused ? "Resume" : "Pause";
         }
 
-        // Outside Play mode the page's hint explains; inside, only a still-loading SubScene needs a message.
+        // Inside Play only a still-loading SubScene needs a message.
         private static bool TryGetPlayers(out EntityManager manager, out NativeArray<Entity> players, out string message)
         {
             players = default;
             message = "";
             if (!PlayWorld.TryGetAuthoritative(out manager))
             {
+                message = "No match is running.";
                 return false;
             }
 
@@ -98,7 +133,7 @@ namespace HyperRTS.Editor.PlayMode
             return players.Length > 0;
         }
 
-        /// <summary>Runs a cheat on the selected player, re-read now since entities change between polls.</summary>
+        /// <summary>Runs a cheat on the chosen player, re-read now since entities change between polls.</summary>
         private void Act(System.Action<EntityManager, Entity, byte> cheat)
         {
             if (!TryGetPlayers(out var manager, out var players, out _))
@@ -109,6 +144,43 @@ namespace HyperRTS.Editor.PlayMode
             var player = SelectedPlayer(players);
             cheat(manager, player, manager.GetComponentData<Player>(player).Owner);
             StopRecording(manager.World);
+            Poll();
+        }
+
+        private void ActOnPrefab(System.Action<EntityManager, Entity, byte> cheat) => Act((manager, _, owner) =>
+        {
+            var prefab = Cheats.FindPrefab(manager, EditorState.instance.spawnTypeId);
+            if (prefab != Entity.Null)
+            {
+                cheat(manager, prefab, owner);
+            }
+        });
+
+        private void PickPrefab()
+        {
+            if (PlayWorld.TryGetAuthoritative(out var manager))
+            {
+                SpawnPicker.Open(manager, _prefab.worldBound, typeId =>
+                {
+                    EditorState.instance.spawnTypeId = typeId;
+                    EditorState.instance.Save();
+                    Poll();
+                });
+            }
+        }
+
+        private void TogglePause()
+        {
+            if (LocalGameSpeed.IsPaused)
+            {
+                LocalGameSpeed.Resume();
+            }
+            else
+            {
+                LocalGameSpeed.Pause();
+            }
+
+            Poll();
         }
 
         private Entity SelectedPlayer(NativeArray<Entity> players) =>
@@ -123,25 +195,6 @@ namespace HyperRTS.Editor.PlayMode
                 Debug.LogWarning("[HyperRTS] Cheats used: this match's replay recording was dropped.");
             }
         }
-
-        private void SpawnAtView() => Act((manager, _, owner) =>
-        {
-            var prefabs = Cheats.Prefabs(manager);
-            if (_prefab.index >= 0 && _prefab.index < prefabs.Length)
-            {
-                Cheats.Spawn(manager, prefabs[_prefab.index], owner, Cheats.ViewCenter(manager));
-            }
-        });
-
-        // A load test: two hostile armies of the chosen prefab march on each other's bases.
-        private void SpawnArmies() => Act((manager, _, _) =>
-        {
-            var prefabs = Cheats.Prefabs(manager);
-            if (_prefab.index >= 0 && _prefab.index < prefabs.Length)
-            {
-                NetworkStress.SpawnArmies(manager, prefabs[_prefab.index], _perSide.value);
-            }
-        });
 
         // Over the network the server decides which connection controls a player.
         private static bool CanControl(EntityManager manager, Entity player) =>
@@ -168,18 +221,7 @@ namespace HyperRTS.Editor.PlayMode
             return labels;
         }
 
-        private static List<string> PrefabNames(EntityManager manager, NativeArray<Entity> prefabs)
-        {
-            var names = new List<string>(prefabs.Length);
-            foreach (var prefab in prefabs)
-            {
-                names.Add(manager.GetComponentData<EntityInfo>(prefab).Name.ToString());
-            }
-
-            return names;
-        }
-
-        // Polls rebuild the lists; touching the field only on a real change keeps an open dropdown stable.
+        // Polls rebuild the list; touching the field only on a real change keeps an open dropdown stable.
         private static void SetChoices(DropdownField field, List<string> choices)
         {
             if (choices.Count == 0 || choices.SequenceEqual(field.choices))

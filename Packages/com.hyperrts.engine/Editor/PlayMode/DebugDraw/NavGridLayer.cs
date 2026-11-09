@@ -6,33 +6,32 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
     /// <summary>Nav grid cells: blocked (buildings, obstacles, slopes), water, and decks over water or gaps.</summary>
-    public sealed class NavGridLayer : CellTextureLayer
+    public sealed class NavGridLayer : DebugLayer
     {
         private const float Alpha = 0.35f;
 
         public override string Label => "Nav grid";
 
-        public override string Detail => "Blocked, water and deck cells";
+        public override string Detail => "Red blocked cells, blue water, yellow decks over water or gaps.";
 
         public override string Group => "Movement";
 
         public override string Glyph => "grid-3x3";
 
-        protected override bool Paint(EntityManager entityManager, CellTexture texture)
+        public override void Draw(EntityManager entityManager, DebugShapes shapes)
         {
             if (!TryGetSingleton(entityManager, out NavGrid grid) || !grid.IsCreated)
             {
-                return false;
+                return;
             }
 
-            texture.Paint(grid.Grid, new Colors
+            shapes.Cells(grid.Grid, new Colors
             {
                 Cells = grid.Cells,
                 Blocked = Tint(NavColors.Blocked),
                 Water = Tint(NavColors.Water),
                 Deck = Tint(NavColors.Deck),
             });
-            return true;
         }
 
         private static Color32 Tint(Color color) => new Color(color.r, color.g, color.b, Alpha);

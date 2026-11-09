@@ -6,25 +6,24 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
     /// <summary>What blocks sight: solid in red, porous or crop cover in green, other concealment in yellow.</summary>
-    public sealed class SightBlockersLayer : CellTextureLayer
+    public sealed class SightBlockersLayer : DebugLayer
     {
         public override string Label => "Sight blockers";
 
-        public override string Detail => "Cells that block line of sight";
+        public override string Detail => "Red solid blockers, green porous or crop cover, yellow other concealment.";
 
         public override string Group => "Vision";
 
         public override string Glyph => "brick-wall";
 
-        protected override bool Paint(EntityManager entityManager, CellTexture texture)
+        public override void Draw(EntityManager entityManager, DebugShapes shapes)
         {
             if (!TryGetSingleton(entityManager, out SightBlockers blockers) || !blockers.IsCreated)
             {
-                return false;
+                return;
             }
 
-            texture.Paint(blockers.Grid, new Colors { Cells = blockers.Cells });
-            return true;
+            shapes.Cells(blockers.Grid, new Colors { Cells = blockers.Cells });
         }
 
         private struct Colors : ICellColors

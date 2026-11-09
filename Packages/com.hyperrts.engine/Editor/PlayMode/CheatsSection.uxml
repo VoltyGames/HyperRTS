@@ -1,27 +1,41 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <ui:VisualElement class="hrts-cheats">
-    <ui:Label name="hint" class="hrts-hint" text="Cheats work in Play mode." />
     <ui:HelpBox name="status" class="hrts-note" message-type="Info" />
     <ui:VisualElement name="controls">
-      <ui:DropdownField name="player" label="Player" />
-      <ui:VisualElement class="hrts-row">
-        <ui:IntegerField name="amount" label="Resources" binding-path="cheatResources" class="hrts-row__grow" />
-        <ui:Button name="add" text="Add" />
-      </ui:VisualElement>
-      <ui:VisualElement class="hrts-buttons">
-        <ui:Button name="instant-build" text="Instant build" />
-        <ui:Button name="control" text="Control this player" />
-      </ui:VisualElement>
-      <ui:Toggle name="fog" label="Fog of war" />
-      <ui:VisualElement class="hrts-row">
-        <ui:DropdownField name="prefab" label="Spawn" class="hrts-row__grow" />
-        <ui:Button name="at-view" text="At view" />
-      </ui:VisualElement>
-      <ui:VisualElement class="hrts-row">
-        <ui:IntegerField name="per-side" label="Armies per side" binding-path="armiesPerSide" class="hrts-row__grow" />
-        <ui:Button name="attack" text="Attack" />
-      </ui:VisualElement>
-      <ui:Slider name="speed" label="Game speed" low-value="0" high-value="4" show-input-field="true" />
+      <ui:Foldout name="player-group" text="Player" class="hrts-group">
+        <ui:VisualElement class="hrts-row">
+          <ui:DropdownField name="player" label="Player" class="hrts-row__grow" />
+          <ui:Button name="control" text="Play as" tooltip="Switch your control to this player; its AI stops. Single player only." />
+        </ui:VisualElement>
+        <ui:VisualElement class="hrts-row">
+          <ui:IntegerField name="amount" label="Resources" binding-path="cheatResources" class="hrts-row__grow" />
+          <ui:Button name="add" text="Add" tooltip="Add this much of every resource to the player." />
+        </ui:VisualElement>
+        <ui:Button name="instant-build" text="Finish construction and production" tooltip="Complete the player's construction sites and the item at the front of each production queue." />
+      </ui:Foldout>
+      <ui:Foldout name="units-group" text="Units" class="hrts-group">
+        <ui:VisualElement class="hrts-row">
+          <ui:Button name="prefab" class="hrts-row__grow hrts-cheats__picker" tooltip="Choose what to spawn." />
+          <ui:IntegerField name="count" binding-path="spawnCount" class="hrts-cheats__count" tooltip="How many to spawn." />
+          <ui:Button name="spawn" text="Spawn at view" tooltip="Spawn for the player at the centre of the game view." />
+        </ui:VisualElement>
+        <ui:VisualElement class="hrts-buttons">
+          <ui:Button name="repair" text="Repair selected" tooltip="Heal your selected units and buildings to full." />
+          <ui:Button name="destroy" text="Destroy selected" tooltip="Kill your selected units and buildings through the damage system." />
+        </ui:VisualElement>
+        <ui:VisualElement class="hrts-row">
+          <ui:IntegerField name="per-side" label="Battle size" binding-path="armiesPerSide" class="hrts-row__grow" tooltip="Units in each of the two armies." />
+          <ui:Button name="battle" text="Start battle" tooltip="A load test: two hostile armies of the chosen prefab march on each other's bases." />
+        </ui:VisualElement>
+      </ui:Foldout>
+      <ui:Foldout name="match-group" text="Match" class="hrts-group">
+        <ui:Toggle name="fog" label="Fog of war" />
+        <ui:VisualElement class="hrts-row">
+          <ui:Slider name="speed" label="Game speed" low-value="0" high-value="4" show-input-field="true" class="hrts-row__grow" />
+          <ui:Button name="pause" text="Pause" />
+        </ui:VisualElement>
+        <ui:Label name="speed-note" class="hrts-note hrts-hint" text="Game speed works in single player only." />
+      </ui:Foldout>
     </ui:VisualElement>
   </ui:VisualElement>
 </ui:UXML>

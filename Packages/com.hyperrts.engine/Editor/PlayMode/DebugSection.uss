@@ -1,6 +1,18 @@
-/* The debug-draw layers and AI table in the Cheats & Debug window. Colour tokens are in Common/HyperRTSEditor.uss. */
+/* The debug layers and AI table in the Cheats & Debug window. Colour tokens are in Common/HyperRTSEditor.uss. */
+
+/* Movement and Vision sit side by side when the window is wide enough. */
+.hrts-debug__groups {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
 
 .hrts-debug__group {
+  flex-grow: 1;
+  flex-basis: 170px;
+  margin-bottom: 4px;
+}
+
+.hrts-debug__heading {
   -unity-font-style: bold;
   margin: 4px 0 1px 2px;
 }
@@ -8,6 +20,21 @@
 .hrts-debug__row {
   flex-direction: row;
   align-items: center;
+}
+
+.hrts-debug__row > .unity-toggle {
+  margin-left: 4px;
+}
+
+.hrts-debug__status {
+  color: var(--hrts-dim-text);
+  font-size: 10px;
+  white-space: normal;
+  margin: 0 4px 2px 38px;
+}
+
+.hrts-debug__hint {
+  white-space: normal;
 }
 
 .hrts-debug__name {
@@ -19,11 +46,6 @@
   -unity-text-align: middle-right;
 }
 
-.hrts-debug__hint {
-  margin-top: 4px;
-  white-space: normal;
-}
-
-.hrts-debug__ai {
-  margin-top: 4px;
+.hrts-debug__head {
+  -unity-font-style: bold;
 }

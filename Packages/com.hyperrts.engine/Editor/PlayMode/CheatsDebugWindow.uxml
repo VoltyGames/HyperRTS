@@ -4,9 +4,8 @@
   <ui:Template name="CheatsSection" src="CheatsSection.uxml" />
   <ui:Template name="DebugSection" src="DebugSection.uxml" />
   <ui:ScrollView class="hrts-cheats-debug">
-    <ui:Label class="hrts-section__title" text="Cheats" />
+    <ui:Label name="match" class="hrts-cheats-debug__match" />
     <ui:Instance template="CheatsSection" name="cheats" />
-    <ui:Label class="hrts-section hrts-section__title" text="Debug" />
     <ui:Instance template="DebugSection" name="debug" />
   </ui:ScrollView>
 </ui:UXML>

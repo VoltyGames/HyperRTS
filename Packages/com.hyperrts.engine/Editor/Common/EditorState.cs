@@ -49,6 +49,12 @@ namespace HyperRTS.Editor.Common
         [Min(1)]
         public int armiesPerSide = 250;
 
+        /// <summary>The cheats' spawn choice, as an <c>EntityInfo.TypeId</c>.</summary>
+        public int spawnTypeId;
+
+        [Min(1)]
+        public int spawnCount = 1;
+
         public LaunchChoice launch = new();
 
         public BotMatches.Settings bots = new();

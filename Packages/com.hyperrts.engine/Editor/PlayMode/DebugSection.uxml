@@ -1,9 +1,15 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="DebugSection.uss" />
   <ui:VisualElement class="hrts-debug">
-    <ui:VisualElement name="layers" />
-    <ui:Button name="hide-all" text="Hide all" />
-    <ui:Label name="hint" class="hrts-hint hrts-debug__hint" text="Layers draw in Play mode." />
-    <ui:VisualElement name="ai" class="hrts-debug__ai" />
+    <ui:Foldout name="layers-group" text="Debug layers" class="hrts-group">
+      <ui:VisualElement name="layers" class="hrts-debug__groups" />
+      <ui:VisualElement class="hrts-row">
+        <ui:Label name="hint" class="hrts-hint hrts-debug__hint hrts-row__grow" text="Layers draw in the Game and Scene views once a match runs." />
+        <ui:Button name="hide-all" text="Hide all" />
+      </ui:VisualElement>
+    </ui:Foldout>
+    <ui:Foldout name="ai-group" text="AI players" class="hrts-group">
+      <ui:VisualElement name="ai" />
+    </ui:Foldout>
   </ui:VisualElement>
 </ui:UXML>

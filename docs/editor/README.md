@@ -174,37 +174,38 @@ builder throws on a bad path, player count or size. Maps built from JSON specs: 
 
 ## Play-mode debugging
 
-The **HyperRTS ▸ Cheats & Debug** window (`CheatsDebugWindow`) holds the debug layers and the cheats. Dock it beside
-the Game view so it stays in reach during Play.
+The **HyperRTS ▸ Cheats & Debug** window (`CheatsDebugWindow`) holds the cheats, the debug layers and a table of
+the AI players. Dock it beside the Game view so it stays in reach during Play. A line at the top sums up the running
+match: who runs it (single player, host or server) and its players, units and buildings.
 
-The debug section toggles `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Toggles are
-remembered and work outside Play mode; **Hide all** clears them.
+The cheats work in Play mode only, through the normal game systems, and drop the replay recording:
+
+| Section | Does |
+| --- | --- |
+| Player | Pick a player; **Play as** it (its AI stops), add resources, finish its construction and production |
+| Units | Spawn any prefab (a searchable list) at the view centre, repair or destroy your selection, start a battle of two hostile armies as a load test |
+| Match | Switch fog of war; change game speed or pause (single player only) |
+
+Debug layers are `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Switches are
+remembered and work outside Play mode; **Hide all** clears them. While a layer is on, a status line under it shows
+its `Describe` text, or that it has nothing to draw yet. Each refresh a layer adds lines and one grid of cells to a
+`DebugShapes`: hidden mesh objects draw them in the Game and Scene views, the cells draped on the simulation's ground
+heights, and both over everything so crops and units never hide them.
 
 | Layer | Shows |
 | --- | --- |
 | Nav grid | Blocked, water and deck cells |
-| Wall distance | Distance to the nearest wall, red at a wall to blue at 8 m |
+| Wall distance | Distance to the nearest wall, red at a wall to blue far away |
 | Sectors | Connected regions of the first movement class |
 | Flow field | Cost to the goal of the latest group field |
 | Fog | Cells the local team sees |
 | Sight area, Sight blockers, High ground | The selected unit's sight, what conceals cells, and rise above surrounding ground |
 | Spatial cells | Spatial index cells holding an entity |
-| Paths and targets | Waypoints, manoeuvres, attack targets and dock bays, with the pathfinder's totals (all units) |
+| Paths | Waypoints, manoeuvres, attack targets and dock bays; its status totals the pathfinder's work |
 
-In Play, an AI table shows each player's think timer and attack wave size. To add a grid view, subclass
-`CellTextureLayer` and implement `Paint`, giving `CellTexture.Paint` a `CellGrid` and an `ICellColors` struct; a Burst
-job fills one texture drawn as a single quad. For anything else subclass `DebugLayer`. Layers read the authoritative
-world unless they override `Source`.
-
-The cheats work in Play mode only:
-
-| Control | Does |
-| --- | --- |
-| Player, Resources, Instant build, Control this player | Act on the chosen player |
-| Fog of war, Game speed | Switch fog and change speed |
-| Spawn, Armies per side | Any prefab at the view, or two hostile armies of it as a load test |
-
-Cheats act through the normal game systems and drop the replay recording.
+To add a layer, subclass `DebugLayer` and implement `Draw`: `DebugShapes.Cells` takes a `CellGrid` and an
+`ICellColors` struct that a Burst job reads for every cell, and `Line`, `DashedLine` and `Circle` draw the rest.
+Layers read the authoritative world unless they override `Source`.
 
 The **Play** page is the launcher outside Play mode: map, mode (1v1 to 4v4 or free for all), start (into the map or
 through the main menu), network (offline, host, dedicated server), the slot table and the game's switches. **Play**

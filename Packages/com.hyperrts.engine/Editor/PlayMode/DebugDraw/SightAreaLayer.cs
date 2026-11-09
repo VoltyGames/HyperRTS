@@ -11,11 +11,11 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.DebugDraw
 {
     /// <summary>A selected unit's sight area: green where it sees the ground, blue where only a tall target shows, yellow within close range.</summary>
-    public sealed class SightAreaLayer : CellTextureLayer
+    public sealed class SightAreaLayer : DebugLayer
     {
         public override string Label => "Sight area";
 
-        public override string Detail => "What the selected unit sees";
+        public override string Detail => "The first selected unit's sight: green sees the ground, blue only tall targets, yellow close range.";
 
         public override string Group => "Vision";
 
@@ -24,30 +24,29 @@ namespace HyperRTS.Editor.PlayMode.DebugDraw
         // Selection only exists in the world the player looks at.
         public override WorldSystemFilterFlags Source => SimulationWorlds.Presented;
 
-        protected override bool Paint(EntityManager entityManager, CellTexture texture)
+        public override void Draw(EntityManager entityManager, DebugShapes shapes)
         {
             if (!TryGetSingleton(entityManager, out FogOfWar fog) || !fog.IsCreated)
             {
-                return false;
+                return;
             }
 
             using var query = entityManager.CreateEntityQuery(typeof(SightArea), typeof(SightAreaBits), typeof(Selected));
             using var units = query.ToEntityArray(Allocator.Temp);
             if (units.Length == 0)
             {
-                return false;
+                return;
             }
 
             var area = entityManager.GetComponentData<SightArea>(units[0]);
             if (area.Radius < 0)
             {
-                return false;
+                return;
             }
 
             var grid = new CellGrid(fog.Grid.Min + (float2)area.Origin * fog.Grid.CellSize, fog.Grid.CellSize, new int2(area.Width));
             var bits = entityManager.GetBuffer<SightAreaBits>(units[0], true).Reinterpret<ulong>().AsNativeArray();
-            texture.Paint(grid, new Colors { Area = area, Bits = bits });
-            return true;
+            shapes.Cells(grid, new Colors { Area = area, Bits = bits });
         }
 
         private struct Colors : ICellColors

@@ -143,6 +143,7 @@ namespace HyperRTS.Editor.PlayMode
             var columns = (int)math.ceil(math.sqrt(count));
             var front = home.Position + forward * FrontDistance;
 
+            var rotation = entityManager.GetComponentData<LocalTransform>(prefab).Rotation;
             var spawned = new NativeArray<Entity>(count, Allocator.Temp);
             for (var i = 0; i < count; i++)
             {
@@ -150,7 +151,7 @@ namespace HyperRTS.Editor.PlayMode
                 var row = i / columns;
                 var position = front + right * (column * Spacing) + forward * (row * Spacing);
                 position.y = terrain.Height(position.xz);
-                spawned[i] = Cheats.Spawn(entityManager, prefab, home.Owner, position);
+                spawned[i] = entityManager.Spawn(prefab, position, rotation, home.Owner);
             }
 
             // Spawning is structural, so the buffers are fetched once the batch exists.
