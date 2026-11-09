@@ -16,8 +16,8 @@ namespace HyperRTS.Simulation.Cues.Voice
         public bool Digging;
         public int Living;
 
-        /// <summary>Game time before which this squad barks no more.</summary>
-        public double QuietUntil;
+        /// <summary>Keeps this squad from barking again too soon.</summary>
+        public Throttle Quiet;
 
         /// <summary>
         /// Records the squad's state and returns the cue slot of the strongest change since last time, or <see
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             var now = new SquadBarkState
             {
                 Known = true, Level = rules.Level(suppression.Value), Retreating = retreating,
-                Covered = covered * 2 > living, Digging = digging, Living = living, QuietUntil = QuietUntil,
+                Covered = covered * 2 > living, Digging = digging, Living = living, Quiet = Quiet,
             };
             var slot = Known ? Strongest(now) : CueSlot.None;
             this = now;

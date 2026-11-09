@@ -14,9 +14,6 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Experience a kill pays per resource unit of the victim's cost (<c>KillCreditSystem</c>).</summary>
         public float ExperiencePerCost;
 
-        /// <summary>Record a replay from the start of the match (<c>ReplayRecorderSystem</c>).</summary>
-        public bool RecordReplay;
-
         /// <summary>Networked matches: seconds the server waits for every human slot to join before starting anyway.</summary>
         public float JoinTimeout;
 

@@ -2,6 +2,7 @@ using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Replays;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
 using HyperRTS.Simulation.Vision.Fog;
@@ -111,6 +112,10 @@ namespace HyperRTS.Simulation.MatchStart
             var rules = entityManager.GetComponentData<MatchRules>(match);
             rules.StrategicAssets = setup.StrategicAssets;
             entityManager.SetComponentData(match, rules);
+            if (setup.RecordReplay && SimulationWorlds.IsAuthoritative(state.WorldUnmanaged))
+            {
+                entityManager.CreateSingleton(ReplayRecording.Create());
+            }
         }
 
         private static void ApplySlot(EntityManager entityManager, Entity player, in SlotSetup slot,

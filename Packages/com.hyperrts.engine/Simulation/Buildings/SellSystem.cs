@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Buildings
 {
@@ -42,6 +43,8 @@ namespace HyperRTS.Simulation.Buildings
             var refund = SystemAPI.GetSingleton<MatchRules>().SellRefund;
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
+            var groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true);
+            var children = SystemAPI.GetBufferLookup<Child>(true);
             var sold = new NativeHashSet<Entity>(8, Allocator.Temp);
             foreach (var each in issued)
             {
@@ -51,7 +54,7 @@ namespace HyperRTS.Simulation.Buildings
                     if (IsSellableBuilding(ref state, building) && sold.Add(building))
                     {
                         Sell(ref state, building, stock, refund);
-                        ecb.DestroyEntity(building);
+                        EntityParts.Destroy(building, groups, children, ecb);
                     }
                 }
             }

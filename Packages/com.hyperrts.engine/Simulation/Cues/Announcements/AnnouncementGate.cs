@@ -11,21 +11,18 @@ namespace HyperRTS.Simulation.Cues.Announcements
     {
         public const float Interval = 1f;
 
-        private NativeHashMap<ushort, double> _next;
+        private NativeHashMap<ushort, Throttle> _next;
 
-        public AnnouncementGate(Allocator allocator) => _next = new NativeHashMap<ushort, double>(16, allocator);
+        public AnnouncementGate(Allocator allocator) => _next = new NativeHashMap<ushort, Throttle>(16, allocator);
 
         /// <summary>True, closing the gate for <see cref="Interval"/>, when the owner may hear this kind now.</summary>
         public bool TryPass(AnnouncementKind kind, byte owner, double now)
         {
             var key = (ushort)(owner << 8 | kind.Value);
-            if (_next.TryGetValue(key, out var next) && now < next)
-            {
-                return false;
-            }
-
-            _next[key] = now + Interval;
-            return true;
+            _next.TryGetValue(key, out var throttle);
+            var passed = throttle.TryPass(now, Interval);
+            _next[key] = throttle;
+            return passed;
         }
 
         public void Dispose() => _next.Dispose();

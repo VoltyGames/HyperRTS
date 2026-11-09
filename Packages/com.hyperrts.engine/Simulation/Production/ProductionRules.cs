@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 
@@ -6,6 +8,24 @@ namespace HyperRTS.Simulation.Production
     /// <summary>Option-list and refund rules shared by the build, production, sell and capture behaviours.</summary>
     public static class ProductionRules
     {
+        /// <summary>Whether a finished producer of <paramref name="owner"/> offers <paramref name="prefab"/> and has queue room.</summary>
+        public static bool CanQueue(EntityManager entityManager, Entity producer, byte owner, Entity prefab)
+        {
+            if (!entityManager.HasComponent<Producer>(producer) || entityManager.GetComponentData<Owner>(producer).Value != owner)
+            {
+                return false;
+            }
+
+            if (entityManager.HasEnabled<ConstructionProgress>(producer))
+            {
+                return false;
+            }
+
+            var hasRoom = entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length
+                < entityManager.GetComponentData<Producer>(producer).QueueLimit;
+            return hasRoom && HasOption(entityManager.GetBuffer<ProductionOption>(producer, true), prefab);
+        }
+
         public static bool HasOption<T>(DynamicBuffer<T> options, Entity prefab)
             where T : unmanaged, IBufferElementData, IPrefabOption
         {

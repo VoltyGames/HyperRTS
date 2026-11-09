@@ -17,13 +17,13 @@ namespace HyperRTS.Simulation.Cues.Voice
     public partial struct UnderFireSystem : ISystem
     {
         private CueWriter _cues;
-        private NativeArray<double> _nextByPlayer;
+        private NativeArray<Throttle> _nextByPlayer;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _cues = new CueWriter(ref state);
-            _nextByPlayer = new NativeArray<double>(Owner.Max + 1, Allocator.Persistent);
+            _nextByPlayer = new NativeArray<Throttle>(Owner.Max + 1, Allocator.Persistent);
             state.RequireForUpdate<GameEvents>();
             state.RequireForUpdate<VoiceRules>();
         }
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             public ComponentLookup<UnderFireVoice> Voices;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             [ReadOnly] public ComponentLookup<Health> Health;
-            public NativeArray<double> NextByPlayer;
+            public NativeArray<Throttle> NextByPlayer;
 
             private void Execute(in DynamicBuffer<EntityDamaged> damaged)
             {
@@ -88,7 +88,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             private void CallOut(in EntityDamaged hit)
             {
                 var alive = Health[hit.Entity].Current > 0f;
-                if (!alive || Now < NextByPlayer[hit.Owner])
+                if (!alive || !NextByPlayer[hit.Owner].IsOpen(Now))
                 {
                     return;
                 }
@@ -96,7 +96,9 @@ namespace HyperRTS.Simulation.Cues.Voice
                 var place = Transforms[hit.Entity];
                 if (Cues.Play(hit.Entity, CueSlot.UnderFire, place, place.Forward(), hit.Owner))
                 {
-                    NextByPlayer[hit.Owner] = Now + Rules.UnderFireInterval;
+                    var throttle = NextByPlayer[hit.Owner];
+                    throttle.Close(Now, Rules.UnderFireInterval);
+                    NextByPlayer[hit.Owner] = throttle;
                 }
             }
         }

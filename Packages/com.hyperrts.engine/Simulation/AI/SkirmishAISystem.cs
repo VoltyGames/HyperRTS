@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.AI
                 .WithDisabled<ActiveOrder>().WithNone<Harvester, Dead, AttackTarget>().Build();
             _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, Owner, LocalTransform>().Build();
             _producers = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, ProductionQueueItem, Owner>()
-                .WithNone<ConstructionProgress, Dead>().Build();
+                .WithNone<Dead>().Build();
             _targets = SystemAPI.QueryBuilder().WithAll<Health, Owner, LocalTransform>().WithNone<Dead>().Build();
             _builders = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Owner, LocalTransform>()
                 .WithPresent<ActiveOrder>().WithNone<Dead>().Build();

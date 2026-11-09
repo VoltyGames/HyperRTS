@@ -19,6 +19,15 @@ namespace HyperRTS.Simulation.Common
             ecb.DestroyEntity(sortKey, parts.AsArray());
         }
 
+        /// <summary>Destroys <paramref name="root"/> with everything it is made of, on a single-threaded buffer.</summary>
+        public static void Destroy(Entity root, in BufferLookup<LinkedEntityGroup> groups,
+            in BufferLookup<Child> children, EntityCommandBuffer ecb)
+        {
+            var parts = new NativeList<Entity>(4, Allocator.Temp);
+            Collect(root, groups, children, parts);
+            ecb.DestroyEntity(parts.AsArray());
+        }
+
         private static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> groups, in BufferLookup<Child> children,
             NativeList<Entity> parts)
         {

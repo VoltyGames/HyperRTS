@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Cues.Voice
     {
         private CommandReader _commands;
         private CueWriter _cues;
-        private double _next;
+        private Throttle _next;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Cues.Voice
         public void OnUpdate(ref SystemState state)
         {
             var now = SystemAPI.Time.ElapsedTime;
-            if (now < _next)
+            if (!_next.IsOpen(now))
             {
                 return;
             }
@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             {
                 if (TryAnswer(ref state, unit, slot, issued.Owner))
                 {
-                    _next = now + SystemAPI.GetSingleton<VoiceRules>().AcknowledgementInterval;
+                    _next.Close(now, SystemAPI.GetSingleton<VoiceRules>().AcknowledgementInterval);
                     return;
                 }
             }

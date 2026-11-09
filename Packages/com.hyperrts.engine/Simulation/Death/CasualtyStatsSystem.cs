@@ -23,6 +23,7 @@ namespace HyperRTS.Simulation.Death
             state.RequireForUpdate<PlayerRegistry>();
             _dying = SystemAPI.QueryBuilder().WithAll<Dead, Owner>().WithAny<UnitTag, BuildingTag>().Build();
             state.RequireForUpdate<PlayerStats>();
+            state.RequireForUpdate<OwnerRelations>();
         }
 
         [BurstCompile]
@@ -36,6 +37,7 @@ namespace HyperRTS.Simulation.Death
             new CountJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
+                Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
                 AttackerLookup = SystemAPI.GetComponentLookup<LastAttacker>(true),
                 BuildingLookup = SystemAPI.GetComponentLookup<BuildingTag>(true),
@@ -49,6 +51,7 @@ namespace HyperRTS.Simulation.Death
         private partial struct CountJob : IJobEntity
         {
             public PlayerRegistry Players;
+            public OwnerRelations Relations;
             public ComponentLookup<PlayerStats> StatsLookup;
             [ReadOnly] public ComponentLookup<LastAttacker> AttackerLookup;
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
@@ -74,7 +77,7 @@ namespace HyperRTS.Simulation.Death
 
             private void CreditKiller(Entity entity, byte victim, bool building)
             {
-                if (!AttackerLookup.TryGetComponent(entity, out var attacker) || attacker.Owner == victim)
+                if (!AttackerLookup.TryGetComponent(entity, out var attacker) || !attacker.CreditsKill(Relations, victim))
                 {
                     return;
                 }

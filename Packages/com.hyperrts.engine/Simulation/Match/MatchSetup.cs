@@ -21,6 +21,9 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Copied to <see cref="MatchRules.StrategicAssets"/>.</summary>
         public bool StrategicAssets;
 
+        /// <summary>Starts a replay recording in the authoritative world when the setup is applied.</summary>
+        public bool RecordReplay;
+
         /// <summary>The map weather's key the scene switches to when it loads; empty keeps the map's own.</summary>
         public FixedString32Bytes Weather;
 
@@ -28,7 +31,7 @@ namespace HyperRTS.Simulation.Match
         public uint ClosedOwners;
 
         /// <summary>
-        /// Match seed shared by every peer and recorded in replays; the AI module derives each bot's attack lane choice
+        /// Match seed shared by every world and recorded in replays; the AI module derives each bot's attack lane choice
         /// from it and the bot's owner.
         /// </summary>
         public uint Seed;

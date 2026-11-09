@@ -1,7 +1,9 @@
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Resources.Gathering
 {
@@ -21,7 +23,13 @@ namespace HyperRTS.Simulation.Resources.Gathering
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
 
-            new NodeJob { DeltaTime = SystemAPI.Time.DeltaTime, Ecb = ecb.AsParallelWriter() }.ScheduleParallel();
+            new NodeJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime,
+                Ecb = ecb.AsParallelWriter(),
+                Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
+                Children = SystemAPI.GetBufferLookup<Child>(true),
+            }.ScheduleParallel();
         }
 
         [BurstCompile]
@@ -29,6 +37,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
         {
             public float DeltaTime;
             public EntityCommandBuffer.ParallelWriter Ecb;
+            [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
+            [ReadOnly] public BufferLookup<Child> Children;
 
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref ResourceNode node)
             {
@@ -36,7 +46,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 {
                     if (node.Amount <= 0)
                     {
-                        Ecb.DestroyEntity(sortKey, entity);
+                        EntityParts.Destroy(entity, Groups, Children, Ecb, sortKey);
                     }
 
                     return;

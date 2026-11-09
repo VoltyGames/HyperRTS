@@ -160,7 +160,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var producer = snapshot.Producers[i];
                 var length = SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length;
-                if (CanQueueAt(ref state, producer, turn.Owner, prefab, length))
+                if (ProductionRules.CanQueue(state.EntityManager, producer, turn.Owner, prefab))
                 {
                     shortest.Consider(i, producer, length);
                 }
@@ -173,17 +173,6 @@ namespace HyperRTS.Simulation.AI
 
             turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = shortest.Entity, Prefab = prefab });
             return true;
-        }
-
-        private bool CanQueueAt(ref SystemState state, Entity producer, byte owner, Entity prefab, int queued)
-        {
-            if (SystemAPI.GetComponent<Owner>(producer).Value != owner)
-            {
-                return false;
-            }
-
-            var hasRoom = queued < SystemAPI.GetComponent<Producer>(producer).QueueLimit;
-            return hasRoom && ProductionRules.HasOption(SystemAPI.GetBuffer<ProductionOption>(producer), prefab);
         }
     }
 }

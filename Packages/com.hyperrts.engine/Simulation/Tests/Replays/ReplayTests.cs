@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
@@ -199,17 +200,17 @@ namespace HyperRTS.Simulation.Tests.Replays
         }
 
         [Test]
-        public void MatchRules_RecordReplay_StartsRecordingByItself()
+        public void MatchSetup_RecordReplay_StartsRecording()
         {
             using var world = new TestWorld();
             world.CreateMatch(1, 2);
-            using var query = world.Query(typeof(MatchRules));
-            var rules = query.GetSingleton<MatchRules>();
-            rules.RecordReplay = true;
-            query.SetSingleton(rules);
+            var setup = MatchSetup.Create();
+            setup.RecordReplay = true;
+            MatchSetupRequest.Set(setup);
 
             world.Tick();
 
+            MatchSetupRequest.Clear();
             Assert.IsTrue(ReplayRecorder.IsRecording(world.World));
         }
     }

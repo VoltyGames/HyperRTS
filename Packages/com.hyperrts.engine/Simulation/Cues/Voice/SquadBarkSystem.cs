@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Cues.Voice
     {
         private CueWriter _cues;
         private EntityQuery _unseen;
-        private double _next;
+        private Throttle _next;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Cues.Voice
                 }
 
                 var slot = bark.ValueRW.Observe(rules, suppression.ValueRO, retreating.ValueRO, members);
-                var allowed = now >= _next && now >= bark.ValueRO.QuietUntil;
+                var allowed = _next.IsOpen(now) && bark.ValueRO.Quiet.IsOpen(now);
                 if (slot == CueSlot.None || !allowed)
                 {
                     continue;
@@ -65,8 +65,8 @@ namespace HyperRTS.Simulation.Cues.Voice
                 var place = transform.ValueRO;
                 if (_cues.Play(squad, slot, place, place.Forward(), local))
                 {
-                    bark.ValueRW.QuietUntil = now + voice.SquadBarkInterval;
-                    _next = now + voice.SquadBarkPlayerInterval;
+                    bark.ValueRW.Quiet.Close(now, voice.SquadBarkInterval);
+                    _next.Close(now, voice.SquadBarkPlayerInterval);
                 }
             }
         }

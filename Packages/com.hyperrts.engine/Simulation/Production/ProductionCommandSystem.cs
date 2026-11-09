@@ -92,11 +92,6 @@ namespace HyperRTS.Simulation.Production
             var queue = SystemAPI.GetBuffer<ProductionQueueItem>(producer);
             var prefab = issued.Command.Prefab;
             var stock = SystemAPI.GetBuffer<ResourceStock>(issued.Player);
-            if (queue.Length >= SystemAPI.GetComponent<Producer>(producer).QueueLimit)
-            {
-                return;
-            }
-
             if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
             {
                 return;
@@ -158,29 +153,13 @@ namespace HyperRTS.Simulation.Production
             for (var i = 0; i < producers.Length; i++)
             {
                 var producer = producers[i];
-                if (CanProduce(ref state, producer, issued.Command.Prefab))
+                if (ProductionRules.CanQueue(state.EntityManager, producer, issued.Owner, issued.Command.Prefab))
                 {
                     shortest.Consider(i, producer, SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length);
                 }
             }
 
             return shortest.Entity;
-        }
-
-        /// <summary>A finished producer offering <paramref name="prefab"/>.</summary>
-        private bool CanProduce(ref SystemState state, Entity producer, Entity prefab)
-        {
-            if (!SystemAPI.HasComponent<Producer>(producer))
-            {
-                return false;
-            }
-
-            if (state.EntityManager.HasEnabled<ConstructionProgress>(producer))
-            {
-                return false;
-            }
-
-            return ProductionRules.HasOption(SystemAPI.GetBuffer<ProductionOption>(producer), prefab);
         }
 
         /// <summary>The first commanded producer that has something queued.</summary>

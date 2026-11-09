@@ -10,6 +10,9 @@ namespace HyperRTS.Simulation.Death
     {
         public Entity Source;
         public byte Owner;
+
+        /// <summary>Whether killing <paramref name="victim"/>'s entity earns kill credit: allies and self give none.</summary>
+        public readonly bool CreditsKill(in OwnerRelations relations, byte victim) => relations.IsHostile(Owner, victim);
     }
 
     /// <summary>Prefab instantiated where the entity dies (wreck, debris, explosion).</summary>

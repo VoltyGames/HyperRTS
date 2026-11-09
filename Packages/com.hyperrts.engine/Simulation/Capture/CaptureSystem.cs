@@ -48,6 +48,8 @@ namespace HyperRTS.Simulation.Capture
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Targets = _targets,
+                Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
+                Children = SystemAPI.GetBufferLookup<Child>(true),
                 CapturableLookup = SystemAPI.GetComponentLookup<Capturable>(true),
                 ProgressLookup = SystemAPI.GetComponentLookup<CaptureProgress>(false),
                 OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
@@ -66,6 +68,8 @@ namespace HyperRTS.Simulation.Capture
             public OwnerRelations Relations;
             public EntityCommandBuffer Ecb;
             public CaptureLookup Targets;
+            [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
+            [ReadOnly] public BufferLookup<Child> Children;
             [ReadOnly] public ComponentLookup<Capturable> CapturableLookup;
             public ComponentLookup<CaptureProgress> ProgressLookup;
             [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
@@ -104,7 +108,7 @@ namespace HyperRTS.Simulation.Capture
                 busy.ValueRW = false;
                 if (capturer.ConsumedOnCapture)
                 {
-                    Ecb.DestroyEntity(entity);
+                    EntityParts.Destroy(entity, Groups, Children, Ecb);
                 }
             }
 

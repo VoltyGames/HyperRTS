@@ -74,9 +74,6 @@ namespace HyperRTS.Simulation.Match
         [Min(0f)]
         public float experiencePerCost = 0.1f;
 
-        [Tooltip("Record a replay from the start of the match; save it with HyperRTS ▸ Replays ▸ Save Recording.")]
-        public bool recordReplay;
-
         [Tooltip("Networked matches: how long to wait for every human player to load before starting without them.")]
         [Unit("s")]
         [Min(1f)]
@@ -172,7 +169,6 @@ namespace HyperRTS.Simulation.Match
                     LowPowerProductionRate = authoring.lowPowerProductionRate,
                     SellRefund = authoring.sellRefund,
                     ExperiencePerCost = authoring.experiencePerCost,
-                    RecordReplay = authoring.recordReplay,
                     JoinTimeout = authoring.joinTimeout,
                     StrategicAssets = true,
                 });

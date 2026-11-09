@@ -12,14 +12,12 @@ namespace HyperRTS.Simulation.Replays
 {
     /// <summary>
     /// Samples every gameplay entity into a <see cref="ReplayRecording"/> after the frame: keyframes, deltas and cues
-    /// except owner-only ones. Starts one itself when <see cref="MatchRules.RecordReplay"/> is set.
+    /// except owner-only ones. It runs while a recording exists; <c>MatchSetupSystem</c> starts one for <see cref="MatchSetup.RecordReplay"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup), OrderLast = true)]
     public partial struct ReplayRecorderSystem : ISystem
     {
-        private bool _autoStarted;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state) => state.RequireForUpdate<CueQueue>();
 
@@ -36,7 +34,6 @@ namespace HyperRTS.Simulation.Replays
         {
             if (!SystemAPI.TryGetSingletonEntity<ReplayRecording>(out var entity))
             {
-                AutoStart(ref state);
                 return;
             }
 
@@ -110,20 +107,6 @@ namespace HyperRTS.Simulation.Replays
                 CueStart = recording.Stream.SampledCues,
             };
             return true;
-        }
-
-        private void AutoStart(ref SystemState state)
-        {
-            if (_autoStarted || !SystemAPI.TryGetSingleton(out MatchRules rules))
-            {
-                return;
-            }
-
-            if (rules.RecordReplay)
-            {
-                _autoStarted = true;
-                state.EntityManager.CreateSingleton(ReplayRecording.Create());
-            }
         }
 
         private void Sample(ref SystemState state, ref ReplayRecording recording, bool keyframe)
