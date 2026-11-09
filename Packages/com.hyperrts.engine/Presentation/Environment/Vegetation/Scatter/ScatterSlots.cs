@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -18,19 +19,17 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private static readonly int SlotOffsetId = Shader.PropertyToID("_SlotOffset");
 
         private readonly MaterialPropertyBlock[] _blocks;
-        private readonly int _minInstances;
         private readonly uint[] _table;
         private readonly GraphicsBuffer _slots;
-        private GraphicsBuffer _instances;
+        private readonly GrowingBuffer _instances;
 
         /// <summary>Room for <paramref name="blocks"/>' slots, each drawn from its own block.</summary>
         public ScatterSlots(MaterialPropertyBlock[] blocks, int minInstances)
         {
             _blocks = blocks;
-            _minInstances = minInstances;
             _table = new uint[blocks.Length * 2];
             _slots = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, blocks.Length), sizeof(uint) * 2);
-            _instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured, minInstances, InstanceStride);
+            _instances = new GrowingBuffer(GraphicsBuffer.Target.Structured, InstanceStride, minInstances);
             BindDraws();
         }
 
@@ -48,13 +47,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
                 total += capacities[slot];
             }
 
-            if (total > _instances.count)
-            {
-                _instances.Release();
-                _instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured,
-                    Mathf.Max(_minInstances, (int)(total + total / 4)), InstanceStride);
-            }
-
+            _instances.Reserve((int)total);
             BindDraws();
             _slots.SetData(_table);
         }
@@ -63,7 +56,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         public void BindGrow(ComputeShader compute, int kernel)
         {
             compute.SetBuffer(kernel, SlotsId, _slots);
-            compute.SetBuffer(kernel, InstancesId, _instances);
+            compute.SetBuffer(kernel, InstancesId, _instances.Buffer);
         }
 
         /// <summary>Binds the table and slot count to the kernel that turns counts into draws.</summary>
@@ -75,7 +68,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         public void Dispose()
         {
-            _instances.Release();
+            _instances.Dispose();
             _slots.Release();
         }
 
@@ -84,7 +77,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         {
             for (var slot = 0; slot < _blocks.Length; slot++)
             {
-                _blocks[slot].SetBuffer(InstancesId, _instances);
+                _blocks[slot].SetBuffer(InstancesId, _instances.Buffer);
                 _blocks[slot].SetInteger(SlotOffsetId, (int)_table[slot * 2]);
             }
         }

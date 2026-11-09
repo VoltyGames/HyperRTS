@@ -40,11 +40,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             Terrain = terrain;
             _data = terrain.terrainData;
             var heights = _data.heightmapTexture;
-            _original = new RenderTexture(heights.width, heights.height, heights.graphicsFormat, GraphicsFormat.None, 1)
-            {
-                name = "HyperRTS Original Heights", hideFlags = HideFlags.DontSave, filterMode = FilterMode.Point,
-            };
-            _original.Create();
+            _original = RenderTargets.Create("HyperRTS Original Heights", heights.width, heights.height,
+                heights.graphicsFormat, FilterMode.Point, TextureWrapMode.Clamp);
             Graphics.CopyTexture(heights, 0, 0, _original, 0, 0);
 
             var position = terrain.GetPosition();
@@ -82,7 +79,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             _material.SetVector(HeightRegionId, new Vector4(region.x, region.y, 0f, 0f));
             _commands.Clear();
             _commands.SetRenderTarget(target);
-            _commands.DrawProcedural(Matrix4x4.identity, _material, 0, MeshTopology.Triangles, 3);
+            _commands.DrawFullScreen(_material, 0);
             Graphics.ExecuteCommandBuffer(_commands);
             Copy(target, region);
             RenderTexture.ReleaseTemporary(target);
@@ -126,8 +123,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             Undented.Clear();
             Shader.SetGlobalVector(UndentedScaleId, Vector4.zero);
             _commands.Release();
-            _original.Release();
-            CoreUtils.Destroy(_original);
+            RenderTargets.Free(_original);
             CoreUtils.Destroy(_material);
         }
 

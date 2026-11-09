@@ -19,8 +19,7 @@ namespace HyperRTS.Presentation.HUD.Map
         private readonly LiveSingleton<LocalFogView> _localView = new();
 
         private readonly VisualElement _layer;
-        private Texture2D _texture;
-        private int _version = -1;
+        private readonly FogTexture _fogTexture = new("Minimap Fog", TextureFormat.Alpha8, false);
         private byte _explored;
         private byte _unexplored;
 
@@ -41,29 +40,16 @@ namespace HyperRTS.Presentation.HUD.Map
             }
 
             _layer.SetHidden(false);
-            if (view.Version == _version && _texture != null)
+            if (!_fogTexture.Stale(view))
             {
                 return;
             }
 
             _fogGrid.Complete(entityManager);
-            if (_texture == null || _texture.width != fog.Grid.Size.x || _texture.height != fog.Grid.Size.y)
+            if (_fogTexture.Refill(fog, view, _explored, _unexplored))
             {
-                Object.Destroy(_texture);
-                _texture = new Texture2D(fog.Grid.Size.x, fog.Grid.Size.y, TextureFormat.Alpha8, false, true)
-                {
-                    name = "Minimap Fog",
-                    filterMode = FilterMode.Bilinear,
-                    wrapMode = TextureWrapMode.Clamp,
-                    hideFlags = HideFlags.DontSave,
-                };
-                _layer.style.backgroundImage = new StyleBackground(_texture);
+                _layer.style.backgroundImage = new StyleBackground(_fogTexture.Texture);
             }
-
-            FogTexels.Fill(fog, view.Team, _explored, _unexplored,
-                _texture.GetPixelData<byte>(0));
-            _texture.Apply(false);
-            _version = view.Version;
         }
 
         private void OnStyleResolved(CustomStyleResolvedEvent evt)
@@ -72,13 +58,12 @@ namespace HyperRTS.Presentation.HUD.Map
             evt.customStyle.TryGetValue(_unexploredAlpha, out var unexplored);
             _explored = (byte)Mathf.RoundToInt(explored * 255f);
             _unexplored = (byte)Mathf.RoundToInt(unexplored * 255f);
-            _version = -1;
+            _fogTexture.Invalidate();
         }
 
         private void Release()
         {
-            Object.Destroy(_texture);
-            _texture = null;
+            _fogTexture.Dispose();
             _layer.style.backgroundImage = StyleKeyword.None;
         }
     }

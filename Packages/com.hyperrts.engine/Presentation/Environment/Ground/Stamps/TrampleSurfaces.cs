@@ -5,7 +5,6 @@ using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.Ground.Stamps
 {
@@ -97,29 +96,13 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
 
         public void Dispose()
         {
-            Release(Trample);
-            Release(Tracks);
-            Release(Wake);
-            Release(Remains);
+            RenderTargets.Free(Trample);
+            RenderTargets.Free(Tracks);
+            RenderTargets.Free(Wake);
+            RenderTargets.Free(Remains);
         }
 
-        private static RenderTexture Create(string name, int2 size, GraphicsFormat format)
-        {
-            var texture = new RenderTexture(size.x, size.y, format, GraphicsFormat.None, 1)
-            {
-                name = name,
-                hideFlags = HideFlags.DontSave,
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-            };
-            texture.Create();
-            return texture;
-        }
-
-        private static void Release(RenderTexture texture)
-        {
-            texture.Release();
-            CoreUtils.Destroy(texture);
-        }
+        private static RenderTexture Create(string name, int2 size, GraphicsFormat format) =>
+            RenderTargets.Create(name, size.x, size.y, format, FilterMode.Bilinear, TextureWrapMode.Clamp);
     }
 }

@@ -167,7 +167,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             return model;
         }
 
-        // Every value a MeshPainter puts on a root's meshes, and the team colour, which TeamColorSystem paints itself.
+        // Every value a MeshPainter puts on a root's meshes.
         private static ComponentType[] PaintedTypes()
         {
             const BindingFlags fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -176,8 +176,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
                 .Select(field => field.FieldType)
                 .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(MeshPainter<>))
                 .Select(type => type.GetGenericArguments()[0])
-                .Append(typeof(TeamColor))
-                .Append(typeof(TeamStrip))
                 .Distinct()
                 .Select(type => new ComponentType(type))
                 .ToArray();

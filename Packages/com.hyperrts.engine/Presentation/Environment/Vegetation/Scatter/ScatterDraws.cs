@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
@@ -17,7 +18,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private readonly Mesh[] _meshes;
         private readonly GraphicsBuffer _args;
         private readonly GraphicsBuffer _counters;
-        private GraphicsBuffer _jobs;
+        private readonly GrowingBuffer _jobs = new(GraphicsBuffer.Target.Structured, ScatterJob.Stride, 64);
 
         /// <summary>Draws for <paramref name="meshes"/>, one slot each.</summary>
         public ScatterDraws(Mesh[] meshes)
@@ -34,14 +35,9 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         /// <summary>Uploads the queued jobs, growing the buffer when there are more, and binds them and the counters to the grow kernel.</summary>
         public void BindGrow(List<ScatterJob> jobs, ComputeShader compute, int kernel)
         {
-            if (_jobs == null || _jobs.count < jobs.Count)
-            {
-                _jobs?.Release();
-                _jobs = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(64, jobs.Count * 2), ScatterJob.Stride);
-            }
-
-            _jobs.SetData(jobs);
-            compute.SetBuffer(kernel, JobsId, _jobs);
+            _jobs.Reserve(jobs.Count);
+            _jobs.Buffer.SetData(jobs);
+            compute.SetBuffer(kernel, JobsId, _jobs.Buffer);
             compute.SetBuffer(kernel, CountersId, _counters);
         }
 
@@ -58,7 +54,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         public void Dispose()
         {
-            _jobs?.Release();
+            _jobs.Dispose();
             _args.Release();
             _counters.Release();
         }

@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Lights;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -97,7 +98,7 @@ namespace HyperRTS.Presentation.Environment.Weather
             _material.SetMatrix(WorldToLightId, worldToLight);
             _commands.Clear();
             _commands.SetRenderTarget(_cookie);
-            _commands.DrawProcedural(Matrix4x4.identity, _material, 0, MeshTopology.Triangles, 3);
+            _commands.DrawFullScreen(_material, 0);
             var columns = smoke ? Shader.GetGlobalInt(SmokeShadows.CountId) : 0;
             if (columns > 0)
             {
@@ -115,12 +116,8 @@ namespace HyperRTS.Presentation.Environment.Weather
             _material = new Material(Resources.Load<Shader>(ShaderPath)) { hideFlags = HideFlags.DontSave };
             _commands = new CommandBuffer { name = "HyperRTS Cloud Cookie" };
             // Repeat, so the cookie wraps around the camera and only its far seam moves with it.
-            _cookie = new RenderTexture(resolution, resolution, GraphicsFormat.R8_UNorm, GraphicsFormat.None)
-            {
-                name = "Cloud Cookie", wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.DontSave,
-            };
-            _cookie.Create();
+            _cookie = RenderTargets.Create("Cloud Cookie", resolution, resolution, GraphicsFormat.R8_UNorm,
+                FilterMode.Bilinear, TextureWrapMode.Repeat);
             _light.cookie = _cookie;
             _data.lightCookieSize = new Vector2(area, area);
             _data.lightCookieOffset = Vector2.zero;
@@ -132,12 +129,7 @@ namespace HyperRTS.Presentation.Environment.Weather
             _commands?.Release();
             _commands = null;
             CoreUtils.Destroy(_material);
-            if (_cookie != null)
-            {
-                _cookie.Release();
-                CoreUtils.Destroy(_cookie);
-            }
-
+            RenderTargets.Free(_cookie);
             _cookie = null;
         }
     }

@@ -4,8 +4,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
-using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
@@ -25,11 +23,15 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         private int _sourceVersion;
         private int _overrideVersion;
         private OwnerPalette _palette;
+        private MeshPainter<TeamColor> _colorParts;
+        private MeshPainter<TeamStrip> _stripParts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _uncolored = SystemAPI.QueryBuilder().WithAll<Owner>().WithNone<TeamColored>().Build();
+            _colorParts = new MeshPainter<TeamColor>(ref state);
+            _stripParts = new MeshPainter<TeamStrip>(ref state);
             _recolored = SystemAPI.QueryBuilder().WithAll<Owner, TeamColored>().Build();
             _recolored.SetChangedVersionFilter(ComponentType.ReadOnly<Owner>());
             _colored = SystemAPI.QueryBuilder().WithAll<TeamColored>().Build();
@@ -58,12 +60,13 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
                 return;
             }
 
+            _colorParts.Update(ref state);
+            _stripParts.Update(ref state);
             var painter = new TeamPainter
             {
                 Colors = _palette.Build(state.WorldUpdateAllocator),
-                Linked = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
-                Children = SystemAPI.GetBufferLookup<Child>(true),
-                Meshes = SystemAPI.GetComponentLookup<MaterialMeshInfo>(true),
+                ColorParts = _colorParts,
+                StripParts = _stripParts,
                 Strips = SystemAPI.GetComponentLookup<TeamStripBand>(true),
                 Commands = SystemAPI.GetSingleton<BeginPresentationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
@@ -112,14 +115,10 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         private struct TeamPainter
         {
             [ReadOnly] public NativeArray<float4> Colors;
-            [ReadOnly] public BufferLookup<LinkedEntityGroup> Linked;
-            [ReadOnly] public BufferLookup<Child> Children;
-            [ReadOnly] public ComponentLookup<MaterialMeshInfo> Meshes;
+            public MeshPainter<TeamColor> ColorParts;
+            public MeshPainter<TeamStrip> StripParts;
             [ReadOnly] public ComponentLookup<TeamStripBand> Strips;
             public EntityCommandBuffer Commands;
-
-            private static ComponentTypeSet TeamTypes =>
-                new(ComponentType.ReadWrite<TeamColor>(), ComponentType.ReadWrite<TeamStrip>());
 
             /// <summary>False while the owner has no player yet; neutral entities keep their authored materials.</summary>
             public bool Paint(Entity root, byte owner)
@@ -135,26 +134,12 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
                     return false;
                 }
 
-                var hasStrip = Strips.TryGetComponent(root, out var band);
                 var targets = new NativeList<Entity>(Allocator.Temp);
-                RenderHierarchy.Collect(root, Linked, Children, targets);
-                foreach (var target in targets)
+                ColorParts.Collect(root, targets);
+                ColorParts.Add(targets, new TeamColor { Value = color }, Commands);
+                if (Strips.TryGetComponent(root, out var band))
                 {
-                    if (!Meshes.HasComponent(target))
-                    {
-                        continue;
-                    }
-
-                    if (!hasStrip)
-                    {
-                        Commands.AddComponent(target, new TeamColor { Value = color });
-                        continue;
-                    }
-
-                    // One structural change for both, then fill them in.
-                    Commands.AddComponent(target, TeamTypes);
-                    Commands.SetComponent(target, new TeamColor { Value = color });
-                    Commands.SetComponent(target, new TeamStrip { Value = new float4(band.Bottom, band.Top, 0f, 0f) });
+                    StripParts.Add(targets, new TeamStrip { Value = new float4(band.Bottom, band.Top, 0f, 0f) }, Commands);
                 }
 
                 return true;
@@ -164,14 +149,9 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
             public void Unpaint(Entity root)
             {
                 var targets = new NativeList<Entity>(Allocator.Temp);
-                RenderHierarchy.Collect(root, Linked, Children, targets);
-                foreach (var target in targets)
-                {
-                    if (Meshes.HasComponent(target))
-                    {
-                        Commands.RemoveComponent(target, TeamTypes);
-                    }
-                }
+                ColorParts.Collect(root, targets);
+                ColorParts.Remove(targets, Commands);
+                StripParts.Remove(targets, Commands);
             }
         }
 

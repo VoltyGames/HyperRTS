@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
-    /// One frame's instances of one mesh, drawn unshadowed in one indirect call. The shader reads them as
+    /// One frame's instances of one mesh, drawn unshadowed in one call. The shader reads them as
     /// <c>StructuredBuffer&lt;T&gt; _Instances</c> by <c>SV_InstanceID</c>; the buffer doubles whenever it fills.
     /// </summary>
     public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
@@ -18,21 +18,14 @@ namespace HyperRTS.Presentation.Rendering
         private static readonly Bounds Everywhere = new(Vector3.zero, Vector3.one * 100000f);
 
         private readonly Mesh _mesh;
-        private readonly GraphicsBuffer _args;
-        private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _command = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+        private readonly GrowingBuffer _instances =
+            new(GraphicsBuffer.Target.Structured, UnsafeUtility.SizeOf<T>(), StartCapacity);
         private T[] _staged = new T[StartCapacity];
-        private GraphicsBuffer _instances;
 
         public InstanceBuffer(Mesh mesh)
         {
             _mesh = mesh;
-            _args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size);
-            _command[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-            {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = mesh.GetBaseVertex(0),
-            };
+            Properties.SetBuffer(InstancesId, _instances.Buffer);
         }
 
         public int Count { get; private set; }
@@ -67,28 +60,23 @@ namespace HyperRTS.Presentation.Rendering
                 receiveShadows = false,
                 layer = layer,
             };
-            Graphics.RenderMeshIndirect(parameters, _mesh, _args);
+            Graphics.RenderMeshPrimitives(parameters, _mesh, 0, Count);
             Count = 0;
         }
 
         public void Dispose()
         {
-            _instances?.Release();
-            _args.Release();
+            _instances.Dispose();
         }
 
         private void Upload()
         {
-            if (_instances == null || _instances.count < Count)
+            if (_instances.Reserve(Count))
             {
-                _instances?.Release();
-                _instances = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _staged.Length, UnsafeUtility.SizeOf<T>());
-                Properties.SetBuffer(InstancesId, _instances);
+                Properties.SetBuffer(InstancesId, _instances.Buffer);
             }
 
-            _instances.SetData(_staged, 0, 0, Count);
-            _command[0].instanceCount = (uint)Count;
-            _args.SetData(_command);
+            _instances.Buffer.SetData(_staged, 0, 0, Count);
         }
     }
 }

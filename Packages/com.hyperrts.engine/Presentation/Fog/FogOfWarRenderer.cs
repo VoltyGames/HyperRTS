@@ -2,7 +2,6 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Vision.Fog;
-using Unity.Collections;
 using Unity.Scripting.LifecycleManagement;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -66,10 +65,7 @@ namespace HyperRTS.Presentation.Fog
         private readonly LiveSingleton<FogOfWar> _fogGrid = new();
         private readonly LiveSingleton<LocalFogView> _localView = new();
         private readonly SightShape _sightShape = new();
-        private Texture2D _texture;
-        private NativeArray<byte> _target;
-        private bool _settled;
-        private int _version = -1;
+        private readonly FogTexture _fogTexture = new("Fog Of War", TextureFormat.R8, true);
 
         /// <summary>Whether a fog of war is published, so the full-screen pass has something to draw.</summary>
         public static bool Shown => Shader.GetGlobalVector(ColorId).w > 0f;
@@ -82,17 +78,13 @@ namespace HyperRTS.Presentation.Fog
                 return;
             }
 
-            if (view.Version != _version || _texture == null)
+            if (_fogTexture.Stale(view))
             {
                 _fogGrid.Complete(entityManager);
-                Retarget(fog, view);
+                _fogTexture.Refill(fog, view, ToByte(exploredOpacity), ToByte(unexploredOpacity));
             }
 
-            if (!_settled)
-            {
-                _settled = FogEase.Step(_texture.GetPixelData<byte>(0), _target, Time.deltaTime, fadeTime);
-                _texture.Apply(false);
-            }
+            _fogTexture.Ease(Time.deltaTime, fadeTime);
 
             Publish(fog);
             _sightShape.Update(entityManager, fog, view, sightShapeColor);
@@ -118,38 +110,10 @@ namespace HyperRTS.Presentation.Fog
             return _fogGrid.TryGet(entityManager, out fog);
         }
 
-        /// <summary>Fills the target from the latest stamp; a new grid shows it at once rather than fading in.</summary>
-        private void Retarget(in FogOfWar fog, in LocalFogView view)
-        {
-            var created = _texture == null || _texture.width != fog.Grid.Size.x || _texture.height != fog.Grid.Size.y;
-            if (created)
-            {
-                DestroyTexture();
-                _texture = new Texture2D(fog.Grid.Size.x, fog.Grid.Size.y, TextureFormat.R8, false, true)
-                {
-                    name = "Fog Of War",
-                    filterMode = FilterMode.Bilinear,
-                    wrapMode = TextureWrapMode.Clamp,
-                    hideFlags = HideFlags.DontSave,
-                };
-                _target = new NativeArray<byte>(fog.Grid.Size.x * fog.Grid.Size.y, Allocator.Persistent);
-            }
-
-            FogTexels.Fill(fog, view.Team, ToByte(exploredOpacity), ToByte(unexploredOpacity), _target);
-            if (created)
-            {
-                _texture.GetPixelData<byte>(0).CopyFrom(_target);
-                _texture.Apply(false);
-            }
-
-            _settled = created;
-            _version = view.Version;
-        }
-
         private void Publish(in FogOfWar fog)
         {
             // Unlike the ground maps, the fog rect holds the size, not its inverse.
-            Global.Publish(_texture, new float4(fog.Grid.Min, (float2)fog.Grid.Size * fog.Grid.CellSize));
+            Global.Publish(_fogTexture.Texture, new float4(fog.Grid.Min, (float2)fog.Grid.Size * fog.Grid.CellSize));
             Shader.SetGlobalColor(ColorId, color);
             Shader.SetGlobalVector(BorderId, new Vector4(borderOpacity, borderFade, 1f / fog.Grid.Size.x, 1f / fog.Grid.Size.y));
             Shader.SetGlobalVector(LookId, new Vector4(desaturation, 0f, 0f, 0f));
@@ -170,20 +134,7 @@ namespace HyperRTS.Presentation.Fog
             Hide();
             Global.Clear();
             _sightShape.Dispose();
-            DestroyTexture();
-        }
-
-        private void DestroyTexture()
-        {
-            if (_texture != null)
-            {
-                Destroy(_texture);
-            }
-
-            if (_target.IsCreated)
-            {
-                _target.Dispose();
-            }
+            _fogTexture.Dispose();
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -28,7 +29,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private readonly int _remainsPass;
         private readonly int _fadePass;
         private readonly CommandBuffer _commands = new() { name = "HyperRTS Trample Maps" };
-        private GraphicsBuffer _buffer;
+        private readonly GrowingBuffer _buffer = new(GraphicsBuffer.Target.Structured, TrampleStamp.Stride, 256);
         private int _wakeFadedSteps;
 
         public TrampleBrush(Shader shader)
@@ -75,7 +76,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
                 AppendClear(surfaces);
             }
 
-            _commands.SetGlobalBuffer(StampsId, _buffer);
+            _commands.SetGlobalBuffer(StampsId, _buffer.Buffer);
             var offset = 0;
             _commands.SetRenderTarget(surfaces.Trample);
             Fade(new Vector4(0f, 0f, recoverySteps, 0f) / Levels);
@@ -100,7 +101,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         public void Dispose()
         {
             _commands.Release();
-            _buffer?.Release();
+            _buffer.Dispose();
             CoreUtils.Destroy(_material);
         }
 
@@ -109,12 +110,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         {
             var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count +
                 stamps.Remains.Count + stamps.Wakes.Count, 1);
-            if (_buffer == null || _buffer.count < needed)
-            {
-                _buffer?.Release();
-                _buffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.NextPowerOfTwo(Mathf.Max(needed, 256)),
-                    TrampleStamp.Stride);
-            }
+            _buffer.Reserve(needed);
 
             var offset = 0;
             Put(stamps.Trample, ref offset);
@@ -126,7 +122,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
 
         private void Put(List<TrampleStamp> list, ref int offset)
         {
-            _buffer.SetData(list, 0, offset, list.Count);
+            _buffer.Buffer.SetData(list, 0, offset, list.Count);
             offset += list.Count;
         }
 
@@ -177,7 +173,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             }
 
             _commands.SetGlobalVector(FadeId, amount);
-            _commands.DrawProcedural(Matrix4x4.identity, _material, _fadePass, MeshTopology.Triangles, 3);
+            _commands.DrawFullScreen(_material, _fadePass);
         }
 
         private void DrawStamps(int pass, int offset, int count)
