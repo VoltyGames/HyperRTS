@@ -49,7 +49,10 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 var folder = new AdvancedDropdownItem(group.Key.ToString());
                 foreach (var choice in group.OrderBy(choice => choice.Name, StringComparer.OrdinalIgnoreCase))
                 {
-                    folder.AddChild(new AdvancedDropdownItem(choice.Name) { id = choice.TypeId });
+                    // AddChild overwrites the id with one made from the name, so the type id goes on after it.
+                    var item = new AdvancedDropdownItem(choice.Name);
+                    folder.AddChild(item);
+                    item.id = choice.TypeId;
                 }
 
                 root.AddChild(folder);
