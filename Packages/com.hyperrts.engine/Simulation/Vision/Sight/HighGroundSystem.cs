@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Vision.Sight
     {
         private static readonly ProfilerMarker RiseMarker = new("HighGroundSystem.Rise");
 
+        private EntityQuery _ground;
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private SightRules _builtRules;
@@ -29,6 +30,7 @@ namespace HyperRTS.Simulation.Vision.Sight
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _ground = SystemAPI.QueryBuilder().WithAllRW<HighGround>().Build();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<SightRules>();
         }
@@ -65,7 +67,7 @@ namespace HyperRTS.Simulation.Vision.Sight
                 Grid = grid,
                 Rules = rules,
             };
-            state.ReplaceSingleton(ref ground, "HighGround");
+            state.ReplaceSingleton(_ground, ref ground, "HighGround");
             var radius = (int)math.round(rules.Radius / grid.CellSize);
             state.Dependency = new RiseJob { Ground = ground, Terrain = terrain, Radius = radius }
                 .Schedule(state.Dependency);

@@ -39,6 +39,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
         private ChangeTracker _builtFootprints;
         private ChangeTracker _builtScenery;
         private EntityQuery _openScenery;
+        private EntityQuery _grid;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -54,6 +55,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
             _parts.SetChangedVersionFilter(ComponentType.ReadOnly<NavObstaclePart>());
             _areaParts = SystemAPI.QueryBuilder().WithAll<NavAreaPart, NavArea>().Build();
             _areaParts.SetChangedVersionFilter(ComponentType.ReadOnly<NavAreaPart>());
+            _grid = SystemAPI.QueryBuilder().WithAllRW<NavGrid>().Build();
             state.RequireForUpdate<MapSettings>();
         }
 
@@ -214,7 +216,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
             var cellGrid = map.NavGrid();
             var count = cellGrid.Count;
             var grid = NavGrid.Create(cellGrid, terrain, map.WaterLevel);
-            state.ReplaceSingleton(ref grid, "NavGrid");
+            state.ReplaceSingleton(_grid, ref grid, "NavGrid");
 
             if (_base.IsCreated)
             {

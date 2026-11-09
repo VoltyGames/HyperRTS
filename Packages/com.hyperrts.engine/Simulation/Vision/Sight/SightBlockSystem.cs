@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.Vision.Sight
 
         private EntityQuery _blocks;
         private EntityQuery _changed;
+        private EntityQuery _blockers;
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private CropCover _builtCrops;
@@ -42,6 +43,7 @@ namespace HyperRTS.Simulation.Vision.Sight
                 .WithOptions(EntityQueryOptions.IgnoreComponentEnabledState).Build();
             _changed.SetChangedVersionFilter(ComponentType.ReadOnly<SightBlock>());
             _changed.AddChangedVersionFilter(ComponentType.ReadOnly<LocalTransform>());
+            _blockers = SystemAPI.QueryBuilder().WithAllRW<SightBlockers>().Build();
             state.RequireForUpdate<MapSettings>();
         }
 
@@ -115,7 +117,7 @@ namespace HyperRTS.Simulation.Vision.Sight
             _builtTerrain = terrain;
             _builtCrops = crops;
             var grid = SightBlockers.Create(map, Allocator.Persistent);
-            if (state.ReplaceSingleton(ref grid, "SightBlockers"))
+            if (state.ReplaceSingleton(_blockers, ref grid, "SightBlockers"))
             {
                 _previous.Dispose();
             }

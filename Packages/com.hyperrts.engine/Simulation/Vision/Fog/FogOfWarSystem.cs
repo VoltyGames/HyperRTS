@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.Vision.Fog
         public const float UpdateInterval = 0.1f;
 
         private EntityQuery _viewers;
+        private EntityQuery _fog;
         private double _nextUpdate;
         private bool _stampedWithFog;
         private MapSettings _builtMap;
@@ -34,6 +35,7 @@ namespace HyperRTS.Simulation.Vision.Fog
         {
             _viewers = SystemAPI.QueryBuilder().WithAll<SightArea, SightAreaBits, VisionRange, Owner, LocalTransform>()
                 .Build();
+            _fog = SystemAPI.QueryBuilder().WithAllRW<FogOfWar>().Build();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SightBlockers>();
@@ -132,7 +134,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             _builtMap = settings;
             var grid = FogOfWar.Create(settings.FogGrid(), Allocator.Persistent);
             grid.Generation = 1;
-            state.ReplaceSingleton(ref grid, "FogOfWar");
+            state.ReplaceSingleton(_fog, ref grid, "FogOfWar");
             return true;
         }
 
