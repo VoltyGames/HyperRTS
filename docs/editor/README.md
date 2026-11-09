@@ -81,9 +81,12 @@ awaits.
 A `Generator` is one step that creates generated assets. Subclass it in the engine or a game and it appears on the
 Build page's Generators tab. It has a unique `Name`, a `Group`, an `Order`, a `Description`, its `Sources` and
 `Outputs`, its `Inputs` (asset paths of files or folders it reads) and a `Run()` method. A step that uses another's
-output must come after it. An import hook that keeps an output current calls the generator through
-`GeneratorRunner.Run`, so an import and a manual run do the same work. Each run's time and result go to
-`Library/HyperRTS/GeneratorRuns.json`.
+output must come after it. Each run's time and result go to `Library/HyperRTS/GeneratorRuns.json`.
+
+A generator that overrides `RunOnImport` to true also runs on its own: `GeneratorImport` runs it once per import batch
+(after the batch, through `delayCall`) when an imported, deleted or moved path is one it `Reads`. By default that is an
+input or anything below an input folder; override `Reads` when the inputs are a list that lags a delete or when an
+output sits inside an input folder, so the step's own writes never start it again.
 
 A generator is **Out of date** when it never ran here, failed last time, or an input was written after its last run.
 **Run out of date** runs only those, in order. In batch mode call `GeneratorRunner.RunAll` with `-executeMethod`. To

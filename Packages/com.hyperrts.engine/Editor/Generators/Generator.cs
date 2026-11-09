@@ -36,7 +36,13 @@ namespace HyperRTS.Editor.Generators
         /// <summary>False hides the step, e.g. engine steps that write into a read-only package.</summary>
         public virtual bool Available => true;
 
+        /// <summary>True to run the step after an import batch that changed something it <see cref="Reads"/>.</summary>
+        public virtual bool RunOnImport => false;
+
         public abstract void Run();
+
+        /// <summary>True when this asset path is one of the <see cref="Inputs"/> or below an input folder. Override it when the inputs are a list that lags a delete.</summary>
+        public virtual bool Reads(string assetPath) => Inputs.Any(input => assetPath == input || assetPath.StartsWith(input + "/", StringComparison.Ordinal));
 
         /// <summary>True when the step never ran here, failed last time, or an input changed since it ran.</summary>
         public bool IsOutOfDate(GeneratorRunLog log)
