@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Vision.Sight
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
         private CropCover _builtCrops;
-        private ChangeSignature _built;
+        private ChangeTracker _built;
 
         // The last stamp, to tell which tiles a restamp changed.
         private NativeArray<SightCell> _previous;
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Vision.Sight
             SystemAPI.TryGetSingleton<CropCover>(out var crops);
             var rebuilt = EnsureGrid(ref state, map, terrain, crops);
             // Checked on a rebuild too, so the set it stamps is the one later frames compare with.
-            var changed = MayDiffer(ref state) && SignatureChanged(ref state);
+            var changed = MayDiffer(ref state) && BlocksChanged(ref state);
             if (!rebuilt && !changed)
             {
                 return;
@@ -89,16 +89,16 @@ namespace HyperRTS.Simulation.Vision.Sight
             _built.OrderChanged<SightBlock>(ref state) | _built.CountChanged(_blocks.CalculateEntityCount()) |
             !_changed.IsEmpty;
 
-        private bool SignatureChanged(ref SystemState state)
+        private bool BlocksChanged(ref SystemState state)
         {
             // Seeded with the count, since the sum can't tell a block from none.
-            var signature = (ulong)_built.Count;
+            var sum = (ulong)_built.Count;
             foreach (var (block, transform) in SystemAPI.Query<RefRO<SightBlock>, RefRO<LocalTransform>>())
             {
-                signature += block.ValueRO.Hash(transform.ValueRO);
+                sum += block.ValueRO.Hash(transform.ValueRO);
             }
 
-            return _built.SumChanged(signature);
+            return _built.SumChanged(sum);
         }
 
         /// <summary>Creates the grid, or replaces it when the map's area, terrain or crops changed; true if it did.</summary>

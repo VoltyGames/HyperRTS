@@ -6,7 +6,7 @@ namespace HyperRTS.Simulation.Common
     /// What a system last built from: an order version, an entity count and an order-independent hash sum, each
     /// compared against the last call so a system restamps only when its entities changed.
     /// </summary>
-    public struct ChangeSignature
+    public struct ChangeTracker
     {
         private int _order;
         private int _count;

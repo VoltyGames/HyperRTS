@@ -20,8 +20,7 @@ namespace HyperRTS.Simulation.Squads.Cover
         private EntityQuery _cover;
         private EntityQuery _changed;
         private MapSettings _builtMap;
-        private int _builtCount;
-        private ulong _builtSignature;
+        private ChangeTracker _built;
         private int _builds;
 
         [BurstCompile]
@@ -52,14 +51,13 @@ namespace HyperRTS.Simulation.Squads.Cover
             var map = SystemAPI.GetSingleton<MapSettings>();
             var missing = !SystemAPI.HasSingleton<CoverSpots>() || !map.SameArea(_builtMap);
             var count = _cover.CalculateEntityCount();
-            var differ = missing || count != _builtCount || !_changed.IsEmpty;
-            if (differ && (SignatureChanged(ref state, count) || missing))
+            var differ = _built.CountChanged(count) | missing | !_changed.IsEmpty;
+            if (differ && (SpotsChanged(ref state, count) || missing))
             {
                 Rebuild(ref state, map);
             }
 
             _builtMap = map;
-            _builtCount = count;
             ExpireReservations(ref state);
         }
 
@@ -74,24 +72,22 @@ namespace HyperRTS.Simulation.Squads.Cover
             }
         }
 
-        private bool SignatureChanged(ref SystemState state, int count)
+        private bool SpotsChanged(ref SystemState state, int count)
         {
             // An order-independent sum, since an archetype move reorders the chunks.
-            var signature = (ulong)count;
+            var sum = (ulong)count;
             foreach (var (spots, transform) in SystemAPI.Query<DynamicBuffer<CoverSpot>, RefRO<LocalTransform>>()
                          .WithNone<ConstructionProgress>())
             {
-                signature += math.hash(transform.ValueRO.Position) + (ulong)math.hash(transform.ValueRO.Rotation.value) * 31UL
+                sum += math.hash(transform.ValueRO.Position) + (ulong)math.hash(transform.ValueRO.Rotation.value) * 31UL
                     + (ulong)spots.Length;
                 foreach (var spot in spots)
                 {
-                    signature += spot.Hash();
+                    sum += spot.Hash();
                 }
             }
 
-            var changed = signature != _builtSignature;
-            _builtSignature = signature;
-            return changed;
+            return _built.SumChanged(sum);
         }
 
         private void Rebuild(ref SystemState state, in MapSettings map)

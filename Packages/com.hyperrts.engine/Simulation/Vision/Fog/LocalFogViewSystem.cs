@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Vision.Fog
     public partial struct LocalFogViewSystem : ISystem
     {
         private int _fogVersion;
-        private ChangeSignature _owners;
+        private ChangeTracker _owners;
         private ConcealmentLookup _concealment;
 
         [BurstCompile]

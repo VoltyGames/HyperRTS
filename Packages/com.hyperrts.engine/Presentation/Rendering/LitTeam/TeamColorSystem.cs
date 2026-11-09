@@ -19,10 +19,10 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         private EntityQuery _colored;
         private EntityQuery _changedOverride;
         private EntityQuery _uncoloredSources;
-        private ChangeSignature _players;
-        private ChangeSignature _owned;
-        private ChangeSignature _sources;
-        private ChangeSignature _overrides;
+        private ChangeTracker _players;
+        private ChangeTracker _owned;
+        private ChangeTracker _sources;
+        private ChangeTracker _overrides;
         private OwnerPalette _palette;
         private MeshPainter<TeamColor> _colorParts;
         private MeshPainter<TeamStrip> _stripParts;

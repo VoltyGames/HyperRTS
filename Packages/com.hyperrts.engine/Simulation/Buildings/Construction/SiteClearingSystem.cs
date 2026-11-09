@@ -19,8 +19,8 @@ namespace HyperRTS.Simulation.Buildings.Construction
     [UpdateInGroup(typeof(CombatSystemGroup))]
     public partial struct SiteClearingSystem : ISystem
     {
-        private ChangeSignature _sites;
-        private ChangeSignature _scenery;
+        private ChangeTracker _sites;
+        private ChangeTracker _scenery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)

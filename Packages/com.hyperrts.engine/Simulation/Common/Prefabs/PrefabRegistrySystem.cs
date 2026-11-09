@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Common.Prefabs
     {
         private NativeHashMap<int, Entity> _byTypeId;
         private EntityQuery _prefabs;
-        private ChangeSignature _built;
+        private ChangeTracker _registered;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Common.Prefabs
         public void OnUpdate(ref SystemState state)
         {
             // Prefab's order version moves only when prefabs load, unload or change shape, not as units spawn and die.
-            if (!_built.OrderChanged<Prefab>(ref state))
+            if (!_registered.OrderChanged<Prefab>(ref state))
             {
                 return;
             }

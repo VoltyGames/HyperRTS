@@ -33,11 +33,11 @@ namespace HyperRTS.Simulation.Navigation.Grid
         private NativeArray<byte> _previousScenery;
         private MapSettings _builtMap;
         private TerrainHeight _builtTerrain;
-        private ChangeSignature _builtObstacles;
-        private ChangeSignature _builtBlockers;
-        private ChangeSignature _builtAreas;
-        private ChangeSignature _builtFootprints;
-        private ChangeSignature _builtScenery;
+        private ChangeTracker _builtObstacles;
+        private ChangeTracker _builtBlockers;
+        private ChangeTracker _builtAreas;
+        private ChangeTracker _builtFootprints;
+        private ChangeTracker _builtScenery;
         private EntityQuery _openScenery;
 
         [BurstCompile]
@@ -85,11 +85,11 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 BuildGrid(ref state, map, terrain);
             }
 
-            var footprintsChanged = FootprintsMayDiffer(ref state) && SignatureChanged(ref state);
+            var footprintsChanged = FootprintsMayDiffer(ref state) && FootprintsChanged(ref state);
             var restamp = _builtAreas.OrderChanged<NavArea>(ref state) | footprintsChanged | rebuilt;
             // Unit spawns and deaths bump the order too, so only a changed set of scenery refills it.
             var sceneryMayDiffer = _builtScenery.OrderChanged<Destructible>(ref state);
-            var restampScenery = (sceneryMayDiffer && ScenerySignatureChanged(ref state)) | rebuilt;
+            var restampScenery = (sceneryMayDiffer && SceneryChanged(ref state)) | rebuilt;
             if (!restamp && !restampScenery)
             {
                 return;
@@ -142,22 +142,22 @@ namespace HyperRTS.Simulation.Navigation.Grid
         }
 
         /// <summary>Whether the scenery's count, places or ratings differ from the last fill.</summary>
-        private bool ScenerySignatureChanged(ref SystemState state)
+        private bool SceneryChanged(ref SystemState state)
         {
-            var signature = (ulong)(_scenery.CalculateEntityCount() + _openScenery.CalculateEntityCount());
+            var sum = (ulong)(_scenery.CalculateEntityCount() + _openScenery.CalculateEntityCount());
             foreach (var (destructible, transform) in SystemAPI.Query<RefRO<Destructible>, RefRO<LocalTransform>>()
                          .WithNone<NavObstacle, NavAgent>())
             {
-                signature += math.hash(new float4(transform.ValueRO.Position, destructible.ValueRO.Crush));
+                sum += math.hash(new float4(transform.ValueRO.Position, destructible.ValueRO.Crush));
             }
 
             foreach (var (destructible, obstacle, transform) in SystemAPI
                          .Query<RefRO<Destructible>, RefRO<NavObstacle>, RefRO<LocalTransform>>().WithNone<NavAgent>())
             {
-                signature += obstacle.ValueRO.Open ? obstacle.ValueRO.Hash(transform.ValueRO) + (ulong)destructible.ValueRO.Crush : 0UL;
+                sum += obstacle.ValueRO.Open ? obstacle.ValueRO.Hash(transform.ValueRO) + (ulong)destructible.ValueRO.Crush : 0UL;
             }
 
-            return _builtScenery.SumChanged(signature);
+            return _builtScenery.SumChanged(sum);
         }
 
         /// <summary>Whether the grid was built from this map and terrain; a new map or late-streamed terrain rebuilds it.</summary>
@@ -170,19 +170,19 @@ namespace HyperRTS.Simulation.Navigation.Grid
         }
 
         /// <summary>Whether obstacle and blocker footprints differ from the last stamp, so fog tags alone cost no rebuild.</summary>
-        private bool SignatureChanged(ref SystemState state)
+        private bool FootprintsChanged(ref SystemState state)
         {
-            var signature = (ulong)_obstacles.CalculateEntityCount() + ((ulong)_builtBlockers.Count << 32);
+            var sum = (ulong)_obstacles.CalculateEntityCount() + ((ulong)_builtBlockers.Count << 32);
             var parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true);
             foreach (var (obstacle, transform, entity) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalTransform>>()
                          .WithEntityAccess())
             {
-                signature += obstacle.ValueRO.Hash(transform.ValueRO);
+                sum += obstacle.ValueRO.Hash(transform.ValueRO);
                 if (parts.TryGetBuffer(entity, out var pieces))
                 {
                     foreach (var part in pieces)
                     {
-                        signature += part.Closed ? math.hash(new float4(part.Center, part.Size)) : 0u;
+                        sum += part.Closed ? math.hash(new float4(part.Center, part.Size)) : 0u;
                     }
                 }
             }
@@ -193,16 +193,16 @@ namespace HyperRTS.Simulation.Navigation.Grid
             {
                 foreach (var part in areaParts[entity])
                 {
-                    signature += part.Open ? math.hash(new float4(part.Center, part.Size)) : 0u;
+                    sum += part.Open ? math.hash(new float4(part.Center, part.Size)) : 0u;
                 }
             }
 
             foreach (var (blocker, transform) in SystemAPI.Query<RefRO<Blocker>, RefRO<LocalTransform>>())
             {
-                signature += blocker.ValueRO.Hash(transform.ValueRO);
+                sum += blocker.ValueRO.Hash(transform.ValueRO);
             }
 
-            return _builtFootprints.SumChanged(signature);
+            return _builtFootprints.SumChanged(sum);
         }
 
         /// <summary>
