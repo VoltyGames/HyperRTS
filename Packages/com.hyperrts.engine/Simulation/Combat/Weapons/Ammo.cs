@@ -59,6 +59,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
             Current++;
         }
 
+        /// <summary>False when <see cref="Reload"/> would change nothing.</summary>
+        public bool NeedsReload => CanReload() || ReloadElapsed != 0f;
+
         private bool CanReload() => Current < Max && (Refill != AmmoRefill.Magazine || Current <= 0);
     }
 }

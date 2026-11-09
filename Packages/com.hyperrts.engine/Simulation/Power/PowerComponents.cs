@@ -9,8 +9,8 @@ namespace HyperRTS.Simulation.Power
     /// </summary>
     public struct PowerGrid : IComponentData
     {
-        [GhostField] public float Produced;
-        [GhostField] public float Consumed;
+        [GhostField(Quantization = 10)] public float Produced;
+        [GhostField(Quantization = 10)] public float Consumed;
 
         public readonly bool IsLow => Consumed > Produced;
     }

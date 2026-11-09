@@ -5,15 +5,15 @@ namespace HyperRTS.Simulation.Status
 {
     /// <summary>
     /// A status effect on this entity, kept by <see cref="StatusEffectSystem"/> on the server. Clients get only the
-    /// type id and end time for the HUD, and find the effect's name and icon through the prefab registry.
+    /// type id for the HUD, and find the effect's name and icon through the prefab registry.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct ActiveStatus : IBufferElementData
     {
         [GhostField] public int TypeId;
 
-        /// <summary>Elapsed world time the effect ends at.</summary>
-        [GhostField] public float EndsAt;
+        /// <summary>Elapsed world time the effect ends at; server only, since a client's clock differs.</summary>
+        [GhostField(SendData = false)] public float EndsAt;
 
         [GhostField(SendData = false)] public Entity Definition;
 

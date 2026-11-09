@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Status;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Transforms;
 
@@ -46,7 +47,11 @@ namespace HyperRTS.Simulation.Abilities
             _targets.Update(ref state, _targetQueries);
             _caster.Update(ref state);
 
-            new CooldownJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
+            new CooldownJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime,
+                Cooldowns = SystemAPI.GetBufferLookup<AbilityCooldown>(),
+            }.ScheduleParallel();
 
             var completed = new CompletedBuildings(_completed, state.WorldUpdateAllocator, state.Dependency,
                 out var gathered);
@@ -69,8 +74,19 @@ namespace HyperRTS.Simulation.Abilities
         {
             public float DeltaTime;
 
-            private void Execute(DynamicBuffer<AbilityCooldown> states)
+            // Written only for the unit being run, and only while a cooldown runs, so idle chunks keep their version.
+            [NativeDisableParallelForRestriction]
+            [NativeDisableContainerSafetyRestriction]
+            public BufferLookup<AbilityCooldown> Cooldowns;
+
+            private void Execute(Entity entity, in DynamicBuffer<AbilityCooldown> read)
             {
+                if (!IsRunning(read))
+                {
+                    return;
+                }
+
+                var states = Cooldowns[entity];
                 for (var i = 0; i < states.Length; i++)
                 {
                     ref var state = ref states.ElementAt(i);
@@ -79,6 +95,19 @@ namespace HyperRTS.Simulation.Abilities
                         state.Remaining -= DeltaTime;
                     }
                 }
+            }
+
+            private static bool IsRunning(in DynamicBuffer<AbilityCooldown> states)
+            {
+                for (var i = 0; i < states.Length; i++)
+                {
+                    if (states[i].Remaining > 0f)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
         }
 

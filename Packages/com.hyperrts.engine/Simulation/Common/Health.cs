@@ -7,8 +7,8 @@ namespace HyperRTS.Simulation.Common
     /// <summary>Hit points; the entity dies when they reach zero.</summary>
     public struct Health : IComponentData
     {
-        [GhostField] public float Current;
-        [GhostField] public float Max;
+        [GhostField(Quantization = 10)] public float Current;
+        [GhostField(Quantization = 10)] public float Max;
 
         public readonly float Fraction => Max > 0f ? math.saturate(Current / Max) : 0f;
 

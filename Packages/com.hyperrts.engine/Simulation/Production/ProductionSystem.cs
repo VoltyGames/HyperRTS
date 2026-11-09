@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -62,6 +63,8 @@ namespace HyperRTS.Simulation.Production
                 PadUserLookup = SystemAPI.GetComponentLookup<HomePad>(true),
                 Produced = _produced,
                 Researched = _researched,
+                Producers = SystemAPI.GetComponentLookup<Producer>(),
+                Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(),
             }.Schedule();
         }
 
@@ -87,12 +90,22 @@ namespace HyperRTS.Simulation.Production
             public EventWriter<UnitProduced> Produced;
             public EventWriter<ResearchCompleted> Researched;
 
-            private void Execute(Entity entity, ref Producer producer, DynamicBuffer<ProductionQueueItem> queue,
+            // Written only when a producer works, so idle producers keep their change version.
+            [NativeDisableContainerSafetyRestriction] public ComponentLookup<Producer> Producers;
+            [NativeDisableContainerSafetyRestriction] public BufferLookup<ProductionQueueItem> Queues;
+
+            private void Execute(Entity entity, in Producer idle, in DynamicBuffer<ProductionQueueItem> queue,
                 in LocalTransform transform, in Owner owner, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
             {
                 if (queue.IsEmpty)
                 {
-                    producer.Elapsed = 0f;
+                    if (idle.Elapsed != 0f)
+                    {
+                        var reset = idle;
+                        reset.Elapsed = 0f;
+                        Producers[entity] = reset;
+                    }
+
                     return;
                 }
 
@@ -110,10 +123,12 @@ namespace HyperRTS.Simulation.Production
                     return;
                 }
 
+                var producer = idle;
                 var lowPower = (offline.Reasons & OfflineReason.Unpowered) != 0;
                 producer.Elapsed += DeltaTime * producer.Speed * (lowPower ? LowPowerRate : 1f);
                 if (producer.Elapsed < producible.BuildTime)
                 {
+                    Producers[entity] = producer;
                     return;
                 }
 
@@ -134,8 +149,9 @@ namespace HyperRTS.Simulation.Production
                     });
                 }
 
-                queue.RemoveAt(0);
+                Queues[entity].RemoveAt(0);
                 producer.Elapsed = 0f;
+                Producers[entity] = producer;
             }
 
             private void RecordResearch(Entity producer, byte owner, ProductionQueueItem item)

@@ -1,5 +1,7 @@
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Combat.Weapons
@@ -13,7 +15,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new ReloadJob { DeltaTime = SystemAPI.Time.DeltaTime }.ScheduleParallel();
+            new ReloadJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime,
+                Mounts = SystemAPI.GetBufferLookup<WeaponMount>(),
+            }.ScheduleParallel();
         }
 
         [BurstCompile]
@@ -22,7 +28,18 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             public float DeltaTime;
 
-            private void Execute(DynamicBuffer<WeaponMount> mounts) => WeaponMount.Reload(mounts, DeltaTime, docked: false);
+            // Written only for the unit being run, and only when a reload moves, so idle chunks keep their version.
+            [NativeDisableParallelForRestriction]
+            [NativeDisableContainerSafetyRestriction]
+            public BufferLookup<WeaponMount> Mounts;
+
+            private void Execute(Entity entity, in DynamicBuffer<WeaponMount> mounts)
+            {
+                if (WeaponMount.NeedsReload(mounts, docked: false))
+                {
+                    WeaponMount.Reload(Mounts[entity], DeltaTime, docked: false);
+                }
+            }
         }
     }
 }

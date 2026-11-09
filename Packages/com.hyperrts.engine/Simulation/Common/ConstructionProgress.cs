@@ -7,6 +7,6 @@ namespace HyperRTS.Simulation.Common
     [GhostEnabledBit]
     public struct ConstructionProgress : IComponentData, IEnableableComponent
     {
-        [GhostField] public float Value;
+        [GhostField(Quantization = 1000)] public float Value;
     }
 }

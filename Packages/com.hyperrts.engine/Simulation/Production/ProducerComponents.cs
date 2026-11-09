@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Production
         [StatField(Stat.ProductionSpeed)] public float Speed;
 
         /// <summary>Seconds of work done on the head of the queue.</summary>
-        [GhostField] public float Elapsed;
+        [GhostField(Quantization = 100)] public float Elapsed;
 
         /// <summary>Units released so far; every client sees it rise, so doors open for enemies too.</summary>
         [GhostField] public uint Released;

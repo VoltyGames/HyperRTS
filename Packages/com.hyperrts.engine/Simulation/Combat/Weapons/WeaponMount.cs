@@ -85,6 +85,20 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
         }
 
+        /// <summary>Some mount of the matching refill kind has a reload to advance or reset.</summary>
+        public static bool NeedsReload(in DynamicBuffer<WeaponMount> mounts, bool docked)
+        {
+            for (var i = 0; i < mounts.Length; i++)
+            {
+                if ((mounts[i].Ammo.Refill == AmmoRefill.Docked) == docked && mounts[i].Ammo.NeedsReload)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>Every usable weapon with limited rounds is empty, and there is at least one.</summary>
         public static bool IsSpent(DynamicBuffer<WeaponMount> mounts)
         {
