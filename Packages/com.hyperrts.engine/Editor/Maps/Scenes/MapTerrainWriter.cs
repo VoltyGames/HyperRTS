@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Build;
@@ -21,7 +22,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var (path, layout, climate) = (generation.Project.Paths.Terrain, generation.Layout, generation.Project.Climate);
             var (heights, textureWeights, trees) = (generation.Heights, generation.TextureWeights, generation.TerrainTrees);
-            var data = TerrainAsset(path);
+            var data = EditorAssets.LoadOrCreate(path, () => new TerrainData());
             var terrain = layout.Terrain;
             data.heightmapResolution = terrain.resolution;
             data.size = new Vector3(layout.TerrainBounds.width, terrain.maxHeight, layout.TerrainBounds.height);
@@ -32,19 +33,6 @@ namespace HyperRTS.Editor.Maps.Scenes
             data.detailPrototypes = System.Array.Empty<DetailPrototype>();
             WriteTrees(data, trees, generation.Scenery, climate, layout, generation.Project.Paths);
             EditorUtility.SetDirty(data);
-            return data;
-        }
-
-        /// <summary>The TerrainData at <paramref name="path"/>, created there when missing.</summary>
-        private static TerrainData TerrainAsset(string path)
-        {
-            var data = AssetDatabase.LoadAssetAtPath<TerrainData>(path);
-            if (data == null)
-            {
-                data = new TerrainData();
-                AssetDatabase.CreateAsset(data, path);
-            }
-
             return data;
         }
 

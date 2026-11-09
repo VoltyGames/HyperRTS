@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Vegetation
         /// <summary>Saves the cover to <paramref name="path"/>, keeping the asset's GUID across rebuilds.</summary>
         public static CropCoverMap Write(string path, MapCropBake bake)
         {
-            var map = EditorAssets.LoadOrCreate<CropCoverMap>(path);
+            var map = EditorAssets.LoadOrCreate(path, ScriptableObject.CreateInstance<CropCoverMap>);
             (map.width, map.height, map.spacing) = (bake.Width, bake.Height, bake.Area.width / bake.Width);
             map.density = new byte[bake.Ids.Values.Length];
             map.top = new byte[map.density.Length];

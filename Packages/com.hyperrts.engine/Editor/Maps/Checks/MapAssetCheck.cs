@@ -24,7 +24,8 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             ClimateAssets();
             PaletteAssets();
-            ClimateKeys();
+            MapFieldCheck.CheckLibrary(Climate, Palette, Issues);
+            RavineTrees();
             Climate.surfaces.ForEach(SurfaceContents);
             Climate.roadClasses.ForEach(RoadClass);
             Climate.farmlandKits.ForEach(FarmlandKit);
@@ -62,12 +63,6 @@ namespace HyperRTS.Editor.Maps.Checks
             Require(Climate.terrain != null, $"{name} has no terrain material.");
             Require(Climate.water != null, $"{name} has no water material.");
             MapWeatherCheck.Check(Climate, Issues);
-            Require(Climate.fordShallowsWidth > 0f, $"{name}: fordShallowsWidth {Climate.fordShallowsWidth} must be above 0.");
-            Require(Climate.fordRapidsLength > 0f, $"{name}: fordRapidsLength {Climate.fordRapidsLength} must be above 0.");
-            foreach (var (field, value) in Climate.groundTint.Fields())
-            {
-                Require(value > 0f, $"{name}: groundTint {field} {value} must be above 0.");
-            }
         }
 
         private void RowCropAssets(MapClimateRowCrop rowCrop, string name)
@@ -91,12 +86,9 @@ namespace HyperRTS.Editor.Maps.Checks
             Require(decal.material != null, $"{what} has no material.");
             var sized = decal.size.x > 0f && decal.size.y >= decal.size.x;
             Require(sized, $"{what}: size {decal.size} must be above 0 with y at least x.");
-            Require(decal.depth > 0f, $"{what}: depth {decal.depth} must be above 0.");
             var twoTurns = decal.alongRoad && decal.randomRotation;
             Require(!twoTurns, $"{what} sets both alongRoad and randomRotation; turn randomRotation off.");
         }
-
-        private void Decal(string key, string source) => InClimate(Climate.decals, key, "decal", source);
 
         private void PaletteAssets()
         {
@@ -123,29 +115,15 @@ namespace HyperRTS.Editor.Maps.Checks
             }
         }
 
-        private void ClimateKeys()
-        {
-            var name = $"Climate '{Climate.key}'";
-            Surface(Climate.groundSurface, $"{name} ground");
-            Surface(Climate.baseSurface, $"{name} base");
-            Surface(Climate.slopeSurface, $"{name} slope");
-            Surface(Climate.shoreSurface, $"{name} shore");
-            Surface(Climate.floodplainSurface, $"{name} floodplain");
-            Surface(Climate.ravineSurface, $"{name} ravine");
-            Surface(Climate.ravineRimSurface, $"{name} ravine rim");
-            Optional(Climate.reedPlant, key => InClimate(Climate.plants, key, "plant", $"{name} reeds"));
-            RavineTrees(name);
-        }
-
         /// <summary>Ravine woods scatter the ravine surface's trees along the floor, ignoring maxEdgeDistance.</summary>
-        private void RavineTrees(string name)
+        private void RavineTrees()
         {
             if (!MapKeys.Contains(Climate.surfaces, Climate.ravineSurface))
             {
                 return;
             }
 
-            var source = $"{name} ravine surface '{Climate.ravineSurface}'";
+            var source = $"Climate '{Climate.key}' ravine surface '{Climate.ravineSurface}'";
             Climate.Surface(Climate.ravineSurface).trees.ForEach(tree => NoMaxEdgeDistance(tree, source));
         }
 
@@ -157,62 +135,35 @@ namespace HyperRTS.Editor.Maps.Checks
         private void SurfaceContents(MapClimateSurface surface)
         {
             var name = $"surface '{surface.key}'";
-            InClimate(Climate.layers, surface.layer, "layer", name);
-            surface.trees.ForEach(tree => Tree(tree.tree, name));
-            surface.plants.ForEach(coverage => InClimate(Climate.plants, coverage.plant, "plant", name));
-            surface.props.ForEach(prop => EntryNotBesideRoad(prop.prop, name));
-            surface.decals.ForEach(decal => Decal(decal.decal, name));
-            SurfaceEdge(surface, name);
+            surface.props.ForEach(prop => NotBesideRoad(prop.prop, name));
             surface.mixes.ForEach(mix => SurfaceMix(mix, name));
-            Optional(surface.tramlines.layer, key => InClimate(Climate.layers, key, "tramline layer", name));
             Require(surface.tramlines.Valid && surface.swaths.Valid,
                 $"{name}: tramlines need a layer, a width above 0 and gauge plus width under spacing; swaths a width from 0 to spacing.");
             Require(MapImpactClass.IsValid(surface.impactClass), MapImpactClass.Problem(name, surface.impactClass));
         }
 
-        /// <summary>Every surface states its edge.</summary>
-        private void SurfaceEdge(MapClimateSurface surface, string name)
-        {
-            Require(surface.edgeWidth > 0f, $"{name}: edgeWidth {surface.edgeWidth} must be above 0 metres.");
-            Require(surface.edgeWander > 0f, $"{name}: edgeWander {surface.edgeWander} must be above 0 metres.");
-        }
-
         private void SurfaceMix(MapSurfaceMix mix, string name)
         {
-            InClimate(Climate.layers, mix.layer, "mix layer", name);
             Require(mix.Valid, $"{name}: mix '{mix.layer}' coverage {mix.coverage} and alongFlow {mix.alongFlow} must be in 0..1 and size {mix.size} above 0.");
         }
 
         private void RoadClass(MapRoadClass road)
         {
             var name = $"road class '{road.key}'";
-            Surface(road.surface, name);
             Require(MapImpactClass.IsValid(road.impactClass), MapImpactClass.Problem(name, road.impactClass));
-            if (road.vergeWidth > 0f)
-            {
-                Surface(road.vergeSurface, $"{name} verge");
-            }
+            Require(road.vergeWidth <= 0f || !string.IsNullOrEmpty(road.vergeSurface), $"{name}: vergeWidth {road.vergeWidth} needs a vergeSurface.");
         }
 
         private void FarmlandKit(MapFarmlandKit kit)
         {
             var name = $"farmland kit '{kit.key}'";
             Require(kit.crops.Count > 0, $"{name} has no crops.");
-            kit.crops.ForEach(crop => Surface(crop.surface, name));
-            kit.leftovers.ForEach(leftover => Surface(leftover.surface, name));
-            Surface(kit.marginSurface, name);
-            Optional(kit.beltKit, key => InClimate(Climate.beltKits, key, "belt kit", name));
-            Optional(kit.trackClass, key => InClimate(Climate.roadClasses, key, "road class", $"{name} tracks"));
-            Require(kit.trackJoinDistance > 0f, $"{name}: trackJoinDistance {kit.trackJoinDistance} must be above 0.");
         }
 
         private void BeltKit(MapBeltKit kit)
         {
             var name = $"belt kit '{kit.key}'";
             Require(kit.trees.Count > 0, $"{name} has no trees.");
-            kit.trees.ForEach(tree => Tree(tree.tree, name));
-            Optional(kit.shrub, key => Tree(key, $"{name} shrub"));
-            Surface(kit.surface, name);
         }
 
         private void WoodlandKit(MapWoodlandKit kit)
@@ -220,42 +171,25 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"woodland kit '{kit.key}'";
             foreach (var tree in kit.trees.Concat(kit.edgeTrees))
             {
-                Tree(tree.tree, name);
                 NoMaxEdgeDistance(tree, name);
             }
-
-            Surface(kit.surface, name);
-            Surface(kit.edgeSurface, name);
         }
 
         private void EntryKeys(MapProp entry)
         {
             var name = $"prop '{entry.key}'";
-            Optional(entry.pad, key => Surface(key, $"{name} pad"));
-            Optional(entry.access, key => InClimate(Climate.roadClasses, key, "road class", $"{name} access"));
             SharedAccessDistance(entry, name);
             Optional(entry.groundDecal, key =>
-            {
-                Decal(key, $"{name} ground decal");
                 Require(entry.groundDecalSize > 0f,
-                    $"{name}: groundDecalSize {entry.groundDecalSize} must be above 0 for groundDecal '{key}'.");
-            });
+                    $"{name}: groundDecalSize {entry.groundDecalSize} must be above 0 for groundDecal '{key}'."));
         }
 
         /// <summary>A shared access distance only matters for props with an access track.</summary>
         private void SharedAccessDistance(MapProp entry, string name)
         {
             var distance = entry.sharedAccessDistance;
-            Require(distance >= 0f, $"{name}: sharedAccessDistance {distance} must be at least 0.");
             var hasAccess = !string.IsNullOrEmpty(entry.access);
             Require(hasAccess || distance <= 0f, $"{name}: sharedAccessDistance {distance} needs access set; use 0 without an access track.");
-        }
-
-        /// <summary>A surface or kit entry must exist and must not ask for besideRoad, which only scatters use.</summary>
-        private void EntryNotBesideRoad(string key, string source)
-        {
-            Entry(key, source);
-            NotBesideRoad(key, source);
         }
 
         private void SettlementKit(MapSettlementKit kit)
@@ -263,41 +197,35 @@ namespace HyperRTS.Editor.Maps.Checks
             var name = $"settlement kit '{kit.key}'";
             Require(kit.houses.Count > 0, $"{name} has no houses.");
             Require(kit.plot.x >= 1f && kit.plot.y >= 1f, $"{name}: plot {kit.plot} must be at least 1 m each way.");
-            kit.houses.ForEach(key => EntryNotBesideRoad(key, name));
-            kit.outbuildings.ForEach(key => EntryNotBesideRoad(key, name));
-            kit.extras.ForEach(extra => EntryNotBesideRoad(extra.kind, name));
+            kit.houses.ForEach(key => NotBesideRoad(key, name));
+            kit.outbuildings.ForEach(key => NotBesideRoad(key, name));
+            kit.extras.ForEach(extra => NotBesideRoad(extra.kind, name));
             foreach (var key in new[] { kit.frontFence, kit.sideFence, kit.gate })
             {
-                Optional(key, entry => EntryNotBesideRoad(entry, name));
+                Optional(key, entry => NotBesideRoad(entry, name));
             }
 
             Optional(kit.streetPipe, key => StreetPipe(kit, key, name));
 
             Optional(kit.streetPole, key =>
             {
-                EntryNotBesideRoad(key, name);
+                NotBesideRoad(key, name);
                 Require(kit.poleSpacing >= 1f, $"{name}: poleSpacing {kit.poleSpacing} must be at least 1 m.");
             });
-            Optional(kit.orchardTree, key =>
-            {
-                Tree(key, $"{name} orchard");
-                Require(kit.orchardSpacing >= 1f, $"{name}: orchardSpacing {kit.orchardSpacing} must be at least 1 m.");
-            });
-            Surface(kit.yardSurface, name);
-            Surface(kit.gardenSurface, name);
-            Surface(kit.backSurface, name);
+            Require(string.IsNullOrEmpty(kit.orchardTree) || kit.orchardSpacing >= 1f,
+                $"{name}: orchardSpacing {kit.orchardSpacing} must be at least 1 m.");
         }
 
         /// <summary>A street pipe needs its arch, a minimum section count and the widest gap an arch bridges.</summary>
         private void StreetPipe(MapSettlementKit kit, string pipe, string name)
         {
-            EntryNotBesideRoad(pipe, name);
+            NotBesideRoad(pipe, name);
             var hasArch = !string.IsNullOrEmpty(kit.streetPipeArch);
             Require(hasArch,
                 $"{name}: streetPipe '{pipe}' needs streetPipeArch, the arch that carries it over driveways and roads.");
             if (hasArch)
             {
-                EntryNotBesideRoad(kit.streetPipeArch, name);
+                NotBesideRoad(kit.streetPipeArch, name);
             }
 
             Require(kit.streetPipeMinSections >= 1, $"{name}: streetPipeMinSections {kit.streetPipeMinSections} must be at least 1 section.");

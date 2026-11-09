@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Kits
         public List<MapTreeShare> trees = new();
 
         [Tooltip("Climate tree (shrub) filling the gaps and edges; empty for none.")]
-        [MapKey(typeof(MapClimateTree))]
+        [MapKey(typeof(MapClimateTree), Optional = true)]
         public string shrub;
 
         [Range(0f, 1f)]

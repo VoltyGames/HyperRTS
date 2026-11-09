@@ -62,7 +62,7 @@ namespace HyperRTS.Editor.Maps.Climate
         public List<MapWoodlandKit> woodlandKits = new();
 
         [Tooltip("Old scars for maps with a war age; empty for none.")]
-        [MapKey(typeof(MapWarKit))]
+        [MapKey(typeof(MapWarKit), Optional = true)]
         public string warKit;
 
         [NonSerialized]
@@ -105,16 +105,18 @@ namespace HyperRTS.Editor.Maps.Climate
         public float floodplainWidth = 18f;
 
         [Tooltip("Plants of the shallows along the banks, such as reeds. Empty for none.")]
-        [MapKey(typeof(MapClimatePlant))]
+        [MapKey(typeof(MapClimatePlant), Optional = true)]
         public string reedPlant;
 
         [Tooltip("Width of the reed band reaching out from the water's edge (metres).")]
         public float reedWidth = 3f;
 
         [Tooltip("Metres past a ford's edge over which the river deepens again.")]
+        [Above(0f)]
         public float fordShallowsWidth;
 
         [Tooltip("Metres of fast, foaming water downstream of a ford.")]
+        [Above(0f)]
         public float fordRapidsLength;
 
         [Tooltip("Metres of foam lines trailing downstream of a ford or bridge; 0 for none.")]

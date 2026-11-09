@@ -111,8 +111,8 @@ namespace HyperRTS.Editor.Common
             EditorGUIUtility.PingObject(target);
         }
 
-        /// <summary>The asset at <paramref name="path"/>, created empty there when missing, so rebuilds keep its GUID.</summary>
-        public static T LoadOrCreate<T>(string path) where T : ScriptableObject
+        /// <summary>The asset at <paramref name="path"/>, made by <paramref name="create"/> there when missing, so rebuilds keep its GUID.</summary>
+        public static T LoadOrCreate<T>(string path, Func<T> create) where T : Object
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             if (asset != null)
@@ -120,7 +120,7 @@ namespace HyperRTS.Editor.Common
                 return asset;
             }
 
-            asset = ScriptableObject.CreateInstance<T>();
+            asset = create();
             AssetDatabase.CreateAsset(asset, path);
             return asset;
         }

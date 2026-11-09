@@ -7,8 +7,8 @@ using HyperRTS.Editor.Maps.Palette;
 namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
-    /// Reports each key that doesn't resolve with where it was named, so everything after the checks can look keys up
-    /// without checking them again.
+    /// Base of the map checks: holds the climate, palette and issues they report to. <see cref="MapFieldCheck"/>
+    /// reports each key that doesn't resolve, so everything after can look keys up without checking them again.
     /// </summary>
     public abstract class MapKeyCheck
     {
@@ -36,15 +36,8 @@ namespace HyperRTS.Editor.Maps.Checks
             }
         }
 
-        protected void Surface(string key, string source) => InClimate(Climate.surfaces, key, "surface", source);
-
-        protected void Tree(string key, string source) => InClimate(Climate.trees, key, "tree", source);
-
         protected void InClimate<T>(IReadOnlyList<T> items, string key, string what, string source) where T : IMapKeyed =>
             Require(MapKeys.Contains(items, key), $"{source}: {what} '{key}' is not in climate '{Climate.key}'.");
-
-        protected void Entry(string key, string source) =>
-            Require(MapKeys.Contains(Palette.entries, key), $"{source}: '{key}' is not in the palette.");
 
         /// <summary>A prop placed where besideRoad would be ignored: only scatters turn props onto a verge.</summary>
         protected void NotBesideRoad(string key, string source)

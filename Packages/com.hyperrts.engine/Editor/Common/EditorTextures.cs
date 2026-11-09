@@ -172,8 +172,8 @@ namespace HyperRTS.Editor.Common
             return Import(path, configure);
         }
 
-        // The full path, since a local package's files are not under the project folder.
-        private static void SavePng(Texture2D image, string path) =>
-            File.WriteAllBytes(Path.GetFullPath(path), image.EncodeToPNG());
+        /// <summary>Writes a PNG file without importing it; the physical path, since a local package's files are not under the project folder.</summary>
+        public static void SavePng(Texture2D image, string path) =>
+            File.WriteAllBytes(FileUtil.GetPhysicalPath(path), image.EncodeToPNG());
     }
 }

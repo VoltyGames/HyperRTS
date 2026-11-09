@@ -6,14 +6,16 @@ using HyperRTS.Editor.Common;
 namespace HyperRTS.Editor.Maps.Library
 {
     /// <summary>
-    /// Walks the serialized strings of an item or a spec and hands each to a visitor with its field and JSON path, so
-    /// callers can follow <see cref="MapKeyAttribute"/> fields.
+    /// Walks the serialized strings and numbers of an item or a spec and hands each to a visitor with its field and
+    /// JSON path, so callers can follow <see cref="MapKeyAttribute"/>, <see cref="AboveAttribute"/> and Unity
+    /// <c>[Min]</c> fields.
     /// </summary>
     public static class MapLibraryFields
     {
-        public static void Walk(object target, Action<FieldInfo, string, string> visit) => Walk(target, string.Empty, visit);
+        public static void Walk(object target, Action<FieldInfo, string, object> visit) => Walk(target, string.Empty, visit);
 
-        private static void Walk(object target, string at, Action<FieldInfo, string, string> visit)
+        /// <summary>Walks from <paramref name="at"/>, the path prefix that names where <paramref name="target"/> lies.</summary>
+        public static void Walk(object target, string at, Action<FieldInfo, string, object> visit)
         {
             foreach (var field in target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             {
@@ -27,14 +29,14 @@ namespace HyperRTS.Editor.Maps.Library
             }
         }
 
-        private static void Visit(FieldInfo field, string path, object value, Action<FieldInfo, string, string> visit)
+        private static void Visit(FieldInfo field, string path, object value, Action<FieldInfo, string, object> visit)
         {
             switch (value)
             {
                 case null:
                     return;
-                case string text:
-                    visit(field, path, text);
+                case string or int or float:
+                    visit(field, path, value);
                     return;
                 case IList list:
                     for (var i = 0; i < list.Count; i++)

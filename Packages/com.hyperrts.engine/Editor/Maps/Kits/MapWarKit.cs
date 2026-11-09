@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Maps.Kits
         public float bowlPlants = 0.3f;
 
         [Tooltip("Climate plant growing in a ring round each bowl; empty for none.")]
-        [MapKey(typeof(MapClimatePlant))]
+        [MapKey(typeof(MapClimatePlant), Optional = true)]
         public string weedPlant;
 
         [Tooltip("Width of the weed ring outside the rim (metres).")]
@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.Maps.Kits
         public Vector2 burntRadius = new(8f, 20f);
 
         [Tooltip("Climate plant growing on each burnt patch, such as fireweed; empty for none.")]
-        [MapKey(typeof(MapClimatePlant))]
+        [MapKey(typeof(MapClimatePlant), Optional = true)]
         public string burnPlant;
 
         [Range(0f, 1f)]

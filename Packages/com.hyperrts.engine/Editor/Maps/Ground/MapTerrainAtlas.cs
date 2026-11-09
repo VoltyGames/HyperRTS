@@ -78,7 +78,7 @@ namespace HyperRTS.Editor.Maps.Ground
                 atlas.SetPixels32(i % columns * size, (rows - 1 - i / columns) * size, size, size, pixels);
             }
 
-            File.WriteAllBytes(FileUtil.GetPhysicalPath(path), atlas.EncodeToPNG());
+            EditorTextures.SavePng(atlas, path);
             Object.DestroyImmediate(atlas);
         }
 

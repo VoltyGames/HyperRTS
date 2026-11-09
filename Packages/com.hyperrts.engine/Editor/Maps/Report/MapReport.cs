@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -81,7 +82,7 @@ namespace HyperRTS.Editor.Maps.Report
             File.WriteAllText(JsonPath(name), JsonUtility.ToJson(this, true));
             if (overview != null)
             {
-                File.WriteAllBytes(ImagePath(name), overview.EncodeToPNG());
+                EditorTextures.SavePng(overview, ImagePath(name));
             }
         }
     }

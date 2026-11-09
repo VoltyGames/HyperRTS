@@ -27,7 +27,6 @@ namespace HyperRTS.Editor.Maps.Checks
 
         private void KitItem(string key, string source)
         {
-            Entry(key, source);
             if (!MapKeys.Contains(Palette.entries, key))
             {
                 return;

@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Kits
         public string marginSurface;
 
         [Tooltip("Belt kit planted across the field ends; empty for none.")]
-        [MapKey(typeof(MapBeltKit))]
+        [MapKey(typeof(MapBeltKit), Optional = true)]
         public string beltKit;
 
         [Tooltip("A belt on every Nth line of field ends.")]
@@ -35,10 +35,11 @@ namespace HyperRTS.Editor.Maps.Kits
         public int beltEvery = 1;
 
         [Tooltip("Road class of the tracks along the field ends; empty for none.")]
-        [MapKey(typeof(MapRoadClass))]
+        [MapKey(typeof(MapRoadClass), Optional = true)]
         public string trackClass;
 
         [Tooltip("A field-end track ending this close to a road's edge (metres) is carried onto the road.")]
+        [Above(0f)]
         public float trackJoinDistance;
 
         [Tooltip("Metres past the margin at each field end where the rows turn; 0 for none.")]

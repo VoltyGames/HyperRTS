@@ -133,7 +133,7 @@ namespace HyperRTS.Editor.Maps.Layout
                 var count = feature.shared ? 1 : Symmetry.Copies.Count;
                 for (var copy = 0; copy < count; copy++)
                 {
-                    var placed = JsonUtility.FromJson<T>(JsonUtility.ToJson(feature));
+                    var placed = MapSpecJson.Clone(feature);
                     transform(placed, Symmetry.Copies[copy]);
                     copies.Add(new MapCopy<T>(feature, placed, Symmetry.Copies[copy], index, copy));
                 }

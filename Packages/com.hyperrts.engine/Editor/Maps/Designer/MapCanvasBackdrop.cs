@@ -1,7 +1,5 @@
 using System.IO;
-using System.Threading;
 using HyperRTS.Editor.Maps.Report;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,10 +12,12 @@ namespace HyperRTS.Editor.Maps.Designer
     [UxmlElement]
     public sealed partial class MapCanvasBackdrop : VisualElement
     {
+        private const long PollMilliseconds = 500;
+
         private Texture2D _image;
         private string _path;
         private long _diskTicks;
-        private FileSystemWatcher _watcher;
+        private IVisualElementScheduledItem _poll;
 
         public MapCanvasBackdrop()
         {
@@ -50,31 +50,13 @@ namespace HyperRTS.Editor.Maps.Designer
 
             LoadFromDisk();
             // Logs/ is outside the asset database, so no import event reports the preview.
-            Directory.CreateDirectory(MapReport.Folder);
-            var main = SynchronizationContext.Current;
-            var watcher = new FileSystemWatcher(MapReport.Folder, Path.GetFileName(_path));
-            watcher.Changed += (_, _) => main.Post(_ => OnWritten(watcher), null);
-            watcher.Created += (_, _) => main.Post(_ => OnWritten(watcher), null);
-            watcher.EnableRaisingEvents = true;
-            _watcher = watcher;
-            // A live watcher's OS callback would keep the old scripts loaded after a reload.
-            AssemblyReloadEvents.beforeAssemblyReload += Stop;
-        }
-
-        // Events arrive on a worker thread and may land after the watcher stopped.
-        private void OnWritten(FileSystemWatcher watcher)
-        {
-            if (watcher == _watcher)
-            {
-                LoadFromDisk();
-            }
+            _poll = schedule.Execute(LoadFromDisk).Every(PollMilliseconds);
         }
 
         private void Stop()
         {
-            AssemblyReloadEvents.beforeAssemblyReload -= Stop;
-            _watcher?.Dispose();
-            _watcher = null;
+            _poll?.Pause();
+            _poll = null;
             _diskTicks = 0L;
             Show(null);
         }

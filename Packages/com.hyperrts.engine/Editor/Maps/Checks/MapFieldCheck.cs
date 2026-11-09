@@ -8,21 +8,68 @@ using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Checks
 {
     /// <summary>
-    /// Checks every <see cref="MapKeyAttribute"/> field of a spec against the climate or palette it is built with,
-    /// naming the bad key by its JSON path (<c>belts[1].kind 'Hedge' is not a belt in climate 'Steppe'</c>).
+    /// Checks every <see cref="MapKeyAttribute"/>, <see cref="AboveAttribute"/> and <c>[Min]</c> field of a spec, or of
+    /// the climate and palette and their items, against the climate and palette a map is built with, naming the bad
+    /// value by its path (<c>belts[1].kind 'Hedge' is not a belt in climate 'Steppe'</c>).
     /// </summary>
-    public sealed class MapSpecKeyCheck : MapKeyCheck
+    public sealed class MapFieldCheck : MapKeyCheck
     {
-        private MapSpecKeyCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
+        private MapFieldCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
         {
         }
 
-        public static void Check(MapSpec spec, MapClimate climate, MapPalette palette, MapIssues issues) =>
-            MapLibraryFields.Walk(spec, new MapSpecKeyCheck(climate, palette, issues).Key);
+        public static void CheckSpec(MapSpec spec, MapClimate climate, MapPalette palette, MapIssues issues) =>
+            MapLibraryFields.Walk(spec, new MapFieldCheck(climate, palette, issues).Field);
+
+        public static void CheckLibrary(MapClimate climate, MapPalette palette, MapIssues issues)
+        {
+            var check = new MapFieldCheck(climate, palette, issues);
+            foreach (var item in check.Items())
+            {
+                var name = $"{MapLibrary.TypeName(item.GetType())} '{item.key}'";
+                MapLibraryFields.Walk(item, name, check.Field);
+            }
+        }
+
+        private IEnumerable<MapLibraryItem> Items() =>
+            new MapLibraryItem[] { Climate, Palette, Climate.war }
+                .Concat(Climate.layers).Concat(Climate.surfaces).Concat(Climate.trees).Concat(Climate.plants)
+                .Concat(Climate.rowCrops).Concat(Climate.decals).Concat(Climate.roadClasses)
+                .Concat(Climate.farmlandKits).Concat(Climate.beltKits).Concat(Climate.woodlandKits)
+                .Concat(Palette.entries).Concat(Palette.settlementKits)
+                .Where(item => item != null);
+
+        private void Field(FieldInfo field, string path, object value)
+        {
+            Feature = FeatureAt(path);
+            if (value is string key)
+            {
+                Key(field, path, key);
+            }
+            else
+            {
+                Number(field, path, value);
+            }
+        }
+
+        private void Number(FieldInfo field, string path, object value)
+        {
+            var number = Convert.ToDouble(value);
+            if (field.GetCustomAttribute<AboveAttribute>() is { } above)
+            {
+                Require(number > above.Limit, $"{path} {value} must be above {above.Limit}.");
+            }
+
+            if (field.GetCustomAttribute<MinAttribute>() is { } min)
+            {
+                Require(number >= min.min, $"{path} {value} must be at least {min.min}.");
+            }
+        }
 
         private void Key(FieldInfo field, string path, string key)
         {
@@ -32,7 +79,6 @@ namespace HyperRTS.Editor.Maps.Checks
                 return;
             }
 
-            Feature = FeatureAt(path);
             if (string.IsNullOrEmpty(key))
             {
                 var names = string.Join(" or ", attribute.Types.Select(MapLibrary.TypeName));
@@ -52,6 +98,11 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             nameof(MapClimate) => (new IMapKeyed[] { Climate }, "the map library"),
             nameof(MapClimateSurface) => (Climate.surfaces, InClimate),
+            nameof(MapClimateLayer) => (Climate.layers, InClimate),
+            nameof(MapClimatePlant) => (Climate.plants, InClimate),
+            nameof(MapClimateDecal) => (Climate.decals, InClimate),
+            nameof(MapClimateRowCrop) => (Climate.rowCrops, InClimate),
+            nameof(MapWarKit) => (new[] { Climate.war }.Where(war => war != null), InClimate),
             nameof(MapClimateTree) => (Climate.trees, InClimate),
             nameof(MapRoadClass) => (Climate.roadClasses, InClimate),
             nameof(MapFarmlandKit) => (Climate.farmlandKits, InClimate),

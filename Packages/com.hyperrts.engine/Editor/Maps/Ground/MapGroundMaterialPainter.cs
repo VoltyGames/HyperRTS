@@ -1,3 +1,4 @@
+using UnityEngine;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
@@ -26,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Ground
         /// <summary>Saves the painted grid to <paramref name="path"/>, keeping the asset's GUID across rebuilds.</summary>
         public static GroundMaterialMap Write(string path, MapLand land, MapClimate climate)
         {
-            var map = EditorAssets.LoadOrCreate<GroundMaterialMap>(path);
+            var map = EditorAssets.LoadOrCreate(path, ScriptableObject.CreateInstance<GroundMaterialMap>);
 
             (map.width, map.height, map.spacing) = (land.Width, land.Height, MapLand.CellSize);
             map.cells = Paint(land, climate);

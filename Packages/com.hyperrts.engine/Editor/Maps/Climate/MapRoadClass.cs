@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Climate
         [Tooltip("Strip of grass and weeds either side of the road (metres).")]
         public float vergeWidth = 3f;
 
-        [MapKey(typeof(MapClimateSurface))]
+        [MapKey(typeof(MapClimateSurface), Optional = true)]
         public string vergeSurface;
 
         [Tooltip("At a junction the lower-ranked road ends under the higher-ranked one.")]

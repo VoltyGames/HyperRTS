@@ -165,7 +165,7 @@ namespace HyperRTS.Editor.Icons
         public static void WriteIcon(string svgPath, Color tile, string pngPath)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(pngPath));
-            File.WriteAllBytes(pngPath, Render(svgPath, tile).EncodeToPNG());
+            EditorTextures.SavePng(Render(svgPath, tile), pngPath);
             AssetDatabase.ImportAsset(pngPath, ImportAssetOptions.ForceUpdate);
             ApplyImportSettings(pngPath);
         }

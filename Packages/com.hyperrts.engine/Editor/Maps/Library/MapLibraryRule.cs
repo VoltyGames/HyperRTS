@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Maps.Library
                 issues.Error(item, e.Message);
             }
 
-            MapLibraryFields.Walk(item, (field, _, text) => CheckKey(library, field, text, item, issues));
+            MapLibraryFields.Walk(item, (field, _, value) => CheckKey(library, field, value as string, item, issues));
             CheckLinks(item, issues);
         }
 

@@ -109,10 +109,21 @@ namespace HyperRTS.Editor.Maps.Tests
 
             var issues = CheckAssets(climate, MapFixture.Item<MapPalette>("Palette"));
 
-            foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance", "groundTint regionLight" })
+            foreach (var field in new[] { "fordShallowsWidth", "fordRapidsLength", "trackJoinDistance", "groundTint.regionLight" })
             {
                 Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains(field)), $"{field}: {issues}");
             }
+        }
+
+        [Test]
+        public void AnOptionalKeyNamingNothingInTheClimate_IsAnErrorNamingIt()
+        {
+            var palette = MapFixture.Item<MapPalette>("Palette");
+            palette.settlementKits.Add(MapFixture.Item<MapSettlementKit>("Village", i => { i.pathSurface = "Cobbles"; }));
+
+            var issues = CheckAssets(MapFixture.Climate(), palette);
+
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("pathSurface 'Cobbles' is not a surface in climate")), issues.ToString());
         }
 
         [Test]
@@ -172,7 +183,7 @@ namespace HyperRTS.Editor.Maps.Tests
 
             Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("side 0") && e.Message.Contains("1 to 255")), issues.ToString());
             Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("side 2 is listed twice")), issues.ToString());
-            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("'Bunker' is not in the palette")), issues.ToString());
+            Assert.IsTrue(issues.Errors.Any(e => e.Message.Contains("'Bunker' is not a prop in palette")), issues.ToString());
         }
 
         [Test]

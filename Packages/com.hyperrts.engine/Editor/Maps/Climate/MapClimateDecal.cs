@@ -22,6 +22,7 @@ namespace HyperRTS.Editor.Maps.Climate
         public bool alongRoad;
 
         [Tooltip("How far the decal reaches above and below the ground (metres); shallow keeps units standing in it clean.")]
+        [Above(0f)]
         public float depth = 0.5f;
     }
 }

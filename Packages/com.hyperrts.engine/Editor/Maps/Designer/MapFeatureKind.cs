@@ -129,7 +129,7 @@ namespace HyperRTS.Editor.Maps.Designer
             var list = List(spec);
             var element = list.Count == 0
                 ? Activator.CreateInstance(ElementType)
-                : JsonUtility.FromJson(JsonUtility.ToJson(list[list.Count - 1]), ElementType);
+                : MapSpecJson.Clone(list[list.Count - 1], ElementType);
             ClearLists(element);
             WritePoints(element, points);
             list.Add(element);

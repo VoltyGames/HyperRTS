@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Maps.Climate
         public List<MapPlantCoverage> plants = new();
 
         [Tooltip("Crop grown in 3D rows on this surface's fields. Empty for none.")]
-        [MapKey(typeof(MapClimateRowCrop))]
+        [MapKey(typeof(MapClimateRowCrop), Optional = true)]
         public string rowCrop;
 
         public List<MapPropDensity> props = new();
@@ -46,9 +46,11 @@ namespace HyperRTS.Editor.Maps.Climate
 
         [Header("Edge")]
         [Tooltip("Width of the band over which this surface blends into its neighbour (metres). Where two surfaces meet, the narrower width wins.")]
+        [Above(0f)]
         public float edgeWidth;
 
         [Tooltip("How far the edge line wanders (metres); larger wander also waves more slowly. The smaller of the two sides wins.")]
+        [Above(0f)]
         public float edgeWander;
     }
 }

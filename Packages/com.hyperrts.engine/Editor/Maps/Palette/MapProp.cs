@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Maps.Palette
         public Vector2 scale = Vector2.one;
 
         [Tooltip("Climate surface painted under and around the footprint (a gravel pad); empty for none.")]
-        [MapKey(typeof(MapClimateSurface))]
+        [MapKey(typeof(MapClimateSurface), Optional = true)]
         public string pad;
 
         [Tooltip("How far the pad reaches past the footprint (metres).")]
@@ -52,14 +52,15 @@ namespace HyperRTS.Editor.Maps.Palette
         public bool padRound;
 
         [Tooltip("Road class of an access track run from the pad to the nearest road; empty for none.")]
-        [MapKey(typeof(MapRoadClass))]
+        [MapKey(typeof(MapRoadClass), Optional = true)]
         public string access;
 
         [Tooltip("Props this close (metres) to another asking for the same access road share its track; 0 for a track of their own.")]
+        [Min(0f)]
         public float sharedAccessDistance;
 
         [Tooltip("Decal laid on the ground under the prop, turned with it (oil under a derrick, mud at a gate); empty for none.")]
-        [MapKey(typeof(MapClimateDecal))]
+        [MapKey(typeof(MapClimateDecal), Optional = true)]
         public string groundDecal;
 
         [Tooltip("Diameter of the ground decal (metres), scaled with the prop; required above 0 when groundDecal is set.")]

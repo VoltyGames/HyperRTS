@@ -40,13 +40,13 @@ namespace HyperRTS.Editor.Maps.Kits
         public int maxOutbuildings = 2;
 
         [Tooltip("Palette keys of the fence sections along the street, between plots, and the gate.")]
-        [MapKey(typeof(MapProp))]
+        [MapKey(typeof(MapProp), Optional = true)]
         public string frontFence;
 
-        [MapKey(typeof(MapProp))]
+        [MapKey(typeof(MapProp), Optional = true)]
 
         public string sideFence;
-        [MapKey(typeof(MapProp))]
+        [MapKey(typeof(MapProp), Optional = true)]
         public string gate;
 
         [Tooltip("Climate surfaces of the yard, the vegetable garden and the back of the plot.")]
@@ -60,7 +60,7 @@ namespace HyperRTS.Editor.Maps.Kits
         public string backSurface;
 
         [Tooltip("Surface of the worn paths from the gate to the house and on to the outbuildings; empty for none.")]
-        [MapKey(typeof(MapClimateSurface))]
+        [MapKey(typeof(MapClimateSurface), Optional = true)]
         public string pathSurface;
 
         [Tooltip("Width of a worn path (metres).")]
@@ -71,7 +71,7 @@ namespace HyperRTS.Editor.Maps.Kits
         public float gardenShare = 0.55f;
 
         [Tooltip("Climate tree of the orchard at the back of the plot; empty leaves it meadow.")]
-        [MapKey(typeof(MapClimateTree))]
+        [MapKey(typeof(MapClimateTree), Optional = true)]
         public string orchardTree;
 
         public float orchardSpacing = 6f;
@@ -79,11 +79,11 @@ namespace HyperRTS.Editor.Maps.Kits
         public List<MapPlotProp> extras = new();
 
         [Tooltip("Palette key of a pipe section run along the plot fronts (gas pipe); empty for none.")]
-        [MapKey(typeof(MapProp))]
+        [MapKey(typeof(MapProp), Optional = true)]
         public string streetPipe;
 
         [Tooltip("Palette key of the arch that carries the pipe over a driveway or a crossing road; required with a pipe.")]
-        [MapKey(typeof(MapProp))]
+        [MapKey(typeof(MapProp), Optional = true)]
         public string streetPipeArch;
 
         [Tooltip("Fewest pipe sections in a run; shorter runs are left out. Required (at least 1) with a pipe.")]
@@ -93,7 +93,7 @@ namespace HyperRTS.Editor.Maps.Kits
         public float streetPipeMaxGap;
 
         [Tooltip("Palette key of the poles along the street; empty for none.")]
-        [MapKey(typeof(MapProp))]
+        [MapKey(typeof(MapProp), Optional = true)]
         public string streetPole;
 
         public float poleSpacing = 35f;

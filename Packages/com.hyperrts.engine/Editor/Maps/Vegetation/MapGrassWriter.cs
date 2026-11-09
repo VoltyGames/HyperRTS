@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Vegetation
             }
 
             var coverage = WriteCoverage(coveragePath, bake);
-            var field = EditorAssets.LoadOrCreate<GrassField>(fieldPath);
+            var field = EditorAssets.LoadOrCreate(fieldPath, ScriptableObject.CreateInstance<GrassField>);
 
             var (tiles, tilePlants) = bake.Tiles();
             field.coverage = coverage;

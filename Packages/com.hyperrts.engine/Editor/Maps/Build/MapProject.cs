@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Maps.Build
         /// The spec is copied first, since generation refines it in place.
         /// </summary>
         public static MapProject FromSpec(MapSpec spec, string specPath) =>
-            Create(JsonUtility.FromJson<MapSpec>(JsonUtility.ToJson(spec)), specPath);
+            Create(MapSpecJson.Clone(spec), specPath);
 
         private static MapProject Create(MapSpec spec, string specPath)
         {

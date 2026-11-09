@@ -71,8 +71,9 @@ detail and triplanar slopes, and Ultra adds parallax. Edit mode sets none, so ma
 ## Checks and measures
 
 Checks run before anything is refined. `MapAssetCheck` covers the climate and palette, `MapSpecCheck` the spec, and
-`MapSpecKeyCheck` walks every `[MapKey]` field and names a bad key by its path, such as
-`belts[1].kind 'Hedge' is not a belt in climate 'Steppe'`. After the checks, lookups throw, so a missed key fails
+`MapFieldCheck` walks the spec, the climate, the palette and every item of them, checking each `[MapKey]` field and
+each `[Above]` or `[Min]` number, and names the bad value by its path, such as
+`belts[1].kind 'Hedge' is not a belt in climate 'Steppe'`. A key that may be empty sets `Optional = true`. After the checks, lookups throw, so a missed key fails
 loudly. Once props are placed, `MapPlacements.CheckEntities` errors on any play-area prop prefab without HyperRTS
 authoring, since the simulation must see it to clear or crush it. The backdrop draws `backdropModel`s instead.
 

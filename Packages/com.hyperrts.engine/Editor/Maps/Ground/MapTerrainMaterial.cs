@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using System;
 using HyperRTS.Editor.Maps.Climate;
 using UnityEditor;
@@ -102,13 +103,7 @@ namespace HyperRTS.Editor.Maps.Ground
         // after those sets and save the variant empty.
         private static Material LoadOrCreate(string path, MapClimate climate)
         {
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material == null)
-            {
-                material = new Material(climate.terrain);
-                AssetDatabase.CreateAsset(material, path);
-            }
-
+            var material = EditorAssets.LoadOrCreate(path, () => new Material(climate.terrain));
             material.parent = climate.terrain;
             return material;
         }

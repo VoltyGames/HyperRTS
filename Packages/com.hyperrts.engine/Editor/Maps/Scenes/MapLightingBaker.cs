@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Build;
 using UnityEditor;
 using UnityEngine;
@@ -13,13 +14,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         public static void Bake(MapPaths paths)
         {
             var path = paths.Lighting;
-            var settings = AssetDatabase.LoadAssetAtPath<LightingSettings>(path);
-            if (settings == null)
-            {
-                settings = new LightingSettings { name = paths.Name + " Lighting" };
-                AssetDatabase.CreateAsset(settings, path);
-            }
-
+            var settings = EditorAssets.LoadOrCreate(path, () => new LightingSettings { name = paths.Name + " Lighting" });
             settings.bakedGI = false;
             EditorUtility.SetDirty(settings);
             Lightmapping.lightingSettings = settings;

@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Climate
         public float width = 0.5f;
 
         [Tooltip("Key of the terrain layer the wheel lines paint.")]
-        [MapKey(typeof(MapClimateLayer))]
+        [MapKey(typeof(MapClimateLayer), Optional = true)]
         public string layer;
 
         public bool Any => spacing > 0f;

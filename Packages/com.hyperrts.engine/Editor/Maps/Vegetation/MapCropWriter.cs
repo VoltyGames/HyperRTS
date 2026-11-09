@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Maps.Vegetation
             }
 
             var picture = WritePicture(picturePath, bake);
-            var fields = EditorAssets.LoadOrCreate<RowCropFields>(assetPath);
+            var fields = EditorAssets.LoadOrCreate(assetPath, ScriptableObject.CreateInstance<RowCropFields>);
 
             fields.fieldIds = picture;
             fields.area = bake.Area;
