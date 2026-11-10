@@ -76,6 +76,7 @@ MonoBehaviour:
   moveSpeed: 4.5
   radius: 0.9
   population: 1
+  mass: 16.3
 --- !u!114 &5842551498610845080
 MonoBehaviour:
   m_ObjectHideFlags: 0

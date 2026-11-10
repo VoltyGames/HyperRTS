@@ -1,4 +1,4 @@
-﻿using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -29,11 +29,12 @@ namespace HyperRTS.Simulation.Movement
     {
         private static readonly ProfilerMarker MoveMarker = new("MovementSystem.Move");
 
-        private GivingWay _givingWay;
+        private RightOfWay _rightOfWay;
 
         public void OnCreate(ref SystemState state)
         {
-            _givingWay = new GivingWay(ref state);
+            _rightOfWay = new RightOfWay(ref state);
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
         }
@@ -41,7 +42,7 @@ namespace HyperRTS.Simulation.Movement
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _givingWay.Update(ref state);
+            _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
             var index = SystemAPI.GetSingleton<SpatialIndex>();
             var grid = SystemAPI.GetSingleton<NavGrid>();
             // A paused frame moves nothing and has no velocity to measure.
@@ -55,7 +56,7 @@ namespace HyperRTS.Simulation.Movement
                 Movers = new Movers
                 {
                     Index = index,
-                    GivingWay = _givingWay,
+                    RightOfWay = _rightOfWay,
                     Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
                     States = SystemAPI.GetComponentLookup<LocomotionState>(false),
                     DeltaTime = SystemAPI.Time.DeltaTime,

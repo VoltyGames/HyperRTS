@@ -49,6 +49,11 @@ namespace HyperRTS.Simulation.GameEntities
         [Tooltip("Surface the unit moves on: Ground (land and decks), Naval (water) or Amphibious (both). A Flight component makes it Air.")]
         public NavLayer navLayer;
 
+        [Tooltip("Mass in tonnes, from the real vehicle; a squad is 1. The heavier of two units by half again has the right of way.")]
+        [Unit("t")]
+        [Min(0f)]
+        public float mass;
+
         [Tooltip("Walks between destructible scenery (trees, fences) as infantry do. Otherwise scenery blocks it unless a Crusher flattens it.")]
         public bool walksThroughScenery;
 
@@ -96,6 +101,7 @@ namespace HyperRTS.Simulation.GameEntities
                     Spacing = authoring.spacing,
                     Layer = Layer(authoring),
                     SceneryCrushLimit = SceneryCrushLimit(authoring),
+                    Mass = authoring.mass,
                 };
                 var locomotion = GetComponent<LocomotionAuthoring>();
                 if (locomotion != null)

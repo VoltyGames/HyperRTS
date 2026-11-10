@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.Tick();
             Send(truck, new float3(50f, 0f, 0f));
             Finish("squads", 90f, 1);
+            AssertNoWheelsSlid();
         }
 
         // Owner 1 is the truck's own side; owner 2 is a teammate, which should make way just the same.

@@ -88,9 +88,18 @@ meet: each unit's whole move closes on a neighbour by at most half the room betw
 formation slot is sized by its own unit's footprint, and a slot in a building or off the unit's ground moves to the
 nearest spot the unit fits and can reach.
 
+`RightOfWay` answers every "who moves" question. Allies are teammates (`OwnerRelations`), and `UnitAuthoring.mass`,
+in tonnes, sets each unit's weight.
+
 - **Giving way.** Two movers share the avoiding unless they go one way; then the one further back gives way and the
-  one ahead shares only the inner push, so an abreast pair at a one-lane bridge never waits on each other.
-- **Idle units** step aside for a moving unit of their own side (`GivingWay`) and stay where pushed.
+  one ahead shares only the inner push, so an abreast pair at a one-lane bridge never waits on each other. A mover
+  that another outweighs by half again takes all the avoiding on itself.
+- **Idle units** step aside for an allied mover of their own kind and stay where pushed.
+- **Foot units and vehicles.** The push never moves a vehicle off a foot unit: the foot unit takes the whole overlap.
+  A foot unit always gives way to an allied vehicle, whatever its order or stance, and steps out of a moving one's
+  lane (its hull's width, out to its braking distance and a few metres more) before the vehicle reaches it. The
+  vehicle slows to `RightOfWay.WalkingPace` while one stands in its lane and still stops at its hull. Held 2 s by
+  allied foot units alone, it drives through them at a walk until it is clear of them.
 - **Busy units.** A parked unit with an order, a target or Hold Position, a landed aircraft and an enemy hold their
   ground: to the mover they are fixed obstacles, so a truck never shoves a dozer that is building. A unit standing on
   the mover's goal and an arrived groupmate are not avoided.

@@ -10,13 +10,13 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Movement
 {
     /// <summary>
-    /// What every mover in a movement job shares: the crowd's index, who gives way, the frame's length and the
+    /// What every mover in a movement job shares: the crowd's index, who moves for whom, the frame's length and the
     /// handling lookups. Ground and air jobs each keep one and open a <see cref="MoveFrame"/> per unit from it.
     /// </summary>
     internal struct Movers
     {
         [ReadOnly] public SpatialIndex Index;
-        public GivingWay GivingWay;
+        public RightOfWay RightOfWay;
         [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
 
         // Each unit writes only its own state.
@@ -36,8 +36,10 @@ namespace HyperRTS.Simulation.Movement
 
             var from = transform.Position.xz;
             var facing = math.normalizesafe(transform.Forward().xz);
-            var crowd = new CrowdVisitor(entity, from, facing, agent, owner.Value, moving, destination, GivingWay);
+            var crowd = new CrowdVisitor(entity, from, facing, velocity, agent, owner.Value, moving, destination,
+                RightOfWay) { PassesInfantry = drive.PassesInfantry };
             Index.QueryHulls(crowd.Center, crowd.Reach(top), ref crowd);
+            var pace = crowd.WalksForInfantry ? math.min(top, RightOfWay.WalkingPace) : top;
             return new MoveFrame
             {
                 Entity = entity,
@@ -47,7 +49,7 @@ namespace HyperRTS.Simulation.Movement
                 WasMoving = moving,
                 Remembers = remembers,
                 Crowd = crowd,
-                Driver = new Driver(locomotion, agent, top, DeltaTime) { Position = from, Facing = facing, State = drive },
+                Driver = new Driver(locomotion, agent, pace, DeltaTime) { Position = from, Facing = facing, State = drive },
             };
         }
 
@@ -59,7 +61,10 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
-            frame.Driver.State.Hit(position - frame.From, step, walled);
+            var moved = position - frame.From;
+            frame.Driver.State.Hit(moved, step, walled);
+            frame.Driver.State.WaitOnInfantry(frame.Crowd.IsHeldByInfantry, !frame.Crowd.IsNearInfantry,
+                math.length(moved), DeltaTime);
             States[frame.Entity] = frame.Driver.State;
         }
     }

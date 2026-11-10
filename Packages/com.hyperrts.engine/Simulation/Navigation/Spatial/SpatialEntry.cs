@@ -50,6 +50,12 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// <summary>The <see cref="NavAgent.Spacing"/> it keeps; zero for entities without an agent.</summary>
         public float Spacing;
 
+        /// <summary>The <see cref="NavAgent.Mass"/> in tonnes; zero for entities without an agent.</summary>
+        public float Mass;
+
+        /// <summary>A <see cref="NavAgent.IsVehicle"/>: the crowd's push never moves it and allied foot units make way.</summary>
+        public bool IsVehicle;
+
         /// <summary>Bounding radius of the footprint plus its spacing, for <see cref="SpatialIndex.QueryHulls{T}"/>.</summary>
         public float HullReach;
 

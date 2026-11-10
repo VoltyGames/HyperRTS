@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnShip(this TestWorld world, byte owner, float3 position, float radius = 0.5f)
         {
             var ship = world.SpawnUnit(owner, position, speed: 8f, radius: radius, name: "Ship");
-            world.Set(ship, new NavAgent { Radius = radius, Layer = NavLayer.Naval });
+            world.Set(ship, new NavAgent { Radius = radius, Layer = NavLayer.Naval, Mass = 50f });
             return ship;
         }
 

@@ -25,7 +25,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.SpawnBridge();
             var tank = new NavAgent
             {
-                Radius = 1.85f, HullLength = 7.9f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
+                Radius = 1.85f, HullLength = 7.9f, Mass = 62f,
+                Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
             };
             var handling = new Locomotion
             {
@@ -112,7 +113,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.SpawnBridge();
             var tank = new NavAgent
             {
-                Radius = 1.85f, HullLength = 7.9f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
+                Radius = 1.85f, HullLength = 7.9f, Mass = 62f,
+                Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
             };
             var handling = new Locomotion
             {

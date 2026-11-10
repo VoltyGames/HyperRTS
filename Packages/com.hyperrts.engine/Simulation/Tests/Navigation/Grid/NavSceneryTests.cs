@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         private Entity SendAcross(byte crushLimit, float radius = 0.5f)
         {
             var unit = World.SpawnUnit(1, new float3(-5f, 0f, 0.5f), radius: radius);
-            World.Set(unit, new NavAgent { Radius = radius, SceneryCrushLimit = crushLimit });
+            World.Set(unit, new NavAgent { Radius = radius, SceneryCrushLimit = crushLimit, Mass = 1f });
             World.MoveTo(unit, new float3(5f, 0f, 0.5f));
             return unit;
         }
@@ -120,7 +120,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             var truck = World.SpawnUnit(1, new float3(0f, 0f, 0.5f), radius: 1f);
             World.Set(truck, new NavAgent
             {
-                Radius = 1f, HullLength = 10f, SceneryCrushLimit = 1,
+                Radius = 1f, HullLength = 10f, SceneryCrushLimit = 1, Mass = 17f,
             });
             World.Set(truck,
                 LocalTransform.FromPositionRotation(new float3(0f, 0f, 0.5f), quaternion.LookRotationSafe(math.right(), math.up())));

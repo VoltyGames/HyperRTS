@@ -33,14 +33,15 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>The game's supply truck hull: 8 m long, a 10 m turn, reversing 6 m.</summary>
         public static NavAgent SupplyTruckHull() => Hull(new NavAgent
         {
-            Radius = 1.25f, HullLength = 8f,
+            Radius = 1.25f, HullLength = 8f, Mass = 17f,
             Chassis = new Chassis { Wheelbase = 4.6f, RearAxle = 2f, TurnRadius = 10f, ReverseRun = 6f },
         });
 
         /// <summary>A main battle tank hull that pivots on the spot.</summary>
         public static NavAgent TankHull() => Hull(new NavAgent
         {
-            Radius = 1.85f, HullLength = 7.9f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
+            Radius = 1.85f, HullLength = 7.9f, Mass = 62f,
+            Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
         });
 
         /// <summary>A vehicle standing at <paramref name="position"/>, facing <paramref name="yaw"/> radians.</summary>

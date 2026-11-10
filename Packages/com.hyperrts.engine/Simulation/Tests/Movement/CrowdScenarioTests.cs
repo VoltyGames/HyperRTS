@@ -93,6 +93,7 @@ namespace HyperRTS.Simulation.Tests.Movement
 
                 if (AllArrived(units))
                 {
+                    UnityEngine.Debug.Log($"[{TestContext.CurrentContext.Test.Name}] all arrived in {t:F1} s");
                     return true;
                 }
             }
@@ -155,7 +156,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.SpawnObstacle(new float3(0f, 0f, -46f), new float2(2f, 80f));
             var tank = new NavAgent
             {
-                Radius = 1.85f, HullLength = 7.5f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
+                Radius = 1.85f, HullLength = 7.5f, Mass = 62f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
             };
             var handling = new Locomotion
             {
@@ -202,7 +203,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.SpawnObstacle(new float3(45f, 0f, 90f), new float2(10f, 4f));
             var truck = new NavAgent
             {
-                Radius = 1.4f, HullLength = 17f,
+                Radius = 1.4f, HullLength = 17f, Mass = 17f,
                 Chassis = new Chassis { Wheelbase = 6f, RearAxle = 2.5f, TurnRadius = 12f, ReverseRun = 6f },
             };
             var handling = new Locomotion

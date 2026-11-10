@@ -142,7 +142,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var gun = World.SpawnUnit(1, position, radius: radius);
             World.Set(gun, new NavAgent
             {
-                Radius = radius, HullLength = hullLength, Chassis = new Chassis { Pivots = true },
+                Radius = radius, HullLength = hullLength, Mass = 40f, Chassis = new Chassis { Pivots = true },
             });
             var writer = World.Writer(gun);
             LocomotionAuthoring.Add(writer, new Locomotion

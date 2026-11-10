@@ -142,18 +142,25 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             var site = World.SpawnBuilding(1, new float3(0f, 0f, 4f), new float2(4f, 4f), complete: false,
                 buildTime: 60f);
-            var dozer = World.MakeBuilder(World.SpawnUnit(1, float3.zero));
+            var dozer = World.MakeBuilder(World.SpawnVehicle(1, new float3(0f, 0f, -4f), 0f, 5f, TestVehicles.TankHull(),
+                TestVehicles.Tracks));
             World.Order(dozer, OrderType.Build, site);
-            Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<MoveDestination>(dozer), 5f), "reached the site");
+            Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<MoveDestination>(dozer), 10f), "reached the site");
+            World.Run(2f);
             var at = World.GetPosition(dozer);
 
-            var truck = World.SpawnUnit(1, new float3(-8f, 0f, at.z));
-            var goal = new float3(8f, 0f, at.z);
+            // A truck brushing past its side and a squad walking straight into it.
+            var lane = at.x + 3.6f;
+            var truck = World.SpawnVehicle(1, new float3(lane, 0f, at.z - 20f), 0f, 6f,
+                TestVehicles.SupplyTruckHull(), TestVehicles.SupplyTruck);
+            var goal = new float3(lane, 0f, at.z + 16f);
             World.MoveTo(truck, goal);
+            var squad = World.SpawnSquad(1, new float3(at.x, 0f, at.z - 10f));
+            World.MoveTo(squad, new float3(at.x + 0.5f, 0f, at.z - 0.5f));
 
-            Assert.AreEqual(0f, Shove(dozer, 8f), 1e-4f, "the dozer held its ground");
+            Assert.AreEqual(0f, Shove(dozer, 20f), 1e-4f, "the dozer held its ground");
             Assert.AreEqual(OrderType.Build, World.Get<ActiveOrder>(dozer).Value.Type, "still building");
-            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), 1f, "the truck went round it");
+            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), 1.5f, "the truck got past it");
         }
 
         [Test]

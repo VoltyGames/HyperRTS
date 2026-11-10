@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests
             float loiterRadius = 0f, float speed = 10f)
         {
             var aircraft = world.SpawnUnit(owner, position, speed: speed, name: "Aircraft");
-            world.Set(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
+            world.Set(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air, Mass = 10f });
             var writer = world.Writer(aircraft);
             AirSetup.AddFlight(writer, altitude, climbSpeed: 20f, loiterRadius);
             return aircraft;

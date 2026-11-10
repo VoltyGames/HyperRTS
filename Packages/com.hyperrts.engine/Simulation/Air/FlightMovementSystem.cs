@@ -24,11 +24,12 @@ namespace HyperRTS.Simulation.Air
     [UpdateBefore(typeof(CargoFollowSystem))]
     public partial struct FlightMovementSystem : ISystem
     {
-        private GivingWay _givingWay;
+        private RightOfWay _rightOfWay;
 
         public void OnCreate(ref SystemState state)
         {
-            _givingWay = new GivingWay(ref state);
+            _rightOfWay = new RightOfWay(ref state);
+            state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
         }
@@ -36,7 +37,7 @@ namespace HyperRTS.Simulation.Air
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _givingWay.Update(ref state);
+            _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
             var index = SystemAPI.GetSingleton<SpatialIndex>();
             var grid = SystemAPI.GetSingleton<NavGrid>();
             if (SystemAPI.Time.DeltaTime <= 0f)
@@ -49,7 +50,7 @@ namespace HyperRTS.Simulation.Air
                 Movers = new Movers
                 {
                     Index = index,
-                    GivingWay = _givingWay,
+                    RightOfWay = _rightOfWay,
                     Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
                     States = SystemAPI.GetComponentLookup<LocomotionState>(false),
                     DeltaTime = SystemAPI.Time.DeltaTime,

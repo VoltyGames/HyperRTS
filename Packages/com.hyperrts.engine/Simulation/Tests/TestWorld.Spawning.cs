@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Tests
             float maxHealth = 100f, string name = "Unit")
         {
             var unit = CreateGameEntity(owner, position, maxHealth, name, out var writer);
-            var agent = new NavAgent { Radius = radius };
+            var agent = new NavAgent { Radius = radius, Mass = 1f };
             agent.WallMargin = agent.HullWallMargin;
             UnitAuthoring.Add(writer, speed, agent);
             return unit;

@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Tests.Resources
             var truck = SpawnLoaded(World.SpawnUnit(1, position, 8f, TruckRadius));
             var agent = new NavAgent
             {
-                Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing,
+                Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
                 Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
             };
             agent.WallMargin = agent.HullWallMargin;

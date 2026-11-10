@@ -53,6 +53,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.Set(vehicle, new NavAgent
             {
                 Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing, Chassis = chassis,
+                Mass = chassis.Pivots ? 62f : 17f,
             });
             var writer = _world.Writer(vehicle);
             LocomotionAuthoring.Add(writer, locomotion);
@@ -210,17 +211,6 @@ namespace HyperRTS.Simulation.Tests.Movement
 
             Assert.IsTrue(_world.RunUntil(() => Arrived(truck), 30f), "arrived");
             Assert.Less(math.distance(_world.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
-        }
-
-        [Test]
-        public void Shove_MovesTheHull_ButNeverTurnsIt()
-        {
-            var tank = SpawnTank(float3.zero);
-            _world.SpawnUnit(1, new float3(1.5f, 0f, 0.5f));
-            _world.Run(0.5f);
-
-            Assert.Greater(math.length(_world.GetPosition(tank).xz), 0.05f, "pushed aside");
-            Assert.AreEqual(1f, math.dot(Facing(tank), new float2(0f, 1f)), 1e-5f, "facing kept");
         }
 
         [Test]

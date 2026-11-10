@@ -62,6 +62,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var tank = _world.SpawnUnit(1, position, 7f, Tank.Radius);
             var agent = Tank;
             agent.HullLength = 7.5f;
+            agent.Mass = 62f;
             agent.Spacing = UnitAuthoring.DefaultSpacing;
             agent.Chassis = new Chassis { Pivots = true, ReverseRun = 10f };
             _world.EntityManager.SetComponentData(tank, agent);

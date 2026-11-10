@@ -40,6 +40,12 @@ namespace HyperRTS.Simulation.Navigation.Agents
         /// <summary>How the hull turns and reverses; default for units without handling.</summary>
         public Chassis Chassis;
 
+        /// <summary>Tonnes: the heavier of two units by half again has the right of way.</summary>
+        public float Mass;
+
+        /// <summary>Drives on tracks or wheels, as its handling's chassis says; foot units and aircraft have none.</summary>
+        public readonly bool IsVehicle => Chassis.Pivots || Chassis.TurnRadius > 0f;
+
         /// <summary>Half the capsule's core segment: zero for round footprints.</summary>
         public readonly float HalfSegment => HalfSegmentFor(Radius, HullLength);
 

@@ -30,6 +30,7 @@ namespace HyperRTS.Editor.Templates
             var unit = go.AddComponent<UnitAuthoring>();
             unit.displayName = name;
             unit.radius = 0.4f;
+            unit.mass = 1f;
             return go;
         }
 

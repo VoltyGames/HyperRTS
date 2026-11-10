@@ -218,7 +218,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 quaternion.RotateY(math.PI * 0.5f)));
             World.Set(truck, new NavAgent
             {
-                Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing,
+                Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
                 Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
             });
             var writer = World.Writer(truck);

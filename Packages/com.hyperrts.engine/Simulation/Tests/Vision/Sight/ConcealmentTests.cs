@@ -111,7 +111,7 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
         {
             _world.SpawnSightBlock(new float3(31f, 0f, 1f), Woods);
             var drone = _world.SpawnViewer(Team1, new float3(23f, 0f, 3f), 40f);
-            _world.Set(drone, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air });
+            _world.Set(drone, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air, Mass = 0.1f });
             if (detector)
             {
                 var writer = _world.Writer(drone);

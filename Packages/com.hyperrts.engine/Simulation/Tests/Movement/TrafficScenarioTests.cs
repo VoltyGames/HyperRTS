@@ -78,6 +78,18 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.AreEqual(0, _record.GiveUps, "no unit gave up");
         }
 
+        // Wheels can't move sideways, so nothing may slide a truck; foot units no longer do.
+        private void AssertNoWheelsSlid()
+        {
+            foreach (var tally in _record.Units)
+            {
+                if (_world.Get<NavAgent>(tally.Unit).Chassis.IsWheeled)
+                {
+                    Assert.Less(tally.Sideways, 0.2f, $"{tally.Name} slid sideways");
+                }
+            }
+        }
+
         private Entity TrackedTruck(string name, float3 start, float yaw)
         {
             var truck = SpawnTruck(start, yaw);

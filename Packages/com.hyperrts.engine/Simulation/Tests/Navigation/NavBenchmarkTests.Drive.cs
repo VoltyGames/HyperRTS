@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
 
         private static readonly NavAgent SupplyTruck = WithHullMargin(new NavAgent
         {
-            Radius = 1.25f, HullLength = 8f, Spacing = UnitAuthoring.DefaultSpacing,
+            Radius = 1.25f, HullLength = 8f, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
             Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
         });
 

@@ -139,6 +139,8 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     Layer = agent.Layer,
                     SegmentAxis = facing * agent.HalfSegment,
                     Spacing = agent.Spacing,
+                    Mass = agent.Mass,
+                    IsVehicle = agent.IsVehicle,
                 };
                 entry.FixReach();
                 Snapshots[slot] = entry;
