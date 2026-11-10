@@ -47,11 +47,10 @@ game adds its own.
 
 ## Commands
 
-Each Tools window action an agent needs is also a command of the `com.unity.pipeline` package, run with
-`unity command <group> <name> [args]` while the Editor is open, or through the game's wrapper
-(`uv run hardpower editor run <group> <command>`). A command is a thin `[CliCommand]` class beside the feature it
-drives; the work lives on the type that owns it, and the button and the command both call it. Long commands run as
-detached jobs. `unity command --tag hyperrts` lists them with their arguments.
+Each Tools window action an agent needs is also a `com.unity.pipeline` command: `unity command <group> <name>
+[args]`, or a game's wrapper, which may refresh first and so can't run in Play. A command is a thin `[CliCommand]`
+class beside its feature; the type that owns the work serves the button and the command. Long commands run as
+detached jobs. `--tag hyperrts` lists them.
 
 | Command | Does |
 | --- | --- |
@@ -62,6 +61,7 @@ detached jobs. `unity command --tag hyperrts` lists them with their arguments.
 | `map look_status` | Whether a look capture runs, and how it ended |
 | `effect build [recipe]` | Builds effect graphs, reporting each `Problem` and `ShaderErrors` |
 | `effect capture <rig> [times] [distance]` | Renders a rig to `Logs/EffectCaptures/<Rig>/` at seconds after its burst; fails after 45 s without an Editor frame, so keep the Editor in front |
+| `play capture <name> [seconds] [fps]` | In Play, records the Game view as PNGs at a fixed rate into `Work/FrameCapture/<name>/` |
 | `generator run [name] [--list true] [--stale true]` | Runs one, all, or the out of date [generators](#generators) |
 | `bone bake [set]` | Bakes a `BoneAnimationSet` (none named bakes all) |
 | `rigid bake [set]` | Bakes a `RigidAnimationSet` (none named bakes all) |
