@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Shorthands for UXML templates, labels and visibility, shared by the HUD and the editor tools.</summary>
+    /// <summary>Shorthands for UXML templates, labels, localized text and visibility, shared by the HUD and the editor tools.</summary>
     public static class HUDElements
     {
         public static Label Text(string text, string className, VisualElement parent = null)
@@ -65,6 +65,10 @@ namespace HyperRTS.Presentation.HUD
                 on();
             }
         }
+
+        /// <summary>Binds the element's text to a string table entry, filling its placeholders from the arguments.</summary>
+        public static void Localize(this TextElement element, string table, string entry, params object[] arguments) =>
+            element.SetBinding(nameof(TextElement.text), new LocalizedText(table, entry, arguments));
 
         /// <summary>Removes the element from layout, for elements outside the HUD's sheets.</summary>
         public static void SetVisible(this VisualElement element, bool visible) =>

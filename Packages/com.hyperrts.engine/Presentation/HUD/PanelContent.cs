@@ -4,7 +4,10 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
-    /// <summary>Adds one element tree to the <see cref="PanelRenderer"/> and rebuilds it whenever the panel reloads.</summary>
+    /// <summary>
+    /// Adds one element tree to the <see cref="PanelRenderer"/> and rebuilds it whenever the panel reloads or
+    /// <see cref="Rebuild"/> asks.
+    /// </summary>
     [RequireComponent(typeof(PanelRenderer))]
     public abstract class PanelContent : PresentationBehaviour
     {
@@ -31,6 +34,21 @@ namespace HyperRTS.Presentation.HUD
             {
                 panelRenderer.UnregisterUIReloadCallback(OnUIReload);
             }
+        }
+
+        /// <summary>Builds the tree again in its place, such as for text the build wrote once; nothing before it loads.</summary>
+        protected void Rebuild()
+        {
+            var root = Content?.parent;
+            if (root == null)
+            {
+                return;
+            }
+
+            var index = root.IndexOf(_content);
+            _content.RemoveFromHierarchy();
+            _content = Build();
+            root.Insert(index, _content);
         }
 
         // Fires on load and on asset changes; skip versions already built.

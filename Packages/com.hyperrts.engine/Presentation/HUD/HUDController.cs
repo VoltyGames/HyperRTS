@@ -4,6 +4,7 @@ using HyperRTS.Presentation.HUD.Commands;
 using HyperRTS.Presentation.HUD.Map;
 using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Common.Authoring;
+using Unity.Localization;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,7 +12,8 @@ namespace HyperRTS.Presentation.HUD
 {
     /// <summary>
     /// Builds the in-game HUD (resources, minimap, selection, command card, banner) and keeps it in sync with ECS.
-    /// Games add or replace panels by overriding <see cref="CreatePanels"/>.
+    /// Games add or replace panels by overriding <see cref="CreatePanels"/>. A language change rebuilds it, since panels
+    /// write most of their text once.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Scene + "Rig/HUD")]
     [Icon(HyperRTSIcons.HUDController)]
@@ -102,6 +104,18 @@ namespace HyperRTS.Presentation.HUD
             element.styleSheets.Add(themeSheet);
         }
 
+        protected override void OnAwake()
+        {
+            base.OnAwake();
+            LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
+        }
+
+        protected override void OnDestroyed()
+        {
+            LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
+            base.OnDestroyed();
+        }
+
         protected override VisualElement Build()
         {
             var hud = panelLayouts.Root.CloneRoot();
@@ -117,6 +131,8 @@ namespace HyperRTS.Presentation.HUD
             CreatePanels(hud);
             return hud;
         }
+
+        private void OnLocaleChanged(Locale locale) => Rebuild();
 
         private void Update()
         {

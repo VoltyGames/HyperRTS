@@ -20,11 +20,17 @@ disabled buttons and `Issue` drops commands.
 | --- | --- |
 | Panels | `ResourceBar`, `SelectionPanel`, `CommandCard`, `Minimap` and others, each built from its shell in `HUD.uxml` |
 | `ICommandSource` | Decides which command specs apply to the selection and shows their live state |
-| `HUDText` | Every HUD string, by key. Set `HUDText.Current` to translate; `HUDText.Keys` lists the fixed keys |
+| `HUDText` | Every HUD string, by key, with `{0}` placeholders filled from arguments. Set `HUDText.Current` to translate; `HUDText.Keys` lists the fixed keys |
 | `PlacementGhosts` | The building's real model as tinted visual-only copies, one per spot or line segment |
 
 `HUDText` keys are kebab-cased: `hud.*`, `command.*`, `entity.<name>`, `resource.<asset>`, `ability.<name>` and so on.
-An optional `entity.<name>.description` adds a tooltip line.
+An optional `entity.<name>.description` adds a tooltip line. Panels write most text once, so `HUDController` rebuilds
+the HUD when Unity Localization's selected locale changes.
+
+For other UI Toolkit text, `LocalizedText` binds an element to a string table entry and follows language changes:
+`element.Localize(table, entry, args)` from code, or `<hrts:LocalizedText property="text" table="..." entry="..." />`
+in UXML with `xmlns:hrts="HyperRTS.Presentation.HUD"`. On an element with the `hrts-caps` class it writes capitals,
+since USS has no text case.
 
 ### Command card
 
