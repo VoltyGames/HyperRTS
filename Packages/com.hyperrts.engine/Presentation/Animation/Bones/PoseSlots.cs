@@ -69,10 +69,9 @@ namespace HyperRTS.Presentation.Animation.Bones
         /// <summary>Takes a free slot, or returns false at the cap.</summary>
         public bool TryTake(out int slot)
         {
-            slot = Taken.IndexOf(false);
-            if (!HasFree || slot < 0)
+            slot = HasFree ? Taken.IndexOf(false) : -1;
+            if (slot < 0)
             {
-                slot = -1;
                 return false;
             }
 

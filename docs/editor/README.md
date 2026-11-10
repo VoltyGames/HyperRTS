@@ -61,7 +61,7 @@ detached jobs. `--tag hyperrts` lists them.
 | `map look_status` | Whether a look capture runs, and how it ended |
 | `effect build [recipe]` | Builds effect graphs, reporting each `Problem` and `ShaderErrors` |
 | `effect capture <rig> [times] [distance]` | Renders a rig to `Logs/EffectCaptures/<Rig>/` at seconds after its burst; fails after 45 s without an Editor frame, so keep the Editor in front |
-| `play capture <name> [seconds] [fps]` | In Play, records the Game view as PNGs at a fixed rate into `Work/FrameCapture/<name>/` |
+| `play capture <name> [seconds] [fps]` | In Play, records the Game view as PNGs at a fixed rate into `Logs/FrameCaptures/<name>/` |
 | `generator run [name] [--list true] [--stale true]` | Runs one, all, or the out of date [generators](#generators) |
 | `bone bake [set]` | Bakes a `BoneAnimationSet` (none named bakes all) |
 | `rigid bake [set]` | Bakes a `RigidAnimationSet` (none named bakes all) |

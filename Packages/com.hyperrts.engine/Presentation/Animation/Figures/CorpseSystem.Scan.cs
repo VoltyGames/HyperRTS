@@ -38,40 +38,41 @@ namespace HyperRTS.Presentation.Animation.Figures
 
             // A death the local player didn't see leaves nothing for them, as the figures it hid were hidden too.
             _visibility.Begin();
+            using var squads = _ends.ToEntityArray(Allocator.Temp);
+            using var ends = _ends.ToComponentDataArray<SquadEnd>(Allocator.Temp);
             foreach (var cue in cues)
             {
                 if (cue.Slot == CueSlot.Death && _visibility.IsSeen(cue))
                 {
-                    MarkDied(cue);
+                    MarkDied(cue, squads, ends);
                 }
             }
         }
 
         // The nearest squad of the cue's type, so another one dying beside it isn't taken for it.
-        private void MarkDied(in CueEvent cue)
+        private void MarkDied(in CueEvent cue, NativeArray<Entity> squads, NativeArray<SquadEnd> ends)
         {
-            using var squads = _ends.ToEntityArray(Allocator.Temp);
-            var nearest = Entity.Null;
+            var nearest = -1;
             var best = CueReach;
-            foreach (var squad in squads)
+            for (var i = 0; i < squads.Length; i++)
             {
-                var end = EntityManager.GetComponentData<SquadEnd>(squad);
-                var distance = math.distance(end.Position.xz, cue.Position.xz);
-                if (end.TypeId == cue.TypeId && distance <= best)
+                var distance = math.distance(ends[i].Position.xz, cue.Position.xz);
+                if (ends[i].TypeId == cue.TypeId && distance <= best)
                 {
-                    nearest = squad;
+                    nearest = i;
                     best = distance;
                 }
             }
 
-            if (nearest == Entity.Null)
+            if (nearest < 0)
             {
                 return;
             }
 
-            var died = EntityManager.GetComponentData<SquadEnd>(nearest);
+            var died = ends[nearest];
             died.Died = true;
-            EntityManager.SetComponentData(nearest, died);
+            ends[nearest] = died;
+            EntityManager.SetComponentData(squads[nearest], died);
         }
 
         // A ghost also goes when its squad walks into fog, so only one its death cue named leaves corpses.

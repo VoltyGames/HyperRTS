@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.PlayMode
     /// <summary>One recording of the Game view in Play as a PNG sequence at a fixed frame rate, to catch glitches that last a few frames.</summary>
     public sealed class FrameCapture
     {
-        public const string Root = "Work/FrameCapture";
+        public const string Root = "Logs/FrameCaptures";
         private const double TimeoutSeconds = 120.0;
 
         private readonly int _fps;
@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.PlayMode
         private int _start;
         private double _deadline;
 
-        /// <summary>A capture of <paramref name="seconds"/> at <paramref name="fps"/> into <c>Work/FrameCapture/&lt;name&gt;/</c>.</summary>
+        /// <summary>A capture of <paramref name="seconds"/> at <paramref name="fps"/> into <c>Logs/FrameCaptures/&lt;name&gt;/</c>.</summary>
         public FrameCapture(string name, float seconds, int fps)
         {
             if (seconds <= 0f || fps <= 0)
