@@ -835,7 +835,8 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   webProgressiveAssetLoading: 0
   scriptingDefineSymbols:
-    Standalone: NETCODE_NO_OBSOLETE_HELPER
+    Server: NETCODE_NO_OBSOLETE_HELPER;VOLUMETRIC_FOG
+    Standalone: NETCODE_NO_OBSOLETE_HELPER;VOLUMETRIC_FOG
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
