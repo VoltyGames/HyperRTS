@@ -20,6 +20,7 @@
     "com.unity.entities.graphics": "7.0.0",
     "com.unity.netcode": "7.2.0",
     "com.unity.inputsystem": "7.0.0",
+    "com.unity.multiplayer.playmode": "3.0.0",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "com.unity.physics": "7.0.0",
     "com.unity.pipeline": "0.10.0-exp.1",

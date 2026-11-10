@@ -24,6 +24,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private readonly VisualElement _slots;
         private readonly HelpBox _problem;
         private readonly Button _play;
+        private SliderInt _virtualPlayers;
         private IReadOnlyList<LaunchMap> _maps;
         private IReadOnlyList<LaunchSide> _sides;
         private LaunchMap _map;
@@ -96,6 +97,14 @@ namespace HyperRTS.Editor.PlayMode.Launch
             network.RegisterValueChangedCallback(_ =>
             {
                 _choice.network = (LaunchNetwork)network.index;
+                Refresh();
+            });
+
+            _virtualPlayers = root.Require<SliderInt>("virtual-players");
+            _virtualPlayers.SetValueWithoutNotify(_choice.virtualPlayers);
+            _virtualPlayers.RegisterValueChangedCallback(change =>
+            {
+                _choice.virtualPlayers = change.newValue;
                 Refresh();
             });
         }
@@ -181,6 +190,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
             _problem.text = problem;
             _problem.SetHidden(problem.Length == 0);
             _play.SetEnabled(problem.Length == 0);
+            _virtualPlayers.SetHidden(_choice.network != LaunchNetwork.Host || _choice.entry != LaunchEntry.Map);
             MainToolbar.Refresh(LaunchToolbar.Path);
         }
     }

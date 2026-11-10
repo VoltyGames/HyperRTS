@@ -7,6 +7,7 @@
       <ui:DropdownField name="mode" label="Mode" />
       <ui:DropdownField name="entry" label="Start" />
       <ui:DropdownField name="network" label="Network" />
+      <ui:SliderInt name="virtual-players" label="Virtual players" low="0" high="3" show-input-field="true" tooltip="Multiplayer Play Mode Editor instances that join the hosted match. The active scenario needs that many instances tagged HyperRtsJoin." />
       <ui:VisualElement class="hrts-row hrts-launch__head">
         <ui:Label text="Slot" class="hrts-launch__number" />
         <ui:Label text="Player" class="hrts-launch__kind" />

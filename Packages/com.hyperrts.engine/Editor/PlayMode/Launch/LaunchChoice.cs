@@ -12,7 +12,15 @@ namespace HyperRTS.Editor.PlayMode.Launch
         public TeamLayout mode = TeamLayout.TwoVsTwo;
         public LaunchEntry entry;
         public LaunchNetwork network;
+
+        /// <summary>Multiplayer Play Mode Editor instances (0 to <see cref="MaxVirtualPlayers"/>) that join a hosted match.</summary>
+        public int virtualPlayers;
         public List<LaunchSlot> slots = new();
+
+        public const int MaxVirtualPlayers = 3;
+
+        /// <summary>Whether Play hosts this map with virtual players joining it.</summary>
+        public bool HostsVirtualPlayers => entry == LaunchEntry.Map && network == LaunchNetwork.Host && virtualPlayers > 0;
 
         /// <summary>The short name of a mode, such as "2v2".</summary>
         public static string ModeName(TeamLayout mode) => mode switch
@@ -121,6 +129,11 @@ namespace HyperRTS.Editor.PlayMode.Launch
             if (network == LaunchNetwork.Host && humans == 0)
             {
                 return "Hosting needs a human slot for yourself.";
+            }
+
+            if (network == LaunchNetwork.Host && humans <= virtualPlayers)
+            {
+                return "Each virtual player needs a human slot besides your own.";
             }
 
             if (network == LaunchNetwork.Dedicated && humans == 0)

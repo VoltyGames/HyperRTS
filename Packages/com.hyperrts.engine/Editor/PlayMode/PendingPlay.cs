@@ -1,4 +1,5 @@
 ﻿using System;
+using Unity.PlayMode.Editor;
 using UnityEditor;
 
 namespace HyperRTS.Editor.PlayMode
@@ -22,15 +23,26 @@ namespace HyperRTS.Editor.PlayMode
             DropUnlessEnteringPlay();
         }
 
-        /// <summary>Enters Play mode; an empty <paramref name="value"/> only enters it.</summary>
-        public void Enter(string value)
+        /// <summary>
+        /// Enters Play mode; an empty <paramref name="value"/> only enters it. With <paramref name="throughScenario"/> the
+        /// active Multiplayer Play Mode scenario starts instead, which also launches its other Editor instances.
+        /// </summary>
+        public void Enter(string value, bool throughScenario = false)
         {
             if (value.Length > 0)
             {
                 SessionState.SetString(_key, value);
             }
 
-            EditorApplication.EnterPlaymode();
+            if (throughScenario)
+            {
+                PlayModeScenarioManager.Start();
+            }
+            else
+            {
+                EditorApplication.EnterPlaymode();
+            }
+
             EditorApplication.update += DropUnlessEnteringPlay;
         }
 
@@ -48,7 +60,8 @@ namespace HyperRTS.Editor.PlayMode
 
         private void DropUnlessEnteringPlay()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            // A scenario spends a while starting its instances before Play begins.
+            if (EditorApplication.isPlayingOrWillChangePlaymode || PlayModeScenarioManager.State != PlayModeScenarioState.Idle)
             {
                 return;
             }
