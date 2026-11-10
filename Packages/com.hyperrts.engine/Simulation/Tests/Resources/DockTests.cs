@@ -28,6 +28,7 @@ namespace HyperRTS.Simulation.Tests.Resources
         private const float TruckRadius = 1.3f;
         private const float TruckLength = 7f;
         private static readonly float3 DepotCenter = new(30f, 0f, 0f);
+        private static readonly float3 SouthStop = DepotCenter + new float3(0f, 0f, -8f);
 
         private ResourceType _supplies;
 
@@ -138,10 +139,50 @@ namespace HyperRTS.Simulation.Tests.Resources
             Assert.IsTrue(World.RunUntil(() => HasDelivered(truck), 60f), "the load was delivered");
 
             var transform = World.Get<LocalTransform>(truck);
-            var stop = DepotCenter + new float3(0f, 0f, -8f);
             var heading = math.degrees(math.acos(math.clamp(transform.Forward().x, -1f, 1f)));
             Assert.Less(heading, 15f, "it stands within 15 degrees of the bay's heading");
-            Assert.Less(math.distance(transform.Position.xz, stop.xz), BayPose.StopReach, "at the stop");
+            Assert.Less(math.distance(transform.Position.xz, SouthStop.xz), BayPose.StopReach, "at the stop");
+        }
+
+        [Test]
+        public void Truck_StoppedAMetreShortOfItsStop_CreepsOnAndDocks()
+        {
+            // A quarter metre off the bay's line, where the goal sits under the hull inside the turning circle.
+            SpawnDepot(1);
+            var start = SouthStop + new float3(-1f, 0f, -0.25f);
+            var truck = SpawnTruck(start);
+            Assert.Greater(math.distance(start.xz, SouthStop.xz), BayPose.StopReach, "it starts short of the stop");
+
+            Assert.IsTrue(World.RunUntil(() => HasDelivered(truck), 15f), "the load was delivered");
+            var transform = World.Get<LocalTransform>(truck);
+            Assert.Less(math.distance(transform.Position.xz, SouthStop.xz), BayPose.StopReach, "at the stop");
+        }
+
+        [Test]
+        public void TrucksInLine_StandingAgainstTheirJoiningOrder_TheFrontOneDocksFirst_AndBothDeliver()
+        {
+            // The far truck joins the line first; the near one joins a frame later, already in front of it.
+            var depot = SpawnDepot(1);
+            var far = SpawnTruck(new float3(-20f, 0f, -8f));
+            HoldBay(depot, 1);
+            var near = SpawnTruck(new float3(12f, 0f, -8f));
+            HoldBay(depot, 30);
+            Assert.Less(World.Get<HarvestState>(far).Place, World.Get<HarvestState>(near).Place, "joined first");
+
+            Assert.IsTrue(World.RunUntil(() => Occupant(depot, 0) == near || Occupant(depot, 0) == far, 5f),
+                "a truck took the bay");
+            Assert.AreEqual(near, Occupant(depot, 0), "the truck in front docks first");
+            Assert.IsTrue(World.RunUntil(() => HasDelivered(near) && HasDelivered(far), 90f), "both delivered");
+        }
+
+        // The depot itself holds its bay for these frames, so trucks queue for it.
+        private void HoldBay(Entity depot, int frames)
+        {
+            for (var i = 0; i < frames; i++)
+            {
+                World.Buffer<DockBay>(depot).ElementAt(0).Reservation.Reserve(depot);
+                World.Tick();
+            }
         }
 
         [TestCase(true, TestName = "Bay_Frees_WhenItsTruckDies")]

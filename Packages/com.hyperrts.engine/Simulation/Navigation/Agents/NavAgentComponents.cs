@@ -129,6 +129,12 @@ namespace HyperRTS.Simulation.Navigation.Agents
         /// <summary>Metres driven straight ahead before the path proper, as out of a dock bay.</summary>
         public float ExitRun;
 
+        public readonly bool IsPose => math.any(Facing != 0f);
+
+        /// <summary>Whether a hull centre and facing stand on this pose end, as the drive search plans to.</summary>
+        public readonly bool IsAtPose(float2 center, float2 facing) =>
+            DriveGoal.ToPose(Value.xz, Facing).IsAtPose(center, facing);
+
         /// <summary>Whether locomotion already heads within <paramref name="tolerance"/> of the goal, so a rewrite would only restart pathing.</summary>
         public readonly bool IsHeadingTo(EnabledRefRW<MoveDestination> moving, float3 goal, float tolerance) =>
             moving.ValueRO && math.distancesq(Value.xz, goal.xz) < tolerance * tolerance;

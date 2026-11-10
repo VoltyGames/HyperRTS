@@ -30,6 +30,7 @@ namespace HyperRTS.Simulation.Navigation.Docks
                     bay.Reservation.Expire();
                     bay.Line = bay.NextLine;
                     bay.NextLine = 0u;
+                    bay.FrontDistance = bay.NextFrontDistance;
                 }
             }
         }

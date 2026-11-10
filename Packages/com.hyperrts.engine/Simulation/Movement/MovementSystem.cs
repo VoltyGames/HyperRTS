@@ -116,7 +116,7 @@ namespace HyperRTS.Simulation.Movement
                 var axis = facing * agent.HalfSegment;
 
                 var capsule = new NavCapsule(agent.Access(Grid), axis);
-                var step = Plan(ref frame, destination.Value, moving, ref path, waypoints, capsule.Access);
+                var step = Plan(ref frame, destination, moving, ref path, waypoints, capsule.Access);
                 var heading = frame.Driver.Aim(frame.Heading, !moving.ValueRO, aim, aiming);
 
                 // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
@@ -204,12 +204,13 @@ namespace HyperRTS.Simulation.Movement
             }
 
             /// <summary>This frame's step and facing before the crowd's push and the walls have their say.</summary>
-            private static float2 Plan(ref MoveFrame frame, float3 goal, EnabledRefRW<MoveDestination> moving,
-                ref PathState path, DynamicBuffer<PathWaypoint> waypoints, in NavAccess access)
+            private static float2 Plan(ref MoveFrame frame, in MoveDestination destination,
+                EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
+                in NavAccess access)
             {
                 ref var driver = ref frame.Driver;
                 var leg = default(PathLeg);
-                if (moving.ValueRO && !Follow(driver, access, goal, ref path, waypoints, out leg))
+                if (moving.ValueRO && !Follow(driver, access, destination, ref path, waypoints, out leg))
                 {
                     path.Halt(moving, waypoints);
                 }
@@ -222,7 +223,7 @@ namespace HyperRTS.Simulation.Movement
                 // No corners yet: stop and face the goal rather than drive blind at it.
                 if (path.Status != PathStatus.Ready && waypoints.Length == 0)
                 {
-                    frame.Heading = driver.TurnToward(math.normalizesafe(goal.xz - driver.Position));
+                    frame.Heading = driver.TurnToward(math.normalizesafe(destination.Value.xz - driver.Position));
                     return driver.BrakeToStop();
                 }
 
@@ -234,13 +235,19 @@ namespace HyperRTS.Simulation.Movement
             }
 
             /// <summary>Picks the leg to drive; false once the unit has arrived.</summary>
-            private static bool Follow(in Driver driver, in NavAccess access, float3 goal, ref PathState path,
-                DynamicBuffer<PathWaypoint> waypoints, out PathLeg leg)
+            private static bool Follow(in Driver driver, in NavAccess access, in MoveDestination destination,
+                ref PathState path, DynamicBuffer<PathWaypoint> waypoints, out PathLeg leg)
             {
                 var touch = math.max(driver.Radius * 0.5f, driver.TopSpeed * driver.DeltaTime);
                 path.SkipCorners(access, driver.Position, touch, driver.LookAhead, waypoints);
-                leg = PathLeg.Along(driver.Position, goal.xz, waypoints, path).Manoeuvre(driver.Position, waypoints,
-                    Locomotion.TightLookAhead(driver.State.Speed), driver.Chassis);
+                leg = PathLeg.Along(driver.Position, destination.Value.xz, waypoints, path).Manoeuvre(driver.Position,
+                    waypoints, Locomotion.TightLookAhead(driver.State.Speed), driver.Chassis);
+                // A pose end arrives only on its pose, so a move into a dock bay never ends short of the stop.
+                if (destination.IsPose)
+                {
+                    return !destination.IsAtPose(driver.Position, driver.Facing);
+                }
+
                 return !driver.HasArrived(leg);
             }
         }

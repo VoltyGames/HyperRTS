@@ -23,8 +23,6 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
         private const int ShortcutEvery = 10;
         private const int ShortcutNearEvery = 3;
-        private const float PoseReach = 0.75f;
-        private static readonly float PoseAngleCos = math.cos(math.radians(10f));
 
         private static readonly ProfilerMarker RunMarker = new("DriveSearch.Run");
 
@@ -176,7 +174,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         // A pose goal whose hull centre sits in walls beyond the pose tolerance, as where a path runs into a building,
         // can never be reached, so it costs no expansions.
         private readonly bool CanStand(in DriveGoal goal) =>
-            !goal.HasFacing || _hull.Access.Distance(goal.Center) >= _hull.Access.Class.Radius - PoseReach;
+            !goal.HasFacing || _hull.Access.Distance(goal.Center) >= _hull.Access.Class.Radius - DriveGoal.PoseReach;
 
         private bool Search(out int last, out DriveCurve curve, out float curveLength)
         {
@@ -232,7 +230,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
                 return math.distance(center, _goal.Center) <= NavTolerances.Arrive(_hull.Access.Class.Radius);
             }
 
-            return math.distance(center, _goal.Center) <= PoseReach && math.dot(pose.Facing, _goal.Facing) >= PoseAngleCos;
+            return _goal.IsAtPose(center, pose.Facing);
         }
 
         // The node chain from the start, then the shortcut, as the hull centre's waypoints.

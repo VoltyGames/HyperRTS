@@ -84,8 +84,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
                     return false;
                 }
 
-                var firstInLineAt = waits && harvest.Place == 1 ? harvest.Bay : -1;
-                if (!Bays.TryClaim(dock, entity, transform.Position.xz, firstInLineAt, out var bay))
+                var waitsAt = waits ? harvest.Bay : -1;
+                if (!Bays.TryClaim(dock, entity, transform.Position.xz, waitsAt, out var bay))
                 {
                     harvest.RetryIn = RetrySeconds;
                     return false;
@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 in NavAgent agent)
             {
                 var place = harvest.Dock == dock ? harvest.Place : 0;
-                harvest.Place = Bays.Queue(dock, ref harvest.Bay, place);
+                harvest.Place = Bays.Queue(dock, ref harvest.Bay, place, transform.Position.xz);
                 harvest.Dock = dock;
                 var bay = Bays.Pose(dock, harvest.Bay);
                 bay.WaitInLine(move, harvest.Place, agent.HalfLength * 2f, transform.Position.xz);

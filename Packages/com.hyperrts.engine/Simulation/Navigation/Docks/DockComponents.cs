@@ -31,6 +31,12 @@ namespace HyperRTS.Simulation.Navigation.Docks
         /// <summary>Places taken so far this frame, rolled into <see cref="Line"/> by <see cref="DockSystem"/>.</summary>
         public uint NextLine;
 
+        /// <summary>Metres from the stop to the nearest vehicle in line last frame, which the bay goes to next.</summary>
+        public float FrontDistance;
+
+        /// <summary>The same so far this frame, rolled into <see cref="FrontDistance"/> by the dock system.</summary>
+        public float NextFrontDistance;
+
         public readonly bool IsFree => Reservation.IsFree;
 
         public readonly BayPose WorldPose(in LocalTransform dock)
@@ -131,6 +137,9 @@ namespace HyperRTS.Simulation.Navigation.Docks
         // One bit a place in a line's mask.
         private const int MostPlaces = 32;
 
+        // Metres within which a vehicle counts as the nearest in line, for float noise between frames.
+        private const float FrontSlack = 0.05f;
+
         private BufferLookup<DockBay> _bays;
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
 
@@ -154,9 +163,9 @@ namespace HyperRTS.Simulation.Navigation.Docks
 
         /// <summary>
         /// Claims the free bay nearest the unit that nobody waits for ahead of it: one with no line, or the bay it
-        /// is first in line for (<paramref name="firstInLineAt"/>, -1 for none).
+        /// waits for (<paramref name="waitsAt"/>, -1 for none) when it stands nearest that bay's stop.
         /// </summary>
-        public bool TryClaim(Entity dock, Entity unit, float2 position, int firstInLineAt, out int claimed)
+        public bool TryClaim(Entity dock, Entity unit, float2 position, int waitsAt, out int claimed)
         {
             var bays = _bays[dock];
             var transform = _transforms[dock];
@@ -164,10 +173,10 @@ namespace HyperRTS.Simulation.Navigation.Docks
             for (var i = 0; i < bays.Length; i++)
             {
                 var bay = bays[i];
-                var isFirst = bay.Line == 0 || i == firstInLineAt;
-                if (bay.IsFree && isFirst)
+                var distance = math.distance(position, bay.WorldPose(transform).Stop.xz);
+                if (bay.IsFree && IsNext(bay, i == waitsAt, distance))
                 {
-                    closest.Consider(i, dock, math.distancesq(position, bay.WorldPose(transform).Stop.xz));
+                    closest.Consider(i, dock, distance * distance);
                 }
             }
 
@@ -188,11 +197,23 @@ namespace HyperRTS.Simulation.Navigation.Docks
 
         public void Free(Entity dock, int bay, Entity unit) => _bays[dock].ElementAt(bay).Reservation.Release(unit);
 
+        // The bay goes to the vehicle in line standing nearest its stop, so none drives through another waiting.
+        private static bool IsNext(in DockBay bay, bool waits, float distance)
+        {
+            if (bay.Line == 0)
+            {
+                return true;
+            }
+
+            return waits && distance <= bay.FrontDistance + FrontSlack;
+        }
+
         /// <summary>
         /// The unit's place in line this frame: its old one moved up past places left empty, or for a newcomer
-        /// (<paramref name="place"/> 0) the end of the shortest line, whose bay it sets.
+        /// (<paramref name="place"/> 0) the end of the shortest line, whose bay it sets. It also counts towards who
+        /// stands nearest the stop.
         /// </summary>
-        public int Queue(Entity dock, ref int bay, int place)
+        public int Queue(Entity dock, ref int bay, int place, float2 position)
         {
             var bays = _bays[dock];
             if (place == 0)
@@ -201,6 +222,8 @@ namespace HyperRTS.Simulation.Navigation.Docks
             }
 
             ref var line = ref bays.ElementAt(bay);
+            var distance = math.distance(position, line.WorldPose(_transforms[dock]).Stop.xz);
+            line.NextFrontDistance = line.NextLine == 0u ? distance : math.min(line.NextFrontDistance, distance);
             var lastTaken = MostPlaces - math.lzcnt(line.Line | line.NextLine);
             var ahead = math.countbits(line.Line & ((1u << (place - 1)) - 1u));
             var next = math.min(place == 0 ? lastTaken + 1 : ahead + 1, MostPlaces);
