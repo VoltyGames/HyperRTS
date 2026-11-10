@@ -2,24 +2,39 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Profiling;
 using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Physics
 {
     /// <summary>
-    /// Keeps a static heightfield of the active map terrain in the presented physics world, rebuilt when the terrain or
-    /// its data is swapped, so bodies land on the ground the player sees.
+    /// Keeps the active map terrain in the presented physics world as static heightfield tiles, so bodies land on the
+    /// ground the player sees. A swapped terrain rebuilds them all; heights read back from the GPU, as after craters,
+    /// rebuild only the tiles they touch.
     /// </summary>
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class TerrainColliderSystem : SystemBase
     {
+        /// <summary>Heightmap quads along a tile's side; a crater rebuilds a tile, not the map.</summary>
+        public const int TileQuads = 128;
+
+        private static readonly ProfilerMarker RebuildMarker = new("TerrainColliderSystem.Rebuild");
+
         private Terrain _terrain;
         private TerrainData _data;
-        private Entity _ground;
-        private BlobAssetReference<Unity.Physics.Collider> _collider;
+        private int _tilesAcross;
+        private Entity[] _tiles = System.Array.Empty<Entity>();
+        private BlobAssetReference<Unity.Physics.Collider>[] _colliders = System.Array.Empty<BlobAssetReference<Unity.Physics.Collider>>();
+        private RectInt _changed;
 
-        protected override void OnDestroy() => Release();
+        protected override void OnCreate() => TerrainCallbacks.heightmapChanged += OnHeightsChanged;
+
+        protected override void OnDestroy()
+        {
+            TerrainCallbacks.heightmapChanged -= OnHeightsChanged;
+            Release();
+        }
 
         protected override void OnUpdate()
         {
@@ -30,62 +45,127 @@ namespace HyperRTS.Presentation.Physics
                 return;
             }
 
-            var unchanged = terrain == _terrain && terrain.terrainData == _data;
-            if (unchanged)
+            var swapped = terrain != _terrain || terrain.terrainData != _data;
+            if (swapped)
+            {
+                Release();
+                _terrain = terrain;
+                _data = terrain.terrainData;
+                _tilesAcross = (_data.heightmapResolution - 2) / TileQuads + 1;
+                _tiles = new Entity[_tilesAcross * _tilesAcross];
+                _colliders = new BlobAssetReference<Unity.Physics.Collider>[_tiles.Length];
+                _changed = new RectInt(0, 0, _data.heightmapResolution, _data.heightmapResolution);
+            }
+
+            if (_changed.width > 0)
+            {
+                using (RebuildMarker.Auto())
+                {
+                    RebuildTiles(_changed);
+                }
+
+                _changed = default;
+            }
+        }
+
+        // Only heights already back in CPU memory: the GPU-only dent before a sync has nothing to read yet.
+        private void OnHeightsChanged(Terrain terrain, RectInt region, bool synched)
+        {
+            if (!synched || terrain != _terrain)
             {
                 return;
             }
 
-            Release();
-            _terrain = terrain;
-            _data = terrain.terrainData;
-            _collider = CreateCollider(_data);
-            _ground = EntityManager.CreateEntity(typeof(PhysicsCollider), typeof(LocalTransform), typeof(LocalToWorld));
-            var place = LocalTransform.FromPosition(terrain.GetPosition());
-            EntityManager.SetComponentData(_ground, new PhysicsCollider { Value = _collider });
-            EntityManager.SetComponentData(_ground, place);
-            EntityManager.SetComponentData(_ground, new LocalToWorld { Value = place.ToMatrix() });
-            EntityManager.AddSharedComponent(_ground, new PhysicsWorldIndex(PhysicsGroup.WorldIndex));
+            _changed = _changed.width > 0 ? Union(_changed, region) : region;
         }
 
-        private static BlobAssetReference<Unity.Physics.Collider> CreateCollider(TerrainData data)
+        // A sample on a tile edge belongs to the tiles on both sides of it.
+        private void RebuildTiles(RectInt samples)
         {
-            var resolution = data.heightmapResolution;
-            var rows = data.GetHeights(0, 0, resolution, resolution);
-            var heights = new NativeArray<float>(resolution * resolution, Allocator.TempJob);
-            for (var z = 0; z < resolution; z++)
+            var first = math.max(0, new int2(samples.xMin - 1, samples.yMin - 1) / TileQuads);
+            var last = math.min(_tilesAcross - 1, new int2(samples.xMax - 1, samples.yMax - 1) / TileQuads);
+            for (var z = first.y; z <= last.y; z++)
             {
-                for (var x = 0; x < resolution; x++)
+                for (var x = first.x; x <= last.x; x++)
                 {
-                    heights[z * resolution + x] = rows[z, x];
+                    RebuildTile(x, z);
+                }
+            }
+        }
+
+        private void RebuildTile(int x, int z)
+        {
+            var index = z * _tilesAcross + x;
+            ReleaseTile(index);
+            var start = new int2(x, z) * TileQuads;
+            var count = math.min(TileQuads + 1, _data.heightmapResolution - start);
+            var collider = CreateCollider(_data, start, count, out var spacing);
+            var corner = (float3)_terrain.GetPosition() + new float3(start.x * spacing.x, 0f, start.y * spacing.y);
+            var tile = EntityManager.CreateEntity(typeof(PhysicsCollider), typeof(LocalTransform), typeof(LocalToWorld));
+            var place = LocalTransform.FromPosition(corner);
+            EntityManager.SetComponentData(tile, new PhysicsCollider { Value = collider });
+            EntityManager.SetComponentData(tile, place);
+            EntityManager.SetComponentData(tile, new LocalToWorld { Value = place.ToMatrix() });
+            EntityManager.AddSharedComponent(tile, new PhysicsWorldIndex(PhysicsGroup.WorldIndex));
+            _tiles[index] = tile;
+            _colliders[index] = collider;
+        }
+
+        private static BlobAssetReference<Unity.Physics.Collider> CreateCollider(TerrainData data, int2 start, int2 count, out float2 spacing)
+        {
+            var rows = data.GetHeights(start.x, start.y, count.x, count.y);
+            var heights = new NativeArray<float>(count.x * count.y, Allocator.Temp);
+            for (var z = 0; z < count.y; z++)
+            {
+                for (var x = 0; x < count.x; x++)
+                {
+                    heights[z * count.x + x] = rows[z, x];
                 }
             }
 
             var size = (float3)data.size;
-            var scale = new float3(size.x / (resolution - 1), size.y, size.z / (resolution - 1));
+            spacing = size.xz / (data.heightmapResolution - 1);
+            var scale = new float3(spacing.x, size.y, spacing.y);
             // Triangles, not vertex samples: a capsule lying on a slope must not sink through its edges.
-            var collider = Unity.Physics.TerrainCollider.Create(heights, new int2(resolution), scale,
-                Unity.Physics.TerrainCollider.CollisionMethod.Triangles, PhysicsGroup.TerrainFilter);
-            heights.Dispose();
-            return collider;
+            return Unity.Physics.TerrainCollider.Create(heights, count, scale,
+                Unity.Physics.TerrainCollider.CollisionMethod.Triangles, PhysicsGroup.GroundFilter);
+        }
+
+        private void ReleaseTile(int index)
+        {
+            if (EntityManager.Exists(_tiles[index]))
+            {
+                EntityManager.DestroyEntity(_tiles[index]);
+            }
+
+            if (_colliders[index].IsCreated)
+            {
+                _colliders[index].Dispose();
+            }
+
+            _tiles[index] = Entity.Null;
+            _colliders[index] = default;
         }
 
         private void Release()
         {
-            if (EntityManager.Exists(_ground))
+            for (var i = 0; i < _tiles.Length; i++)
             {
-                EntityManager.DestroyEntity(_ground);
+                ReleaseTile(i);
             }
 
-            if (_collider.IsCreated)
-            {
-                _collider.Dispose();
-            }
-
-            _ground = Entity.Null;
-            _collider = default;
+            _tiles = System.Array.Empty<Entity>();
+            _colliders = System.Array.Empty<BlobAssetReference<Unity.Physics.Collider>>();
             _terrain = null;
             _data = null;
+            _changed = default;
+        }
+
+        private static RectInt Union(RectInt a, RectInt b)
+        {
+            var min = Vector2Int.Min(a.min, b.min);
+            var max = Vector2Int.Max(a.max, b.max);
+            return new RectInt(min, max - min);
         }
     }
 }

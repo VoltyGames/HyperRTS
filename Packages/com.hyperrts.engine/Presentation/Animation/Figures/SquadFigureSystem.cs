@@ -50,7 +50,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 Renderers = SystemAPI.GetBufferLookup<FigureRenderer>(true),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
                 Switch = _switch,
-            }.Schedule(state.Dependency);
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
@@ -60,10 +60,12 @@ namespace HyperRTS.Presentation.Animation.Figures
             public float DeltaTime;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
-            public ComponentLookup<LowerClip> Lowers;
-            public ComponentLookup<UpperClip> Uppers;
-            public ComponentLookup<LowerFade> LowerFades;
-            public ComponentLookup<UpperFade> UpperFades;
+
+            // Each squad writes only its own figures' parts, so squads run in parallel.
+            [NativeDisableParallelForRestriction] public ComponentLookup<LowerClip> Lowers;
+            [NativeDisableParallelForRestriction] public ComponentLookup<UpperClip> Uppers;
+            [NativeDisableParallelForRestriction] public ComponentLookup<LowerFade> LowerFades;
+            [NativeDisableParallelForRestriction] public ComponentLookup<UpperFade> UpperFades;
             [ReadOnly] public BufferLookup<FigureRenderer> Renderers;
             [ReadOnly] public ComponentLookup<LocalToWorld> Places;
             public RenderSwitch Switch;

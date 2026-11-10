@@ -4,6 +4,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Rendering;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Animation.Figures
@@ -45,6 +46,21 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _later.Add(_kit.World.CreateSystem<CorpseSystem>());
             _later.Add(_kit.World.CreateSystem<CorpsePoseSystem>());
             _later.Add(_kit.World.CreateSystem<PoseSlotSystem>());
+        }
+
+        /// <summary>Gives every figure <paramref name="count"/> more parts, as a soldier's kit and weapon; call before <see cref="UseRagdolls"/>.</summary>
+        protected void AddParts(int count)
+        {
+            foreach (var figure in _figures)
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    var part = CreatePart();
+                    _em.SetComponentData(part, new Parent { Value = figure });
+                    _em.GetBuffer<FigureRenderer>(_squad).Add(new FigureRenderer { Model = figure, Part = part });
+                    _em.GetBuffer<LinkedEntityGroup>(_squad).Add(part);
+                }
+            }
         }
 
         /// <summary>The skinning matrix the rig texture holds for a bone and row; the spine's is relative to the hips.</summary>

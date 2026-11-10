@@ -117,13 +117,16 @@ is an error. `deployedModel` is a child (a gun on its tripod) shown while the sq
 A dead member's figure plays its fall (the shot fall, or the blast fall for the side the blast came from) and hides
 after `dieHold`. When the bone set has a ragdoll, `CorpseSystem` decides at the handover, `handoverTime` into the fall:
 a figure within `cameraDistance` of the camera, with a pose slot free, becomes a `Corpse`; the rest keep their fall.
+A frame makes and hands over at most `EffectDetail.CorpsesPerFrameAt` corpses, nearest the camera first, so a blast
+that kills hundreds spreads its cost over frames.
 
 - A corpse draws through its own copies of the figure's renderers (`VisualPrefab.Copy`), listed in its
   `LinkedEntityGroup` at the figure's world place, so it outlives the squad ghost. The squad's figure hides.
 - The handover reads the pose the fall draws now from the readable bone texture (`BoneTexture`, `Ragdoll.Skins`, the
-  shader's sums) into the slot, so nothing pops. One capsule body per ragdoll body starts there in physics world 1,
-  moving as the clip did over its last row, joined by `PhysicsJoint.CreateRagdoll` with the baked limits. A blast death
-  adds `blastSpeed` away from the blast and `blastLift` up.
+  shader's sums) into the slot, so nothing pops. One capsule body per ragdoll body starts there in
+  [physics world 1](README.md#physics), where it lands on the terrain, buildings and vehicles, moving as the clip did
+  over its last row, joined by `PhysicsJoint.CreateRagdoll` with the baked limits. A blast death adds `blastSpeed`
+  away from the blast and `blastLift` up.
 - `CorpsePoseSystem` writes each bone into the slot as its body moved since the handover (bones without a body ride
   on `boneBodies`) and keeps the copies' render bounds round the bodies. Once every body is under `restSpeed` for
   `restTime`, or after `settleTime`, the bodies go and the slot keeps the last pose. The corpse and its slot go at the
@@ -131,8 +134,9 @@ a figure within `cameraDistance` of the camera, with a pose slot free, becomes a
 - The client never sees the last member die: the ghost goes the tick it does, often with every member in one blast.
   Each squad keeps a cleanup `SquadEnd` and a `ShownFigure` per figure (place, posture, fall). Every squad's death plays
   a death cue, sound or not (`CueWriter`), so when the ghost goes and a seen death cue of its type lands on it within
-  `CueWait`, its figures still on show fall as corpses copied from the prefab: falling ones carry on, living ones fall
-  as if shot, then hand over as above. A ghost that goes into fog has no death cue and leaves nothing.
+  `CueWait`, its figures still on show wait to fall as corpses copied from the prefab: falling ones carry on, living
+  ones fall as if shot, then hand over as above. One the frame's budget leaves waits, and past `FallWait` it hides
+  with its squad. A ghost that goes into fog has no death cue and leaves nothing.
 
 The tuning (`RagdollTuning`) sits on the `BoneAnimationSet` beside its ragdoll bodies and bakes through the clip table
 into `FigureClips.Ragdoll`. Headless and server worlds run none of this, and a `-nographics` client keeps no slots.

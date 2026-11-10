@@ -14,8 +14,9 @@ namespace HyperRTS.Presentation.Rendering.Parts
     {
         private RenderParts _parts;
         [ReadOnly] private ComponentLookup<Parent> _parents;
-        private ComponentLookup<HiddenBy> _hidden;
-        private ComponentLookup<MaterialMeshInfo> _meshes;
+        // A job over many roots writes only each root's own parts, so it may run them in parallel.
+        [NativeDisableParallelForRestriction] private ComponentLookup<HiddenBy> _hidden;
+        [NativeDisableParallelForRestriction] private ComponentLookup<MaterialMeshInfo> _meshes;
 
         public RenderSwitch(ref SystemState state)
         {

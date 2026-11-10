@@ -64,10 +64,18 @@ handles Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInter
 Unity Physics moves things that are only looked at, never gameplay, in `Presentation/Physics/`. `PhysicsGroup` steps
 physics world 1 (`PhysicsGroup.WorldIndex`) in presented worlds; a body joins it with that `PhysicsWorldIndex` and
 `PhysicsGroup.BodyFilter`. `PhysicsStartSystem` steps the main physics world once, which a custom group needs, then
-switches it off, and on a `-nographics` client switches `PhysicsGroup` off too. `TerrainColliderSystem` keeps a
-heightfield of the active terrain in world 1, rebuilt when the terrain or its data is swapped; crater dents don't
-reach it. Its only bodies are the ragdolls of dying squad figures (see
-[squad figures](animation.md#deaths-and-ragdolls)).
+switches it off, and on a `-nographics` client switches `PhysicsGroup` off too. Its only dynamic bodies are the
+ragdolls of dying squad figures (see [squad figures](animation.md#deaths-and-ragdolls)).
+
+What they land on carries `PhysicsGroup.GroundFilter`, which meets bodies only:
+
+- `TerrainColliderSystem` keeps the active terrain as heightfield tiles of `TileQuads` quads. A swapped terrain
+  rebuilds them all; heights read back to the CPU (`TerrainCallbacks.heightmapChanged`, as on a crater sync) rebuild
+  only the tiles they touch, so a ragdoll lies in the crater it fell in.
+- `BoxColliderSystem` gives each building (`BuildingTag`) a static box and each vehicle (`Locomotion`) a kinematic box,
+  sized by its `PickBox`, on its own entity with a `ColliderSource`. Each fixed step sets a vehicle box's velocity to
+  reach its unit by the end of the step, so a body on a moving hull rides it; a unit that jumps further than
+  `JumpDistance` takes its box along. Gameplay entities gain no physics components.
 
 ## Audio
 

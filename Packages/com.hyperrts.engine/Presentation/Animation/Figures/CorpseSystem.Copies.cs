@@ -54,7 +54,8 @@ namespace HyperRTS.Presentation.Animation.Figures
             return root;
         }
 
-        // The squad's own figures went with its ghost, so they are copied from its prefab and fall on from where they were.
+        // The squad's own figures went with its ghost, so they wait to be copied from its prefab and fall on from where
+        // they were.
         private void FallShownFigures(Entity squad, in SquadEnd end)
         {
             var prefab = SystemAPI.GetSingleton<PrefabRegistry>().Find(end.TypeId);
@@ -71,14 +72,20 @@ namespace HyperRTS.Presentation.Animation.Figures
             {
                 if (shown[i].Shown)
                 {
-                    Fall(shown[i], prefab, figures[i], dieHold, end.Owner);
+                    _waiting.Add(new WaitingFall
+                    {
+                        Shown = shown[i], Prefab = prefab, Baked = figures[i], DieHold = dieHold, Owner = end.Owner,
+                        Since = _now,
+                    });
                 }
             }
         }
 
         // A living member's death went unseen, so it falls as if shot.
-        private void Fall(in ShownFigure shown, Entity prefab, in SquadFigure baked, float dieHold, byte owner)
+        private void Fall(in WaitingFall waiting)
         {
+            var shown = waiting.Shown;
+            var baked = waiting.Baked;
             var model = shown.ShowsOther ? baked.Other.Model : new FigureModel { Figure = baked.Figure, Clips = baked.Clips };
             ref var clips = ref model.Clips.Value;
             var start = shown.Falling ? shown.FallStart : _now;
@@ -90,9 +97,9 @@ namespace HyperRTS.Presentation.Animation.Figures
                 Throw = clips.Ragdoll.Tuning.Throw(death, shown.BlastDirection),
                 HandoverAt = start + clips.Ragdoll.Tuning.handoverTime,
                 HandedOver = shown.Falling && shown.HandedOver,
-                HideAt = shown.Falling ? shown.HideAt : _now + dieHold,
+                HideAt = shown.Falling ? shown.HideAt : _now + waiting.DieHold,
             };
-            var root = CreateCorpse(prefab, model.Figure, corpse, owner);
+            var root = CreateCorpse(waiting.Prefab, model.Figure, corpse, waiting.Owner);
             var direction = new float3(shown.BlastDirection.x, 0f, shown.BlastDirection.y);
             var fall = new PlayingClip { Value = clips.Fall(shown.Posture, death, direction, shown.World).Packed(start) };
             using var group = EntityManager.GetBuffer<LinkedEntityGroup>(root).ToNativeArray(Allocator.Temp);

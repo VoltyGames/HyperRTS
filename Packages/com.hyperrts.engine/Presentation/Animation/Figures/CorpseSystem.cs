@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Animation.Bones;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Quality;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
@@ -16,9 +18,10 @@ namespace HyperRTS.Presentation.Animation.Figures
 {
     /// <summary>
     /// Makes corpses of dying squad figures. Past its handover a figure near the camera with a free pose slot becomes a
-    /// ragdoll drawn by copies of its renderers; the figures still on show when a squad dies fall as corpses too. Bodies
-    /// freeze once they rest, and a corpse hides when its figure would have. Not Burst: it copies renderers and reads
-    /// bone textures.
+    /// ragdoll drawn by copies of its renderers; the figures still on show when a squad dies fall as corpses too. A frame
+    /// makes and hands over at most <see cref="EffectDetail.CorpsesPerFrameAt"/>, nearest the camera first. Bodies freeze
+    /// once they rest, and a corpse hides when its figure would have. Not Burst: it copies renderers and reads bone
+    /// textures.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -35,12 +38,17 @@ namespace HyperRTS.Presentation.Animation.Figures
         private EntityQuery _ends;
         private EntityQuery _corpses;
         private NativeList<Handover> _handovers;
+        private NativeList<WaitingFall> _waiting;
         private float _now;
+        private int _budget;
 
-        private struct Handover
+        private struct Handover : IComparable<Handover>
         {
             public Entity Squad;
             public int Figure;
+            public float Distance;
+
+            public readonly int CompareTo(Handover other) => Distance.CompareTo(other.Distance);
         }
 
         protected override void OnCreate()
@@ -53,11 +61,13 @@ namespace HyperRTS.Presentation.Animation.Figures
             _ends = SystemAPI.QueryBuilder().WithAll<SquadEnd>().Build();
             _corpses = SystemAPI.QueryBuilder().WithAll<Corpse>().Build();
             _handovers = new NativeList<Handover>(Allocator.Persistent);
+            _waiting = new NativeList<WaitingFall>(Allocator.Persistent);
         }
 
         protected override void OnDestroy()
         {
             _handovers.Dispose();
+            _waiting.Dispose();
             foreach (var colliders in _colliders.Values)
             {
                 foreach (var collider in colliders)
@@ -74,28 +84,37 @@ namespace HyperRTS.Presentation.Animation.Figures
             CompleteDependency();
             _now = (float)SystemAPI.Time.ElapsedTime;
             _camera = MainCamera.Find(_camera);
+            _budget = EffectDetail.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
             EntityManager.AddComponent(_newSquads, new ComponentTypeSet(typeof(SquadEnd), typeof(ShownFigure)));
             Scan();
             MatchDeathCues();
-            HandOverFigures();
             EndGoneSquads();
+            using (MakeMarker.Auto())
+            {
+                MakeWaitingFalls();
+            }
+
+            HandOverFigures();
             UpdateCorpses();
         }
 
-        // A live figure past its handover becomes a ragdoll at once, or keeps falling on its squad.
+        // A live figure past its handover becomes a ragdoll at once, or keeps falling on its squad when the frame's
+        // budget or the slots are spent.
         private void HandOverFigures()
         {
+            SortHandovers();
             foreach (var handover in _handovers)
             {
                 var figure = EntityManager.GetBuffer<SquadFigure>(handover.Squad)[handover.Figure];
                 var member = EntityManager.GetBuffer<SquadMember>(handover.Squad)[handover.Figure];
                 var world = EntityManager.GetComponentData<LocalToWorld>(figure.Figure).Value;
                 ref var ragdoll = ref figure.Clips.Value.Ragdoll;
-                if (!TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
+                if (_budget <= 0 || !TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
                 {
                     continue;
                 }
 
+                _budget--;
                 var corpse = new Corpse
                 {
                     Clips = figure.Clips,
@@ -155,8 +174,9 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             corpse.HandedOver = true;
             EntityManager.SetComponentData(root, corpse);
-            if (TryTakeSlot(ref corpse.Clips.Value.Ragdoll, corpse.World.c3.xyz, out var slot))
+            if (_budget > 0 && TryTakeSlot(ref corpse.Clips.Value.Ragdoll, corpse.World.c3.xyz, out var slot))
             {
+                _budget--;
                 StartRagdoll(root, slot);
             }
         }

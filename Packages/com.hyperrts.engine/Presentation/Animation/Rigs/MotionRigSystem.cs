@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 TrackWheels = SystemAPI.GetBufferLookup<TrackWheel>(),
                 FrontLifts = SystemAPI.GetComponentLookup<TrackLift0>(),
                 BackLifts = SystemAPI.GetComponentLookup<TrackLift1>(),
-            }.Schedule(state.Dependency);
+            }.ScheduleParallel(state.Dependency);
         }
 
         [BurstCompile]
@@ -57,12 +57,14 @@ namespace HyperRTS.Presentation.Animation.Rigs
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             [ReadOnly] public ComponentLookup<Docked> Docks;
-            public ComponentLookup<RotorSpin> Spins;
-            public ComponentLookup<LocalTransform> Transforms;
-            public BufferLookup<MotionRigTrack> Tracks;
-            public BufferLookup<TrackWheel> TrackWheels;
-            public ComponentLookup<TrackLift0> FrontLifts;
-            public ComponentLookup<TrackLift1> BackLifts;
+
+            // Each rig writes only itself and its own parts, so rigs run in parallel.
+            [NativeDisableParallelForRestriction] public ComponentLookup<RotorSpin> Spins;
+            [NativeDisableParallelForRestriction] public ComponentLookup<LocalTransform> Transforms;
+            [NativeDisableParallelForRestriction] public BufferLookup<MotionRigTrack> Tracks;
+            [NativeDisableParallelForRestriction] public BufferLookup<TrackWheel> TrackWheels;
+            [NativeDisableParallelForRestriction] public ComponentLookup<TrackLift0> FrontLifts;
+            [NativeDisableParallelForRestriction] public ComponentLookup<TrackLift1> BackLifts;
 
             // Roots are top-level, so LocalTransform is this frame's pose; read by lookup, since a parameter would alias it.
             private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts)
