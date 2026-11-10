@@ -51,10 +51,17 @@ namespace HyperRTS.Simulation.Cues.Sounds
         /// <summary>Draws one of the clips, never the one drawn last, and a pitch, for a cue that has clips.</summary>
         public void Pick(out AudioClip clip, out float randomPitch)
         {
-            // A step of 1 to n - 1 clips on from the last lands on every other clip alike.
-            _last = _last >= 0 && clips.Length > 1
-                ? (_last + Random.Range(1, clips.Length)) % clips.Length
-                : Random.Range(0, clips.Length);
+            if (_last < 0 || clips.Length == 1)
+            {
+                _last = Random.Range(0, clips.Length);
+            }
+            else
+            {
+                // Draw among the other clips: indexes from the last one up shift by one to skip it.
+                var next = Random.Range(0, clips.Length - 1);
+                _last = next >= _last ? next + 1 : next;
+            }
+
             clip = clips[_last];
             randomPitch = Random.Range(pitch.x, pitch.y);
         }
