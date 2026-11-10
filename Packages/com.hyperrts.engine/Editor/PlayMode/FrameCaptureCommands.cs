@@ -11,6 +11,6 @@ namespace HyperRTS.Editor.PlayMode
             [CliArg("name", "Folder name under Work/FrameCapture", Required = true)] string name,
             [CliArg("seconds", "Seconds of game time to record")] float seconds = 2f,
             [CliArg("fps", "Frames per second of game time")] int fps = 60) =>
-            await FrameCapture.Record(name, seconds, fps);
+            await new FrameCapture(name, seconds, fps).Record();
     }
 }

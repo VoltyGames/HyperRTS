@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -12,7 +11,6 @@ namespace HyperRTS.Presentation.Physics
     /// Keeps a static heightfield of the active map terrain in the presented physics world, rebuilt when the terrain or
     /// its data is swapped, so bodies land on the ground the player sees.
     /// </summary>
-    [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class TerrainColliderSystem : SystemBase
     {

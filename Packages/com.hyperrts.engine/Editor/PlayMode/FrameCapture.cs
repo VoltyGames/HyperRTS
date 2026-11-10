@@ -9,37 +9,52 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>Records the Game view in Play as a PNG sequence at a fixed frame rate, to catch glitches that last a few frames.</summary>
-    public static class FrameCapture
+    /// <summary>One recording of the Game view in Play as a PNG sequence at a fixed frame rate, to catch glitches that last a few frames.</summary>
+    public sealed class FrameCapture
     {
-        public const string Folder = "Work/FrameCapture";
+        public const string Root = "Work/FrameCapture";
         private const double TimeoutSeconds = 120.0;
 
-        /// <summary>Records <paramref name="seconds"/> at <paramref name="fps"/> into <c>Work/FrameCapture/&lt;name&gt;/</c>; returns the PNG paths.</summary>
-        public static async Task<string[]> Record(string name, float seconds, int fps)
+        private readonly int _fps;
+        private readonly int _frames;
+        private readonly TaskCompletionSource<bool> _done = new();
+        private int _start;
+        private double _deadline;
+
+        /// <summary>A capture of <paramref name="seconds"/> at <paramref name="fps"/> into <c>Work/FrameCapture/&lt;name&gt;/</c>.</summary>
+        public FrameCapture(string name, float seconds, int fps)
+        {
+            if (seconds <= 0f || fps <= 0)
+            {
+                throw new ArgumentException($"HyperRTS: frame capture needs seconds and fps above zero, got {seconds} and {fps}.");
+            }
+
+            Folder = Path.Combine(Root, name).Replace('\\', '/');
+            _fps = fps;
+            _frames = Mathf.CeilToInt(seconds * fps);
+        }
+
+        /// <summary>Project-relative folder the PNGs land in.</summary>
+        public string Folder { get; }
+
+        /// <summary>Records into <see cref="Folder"/>, replacing an earlier capture there; returns the PNG paths.</summary>
+        public async Task<string[]> Record()
         {
             if (!EditorApplication.isPlaying)
             {
                 throw new InvalidOperationException("HyperRTS: frame capture needs Play mode; enter Play first.");
             }
 
-            if (seconds <= 0f || fps <= 0)
+            if (Directory.Exists(Folder))
             {
-                throw new ArgumentException($"HyperRTS: frame capture needs seconds and fps above zero, got {seconds} and {fps}.");
+                Directory.Delete(Folder, true);
             }
 
-            var folder = Path.Combine(Folder, name);
-            if (Directory.Exists(folder))
-            {
-                Directory.Delete(folder, true);
-            }
-
-            var frames = Mathf.CeilToInt(seconds * fps);
             var controls = ScriptableObject.CreateInstance<RecorderControllerSettings>();
             var images = ScriptableObject.CreateInstance<ImageRecorderSettings>();
             try
             {
-                Configure(controls, images, folder, fps);
+                Configure(controls, images);
                 var controller = new RecorderController(controls);
                 controller.PrepareRecording();
                 if (!controller.StartRecording())
@@ -47,7 +62,10 @@ namespace HyperRTS.Editor.PlayMode
                     throw new InvalidOperationException("HyperRTS: the Recorder did not start; see the Console.");
                 }
 
-                await FramesPassed(frames);
+                _start = Time.frameCount;
+                _deadline = EditorApplication.timeSinceStartup + TimeoutSeconds;
+                EditorApplication.update += Poll;
+                await _done.Task;
                 controller.StopRecording();
             }
             finally
@@ -56,13 +74,13 @@ namespace HyperRTS.Editor.PlayMode
                 UnityEngine.Object.DestroyImmediate(controls);
             }
 
-            return Directory.GetFiles(folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path).ToArray();
+            return Directory.GetFiles(Folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path).ToArray();
         }
 
-        private static void Configure(RecorderControllerSettings controls, ImageRecorderSettings images, string folder, int fps)
+        private void Configure(RecorderControllerSettings controls, ImageRecorderSettings images)
         {
             controls.SetRecordModeToManual();
-            controls.FrameRate = fps;
+            controls.FrameRate = _fps;
             controls.FrameRatePlayback = FrameRatePlayback.Constant;
             controls.CapFrameRate = true;
             controls.ExitPlayMode = false;
@@ -70,38 +88,30 @@ namespace HyperRTS.Editor.PlayMode
             images.OutputFormat = ImageRecorderSettings.ImageRecorderOutputFormat.PNG;
             images.imageInputSettings = new GameViewInputSettings();
             images.FileNameGenerator.Root = OutputPath.Root.Project;
-            images.FileNameGenerator.Leaf = folder.Replace('\\', '/');
+            images.FileNameGenerator.Leaf = Folder;
             images.FileNameGenerator.FileName = "frame_" + DefaultWildcard.Frame;
             controls.AddRecorderSettings(images);
         }
 
         // The Recorder sets a fixed time step, so each editor frame in Play is one captured frame.
-        private static Task FramesPassed(int frames)
+        private void Poll()
         {
-            var source = new TaskCompletionSource<bool>();
-            var start = Time.frameCount;
-            var deadline = EditorApplication.timeSinceStartup + TimeoutSeconds;
-            void Poll()
+            var seen = Time.frameCount - _start;
+            var done = seen >= _frames;
+            var late = EditorApplication.timeSinceStartup >= _deadline;
+            if (!done && !late && EditorApplication.isPlaying)
             {
-                var done = Time.frameCount - start >= frames;
-                var late = EditorApplication.timeSinceStartup >= deadline;
-                if (!done && !late && EditorApplication.isPlaying)
-                {
-                    return;
-                }
-
-                EditorApplication.update -= Poll;
-                if (done)
-                {
-                    source.SetResult(true);
-                    return;
-                }
-
-                source.SetException(new TimeoutException($"HyperRTS: frame capture saw {Time.frameCount - start} of {frames} frames before Play ended or {TimeoutSeconds:0} s passed."));
+                return;
             }
 
-            EditorApplication.update += Poll;
-            return source.Task;
+            EditorApplication.update -= Poll;
+            if (done)
+            {
+                _done.SetResult(true);
+                return;
+            }
+
+            _done.SetException(new TimeoutException($"HyperRTS: frame capture saw {seen} of {_frames} frames before Play ended or {TimeoutSeconds:0} s passed."));
         }
     }
 }
