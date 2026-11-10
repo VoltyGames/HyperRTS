@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Animation
     /// A temporary instance of a bone set's rig model, posed by its clips so the baked meshes need no skin and no
     /// object transform. Its bones are the skeleton's, root first, then one per socket.
     /// </summary>
-    internal sealed class BoneRig : IDisposable
+    internal sealed partial class BoneRig : IDisposable
     {
         private const float BindTolerance = 1e-3f;
 

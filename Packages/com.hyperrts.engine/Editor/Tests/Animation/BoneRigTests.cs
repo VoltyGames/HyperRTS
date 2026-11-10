@@ -11,9 +11,9 @@ namespace HyperRTS.Editor.Tests.Animation
     /// <summary>
     /// Parts from other models on the same skeleton: a differently turned skinned part is moved into the skeleton's
     /// space, one at another rest pose fails, a weapon follows its socket's bone and swings to the other hand, and the
-    /// upper body is written on the root bone.
+    /// upper body is written on the root bone, and the ragdoll bake writes the rest pose and refuses a missing bone.
     /// </summary>
-    public class BoneRigTests
+    public partial class BoneRigTests
     {
         private static readonly Vector3 HandAt = new(0.5f, 1.4f, 0f);
         private static readonly Vector3 OffHandAt = new(0.6f, 1.6f, 0.4f);

@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Animation
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Bone Animation Set", fileName = "BoneAnimationSet")]
     [HelpURL(HyperRTSDocs.Presentation)]
-    public class BoneAnimationSet : ScriptableObject
+    public partial class BoneAnimationSet : ScriptableObject
     {
         public const string GeneratedFolder = "Generated";
         private const int MaxFrames = 16384;
@@ -96,6 +96,9 @@ namespace HyperRTS.Editor.Animation
 
         public List<Socket> sockets = new();
 
+        [Tooltip("Bodies a dying figure falls as, the root body first; empty for none. The context menu fills them for a humanoid rig.")]
+        public List<RagdollBone> ragdoll = new();
+
         [Tooltip("Frames per second sampled.")]
         [Min(1f)]
         public float fps = 30f;
@@ -130,10 +133,12 @@ namespace HyperRTS.Editor.Animation
             var bones = posed.BoneNames();
             var pose = BoneFrames.Sample(posed, plans);
 
+            var table = MakeTable(posed, plans, bones, pose.Bounds(meshes));
+            WriteRagdoll(posed, table);
             var written = new List<string>
             {
                 Write(pose.Texture(bones.Count), TexturePath),
-                Write(MakeTable(posed, plans, bones, pose.Bounds(meshes)), TablePath),
+                Write(table, TablePath),
             };
             for (var i = 0; i < parts.Count; i++)
             {
