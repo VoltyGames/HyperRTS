@@ -86,6 +86,9 @@ The build then measures the map on the nav grid:
 - **Renewable resources.** A renewable node among a base's resources is an error, since base fields must run dry.
   Stacks within 20 m of each other form one field, and fewer fields than the rules' `minRenewableFields` per player
   is an error.
+- **Docks.** `MapDockCheck` parks the longest docking hull (any prefab with `HarvesterAuthoring` and `UnitAuthoring`)
+  at every placed bay's stop and along its run-in. A hull that touches a wall other than its own dock is an error,
+  so supply fields placed too close together fail the build.
 - **Decals.** More than the rules' `maxDecals` is a warning.
 - **Composition.** The play area is tiled with camera frames (rules `compositionFrame`). A frame should hold at least
   `compositionMinKinds` of five kinds: a wood or belt edge, water, a field pattern, a built place and relief. The

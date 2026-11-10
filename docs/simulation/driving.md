@@ -74,6 +74,8 @@ past it as drawn (`PathState.PartlyPlanned`), planned once its planned part is d
   (a moved goal searches again).
 - **Pose ends.** A move with `MoveDestination.Facing` set, as into a [dock bay](economy.md#docks), ends as a pose: the
   last stretch becomes a curve or search to the pose `RunIn` metres before the goal, then a tight straight run-in.
+  It arrives only on the pose itself (`DriveGoal.IsAtPose`); short of it the move stays on and the stall clock runs,
+  so a hull that can't get there gives up rather than standing for ever.
   `MoveDestination.ExitRun` starts a path with that many metres straight ahead.
 - The Paths debug layer draws tight legs in orange, reverse legs dashed, gear changes as dots and each wheeled
   vehicle's rear axle.

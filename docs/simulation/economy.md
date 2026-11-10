@@ -32,8 +32,10 @@ straight before the stop. The **Fill bays** button fills the list from `Bay_NN` 
 siblings. Vehicles drive through: in along the run-in, out straight ahead.
 
 - A harvester with a chassis (`NavAgent.UsesBays`) claims the free bay nearest it through `DockBays`, drives to the
-  stop as a pose goal (`MoveDestination.Facing` and `RunIn`) and works there once close enough.
-- With every bay taken it queues on a bay's run-in line and retries. A newcomer never takes a bay someone waits for.
+  stop as a pose goal (`MoveDestination.Facing` and `RunIn`) and works there once close enough. A drive that gives
+  up short of the stop is stuck, and the order moves on.
+- With every bay taken it queues on a bay's run-in line and retries. A freed bay goes to the waiting vehicle nearest
+  its stop, so none drives through another to reach it, and a newcomer never takes a bay someone waits for.
 - Leaving, it first runs straight to the exit (`MoveDestination.ExitRun`), so it never turns in the bay.
 - A holder renews its claim every frame, and `DockSystem` frees bays nobody held, so a bay frees when its vehicle dies
   or its order moves on.
