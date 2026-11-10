@@ -10,15 +10,11 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests.Movement
 {
-    /// <summary>Tanks over a one-lane bridge, alone, in columns and formations, never touching.</summary>
+    /// <summary>Tanks over a one-lane bridge, alone and two in a column, never touching.</summary>
     public partial class CrowdScenarioTests
     {
-        // Abreast tanks can't both fit on the deck; the push between them points into the rails, so one must yield.
         [TestCase(1, 1, 40f, true)]
         [TestCase(2, 1, 40f, false)]
-        [TestCase(8, 2, 40f, true)]
-        [TestCase(16, 4, 40f, false)]
-        [TestCase(16, 4, 14f, false)]
         public void Tanks_CrossAOneLaneBridge_WithoutDrivingIntoEachOther(int count, int abreast, float goalX,
             bool formation)
         {

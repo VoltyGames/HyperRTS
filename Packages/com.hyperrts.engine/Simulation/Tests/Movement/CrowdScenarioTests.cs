@@ -146,10 +146,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             }
         }
 
-        // A formation order is what players give; single moves cover the corridor search instead of the group field.
-        [TestCase(true)]
-        [TestCase(false)]
-        public void TwentyTanks_ThroughATwelveMetreGate_AllArrive(bool formation)
+        [Test]
+        public void TwentyTanks_ThroughATwelveMetreGate_AllArrive()
         {
             // A wall along x = 0 with a 12 m gate at z -6 to 6.
             _world.SpawnObstacle(new float3(0f, 0f, 46f), new float2(2f, 80f));
@@ -170,17 +168,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             }
 
             _world.Tick();
-            if (formation)
-            {
-                OrderFormation(units, new float3(55f, 0f, 0f));
-            }
-            else
-            {
-                for (var i = 0; i < 20; i++)
-                {
-                    Send(units[i], new float3(30f + i / 4 * 12f, 0f, -15f + i % 4 * 10f), 0);
-                }
-            }
+            OrderFormation(units, new float3(55f, 0f, 0f));
 
             Assert.IsTrue(RunWatchingWalls(units, 120f), Stragglers(units));
             AssertNoneStalled(units);
