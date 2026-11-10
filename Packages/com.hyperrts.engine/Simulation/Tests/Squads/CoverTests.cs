@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// Halted squads take free cover spots facing their way, count as covered only once they stand in them, and take
     /// less from hits inside the spot's front arc. The spot index changes only when cover comes or goes.
     /// </summary>
-    public class CoverTests : SimulationFixture
+    public class CoverTests : SquadFixture
     {
         private static readonly float3 Ahead = new(0f, 0f, 20f);
         private static readonly float3 Behind = new(0f, 0f, -20f);

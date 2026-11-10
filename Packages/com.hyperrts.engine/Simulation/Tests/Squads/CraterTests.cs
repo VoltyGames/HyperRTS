@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// Heavy blasts on open ground dig crater cover; small blasts, other surfaces, spots nearby and other craters
     /// dig none, and past the cap the oldest crater goes.
     /// </summary>
-    public class CraterTests : SimulationFixture
+    public class CraterTests : SquadFixture
     {
         private const float MinRadius = 3f;
         private const int MaxCount = 3;

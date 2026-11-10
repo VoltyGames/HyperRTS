@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// A retreating squad runs to the nearest friendly retreat point faster, takes half damage, fires nothing, shrugs
     /// off suppression even when pinned, and goes back to normal on arrival.
     /// </summary>
-    public class RetreatTests : SimulationFixture
+    public class RetreatTests : SquadFixture
     {
         private Entity Squad(float3 position)
         {

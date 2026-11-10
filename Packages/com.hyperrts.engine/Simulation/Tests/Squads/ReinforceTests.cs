@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// Reinforcing brings dead members back one at a time near a friendly point, at a share of the squad's price each,
     /// and keeps the squad's health and weapon carriers in step. It is refused when poor or out of range.
     /// </summary>
-    public class ReinforceTests : SimulationFixture
+    public class ReinforceTests : SquadFixture
     {
         private const int Funds = 500;
 

@@ -29,7 +29,13 @@ always the sum of its living members'. A dead member keeps its place in the buff
   enabled (`MountUnlockSystem`) the member carries it instead of its base weapon.
 - **Slots.** Members walk toward a slot: a wedge along the heading while the squad moves, a ring when it halts, never
   past `SquadRules.MaxSpread`. They close at a share of the squad's speed, so a straggler runs. Squads inside a
-  container don't walk. Slots ignore the nav grid.
+  container don't walk.
+- **Footing.** `SquadGround` keeps formation slots, and where members get to on the way, off the hulls of allied
+  vehicles round the squad (one `SpatialIndex.QueryHulls` per squad), each moving straight out to its nearer side,
+  then cuts them back to the last cell open to the squad's class on the line from its centre (a `GridRay` over its
+  `NavAccess`). So no soldier stands in a wall or a river, which blast damage reads, and a vehicle driving through
+  parts the squad. Cover spots, crew places and a site's work line are laid out off closed ground and stay as they
+  are. `SquadFootingCheck` asserts both every tick in the squad and Traffic tests.
 - **Stats.** A change to the squad's max health rescales the members.
 - **Weapon teams.** A squad that is `Deployable` is a weapon team ([deploying](weapons.md#deploying)). Members with
   `takesCrewPlace` walk to their `crewOffset` while `Emplaced`, take `crewPosture` and use no cover; the rest keep

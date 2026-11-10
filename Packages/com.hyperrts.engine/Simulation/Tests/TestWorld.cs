@@ -40,6 +40,7 @@ namespace HyperRTS.Simulation.Tests
         public readonly World World;
         private readonly List<BlobAssetReference<HeightfieldBlob>> _terrains = new();
         private readonly List<UnityEngine.Object> _owned = new();
+        private readonly List<Action> _checks = new();
         private double _elapsed;
 
         public TestWorld()
@@ -118,8 +119,15 @@ namespace HyperRTS.Simulation.Tests
                 World.SetTime(new TimeData(_elapsed, deltaTime));
                 World.GetExistingSystem<PrefabRegistrySystem>().Update(World.Unmanaged);
                 World.GetExistingSystemManaged<SimulationSystemGroup>().Update();
+                foreach (var check in _checks)
+                {
+                    check();
+                }
             }
         }
+
+        /// <summary>Runs <paramref name="check"/> after every tick from now on, for rules that must hold every frame.</summary>
+        public void CheckEveryTick(Action check) => _checks.Add(check);
 
         /// <summary>Ticks fixed frames until <paramref name="seconds"/> of game time have passed.</summary>
         public void Run(float seconds) => Tick(FrameTime, (int)math.ceil(seconds / FrameTime));

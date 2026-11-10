@@ -18,13 +18,17 @@ namespace HyperRTS.Simulation.Tests.Movement
         private TripRecord _record;
         private readonly Dictionary<Entity, float> _arrivedAt = new();
 
-        // Owners 1 and 2 are teammates, so teammate traffic needs no second match.
+        // Owners 1 and 2 are teammates, so teammate traffic needs no second match. Squad members keep off walls and
+        // allied hulls every frame.
         [SetUp]
         public void SetUp()
         {
             _world = new TestWorld();
             _world.CreateMatch(new byte[] { 1, 1 }, 400f);
             _record = new TripRecord(_world);
+            var footing = new SquadFootingCheck(_world);
+            _world.CheckEveryTick(footing.AssertOnOpenGround);
+            _world.CheckEveryTick(footing.AssertOffHulls);
         }
 
         [TearDown]

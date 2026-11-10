@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// Fire on a squad builds suppression that falls after a quiet spell. Suppressed squads move crouched and slower,
     /// pinned ones lie prone, fire little and hold still without losing their orders.
     /// </summary>
-    public class SuppressionTests : SimulationFixture
+    public class SuppressionTests : SquadFixture
     {
         private static readonly float3 Shooter = new(0f, 0f, 20f);
 

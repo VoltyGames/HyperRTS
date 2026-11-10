@@ -13,7 +13,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Tests.Squads
 {
     /// <summary>A squad's weapons follow their living carriers, and an upgrade shows only while its mount is enabled.</summary>
-    public class SquadWeaponTests : SimulationFixture
+    public class SquadWeaponTests : SquadFixture
     {
         private const int Research = 4242;
 

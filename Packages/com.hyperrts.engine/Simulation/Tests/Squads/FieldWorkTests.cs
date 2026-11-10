@@ -15,7 +15,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// Squads building a field work: progress for each living member, members spread along the site and dig, and the
     /// site's cover spots count only once it is built.
     /// </summary>
-    public class FieldWorkTests : SimulationFixture
+    public class FieldWorkTests : SquadFixture
     {
         private const float BuildTime = 100f;
         private static readonly float2 Footprint = new(3f, 1f);

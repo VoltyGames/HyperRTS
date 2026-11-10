@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;
@@ -13,7 +14,7 @@ namespace HyperRTS.Simulation.Tests.Squads
     /// A squad of four, 25 health each: hits land on members without carrying over, splash and heals go by member,
     /// weapons follow their living carriers, and members walk to their slots. Health always equals the members' sum.
     /// </summary>
-    public class SquadTests : SimulationFixture
+    public class SquadTests : SquadFixture
     {
         private Entity Squad(float3 position, params byte[] weapons) => World.SpawnSquad(1, position, weapons);
 
@@ -183,6 +184,29 @@ namespace HyperRTS.Simulation.Tests.Squads
             var members = World.Buffer<SquadMember>(squad);
             Assert.Greater(members[0].Offset.x, members[3].Offset.x + 1f, "the point man leads the rear");
             Assert.AreEqual(0f, math.distance(members[1].Offset, members[1].Slot), 0.1f);
+        }
+
+        // The ring reaches past ground closed 1 m east of the squad; the fixture checks every member stays open.
+        [TestCase(false, TestName = "HaltedMembers_StopShortOfAWall")]
+        [TestCase(true, TestName = "HaltedMembers_StopShortOfARiverbank")]
+        public void HaltedMembers_StopShortOfClosedGround(bool river)
+        {
+            if (river)
+            {
+                World.SpawnNavArea(new float3(7f, 0f, 0f), new float2(12f, 600f), NavAreaKind.Water);
+            }
+            else
+            {
+                World.SpawnObstacle(new float3(3f, 0f, 0f), new float2(4f, 20f));
+            }
+
+            var squad = World.SpawnSquad(1, float3.zero);
+            World.Run(3f);
+
+            foreach (var member in World.Buffer<SquadMember>(squad))
+            {
+                Assert.Less(member.Offset.x, 1f, "no member past the edge");
+            }
         }
     }
 }
