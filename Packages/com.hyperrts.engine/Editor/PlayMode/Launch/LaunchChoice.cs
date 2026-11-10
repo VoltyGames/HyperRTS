@@ -19,8 +19,11 @@ namespace HyperRTS.Editor.PlayMode.Launch
 
         public const int MaxVirtualPlayers = 3;
 
+        /// <summary>Whether virtual players could join: Play hosts this map.</summary>
+        public bool CanHostVirtualPlayers => entry == LaunchEntry.Map && network == LaunchNetwork.Host;
+
         /// <summary>Whether Play hosts this map with virtual players joining it.</summary>
-        public bool HostsVirtualPlayers => entry == LaunchEntry.Map && network == LaunchNetwork.Host && virtualPlayers > 0;
+        public bool HostsVirtualPlayers => CanHostVirtualPlayers && virtualPlayers > 0;
 
         /// <summary>The short name of a mode, such as "2v2".</summary>
         public static string ModeName(TeamLayout mode) => mode switch

@@ -86,8 +86,7 @@ namespace HyperRTS.Editor.Animation
                 return;
             }
 
-            var parentIsBody = ragdoll.Exists(other => other.bone == body.parentBone);
-            if (!parentIsBody || !IsAncestor(parents, posed.BoneIndex(body.parentBone), posed.BoneIndex(body.bone)))
+            if (ParentBody(body) < 0 || !IsAncestor(parents, posed.BoneIndex(body.parentBone), posed.BoneIndex(body.bone)))
             {
                 throw new InvalidOperationException($"Bone set '{name}' ragdoll body '{body.bone}' has parent '{body.parentBone}', which is not a body on an ancestor bone.");
             }

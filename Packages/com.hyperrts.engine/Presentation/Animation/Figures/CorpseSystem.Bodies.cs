@@ -35,7 +35,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                     $"Corpse copy '{EntityManager.GetName(copy)}' has no material with a bone texture to take its pose from.");
             }
 
-            var step = 1f / math.abs(EntityManager.GetComponentData<LowerClip>(copy).Clip.Value.z);
+            var step = EntityManager.GetComponentData<LowerClip>(copy).Clip.FrameStep;
             var bones = new BoneTexture(texture);
             var fadeTime = material.GetFloat(FadeTimeId);
             using var skins = Skins(copy, bones, fadeTime, ref ragdoll, _now);

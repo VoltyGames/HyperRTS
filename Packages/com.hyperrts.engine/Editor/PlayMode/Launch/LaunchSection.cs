@@ -190,7 +190,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
             _problem.text = problem;
             _problem.SetHidden(problem.Length == 0);
             _play.SetEnabled(problem.Length == 0);
-            _virtualPlayers.SetHidden(_choice.network != LaunchNetwork.Host || _choice.entry != LaunchEntry.Map);
+            _virtualPlayers.SetHidden(!_choice.CanHostVirtualPlayers);
             MainToolbar.Refresh(LaunchToolbar.Path);
         }
     }

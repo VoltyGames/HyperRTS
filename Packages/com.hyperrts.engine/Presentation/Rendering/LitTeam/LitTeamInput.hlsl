@@ -19,7 +19,7 @@
 //   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
 //               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
 // TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
-// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, game code writes VATClip, the bone clips and _PoseSlot.
+// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, CorpseSystem writes _PoseSlot, and game code writes VATClip and the bone clips.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 // URP's LitForwardPass includes "LitInput.hlsl" itself; its guard keeps this file's declarations the only ones.

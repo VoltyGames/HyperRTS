@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -40,25 +41,19 @@ namespace HyperRTS.Presentation.Animation.Bones
                 binds[i] = table.bindPoses[i];
             }
 
-            var upper = builder.Allocate(ref ragdoll.UpperBones, table.upperBones.Count);
-            for (var i = 0; i < upper.Length; i++)
-            {
-                upper[i] = table.upperBones[i];
-            }
-
-            var ridden = builder.Allocate(ref ragdoll.BoneBodies, table.boneBodies.Count);
-            for (var i = 0; i < ridden.Length; i++)
-            {
-                ridden[i] = table.boneBodies[i];
-            }
-
-            var bodies = builder.Allocate(ref ragdoll.Bodies, table.ragdoll.Count);
-            for (var i = 0; i < bodies.Length; i++)
-            {
-                bodies[i] = table.ragdoll[i];
-            }
-
+            Copy(builder, ref ragdoll.UpperBones, table.upperBones);
+            Copy(builder, ref ragdoll.BoneBodies, table.boneBodies);
+            Copy(builder, ref ragdoll.Bodies, table.ragdoll);
             ragdoll.Tuning = table.ragdollTuning;
+        }
+
+        private static void Copy<T>(BlobBuilder builder, ref BlobArray<T> array, List<T> source) where T : unmanaged
+        {
+            var copy = builder.Allocate(ref array, source.Count);
+            for (var i = 0; i < copy.Length; i++)
+            {
+                copy[i] = source[i];
+            }
         }
 
         public bool HasBodies => Bodies.Length > 0;

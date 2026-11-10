@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using UnityEditor;
 using UnityEngine;
@@ -116,7 +117,7 @@ namespace HyperRTS.Editor.Effects.Preview
                 player.Step(0f);
                 camera.Render();
                 var file = $"{Folder}/{_prefab.name}_{time.ToString("0.0#", CultureInfo.InvariantCulture)}.png";
-                File.WriteAllBytes(file, Read(target));
+                EditorTextures.WritePng(target, file);
                 files.Add(file);
             }
 
@@ -215,23 +216,6 @@ namespace HyperRTS.Editor.Effects.Preview
             ground.GetComponent<Renderer>().sharedMaterial = material;
             Object.DestroyImmediate(ground.GetComponent<Collider>());
             return camera;
-        }
-
-        private static byte[] Read(RenderTexture target)
-        {
-            var previous = RenderTexture.active;
-            var picture = new Texture2D(Width, Height, TextureFormat.RGB24, false);
-            try
-            {
-                RenderTexture.active = target;
-                picture.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
-                return picture.EncodeToPNG();
-            }
-            finally
-            {
-                RenderTexture.active = previous;
-                Object.DestroyImmediate(picture);
-            }
         }
     }
 }

@@ -124,8 +124,8 @@ namespace HyperRTS.Editor.Animation
             var end = toBone * (body.To - place);
             var length = Vector3.Distance(start, end);
             var radius = body.Radius * length;
-            var inset = (end - start).normalized * Mathf.Min(radius, 0.4f * length);
             var along = (end - start).normalized;
+            var inset = along * Mathf.Min(radius, 0.4f * length);
             var across = Vector3.ProjectOnPlane(toBone * Vector3.right, along).normalized;
             var limit = Mathf.Min(body.Cone, 90f);
             return new RagdollBone

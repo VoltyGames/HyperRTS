@@ -26,10 +26,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
 
         public static void Clear()
         {
-            if (File.Exists(FilePath))
-            {
-                File.Delete(FilePath);
-            }
+            File.Delete(FilePath);
         }
 
         public void Publish()

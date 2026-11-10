@@ -91,8 +91,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 var member = EntityManager.GetBuffer<SquadMember>(handover.Squad)[handover.Figure];
                 var world = EntityManager.GetComponentData<LocalToWorld>(figure.Figure).Value;
                 ref var ragdoll = ref figure.Clips.Value.Ragdoll;
-                var slots = SystemAPI.GetSingleton<PoseSlots>();
-                if (!CanRagdoll(ref ragdoll, world.c3.xyz, slots) || !slots.TryTake(out var slot))
+                if (!TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
                 {
                     continue;
                 }
@@ -117,14 +116,17 @@ namespace HyperRTS.Presentation.Animation.Figures
             }
         }
 
-        private bool CanRagdoll(ref Ragdoll ragdoll, float3 position, in PoseSlots slots)
+        // A ragdoll needs bodies, the camera close enough and a free pose slot.
+        private bool TryTakeSlot(ref Ragdoll ragdoll, float3 position, out int slot)
         {
-            if (!ragdoll.HasBodies || _camera == null || !slots.HasFree)
+            slot = -1;
+            if (!ragdoll.HasBodies || _camera == null
+                || math.distance(_camera.transform.position, position) > ragdoll.Tuning.cameraDistance)
             {
                 return false;
             }
 
-            return math.distance(_camera.transform.position, position) <= ragdoll.Tuning.cameraDistance;
+            return SystemAPI.GetSingleton<PoseSlots>().TryTake(out slot);
         }
 
         private void UpdateCorpses()
@@ -153,8 +155,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             corpse.HandedOver = true;
             EntityManager.SetComponentData(root, corpse);
-            var slots = SystemAPI.GetSingleton<PoseSlots>();
-            if (CanRagdoll(ref corpse.Clips.Value.Ragdoll, corpse.World.c3.xyz, slots) && slots.TryTake(out var slot))
+            if (TryTakeSlot(ref corpse.Clips.Value.Ragdoll, corpse.World.c3.xyz, out var slot))
             {
                 StartRagdoll(root, slot);
             }
