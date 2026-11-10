@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Effects;
@@ -25,6 +26,7 @@ namespace HyperRTS.Simulation.Cues
         [ReadOnly] private BufferLookup<EntityImpactMark> _marks;
         [ReadOnly] private ComponentLookup<EntityImpactEffects> _impactEffects;
         [ReadOnly] private ComponentLookup<DeathRemains> _remains;
+        [ReadOnly] private BufferLookup<SquadMember> _members;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
         private ConcealmentLookup _concealment;
 
@@ -36,6 +38,7 @@ namespace HyperRTS.Simulation.Cues
             _marks = state.GetBufferLookup<EntityImpactMark>(true);
             _impactEffects = state.GetComponentLookup<EntityImpactEffects>(true);
             _remains = state.GetComponentLookup<DeathRemains>(true);
+            _members = state.GetBufferLookup<SquadMember>(true);
             _info = state.GetComponentLookup<EntityInfo>(true);
             _concealment = new ConcealmentLookup(ref state);
         }
@@ -49,6 +52,7 @@ namespace HyperRTS.Simulation.Cues
             _marks.Update(ref state);
             _impactEffects.Update(ref state);
             _remains.Update(ref state);
+            _members.Update(ref state);
             _info.Update(ref state);
             _concealment.Update(ref state);
         }
@@ -84,7 +88,7 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>
         /// <paramref name="source"/>'s type id if it has a sound or an effect for the slot and variant (for impacts
-        /// also marks or impact effects, for deaths also remains), else 0.
+        /// also marks or impact effects, for deaths also remains or squad members), else 0.
         /// </summary>
         public int TypeIdFor(Entity source, CueSlot slot, byte variant = 0)
         {
@@ -126,7 +130,7 @@ namespace HyperRTS.Simulation.Cues
                 return true;
             }
 
-            if (slot == CueSlot.Death && _remains.HasComponent(source))
+            if (slot == CueSlot.Death && DiesWithCue(source))
             {
                 return true;
             }
@@ -139,6 +143,9 @@ namespace HyperRTS.Simulation.Cues
             var rigged = _effects.TryGetBuffer(source, out var effects);
             return rigged && TryGetSocket(effects, slot, variant, out _);
         }
+
+        // A squad's ghost goes the tick it dies, so its death cue is how a client tells a wiped squad from one gone into fog.
+        private bool DiesWithCue(Entity source) => _remains.HasComponent(source) || _members.HasBuffer(source);
 
         private bool LeavesImpact(Entity shooter)
         {

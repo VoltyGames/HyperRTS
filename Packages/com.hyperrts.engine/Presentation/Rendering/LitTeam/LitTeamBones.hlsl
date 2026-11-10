@@ -2,7 +2,8 @@
 // frame and three texels per bone, the 3x4 skinning matrix (pose times inverse bind) in object space. Bone 0 is the
 // root (the hips). A negative weight marks an upper-body bone, which plays _UpperClip and is stored relative to its
 // frame's root, so it rides on the root of _LowerClip, which the rest play. A clip switch blends from the frozen pose
-// in _LowerFade or _UpperFade over _BoneFadeTime.
+// in _LowerFade or _UpperFade over _BoneFadeTime. With DOTS instancing, _PoseSlot 0 or above draws a live pose (a ragdoll)
+// instead: every bone's skinning matrix, absolute in object space, from that slot of the global _PoseSlots buffer.
 #ifndef HYPERRTS_LIT_TEAM_BONES_INCLUDED
 #define HYPERRTS_LIT_TEAM_BONES_INCLUDED
 
@@ -15,6 +16,33 @@
 #ifdef _BONES
 
 TEXTURE2D(_BoneTex);
+
+#ifdef UNITY_DOTS_INSTANCING_ENABLED
+// Matches PoseSlots.MostBones: each slot holds this many bones of three rows.
+#define POSE_SLOT_BONES 128
+StructuredBuffer<float4> _PoseSlots;
+
+float3x4 SlotSkin(uint slot, uint bone)
+{
+    uint at = (slot * POSE_SLOT_BONES + bone) * 3;
+    return float3x4(_PoseSlots[at], _PoseSlots[at + 1], _PoseSlots[at + 2]);
+}
+
+void ApplyLivePose(uint slot, float4 boneIndex, float4 boneWeight, inout float3 positionOS, inout float3 normalOS)
+{
+    float3 position = 0.0;
+    float3 normal = 0.0;
+    [unroll] for (uint i = 0; i < 4; i++)
+    {
+        float3x4 pose = SlotSkin(slot, (uint)(boneIndex[i] + 0.5));
+        float weight = abs(boneWeight[i]);
+        position += weight * mul(pose, float4(positionOS, 1.0));
+        normal += weight * mul((float3x3)pose, normalOS);
+    }
+    positionOS = position;
+    normalOS = normalize(normal);
+}
+#endif
 
 // The frames one body half blends, and how much of its clip shows over the pose it fades out of.
 struct BoneSide
@@ -65,6 +93,13 @@ float3x4 Compose(float3x4 outer, float3x4 inner)
 
 void ApplyBones(float4 boneIndex, float4 boneWeight, inout float3 positionOS, inout float3 normalOS)
 {
+#ifdef UNITY_DOTS_INSTANCING_ENABLED
+    if (_PoseSlot >= 0.0)
+    {
+        ApplyLivePose((uint)_PoseSlot, boneIndex, boneWeight, positionOS, normalOS);
+        return;
+    }
+#endif
     BoneSide lower = BoneSideAt(_LowerClip, _LowerFade);
     BoneSide upper = BoneSideAt(_UpperClip, _UpperFade);
     float3x4 hips = BonePose(0, lower);

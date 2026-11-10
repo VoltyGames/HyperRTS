@@ -86,6 +86,19 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         [Test]
+        public void SquadWipedInOneBlast_PlaysItsDeathCueWithoutASound()
+        {
+            var squad = World.SpawnSquad(1, new float3(3f, 0f, 0f), speed: 0f);
+            var typeId = World.GetTypeId(squad);
+
+            World.HitSquad(Entity.Null, 1000f, new float3(3f, 0f, 0f), radius: 12f, edge: 0f);
+            var death = Find(World.QueuedOver(0.5f), CueSlot.Death);
+
+            Assert.AreEqual(typeId, death.TypeId);
+            Assert.AreEqual(3f, death.Position.x, 1e-3f);
+        }
+
+        [Test]
         public void ProducedUnit_PlaysItsReadyCue()
         {
             var prefab = Voiced(World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Tank")),

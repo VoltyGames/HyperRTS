@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Animation.Bones;
 using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;
@@ -15,8 +16,8 @@ namespace HyperRTS.Presentation.Animation.Figures
     }
 
     /// <summary>
-    /// The clip ranges a <see cref="FigureClipSet"/> resolves to in one bone clip table, shared by every figure that
-    /// plays that set on that table. Its methods aren't <c>readonly</c>: a copy of a blob array points nowhere.
+    /// The clip ranges a <see cref="FigureClipSet"/> resolves to in one bone clip table, and the table's ragdoll, shared
+    /// by every figure that plays that set on that table. Its methods aren't <c>readonly</c>: a copy of a blob array points nowhere.
     /// </summary>
     public struct FigureClips
     {
@@ -37,6 +38,9 @@ namespace HyperRTS.Presentation.Animation.Figures
 
         /// <summary>By posture then the shot fall and the four blast falls.</summary>
         public BlobArray<ClipRange> Falls;
+
+        /// <summary>The table's bones and ragdoll, which a dying figure becomes after its handover.</summary>
+        public Ragdoll Ragdoll;
 
         /// <summary>What the legs play for a posture and a living state.</summary>
         public ClipRange Lower(Posture posture, FigureState moving)

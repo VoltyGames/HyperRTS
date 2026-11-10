@@ -48,6 +48,7 @@ namespace HyperRTS.Presentation.Animation.Bones
             writer.Add(new LowerFade { Fade = ClipFade.None });
             writer.Add(new UpperFade { Fade = ClipFade.None });
             writer.Add(new ClipBounds { Value = bounds });
+            writer.Add(new PoseSlot { Value = PoseSlot.None });
         }
 
         /// <summary>Why this renderer can't play its clips, or null when it can.</summary>

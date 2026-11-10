@@ -21,6 +21,7 @@ Shader "HyperRTS/LitTeam"
         _LowerFade("Lower Body Fade (frame, next frame, blend, switch time)", Vector) = (0, 0, 0, -100000)
         _UpperFade("Upper Body Fade (frame, next frame, blend, switch time)", Vector) = (0, 0, 0, -100000)
         _BoneFadeTime("Bone Fade Time (s)", Float) = 0.2
+        [HideInInspector] _PoseSlot("Pose Slot (live pose; below 0 plays the clips)", Float) = -1
 
         [Header(Grime)]
         _Grime("Grime (dust, mud, wet, soot)", Vector) = (0, 0, 0, 0)

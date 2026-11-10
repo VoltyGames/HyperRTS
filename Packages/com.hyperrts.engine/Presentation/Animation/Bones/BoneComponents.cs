@@ -34,4 +34,16 @@ namespace HyperRTS.Presentation.Animation.Bones
     {
         public ClipFade Fade;
     }
+
+    /// <summary>
+    /// The live pose slot a bone-animated renderer draws, which LitTeam reads in place of its clips; below 0 it plays
+    /// its clips. The material default is <see cref="None"/> too, since slot 0 is a real slot.
+    /// </summary>
+    [MaterialProperty("_PoseSlot")]
+    public struct PoseSlot : IComponentData
+    {
+        public const float None = -1f;
+
+        public float Value;
+    }
 }

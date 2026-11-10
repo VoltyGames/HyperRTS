@@ -32,8 +32,15 @@ pose differs from the skeleton's fails the bake. Upper-body bones are written re
 frame, so the shader sets the upper body's clip on the hips of the legs' clip, and firing over a walk keeps the torso
 on the walking hips.
 
-The material turns on `_BONES`. `BoneAnimatedAuthoring` on a renderer bakes the start clip and render bounds. Game code
-plays a clip with `PlayingClip.Switch` using `SystemAPI.Time.ElapsedTime`, so pause and replay speed apply.
+The material turns on `_BONES`. `BoneAnimatedAuthoring` on a renderer bakes the start clip, render bounds and a
+`PoseSlot` of -1. Game code plays a clip with `PlayingClip.Switch` using `SystemAPI.Time.ElapsedTime`, so pause and
+replay speed apply.
+
+A renderer whose `PoseSlot` is 0 or above draws a live pose instead of its clips: every bone's skinning matrix,
+absolute in object space, from that slot of the global `_PoseSlots` buffer (DOTS instanced draws only). The material
+default is -1 too, since slot 0 is a real slot. `PoseSlotSystem` keeps the `PoseSlots` singleton, uploads the slots
+written each frame and caps how many may be taken by the effect level (`EffectDetail.RagdollsAt`: none on Low, 24 on
+Medium, 48 on High). A slot holds up to `PoseSlots.MostBones` bones.
 
 ## Rigid vertex animation
 
@@ -104,3 +111,28 @@ A figure may name one other model: an `upgradedRoot`, swapped in when the member
 `BaseWeapon`, or an `emplacedRoot`, shown while the squad is `Emplaced` and the member takes a crew place. Naming both
 is an error. `deployedModel` is a child (a gun on its tripod) shown while the squad deploys (see
 [combat](../simulation/squads.md#squads-and-members)).
+
+### Deaths and ragdolls
+
+A dead member's figure plays its fall (the shot fall, or the blast fall for the side the blast came from) and hides
+after `dieHold`. When the bone set has a ragdoll, `CorpseSystem` decides at the handover, `handoverTime` into the fall:
+a figure within `cameraDistance` of the camera, with a pose slot free, becomes a `Corpse`; the rest keep their fall.
+
+- A corpse draws through its own copies of the figure's renderers (`VisualPrefab.Copy`), listed in its
+  `LinkedEntityGroup` at the figure's world place, so it outlives the squad ghost. The squad's figure hides.
+- The handover reads the pose the fall draws now from the readable bone texture (`BoneTexture`, `Ragdoll.Skins`, the
+  shader's sums) into the slot, so nothing pops. One capsule body per ragdoll body starts there in physics world 1,
+  moving as the clip did over its last row, joined by `PhysicsJoint.CreateRagdoll` with the baked limits. A blast death
+  adds `blastSpeed` away from the blast and `blastLift` up.
+- `CorpsePoseSystem` writes each bone into the slot as its body moved since the handover (bones without a body ride
+  on `boneBodies`) and keeps the copies' render bounds round the bodies. Once every body is under `restSpeed` for
+  `restTime`, or after `settleTime`, the bodies go and the slot keeps the last pose. The corpse and its slot go at the
+  figure's hide time.
+- The client never sees the last member die: the ghost goes the tick it does, often with every member in one blast.
+  Each squad keeps a cleanup `SquadEnd` and a `ShownFigure` per figure (place, posture, fall). Every squad's death plays
+  a death cue, sound or not (`CueWriter`), so when the ghost goes and a seen death cue of its type lands on it within
+  `CueWait`, its figures still on show fall as corpses copied from the prefab: falling ones carry on, living ones fall
+  as if shot, then hand over as above. A ghost that goes into fog has no death cue and leaves nothing.
+
+The tuning (`RagdollTuning`) sits on the `BoneAnimationSet` beside its ragdoll bodies and bakes through the clip table
+into `FigureClips.Ragdoll`. Headless and server worlds run none of this, and a `-nographics` client keeps no slots.

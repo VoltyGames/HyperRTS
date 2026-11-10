@@ -26,6 +26,16 @@ namespace HyperRTS.Presentation.Rendering
             return root;
         }
 
+        /// <summary>A visual-only copy of one renderer, unparented and drawn whatever hid its source.</summary>
+        public static Entity Copy(EntityManager entityManager, Entity part)
+        {
+            var copy = entityManager.Instantiate(part);
+            Strip(entityManager, copy);
+            entityManager.RemoveComponent<Parent>(copy);
+            entityManager.SetComponentEnabled<MaterialMeshInfo>(copy, true);
+            return copy;
+        }
+
         /// <summary>The root and every part under it.</summary>
         public static NativeList<Entity> Members(EntityManager entityManager, Entity root)
         {

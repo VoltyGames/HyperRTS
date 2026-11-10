@@ -41,6 +41,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 }
 
                 FillActions(table, builder.Allocate(ref root.Actions, Enum.GetValues(typeof(MemberAction)).Length));
+                Ragdoll.Build(builder, ref root.Ragdoll, table);
                 return builder.CreateBlobAssetReference<FigureClips>(Allocator.Persistent);
             }
             finally

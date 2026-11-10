@@ -18,6 +18,7 @@ namespace HyperRTS.Editor.Animation
             table.upperBones = posed.UpperBones().ToList();
             table.ragdoll = ragdoll.Select(body => body.Bake(posed.BoneIndex(body.bone), ParentBody(body))).ToList();
             table.boneBodies = ragdoll.Count == 0 ? new List<int>() : BoneBodies(table.ragdoll, parents);
+            table.ragdollTuning = ragdollTuning;
         }
 
         private int ParentBody(RagdollBone body) =>

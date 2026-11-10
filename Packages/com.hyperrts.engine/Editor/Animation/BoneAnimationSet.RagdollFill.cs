@@ -31,27 +31,24 @@ namespace HyperRTS.Editor.Animation
             }
         }
 
+        /// <summary>A rig bone standing for one human body part.</summary>
+        [Serializable]
+        public struct HumanBone
+        {
+            public HumanBodyBones part;
+            public string bone;
+        }
+
         /// <summary>Replaces the ragdoll with eleven bodies on a humanoid rig's pelvis, spine, head, arms and legs.</summary>
         [ContextMenu("Fill ragdoll from rig")]
         public void FillRagdoll()
         {
-            var avatar = rig != null ? rig.GetComponentInChildren<Animator>()?.avatar : null;
-            if (avatar == null || !avatar.isHuman)
-            {
-                throw new InvalidOperationException($"Bone set '{name}' needs a rig with a humanoid avatar to fill its ragdoll.");
-            }
-
-            var boneNames = new Dictionary<string, string>();
-            foreach (var human in avatar.humanDescription.human)
-            {
-                boneNames.Add(human.humanName, human.boneName);
-            }
-
+            var boneNames = HumanBoneNames();
             using var posed = new BoneRig(rig, skeleton, upperRoot, rootBone, sockets);
             var binds = posed.BindPoses();
             string Bone(HumanBodyBones bone) => boneNames.TryGetValue(HumanTrait.BoneName[(int)bone], out var found)
                 ? found
-                : throw new InvalidOperationException($"The avatar of bone set '{name}' maps no {bone}.");
+                : throw new InvalidOperationException($"Bone set '{name}' maps no {bone} in its avatar or Human Bones.");
             Matrix4x4 Rest(HumanBodyBones bone) => binds[posed.BoneIndex(Bone(bone))].inverse;
 
             Undo.RecordObject(this, "Fill ragdoll from rig");
@@ -62,6 +59,34 @@ namespace HyperRTS.Editor.Animation
             }
 
             EditorUtility.SetDirty(this);
+        }
+
+        // By human trait name: from a humanoid avatar, else from humanBones.
+        private Dictionary<string, string> HumanBoneNames()
+        {
+            var names = new Dictionary<string, string>();
+            var avatar = rig != null ? rig.GetComponentInChildren<Animator>()?.avatar : null;
+            if (avatar != null && avatar.isHuman)
+            {
+                foreach (var human in avatar.humanDescription.human)
+                {
+                    names.Add(human.humanName, human.boneName);
+                }
+
+                return names;
+            }
+
+            if (humanBones.Count == 0)
+            {
+                throw new InvalidOperationException($"Bone set '{name}' needs a humanoid avatar or Human Bones to fill its ragdoll.");
+            }
+
+            foreach (var human in humanBones)
+            {
+                names.Add(HumanTrait.BoneName[(int)human.part], human.bone);
+            }
+
+            return names;
         }
 
         // Mass shares follow adult segment masses; limits are a loose human range, tuned by hand after.

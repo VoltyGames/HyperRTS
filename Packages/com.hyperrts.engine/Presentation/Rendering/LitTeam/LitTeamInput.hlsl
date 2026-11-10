@@ -7,7 +7,7 @@
 //   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
 //   _BONES      keyword: skinning from _BoneTex, bone indices in UV6 and weights in UV7 (negative for upper-body bones);
 //               per instance _LowerClip and _UpperClip, and _LowerFade and _UpperFade, the pose a clip switch fades
-//               out of over _BoneFadeTime seconds (LitTeamBones.hlsl)
+//               out of over _BoneFadeTime seconds; _PoseSlot 0 or above draws that live pose slot instead (LitTeamBones.hlsl)
 //   _VAT_RIGID  keyword: rigid pieces, each moved by its position in _VATPositions and rotation in _VATRotations at
 //               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamVAT.hlsl)
 //   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
@@ -19,7 +19,7 @@
 //   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
 //               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
 // TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
-// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, game code writes VATClip and the bone clips.
+// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, game code writes VATClip, the bone clips and _PoseSlot.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 // URP's LitForwardPass includes "LitInput.hlsl" itself; its guard keeps this file's declarations the only ones.
@@ -55,6 +55,7 @@ float4 _LowerFade;
 float4 _UpperFade;
 float4 _VATPositions_TexelSize;
 float _BoneFadeTime;
+float _PoseSlot;
 float4 _Grime;
 float4 _GrimeBand;
 float4 _TrackLift0;
@@ -98,6 +99,7 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackLift0)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackLift1)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackSpan)
+    UNITY_DOTS_INSTANCED_PROP(float , _PoseSlot)
     UNITY_DOTS_INSTANCED_PROP(float , _BuildProgress)
     UNITY_DOTS_INSTANCED_PROP(float , _Reveal)
     UNITY_DOTS_INSTANCED_PROP(float , _LightsOn)
@@ -123,6 +125,7 @@ static float4 unity_DOTS_Sampled_GrimeBand;
 static float4 unity_DOTS_Sampled_TrackLift0;
 static float4 unity_DOTS_Sampled_TrackLift1;
 static float4 unity_DOTS_Sampled_TrackSpan;
+static float  unity_DOTS_Sampled_PoseSlot;
 static float  unity_DOTS_Sampled_BuildProgress;
 static float  unity_DOTS_Sampled_Reveal;
 static float  unity_DOTS_Sampled_LightsOn;
@@ -148,6 +151,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
     unity_DOTS_Sampled_TrackLift0           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackLift0);
     unity_DOTS_Sampled_TrackLift1           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackLift1);
     unity_DOTS_Sampled_TrackSpan            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackSpan);
+    unity_DOTS_Sampled_PoseSlot             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _PoseSlot);
     unity_DOTS_Sampled_BuildProgress        = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _BuildProgress);
     unity_DOTS_Sampled_Reveal               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Reveal);
     unity_DOTS_Sampled_LightsOn             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _LightsOn);
@@ -175,6 +179,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 #define _TrackLift0             unity_DOTS_Sampled_TrackLift0
 #define _TrackLift1             unity_DOTS_Sampled_TrackLift1
 #define _TrackSpan              unity_DOTS_Sampled_TrackSpan
+#define _PoseSlot               unity_DOTS_Sampled_PoseSlot
 #define _BuildProgress          unity_DOTS_Sampled_BuildProgress
 #define _Reveal                 unity_DOTS_Sampled_Reveal
 #define _LightsOn               unity_DOTS_Sampled_LightsOn

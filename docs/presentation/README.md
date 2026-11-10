@@ -66,7 +66,8 @@ physics world 1 (`PhysicsGroup.WorldIndex`) in presented worlds; a body joins it
 `PhysicsGroup.BodyFilter`. `PhysicsStartSystem` steps the main physics world once, which a custom group needs, then
 switches it off, and on a `-nographics` client switches `PhysicsGroup` off too. `TerrainColliderSystem` keeps a
 heightfield of the active terrain in world 1, rebuilt when the terrain or its data is swapped; crater dents don't
-reach it.
+reach it. Its only bodies are the ragdolls of dying squad figures (see
+[squad figures](animation.md#deaths-and-ragdolls)).
 
 ## Audio
 

@@ -35,6 +35,9 @@ namespace HyperRTS.Presentation.Animation.Bones
         [Tooltip("Per bone, the ragdoll body it rides on rigidly: its own, its nearest ancestor's, else the root body's. Empty without a ragdoll.")]
         public List<int> boneBodies = new();
 
+        [Tooltip("When the ragdoll takes over from the fall clip, how blasts throw it and when it comes to rest.")]
+        public RagdollTuning ragdollTuning = RagdollTuning.Default;
+
         public int TextureWidth => bones.Count * 3;
     }
 }

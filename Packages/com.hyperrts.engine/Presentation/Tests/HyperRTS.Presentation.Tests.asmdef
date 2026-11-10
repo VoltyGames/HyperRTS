@@ -11,6 +11,7 @@
         "Unity.Transforms",
         "Unity.Mathematics",
         "Unity.Mathematics.Extensions",
+        "Unity.Physics",
         "Unity.Collections",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.InputSystem",

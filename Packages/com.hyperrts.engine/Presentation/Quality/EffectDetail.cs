@@ -5,8 +5,8 @@ using HyperRTS.Simulation.Common;
 namespace HyperRTS.Presentation.Quality
 {
     /// <summary>
-    /// Particle share per effect level. Low thins particles and keeps loops near the camera; only High adds flash
-    /// lights.
+    /// Particle share and ragdoll count per effect level. Low thins particles, keeps loops near the camera and has no
+    /// ragdolls; only High adds flash lights.
     /// </summary>
     public static class EffectDetail
     {
@@ -18,6 +18,14 @@ namespace HyperRTS.Presentation.Quality
             DetailLevel.Low => 0.35f,
             DetailLevel.Medium => 0.7f,
             _ => 1f,
+        };
+
+        /// <summary>Most figures that are ragdolls at once at <paramref name="level"/>: the live pose slots kept.</summary>
+        public static int RagdollsAt(DetailLevel level) => level switch
+        {
+            DetailLevel.Low => 0,
+            DetailLevel.Medium => 24,
+            _ => 48,
         };
     }
 }

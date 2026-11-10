@@ -71,6 +71,9 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>Clock time a dying figure hides at.</summary>
         public float HideAt;
 
+        /// <summary>True once a dying figure's handover time has passed, whether it became a ragdoll or keeps its fall clip.</summary>
+        public bool HandedOver;
+
         /// <summary>Where the figure stands in metres from the squad on world axes, eased toward its member's offset.</summary>
         public float2 Offset;
 
@@ -215,6 +218,17 @@ namespace HyperRTS.Presentation.Animation.Figures
             }
 
             return now >= HideAt ? FigureState.Hidden : FigureState.Die;
+        }
+
+        /// <summary>Whether this dying figure reaches its handover from the fall clip at <paramref name="now"/>.</summary>
+        public readonly bool ReachesHandover(float now)
+        {
+            if (State != FigureState.Die || HandedOver)
+            {
+                return false;
+            }
+
+            return now >= StateSince + Clips.Value.Ragdoll.Tuning.handoverTime;
         }
 
         /// <summary>When <paramref name="clip"/> started for this figure if it began at <paramref name="now"/>, played at <paramref name="rate"/>.</summary>

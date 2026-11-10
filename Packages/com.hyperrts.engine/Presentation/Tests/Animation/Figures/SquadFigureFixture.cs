@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using NUnit.Framework;
 using Unity.Core;
 using Unity.Entities;
@@ -30,6 +31,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         /// <summary>Seconds of the fixture's fire clips, which set how long a figure keeps firing.</summary>
         protected const float FireLength = 1f;
 
+        protected static readonly int SquadType = EntityInfo.TypeIdFromName("Test Squad");
+
         protected PresentationWorldKit _kit;
         protected EntityManager _em;
         protected SystemHandle _placement;
@@ -39,6 +42,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         protected Entity _squad;
         protected Entity _model;
         protected Entity[] _figures;
+
+        /// <summary>Systems a test adds, updated after the figure system.</summary>
+        protected readonly List<SystemHandle> _later = new();
         protected double _time;
         private readonly Dictionary<int, BlobAssetReference<FigureClips>> _clips = new();
         private readonly List<Object> _made = new();
@@ -72,6 +78,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             }
 
             _made.Clear();
+            _later.Clear();
         }
 
         protected Entity Squad(int count)
@@ -103,6 +110,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             }
 
             _em.AddComponentData(squad, new Health { Current = 100f, Max = 100f });
+            _em.AddComponentData(squad, new EntityInfo { TypeId = SquadType });
+            _em.AddComponentData(squad, new Owner { Value = 1 });
             _em.AddBuffer<WeaponPose>(squad).Add(default);
             var members = _em.AddBuffer<SquadMember>(squad);
             for (var i = 0; i < count; i++)
@@ -124,6 +133,10 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _parents.Update(_kit.World.Unmanaged);
             _matrices.Update(_kit.World.Unmanaged);
             _system.Update(_kit.World.Unmanaged);
+            foreach (var system in _later)
+            {
+                system.Update(_kit.World.Unmanaged);
+            }
         }
 
         // One update past the seconds, so rounding can't leave the clock just short.
@@ -262,6 +275,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.AddComponentData(part, new UpperClip { Clip = start });
             _em.AddComponentData(part, new LowerFade { Fade = ClipFade.None });
             _em.AddComponentData(part, new UpperFade { Fade = ClipFade.None });
+            _em.AddComponentData(part, new PoseSlot { Value = PoseSlot.None });
+            _em.AddComponentData(part, new RenderBounds { Value = new AABB { Extents = new float3(0.5f, 1f, 0.5f) } });
             _em.AddComponentData(part, new LocalToWorld { Value = float4x4.identity });
             return part;
         }
