@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Entities;
 using Unity.PerformanceTesting;
 
@@ -24,6 +25,14 @@ namespace HyperRTS.Simulation.Tests
                 .WarmupCount(Warmup).MeasurementCount(Runs).Run();
             var samples = group.Samples.OrderBy(sample => sample).ToArray();
             return (samples[(samples.Length - 1) / 2] + samples[samples.Length / 2]) / 2.0;
+        }
+
+        /// <summary>The pathfinder's running totals, with its jobs finished.</summary>
+        public static PathStats ReadPathStats(this TestWorld world)
+        {
+            world.EntityManager.CompleteAllTrackedJobs();
+            var handle = world.World.GetExistingSystem<PathfindingSystem>();
+            return world.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(handle).Stats;
         }
 
         /// <summary>Updates one system and waits for its jobs.</summary>

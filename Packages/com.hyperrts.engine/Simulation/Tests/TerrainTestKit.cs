@@ -35,6 +35,13 @@ namespace HyperRTS.Simulation.Tests
             return area;
         }
 
+        /// <summary>A 12 m river across the map, crossed by one 6 m deck 20 m long: a one-lane bridge on the x axis.</summary>
+        public static void SpawnBridge(this TestWorld world)
+        {
+            world.SpawnNavArea(float3.zero, new float2(12f, 600f), NavAreaKind.Water);
+            world.SpawnNavArea(float3.zero, new float2(20f, 6f), NavAreaKind.Deck);
+        }
+
         public static Entity SpawnObstacle(this TestWorld world, float3 center, float2 size, float yaw = 0f)
         {
             var obstacle = world.EntityManager.CreateEntity();

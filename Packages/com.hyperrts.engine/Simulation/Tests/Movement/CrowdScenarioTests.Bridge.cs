@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Movement;
@@ -23,8 +22,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         public void Tanks_CrossAOneLaneBridge_WithoutDrivingIntoEachOther(int count, int abreast, float goalX,
             bool formation)
         {
-            _world.SpawnNavArea(float3.zero, new float2(12f, 600f), NavAreaKind.Water);
-            _world.SpawnNavArea(float3.zero, new float2(20f, 6f), NavAreaKind.Deck);
+            _world.SpawnBridge();
             var tank = new NavAgent
             {
                 Radius = 1.85f, HullLength = 7.9f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
@@ -111,8 +109,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         [TestCase(-1.3f, 2.96f, 9f)]
         public void Tank_RollingPastTheBridgeMouth_PivotsIntoIt(float z, float yaw, float goalZ)
         {
-            _world.SpawnNavArea(float3.zero, new float2(12f, 600f), NavAreaKind.Water);
-            _world.SpawnNavArea(float3.zero, new float2(20f, 6f), NavAreaKind.Deck);
+            _world.SpawnBridge();
             var tank = new NavAgent
             {
                 Radius = 1.85f, HullLength = 7.9f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
