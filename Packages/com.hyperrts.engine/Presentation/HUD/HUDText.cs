@@ -71,8 +71,11 @@ namespace HyperRTS.Presentation.HUD
         [AutoStaticsCleanup]
         public static HUDText Current { get; set; } = new();
 
-        /// <summary>Text of a fixed HUD key (hud.*, command.*, stance.*, outcome.*, tooltip.*).</summary>
-        public virtual string Get(string key) => English[key];
+        /// <summary>
+        /// Text of a fixed HUD key (hud.*, command.*, stance.*, outcome.*, tooltip.*), its {0}, {1}... placeholders
+        /// filled from the arguments.
+        /// </summary>
+        public virtual string Get(string key, params object[] arguments) => string.Format(English[key], arguments);
 
         /// <summary>
         /// Shown name of authored content: <paramref name="key"/> is entity.*, resource.*, ability.* or weapon.* and
@@ -83,7 +86,7 @@ namespace HyperRTS.Presentation.HUD
         /// <summary>Optional text of a content key such as entity.war-factory.description; null when there is none.</summary>
         public virtual string Description(string key) => null;
 
-        public static string Text(string key) => Current.Get(key);
+        public static string Text(string key, params object[] arguments) => Current.Get(key, arguments);
 
         /// <summary>A unit, building or upgrade by its <c>EntityInfo.Name</c>: entity.command-center.</summary>
         public static string EntityName(string name) => Current.Name(Key("entity", name), name);

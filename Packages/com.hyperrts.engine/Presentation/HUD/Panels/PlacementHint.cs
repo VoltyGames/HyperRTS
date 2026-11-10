@@ -42,8 +42,8 @@ namespace HyperRTS.Presentation.HUD.Panels
                 _shownKeys = keys;
                 _shownWall = wall;
                 _hint.text = wall
-                    ? string.Format(HUDText.Text("hud.wall-hint"), keys.Place, keys.Finish, keys.Snap)
-                    : string.Format(HUDText.Text("hud.rotate-hint"), keys.Rotate, keys.Snap);
+                    ? HUDText.Text("hud.wall-hint", keys.Place, keys.Finish, keys.Snap)
+                    : HUDText.Text("hud.rotate-hint", keys.Rotate, keys.Snap);
             }
 
             PlaceBeside(placement.Position, Vector2.zero);
