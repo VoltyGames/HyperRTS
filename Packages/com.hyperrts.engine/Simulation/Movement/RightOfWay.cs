@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Movement.Crushing;
 using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Orders;
 using Unity.Collections;
@@ -10,8 +11,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Movement
 {
     /// <summary>
-    /// Who moves when two units meet: who gives way, each mover's share of the avoiding, who is ahead, and the lane
-    /// ahead of a vehicle that allied foot units clear. Read-only, so parallel jobs can share it.
+    /// Who moves when two units meet: who gives way, each mover's share of the avoiding, who is ahead, who is crushed,
+    /// and the lane ahead of a vehicle that allied foot units clear. Read-only, so parallel jobs can share it.
     /// </summary>
     public struct RightOfWay
     {
@@ -40,6 +41,8 @@ namespace HyperRTS.Simulation.Movement
         [ReadOnly] private ComponentLookup<AttackTarget> _attacks;
         [ReadOnly] private ComponentLookup<CombatStance> _stances;
         [ReadOnly] private ComponentLookup<Locomotion> _handling;
+        [ReadOnly] private ComponentLookup<Crusher> _crushers;
+        [ReadOnly] private ComponentLookup<Crushable> _crushables;
         private OwnerRelations _relations;
 
         public RightOfWay(ref SystemState state)
@@ -48,6 +51,8 @@ namespace HyperRTS.Simulation.Movement
             _attacks = state.GetComponentLookup<AttackTarget>(true);
             _stances = state.GetComponentLookup<CombatStance>(true);
             _handling = state.GetComponentLookup<Locomotion>(true);
+            _crushers = state.GetComponentLookup<Crusher>(true);
+            _crushables = state.GetComponentLookup<Crushable>(true);
             _relations = default;
         }
 
@@ -57,7 +62,44 @@ namespace HyperRTS.Simulation.Movement
             _attacks.Update(ref state);
             _stances.Update(ref state);
             _handling.Update(ref state);
+            _crushers.Update(ref state);
+            _crushables.Update(ref state);
             _relations = relations;
+        }
+
+        /// <summary>
+        /// Whether <paramref name="crusher"/> drives over <paramref name="victim"/> instead of round it: an enemy foot
+        /// unit its crusher is big enough for.
+        /// </summary>
+        public readonly bool Crushes(in SpatialEntry crusher, in SpatialEntry victim)
+        {
+            if (!crusher.IsVehicle || victim.IsVehicle || _relations.IsAllied(crusher.Owner, victim.Owner))
+            {
+                return false;
+            }
+
+            if (!_crushers.TryGetComponent(crusher.Entity, out var size) ||
+                !_crushables.TryGetComponent(victim.Entity, out var rating))
+            {
+                return false;
+            }
+
+            return rating.Crush > 0 && rating.Crush <= size.Size;
+        }
+
+        /// <summary>
+        /// Whether the pair ignore each other: a crusher takes no notice of a unit it drives over, and that unit none of a
+        /// crusher at crushing pace, so neither steers, stops or pushes the other.
+        /// </summary>
+        public readonly bool IsCrushing(in SpatialEntry unit, in SpatialEntry other)
+        {
+            if (Crushes(unit, other))
+            {
+                return true;
+            }
+
+            var pace = Crusher.Pace;
+            return math.lengthsq(other.Velocity) > pace * pace && Crushes(other, unit);
         }
 
         /// <summary>

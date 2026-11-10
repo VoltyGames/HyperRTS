@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Movement.Crushing
 {
-    /// <summary>Lets a vehicle flatten destructible scenery (fences, hay bales, small trees) it drives over.</summary>
+    /// <summary>Lets a vehicle flatten destructible scenery (fences, hay bales, small trees) and crush enemy infantry it drives over.</summary>
     [AddComponentMenu(HyperRTSMenu.Entity + "Units/Crusher")]
     [Icon(HyperRTSIcons.CrusherAuthoring)]
     [HelpURL(HyperRTSDocs.Movement)]
@@ -13,7 +13,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
     [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
     public class CrusherAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Flattens scenery whose Crushed By is 1 to this (e.g. 1 light vehicle, 2 APC, 3 tank).")]
+        [Tooltip("Flattens scenery whose Crushed By is 1 to this (e.g. 1 light vehicle, 2 APC, 3 tank), and kills enemy units whose Crush is 1 to this by driving over them.")]
         [Min(1)]
         public int size = 3;
 

@@ -54,6 +54,10 @@ namespace HyperRTS.Simulation.GameEntities
         [Min(0f)]
         public float mass;
 
+        [Tooltip("Smallest Crusher size of an enemy vehicle that kills this unit by driving over it; 0 = never. A squad is 1.")]
+        [Min(0)]
+        public int crush;
+
         [Tooltip("Walks between destructible scenery (trees, fences) as infantry do. Otherwise scenery blocks it unless a Crusher flattens it.")]
         public bool walksThroughScenery;
 
@@ -111,6 +115,10 @@ namespace HyperRTS.Simulation.GameEntities
 
                 agent.WallMargin = agent.HullWallMargin;
                 UnitAuthoring.Add(writer, authoring.moveSpeed, agent);
+                if (authoring.crush > 0)
+                {
+                    writer.Add(new Crushable { Crush = authoring.crush });
+                }
             }
 
             private byte SceneryCrushLimit(UnitAuthoring authoring)

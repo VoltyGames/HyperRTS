@@ -31,6 +31,20 @@ namespace HyperRTS.Simulation.Combat.Damage
         /// <summary>Layers the splash reaches: the weapon's targets.</summary>
         public WeaponTargets Layers;
 
+        // Stored plus one so an event built without it still rolls its member.
+        private int _aimedMember;
+
+        /// <summary>The squad member a hit on a squad lands on, or -1 to let it roll (or the blast pick the nearest).</summary>
+        public readonly int AimedMember => _aimedMember - 1;
+
+        /// <summary>This hit landing on squad member <paramref name="member"/>.</summary>
+        public readonly DamageEvent Aimed(int member)
+        {
+            var hit = this;
+            hit._aimedMember = member + 1;
+            return hit;
+        }
+
         /// <summary>A plain hit or heal on <paramref name="target"/> alone, untyped and without splash.</summary>
         public static DamageEvent Direct(Entity target, float3 position, Entity source, byte owner,
             float amount) => new()

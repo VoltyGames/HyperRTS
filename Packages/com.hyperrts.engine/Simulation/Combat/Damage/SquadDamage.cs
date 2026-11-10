@@ -43,9 +43,14 @@ namespace HyperRTS.Simulation.Combat.Damage
 
         public DynamicBuffer<SquadMember> Members(Entity squad) => _members[squad];
 
-        /// <summary>A blast aimed at a squad strikes the member nearest it; -1 lets a direct hit roll.</summary>
+        /// <summary>The member a hit is aimed at, else the member nearest a blast aimed at a squad; -1 lets a direct hit roll.</summary>
         public int Nearest(in DamageEvent hit)
         {
+            if (hit.AimedMember >= 0)
+            {
+                return hit.AimedMember;
+            }
+
             if (hit.Profile.Radius <= 0f || !_members.TryGetBuffer(hit.Target, out var members)
                 || !_transforms.TryGetComponent(hit.Target, out var squad))
             {

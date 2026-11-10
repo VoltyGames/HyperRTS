@@ -118,6 +118,11 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
+            if (Rule.IsCrushing(Unit, entry))
+            {
+                return;
+            }
+
             var offset = entry.ClosestOffset(Position, SegmentAxis);
             var distanceSq = math.lengthsq(offset);
             var distance = math.sqrt(distanceSq);
