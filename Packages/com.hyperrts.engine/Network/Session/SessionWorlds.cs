@@ -6,6 +6,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
 using Unity.Networking.Transport;
+using Unity.Physics.Systems;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
@@ -43,7 +44,7 @@ namespace HyperRTS.Network.Session
         /// <summary>One world that serves remote clients and is the local player's client, with this player's join.</summary>
         public static NetcodeWorld CreateHost(NativeList<SystemTypeIndex> systems)
         {
-            RequireJoinsToSetInGame();
+            RequireConfig();
             // Sessions listen and connect themselves, on the port and drivers they were given.
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateSingleWorldHost("HostWorld", systems);
@@ -55,9 +56,11 @@ namespace HyperRTS.Network.Session
 
         public static NetcodeWorld CreateServer()
         {
-            RequireJoinsToSetInGame();
+            RequireConfig();
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
+            // Gameplay has no physics and a server shows nothing.
+            world.GetExistingSystemManaged<PhysicsSystemGroup>().Enabled = false;
             SetSingleton(world, ServerTickRate());
             Created.Add(world);
             return world;
@@ -65,7 +68,7 @@ namespace HyperRTS.Network.Session
 
         public static NetcodeWorld CreateClient(NativeList<SystemTypeIndex> systems)
         {
-            RequireJoinsToSetInGame();
+            RequireConfig();
             ClientServerBootstrap.AutoConnectPort = 0;
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld", systems);
             AddJoin(world);
@@ -75,15 +78,22 @@ namespace HyperRTS.Network.Session
 
         /// <summary>
         /// The join systems put a connection in game once it is seated, so Netcode must not do it on connect: the
-        /// global <see cref="NetcodeConfig"/> needs Automatic State Replication off.
+        /// global <see cref="NetcodeConfig"/> needs Automatic State Replication off. Gameplay has no physics, so
+        /// Netcode must not step it in the prediction loop: Physics Run Mode is User Controlled.
         /// </summary>
-        private static void RequireJoinsToSetInGame()
+        private static void RequireConfig()
         {
             var config = NetcodeConfig.Global;
             if (config == null || config.AutomaticStateReplication)
             {
                 throw new InvalidOperationException("[HyperRTS] Turn Automatic State Replication off on the global " +
                                                     "NetcodeConfig asset: joins put connections in game themselves.");
+            }
+
+            if (config.PhysicsRunMode != PhysicGroupRunMode.UserControlled)
+            {
+                throw new InvalidOperationException("[HyperRTS] Set Physics Run Mode to User Controlled on the global " +
+                                                    "NetcodeConfig asset: gameplay has no physics.");
             }
         }
 

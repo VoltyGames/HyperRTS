@@ -59,6 +59,15 @@ handles Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInter
 | [Vegetation](vegetation.md) | Row crops and the shared scatter host |
 | [Effects](effects.md) | Effect rigs, generated VFX graphs, pools, loop lights |
 
+## Physics
+
+Unity Physics moves things that are only looked at, never gameplay, in `Presentation/Physics/`. `PhysicsGroup` steps
+physics world 1 (`PhysicsGroup.WorldIndex`) in presented worlds; a body joins it with that `PhysicsWorldIndex` and
+`PhysicsGroup.BodyFilter`. `PhysicsStartSystem` steps the main physics world once, which a custom group needs, then
+switches it off, and on a `-nographics` client switches `PhysicsGroup` off too. `TerrainColliderSystem` keeps a
+heightfield of the active terrain in world 1, rebuilt when the terrain or its data is swapped; crater dents don't
+reach it.
+
 ## Audio
 
 `SoundPlaybackSystem` plays cue sounds and `LoopSoundSystem` entity loops, heard from `SoundListener` at the camera's

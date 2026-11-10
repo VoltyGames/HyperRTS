@@ -107,7 +107,9 @@ wait for. Single player never holds.
    `ObserverAccepted` and the client makes a `LocalObserver`.
 
 A connection only carries RPCs until it joins. The global `NetcodeConfig` asset therefore needs **Automatic State
-Replication** off, and `NetworkSession` throws when it is on.
+Replication** off and **Physics Run Mode** set to User Controlled, and `NetworkSession` throws otherwise. Gameplay
+has no physics, so Netcode must not step it on every prediction tick; a server world switches physics off and a
+presented world steps only its own (see [physics](presentation/README.md#physics)).
 
 **Identity.** `NetworkSession.Token` is a random number made once per process, stored with the slot the client
 claims. When the connection drops, the slot keeps the token and waits for its owner, with its units idle. If the
