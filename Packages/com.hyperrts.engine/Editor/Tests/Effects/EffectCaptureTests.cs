@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Tests.Effects
         public void Clean()
         {
             AssetDatabase.DeleteAsset(Folder);
-            var captures = Path.Combine(EffectCapture.Folder, Rig);
+            var captures = Path.Combine(EffectCapture.Root, Rig);
             if (Directory.Exists(captures))
             {
                 Directory.Delete(captures, true);
@@ -35,19 +35,20 @@ namespace HyperRTS.Editor.Tests.Effects
         [Test]
         public void Times_AreSortedAndABadOneIsRefused()
         {
-            Assert.That(EffectCapture.ParseTimes("1.2, 0.1,0.3"), Is.EqualTo(new[] { 0.1f, 0.3f, 1.2f }));
-            Assert.Throws<ArgumentException>(() => EffectCapture.ParseTimes("0.1,soon"));
+            MakeRig();
+            Assert.That(new EffectCapture(Rig, "1.2, 0.1,0.3").Times, Is.EqualTo(new[] { 0.1f, 0.3f, 1.2f }));
+            Assert.Throws<ArgumentException>(() => _ = new EffectCapture(Rig, "0.1,soon"));
         }
 
         [Test]
-        public void FindRig_RefusesAPrefabWithoutARig()
+        public void Capture_RefusesAPrefabWithoutARig()
         {
             AssetDatabase.CreateFolder("Assets", "_EffectCaptureTests");
             var plain = new GameObject("Plain");
             PrefabUtility.SaveAsPrefabAsset(plain, Folder + "/Plain.prefab");
             UnityEngine.Object.DestroyImmediate(plain);
 
-            Assert.Throws<ArgumentException>(() => EffectCapture.FindRig("Plain"));
+            Assert.Throws<ArgumentException>(() => _ = new EffectCapture("Plain"));
         }
 
         // Graphs run once per editor frame, and a background Editor gives few.
@@ -56,7 +57,7 @@ namespace HyperRTS.Editor.Tests.Effects
         public IEnumerator Capture_WritesOnePngPerTimeShowingTheEffect()
         {
             MakeRig();
-            var capture = EffectCapture.Capture(Rig, "0.1,0.5", 12f);
+            var capture = new EffectCapture(Rig, "0.1,0.5", 12f).Render();
             while (!capture.IsCompleted)
             {
                 yield return null;

@@ -254,8 +254,9 @@ namespace HyperRTS.Editor.Effects.Preview
             _capture.SetEnabled(false);
             try
             {
-                await EffectCapture.Capture(_current.Name, EffectCapture.DefaultTimes, EffectCapture.DefaultDistance);
-                EditorUtility.RevealInFinder(Path.GetFullPath(Path.Combine(EffectCapture.Folder, _current.Name)));
+                var capture = new EffectCapture(_current.Name);
+                await capture.Render();
+                EditorUtility.RevealInFinder(Path.GetFullPath(capture.Folder));
             }
             catch (Exception exception)
             {

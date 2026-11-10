@@ -29,6 +29,6 @@ namespace HyperRTS.Editor.Effects
             [CliArg("rig", "An effect rig prefab name (FX_Explosion_Vehicle_01) or its path")] string rig,
             [CliArg("times", "Seconds after the burst, comma separated")] string times = EffectCapture.DefaultTimes,
             [CliArg("distance", "Metres from the camera to the aim point")] float distance = EffectCapture.DefaultDistance) =>
-            await EffectCapture.Capture(rig, times, distance);
+            await new EffectCapture(rig, times, distance).Render();
     }
 }

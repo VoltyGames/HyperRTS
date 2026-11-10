@@ -17,9 +17,9 @@ namespace HyperRTS.Editor.Effects.Preview
     /// Plays a rig above the open scene as the Effects page does and renders it at chosen times after the burst, from a
     /// fixed RTS-like camera and sun over a grey ground, into <c>Logs/EffectCaptures/&lt;Rig&gt;/</c>.
     /// </summary>
-    public static class EffectCapture
+    public sealed class EffectCapture
     {
-        public const string Folder = "Logs/EffectCaptures";
+        public const string Root = "Logs/EffectCaptures";
         public const string DefaultTimes = "0.1,0.3,0.6,1.2,2.5";
         public const float DefaultDistance = 24f;
 
@@ -33,8 +33,97 @@ namespace HyperRTS.Editor.Effects.Preview
         // Far above any map, so the open scene's own contents stay out of the picture.
         private static readonly Vector3 Sky = new(0f, 10000f, 0f);
 
-        /// <summary>The rig prefab named <paramref name="rig"/> (or at that path); throws naming it when there is none.</summary>
-        public static GameObject FindRig(string rig)
+        private readonly GameObject _prefab;
+        private readonly float _distance;
+
+        /// <summary>
+        /// A capture of the rig prefab named <paramref name="rig"/> (or at that path) at <paramref name="times"/>, such
+        /// as <c>0.1,0.3,2.5</c>, seconds after its burst, <paramref name="distance"/> metres from the aim. Throws naming
+        /// a missing rig or a bad time.
+        /// </summary>
+        public EffectCapture(string rig, string times = DefaultTimes, float distance = DefaultDistance)
+        {
+            _prefab = FindRig(rig);
+            Times = ParseTimes(string.IsNullOrWhiteSpace(times) ? DefaultTimes : times);
+            if (Times.Count == 0)
+            {
+                throw new ArgumentException("HyperRTS: no capture times given.");
+            }
+
+            _distance = distance;
+            Folder = $"{Root}/{_prefab.name}";
+        }
+
+        /// <summary>Seconds after the burst, ascending.</summary>
+        public IReadOnlyList<float> Times { get; }
+
+        /// <summary>Project-relative folder the PNGs land in.</summary>
+        public string Folder { get; }
+
+        /// <summary>Renders the rig at each time and returns the PNG paths. Graphs only run on editor frames, so this awaits them.</summary>
+        public async Task<List<string>> Render()
+        {
+            Directory.CreateDirectory(Folder);
+            var set = new GameObject("HyperRTS Effect Capture") { hideFlags = HideFlags.DontSave };
+            var target = RenderTexture.GetTemporary(Width, Height, 24, RenderTextureFormat.ARGB32);
+            using var player = new EffectPreviewPlayer(SceneManager.GetActiveScene()) { Pivot = Sky, Paused = true };
+            try
+            {
+                var camera = Lay(set, _distance);
+                camera.targetTexture = target;
+                player.Load(_prefab);
+                await NextFrame();
+                player.Play(true);
+                await Start(player, camera);
+                return await Shoot(player, camera, target);
+            }
+            finally
+            {
+                foreach (var renderer in set.GetComponentsInChildren<Renderer>())
+                {
+                    Object.DestroyImmediate(renderer.sharedMaterial);
+                }
+
+                Object.DestroyImmediate(set);
+                RenderTexture.ReleaseTemporary(target);
+            }
+        }
+
+        // A graph runs once a camera sees it, and sees it once it has run, so render until it starts.
+        private static async Task Start(EffectPreviewPlayer player, Camera camera)
+        {
+            for (var frame = 0; frame < StartFrames && player.AllCulled; frame++)
+            {
+                player.Step(0f);
+                camera.Render();
+                await NextFrame();
+            }
+        }
+
+        private async Task<List<string>> Shoot(EffectPreviewPlayer player, Camera camera, RenderTexture target)
+        {
+            var files = new List<string>();
+            var at = 0f;
+            foreach (var time in Times)
+            {
+                if (time > at)
+                {
+                    player.Simulate(time - at);
+                    at = time;
+                }
+
+                await NextFrame();
+                player.Step(0f);
+                camera.Render();
+                var file = $"{Folder}/{_prefab.name}_{time.ToString("0.0#", CultureInfo.InvariantCulture)}.png";
+                File.WriteAllBytes(file, Read(target));
+                files.Add(file);
+            }
+
+            return files;
+        }
+
+        private static GameObject FindRig(string rig)
         {
             var path = rig.Replace('\\', '/');
             var match = AssetDatabase.FindAssets("t:Prefab " + Path.GetFileNameWithoutExtension(path))
@@ -49,8 +138,7 @@ namespace HyperRTS.Editor.Effects.Preview
             return prefab;
         }
 
-        /// <summary>Seconds in a list such as <c>0.1,0.3,2.5</c>, ascending; throws on a bad entry.</summary>
-        public static List<float> ParseTimes(string times)
+        private static List<float> ParseTimes(string times)
         {
             var parsed = new List<float>();
             foreach (var entry in times.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -66,72 +154,6 @@ namespace HyperRTS.Editor.Effects.Preview
 
             parsed.Sort();
             return parsed;
-        }
-
-        /// <summary>
-        /// Renders the rig at each time after its burst, <paramref name="distance"/> metres from the aim; returns the
-        /// PNG paths. Graphs only run on editor frames, so this awaits them.
-        /// </summary>
-        public static async Task<List<string>> Capture(string rig, string times, float distance)
-        {
-            var prefab = FindRig(rig);
-            var seconds = ParseTimes(string.IsNullOrWhiteSpace(times) ? DefaultTimes : times);
-            if (seconds.Count == 0)
-            {
-                throw new ArgumentException("HyperRTS: no capture times given.");
-            }
-
-            var folder = Path.Combine(Folder, prefab.name);
-            Directory.CreateDirectory(folder);
-            var files = new List<string>();
-            var set = new GameObject("HyperRTS Effect Capture") { hideFlags = HideFlags.DontSave };
-            var target = RenderTexture.GetTemporary(Width, Height, 24, RenderTextureFormat.ARGB32);
-            using var player = new EffectPreviewPlayer(SceneManager.GetActiveScene()) { Pivot = Sky, Paused = true };
-            try
-            {
-                var camera = Lay(set, distance);
-                camera.targetTexture = target;
-                player.Load(prefab);
-                await NextFrame();
-                player.Play(true);
-
-                // A graph runs once a camera sees it, and sees it once it has run, so render until it starts.
-                for (var frame = 0; frame < StartFrames && player.AllCulled; frame++)
-                {
-                    player.Step(0f);
-                    camera.Render();
-                    await NextFrame();
-                }
-
-                var at = 0f;
-                foreach (var time in seconds)
-                {
-                    if (time > at)
-                    {
-                        player.Simulate(time - at);
-                        at = time;
-                    }
-
-                    await NextFrame();
-                    player.Step(0f);
-                    camera.Render();
-                    var file = Path.Combine(folder, $"{prefab.name}_{time.ToString("0.0#", CultureInfo.InvariantCulture)}.png");
-                    File.WriteAllBytes(file, Read(target));
-                    files.Add(file.Replace('\\', '/'));
-                }
-            }
-            finally
-            {
-                foreach (var renderer in set.GetComponentsInChildren<Renderer>())
-                {
-                    Object.DestroyImmediate(renderer.sharedMaterial);
-                }
-
-                Object.DestroyImmediate(set);
-                RenderTexture.ReleaseTemporary(target);
-            }
-
-            return files;
         }
 
         private static Task NextFrame()
