@@ -47,7 +47,8 @@ namespace HyperRTS.Editor.Maps.Vegetation
             _plants = Plants(_climate, edges);
             _reed = string.IsNullOrEmpty(_climate.reedPlant) ? -1 : _climate.PlantIndex(_climate.reedPlant);
             _clumps = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.PlantClumps);
-            _stands = StandNoise(layout, _climate);
+            // One noise per climate plant, so each weed's stands lie apart from the others'.
+            _stands = MapNoise.CreateMany(layout, MapNoiseChannel.PlantStands, _climate.plants.Count);
             _rowLines = new MapRowLines(layout.Symmetry, edges, _cell.x);
             _water = layout.Terrain.waterLevel;
         }
@@ -90,18 +91,6 @@ namespace HyperRTS.Editor.Maps.Vegetation
             }
 
             return _clumps.Blotches(p, 9f, WildClumps) * Mathf.Clamp01(0.75f + 0.5f * _clumps.Sample(p, 2.5f));
-        }
-
-        /// <summary>One noise per climate plant, so each weed's stands lie apart from the others'.</summary>
-        private static MapNoise[] StandNoise(MapLayout layout, MapClimate climate)
-        {
-            var noise = new MapNoise[climate.plants.Count];
-            for (var i = 0; i < noise.Length; i++)
-            {
-                noise[i] = new MapNoise(layout.Symmetry, layout.Spec.seed + 7919 * i, MapNoiseChannel.PlantStands);
-            }
-
-            return noise;
         }
 
         /// <summary>Crops are sown evenly: a field's plants keep their cover instead of clumping like wild grass.</summary>

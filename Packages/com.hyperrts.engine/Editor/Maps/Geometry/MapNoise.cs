@@ -26,6 +26,21 @@ namespace HyperRTS.Editor.Maps.Geometry
             _gain = Mathf.Sqrt(symmetry.Copies.Count);
         }
 
+        /// <summary>
+        /// <paramref name="count"/> noises on one channel, each seeded apart, so the layers or plants they place keep
+        /// apart from each other.
+        /// </summary>
+        public static MapNoise[] CreateMany(MapLayout layout, MapNoiseChannel channel, int count)
+        {
+            var noise = new MapNoise[count];
+            for (var i = 0; i < count; i++)
+            {
+                noise[i] = new MapNoise(layout.Symmetry, layout.Spec.seed + 7919 * i, channel);
+            }
+
+            return noise;
+        }
+
         /// <summary>Noise at a map point with features about <paramref name="wavelength"/> metres apart.</summary>
         public float Sample(Vector2 point, float wavelength)
         {

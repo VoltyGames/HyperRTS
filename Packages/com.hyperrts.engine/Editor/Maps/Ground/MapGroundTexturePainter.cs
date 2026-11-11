@@ -51,11 +51,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             // One noise per mix layer, so every surface's mixes of a layer agree where surfaces meet.
-            _mixNoise = new MapNoise[climate.layers.Count];
-            for (var i = 0; i < _mixNoise.Length; i++)
-            {
-                _mixNoise[i] = new MapNoise(layout.Symmetry, layout.Spec.seed + 7919 * i, MapNoiseChannel.SurfaceMixes);
-            }
+            _mixNoise = MapNoise.CreateMany(layout, MapNoiseChannel.SurfaceMixes, climate.layers.Count);
 
             _slope = climate.SurfaceLayer(climate.slopeSurface);
         }
