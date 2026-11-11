@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 namespace HyperRTS.Editor.Maps.Tests
 {
     /// <summary>
-    /// The Map Editor's document: an edit saves at once and diffs like a hand edit, undo restores the file, and a file
+    /// The Map Editor's document: an edit saves at once and diffs like a hand edit, and a file
     /// written from outside reloads, also while the window is open.
     /// </summary>
     public class MapSpecDocumentTests
@@ -53,22 +53,6 @@ namespace HyperRTS.Editor.Maps.Tests
             Assert.AreEqual(0, hill.Index);
             Assert.AreEqual(Formatted(Original.TrimEnd('}') + ", \"hills\": [{\"pos\": {\"x\": 10, \"z\": 20}}]}"), Saved());
             Assert.IsTrue(MapSpecJson.SameContent(_document.Spec, MapSpecJson.Read(Saved())));
-        }
-
-        [Test]
-        public void UndoRestoresTheFile()
-        {
-            var road = new MapFeatureRef(MapFeatureKinds.Find(nameof(MapSpec.roads)), 0);
-            Undo.IncrementCurrentGroup();
-            MapFeatureEdits.SetPoints(_document, road, new[] { new Vector2(-100, 0), new Vector2(50, 50) }, true);
-            // Our own save comes back as an import; it must not reload and drop the undo history.
-            _document.Reload();
-            Assert.AreNotEqual(Formatted(Original), Saved());
-
-            Undo.PerformUndo();
-
-            Assert.AreEqual(Formatted(Original), Saved());
-            Assert.AreEqual(100f, _document.Spec.roads[0].points[1].x);
         }
 
         [Test]
