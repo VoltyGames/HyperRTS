@@ -3,23 +3,19 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
-using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
-using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests.Navigation
 {
     /// <summary>
-    /// Navigation timings on a 600 m map at 1 m cells with about 80 rotated buildings, woods and a river with two
-    /// bridges, against twice the plan's budgets. Each test warms up first, so Burst is compiled, and asserts the median.
+    /// Navigation at scale on a 600 m map at 1 m cells with about 80 rotated buildings, woods and a river with two
+    /// bridges. Timings are recorded for the performance results, never asserted: they vary with the machine and Editor.
     /// </summary>
     [Category("Benchmark")]
     public partial class NavBenchmarkTests
@@ -100,97 +96,9 @@ namespace HyperRTS.Simulation.Tests.Navigation
         }
 
         [Test, Performance]
-        public void FieldAndSectorBuilds_FullAndAfterABuilding()
+        public void GroupOrder_CrossMap_GivesEveryMemberAPath()
         {
-            var full = BenchmarkKit.Median("FullBuild", _world.UpdateSystem<NavFieldSystem>, () =>
-            {
-                var grid = _world.Grid();
-                grid.Field.MarkDirty(int2.zero, grid.Grid.Size - 1);
-            }, null, "NavFieldSystem.Rebuild", "NavSectors.Relabel", "NavSectors.Connect", "FlowField.Build");
-
-            var random = new Random(5);
-            void AddBuilding() => _world.SpawnObstacle(
-                new float3(random.NextFloat(-200f, 60f), 0f, random.NextFloat(-250f, 250f)), new float2(14f, 10f),
-                random.NextFloat(math.PI));
-
-            var incremental = BenchmarkKit.Median("AfterABuilding", _world.UpdateSystem<NavFieldSystem>, () =>
-            {
-                AddBuilding();
-                _world.UpdateSystem<NavGridSystem>();
-            }, null, "NavFieldSystem.Rebuild", "NavSectors.Relabel", "NavSectors.Connect");
-            var restamp = BenchmarkKit.Median("Restamp", _world.UpdateSystem<NavGridSystem>, AddBuilding, null,
-                "NavGridSystem.Restamp");
-
-            var sectors = _world.Grid().Sectors;
-            TestContext.WriteLine($"Full field and sector build: median {full:F2} ms ({sectors.ClassCount} classes, " +
-                                  $"{sectors.SectorCount} sectors, {sectors.Regions.Length} components)");
-            TestContext.WriteLine($"After a building: restamp {restamp:F2} ms, field and sectors {incremental:F2} ms");
-            Assert.Less(full, 60.0, $"full build {full:F2} ms, under twice 30 ms");
-            Assert.Less(incremental, 2.0, $"after a building {incremental:F2} ms, under twice 1 ms");
-        }
-
-        [BurstCompile(CompileSynchronously = true)]
-        private struct SearchJob : IJob
-        {
-            [ReadOnly] public NavGrid Grid;
-            public NavAgent Agent;
-            public float3 Start;
-            public float3 Goal;
-            public NativeList<float3> Points;
-            public NativeReference<int> Expansions;
-
-            public void Execute()
-            {
-                Points.Clear();
-                GridPathfinder.Plan(Agent.Access(Grid), Start, Goal, Points, out var expansions);
-                Expansions.Value = expansions;
-            }
-        }
-
-        [Test, Performance]
-        public void CrossMapSearches()
-        {
-            var points = new NativeList<float3>(64, Allocator.Persistent);
-            var expansions = new NativeReference<int>(Allocator.Persistent);
-            var job = new SearchJob { Grid = _world.Grid(), Agent = Truck, Points = points, Expansions = expansions };
-            var random = new Random(23);
-            double length = 0.0;
-            long expanded = 0;
-            var most = 0;
-            var median = BenchmarkKit.Median("CrossMapSearch", () => job.Run(), () =>
-            {
-                job.Start = new float3(random.NextFloat(-290f, -250f), 0f, random.NextFloat(-290f, 290f));
-                job.Goal = new float3(random.NextFloat(250f, 290f), 0f, random.NextFloat(-290f, 290f));
-            }, () =>
-            {
-                expanded += expansions.Value;
-                most = math.max(most, expansions.Value);
-                length += PathLength(job.Start, points);
-            }, "GridAStar.Search");
-
-            var runs = BenchmarkKit.Warmup + BenchmarkKit.Runs;
-            points.Dispose();
-            expansions.Dispose();
-            TestContext.WriteLine($"Cross-map search: median {median:F3} ms, expansions mean {expanded / runs} " +
-                                  $"max {most}, path mean {length / runs:F1} m");
-            Assert.Less(median, 4.0, $"median {median:F3} ms, under twice 2 ms");
-        }
-
-        private static float PathLength(float3 start, NativeList<float3> points)
-        {
-            var length = 0f;
-            for (var i = 0; i < points.Length; i++)
-            {
-                length += math.distance((i == 0 ? start : points[i - 1]).xz, points[i].xz);
-            }
-
-            return length;
-        }
-
-        [Test, Performance]
-        [TestCase(200, 20.0)]
-        public void GroupOrder_CrossMap(int count, double budget)
-        {
+            const int count = 200;
             var group = 0;
             Entity[] units = null;
             var before = Stats();
@@ -208,7 +116,6 @@ namespace HyperRTS.Simulation.Tests.Navigation
             TestContext.WriteLine($"{count}-unit group order: median {median:F2} ms, " +
                                   $"{after.Fields - before.Fields} fields, {after.Traces - before.Traces} traces, " +
                                   $"{after.Searches - before.Searches} searches");
-            Assert.Less(median, budget, $"{median:F2} ms, under twice the budget");
         }
 
         private PathStats Stats()

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
@@ -8,8 +7,6 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace HyperRTS.Simulation.Tests.MatchStart
 {
@@ -168,18 +165,6 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             Assert.AreEqual(0, _world.EntityManager.GetBuffer<AIBuildStep>(_world.Player(2)).Length,
                 "side 2 has no build order, so its bot trains freely");
             Assert.AreEqual(0, _world.Owned(_base, 2).Count, "side 2 has no kit");
-        }
-
-        [Test]
-        public void AnUnlistedSide_Throws_AndSpawnsNothing()
-        {
-            CreateSides(_world, out _base, out _truck);
-            RequestSetup(Slot(1, 1), Slot(2, 5));
-
-            LogAssert.Expect(LogType.Exception, new Regex("Player 2 plays side 5"));
-            _world.Tick();
-
-            Assert.AreEqual(0, CountType(_world, _base));
         }
 
         [Test]

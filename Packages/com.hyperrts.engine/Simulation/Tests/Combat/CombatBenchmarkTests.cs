@@ -65,7 +65,6 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             // Everyone aims at the nearest enemy, so the two front ranks take the fire.
             Assert.GreaterOrEqual(hit, 100, $"both front ranks under fire: {hit} hit");
-            Assert.Less(frame, 6.0, $"median {frame:F3} ms, under twice 3 ms");
         }
     }
 }

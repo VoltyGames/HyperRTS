@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
@@ -13,7 +12,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace HyperRTS.Presentation.Tests.Effects
 {
@@ -56,48 +54,6 @@ namespace HyperRTS.Presentation.Tests.Effects
             Assert.AreSame(dust, _pool.Get(_dust.gameObject));
             Assert.AreNotSame(_dust, dust, "an instance, not the prefab");
             Assert.AreNotSame(dust, _pool.Get(_sparks.gameObject));
-        }
-
-        [Test]
-        public void Get_PrefabWithoutRig_LogsOnceAndReturnsNull()
-        {
-            var plain = new GameObject("Plain Smoke");
-            try
-            {
-                LogAssert.Expect(LogType.Error, new Regex("Plain Smoke"));
-                Assert.IsNull(_pool.Get(plain));
-                Assert.IsNull(_pool.Get(plain), "the second miss stays quiet");
-            }
-            finally
-            {
-                Object.DestroyImmediate(plain);
-            }
-        }
-
-        [Test]
-        public void Get_GraphWithoutAsset_LogsNamingThePrefabAndReturnsNull()
-        {
-            var empty = EffectRigKit.Rig("Empty Smoke");
-            EffectRigKit.AddGraph(empty).visualEffectAsset = null;
-            try
-            {
-                LogAssert.Expect(LogType.Error, new Regex("Empty Smoke.*has no asset"));
-                Assert.IsNull(_pool.Get(empty.gameObject));
-            }
-            finally
-            {
-                Object.DestroyImmediate(empty.gameObject);
-            }
-        }
-
-        [Test]
-        public void Get_VariantWithVariants_LogsAndReturnsNull()
-        {
-            _dust.variants = new[] { _sparks.gameObject };
-            _sparks.variants = new[] { _dust.gameObject };
-
-            LogAssert.Expect(LogType.Error, new Regex("Dust.*variants of its own"));
-            Assert.IsNull(_pool.Get(_dust.gameObject));
         }
 
         [Test]

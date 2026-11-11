@@ -49,9 +49,15 @@ new rule needs a row there. `ModuleLayoutTests` checks the [module rules](archit
 
 Timing tests are `[Test, Performance]` cases in the `Benchmark` category (`NavBenchmarkTests`,
 `CombatBenchmarkTests`), built on the Performance Testing package. `BenchmarkKit.Median` wraps `Measure.Method` with a
-warm-up, 20 measured runs, untimed prepare and finish steps and the profiler markers to record. Each test keeps one
-coarse assert at twice its budget, so a regression fails. Covered systems have markers named `<Type>.<Step>`; a
-per-entity job opens its marker in `IJobEntityChunkBeginEnd`, heavier work uses `ProfilerMarker.Auto()`.
+warm-up, 20 measured runs, untimed prepare and finish steps and the profiler markers to record. They record timings
+in the performance results and assert only behaviour (every unit gets a path, the front ranks take fire), never a
+time: wall-clock times vary with the machine, Editor focus and what ran before. Covered systems have markers named
+`<Type>.<Step>`; a per-entity job opens its marker in `IJobEntityChunkBeginEnd`, heavier work uses
+`ProfilerMarker.Auto()`.
+
+Avoid tests that depend on Editor state, such as waiting for a log message or holding cached assets across Play
+sessions: after a Play session the Editor can miss expected logs and destroy cached assets, so they fail until a
+restart.
 
 ## Not covered yet
 

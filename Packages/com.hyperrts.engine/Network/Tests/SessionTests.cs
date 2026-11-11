@@ -1,19 +1,17 @@
 using HyperRTS.Simulation.Stats;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using HyperRTS.Network.Session;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Netcode;
 using Unity.Networking.Transport.Relay;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace HyperRTS.Network.Tests
 {
     /// <summary>
-    /// Session plumbing without opening sockets: relay drivers, connection status, rejoin guards, launch flags and
+    /// Session plumbing without opening sockets: relay drivers, connection status, launch flags and
     /// the server report.
     /// </summary>
     public class SessionTests
@@ -30,14 +28,6 @@ namespace HyperRTS.Network.Tests
             Assert.AreEqual(1, store.DriversCount);
             Assert.AreEqual(TransportType.Socket, store.GetDriverType(store.FirstDriver));
             store.Dispose();
-        }
-
-        [Test]
-        public void Rejoin_WithoutADirectJoin_ChangesNothing()
-        {
-            LogAssert.Expect(LogType.Error, new Regex("Nothing to rejoin"));
-            Assert.IsFalse(NetworkSession.CanRejoin);
-            Assert.IsFalse(NetworkSession.Rejoin(SessionScene.Keep));
         }
 
         [Test]

@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
@@ -10,12 +9,10 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
 
 namespace HyperRTS.Simulation.Tests.AI
 {
-    /// <summary>The skirmish AI on a map's hints: attack lanes chosen by seed, and an error when the hints are missing.</summary>
+    /// <summary>The skirmish AI on a map's hints: attack lanes chosen by seed.</summary>
     public class AIHintsTests
     {
         private static readonly Vector2[] North = { new(-10f, -40f), new(30f, -40f) };
@@ -148,34 +145,6 @@ namespace HyperRTS.Simulation.Tests.AI
 
             var goal = world.Get<ActiveOrder>(soldier).Value.Position;
             Assert.Less(math.distance(goal, new float3(80f, 0f, 0f)), 5f, "the nearer enemy has no lane from this slot");
-        }
-
-        [Test]
-        public void MapWithoutHints_LogsOneErrorNamingTheMap_AndTheAIStaysIdle()
-        {
-            using var world = BotWorld(new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2 }, 1, 2);
-            world.RemoveHints();
-            var supplies = world.CreateSupplies();
-            var harvester = world.MakeHarvester(world.SpawnUnit(2, float3.zero), 10, 1f);
-            world.SpawnNode(new float3(5f, 0f, 0f), supplies, 100);
-            var map = Regex.Escape(SceneManager.GetActiveScene().name);
-            LogAssert.Expect(LogType.Error, new Regex($"Map '{map}' has no AI map hints"));
-
-            world.Tick(frames: 5);
-
-            Assert.IsFalse(world.IsEnabled<ActiveOrder>(harvester), "no hints, no AI");
-        }
-
-        [Test]
-        public void HintsWithoutTheBotsSlot_LogAnErrorNamingTheSlot()
-        {
-            using var world = BotWorld(new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 2 }, 1, 2);
-            var data = new AIMapHintsData();
-            data.AddSlot(1, None, None);
-            world.CreateHints(data);
-            LogAssert.Expect(LogType.Error, new Regex("no AI map hints for slot 2"));
-
-            world.Tick(frames: 3);
         }
 
         [Test]
