@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         protected Entity SpawnVehicle(float3 position, float radius, float hullLength, Locomotion locomotion,
             Chassis chassis)
         {
-            var vehicle = _world.SpawnUnit(1, position, speed: 8f, radius: radius);
+            var vehicle = _world.SpawnUnit(1, position, new TestUnit { Speed = 8f, Radius = radius });
             _world.Set(vehicle, new NavAgent
             {
                 Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing, Chassis = chassis, IsVehicle = true,

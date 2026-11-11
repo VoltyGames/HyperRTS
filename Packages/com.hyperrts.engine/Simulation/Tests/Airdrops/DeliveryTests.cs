@@ -34,7 +34,11 @@ namespace HyperRTS.Simulation.Tests.Airdrops
         /// <summary>A source 60 m west of the east edge, as the test map spans -100 to 100.</summary>
         private Entity DeliverySource()
         {
-            var carrier = World.MakePrefab(World.SpawnUnit(0, float3.zero, speed: 20f, name: "Truck"));
+            var carrier = World.MakePrefab(World.SpawnUnit(0, float3.zero, new TestUnit
+            {
+                Speed = 20f,
+                Name = "Truck",
+            }));
             var source = World.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
             var writer = World.Writer(source);
             writer.Add(new DeliverySource

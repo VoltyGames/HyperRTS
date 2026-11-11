@@ -16,54 +16,54 @@ namespace HyperRTS.Simulation.Tests
     /// <summary>Combat helpers on top of <see cref="TestWorld"/>.</summary>
     public static class CombatTestKit
     {
-        public static Entity AddWeapon(this TestWorld world, Entity entity, Stance stance = Stance.Aggressive,
-            float range = 4f, float damage = 25f, float cooldown = 0.5f, Entity projectile = default,
-            UnityObjectRef<DamageType> damageType = default, WeaponTargets targets = WeaponTargets.Surface,
-            Trajectory trajectory = Trajectory.Direct, float arcHeight = 0f, float minRange = 0f, bool turreted = false,
-            float traverseSpeed = 360f)
+        public static Entity AddWeapon(this TestWorld world, Entity entity) =>
+            world.AddWeapon(entity, new TestWeapon());
+
+        public static Entity AddWeapon(this TestWorld world, Entity entity, TestWeapon settings)
         {
             var weapon = new Weapon
             {
-                Range = range,
-                Damage = new DamageProfile { Amount = damage, Type = damageType },
-                Cooldown = cooldown,
-                ProjectilePrefab = projectile,
+                Range = settings.Range,
+                Damage = new DamageProfile { Amount = settings.Damage, Type = settings.DamageType },
+                Cooldown = settings.Cooldown,
+                ProjectilePrefab = settings.Projectile,
                 ProjectileSpeed = 10f,
-                Targets = targets,
-                MinRange = minRange,
+                Targets = settings.Targets,
+                MinRange = settings.MinRange,
                 Aim = new WeaponAim
                 {
                     ProjectileHeight = 1f,
-                    Course = ShotCourse.From(trajectory),
-                    ArcHeight = arcHeight,
-                    Turreted = turreted,
+                    Course = ShotCourse.From(settings.Trajectory),
+                    ArcHeight = settings.ArcHeight,
+                    Turreted = settings.Turreted,
                 },
             };
-            Aim(ref weapon, traverseSpeed);
+            Aim(ref weapon, settings.TraverseSpeed);
             var writer = world.Writer(entity);
             WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) },
-                CombatStance.Create(stance, world.Get<LocalTransform>(entity).Position));
+                CombatStance.Create(settings.Stance, world.Get<LocalTransform>(entity).Position));
             return entity;
         }
 
+        public static Entity AddMount(this TestWorld world, Entity entity) =>
+            world.AddMount(entity, new TestMount());
+
         /// <summary>Gives the entity one extra weapon beside its primary.</summary>
-        public static Entity AddMount(this TestWorld world, Entity entity, float range = 4f, float damage = 10f,
-            float cooldown = 0.5f, WeaponTargets targets = WeaponTargets.Surface, bool independent = false,
-            float minEffect = 0f, UnityObjectRef<DamageType> damageType = default, int rounds = 0,
-            float reloadTime = 0.5f, int requiredResearchTypeId = 0, AmmoRefill refill = AmmoRefill.Docked)
+        public static Entity AddMount(this TestWorld world, Entity entity, TestMount settings)
         {
             var weapon = new Weapon
             {
-                Range = range,
-                Damage = new DamageProfile { Amount = damage, Type = damageType },
-                Cooldown = cooldown,
-                Targets = targets,
-                MinEffect = minEffect,
+                Range = settings.Range,
+                Damage = new DamageProfile { Amount = settings.Damage, Type = settings.DamageType },
+                Cooldown = settings.Cooldown,
+                Targets = settings.Targets,
+                MinEffect = settings.MinEffect,
                 Aim = new WeaponAim { Course = ShotCourse.Direct },
             };
             Aim(ref weapon, 360f);
-            var ammo = Ammo.Create(rounds, reloadTime, refill);
-            world.Buffer<WeaponMount>(entity).Add(WeaponMount.CreateExtra(weapon, ammo, requiredResearchTypeId, independent));
+            var ammo = Ammo.Create(settings.Rounds, settings.ReloadTime, settings.Refill);
+            world.Buffer<WeaponMount>(entity).Add(
+                WeaponMount.CreateExtra(weapon, ammo, settings.RequiredResearchTypeId, settings.Independent));
             world.Buffer<WeaponPose>(entity).Add(default);
             return entity;
         }

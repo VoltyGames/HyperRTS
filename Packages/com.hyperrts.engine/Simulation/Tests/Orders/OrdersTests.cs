@@ -173,7 +173,7 @@ namespace HyperRTS.Simulation.Tests.Orders
         [Test]
         public void Patrol_EngagesEnemiesOnTheWay()
         {
-            var unit = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 3f);
+            var unit = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Range = 3f });
             var enemy = World.SpawnUnit(2, new float3(10f, 0f, 3f));
             Patrol(unit, new float3(20f, 0f, 0f));
 
@@ -187,7 +187,7 @@ namespace HyperRTS.Simulation.Tests.Orders
         public void Escort_FollowsItsWard_DefendsIt_AndEndsWhenItDies()
         {
             var ward = World.SpawnUnit(1, float3.zero);
-            var escort = World.AddWeapon(World.SpawnUnit(1, new float3(-3f, 0f, 0f)), range: 3f);
+            var escort = World.AddWeapon(World.SpawnUnit(1, new float3(-3f, 0f, 0f)), new TestWeapon { Range = 3f });
             World.Command(1, new PlayerCommand
             {
                 Type = CommandType.Escort, Unit = escort, Target = ward, Position = float3.zero,

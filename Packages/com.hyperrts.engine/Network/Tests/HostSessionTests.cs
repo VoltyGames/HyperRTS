@@ -76,10 +76,13 @@ namespace HyperRTS.Network.Tests
         {
             var host = _session.Host;
             var cue = host.Own(ScriptableObject.CreateInstance<SoundCue>());
-            var prefab = host.MakePrefab(host.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Tank"));
+            var prefab = host.MakePrefab(host.SpawnUnit(0, new float3(90f, 0f, 90f), new TestUnit { Name = "Tank" }));
             host.SetBuildTime(prefab, 0.25f);
             var producer = host.MakeProducer(host.SpawnBuilding(2, new float3(40f, 0f, 30f), new float2(4f, 4f),
-                name: "Factory"), new float3(0f, 0f, -4f), prefab);
+                new TestBuilding
+            {
+                Name = "Factory",
+            }), new float3(0f, 0f, -4f), prefab);
             var writer = new EntityWriter(host.EntityManager, producer);
             EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(writer), CueSlot.ProductionDone, cue);
             host.SpawnProvider(2, new float3(30f, 0f, 40f), 10);

@@ -192,8 +192,11 @@ namespace HyperRTS.Simulation.Tests.Navigation
         public void Builder_WalledOffFromItsSite_GivesUpTheOrder()
         {
             // A ring of walls round the site, 4 m clear of it, with no way in.
-            var site = World.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(4f, 4f), complete: false,
-                buildTime: 60f);
+            var site = World.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(4f, 4f), new TestBuilding
+            {
+                Complete = false,
+                BuildTime = 60f,
+            });
             World.SpawnObstacle(new float3(20f, 0f, 7f), new float2(16f, 2f));
             World.SpawnObstacle(new float3(20f, 0f, -7f), new float2(16f, 2f));
             World.SpawnObstacle(new float3(13f, 0f, 0f), new float2(2f, 12f));
@@ -208,7 +211,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
 
         private Entity SpawnTruck(float3 position)
         {
-            var truck = World.SpawnUnit(1, position, speed: 8f, radius: TruckRadius);
+            var truck = World.SpawnUnit(1, position, new TestUnit { Speed = 8f, Radius = TruckRadius });
             World.Set(truck, LocalTransform.FromPositionRotation(position,
                 quaternion.RotateY(math.PI * 0.5f)));
             World.Set(truck, new NavAgent

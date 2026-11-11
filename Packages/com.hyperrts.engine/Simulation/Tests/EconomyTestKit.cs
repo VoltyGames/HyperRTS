@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity UnitPrefab(this TestWorld world, ResourceType supplies, int cost, float buildTime = 1f,
             string name = "Unit")
         {
-            var prefab = world.MakePrefab(world.SpawnUnit(0, Far, name: name));
+            var prefab = world.MakePrefab(world.SpawnUnit(0, Far, new TestUnit { Name = name }));
             world.SetBuildTime(prefab, buildTime);
             world.SetCost(prefab, supplies, cost);
             return prefab;
@@ -38,7 +38,10 @@ namespace HyperRTS.Simulation.Tests
 
         /// <summary>Player 1's producer at the origin, spawning south of it.</summary>
         public static Entity SpawnProducer(this TestWorld world, Entity unitPrefab, bool complete = true) =>
-            world.MakeProducer(world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), complete),
+            world.MakeProducer(world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), new TestBuilding
+            {
+                Complete = complete,
+            }),
                 new float3(0f, 0f, -4f), unitPrefab);
 
         public static int QueueLength(this TestWorld world, Entity producer) =>
@@ -88,7 +91,10 @@ namespace HyperRTS.Simulation.Tests
         }
 
         public static Entity SpawnProvider(this TestWorld world, byte owner, float3 position, int population) =>
-            world.SpawnBuilding(owner, position, new float2(2f, 2f), populationProvided: population);
+            world.SpawnBuilding(owner, position, new float2(2f, 2f), new TestBuilding
+            {
+                PopulationProvided = population,
+            });
 
         public static Entity AddIncome(this TestWorld world, Entity entity, ResourceType type, int amount,
             float interval)
@@ -135,12 +141,15 @@ namespace HyperRTS.Simulation.Tests
                 Yaw = PlacementMath.CameraYaw,
             });
 
+        public static void PlaceLine(this TestWorld world, Entity builder, Entity prefab, float3 start, float3 end) =>
+            world.PlaceLine(builder, prefab, start, end, new TestLine());
+
         public static void PlaceLine(this TestWorld world, Entity builder, Entity prefab, float3 start, float3 end,
-            LineStart join = LineStart.Snapped, bool queue = false) =>
+            TestLine line) =>
             world.Command(world.Get<Owner>(builder).Value, new PlayerCommand
             {
                 Type = CommandType.PlaceLine, Unit = builder, Prefab = prefab, Position = start, End = end,
-                Argument = (int)join, Queue = queue,
+                Argument = (int)line.Join, Queue = line.Queue,
             });
 
         public static void SetBuildTime(this TestWorld world, Entity entity, float seconds, int population = 1) =>

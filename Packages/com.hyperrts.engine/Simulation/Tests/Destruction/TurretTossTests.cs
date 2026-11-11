@@ -106,7 +106,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
 
         private Entity SpawnTank(float3 position)
         {
-            var tank = _world.SpawnUnit(1, position, maxHealth: 100f);
+            var tank = _world.SpawnUnit(1, position, new TestUnit { MaxHealth = 100f });
             _world.Add(tank, new SpawnOnDeath { Prefab = _wreck });
             var writer = _world.Writer(tank);
             TurretTossAuthoring.Add(writer, "tank", new TurretToss

@@ -30,7 +30,10 @@ namespace HyperRTS.Network.Tests
         {
             using var world = new TestWorld();
             world.CreateMatch(1);
-            var prefab = world.MakePrefab(world.SpawnUnit(0, new float3(50f, 0f, 50f), name: "Scout"));
+            var prefab = world.MakePrefab(world.SpawnUnit(0, new float3(50f, 0f, 50f), new TestUnit
+            {
+                Name = "Scout",
+            }));
             world.Tick();
             var holder = world.EntityManager.CreateEntity();
             world.EntityManager.AddBuffer<ProductionQueueItem>(holder)

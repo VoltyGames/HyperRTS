@@ -202,14 +202,30 @@ namespace HyperRTS.Editor.Maps.Geometry
             var across = MapGeometry.Left(direction);
             if (spec.kind == MapCrossingSpec.Ford)
             {
-                Crossings.Add(new MapCrossing(spec.kind, null, position, across, spec.width, river.Spec.width + FordBanks,
-                    water - FordWade));
+                Crossings.Add(new MapCrossing
+                {
+                    Kind = spec.kind,
+                    Prop = null,
+                    Position = position,
+                    Across = across,
+                    Width = spec.width,
+                    Span = river.Spec.width + FordBanks,
+                    Height = water - FordWade,
+                });
                 return;
             }
 
             var entry = palette.Entry(spec.prop);
-            Crossings.Add(new MapCrossing(spec.kind, spec.prop, position, across, entry.size.x, entry.size.y,
-                water + DeckClearance));
+            Crossings.Add(new MapCrossing
+            {
+                Kind = spec.kind,
+                Prop = spec.prop,
+                Position = position,
+                Across = across,
+                Width = entry.size.x,
+                Span = entry.size.y,
+                Height = water + DeckClearance,
+            });
         }
     }
 }

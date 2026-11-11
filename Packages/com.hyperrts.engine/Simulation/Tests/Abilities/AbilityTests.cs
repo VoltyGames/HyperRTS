@@ -45,8 +45,8 @@ namespace HyperRTS.Simulation.Tests.Abilities
         public void UnitAbility_WalksIntoRange_FiresSplash_ThenCoolsDown()
         {
             var soldier = Give(World.SpawnUnit(1, float3.zero), Spec("Grenade", AbilityTarget.Point, 5f, 20f, 50f, 3f));
-            var a = World.SpawnUnit(2, new float3(15f, 0f, 0f), speed: 0f);
-            var b = World.SpawnUnit(2, new float3(15f, 0f, 2f), speed: 0f);
+            var a = World.SpawnUnit(2, new float3(15f, 0f, 0f), new TestUnit { Speed = 0f });
+            var b = World.SpawnUnit(2, new float3(15f, 0f, 2f), new TestUnit { Speed = 0f });
             var command = new PlayerCommand
             {
                 Type = CommandType.UseAbility, Unit = soldier, Position = new float3(15f, 0f, 0f), Argument = Grenade,
@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
             var power = Spec("Airstrike", AbilityTarget.Point, 0f, 60f, 30f, 5f);
             power.RequiredTypeId = EntityInfo.TypeIdFromName("Airfield");
             Give(World.Player(1), power);
-            var enemy = World.SpawnUnit(2, new float3(40f, 0f, 40f), speed: 0f);
+            var enemy = World.SpawnUnit(2, new float3(40f, 0f, 40f), new TestUnit { Speed = 0f });
             var command = new PlayerCommand
             {
                 Type = CommandType.UsePower, Position = new float3(40f, 0f, 40f), Argument = power.Id,
@@ -112,7 +112,10 @@ namespace HyperRTS.Simulation.Tests.Abilities
             World.Tick();
             Assert.AreEqual(100f, World.Get<Health>(enemy).Current, "no airfield yet");
 
-            World.SpawnBuilding(1, new float3(-40f, 0f, 0f), new float2(4f, 4f), name: "Airfield");
+            World.SpawnBuilding(1, new float3(-40f, 0f, 0f), new float2(4f, 4f), new TestBuilding
+            {
+                Name = "Airfield",
+            });
             World.Command(1, command);
             World.Tick();
 
@@ -125,13 +128,13 @@ namespace HyperRTS.Simulation.Tests.Abilities
         {
             var snipe = Spec("Snipe", AbilityTarget.Entity, 0f, 30f, 40f);
             Give(World.Player(1), snipe);
-            var cloaked = World.SpawnUnit(2, new float3(20f, 0f, 0f), speed: 0f);
+            var cloaked = World.SpawnUnit(2, new float3(20f, 0f, 0f), new TestUnit { Speed = 0f });
             var writer = World.Writer(cloaked);
             StealthSetup.AddStealth(writer, new Stealth { RevealDuration = 1f }, true);
             var bunker = World.SpawnBuilding(2, new float3(-20f, 0f, 0f), new float2(4f, 4f));
-            var garrisoned = World.SpawnUnit(2, new float3(-20f, 0f, 0f), speed: 0f);
+            var garrisoned = World.SpawnUnit(2, new float3(-20f, 0f, 0f), new TestUnit { Speed = 0f });
             World.Add(garrisoned, new Inside { Container = bunker });
-            var visible = World.SpawnUnit(2, new float3(0f, 0f, 20f), speed: 0f);
+            var visible = World.SpawnUnit(2, new float3(0f, 0f, 20f), new TestUnit { Speed = 0f });
 
             foreach (var target in new[] { cloaked, garrisoned })
             {
@@ -154,8 +157,11 @@ namespace HyperRTS.Simulation.Tests.Abilities
             var grenade = Spec("Grenade", AbilityTarget.Point, 5f, 20f, 50f, 3f);
             grenade.RequiredTypeId = EntityInfo.TypeIdFromName("Armory");
             var soldier = Give(World.SpawnUnit(1, float3.zero), grenade);
-            var armory = World.SpawnBuilding(1, new float3(-30f, 0f, 0f), new float2(4f, 4f), name: "Armory");
-            var enemy = World.SpawnUnit(2, new float3(30f, 0f, 0f), speed: 0f);
+            var armory = World.SpawnBuilding(1, new float3(-30f, 0f, 0f), new float2(4f, 4f), new TestBuilding
+            {
+                Name = "Armory",
+            });
+            var enemy = World.SpawnUnit(2, new float3(30f, 0f, 0f), new TestUnit { Speed = 0f });
             World.Command(1, new PlayerCommand
             {
                 Type = CommandType.UseAbility, Unit = soldier, Position = new float3(30f, 0f, 0f), Argument = grenade.Id,

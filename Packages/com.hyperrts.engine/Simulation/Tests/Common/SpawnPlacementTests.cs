@@ -89,7 +89,10 @@ namespace HyperRTS.Simulation.Tests.Common
         [Test]
         public void PlacedSite_KeepsThePrefabScale()
         {
-            var prefab = _world.MakePrefab(_world.SpawnBuilding(0, Far, new float2(4f, 4f), name: "Barracks"));
+            var prefab = _world.MakePrefab(_world.SpawnBuilding(0, Far, new float2(4f, 4f), new TestBuilding
+            {
+                Name = "Barracks",
+            }));
             Scaled(prefab, 1.25f);
             _world.SetCost(prefab, _supplies, 10);
             var builder = _world.MakeBuilder(_world.SpawnUnit(1, float3.zero), prefab);
@@ -110,8 +113,13 @@ namespace HyperRTS.Simulation.Tests.Common
             _world.Add(prefab, LocalTransform.FromScale(2f));
             _world.Add(prefab, new PostTransformMatrix { Value = stretch });
             _world.MakePrefab(prefab);
-            _world.AddWeapon(_world.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f, projectile: prefab);
-            _world.SpawnUnit(2, new float3(4f, 0f, 4f), speed: 0f);
+            _world.AddWeapon(_world.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 8f,
+                Cooldown = 100f,
+                Projectile = prefab,
+            });
+            _world.SpawnUnit(2, new float3(4f, 0f, 4f), new TestUnit { Speed = 0f });
 
             var projectile = Single(TickUntilSpawned(30, ComponentType.ReadOnly<Projectile>()));
 
@@ -171,7 +179,11 @@ namespace HyperRTS.Simulation.Tests.Common
         [Test]
         public void DeliveryCarriers_KeepThePrefabScale_HeadingForTheSource()
         {
-            var carrier = Scaled(_world.MakePrefab(_world.SpawnUnit(0, float3.zero, speed: 20f, name: "Truck")), 1.2f);
+            var carrier = Scaled(_world.MakePrefab(_world.SpawnUnit(0, float3.zero, new TestUnit
+            {
+                Speed = 20f,
+                Name = "Truck",
+            })), 1.2f);
             var source = _world.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
             var writer = _world.Writer(source);
             writer.Add(new DeliverySource

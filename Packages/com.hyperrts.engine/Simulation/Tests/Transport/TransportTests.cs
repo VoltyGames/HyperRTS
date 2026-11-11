@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests.Transport
             TransportSetup.AddPassenger(writer, size);
             if (armed)
             {
-                World.AddWeapon(unit, range: 3f, damage: 10f);
+                World.AddWeapon(unit, new TestWeapon { Range = 3f, Damage = 10f });
             }
 
             return unit;
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests.Transport
         [Test]
         public void Infantry_BoardsALongHull_FromBehind()
         {
-            var carrier = World.SpawnUnit(1, float3.zero, radius: 1.5f);
+            var carrier = World.SpawnUnit(1, float3.zero, new TestUnit { Radius = 1.5f });
             World.Set(carrier, LocalTransform.FromPositionRotation(float3.zero,
                 quaternion.RotateY(math.PI * 0.5f)));
             var agent = World.Get<NavAgent>(carrier);
@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Tests.Transport
         public void Container_RidingInAnother_TakesNoPassengers()
         {
             var ship = Bunker(float3.zero, capacity: 4);
-            var truck = World.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1f);
+            var truck = World.SpawnUnit(1, new float3(5f, 0f, 0f), new TestUnit { Radius = 1f });
             var writer = World.Writer(truck);
             TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             TransportSetup.AddPassenger(writer, 2);
@@ -106,7 +106,7 @@ namespace HyperRTS.Simulation.Tests.Transport
         [Test]
         public void Passengers_RideAlong_AndIgnoreOrders()
         {
-            var truck = World.SpawnUnit(1, float3.zero, speed: 5f, radius: 1f);
+            var truck = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 5f, Radius = 1f });
             var writer = World.Writer(truck);
             TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
             var rider = Passenger(new float3(4f, 0f, 0f));
@@ -131,8 +131,8 @@ namespace HyperRTS.Simulation.Tests.Transport
             World.Enter(rifle, bunker);
             World.Run(2f);
 
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4.5f), speed: 0f);
-            World.AddWeapon(enemy, Stance.HoldPosition, range: 3f, damage: 10f);
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4.5f), new TestUnit { Speed = 0f });
+            World.AddWeapon(enemy, new TestWeapon { Stance = Stance.HoldPosition, Range = 3f, Damage = 10f });
             World.Run(2f);
 
             Assert.Less(World.Get<Health>(enemy).Current, 100f, "fires from the bunker's edge");
@@ -152,13 +152,13 @@ namespace HyperRTS.Simulation.Tests.Transport
             }
 
             var rifle = Passenger(new float3(0f, 0f, 6f));
-            World.AddWeapon(rifle, range: 3f, damage: 10f, projectile: World.ProjectilePrefab());
+            World.AddWeapon(rifle, new TestWeapon { Range = 3f, Damage = 10f, Projectile = World.ProjectilePrefab() });
             var writer = World.Writer(rifle);
             var sound = World.Own(ScriptableObject.CreateInstance<SoundCue>());
             EntitySoundsAuthoring.Set(EntitySoundsAuthoring.Add(writer), CueSlot.Fire, sound);
             World.Enter(rifle, bunker);
             World.Run(2f);
-            World.SpawnUnit(2, new float3(4.5f, 0f, 0f), speed: 0f);
+            World.SpawnUnit(2, new float3(4.5f, 0f, 0f), new TestUnit { Speed = 0f });
             return rifle;
         }
 

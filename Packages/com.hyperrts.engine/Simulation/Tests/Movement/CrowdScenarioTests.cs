@@ -26,7 +26,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var i = 0; i < 20; i++)
             {
                 var start = new float3(-30f - i / 4 * 10f, 0f, -12f + i % 4 * 6f);
-                units.Add(_world.SpawnVehicle(1, start, math.PI * 0.5f, 7f, tank, TestVehicles.Tracks));
+                units.Add(_world.SpawnVehicle(1, TestVehicles.At(start, math.PI * 0.5f), 7f, tank,
+                    TestVehicles.Tracks));
             }
 
             _world.Tick();
@@ -59,7 +60,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             var units = new List<Entity>();
             for (var i = 0; i < 10; i++)
             {
-                units.Add(_world.SpawnVehicle(1, new float3(-20f - i * 22f, 0f, 0f), math.PI * 0.5f, 8f, truck, TestVehicles.Wheels));
+                units.Add(_world.SpawnVehicle(1, TestVehicles.At(new float3(-20f - i * 22f, 0f, 0f), math.PI * 0.5f),
+                    8f, truck, TestVehicles.Wheels));
             }
 
             _world.Tick();
@@ -82,7 +84,7 @@ namespace HyperRTS.Simulation.Tests.Movement
                 var west = i < 50;
                 var row = new float2(i % 50 / 10 * 1.6f, i % 10 * 1.6f - 7.2f);
                 var start = new float3(west ? -30f - row.x : 30f + row.x, 0f, row.y);
-                units.Add(_world.SpawnUnit(1, start, 5f, 0.5f));
+                units.Add(_world.SpawnUnit(1, start, new TestUnit { Speed = 5f, Radius = 0.5f }));
             }
 
             _world.Tick();

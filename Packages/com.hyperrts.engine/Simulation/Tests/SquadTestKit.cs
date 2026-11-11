@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Tests
             float speed = 5f)
         {
             var health = MemberHealth * weapons.Length;
-            var squad = world.SpawnUnit(owner, position, speed: speed, maxHealth: health);
+            var squad = world.SpawnUnit(owner, position, new TestUnit { Speed = speed, MaxHealth = health });
             SquadAuthoring.Add(world.Writer(squad), health, weapons);
             return squad;
         }
@@ -31,26 +31,25 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnArmedSquad(this TestWorld world, float3 position, params byte[] weapons)
         {
             var squad = world.SpawnSquad(1, position, weapons);
-            world.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
+            world.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 100f });
             return squad;
         }
 
-        /// <summary>
-        /// Queues a hit at <paramref name="at"/> that lands on <paramref name="target"/> (or splashes within
-        /// <paramref name="radius"/> of it), from a shooter <paramref name="from"/> metres past it and of owner 2.
-        /// </summary>
-        public static void HitSquad(this TestWorld world, Entity target, float amount = 0f, float3 at = default,
-            float radius = 0f, float edge = 1f, float suppression = 0f, float piercing = 0f, float3 from = default) =>
+        public static void HitSquad(this TestWorld world, Entity target) => world.HitSquad(target, new TestHit());
+
+        /// <summary>Queues a hit on <paramref name="target"/>, or splashing round it, from a shooter of owner 2.</summary>
+        public static void HitSquad(this TestWorld world, Entity target, TestHit hit) =>
             world.QueueDamage(new DamageEvent
             {
                 Target = target,
-                Position = at,
-                Origin = at + from,
+                Position = hit.At,
+                Origin = hit.At + hit.From,
                 SourceOwner = 2,
                 Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile
                 {
-                    Amount = amount, Radius = radius, EdgeFactor = edge, Suppression = suppression, CoverPiercing = piercing,
+                    Amount = hit.Amount, Radius = hit.Radius, EdgeFactor = hit.Edge, Suppression = hit.Suppression,
+                    CoverPiercing = hit.Piercing,
                 },
             });
 

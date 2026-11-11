@@ -15,15 +15,13 @@ namespace HyperRTS.Presentation.Overlays.Bars
         /// <summary>Width in reference pixels.</summary>
         public readonly float Width;
 
-        /// <summary><paramref name="members"/> is zero for anything but a squad.</summary>
-        public HealthBarData(in Health health, int members, int alive, int rank, float radius,
-            in SquadBarState squad, OverlayStyle style)
+        public HealthBarData(in Health health, int rank, float radius, in SquadBarState squad, OverlayStyle style)
         {
             Fraction = health.Fraction;
-            Segments = style.Segments(health.Max, members);
+            Segments = style.Segments(health.Max, squad.Members);
             Rank = rank;
-            Members = members;
-            Alive = alive;
+            Members = squad.Members;
+            Alive = squad.Alive;
             Squad = squad;
             Width = style.BarWidth(radius);
         }

@@ -69,7 +69,7 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
             _world.Tick(frames: 2);
             Assert.IsTrue(_world.IsFogHidden(team), "30 m of sunflowers hide it");
 
-            var tank = _world.SpawnUnit(Team1, new float3(3f, 0f, 1f), radius: 1.5f);
+            var tank = _world.SpawnUnit(Team1, new float3(3f, 0f, 1f), new TestUnit { Radius = 1.5f });
             _world.Add(tank, new Crusher { Size = 3 });
             _world.Set(tank, new VisionRange());
             _world.MoveTo(tank, new float3(30f, 0f, 1f));

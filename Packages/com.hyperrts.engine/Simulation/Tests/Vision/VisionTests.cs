@@ -135,13 +135,16 @@ namespace HyperRTS.Simulation.Tests.Vision
         [Test]
         public void Detector_OnLowPower_StopsDetecting_UntilPowered()
         {
-            Detect(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), power: -3f), radius: 10f);
+            Detect(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), new TestBuilding
+            {
+                Power = -3f,
+            }), radius: 10f);
             var enemy = Stealthy(_world.SpawnUnit(2, new float3(5f, 0f, 0f)));
 
             _world.Run(0.3f);
             Assert.IsTrue(_world.IsFogHidden(enemy), "a radar on low power is off");
 
-            _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), new float2(4f, 4f), power: 5f);
+            _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), new float2(4f, 4f), new TestBuilding { Power = 5f });
             _world.Run(0.3f);
             Assert.IsFalse(_world.IsFogHidden(enemy), "powered again, so it detects");
         }
@@ -149,8 +152,11 @@ namespace HyperRTS.Simulation.Tests.Vision
         [Test]
         public void Firing_RevealsShooter_ThenItRestealths()
         {
-            var shooter = Stealthy(_world.AddWeapon(_world.SpawnUnit(2, float3.zero), cooldown: 100f), reveal: 1f);
-            var target = _world.SpawnUnit(1, new float3(3f, 0f, 0f), maxHealth: 1000f);
+            var shooter = Stealthy(_world.AddWeapon(_world.SpawnUnit(2, float3.zero), new TestWeapon
+            {
+                Cooldown = 100f,
+            }), reveal: 1f);
+            var target = _world.SpawnUnit(1, new float3(3f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
 
             _world.Run(0.4f);
             Assert.Less(_world.GetHealth(target), 1000f, "fired once");

@@ -152,7 +152,10 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void InterceptorOffline_DoesNothing()
         {
-            var defence = Defence(World.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false));
+            var defence = Defence(World.SpawnBuilding(1, float3.zero, new float2(2f, 2f), new TestBuilding
+            {
+                Complete = false,
+            }));
             var shot = Shot(new float3(6f, 4f, 0f));
 
             World.Run(1f);
@@ -178,7 +181,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void InterceptorBesideAWeapon_AimsThePoseAfterTheWeapons()
         {
             var tower = Site();
-            World.AddWeapon(tower, range: 6f, cooldown: 100f, turreted: true);
+            World.AddWeapon(tower, new TestWeapon { Range = 6f, Cooldown = 100f, Turreted = true });
             Defence(tower, killChance: 0f);
             World.SpawnUnit(2, new float3(4f, 0f, 0f));
             Shot(new float3(-6f, 4f, 0f));
@@ -204,8 +207,14 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         private Entity SpawnShooter(Trajectory trajectory, float range) =>
-            World.AddWeapon(World.SpawnUnit(1, float3.zero), range: range, cooldown: 100f,
-                projectile: World.ProjectilePrefab(), trajectory: trajectory, arcHeight: 0.5f);
+            World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = range,
+                Cooldown = 100f,
+                Projectile = World.ProjectilePrefab(),
+                Trajectory = trajectory,
+                ArcHeight = 0.5f,
+            });
 
         /// <summary>Ticks until the one shot has landed, recording its flight; the callback gets the frames flown.</summary>
         private List<float3> Fly(Action<int> beforeTick)

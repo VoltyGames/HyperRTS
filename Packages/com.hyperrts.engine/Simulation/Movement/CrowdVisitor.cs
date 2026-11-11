@@ -37,30 +37,11 @@ namespace HyperRTS.Simulation.Movement
         private bool _othersTouch;
         private bool _infantryNear;
 
-        public CrowdVisitor(Entity self, float2 position, float2 facing, float2 velocity, in NavAgent agent,
-            byte owner, bool moving, in MoveDestination destination, in RightOfWay rule)
+        public CrowdVisitor(in SpatialEntry unit, in MoveDestination destination, in RightOfWay rule)
         {
+            Unit = unit;
             Goal = destination.Value.xz;
-            Unit = new SpatialEntry
-            {
-                Entity = self,
-                Position = new float3(position.x, 0f, position.y),
-                Radius = agent.Radius,
-                Owner = owner,
-                IsUnit = true,
-                IsMoving = moving,
-                Group = destination.Group,
-                Facing = facing,
-                Heading = moving ? math.normalizesafe(Goal - position) : float2.zero,
-                Velocity = velocity,
-                Layer = agent.Layer,
-                SegmentAxis = facing * agent.HalfSegment,
-                Spacing = agent.Spacing,
-                Mass = agent.Mass,
-                IsVehicle = agent.IsVehicle,
-            };
-            Unit.FixReach();
-            InGoalArea = math.distance(position, Goal) <= destination.Extent;
+            InGoalArea = math.distance(unit.Position.xz, Goal) <= destination.Extent;
             Rule = rule;
             Push = float2.zero;
             ReachedGroup = false;

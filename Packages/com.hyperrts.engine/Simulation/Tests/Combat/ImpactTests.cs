@@ -43,8 +43,15 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         private Entity Gun(float3 position, float range = 6f, WeaponTargets targets = WeaponTargets.Surface) =>
-            Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, position, name: "Mortar"), range: range,
-                cooldown: 100f, targets: targets), _mark);
+            Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, position, new TestUnit
+            {
+                Name = "Mortar",
+            }), new TestWeapon
+            {
+                Range = range,
+                Cooldown = 100f,
+                Targets = targets,
+            }), _mark);
 
         [Test]
         public void InstantHit_LandsOnceOnTheGroundAtItsTarget_UnderTheShootersType()
@@ -64,8 +71,15 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void ProjectileImpact_LandsOnArrival_EvenAfterTheShooterDied()
         {
-            var gun = Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Howitzer"), range: 8f,
-                cooldown: 100f, projectile: _world.ProjectilePrefab()), _mark);
+            var gun = Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, float3.zero, new TestUnit
+            {
+                Name = "Howitzer",
+            }), new TestWeapon
+            {
+                Range = 8f,
+                Cooldown = 100f,
+                Projectile = _world.ProjectilePrefab(),
+            }), _mark);
             var typeId = _world.GetTypeId(gun);
             _world.SpawnUnit(2, new float3(6f, 0f, 0f));
 
@@ -136,7 +150,10 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void ShotsWithOnlyImpactEffects_StillWriteImpacts()
         {
             var effects = ScriptableObject.CreateInstance<SurfaceEffects>();
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, name: "Rifle"), cooldown: 100f);
+            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, new TestUnit { Name = "Rifle" }), new TestWeapon
+            {
+                Cooldown = 100f,
+            });
             var writer = _world.Writer(gun);
             ImpactEffectsAuthoring.Add(writer, effects);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));

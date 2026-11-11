@@ -30,10 +30,27 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void CommandSpecs_ShareNoHotkeyOnAPage_AndTakeNoBoundKey()
         {
-            var first = Track(CommandSpec.Create(CommandTarget.Order, Key.B, labelKey: "command.sell"));
-            var twin = Track(CommandSpec.Create(CommandTarget.Order, Key.B, labelKey: "command.return"));
-            var otherPage = Track(CommandSpec.Create(CommandTarget.Order, Key.B, page: 1, labelKey: "command.unload"));
-            var bound = Track(CommandSpec.Create(CommandTarget.Order, Key.A, labelKey: "command.deploy"));
+            var first = Track(CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
+            {
+                Hotkey = Key.B,
+                LabelKey = "command.sell",
+            }));
+            var twin = Track(CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
+            {
+                Hotkey = Key.B,
+                LabelKey = "command.return",
+            }));
+            var otherPage = Track(CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
+            {
+                Hotkey = Key.B,
+                Page = 1,
+                LabelKey = "command.unload",
+            }));
+            var bound = Track(CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
+            {
+                Hotkey = Key.A,
+                LabelKey = "command.deploy",
+            }));
             var issues = new ValidationIssues();
 
             new CommandSpecRule().Check(AssetSet.From(first, twin, otherPage, bound), issues);

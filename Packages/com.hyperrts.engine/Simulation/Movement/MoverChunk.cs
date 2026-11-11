@@ -2,8 +2,10 @@ using System;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Movement
@@ -30,6 +32,35 @@ namespace HyperRTS.Simulation.Movement
         public NativeArray<LocomotionState> Drives;
         // Infantry have no LocomotionState and start each frame from rest.
         public bool Remembers;
+
+        /// <summary>The mover as its neighbours see it in the spatial index.</summary>
+        public SpatialEntry Entry(int index, bool moving)
+        {
+            var agent = Agents[index];
+            var transform = Transforms[index];
+            var position = transform.Position.xz;
+            var facing = math.normalizesafe(transform.Forward().xz);
+            var entry = new SpatialEntry
+            {
+                Entity = Entities[index],
+                Position = new float3(position.x, 0f, position.y),
+                Radius = agent.Radius,
+                Owner = Owners[index].Value,
+                IsUnit = true,
+                IsMoving = moving,
+                Group = Destinations[index].Group,
+                Facing = facing,
+                Heading = moving ? math.normalizesafe(Destinations[index].Value.xz - position) : float2.zero,
+                Velocity = Velocities[index].Value,
+                Layer = agent.Layer,
+                SegmentAxis = facing * agent.HalfSegment,
+                Spacing = agent.Spacing,
+                Mass = agent.Mass,
+                IsVehicle = agent.IsVehicle,
+            };
+            entry.FixReach();
+            return entry;
+        }
 
         public EnabledRefRW<MoveDestination> Moving(int index) => MovingMask.GetEnabledRefRW<MoveDestination>(index);
 

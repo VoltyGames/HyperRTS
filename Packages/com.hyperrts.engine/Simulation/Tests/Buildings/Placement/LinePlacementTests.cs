@@ -136,7 +136,10 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             var builder = Builder(prefab, float3.zero);
             World.PlaceLine(builder, prefab, LegStart, LegEnd);
             World.PlaceLine(builder, prefab, LegStart + new float3(0f, 0f, 2f), LegEnd + new float3(0f, 0f, 2f),
-                queue: true);
+                new TestLine
+            {
+                Queue = true,
+            });
             World.Tick();
 
             Assert.AreEqual(8, SitePositions().Length, "walls are barriers, so two may run a metre apart");

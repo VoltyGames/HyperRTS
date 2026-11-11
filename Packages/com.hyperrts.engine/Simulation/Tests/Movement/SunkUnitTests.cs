@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         public void PinnedUnit_GivesUpItsMove_InsteadOfReplanningForever()
         {
             // A sealed two-metre slot, too narrow for a three-metre unit to drive along or leave.
-            var unit = World.SpawnUnit(1, float3.zero, radius: 1.5f);
+            var unit = World.SpawnUnit(1, float3.zero, new TestUnit { Radius = 1.5f });
             World.Tick();
             World.SpawnObstacle(new float3(-3f, 0f, 0f), new float2(4f, 40f));
             World.SpawnObstacle(new float3(3f, 0f, 0f), new float2(4f, 40f));

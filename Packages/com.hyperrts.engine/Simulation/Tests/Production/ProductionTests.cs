@@ -27,8 +27,11 @@ namespace HyperRTS.Simulation.Tests.Production
 
         private Entity BuildingPrefab(int cost)
         {
-            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, new float2(4f, 4f), buildTime: 2f,
-                name: "Barracks"));
+            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, new float2(4f, 4f), new TestBuilding
+            {
+                BuildTime = 2f,
+                Name = "Barracks",
+            }));
             World.SetCost(prefab, _supplies, cost);
             return prefab;
         }
@@ -63,7 +66,7 @@ namespace HyperRTS.Simulation.Tests.Production
         [Test]
         public void SiteSetToFullProgress_CompletesLikeABuiltOne_AndRaisesBuildingCompletedForOneFrame()
         {
-            var site = World.SpawnBuilding(1, float3.zero, new float2(4f, 4f), complete: false);
+            var site = World.SpawnBuilding(1, float3.zero, new float2(4f, 4f), new TestBuilding { Complete = false });
             World.Set(site, new ConstructionProgress { Value = 1f });
 
             World.Tick();
@@ -219,8 +222,11 @@ namespace HyperRTS.Simulation.Tests.Production
             World.Tick();
             Assert.AreEqual(0, World.QueueLength(producer), "no barracks");
 
-            var barracks = World.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(4f, 4f), complete: false,
-                name: "Barracks");
+            var barracks = World.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(4f, 4f), new TestBuilding
+            {
+                Complete = false,
+                Name = "Barracks",
+            });
             World.Produce(1, producer, prefab);
             World.Tick();
             Assert.AreEqual(0, World.QueueLength(producer), "an unfinished barracks doesn't count");

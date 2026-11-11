@@ -38,9 +38,9 @@ namespace HyperRTS.Simulation.Tests.Navigation
             {
                 var position = new float3(side * (-295f + i % 7 * 9f), 0f, -295f + i / 7 * 5f);
                 var tank = i % 2 == 0;
-                var vehicle = _world.SpawnVehicle(1, position, side * math.PI * -0.5f, 7f,
+                var vehicle = _world.SpawnVehicle(1, TestVehicles.At(position, side * math.PI * -0.5f), 7f,
                     tank ? TestVehicles.TankHull() : TestVehicles.SupplyTruckHull(),
-                    tank ? TestVehicles.Tracks : TestVehicles.SupplyTruck);
+                tank ? TestVehicles.Tracks : TestVehicles.SupplyTruck);
                 March(vehicle, side, side < 0f ? 1 : 3);
             }
 
@@ -53,7 +53,11 @@ namespace HyperRTS.Simulation.Tests.Navigation
             for (var i = 0; i < count; i++)
             {
                 var position = new float3(side * (-295f + i % 40 * 1.6f), 0f, 180f + i / 40 * 1.6f);
-                March(_world.SpawnUnit(1, position, 5f, Infantry.Radius), side, side < 0f ? 2 : 4);
+                March(_world.SpawnUnit(1, position, new TestUnit
+                {
+                    Speed = 5f,
+                    Radius = Infantry.Radius,
+                }), side, side < 0f ? 2 : 4);
             }
 
             return count;

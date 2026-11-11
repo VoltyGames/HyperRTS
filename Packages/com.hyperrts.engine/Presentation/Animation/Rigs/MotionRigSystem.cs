@@ -74,24 +74,22 @@ namespace HyperRTS.Presentation.Animation.Rigs
             // Roots are top-level, so LocalTransform is this frame's pose.
             private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, in LocalTransform place)
             {
-                var facing = place.Forward();
-                var forward = math.normalizesafe(new float3(facing.x, 0f, facing.z), math.forward());
-                var right = math.cross(math.up(), forward);
+                var heading = new RigHeading(place);
                 var moved = rig.Frames > 0 ? place.Position - rig.LastPosition : float3.zero;
                 var velocity = moved / DeltaTime;
                 var acceleration = rig.Frames > 1 ? (velocity - rig.LastVelocity) / DeltaTime : float3.zero;
-                var rolled = math.length(moved.xz) * math.sign(math.dot(moved, forward));
-                rig.MeasureCurvature(forward.xz, rolled);
+                var rolled = math.length(moved.xz) * math.sign(math.dot(moved, heading.Forward));
+                rig.MeasureCurvature(heading.Forward.xz, rolled);
                 rig.Frames = (byte)math.min(rig.Frames + 1, 2);
                 rig.LastPosition = place.Position;
                 rig.LastVelocity = velocity;
 
-                Tilt(ref rig, place.Position, forward, right, acceleration);
-                AdvanceParts(entity, ref rig, parts, place.Position, forward, right, rolled);
+                Tilt(ref rig, heading, acceleration);
+                AdvanceParts(entity, ref rig, parts, heading, rolled);
             }
 
-            private void AdvanceParts(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, float3 position,
-                float3 forward, float3 right, float rolled)
+            private void AdvanceParts(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts,
+                in RigHeading heading, float rolled)
             {
                 var running = Flights.HasComponent(entity) && !Docks.HasEnabled(entity);
                 Poses.TryGetBuffer(entity, out var poses);
@@ -106,14 +104,16 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
                     if (part.Travel > 0f)
                     {
-                        part.FollowGround(MotionRig.GroundLift(Terrain, position, forward, right, bodyTilt, part.Contact), DeltaTime);
+                        var lift = MotionRig.GroundLift(Terrain, heading.Position, heading.Forward, heading.Right,
+                            bodyTilt, part.Contact);
+                        part.FollowGround(lift, DeltaTime);
                     }
 
                     parts[i] = part;
                 }
             }
 
-            private void Tilt(ref MotionRig rig, float3 position, float3 forward, float3 right, float3 acceleration)
+            private void Tilt(ref MotionRig rig, in RigHeading heading, float3 acceleration)
             {
                 if (rig.TiltRoot == Entity.Null)
                 {
@@ -121,10 +121,10 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 }
 
                 var target = rig.Aircraft
-                    ? MotionRig.LeanTilt(acceleration, forward, right)
-                    : rig.GroundTilt(Terrain, position, forward, right);
+                    ? MotionRig.LeanTilt(acceleration, heading.Forward, heading.Right)
+                    : rig.GroundTilt(Terrain, heading.Position, heading.Forward, heading.Right);
                 rig.SmoothTilt(target, DeltaTime);
-                rig.Suspension.Spring(rig.Suspension.Target(acceleration, forward, right), DeltaTime);
+                rig.Suspension.Spring(rig.Suspension.Target(acceleration, heading.Forward, heading.Right), DeltaTime);
             }
 
             /// <summary>True when a recoil part fired this frame.</summary>

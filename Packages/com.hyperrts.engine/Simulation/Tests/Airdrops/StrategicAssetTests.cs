@@ -174,8 +174,14 @@ namespace HyperRTS.Simulation.Tests.Airdrops
         {
             for (var i = 0; i < defences; i++)
             {
-                var launcher = World.SpawnUnit(2, Target + new float3(i * 2f, 0f, 10f), speed: 0f);
-                World.AddWeapon(launcher, Stance.HoldPosition, range: 30f, damage: 0f, targets: WeaponTargets.Air);
+                var launcher = World.SpawnUnit(2, Target + new float3(i * 2f, 0f, 10f), new TestUnit { Speed = 0f });
+                World.AddWeapon(launcher, new TestWeapon
+                {
+                    Stance = Stance.HoldPosition,
+                    Range = 30f,
+                    Damage = 0f,
+                    Targets = WeaponTargets.Air,
+                });
             }
 
             Fire();

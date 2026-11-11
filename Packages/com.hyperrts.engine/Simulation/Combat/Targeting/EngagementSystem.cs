@@ -63,8 +63,16 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 EnabledRefRW<AttackTarget> attacking, RefRW<MoveDestination> destination,
                 EnabledRefRW<MoveDestination> moving)
             {
-                Engager.Engage(entity, transform, mounts, vision, owner, ref stance, ref attack, attacking,
-                    new UnitMove(destination, moving, Engager.Deployables, entity));
+                var unit = new Attacker
+                {
+                    Entity = entity,
+                    Position = transform.Position,
+                    Mounts = mounts,
+                    Vision = vision,
+                    Owner = owner,
+                    Moves = new UnitMove(destination, moving, Engager.Deployables, entity),
+                };
+                Engager.Engage(unit, ref stance, ref attack, attacking);
             }
         }
 
@@ -78,8 +86,18 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
             private void Execute(Entity entity, in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts,
                 in VisionRange vision, in Owner owner, ref CombatStance stance, ref AttackTarget attack,
-                EnabledRefRW<AttackTarget> attacking) =>
-                Engager.Engage(entity, transform, mounts, vision, owner, ref stance, ref attack, attacking, default);
+                EnabledRefRW<AttackTarget> attacking)
+            {
+                var unit = new Attacker
+                {
+                    Entity = entity,
+                    Position = transform.Position,
+                    Mounts = mounts,
+                    Vision = vision,
+                    Owner = owner,
+                };
+                Engager.Engage(unit, ref stance, ref attack, attacking);
+            }
         }
     }
 }

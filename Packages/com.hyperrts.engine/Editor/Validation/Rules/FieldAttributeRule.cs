@@ -14,16 +14,15 @@ namespace HyperRTS.Editor.Validation.Rules
         public override bool AppliesTo(Component component) => !CheckedFields.Find(component.GetType()).IsEmpty;
 
         protected override void Check(Component component, ValidationIssues issues) =>
-            CheckBlock(component, component, CheckedFields.Find(component.GetType()), "", "", issues);
+            CheckBlock(component, CheckedFields.Find(component.GetType()), new Place(component, "", "", issues));
 
         // The location prefix names the list entry a nested field sits in, such as "Extra weapons 2: ";
         // the path prefix is the same place as a property path, such as "extraWeapons.Array.data[1].".
-        private static void CheckBlock(Component owner, object block, CheckedFields fields, string location,
-            string path, ValidationIssues issues)
+        private static void CheckBlock(object block, CheckedFields fields, in Place place)
         {
             foreach (var field in fields.Checked)
             {
-                CheckField(owner, field, field.Field.GetValue(block), location, path + field.Field.Name, issues);
+                CheckField(field, field.Field.GetValue(block), place.Field(field.Field.Name));
             }
 
             foreach (var (field, inner) in fields.Nested)
@@ -33,7 +32,7 @@ namespace HyperRTS.Editor.Validation.Rules
                 {
                     if (value != null)
                     {
-                        CheckBlock(owner, value, inner, location, $"{path}{field.Name}.", issues);
+                        CheckBlock(value, inner, place.Into(place.Location, $"{place.Path}{field.Name}."));
                     }
 
                     continue;
@@ -44,36 +43,35 @@ namespace HyperRTS.Editor.Validation.Rules
                 {
                     if (list[i] != null)
                     {
-                        CheckBlock(owner, list[i], inner, $"{location}{name} {i + 1}: ", $"{path}{field.Name}.Array.data[{i}].",
-                            issues);
+                        var entry = place.Into($"{place.Location}{name} {i + 1}: ",
+                            $"{place.Path}{field.Name}.Array.data[{i}].");
+                        CheckBlock(list[i], inner, entry);
                     }
                 }
             }
         }
 
-        private static void CheckField(Component owner, CheckedField field, object value, string location,
-            string path, ValidationIssues issues)
+        private static void CheckField(CheckedField field, object value, in Place place)
         {
             var list = value as IList;
             if (field.NoEmptyEntries != null)
             {
-                CheckEmptyEntries(owner, field, list, location, path, issues);
+                CheckEmptyEntries(field, list, place);
             }
 
             if (list == null)
             {
-                CheckReference(owner, field, value as Object, null, location, path, issues);
+                CheckReference(field, value as Object, null, place);
                 return;
             }
 
             foreach (var entry in list)
             {
-                CheckReference(owner, field, entry as Object, list, location, path, issues);
+                CheckReference(field, entry as Object, list, place);
             }
         }
 
-        private static void CheckEmptyEntries(Component owner, CheckedField field, IList list, string location,
-            string path, ValidationIssues issues)
+        private static void CheckEmptyEntries(CheckedField field, IList list, in Place place)
         {
             foreach (var entry in list)
             {
@@ -82,14 +80,15 @@ namespace HyperRTS.Editor.Validation.Rules
                     continue;
                 }
 
-                issues.Warn(owner, $"{location}The {field.Name} list has {field.EmptyEntries}, which are ignored.", "Remove Empty",
-                    () => QuickFixes.RemoveEmpty(owner, list, field.IsEmpty), path);
+                var owner = place.Owner;
+                place.Issues.Warn(owner,
+                    $"{place.Location}The {field.Name} list has {field.EmptyEntries}, which are ignored.",
+                    "Remove Empty", () => QuickFixes.RemoveEmpty(owner, list, field.IsEmpty), place.Path);
                 return;
             }
         }
 
-        private static void CheckReference(Component owner, CheckedField field, Object reference, IList list,
-            string location, string path, ValidationIssues issues)
+        private static void CheckReference(CheckedField field, Object reference, IList list, in Place place)
         {
             if (reference == null)
             {
@@ -98,45 +97,67 @@ namespace HyperRTS.Editor.Validation.Rules
 
             if (field.PrefabAsset != null)
             {
-                CheckPrefabAsset(owner, field.PrefabAsset.Label, reference, list, location, path, issues);
+                CheckPrefabAsset(field.PrefabAsset.Label, reference, list, place);
             }
 
             if (field.GhostPrefab != null)
             {
-                CheckGhost(owner, field, reference, location, path, issues);
+                CheckGhost(field, reference, place);
             }
         }
 
-        private static void CheckPrefabAsset(Component owner, string label, Object reference, IList list,
-            string location, string path, ValidationIssues issues)
+        private static void CheckPrefabAsset(string label, Object reference, IList list, in Place place)
         {
             if (PrefabUtility.IsPartOfPrefabAsset(reference))
             {
                 return;
             }
 
-            var message = $"{location}{label} '{reference.name}' is a scene object; reference the prefab asset.";
+            var owner = place.Owner;
+            var message = $"{place.Location}{label} '{reference.name}' is a scene object; reference the prefab asset.";
             var hasSource = PrefabUtility.GetCorrespondingObjectFromSource(reference) != null;
             if (list != null && hasSource)
             {
-                issues.Warn(owner, message, "Use Prefab", () => QuickFixes.UsePrefab(owner, list, reference), path);
+                place.Issues.Warn(owner, message, "Use Prefab", () => QuickFixes.UsePrefab(owner, list, reference),
+                    place.Path);
                 return;
             }
 
-            issues.Warn(owner, message, path: path);
+            place.Issues.Warn(owner, message, path: place.Path);
         }
 
-        private static void CheckGhost(Component owner, CheckedField field, Object reference, string location,
-            string path, ValidationIssues issues)
+        private static void CheckGhost(CheckedField field, Object reference, in Place place)
         {
-            if (field.GhostPrefab.OnlyOnGhosts && !IsGhost(owner))
+            if (field.GhostPrefab.OnlyOnGhosts && !IsGhost(place.Owner))
             {
                 return;
             }
 
             var target = reference is Component component ? component.gameObject : (GameObject)reference;
-            WarnIfNotGhost(owner, target,
-                $"{location}{field.GhostPrefab.Label} '{target.name}' is not a ghost, so clients won't see it.", issues, path);
+            WarnIfNotGhost(place.Owner, target,
+                $"{place.Location}{field.GhostPrefab.Label} '{target.name}' is not a ghost, so clients won't see it.",
+                place.Issues, place.Path);
+        }
+
+        // The location prefix and path prefix of the field being checked, with the owner and where issues go.
+        private readonly struct Place
+        {
+            public readonly Component Owner;
+            public readonly string Location;
+            public readonly string Path;
+            public readonly ValidationIssues Issues;
+
+            public Place(Component owner, string location, string path, ValidationIssues issues)
+            {
+                Owner = owner;
+                Location = location;
+                Path = path;
+                Issues = issues;
+            }
+
+            public Place Into(string location, string path) => new(Owner, location, path, Issues);
+
+            public Place Field(string name) => new(Owner, Location, Path + name, Issues);
         }
     }
 }

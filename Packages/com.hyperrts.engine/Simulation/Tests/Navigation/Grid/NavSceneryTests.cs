@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
 
         private Entity SendAcross(byte crushLimit, float radius = 0.5f)
         {
-            var unit = World.SpawnUnit(1, new float3(-5f, 0f, 0.5f), radius: radius);
+            var unit = World.SpawnUnit(1, new float3(-5f, 0f, 0.5f), new TestUnit { Radius = radius });
             World.Set(unit, new NavAgent { Radius = radius, SceneryCrushLimit = crushLimit, Mass = 1f });
             World.MoveTo(unit, new float3(5f, 0f, 0.5f));
             return unit;
@@ -117,7 +117,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             // Between where the old end and centre circles sat, so the rear end met the tree once moving.
             PlantTree(new float3(-1.5f, 0f, 0.5f));
             World.Tick();
-            var truck = World.SpawnUnit(1, new float3(0f, 0f, 0.5f), radius: 1f);
+            var truck = World.SpawnUnit(1, new float3(0f, 0f, 0.5f), new TestUnit { Radius = 1f });
             World.Set(truck, new NavAgent
             {
                 Radius = 1f, HullLength = 10f, SceneryCrushLimit = 1, Mass = 17f,
@@ -173,7 +173,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
 
         private Entity DriveAcross(float3 start)
         {
-            var unit = World.SpawnUnit(1, start, radius: UnitRadius);
+            var unit = World.SpawnUnit(1, start, new TestUnit { Radius = UnitRadius });
             World.Set(unit, new MoveDestination { Value = new float3(10f, 0f, start.z) });
             World.SetEnabled<MoveDestination>(unit, true);
             return unit;

@@ -43,8 +43,7 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>The point a tight leg's pursuit aims at, no further than the next gear change.</summary>
         public readonly float2 Aim;
 
-        public PathLeg(float2 position, float2 corner, float2 next, float cornerTurn, float remaining, bool isFinal,
-            bool reverse = false)
+        public PathLeg(float2 position, float2 corner, float2 next, float cornerTurn, float remaining, bool isFinal)
         {
             var toCorner = corner - position;
             Corner = corner;
@@ -55,9 +54,15 @@ namespace HyperRTS.Simulation.Movement
             IsFinal = isFinal;
             Next = isFinal ? Direction : next;
             Tight = false;
-            Reverse = reverse;
+            Reverse = false;
             ToGearChange = remaining;
             Aim = corner;
+        }
+
+        private PathLeg(in PathLeg leg, bool reverse)
+        {
+            this = leg;
+            Reverse = reverse;
         }
 
         private PathLeg(in PathLeg leg, bool reverse, float toGearChange, float2 aim)
@@ -74,8 +79,8 @@ namespace HyperRTS.Simulation.Movement
 
         /// <summary>The same leg bent to head along <paramref name="velocity"/>, as avoidance steers it.</summary>
         public PathLeg Toward(float2 position, float2 velocity) =>
-            new(position, position + math.normalizesafe(velocity) * Distance, Next, CornerTurn, Remaining, IsFinal,
-                Reverse);
+            new(new PathLeg(position, position + math.normalizesafe(velocity) * Distance, Next, CornerTurn, Remaining,
+                IsFinal), Reverse);
 
         /// <summary>
         /// The point <paramref name="distance"/> along the path from <paramref name="position"/>, round the corner;
@@ -110,7 +115,7 @@ namespace HyperRTS.Simulation.Movement
             var isFinal = waypoints.Length == 1;
             var next = isFinal ? float2.zero : math.normalizesafe(waypoints[1].Position.xz - corner);
             var turn = isFinal ? 0f : Turn(corner - position, next);
-            return new PathLeg(position, corner, next, turn, remaining, isFinal, waypoints[0].Reverse);
+            return new PathLeg(new PathLeg(position, corner, next, turn, remaining, isFinal), waypoints[0].Reverse);
         }
 
         /// <summary>

@@ -43,13 +43,16 @@ namespace HyperRTS.Simulation.Tests
                 .Issue(ref world.World.Unmanaged.ResolveSystemStateRef(system), unit, order, queue);
         }
 
-        public static Entity SpawnUnit(this TestWorld world, byte owner, float3 position, float speed = 5f,
-            float radius = 0.5f, float maxHealth = 100f, string name = "Unit")
+        public static Entity SpawnUnit(this TestWorld world, byte owner, float3 position) =>
+            world.SpawnUnit(owner, position, new TestUnit());
+
+        public static Entity SpawnUnit(this TestWorld world, byte owner, float3 position, TestUnit settings)
         {
-            var unit = world.CreateGameEntity(owner, position, maxHealth, name, out var writer);
-            var agent = new NavAgent { Radius = radius, Mass = 1f };
+            var unit = world.CreateGameEntity(position, GameSpec(owner, settings.MaxHealth, settings.Name, 5f),
+                out var writer);
+            var agent = new NavAgent { Radius = settings.Radius, Mass = 1f };
             agent.WallMargin = agent.HullWallMargin;
-            UnitAuthoring.Add(writer, speed, agent);
+            UnitAuthoring.Add(writer, settings.Speed, agent);
             return unit;
         }
 
@@ -63,12 +66,22 @@ namespace HyperRTS.Simulation.Tests
             }
         }
 
+        public static Entity SpawnBuilding(this TestWorld world, byte owner, float3 position, float2 footprint) =>
+            world.SpawnBuilding(owner, position, footprint, new TestBuilding());
+
         public static Entity SpawnBuilding(this TestWorld world, byte owner, float3 position, float2 footprint,
-            bool complete = true, float buildTime = 10f, string name = "Building", int populationProvided = 0,
-            float power = 0f)
+            TestBuilding settings)
         {
-            var building = world.CreateGameEntity(owner, position, 500f, name, out var writer, buildTime);
-            BuildingSetup.Add(writer, footprint, populationProvided, complete, power);
+            var building = world.CreateGameEntity(position, GameSpec(owner, 500f, settings.Name, settings.BuildTime),
+                out var writer);
+            BuildingSetup.Add(writer, new BuildingSpec
+            {
+                Footprint = footprint,
+                PopulationProvided = settings.PopulationProvided,
+                Complete = settings.Complete,
+                Power = settings.Power,
+                RememberedInFog = true,
+            });
             return building;
         }
 
@@ -79,23 +92,25 @@ namespace HyperRTS.Simulation.Tests
             return entity;
         }
 
-        private static Entity CreateGameEntity(this TestWorld world, byte owner, float3 position,
-            float maxHealth, string name, out EntityWriter writer, float buildTime = 5f)
+        private static GameEntitySpec GameSpec(byte owner, float maxHealth, string name, float buildTime) => new()
+        {
+            Info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name },
+            Owner = owner,
+            MaxHealth = maxHealth,
+            VisionRange = 10f,
+            EyeHeight = 2f,
+            BuildTime = buildTime,
+            Population = 1,
+            CountsForVictory = true,
+        };
+
+        private static Entity CreateGameEntity(this TestWorld world, float3 position, in GameEntitySpec spec,
+            out EntityWriter writer)
         {
             var entity = world.EntityManager.CreateEntity();
             world.EntityManager.AddComponentData(entity, LocalTransform.FromPosition(position));
             writer = new EntityWriter(world.EntityManager, entity);
-            GameEntitySetup.Add(writer, new GameEntitySpec
-            {
-                Info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name },
-                Owner = owner,
-                MaxHealth = maxHealth,
-                VisionRange = 10f,
-                EyeHeight = 2f,
-                BuildTime = buildTime,
-                Population = 1,
-                CountsForVictory = true,
-            });
+            GameEntitySetup.Add(writer, spec);
             return entity;
         }
 

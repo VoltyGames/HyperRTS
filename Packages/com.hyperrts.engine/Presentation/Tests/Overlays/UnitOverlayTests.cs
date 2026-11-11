@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Overlays;
 using HyperRTS.Presentation.Overlays.Bars;
 using HyperRTS.Presentation.Overlays.Markers;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
@@ -135,9 +136,11 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void HealthBar_SegmentsPerHealthChunkOrSquadMember()
         {
-            var tank = new HealthBarData(new Health { Current = 300f, Max = 600f }, 0, 0, 2, 2f, SquadBarState.None, _style);
-            var squad = new HealthBarData(new Health { Current = 50f, Max = 100f }, 5, 3, 0, 1f, SquadBarState.None, _style);
-            var fortress = new HealthBarData(new Health { Current = 1f, Max = 50000f }, 0, 0, 0, 10f, SquadBarState.None, _style);
+            var tank = new HealthBarData(new Health { Current = 300f, Max = 600f }, 2, 2f, SquadBarState.None, _style);
+            var fivePips = new SquadBarState(-1f, SuppressionLevel.Steady, CoverKind.None, false, 5, 3);
+            var squad = new HealthBarData(new Health { Current = 50f, Max = 100f }, 0, 1f, fivePips, _style);
+            var fortress = new HealthBarData(new Health { Current = 1f, Max = 50000f }, 0, 10f, SquadBarState.None,
+                _style);
 
             Assert.AreEqual(6, tank.Segments);
             Assert.AreEqual(0.5f, tank.Fraction, 1e-4f);

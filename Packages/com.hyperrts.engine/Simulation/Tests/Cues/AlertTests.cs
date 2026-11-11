@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         public void Ability_SpeaksAtTheCaster_ForItsOwnerOnly()
         {
             var caster = Voiced(World.SpawnUnit(1, float3.zero), CueSlot.Ability, CueSlot.AbilityVoice);
-            World.SpawnUnit(2, new float3(3f, 0f, 0f), speed: 0f);
+            World.SpawnUnit(2, new float3(3f, 0f, 0f), new TestUnit { Speed = 0f });
             var id = EntityInfo.TypeIdFromName("Grenade");
             World.GiveAbility(caster, new Ability
             {
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void UnderFire_CallsOutAfterAQuietSpell_Only()
         {
-            var unit = Voiced(World.SpawnUnit(1, float3.zero, speed: 0f), CueSlot.UnderFire);
+            var unit = Voiced(World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 0f }), CueSlot.UnderFire);
 
             Hit(unit);
             World.Tick();
@@ -83,9 +83,9 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void UnderFire_SpeaksOncePerPlayerInterval()
         {
-            var a = Voiced(World.SpawnUnit(1, float3.zero, speed: 0f), CueSlot.UnderFire);
-            var b = Voiced(World.SpawnUnit(1, new float3(5f, 0f, 0f), speed: 0f), CueSlot.UnderFire);
-            var c = Voiced(World.SpawnUnit(1, new float3(10f, 0f, 0f), speed: 0f), CueSlot.UnderFire);
+            var a = Voiced(World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 0f }), CueSlot.UnderFire);
+            var b = Voiced(World.SpawnUnit(1, new float3(5f, 0f, 0f), new TestUnit { Speed = 0f }), CueSlot.UnderFire);
+            var c = Voiced(World.SpawnUnit(1, new float3(10f, 0f, 0f), new TestUnit { Speed = 0f }), CueSlot.UnderFire);
 
             Hit(a);
             Hit(b);
@@ -101,10 +101,13 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void ProducedUnit_PlaysProductionDoneAtTheProducer()
         {
-            var prefab = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Tank"));
+            var prefab = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), new TestUnit { Name = "Tank" }));
             World.SetBuildTime(prefab, 0.5f);
-            var producer = Voiced(World.MakeProducer(World.SpawnBuilding(1, new float3(4f, 0f, 4f),
-                Footprint, name: "Factory"), new float3(0f, 0f, -4f), prefab), CueSlot.ProductionDone);
+            var producer = Voiced(World.MakeProducer(World.SpawnBuilding(1, new float3(4f, 0f, 4f), Footprint,
+                new TestBuilding
+            {
+                Name = "Factory",
+            }), new float3(0f, 0f, -4f), prefab), CueSlot.ProductionDone);
             World.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
 
             World.Produce(1, producer, prefab);
@@ -131,7 +134,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void LostUnit_IsAnnouncedToItsOwnerOnly_WhoNeedsNoSoundOnIt()
         {
-            var unit = World.SpawnUnit(1, new float3(3f, 0f, 0f), name: "Rifleman");
+            var unit = World.SpawnUnit(1, new float3(3f, 0f, 0f), new TestUnit { Name = "Rifleman" });
             World.SpawnBuilding(1, new float3(-30f, 0f, -30f), Footprint);
             World.SpawnBuilding(2, new float3(30f, 0f, 30f), Footprint);
             World.Kill(unit);
@@ -166,7 +169,11 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void FinishedConstruction_IsAnnounced()
         {
-            var site = World.SpawnBuilding(1, float3.zero, Footprint, complete: false, buildTime: 0.5f);
+            var site = World.SpawnBuilding(1, float3.zero, Footprint, new TestBuilding
+            {
+                Complete = false,
+                BuildTime = 0.5f,
+            });
             var builder = World.MakeBuilder(World.SpawnUnit(1, new float3(3f, 0f, 0f)));
             World.Order(builder, OrderType.Build, site);
 
@@ -178,7 +185,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void ProducedUnit_AndFinishedResearch_AreAnnounced()
         {
-            var tank = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Tank"));
+            var tank = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), new TestUnit { Name = "Tank" }));
             World.SetBuildTime(tank, 0.5f);
             var upgrade = Upgrade("Armor Plating");
             var factory = World.MakeProducer(World.SpawnBuilding(1, float3.zero, Footprint), new float3(0f, 0f, -4f),
@@ -198,10 +205,10 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void LowPower_IsAnnouncedWhenTheGridFallsShort()
         {
-            World.SpawnBuilding(1, float3.zero, Footprint, power: 5f);
+            World.SpawnBuilding(1, float3.zero, Footprint, new TestBuilding { Power = 5f });
             Assert.IsEmpty(Announced(0.5f));
 
-            World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -10f);
+            World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, new TestBuilding { Power = -10f });
             var low = Announced(1f, AnnouncementKind.LowPower);
 
             Assert.AreEqual(1, low.Count, "once, when it falls short");

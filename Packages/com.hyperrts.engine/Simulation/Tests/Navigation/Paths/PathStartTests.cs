@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             _world.SpawnObstacle(new float3(-13.5f, 0f, 6.5f), new float2(7f, 2f));
             _world.SpawnObstacle(new float3(-13.5f, 0f, -6.5f), new float2(7f, 2f));
             _world.Tick();
-            var dozer = _world.SpawnUnit(1, new float3(-7f, 0f, 0f), radius: DozerRadius);
+            var dozer = _world.SpawnUnit(1, new float3(-7f, 0f, 0f), new TestUnit { Radius = DozerRadius });
             _world.Tick();
             var goal = new float3(30f, 0f, 0f);
 
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             _world.SpawnObstacle(new float3(0f, 0f, 4f), new float2(20f, 4f));
             _world.Tick();
             var start = new float3(0f, 0f, 7f);
-            var unit = _world.SpawnUnit(1, start, radius: DozerRadius);
+            var unit = _world.SpawnUnit(1, start, new TestUnit { Radius = DozerRadius });
             _world.Tick();
             var access = Access(unit);
             Assert.IsFalse(access.IsOpen(_world.Grid().Grid.Cell(start)), "the unit stands in a blocked cell");

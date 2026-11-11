@@ -58,13 +58,17 @@ namespace HyperRTS.Simulation.Tests
             Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
         });
 
-        /// <summary>A vehicle standing at <paramref name="position"/>, facing <paramref name="yaw"/> radians.</summary>
-        public static Entity SpawnVehicle(this TestWorld world, byte owner, float3 position, float yaw, float speed,
+        /// <summary>A transform at <paramref name="position"/> facing <paramref name="yaw"/> radians.</summary>
+        public static LocalTransform At(float3 position, float yaw) =>
+            LocalTransform.FromPositionRotation(position, quaternion.RotateY(yaw));
+
+        /// <summary>A vehicle standing at <paramref name="at"/>.</summary>
+        public static Entity SpawnVehicle(this TestWorld world, byte owner, LocalTransform at, float speed,
             NavAgent agent, Locomotion locomotion)
         {
-            var vehicle = world.SpawnUnit(owner, position, speed, agent.Radius);
+            var vehicle = world.SpawnUnit(owner, at.Position, new TestUnit { Speed = speed, Radius = agent.Radius });
             world.Set(vehicle, agent);
-            world.Set(vehicle, LocalTransform.FromPositionRotation(position, quaternion.RotateY(yaw)));
+            world.Set(vehicle, at);
             LocomotionAuthoring.Add(world.Writer(vehicle), locomotion);
             return vehicle;
         }

@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         private Entity Squad(float3 position)
         {
             var squad = World.SpawnSquad(1, position);
-            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 0.2f);
+            World.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 0.2f });
             return squad;
         }
 
@@ -113,7 +113,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         public void Retreating_TakesHalfDamageAndFiresNothing()
         {
             var squad = Squad(float3.zero);
-            var enemy = World.SpawnUnit(2, new float3(3f, 0f, 0f), maxHealth: 1000f);
+            var enemy = World.SpawnUnit(2, new float3(3f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
             Point(1, new float3(-80f, 0f, 0f));
             World.Run(1f);
             Assert.Less(World.Get<Health>(enemy).Current, 1000f, "the squad fights before it retreats");

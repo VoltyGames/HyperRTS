@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Common.Infantry;
 
 namespace HyperRTS.Presentation.Overlays.Bars
 {
-    /// <summary>What a squad's health bar adds: the best cover its living members hold, suppression and retreating.</summary>
+    /// <summary>What a squad's health bar adds: member pips, the best cover its living members hold, suppression, retreating.</summary>
     public readonly struct SquadBarState
     {
         /// <summary>Suppression from 0 to 1, or -1 for anything but a squad.</summary>
@@ -11,15 +11,22 @@ namespace HyperRTS.Presentation.Overlays.Bars
         public readonly CoverKind Cover;
         public readonly bool Retreating;
 
-        public SquadBarState(float suppression, SuppressionLevel level, CoverKind cover, bool retreating)
+        /// <summary>Zero for anything but a squad.</summary>
+        public readonly int Members;
+        public readonly int Alive;
+
+        public SquadBarState(float suppression, SuppressionLevel level, CoverKind cover, bool retreating, int members,
+            int alive)
         {
+            Members = members;
+            Alive = alive;
             Suppression = suppression;
             Level = level;
             Cover = cover;
             Retreating = retreating;
         }
 
-        public static SquadBarState None => new(-1f, SuppressionLevel.Steady, CoverKind.None, false);
+        public static SquadBarState None => new(-1f, SuppressionLevel.Steady, CoverKind.None, false, 0, 0);
 
         public static SquadBarState Read(in OverlayUnit unit, in SquadRules rules)
         {
@@ -35,7 +42,8 @@ namespace HyperRTS.Presentation.Overlays.Bars
             }
 
             var suppression = unit.Suppression.Value;
-            return new SquadBarState(suppression.Value, rules.Level(suppression.Value), cover, unit.Retreating);
+            return new SquadBarState(suppression.Value, rules.Level(suppression.Value), cover, unit.Retreating,
+                unit.MemberCount, unit.Alive);
         }
     }
 }

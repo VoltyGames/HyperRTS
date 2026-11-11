@@ -151,7 +151,11 @@ namespace HyperRTS.Simulation.Tests.Navigation
                     DriveGoal.ToPoint(SupplyTruck.Chassis.Center(LanePose(ref random, lanes, SupplyTruck.Chassis)))),
                     ref undrivable);
                 var center = SupplyTruck.Chassis.Center(job.Start);
-                truck = _world.SpawnUnit(1, new float3(center.x, 0f, center.y), 8f, SupplyTruck.Radius);
+                truck = _world.SpawnUnit(1, new float3(center.x, 0f, center.y), new TestUnit
+                {
+                    Speed = 8f,
+                    Radius = SupplyTruck.Radius,
+                });
                 _world.EntityManager.SetComponentData(truck, SupplyTruck);
                 var yaw = math.atan2(job.Start.Facing.x, job.Start.Facing.y);
                 _world.EntityManager.SetComponentData(truck,

@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests.Transport
             var unit = World.SpawnUnit(owner, position);
             var writer = World.Writer(unit);
             TransportSetup.AddPassenger(writer, 1);
-            World.AddWeapon(unit, range: 7f, damage: 8f);
+            World.AddWeapon(unit, new TestWeapon { Range = 7f, Damage = 8f });
             return unit;
         }
 

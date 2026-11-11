@@ -166,7 +166,12 @@ namespace HyperRTS.Presentation.Tests.HUD
 
         private CommandSpec Spec(string label, Key key = Key.None, int page = 0, int slot = 0)
         {
-            var spec = CommandSpec.Create(CommandTarget.Order, key, page, slot);
+            var spec = CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
+            {
+                Hotkey = key,
+                Page = page,
+                Slot = slot,
+            });
             _specs.Add((spec, label));
             return spec;
         }

@@ -6,36 +6,24 @@ namespace HyperRTS.Editor.Maps.Geometry
     /// <summary>A bridge or ford resolved in map space: where it is, which way it spans and how high units cross.</summary>
     public sealed class MapCrossing
     {
-        public MapCrossing(string kind, string prop, Vector2 position, Vector2 across, float width, float span,
-            float height)
-        {
-            Kind = kind;
-            Prop = prop;
-            Position = position;
-            Across = across;
-            Width = width;
-            Span = span;
-            Height = height;
-        }
-
-        public string Kind { get; }
+        public string Kind { get; set; }
 
         /// <summary>Palette key of the bridge prefab; empty for a ford.</summary>
-        public string Prop { get; }
+        public string Prop { get; set; }
 
-        public Vector2 Position { get; }
+        public Vector2 Position { get; set; }
 
         /// <summary>Unit direction from one bank to the other.</summary>
-        public Vector2 Across { get; }
+        public Vector2 Across { get; set; }
 
         /// <summary>Width of the crossing along the river.</summary>
-        public float Width { get; }
+        public float Width { get; set; }
 
         /// <summary>Length of the crossing from bank to bank.</summary>
-        public float Span { get; }
+        public float Span { get; set; }
 
         /// <summary>Surface height units cross at: a bridge deck, or just under the water over a ford.</summary>
-        public float Height { get; }
+        public float Height { get; set; }
 
         public bool IsBridge => Kind == MapCrossingSpec.Bridge;
 

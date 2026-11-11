@@ -139,7 +139,10 @@ namespace HyperRTS.Editor.Effects.Preview
             EditorState.instance.Save();
             _title.text = $"{rig.Name} ({rig.Kind})";
             ShowRecipes(rig.Recipes);
-            var problems = EffectRig.Problems(prefab).Select(problem => new ValidationIssue(MessageType.Error, problem, prefab)).ToList();
+            var problems = EffectRig.Problems(prefab)
+                .Select(problem => new ValidationIssue { Severity = MessageType.Error, Message = problem,
+                    Context = prefab })
+                .ToList();
             _issues.Show(problems);
             _issues.SetHidden(problems.Count == 0);
         }

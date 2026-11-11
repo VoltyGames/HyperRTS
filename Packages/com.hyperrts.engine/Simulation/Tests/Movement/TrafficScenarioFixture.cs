@@ -31,10 +31,12 @@ namespace HyperRTS.Simulation.Tests.Movement
         public void TearDown() => _world.Dispose();
 
         protected Entity SpawnTruck(float3 position, float yaw, byte owner = 1) =>
-            _world.SpawnVehicle(owner, position, yaw, 6f, TestVehicles.SupplyTruckHull(), TestVehicles.SupplyTruck);
+            _world.SpawnVehicle(owner, TestVehicles.At(position, yaw), 6f, TestVehicles.SupplyTruckHull(),
+                TestVehicles.SupplyTruck);
 
         protected Entity SpawnTank(float3 position, float yaw, byte owner = 1) =>
-            _world.SpawnVehicle(owner, position, yaw, 7f, TestVehicles.TankHull(), TestVehicles.Tracks);
+            _world.SpawnVehicle(owner, TestVehicles.At(position, yaw), 7f, TestVehicles.TankHull(),
+                TestVehicles.Tracks);
 
         protected bool HasArrived(Entity unit) => !_world.IsEnabled<MoveDestination>(unit);
 

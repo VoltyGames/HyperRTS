@@ -44,7 +44,11 @@ namespace HyperRTS.Simulation.Tests.Replays
         {
             using var world = new TestWorld();
             world.CreateMatch(1, 2);
-            var gun = world.AddWeapon(world.SpawnUnit(1, float3.zero, name: "Mortar"), range: 6f, cooldown: 100f);
+            var gun = world.AddWeapon(world.SpawnUnit(1, float3.zero, new TestUnit { Name = "Mortar" }), new TestWeapon
+            {
+                Range = 6f,
+                Cooldown = 100f,
+            });
             Combat.ImpactTests.Marked(world, gun, _mark);
             if (loud)
             {
@@ -54,7 +58,7 @@ namespace HyperRTS.Simulation.Tests.Replays
 
             ReplayRecorder.Start(world.World, sampleRate: 10f, keyframeInterval: 0.5f);
             world.Run(0.5f);
-            world.SpawnUnit(2, TargetPosition, maxHealth: 1000f, name: "Target");
+            world.SpawnUnit(2, TargetPosition, new TestUnit { MaxHealth = 1000f, Name = "Target" });
             world.Run(1f);
             return ReplayRecorder.Stop(world.World, "Assets/Maps/Test.unity");
         }
@@ -63,8 +67,8 @@ namespace HyperRTS.Simulation.Tests.Replays
         {
             var world = new TestWorld();
             world.CreateMatch(1, 2);
-            world.SpawnUnit(1, float3.zero, name: "Mortar");
-            world.MakePrefab(world.SpawnUnit(2, float3.zero, maxHealth: 1000f, name: "Target"));
+            world.SpawnUnit(1, float3.zero, new TestUnit { Name = "Mortar" });
+            world.MakePrefab(world.SpawnUnit(2, float3.zero, new TestUnit { MaxHealth = 1000f, Name = "Target" }));
             ReplayViewer.Begin(world.World, replay);
             return world;
         }

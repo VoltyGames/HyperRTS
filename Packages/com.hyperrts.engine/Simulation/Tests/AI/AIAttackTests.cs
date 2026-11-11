@@ -92,9 +92,12 @@ namespace HyperRTS.Simulation.Tests.AI
         [Test]
         public void AI_FiresReadyAbility_AtNearestEnemyInRange()
         {
-            var caster = GiveAbility(World.SpawnUnit(2, float3.zero, speed: 0f), "Snipe", AbilityTarget.Entity, 8f, 30f);
-            var far = World.SpawnUnit(1, new float3(-20f, 0f, 0f), speed: 0f);
-            var near = World.SpawnUnit(1, new float3(6f, 0f, 0f), speed: 0f);
+            var caster = GiveAbility(World.SpawnUnit(2, float3.zero, new TestUnit
+            {
+                Speed = 0f,
+            }), "Snipe", AbilityTarget.Entity, 8f, 30f);
+            var far = World.SpawnUnit(1, new float3(-20f, 0f, 0f), new TestUnit { Speed = 0f });
+            var near = World.SpawnUnit(1, new float3(6f, 0f, 0f), new TestUnit { Speed = 0f });
 
             World.Run(1f);
 

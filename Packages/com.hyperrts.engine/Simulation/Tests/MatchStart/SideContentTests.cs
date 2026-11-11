@@ -36,8 +36,11 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         {
             world.CreateMatch(1, 2, 3);
             world.CreateTerrain(_ => Ground);
-            basePrefab = world.MakePrefab(world.SpawnBuilding(0, float3.zero, new float2(4f, 4f), name: "Base"));
-            truck = world.MakePrefab(world.SpawnUnit(0, float3.zero, name: "Truck"));
+            basePrefab = world.MakePrefab(world.SpawnBuilding(0, float3.zero, new float2(4f, 4f), new TestBuilding
+            {
+                Name = "Base",
+            }));
+            truck = world.MakePrefab(world.SpawnUnit(0, float3.zero, new TestUnit { Name = "Truck" }));
             var match = world.MatchEntity();
             var entityManager = world.EntityManager;
             var sides = entityManager.AddBuffer<MatchSide>(match);

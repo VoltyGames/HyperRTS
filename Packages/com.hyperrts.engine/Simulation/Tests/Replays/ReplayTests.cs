@@ -31,9 +31,9 @@ namespace HyperRTS.Simulation.Tests.Replays
             track = new List<(float, float3)>();
             using var world = new TestWorld();
             world.CreateMatch(1, 2);
-            var mover = world.SpawnUnit(1, MoverStart, name: "Mover");
-            world.SpawnUnit(1, IdlePosition, name: "Idle");
-            var victim = world.SpawnUnit(2, VictimPosition, name: "Victim");
+            var mover = world.SpawnUnit(1, MoverStart, new TestUnit { Name = "Mover" });
+            world.SpawnUnit(1, IdlePosition, new TestUnit { Name = "Idle" });
+            var victim = world.SpawnUnit(2, VictimPosition, new TestUnit { Name = "Victim" });
             world.Set(mover, new MoveDestination { Value = new float3(30f, 0f, 0f) });
             world.SetEnabled<MoveDestination>(mover, true);
             ReplayRecorder.Start(world.World, sampleRate: 10f, keyframeInterval: 0.5f);
@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Tests.Replays
 
                 if (frame == 20)
                 {
-                    world.SpawnUnit(1, TankPosition, name: "Tank");
+                    world.SpawnUnit(1, TankPosition, new TestUnit { Name = "Tank" });
                 }
 
                 world.Tick();

@@ -157,9 +157,15 @@ namespace HyperRTS.Simulation.Production
                 {
                     var before = producers[i];
                     var producer = before;
-                    var hasRally = chunk.IsComponentEnabled(ref Rallies, i);
-                    var finished = Work(entities[i], ref producer, queues[i], transforms[i], owners[i], rallies[i],
-                        hasRally);
+                    var input = new ProducerInput
+                    {
+                        Entity = entities[i],
+                        Transform = transforms[i],
+                        Owner = owners[i],
+                        Rally = rallies[i],
+                        HasRally = chunk.IsComponentEnabled(ref Rallies, i),
+                    };
+                    var finished = Work(input, ref producer, queues[i]);
                     if (finished || producer.Elapsed != before.Elapsed || producer.Released != before.Released)
                     {
                         Changes.Add(new ProducerChange { Entity = entities[i], Producer = producer, Finished = finished });
@@ -168,9 +174,12 @@ namespace HyperRTS.Simulation.Production
             }
 
             /// <summary>Whether the head of the queue finished and must leave it.</summary>
-            private bool Work(Entity entity, ref Producer producer, in DynamicBuffer<ProductionQueueItem> queue,
-                in LocalTransform transform, in Owner owner, in RallyPoint rally, bool hasRally)
+            private bool Work(in ProducerInput input, ref Producer producer,
+                in DynamicBuffer<ProductionQueueItem> queue)
             {
+                var entity = input.Entity;
+                var owner = input.Owner;
+                var transform = input.Transform;
                 if (queue.IsEmpty)
                 {
                     producer.Elapsed = 0f;
@@ -205,7 +214,7 @@ namespace HyperRTS.Simulation.Production
                 else
                 {
                     var position = SpawnPoint(entity, producer, transform, pad);
-                    var unit = Spawn(prefab, position, transform, owner, hasRally, rally.Position);
+                    var unit = Spawn(prefab, position, input);
                     DockOnPad(unit, prefab, entity, pad);
                     SpawnedPopulation[owner.Value] += producible.Population;
                     producer.Released++;
@@ -265,14 +274,13 @@ namespace HyperRTS.Simulation.Production
                 }
             }
 
-            private Entity Spawn(Entity prefab, float3 position, in LocalTransform producer,
-                in Owner owner, bool rally, float3 rallyPosition)
+            private Entity Spawn(Entity prefab, float3 position, in ProducerInput producer)
             {
-                var unit = Spawner.Spawn(Ecb, prefab, position, producer.Rotation, owner.Value);
+                var unit = Spawner.Spawn(Ecb, prefab, position, producer.Transform.Rotation, producer.Owner.Value);
 
-                if (rally)
+                if (producer.HasRally)
                 {
-                    Ecb.AddComponent(unit, new RallyOrder { Position = rallyPosition });
+                    Ecb.AddComponent(unit, new RallyOrder { Position = producer.Rally.Position });
                 }
 
                 return unit;

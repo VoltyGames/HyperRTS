@@ -51,8 +51,15 @@ namespace HyperRTS.Simulation.Buildings
                 authoring.BakeGameEntity(this, entity);
 
                 var writer = this.Writer(entity);
-                BuildingSetup.Add(writer, authoring.footprint, authoring.populationProvided,
-                    !authoring.startsUnderConstruction, authoring.power, authoring.rememberedInFog, authoring.openFootprint);
+                BuildingSetup.Add(writer, new BuildingSpec
+                {
+                    Footprint = authoring.footprint,
+                    PopulationProvided = authoring.populationProvided,
+                    Complete = !authoring.startsUnderConstruction,
+                    Power = authoring.power,
+                    RememberedInFog = authoring.rememberedInFog,
+                    OpenFootprint = authoring.openFootprint,
+                });
                 if (authoring.placementSurface != PlacementSurface.Land)
                 {
                     writer.Add(new BuildingPlacement { Surface = authoring.placementSurface });

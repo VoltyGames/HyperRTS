@@ -21,14 +21,22 @@ namespace HyperRTS.Presentation.Tests.HUD
         {
             var producible = new GameObject(name).AddComponent<UpgradeAuthoring>();
             Made.Add(producible.gameObject);
-            return CommandSpec.Create(CommandTarget.Prefab, slot: slot, prefab: producible);
+            return CommandSpec.Create(CommandTarget.Prefab, new CommandSpecSettings
+            {
+                Slot = slot,
+                Prefab = producible,
+            });
         }).ToArray());
 
         /// <summary>A kit with an order spec for each type; Retreat and Reinforce get R and T.</summary>
         public static CommandKit Orders(params CommandType[] orders) => Kit(orders.Select(order =>
         {
-            return CommandSpec.Create(CommandTarget.Order, Hotkey(order),
-                labelKey: $"command.{order.ToString().ToLowerInvariant()}", order: order);
+            return CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
+            {
+                Hotkey = Hotkey(order),
+                LabelKey = $"command.{order.ToString().ToLowerInvariant()}",
+                Order = order,
+            });
         }).ToArray());
 
         private static Key Hotkey(CommandType order) => order switch

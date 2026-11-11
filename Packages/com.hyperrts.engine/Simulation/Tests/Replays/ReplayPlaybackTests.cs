@@ -27,11 +27,11 @@ namespace HyperRTS.Simulation.Tests.Replays
             // The map as the replay's scene bakes it: starting entities placed, spawnable types as prefabs.
             _world = new TestWorld();
             _world.CreateMatch(1, 2);
-            _mover = _world.SpawnUnit(1, ReplayTests.MoverStart, name: "Mover");
-            _idle = _world.SpawnUnit(1, ReplayTests.IdlePosition, name: "Idle");
-            _world.SpawnUnit(2, ReplayTests.VictimPosition, name: "Victim");
-            _world.MakePrefab(_world.SpawnUnit(1, float3.zero, name: "Tank"));
-            _world.MakePrefab(_world.SpawnUnit(2, float3.zero, name: "Victim"));
+            _mover = _world.SpawnUnit(1, ReplayTests.MoverStart, new TestUnit { Name = "Mover" });
+            _idle = _world.SpawnUnit(1, ReplayTests.IdlePosition, new TestUnit { Name = "Idle" });
+            _world.SpawnUnit(2, ReplayTests.VictimPosition, new TestUnit { Name = "Victim" });
+            _world.MakePrefab(_world.SpawnUnit(1, float3.zero, new TestUnit { Name = "Tank" }));
+            _world.MakePrefab(_world.SpawnUnit(2, float3.zero, new TestUnit { Name = "Victim" }));
             ReplayViewer.Begin(_world.World, replay);
         }
 

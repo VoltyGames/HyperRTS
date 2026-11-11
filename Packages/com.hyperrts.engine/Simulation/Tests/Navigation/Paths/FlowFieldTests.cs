@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             for (var i = 0; i < count; i++)
             {
                 var start = new float3(-40f + i % 4 * 4f, 0f, -20f + i / 4 * 4f + slotOffset);
-                units[i] = World.SpawnUnit(1, start, radius: radius);
+                units[i] = World.SpawnUnit(1, start, new TestUnit { Radius = radius });
             }
 
             World.Tick();
@@ -163,7 +163,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             var tanks = new Entity[3];
             for (var i = 0; i < tanks.Length; i++)
             {
-                tanks[i] = World.SpawnUnit(1, new float3(-40f + i * 6f, 0f, 10f), radius: 1.85f);
+                tanks[i] = World.SpawnUnit(1, new float3(-40f + i * 6f, 0f, 10f), new TestUnit { Radius = 1.85f });
             }
 
             World.Tick();

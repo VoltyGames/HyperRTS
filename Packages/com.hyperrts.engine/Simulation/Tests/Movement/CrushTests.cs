@@ -22,8 +22,8 @@ namespace HyperRTS.Simulation.Tests.Movement
 
         private Entity SpawnTank(float speed, int crusherSize = 3)
         {
-            var tank = World.SpawnVehicle(1, new float3(-30f, 0f, 0f), East, speed, TestVehicles.TankHull(),
-                TestVehicles.Tracks);
+            var tank = World.SpawnVehicle(1, TestVehicles.At(new float3(-30f, 0f, 0f), East), speed,
+                TestVehicles.TankHull(), TestVehicles.Tracks);
             if (crusherSize > 0)
             {
                 World.Add(tank, new Crusher { Size = crusherSize });
@@ -91,8 +91,8 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void Truck_WithoutACrusher_TreatsTheSquadAsAnObstacle()
         {
-            var truck = World.SpawnVehicle(1, new float3(-30f, 0f, 0f), East, 6f, TestVehicles.SupplyTruckHull(),
-                TestVehicles.SupplyTruck);
+            var truck = World.SpawnVehicle(1, TestVehicles.At(new float3(-30f, 0f, 0f), East), 6f,
+                TestVehicles.SupplyTruckHull(), TestVehicles.SupplyTruck);
             var squad = SpawnSquad(3);
 
             DriveThrough(truck, out _);

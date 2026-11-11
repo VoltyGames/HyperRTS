@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Tests
         public static Entity SpawnAircraft(this TestWorld world, byte owner, float3 position, float altitude = 10f,
             float loiterRadius = 0f, float speed = 10f)
         {
-            var aircraft = world.SpawnUnit(owner, position, speed: speed, name: "Aircraft");
+            var aircraft = world.SpawnUnit(owner, position, new TestUnit { Speed = speed, Name = "Aircraft" });
             world.Set(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air, Mass = 10f });
             var writer = world.Writer(aircraft);
             AirSetup.AddFlight(writer, altitude, climbSpeed: 20f, loiterRadius);
@@ -39,7 +39,10 @@ namespace HyperRTS.Simulation.Tests
 
         public static Entity SpawnAirfield(this TestWorld world, byte owner, float3 position, params float3[] pads)
         {
-            var airfield = world.SpawnBuilding(owner, position, new float2(4f, 4f), name: "Airfield");
+            var airfield = world.SpawnBuilding(owner, position, new float2(4f, 4f), new TestBuilding
+            {
+                Name = "Airfield",
+            });
             var writer = world.Writer(airfield);
             var buffer = AirSetup.AddAirfield(writer);
             foreach (var offset in pads)

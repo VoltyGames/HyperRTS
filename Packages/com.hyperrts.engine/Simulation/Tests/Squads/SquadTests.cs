@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         {
             var squad = Squad(float3.zero, 0, 0, 0, 0);
 
-            World.HitSquad(squad, 40f);
+            World.HitSquad(squad, new TestHit { Amount = 40f });
             World.Tick();
 
             Assert.AreEqual(1, Hurt(squad), "one member took the hit");
@@ -68,7 +68,13 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 0, 0, 0, 0);
             StandAt(squad, -2f, 0f, 2f, 3f);
 
-            World.HitSquad(Entity.Null, 20f, new float3(3f, 0f, 0f), radius: 3f, edge: 0f);
+            World.HitSquad(Entity.Null, new TestHit
+            {
+                Amount = 20f,
+                At = new float3(3f, 0f, 0f),
+                Radius = 3f,
+                Edge = 0f,
+            });
             World.Tick();
 
             Assert.AreEqual(SquadTestKit.MemberHealth, Member(squad, 0), 0.5f, "outside the blast");
@@ -84,7 +90,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 0, 0, 0, 0);
             StandAt(squad, -3f, -1f, 1f, 3f);
 
-            World.HitSquad(squad, 30f, new float3(3f, 0f, 0.4f), radius: 0.5f);
+            World.HitSquad(squad, new TestHit { Amount = 30f, At = new float3(3f, 0f, 0.4f), Radius = 0.5f });
             World.Tick();
 
             Assert.AreEqual(0f, Member(squad, 3), 1e-3f, "the member under the blast");
@@ -136,7 +142,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         public void StatChangeToMaxHealth_ScalesMembersAndKeepsTheSum()
         {
             var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
-            World.HitSquad(squad, 10f);
+            World.HitSquad(squad, new TestHit { Amount = 10f });
             World.Tick();
 
             var health = World.Get<Health>(squad);

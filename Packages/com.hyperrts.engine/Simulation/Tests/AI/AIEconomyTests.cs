@@ -186,7 +186,10 @@ namespace HyperRTS.Simulation.Tests.AI
             var (barracks, soldier) = BuildOrderBase();
             SpawnBuilder(new float3(0f, 0f, -6f), barracks);
             SpawnBuilder(new float3(6f, 0f, -6f), barracks);
-            var locked = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(2f, 2f), name: "Locked"));
+            var locked = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(2f, 2f), new TestBuilding
+            {
+                Name = "Locked",
+            }));
             World.Buffer<Prerequisite>(locked)
                 .Add(new Prerequisite { TypeId = EntityInfo.TypeIdFromName("Never Built") });
             SetBuildOrder((barracks, 2), (soldier, 3), (locked, 1));
@@ -244,7 +247,7 @@ namespace HyperRTS.Simulation.Tests.AI
 
         private Entity UnitPrefab(string name, int cost, float buildTime)
         {
-            var prefab = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), name: name));
+            var prefab = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), new TestUnit { Name = name }));
             World.SetBuildTime(prefab, buildTime);
             World.SetCost(prefab, _supplies, cost);
             return prefab;
@@ -253,10 +256,18 @@ namespace HyperRTS.Simulation.Tests.AI
         /// <summary>Slot 2's HQ, and a barracks prefab that trains the soldier prefab.</summary>
         private (Entity Barracks, Entity Soldier) BuildOrderBase()
         {
-            World.SpawnBuilding(2, float3.zero, new float2(4f, 4f), name: "HQ", populationProvided: 20);
+            World.SpawnBuilding(2, float3.zero, new float2(4f, 4f), new TestBuilding
+            {
+                Name = "HQ",
+                PopulationProvided = 20,
+            });
             var soldier = UnitPrefab("Soldier", 10, 0.5f);
-            var barracks = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(4f, 4f), complete: false,
-                buildTime: 1f, name: "Barracks"));
+            var barracks = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(4f, 4f), new TestBuilding
+            {
+                Complete = false,
+                BuildTime = 1f,
+                Name = "Barracks",
+            }));
             World.SetCost(barracks, _supplies, 50);
             World.MakeProducer(barracks, new float3(0f, 0f, -3f), soldier);
             return (barracks, soldier);
@@ -264,12 +275,15 @@ namespace HyperRTS.Simulation.Tests.AI
 
         private Entity ExistingBarracks(Entity soldier)
         {
-            var existing = World.SpawnBuilding(2, new float3(20f, 0f, 20f), new float2(4f, 4f), name: "Barracks");
+            var existing = World.SpawnBuilding(2, new float3(20f, 0f, 20f), new float2(4f, 4f), new TestBuilding
+            {
+                Name = "Barracks",
+            });
             return World.MakeProducer(existing, new float3(0f, 0f, -3f), soldier);
         }
 
         private void SpawnBuilder(float3 position, Entity barracks) =>
-            World.MakeBuilder(World.SpawnUnit(2, position, name: "Builder"), barracks);
+            World.MakeBuilder(World.SpawnUnit(2, position, new TestUnit { Name = "Builder" }), barracks);
 
         private void SetBuildOrder(params (Entity Prefab, int Count)[] steps)
         {

@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Tests.Air
         public void AircraftOutOfAmmo_ReturnsToItsPad_ReloadsAndIsReadyAgain()
         {
             var airfield = World.SpawnAirfield(1, float3.zero, Pad);
-            var aircraft = World.AddWeapon(World.SpawnAircraft(1, Pad), range: 4f, damage: 10f);
+            var aircraft = World.AddWeapon(World.SpawnAircraft(1, Pad), new TestWeapon { Range = 4f, Damage = 10f });
             World.AddPadUser(aircraft, rounds: 2);
             World.Set(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
             var tank = World.SpawnUnit(2, new float3(30f, 0f, 0f));
@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Tests.Air
         public void SpentAircraft_IsSentHomeOnce_ThenObeysPlayerOrders()
         {
             var airfield = World.SpawnAirfield(1, float3.zero, Pad);
-            var aircraft = World.AddWeapon(World.SpawnAircraft(1, Pad), range: 4f, damage: 10f);
+            var aircraft = World.AddWeapon(World.SpawnAircraft(1, Pad), new TestWeapon { Range = 4f, Damage = 10f });
             World.AddPadUser(aircraft, rounds: 1);
             World.Set(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
             var tank = World.SpawnUnit(2, new float3(30f, 0f, 0f));
@@ -181,11 +181,17 @@ namespace HyperRTS.Simulation.Tests.Air
         private (Entity Aircraft, Entity Tank) SpawnGunship(float missileCooldown)
         {
             var airfield = World.SpawnAirfield(1, float3.zero, Pad);
-            var aircraft = World.AddWeapon(World.SpawnAircraft(1, Pad), range: 4f, damage: 1f);
-            World.AddMount(aircraft, range: 4f, damage: 10f, cooldown: missileCooldown, rounds: 2);
+            var aircraft = World.AddWeapon(World.SpawnAircraft(1, Pad), new TestWeapon { Range = 4f, Damage = 1f });
+            World.AddMount(aircraft, new TestMount
+            {
+                Range = 4f,
+                Damage = 10f,
+                Cooldown = missileCooldown,
+                Rounds = 2,
+            });
             World.AddPadUser(aircraft);
             World.Set(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
-            return (aircraft, World.SpawnUnit(2, new float3(30f, 0f, 0f), maxHealth: 1000f));
+            return (aircraft, World.SpawnUnit(2, new float3(30f, 0f, 0f), new TestUnit { MaxHealth = 1000f }));
         }
 
         private int Missiles(Entity aircraft) => World.Mount(aircraft).Ammo.Current;

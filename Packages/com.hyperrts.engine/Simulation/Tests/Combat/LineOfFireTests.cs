@@ -26,11 +26,17 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void TankBehindAHouse_CannotFireThroughIt_AndItsRoundHitsTheHouse()
         {
             var tank = World.SpawnUnit(1, new float3(1f, 0f, 1f));
-            World.AddWeapon(tank, range: 30f, damage: 40f, cooldown: 0.5f, projectile: World.ProjectilePrefab());
+            World.AddWeapon(tank, new TestWeapon
+            {
+                Range = 30f,
+                Damage = 40f,
+                Cooldown = 0.5f,
+                Projectile = World.ProjectilePrefab(),
+            });
             var house = World.SpawnBuilding(0, new float3(11f, 0f, 1f), new float2(4f, 4f));
             var writer = World.Writer(house);
             SightBlockAuthoring.Add(writer, new SightBlock { Size = new float2(4f, 4f), Height = 6f });
-            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), maxHealth: 1000f);
+            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
             var houseHealth = World.GetHealth(house);
 
             Attack(tank, enemy);
@@ -44,9 +50,9 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void ExplicitAttack_WithBullets_MovesUntilTheLineIsClear()
         {
             var rifleman = World.SpawnUnit(1, new float3(1f, 0f, 1f));
-            World.AddWeapon(rifleman, range: 25f, damage: 10f);
+            World.AddWeapon(rifleman, new TestWeapon { Range = 25f, Damage = 10f });
             World.SpawnSightBlock(new float3(9f, 0f, 1f), new float2(0.5f, 6f), 3f);
-            var enemy = World.SpawnUnit(2, new float3(17f, 0f, 1f), maxHealth: 1000f);
+            var enemy = World.SpawnUnit(2, new float3(17f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
 
             Attack(rifleman, enemy);
             World.Run(0.5f);
@@ -61,10 +67,15 @@ namespace HyperRTS.Simulation.Tests.Combat
         {
             World.SetFog(true);
             var launcher = World.SpawnViewer(1, new float3(1f, 0f, 1f), 40f);
-            World.AddWeapon(launcher, range: 30f, cooldown: 100f, projectile: World.ProjectilePrefab(),
-                trajectory: Trajectory.Rocket);
+            World.AddWeapon(launcher, new TestWeapon
+            {
+                Range = 30f,
+                Cooldown = 100f,
+                Projectile = World.ProjectilePrefab(),
+                Trajectory = Trajectory.Rocket,
+            });
             var smoke = Smoke(new float3(11f, 0f, 1f));
-            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), maxHealth: 1000f);
+            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
             World.EntityManager.AddComponent<TallTarget>(enemy);
 
             World.Run(0.3f);

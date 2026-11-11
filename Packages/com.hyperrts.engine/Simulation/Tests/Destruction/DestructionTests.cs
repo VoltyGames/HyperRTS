@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             var remains = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var fence = SpawnScenery(new float3(5f, 0f, 0f), 1, remains);
-            var tank = World.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1.5f);
+            var tank = World.SpawnUnit(1, new float3(5f, 0f, 0f), new TestUnit { Radius = 1.5f });
             World.Add(tank, new Crusher { Size = 3 });
 
             World.Run(0.5f);
@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var underNose = SpawnScenery(new float3(1.5f, 0f, 3.5f), 1);
             var underTail = SpawnScenery(new float3(-1.5f, 0f, -3.5f), 1);
             var beside = SpawnScenery(new float3(3f, 0f, 0f), 1);
-            var tank = World.SpawnUnit(1, float3.zero, radius: 1.85f);
+            var tank = World.SpawnUnit(1, float3.zero, new TestUnit { Radius = 1.85f });
             var agent = World.Get<NavAgent>(tank);
             agent.HullLength = 7.9f;
             World.Set(tank, agent);
@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 fence.Add(SpawnScenery(new float3(i * segment, 0f, 0f), 1, block: new float2(segment, 0.3f)));
             }
 
-            var tank = World.SpawnUnit(1, float3.zero, radius: 0.9f);
+            var tank = World.SpawnUnit(1, float3.zero, new TestUnit { Radius = 0.9f });
             World.Add(tank, new Crusher { Size = 3 });
             World.Run(0.5f);
 
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
         public void LightCrusher_LeavesSturdierSceneryStanding()
         {
             var tree = SpawnScenery(new float3(5f, 0f, 0f), 3);
-            var jeep = World.SpawnUnit(1, new float3(5f, 0f, 0f), radius: 1f);
+            var jeep = World.SpawnUnit(1, new float3(5f, 0f, 0f), new TestUnit { Radius = 1f });
             World.Add(jeep, new Crusher { Size = 1 });
 
             World.Run(0.5f);
@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var fence = SpawnScenery(new float3(-1f, 0f, -2f), 1);
             var outside = SpawnScenery(new float3(5f, 0f, 0f), 0);
             var wall = SpawnScenery(new float3(0f, 0f, 2.5f), 0, block: new float2(1f, 1f));
-            World.SpawnBuilding(1, float3.zero, new float2(6f, 6f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(6f, 6f), new TestBuilding { Complete = false });
 
             World.Run(0.5f);
 

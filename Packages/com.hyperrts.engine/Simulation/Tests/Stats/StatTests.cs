@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Tests.Stats
         [Test]
         public void Modifiers_RewriteLiveStats_AndKeepHealthFraction()
         {
-            var unit = World.SpawnUnit(1, float3.zero, speed: 4f);
+            var unit = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 4f });
             World.Set(unit, new Health { Current = 50f, Max = 100f });
             var modifiers = World.Buffer<StatModifier>(unit);
             modifiers.Add(new StatModifier { Stat = Stat.MaxHealth, Add = 100f, Source = StatSource.Upgrade(7) });
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Tests.Stats
         [Test]
         public void Modifiers_UseTheSpawnBase_WhenTheLiveStatChangedFirst()
         {
-            var unit = World.SpawnUnit(1, float3.zero, speed: 4f);
+            var unit = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 4f });
             World.Tick();
             World.Set(unit, new MovementSpeed { Value = 9f });
             World.Buffer<StatModifier>(unit)
@@ -95,7 +95,11 @@ namespace HyperRTS.Simulation.Tests.Stats
         [TestCase(1f, 0f, 1f / 3f, TestName = "FireRate +1 shot per second turns 2/s into 3/s")]
         public void FireRateModifier_ScalesCooldown(float add, float percent, float expected)
         {
-            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), Stance.Passive, cooldown: 0.5f);
+            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Stance = Stance.Passive,
+                Cooldown = 0.5f,
+            });
             World.Buffer<StatModifier>(soldier).Add(new StatModifier
             {
                 Stat = Stat.FireRate, Add = add, Percent = percent,
@@ -109,8 +113,8 @@ namespace HyperRTS.Simulation.Tests.Stats
         [Test]
         public void DamageModifier_ReachesMounts()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), Stance.Passive);
-            World.AddMount(gun, range: 5f, damage: 40f, cooldown: 2f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Stance = Stance.Passive });
+            World.AddMount(gun, new TestMount { Range = 5f, Damage = 40f, Cooldown = 2f });
             World.Buffer<StatModifier>(gun).Add(new StatModifier
             {
                 Stat = Stat.Damage, Percent = 0.25f, Source = StatSource.Upgrade(7),
@@ -162,7 +166,7 @@ namespace HyperRTS.Simulation.Tests.Stats
 
         private Entity Veteran(float3 position)
         {
-            var unit = World.AddWeapon(World.SpawnUnit(1, position), damage: 50f);
+            var unit = World.AddWeapon(World.SpawnUnit(1, position), new TestWeapon { Damage = 50f });
             var writer = World.Writer(unit);
             VeterancyAuthoring.Add(writer, new[] { 10f, 100f }, new[]
             {

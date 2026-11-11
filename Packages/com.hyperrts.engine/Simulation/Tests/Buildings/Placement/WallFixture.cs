@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         protected Entity WallPrefab(int funds = 1000)
         {
             World.AddResources(1, Supplies, funds);
-            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, Footprint, name: "Wall"));
+            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, Footprint, new TestBuilding { Name = "Wall" }));
             World.EntityManager.AddComponent<LinePlacement>(prefab);
             World.SetCost(prefab, Supplies, 100);
             return prefab;
@@ -62,7 +62,11 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
             World.Tick();
             var start = Leg().JoinedStart(direction);
             World.PlaceLine(builder, prefab, start, start + new float3(direction.x, 0f, direction.y) * length,
-                LineStart.Joined, true);
+                new TestLine
+            {
+                Join = LineStart.Joined,
+                Queue = true,
+            });
             World.Tick();
         }
 

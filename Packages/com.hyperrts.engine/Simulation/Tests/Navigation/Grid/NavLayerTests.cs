@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         public void GroundUnits_RouteAroundWater_WhileShipsCrossIt()
         {
             World.SpawnNavArea(float3.zero, new float2(10f, 40f), NavAreaKind.Water);
-            var tank = World.SpawnUnit(1, new float3(-12f, 0f, 0f), speed: 10f);
+            var tank = World.SpawnUnit(1, new float3(-12f, 0f, 0f), new TestUnit { Speed = 10f });
             var ship = World.SpawnShip(1, new float3(0f, 0f, -15f));
             World.MoveTo(tank, new float3(12f, 0f, 0f));
             World.MoveTo(ship, new float3(0f, 0f, 15f));
@@ -76,7 +76,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         {
             World.SpawnNavArea(float3.zero, new float2(8f, 200f), NavAreaKind.Water);
             World.SpawnNavArea(new float3(0f, 3f, 0f), new float2(14f, 4f), NavAreaKind.Deck);
-            var tank = World.SpawnUnit(1, float3.zero, radius: 1f);
+            var tank = World.SpawnUnit(1, float3.zero, new TestUnit { Radius = 1f });
             var ship = World.SpawnShip(1, new float3(0f, 0f, -15f), radius: 1f);
 
             World.MoveTo(ship, new float3(0f, 0f, 15f));
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             World.SpawnNavArea(float3.zero, new float2(6f, 200f), NavAreaKind.Water);
             var near = World.SpawnNavArea(new float3(0f, 2f, 0f), new float2(10f, 4f), NavAreaKind.Deck);
             World.SpawnNavArea(new float3(0f, 2f, 30f), new float2(10f, 4f), NavAreaKind.Deck);
-            var tank = World.SpawnUnit(1, new float3(-12f, 0f, 0f), speed: 10f);
+            var tank = World.SpawnUnit(1, new float3(-12f, 0f, 0f), new TestUnit { Speed = 10f });
             var goal = new float3(12f, 0f, 0f);
 
             World.MoveTo(tank, goal);

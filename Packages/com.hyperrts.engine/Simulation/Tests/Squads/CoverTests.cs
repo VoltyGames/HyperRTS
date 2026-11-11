@@ -118,17 +118,17 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 1);
             World.Run(3f);
 
-            World.HitSquad(squad, 10f, Ahead, suppression: 0.5f);
+            World.HitSquad(squad, new TestHit { Amount = 10f, At = Ahead, Suppression = 0.5f });
             World.Tick();
             Assert.AreEqual(5f, Lost(squad, 0), 1e-3f, "heavy cover halves a hit from the front");
             Assert.AreEqual(0.15f, World.Get<Suppression>(squad).Value, 1e-3f, "heavy cover lets 0.3 of the suppression through");
 
-            World.HitSquad(squad, 10f, Behind, suppression: 0.5f);
+            World.HitSquad(squad, new TestHit { Amount = 10f, At = Behind, Suppression = 0.5f });
             World.Tick();
             Assert.AreEqual(15f, Lost(squad, 0), 1e-3f, "a hit from behind is full");
             Assert.AreEqual(0.65f, World.Get<Suppression>(squad).Value, 0.01f);
 
-            World.HitSquad(squad, 2f, Ahead, piercing: 1f);
+            World.HitSquad(squad, new TestHit { Amount = 2f, At = Ahead, Piercing = 1f });
             World.Tick();
             Assert.AreEqual(17f, Lost(squad, 0), 1e-3f, "a piercing hit ignores cover");
 
@@ -149,7 +149,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             // Enough small hits that the roll can't by chance favour the covered pair (about five deviations out).
             for (var i = 0; i < 200; i++)
             {
-                World.HitSquad(squad, 0.1f, Ahead);
+                World.HitSquad(squad, new TestHit { Amount = 0.1f, At = Ahead });
                 World.Tick();
             }
 
@@ -214,7 +214,7 @@ namespace HyperRTS.Simulation.Tests.Squads
                 Assert.AreEqual(Posture.Crouch, member.Posture);
             }
 
-            World.HitSquad(squad, 20f, Behind);
+            World.HitSquad(squad, new TestHit { Amount = 20f, At = Behind });
             World.Tick();
             Assert.Less(World.Get<Health>(squad).Current, SquadTestKit.MemberHealth * 3f);
         }

@@ -30,11 +30,11 @@ namespace HyperRTS.Simulation.Tests.Buildings
         [Test]
         public void LowPower_SilencesConsumers_UntilSupplyRecovers()
         {
-            var plant = World.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, power: 5f);
-            var radar = World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -10f);
-            var tower = World.SpawnBuilding(1, new float3(0f, 0f, 20f), Footprint, power: -1f);
-            World.AddWeapon(tower, range: 6f, damage: 10f);
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 25f), speed: 0f);
+            var plant = World.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, new TestBuilding { Power = 5f });
+            var radar = World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, new TestBuilding { Power = -10f });
+            var tower = World.SpawnBuilding(1, new float3(0f, 0f, 20f), Footprint, new TestBuilding { Power = -1f });
+            World.AddWeapon(tower, new TestWeapon { Range = 6f, Damage = 10f });
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 25f), new TestUnit { Speed = 0f });
 
             World.Run(1f);
 
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Tests.Buildings
             Assert.AreEqual(OfflineReason.Unpowered, World.Get<Offline>(radar).Reasons);
             Assert.AreEqual(100f, World.Get<Health>(enemy).Current, "an unpowered tower holds fire");
 
-            World.SpawnBuilding(1, new float3(-30f, 0f, 0f), Footprint, power: 10f);
+            World.SpawnBuilding(1, new float3(-30f, 0f, 0f), Footprint, new TestBuilding { Power = 10f });
             World.Run(2f);
 
             Assert.AreEqual(OfflineReason.None, World.Get<Offline>(radar).Reasons);
@@ -58,7 +58,10 @@ namespace HyperRTS.Simulation.Tests.Buildings
             var prefab = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f)));
             World.SetBuildTime(prefab, 2f);
             World.SpawnProvider(1, new float3(-20f, 0f, 0f), 10);
-            var factory = World.MakeProducer(World.SpawnBuilding(1, float3.zero, Footprint, power: -5f),
+            var factory = World.MakeProducer(World.SpawnBuilding(1, float3.zero, Footprint, new TestBuilding
+            {
+                Power = -5f,
+            }),
                 new float3(0f, 0f, -4f), prefab);
             World.Produce(1, factory, prefab);
 
@@ -72,10 +75,10 @@ namespace HyperRTS.Simulation.Tests.Buildings
         [Test]
         public void GameOfflineReason_SilencesTowersAndPlants_UntilCleared()
         {
-            var plant = World.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, power: 5f);
+            var plant = World.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, new TestBuilding { Power = 5f });
             var tower = World.SpawnBuilding(1, new float3(0f, 0f, 20f), Footprint);
-            World.AddWeapon(tower, range: 6f, damage: 10f);
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 25f), speed: 0f);
+            World.AddWeapon(tower, new TestWeapon { Range = 6f, Damage = 10f });
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 25f), new TestUnit { Speed = 0f });
             var emp = new Offline { Reasons = OfflineReason.Custom };
             World.Set(tower, emp);
             World.Set(plant, emp);
@@ -112,9 +115,9 @@ namespace HyperRTS.Simulation.Tests.Buildings
         [Test]
         public void GameOverwritingOffline_KeepsTheEngineReasons()
         {
-            var site = World.SpawnBuilding(1, float3.zero, Footprint, complete: false);
-            var radar = World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, power: -5f);
-            World.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, power: -5f);
+            var site = World.SpawnBuilding(1, float3.zero, Footprint, new TestBuilding { Complete = false });
+            var radar = World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, new TestBuilding { Power = -5f });
+            World.SpawnBuilding(1, new float3(-20f, 0f, 0f), Footprint, new TestBuilding { Power = -5f });
             var emp = new Offline { Reasons = OfflineReason.Custom };
             World.Set(site, emp);
             World.Set(radar, emp);
@@ -130,7 +133,10 @@ namespace HyperRTS.Simulation.Tests.Buildings
         {
             var depot = World.SpawnBuilding(1, float3.zero, Footprint);
             World.SetCost(depot, _supplies, 101);
-            var site = World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, complete: false);
+            var site = World.SpawnBuilding(1, new float3(20f, 0f, 0f), Footprint, new TestBuilding
+            {
+                Complete = false,
+            });
             World.SetCost(site, _supplies, 40);
             var enemy = World.SpawnBuilding(2, new float3(-20f, 0f, 0f), Footprint);
             World.SetCost(enemy, _supplies, 1000);
@@ -151,7 +157,7 @@ namespace HyperRTS.Simulation.Tests.Buildings
         [Test]
         public void SmartClickOnDamagedBuilding_BuildersRepairIt()
         {
-            var depot = World.SpawnBuilding(1, float3.zero, Footprint, buildTime: 10f);
+            var depot = World.SpawnBuilding(1, float3.zero, Footprint, new TestBuilding { BuildTime = 10f });
             World.Set(depot, new Health { Current = 100f, Max = 500f });
             var builder = World.MakeBuilder(World.SpawnUnit(1, new float3(8f, 0f, 0f)));
 

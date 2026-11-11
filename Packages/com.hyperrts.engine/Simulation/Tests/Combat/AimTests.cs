@@ -24,8 +24,14 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void ArcingWeapon_PitchesToItsLaunchAngle()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f,
-                projectile: World.ProjectilePrefab(), trajectory: Trajectory.Ballistic, arcHeight: 0.25f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 8f,
+                Cooldown = 100f,
+                Projectile = World.ProjectilePrefab(),
+                Trajectory = Trajectory.Ballistic,
+                ArcHeight = 0.25f,
+            });
             World.SpawnUnit(2, new float3(6f, 0f, 0f));
 
             World.Run(0.5f);
@@ -37,9 +43,18 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void TurretedUnit_KeepsItsHeadingWhileFiring_AndSettlesWhenIdle()
         {
-            var turret = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, cooldown: 0.2f, turreted: true);
-            var fixedGun = World.AddWeapon(World.SpawnUnit(1, new float3(0f, 0f, 2f)), range: 6f, cooldown: 0.2f);
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
+            var turret = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Cooldown = 0.2f,
+                Turreted = true,
+            });
+            var fixedGun = World.AddWeapon(World.SpawnUnit(1, new float3(0f, 0f, 2f)), new TestWeapon
+            {
+                Range = 6f,
+                Cooldown = 0.2f,
+            });
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
 
             World.Run(1f);
 
@@ -56,9 +71,14 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void Turret_FiresOnlyAfterTurningOntoTheTarget_AtItsRate()
         {
-            var turret = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, cooldown: 0.1f, turreted: true,
-                traverseSpeed: 90f);
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
+            var turret = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Cooldown = 0.1f,
+                Turreted = true,
+                TraverseSpeed = 90f,
+            });
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
 
             World.Run(0.8f);
             Assert.AreEqual(1000f, World.GetHealth(enemy), "still turning a quarter turn at 90 degrees a second");
@@ -71,8 +91,13 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void TraversedTurret_FiresFromItsTurnedMuzzle()
         {
-            var turret = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 8f, cooldown: 100f,
-                projectile: World.ProjectilePrefab(), turreted: true);
+            var turret = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 8f,
+                Cooldown = 100f,
+                Projectile = World.ProjectilePrefab(),
+                Turreted = true,
+            });
             var weapon = World.Primary(turret);
             weapon.Aim.Muzzle = new float3(0f, 1f, 3f);
             weapon.Aim.HasMuzzle = true;
@@ -139,7 +164,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         // Faces +z, as spawned, and holds position so it only turns.
         private Entity SpawnHullGun(float3 position, float radius, float hullLength, float turnRate, float range)
         {
-            var gun = World.SpawnUnit(1, position, radius: radius);
+            var gun = World.SpawnUnit(1, position, new TestUnit { Radius = radius });
             World.Set(gun, new NavAgent
             {
                 Radius = radius, HullLength = hullLength, Mass = 40f, IsVehicle = true, Chassis = new Chassis { Pivots = true },
@@ -149,7 +174,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             {
                 Acceleration = 3f, Braking = 6f, TurnRate = math.radians(turnRate),
             });
-            return World.AddWeapon(gun, Stance.HoldPosition, range: range);
+            return World.AddWeapon(gun, new TestWeapon { Stance = Stance.HoldPosition, Range = range });
         }
 
         private float Yaw(Entity unit)

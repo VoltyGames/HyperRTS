@@ -55,28 +55,31 @@ namespace HyperRTS.Presentation.Animation.Figures
                     var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                     var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
                     var hold = figure.Clips.Value.FireHold(member.Posture);
-                    moving = figure.Observe(squad, feet, shots, Now, DeltaTime, hold, out firing);
+                    figure.Observe(feet, shots, DeltaTime);
+                    firing = figure.Shots.Within(hold);
+                    moving = squad.Moving(figure.Speed, figure.State, Now - figure.StateSince);
                     digging = IsDigging(member, moving, firing);
                 }
 
                 var next = figure.Next(member.Alive, moving, Now);
-                Animate(entity, ref figure, next, member, firing, digging, squad);
+                Animate(entity, ref figure, next, member, new FigureActivity(firing, digging), squad);
 
                 figures[i] = figure;
             }
         }
 
         private void Animate(Entity root, ref SquadFigure figure, FigureState next, in SquadMember member,
-            bool firing, bool digging, in SquadFigures squad)
+            in FigureActivity activity, in SquadFigures squad)
         {
             if (next != figure.State)
             {
-                Show(root, ref figure, next, member, firing, digging, squad);
+                Show(root, ref figure, next, member, activity, squad);
             }
             else if (next != FigureState.Die && next != FigureState.Hidden
-                && (figure.PoseDiffers(member.Posture, firing, digging) || firing && figure.Shot))
+                && (figure.PoseDiffers(member.Posture, activity.Firing, activity.Digging)
+                    || activity.Firing && figure.Shot))
             {
-                Pose(ref figure, next, member.Posture, firing, digging);
+                Pose(ref figure, next, member.Posture, activity.Firing, activity.Digging);
             }
 
             if (next is FigureState.Walk or FigureState.Run && figure.Retune(Now))
@@ -98,7 +101,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         }
 
         private void Show(Entity root, ref SquadFigure figure, FigureState next, in SquadMember member,
-            bool firing, bool digging, in SquadFigures squad)
+            in FigureActivity activity, in SquadFigures squad)
         {
             var hidden = next == FigureState.Hidden;
             Hides.Enqueue(new FigureHide { Root = root, Branch = figure.Figure, Hide = hidden });
@@ -116,7 +119,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 return;
             }
 
-            Pose(ref figure, next, member.Posture, firing, digging);
+            Pose(ref figure, next, member.Posture, activity.Firing, activity.Digging);
         }
 
         // A standing member at its place on a site digs unless it is firing.

@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void PassiveStance_NeverEngages()
         {
-            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), Stance.Passive);
+            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Stance = Stance.Passive });
             var enemy = World.SpawnUnit(2, new float3(3f, 0f, 0f));
 
             World.Run(3f);
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void LongRangeWeapon_HoldsFireAtUnseenEnemy_UntilAnAllySpotsIt()
         {
-            var artillery = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 30f);
+            var artillery = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Range = 30f });
             var enemy = World.SpawnUnit(2, new float3(25f, 0f, 0f));
 
             World.Run(2f);
@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.AreEqual(100f, World.GetHealth(enemy), "out of its team's sight");
             Assert.IsFalse(World.IsEnabled<AttackTarget>(artillery));
 
-            World.SpawnUnit(3, new float3(18f, 0f, 0f), name: "Spotter");
+            World.SpawnUnit(3, new float3(18f, 0f, 0f), new TestUnit { Name = "Spotter" });
             World.Run(2f);
 
             Assert.IsTrue(WasHit(enemy), "fires once an ally sees it");
@@ -97,7 +97,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void LongRangeWeapon_WithFogOff_FiresAtAnythingInRange()
         {
             World.DisableFog();
-            World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 30f);
+            World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Range = 30f });
             var enemy = World.SpawnUnit(2, new float3(25f, 0f, 0f));
 
             World.Run(2f);
@@ -109,7 +109,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void AttackOrder_ChasesBeyondAcquireRange_ThenCompletes()
         {
             var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero));
-            var enemy = World.SpawnUnit(2, new float3(25f, 0f, 0f), speed: 2f);
+            var enemy = World.SpawnUnit(2, new float3(25f, 0f, 0f), new TestUnit { Speed = 2f });
             World.Set(enemy, new MoveDestination { Value = new float3(80f, 0f, 0f) });
             World.SetEnabled<MoveDestination>(enemy, true);
             World.Issue(soldier, new Order { Type = OrderType.Attack, Target = enemy });
@@ -126,7 +126,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [TestCase(Stance.Defensive)]
         public void AttackMove_FightsOnTheWay_ThenReachesGoal(Stance stance)
         {
-            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), stance);
+            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Stance = stance });
             var enemy = World.SpawnUnit(2, new float3(50f, 0f, 0f));
             var goal = new float3(80f, 0f, 0f);
             World.Command(1, new PlayerCommand { Type = CommandType.AttackMove, Unit = soldier, Position = goal });
@@ -142,8 +142,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [TestCase(1f, false)]
         public void DefensiveLeash_ScalesWithTheStancesLeashFactor(float leashFactor, bool keeps)
         {
-            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), Stance.Defensive, range: 2f);
-            var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f), speed: 0f);
+            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Stance = Stance.Defensive,
+                Range = 2f,
+            });
+            var enemy = World.SpawnUnit(2, new float3(6f, 0f, 0f), new TestUnit { Speed = 0f });
             World.Tick();
 
             // About 12 from its post: past a 10 acquire range, inside 1.5 times it.
@@ -159,7 +163,10 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void HoldPosition_FiresInRangeButNeverMoves()
         {
-            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), Stance.HoldPosition);
+            var soldier = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Stance = Stance.HoldPosition,
+            });
             var near = World.SpawnUnit(2, new float3(3f, 0f, 0f));
             var far = World.SpawnUnit(2, new float3(0f, 0f, 8f));
 
@@ -174,7 +181,11 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void TowerUnderConstruction_HoldsFireUntilFinished()
         {
             var tower = World.AddWeapon(
-                World.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false, buildTime: 100f));
+                World.SpawnBuilding(1, float3.zero, new float2(2f, 2f), new TestBuilding
+                {
+                    Complete = false,
+                    BuildTime = 100f,
+                }));
             var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
 
             World.Run(2f);
@@ -188,7 +199,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void TargetInsideMinRange_IsSkipped_ForOneBeyondIt()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 8f, minRange: 3f, cooldown: 100f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 8f,
+                MinRange = 3f,
+                Cooldown = 100f,
+            });
             var near = World.SpawnUnit(2, new float3(2f, 0f, 0f));
             var far = World.SpawnUnit(2, new float3(-6f, 0f, 0f));
 
@@ -202,7 +218,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void OrderedTargetInsideMinRange_BacksOffToMidRange_ThenFires()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 8f, minRange: 3f, cooldown: 100f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 8f,
+                MinRange = 3f,
+                Cooldown = 100f,
+            });
             var enemy = World.SpawnUnit(2, new float3(2f, 0f, 0f));
             World.Command(1, new PlayerCommand
             {
@@ -220,7 +241,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void SurfaceOnlyGun_IgnoresAircraft_AndCantBeOrderedAtThem()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Range = 6f });
             var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
             World.Run(2f);
 

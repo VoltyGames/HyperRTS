@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
 
         protected Entity Spawn(NavAgent agent, Locomotion locomotion, float3 position, float yaw)
         {
-            var unit = _world.SpawnUnit(1, position, 8f, agent.Radius);
+            var unit = _world.SpawnUnit(1, position, new TestUnit { Speed = 8f, Radius = agent.Radius });
             agent.WallMargin = agent.HullWallMargin;
             _world.Set(unit, agent);
             _world.Set(unit,

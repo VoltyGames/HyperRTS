@@ -52,11 +52,14 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void FindMissingPrerequisites_ListsOnlyUnmetTypesWithAPrefab()
         {
             var prefab = _world.UnitPrefab(_supplies, 10);
-            var radar = _world.MakePrefab(_world.SpawnBuilding(0, Far, new float2(4f, 4f), name: "Radar"));
+            var radar = _world.MakePrefab(_world.SpawnBuilding(0, Far, new float2(4f, 4f), new TestBuilding
+            {
+                Name = "Radar",
+            }));
             Require(prefab, "Barracks");
             Require(prefab, "Radar");
             Require(prefab, "Never Made");
-            _world.SpawnBuilding(1, Far, new float2(4f, 4f), name: "Barracks");
+            _world.SpawnBuilding(1, Far, new float2(4f, 4f), new TestBuilding { Name = "Barracks" });
             _world.Tick();
             Refresh();
 
@@ -123,7 +126,7 @@ namespace HyperRTS.Presentation.Tests.HUD
         public void Tooltip_ShowsTheNameAndMissingPrerequisitesAsWarnings()
         {
             var prefab = _world.UnitPrefab(_supplies, 10, name: "Tank");
-            _world.MakePrefab(_world.SpawnBuilding(0, Far, new float2(4f, 4f), name: "Factory"));
+            _world.MakePrefab(_world.SpawnBuilding(0, Far, new float2(4f, 4f), new TestBuilding { Name = "Factory" }));
             Require(prefab, "Factory");
             var builder = _world.SpawnUnit(1, Far);
             _world.MakeBuilder(builder, prefab);

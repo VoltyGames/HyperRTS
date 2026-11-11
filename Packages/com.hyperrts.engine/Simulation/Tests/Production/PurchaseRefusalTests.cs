@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests.Production
 
             Assert.AreEqual(PurchaseRefusal.MissingPrerequisite, Refusal(prefab), "locked and unaffordable");
 
-            World.SpawnBuilding(1, Far, new float2(4f, 4f), name: "Barracks");
+            World.SpawnBuilding(1, Far, new float2(4f, 4f), new TestBuilding { Name = "Barracks" });
             Assert.AreEqual(PurchaseRefusal.CannotAfford, Refusal(prefab));
 
             World.AddResources(1, _supplies, 100);
@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Tests.Production
             var entityManager = World.EntityManager;
             World.AddResources(1, _supplies, 1000);
             var hero = World.AddBuildLimit(World.UnitPrefab(_supplies, 10, name: "Hero"), 1);
-            World.AddBuildLimit(World.SpawnUnit(1, Far, name: "Hero"), 1);
+            World.AddBuildLimit(World.SpawnUnit(1, Far, new TestUnit { Name = "Hero" }), 1);
             var upgrade = World.UnitPrefab(_supplies, 10, name: "Upgrade");
             entityManager.AddComponent<Research>(upgrade);
             entityManager.GetBuffer<CompletedResearch>(World.Player(1)).Add(new CompletedResearch

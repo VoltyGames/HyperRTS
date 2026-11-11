@@ -26,8 +26,13 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void BothWeapons_FireAtOneTarget()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
-            World.AddMount(gun, range: 6f, damage: 5f, cooldown: 100f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 100f,
+            });
+            World.AddMount(gun, new TestMount { Range = 6f, Damage = 5f, Cooldown = 100f });
             var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
 
             World.Run(1f);
@@ -39,8 +44,20 @@ namespace HyperRTS.Simulation.Tests.Combat
         public void MinEffect_MountSkipsTargetsItsDamageBarelyHurts()
         {
             var missile = World.Own(ScriptableObject.CreateInstance<DamageType>());
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
-            World.AddMount(gun, range: 6f, damage: 50f, cooldown: 100f, minEffect: 0.5f, damageType: missile);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 100f,
+            });
+            World.AddMount(gun, new TestMount
+            {
+                Range = 6f,
+                Damage = 50f,
+                Cooldown = 100f,
+                MinEffect = 0.5f,
+                DamageType = missile,
+            });
             var soldier = World.SpawnUnit(2, new float3(4f, 0f, 0f));
             var writer = World.Writer(soldier);
             writer.AddBuffer(new[] { new ArmorModifier { DamageType = missile, Multiplier = 0.1f } });
@@ -54,10 +71,21 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void IndependentAirMount_EngagesAndAimsAtAircraft_WhileThePrimaryShootsGround()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f,
-                turreted: true);
-            World.AddMount(gun, range: 6f, damage: 20f, cooldown: 100f, targets: WeaponTargets.Air,
-                independent: true);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 100f,
+                Turreted = true,
+            });
+            World.AddMount(gun, new TestMount
+            {
+                Range = 6f,
+                Damage = 20f,
+                Cooldown = 100f,
+                Targets = WeaponTargets.Air,
+                Independent = true,
+            });
             var tank = World.SpawnUnit(2, new float3(-3f, 0f, 0f));
             var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
 
@@ -75,9 +103,20 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void ResearchGatedMount_HoldsFireUntilTheResearchIsDone()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 100f);
-            World.AddMount(gun, range: 6f, damage: 5f, cooldown: 0.5f, requiredResearchTypeId: Research);
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 100f,
+            });
+            World.AddMount(gun, new TestMount
+            {
+                Range = 6f,
+                Damage = 5f,
+                Cooldown = 0.5f,
+                RequiredResearchTypeId = Research,
+            });
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
 
             World.Run(1f);
             Assert.AreEqual(990f, World.GetHealth(enemy), "locked mount stayed silent");
@@ -93,8 +132,19 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void ResearchGatedMount_Relocks_WhenTheResearchIsGone()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);
-            World.AddMount(gun, range: 6f, damage: 10f, cooldown: 100f, requiredResearchTypeId: Research);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 0f,
+                Cooldown = 100f,
+            });
+            World.AddMount(gun, new TestMount
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 100f,
+                RequiredResearchTypeId = Research,
+            });
             World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1))
                 .Add(new CompletedResearch { TypeId = Research });
             World.Tick();
@@ -140,8 +190,20 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void MountRounds_RunOut_AndRefillWhileDocked()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 0f, cooldown: 100f);
-            World.AddMount(gun, range: 6f, damage: 10f, cooldown: 0.2f, rounds: 2, reloadTime: 0.5f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 0f,
+                Cooldown = 100f,
+            });
+            World.AddMount(gun, new TestMount
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 0.2f,
+                Rounds = 2,
+                ReloadTime = 0.5f,
+            });
             var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
 
             World.Run(2f);
@@ -158,7 +220,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void MagazineRefill_ReloadsAGroundUnitInTheField()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 0.5f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 0.5f,
+            });
             World.SetAmmo(gun, 2, 3f, AmmoRefill.Magazine);
             var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
@@ -172,7 +239,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void Salvo_FiresEachShotAtTheInterval_ThenCoolsDown()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 5f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 5f,
+            });
             World.SetSalvo(gun, 3, 0.5f);
             var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
 
@@ -193,7 +265,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void Salvo_StopsWhenItsTargetDies()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 5f);
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 5f,
+            });
             World.SetSalvo(gun, 3, 0.5f);
             var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
             Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f));
@@ -209,8 +286,12 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void Salvo_FiresFromEachMuzzleInTurn()
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, cooldown: 100f,
-                projectile: World.ProjectilePrefab());
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Cooldown = 100f,
+                Projectile = World.ProjectilePrefab(),
+            });
             World.SetSalvo(gun, 4, 0.2f);
             World.SetMuzzles(gun, new float3(-1f, 1f, 0f), new float3(0f, 1f, 0f), new float3(1f, 1f, 0f));
             var weapon = World.Primary(gun);

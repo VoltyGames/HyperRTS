@@ -141,8 +141,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
             _world.SpawnObstacle(new float3(0.5f, 0f, 22f), new float2(1f, 18f));
             _world.Tick();
 
-            var small = _world.SpawnUnit(1, new float3(-6f, 0f, 0.5f), radius: 0.4f);
-            var wide = _world.SpawnUnit(1, new float3(-6f, 0f, 5f), radius: 1f);
+            var small = _world.SpawnUnit(1, new float3(-6f, 0f, 0.5f), new TestUnit { Radius = 0.4f });
+            var wide = _world.SpawnUnit(1, new float3(-6f, 0f, 5f), new TestUnit { Radius = 1f });
             var goal = new float3(6f, 0f, 0.5f);
             var wideGoal = new float3(6f, 0f, 5f);
             _world.MoveTo(small, goal);

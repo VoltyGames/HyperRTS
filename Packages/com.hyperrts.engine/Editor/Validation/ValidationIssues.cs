@@ -9,10 +9,18 @@ namespace HyperRTS.Editor.Validation
     public sealed class ValidationIssues : List<ValidationIssue>
     {
         public void Error(Object context, string message, string fixLabel = null, Action fix = null, string path = null) =>
-            Add(new ValidationIssue(MessageType.Error, message, context, fixLabel, fix, path: path));
+            Add(new ValidationIssue
+            {
+                Severity = MessageType.Error, Message = message, Context = context, FixLabel = fixLabel, Fix = fix,
+                    Path = path,
+            });
 
         public void Warn(Object context, string message, string fixLabel = null, Action fix = null, string path = null) =>
-            Add(new ValidationIssue(MessageType.Warning, message, context, fixLabel, fix, path: path));
+            Add(new ValidationIssue
+            {
+                Severity = MessageType.Warning, Message = message, Context = context, FixLabel = fixLabel, Fix = fix,
+                    Path = path,
+            });
 
         /// <summary>The most severe issue's severity, or None when there are no issues.</summary>
         public MessageType Worst

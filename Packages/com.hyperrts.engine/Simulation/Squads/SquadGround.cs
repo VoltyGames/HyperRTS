@@ -33,26 +33,29 @@ namespace HyperRTS.Simulation.Squads
         private readonly Entity _squad;
         private readonly byte _owner;
         private readonly OwnerRelations _relations;
-        private readonly float _deltaTime;
+        private float _deltaTime;
         private FixedList512Bytes<Hull> _hulls;
 
         public SquadGround(in NavGrid grid, in NavAgent agent, float2 centre, Entity squad, byte owner,
-            in OwnerRelations relations, float deltaTime)
+            in OwnerRelations relations)
         {
             _hasAccess = agent.TryAccess(grid, out _access);
             _centre = centre;
             _squad = squad;
             _owner = owner;
             _relations = relations;
-            _deltaTime = deltaTime;
+            _deltaTime = 0f;
             _hulls = default;
             // Within this of the centre every cell is open, so most places need no ray.
             _openReach = _hasAccess ? OpenReach(_access, centre) : float.PositiveInfinity;
         }
 
-        /// <summary>Gathers the allied vehicle hulls within <paramref name="spread"/> of the centre.</summary>
-        public void FindHulls(in SpatialIndex index, float spread) =>
+        /// <summary>Gathers the allied vehicle hulls within <paramref name="spread"/> of the centre, moved on by <paramref name="deltaTime"/>.</summary>
+        public void FindHulls(in SpatialIndex index, float spread, float deltaTime)
+        {
+            _deltaTime = deltaTime;
             index.QueryHulls(new float3(_centre.x, 0f, _centre.y), spread + HullMargin, ref this);
+        }
 
         public void Visit(in SpatialEntry entry)
         {

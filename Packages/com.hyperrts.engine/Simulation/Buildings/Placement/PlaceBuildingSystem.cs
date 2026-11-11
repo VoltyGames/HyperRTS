@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var asked = new BuildingSpot(request.Command.Position, request.Command.Yaw, footprint, surface);
             var spot = asked.Snap(map).Grounded(grid);
-            if (!IsFree(ref state, spot, map, grid, request.Owner, sites, inLine: false))
+            if (!IsFree(ref state, spot, request.Owner, sites, inLine: false))
             {
                 return false;
             }
@@ -154,18 +154,18 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 return false;
             }
 
-            order = Raise(ref state, request, buyer, ecb, sites, spot, inLine: false);
+            sites.Add(new PlacedFootprint(spot.Box, false));
+            order = Raise(ref state, request, buyer, ecb, spot);
             return true;
         }
 
         /// <summary>Counts the bought site against the buyer, spawns it and returns the Build order on it.</summary>
         private Order Raise(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
-            NativeList<PlacedFootprint> sites, in BuildingSpot spot, bool inLine)
+            in BuildingSpot spot)
         {
             var prefab = request.Command.Prefab;
             buyer.AddPurchase(state.EntityManager, prefab);
             var building = SpawnSite(ref state, prefab, spot.Center, spot.Rotation, request.Owner, ecb);
-            sites.Add(new PlacedFootprint(spot.Box, inLine));
             return new Order { Type = OrderType.Build, Target = building, Position = spot.Center };
         }
 
@@ -230,9 +230,11 @@ namespace HyperRTS.Simulation.Buildings.Placement
         /// Valid ground, clear of every site by the map's building gap, with no enemy unit on it; a hidden enemy fails
         /// it like any bad spot.
         /// </summary>
-        private bool IsFree(ref SystemState state, in BuildingSpot spot, in MapSettings map, in NavGrid grid,
-            byte owner, NativeList<PlacedFootprint> sites, bool inLine)
+        private bool IsFree(ref SystemState state, in BuildingSpot spot, byte owner, NativeList<PlacedFootprint> sites,
+            bool inLine)
         {
+            var map = SystemAPI.GetSingleton<MapSettings>();
+            var grid = SystemAPI.GetSingleton<NavGrid>();
             if (!spot.CanPlace(map, grid, sites.AsArray(), inLine))
             {
                 return false;
@@ -260,7 +262,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             for (var i = 0; i < line.Count; i++)
             {
                 var spot = line.Segment(i).Grounded(grid);
-                if (!IsFree(ref state, spot, map, grid, request.Owner, sites, inLine: true))
+                if (!IsFree(ref state, spot, request.Owner, sites, inLine: true))
                 {
                     continue;
                 }
@@ -270,7 +272,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
                     break;
                 }
 
-                orders.Add(Raise(ref state, request, buyer, ecb, sites, spot, inLine: true));
+                sites.Add(new PlacedFootprint(spot.Box, true));
+                orders.Add(Raise(ref state, request, buyer, ecb, spot));
             }
         }
     }

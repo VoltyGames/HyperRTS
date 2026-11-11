@@ -24,7 +24,7 @@ namespace HyperRTS.Simulation.Tests.Movement
 
         private Entity SpawnTank(float3 position, float3 facing)
         {
-            var tank = World.SpawnUnit(1, position, radius: TankRadius);
+            var tank = World.SpawnUnit(1, position, new TestUnit { Radius = TankRadius });
             World.Set(tank, new NavAgent
             {
                 Radius = TankRadius, HullLength = TankLength, Spacing = Spacing,

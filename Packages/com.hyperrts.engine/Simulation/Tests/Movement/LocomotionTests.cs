@@ -128,7 +128,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void Infantry_StepsAtFullSpeedAndFacesItsGoal_AtOnce()
         {
-            var soldier = _world.SpawnUnit(1, float3.zero, speed: 5f, radius: 0.4f);
+            var soldier = _world.SpawnUnit(1, float3.zero, new TestUnit { Speed = 5f, Radius = 0.4f });
             Order(soldier, new float3(10f, 0f, 0f));
             _world.Tick(TestWorld.FrameTime, 2);
 

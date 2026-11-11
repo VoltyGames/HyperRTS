@@ -87,7 +87,9 @@ namespace HyperRTS.Presentation.Overlays
 
                     if (showsBar)
                     {
-                        AddBar(entityManager, entities[i], unit, worlds[i].Position, health, squadRules, style);
+                        var position = worlds[i].Position;
+                        var top = EntityExtent.Top(entityManager, entities[i], position, unit.Radius);
+                        AddBar(unit, new Vector3(position.x, top, position.z), health, squadRules, style);
                     }
                 }
             }
@@ -131,13 +133,11 @@ namespace HyperRTS.Presentation.Overlays
             _markers.Add(pose, footprint, color, selected, style);
         }
 
-        private void AddBar(EntityManager entityManager, Entity entity, in OverlayUnit unit, float3 position,
-            in Health health, in SquadRules squadRules, OverlayStyle style)
+        private void AddBar(in OverlayUnit unit, Vector3 anchor, in Health health, in SquadRules squadRules,
+            OverlayStyle style)
         {
-            var top = EntityExtent.Top(entityManager, entity, position, unit.Radius);
-            var bar = new HealthBarData(health, unit.MemberCount, unit.Alive, unit.Rank, unit.Radius,
-                SquadBarState.Read(unit, squadRules), style);
-            _bars.Add(new Vector3(position.x, top, position.z), bar, style);
+            var bar = new HealthBarData(health, unit.Rank, unit.Radius, SquadBarState.Read(unit, squadRules), style);
+            _bars.Add(anchor, bar, style);
         }
 
         // Chunk reads skip the job sync EntityManager.GetComponentData does, so the constructor completes writers first.

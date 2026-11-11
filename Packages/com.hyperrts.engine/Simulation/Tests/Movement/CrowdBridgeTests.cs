@@ -23,7 +23,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var i = 0; i < count; i++)
             {
                 var start = new float3(-25f - i / abreast * 11f, 0f, (i % abreast - (abreast - 1) * 0.5f) * 5f);
-                units.Add(_world.SpawnVehicle(1, start, math.PI * 0.5f, 4.5f, tank, TestVehicles.Tracks));
+                units.Add(_world.SpawnVehicle(1, TestVehicles.At(start, math.PI * 0.5f), 4.5f, tank,
+                    TestVehicles.Tracks));
             }
 
             _world.Tick();
@@ -99,7 +100,8 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             _world.SpawnBridge();
             var tank = TestVehicles.TankHull();
-            var unit = _world.SpawnVehicle(1, new float3(-8.6f, 0f, z), yaw, 4.5f, tank, TestVehicles.Tracks);
+            var unit = _world.SpawnVehicle(1, TestVehicles.At(new float3(-8.6f, 0f, z), yaw), 4.5f, tank,
+                TestVehicles.Tracks);
             var facing = new float2(math.sin(yaw), math.cos(yaw));
             var rolling = new LocomotionState { Speed = 1.8f, LastChoice = facing * 1.8f };
             _world.EntityManager.SetComponentData(unit, rolling);

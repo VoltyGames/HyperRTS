@@ -135,7 +135,7 @@ namespace HyperRTS.Network.Tests
             var prefab = Entity.Null;
             foreach (var world in new[] { Client, Host })
             {
-                prefab = world.SpawnUnit(owner, float3.zero, name: name);
+                prefab = world.SpawnUnit(owner, float3.zero, new TestUnit { Name = name });
                 GhostPrefabCreation.ConvertToGhostPrefab(world.EntityManager, prefab, config);
             }
 

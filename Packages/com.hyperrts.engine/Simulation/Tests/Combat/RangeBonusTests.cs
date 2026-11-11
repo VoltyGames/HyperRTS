@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             // The shooter stands at the cliff's edge, so its line down to the target clears the cliff top.
             World.CreateTerrain(p => p.x < 3f ? height : 0f);
             var shooter = World.SpawnUnit(1, new float3(1f, height, 0f));
-            World.AddWeapon(shooter, range: Range, trajectory: trajectory, arcHeight: 5f);
+            World.AddWeapon(shooter, new TestWeapon { Range = Range, Trajectory = trajectory, ArcHeight = 5f });
             World.SpawnUnit(2, new float3(8f, 0f, 0f));
 
             Assert.IsTrue(World.RunUntil(() => World.IsEnabled<AttackTarget>(shooter), 2f), "never engaged");
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var squad = World.SpawnUnit(1, new float3(0f, 0f, -5f));
             var passenger = World.Writer(squad);
             TransportSetup.AddPassenger(passenger, 1);
-            World.AddWeapon(squad, range: Range);
+            World.AddWeapon(squad, new TestWeapon { Range = Range });
             if (garrisoned)
             {
                 World.Enter(squad, house);

@@ -219,9 +219,8 @@ namespace HyperRTS.Presentation.Animation.Figures
             Facing = Primed ? math.slerp(Facing, target, 1f - math.exp(-TurnRate * deltaTime)) : target;
         }
 
-        /// <summary>Records this frame's position and shot count; returns how a living figure moves and whether it fires.</summary>
-        public FigureState Observe(in SquadFigures squad, float3 position, byte shots, float now, float deltaTime,
-            float fireHold, out bool firing)
+        /// <summary>Records this frame's position and shot count.</summary>
+        public void Observe(float3 position, byte shots, float deltaTime)
         {
             if (!Primed)
             {
@@ -233,8 +232,6 @@ namespace HyperRTS.Presentation.Animation.Figures
             Speed = math.lerp(Speed, measured, 1f - math.exp(-deltaTime / SquadFigures.SpeedTime));
             Shot = Shots.Update(shots, deltaTime);
             LastPosition = position;
-            firing = Shots.Within(fireHold);
-            return squad.Moving(Speed, State, now - StateSince);
         }
 
         /// <summary>The state this figure moves to: a dead member's figure dies then hides, a living one's shows <paramref name="living"/>.</summary>

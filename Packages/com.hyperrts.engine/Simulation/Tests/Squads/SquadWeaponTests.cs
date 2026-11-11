@@ -20,10 +20,16 @@ namespace HyperRTS.Simulation.Tests.Squads
         [Test]
         public void UpgradedMember_CarriesTheUpgradeWhileItsMountIsEnabled_AndItsOwnWeaponOtherwise()
         {
-            var squad = World.SpawnUnit(1, float3.zero, maxHealth: SquadTestKit.MemberHealth * 2);
+            var squad = World.SpawnUnit(1, float3.zero, new TestUnit { MaxHealth = SquadTestKit.MemberHealth * 2 });
             SquadAuthoring.Add(World.Writer(squad), SquadTestKit.MemberHealth * 2, new byte[] { 0, 0 }, new byte?[] { null, 1 });
-            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
-            World.AddMount(squad, range: 6f, damage: 30f, cooldown: 100f, requiredResearchTypeId: Research);
+            World.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 100f });
+            World.AddMount(squad, new TestMount
+            {
+                Range = 6f,
+                Damage = 30f,
+                Cooldown = 100f,
+                RequiredResearchTypeId = Research,
+            });
             World.Tick();
             Assert.AreEqual(0, World.Buffer<SquadMember>(squad)[1].Weapon, "locked");
 
@@ -71,8 +77,8 @@ namespace HyperRTS.Simulation.Tests.Squads
         public void EachCarrierFiresItsOwnShot_AndAMountWithoutCarriersStaysSilent()
         {
             var gun = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 1);
-            World.AddMount(gun, range: 6f, damage: 5f, cooldown: 100f);
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), maxHealth: 1000f);
+            World.AddMount(gun, new TestMount { Range = 6f, Damage = 5f, Cooldown = 100f });
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
 
             World.Run(1f);
 
@@ -80,8 +86,8 @@ namespace HyperRTS.Simulation.Tests.Squads
             Assert.AreEqual(1000f - 3f * 10f - 5f, World.GetHealth(enemy), 1e-3f);
 
             var silenced = World.SpawnArmedSquad(new float3(0f, 0f, 20f), 0, 0, 0, 1);
-            World.AddMount(silenced, range: 6f, damage: 5f, cooldown: 100f);
-            var other = World.SpawnUnit(2, new float3(4f, 0f, 20f), maxHealth: 1000f);
+            World.AddMount(silenced, new TestMount { Range = 6f, Damage = 5f, Cooldown = 100f });
+            var other = World.SpawnUnit(2, new float3(4f, 0f, 20f), new TestUnit { MaxHealth = 1000f });
             var members = World.Buffer<SquadMember>(silenced);
             var carrier = members[3];
             carrier.Health = 0f;

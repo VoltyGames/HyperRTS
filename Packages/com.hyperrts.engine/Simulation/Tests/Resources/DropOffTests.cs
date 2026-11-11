@@ -134,7 +134,10 @@ namespace HyperRTS.Simulation.Tests.Resources
         public void Harvester_DeliversToNearerDropOff_OnceItIsBuilt()
         {
             SpawnDropOff(new float3(-30f, 0f, 0f));
-            var site = World.SpawnBuilding(1, new float3(6f, 0f, 4f), new float2(4f, 4f), complete: false);
+            var site = World.SpawnBuilding(1, new float3(6f, 0f, 4f), new float2(4f, 4f), new TestBuilding
+            {
+                Complete = false,
+            });
             World.EntityManager.AddComponent<ResourceDropOff>(site);
             var node = World.SpawnNode(new float3(10f, 0f, 0f), _supplies, 1000);
             var harvester = SpawnHarvester(new float3(8f, 0f, 0f));

@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Tests.AI
         private Entity Squad(float3 position, int dead = 0)
         {
             var squad = World.SpawnSquad(Bot, position);
-            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
+            World.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 100f });
             var members = World.Buffer<SquadMember>(squad);
             for (var i = 0; i < dead; i++)
             {
@@ -136,10 +136,13 @@ namespace HyperRTS.Simulation.Tests.AI
             var work = FieldWorkPrefab(FieldWorkRole.Cover);
             World.MakeBuilder(Squad(new float3(-10f, 0f, 0f)), work);
             World.AddResources(Bot, _supplies, 500);
-            World.SpawnBuilding(Bot, float3.zero, new float2(4f, 4f), name: "HQ");
+            World.SpawnBuilding(Bot, float3.zero, new float2(4f, 4f), new TestBuilding { Name = "HQ" });
             DefencePointAt(new Vector2(20f, 0f));
-            var unmet = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(4f, 4f), complete: false,
-                name: "Depot"));
+            var unmet = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(4f, 4f), new TestBuilding
+            {
+                Complete = false,
+                Name = "Depot",
+            }));
             World.SetCost(unmet, _supplies, 9999);
             var steps = World.EntityManager.GetBuffer<AIBuildStep>(World.Player(Bot));
             steps.Add(new AIBuildStep { Prefab = unmet, Count = 1 });
@@ -162,8 +165,12 @@ namespace HyperRTS.Simulation.Tests.AI
 
         private Entity FieldWorkPrefab(FieldWorkRole role)
         {
-            var work = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(3f, 1f), complete: false,
-                buildTime: 0.5f, name: "FieldWork"));
+            var work = World.MakePrefab(World.SpawnBuilding(0, float3.zero, new float2(3f, 1f), new TestBuilding
+            {
+                Complete = false,
+                BuildTime = 0.5f,
+                Name = "FieldWork",
+            }));
             World.Add(work, new LinePlacement());
             World.Add(work, new AIFieldWork { Role = role });
             World.SetCost(work, _supplies, 5);

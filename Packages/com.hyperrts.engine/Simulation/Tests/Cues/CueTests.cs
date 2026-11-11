@@ -22,7 +22,10 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void InstantWeapon_PlaysFireAtShooter_AndImpactAtTarget()
         {
-            var shooter = Voiced(World.AddWeapon(World.SpawnUnit(1, float3.zero, name: "Rifle")), CueSlot.Fire,
+            var shooter = Voiced(World.AddWeapon(World.SpawnUnit(1, float3.zero, new TestUnit
+            {
+                Name = "Rifle",
+            })), CueSlot.Fire,
                 CueSlot.Impact);
             World.SpawnUnit(2, new float3(3f, 0f, 0f));
 
@@ -40,7 +43,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         {
             Rigged(World.AddWeapon(World.SpawnUnit(1, float3.zero)), CueSlot.Death, float3.zero);
             World.AddWeapon(World.SpawnUnit(1, new float3(0f, 0f, 2f)));
-            World.SpawnUnit(2, new float3(3f, 0f, 0f), maxHealth: 1000f);
+            World.SpawnUnit(2, new float3(3f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
 
             Assert.IsEmpty(World.QueuedOver(1f));
         }
@@ -48,7 +51,7 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void Events_LastOneFrame()
         {
-            Voiced(World.AddWeapon(World.SpawnUnit(1, float3.zero), cooldown: 100f), CueSlot.Fire);
+            Voiced(World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Cooldown = 100f }), CueSlot.Fire);
             World.SpawnUnit(2, new float3(3f, 0f, 0f));
 
             Assert.IsNotEmpty(World.QueuedOver(0.5f).FindAll(sound => sound.Slot == CueSlot.Fire));
@@ -61,8 +64,8 @@ namespace HyperRTS.Simulation.Tests.Cues
         [TestCase("remains", TestName = "Death plays a cue for remains alone")]
         public void Death_PlaysTheVictimsDeathCue(string leaves)
         {
-            World.AddWeapon(World.SpawnUnit(1, float3.zero), damage: 100f);
-            var victim = World.SpawnUnit(2, new float3(3f, 0f, 0f), name: "Victim");
+            World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Damage = 100f });
+            var victim = World.SpawnUnit(2, new float3(3f, 0f, 0f), new TestUnit { Name = "Victim" });
             switch (leaves)
             {
                 case "sound":
@@ -91,7 +94,13 @@ namespace HyperRTS.Simulation.Tests.Cues
             var squad = World.SpawnSquad(1, new float3(3f, 0f, 0f), speed: 0f);
             var typeId = World.GetTypeId(squad);
 
-            World.HitSquad(Entity.Null, 1000f, new float3(3f, 0f, 0f), radius: 12f, edge: 0f);
+            World.HitSquad(Entity.Null, new TestHit
+            {
+                Amount = 1000f,
+                At = new float3(3f, 0f, 0f),
+                Radius = 12f,
+                Edge = 0f,
+            });
             var death = Find(World.QueuedOver(0.5f), CueSlot.Death);
 
             Assert.AreEqual(typeId, death.TypeId);
@@ -101,7 +110,10 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void ProducedUnit_PlaysItsReadyCue()
         {
-            var prefab = Voiced(World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Tank")),
+            var prefab = Voiced(World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), new TestUnit
+            {
+                Name = "Tank",
+            })),
                 CueSlot.Ready);
             World.SetBuildTime(prefab, 0.5f);
             var producer = World.MakeProducer(World.SpawnBuilding(1, float3.zero, new float2(4f, 4f)),
@@ -119,8 +131,12 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void FinishedConstruction_PlaysTheBuildingsReadyCue()
         {
-            var site = Voiced(World.SpawnBuilding(1, float3.zero, new float2(2f, 2f), complete: false, buildTime: 0.5f,
-                name: "Depot"), CueSlot.Ready);
+            var site = Voiced(World.SpawnBuilding(1, float3.zero, new float2(2f, 2f), new TestBuilding
+            {
+                Complete = false,
+                BuildTime = 0.5f,
+                Name = "Depot",
+            }), CueSlot.Ready);
             var builder = World.MakeBuilder(World.SpawnUnit(1, new float3(2f, 0f, 0f)));
             World.Order(builder, OrderType.Build, site);
 
@@ -130,7 +146,10 @@ namespace HyperRTS.Simulation.Tests.Cues
         [Test]
         public void MoveCommand_SelectedUnitAnswers_RateLimited()
         {
-            var unit = Voiced(World.SpawnUnit(1, float3.zero, name: "Rifleman"), CueSlot.Move, CueSlot.Attack);
+            var unit = Voiced(World.SpawnUnit(1, float3.zero, new TestUnit
+            {
+                Name = "Rifleman",
+            }), CueSlot.Move, CueSlot.Attack);
             World.SetEnabled<Selected>(unit, true);
             var move = new PlayerCommand { Type = CommandType.Move, Position = new float3(10f, 0f, 0f) };
 

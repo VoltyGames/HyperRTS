@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests.Production
 
         private Entity LiveHero(byte owner, Entity prefab)
         {
-            var hero = World.SpawnUnit(owner, new float3(-20f, 0f, 0f), name: "Hero");
+            var hero = World.SpawnUnit(owner, new float3(-20f, 0f, 0f), new TestUnit { Name = "Hero" });
             return World.AddBuildLimit(hero, World.Get<BuildLimit>(prefab).Max);
         }
 
@@ -82,7 +82,7 @@ namespace HyperRTS.Simulation.Tests.Production
         [Test]
         public void PlaceBuilding_SecondSiteInTheSameFrameIsRefused()
         {
-            var silo = World.SpawnBuilding(0, Far, new float2(4f, 4f), name: "Silo");
+            var silo = World.SpawnBuilding(0, Far, new float2(4f, 4f), new TestBuilding { Name = "Silo" });
             var prefab = World.AddBuildLimit(World.MakePrefab(silo), 1);
             World.SetCost(prefab, _supplies, 100);
             var builder = World.MakeBuilder(World.SpawnUnit(1, float3.zero), prefab);

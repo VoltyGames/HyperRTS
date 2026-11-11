@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
 
         private Entity SpawnTurnedSite(float yaw)
         {
-            var site = World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            var site = World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), new TestBuilding { Complete = false });
             Manager.SetComponentData(site, LocalTransform.FromPositionRotation(float3.zero, quaternion.RotateY(yaw)));
             return site;
         }
@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
             var fence = SpawnScenery(new float3(5.3f, 0f, 0f), remains);
             var ruin = SpawnRuin(new float3(-3f, 0f, 0f));
             var outside = SpawnScenery(new float3(7f, 0f, 0f));
-            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), new TestBuilding { Complete = false });
 
             World.Run(0.5f);
 
@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
                 ToppleAuthoring.AddTopple(writer, new float3(0f, 1f, 0f), 12f, 0f, 2.5f);
             }
 
-            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), new TestBuilding { Complete = false });
 
             World.Run(0.5f);
 
@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Tests.Buildings.Construction
         public void SolidScenery_StaysAndStillBlocksPlacement()
         {
             var wall = SpawnScenery(new float3(6f, 0f, 0f), block: new float2(4f, 4f));
-            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), complete: false);
+            World.SpawnBuilding(1, float3.zero, new float2(10f, 2f), new TestBuilding { Complete = false });
 
             World.Run(0.5f);
 

@@ -8,32 +8,20 @@ namespace HyperRTS.Editor.Maps.Build
     /// <summary>What a finished map build hands to <see cref="IMapBuildHook"/>s.</summary>
     public sealed class MapBuildResult
     {
-        public MapBuildResult(MapSpec spec, MapPaths paths, MapClimate climate, MapReport report, int players, Texture2D minimap,
-            Texture2D overview)
-        {
-            Spec = spec;
-            Paths = paths;
-            Climate = climate;
-            Report = report;
-            Players = players;
-            Minimap = minimap;
-            Overview = overview;
-        }
+        public MapSpec Spec { get; set; }
 
-        public MapSpec Spec { get; }
-
-        public MapPaths Paths { get; }
+        public MapPaths Paths { get; set; }
 
         /// <summary>The climate the build used, so hooks need not reload the library.</summary>
-        public MapClimate Climate { get; }
+        public MapClimate Climate { get; set; }
 
-        public MapReport Report { get; }
+        public MapReport Report { get; set; }
 
-        public int Players { get; }
+        public int Players { get; set; }
 
-        public Texture2D Minimap { get; }
+        public Texture2D Minimap { get; set; }
 
         /// <summary>The map seen whole from the match camera (loading screens, menus); the last one saved in a build without graphics.</summary>
-        public Texture2D Overview { get; }
+        public Texture2D Overview { get; set; }
     }
 }

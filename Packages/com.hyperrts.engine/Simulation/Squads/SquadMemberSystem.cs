@@ -72,9 +72,8 @@ namespace HyperRTS.Simulation.Squads
                 CountCarriers(members, mounts);
                 if (!InsideLookup.HasEnabled(entity))
                 {
-                    var ground = new SquadGround(Grid, agent, transform.Position.xz, entity, owner.Value, Relations,
-                        DeltaTime);
-                    ground.FindHulls(Index, Spread(entity, members));
+                    var ground = new SquadGround(Grid, agent, transform.Position.xz, entity, owner.Value, Relations);
+                    ground.FindHulls(Index, Spread(entity, members), DeltaTime);
                     Walk(entity, members, ground, velocity.Value, speed.Value, transform);
                 }
             }

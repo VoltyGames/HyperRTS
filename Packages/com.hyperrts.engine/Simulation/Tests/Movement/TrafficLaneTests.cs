@@ -165,7 +165,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.SpawnObstacle(new float3(0f, 0f, 18.25f), new float2(4f, 30.5f));
             _world.SpawnObstacle(new float3(0f, 0f, -18.25f), new float2(4f, 30.5f));
             var dozer = SpawnTank(float3.zero, 0f);
-            _world.AddWeapon(dozer, Stance.HoldPosition);
+            _world.AddWeapon(dozer, new TestWeapon { Stance = Stance.HoldPosition });
             var truck = SpawnTruck(new float3(-30f, 0f, 0f), math.PI * 0.5f);
             _record.Track("truck", truck);
             _world.Tick();

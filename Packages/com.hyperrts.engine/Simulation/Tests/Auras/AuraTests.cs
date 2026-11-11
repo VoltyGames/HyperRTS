@@ -16,8 +16,7 @@ namespace HyperRTS.Simulation.Tests.Auras
     /// <summary>Area auras: who they affect, presence, bonuses, healing, damage, no stacking.</summary>
     public class AuraTests : SimulationFixture
     {
-        private Entity SpawnAura(byte owner, float3 position, string name, AuraTargets affects, float heal = 0f,
-            float damage = 0f, params StatModifier[] bonuses)
+        private Entity SpawnAura(byte owner, float3 position, string name, Aura aura, params StatModifier[] bonuses)
         {
             var source = World.SpawnBuilding(owner, position, new float2(2f, 2f));
             var id = EntityInfo.TypeIdFromName(name);
@@ -27,10 +26,9 @@ namespace HyperRTS.Simulation.Tests.Auras
             }
 
             var writer = World.Writer(source);
-            AuraAuthoring.AddAura(writer, new Aura
-            {
-                AuraId = id, Radius = 10f, Affects = affects, HealPerSecond = heal, DamagePerSecond = damage,
-            }, bonuses);
+            aura.AuraId = id;
+            aura.Radius = 10f;
+            AuraAuthoring.AddAura(writer, aura, bonuses);
             return source;
         }
 
@@ -38,11 +36,12 @@ namespace HyperRTS.Simulation.Tests.Auras
         public void FriendlyAura_HealsAndBoosts_OnlyAllies()
         {
             var speed = new StatModifier { Stat = Stat.MoveSpeed, Percent = 0.5f };
-            SpawnAura(1, float3.zero, "Repair Zone", AuraTargets.Friendly | AuraTargets.Units, heal: 20f, bonuses: speed);
-            var friend = World.SpawnUnit(1, new float3(3f, 0f, 0f), speed: 0f);
+            SpawnAura(1, float3.zero, "Repair Zone", new Aura { Affects = AuraTargets.Friendly | AuraTargets.Units,
+                HealPerSecond = 20f }, speed);
+            var friend = World.SpawnUnit(1, new float3(3f, 0f, 0f), new TestUnit { Speed = 0f });
             World.Set(friend, new MovementSpeed { Value = 4f });
             World.Set(friend, new Health { Current = 50f, Max = 100f });
-            var enemy = World.SpawnUnit(2, new float3(-3f, 0f, 0f), speed: 0f);
+            var enemy = World.SpawnUnit(2, new float3(-3f, 0f, 0f), new TestUnit { Speed = 0f });
             World.Set(enemy, new Health { Current = 50f, Max = 100f });
 
             World.Run(1.05f);
@@ -57,8 +56,9 @@ namespace HyperRTS.Simulation.Tests.Auras
         [Test]
         public void HostileAura_DamagesEnemies_AndCreditsSource()
         {
-            var source = SpawnAura(1, float3.zero, "Radiation", AuraTargets.Enemies | AuraTargets.AllKinds, damage: 40f);
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), speed: 0f);
+            var source = SpawnAura(1, float3.zero, "Radiation",
+                new Aura { Affects = AuraTargets.Enemies | AuraTargets.AllKinds, DamagePerSecond = 40f });
+            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { Speed = 0f });
 
             World.Run(1.05f);
 
@@ -69,9 +69,11 @@ namespace HyperRTS.Simulation.Tests.Auras
         [Test]
         public void SameNamedAuras_DoNotStack()
         {
-            SpawnAura(1, new float3(-2f, 0f, 0f), "Radiation", AuraTargets.Enemies | AuraTargets.Units, damage: 40f);
-            SpawnAura(1, new float3(2f, 0f, 0f), "Radiation", AuraTargets.Enemies | AuraTargets.Units, damage: 40f);
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 3f), speed: 0f);
+            SpawnAura(1, new float3(-2f, 0f, 0f), "Radiation",
+                new Aura { Affects = AuraTargets.Enemies | AuraTargets.Units, DamagePerSecond = 40f });
+            SpawnAura(1, new float3(2f, 0f, 0f), "Radiation",
+                new Aura { Affects = AuraTargets.Enemies | AuraTargets.Units, DamagePerSecond = 40f });
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 3f), new TestUnit { Speed = 0f });
 
             World.Run(1.05f);
 
@@ -83,8 +85,9 @@ namespace HyperRTS.Simulation.Tests.Auras
         public void EndingAura_RemovesBonus(bool destroySource)
         {
             var armor = new StatModifier { Stat = Stat.DamageTaken, Percent = -0.5f };
-            var source = SpawnAura(1, float3.zero, "Shield", AuraTargets.Friendly | AuraTargets.Units, bonuses: armor);
-            var unit = World.SpawnUnit(1, new float3(3f, 0f, 0f), speed: 0f);
+            var source = SpawnAura(1, float3.zero, "Shield",
+                new Aura { Affects = AuraTargets.Friendly | AuraTargets.Units }, armor);
+            var unit = World.SpawnUnit(1, new float3(3f, 0f, 0f), new TestUnit { Speed = 0f });
             World.Run(0.5f);
             Assert.AreEqual(1, World.Buffer<StatModifier>(unit).Length);
 
@@ -107,8 +110,8 @@ namespace HyperRTS.Simulation.Tests.Auras
         public void LeavingAura_KeepsOtherSourcesWithTheSameId()
         {
             var armor = new StatModifier { Stat = Stat.DamageTaken, Percent = -0.5f };
-            SpawnAura(1, float3.zero, "Shield", AuraTargets.Friendly | AuraTargets.Units, bonuses: armor);
-            var unit = World.SpawnUnit(1, new float3(3f, 0f, 0f), speed: 0f);
+            SpawnAura(1, float3.zero, "Shield", new Aura { Affects = AuraTargets.Friendly | AuraTargets.Units }, armor);
+            var unit = World.SpawnUnit(1, new float3(3f, 0f, 0f), new TestUnit { Speed = 0f });
             var upgrade = StatSource.Upgrade(EntityInfo.TypeIdFromName("Shield"));
             World.Buffer<StatModifier>(unit)
                 .Add(new StatModifier { Stat = Stat.MaxHealth, Add = 50f, Source = upgrade });

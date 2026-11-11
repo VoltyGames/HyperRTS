@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Tests.Status
         [Test]
         public void TypedBonus_RaisesOnlyMatchingHits_UntilExpiry()
         {
-            var target = World.SpawnUnit(2, float3.zero, speed: 0f);
+            var target = World.SpawnUnit(2, float3.zero, new TestUnit { Speed = 0f });
             Apply(target, Marked(duration: 2f));
 
             Hit(target, _precision, 10f);
@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Tests.Status
         [Test]
         public void RefreshRule_ResetsDuration_WithoutStacking()
         {
-            var target = World.SpawnUnit(2, float3.zero, speed: 0f);
+            var target = World.SpawnUnit(2, float3.zero, new TestUnit { Speed = 0f });
             var marked = Marked(duration: 2f);
             Apply(target, marked);
             World.Run(1.5f);
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Tests.Status
         [Test]
         public void AddStackRule_StacksToMax()
         {
-            var target = World.SpawnUnit(2, float3.zero, speed: 0f);
+            var target = World.SpawnUnit(2, float3.zero, new TestUnit { Speed = 0f });
             var marked = Marked(duration: 10f, StatusStackRule.AddStack, maxStacks: 2);
             for (var i = 0; i < 3; i++)
             {
@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Tests.Status
         [Test]
         public void StatBonus_AppliesWhileActive_AndRestoresAfter()
         {
-            var unit = World.SpawnUnit(1, float3.zero, speed: 0f);
+            var unit = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 0f });
             World.Set(unit, new MovementSpeed { Value = 4f });
             World.Tick();
             var haste = Effect("Haste", new StatusEffectDefinition { Duration = 1f, MaxStacks = 1 },
@@ -100,8 +100,8 @@ namespace HyperRTS.Simulation.Tests.Status
         [Test]
         public void DamageOverTime_HurtsInTheFrameItApplies_AndCreditsTheSource()
         {
-            var attacker = World.SpawnUnit(1, new float3(-5f, 0f, 0f), speed: 0f);
-            var target = World.SpawnUnit(2, float3.zero, speed: 0f);
+            var attacker = World.SpawnUnit(1, new float3(-5f, 0f, 0f), new TestUnit { Speed = 0f });
+            var target = World.SpawnUnit(2, float3.zero, new TestUnit { Speed = 0f });
             var burn = Effect("Burn", new StatusEffectDefinition
             {
                 Duration = 1f, MaxStacks = 1, DamagePerSecond = 10f, Damage = DamageProfile.FromType(_bullet),
@@ -129,7 +129,7 @@ namespace HyperRTS.Simulation.Tests.Status
                 StatusEffect = marked,
             };
             World.GiveAbility(World.Player(1), ability);
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 20f), speed: 0f);
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 20f), new TestUnit { Speed = 0f });
 
             World.Command(1, new PlayerCommand { Type = CommandType.UsePower, Target = enemy, Argument = ability.Id });
             World.Tick();

@@ -5,36 +5,34 @@ using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Vision.Fog;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Buildings
 {
     /// <summary>Adds the building components on top of <c>GameEntitySetup</c>.</summary>
     public static class BuildingSetup
     {
-        public static void Add(EntityWriter writer, float2 footprint, int populationProvided, bool complete,
-            float power = 0f, bool rememberedInFog = true, bool openFootprint = false)
+        public static void Add(EntityWriter writer, in BuildingSpec spec)
         {
             writer.Add<BuildingTag>();
-            if (rememberedInFog)
+            if (spec.RememberedInFog)
             {
                 writer.Add<RememberedInFog>();
             }
 
-            NavSetup.AddObstacle(writer, footprint, openFootprint);
-            writer.Add(new ConstructionProgress { Value = complete ? 1f : 0f });
-            writer.SetEnabled<ConstructionProgress>(!complete);
-            writer.Add(new Offline { Reasons = complete ? OfflineReason.None : OfflineReason.UnderConstruction });
-            writer.SetEnabled<Offline>(!complete);
+            NavSetup.AddObstacle(writer, spec.Footprint, spec.OpenFootprint);
+            writer.Add(new ConstructionProgress { Value = spec.Complete ? 1f : 0f });
+            writer.SetEnabled<ConstructionProgress>(!spec.Complete);
+            writer.Add(new Offline { Reasons = spec.Complete ? OfflineReason.None : OfflineReason.UnderConstruction });
+            writer.SetEnabled<Offline>(!spec.Complete);
 
-            if (populationProvided > 0)
+            if (spec.PopulationProvided > 0)
             {
-                writer.Add(new PopulationProvider { Value = populationProvided });
+                writer.Add(new PopulationProvider { Value = spec.PopulationProvided });
             }
 
-            if (power != 0f)
+            if (spec.Power != 0f)
             {
-                writer.Add(new PowerSupply { Amount = power });
+                writer.Add(new PowerSupply { Amount = spec.Power });
             }
         }
     }

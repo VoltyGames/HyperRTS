@@ -23,12 +23,12 @@ namespace HyperRTS.Simulation.Tests.Squads
         private Entity Squad(float3 position, int size)
         {
             var squad = World.SpawnSquad(1, position, new byte[size], speed: 4f);
-            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
+            World.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 100f });
             return World.MakeBuilder(squad);
         }
 
         private Entity Site(float3 position) =>
-            World.SpawnBuilding(1, position, Footprint, complete: false, buildTime: BuildTime);
+            World.SpawnBuilding(1, position, Footprint, new TestBuilding { Complete = false, BuildTime = BuildTime });
 
         private Entity Dig(Entity squad, Entity site)
         {
@@ -92,14 +92,14 @@ namespace HyperRTS.Simulation.Tests.Squads
         [Test]
         public void CoverSpots_OfASite_AreTakenOnlyOnceItIsBuilt_AndATrenchSpotStandsTheSoldier()
         {
-            var site = World.SpawnBuilding(0, new float3(0f, 0f, 2f), Footprint, complete: false);
+            var site = World.SpawnBuilding(0, new float3(0f, 0f, 2f), Footprint, new TestBuilding { Complete = false });
             World.EntityManager.AddBuffer<CoverSpot>(site).Add(new CoverSpot
             {
                 Position = new float3(0f, -1.2f, -2f), Facing = new float2(0f, 1f), Kind = CoverKind.Heavy,
             });
             var squad = World.SpawnUnit(1, float3.zero);
             SquadAuthoring.Add(World.Writer(squad), 25f, new byte[1]);
-            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
+            World.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 100f });
 
             World.Run(2f);
             Assert.IsFalse(World.Buffer<SquadMember>(squad)[0].HasSpot, "nothing to stand behind yet");

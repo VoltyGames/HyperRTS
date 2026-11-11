@@ -85,21 +85,20 @@ namespace HyperRTS.Presentation.HUD.Commands
         public int Slot => slot;
 
         /// <summary>A spec made in code, for tests and tools.</summary>
-        public static CommandSpec Create(CommandTarget target, Key hotkey = Key.None, int page = 0, int slot = 0, string labelKey = "", Texture2D icon = null, CommandType order = CommandType.None,
-            int argument = 0, string ability = "", ProducibleAuthoring prefab = null, ProducibleAuthoring card = null)
+        public static CommandSpec Create(CommandTarget target, CommandSpecSettings settings)
         {
             var spec = CreateInstance<CommandSpec>();
             spec.target = target;
-            spec.hotkey = hotkey;
-            spec.page = page;
-            spec.slot = slot;
-            spec.labelKey = labelKey;
-            spec.icon = icon;
-            spec.order = order;
-            spec.argument = argument;
-            spec.ability = ability;
-            spec.prefab = prefab;
-            spec.card = card;
+            spec.hotkey = settings.Hotkey;
+            spec.page = settings.Page;
+            spec.slot = settings.Slot;
+            spec.labelKey = settings.LabelKey;
+            spec.icon = settings.Icon;
+            spec.order = settings.Order;
+            spec.argument = settings.Argument;
+            spec.ability = settings.Ability;
+            spec.prefab = settings.Prefab;
+            spec.card = settings.Card;
             return spec;
         }
     }

@@ -34,7 +34,10 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
 
         private Entity FactoryPrefab(float2 footprint)
         {
-            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, footprint, name: "Factory"));
+            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, footprint, new TestBuilding
+            {
+                Name = "Factory",
+            }));
             World.SetCost(prefab, _supplies, 100);
             var unit = World.UnitPrefab(_supplies, 10);
             return World.MakeProducer(prefab, SpawnOffset, unit);

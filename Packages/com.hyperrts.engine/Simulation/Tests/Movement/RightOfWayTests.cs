@@ -23,7 +23,8 @@ namespace HyperRTS.Simulation.Tests.Movement
         protected override byte[] Teams => new byte[] { 1, 1 };
 
         private Entity SpawnTruck(float3 position) =>
-            World.SpawnVehicle(1, position, East, 6f, TestVehicles.SupplyTruckHull(), TestVehicles.SupplyTruck);
+            World.SpawnVehicle(1, TestVehicles.At(position, East), 6f, TestVehicles.SupplyTruckHull(),
+                TestVehicles.SupplyTruck);
 
         private float Speed(Entity unit) => math.length(World.Get<Velocity>(unit).Value);
 
@@ -44,7 +45,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             var hull = TestVehicles.TankHull();
             hull.Chassis = pivots ? hull.Chassis : new Chassis { ReverseRun = 10f };
-            var tank = World.SpawnVehicle(1, float3.zero, East, 7f, hull, TestVehicles.Tracks);
+            var tank = World.SpawnVehicle(1, TestVehicles.At(float3.zero, East), 7f, hull, TestVehicles.Tracks);
             var squad = World.SpawnSquad(1, new float3(-10f, 0f, 0.5f));
             World.Tick();
             var goal = new float3(10f, 0f, 0.5f);

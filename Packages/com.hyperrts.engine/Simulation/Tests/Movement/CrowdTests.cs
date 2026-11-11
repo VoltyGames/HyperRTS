@@ -115,11 +115,11 @@ namespace HyperRTS.Simulation.Tests.Movement
             World.SpawnObstacle(new float3(0f, 0f, -1f), new float2(6f, 2f));
             World.Tick();
 
-            var parked = World.SpawnUnit(1, new float3(0f, 0f, 0.5f), radius: 0.4f);
+            var parked = World.SpawnUnit(1, new float3(0f, 0f, 0.5f), new TestUnit { Radius = 0.4f });
             var column = new[]
             {
-                World.SpawnUnit(1, new float3(-8f, 0f, 0.5f), radius: 0.4f),
-                World.SpawnUnit(1, new float3(-10f, 0f, 0.5f), radius: 0.4f),
+                World.SpawnUnit(1, new float3(-8f, 0f, 0.5f), new TestUnit { Radius = 0.4f }),
+                World.SpawnUnit(1, new float3(-10f, 0f, 0.5f), new TestUnit { Radius = 0.4f }),
             };
             var goals = new[] { new float3(9f, 0f, 0.5f), new float3(7f, 0f, 0.5f) };
             for (var i = 0; i < column.Length; i++)
@@ -140,10 +140,13 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void ConstructingDozer_IsNeverShoved_TheMoverGoesRound()
         {
-            var site = World.SpawnBuilding(1, new float3(0f, 0f, 4f), new float2(4f, 4f), complete: false,
-                buildTime: 60f);
-            var dozer = World.MakeBuilder(World.SpawnVehicle(1, new float3(0f, 0f, -4f), 0f, 5f, TestVehicles.TankHull(),
-                TestVehicles.Tracks));
+            var site = World.SpawnBuilding(1, new float3(0f, 0f, 4f), new float2(4f, 4f), new TestBuilding
+            {
+                Complete = false,
+                BuildTime = 60f,
+            });
+            var dozer = World.MakeBuilder(World.SpawnVehicle(1, TestVehicles.At(new float3(0f, 0f, -4f), 0f), 5f,
+                TestVehicles.TankHull(), TestVehicles.Tracks));
             World.Order(dozer, OrderType.Build, site);
             Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<MoveDestination>(dozer), 10f), "reached the site");
             World.Run(2f);
@@ -151,7 +154,7 @@ namespace HyperRTS.Simulation.Tests.Movement
 
             // A truck brushing past its side and a squad walking straight into it.
             var lane = at.x + 3.6f;
-            var truck = World.SpawnVehicle(1, new float3(lane, 0f, at.z - 20f), 0f, 6f,
+            var truck = World.SpawnVehicle(1, TestVehicles.At(new float3(lane, 0f, at.z - 20f), 0f), 6f,
                 TestVehicles.SupplyTruckHull(), TestVehicles.SupplyTruck);
             var goal = new float3(lane, 0f, at.z + 16f);
             World.MoveTo(truck, goal);
@@ -187,11 +190,11 @@ namespace HyperRTS.Simulation.Tests.Movement
             World.SpawnObstacle(new float3(0f, 0f, 2f), new float2(30f, 2f));
             World.SpawnObstacle(new float3(0f, 0f, -1f), new float2(30f, 2f));
             World.Tick();
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 0.5f), radius: 0.4f);
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 0.5f), new TestUnit { Radius = 0.4f });
             var column = new Entity[3];
             for (var i = 0; i < column.Length; i++)
             {
-                column[i] = World.SpawnUnit(1, new float3(-18f - i * 1.5f, 0f, 0.5f), radius: 0.4f);
+                column[i] = World.SpawnUnit(1, new float3(-18f - i * 1.5f, 0f, 0.5f), new TestUnit { Radius = 0.4f });
                 var goal = new float3(25f + i * 2f, 0f, 0.5f);
                 World.Issue(column[i], new Order { Type = OrderType.Move, Position = goal });
             }

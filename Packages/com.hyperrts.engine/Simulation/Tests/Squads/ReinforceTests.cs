@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             _supplies ??= World.CreateSupplies();
             World.AddResources(1, _supplies, funds);
             var squad = World.SpawnSquad(1, float3.zero);
-            World.AddWeapon(squad, range: 6f, damage: 10f, cooldown: 100f);
+            World.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 100f });
             World.EntityManager.AddBuffer<ResourceCost>(squad);
             World.SetCost(squad, _supplies, 100);
             var members = World.Buffer<SquadMember>(squad);

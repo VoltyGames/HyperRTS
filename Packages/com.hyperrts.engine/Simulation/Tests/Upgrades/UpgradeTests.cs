@@ -48,9 +48,9 @@ namespace HyperRTS.Simulation.Tests.Upgrades
             var tankType = EntityInfo.TypeIdFromName("Tank");
             var upgrade = UpgradePrefab("Armor Plating", tankType);
             var lab = World.MakeProducer(World.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero, upgrade);
-            var tank = World.SpawnUnit(1, new float3(10f, 0f, 0f), name: "Tank");
-            var jeep = World.SpawnUnit(1, new float3(12f, 0f, 0f), name: "Jeep");
-            var enemyTank = World.SpawnUnit(2, new float3(-30f, 0f, 0f), name: "Tank");
+            var tank = World.SpawnUnit(1, new float3(10f, 0f, 0f), new TestUnit { Name = "Tank" });
+            var jeep = World.SpawnUnit(1, new float3(12f, 0f, 0f), new TestUnit { Name = "Jeep" });
+            var enemyTank = World.SpawnUnit(2, new float3(-30f, 0f, 0f), new TestUnit { Name = "Tank" });
             World.AddResources(1, _supplies, 100);
 
             World.Produce(1, lab, upgrade);
@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Tests.Upgrades
             Assert.AreEqual(100f, World.Get<Health>(jeep).Max, "other types are unaffected");
             Assert.AreEqual(100f, World.Get<Health>(enemyTank).Max, "other players are unaffected");
 
-            var newTank = World.SpawnUnit(1, new float3(14f, 0f, 0f), name: "Tank");
+            var newTank = World.SpawnUnit(1, new float3(14f, 0f, 0f), new TestUnit { Name = "Tank" });
             World.Tick(frames: 2);
             Assert.AreEqual(150f, World.Get<Health>(newTank).Max, "later spawns catch up");
         }
@@ -91,7 +91,7 @@ namespace HyperRTS.Simulation.Tests.Upgrades
         public void FinishedResearch_SatisfiesAPrerequisite()
         {
             var doctrine = UpgradePrefab("Doctrine", 0);
-            var tank = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), name: "Tank"));
+            var tank = World.MakePrefab(World.SpawnUnit(0, new float3(90f, 0f, 90f), new TestUnit { Name = "Tank" }));
             var required = new Prerequisite { TypeId = EntityInfo.TypeIdFromName("Doctrine") };
             World.Buffer<Prerequisite>(tank).Add(required);
             var lab = World.MakeProducer(World.SpawnBuilding(1, float3.zero, new float2(4f, 4f)), float3.zero,

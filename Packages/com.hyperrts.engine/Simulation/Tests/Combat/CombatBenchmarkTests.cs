@@ -41,8 +41,14 @@ namespace HyperRTS.Simulation.Tests.Combat
                 var position = new float3(-50f + index % 50 * 2f, 0f, sign * (10f + index / 50 * 2f));
                 units[i] = _world.SpawnUnit(north ? (byte)2 : (byte)1, position);
                 _world.EntityManager.SetComponentData(units[i], new VisionRange { Value = 50f });
-                _world.AddWeapon(units[i], range: 40f, damage: 0.1f, cooldown: 0.5f,
-                    projectile: index % 2 == 0 ? projectile : Entity.Null, turreted: true);
+                _world.AddWeapon(units[i], new TestWeapon
+                {
+                    Range = 40f,
+                    Damage = 0.1f,
+                    Cooldown = 0.5f,
+                    Projectile = index % 2 == 0 ? projectile : Entity.Null,
+                    Turreted = true,
+                });
             }
 
             // Until every unit has a target and the first projectiles are in flight.

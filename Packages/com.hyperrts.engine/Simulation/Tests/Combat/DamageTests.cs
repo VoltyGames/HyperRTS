@@ -16,10 +16,10 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void Splash_FallsOffWithDistance_AndSparesAllies()
         {
-            var centre = World.SpawnUnit(2, float3.zero, radius: 0f);
-            var edge = World.SpawnUnit(2, new float3(4f, 0f, 0f), radius: 0f);
-            var outside = World.SpawnUnit(2, new float3(6f, 0f, 0f), radius: 0f);
-            var friend = World.SpawnUnit(1, new float3(1f, 0f, 0f), radius: 0f);
+            var centre = World.SpawnUnit(2, float3.zero, new TestUnit { Radius = 0f });
+            var edge = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { Radius = 0f });
+            var outside = World.SpawnUnit(2, new float3(6f, 0f, 0f), new TestUnit { Radius = 0f });
+            var friend = World.SpawnUnit(1, new float3(1f, 0f, 0f), new TestUnit { Radius = 0f });
             World.Tick();
 
             World.QueueDamage(Blast(float3.zero, 4f));
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void FriendlyFire_HurtsAllies()
         {
-            var friend = World.SpawnUnit(1, float3.zero, radius: 0f);
+            var friend = World.SpawnUnit(1, float3.zero, new TestUnit { Radius = 0f });
             World.Tick();
 
             World.QueueDamage(Blast(float3.zero, 2f, friendlyFire: true));

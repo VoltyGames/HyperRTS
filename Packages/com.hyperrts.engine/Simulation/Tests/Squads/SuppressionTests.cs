@@ -31,9 +31,9 @@ namespace HyperRTS.Simulation.Tests.Squads
         {
             var squad = Squad(float3.zero);
 
-            World.HitSquad(squad, suppression: 0.3f, from: Shooter);
+            World.HitSquad(squad, new TestHit { Suppression = 0.3f, From = Shooter });
             World.Tick();
-            World.HitSquad(squad, suppression: 0.3f, from: Shooter);
+            World.HitSquad(squad, new TestHit { Suppression = 0.3f, From = Shooter });
             World.Tick();
             Assert.AreEqual(0.6f, Suppression(squad), 0.01f);
 
@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Tests.Squads
             var squad = Squad(float3.zero, 4);
 
             // The struck member takes the hit's 0.2, each of the other three a quarter of it.
-            World.HitSquad(squad, suppression: 0.2f, radius: 10f, from: Shooter);
+            World.HitSquad(squad, new TestHit { Suppression = 0.2f, Radius = 10f, From = Shooter });
             World.Tick();
 
             Assert.AreEqual(0.35f, Suppression(squad), 0.02f);

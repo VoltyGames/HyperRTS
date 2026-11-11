@@ -149,8 +149,13 @@ namespace HyperRTS.Simulation.Tests.Combat
 
         private Entity Launcher(bool turreted = false, float arcDegrees = 0f)
         {
-            var launcher = World.AddWeapon(World.SpawnUnit(1, float3.zero), range: 6f, damage: 10f, cooldown: 0.5f,
-                turreted: turreted);
+            var launcher = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 0.5f,
+                Turreted = turreted,
+            });
             World.AddDeployable(launcher, DeployTime, PackUpTime);
             var weapon = World.Primary(launcher);
             weapon.FiringArc = math.radians(arcDegrees);
