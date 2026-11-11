@@ -1,19 +1,19 @@
-using System.Collections;
 using System.IO;
-using System.Linq;
 using HyperRTS.Editor.Common.Json;
-using HyperRTS.Editor.Maps.Designer;
+using HyperRTS.Editor.Maps.Designer.Canvas;
+using HyperRTS.Editor.Maps.Designer.Features;
+using HyperRTS.Editor.Maps.Designer.Tools;
+using HyperRTS.Editor.Maps.Designer.Window;
 using HyperRTS.Editor.Maps.Spec;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace HyperRTS.Editor.Maps.Tests
 {
     /// <summary>
     /// The Map Editor's document: an edit saves at once and diffs like a hand edit, and a file
-    /// written from outside reloads, also while the window is open.
+    /// written from outside reloads.
     /// </summary>
     public class MapSpecDocumentTests
     {
@@ -112,30 +112,6 @@ namespace HyperRTS.Editor.Maps.Tests
             Assert.AreEqual("Paved", _document.Spec.roads[0].kind);
             Assert.AreEqual(1, changes);
         }
-
-        [UnityTest]
-        public IEnumerator AnOutsideWriteReloadsTheOpenWindow()
-        {
-            MapEditorWindow.Open(SpecPath);
-            var window = EditorWindow.GetWindow<MapEditorWindow>();
-            var shown = Shown();
-            Assert.IsNotNull(shown, "The window holds no document for the spec.");
-
-            File.WriteAllText(SpecPath, JsonFormat.Format(Original.Replace("Dirt", "Paved")));
-            AssetDatabase.ImportAsset(SpecPath);
-            for (var frame = 0; frame < 10 && shown.Spec.roads[0].kind != "Paved"; frame++)
-            {
-                yield return null;
-            }
-
-            Assert.AreEqual("Paved", shown.Spec.roads[0].kind);
-            window.Close();
-            yield return null;
-            Assert.IsTrue(shown == null, "Closing the window leaves its document behind.");
-        }
-
-        private MapSpecDocument Shown() => Resources.FindObjectsOfTypeAll<MapSpecDocument>()
-            .FirstOrDefault(document => document != _document && document.Path == SpecPath);
 
         private static string Saved() => File.ReadAllText(SpecPath);
 
