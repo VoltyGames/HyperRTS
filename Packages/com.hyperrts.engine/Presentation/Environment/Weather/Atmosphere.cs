@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -14,8 +15,9 @@ namespace HyperRTS.Presentation.Environment.Weather
     [Icon(HyperRTSIcons.Atmosphere)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed class Atmosphere : PresentationBehaviour
+    public sealed partial class Atmosphere : PresentationBehaviour
     {
+        private static readonly int WetnessId = Shader.PropertyToID("_HyperRTSWetness");
         private static readonly int DustColorId = Shader.PropertyToID("_HyperRTSDustColor");
         private static readonly int MudColorId = Shader.PropertyToID("_HyperRTSMudColor");
 
@@ -41,6 +43,8 @@ namespace HyperRTS.Presentation.Environment.Weather
         [Tooltip("Mud on vehicles driving wet ground here, as dark wet earth.")]
         public Color mudColor = new(0.1f, 0.075f, 0.05f);
 
+        private readonly SceneSingleton<GroundWetness> _wetness = new();
+
         private void OnEnable()
         {
             if (!IsComplete())
@@ -55,13 +59,26 @@ namespace HyperRTS.Presentation.Environment.Weather
             RenderSettings.customReflectionTexture = reflection;
             RenderSettings.reflectionIntensity = reflectionIntensity;
             RenderSettings.fog = false;
-            Wetness.Publish(wetness);
             Shader.SetGlobalColor(DustColorId, dustColor);
             Shader.SetGlobalColor(MudColorId, mudColor);
             DynamicGI.UpdateEnvironment();
         }
 
-        protected override void OnDisabled() => Wetness.Publish(0f);
+        private void Update()
+        {
+            _wetness.Write(new GroundWetness { Level = wetness });
+            Shader.SetGlobalFloat(WetnessId, wetness);
+        }
+
+        protected override void OnDisabled()
+        {
+            _wetness.Remove();
+            Shader.SetGlobalFloat(WetnessId, 0f);
+        }
+
+        // Shader globals outlive Play mode in the editor.
+        [OnEnteringPlayMode]
+        private static void ClearWetness() => Shader.SetGlobalFloat(WetnessId, 0f);
 
         private bool IsComplete()
         {

@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
 
         protected override void OnUpdate()
         {
-            var life = AmbientLife.Active;
+            var life = SystemAPI.TryGetSingleton(out AmbientLifeSource source) ? source.Life.Value : null;
             var off = life == null || life.maxDustDevils == 0;
             if (off || PresentationQuality.Current.Effects == DetailLevel.Low)
             {

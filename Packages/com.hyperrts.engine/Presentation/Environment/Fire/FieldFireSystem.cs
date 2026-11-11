@@ -149,10 +149,11 @@ namespace HyperRTS.Presentation.Environment.Fire
                 return;
             }
 
+            var wetness = SystemAPI.TryGetSingleton(out GroundWetness ground) ? ground.Level : 0f;
             foreach (var cue in cues)
             {
                 var seed = Seed(cue);
-                if (_settings.Lights(cue, Wetness.Level, seed) && _visibility.IsSeen(cue))
+                if (_settings.Lights(cue, wetness, seed) && _visibility.IsSeen(cue))
                 {
                     _fires.TryIgnite(cue.Position.xz, seed);
                 }

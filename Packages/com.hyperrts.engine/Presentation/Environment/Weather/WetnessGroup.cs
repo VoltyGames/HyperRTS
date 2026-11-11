@@ -11,20 +11,25 @@ namespace HyperRTS.Presentation.Environment.Weather
         [Range(0f, 1f)]
         public float threshold = 0.5f;
 
-        private void OnEnable()
-        {
-            Wetness.Changed += Apply;
-            Apply();
-        }
+        private static readonly int WetnessId = Shader.PropertyToID("_HyperRTSWetness");
 
-        protected override void OnDisabled()
-        {
-            Wetness.Changed -= Apply;
-        }
+        private bool? _shown;
 
-        public void Apply()
+        private void OnEnable() => _shown = null;
+
+        // The shader global, not the match singleton, so puddles also show in edit mode and in the map's view captures.
+        private void Update() => Apply(Shader.GetGlobalFloat(WetnessId));
+
+        /// <summary>Shows or hides the children for this wetness, touching them only when it crosses the threshold.</summary>
+        public void Apply(float level)
         {
-            var shown = Wetness.Level >= threshold;
+            var shown = level >= threshold;
+            if (shown == _shown)
+            {
+                return;
+            }
+
+            _shown = shown;
             foreach (Transform child in transform)
             {
                 child.gameObject.SetActive(shown);

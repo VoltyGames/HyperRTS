@@ -36,8 +36,8 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
             _levels.Update(ref state);
             _bands.Update(ref state);
             var transforms = SystemAPI.GetComponentLookup<LocalToWorld>(true);
-            var ground = SystemAPI.GetSingleton<GroundMaterials>();
-            var wetness = Wetness.Level;
+            var materials = SystemAPI.GetSingleton<GroundMaterials>();
+            var wetness = SystemAPI.TryGetSingleton(out GroundWetness ground) ? ground.Level : 0f;
             var deltaTime = SystemAPI.Time.DeltaTime;
             var parts = new NativeList<Entity>(Allocator.Temp);
             var commands = new EntityCommandBuffer(Allocator.Temp);
@@ -54,7 +54,7 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
                     continue;
                 }
 
-                var moved = grime.ValueRW.Advance(position, ground.At(position.xz), wetness,
+                var moved = grime.ValueRW.Advance(position, materials.At(position.xz), wetness,
                     health.ValueRO.Fraction, deltaTime);
                 if (first)
                 {

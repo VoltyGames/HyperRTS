@@ -26,7 +26,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
             _set.atmospheres.Add("Overcast", _overcast);
             new GameObject("Default").transform.SetParent(_weather.transform);
 
-            Wetness.Publish(0f);
             _group = new GameObject("Wet Decals");
             _puddle = new GameObject("Puddle 1");
             _puddle.transform.SetParent(_group.transform, false);
@@ -43,7 +42,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
 
             Object.DestroyImmediate(_weather);
             Object.DestroyImmediate(_group);
-            Wetness.Publish(0f);
         }
 
         [Test]
@@ -58,16 +56,17 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
         [Test]
         public void Wetness_ShowsChildrenFromTheThreshold_AndHidesThemAgainWhenDry()
         {
-            _group.GetComponent<WetnessGroup>().Apply();
+            var group = _group.GetComponent<WetnessGroup>();
+            group.Apply(0f);
             Assert.IsFalse(_puddle.activeSelf, "dry ground");
 
-            Wetness.Publish(0.4f);
+            group.Apply(0.4f);
             Assert.IsFalse(_puddle.activeSelf);
 
-            Wetness.Publish(0.8f);
+            group.Apply(0.8f);
             Assert.IsTrue(_puddle.activeSelf);
 
-            Wetness.Publish(0f);
+            group.Apply(0f);
             Assert.IsFalse(_puddle.activeSelf);
         }
 

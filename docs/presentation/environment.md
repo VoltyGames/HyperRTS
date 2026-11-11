@@ -8,7 +8,7 @@ Sky, fog, weather, wind, water, and the ground that remembers what happened on i
 ## Atmosphere
 
 An `Atmosphere` component sits on the root of a weather's atmosphere prefab, with its sun, post-processing volume and
-`Wind`. When enabled it sets the skybox, ambient light, reflection cubemap and wetness, and turns Unity fog off. A
+`Wind`. When enabled it sets the skybox, ambient light, reflection cubemap, and turns Unity fog off. It writes the ground wetness each frame as the `GroundWetness` singleton and `_HyperRTSWetness`; `WetnessGroup` shows its children from a threshold of `_HyperRTSWetness`, so puddles also show in edit mode. A
 missing skybox or reflection is an error. Skyboxes use `HyperRTS/Sky`, which blends its photographed ground into haze
 below the horizon.
 
@@ -82,7 +82,7 @@ per climate, names the fire rig, the dry terrain layers and the limits on igniti
 or without an active terrain, `FieldFireSystem` idles.
 
 - `FieldFires` is a 1 m grid. Roads, water, bare soil and ground near buildings stay bare.
-- A seen impact lights the dry cell it hit when it is big enough and `Wetness.Level` is low. Burning cells light their
+- A seen impact lights the dry cell it hit when it is big enough and the `GroundWetness` singleton is low. Burning cells light their
   neighbours, faster downwind, and a front dies out by itself.
 - Fires show only on ground the local player sees (`CueVisibility.IsSeen`), so they never reveal where enemy shells land.
 - Burning cells feed `BattleHaze.Add`. A cell that burns out stamps ash and scorch, and the grass and row crop kernels drop

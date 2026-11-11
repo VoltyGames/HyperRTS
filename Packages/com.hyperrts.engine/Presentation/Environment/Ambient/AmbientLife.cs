@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using Unity.Mathematics;
-using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Ambient
@@ -16,7 +15,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
     [Icon(HyperRTSIcons.AmbientLife)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public sealed partial class AmbientLife : PresentationBehaviour
+    public sealed class AmbientLife : PresentationBehaviour
     {
         [Header("Birds")]
         [Tooltip("HyperRTS/Bird material with a 2x2 flipbook of wing poses in _BaseMap (frames left to right, top " +
@@ -67,9 +66,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
         [Min(0f)]
         public float dustDevilSpeed = 3f;
 
-        /// <summary>The enabled instance in the loaded scenes, or null.</summary>
-        [AutoStaticsCleanup]
-        public static AmbientLife Active { get; private set; }
+        private readonly SceneSingleton<AmbientLifeSource> _source = new();
 
         public BirdSettings Birds => new()
         {
@@ -96,15 +93,9 @@ namespace HyperRTS.Presentation.Environment.Ambient
             Require(IsRange(dustDevilLifetime) && dustDevilLifetime.x > 0f, nameof(dustDevilLifetime), "needs 0 < min ≤ max");
         }
 
-        private void OnEnable() => Active = this;
+        private void Update() => _source.Write(new AmbientLifeSource { Life = this });
 
-        protected override void OnDisabled()
-        {
-            if (Active == this)
-            {
-                Active = null;
-            }
-        }
+        protected override void OnDisabled() => _source.Remove();
 
         private static bool IsRange(Vector2 range) => range.x >= 0f && range.y >= range.x;
 
