@@ -21,27 +21,10 @@ Nodes are finite or regrow, and harvesters move on when one runs dry. Steady inc
 with the player's `Income` stat. `ResourceStagesAuthoring` on a node swaps child models by the share of its starting
 amount left, and steps back up as a renewable node regrows.
 
-A full harvester picks one drop-off per trip (`HarvestState.DropOff`) and keeps it until it delivers or the drop-off
-is lost, unfinished or changes owner, so a truck never flips between two.
-
-### Docks
-
-`DockAuthoring` on a drop-off or resource node lists bays where vehicles load and unload. Each bay has a `stop`
-transform (where the vehicle's centre stands, +Z the facing), an optional `exit` and a `runIn`, the metres driven
-straight before the stop. The **Fill bays** button fills the list from `Bay_NN` children and their `Bay_NN_Exit`
-siblings. Vehicles drive through: in along the run-in, out straight ahead.
-
-- A harvester with a chassis (`NavAgent.UsesBays`) claims the free bay nearest it through `DockBays`, drives to the
-  stop as a pose goal (`MoveDestination.Facing` and `RunIn`) and works there once close enough. A drive that gives
-  up short of the stop is stuck, and the order moves on.
-- With every bay taken it queues on a bay's run-in line and retries. A freed bay goes to the waiting vehicle nearest
-  its stop, so none drives through another to reach it, and a newcomer never takes a bay someone waits for.
-- Leaving, it first runs straight to the exit (`MoveDestination.ExitRun`), so it never turns in the bay.
-- A holder renews its claim every frame, and `DockSystem` frees bays nobody held, so a bay frees when its vehicle dies
-  or its order moves on.
-- Infantry and aircraft ignore bays and walk to the footprint's edge.
-
-The Paths debug layer and the Scene view draw each bay's stop, run-in and exit.
+A harvester works a node or drop-off from any side. `TargetReach.Approach` sends it to the nearest reachable point on
+the footprint's edge, and it works once its hull touches the edge, whichever way it faces. A full harvester picks one
+drop-off per trip (`HarvestState.DropOff`), the one with the smallest edge gap plus the turn needed to face it, and
+keeps it until it delivers or the drop-off is lost, unfinished or changes owner, so a truck never flips between two.
 
 ## Airdrops
 

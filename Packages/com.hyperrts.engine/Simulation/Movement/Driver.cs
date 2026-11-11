@@ -96,10 +96,11 @@ namespace HyperRTS.Simulation.Movement
                 return FollowTight(leg, cap);
             }
 
-            State.Reverse = PrefersReverse(leg);
-            // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame.
-            State.InThreePointTurn =
-                Chassis.IsInsideTurn(Position, Facing, leg.Corner, State.InThreePointTurn ? 1.2f : 1f);
+            State.Reverse = leg.Reverse || PrefersReverse(leg);
+            // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame. A route backed
+            // whole has no three-point turn: the goal behind is where it backs to.
+            State.InThreePointTurn = !leg.Reverse &&
+                                     Chassis.IsInsideTurn(Position, Facing, leg.Corner, State.InThreePointTurn ? 1.2f : 1f);
             var lookAhead = LookAhead;
             var aim = ToTarget(leg, lookAhead);
             var desired = math.normalizesafe(State.Reverse ? -aim : aim, Facing);
@@ -158,8 +159,9 @@ namespace HyperRTS.Simulation.Movement
                 return true;
             }
 
-            // A goal under the hull but inside the turning circle would take a three-point turn to reach.
-            var underHull = leg.IsFinal && leg.Distance <= Radius;
+            // A goal under the hull but inside the turning circle would take a three-point turn to reach; backing,
+            // it drives straight on.
+            var underHull = leg.IsFinal && leg.Distance <= Radius && !leg.Reverse;
             return underHull && Chassis.IsInsideTurn(Position, Facing, leg.Corner, 1f);
         }
 

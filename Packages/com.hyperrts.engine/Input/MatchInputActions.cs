@@ -458,6 +458,16 @@ namespace HyperRTS.Input
                     ""priority"": 0
                 },
                 {
+                    ""name"": ""ReverseMove"",
+                    ""type"": ""Button"",
+                    ""id"": ""4dc08e8a-cb71-433c-b64d-fb8def081f45"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
+                },
+                {
                     ""name"": ""RotateBuilding"",
                     ""type"": ""Button"",
                     ""id"": ""3f6d2a91-7c4e-4b8a-9e15-2d7b0c6a4f38"",
@@ -574,6 +584,17 @@ namespace HyperRTS.Input
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Escort"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""63971f51-e75d-41af-8113-3602c086eff4"",
+                    ""path"": ""<Keyboard>/u"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ReverseMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -870,6 +891,7 @@ namespace HyperRTS.Input
             m_Commands_HoldPosition = m_Commands.FindAction("HoldPosition", throwIfNotFound: true);
             m_Commands_Patrol = m_Commands.FindAction("Patrol", throwIfNotFound: true);
             m_Commands_Escort = m_Commands.FindAction("Escort", throwIfNotFound: true);
+            m_Commands_ReverseMove = m_Commands.FindAction("ReverseMove", throwIfNotFound: true);
             m_Commands_RotateBuilding = m_Commands.FindAction("RotateBuilding", throwIfNotFound: true);
             m_Commands_Queue = m_Commands.FindAction("Queue", throwIfNotFound: true);
             m_Commands_Cancel = m_Commands.FindAction("Cancel", throwIfNotFound: true);
@@ -1178,6 +1200,7 @@ namespace HyperRTS.Input
         private readonly InputAction m_Commands_HoldPosition;
         private readonly InputAction m_Commands_Patrol;
         private readonly InputAction m_Commands_Escort;
+        private readonly InputAction m_Commands_ReverseMove;
         private readonly InputAction m_Commands_RotateBuilding;
         private readonly InputAction m_Commands_Queue;
         private readonly InputAction m_Commands_Cancel;
@@ -1224,6 +1247,10 @@ namespace HyperRTS.Input
             /// Provides access to the underlying input action "Commands/Escort".
             /// </summary>
             public InputAction @Escort => m_Wrapper.m_Commands_Escort;
+            /// <summary>
+            /// Provides access to the underlying input action "Commands/ReverseMove".
+            /// </summary>
+            public InputAction @ReverseMove => m_Wrapper.m_Commands_ReverseMove;
             /// <summary>
             /// Provides access to the underlying input action "Commands/RotateBuilding".
             /// </summary>
@@ -1286,6 +1313,9 @@ namespace HyperRTS.Input
                 @Escort.started += instance.OnEscort;
                 @Escort.performed += instance.OnEscort;
                 @Escort.canceled += instance.OnEscort;
+                @ReverseMove.started += instance.OnReverseMove;
+                @ReverseMove.performed += instance.OnReverseMove;
+                @ReverseMove.canceled += instance.OnReverseMove;
                 @RotateBuilding.started += instance.OnRotateBuilding;
                 @RotateBuilding.performed += instance.OnRotateBuilding;
                 @RotateBuilding.canceled += instance.OnRotateBuilding;
@@ -1330,6 +1360,9 @@ namespace HyperRTS.Input
                 @Escort.started -= instance.OnEscort;
                 @Escort.performed -= instance.OnEscort;
                 @Escort.canceled -= instance.OnEscort;
+                @ReverseMove.started -= instance.OnReverseMove;
+                @ReverseMove.performed -= instance.OnReverseMove;
+                @ReverseMove.canceled -= instance.OnReverseMove;
                 @RotateBuilding.started -= instance.OnRotateBuilding;
                 @RotateBuilding.performed -= instance.OnRotateBuilding;
                 @RotateBuilding.canceled -= instance.OnRotateBuilding;
@@ -1682,6 +1715,13 @@ namespace HyperRTS.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnEscort(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "ReverseMove" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnReverseMove(InputAction.CallbackContext context);
             /// <summary>
             /// Method invoked when associated input action "RotateBuilding" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>

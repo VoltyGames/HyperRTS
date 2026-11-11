@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Drive;
@@ -10,7 +11,6 @@ using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -165,7 +165,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
         }
 
         [Test]
-        public void LongTruck_DeliversAtTheDropOffEdge_DrivingForward_AndNeverEntersIt()
+        public void LongTruck_DeliversAtTheDropOffEdge_AndNeverEntersIt()
         {
             var supplies = World.CreateSupplies();
             var dropOff = World.SpawnBuilding(1, new float3(-30f, 0f, 0f), new float2(16f, 16f));
@@ -176,21 +176,16 @@ namespace HyperRTS.Simulation.Tests.Navigation
             World.Order(truck, OrderType.Gather, node);
 
             var closest = float.MaxValue;
-            var reversed = false;
             for (var t = 0f; t < 60f && World.GetResources(1, supplies) < 20; t += TestWorld.FrameTime)
             {
                 World.Tick();
                 var transform = World.Get<LocalTransform>(truck);
                 var axis = World.Get<NavAgent>(truck).SegmentAxis(transform.Rotation);
                 closest = math.min(closest, footprint.Gap(transform.Position.xz - axis, transform.Position.xz + axis));
-                // Backing off a corner it noses into is the wall reflex, not a reverse leg, so only the legs count.
-                var drive = World.Get<LocomotionState>(truck);
-                reversed |= drive.Reverse || drive.InThreePointTurn;
             }
 
             Assert.GreaterOrEqual(World.GetResources(1, supplies), 20, "two loads delivered");
             Assert.GreaterOrEqual(closest, TruckRadius - 0.05f, $"the hull never entered the footprint ({closest:F2} m)");
-            Assert.IsFalse(reversed, "the round trips drive forward");
         }
 
         [Test]

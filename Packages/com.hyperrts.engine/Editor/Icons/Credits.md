@@ -97,7 +97,6 @@ file is named after the component it marks.
 | DeployableAuthoring | delapouite/transform | Delapouite |
 | DestructibleAuthoring | delapouite/brick-wall | Delapouite |
 | DetectorAuthoring | lorc/radar-sweep | Lorc |
-| DockAuthoring | delapouite/harbor-dock | Delapouite |
 | EffectLight | lorc/light-bulb | Lorc |
 | EffectRig | lorc/firework-rocket | Lorc |
 | EffectTrailAuthoring | lorc/comet-spark | Lorc |

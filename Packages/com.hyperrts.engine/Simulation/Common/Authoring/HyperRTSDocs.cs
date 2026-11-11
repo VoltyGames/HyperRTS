@@ -21,7 +21,6 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string Capture = SimulationPages + "economy.md#capture";
         public const string Combat = SimulationPages + "combat.md#combat";
         public const string Destruction = SimulationPages + "combat.md#destruction";
-        public const string Docks = SimulationPages + "economy.md#docks";
         public const string Effects = PresentationPages + "effects.md#effects";
         public const string Input = PresentationPages + "README.md#input";
         public const string Match = SimulationPages + "core.md#match";

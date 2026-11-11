@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Reach
 {
@@ -31,19 +30,6 @@ namespace HyperRTS.Simulation.Navigation.Reach
         {
             Moving.ValueRW = false;
             Arrived.ValueRW = false;
-        }
-
-        /// <summary>Points locomotion at a pose goal, rewriting it only when it changed, so pathing isn't restarted.</summary>
-        public readonly void ToPose(float3 goal, float2 facing, float runIn)
-        {
-            ref var destination = ref Destination.ValueRW;
-            if (destination.IsHeadingTo(Moving, goal, 0.1f) && math.all(destination.Facing == facing))
-            {
-                return;
-            }
-
-            destination = new MoveDestination { Value = goal, Facing = facing, RunIn = runIn };
-            Moving.ValueRW = true;
         }
     }
 }

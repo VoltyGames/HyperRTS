@@ -29,7 +29,7 @@ with an enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it stand
 | Rear Axle | Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre; 0 for tracks |
 | Turn Radius | Tightest circle of the rear axle. 0 turns at any speed |
 | Pivots | Stops and turns in place when far off its heading, as tracked vehicles do |
-| Reverse Run | Backs up to a goal behind it when the path left is at most this long and turning round would take longer; 0 never reverses |
+| Reverse Run | Longest reverse leg of a reflex or a planned manoeuvre; 0 never reverses, even on a reverse move |
 
 A hull with a turn radius that doesn't pivot is wheeled. It aims its rear axle at a look-ahead point on the path and
 steers an arc through it (pure pursuit), with the steer angle changing at most at the steer rate. The centre drifts
@@ -52,6 +52,16 @@ On a planned manoeuvre (a `Tight` leg, `PathLeg.Tight`) none of the reflexes run
 their gear, aiming a short way ahead and never past the next gear change (`PathLeg.Aim`), brakes to each gear change
 as to the goal, changes gear standing, and keeps to a slow tight speed (`Locomotion.TightSpeed`).
 
+## Backing up
+
+A vehicle with a reverse run drives a whole route backwards, front toward where it came from, in two cases:
+`MoveDestination.Backward` is set, as the reverse move order (`CommandType.ReverseMove`, `OrderType.ReverseMove`,
+trait `DrivesBackward`) does, or the route is at most three hull lengths and starts behind it, so a truck backs from a
+drop-off to a field beside it rather than turning round. `PathRequest.DrivesBackward` decides when the route is
+served. The route then skips the drive planner and is driven as drawn, every waypoint marked `Reverse`, at the
+reverse speed with the rear axle leading. A goal close behind is backed onto, never three-point turned. Units
+without a reverse run, foot units and aircraft take a reverse move as a plain move.
+
 ## Drive planner
 
 `DrivePlanner` checks every fresh path of a unit with a turn radius or a hull longer than it is wide, in the same serve
@@ -72,10 +82,5 @@ past it as drawn (`PathState.PartlyPlanned`), planned once its planned part is d
   a gear change is a waypoint where it flips. `PathStats.Drive` counts searches, expansions and failures.
 - **Following.** `PathState.SkipCorners` never cuts a tight waypoint, and goal moves never move a tight last waypoint
   (a moved goal searches again).
-- **Pose ends.** A move with `MoveDestination.Facing` set, as into a [dock bay](economy.md#docks), ends as a pose: the
-  last stretch becomes a curve or search to the pose `RunIn` metres before the goal, then a tight straight run-in.
-  It arrives only on the pose itself (`DriveGoal.IsAtPose`); short of it the move stays on and the stall clock runs,
-  so a hull that can't get there gives up rather than standing for ever.
-  `MoveDestination.ExitRun` starts a path with that many metres straight ahead.
 - The Paths debug layer draws tight legs in orange, reverse legs dashed, gear changes as dots and each wheeled
   vehicle's rear axle.

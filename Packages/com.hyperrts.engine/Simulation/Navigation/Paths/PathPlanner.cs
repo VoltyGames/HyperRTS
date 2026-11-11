@@ -143,7 +143,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             if (!_prepared[index])
             {
                 var request = _requests[index];
-                _queries[index] = GridPathfinder.Prepare(access, request.RouteStart, request.Goal);
+                _queries[index] = GridPathfinder.Prepare(access, request.Start, request.Goal);
                 _prepared[index] = true;
             }
 

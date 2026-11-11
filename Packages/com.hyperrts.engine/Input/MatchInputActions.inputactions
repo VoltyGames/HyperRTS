@@ -350,6 +350,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "ReverseMove",
+                    "type": "Button",
+                    "id": "4dc08e8a-cb71-433c-b64d-fb8def081f45",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "RotateBuilding",
                     "type": "Button",
                     "id": "3f6d2a91-7c4e-4b8a-9e15-2d7b0c6a4f38",
@@ -463,6 +472,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Escort",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "63971f51-e75d-41af-8113-3602c086eff4",
+                    "path": "<Keyboard>/u",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ReverseMove",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

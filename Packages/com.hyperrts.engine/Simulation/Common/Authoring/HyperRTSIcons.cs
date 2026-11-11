@@ -37,7 +37,6 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string DeployableAuthoring = Dir + "DeployableAuthoring.png";
         public const string DestructibleAuthoring = Dir + "DestructibleAuthoring.png";
         public const string DetectorAuthoring = Dir + "DetectorAuthoring.png";
-        public const string DockAuthoring = Dir + "DockAuthoring.png";
         public const string EffectLight = Dir + "EffectLight.png";
         public const string EffectRig = Dir + "EffectRig.png";
         public const string EffectTrailAuthoring = Dir + "EffectTrailAuthoring.png";

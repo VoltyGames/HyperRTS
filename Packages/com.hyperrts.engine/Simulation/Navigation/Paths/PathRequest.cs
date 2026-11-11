@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Navigation.Agents;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -8,6 +9,10 @@ namespace HyperRTS.Simulation.Navigation.Paths
     /// <summary>One pending path search, snapshotted so the search job needs no component reads.</summary>
     internal struct PathRequest
     {
+        // A route this many hull lengths or shorter that starts behind the hull is backed, as a driver would.
+        private const float ShortWayHulls = 3f;
+        private const float BehindCos = -0.3f;
+
         public Entity Entity;
         public float3 Start;
 
@@ -16,12 +21,10 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         public float3 Goal;
 
-        /// <summary><see cref="MoveDestination.Facing"/>: zero, or the pose the path must end in.</summary>
-        public float2 GoalFacing;
-
-        public float RunIn;
-        public float ExitRun;
         public NavAgent Agent;
+
+        /// <summary><see cref="MoveDestination.Backward"/>: the order asks to drive there in reverse.</summary>
+        public bool Backward;
 
         /// <summary><see cref="MoveDestination.Group"/>: members of one share a flow field.</summary>
         public int Group;
@@ -41,17 +44,46 @@ namespace HyperRTS.Simulation.Navigation.Paths
             Start = transform.Position;
             Facing = math.normalizesafe(transform.Forward().xz);
             Goal = destination.Value;
-            GoalFacing = destination.Facing;
-            RunIn = destination.RunIn;
-            ExitRun = destination.ExitRun;
             Group = destination.Group;
+            Backward = destination.Backward;
             Agent = agent;
             Frame = path.RequestFrame;
             Cause = path.Cause;
             Stuck = path.Stuck;
         }
 
-        /// <summary>Where the route starts: past the straight exit run, if there is one.</summary>
-        public readonly float3 RouteStart => Start + new float3(Facing.x, 0f, Facing.y) * ExitRun;
+        /// <summary>
+        /// Whether a vehicle that reverses drives the whole route backwards: the order asks it to, or the route is
+        /// short and starts behind it.
+        /// </summary>
+        public readonly bool DrivesBackward(NativeList<float3> points)
+        {
+            if (!Agent.CanReverse || points.Length == 0)
+            {
+                return false;
+            }
+
+            return Backward || IsShortWayBehind(points);
+        }
+
+        private readonly bool IsShortWayBehind(NativeList<float3> points)
+        {
+            var length = 0f;
+            var from = Start.xz;
+            var first = float2.zero;
+            foreach (var point in points)
+            {
+                var step = point.xz - from;
+                if (math.all(first == 0f) && math.lengthsq(step) > 1f)
+                {
+                    first = math.normalize(step);
+                }
+
+                length += math.length(step);
+                from = point.xz;
+            }
+
+            return length <= ShortWayHulls * Agent.HullLength && math.dot(Facing, first) < BehindCos;
+        }
     }
 }

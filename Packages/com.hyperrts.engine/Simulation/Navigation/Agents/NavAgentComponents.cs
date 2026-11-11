@@ -82,8 +82,8 @@ namespace HyperRTS.Simulation.Navigation.Agents
         /// </summary>
         public readonly float HullWallMargin => Radius + 2f + 0.25f * HalfSegment;
 
-        /// <summary>Drives into dock bays: a vehicle the drive planner plans for. Infantry and aircraft walk to the edge.</summary>
-        public readonly bool UsesBays => Layer != NavLayer.Air && DrivePlanner.Applies(this);
+        /// <summary>A vehicle that backs up: it has a reverse run and the drive planner plans for it.</summary>
+        public readonly bool CanReverse => Chassis.ReverseRun > 0f && DrivePlanner.Applies(this);
 
         /// <summary>The core segment's half on the XZ plane, along the unit's facing.</summary>
         public readonly float2 SegmentAxis(quaternion rotation) => SegmentAxis(rotation, Radius, HullLength);
@@ -126,20 +126,11 @@ namespace HyperRTS.Simulation.Navigation.Agents
         /// </summary>
         public bool Chase;
 
-        /// <summary>The facing to stop with, zero for any: a set facing makes the end a pose the drive planner plans to.</summary>
-        public float2 Facing;
-
-        /// <summary>Metres driven straight along <see cref="Facing"/> into the end, as into a dock bay.</summary>
-        public float RunIn;
-
-        /// <summary>Metres driven straight ahead before the path proper, as out of a dock bay.</summary>
-        public float ExitRun;
-
-        public readonly bool IsPose => math.any(Facing != 0f);
-
-        /// <summary>Whether a hull centre and facing stand on this pose end, as the drive search plans to.</summary>
-        public readonly bool IsAtPose(float2 center, float2 facing) =>
-            DriveGoal.ToPose(Value.xz, Facing).IsAtPose(center, facing);
+        /// <summary>
+        /// Drive the whole way in reverse, keeping the front toward where it came from. Only a vehicle that reverses
+        /// does; any other unit moves as usual.
+        /// </summary>
+        public bool Backward;
 
         /// <summary>Whether locomotion already heads within <paramref name="tolerance"/> of the goal, so a rewrite would only restart pathing.</summary>
         public readonly bool IsHeadingTo(EnabledRefRW<MoveDestination> moving, float3 goal, float tolerance) =>

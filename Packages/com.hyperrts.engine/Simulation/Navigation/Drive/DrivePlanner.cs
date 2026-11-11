@@ -30,10 +30,6 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private WaypointWriter _writer;
         private AxlePose _start;
 
-        // The facing a pose end stops with, zero for a point end, and the straight run into it.
-        private float2 _endFacing;
-        private float _runIn;
-
         // Expansions this plan may spend, and whether running out defers it rather than leaving stretches as drawn.
         private int _budget;
         private bool _defers;
@@ -65,8 +61,6 @@ namespace HyperRTS.Simulation.Navigation.Drive
             _tight = new NativeList<PathWaypoint>(64, allocator);
             _writer = new WaypointWriter(allocator);
             _start = default;
-            _endFacing = float2.zero;
-            _runIn = 0f;
             _budget = 0;
             _defers = false;
             _planned = false;
@@ -131,9 +125,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             _planned = false;
             WaitsForBudget = false;
             PartlyPlanned = false;
-            AddExitRun(request);
-            _line.Trace(request.RouteStart.xz, points);
-            SetEnd(request);
+            _line.Trace(request.Start.xz, points);
             if (_line.Corners.Length < 2)
             {
                 foreach (var point in points)

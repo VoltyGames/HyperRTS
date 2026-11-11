@@ -1,8 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Docks;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
@@ -18,17 +16,15 @@ namespace HyperRTS.Simulation.Resources.Gathering
 {
     /// <summary>
     /// Runs Gather orders: walk to the node, fill up, deposit at an owned drop-off chosen once per trip by its edge
-    /// distance and the turn needed to face it, repeat. Vehicles work at dock bays where the target has them.
+    /// distance and the turn needed to face it, repeat. Every harvester works from any side of the node and drop-off.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(ProductionSystemGroup))]
-    [UpdateAfter(typeof(DockSystem))]
     public partial struct GatherSystem : ISystem
     {
         private EntityQuery _nodes;
         private EntityQuery _dropOffs;
         private TargetReach _reach;
-        private DockBays _bays;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -38,7 +34,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 .WithNone<ConstructionProgress, Dead>().Build();
             state.RequireForUpdate<PlayerRegistry>();
             _reach = new TargetReach(ref state);
-            _bays = new DockBays(ref state);
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
@@ -53,7 +48,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
             state.Dependency = JobHandle.CombineDependencies(nodesReady, dropOffsReady);
 
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
-            _bays.Update(ref state);
 
             new GatherJob
             {
@@ -64,7 +58,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 NodeLookup = SystemAPI.GetComponentLookup<ResourceNode>(false),
                 StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 Reach = _reach,
-                Bays = _bays,
                 OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
@@ -78,8 +71,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
         [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct GatherJob : IJobEntity
         {
-            private const float RetrySeconds = 0.5f;
-
             public float DeltaTime;
             [ReadOnly] public NativeArray<Entity> Nodes;
             [ReadOnly] public NativeArray<Entity> DropOffs;
@@ -87,7 +78,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
             public ComponentLookup<ResourceNode> NodeLookup;
             public BufferLookup<ResourceStock> StockLookup;
             public TargetReach Reach;
-            public DockBays Bays;
             [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
@@ -126,7 +116,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
                 var node = order.Value.Target;
                 var nodePosition = Reach.Position(node);
-                var toNode = Arrive(node, entity, ref harvest, move, transform, agent);
+                var toNode = Reach.Approach(node, transform, agent, move, Grid);
                 if (!ActiveOrder.StopsShort(toNode, busy, moving))
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
@@ -195,7 +185,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                     return false;
                 }
 
-                var walk = Arrive(dropOff, entity, ref harvest, move, transform, agent);
+                var walk = Reach.Approach(dropOff, transform, agent, move, Grid);
                 return !ActiveOrder.StopsShort(walk, busy, move.Moving);
             }
 

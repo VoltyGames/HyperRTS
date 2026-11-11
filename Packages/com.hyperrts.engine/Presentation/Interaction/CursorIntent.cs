@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Interaction
         /// <summary>The cursor of a targeted command waiting for its click, such as attack-move from a hotkey.</summary>
         public static CursorKind ForPending(CommandType command) => command switch
         {
-            CommandType.Move => CursorKind.Default,
+            CommandType.Move or CommandType.ReverseMove => CursorKind.Default,
             CommandType.AttackMove or CommandType.Patrol => CursorKind.AttackMove,
             CommandType.Attack => CursorKind.Attack,
             CommandType.Gather => CursorKind.Gather,

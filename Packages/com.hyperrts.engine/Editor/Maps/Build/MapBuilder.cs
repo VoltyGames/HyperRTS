@@ -9,7 +9,6 @@ using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Maps.Scenes;
 using HyperRTS.Editor.Maps.Views;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Navigation.Docks;
 using UnityEditor;
 using UnityEngine;
 
@@ -63,9 +62,7 @@ namespace HyperRTS.Editor.Maps.Build
             var layout = generation.Layout;
             using var nav = MapNavGrid.Build(scene.Entities, data, layout.TerrainOrigin, layout.Bounds, layout.WaterHeight,
                 generation.Project.Rules);
-            var docks = scene.Entities.GetRootGameObjects()
-                .SelectMany(root => root.GetComponentsInChildren<DockAuthoring>(true));
-            var measurer = MapMeasurer.Measure(generation, nav, docks, issues);
+            var measurer = MapMeasurer.Measure(generation, nav, issues);
             MapHintWriter.Write(scene, generation, nav, issues);
             var report = MapReport.Create(generation.Project.Spec, issues, measurer.Metrics);
             report.land = MapLandShares.Measure(generation);

@@ -157,7 +157,8 @@ namespace HyperRTS.Simulation.Movement
             // No corners yet: stop and face the goal rather than drive blind at it.
             if (path.Status != PathStatus.Ready && waypoints.Length == 0)
             {
-                frame.Heading = driver.TurnToward(math.normalizesafe(destination.Value.xz - driver.Position));
+                var toGoal = math.normalizesafe(destination.Value.xz - driver.Position);
+                frame.Heading = driver.TurnToward(destination.Backward ? -toGoal : toGoal);
                 return driver.BrakeToStop();
             }
 
@@ -176,12 +177,6 @@ namespace HyperRTS.Simulation.Movement
             path.SkipCorners(access, driver.Position, touch, driver.LookAhead, waypoints);
             leg = PathLeg.Along(driver.Position, destination.Value.xz, waypoints, path).Manoeuvre(driver.Position,
                 waypoints, Locomotion.TightLookAhead(driver.State.Speed), driver.Chassis);
-            // A pose end arrives only on its pose, so a move into a dock bay never ends short of the stop.
-            if (destination.IsPose)
-            {
-                return !destination.IsAtPose(driver.Position, driver.Facing);
-            }
-
             return !driver.HasArrived(leg);
         }
     }

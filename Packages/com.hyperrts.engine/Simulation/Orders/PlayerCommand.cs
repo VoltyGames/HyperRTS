@@ -81,6 +81,9 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Squads with dead members bring them back at a friendly reinforce point in range.</summary>
         Reinforce = 28,
 
+        /// <summary>Vehicles drive to Position in reverse, keeping their front toward where they came from.</summary>
+        ReverseMove = 29,
+
         /// <summary>First value a game may use for its own commands; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }

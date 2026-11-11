@@ -49,7 +49,9 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 var points = new NativeList<float3>(16, Allocator.Temp);
                 var route = Route(task, access, points);
                 var result = new PathResult { Expansions = route.x, Searches = route.y };
-                var drives = task.Query.Route != PathRoute.Stay && DrivePlanner.Applies(request.Agent);
+                // A route backed whole is driven as drawn: the drive planner plans forward hulls.
+                var reverses = request.DrivesBackward(points);
+                var drives = !reverses && task.Query.Route != PathRoute.Stay && DrivePlanner.Applies(request.Agent);
                 var path = new UnsafeList<PathWaypoint>(points.Length, Allocator.TempJob);
                 // A path that needs a drive search leaves its drawn corners for the drive job to plan in turn.
                 var planned = drives && TryDrive(request, access, points, ref path);
@@ -58,7 +60,10 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 {
                     foreach (var point in points)
                     {
-                        path.Add(new PathWaypoint { Position = new float3(point.x, request.Start.y, point.z) });
+                        path.Add(new PathWaypoint
+                        {
+                            Position = new float3(point.x, request.Start.y, point.z), Reverse = reverses,
+                        });
                     }
                 }
 

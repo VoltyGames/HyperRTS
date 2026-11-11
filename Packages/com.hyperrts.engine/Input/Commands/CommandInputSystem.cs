@@ -73,6 +73,11 @@ namespace HyperRTS.Input.Commands
                 pending = new PendingCommand { Type = CommandType.Escort };
             }
 
+            if (commands.ReverseMove.WasPressedThisFrame())
+            {
+                pending = new PendingCommand { Type = CommandType.ReverseMove };
+            }
+
             if (commands.Stop.WasPressedThisFrame())
             {
                 pending.Type = CommandType.None;

@@ -1,7 +1,6 @@
 using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Docks;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Collections;
@@ -13,8 +12,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>
-    /// Each unit's remaining waypoints, planned manoeuvres, rear axles, attack target lines and dock bays; its status
-    /// totals the pathfinder's work.
+    /// Each unit's remaining waypoints, planned manoeuvres, rear axles and attack target lines; its status totals
+    /// the pathfinder's work.
     /// </summary>
     public sealed class PathsLayer : DebugLayer
     {
@@ -23,14 +22,12 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
         private static readonly Color32 Waypoint = new(0, 255, 255, 255);
         private static readonly Color32 Manoeuvre = new(255, 140, 0, 255);
         private static readonly Color32 Target = new(255, 40, 40, 255);
-        private static readonly Color32 RunIn = new(40, 230, 40, 255);
-        private static readonly Color32 Exit = new(255, 230, 0, 255);
 
         public override string Label => "Paths";
 
         public override string Detail =>
             "Cyan waypoints, orange tight manoeuvres and rear axles, dashed when reversing; red dashes to attack " +
-            "targets; dock bays in green (run-in) and yellow (exit).";
+            "targets.";
 
         public override string Group => "Movement";
 
@@ -41,7 +38,6 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
             DrawPaths(entityManager, shapes);
             DrawRearAxles(entityManager, shapes);
             DrawAttackTargets(entityManager, shapes);
-            DrawBays(entityManager, shapes);
         }
 
         // The totals cover every unit: the pathfinder keeps no count per unit.
@@ -117,28 +113,6 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
                     var facing = math.normalizesafe(transform.Forward().xz);
                     var rear = chassis.Pose(transform.Position.xz, facing).Position;
                     shapes.Circle(new float3(rear.x, transform.Position.y, rear.y), AxleSize, Manoeuvre);
-                }
-            }
-        }
-
-        private static void DrawBays(EntityManager entityManager, DebugShapes shapes)
-        {
-            using var query = entityManager.CreateEntityQuery(typeof(DockBay), typeof(LocalTransform));
-            using var entities = query.ToEntityArray(Allocator.Temp);
-            foreach (var entity in entities)
-            {
-                var transform = entityManager.GetComponentData<LocalTransform>(entity);
-                foreach (var bay in entityManager.GetBuffer<DockBay>(entity, true))
-                {
-                    var pose = bay.WorldPose(transform);
-                    shapes.Line(pose.Stop - new float3(pose.Facing.x, 0f, pose.Facing.y) * pose.RunIn, pose.Stop, RunIn);
-                    shapes.Circle(pose.Stop, BayPose.StopReach, RunIn);
-                    shapes.Line(pose.Stop, pose.Exit, Exit);
-                    var occupant = bay.Reservation.Holder;
-                    if (entityManager.Exists(occupant) && entityManager.HasComponent<LocalTransform>(occupant))
-                    {
-                        shapes.DashedLine(pose.Stop, entityManager.GetComponentData<LocalTransform>(occupant).Position, Exit);
-                    }
                 }
             }
         }

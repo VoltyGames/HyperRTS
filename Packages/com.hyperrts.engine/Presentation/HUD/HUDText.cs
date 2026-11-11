@@ -32,6 +32,7 @@ namespace HyperRTS.Presentation.HUD
             ["command.back"] = "Back",
             ["command.retreat"] = "Retreat",
             ["command.reinforce"] = "Reinforce",
+            ["command.reverse-move"] = "Reverse",
             ["squad.stand"] = "Standing",
             ["squad.crouch"] = "Crouched",
             ["squad.prone"] = "Prone",

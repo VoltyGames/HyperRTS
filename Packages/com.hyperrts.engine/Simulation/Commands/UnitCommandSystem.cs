@@ -93,7 +93,8 @@ namespace HyperRTS.Simulation.Commands
         private static TypeSet UnitCommands =>
             TypeSet.Range(CommandType.Smart, CommandType.SetStance)
                 .With(TypeSet.Range(CommandType.Repair, CommandType.Enter))
-                .With(TypeSet.Range(CommandType.Patrol, CommandType.ReturnToBase));
+                .With(TypeSet.Range(CommandType.Patrol, CommandType.ReturnToBase))
+                .With(CommandType.ReverseMove);
 
         /// <summary>Keeps the command's owned subjects that take orders, in order.</summary>
         private bool GatherSubjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)

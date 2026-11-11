@@ -11,14 +11,13 @@ Units find paths on a grid over the map. Each cell is land, water, deck or block
 Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestination`.
 
 The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`: `Grid`, `Areas`, `Fields`, `Sectors`,
-`Paths`, `Agents`, `Drive`, `Reach`, `Docks`, `Spatial` and `Heights`.
+`Paths`, `Agents`, `Drive`, `Reach`, `Spatial` and `Heights`.
 
 | Authoring | Does |
 | --- | --- |
 | `TerrainHeightAuthoring` | A baked heightfield. Without one the ground is flat |
 | `NavObstacleAuthoring` | Blocks a box. Buildings block their footprint |
 | `NavAreaAuthoring` | Marks a box as water, blocked, or a bridge deck with water below |
-| `DockAuthoring` | Bays where vehicles load and unload, see [docks](economy.md#docks) |
 
 - **Grid.** Flooded cells become water and steep ones blocked. Obstacles restamp the grid only when their footprints
   change, and each restamp records the changed box (`NavChanges`). A path re-plans only when one of its legs passes

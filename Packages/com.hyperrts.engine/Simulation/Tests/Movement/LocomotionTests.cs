@@ -136,15 +136,6 @@ namespace HyperRTS.Simulation.Tests.Movement
         }
 
         [Test]
-        public void Truck_DrivesForwardWithATurn_ToAGoalBehindPastAFewMetres()
-        {
-            var truck = SpawnTruck(float3.zero);
-            Order(truck, new float3(0f, 0f, -15f));
-
-            Assert.Greater(SlowestUntilArrived(truck, 30f), -0.1f, "never reversed");
-        }
-
-        [Test]
         public void Truck_Accelerates_ThenBrakesToStopAtTheGoal()
         {
             var truck = SpawnTruck(float3.zero);

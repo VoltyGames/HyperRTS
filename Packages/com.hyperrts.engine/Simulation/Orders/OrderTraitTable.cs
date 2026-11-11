@@ -52,6 +52,7 @@ namespace HyperRTS.Simulation.Orders
         private static OrderTraits EngineTraits(OrderType type) => type switch
         {
             OrderType.Move => Walks,
+            OrderType.ReverseMove => Walks | OrderTraits.DrivesBackward,
             OrderType.AttackMove => Walks | Fights,
             OrderType.Patrol => Walks | Fights | OrderTraits.Loops,
             OrderType.Escort => OrderTraits.EngagesWhileMoving,

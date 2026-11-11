@@ -52,8 +52,8 @@ namespace HyperRTS.Simulation.Tests.Navigation
         }
 
         // Twenty 10 m buildings in the west strip, four across and five deep, on lanes 4 to 8 m wide. The map's
-        // buildings reaching into the strip go first, so no bay is walled into a pocket no hull can reach.
-        private List<Lane> SpawnBase(ref Random random, List<NavBox> buildings)
+        // buildings reaching into the strip go first, so no lane is walled into a pocket no hull can reach.
+        private List<Lane> SpawnBase(ref Random random)
         {
             ClearWestStrip();
             var lanes = new List<Lane>();
@@ -65,7 +65,6 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 {
                     var center = new float3(x + 5f, 0f, z + 5f);
                     _world.SpawnObstacle(center, new float2(10f));
-                    buildings.Add(new NavBox(center, quaternion.identity, new float2(10f)));
                     var gap = random.NextInt(4, 9);
                     var middle = z + 10f + gap * 0.5f;
                     lanes.Add(new Lane { From = new float2(x - 2f, middle), To = new float2(x + 12f, middle) });
@@ -126,56 +125,11 @@ namespace HyperRTS.Simulation.Tests.Navigation
             return chassis.Pose(center, along);
         }
 
-        private static readonly float2[] Sides = { new(1f, 0f), new(-1f, 0f), new(0f, 1f), new(0f, -1f) };
-
-        // Beside one wall of a building, a metre off it, facing along it.
-        private static DriveGoal Bay(ref Random random, List<NavBox> buildings)
-        {
-            var box = buildings[random.NextInt(buildings.Count)];
-            var outward = Sides[random.NextInt(Sides.Length)];
-            var along = new float2(-outward.y, outward.x) * (random.NextBool() ? 1f : -1f);
-            return DriveGoal.ToPose(box.Center + outward * (5f + SupplyTruck.Radius + 1f), along);
-        }
-
-        [Test, Performance]
-        public void DockApproaches_IntoABase()
-        {
-            var random = new Random(41);
-            var buildings = new List<NavBox>();
-            var lanes = SpawnBase(ref random, buildings);
-            _world.AddAgentPrefabs(SupplyTruck);
-            _world.Tick();
-            var points = new NativeList<PathWaypoint>(64, Allocator.Persistent);
-            var result = new NativeReference<int2>(Allocator.Persistent);
-            var job = NewDriveJob(points, result);
-            long expanded = 0;
-            int most = 0, failures = 0, capped = 0, undrivable = 0;
-            var median = BenchmarkKit.Median("DockApproach", () => job.Run(), () => DrawDrivable(ref job,
-                () => (LanePose(ref random, lanes, SupplyTruck.Chassis), Bay(ref random, buildings)), ref undrivable),
-                () =>
-                {
-                    expanded += result.Value.y;
-                    most = math.max(most, result.Value.y);
-                    failures += 1 - result.Value.x;
-                    capped += result.Value.y >= DriveSearch.MaxExpansions ? 1 : 0;
-                }, "DriveSearch.Run", "DrivePlanner.Plan");
-
-            var runs = BenchmarkKit.Warmup + BenchmarkKit.Runs;
-            points.Dispose();
-            result.Dispose();
-            var summary = $"Dock approach: median {median:F3} ms, " +
-                          $"expansions mean {expanded / runs} max {most}, failures {failures} ({capped} at the cap), " +
-                          $"{undrivable} undrivable pairs redrawn";
-            TestContext.WriteLine(summary);
-            Assert.AreEqual(0, failures, summary);
-            Assert.Less(median, 3.0, $"median {median:F3} ms, under twice 1.5 ms");
-        }
-
         [Test, Performance]
         public void TruckMoves_InABase()
         {
             var random = new Random(43);
-            var lanes = SpawnBase(ref random, new List<NavBox>());
+            var lanes = SpawnBase(ref random);
             _world.AddAgentPrefabs(SupplyTruck);
             _world.Tick();
             var points = new NativeList<PathWaypoint>(64, Allocator.Persistent);

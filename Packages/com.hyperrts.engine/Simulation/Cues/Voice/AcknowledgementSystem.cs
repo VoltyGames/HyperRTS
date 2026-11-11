@@ -96,6 +96,7 @@ namespace HyperRTS.Simulation.Cues.Voice
             switch (command.Type)
             {
                 case CommandType.Move:
+                case CommandType.ReverseMove:
                 case CommandType.ReturnToBase:
                     return CueSlot.Move;
                 case CommandType.Attack:

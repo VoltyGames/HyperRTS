@@ -7,7 +7,6 @@ using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Editor.Maps.Checks;
-using HyperRTS.Simulation.Navigation.Docks;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -15,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Report
 {
     /// <summary>
     /// Measures a built map against the rules: rush times to the nearest enemy, attack paths, reachability of every
-    /// placed object, buildable ground, resources per base and room at every dock's bays.
+    /// placed object, buildable ground and resources per base.
     /// </summary>
     public sealed class MapMeasurer
     {
@@ -42,8 +41,7 @@ namespace HyperRTS.Editor.Maps.Report
 
         public MapMetrics Metrics { get; } = new();
 
-        public static MapMeasurer Measure(MapGeneration generation, MapNavGrid nav, IEnumerable<DockAuthoring> docks,
-            MapIssues issues)
+        public static MapMeasurer Measure(MapGeneration generation, MapNavGrid nav, MapIssues issues)
         {
             var project = generation.Project;
             var placements = generation.Placements;
@@ -58,11 +56,6 @@ namespace HyperRTS.Editor.Maps.Report
                 measurer.CountPaths();
                 measurer.CheckReach(placements.All);
                 measurer.MeasureBases(placements.All);
-            }
-
-            if (MapDockingHull.TryFind(out var hull))
-            {
-                MapDockCheck.Check(docks, nav, hull, issues);
             }
 
             return measurer;

@@ -22,5 +22,8 @@ namespace HyperRTS.Simulation.Orders
 
         /// <summary>A finished order goes to the back of the queue, so the unit loops through its legs.</summary>
         Loops = 16,
+
+        /// <summary>Vehicles that can reverse drive the whole way to <see cref="Order.Position"/> backwards.</summary>
+        DrivesBackward = 32,
     }
 }

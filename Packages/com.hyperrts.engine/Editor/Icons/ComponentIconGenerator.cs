@@ -81,7 +81,7 @@ namespace HyperRTS.Editor.Icons
         // Navigation
         (new Color(0.20f, 0.75f, 0.70f), new[]
         {
-            "BlockerAuthoring", "DockAuthoring", "NavAreaAuthoring", "NavObstacleAuthoring",
+            "BlockerAuthoring", "NavAreaAuthoring", "NavObstacleAuthoring",
             "TerrainHeightAuthoring",
         }),
         // Research

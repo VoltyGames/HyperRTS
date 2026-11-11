@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Entities;
@@ -22,8 +23,11 @@ namespace HyperRTS.Simulation.Tests
         public int Steps { get; private set; }
         public float Seconds => Steps * TestWorld.FrameTime;
 
-        /// <summary>The most any unit turned one way within 40 m driven; a truck's circle reads about 195 degrees.</summary>
+        /// <summary>The most any unit turned one way within 80 m driven; a truck's full circle reads 360 degrees.</summary>
         public float MaxLoop => Max(unit => unit.MaxLoop);
+
+        /// <summary>The unit that turned most one way, where and when.</summary>
+        public Tally WorstLoop => _units.OrderByDescending(unit => unit.MaxLoop).First();
 
         public float MaxSideways => Max(unit => unit.Sideways);
         public int GiveUps => Sum(unit => unit.GiveUps);
@@ -103,7 +107,9 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>What one unit has done since it was tracked.</summary>
         public sealed class Tally
         {
-            private const float LoopMetres = 40f;
+            // Longer than a full circle at the truck's 11.8 m turn radius (74 m), so a ring reads 360 degrees and a
+            // turnaround about 180.
+            private const float LoopMetres = 80f;
             private const float StopSpeed = 0.2f;
             private const float Step = TestWorld.FrameTime;
 
@@ -122,6 +128,11 @@ namespace HyperRTS.Simulation.Tests
             public float Metres;
             public float Turned;
             public float MaxLoop;
+
+            /// <summary>Where the unit stood and the seconds since it was tracked when <see cref="MaxLoop"/> was reached.</summary>
+            public float3 MaxLoopAt;
+
+            private float _seconds;
             public float TightSeconds;
             public float Sideways;
             public int Stops;
@@ -155,7 +166,8 @@ namespace HyperRTS.Simulation.Tests
                 Metres += distance;
                 Turned += math.degrees(math.abs(turn));
                 MeasureSideways(moved, _yaw + turn * 0.5f);
-                MeasureLoop(distance, turn);
+                _seconds += Step;
+                MeasureLoop(distance, turn, transform.Position.xz);
                 _position = transform.Position.xz;
                 _yaw = yaw;
 
@@ -170,7 +182,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             public override string ToString() =>
-                $"{Name}: {Metres:F0} m, turned {Turned:F0} deg, max loop {MaxLoop:F0} deg, " +
+                $"{Name}: {Metres:F0} m, turned {Turned:F0} deg, max loop {MaxLoop:F0} deg at {MaxLoopAt.xy} after {MaxLoopAt.z:F0} s, " +
                 $"tight {TightSeconds:F1} s, stops {Stops}, give-ups {GiveUps}, sideways {Sideways:F2} m/s, " +
                 $"trips {Trips} (mean {(Trips == 0 ? 0f : TripSeconds / Trips):F1} s)";
 
@@ -187,7 +199,7 @@ namespace HyperRTS.Simulation.Tests
                 Sideways = math.max(Sideways, math.abs(math.dot(moved, right)) / Step);
             }
 
-            private void MeasureLoop(float distance, float turn)
+            private void MeasureLoop(float distance, float turn, float2 position)
             {
                 _window.Enqueue(new float2(distance, turn));
                 _windowMetres += distance;
@@ -199,7 +211,12 @@ namespace HyperRTS.Simulation.Tests
                     _windowTurn -= oldest.y;
                 }
 
-                MaxLoop = math.max(MaxLoop, math.degrees(math.abs(_windowTurn)));
+                var loop = math.degrees(math.abs(_windowTurn));
+                if (loop > MaxLoop)
+                {
+                    MaxLoop = loop;
+                    MaxLoopAt = new float3(position, _seconds);
+                }
             }
 
             private void CountStops(bool ordered, float speed)

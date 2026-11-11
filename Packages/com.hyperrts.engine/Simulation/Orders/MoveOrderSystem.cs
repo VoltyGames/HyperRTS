@@ -65,6 +65,7 @@ namespace HyperRTS.Simulation.Orders
                     destination = new MoveDestination
                     {
                         Value = order.Value.Position, Group = order.Value.Group, Extent = order.Value.Extent,
+                        Backward = Traits.Has(type, OrderTraits.DrivesBackward),
                     };
                     moving.ValueRW = true;
                     arrived.ValueRW = false;

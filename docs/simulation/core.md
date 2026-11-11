@@ -100,8 +100,8 @@ All player intent is a `PlayerCommand` on the player entity. Units carry orders.
 
 Games add command and order types from `GameFirst` (128) up and register each order type's traits in
 `OrderTraitTable`. The traits say whether the order spreads a group into a `Formation`, hands off to `MoveOrderSystem`
-(`MovesToPosition`), repeats (`Loops`) and how combat treats it (`AttackMove`, `EngagesWhileMoving`). The engine runs
-Move, AttackMove, Patrol and Escort. When the active order finishes, the next queued one starts.
+(`MovesToPosition`), repeats (`Loops`), drives there backwards (`DrivesBackward`) and how combat treats it
+(`AttackMove`, `EngagesWhileMoving`). The engine runs Move, ReverseMove, AttackMove, Patrol and Escort. When the active order finishes, the next queued one starts.
 
 ## Commands
 

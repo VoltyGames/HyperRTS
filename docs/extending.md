@@ -41,7 +41,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 
 1. Pick an `OrderType` from `GameFirst` (128) up in your own code.
 2. Register its traits once from a system update with `OrderTraitTable.Register`: `EngagesWhileMoving`,
-   `AttackMove`, `Formation`, `MovesToPosition` or `Loops`. `OrderWriter.Issue` rejects a game type with none.
+   `AttackMove`, `Formation`, `MovesToPosition`, `Loops` or `DrivesBackward`. `OrderWriter.Issue` rejects a game type with none.
 3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, or set `MoveDestination` directly.
 4. Disable `ActiveOrder` when the order is done.
 
@@ -61,7 +61,7 @@ A stat read at the moment of use, like `Income` or `DamageTaken`, needs no field
 | Feature | In HyperRTS |
 | --- | --- |
 | Dozer | Unit with `Builder` |
-| Supply truck and dock | `Harvester`, `Resource Node`, `Resource Drop-Off` |
+| Supply truck and drop-off | `Harvester`, `Resource Node`, `Resource Drop-Off` |
 | Power plants | Building **Power**: positive generates, negative draws |
 | Weak rear armor | `Armor` facing multipliers |
 | Upgrades, tech unlocks | `UpgradeAuthoring` research, usable as a prerequisite |

@@ -99,6 +99,7 @@ namespace HyperRTS.Simulation.Commands
                 CommandType.Attack => CanForceAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
                 CommandType.AttackMove => ResolveAttackMove(unit, target, relations),
                 CommandType.Patrol => OrderType.Patrol,
+                CommandType.ReverseMove => OrderType.ReverseMove,
                 CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,
                 CommandType.ReturnToBase => _padUsers.HasComponent(unit) ? OrderType.ReturnToBase : OrderType.None,
                 CommandType.Gather => CanGather(unit, target) ? OrderType.Gather : OrderType.Move,

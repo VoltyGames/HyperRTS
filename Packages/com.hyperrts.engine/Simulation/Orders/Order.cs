@@ -29,6 +29,9 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Run to Position, a friendly retreat point, firing nothing; ends on arrival.</summary>
         Retreat = 13,
 
+        /// <summary>Drive to Position in reverse, front toward where the unit came from; others move as usual.</summary>
+        ReverseMove = 14,
+
         /// <summary>First value a game may use for its own orders; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }
