@@ -122,7 +122,7 @@ namespace HyperRTS.Simulation.Replays
                 var key = known ? last.Key : recording.NextKey++;
                 var healthFraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
                 var building = construction.HasEnabled(entity);
-                var living = squads.TryGetBuffer(entity, out var members) ? SquadMember.LivingMask(members) : (ushort)0;
+                var living = squads.TryGetBuffer(entity, out var members) ? new SquadRoster(members).LivingMask() : (ushort)0;
                 var current = ReplayEntity.Capture(key, info.ValueRO.TypeId, owner.ValueRO.Value, transform.ValueRO,
                     healthFraction, living);
                 if (building)

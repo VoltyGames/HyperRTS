@@ -1,12 +1,10 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Cells;
 using System;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Profiling;
 
@@ -16,7 +14,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
     /// Hybrid A* over the rear axle's pose, led by a <see cref="DriveHeuristic"/>, for a stretch of path the chassis can't
     /// drive as drawn. It gives the hull centre's waypoints, each <see cref="PathWaypoint.Tight"/>.
     /// </summary>
-    public partial struct DriveSearch : IDisposable
+    public struct DriveSearch : IDisposable
     {
         /// <summary>A search stops after this many expansions and leaves its stretch as drawn.</summary>
         public const int MaxExpansions = 6000;
@@ -52,19 +50,8 @@ namespace HyperRTS.Simulation.Navigation.Drive
         }
 
         private DriveHull _hull;
-
-        // Unchecked, as they are the inner loop of every search.
-        private UnsafeList<Node> _nodes;
-        private UnsafeList<Move> _moves;
-        private OpenSet _open;
-
-        // The best node found so far for each cell and heading bin.
-        private UnsafeHashMap<int, int> _visited;
-        private FieldWindow _walls;
-        private DriveHeuristic _heuristic;
-        private DriveGoal _goal;
-        private AxlePose _goalPose;
-        private CellRange _window;
+        private DriveNodes _nodes;
+        private DriveWindow _window;
 
         // The ground height the run's waypoints sit at.
         private float _height;
@@ -86,25 +73,18 @@ namespace HyperRTS.Simulation.Navigation.Drive
         {
             _hull = default;
             Cap = cap;
-            _nodes = new UnsafeList<Node>(4096, allocator);
-            _moves = new UnsafeList<Move>(24, allocator);
-            _open = new OpenSet(4096, allocator);
-            _visited = new UnsafeHashMap<int, int>(4096, allocator);
-            _walls = new FieldWindow(16384, allocator);
-            _goal = default;
-            _goalPose = default;
-            _window = default;
+            _nodes = new DriveNodes(allocator);
+            _window = new DriveWindow(allocator);
             _height = 0f;
             Expansions = 0;
-            _heuristic = new DriveHeuristic(16384, allocator);
         }
 
         /// <summary>Searches for <paramref name="agent"/> from now on; its moves follow its chassis.</summary>
         public void SetAgent(in NavAccess access, in NavAgent agent)
         {
             _hull = new DriveHull(access, agent);
-            _moves.Clear();
-            _heuristic.SetAgent(access, _hull.CurveRadius, _hull.HullLength);
+            _nodes.ClearMoves();
+            _window.SetAgent(access, _hull);
         }
 
         public readonly bool IsCreated => _nodes.IsCreated;
@@ -112,11 +92,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         public void Dispose()
         {
             _nodes.Dispose();
-            _moves.Dispose();
-            _open.Dispose();
-            _visited.Dispose();
-            _walls.Dispose();
-            _heuristic.Dispose();
+            _window.Dispose();
         }
 
         /// <summary>
@@ -145,22 +121,11 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
         private void Begin(in AxlePose start, in DriveGoal goal)
         {
-            _goal = goal;
-            _goalPose = _hull.Chassis.Pose(goal.Center, goal.Facing);
-            _nodes.Clear();
-            _open.Clear();
-            _visited.Clear();
-            if (_moves.IsEmpty)
-            {
-                AddMoves();
-            }
-
-            SetWindow(_hull.Chassis.Center(start), goal.Center);
-            var key = Key(start);
-            var depth = _hull.Depth(_walls, start, float.PositiveInfinity);
-            _nodes.Add(new Node { Pose = start, Key = key, Parent = -1, Depth = depth });
-            _visited[key] = 0;
-            _open.Push(0, Guide(start));
+            _window.SetGoal(_hull, goal);
+            _nodes.FillIfEmpty(_hull.Chassis, _hull.MostCurvature);
+            _window.Fit(_hull, _hull.Chassis.Center(start), goal.Center);
+            var depth = _hull.Depth(_window.Walls, start, float.PositiveInfinity);
+            _nodes.Begin(start, _window.Key(_hull, start), depth, _window.Guide(_hull, start));
         }
 
         // Both ends on the grid and within one window, so the guide and the closed set hold them.
@@ -168,7 +133,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
         {
             var grid = _hull.Access.Grid;
             var onGrid = grid.Grid.Contains(grid.Grid.Cell(from)) && grid.Grid.Contains(grid.Grid.Cell(to));
-            return onGrid && math.all(math.abs(to - from) <= MaxWindow);
+            return onGrid && math.all(math.abs(to - from) <= DriveWindow.MaxWindow);
         }
 
         // A pose goal whose hull centre sits in walls beyond the pose tolerance, as where a path runs into a building,
@@ -181,23 +146,16 @@ namespace HyperRTS.Simulation.Navigation.Drive
             last = -1;
             curve = default;
             curveLength = 0f;
-            while (_open.TryPop(out var index))
+            while (_nodes.TryPop(out var index))
             {
-                ref var node = ref _nodes.ElementAt(index);
-                if (node.Closed || _visited[node.Key] != index)
-                {
-                    continue;
-                }
-
                 if (Expansions >= Cap)
                 {
                     return false;
                 }
 
-                node.Closed = true;
+                var expanded = _nodes.Close(index);
                 Expansions++;
                 last = index;
-                var expanded = node;
                 if (IsAtGoal(expanded.Pose))
                 {
                     return true;
@@ -208,7 +166,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
                     return true;
                 }
 
-                Expand(index, expanded);
+                _nodes.Expand(index, expanded, _hull, _window);
             }
 
             return false;
@@ -218,27 +176,31 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private readonly bool IsShortcutDue(in AxlePose pose)
         {
             var radius = _hull.CurveRadius;
-            var near = math.distancesq(_hull.Chassis.Center(pose), _goal.Center) <= 4f * radius * radius;
+            var near = math.distancesq(_hull.Chassis.Center(pose), _window.Goal.Center) <= 4f * radius * radius;
             return Expansions % (near ? ShortcutNearEvery : ShortcutEvery) == 1;
         }
 
         private readonly bool IsAtGoal(in AxlePose pose)
         {
             var center = _hull.Chassis.Center(pose);
-            if (!_goal.HasFacing)
+            if (!_window.Goal.HasFacing)
             {
-                return math.distance(center, _goal.Center) <= NavTolerances.Arrive(_hull.Access.Class.Radius);
+                return math.distance(center, _window.Goal.Center) <= NavTolerances.Arrive(_hull.Access.Class.Radius);
             }
 
-            return _goal.IsAtPose(center, pose.Facing);
+            return _window.Goal.IsAtPose(center, pose.Facing);
         }
+
+        private readonly bool TryShortcut(in DriveNodes.Node node, out DriveCurve curve, out float length) =>
+            _hull.TryFit(node.Pose, _window.Goal, out curve, out length) &&
+            _hull.IsClear(_window.Walls, curve, length, node.Depth);
 
         // The node chain from the start, then the shortcut, as the hull centre's waypoints.
         private readonly void Emit(int last, in DriveCurve curve, float curveLength, NativeList<PathWaypoint> points)
         {
             var first = points.Length;
             AddChain(last, points);
-            for (var distance = FineStep; distance < curveLength; distance += FineStep)
+            for (var distance = DriveNodes.FineStep; distance < curveLength; distance += DriveNodes.FineStep)
             {
                 points.Add(Waypoint(_hull.Chassis.Center(curve.Sample(distance)), false));
             }
@@ -248,7 +210,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
                 points.Add(Waypoint(_hull.Chassis.Center(curve.Sample(curveLength)), false));
             }
 
-            if (_goal.HasFacing)
+            if (_window.Goal.HasFacing)
             {
                 return;
             }
@@ -256,11 +218,11 @@ namespace HyperRTS.Simulation.Navigation.Drive
             // A point goal ends on the point itself, as the drawn path did.
             if (points.Length == first)
             {
-                points.Add(Waypoint(_goal.Center, false));
+                points.Add(Waypoint(_window.Goal.Center, false));
             }
 
             ref var end = ref points.ElementAt(points.Length - 1);
-            end.Position.xz = _goal.Center;
+            end.Position.xz = _window.Goal.Center;
         }
 
         private readonly void AddChain(int last, NativeList<PathWaypoint> points)

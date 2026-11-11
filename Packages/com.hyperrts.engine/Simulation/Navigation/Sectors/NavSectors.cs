@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Profiling;
 
 namespace HyperRTS.Simulation.Navigation.Sectors
 {
@@ -9,28 +10,18 @@ namespace HyperRTS.Simulation.Navigation.Sectors
     /// The sector graph per <see cref="MovementClass"/>: each sector's open cells split into 4-connected components,
     /// joined across borders into regions.
     /// </summary>
-    public partial struct NavSectors
+    public struct NavSectors
     {
         public const int Area = NavField.SectorCells * NavField.SectorCells;
 
         /// <summary>Most components one sector holds: a checkerboard of single open cells.</summary>
         public const int MaxComponents = Area / 2;
 
-        // A pass marker for open cells not yet given a component.
-        private const byte Unlabelled = byte.MaxValue;
-
-        /// <summary>Per class, sector and local cell: the cell's component in its sector from 1, 0 when closed.</summary>
-        public NativeArray<byte> Labels;
-
-        /// <summary>Components per class and sector.</summary>
-        public NativeArray<byte> Counts;
-
-        /// <summary>Per class, sector and component: the local cell nearest the component's centroid.</summary>
-        public NativeArray<byte> Representatives;
-
         /// <summary>Sectors relabelled at the next update, marked from the field's dirty sectors.</summary>
         public NativeArray<bool> Dirty;
 
+        public SectorLabelling Labelling;
+        public SectorLinks Links;
         public SectorLayout Layout;
         public int ClassCount;
 
@@ -39,15 +30,9 @@ namespace HyperRTS.Simulation.Navigation.Sectors
             var count = layout.Total;
             var built = new NavSectors
             {
-                Labels = new NativeArray<byte>(classes * count * Area, allocator),
-                Counts = new NativeArray<byte>(classes * count, allocator),
-                Representatives = new NativeArray<byte>(classes * count * MaxComponents, allocator),
+                Labelling = new SectorLabelling(classes, layout, allocator),
+                Links = new SectorLinks(classes, layout, allocator),
                 Dirty = new NativeArray<bool>(count, allocator),
-                EdgeCounts = new NativeArray<byte>(classes * count * 2, allocator),
-                Edges = new NativeArray<ushort>(classes * count * 2 * NavField.SectorCells, allocator),
-                Firsts = new NativeArray<int>(classes * count + 1, allocator),
-                Owners = new NativeList<int>(allocator),
-                Regions = new NativeList<int>(allocator),
                 Layout = layout,
                 ClassCount = classes,
             };
@@ -57,18 +42,14 @@ namespace HyperRTS.Simulation.Navigation.Sectors
 
         public void Dispose()
         {
-            Labels.Dispose();
-            Counts.Dispose();
-            Representatives.Dispose();
+            Labelling.Dispose();
+            Links.Dispose();
             Dirty.Dispose();
-            EdgeCounts.Dispose();
-            Edges.Dispose();
-            Firsts.Dispose();
-            Owners.Dispose();
-            Regions.Dispose();
         }
 
         public readonly int SectorCount => Layout.Total;
+
+        private static readonly ProfilerMarker ConnectMarker = new("NavSectors.Connect");
 
         public void MarkAllDirty()
         {
@@ -77,9 +58,6 @@ namespace HyperRTS.Simulation.Navigation.Sectors
                 Dirty[i] = true;
             }
         }
-
-        // Where one class's entry for a sector sits in the per-sector arrays.
-        private readonly int ClassSector(int classIndex, int sector) => classIndex * SectorCount + sector;
 
         /// <summary>A cell's index inside its sector.</summary>
         public static int Local(int2 cell)
@@ -97,23 +75,24 @@ namespace HyperRTS.Simulation.Navigation.Sectors
                 return -1;
             }
 
-            var label = Labels[(ClassSector(classIndex, sector)) * Area + Local(cell)];
-            return label == 0 ? -1 : Global(classIndex, sector, label);
+            var label = Labelling.Labels[Layout.ClassSector(classIndex, sector) * Area + Local(cell)];
+            return label == 0 ? -1 : Links.Global(classIndex, sector, label);
         }
 
         /// <summary>The connected region of a cell for a class; 0 when closed or off the grid.</summary>
         public readonly int Region(int classIndex, int2 cell)
         {
             var component = Component(classIndex, cell);
-            return component < 0 ? 0 : Regions[component];
+            return component < 0 ? 0 : Links.Regions[component];
         }
 
         /// <summary>The representative cell of a component.</summary>
         public readonly int2 Representative(int classIndex, int component)
         {
-            var sector = Owners[component];
-            var label = component - Firsts[ClassSector(classIndex, sector)];
-            return Layout.Cell(sector, Representatives[(ClassSector(classIndex, sector)) * MaxComponents + label]);
+            var sector = Links.Owners[component];
+            var label = component - Links.Firsts[Layout.ClassSector(classIndex, sector)];
+            var local = Labelling.Representatives[Layout.ClassSector(classIndex, sector) * MaxComponents + label];
+            return Layout.Cell(sector, local);
         }
 
         /// <summary>Labels every sector of every class and connects them, as editor tools and tests need.</summary>
@@ -124,11 +103,22 @@ namespace HyperRTS.Simulation.Navigation.Sectors
             {
                 for (var sector = 0; sector < SectorCount; sector++)
                 {
-                    Relabel(field, classes, classIndex, sector);
+                    Labelling.Relabel(field, classes, classIndex, sector);
                 }
             }
 
             Connect();
+        }
+
+        /// <summary>Rebuilds the edges and regions round the dirty sectors, then clears the dirty marks.</summary>
+        public void Connect()
+        {
+            using var scope = ConnectMarker.Auto();
+            Links.Rebuild(Labelling.Labels, Labelling.Counts, Dirty);
+            for (var i = 0; i < Dirty.Length; i++)
+            {
+                Dirty[i] = false;
+            }
         }
     }
 }

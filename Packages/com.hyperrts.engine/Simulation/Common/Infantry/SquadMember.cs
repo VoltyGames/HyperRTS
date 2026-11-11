@@ -39,7 +39,7 @@ namespace HyperRTS.Simulation.Common.Infantry
     /// shift.
     /// </summary>
     [InternalBufferCapacity(4)]
-    public partial struct SquadMember : IBufferElementData
+    public struct SquadMember : IBufferElementData
     {
         /// <summary>Splash treats a member as a disc of this radius.</summary>
         public const float Radius = 0.3f;

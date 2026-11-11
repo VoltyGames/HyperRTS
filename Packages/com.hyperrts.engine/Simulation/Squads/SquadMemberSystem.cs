@@ -87,7 +87,7 @@ namespace HyperRTS.Simulation.Squads
                     return;
                 }
 
-                var capacity = SquadMember.TotalMax(members);
+                var capacity = new SquadRoster(members).TotalMax();
                 if (capacity > 0f && math.abs(capacity - health.Max) > Tolerance)
                 {
                     var scale = health.Max / capacity;
@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Squads
                     }
                 }
 
-                health.Current = SquadMember.Total(members);
+                health.Current = new SquadRoster(members).Total();
             }
 
             private static void ChooseWeapons(DynamicBuffer<SquadMember> members, DynamicBuffer<WeaponMount> mounts)
@@ -138,7 +138,7 @@ namespace HyperRTS.Simulation.Squads
                 float2 squadVelocity, float speed, in LocalTransform transform)
             {
                 var crewing = Deployable.IsEmplaced(Deployables, entity);
-                var living = SquadMember.CountFreeLiving(members, crewing);
+                var living = new SquadRoster(members).CountFreeLiving(crewing);
                 var working = WorkLookup.HasEnabled(entity);
                 var reach = speed * Rules.CatchUp * DeltaTime;
                 var rank = 0;

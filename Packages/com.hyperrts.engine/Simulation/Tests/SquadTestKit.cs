@@ -57,8 +57,8 @@ namespace HyperRTS.Simulation.Tests
         public static void AssertHealthIsMemberSum(this TestWorld world, Entity squad)
         {
             var members = world.Buffer<SquadMember>(squad);
-            Assert.AreEqual(SquadMember.Total(members), world.GetHealth(squad), 1e-3f);
-            Assert.AreEqual(SquadMember.TotalMax(members), world.Get<Health>(squad).Max, 1e-3f);
+            Assert.AreEqual(new SquadRoster(members).Total(), world.GetHealth(squad), 1e-3f);
+            Assert.AreEqual(new SquadRoster(members).TotalMax(), world.Get<Health>(squad).Max, 1e-3f);
         }
     }
 }

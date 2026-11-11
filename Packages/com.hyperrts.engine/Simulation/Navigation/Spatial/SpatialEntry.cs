@@ -68,5 +68,29 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// <summary>From this entry's core segment to another's, between their closest points.</summary>
         public readonly float2 ClosestOffset(float2 position, float2 axis) =>
             Planar.ClosestOffset(position, axis, Position.xz, SegmentAxis);
+
+        /// <summary>
+        /// The unit direction on XZ that parts this entry from <paramref name="other"/>. Crossed segments have no
+        /// closest-point line, so it falls back to the centres, then to a tie-break.
+        /// </summary>
+        public readonly float2 DirectionAway(float2 offset, float distance, in SpatialEntry other)
+        {
+            if (distance > 1e-4f)
+            {
+                return offset / distance;
+            }
+
+            var centres = Position.xz - other.Position.xz;
+            var apart = math.length(centres);
+            return apart > 1e-4f ? centres / apart : TieBreak(other.Entity);
+        }
+
+        // Stacked units need opposite, deterministic directions: hash the pair, flip by index order.
+        private readonly float2 TieBreak(Entity other)
+        {
+            var pair = new int2(math.min(Entity.Index, other.Index), math.max(Entity.Index, other.Index));
+            math.sincos(math.hash(pair) * (math.PI * 2f / uint.MaxValue), out var sin, out var cos);
+            return new float2(cos, sin) * (Entity.Index < other.Index ? 1f : -1f);
+        }
     }
 }

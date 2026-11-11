@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
@@ -20,6 +21,15 @@ namespace HyperRTS.Simulation.Navigation.Paths
     [UpdateAfter(typeof(NavGridSystem))]
     public partial struct PathfindingSystem : ISystem
     {
+        /// <summary>
+        /// Drive search expansions a frame may spend, one capped search. The frame's first path that needs a search
+        /// stays within it, leaving any stretch past it as drawn; later paths that don't fit wait for the next frame.
+        /// </summary>
+        public const int DriveBudget = DriveSearch.MaxExpansions;
+
+        /// <summary>Estimated expansions a frame's paths may cost; the frame's first request runs whatever its cost.</summary>
+        public const float CostPerFrame = 30000f;
+
         private const double UseCheckSeconds = 1.0;
 
         private EntityQuery _agents;
@@ -70,7 +80,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
             var requests = new NativeList<PathRequest>(count, Allocator.TempJob);
             var used = new NativeParallelHashSet<int2>(checksUse ? math.max(count, 1) : 1, Allocator.TempJob);
-            state.Dependency = new EvaluateJob
+            state.Dependency = new PathEvaluateJob
             {
                 Requests = requests.AsParallelWriter(),
                 Used = used.AsParallelWriter(),
@@ -81,7 +91,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             }.ScheduleParallel(_agents, state.Dependency);
 
             var plan = new PathPlan(Allocator.TempJob);
-            state.Dependency = new PlanJob
+            state.Dependency = new PathPlanJob
             {
                 Requests = requests, Used = used, ChecksUse = checksUse, Grid = grid, Fields = _fields, Plan = plan,
                 Now = now,
@@ -97,9 +107,9 @@ namespace HyperRTS.Simulation.Navigation.Paths
             in PathPlan plan, double now, JobHandle dependency)
         {
             var fields = _fields.Fields.AsDeferredJobArray();
-            dependency = new FieldJob { Grid = grid, Fields = fields, Builds = plan.Builds.AsDeferredJobArray() }
+            dependency = new PathFieldJob { Grid = grid, Fields = fields, Builds = plan.Builds.AsDeferredJobArray() }
                 .Schedule(plan.Builds, 1, dependency);
-            dependency = new ServeJob
+            dependency = new PathServeJob
             {
                 Requests = requests.AsDeferredJobArray(),
                 Tasks = plan.Tasks.AsDeferredJobArray(),
@@ -109,7 +119,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 Grid = grid,
                 Served = plan.Served.AsDeferredJobArray(),
             }.Schedule(plan.Tasks, 1, dependency);
-            dependency = new DriveJob
+            dependency = new PathDriveJob
             {
                 Requests = requests.AsDeferredJobArray(),
                 Tasks = plan.Tasks.AsDeferredJobArray(),
@@ -120,7 +130,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 StateLookup = SystemAPI.GetComponentLookup<PathState>(false),
                 Now = now,
             }.Schedule(dependency);
-            return new StatsJob { Plan = plan, Requests = requests.AsDeferredJobArray(), Stats = _stats }
+            return new PathStatsJob { Plan = plan, Requests = requests.AsDeferredJobArray(), Stats = _stats }
                 .Schedule(dependency);
         }
     }

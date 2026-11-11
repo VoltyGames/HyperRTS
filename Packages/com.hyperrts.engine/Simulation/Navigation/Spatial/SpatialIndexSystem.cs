@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 ArrivalLookup = SystemAPI.GetComponentLookup<Arrival>(true),
                 VelocityLookup = SystemAPI.GetComponentLookup<Velocity>(true),
             }.ScheduleBatch(count, BatchSize, listed);
-            state.Dependency = new SortJob { Index = index, Snapshots = _snapshots.AsArray() }
+            state.Dependency = new SpatialSortJob { Index = index, Snapshots = _snapshots.AsArray() }
                 .Schedule(state.Dependency);
         }
 

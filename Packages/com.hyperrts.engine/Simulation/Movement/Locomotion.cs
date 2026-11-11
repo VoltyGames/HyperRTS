@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Navigation.Drive;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -75,5 +76,35 @@ namespace HyperRTS.Simulation.Movement
             var half = cornerTurn * 0.5f;
             return half < 1e-3f ? Unlimited : TurnRate * math.max(turnRadius, lookAhead / math.tan(half));
         }
+
+        /// <summary>Radians the hull can turn within <paramref name="seconds"/> at <paramref name="speed"/>.</summary>
+        internal readonly float TurnWithin(in Chassis chassis, float speed, float seconds)
+        {
+            if (!chassis.IsWheeled)
+            {
+                return math.min(math.PI, TurnRate * seconds);
+            }
+
+            // Wheels first steer over to the tightest curvature at the steer rate, then hold it.
+            var curvature = Grip(chassis, speed);
+            var steering = math.atan(chassis.Wheelbase * curvature) / SteerRate;
+            var held = seconds > steering ? seconds - steering * 0.5f : seconds * seconds / (2f * steering);
+            return math.min(math.PI, math.abs(speed) * curvature * held);
+        }
+
+        /// <summary>The curvature of the steering after one frame of turning the wheels toward <paramref name="wanted"/>.</summary>
+        internal readonly float SteerToward(in Chassis chassis, float steer, float speed, float wanted, float deltaTime)
+        {
+            var limit = Grip(chassis, speed);
+            var angle = math.atan(chassis.Wheelbase * steer);
+            var target = math.atan(chassis.Wheelbase * math.clamp(wanted, -limit, limit));
+            var turn = SteerRate * deltaTime;
+            angle += math.clamp(target - angle, -turn, turn);
+            return math.clamp(math.tan(angle) / chassis.Wheelbase, -limit, limit);
+        }
+
+        // The turn radius, and at speed the yaw rate the tyres hold.
+        private readonly float Grip(in Chassis chassis, float speed) =>
+            math.min(chassis.MaxCurvature, TurnRate / math.max(math.abs(speed), 1e-3f));
     }
 }

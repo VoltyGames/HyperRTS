@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Replays
         public byte Owner;
         public byte Health;
 
-        /// <summary>Bit i is set while squad member i lives (<c>SquadMember.LivingMask</c>); 0 for an entity without members.</summary>
+        /// <summary>Bit i is set while squad member i lives (<c>SquadRoster.LivingMask</c>); 0 for an entity without members.</summary>
         public ushort Living;
 
         /// <summary>Construction progress in 0..254, or <see cref="Finished"/>.</summary>

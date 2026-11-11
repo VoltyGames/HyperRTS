@@ -12,22 +12,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Paths
     /// Paths round walls, out of dead ends and through narrow gaps by width, keep their wall margin, re-plan when
     /// shoved, and track the length left past each corner.
     /// </summary>
-    public partial class PathTests
+    public class PathTests : PathFixture
     {
-        private TestWorld _world;
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
-        private void CreateMatch(float size)
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(new byte[] { 1, 2 }, size);
-        }
-
-        private DynamicBuffer<PathWaypoint> Waypoints(Entity unit) =>
-            _world.Buffer<PathWaypoint>(unit);
-
         [Test]
         public void CrossMapPath_OnAFullSizeMap_EndsAtTheGoal()
         {

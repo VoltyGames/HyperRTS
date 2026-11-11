@@ -60,5 +60,47 @@ namespace HyperRTS.Simulation.Navigation.Drive
             var reach = math.sqrt(TurnRadius * TurnRadius + RearAxle * RearAxle);
             return math.distance(target, middle) < reach * slack;
         }
+
+        // Until the wheels turn to within this of the planned angle a plan-following hull only creeps.
+        private static readonly float SteerSettled = math.radians(3f);
+
+        /// <summary>
+        /// Pure pursuit: the curvature of the arc from the rear axle to a target <paramref name="error"/> off the
+        /// heading. A target behind takes full lock.
+        /// </summary>
+        public static float Pursuit(float error, float distance)
+        {
+            if (math.abs(error) > math.PI * 0.5f)
+            {
+                return math.sign(error) * float.PositiveInfinity;
+            }
+
+            return 2f * math.sin(error) / math.max(distance, 1e-3f);
+        }
+
+        /// <summary>
+        /// Pursuit that brings the hull centre, not the rear axle, onto the aim in either gear, so planned centre
+        /// waypoints are followed exactly.
+        /// </summary>
+        public readonly float CenterPursuit(float2 facing, float2 aim)
+        {
+            var ahead = math.dot(aim, facing);
+            var side = math.dot(aim, Planar.Left(facing));
+            var spread = ahead * ahead + side * side - RearAxle * RearAxle;
+            return math.abs(spread) > 1e-3f ? 2f * side / spread : math.sign(side) * float.PositiveInfinity;
+        }
+
+        /// <summary>Whether the wheels are still turning over from <paramref name="steer"/> to the curvature wanted.</summary>
+        public readonly bool IsSteeringOver(float steer, float wanted)
+        {
+            if (!IsWheeled)
+            {
+                return false;
+            }
+
+            var most = MaxCurvature;
+            var turn = math.atan(Wheelbase * math.clamp(wanted, -most, most));
+            return math.abs(turn - math.atan(Wheelbase * steer)) > SteerSettled;
+        }
     }
 }

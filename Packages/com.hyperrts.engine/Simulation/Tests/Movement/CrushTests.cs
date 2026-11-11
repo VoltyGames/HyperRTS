@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             }
 
             var members = World.Buffer<SquadMember>(squad);
-            return members.Length - SquadMember.CountLiving(members);
+            return members.Length - new SquadRoster(members).CountLiving();
         }
 
         [TestCase(7f, true)]

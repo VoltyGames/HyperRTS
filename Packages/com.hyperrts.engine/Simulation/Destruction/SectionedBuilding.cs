@@ -9,7 +9,7 @@ namespace HyperRTS.Simulation.Destruction
     /// A building made of <see cref="Section"/>s: hits land on the sections they reach, cut-off sections fall, and its health is the sum of theirs.
     /// Only <see cref="Broken"/> reaches clients.
     /// </summary>
-    public partial struct SectionedBuilding : IComponentData
+    public struct SectionedBuilding : IComponentData
     {
         /// <summary>Seconds between one support level falling and the next.</summary>
         public const float FallDelay = 0.3f;
@@ -195,6 +195,39 @@ namespace HyperRTS.Simulation.Destruction
             }
 
             return nearest.Index;
+        }
+
+        /// <summary>
+        /// Rebuilds the latest broken section first, each coming back once full, then mends the standing ones.
+        /// Returns the health restored.
+        /// </summary>
+        public float Repair(DynamicBuffer<Section> sections, float amount)
+        {
+            var restored = 0f;
+            while (amount > 0f)
+            {
+                var index = Repairable.NextRepair(sections);
+                if (index < 0)
+                {
+                    break;
+                }
+
+                var section = sections[index];
+                var added = math.min(section.MaxHealth - section.Health, amount);
+                section.Health += added;
+                amount -= added;
+                restored += added;
+                if (section.IsBroken && section.Health >= section.MaxHealth)
+                {
+                    section.BreakOrder = 0;
+                    Broken &= ~(1ul << index);
+                    Fell &= ~(1ul << index);
+                }
+
+                sections[index] = section;
+            }
+
+            return restored;
         }
     }
 }

@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 if (request.Command.Type == CommandType.PlaceLine)
                 {
                     PlaceLine(ref state, request, buyer, ecb, sites, orders);
-                    NearEndFirst(ref state, builders, orders, request.Command.Queue);
+                    new BuilderGroup(state.EntityManager, builders).NearEndFirst(orders, request.Command.Queue);
                 }
                 else if (TryPlace(ref state, request, buyer, ecb, sites, out var order))
                 {
@@ -240,6 +240,38 @@ namespace HyperRTS.Simulation.Buildings.Placement
 
             var relations = SystemAPI.GetSingleton<OwnerRelations>();
             return !spot.IsBlockedByEnemies(SystemAPI.GetSingleton<SpatialIndex>(), relations, owner);
+        }
+
+        /// <summary>
+        /// Places every free segment from the line's start, stopping at the first the player can't buy. Segments are
+        /// line pieces, so they keep the building gap from other buildings but not from each other or other walls.
+        /// </summary>
+        private void PlaceLine(ref SystemState state, in IssuedCommand request, in Buyer buyer,
+            EntityCommandBuffer ecb, NativeList<PlacedFootprint> sites, NativeList<Order> orders)
+        {
+            var prefab = request.Command.Prefab;
+            var map = SystemAPI.GetSingleton<MapSettings>();
+            var grid = SystemAPI.GetSingleton<NavGrid>();
+            var footprint = SystemAPI.GetComponent<NavObstacle>(prefab).Size;
+            var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
+            var join = (LineStart)request.Command.Argument;
+            var line = new PlacementLine(map, request.Command.Position, request.Command.End, footprint, surface, join);
+            var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
+            for (var i = 0; i < line.Count; i++)
+            {
+                var spot = line.Segment(i).Grounded(grid);
+                if (!IsFree(ref state, spot, map, grid, request.Owner, sites, inLine: true))
+                {
+                    continue;
+                }
+
+                if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
+                {
+                    break;
+                }
+
+                orders.Add(Raise(ref state, request, buyer, ecb, sites, spot, inLine: true));
+            }
         }
     }
 }

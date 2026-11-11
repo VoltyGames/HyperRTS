@@ -1,7 +1,7 @@
+using Unity.Collections;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Spatial;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -11,10 +11,8 @@ namespace HyperRTS.Simulation.Movement
     /// One neighbour query per unit, gathering the neighbours <see cref="Steering"/> avoids and summing the push that
     /// keeps footprints apart. <see cref="RightOfWay"/> says who moves.
     /// </summary>
-    internal partial struct CrowdVisitor : ISpatialVisitor
+    internal struct CrowdVisitor : ISpatialVisitor
     {
-        public const int MaxNeighbours = 8;
-
         /// <summary>The unit itself, as its neighbours see it in the index.</summary>
         public SpatialEntry Unit;
         public float2 Goal;
@@ -33,7 +31,7 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>An allied foot unit stands in this moving vehicle's lane, so it slows to a walk.</summary>
         public bool InfantryAhead;
 
-        private FixedList512Bytes<AvoidanceNeighbour> _neighbours;
+        private AvoidanceList _neighbours;
         private HullClearance _room;
         private bool _infantryTouches;
         private bool _othersTouch;
@@ -98,9 +96,9 @@ namespace HyperRTS.Simulation.Movement
         }
 
         /// <summary>The nearest neighbours a mover steers round.</summary>
-        public readonly FixedList512Bytes<AvoidanceNeighbour> Neighbours => _neighbours;
+        public readonly FixedList512Bytes<AvoidanceNeighbour> Neighbours => _neighbours.Items;
 
-        public readonly bool HasNeighbours => _neighbours.Length > 0;
+        public readonly bool HasNeighbours => _neighbours.Count > 0;
 
         /// <summary>Allied foot units stand in its lane, or it is driving through them, so it keeps to a walk.</summary>
         public readonly bool WalksForInfantry => InfantryAhead || (PassesInfantry && _infantryNear);
@@ -143,7 +141,7 @@ namespace HyperRTS.Simulation.Movement
             }
 
             _infantryNear |= Unit.IsVehicle && !entry.IsVehicle && entryYields;
-            var direction = Direction(offset, distance, entry);
+            var direction = Unit.DirectionAway(offset, distance, entry);
             // Parked pairs only part, and a mover presses aside a unit giving way to it, so neither limits the move.
             if (Moving ? !Presses(entry, entryYields) : entry.IsMoving)
             {
@@ -179,7 +177,7 @@ namespace HyperRTS.Simulation.Movement
 
             // Behind same-way traffic a mover counts the whole spacing it already lacks, so it backs off.
             reach = precedence > 0 ? LeaderReach(entry, reach) : reach;
-            Keep(new AvoidanceNeighbour
+            _neighbours.Keep(new AvoidanceNeighbour
             {
                 Position = entry.Position.xz,
                 SegmentAxis = entry.SegmentAxis,
@@ -236,24 +234,56 @@ namespace HyperRTS.Simulation.Movement
         private readonly bool IsArrivedGroupmate(in SpatialEntry entry) =>
             InGoalArea && Unit.Group != 0 && entry.Group == Unit.Group && entry.IsArrived && !entry.IsMoving;
 
-        private void Keep(in AvoidanceNeighbour neighbour)
+        /// <summary>The overlap push, no longer than one frame's step.</summary>
+        public readonly float2 PushWithin(float maxStep)
         {
-            if (_neighbours.Length < MaxNeighbours)
-            {
-                _neighbours.Add(neighbour);
-                return;
-            }
+            var length = math.length(Push);
+            return length > maxStep ? Push * (maxStep / length) : Push;
+        }
 
-            var farthest = 0;
-            for (var i = 1; i < _neighbours.Length; i++)
+        private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach, int precedence,
+            bool entryYields)
+        {
+            var overlap = reach - distance;
+            ReachedGroup |= Moving && IsArrivedGroupmate(entry) &&
+                            math.dot(entry.Position.xz - Position, Goal - Position) > 0f;
+            // The push never moves a vehicle off a foot unit, so the foot unit takes the whole overlap.
+            if (Unit.IsVehicle != entry.IsVehicle)
             {
-                farthest = _neighbours[i].DistanceSq > _neighbours[farthest].DistanceSq ? i : farthest;
+                Push += direction * (overlap * Rule.PushShare(Unit, entry, entryYields));
             }
-
-            if (neighbour.DistanceSq < _neighbours[farthest].DistanceSq)
+            else if (Moving)
             {
-                _neighbours[farthest] = neighbour;
+                Push += direction * MoverPush(entry, distance, reach, precedence, entryYields);
+            }
+            else if (!entry.IsMoving)
+            {
+                Push += direction * (overlap * 0.5f);
+            }
+            else if (Rule.Yields(Unit, entry))
+            {
+                var aside = RightOfWay.Side(entry.Facing, Position - entry.Position.xz);
+                Push += math.normalizesafe(direction + aside) * (overlap * 0.5f);
             }
         }
+
+        // Same-way traffic makes its spacing by the follower alone, but inside the leader's own reach both part half
+        // each, so a follower pressed from both sides can't be driven into.
+        private readonly float MoverPush(in SpatialEntry entry, float distance, float reach, int precedence,
+            bool entryYields)
+        {
+            var overlap = reach - distance;
+            if (precedence == 0)
+            {
+                return overlap * Rule.PushShare(Unit, entry, entryYields);
+            }
+
+            var close = math.max(0f, LeaderReach(entry, reach) - distance) * 0.5f;
+            return precedence > 0 ? close : overlap - close;
+        }
+
+        // Ahead of same-way traffic a mover keeps half the spacing, so it drives on while the follower backs off.
+        private readonly float LeaderReach(in SpatialEntry entry, float reach) =>
+            (reach + Radius + entry.Radius) * 0.5f;
     }
 }

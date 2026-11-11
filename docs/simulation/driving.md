@@ -65,7 +65,7 @@ without a reverse run, foot units and aircraft take a reverse move as a plain mo
 ## Drive planner
 
 `DrivePlanner` checks every fresh path of a unit with a turn radius or a hull longer than it is wide, in the same serve
-job as the route. Easy paths run no search. A path with a stretch to search goes to one serial `DriveJob`, which spends
+job as the route. Easy paths run no search. A path with a stretch to search goes to one serial `PathDriveJob`, which spends
 a fixed budget a frame (`PathfindingSystem.DriveBudget`). The first such path plans within it and leaves any stretch
 past it as drawn (`PathState.PartlyPlanned`), planned once its planned part is driven. Later paths wait a frame.
 

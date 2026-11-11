@@ -201,17 +201,17 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
 
         private static void AssertSameSectors(in NavSectors built, in NavSectors kept, string when)
         {
-            CollectionAssert.AreEqual(built.Labels.ToArray(), kept.Labels.ToArray(), $"{when}: labels");
-            CollectionAssert.AreEqual(built.Counts.ToArray(), kept.Counts.ToArray(), $"{when}: counts");
-            CollectionAssert.AreEqual(built.EdgeCounts.ToArray(), kept.EdgeCounts.ToArray(), $"{when}: edges");
-            CollectionAssert.AreEqual(built.Regions.AsArray().ToArray(), kept.Regions.AsArray().ToArray(),
+            CollectionAssert.AreEqual(built.Labelling.Labels.ToArray(), kept.Labelling.Labels.ToArray(), $"{when}: labels");
+            CollectionAssert.AreEqual(built.Labelling.Counts.ToArray(), kept.Labelling.Counts.ToArray(), $"{when}: counts");
+            CollectionAssert.AreEqual(built.Links.EdgeCounts.ToArray(), kept.Links.EdgeCounts.ToArray(), $"{when}: edges");
+            CollectionAssert.AreEqual(built.Links.Regions.AsArray().ToArray(), kept.Links.Regions.AsArray().ToArray(),
                 $"{when}: regions");
             for (var c = 0; c < built.ClassCount * built.SectorCount; c++)
             {
-                for (var k = 0; k < built.Counts[c]; k++)
+                for (var k = 0; k < built.Labelling.Counts[c]; k++)
                 {
                     var index = c * NavSectors.MaxComponents + k;
-                    Assert.AreEqual(built.Representatives[index], kept.Representatives[index], $"{when}: centre");
+                    Assert.AreEqual(built.Labelling.Representatives[index], kept.Labelling.Representatives[index], $"{when}: centre");
                 }
             }
         }

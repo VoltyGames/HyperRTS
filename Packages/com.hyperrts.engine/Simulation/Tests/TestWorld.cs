@@ -1,26 +1,22 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
-using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Squads.Cover;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Simulation.Vision.Sight;
 using System;
+using HyperRTS.Simulation.Abilities;
 using System.Collections.Generic;
 using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Voice;
-using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
-using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
-using HyperRTS.Simulation.Vision;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
@@ -33,7 +29,7 @@ namespace HyperRTS.Simulation.Tests
     /// Isolated world running every system in HyperRTS.Simulation (no rendering, input or physics), plus
     /// helpers that build entities with the same setup code the bakers use.
     /// </summary>
-    public sealed partial class TestWorld : IDisposable
+    public sealed class TestWorld : IDisposable
     {
         public const float FrameTime = 1f / 30f;
 
@@ -180,7 +176,7 @@ namespace HyperRTS.Simulation.Tests
             for (var i = 0; i < teams.Length; i++)
             {
                 relations.Teams.Add(teams[i]);
-                CreatePlayer((byte)(i + 1), local: i == 0);
+                this.CreatePlayer((byte)(i + 1), local: i == 0);
             }
 
             EntityManager.AddComponentData(match, relations);
@@ -219,5 +215,54 @@ namespace HyperRTS.Simulation.Tests
             World.GetExistingSystem<NavGridSystem>().Update(World.Unmanaged);
             EntityManager.CompleteAllTrackedJobs();
         }
+
+        public T Get<T>(Entity entity) where T : unmanaged, IComponentData => EntityManager.GetComponentData<T>(entity);
+
+        public T Singleton<T>() where T : unmanaged, IComponentData
+        {
+            using var query = EntityManager.CreateEntityQuery(typeof(T));
+            return query.GetSingleton<T>();
+        }
+
+        /// <summary>The match singleton carrying <see cref="MapSettings"/>.</summary>
+        public Entity MatchEntity()
+        {
+            using var query = EntityManager.CreateEntityQuery(typeof(MapSettings));
+            return query.GetSingletonEntity();
+        }
+
+        public bool IsEnabled<T>(Entity entity) where T : unmanaged, IComponentData, IEnableableComponent =>
+            EntityManager.IsComponentEnabled<T>(entity);
+
+        public void Set<T>(Entity entity, T value) where T : unmanaged, IComponentData =>
+            EntityManager.SetComponentData(entity, value);
+
+        public void Add<T>(Entity entity, T value) where T : unmanaged, IComponentData =>
+            EntityManager.AddComponentData(entity, value);
+
+        public DynamicBuffer<T> Buffer<T>(Entity entity) where T : unmanaged, IBufferElementData =>
+            EntityManager.GetBuffer<T>(entity);
+
+        /// <summary>Adds the ability and its cooldown, creating both buffers on first use.</summary>
+        public Entity GiveAbility(Entity entity, Ability ability, float cooldownRemaining = 0f)
+        {
+            if (!EntityManager.HasBuffer<Ability>(entity))
+            {
+                EntityManager.AddBuffer<Ability>(entity);
+                EntityManager.AddBuffer<AbilityCooldown>(entity);
+            }
+
+            Buffer<Ability>(entity).Add(ability);
+            Buffer<AbilityCooldown>(entity).Add(new AbilityCooldown { Id = ability.Id, Remaining = cooldownRemaining });
+            return entity;
+        }
+
+        public void SetEnabled<T>(Entity entity, bool enabled) where T : unmanaged, IComponentData, IEnableableComponent =>
+            EntityManager.SetComponentEnabled<T>(entity, enabled);
+
+        public EntityWriter Writer(Entity entity) => new(EntityManager, entity);
+
+        /// <summary>A query over <paramref name="types"/>; the caller disposes it.</summary>
+        public EntityQuery Query(params ComponentType[] types) => EntityManager.CreateEntityQuery(types);
     }
 }

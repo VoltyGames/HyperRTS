@@ -64,7 +64,7 @@ namespace HyperRTS.Simulation.Navigation.Sectors
             _last = graph.Component(classIndex, goal);
             _start = start;
             _goal = goal;
-            if (_first < 0 || _last < 0 || graph.Regions[_first] != graph.Regions[_last])
+            if (_first < 0 || _last < 0 || graph.Links.Regions[_first] != graph.Links.Regions[_last])
             {
                 throw new InvalidOperationException("Abstract search between cells of different regions.");
             }
@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Navigation.Sectors
         {
             var at = Position(graph, classIndex, node);
             _neighbours.Clear();
-            graph.Neighbours(classIndex, node, _neighbours);
+            graph.Links.Neighbours(classIndex, node, _neighbours);
             foreach (var next in _neighbours)
             {
                 var to = Position(graph, classIndex, next);
@@ -131,7 +131,7 @@ namespace HyperRTS.Simulation.Navigation.Sectors
             var begin = sectors.Length;
             for (var node = last; node >= 0; node = _records[node].Parent)
             {
-                var sector = graph.Owners[node];
+                var sector = graph.Links.Owners[node];
                 if (sectors.Length == begin || sectors[sectors.Length - 1] != sector)
                 {
                     sectors.Add(sector);

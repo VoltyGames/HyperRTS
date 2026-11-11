@@ -100,13 +100,13 @@ namespace HyperRTS.Simulation.Tests.Squads
         {
             var members = World.Buffer<SquadMember>(Squad(float3.zero, 0, 0, 0, 0));
 
-            SquadMember.Fill(members, 40f, 0b1010);
+            new SquadRoster(members).Fill(40f, 0b1010);
 
             Assert.AreEqual(0f, members[0].Health, 1e-3f);
             Assert.AreEqual(20f, members[1].Health, 1e-3f);
             Assert.AreEqual(0f, members[2].Health, 1e-3f);
             Assert.AreEqual(20f, members[3].Health, 1e-3f);
-            Assert.AreEqual(0b1010, SquadMember.LivingMask(members));
+            Assert.AreEqual(0b1010, new SquadRoster(members).LivingMask());
         }
 
         [Test]

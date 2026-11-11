@@ -57,11 +57,11 @@ namespace HyperRTS.Simulation.Combat.Damage
                 return -1;
             }
 
-            return SquadMember.FindNearest(members, squad.Position, hit.Position);
+            return new SquadRoster(members).FindNearest(squad.Position, hit.Position);
         }
 
         /// <summary>Restores health to the most hurt members; returns the squad's health.</summary>
-        public float Heal(Entity squad, float amount) => SquadMember.Heal(_members[squad], amount);
+        public float Heal(Entity squad, float amount) => new SquadRoster(_members[squad]).Heal(amount);
 
         /// <summary>
         /// Deals <paramref name="amount"/>, scaled by the struck member's cover, to the member the blow names or one
@@ -74,7 +74,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             var piercing = hit.Profile.CoverPiercing;
             var index = blow.Member >= 0
                 ? blow.Member
-                : SquadMember.PickExposed(members, position, blow.Seed, _cover, blow.From, piercing);
+                : new SquadRoster(members).PickExposed(position, blow.Seed, _cover, blow.From, piercing);
             if (index < 0)
             {
                 wound = default;
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             var exposure = members[index].ExposureTo(_cover, position, blow.From, piercing);
             var dealt = amount * exposure.Damage;
             var held = members[index].Health;
-            var squadHealth = SquadMember.Hurt(members, index, dealt);
+            var squadHealth = new SquadRoster(members).Hurt(index, dealt);
             RecordDeath(members, index, held, hit, position);
             Suppress(squad, blow.Suppression * exposure.Suppression);
             wound = new MemberWound { Member = index, Held = held, Dealt = dealt, SquadHealth = squadHealth };

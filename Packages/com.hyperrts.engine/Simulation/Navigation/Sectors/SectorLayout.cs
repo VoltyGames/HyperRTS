@@ -16,6 +16,9 @@ namespace HyperRTS.Simulation.Navigation.Sectors
 
         public int Total => Count.x * Count.y;
 
+        /// <summary>Where one class's entry for a sector sits in the per-sector arrays.</summary>
+        public int ClassSector(int classIndex, int sector) => classIndex * Total + sector;
+
         /// <summary>A sector's column and row.</summary>
         public int2 Coordinates(int sector) => new(sector % Count.x, sector / Count.x);
 

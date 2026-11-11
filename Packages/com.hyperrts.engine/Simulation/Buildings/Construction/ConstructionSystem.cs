@@ -205,7 +205,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
 
             /// <summary>A squad's work is its living members, each adding the builder's rate.</summary>
             private int Crew(Entity builder) =>
-                CrewLookup.TryGetBuffer(builder, out var members) ? SquadMember.CountLiving(members) : 1;
+                CrewLookup.TryGetBuffer(builder, out var members) ? new SquadRoster(members).CountLiving() : 1;
 
             /// <summary>Sends a squad's members to dig along the site's long side.</summary>
             private void Dig(Entity builder, Entity site)

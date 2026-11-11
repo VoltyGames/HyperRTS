@@ -1,5 +1,6 @@
 using HyperRTS.Network.Joining;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Mathematics;
 using Unity.Netcode;

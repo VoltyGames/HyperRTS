@@ -1,10 +1,10 @@
+using Unity.Jobs;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Profiling;
 using Unity.Transforms;
 
@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Vision.Sight
     [UpdateBefore(typeof(FogOfWarSystem))]
     public partial struct SightBlockSystem : ISystem
     {
-        private static readonly ProfilerMarker StampMarker = new("SightBlockSystem.Stamp");
+        internal static readonly ProfilerMarker StampMarker = new("SightBlockSystem.Stamp");
 
         private EntityQuery _blocks;
         private EntityQuery _changed;
@@ -76,13 +76,13 @@ namespace HyperRTS.Simulation.Vision.Sight
 
             ref var blockers = ref SystemAPI.GetSingletonRW<SightBlockers>().ValueRW;
             // Crop cover stays, flattened lanes and all.
-            state.Dependency = new SavePreviousJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
-            state.Dependency = new ClearBlocksJob { Cells = blockers.Cells }
+            state.Dependency = new SightSavePreviousJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
+            state.Dependency = new SightClearBlocksJob { Cells = blockers.Cells }
                 .Schedule(blockers.Cells.Length, 4096, state.Dependency);
             state.Dependency = ClearJob<Entity>.Schedule(blockers.Owner, state.Dependency);
-            state.Dependency = new StampJob { Blockers = blockers, Terrain = terrain }
+            state.Dependency = new SightStampJob { Blockers = blockers, Terrain = terrain }
                 .Schedule(_blocks, state.Dependency);
-            state.Dependency = new DiffJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
+            state.Dependency = new SightDiffJob { Blockers = blockers, Previous = _previous }.Schedule(state.Dependency);
         }
 
         // Blocks only differ after an add, removal or archetype change, a block turning on or off, or a write.
@@ -122,12 +122,12 @@ namespace HyperRTS.Simulation.Vision.Sight
             }
 
             _previous = new NativeArray<SightCell>(grid.Cells.Length, Allocator.Persistent);
-            state.Dependency = new GroundJob { Cells = grid.Cells, Grid = grid.Grid, Terrain = terrain }
+            state.Dependency = new SightGroundJob { Cells = grid.Cells, Grid = grid.Grid, Terrain = terrain }
                 .Schedule(grid.Cells.Length, 1024, state.Dependency);
 
             if (crops.Blob.IsCreated)
             {
-                state.Dependency = new CropJob { Blockers = grid, Crops = crops }.Schedule(state.Dependency);
+                state.Dependency = new SightCropJob { Blockers = grid, Crops = crops }.Schedule(state.Dependency);
             }
 
             return true;

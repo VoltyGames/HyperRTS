@@ -94,7 +94,7 @@ namespace HyperRTS.Simulation.Squads
             var share = _rules.ReinforceShare(members.Length);
             var here = SystemAPI.GetComponent<LocalTransform>(squad).Position;
             var stock = SystemAPI.GetBuffer<ResourceStock>(reinforcing.Payer);
-            if (!SquadMember.AnyDead(members) || !_squadPoints.Reaches(reinforcing.Point, here))
+            if (!new SquadRoster(members).AnyDead() || !_squadPoints.Reaches(reinforcing.Point, here))
             {
                 if (reinforcing.Paid)
                 {
@@ -116,8 +116,8 @@ namespace HyperRTS.Simulation.Squads
             reinforcing.Elapsed += deltaTime;
             if (reinforcing.Elapsed >= _rules.ReinforceTime)
             {
-                SquadMember.Revive(members);
-                health.Current = SquadMember.Total(members);
+                new SquadRoster(members).Revive();
+                health.Current = new SquadRoster(members).Total();
                 reinforcing.Elapsed = 0f;
                 reinforcing.Paid = false;
             }

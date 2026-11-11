@@ -207,7 +207,7 @@ namespace HyperRTS.Simulation.Replays
                 health.Current = health.Max * from.HealthFraction;
                 if (_members.TryGetBuffer(entity, out var members))
                 {
-                    SquadMember.Fill(members, health.Current, from.Living);
+                    new SquadRoster(members).Fill(health.Current, from.Living);
                 }
 
                 _health[entity] = health;

@@ -1,8 +1,8 @@
+using Unity.Entities;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
-using Unity.Entities;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Movement
@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Movement
     /// Drives one vehicle for one frame with its <see cref="Locomotion"/>, turning <see cref="Facing"/> and returning
     /// the hull centre's move.
     /// </summary>
-    public partial struct Driver
+    public struct Driver
     {
         public Locomotion Handling;
         public Chassis Chassis;
@@ -31,6 +31,10 @@ namespace HyperRTS.Simulation.Movement
         private const float PivotAngle = math.PI / 3f;
         private const float Crawl = 0.5f;
         private const float LookAheadTime = 0.5f;
+        private const float ReverseMargin = 1.3f;
+
+        // Within this of a gear change the aim sits on the hull, so the wheels hold their angle.
+        private const float SteerHold = 1f;
 
         public Driver(in Locomotion handling, in NavAgent agent, float topSpeed, float deltaTime)
         {
@@ -105,14 +109,14 @@ namespace HyperRTS.Simulation.Movement
             var aim = ToTarget(leg, lookAhead);
             var desired = math.normalizesafe(State.Reverse ? -aim : aim, Facing);
             var error = Planar.SignedAngle(Facing, desired);
-            var gear = State.Reverse == IsOtherWay() ? 1f : -1f;
+            var gear = State.Reverse == State.StepOtherWay(Chassis.IsWheeled, DeltaTime) ? 1f : -1f;
             var top = math.min(gear > 0f ? TopSpeed : Handling.ReverseSpeed, cap);
             // Pivoting is what a wedge blocks, so tracks back out of one and turn as they go.
             var backsOut = Chassis.Pivots && State.OtherWay > 0f;
             // Never past the goal in one frame, which only bites for near-instant braking.
             var target = math.min(TargetSpeed(error, leg, top, lookAhead, backsOut), leg.Remaining / DeltaTime);
             State.Speed = Handling.Accelerate(State.Speed, gear * target, DeltaTime);
-            return Chassis.IsWheeled ? Roll(gear * Pursuit(error, math.length(aim))) : TurnTracks(error);
+            return Chassis.IsWheeled ? Roll(gear * Chassis.Pursuit(error, math.length(aim))) : TurnTracks(error);
         }
 
         // Tracks turn about the centre at their turn rate and drive along the facing.
@@ -185,6 +189,86 @@ namespace HyperRTS.Simulation.Movement
             var corner = math.sqrt(math.square(cornerSpeed) + 2f * Handling.Braking * beforeCorner);
             var turn = Handling.TurnSpeed(Chassis.TurnRadius, leg.Distance, error);
             return math.min(math.min(top, turn), math.min(stop, corner));
+        }
+
+        /// <summary>Wheels can't turn standing, so a wheeled hull wedged against a wall backs off it a while.</summary>
+        public void BackOff() => State.BackOff(Chassis.IsWheeled);
+
+        /// <summary>Radians the hull can turn within <paramref name="seconds"/> at <paramref name="speed"/>.</summary>
+        public readonly float TurnWithin(float speed, float seconds) => Handling.TurnWithin(Chassis, speed, seconds);
+
+        private readonly bool PrefersReverse(in PathLeg leg)
+        {
+            if (leg.Remaining > Chassis.ReverseRun)
+            {
+                return false;
+            }
+
+            var along = math.dot(Facing, leg.Direction);
+            if (along >= (State.Reverse ? 0.3f : -0.2f))
+            {
+                return false;
+            }
+
+            var backing = leg.Remaining / Handling.ReverseSpeed;
+            // Tracks turn at their rate; wheels also need the arc of their turning circle rolled.
+            var rolling = Chassis.Pivots ? 0f : Chassis.TurnRadius / TopSpeed;
+            var turning = math.acos(math.max(-1f, along)) * math.max(1f / Handling.TurnRate, rolling);
+            return turning + leg.Remaining / TopSpeed > backing * ReverseMargin;
+        }
+
+        // Follows the planned legs in their gear with none of the reflexes, braking to each gear change as to the
+        // goal and changing gear standing.
+        private float2 FollowTight(in PathLeg leg, float cap)
+        {
+            State.Reverse = leg.Reverse;
+            State.InThreePointTurn = false;
+            State.OtherWay = 0f;
+            var gear = leg.Reverse ? -1f : 1f;
+            var aim = Chassis.IsWheeled ? leg.Aim - Chassis.Pose(Position, Facing).Position : leg.Direction;
+            var desired = math.normalizesafe(leg.Reverse ? -aim : aim, Facing);
+            var error = Planar.SignedAngle(Facing, desired);
+            var top = math.min(leg.Reverse ? Handling.ReverseSpeed : Locomotion.TightSpeed, cap);
+            var stop = math.max(0f, leg.Stop - NavTolerances.Arrive(Radius));
+            var target = math.min(top, math.max(Crawl, math.sqrt(2f * Handling.Braking * stop)));
+            var wanted = Chassis.IsWheeled && leg.Stop > SteerHold ? Chassis.CenterPursuit(Facing, aim) : State.Steer;
+            var changingGear = State.Speed * gear < -1e-3f;
+            if (changingGear || IsPivot(error))
+            {
+                target = 0f;
+            }
+
+            if (Chassis.IsSteeringOver(State.Steer, wanted))
+            {
+                target = math.min(target, Crawl);
+            }
+
+            State.Speed = Handling.Accelerate(State.Speed, gear * math.min(target, leg.Stop / DeltaTime), DeltaTime);
+            return Chassis.IsWheeled ? Roll(wanted) : TurnTracks(error);
+        }
+
+        // The rear axle aims at the point the look-ahead reaches along the path; tracks head along the leg.
+        private readonly float2 ToTarget(in PathLeg leg, float lookAhead)
+        {
+            if (!Chassis.IsWheeled)
+            {
+                return leg.Direction;
+            }
+
+            return leg.PointAhead(Position, lookAhead) - Chassis.Pose(Position, Facing).Position;
+        }
+
+        /// <summary>Steers toward <paramref name="wanted"/> and rolls the rear axle along the arc.</summary>
+        private float2 Roll(float wanted)
+        {
+            if (Chassis.IsWheeled)
+            {
+                State.Steer = Handling.SteerToward(Chassis, State.Steer, State.Speed, wanted, DeltaTime);
+            }
+
+            var pose = Chassis.Pose(Position, Facing).Advance(State.Steer, State.Speed * DeltaTime);
+            Facing = math.normalize(pose.Facing);
+            return Chassis.Center(pose) - Position;
         }
     }
 }

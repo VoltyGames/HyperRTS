@@ -250,7 +250,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
                 using var scope = RelabelMarker.Auto();
                 var item = Work[index];
                 var labelled = new FixedList512Bytes<byte>();
-                Sectors.Label(Field, Classes, item.y, item.x, ref labelled);
+                Sectors.Labelling.Label(Field, Classes, item.y, item.x, ref labelled);
                 Labelled[index] = labelled;
             }
         }
@@ -266,7 +266,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
             {
                 for (var index = 0; index < Work.Length; index++)
                 {
-                    Sectors.Store(Work[index].y, Work[index].x, Labelled[index]);
+                    Sectors.Labelling.Store(Work[index].y, Work[index].x, Labelled[index]);
                 }
             }
         }

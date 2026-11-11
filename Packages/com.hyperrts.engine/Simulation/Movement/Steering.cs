@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
-using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Profiling;
 
@@ -12,7 +11,7 @@ namespace HyperRTS.Simulation.Movement
     /// Picks one mover's velocity from those its handling can reach, scoring each by how deep it would run into
     /// neighbours and walls and how far it strays from the plan.
     /// </summary>
-    internal partial struct Steering
+    internal struct Steering
     {
         /// <summary>Longest look-ahead, which also sizes the neighbour query.</summary>
         public const float Horizon = 1.5f;
@@ -40,17 +39,11 @@ namespace HyperRTS.Simulation.Movement
 
         private static readonly ProfilerMarker PickMarker = new("Steering.Pick");
 
-        private readonly FixedList512Bytes<AvoidanceNeighbour> _neighbours;
-        private readonly float2 _position;
-        private readonly float2 _axis;
+        private readonly Neighbourhood _crowd;
         private readonly float _halfSegment;
-        private readonly float _radius;
-        private readonly float2 _velocity;
-        private NavAccess _walls;
-        private bool _hasWalls;
+        private WallProbe _walls;
         private float2 _preferred;
         private float2 _last;
-        private float _wallReach;
         private float2 _leg;
 
         // The driver before this frame's drive, whose handling bounds the candidates.
@@ -58,27 +51,44 @@ namespace HyperRTS.Simulation.Movement
 
         public Steering(in CrowdVisitor crowd, float2 velocity)
         {
-            _neighbours = crowd.Neighbours;
-            _position = crowd.Position;
-            _axis = crowd.SegmentAxis;
+            _crowd = new Neighbourhood(crowd, velocity);
             _halfSegment = math.length(crowd.SegmentAxis);
-            _radius = crowd.Radius;
-            _velocity = velocity;
-            _walls = default;
-            _hasWalls = false;
+            _walls = new WallProbe(crowd.Position, crowd.Radius);
             _preferred = float2.zero;
             _last = float2.zero;
-            _wallReach = 0f;
             _leg = float2.zero;
             _start = default;
         }
 
         /// <summary>Also keeps the footprint off the walls of <paramref name="access"/>; aircraft have none.</summary>
-        public void AddWalls(in NavAccess access)
+        public void AddWalls(in NavAccess access) => _walls.Add(access);
+
+        /// <summary>
+        /// Drives the leg, steering when the planned velocity would hit something. A planned manoeuvre isn't steered,
+        /// which would break its legs; it waits instead.
+        /// </summary>
+        public float2 Drive(ref Driver driver, in PathLeg leg) =>
+            leg.Tight ? DriveTight(ref driver, leg) : DriveSampled(ref driver, leg);
+
+        // Stands while driving on would run deeper into a neighbour than standing would. One held too long replans,
+        // so two waiting on each other can't deadlock.
+        private float2 DriveTight(ref Driver driver, in PathLeg leg)
         {
-            _walls = access;
-            _hasWalls = true;
+            var start = driver;
+            var step = driver.Drive(leg);
+            if (RunsInto(step / driver.DeltaTime))
+            {
+                driver = start;
+                step = driver.Steer(leg, float2.zero);
+            }
+
+            driver.State.LastChoice = step / driver.DeltaTime;
+            return step;
         }
+
+        private readonly bool RunsInto(float2 velocity) =>
+            _crowd.Overlap(_crowd.Axis, velocity, 0f, Horizon) >
+            _crowd.Overlap(_crowd.Axis, float2.zero, 0f, Horizon) + Unchanged;
 
         // A reflex manoeuvre runs at a crawl, and steering would break its legs.
         private float2 DriveSampled(ref Driver driver, in PathLeg leg)
@@ -86,7 +96,7 @@ namespace HyperRTS.Simulation.Movement
             _start = driver;
             var step = driver.Drive(leg);
             // With no one near, a pivot means to stand, not to roll on as it brakes.
-            var standsToTurn = _neighbours.Length == 0 && driver.IsPivoting(_start.Facing, leg);
+            var standsToTurn = _crowd.Count == 0 && driver.IsPivoting(_start.Facing, leg);
             _preferred = standsToTurn ? float2.zero : step / driver.DeltaTime;
             if (driver.State.IsManoeuvring)
             {
@@ -95,7 +105,7 @@ namespace HyperRTS.Simulation.Movement
             }
 
             _last = _start.State.LastChoice;
-            _wallReach = leg.Distance;
+            _walls.Reach = leg.Distance;
             _leg = driver.State.Reverse ? -leg.Direction : leg.Direction;
             var chosen = Pick();
             if (math.distancesq(chosen, _preferred) > Unchanged)
@@ -117,7 +127,7 @@ namespace HyperRTS.Simulation.Movement
         private readonly float2 Pick()
         {
             using var scope = PickMarker.Auto();
-            var alone = _neighbours.Length == 0 && !IsNearWall();
+            var alone = _crowd.Count == 0 && !_walls.IsNear(_crowd.Axis);
             var penalty = alone ? 0f : Penalty(_preferred);
             if (penalty <= 0f)
             {
@@ -143,7 +153,7 @@ namespace HyperRTS.Simulation.Movement
         // waiting. Among neighbours standing still blocks them, so it keeps its cost.
         private readonly float StandingExtra()
         {
-            if (!_start.Chassis.Pivots || _neighbours.Length > 0)
+            if (!_start.Chassis.Pivots || _crowd.Count > 0)
             {
                 return StandingCost;
             }
@@ -162,18 +172,7 @@ namespace HyperRTS.Simulation.Movement
 
             var forward = _start.Facing * _start.TopSpeed;
             var axis = _start.Facing * _halfSegment;
-            return _hasWalls && WallDepth(forward, axis, Soon, DepthAt(_position, axis)) > 0f;
-        }
-
-        private readonly bool IsNearWall()
-        {
-            if (!_hasWalls)
-            {
-                return false;
-            }
-
-            var nearest = math.min(_walls.Distance(_position - _axis), _walls.Distance(_position + _axis));
-            return nearest < _walls.WallMargin;
+            return _walls.Depth(forward, axis, Soon, _walls.Resting(axis)) > 0f;
         }
 
         // Instant handling may take any direction at once, so the ring is turned to start on the planned one.
@@ -244,38 +243,16 @@ namespace HyperRTS.Simulation.Movement
         private readonly float Penalty(float2 candidate)
         {
             var moving = _halfSegment > 0f && math.lengthsq(candidate) > 1e-6f;
-            var axis = moving ? math.normalize(candidate) * _halfSegment : _axis;
-            var resting = _hasWalls ? DepthAt(_position, axis) : 0f;
+            var axis = moving ? math.normalize(candidate) * _halfSegment : _crowd.Axis;
+            var resting = _walls.Resting(axis);
             return PenaltyAt(candidate, axis, resting, 0f, Soon) + PenaltyAt(candidate, axis, resting, Soon, Mid) +
                    PenaltyAt(candidate, axis, resting, Mid, Horizon);
         }
 
         private readonly float PenaltyAt(float2 candidate, float2 axis, float resting, float from, float time)
         {
-            var overlap = 0f;
-            foreach (var neighbour in _neighbours)
-            {
-                overlap += neighbour.Overlap(_position, axis, _velocity, candidate, from, time);
-            }
-
-            var walls = _hasWalls ? WallDepth(candidate, axis, time, resting) : 0f;
-            return (overlap + walls) / time;
-        }
-
-        // Only as far as the next corner, since the path turns there and a straight line on would cross its wall.
-        // Only sinking deeper counts, so a unit already touching a wall may still slide along it.
-        private readonly float WallDepth(float2 candidate, float2 axis, float time, float resting)
-        {
-            var travel = math.min(math.length(candidate) * time, _wallReach);
-            var center = _position + math.normalizesafe(candidate) * travel;
-            return math.max(0f, DepthAt(center, axis) - resting);
-        }
-
-        private readonly float DepthAt(float2 center, float2 axis)
-        {
-            var open = _radius - NavTolerances.WallOverlap;
-            return math.max(0f, open - _walls.Distance(center - axis)) +
-                   math.max(0f, open - _walls.Distance(center + axis));
+            var overlap = _crowd.Overlap(axis, candidate, from, time);
+            return (overlap + _walls.Depth(candidate, axis, time, resting)) / time;
         }
 
         private struct Choice

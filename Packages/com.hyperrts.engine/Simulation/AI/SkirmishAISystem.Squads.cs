@@ -69,8 +69,8 @@ namespace HyperRTS.Simulation.AI
 
             var members = SystemAPI.GetBuffer<SquadMember>(squad);
             var pinned = rules.Level(SystemAPI.GetComponent<Suppression>(squad).Value) == SuppressionLevel.Pinned;
-            var fewLiving = SquadMember.CountLiving(members) <= members.Length * ai.RetreatLivingShare;
-            var hurt = SquadMember.Total(members) <= SquadMember.TotalMax(members) * ai.RetreatHealthShare;
+            var fewLiving = new SquadRoster(members).CountLiving() <= members.Length * ai.RetreatLivingShare;
+            var hurt = new SquadRoster(members).Total() <= new SquadRoster(members).TotalMax() * ai.RetreatHealthShare;
             return pinned || fewLiving || hurt;
         }
 

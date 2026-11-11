@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Squads
         public static SquadRefusal FindReinforceRefusal(DynamicBuffer<SquadMember> members, bool inRange,
             in SquadRules rules, DynamicBuffer<ResourceCost> cost, DynamicBuffer<ResourceStock> stock)
         {
-            if (!SquadMember.AnyDead(members))
+            if (!new SquadRoster(members).AnyDead())
             {
                 return SquadRefusal.FullStrength;
             }

@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -13,22 +12,16 @@ namespace HyperRTS.Simulation.Navigation.Drive
     /// Checks a vehicle can drive a fresh path and plans the stretches it can't with a <see cref="DriveSearch"/> into
     /// <see cref="PathWaypoint.Tight"/> waypoints.
     /// </summary>
-    internal partial struct DrivePlanner : IDisposable
+    internal struct DrivePlanner : IDisposable
     {
-        // A drawn leg's hull may graze walls by this much where the field blends between cell centres.
-        private const float SweepSlack = 0.05f;
         private const float StraightTurn = 0.01f;
-        private static readonly float PivotSample = math.radians(10f);
 
         private static readonly ProfilerMarker PlanMarker = new("DrivePlanner.Plan");
 
-        private NavAgent _agent;
-        private DriveHull _hull;
+        private DriveCheck _check;
         private DriveSearch _search;
-        private PathLine _line;
         private NativeList<PathWaypoint> _tight;
         private WaypointWriter _writer;
-        private AxlePose _start;
 
         // Expansions this plan may spend, and whether running out defers it rather than leaving stretches as drawn.
         private int _budget;
@@ -54,13 +47,10 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
         private DrivePlanner(DriveSearch search, Allocator allocator)
         {
-            _agent = default;
-            _hull = default;
+            _check = new DriveCheck(allocator);
             _search = search;
-            _line = new PathLine(allocator);
             _tight = new NativeList<PathWaypoint>(64, allocator);
             _writer = new WaypointWriter(allocator);
-            _start = default;
             _budget = 0;
             _defers = false;
             _planned = false;
@@ -76,7 +66,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
                 _search.Dispose();
             }
 
-            _line.Dispose();
+            _check.Dispose();
             _tight.Dispose();
             _writer.Dispose();
         }
@@ -84,9 +74,9 @@ namespace HyperRTS.Simulation.Navigation.Drive
         /// <summary>Whether its paths need checking: it has a turn radius or a hull longer than it is wide.</summary>
         public static bool Applies(in NavAgent agent) => agent.Chassis.TurnRadius > 0f || agent.HalfSegment > 0f;
 
-        private readonly Chassis Chassis => _agent.Chassis;
+        private readonly Chassis Chassis => _check.Agent.Chassis;
 
-        private readonly float HullLength => _agent.HalfLength * 2f;
+        private readonly float HullLength => _check.Agent.HalfLength * 2f;
 
         /// <summary>
         /// Plans the drawn <paramref name="points"/> into <see cref="Waypoints"/>, planning tight stretches
@@ -102,8 +92,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
                 throw new InvalidOperationException("A drive planner without a search has no budget to spend");
             }
 
-            _agent = request.Agent;
-            _hull = new DriveHull(access, request.Agent);
+            _check.Begin(request.Agent, access);
             if (_search.IsCreated)
             {
                 _search.SetAgent(access, request.Agent);
@@ -119,14 +108,14 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private bool PlanPath(in PathRequest request, NativeList<float3> points, int budget, bool defers)
         {
             _writer.Begin(request.Start.y);
-            _start = Chassis.Pose(request.Start.xz, request.Facing);
+            _check.Start = Chassis.Pose(request.Start.xz, request.Facing);
             _budget = budget;
             _defers = defers;
             _planned = false;
             WaitsForBudget = false;
             PartlyPlanned = false;
-            _line.Trace(request.Start.xz, points);
-            if (_line.Corners.Length < 2)
+            _check.Line.Trace(request.Start.xz, points);
+            if (_check.Line.Corners.Length < 2)
             {
                 foreach (var point in points)
                 {
@@ -137,7 +126,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             }
 
             var cursor = PlanStart(request.Stuck);
-            for (var corner = 1; corner < _line.Corners.Length - 1 && !WaitsForBudget; corner++)
+            for (var corner = 1; corner < _check.Line.Corners.Length - 1 && !WaitsForBudget; corner++)
             {
                 cursor = PlanCorner(corner, cursor);
             }
@@ -146,11 +135,20 @@ namespace HyperRTS.Simulation.Navigation.Drive
             return !WaitsForBudget;
         }
 
+        // The last stretch drives as drawn, so a unit ends on its goal facing whichever way it arrived.
+        private void PlanEnd()
+        {
+            if (!WaitsForBudget)
+            {
+                _writer.AddDrawn(_check.Line, float.PositiveInfinity);
+            }
+        }
+
         // Wheels drive the curve to a pose well along the path; tracks turn in place to the first leg.
         private float PlanStart(bool stuck)
         {
-            var reach = math.min(_line.Total, 2f * Chassis.TurnRadius + HullLength);
-            if (!stuck && CanStart(reach))
+            var reach = math.min(_check.Line.Total, 2f * Chassis.TurnRadius + HullLength);
+            if (!stuck && _check.CanStart(reach))
             {
                 return Chassis.IsWheeled ? reach : 0f;
             }
@@ -158,71 +156,32 @@ namespace HyperRTS.Simulation.Navigation.Drive
             return Search(0f, reach);
         }
 
-        private readonly bool CanStart(float reach)
-        {
-            if (Chassis.IsWheeled)
-            {
-                return CanDrive(0f, reach);
-            }
-
-            return CanTurnInPlace(_start, _line.LegHeading(0)) || CanDrive(0f, reach);
-        }
-
         // Sweeps the curve from a fillet and a hull before the corner to as far after; tracks may pivot on it instead.
         private float PlanCorner(int corner, float cursor)
         {
-            var at = _line.Distances[corner];
-            var turn = _line.TurnAt(corner);
-            var radius = _hull.CurveRadius;
+            var at = _check.Line.Distances[corner];
+            var turn = _check.Line.TurnAt(corner);
+            var radius = _check.Hull.CurveRadius;
             var fillet = math.min(radius * math.tan(turn * 0.5f), radius * 2f);
             if (turn < StraightTurn || at + fillet <= cursor)
             {
                 return cursor;
             }
 
-            if (!Chassis.IsWheeled && CanPivot(corner))
+            if (!Chassis.IsWheeled && _check.CanPivot(corner))
             {
                 return cursor;
             }
 
             var from = math.max(cursor, at - fillet - HullLength);
-            var to = math.min(_line.Total, at + fillet + HullLength);
-            return CanDrive(from, to) ? to : Search(from, to);
-        }
-
-        private readonly bool CanPivot(int corner)
-        {
-            var pose = Chassis.Pose(_line.Corners[corner], _line.LegHeading(corner - 1));
-            return CanTurnInPlace(pose, _line.LegHeading(corner));
-        }
-
-        // The whole sweep of the pivot, sliding off a wall an end swings into as locomotion does.
-        private readonly bool CanTurnInPlace(in AxlePose pose, float2 toward)
-        {
-            var turn = Planar.SignedAngle(pose.Facing, toward);
-            var steps = (int)math.ceil(math.abs(turn) / PivotSample);
-            var center = Chassis.Center(pose);
-            var axis = pose.Facing * _agent.HalfSegment;
-            for (var step = 1; step <= steps; step++)
-            {
-                var hull = new NavCapsule(_hull.Access, axis);
-                var next = Chassis.Rotate(pose, turn * step / steps).Facing * _agent.HalfSegment;
-                var sweep = _agent.HalfSegment * math.abs(turn) / steps;
-                if (!hull.CanTurn(center, next) && !hull.TryTurnOff(center, next, sweep, out center))
-                {
-                    return false;
-                }
-
-                axis = next;
-            }
-
-            return true;
+            var to = math.min(_check.Line.Total, at + fillet + HullLength);
+            return _check.CanDrive(from, to) ? to : Search(from, to);
         }
 
         // Retries reaching twice as far on, where the hull may find room to turn, then stays as drawn and fails.
         private float Search(float from, float to)
         {
-            var further = math.min(_line.Total, to + (to - from) * 2f);
+            var further = math.min(_check.Line.Total, to + (to - from) * 2f);
             var retries = further > to;
             var half = DriveSearch.MaxExpansions / 2;
             var found = TrySearch(from, to, retries ? half : DriveSearch.MaxExpansions, out var cut);
@@ -240,7 +199,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             }
 
             _planned = true;
-            _writer.BeginStretch(_line, from);
+            _writer.BeginStretch(_check.Line, from);
             _writer.Waypoints.AddRange(_tight.AsArray());
             _writer.Written = to;
             return to;
@@ -272,7 +231,7 @@ namespace HyperRTS.Simulation.Navigation.Drive
             Counts.Searches++;
             _tight.Clear();
             _search.Cap = cap;
-            var found = _search.Run(PoseAt(from), GoalAt(to), _writer.Height, _tight);
+            var found = _search.Run(_check.PoseAt(from), _check.GoalAt(to), _writer.Height, _tight);
             Counts.Expansions += _search.Expansions;
             cut = !found && cap < most && _search.Expansions >= cap;
             return found;

@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Tests.Squads
         private void Reinforce(Entity squad) =>
             World.Command(1, new PlayerCommand { Type = CommandType.Reinforce, Unit = squad });
 
-        private int Living(Entity squad) => SquadMember.CountLiving(World.Buffer<SquadMember>(squad));
+        private int Living(Entity squad) => new SquadRoster(World.Buffer<SquadMember>(squad)).CountLiving();
 
         private int Spent(int funds = Funds) => funds - World.GetResources(1, _supplies);
 
@@ -103,8 +103,8 @@ namespace HyperRTS.Simulation.Tests.Squads
             Assert.AreEqual(expected, SquadOrderRule.FindReinforceRefusal(members, inRange, rules, cost, stock));
             Assert.AreEqual(SquadRefusal.None, SquadOrderRule.FindReinforceRefusal(members, true, rules, default, stock),
                 "a squad without a price is free");
-            SquadMember.Revive(members);
-            SquadMember.Revive(members);
+            new SquadRoster(members).Revive();
+            new SquadRoster(members).Revive();
             Assert.AreEqual(SquadRefusal.FullStrength,
                 SquadOrderRule.FindReinforceRefusal(members, true, rules, cost, stock));
         }

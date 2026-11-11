@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             }
 
             Assert.AreEqual(1, hurt);
-            Assert.AreEqual(SquadMember.Total(members), World.GetHealth(squad), 1e-3f);
+            Assert.AreEqual(new SquadRoster(members).Total(), World.GetHealth(squad), 1e-3f);
             Assert.AreEqual(Shot * (1f - Protection) * 0.5f, Lost(squad), 1e-3f);
         }
 

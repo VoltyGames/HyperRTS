@@ -1,3 +1,4 @@
+using Unity.Jobs;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -5,7 +6,6 @@ using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Transforms;
@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
     public partial struct NavGridSystem : ISystem
     {
-        private static readonly ProfilerMarker RestampMarker = new("NavGridSystem.Restamp");
+        internal static readonly ProfilerMarker RestampMarker = new("NavGridSystem.Restamp");
 
         private EntityQuery _obstacles;
         private EntityQuery _areas;
@@ -106,9 +106,9 @@ namespace HyperRTS.Simulation.Navigation.Grid
             if (restampScenery)
             {
                 state.Dependency = ClearJob<byte>.Schedule(grid.Scenery, state.Dependency);
-                state.Dependency = new SceneryJob { Grid = grid }.Schedule(_scenery, state.Dependency);
-                state.Dependency = new OpenSceneryJob { Grid = grid }.Schedule(_openScenery, state.Dependency);
-                state.Dependency = new SceneryDiffJob
+                state.Dependency = new NavSceneryJob { Grid = grid }.Schedule(_scenery, state.Dependency);
+                state.Dependency = new NavOpenSceneryJob { Grid = grid }.Schedule(_openScenery, state.Dependency);
+                state.Dependency = new NavSceneryDiffJob
                 {
                     Field = grid.Field, Scenery = grid.Scenery, Previous = _previousScenery,
                 }.Schedule(state.Dependency);
@@ -123,16 +123,16 @@ namespace HyperRTS.Simulation.Navigation.Grid
                 grid.Changes.Since = grid.Version + 1;
             }
 
-            var dependency = new ResetJob { Base = _base, Cells = grid.Cells, Previous = grid.Changes.Previous }
+            var dependency = new NavResetJob { Base = _base, Cells = grid.Cells, Previous = grid.Changes.Previous }
                 .Schedule(state.Dependency);
             var areaParts = SystemAPI.GetBufferLookup<NavAreaPart>(true);
-            dependency = new AreaJob { Grid = grid, Decks = false, Parts = areaParts }.Schedule(_areas, dependency);
-            dependency = new AreaJob { Grid = grid, Decks = true, Parts = areaParts }.Schedule(_areas, dependency);
-            dependency = new BlockerJob { Grid = grid }.Schedule(_blockers, dependency);
-            dependency = new UnbuiltJob { Cells = grid.Cells, Unbuilt = grid.Unbuilt }.Schedule(dependency);
-            dependency = new ObstacleJob { Grid = grid, Parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true) }
+            dependency = new NavAreaJob { Grid = grid, Decks = false, Parts = areaParts }.Schedule(_areas, dependency);
+            dependency = new NavAreaJob { Grid = grid, Decks = true, Parts = areaParts }.Schedule(_areas, dependency);
+            dependency = new NavBlockerJob { Grid = grid }.Schedule(_blockers, dependency);
+            dependency = new NavUnbuiltJob { Cells = grid.Cells, Unbuilt = grid.Unbuilt }.Schedule(dependency);
+            dependency = new NavObstacleJob { Grid = grid, Parts = SystemAPI.GetBufferLookup<NavObstaclePart>(true) }
                 .Schedule(_obstacles, dependency);
-            state.Dependency = new ChangeJob { Grid = grid }.Schedule(dependency);
+            state.Dependency = new NavChangeJob { Grid = grid }.Schedule(dependency);
         }
 
         // Footprints only differ after an add, removal or archetype change, a blocker turning off as it is buried, or
@@ -227,7 +227,7 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             _base = new NativeArray<byte>(count, Allocator.Persistent);
             _previousScenery = new NativeArray<byte>(count, Allocator.Persistent);
-            var classify = new ClassifyJob
+            var classify = new NavClassifyJob
             {
                 Grid = grid, Base = _base, Flood = map.FloodTerrain, MaxGradient = NavGround.MaxGradient(map.MaxSlope),
             };

@@ -71,6 +71,26 @@ namespace HyperRTS.Simulation.Movement
             InfantryWait = standing ? InfantryWait + deltaTime : 0f;
         }
 
+        /// <summary>Wheels can't turn standing, so a wheeled hull wedged against a wall backs off it a while.</summary>
+        public void BackOff(bool wheeled)
+        {
+            if (wheeled && OtherWay <= 0f)
+            {
+                OtherWay = OtherWaySeconds;
+            }
+        }
+
+        // A leg that runs head-on into a wall drives the other way a while, backing off to turn or taking a
+        // three-point turn's forward leg. A manoeuvre timer, not a stuck test.
+        public bool StepOtherWay(bool wheeled, float deltaTime)
+        {
+            var hit = wheeled && Blocked && OtherWay <= 0f;
+            OtherWay = hit ? OtherWaySeconds : math.max(0f, OtherWay - deltaTime);
+            return InThreePointTurn != OtherWay > 0f;
+        }
+
+        private const float OtherWaySeconds = 1.5f;
+
         // Below this share of the planned step the hit is head-on, not glancing.
         private const float GlancingShare = 0.5f;
 

@@ -15,9 +15,9 @@ namespace HyperRTS.Editor.Validation.Rules
                 return;
             }
 
-            if (squad.members.Count > SquadMember.MaskedMembers)
+            if (squad.members.Count > SquadRoster.MaskedMembers)
             {
-                issues.Error(squad, $"{squad.name} has {squad.members.Count} squad members, but a replay records at most {SquadMember.MaskedMembers}.");
+                issues.Error(squad, $"{squad.name} has {squad.members.Count} squad members, but a replay records at most {SquadRoster.MaskedMembers}.");
             }
 
             if (!squad.TryGetComponent<WeaponAuthoring>(out var armed))

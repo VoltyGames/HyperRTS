@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Squads.Cover
                 var near = new NativeList<int>(0, Allocator.Temp);
                 var searched = false;
                 var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
-                var living = SquadMember.CountFreeLiving(members, crewing);
+                var living = new SquadRoster(members).CountFreeLiving(crewing);
                 var rank = 0;
                 for (var i = 0; i < members.Length; i++)
                 {
