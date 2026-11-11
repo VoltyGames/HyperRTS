@@ -12,6 +12,14 @@ Difficulty presets on `Match` tune it through `AITuning`, and an `AIBuildOrder` 
 It only runs on maps with bot hints, an `AIMapHintsAuthoring` the map builder writes. They list each slot's resource
 fields, defence points and attack lanes. A map without them logs an error.
 
+`SkirmishAISystem` only chooses which players think this frame, takes an `AISnapshot` of the shared query results and
+runs one `AITurn` per player through the planners in a fixed order: build order, builders (resuming unfinished
+sites), squads, harvesters, then training and field works once the build order is done, deploy, attack and abilities
+for players with `UseAbilities`. Each planner (`BuildOrderPlanner`, `BuilderPlanner`, `EconomyPlanner`,
+`SquadPlanner`, `FieldWorkPlanner`, `DeployPlanner`, `AttackPlanner`, `AbilityPlanner`) is a struct in its own file
+with the queries only it uses. They all share the turn's busy units and `Buyer` budget, so training never spends
+what the build order already committed. A planner that calls another holds it, as the build order holds the builders.
+
 On each think, an AI player:
 
 1. Starts the first unmet build-order step it can afford.
