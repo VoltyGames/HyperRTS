@@ -58,20 +58,29 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
 
                 var moved = grime.ValueRW.Advance(position, materials.At(position.xz), wetness,
                     health.ValueRO.Fraction, deltaTime);
-                if (first)
+                if (first || moved)
                 {
-                    _levels.Collect(root, parts);
-                    _levels.Add(parts, new GrimeLevels { Value = grime.ValueRW.Paint() }, commands);
-                    AddBands(ref state, root, grime.ValueRO, parts, commands);
-                }
-                else if (moved)
-                {
-                    _levels.Collect(root, parts);
-                    _levels.Set(parts, new GrimeLevels { Value = grime.ValueRW.Paint() });
+                    Repaint(ref state, root, ref grime.ValueRW, first, parts, commands);
                 }
             }
 
             commands.Playback(state.EntityManager);
+        }
+
+        private void Repaint(ref SystemState state, Entity root, ref Grime grime, bool first, NativeList<Entity> parts,
+            EntityCommandBuffer commands)
+        {
+            _levels.Collect(root, parts);
+            var levels = new GrimeLevels { Value = grime.Paint() };
+            if (first)
+            {
+                _levels.Add(parts, levels, commands);
+                AddBands(ref state, root, grime, parts, commands);
+            }
+            else
+            {
+                _levels.Set(parts, levels);
+            }
         }
 
         // Each mesh gets the ground height and the band in its own object space, as the unit stands when first seen.

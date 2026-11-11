@@ -149,15 +149,16 @@ namespace HyperRTS.Simulation.Combat.Damage
             }
             else
             {
-                dealt = Buildings.IsSectioned(target)
-                    ? Buildings.Route(target, Transforms[target], hit, scale)
-                    : blow.Amount * scale;
+                dealt = Dealt(target, hit, blow.Amount, scale);
                 health.Current = Buildings.Resolved(target, math.max(0f, health.Current - dealt));
             }
 
             Record(target, health, dealt - held, dealt, hit, blow.From);
             return struck;
         }
+
+        private float Dealt(Entity target, in DamageEvent hit, float amount, float scale) =>
+            Buildings.IsSectioned(target) ? Buildings.Route(target, Transforms[target], hit, scale) : amount * scale;
 
         /// <summary>Stores the health and reports the damage, a lethal hit's heading and who dealt it.</summary>
         private void Record(Entity target, Health health, float overkill, float dealt, in DamageEvent hit, float3 from)

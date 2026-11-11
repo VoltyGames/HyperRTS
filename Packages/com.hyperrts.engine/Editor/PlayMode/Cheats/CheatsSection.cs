@@ -102,13 +102,22 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             _spawn.SetEnabled(prefabName != null);
             _battle.SetEnabled(prefabName != null);
 
+            PollSelection(manager);
+            _fog.SetValueWithoutNotify(MatchCheats.FogEnabled(manager));
+            PollSpeed(manager);
+        }
+
+        private void PollSelection(EntityManager manager)
+        {
             var selected = MatchCheats.Selection(manager).Length;
             _repair.SetEnabled(selected > 0);
             _destroy.SetEnabled(selected > 0);
             _repair.text = selected > 0 ? $"Repair selected ({selected})" : "Repair selected";
             _destroy.text = selected > 0 ? $"Destroy selected ({selected})" : "Destroy selected";
+        }
 
-            _fog.SetValueWithoutNotify(MatchCheats.FogEnabled(manager));
+        private void PollSpeed(EntityManager manager)
+        {
             var local = !NetworkSession.IsRunning;
             _speed.SetEnabled(local);
             _pause.SetEnabled(local);

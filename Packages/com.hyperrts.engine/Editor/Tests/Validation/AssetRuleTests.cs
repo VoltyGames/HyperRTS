@@ -1,12 +1,13 @@
+using System.Linq;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Rules.Fields;
+using HyperRTS.Editor.Validation.Sets;
 using HyperRTS.Presentation.HUD.Commands;
 using HyperRTS.Simulation.Cues.Sounds;
-using UnityEngine.InputSystem;
-using System.Linq;
-using HyperRTS.Editor.Validation;
-using HyperRTS.Editor.Validation.Rules;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace HyperRTS.Editor.Tests.Validation
 {

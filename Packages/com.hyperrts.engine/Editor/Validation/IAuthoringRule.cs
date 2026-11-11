@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Validation.Issues;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Validation

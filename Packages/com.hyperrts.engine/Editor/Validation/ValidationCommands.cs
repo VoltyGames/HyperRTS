@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using Unity.Pipeline.Commands;
 
 namespace HyperRTS.Editor.Validation

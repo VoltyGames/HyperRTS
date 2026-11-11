@@ -1,11 +1,12 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Icons;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.HUD;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;

@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
-using HyperRTS.Editor.Validation.Rules;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Rules.Effects;
+using HyperRTS.Editor.Validation.Rules.Fields;
+using HyperRTS.Editor.Validation.Rules.Units;
+using HyperRTS.Editor.Validation.Sets;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
@@ -16,7 +20,7 @@ using UnityEngine.SceneManagement;
 namespace HyperRTS.Editor.Tests.Validation
 {
     /// <summary>Each discovered rule reports its minimal broken case, so a new rule ships with one.</summary>
-    public partial class RuleFiresTests : TemplateFixture
+    public class RuleFiresTests : TemplateFixture
     {
         [NoAutoStaticsCleanup]
         private static readonly Dictionary<Type, string> Skipped = new()
@@ -42,7 +46,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [TestCaseSource(nameof(CoveredRules))]
         public void RuleReportsItsBrokenCase(Type ruleType)
         {
-            var (expected, build) = Rows[ruleType];
+            var (expected, build) = RuleFiresCases.Rows[ruleType];
             var input = build(this);
 
             var messages = Run(Activator.CreateInstance(ruleType), input).Select(issue => issue.Message).ToList();
@@ -54,7 +58,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void EveryEngineRuleHasABrokenCase()
         {
-            var missing = EngineRules().Where(rule => !Rows.ContainsKey(rule) && !Skipped.ContainsKey(rule));
+            var missing = EngineRules().Where(rule => !RuleFiresCases.Rows.ContainsKey(rule) && !Skipped.ContainsKey(rule));
 
             Assert.IsEmpty(missing.Select(rule => rule.Name));
         }
@@ -72,9 +76,9 @@ namespace HyperRTS.Editor.Tests.Validation
 
         [Test]
         public void SkippedRulesHaveNoRow() =>
-            Assert.IsEmpty(Skipped.Keys.Where(Rows.ContainsKey).Select(rule => rule.Name));
+            Assert.IsEmpty(Skipped.Keys.Where(RuleFiresCases.Rows.ContainsKey).Select(rule => rule.Name));
 
-        private static IEnumerable<Type> CoveredRules() => Rows.Keys.OrderBy(rule => rule.Name);
+        private static IEnumerable<Type> CoveredRules() => RuleFiresCases.Rows.Keys.OrderBy(rule => rule.Name);
 
         // The same set ProjectValidator discovers, minus game rules, which ship their cases in the game's tests.
         private static IEnumerable<Type> EngineRules() =>
@@ -111,12 +115,12 @@ namespace HyperRTS.Editor.Tests.Validation
         private static bool PrerequisiteWarned(UnitAuthoring unit) =>
             Run(new GameEntityRule(), unit).Any(issue => issue.Message.Contains("unit prerequisite"));
 
-        private GameObject Make(string name) => Track(new GameObject(name));
+        internal GameObject Make(string name) => Track(new GameObject(name));
 
-        private T Add<T>(GameObject go) where T : Component => Track(go).AddComponent<T>();
+        internal T Add<T>(GameObject go) where T : Component => Track(go).AddComponent<T>();
 
         /// <summary>A fresh scene holding what <paramref name="furnish"/> creates, as the validator sees it.</summary>
-        private SceneSet InNewScene(bool isSubScene, Action furnish)
+        internal SceneSet InNewScene(bool isSubScene, Action furnish)
         {
             _scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             furnish();

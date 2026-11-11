@@ -1,0 +1,23 @@
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Presentation.Animation.Machines;
+
+namespace HyperRTS.Editor.Validation.Rules.Buildings
+{
+    /// <summary>A Raise, Extend or Stretch part moves over a span that ends after it starts, and a Point part has an aim.</summary>
+    public sealed class MachinePartRule : AuthoringRule<MachinePartAuthoring>
+    {
+        protected override void Check(MachinePartAuthoring part, ValidationIssues issues)
+        {
+            var unfolds = part.motion is MachineMotion.Raise or MachineMotion.Extend or MachineMotion.Stretch;
+            if (unfolds && part.to <= part.from)
+            {
+                issues.Error(part, $"'{part.name}' moves over the span {part.from} to {part.to}; To must be above From.");
+            }
+
+            if (part.motion == MachineMotion.Point && part.aim == null)
+            {
+                issues.Error(part, $"'{part.name}' points at nothing; set its Aim.");
+            }
+        }
+    }
+}

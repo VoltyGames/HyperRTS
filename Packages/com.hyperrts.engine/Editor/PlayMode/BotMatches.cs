@@ -173,25 +173,17 @@ namespace HyperRTS.Editor.PlayMode
                 return;
             }
 
-            if (!PlayWorld.TryGetSingleton(entityManager, out MatchSetup setup))
-            {
-                return;
-            }
-
-            if (!PlayWorld.TryGetSingleton(entityManager, out MatchState state))
+            if (!PlayWorld.TryGetSingleton(entityManager, out MatchSetup setup)
+                || !PlayWorld.TryGetSingleton(entityManager, out MatchState state))
             {
                 return;
             }
 
             // The world from before the restart still answers until the new scene has applied its setup.
+            _setupSeen = _setupSeen || (setup.Applied && setup.Seed == _report.matches[_current].seed);
             if (!_setupSeen)
             {
-                _setupSeen = setup.Applied && setup.Seed == _report.matches[_current].seed;
-                if (!_setupSeen)
-                {
-                    return;
-                }
-
+                return;
             }
 
             var minutes = (float)entityManager.World.Time.ElapsedTime / 60f;

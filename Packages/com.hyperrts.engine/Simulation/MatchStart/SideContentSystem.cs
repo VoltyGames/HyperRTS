@@ -63,12 +63,7 @@ namespace HyperRTS.Simulation.MatchStart
             var kit = entityManager.GetBuffer<SideStartItem>(match).ToNativeArray(Allocator.Temp);
             var steps = entityManager.GetBuffer<SideBuildStep>(match).ToNativeArray(Allocator.Temp);
             var players = _players.ToEntityArray(Allocator.Temp);
-            // Checked first, so a bad side spawns nothing rather than half the kits.
-            foreach (var player in players)
-            {
-                RequireSide(sides, entityManager.GetComponentData<PlayerSide>(player).Value,
-                    entityManager.GetComponentData<Player>(player).Owner);
-            }
+            RequireSides(entityManager, sides, players);
 
             var spawned = 0u;
             foreach (var player in players)
@@ -89,6 +84,17 @@ namespace HyperRTS.Simulation.MatchStart
                 spawned |= Owner.Bit(owner);
                 var spawn = entityManager.GetComponentData<PlayerSpawn>(player);
                 SpawnKit(entityManager, kit, side, owner, spawn, terrain);
+            }
+        }
+
+        // Checked first, so a bad side spawns nothing rather than half the kits.
+        private static void RequireSides(EntityManager entityManager, NativeArray<MatchSide> sides,
+            NativeArray<Entity> players)
+        {
+            foreach (var player in players)
+            {
+                RequireSide(sides, entityManager.GetComponentData<PlayerSide>(player).Value,
+                    entityManager.GetComponentData<Player>(player).Owner);
             }
         }
 

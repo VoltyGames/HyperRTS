@@ -38,6 +38,32 @@ namespace HyperRTS.Editor.Effects
 
             var output = Output();
             _graph.Flow(update, output);
+            DrawKind(output);
+            if (_layer.upright)
+            {
+                var upright = _graph.Block(output, "Orient");
+                _graph.Set(upright, "mode", "FixedAxis");
+                _graph.Slot(upright, "Up", Vector3.up);
+            }
+
+            if (_layer.softness > 0f && !_layer.DrawsShaderGraph)
+            {
+                _graph.Set(output, "useSoftParticle", true);
+                _graph.Slot(output, "softParticleFadeDistance", _layer.softness);
+            }
+
+            OverLife(output);
+            if (_layer.DrawsShaderGraph)
+            {
+                return;
+            }
+
+            var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerSystem.Includes + "GraphFogOfWar.hlsl");
+            _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
+        }
+
+        private void DrawKind(object output)
+        {
             switch (_layer.kind)
             {
                 case EffectLayerKind.Glow:
@@ -65,28 +91,6 @@ namespace HyperRTS.Editor.Effects
                     Distort(output);
                     break;
             }
-
-            if (_layer.upright)
-            {
-                var upright = _graph.Block(output, "Orient");
-                _graph.Set(upright, "mode", "FixedAxis");
-                _graph.Slot(upright, "Up", Vector3.up);
-            }
-
-            if (_layer.softness > 0f && !_layer.DrawsShaderGraph)
-            {
-                _graph.Set(output, "useSoftParticle", true);
-                _graph.Slot(output, "softParticleFadeDistance", _layer.softness);
-            }
-
-            OverLife(output);
-            if (_layer.DrawsShaderGraph)
-            {
-                return;
-            }
-
-            var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerSystem.Includes + "GraphFogOfWar.hlsl");
-            _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
         }
 
         private object Output() => _layer.kind switch

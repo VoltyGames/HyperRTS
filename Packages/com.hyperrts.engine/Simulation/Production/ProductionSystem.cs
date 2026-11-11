@@ -51,8 +51,7 @@ namespace HyperRTS.Simulation.Production
             _produced.Update(ref state);
             _researched.Update(ref state);
 
-            var allocator = state.WorldUpdateAllocator;
-            var changes = new NativeList<ProducerChange>(allocator);
+            var changes = new NativeList<ProducerChange>(state.WorldUpdateAllocator);
             state.Dependency = new ProduceJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
@@ -60,7 +59,7 @@ namespace HyperRTS.Simulation.Production
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                SpawnedPopulation = CollectionHelper.CreateNativeArray<int>(PlayerRegistry.Capacity, allocator),
+                SpawnedPopulation = CollectionHelper.CreateNativeArray<int>(PlayerRegistry.Capacity, state.WorldUpdateAllocator),
                 PopulationLookup = SystemAPI.GetComponentLookup<Population>(true),
                 ProducibleLookup = SystemAPI.GetComponentLookup<Producible>(true),
                 Spawner = _spawner,
@@ -181,7 +180,6 @@ namespace HyperRTS.Simulation.Production
             {
                 var entity = input.Entity;
                 var owner = input.Owner;
-                var transform = input.Transform;
                 if (queue.IsEmpty)
                 {
                     producer.Elapsed = 0f;
@@ -209,25 +207,32 @@ namespace HyperRTS.Simulation.Production
                     return false;
                 }
 
-                if (ResearchLookup.HasComponent(prefab))
-                {
-                    RecordResearch(entity, owner.Value, queue[0]);
-                }
-                else
-                {
-                    var position = SpawnPoint(entity, producer, transform, pad);
-                    var unit = Spawn(prefab, position, input);
-                    DockOnPad(unit, prefab, entity, pad);
-                    SpawnedPopulation[owner.Value] += producible.Population;
-                    producer.Released++;
-                    Produced.Add(new UnitProduced
-                    {
-                        Producer = entity, Prefab = prefab, Owner = owner.Value, Position = position,
-                    });
-                }
-
+                Deliver(input, ref producer, queue[0], producible, pad);
                 producer.Elapsed = 0f;
                 return true;
+            }
+
+            private void Deliver(in ProducerInput input, ref Producer producer, in ProductionQueueItem item,
+                in Producible producible, int pad)
+            {
+                var entity = input.Entity;
+                var prefab = item.Prefab;
+                var owner = input.Owner.Value;
+                if (ResearchLookup.HasComponent(prefab))
+                {
+                    RecordResearch(entity, owner, item);
+                    return;
+                }
+
+                var position = SpawnPoint(entity, producer, input.Transform, pad);
+                var unit = Spawn(prefab, position, input);
+                DockOnPad(unit, prefab, entity, pad);
+                SpawnedPopulation[owner] += producible.Population;
+                producer.Released++;
+                Produced.Add(new UnitProduced
+                {
+                    Producer = entity, Prefab = prefab, Owner = owner, Position = position,
+                });
             }
 
             private void RecordResearch(Entity producer, byte owner, ProductionQueueItem item)

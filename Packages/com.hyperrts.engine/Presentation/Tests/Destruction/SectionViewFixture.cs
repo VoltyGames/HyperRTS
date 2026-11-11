@@ -108,7 +108,18 @@ namespace HyperRTS.Presentation.Tests.Destruction
                     : new SectionModel { Intact = Piece(house), Broken = Prefab(house) };
             }
 
-            // Buffers last: every structural change above would invalidate them.
+            AddSections(house, sides, models);
+            if (withPieces)
+            {
+                _em.AddComponentData(house, Clips);
+            }
+
+            return house;
+        }
+
+        // Buffers last: every structural change before would invalidate them.
+        private void AddSections(Entity house, float3[] sides, SectionModel[] models)
+        {
             _em.AddBuffer<Section>(house);
             _em.AddBuffer<SectionLook>(house);
             _em.AddBuffer<SectionModel>(house);
@@ -122,13 +133,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
                 looks.Add(SectionLook.Untouched);
                 list.Add(models[i]);
             }
-
-            if (withPieces)
-            {
-                _em.AddComponentData(house, Clips);
-            }
-
-            return house;
         }
 
         private SectionModel PiecesModel(Entity house, float3 side)

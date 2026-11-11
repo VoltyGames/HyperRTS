@@ -205,5 +205,69 @@ namespace HyperRTS.Network.Session
 
             driver.ResetDriverStore(world.Unmanaged, ref store);
         }
+
+        /// <summary>The emptied world at the bottom of Unity's active world stack; see <see cref="Empty"/>.</summary>
+        [NoAutoStaticsCleanup]
+        private static World _base;
+
+        public static void ResetBase() => _base = null;
+
+        /// <summary>Disposes every simulation world but <paramref name="keep"/>.</summary>
+        public static void DisposeAllBut(World keep)
+        {
+            var worlds = new HashSet<World> { World.DefaultGameObjectInjectionWorld };
+            worlds.UnionWith(ClientServerBootstrap.ServerWorlds);
+            worlds.UnionWith(ClientServerBootstrap.ClientWorlds);
+            worlds.UnionWith(ClientServerBootstrap.ThinClientWorlds);
+
+            // Netcode forgets its tracked worlds when Play starts, so a session that outlived Play is found here.
+            worlds.UnionWith(Created);
+            worlds.RemoveWhere(world => world == null || world == keep || world == _base || !world.IsCreated);
+
+            // Unity disposes only worlds off its active world stack, which pops from the top down.
+            while (worlds.Contains(World.PeekWorldStack()))
+            {
+                var top = World.PeekWorldStack();
+                if (!TryPop(top))
+                {
+                    Empty(top);
+                    worlds.Remove(top);
+                    break;
+                }
+            }
+
+            foreach (var world in worlds)
+            {
+                world.Dispose();
+            }
+
+            Created.Clear();
+        }
+
+        private static bool TryPop(World world)
+        {
+            try
+            {
+                World.PopWorldStack(world);
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                // The world at the bottom of the stack never pops.
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Stops and clears the world Unity keeps at the bottom of its active world stack, which can be neither
+        /// popped nor disposed, and keeps it as the empty base the session's worlds stack on.
+        /// </summary>
+        private static void Empty(World world)
+        {
+            ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
+            world.DestroyAllSystemsAndLogException(out _);
+            world.EntityManager.DestroyEntity(world.EntityManager.UniversalQuery);
+            _base = world;
+        }
     }
 }

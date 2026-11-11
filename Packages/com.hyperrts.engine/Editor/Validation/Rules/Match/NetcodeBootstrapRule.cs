@@ -1,0 +1,34 @@
+using System.Linq;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Sets;
+using Unity.Netcode;
+using Unity.Scenes;
+using UnityEngine;
+
+namespace HyperRTS.Editor.Validation.Rules.Match
+{
+    /// <summary>A scene hosting a SubScene keeps Netcode from replacing the default world.</summary>
+    public sealed class NetcodeBootstrapRule : ISceneRule
+    {
+        public void Check(SceneSet scenes, ValidationIssues issues)
+        {
+            foreach (var roots in scenes.Roots.Where(root => !root.scene.isSubScene).GroupBy(root => root.scene))
+            {
+                var subSceneRoot = roots.FirstOrDefault(root => root.GetComponentInChildren<SubScene>(true) != null);
+                if (subSceneRoot == null)
+                {
+                    continue;
+                }
+
+                if (!roots.Any(HasBootstrapOverride))
+                {
+                    issues.Warn(subSceneRoot,
+                        "No OverrideAutomaticNetcodeBootstrap: Netcode will replace the world. Add the RTS World rig.");
+                }
+            }
+        }
+
+        private static bool HasBootstrapOverride(GameObject root) =>
+            root.GetComponentInChildren<OverrideAutomaticNetcodeBootstrap>(true) != null;
+    }
+}

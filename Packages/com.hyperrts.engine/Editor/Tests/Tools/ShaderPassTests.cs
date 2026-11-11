@@ -1,12 +1,12 @@
-﻿using HyperRTS.Editor.Validation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Validation.Project;
 using NUnit.Framework;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Tests.Tools
 {

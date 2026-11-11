@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using UnityEditor;
-using UnityEngine;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Authoring

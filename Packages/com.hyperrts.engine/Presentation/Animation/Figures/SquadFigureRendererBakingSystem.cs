@@ -26,6 +26,20 @@ namespace HyperRTS.Presentation.Animation.Figures
         public void OnUpdate(ref SystemState state)
         {
             var em = state.EntityManager;
+            var squadOf = MapModels(em);
+            var drawn = ListRenderers(em, squadOf);
+            foreach (var model in squadOf.GetKeyArray(Allocator.Temp))
+            {
+                if (!drawn.Contains(model))
+                {
+                    throw new System.InvalidOperationException(
+                        $"[HyperRTS] Squad figure model '{em.GetName(model)}' has no renderer that plays clips, so it would stay frozen.");
+                }
+            }
+        }
+
+        private NativeHashMap<Entity, FigurePart> MapModels(EntityManager em)
+        {
             var squadOf = new NativeHashMap<Entity, FigurePart>(16, Allocator.Temp);
             using var squads = _squads.ToEntityArray(Allocator.Temp);
             foreach (var squad in squads)
@@ -44,6 +58,11 @@ namespace HyperRTS.Presentation.Animation.Figures
                 }
             }
 
+            return squadOf;
+        }
+
+        private NativeHashSet<Entity> ListRenderers(EntityManager em, NativeHashMap<Entity, FigurePart> squadOf)
+        {
             var drawn = new NativeHashSet<Entity>(16, Allocator.Temp);
             using var renderers = _renderers.ToEntityArray(Allocator.Temp);
             foreach (var renderer in renderers)
@@ -63,14 +82,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 }
             }
 
-            foreach (var model in squadOf.GetKeyArray(Allocator.Temp))
-            {
-                if (!drawn.Contains(model))
-                {
-                    throw new System.InvalidOperationException(
-                        $"[HyperRTS] Squad figure model '{em.GetName(model)}' has no renderer that plays clips, so it would stay frozen.");
-                }
-            }
+            return drawn;
         }
     }
 }

@@ -223,19 +223,21 @@ namespace HyperRTS.Simulation.Replays
             var players = ReadCount(reader, "players");
             for (var i = 0; i < players; i++)
             {
-                replay.Players.Add(new ReplayPlayerInfo
-                {
-                    Owner = reader.ReadByte(),
-                    Team = reader.ReadByte(),
-                    Name = reader.ReadString(),
-                    Color = new float4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
-                    Side = reader.ReadByte(),
-                    Control = (PlayerControl)reader.ReadByte(),
-                    Difficulty = (AIDifficulty)reader.ReadByte(),
-                });
+                replay.Players.Add(ReadPlayer(reader));
             }
 
             return replay;
         }
+
+        private static ReplayPlayerInfo ReadPlayer(BinaryReader reader) => new()
+        {
+            Owner = reader.ReadByte(),
+            Team = reader.ReadByte(),
+            Name = reader.ReadString(),
+            Color = new float4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
+            Side = reader.ReadByte(),
+            Control = (PlayerControl)reader.ReadByte(),
+            Difficulty = (AIDifficulty)reader.ReadByte(),
+        };
     }
 }

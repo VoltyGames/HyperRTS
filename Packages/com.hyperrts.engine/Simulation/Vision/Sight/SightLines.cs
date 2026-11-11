@@ -89,24 +89,30 @@ namespace HyperRTS.Simulation.Vision.Sight
                     continue;
                 }
 
-                var point = grid.Center(ray.Cell);
-                var distance = math.max(math.distance(point, origin.xy), 1e-3f);
-                var cell = Blockers.Cells[grid.Index(ray.Cell)];
-                var ground = Surface(cell, point) - origin.z;
-                // A cell just out of range still hides what lies behind it.
-                if (distance <= range && (ground + TallTargetHeight) / distance >= horizon)
-                {
-                    Mark(ray.Cell, (ground + TargetHeight) / distance >= horizon);
-                }
-
-                horizon = math.max(horizon, ground / distance);
-                // Cover takes its share once crossed, so the near edge of a wood is still seen.
-                cover += cell.Loss(origin.z - cell.Ground, (ray.Exit - ray.Entry) * length);
-                if (cover >= 1f)
+                if (Cross(ray, origin, length, range, ref horizon, ref cover))
                 {
                     break;
                 }
             }
+        }
+
+        /// <summary>Marks what the ray sees in its cell; true once the cover along it blocks the view.</summary>
+        private bool Cross(in GridRay ray, float3 origin, float length, float range, ref float horizon, ref float cover)
+        {
+            var point = Fog.Grid.Center(ray.Cell);
+            var distance = math.max(math.distance(point, origin.xy), 1e-3f);
+            var cell = Blockers.Cells[Fog.Grid.Index(ray.Cell)];
+            var ground = Surface(cell, point) - origin.z;
+            // A cell just out of range still hides what lies behind it.
+            if (distance <= range && (ground + TallTargetHeight) / distance >= horizon)
+            {
+                Mark(ray.Cell, (ground + TargetHeight) / distance >= horizon);
+            }
+
+            horizon = math.max(horizon, ground / distance);
+            // Cover takes its share once crossed, so the near edge of a wood is still seen.
+            cover += cell.Loss(origin.z - cell.Ground, (ray.Exit - ray.Entry) * length);
+            return cover >= 1f;
         }
 
         /// <summary>The ground or water at a cell, raised by the solid blockers on it.</summary>

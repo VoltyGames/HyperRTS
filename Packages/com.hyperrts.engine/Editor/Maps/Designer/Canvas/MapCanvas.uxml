@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <HyperRTS.Editor.Maps.Designer.Canvas.MapCanvasBackdrop name="image" class="hrts-map-canvas__image" picking-mode="Ignore" />
+  <ui:VisualElement name="overlay" class="hrts-map-canvas__overlay" picking-mode="Ignore" />
+  <ui:Label name="error" class="hrts-map-canvas__error" picking-mode="Ignore" />
+</ui:UXML>

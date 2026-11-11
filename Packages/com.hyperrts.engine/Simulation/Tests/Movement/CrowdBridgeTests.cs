@@ -18,43 +18,15 @@ namespace HyperRTS.Simulation.Tests.Movement
             bool formation)
         {
             _world.SpawnBridge();
-            var tank = TestVehicles.TankHull();
-            var units = new List<Entity>();
-            for (var i = 0; i < count; i++)
-            {
-                var start = new float3(-25f - i / abreast * 11f, 0f, (i % abreast - (abreast - 1) * 0.5f) * 5f);
-                units.Add(_world.SpawnVehicle(1, TestVehicles.At(start, math.PI * 0.5f), 4.5f, tank,
-                    TestVehicles.Tracks));
-            }
-
+            var units = SpawnColumn(count, abreast);
             _world.Tick();
-            if (formation)
-            {
-                OrderFormation(units, new float3(goalX, 0f, 0f));
-            }
-            else
-            {
-                for (var i = 0; i < count; i++)
-                {
-                    var lane = (i % abreast - (abreast - 1) * 0.5f) * 6f;
-                    _world.Send(units[i], new float3(goalX + i / abreast * 11f, 0f, lane), 0);
-                }
-            }
+            OrderColumn(units, abreast, goalX, formation);
 
-            var deepest = 0f;
-            var when = 0f;
-            var where = float3.zero;
+            var worst = new Overlap();
             for (var t = 0f; t < 150f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var depth = DeepestHullOverlap(units, out var at);
-                if (depth > deepest)
-                {
-                    deepest = depth;
-                    when = t;
-                    where = at;
-                }
-
+                worst.Record(DeepestHullOverlap(units, out var at), t, at);
                 if (AllArrived(units))
                 {
                     break;
@@ -64,32 +36,14 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var t = 0f; t < 5f; t += TestWorld.FrameTime)
             {
                 _world.Tick();
-                var depth = DeepestHullOverlap(units, out var at);
-                if (depth > deepest)
-                {
-                    deepest = depth;
-                    when = -t;
-                    where = at;
-                }
+                worst.Record(DeepestHullOverlap(units, out var at), -t, at);
             }
 
-            var behind = new List<string>();
-            foreach (var unit in units)
-            {
-                var at = _world.GetPosition(unit);
-                if (at.x <= 8f)
-                {
-                    var speed = math.length(_world.Get<Velocity>(unit).Value);
-                    behind.Add($"{at.xz} facing {_world.Get<LocalTransform>(unit).Forward().xz} at {speed:F1} m/s " +
-                               $"to {_world.Get<MoveDestination>(unit).Value.xz} " +
-                               $"moving {_world.IsEnabled<MoveDestination>(unit)} " +
-                               $"ended {_world.Get<Arrival>(unit).Reason}");
-                }
-            }
-
+            var behind = DescribeUnitsBehind(units);
             Assert.IsEmpty(behind,
-                $"deepest {deepest:F2} m at {when:F1} s at {where}; not across: {string.Join("; ", behind)}");
-            Assert.LessOrEqual(deepest, 0f, $"deepest {deepest:F2} m at {when:F1} s at {where}; " + Stragglers(units));
+                $"deepest {worst.Depth:F2} m at {worst.When:F1} s at {worst.Where}; not across: {string.Join("; ", behind)}");
+            Assert.LessOrEqual(worst.Depth, 0f,
+                $"deepest {worst.Depth:F2} m at {worst.When:F1} s at {worst.Where}; " + Stragglers(units));
         }
 
         // Rolling north past the mouth, far off its leg east, a tank must stop and pivot in rather than loop round.
@@ -116,6 +70,71 @@ namespace HyperRTS.Simulation.Tests.Movement
 
             Assert.Greater(_world.GetPosition(unit).x, 30f, $"crossed, at {_world.GetPosition(unit)}");
             Assert.Less(widest, 3f, $"stayed by the mouth, widest {widest:F2} m off the lane");
+        }
+
+        private struct Overlap
+        {
+            public float Depth;
+            public float When;
+            public float3 Where;
+
+            public void Record(float depth, float when, float3 where)
+            {
+                if (depth > Depth)
+                {
+                    Depth = depth;
+                    When = when;
+                    Where = where;
+                }
+            }
+        }
+
+        private List<Entity> SpawnColumn(int count, int abreast)
+        {
+            var tank = TestVehicles.TankHull();
+            var units = new List<Entity>();
+            for (var i = 0; i < count; i++)
+            {
+                var start = new float3(-25f - i / abreast * 11f, 0f, (i % abreast - (abreast - 1) * 0.5f) * 5f);
+                units.Add(_world.SpawnVehicle(1, TestVehicles.At(start, math.PI * 0.5f), 4.5f, tank,
+                    TestVehicles.Tracks));
+            }
+
+            return units;
+        }
+
+        private void OrderColumn(List<Entity> units, int abreast, float goalX, bool formation)
+        {
+            if (formation)
+            {
+                OrderFormation(units, new float3(goalX, 0f, 0f));
+                return;
+            }
+
+            for (var i = 0; i < units.Count; i++)
+            {
+                var lane = (i % abreast - (abreast - 1) * 0.5f) * 6f;
+                _world.Send(units[i], new float3(goalX + i / abreast * 11f, 0f, lane), 0);
+            }
+        }
+
+        private List<string> DescribeUnitsBehind(List<Entity> units)
+        {
+            var behind = new List<string>();
+            foreach (var unit in units)
+            {
+                var at = _world.GetPosition(unit);
+                if (at.x <= 8f)
+                {
+                    var speed = math.length(_world.Get<Velocity>(unit).Value);
+                    behind.Add($"{at.xz} facing {_world.Get<LocalTransform>(unit).Forward().xz} at {speed:F1} m/s " +
+                               $"to {_world.Get<MoveDestination>(unit).Value.xz} " +
+                               $"moving {_world.IsEnabled<MoveDestination>(unit)} " +
+                               $"ended {_world.Get<Arrival>(unit).Reason}");
+                }
+            }
+
+            return behind;
         }
 
         private float DeepestHullOverlap(List<Entity> units, out float3 at)

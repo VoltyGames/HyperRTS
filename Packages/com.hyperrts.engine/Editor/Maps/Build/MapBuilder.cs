@@ -46,6 +46,13 @@ namespace HyperRTS.Editor.Maps.Build
             AssetDatabase.SaveAssets();
             var overview = CaptureViews(generation, report);
             Log(report);
+            NotifyHooks(project, generation, report, minimap, overview);
+
+            return report;
+        }
+
+        private static void NotifyHooks(MapProject project, MapGeneration generation, MapReport report, Texture2D minimap, Texture2D overview)
+        {
             var result = new MapBuildResult
             {
                 Spec = project.Spec,
@@ -60,8 +67,6 @@ namespace HyperRTS.Editor.Maps.Build
             {
                 hook.OnBuilt(result);
             }
-
-            return report;
         }
 
         /// <summary>Measures the map on the simulation's nav grid and writes its bot hints and report.</summary>

@@ -197,42 +197,45 @@ namespace HyperRTS.Editor.Maps.Heights
         {
             foreach (var crossing in shapes.Crossings)
             {
-                if (!crossing.IsBridge)
+                if (crossing.IsBridge)
                 {
-                    continue;
+                    RaiseBridge(heights, shapes, crossing);
+                }
+            }
+        }
+
+        private static void RaiseBridge(MapHeights heights, MapShapes shapes, MapCrossing crossing)
+        {
+            var half = crossing.Span * 0.5f;
+            heights.ForEachNear(crossing.Position, half + RampLength + crossing.Width, (x, z, _) =>
+            {
+                var p = heights.Position(x, z);
+                var local = crossing.Local(p);
+                var side = Mathf.Abs(local.x) - (crossing.Width * 0.5f + 1f);
+                var along = Mathf.Abs(local.y);
+                if (side > RampEdge || along > half + RampLength)
+                {
+                    return;
                 }
 
-                var half = crossing.Span * 0.5f;
-                heights.ForEachNear(crossing.Position, half + RampLength + crossing.Width, (x, z, _) =>
+                var h = heights[x, z];
+                float target;
+                if (along <= half)
                 {
-                    var p = heights.Position(x, z);
-                    var local = crossing.Local(p);
-                    var side = Mathf.Abs(local.x) - (crossing.Width * 0.5f + 1f);
-                    var along = Mathf.Abs(local.y);
-                    if (side > RampEdge || along > half + RampLength)
+                    if (shapes.WaterEdgeDistance(p) < 1f)
                     {
                         return;
                     }
 
-                    var h = heights[x, z];
-                    float target;
-                    if (along <= half)
-                    {
-                        if (shapes.WaterEdgeDistance(p) < 1f)
-                        {
-                            return;
-                        }
+                    target = crossing.Height - AbutmentDrop;
+                }
+                else
+                {
+                    target = Mathf.Lerp(crossing.Height, h, MapGeometry.Smooth((along - half) / RampLength));
+                }
 
-                        target = crossing.Height - AbutmentDrop;
-                    }
-                    else
-                    {
-                        target = Mathf.Lerp(crossing.Height, h, MapGeometry.Smooth((along - half) / RampLength));
-                    }
-
-                    heights[x, z] = Mathf.Lerp(h, target, 1f - MapGeometry.Smooth(side / RampEdge));
-                });
-            }
+                heights[x, z] = Mathf.Lerp(h, target, 1f - MapGeometry.Smooth(side / RampEdge));
+            });
         }
     }
 }

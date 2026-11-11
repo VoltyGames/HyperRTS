@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Vision.Sight;
 using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
@@ -11,6 +10,7 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
+using HyperRTS.Simulation.Vision.Sight;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;

@@ -26,7 +26,7 @@
             <ui:Label name="no-recipes" class="hrts-hint" text="No recipe builds this effect's graphs." />
           </HyperRTS.Editor.Common.TitledSection>
           <ui:Button name="capture" text="Capture frames" />
-          <HyperRTS.Editor.Validation.IssueList name="issues" />
+          <HyperRTS.Editor.Validation.Issues.IssueList name="issues" />
         </ui:VisualElement>
       </ui:ScrollView>
     </ui:TwoPaneSplitView>

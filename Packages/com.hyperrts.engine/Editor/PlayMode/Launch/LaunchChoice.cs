@@ -124,6 +124,11 @@ namespace HyperRTS.Editor.PlayMode.Launch
                 return "A match needs players on at least two teams.";
             }
 
+            return NetworkProblem(humans);
+        }
+
+        private string NetworkProblem(int humans)
+        {
             if (network == LaunchNetwork.Offline && humans != 1)
             {
                 return "An offline match has exactly one human.";

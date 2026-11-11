@@ -31,25 +31,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test, Performance]
         public void Battle_FiveHundredASide()
         {
-            var projectile = _world.ProjectilePrefab();
-            var units = new Entity[1000];
-            for (var i = 0; i < 1000; i++)
-            {
-                var north = i >= 500;
-                var index = i % 500;
-                var sign = north ? 1f : -1f;
-                var position = new float3(-50f + index % 50 * 2f, 0f, sign * (10f + index / 50 * 2f));
-                units[i] = _world.SpawnUnit(north ? (byte)2 : (byte)1, position);
-                _world.EntityManager.SetComponentData(units[i], new VisionRange { Value = 50f });
-                _world.AddWeapon(units[i], new TestWeapon
-                {
-                    Range = 40f,
-                    Damage = 0.1f,
-                    Cooldown = 0.5f,
-                    Projectile = index % 2 == 0 ? projectile : Entity.Null,
-                    Turreted = true,
-                });
-            }
+            var units = SpawnArmies();
 
             // Until every unit has a target and the first projectiles are in flight.
             _world.Run(2f);
@@ -71,6 +53,31 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             // Everyone aims at the nearest enemy, so the two front ranks take the fire.
             Assert.GreaterOrEqual(hit, 100, $"both front ranks under fire: {hit} hit");
+        }
+
+        private Entity[] SpawnArmies()
+        {
+            var projectile = _world.ProjectilePrefab();
+            var units = new Entity[1000];
+            for (var i = 0; i < 1000; i++)
+            {
+                var north = i >= 500;
+                var index = i % 500;
+                var sign = north ? 1f : -1f;
+                var position = new float3(-50f + index % 50 * 2f, 0f, sign * (10f + index / 50 * 2f));
+                units[i] = _world.SpawnUnit(north ? (byte)2 : (byte)1, position);
+                _world.EntityManager.SetComponentData(units[i], new VisionRange { Value = 50f });
+                _world.AddWeapon(units[i], new TestWeapon
+                {
+                    Range = 40f,
+                    Damage = 0.1f,
+                    Cooldown = 0.5f,
+                    Projectile = index % 2 == 0 ? projectile : Entity.Null,
+                    Turreted = true,
+                });
+            }
+
+            return units;
         }
     }
 }

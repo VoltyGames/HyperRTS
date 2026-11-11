@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Sets;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;

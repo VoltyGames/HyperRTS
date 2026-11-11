@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
             Refresh();
         }
 
-        private void BindChoices(VisualElement root)
+        private void BindMap(VisualElement root)
         {
             var map = root.Require<DropdownField>("map");
             map.choices = _maps.Select(entry => entry.Name).ToList();
@@ -78,7 +78,11 @@ namespace HyperRTS.Editor.PlayMode.Launch
                 _choice.map = _map.Id;
                 Deal();
             });
+        }
 
+        private void BindChoices(VisualElement root)
+        {
+            BindMap(root);
             var mode = Dropdown(root, "mode", Modes, (int)_choice.mode);
             mode.RegisterValueChangedCallback(_ =>
             {

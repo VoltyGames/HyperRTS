@@ -51,6 +51,20 @@ namespace HyperRTS.Presentation.Rendering.Parts
             }
 
             var members = Members(ref state, owners);
+            var prefabParts = MakePrefabs(ref state, models, members);
+            foreach (var root in roots)
+            {
+                Group(ref state, root, members, prefabParts);
+                if (!state.EntityManager.HasBuffer<ModelCopy>(root))
+                {
+                    state.EntityManager.AddBuffer<ModelCopy>(root);
+                }
+            }
+        }
+
+        private static NativeHashSet<Entity> MakePrefabs(ref SystemState state, NativeHashSet<Entity> models,
+            NativeParallelMultiHashMap<Entity, Entity> members)
+        {
             var prefabParts = new NativeHashSet<Entity>(members.Count(), Allocator.Temp);
             foreach (var model in models)
             {
@@ -63,14 +77,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 MakePrefab(ref state, model, members);
             }
 
-            foreach (var root in roots)
-            {
-                Group(ref state, root, members, prefabParts);
-                if (!state.EntityManager.HasBuffer<ModelCopy>(root))
-                {
-                    state.EntityManager.AddBuffer<ModelCopy>(root);
-                }
-            }
+            return prefabParts;
         }
 
         private static void Models(ref SystemState state, Entity root, NativeHashSet<Entity> models)

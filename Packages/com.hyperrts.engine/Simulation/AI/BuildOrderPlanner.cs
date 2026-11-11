@@ -46,26 +46,7 @@ namespace HyperRTS.Simulation.AI
             var done = true;
             foreach (var step in entities.GetBuffer<AIBuildStep>(turn.Player))
             {
-                if (!entities.HasComponent<EntityInfo>(step.Prefab))
-                {
-                    continue;
-                }
-
-                // Walls aren't planned, and field works are only dug in at defence points.
-                if (entities.HasComponent<LinePlacement>(step.Prefab) || entities.HasComponent<AIFieldWork>(step.Prefab))
-                {
-                    continue;
-                }
-
-                counts.TryGetValue(entities.GetComponentData<EntityInfo>(step.Prefab).TypeId, out var owned);
-                var wanted = entities.HasComponent<Research>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
-                if (owned >= wanted)
-                {
-                    continue;
-                }
-
-                // A build limit never lifts by waiting, unlike cost or prerequisites, so the step counts as met.
-                if (turn.Buyer.Counts.AtLimit(entities, step.Prefab))
+                if (!IsUnmet(entities, turn, counts, step))
                 {
                     continue;
                 }
@@ -79,6 +60,32 @@ namespace HyperRTS.Simulation.AI
             }
 
             return done;
+        }
+
+        /// <summary>Whether the step still has to be started: planned, below its count and not capped by a build limit.</summary>
+        private static bool IsUnmet(EntityManager entities, in AITurn turn, NativeHashMap<int, int> counts,
+            in AIBuildStep step)
+        {
+            if (!entities.HasComponent<EntityInfo>(step.Prefab))
+            {
+                return false;
+            }
+
+            // Walls aren't planned, and field works are only dug in at defence points.
+            if (entities.HasComponent<LinePlacement>(step.Prefab) || entities.HasComponent<AIFieldWork>(step.Prefab))
+            {
+                return false;
+            }
+
+            counts.TryGetValue(entities.GetComponentData<EntityInfo>(step.Prefab).TypeId, out var owned);
+            var wanted = entities.HasComponent<Research>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
+            if (owned >= wanted)
+            {
+                return false;
+            }
+
+            // A build limit never lifts by waiting, unlike cost or prerequisites, so the step counts as met.
+            return !turn.Buyer.Counts.AtLimit(entities, step.Prefab);
         }
 
         /// <summary>Per type id: living units and buildings (sites too), queued production and finished research.</summary>

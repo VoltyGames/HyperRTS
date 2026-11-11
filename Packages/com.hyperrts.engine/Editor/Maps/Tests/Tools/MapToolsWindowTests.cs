@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using HyperRTS.Editor.Maps.Designer;
+using HyperRTS.Editor.Maps.Designer.Window;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine.UIElements;

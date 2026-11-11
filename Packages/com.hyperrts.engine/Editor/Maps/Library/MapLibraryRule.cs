@@ -2,6 +2,9 @@ using System;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Project;
+using HyperRTS.Editor.Validation.Sets;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Library

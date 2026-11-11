@@ -1,0 +1,20 @@
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Simulation.Resources.Gathering;
+
+
+namespace HyperRTS.Editor.Validation.Rules.Buildings
+{
+    /// <summary>A node has a resource type and can be right-clicked.</summary>
+    public sealed class ResourceNodeRule : AuthoringRule<ResourceNodeAuthoring>
+    {
+        protected override void Check(ResourceNodeAuthoring node, ValidationIssues issues)
+        {
+            if (node.type == null)
+            {
+                issues.Error(node, "Resource node has no resource type.");
+            }
+
+            FitPickBoxIfMissing(node, "harvesters can't be right-click ordered to gather here.", issues);
+        }
+    }
+}

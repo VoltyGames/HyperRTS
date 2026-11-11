@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Destruction
         /// </summary>
         public void FromParts()
         {
-            var found = new List<SectionsAuthoring.Entry>();
+            var found = new List<SectionEntry>();
             foreach (var child in _owner.GetComponentsInChildren<Transform>(true))
             {
                 if (child.name.EndsWith("_Intact", StringComparison.Ordinal))
@@ -105,7 +105,7 @@ namespace HyperRTS.Editor.Destruction
         /// Anchored, exterior, share and supports guessed from the boxes; the rest of each entry stays. Walls carry the
         /// building, so they take a full share and roofs and floors half.
         /// </summary>
-        private List<SectionsAuthoring.Entry> Guess(List<SectionsAuthoring.Entry> entries)
+        private List<SectionEntry> Guess(List<SectionEntry> entries)
         {
             var boxes = entries.ConvertAll(entry => Measure(entry.intact.transform));
             var middle = Measure(Root).center;
@@ -131,7 +131,7 @@ namespace HyperRTS.Editor.Destruction
             return entries;
         }
 
-        private SectionsAuthoring.Entry Kept(GameObject intact, Transform broken)
+        private SectionEntry Kept(GameObject intact, Transform broken)
         {
             if (broken != null)
             {
@@ -168,7 +168,7 @@ namespace HyperRTS.Editor.Destruction
             return thin < size.y && size.y <= 2f * length && thin <= 0.5f * length;
         }
 
-        private static GameObject[] Below(List<SectionsAuthoring.Entry> entries, List<Bounds> boxes, int index)
+        private static GameObject[] Below(List<SectionEntry> entries, List<Bounds> boxes, int index)
         {
             var below = new List<GameObject>();
             var box = boxes[index];

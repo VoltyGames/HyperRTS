@@ -19,6 +19,6 @@
       <uie:ToolbarSpacer class="hrts-fill" />
       <uie:ToolbarSearchField name="search" />
     </uie:Toolbar>
-    <HyperRTS.Editor.Validation.IssueList name="issues" grouped="true" />
+    <HyperRTS.Editor.Validation.Issues.IssueList name="issues" grouped="true" />
   </HyperRTS.Editor.Hub.PageShell>
 </ui:UXML>

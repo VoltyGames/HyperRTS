@@ -41,6 +41,12 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 Used.Add(new int2(destination.Group, classIndex));
             }
 
+            Evaluate(entity, ref path, waypoints, destination, transform, agent);
+        }
+
+        private void Evaluate(Entity entity, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
+            in MoveDestination destination, in LocalTransform transform, in NavAgent agent)
+        {
             var goal = destination.Value;
             var goalFar = math.distancesq(path.Goal.xz, goal.xz) > Grid.Grid.CellSize * Grid.Grid.CellSize;
             if (path.Status == PathStatus.Ready && path.GridVersion != Grid.Version &&

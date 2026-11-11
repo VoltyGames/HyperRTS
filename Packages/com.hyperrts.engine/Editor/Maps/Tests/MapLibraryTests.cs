@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
-using HyperRTS.Editor.Maps.Checks;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -180,6 +180,13 @@ namespace HyperRTS.Editor.Maps.Tests
                     c.groundSurface = "Meadow";
                 }),
             };
+            Replace(items, extra);
+
+            return MapLibrary.From(items.ToArray());
+        }
+
+        private static void Replace(List<MapLibraryItem> items, MapLibraryItem[] extra)
+        {
             foreach (var item in extra)
             {
                 var replaced = items.FindIndex(own => own.GetType() == item.GetType() && own.key == item.key);
@@ -192,8 +199,6 @@ namespace HyperRTS.Editor.Maps.Tests
                     items.Add(item);
                 }
             }
-
-            return MapLibrary.From(items.ToArray());
         }
 
         private static T Make<T>(string key, Action<T> init = null) where T : MapLibraryItem

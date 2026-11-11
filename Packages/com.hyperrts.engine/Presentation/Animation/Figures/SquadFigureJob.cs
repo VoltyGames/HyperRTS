@@ -46,25 +46,30 @@ namespace HyperRTS.Presentation.Animation.Figures
                     Hides.Enqueue(new FigureHide { Root = entity, Branch = figure.Other.Model.Figure, Hide = true });
                 }
 
+                var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
                 var moving = FigureState.Idle;
-                var firing = false;
-                var digging = false;
+                var activity = new FigureActivity(false, false);
                 if (member.Alive)
                 {
-                    var shots = hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].Shots : (byte)0;
-                    var feet = place.Position + new float3(figure.Offset.x, 0f, figure.Offset.y);
-                    var hold = figure.Clips.Value.FireHold(member.Posture);
-                    figure.Observe(feet, shots, DeltaTime);
-                    firing = figure.Shots.Within(hold);
-                    moving = squad.Moving(figure.Speed, figure.State, Now - figure.StateSince);
-                    digging = IsDigging(member, moving, firing);
+                    activity = Observe(ref figure, member, place.Position, shots, squad, out moving);
                 }
 
                 var next = figure.Next(member.Alive, moving, Now);
-                Animate(entity, ref figure, next, member, new FigureActivity(firing, digging), squad);
+                Animate(entity, ref figure, next, member, activity, squad);
 
                 figures[i] = figure;
             }
+        }
+
+        private FigureActivity Observe(ref SquadFigure figure, in SquadMember member, float3 squadPosition, byte shots,
+            in SquadFigures squad, out FigureState moving)
+        {
+            var feet = squadPosition + new float3(figure.Offset.x, 0f, figure.Offset.y);
+            var hold = figure.Clips.Value.FireHold(member.Posture);
+            figure.Observe(feet, shots, DeltaTime);
+            var firing = figure.Shots.Within(hold);
+            moving = squad.Moving(figure.Speed, figure.State, Now - figure.StateSince);
+            return new FigureActivity(firing, IsDigging(member, moving, firing));
         }
 
         private void Animate(Entity root, ref SquadFigure figure, FigureState next, in SquadMember member,

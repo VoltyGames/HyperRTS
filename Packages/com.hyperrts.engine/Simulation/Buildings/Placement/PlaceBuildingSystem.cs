@@ -97,17 +97,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                     buyers.Add(request.Owner, buyer);
                 }
 
-                var orders = new NativeList<Order>(Allocator.Temp);
-                if (request.Command.Type == CommandType.PlaceLine)
-                {
-                    PlaceLine(ref state, request, buyer, ecb, sites, orders);
-                    new BuilderGroup(state.EntityManager, builders).NearEndFirst(orders, request.Command.Queue);
-                }
-                else if (TryPlace(ref state, request, buyer, ecb, sites, out var order))
-                {
-                    orders.Add(order);
-                }
-
+                var orders = PlaceSites(ref state, request, buyer, ecb, sites, builders);
                 Assign(assignments, builders, orders, request.Command.Queue);
             }
 
@@ -119,6 +109,23 @@ namespace HyperRTS.Simulation.Buildings.Placement
             {
                 _orders.Issue(assignment.Builder, assignment.Order, assignment.Queue);
             }
+        }
+
+        private NativeList<Order> PlaceSites(ref SystemState state, in IssuedCommand request, Buyer buyer,
+            EntityCommandBuffer ecb, NativeList<PlacedFootprint> sites, NativeList<Entity> builders)
+        {
+            var orders = new NativeList<Order>(Allocator.Temp);
+            if (request.Command.Type == CommandType.PlaceLine)
+            {
+                PlaceLine(ref state, request, buyer, ecb, sites, orders);
+                new BuilderGroup(state.EntityManager, builders).NearEndFirst(orders, request.Command.Queue);
+            }
+            else if (TryPlace(ref state, request, buyer, ecb, sites, out var order))
+            {
+                orders.Add(order);
+            }
+
+            return orders;
         }
 
         /// <summary>The first order follows the command's queue flag; the rest queue behind it.</summary>

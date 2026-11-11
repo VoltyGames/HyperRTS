@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Tests
             _created.Clear();
         }
 
-        protected T Track<T>(T created) where T : Object
+        public T Track<T>(T created) where T : Object
         {
             _created.Add(created);
             return created;

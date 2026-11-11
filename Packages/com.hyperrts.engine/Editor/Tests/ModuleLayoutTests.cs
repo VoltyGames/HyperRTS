@@ -1,10 +1,10 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Project;
+using HyperRTS.Simulation.Common.Authoring;
 using NUnit.Framework;
 using UnityEditor.PackageManager;
 

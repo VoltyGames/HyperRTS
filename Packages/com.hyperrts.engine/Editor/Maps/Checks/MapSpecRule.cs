@@ -1,6 +1,8 @@
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Report;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Sets;
 
 namespace HyperRTS.Editor.Maps.Checks
 {

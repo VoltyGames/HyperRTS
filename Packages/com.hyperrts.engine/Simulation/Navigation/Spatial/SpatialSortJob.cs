@@ -23,6 +23,18 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             using var marker = SortMarker.Auto();
             var cells = Index.Grid.Count;
             var starts = Index.CellStarts;
+            Clear(starts, cells);
+            Count(starts);
+            for (var i = 1; i <= cells; i++)
+            {
+                starts[i] += starts[i - 1];
+            }
+
+            Scatter(starts);
+        }
+
+        private void Clear(NativeList<int> starts, int cells)
+        {
             starts.Resize(cells + 1, NativeArrayOptions.UninitializedMemory);
             for (var i = 0; i <= cells; i++)
             {
@@ -36,6 +48,11 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             }
 
             Index.Oversized.Clear();
+        }
+
+        // Counts each entry into the slot after its cell, so the running sum gives every cell's start.
+        private void Count(NativeList<int> starts)
+        {
             for (var i = 0; i < Snapshots.Length; i++)
             {
                 var entry = Snapshots[i];
@@ -58,13 +75,6 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     starts[Index.CellIndex(entry.Position) + 1]++;
                 }
             }
-
-            for (var i = 1; i <= cells; i++)
-            {
-                starts[i] += starts[i - 1];
-            }
-
-            Scatter(starts);
         }
 
         // Each cell's start serves as its write cursor, which leaves it at the next cell's start; shifting back

@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Destruction
     public static class SectionShape
     {
         /// <summary>The sections, each with its share of <paramref name="maxHealth"/>; materials are listed in index order.</summary>
-        public static List<Section> Bake(SectionsAuthoring.Entry[] entries, float maxHealth, List<SectionMaterial> materials)
+        public static List<Section> Bake(SectionEntry[] entries, float maxHealth, List<SectionMaterial> materials)
         {
             var total = 0f;
             foreach (var entry in entries)
@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Destruction
             return sections;
         }
 
-        private static ulong SupportBits(SectionsAuthoring.Entry[] entries, GameObject[] supports)
+        private static ulong SupportBits(SectionEntry[] entries, GameObject[] supports)
         {
             var bits = 0ul;
             foreach (var support in supports ?? Array.Empty<GameObject>())

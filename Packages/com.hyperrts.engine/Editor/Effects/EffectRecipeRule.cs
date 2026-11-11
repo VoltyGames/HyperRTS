@@ -1,5 +1,8 @@
 using System;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Project;
+using HyperRTS.Editor.Validation.Sets;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Effects

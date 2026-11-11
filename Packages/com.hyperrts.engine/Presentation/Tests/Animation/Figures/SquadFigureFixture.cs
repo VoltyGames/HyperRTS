@@ -84,19 +84,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
                 figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0), Baked = quaternion.identity };
             }
 
-            _em.AddBuffer<FigureRenderer>(squad);
-            foreach (var figure in _figures)
-            {
-                _em.GetBuffer<FigureRenderer>(squad).Add(new FigureRenderer { Model = figure, Part = figure });
-            }
-
-            var group = _em.AddBuffer<LinkedEntityGroup>(squad);
-            group.Add(squad);
-            foreach (var figure in _figures)
-            {
-                group.Add(figure);
-            }
-
+            LinkFigures(squad);
             _em.AddComponentData(squad, new Health { Current = 100f, Max = 100f });
             _em.AddComponentData(squad, new EntityInfo { TypeId = SquadType });
             _em.AddComponentData(squad, new Owner { Value = 1 });
@@ -111,6 +99,22 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var setup = new SquadFigures { RunSpeed = 3f, DieHold = DieHold };
             SquadFiguresAuthoring.AddSquad(writer, setup, figures);
             return squad;
+        }
+
+        private void LinkFigures(Entity squad)
+        {
+            _em.AddBuffer<FigureRenderer>(squad);
+            foreach (var figure in _figures)
+            {
+                _em.GetBuffer<FigureRenderer>(squad).Add(new FigureRenderer { Model = figure, Part = figure });
+            }
+
+            var group = _em.AddBuffer<LinkedEntityGroup>(squad);
+            group.Add(squad);
+            foreach (var figure in _figures)
+            {
+                group.Add(figure);
+            }
         }
 
         protected void Update()

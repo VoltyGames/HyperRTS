@@ -118,7 +118,7 @@ namespace HyperRTS.Editor.Destruction
         /// <paramref name="measure"/>. Share, deck and needs-all-supports stay from the owner's entry for the same
         /// model. Holed, pieces, stub and heap models are set to scale 0.
         /// </summary>
-        public List<SectionsAuthoring.Entry> Entries(SectionsAuthoring owner, Func<Transform, Bounds> measure)
+        public List<SectionEntry> Entries(SectionsAuthoring owner, Func<Transform, Bounds> measure)
         {
             var intacts = sections.ConvertAll(part => FindModel(owner, part.intact));
             var boxes = intacts.ConvertAll(intact => measure(intact.transform));
@@ -128,7 +128,7 @@ namespace HyperRTS.Editor.Destruction
                 all.Encapsulate(box);
             }
 
-            var found = new List<SectionsAuthoring.Entry>(sections.Count);
+            var found = new List<SectionEntry>(sections.Count);
             for (var i = 0; i < sections.Count; i++)
             {
                 found.Add(Entry(owner, sections[i], intacts[i], boxes[i], all.center));
@@ -137,10 +137,10 @@ namespace HyperRTS.Editor.Destruction
             return found;
         }
 
-        private SectionsAuthoring.Entry Entry(SectionsAuthoring owner, Part part, GameObject intact, Bounds box, Vector3 middle)
+        private SectionEntry Entry(SectionsAuthoring owner, Part part, GameObject intact, Bounds box, Vector3 middle)
         {
             var keptAt = Array.FindIndex(owner.sections, item => item.intact == intact);
-            var entry = new SectionsAuthoring.Entry
+            var entry = new SectionEntry
             {
                 intact = intact,
                 center = box.center,

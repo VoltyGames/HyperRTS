@@ -3,5 +3,5 @@
     <ui:Label name="errors" class="hrts-issue-badge__count hrts-issue-badge__errors" />
     <ui:Label name="warnings" class="hrts-issue-badge__count hrts-issue-badge__warnings" />
   </ui:Button>
-  <HyperRTS.Editor.Validation.IssueList name="list" class="hrts-hidden" />
+  <HyperRTS.Editor.Validation.Issues.IssueList name="list" class="hrts-hidden" />
 </ui:UXML>

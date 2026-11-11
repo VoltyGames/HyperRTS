@@ -100,6 +100,11 @@ namespace HyperRTS.Simulation.Navigation.Fields
                 Field = grid.Field,
             }.Schedule(dependency);
 
+            return Relabel(grid, dependency);
+        }
+
+        private JobHandle Relabel(in NavGrid grid, JobHandle dependency)
+        {
             dependency = new RelabelJob
             {
                 Field = grid.Field,

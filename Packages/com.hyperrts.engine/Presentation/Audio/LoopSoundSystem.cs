@@ -71,14 +71,7 @@ namespace HyperRTS.Presentation.Audio
                          .Query<DynamicBuffer<EntityLoopSound>, RefRO<LoopSoundTuning>, RefRO<LocalToWorld>>()
                          .WithNone<FogHidden, Inside, Dead>().WithEntityAccess())
             {
-                var flying = flights.HasComponent(entity) && !docks.HasEnabled(entity);
-                // A unit with no rig rotor to follow plays its rotor full while flying.
-                var rotor = flying ? 1f : 0f;
-                if (spins.TryGetComponent(entity, out var spin))
-                {
-                    rotor = spin.Amount;
-                }
-
+                var rotor = RotorAmount(flights, docks, spins, entity);
                 var building = sites.HasEnabled(entity);
                 var producing = queues.TryGetBuffer(entity, out var queue) && !queue.IsEmpty;
                 _states.TryGetValue(entity, out var state);
@@ -97,6 +90,19 @@ namespace HyperRTS.Presentation.Audio
                     });
                 }
             }
+        }
+
+        // A unit with no rig rotor to follow plays its rotor full while flying.
+        private static float RotorAmount(ComponentLookup<Flight> flights, ComponentLookup<Docked> docks,
+            ComponentLookup<RotorSpin> spins, Entity entity)
+        {
+            if (spins.TryGetComponent(entity, out var spin))
+            {
+                return spin.Amount;
+            }
+
+            var flying = flights.HasComponent(entity) && !docks.HasEnabled(entity);
+            return flying ? 1f : 0f;
         }
 
         /// <summary>Every weapon's heading folded into one value, so any turn changes it.</summary>

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.PlayMode;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Project;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Rendering;
@@ -89,21 +89,7 @@ namespace HyperRTS.Editor.Maps.Look
         // The tree entities (the ones that topple) with all their parts, plus the terrain's own trees.
         private void AddTrees()
         {
-            var trees = new List<Entity>();
-            if (PlayWorld.TryGetPresented(out var entityManager))
-            {
-                using var query = entityManager.CreateEntityQuery(
-                    ComponentType.ReadOnly<Topple>(), ComponentType.ReadOnly<SceneryId>());
-                foreach (var root in query.ToEntityArray(Allocator.Temp))
-                {
-                    trees.Add(root);
-                    if (entityManager.HasBuffer<LinkedEntityGroup>(root))
-                    {
-                        trees.AddRange(entityManager.GetBuffer<LinkedEntityGroup>(root).Reinterpret<Entity>().AsNativeArray());
-                    }
-                }
-            }
-
+            var trees = FindTrees();
             var terrain = Terrain.activeTerrain;
             Add("trees", trees.Count > 0 || terrain != null, on =>
             {
@@ -128,6 +114,26 @@ namespace HyperRTS.Editor.Maps.Look
                     manager.AddComponent<DisableRendering>(entities);
                 }
             });
+        }
+
+        private static List<Entity> FindTrees()
+        {
+            var trees = new List<Entity>();
+            if (PlayWorld.TryGetPresented(out var entityManager))
+            {
+                using var query = entityManager.CreateEntityQuery(
+                    ComponentType.ReadOnly<Topple>(), ComponentType.ReadOnly<SceneryId>());
+                foreach (var root in query.ToEntityArray(Allocator.Temp))
+                {
+                    trees.Add(root);
+                    if (entityManager.HasBuffer<LinkedEntityGroup>(root))
+                    {
+                        trees.AddRange(entityManager.GetBuffer<LinkedEntityGroup>(root).Reinterpret<Entity>().AsNativeArray());
+                    }
+                }
+            }
+
+            return trees;
         }
 
         private void AddContactShadows()

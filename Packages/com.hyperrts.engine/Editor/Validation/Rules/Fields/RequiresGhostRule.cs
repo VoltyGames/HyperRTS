@@ -1,0 +1,17 @@
+using HyperRTS.Editor.Validation.Fields;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Simulation.Common.Authoring;
+using UnityEngine;
+
+namespace HyperRTS.Editor.Validation.Rules.Fields
+{
+    /// <summary>Warns when a <see cref="RequiresGhostAttribute"/> component is not on a ghost.</summary>
+    public sealed class RequiresGhostRule : AuthoringRule<Component>
+    {
+        public override bool AppliesTo(Component component) =>
+            AttributeCache<RequiresGhostAttribute>.Get(component.GetType()).Length > 0;
+
+        protected override void Check(Component component, ValidationIssues issues) =>
+            WarnIfNotGhost(component, component.gameObject, "Not a ghost: multiplayer clients won't receive it.", issues);
+    }
+}

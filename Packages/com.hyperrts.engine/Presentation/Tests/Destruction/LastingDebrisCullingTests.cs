@@ -39,13 +39,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             var result = output[0];
             try
             {
-                Assert.AreEqual(new[] { 0, 2, 3, 4 }, new[] { result.visibleInstances[0], result.visibleInstances[1], result.visibleInstances[2], result.visibleInstances[3] });
-                Assert.AreEqual(4, result.visibleInstanceCount);
-                Assert.AreEqual(3, result.drawCommandCount);
-                Assert.AreEqual((0u, 2u, 3), Run(result.drawCommands[0]));
-                Assert.AreEqual((2u, 1u, 2), Run(result.drawCommands[1]));
-                Assert.AreEqual((3u, 1u, 1), Run(result.drawCommands[2]));
-                Assert.AreEqual(3u, result.drawRanges[0].drawCommandsCount);
+                AssertDrawn(result);
             }
             finally
             {
@@ -53,6 +47,17 @@ namespace HyperRTS.Presentation.Tests.Destruction
                 UnsafeUtility.Free(result.visibleInstances, Allocator.TempJob);
                 UnsafeUtility.Free(result.drawRanges, Allocator.TempJob);
             }
+        }
+
+        private static unsafe void AssertDrawn(in BatchCullingOutputDrawCommands result)
+        {
+            Assert.AreEqual(new[] { 0, 2, 3, 4 }, new[] { result.visibleInstances[0], result.visibleInstances[1], result.visibleInstances[2], result.visibleInstances[3] });
+            Assert.AreEqual(4, result.visibleInstanceCount);
+            Assert.AreEqual(3, result.drawCommandCount);
+            Assert.AreEqual((0u, 2u, 3), Run(result.drawCommands[0]));
+            Assert.AreEqual((2u, 1u, 2), Run(result.drawCommands[1]));
+            Assert.AreEqual((3u, 1u, 1), Run(result.drawCommands[2]));
+            Assert.AreEqual(3u, result.drawRanges[0].drawCommandsCount);
         }
 
         private static (uint Offset, uint Count, int Mask) Run(BatchDrawCommand command) =>

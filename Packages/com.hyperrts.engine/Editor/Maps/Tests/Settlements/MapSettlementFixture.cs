@@ -121,6 +121,14 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             palette.entries.Add(Entry("Pipe", 0.5f, 3f));
             palette.entries.Add(Entry("PipeArch", 1f, 2.5f));
             palette.entries.Add(Entry("Well", 1.5f, 1.5f));
+            var kit = MakeKit();
+            edit?.Invoke(kit);
+            palette.settlementKits.Add(kit);
+            return palette;
+        }
+
+        private static MapSettlementKit MakeKit()
+        {
             var kit = MapFixture.Item<MapSettlementKit>("Village", i =>
             {
                 i.plot = new Vector2(24f, 36f);
@@ -147,9 +155,8 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             kit.houses.Add("House");
             kit.outbuildings.Add("Barn");
             kit.extras.Add(new MapPlotProp { kind = "Well", chance = 1f, zone = MapPlotZone.Yard });
-            edit?.Invoke(kit);
-            palette.settlementKits.Add(kit);
-            return palette;
+
+            return kit;
         }
 
         private MapClimate MakeClimate()

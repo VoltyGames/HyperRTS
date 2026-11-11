@@ -167,6 +167,12 @@ namespace HyperRTS.Simulation.Buildings.Construction
                     boxes.Add(Reach.Footprint(piece));
                 }
 
+                return NearestUnfinished(site, from, wall, boxes);
+            }
+
+            private Entity NearestUnfinished(Entity site, float3 from, NativeList<Entity> wall,
+                NativeList<NavBox> boxes)
+            {
                 var joined = new NativeArray<bool>(wall.Length, Allocator.Temp);
                 var reached = new NativeList<NavBox>(Allocator.Temp) { Reach.Footprint(site) };
                 var best = Entity.Null;

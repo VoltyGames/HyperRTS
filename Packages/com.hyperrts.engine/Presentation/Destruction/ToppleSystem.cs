@@ -53,20 +53,8 @@ namespace HyperRTS.Presentation.Destruction
                 return;
             }
 
-            var view = SystemAPI.TryGetSingleton(out LocalFogView local) ? local : default;
-            state.CompleteDependency();
-            _fog.TryGetSingleton(out FogOfWar fog);
+            var falls = NewFalls(ref state);
             var deltaTime = SystemAPI.Time.DeltaTime;
-            var falls = new Falls
-            {
-                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(),
-                Parents = SystemAPI.GetComponentLookup<Parent>(true),
-                Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
-                Children = SystemAPI.GetBufferLookup<Child>(true),
-                CrusherQuery = _crushers,
-                View = view,
-                Fog = fog,
-            };
             using var entities = _falling.ToEntityArray(Allocator.Temp);
             foreach (var entity in entities)
             {
@@ -84,6 +72,23 @@ namespace HyperRTS.Presentation.Destruction
                 falls.Turn(entity, toppleFall, clock.ValueRO.Progress, resting, parts);
                 SystemAPI.SetComponentEnabled<FallClock>(entity, !resting);
             }
+        }
+
+        private Falls NewFalls(ref SystemState state)
+        {
+            var view = SystemAPI.TryGetSingleton(out LocalFogView local) ? local : default;
+            state.CompleteDependency();
+            _fog.TryGetSingleton(out FogOfWar fog);
+            return new Falls
+            {
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(),
+                Parents = SystemAPI.GetComponentLookup<Parent>(true),
+                Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
+                Children = SystemAPI.GetBufferLookup<Child>(true),
+                CrusherQuery = _crushers,
+                View = view,
+                Fog = fog,
+            };
         }
 
         /// <summary>One frame's lookups, fog view and crushers for starting and turning falls.</summary>

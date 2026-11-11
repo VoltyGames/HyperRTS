@@ -42,17 +42,9 @@ namespace HyperRTS.Presentation.Construction
             CompleteDependency();
             _switch.Update(ref CheckedStateRef);
             var now = SystemAPI.Time.ElapsedTime;
-            _deltaTime = SystemAPI.Time.DeltaTime;
-            _reach = PresentationQuality.Current.Effects == DetailLevel.Low ? 0.5f : 1f;
+            BeginFrame();
             var progress = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var fogged = SystemAPI.GetComponentLookup<FogHidden>(true);
-            foreach (var watching in SystemAPI.Query<EnabledRefRW<ConstructionWatch>>().WithAll<ConstructionProgress>()
-                         .WithDisabled<ConstructionWatch>())
-            {
-                watching.ValueRW = true;
-            }
-
-            _streams.BeginFrame();
             foreach (var (site, watch, watching, points, place, entity) in SystemAPI
                          .Query<RefRO<ConstructionSite>, RefRW<ConstructionWatch>, EnabledRefRW<ConstructionWatch>,
                              DynamicBuffer<ConstructionWorkPoint>, RefRO<LocalToWorld>>().WithEntityAccess())
@@ -83,6 +75,19 @@ namespace HyperRTS.Presentation.Construction
             }
 
             _streams.EndFrame();
+        }
+
+        private void BeginFrame()
+        {
+            _deltaTime = SystemAPI.Time.DeltaTime;
+            _reach = PresentationQuality.Current.Effects == DetailLevel.Low ? 0.5f : 1f;
+            foreach (var watching in SystemAPI.Query<EnabledRefRW<ConstructionWatch>>().WithAll<ConstructionProgress>()
+                         .WithDisabled<ConstructionWatch>())
+            {
+                watching.ValueRW = true;
+            }
+
+            _streams.BeginFrame();
         }
 
         private void Stream(Entity entity, in ConstructionSite site, DynamicBuffer<ConstructionWorkPoint> points,

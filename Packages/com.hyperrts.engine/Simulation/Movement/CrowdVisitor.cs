@@ -92,12 +92,8 @@ namespace HyperRTS.Simulation.Movement
 
         public void Visit(in SpatialEntry entry)
         {
-            if (!entry.IsUnit || entry.Entity == Unit.Entity || !NavLayers.CanBlock(Unit.Layer, entry.Layer))
-            {
-                return;
-            }
-
-            if (Rule.IsCrushing(Unit, entry))
+            if (!entry.IsUnit || entry.Entity == Unit.Entity || !NavLayers.CanBlock(Unit.Layer, entry.Layer)
+                || Rule.IsCrushing(Unit, entry))
             {
                 return;
             }

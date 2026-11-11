@@ -150,34 +150,46 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 DrawDrivable(ref job, () => (LanePose(ref random, lanes, SupplyTruck.Chassis),
                     DriveGoal.ToPoint(SupplyTruck.Chassis.Center(LanePose(ref random, lanes, SupplyTruck.Chassis)))),
                     ref undrivable);
-                var center = SupplyTruck.Chassis.Center(job.Start);
-                truck = _world.SpawnUnit(1, new float3(center.x, 0f, center.y), new TestUnit
-                {
-                    Speed = 8f,
-                    Radius = SupplyTruck.Radius,
-                });
-                _world.EntityManager.SetComponentData(truck, SupplyTruck);
-                var yaw = math.atan2(job.Start.Facing.x, job.Start.Facing.y);
-                _world.EntityManager.SetComponentData(truck,
-                    LocalTransform.FromPositionRotation(new float3(center.x, 0f, center.y), quaternion.RotateY(yaw)));
-                _world.Tick();
-                var goal = job.Goal.Center;
-                _world.EntityManager.SetComponentData(truck, new MoveDestination { Value = new float3(goal.x, 0f, goal.y) });
-                _world.EntityManager.SetComponentEnabled<MoveDestination>(truck, true);
+                truck = SpawnTruckOnDrive(job);
             }, () => _world.EntityManager.DestroyEntity(truck), "DriveSearch.Run", "DrivePlanner.Plan");
 
-            var runs = BenchmarkKit.Warmup + BenchmarkKit.Runs;
             points.Dispose();
             result.Dispose();
             var after = Stats();
+            var failures = after.Drive.Failures - before.Drive.Failures;
+            var summary = SummarizeTruckMoves(before, after, median, undrivable);
+            TestContext.WriteLine(summary);
+            Assert.AreEqual(0, failures, summary);
+        }
+
+        private Entity SpawnTruckOnDrive(in DriveJob job)
+        {
+            var center = SupplyTruck.Chassis.Center(job.Start);
+            var truck = _world.SpawnUnit(1, new float3(center.x, 0f, center.y), new TestUnit
+            {
+                Speed = 8f,
+                Radius = SupplyTruck.Radius,
+            });
+            _world.EntityManager.SetComponentData(truck, SupplyTruck);
+            var yaw = math.atan2(job.Start.Facing.x, job.Start.Facing.y);
+            _world.EntityManager.SetComponentData(truck,
+                LocalTransform.FromPositionRotation(new float3(center.x, 0f, center.y), quaternion.RotateY(yaw)));
+            _world.Tick();
+            var goal = job.Goal.Center;
+            _world.EntityManager.SetComponentData(truck, new MoveDestination { Value = new float3(goal.x, 0f, goal.y) });
+            _world.EntityManager.SetComponentEnabled<MoveDestination>(truck, true);
+            return truck;
+        }
+
+        private static string SummarizeTruckMoves(PathStats before, PathStats after, double median, int undrivable)
+        {
+            var runs = BenchmarkKit.Warmup + BenchmarkKit.Runs;
             var searches = after.Drive.Searches - before.Drive.Searches;
             var failures = after.Drive.Failures - before.Drive.Failures;
             var expansions = after.Drive.Expansions - before.Drive.Expansions;
-            var summary = $"Truck move: {searches / (double)runs:F2} drive searches per move, " +
-                          $"{expansions / runs} expansions per move, failures {failures}, " +
-                          $"pathfinder median {median:F3} ms per move, {undrivable} undrivable pairs redrawn";
-            TestContext.WriteLine(summary);
-            Assert.AreEqual(0, failures, summary);
+            return $"Truck move: {searches / (double)runs:F2} drive searches per move, " +
+                   $"{expansions / runs} expansions per move, failures {failures}, " +
+                   $"pathfinder median {median:F3} ms per move, {undrivable} undrivable pairs redrawn";
         }
     }
 }

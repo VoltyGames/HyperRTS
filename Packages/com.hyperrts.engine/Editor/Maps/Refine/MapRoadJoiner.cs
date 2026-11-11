@@ -77,29 +77,40 @@ namespace HyperRTS.Editor.Maps.Refine
                     continue;
                 }
 
-                var length = MapGeometry.Length(other.Points);
-                var point = MapGeometry.PointAlong(other.Points, along, out var tangent);
-                var continues = along <= EndTouch || along >= length - EndTouch;
-                if (continues)
+                var candidate = Candidate(other, symmetry, end, finish, distance, along);
+                if (candidate != null)
                 {
-                    point = along <= EndTouch ? other.Points[0] : other.Points[^1];
+                    best = candidate;
                 }
-
-                if (!symmetry.InSector(point))
-                {
-                    continue;
-                }
-
-                var behind = Vector2.Dot(point - end, finish) <= 0f;
-                if (behind && distance > Snapped)
-                {
-                    continue;
-                }
-
-                best = new Target(point, tangent, distance, continues);
             }
 
             return best;
+        }
+
+        // A road's end is joined whole, so a touch near either end snaps to that end.
+        private static Target Candidate(MapRefinedRoad other, MapSymmetry symmetry, Vector2 end, Vector2 finish,
+            float distance, float along)
+        {
+            var length = MapGeometry.Length(other.Points);
+            var point = MapGeometry.PointAlong(other.Points, along, out var tangent);
+            var continues = along <= EndTouch || along >= length - EndTouch;
+            if (continues)
+            {
+                point = along <= EndTouch ? other.Points[0] : other.Points[^1];
+            }
+
+            if (!symmetry.InSector(point))
+            {
+                return null;
+            }
+
+            var behind = Vector2.Dot(point - end, finish) <= 0f;
+            if (behind && distance > Snapped)
+            {
+                return null;
+            }
+
+            return new Target(point, tangent, distance, continues);
         }
 
         /// <summary>The line re-laid so it ends on the target, bending only as far back as it needs.</summary>

@@ -90,31 +90,37 @@ namespace HyperRTS.Presentation.Rendering.Parts
             var parts = em.GetBuffer<LinkedEntityGroup>(copy).Reinterpret<Entity>().ToNativeArray(Allocator.Temp);
             foreach (var part in parts)
             {
-                if (em.HasComponent<LocalToWorld>(part))
-                {
-                    var place = em.GetComponentData<LocalToWorld>(part);
-                    em.SetComponentData(part, new LocalToWorld { Value = math.mul(moved, place.Value) });
-                }
-
-                if (em.HasComponent<HiddenBy>(part))
-                {
-                    em.SetComponentData(part, new HiddenBy { Reasons = reasons });
-                }
-
-                if (em.HasComponent<MaterialMeshInfo>(part))
-                {
-                    em.SetComponentEnabled<MaterialMeshInfo>(part, reasons == 0);
-                    Paint(em, painted, part);
-                }
-
-                if (change.Plays && em.HasComponent<PlayingClip>(part))
-                {
-                    em.SetComponentData(part, change.Clip);
-                }
+                Place(em, part, moved, reasons, painted, change);
             }
 
             em.GetBuffer<LinkedEntityGroup>(change.Root).AddRange(parts.Reinterpret<LinkedEntityGroup>());
             em.GetBuffer<ModelCopy>(change.Root).Add(new ModelCopy { Model = change.Model, Copy = copy });
+        }
+
+        private static void Place(EntityManager em, Entity part, in float4x4 moved, HideReason reasons, Entity painted,
+            in Change change)
+        {
+            if (em.HasComponent<LocalToWorld>(part))
+            {
+                var place = em.GetComponentData<LocalToWorld>(part);
+                em.SetComponentData(part, new LocalToWorld { Value = math.mul(moved, place.Value) });
+            }
+
+            if (em.HasComponent<HiddenBy>(part))
+            {
+                em.SetComponentData(part, new HiddenBy { Reasons = reasons });
+            }
+
+            if (em.HasComponent<MaterialMeshInfo>(part))
+            {
+                em.SetComponentEnabled<MaterialMeshInfo>(part, reasons == 0);
+                Paint(em, painted, part);
+            }
+
+            if (change.Plays && em.HasComponent<PlayingClip>(part))
+            {
+                em.SetComponentData(part, change.Clip);
+            }
         }
 
         /// <summary>

@@ -22,8 +22,6 @@ namespace HyperRTS.Simulation.Movement
         {
             var entity = chunk.Entities[index];
             var agent = chunk.Agents[index];
-            ref var transform = ref chunk.Transforms[index];
-            ref var velocity = ref chunk.Velocities[index];
             // Aircraft fly in FlightMovementSystem, which this module can't name without a cycle.
             if (agent.Layer == NavLayer.Air)
             {
@@ -34,17 +32,20 @@ namespace HyperRTS.Simulation.Movement
             // A frozen squad keeps its destination and goes on when it is free.
             if (top <= 0f)
             {
-                velocity.Value = float2.zero;
+                chunk.Velocities[index].Value = float2.zero;
                 return;
             }
 
-            ref var destination = ref chunk.Destinations[index];
+            Drive(chunk, index, agent, top);
+        }
+
+        private void Drive(in MoverChunk chunk, int index, in NavAgent agent, float top)
+        {
+            ref var transform = ref chunk.Transforms[index];
             ref var path = ref chunk.Paths[index];
-            ref var progress = ref chunk.Progresses[index];
             var moving = chunk.Moving(index);
             var waypoints = chunk.Waypoints[index];
-            var deltaTime = Movers.DeltaTime;
-            var maxStep = top * deltaTime;
+            var maxStep = top * Movers.DeltaTime;
             var frame = Movers.Begin(chunk, index, top);
             var from = frame.From;
             var facing = frame.Facing;
@@ -52,28 +53,16 @@ namespace HyperRTS.Simulation.Movement
             var axis = facing * agent.HalfSegment;
 
             var capsule = new NavCapsule(agent.Access(Grid), axis);
-            var step = Plan(ref frame, destination, moving, ref path, waypoints, capsule.Access);
+            var step = Plan(ref frame, chunk.Destinations[index], moving, ref path, waypoints, capsule.Access);
             var heading = frame.Driver.Aim(frame.Heading, !moving.ValueRO, chunk.Aims[index], chunk.Aiming(index));
 
             // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
             var depth = capsule.Depth(from, axis);
-            var sunk = depth > NavTolerances.WallOverlap;
-            var escape = sunk ? capsule.WayOut(from, maxStep) : float2.zero;
+            var escape = depth > NavTolerances.WallOverlap ? capsule.WayOut(from, maxStep) : float2.zero;
             var wanted = from + crowd.Within(step + escape + crowd.PushWithin(maxStep));
             Walk(ref transform, capsule, from, wanted, agent, crowd);
 
-            var hold = Hold(capsule, depth, from, transform.Position.xz, axis, crowd);
-            var reading = new MoveProgress.Reading(transform.Position.xz, facing, agent.Radius, destination.Value,
-                waypoints, path);
-            var stalled = moving.ValueRO && !crowd.ReachedGroup &&
-                          progress.HasGivenUp(reading, waypoints, ref path, hold, deltaTime);
-
-            // A planned manoeuvre stuck in walls replans its way out rather than turning out.
-            if (stalled && frame.Remembers && !PathState.IsPlannedManoeuvre(waypoints))
-            {
-                stalled = !progress.TryTurnOut(ref frame.Driver, hold);
-            }
-
+            var stalled = HasStalled(chunk, index, ref frame, capsule, depth);
             if (moving.ValueRO && (crowd.ReachedGroup || stalled))
             {
                 path.Halt(moving, waypoints);
@@ -88,7 +77,32 @@ namespace HyperRTS.Simulation.Movement
             Movers.Finish(chunk, index, ref frame, reason, step, !transform.Position.xz.Equals(wanted));
 
             Face(ref transform, capsule, agent, facing, heading, moving.ValueRO);
-            velocity.Value = (transform.Position.xz - from) / deltaTime;
+            chunk.Velocities[index].Value = (transform.Position.xz - from) / Movers.DeltaTime;
+        }
+
+        /// <summary>Whether the unit gave up on its way after this frame's walk, turning out of walls when it can.</summary>
+        private readonly bool HasStalled(in MoverChunk chunk, int index, ref MoveFrame frame, in NavCapsule capsule,
+            float depth)
+        {
+            var agent = chunk.Agents[index];
+            var position = chunk.Transforms[index].Position.xz;
+            var crowd = frame.Crowd;
+            var moving = chunk.Moving(index);
+            var waypoints = chunk.Waypoints[index];
+            ref var path = ref chunk.Paths[index];
+            var hold = Hold(capsule, depth, frame.From, position, frame.Facing * agent.HalfSegment, crowd);
+            var reading = new MoveProgress.Reading(position, frame.Facing, agent.Radius, chunk.Destinations[index].Value,
+                waypoints, path);
+            var stalled = moving.ValueRO && !crowd.ReachedGroup &&
+                          chunk.Progresses[index].HasGivenUp(reading, waypoints, ref path, hold, Movers.DeltaTime);
+
+            // A planned manoeuvre stuck in walls replans its way out rather than turning out.
+            if (stalled && frame.Remembers && !PathState.IsPlannedManoeuvre(waypoints))
+            {
+                stalled = !chunk.Progresses[index].TryTurnOut(ref frame.Driver, hold);
+            }
+
+            return stalled;
         }
 
         // A long hull mustn't swing an end into a wall. A mover slides off by the end's sweep, else stays unturned.

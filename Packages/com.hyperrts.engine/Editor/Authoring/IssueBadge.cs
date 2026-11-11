@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEngine.UIElements;

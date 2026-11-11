@@ -53,49 +53,55 @@ namespace HyperRTS.Presentation.Overlays
             var handles = new UnitHandles(entityManager);
             _hovered.TryGet(entityManager, out var hovered);
             _squadRules.TryGet(entityManager, out var squadRules);
+            var pass = new GatherPass(view, style, visibility, now, hovered.Value, squadRules);
             using var chunks = _living.In(entityManager).ToArchetypeChunkArray(Allocator.Temp);
             foreach (var chunk in chunks)
             {
-                var entities = chunk.GetNativeArray(handles.Entities);
-                var owners = chunk.GetNativeArray(ref handles.Owners);
-                var healths = chunk.GetNativeArray(ref handles.Healths);
-                var worlds = chunk.GetNativeArray(ref handles.Worlds);
-                for (var i = 0; i < chunk.Count; i++)
-                {
-                    if (handles.IsInside(chunk, i))
-                    {
-                        continue;
-                    }
-
-                    var health = healths[i];
-                    var focus = new OverlayFocus(handles.IsSelected(chunk, i), entities[i] == hovered.Value,
-                        health.Current < health.Max);
-                    var showsBar = focus.ShowsBar(visibility);
-                    if (!focus.ShowsMarker && !showsBar)
-                    {
-                        continue;
-                    }
-
-                    var unit = handles.Unit(chunk, i);
-                    if (focus.ShowsMarker)
-                    {
-                        var color = style.RelationColor(view.RelationTo(owners[i].Value));
-                        var pose = new MarkerPose(worlds[i], unit.Layer);
-                        var footprint = MarkerSize(unit, style);
-                        var selectedFor = focus.Selected ? _fades.Elapsed(entities[i], now) : 0f;
-                        AddMarker(pose, footprint, color, focus.Selected, selectedFor, style);
-                    }
-
-                    if (showsBar)
-                    {
-                        var position = worlds[i].Position;
-                        var top = EntityExtent.Top(entityManager, entities[i], position, unit.Radius);
-                        AddBar(unit, new Vector3(position.x, top, position.z), health, squadRules, style);
-                    }
-                }
+                GatherChunk(pass, ref handles, chunk);
             }
 
             _fades.EndFrame();
+        }
+
+        private void GatherChunk(in GatherPass pass, ref UnitHandles handles, in ArchetypeChunk chunk)
+        {
+            var entities = chunk.GetNativeArray(handles.Entities);
+            var owners = chunk.GetNativeArray(ref handles.Owners);
+            var healths = chunk.GetNativeArray(ref handles.Healths);
+            var worlds = chunk.GetNativeArray(ref handles.Worlds);
+            for (var i = 0; i < chunk.Count; i++)
+            {
+                if (handles.IsInside(chunk, i))
+                {
+                    continue;
+                }
+
+                var health = healths[i];
+                var focus = new OverlayFocus(handles.IsSelected(chunk, i), entities[i] == pass.Hovered,
+                    health.Current < health.Max);
+                var showsBar = focus.ShowsBar(pass.Visibility);
+                if (!focus.ShowsMarker && !showsBar)
+                {
+                    continue;
+                }
+
+                var unit = handles.Unit(chunk, i);
+                if (focus.ShowsMarker)
+                {
+                    var color = pass.Style.RelationColor(pass.View.RelationTo(owners[i].Value));
+                    var pose = new MarkerPose(worlds[i], unit.Layer);
+                    var footprint = MarkerSize(unit, pass.Style);
+                    var selectedFor = focus.Selected ? _fades.Elapsed(entities[i], pass.Now) : 0f;
+                    AddMarker(pose, footprint, color, focus.Selected, selectedFor, pass.Style);
+                }
+
+                if (showsBar)
+                {
+                    var position = worlds[i].Position;
+                    var top = EntityExtent.Top(pass.View.EntityManager, entities[i], position, unit.Radius);
+                    AddBar(unit, new Vector3(position.x, top, position.z), health, pass.Rules, pass.Style);
+                }
+            }
         }
 
         public void Draw(OverlayStyle style, float uiScale, int layer)
@@ -139,6 +145,27 @@ namespace HyperRTS.Presentation.Overlays
         {
             var bar = new HealthBarData(health, unit.Rank, unit.Radius, SquadBarState.Read(unit, squadRules), style);
             _bars.Add(anchor, bar, style);
+        }
+
+        private readonly struct GatherPass
+        {
+            public readonly MatchView View;
+            public readonly OverlayStyle Style;
+            public readonly HealthBarVisibility Visibility;
+            public readonly float Now;
+            public readonly Entity Hovered;
+            public readonly SquadRules Rules;
+
+            public GatherPass(MatchView view, OverlayStyle style, HealthBarVisibility visibility, float now,
+                Entity hovered, SquadRules rules)
+            {
+                View = view;
+                Style = style;
+                Visibility = visibility;
+                Now = now;
+                Hovered = hovered;
+                Rules = rules;
+            }
         }
 
         // Chunk reads skip the job sync EntityManager.GetComponentData does, so the constructor completes writers first.

@@ -1,6 +1,7 @@
 using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using NUnit.Framework;
 
 namespace HyperRTS.Editor.Tests.Commands

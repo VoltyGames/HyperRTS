@@ -40,42 +40,59 @@ namespace HyperRTS.Presentation.Animation.Rigs
             var all = _rig.GetComponentsInChildren<Transform>(true).Where(_rig.IsBelow).ToList();
             // A part a Machine moves, such as a launcher raised on deploying, isn't posed by the rig too.
             var parts = all.Where(part => !part.TryGetComponent<MachinePartAuthoring>(out _)).ToList();
-            IEnumerable<Transform> Named(string partName) => parts.Where(part => part.name == partName);
-            var launcherWeapon = _rig.WeaponCount > 1 ? 1 : 0;
+            FillAimers(parts);
+            _rig.wheels = KeepTuned(_rig.wheels, parts.Where(part => WheelName.IsMatch(part.name)),
+                part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, _rig.transform) });
+            FillSteering();
+            FillTracks(parts);
+            FillRotorsAndTrailers(parts);
+            FillBody(all, parts);
+        }
 
+        private static IEnumerable<Transform> Named(List<Transform> parts, string partName) =>
+            parts.Where(part => part.name == partName);
+
+        private void FillAimers(List<Transform> parts)
+        {
+            var launcherWeapon = _rig.WeaponCount > 1 ? 1 : 0;
             var turretParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Turret");
             var launcherParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Launcher");
-            _rig.turrets = KeepTuned(_rig.turrets, Named("Turret").Concat(turretParts), part => new TurretSlot
+            _rig.turrets = KeepTuned(_rig.turrets, Named(parts, "Turret").Concat(turretParts), part => new TurretSlot
             {
                 part = part,
                 weapon = NumberedWeapon(part, 0),
             });
-            _rig.elevations = KeepTuned(_rig.elevations, Named("Barrel").Concat(Named("Launcher")).Concat(launcherParts),
+            _rig.elevations = KeepTuned(_rig.elevations,
+                Named(parts, "Barrel").Concat(Named(parts, "Launcher")).Concat(launcherParts),
                 part => new ElevationSlot
                 {
                     part = part,
                     weapon = NumberedWeapon(part, part.name == "Launcher" ? launcherWeapon : 0),
                 });
-            _rig.recoils = KeepTuned(_rig.recoils, Named("Barrel"), part => new RecoilSlot { part = part });
-            _rig.wheels = KeepTuned(_rig.wheels, parts.Where(part => WheelName.IsMatch(part.name)),
-                part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, _rig.transform) });
-            FillSteering();
-            FillTracks(parts);
-            var rotorParts = Named("Rotor_Main").Concat(Named("Rotor_Tail")).Concat(parts.Where(part => PropName.IsMatch(part.name)));
+            _rig.recoils = KeepTuned(_rig.recoils, Named(parts, "Barrel"), part => new RecoilSlot { part = part });
+        }
+
+        private void FillRotorsAndTrailers(List<Transform> parts)
+        {
+            var rotorParts = Named(parts, "Rotor_Main").Concat(Named(parts, "Rotor_Tail"))
+                .Concat(parts.Where(part => PropName.IsMatch(part.name)));
             _rig.rotors = KeepTuned(_rig.rotors, rotorParts, part => new RotorSlot
             {
                 part = part,
                 axis = part.InverseTransformDirection(RotorAxis(part.name)),
             });
-            _rig.trailers = KeepTuned(_rig.trailers, Named("Trailer"), part => new TrailerSlot
+            _rig.trailers = KeepTuned(_rig.trailers, Named(parts, "Trailer"), part => new TrailerSlot
             {
                 part = part,
                 axleDistance = MeasureAxleDistance(part),
             });
+        }
 
+        private void FillBody(List<Transform> all, List<Transform> parts)
+        {
             var raised = all.Except(parts).FirstOrDefault(part => part.name is "Barrel" or "Launcher");
             FillWeaponPivots(raised);
-            _rig.tiltRoot = _rig.IsBuilding ? null : Named("Hull").FirstOrDefault() ?? ModelRoot();
+            _rig.tiltRoot = _rig.IsBuilding ? null : Named(parts, "Hull").FirstOrDefault() ?? ModelRoot();
             _rig.tiltFollower = TiltFollower();
             if (_rig.tiltRoot != null)
             {

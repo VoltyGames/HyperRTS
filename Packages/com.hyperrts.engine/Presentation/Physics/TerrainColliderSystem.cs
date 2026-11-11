@@ -56,14 +56,7 @@ namespace HyperRTS.Presentation.Physics
             if (swapped)
             {
                 Release();
-                _terrain = terrain;
-                _data = terrain.terrainData;
-                _tilesAcross = (_data.heightmapResolution - 2) / TileQuads + 1;
-                _tiles = new Entity[_tilesAcross * _tilesAcross];
-                _colliders = new BlobAssetReference<Unity.Physics.Collider>[_tiles.Length];
-                _dirty = new bool[_tiles.Length];
-                System.Array.Fill(_dirty, true);
-                _anyDirty = true;
+                Adopt(terrain);
             }
 
             if (!_anyDirty)
@@ -73,17 +66,34 @@ namespace HyperRTS.Presentation.Physics
 
             using (RebuildMarker.Auto())
             {
-                for (var i = 0; i < _dirty.Length; i++)
-                {
-                    if (_dirty[i])
-                    {
-                        _dirty[i] = false;
-                        RebuildTile(i % _tilesAcross, i / _tilesAcross);
-                    }
-                }
+                RebuildDirtyTiles();
             }
 
             _anyDirty = false;
+        }
+
+        private void Adopt(Terrain terrain)
+        {
+            _terrain = terrain;
+            _data = terrain.terrainData;
+            _tilesAcross = (_data.heightmapResolution - 2) / TileQuads + 1;
+            _tiles = new Entity[_tilesAcross * _tilesAcross];
+            _colliders = new BlobAssetReference<Unity.Physics.Collider>[_tiles.Length];
+            _dirty = new bool[_tiles.Length];
+            System.Array.Fill(_dirty, true);
+            _anyDirty = true;
+        }
+
+        private void RebuildDirtyTiles()
+        {
+            for (var i = 0; i < _dirty.Length; i++)
+            {
+                if (_dirty[i])
+                {
+                    _dirty[i] = false;
+                    RebuildTile(i % _tilesAcross, i / _tilesAcross);
+                }
+            }
         }
 
         // Only heights already back in CPU memory: the GPU-only dent before a sync has nothing to read yet.

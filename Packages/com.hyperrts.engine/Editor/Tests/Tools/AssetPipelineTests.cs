@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Editor.Environment;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Project;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;

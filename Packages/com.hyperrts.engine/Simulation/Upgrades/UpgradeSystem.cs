@@ -97,22 +97,27 @@ namespace HyperRTS.Simulation.Upgrades
                 var modifiers = chunk.GetBufferAccessorRW(ref Modifiers)[index];
                 for (var i = applied.Count; i < researched.Length; i++)
                 {
-                    // Research that only unlocks something has no effects.
-                    if (!Effects.TryGetBuffer(researched[i].Prefab, out var effects))
-                    {
-                        continue;
-                    }
-
-                    foreach (var effect in effects)
-                    {
-                        if (effect.AppliesTo == 0 || effect.AppliesTo == typeId)
-                        {
-                            modifiers.Add(effect.Modifier);
-                        }
-                    }
+                    AddEffects(researched[i].Prefab, typeId, modifiers);
                 }
 
                 applied.Count = researched.Length;
+            }
+
+            private void AddEffects(Entity research, int typeId, DynamicBuffer<StatModifier> modifiers)
+            {
+                // Research that only unlocks something has no effects.
+                if (!Effects.TryGetBuffer(research, out var effects))
+                {
+                    return;
+                }
+
+                foreach (var effect in effects)
+                {
+                    if (effect.AppliesTo == 0 || effect.AppliesTo == typeId)
+                    {
+                        modifiers.Add(effect.Modifier);
+                    }
+                }
             }
         }
     }

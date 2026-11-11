@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Project;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Resources.Gathering;

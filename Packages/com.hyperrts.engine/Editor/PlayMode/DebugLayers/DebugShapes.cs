@@ -241,6 +241,20 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
                 }
             }
 
+            var indices = TriangleIndices(quads, columns);
+
+            _cellMesh.Clear();
+            _cellMesh.vertices = vertices;
+            _cellMesh.uv = uvs;
+            _cellMesh.colors32 = colors;
+            _cellMesh.triangles = indices;
+            _cellMesh.RecalculateBounds();
+            _drapedGrid = grid;
+            _drapedGround = ground.Blob;
+        }
+
+        private static int[] TriangleIndices(int2 quads, int columns)
+        {
             var indices = new int[quads.x * quads.y * 6];
             var next = 0;
             for (var y = 0; y < quads.y; y++)
@@ -257,14 +271,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
                 }
             }
 
-            _cellMesh.Clear();
-            _cellMesh.vertices = vertices;
-            _cellMesh.uv = uvs;
-            _cellMesh.colors32 = colors;
-            _cellMesh.triangles = indices;
-            _cellMesh.RecalculateBounds();
-            _drapedGrid = grid;
-            _drapedGround = ground.Blob;
+            return indices;
         }
 
         // Run on the main thread: the colours read whole arrays, which a parallel job's index range would forbid.

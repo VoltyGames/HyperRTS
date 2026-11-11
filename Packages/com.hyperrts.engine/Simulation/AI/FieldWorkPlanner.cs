@@ -100,10 +100,12 @@ namespace HyperRTS.Simulation.AI
         private readonly bool TryDig(ref SystemState state, in AITurn turn, in AISnapshot snapshot, FieldWorkRole role,
             float2 centre, float2 along)
         {
-            if (!TryPickDigger(ref state, turn, snapshot, role, centre, out var digger, out var prefab))
+            if (!TryPickDigger(ref state, turn, snapshot, role, centre, out var pick))
             {
                 return false;
             }
+
+            var (digger, prefab) = pick;
 
             var entities = state.EntityManager;
             var stock = entities.GetBuffer<ResourceStock>(turn.Player);
@@ -150,12 +152,12 @@ namespace HyperRTS.Simulation.AI
         /// recovering), and the first such work on its build options.
         /// </summary>
         private readonly bool TryPickDigger(ref SystemState state, in AITurn turn, in AISnapshot snapshot,
-            FieldWorkRole role, float2 centre, out Entity digger, out Entity prefab)
+            FieldWorkRole role, float2 centre, out (Entity Digger, Entity Prefab) pick)
         {
             var entities = state.EntityManager;
             var builders = _builders.Builders;
             var nearest = Closest.None;
-            prefab = Entity.Null;
+            var prefab = Entity.Null;
             for (var i = 0; i < builders.Length; i++)
             {
                 var builder = builders.Entities[i];
@@ -173,7 +175,7 @@ namespace HyperRTS.Simulation.AI
                 }
             }
 
-            digger = nearest.Entity;
+            pick = (nearest.Entity, prefab);
             return nearest.Found;
         }
 

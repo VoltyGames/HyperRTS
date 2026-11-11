@@ -31,22 +31,8 @@ namespace HyperRTS.Simulation.Commands
             var columns = math.min(count, (int)math.ceil(math.sqrt(count * 2f)));
             var rows = (count + columns - 1) / columns;
 
-            var order = new NativeArray<int>(count, Allocator.Temp);
-            var keys = new NativeArray<float>(count, Allocator.Temp);
-            for (var i = 0; i < count; i++)
-            {
-                order[i] = i;
-                keys[i] = -math.dot(positions[i].xz, forward);
-            }
-
-            order.Sort(new ByKey { Keys = keys });
-            var depth = 0f;
-            for (var row = 0; row < rows; row++)
-            {
-                depth += RowDepth(order, row, columns, spacings);
-            }
-
-            var front = depth * 0.5f;
+            var order = FrontFirst(positions, forward, out var keys);
+            var front = TotalDepth(order, rows, columns, spacings) * 0.5f;
             for (var row = 0; row < rows; row++)
             {
                 var start = row * columns;
@@ -60,6 +46,32 @@ namespace HyperRTS.Simulation.Commands
 
             order.Dispose();
             keys.Dispose();
+        }
+
+        private static NativeArray<int> FrontFirst(NativeArray<float3> positions, float2 forward,
+            out NativeArray<float> keys)
+        {
+            var order = new NativeArray<int>(positions.Length, Allocator.Temp);
+            keys = new NativeArray<float>(positions.Length, Allocator.Temp);
+            for (var i = 0; i < positions.Length; i++)
+            {
+                order[i] = i;
+                keys[i] = -math.dot(positions[i].xz, forward);
+            }
+
+            order.Sort(new ByKey { Keys = keys });
+            return order;
+        }
+
+        private static float TotalDepth(NativeArray<int> order, int rows, int columns, NativeArray<float2> spacings)
+        {
+            var depth = 0f;
+            for (var row = 0; row < rows; row++)
+            {
+                depth += RowDepth(order, row, columns, spacings);
+            }
+
+            return depth;
         }
 
         /// <summary>How far apart the slots can lie: twice the farthest slot's distance from the goal.</summary>

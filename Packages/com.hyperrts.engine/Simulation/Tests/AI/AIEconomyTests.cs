@@ -32,8 +32,7 @@ namespace HyperRTS.Simulation.Tests.AI
         public void Prepare()
         {
             _supplies = World.CreateSupplies();
-            var writer = World.Writer(World.Player(2));
-            AIPlayerSetup.Add(writer,
+            AIPlayerSetup.Add(World.Writer(World.Player(2)),
                 new AIPlayer { ThinkInterval = 0.5f, AttackWaveSize = 50, BuildingGap = BuildingGap });
             var map = World.Singleton<MapSettings>();
             map.BuildingGap = BuildingGap;

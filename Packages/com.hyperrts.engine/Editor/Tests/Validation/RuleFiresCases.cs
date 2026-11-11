@@ -1,26 +1,32 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using HyperRTS.Editor.Templates;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Rules.Buildings;
+using HyperRTS.Editor.Validation.Rules.Effects;
+using HyperRTS.Editor.Validation.Rules.Fields;
+using HyperRTS.Editor.Validation.Rules.Match;
+using HyperRTS.Editor.Validation.Rules.Units;
+using HyperRTS.Editor.Validation.Sets;
 using HyperRTS.Presentation.Animation.Figures;
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
+using HyperRTS.Presentation.Effects.Streams;
+using HyperRTS.Presentation.Rendering.Parts;
+using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Airdrops;
+using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Cues.Effects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using HyperRTS.Editor.Templates;
-using HyperRTS.Editor.Validation;
-using HyperRTS.Editor.Validation.Rules;
-using HyperRTS.Presentation.Rendering.Parts;
-using HyperRTS.Simulation.Abilities;
-using HyperRTS.Presentation.Effects.Streams;
-using HyperRTS.Simulation.Airdrops;
-using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources.Gathering;
@@ -28,7 +34,6 @@ using HyperRTS.Simulation.Squads;
 using HyperRTS.Simulation.Squads.Cover;
 using HyperRTS.Simulation.Strikes;
 using HyperRTS.Simulation.Transport;
-using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Upgrades;
 using HyperRTS.Simulation.Veterancy;
 using Unity.Scenes;
@@ -38,11 +43,11 @@ using UnityEngine;
 namespace HyperRTS.Editor.Tests.Validation
 {
     /// <summary>One minimal broken case per rule, keyed by rule type, with a fragment of what it must report.</summary>
-    public partial class RuleFiresTests
+    internal static class RuleFiresCases
     {
         [NoAutoStaticsCleanup]
-        private static readonly Dictionary<Type, (string Expected, Func<RuleFiresTests, object> Build)> Rows =
-            GameplayRows().Concat(EntityRows()).Concat(UnitRows()).Concat(EffectRows()).Concat(SceneRows())
+        public static readonly Dictionary<Type, (string Expected, Func<RuleFiresTests, object> Build)> Rows =
+            GameplayRows().Concat(SquadRows()).Concat(EntityRows()).Concat(UnitRows()).Concat(UnitStatRows()).Concat(EffectRows()).Concat(SceneRows())
                 .ToDictionary(row => row.Rule, row => (row.Expected, row.Build));
 
         private static (Type Rule, string Expected, Func<RuleFiresTests, object> Build) Row<TRule>(string expected,
@@ -74,6 +79,10 @@ namespace HyperRTS.Editor.Tests.Validation
                 weapon.extraWeapons[0].stats.projectilePrefab = f.Make("Shell");
                 return weapon;
             });
+        }
+
+        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> SquadRows()
+        {
             yield return Row<ContainerRule>("exceeds capacity", f =>
             {
                 var container = f.Add<ContainerAuthoring>(EntityTemplates.Building());
@@ -155,6 +164,10 @@ namespace HyperRTS.Editor.Tests.Validation
                 part.to = 0.5f;
                 return part;
             });
+        }
+
+        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> UnitStatRows()
+        {
             yield return Row<SceneryRemainsRule>("show twice", f =>
             {
                 var scenery = f.Add<DestructibleAuthoring>(new GameObject("Fence"));

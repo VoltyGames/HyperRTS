@@ -119,23 +119,7 @@ namespace HyperRTS.Editor.Maps.Look
 
             QualitySettings.SetQualityLevel(_quality, true);
             MapLookQuality.Applied?.Invoke(_quality);
-            var keys = _weathers.Count > 0 ? _weathers : weatherSet.atmospheres.Keys.OrderBy(k => k).ToList();
-            if (_cost)
-            {
-                keys = keys.Take(1).ToList();
-            }
-
-            var zooms = new[] { controller.zoom.min, (controller.zoom.min + controller.zoom.max) * 0.5f, controller.zoom.max };
-            foreach (var weather in keys)
-            {
-                // Throws naming an unknown key before any shot is taken.
-                weatherSet.Find(weather);
-                foreach (var look in _spec.looks)
-                {
-                    _plan.AddRange(zooms.Select(zoom => (weather, look, zoom)));
-                }
-            }
-
+            var keys = PlanShots(weatherSet, controller);
             if (!_graded)
             {
                 _ungraded = Ungraded();
@@ -155,6 +139,28 @@ namespace HyperRTS.Editor.Maps.Look
             }
 
             return true;
+        }
+
+        private List<string> PlanShots(WeatherSet weatherSet, CameraController controller)
+        {
+            var keys = _weathers.Count > 0 ? _weathers : weatherSet.atmospheres.Keys.OrderBy(k => k).ToList();
+            if (_cost)
+            {
+                keys = keys.Take(1).ToList();
+            }
+
+            var zooms = new[] { controller.zoom.min, (controller.zoom.min + controller.zoom.max) * 0.5f, controller.zoom.max };
+            foreach (var weather in keys)
+            {
+                // Throws naming an unknown key before any shot is taken.
+                weatherSet.Find(weather);
+                foreach (var look in _spec.looks)
+                {
+                    _plan.AddRange(zooms.Select(zoom => (weather, look, zoom)));
+                }
+            }
+
+            return keys;
         }
 
         private void Frame((string weather, MapLookSpec look, float zoom) shot)

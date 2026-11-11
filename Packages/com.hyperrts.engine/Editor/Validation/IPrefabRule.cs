@@ -1,3 +1,6 @@
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Sets;
+
 namespace HyperRTS.Editor.Validation
 {
     /// <summary>A rule across the project's prefabs, run by the full validator only. Implementations are discovered.</summary>

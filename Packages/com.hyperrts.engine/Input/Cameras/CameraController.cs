@@ -141,6 +141,17 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
+            ReadViewInput(camera);
+            var speed = moveSpeed * speedMultiplier * _height / 10f;
+            var focus = ClampToMap(_focus + PanDirection() * (speed * Time.unscaledDeltaTime));
+            focus.y = SmoothedGround(focus);
+            var height = Mathf.SmoothDamp(_height, _targetHeight, ref _zoomVelocity, zoom.smoothTime,
+                float.PositiveInfinity, Time.unscaledDeltaTime);
+            PlaceAt(focus, height);
+        }
+
+        private void ReadViewInput(MatchInputActions.CameraActions camera)
+        {
             if (camera.Reset.WasPressedThisFrame())
             {
                 ResetView();
@@ -158,13 +169,6 @@ namespace HyperRTS.Input.Cameras
             }
 
             _yaw += camera.Turn.ReadValue<float>() * turnSpeed * Time.unscaledDeltaTime;
-
-            var speed = moveSpeed * speedMultiplier * _height / 10f;
-            var focus = ClampToMap(_focus + PanDirection() * (speed * Time.unscaledDeltaTime));
-            focus.y = SmoothedGround(focus);
-            var height = Mathf.SmoothDamp(_height, _targetHeight, ref _zoomVelocity, zoom.smoothTime,
-                float.PositiveInfinity, Time.unscaledDeltaTime);
-            PlaceAt(focus, height);
         }
 
         /// <summary>World-space XZ pan from the arrow keys plus edge scrolling, relative to the camera's yaw.</summary>

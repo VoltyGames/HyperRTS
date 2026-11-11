@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
