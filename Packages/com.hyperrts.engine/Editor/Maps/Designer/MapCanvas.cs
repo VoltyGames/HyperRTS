@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.Maps.Designer
         private readonly MapCanvasView _view = new();
         private readonly MapToolContext _context;
         private MapCanvasTools _tools;
+        private readonly MapCanvasInput _input;
         private readonly MapCanvasBackdrop _image;
         private readonly VisualElement _overlay;
         private readonly Label _error;
@@ -38,12 +39,7 @@ namespace HyperRTS.Editor.Maps.Designer
             _error = this.Require<Label>("error");
             _context = new MapToolContext(_view, message => Warned?.Invoke(message));
 
-            RegisterCallback<WheelEvent>(OnWheel);
-            RegisterCallback<PointerDownEvent>(OnPointerDown);
-            RegisterCallback<PointerMoveEvent>(OnPointerMove);
-            RegisterCallback<PointerUpEvent>(OnPointerUp);
-            RegisterCallback<KeyDownEvent>(OnKeyDown);
-            RegisterCallback<KeyUpEvent>(OnKeyUp);
+            _input = new MapCanvasInput(this, _view, _overlay);
         }
 
         /// <summary>A tool's passing warning, such as what a deletion changed.</summary>
@@ -51,6 +47,11 @@ namespace HyperRTS.Editor.Maps.Designer
 
         /// <summary>The pointer moved over the map; the position is in metres.</summary>
         public event Action<Vector2> CursorMoved;
+
+        /// <summary>The tools, once a document is bound.</summary>
+        internal MapCanvasTools Tools => _tools;
+
+        internal void MoveCursor(Vector2 position) => CursorMoved?.Invoke(position);
 
         /// <summary>The pan or zoom changed.</summary>
         public event Action ViewChanged;
@@ -216,7 +217,7 @@ namespace HyperRTS.Editor.Maps.Designer
             OnViewChanged();
         }
 
-        private void OnViewChanged()
+        internal void OnViewChanged()
         {
             var image = _view.ToLocal(PlayableBounds);
             _image.style.left = image.x;

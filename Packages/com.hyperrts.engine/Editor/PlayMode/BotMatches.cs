@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.PlayMode
         public static readonly List<Result> Results = new();
 
         [AutoStaticsCleanup]
-        private static Report _report;
+        private static BotMatchReport _report;
         [AutoStaticsCleanup]
         private static byte[] _bakedSides;
         [AutoStaticsCleanup]
@@ -37,12 +37,22 @@ namespace HyperRTS.Editor.PlayMode
         [AutoStaticsCleanup]
         private static double _nextTick;
 
+        /// <summary>One finished match, for the Play page's table.</summary>
+        public class Result
+        {
+            public string run;
+            public int match;
+            public string winner;
+            public float minutes;
+            public string sides;
+        }
+
         public static bool IsRunning => _report != null;
 
         [AutoStaticsCleanup]
         public static string Status { get; private set; } = "";
 
-        public static void Start(Settings settings)
+        public static void Start(BotMatchSettings settings)
         {
             if (IsRunning || !PlayWorld.TryGetAuthoritative(out var entityManager))
             {
@@ -50,7 +60,7 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             _bakedSides = BakedSides(entityManager, settings.players);
-            _report = new Report
+            _report = new BotMatchReport
             {
                 scene = SceneManager.GetActiveScene().path,
                 started = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -78,8 +88,8 @@ namespace HyperRTS.Editor.PlayMode
                 _report.matches.RemoveAt(_current);
             }
 
-            var path = Write(_report);
-            Status = $"{(stopped ? "Stopped. " : "")}{Summary(_report)}. Report: {path}";
+            var path = _report.Write();
+            Status = $"{(stopped ? "Stopped. " : "")}{_report.Summary()}. Report: {path}";
             Debug.Log($"[HyperRTS] Bot matches done: {Status}");
             LocalGameSpeed.Reset();
             MatchSetupRequest.Clear();
@@ -135,7 +145,7 @@ namespace HyperRTS.Editor.PlayMode
                 });
             }
 
-            _report.matches.Add(new MatchResult { seed = seed });
+            _report.matches.Add(new BotMatchReport.Match { seed = seed });
             _setupSeen = false;
             MatchSetupRequest.Set(setup);
             NetworkSession.StartLocal(SessionScene.ReloadActive);
@@ -204,12 +214,12 @@ namespace HyperRTS.Editor.PlayMode
                 }
             }
 
-            Debug.Log($"[HyperRTS] Bot match {_current + 1}: {Describe(result)}");
+            Debug.Log($"[HyperRTS] Bot match {_current + 1}: {result.Describe()}");
             Results.Add(new Result
             {
                 run = _report.started,
                 match = _current + 1,
-                winner = Winner(result),
+                winner = result.Winner(),
                 minutes = minutes,
                 sides = string.Join(" v ", result.players.GroupBy(player => player.team)
                     .Select(team => string.Join("+", team.Select(player => player.side)))),

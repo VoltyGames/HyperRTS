@@ -11,13 +11,12 @@ namespace HyperRTS.Editor.Animation
     /// A temporary instance of a bone set's rig model, posed by its clips so the baked meshes need no skin and no
     /// object transform. Its bones are the skeleton's, root first, then one per socket.
     /// </summary>
-    internal sealed partial class BoneRig : IDisposable
+    internal sealed class BoneRig : IDisposable
     {
         private const float BindTolerance = 1e-3f;
 
         private readonly GameObject _root;
-        private readonly Transform _rootBone;
-        private readonly Dictionary<AnimationClip, (Vector3 Start, Vector3 End)> _travel = new();
+        private readonly RootTravel _travel;
         private readonly SkinnedMeshRenderer _body;
         private readonly Transform[] _bones;
         private readonly Matrix4x4[] _bindposes;
@@ -32,10 +31,11 @@ namespace HyperRTS.Editor.Animation
             _root.hideFlags = HideFlags.HideAndDontSave;
             _body = Find(_root, skeleton).GetComponent<SkinnedMeshRenderer>()
                 ?? throw new InvalidOperationException($"Node '{skeleton}' of '{model.name}' has no skinned mesh to name the skeleton.");
-            _rootBone = Find(_root, rootBone);
+            var rootNode = Find(_root, rootBone);
+            _travel = new RootTravel(_root, rootNode);
             _bones = _body.bones;
             _bindposes = _body.sharedMesh.bindposes;
-            if (_bones[0] != _rootBone)
+            if (_bones[0] != rootNode)
             {
                 throw new InvalidOperationException($"The skeleton of '{model.name}' starts with '{_bones[0].name}', not its root bone '{rootBone}', which the shader sets the upper body on.");
             }
@@ -75,6 +75,42 @@ namespace HyperRTS.Editor.Animation
             ? found
             : throw new InvalidOperationException($"The skeleton of '{_root.name}' has no bone '{bone}'.");
 
+        public bool HasBone(string bone) => _index.ContainsKey(bone);
+
+        /// <summary>Per bone, in texture order, the bone above it in the rig: a socket's is its carrier, the root's -1.</summary>
+        public int[] Parents()
+        {
+            var parents = new int[_upper.Length];
+            for (var i = 0; i < _bones.Length; i++)
+            {
+                parents[i] = CarryingBone(_bones[i].parent) ?? -1;
+            }
+
+            for (var i = 0; i < _sockets.Count; i++)
+            {
+                parents[_bones.Length + i] = CarryingBone(_sockets[i].Node.parent) ?? -1;
+            }
+
+            return parents;
+        }
+
+        /// <summary>Per bone, from the skeleton mesh's rest space into the bone's: the matrix a skin matrix ends with.</summary>
+        public Matrix4x4[] BindPoses()
+        {
+            var binds = new Matrix4x4[_upper.Length];
+            for (var i = 0; i < _bones.Length; i++)
+            {
+                binds[i] = _bindposes[i];
+            }
+
+            for (var i = 0; i < _sockets.Count; i++)
+            {
+                binds[_bones.Length + i] = _sockets[i].Bind;
+            }
+
+            return binds;
+        }
+
         /// <summary>
         /// Every bone's skin matrix with <paramref name="clip"/> sampled at <paramref name="time"/>. In place removes the
         /// root bone's ground travel, the straight line from its first to its last position, and keeps its height and sway.
@@ -82,10 +118,7 @@ namespace HyperRTS.Editor.Animation
         /// </summary>
         public Matrix4x4[] Pose(AnimationClip clip, float time, bool inPlace, bool bothHands)
         {
-            // Measured before sampling: the first measure of a clip samples its ends, which would replace this pose.
-            var drift = inPlace ? Drift(clip, time) : Vector3.zero;
-            Sample(clip, time);
-            _rootBone.position -= _root.transform.TransformVector(drift);
+            _travel.Sample(clip, time, inPlace);
 
             var toRoot = _root.transform.worldToLocalMatrix;
             var pose = new Matrix4x4[_upper.Length];
@@ -102,43 +135,8 @@ namespace HyperRTS.Editor.Animation
             return pose;
         }
 
-        /// <summary>Ground speed in m/s below which a clip counts as having none.</summary>
-        public const float MinGroundSpeed = 0.1f;
-
-        /// <summary>Metres per second the root bone travels over <paramref name="clip"/> played <paramref name="speed"/> times faster: the ground an in place pose removes. Under <see cref="MinGroundSpeed"/> is sway, not travel, and reads 0.</summary>
-        public float GroundSpeed(AnimationClip clip, float speed)
-        {
-            var (start, end) = Travel(clip);
-            var drift = _root.transform.TransformVector(end - start);
-            drift.y = 0f;
-            var ground = drift.magnitude * speed / clip.length;
-            return ground < MinGroundSpeed ? 0f : ground;
-        }
-
-        private void Sample(AnimationClip clip, float time) => clip.SampleAnimation(_rootBone.parent.gameObject, time);
-
-        /// <summary>The root's ground travel from the start of <paramref name="clip"/> to <paramref name="time"/> along its straight line, in the model root's space.</summary>
-        private Vector3 Drift(AnimationClip clip, float time)
-        {
-            var (start, end) = Travel(clip);
-            var drift = Vector3.Lerp(start, end, Mathf.Clamp01(time / clip.length)) - start;
-            drift.y = 0f;
-            return drift;
-        }
-
-        private (Vector3 Start, Vector3 End) Travel(AnimationClip clip)
-        {
-            if (!_travel.TryGetValue(clip, out var ends))
-            {
-                Sample(clip, 0f);
-                var start = _root.transform.InverseTransformPoint(_rootBone.position);
-                Sample(clip, clip.length);
-                ends = (start, _root.transform.InverseTransformPoint(_rootBone.position));
-                _travel.Add(clip, ends);
-            }
-
-            return ends;
-        }
+        /// <summary>Metres per second the root bone travels over <paramref name="clip"/> played <paramref name="speed"/> times faster: the ground an in place pose removes.</summary>
+        public float GroundSpeed(AnimationClip clip, float speed) => _travel.GroundSpeed(clip, speed);
 
         /// <summary>
         /// A skinned node's mesh moved into the skeleton mesh's rest space, with its skin in vertex channels.

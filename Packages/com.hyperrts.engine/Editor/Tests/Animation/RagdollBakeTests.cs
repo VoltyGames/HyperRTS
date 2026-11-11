@@ -7,19 +7,14 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Tests.Animation
 {
-    public partial class BoneRigTests
+    /// <summary>The ragdoll bake writes the rest pose and the body each bone rides on, and refuses a missing bone.</summary>
+    public class RagdollBakeTests : BoneRigFixture
     {
-        private BoneAnimationSet RagdollSet(string handBody)
+        private static RagdollBake Bake(string handBody) => new("Soldier", new List<RagdollBone>
         {
-            var set = Track(ScriptableObject.CreateInstance<BoneAnimationSet>());
-            set.name = "Soldier";
-            set.ragdoll = new List<RagdollBone>
-            {
-                new() { bone = "Hips" },
-                new() { bone = handBody, parentBone = "Hips" },
-            };
-            return set;
-        }
+            new() { bone = "Hips" },
+            new() { bone = handBody, parentBone = "Hips" },
+        }, RagdollTuning.Default);
 
         [Test]
         public void RagdollBake_WritesParentsBindPosesAndTheBodyEachBoneRidesOn()
@@ -27,7 +22,7 @@ namespace HyperRTS.Editor.Tests.Animation
             using var rig = Rig();
             var table = Track(ScriptableObject.CreateInstance<BoneClipTable>());
 
-            RagdollSet("Hand").WriteRagdoll(rig, table);
+            Bake("Hand").Write(rig, table);
 
             CollectionAssert.AreEqual(new[] { -1, 0, 0, 1 }, table.parents, "Hips, Hand, OffHand, then the Grip on the hand");
             CollectionAssert.AreEqual(new[] { false, true, false, true }, table.upperBones);
@@ -43,7 +38,7 @@ namespace HyperRTS.Editor.Tests.Animation
             using var rig = Rig();
             var table = Track(ScriptableObject.CreateInstance<BoneClipTable>());
 
-            var error = Assert.Throws<InvalidOperationException>(() => RagdollSet("Foot").WriteRagdoll(rig, table));
+            var error = Assert.Throws<InvalidOperationException>(() => Bake("Foot").Write(rig, table));
 
             StringAssert.Contains("'Soldier'", error.Message);
         }

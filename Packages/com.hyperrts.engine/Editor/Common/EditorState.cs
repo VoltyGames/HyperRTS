@@ -57,7 +57,7 @@ namespace HyperRTS.Editor.Common
 
         public LaunchChoice launch = new();
 
-        public BotMatches.Settings bots = new();
+        public BotMatchSettings bots = new();
 
         public EffectPreviewSettings effectPreview = new();
 

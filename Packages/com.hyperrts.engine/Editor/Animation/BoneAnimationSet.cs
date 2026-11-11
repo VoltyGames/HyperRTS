@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Animation
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Bone Animation Set", fileName = "BoneAnimationSet")]
     [HelpURL(HyperRTSDocs.Presentation)]
-    public partial class BoneAnimationSet : ScriptableObject
+    public class BoneAnimationSet : ScriptableObject
     {
         public const string GeneratedFolder = "Generated";
         private const int MaxFrames = 16384;
@@ -76,6 +76,14 @@ namespace HyperRTS.Editor.Animation
 
             [Tooltip("The other hand's bone, which Support meets.")]
             public string supportHand;
+        }
+
+        /// <summary>A rig bone standing for one human body part.</summary>
+        [Serializable]
+        public struct HumanBone
+        {
+            public HumanBodyBones part;
+            public string bone;
         }
 
         [Tooltip("The rig model: the skeleton, the socket nodes and the parts that name no model.")]
@@ -140,7 +148,7 @@ namespace HyperRTS.Editor.Animation
             var pose = BoneFrames.Sample(posed, plans);
 
             var table = MakeTable(posed, plans, bones, pose.Bounds(meshes));
-            WriteRagdoll(posed, table);
+            new RagdollBake(name, ragdoll, ragdollTuning).Write(posed, table);
             var written = new List<string>
             {
                 Write(pose.Texture(bones.Count), TexturePath),
@@ -169,6 +177,16 @@ namespace HyperRTS.Editor.Animation
                     Resources.UnloadAsset(asset);
                 }
             }
+        }
+
+        /// <summary>Replaces the ragdoll with eleven bodies on a humanoid rig's pelvis, spine, head, arms and legs.</summary>
+        [ContextMenu("Fill ragdoll from rig")]
+        public void FillRagdoll()
+        {
+            var bodies = new HumanRagdoll(this).Build();
+            Undo.RecordObject(this, "Fill ragdoll from rig");
+            ragdoll = bodies;
+            EditorUtility.SetDirty(this);
         }
 
         private Mesh MakeMesh(BoneRig posed, Part part)
