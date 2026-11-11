@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Geometry
 {
     /// <summary>Quaternion helpers the simulation shares.</summary>
     public static class Rotations

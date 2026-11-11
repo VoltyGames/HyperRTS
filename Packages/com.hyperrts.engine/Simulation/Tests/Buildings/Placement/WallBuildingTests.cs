@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Mathematics;

@@ -1,6 +1,8 @@
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues.Surfaces;
 using Unity.Collections;
 using Unity.Entities;

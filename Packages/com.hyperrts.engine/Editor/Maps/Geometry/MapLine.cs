@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Common.Cells;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Mathematics;
 using UnityEngine;
 

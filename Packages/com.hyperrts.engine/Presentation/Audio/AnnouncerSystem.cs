@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Common;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Announcements;

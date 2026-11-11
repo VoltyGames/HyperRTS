@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using Unity.Entities;

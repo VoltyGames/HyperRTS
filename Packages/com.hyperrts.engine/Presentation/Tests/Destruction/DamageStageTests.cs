@@ -2,7 +2,7 @@ using System.Linq;
 using System.Reflection;
 using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Presentation.Rendering.Parts;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Destruction;
 using NUnit.Framework;
 using Unity.Collections;

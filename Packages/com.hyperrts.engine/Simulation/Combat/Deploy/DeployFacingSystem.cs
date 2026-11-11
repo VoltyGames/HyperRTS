@@ -1,5 +1,8 @@
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Geometry;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;

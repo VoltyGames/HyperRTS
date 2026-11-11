@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Destruction;

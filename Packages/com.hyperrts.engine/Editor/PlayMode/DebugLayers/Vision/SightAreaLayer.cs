@@ -1,6 +1,6 @@
 using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common.Cells;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Simulation.Vision.Sight;

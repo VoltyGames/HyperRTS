@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Stats;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;

@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Surfaces;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision.Detection;
 using HyperRTS.Simulation.Vision.Sight;

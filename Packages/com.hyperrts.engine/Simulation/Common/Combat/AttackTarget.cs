@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Combat
 {
     /// <summary>The entity being attacked. While enabled, combat owns the unit's movement (chase, stop to fire).</summary>
     public struct AttackTarget : IComponentData, IEnableableComponent

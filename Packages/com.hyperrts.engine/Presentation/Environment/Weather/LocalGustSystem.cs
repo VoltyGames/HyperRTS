@@ -5,6 +5,7 @@ using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Vision;

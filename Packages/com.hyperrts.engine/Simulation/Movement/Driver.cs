@@ -1,5 +1,5 @@
 using Unity.Entities;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;

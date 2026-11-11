@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.MatchStart;
 using HyperRTS.Simulation.Navigation.Agents;

@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Animation.Figures;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;

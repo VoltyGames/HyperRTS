@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;

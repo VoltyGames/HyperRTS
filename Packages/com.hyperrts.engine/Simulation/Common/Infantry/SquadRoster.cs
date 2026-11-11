@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Combat;
 using Unity.Entities;
 using Unity.Mathematics;
 

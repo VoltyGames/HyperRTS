@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Systems;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

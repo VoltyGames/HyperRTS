@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Geometry
 {
     /// <summary>World coordinates in 16 bits each, for compact replay and network data.</summary>
     public static class QuantizedPosition

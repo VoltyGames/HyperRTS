@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using Unity.Entities;

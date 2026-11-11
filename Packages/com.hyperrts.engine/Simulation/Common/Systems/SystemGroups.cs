@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Systems
 {
     // Frame order: Order (AI first), Movement, Combat, Production, Lifecycle. GameplayPhaseGroup pauses them.
     // Every phase exists on clients too, but systems default to the authoritative worlds (local and server);

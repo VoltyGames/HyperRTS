@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;

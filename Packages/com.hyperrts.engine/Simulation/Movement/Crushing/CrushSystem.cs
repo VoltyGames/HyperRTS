@@ -1,5 +1,7 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
@@ -125,7 +127,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
                 var victim = entry.Entity;
                 if (Destructibles.TryGetComponent(victim, out var destructible))
                 {
-                    if (Common.Health.IsAlive(Health, victim))
+                    if (Common.Combat.Health.IsAlive(Health, victim))
                     {
                         FlattenScenery(entry, destructible.Crush);
                     }
@@ -138,7 +140,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
                     return;
                 }
 
-                if (Common.Health.IsAlive(Health, victim))
+                if (Common.Combat.Health.IsAlive(Health, victim))
                 {
                     CrushUnit(entry, crushable.Crush);
                 }

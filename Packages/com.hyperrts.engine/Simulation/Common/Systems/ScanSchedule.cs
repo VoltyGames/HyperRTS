@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Systems
 {
     /// <summary>
     /// Spreads per-entity scans over frames: each entity is due on one frame in <see cref="Interval"/>, the same for

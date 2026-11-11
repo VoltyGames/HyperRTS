@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Core;

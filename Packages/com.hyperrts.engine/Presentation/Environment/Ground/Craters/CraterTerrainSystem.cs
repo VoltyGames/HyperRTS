@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Environment.Ground.Stamps;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

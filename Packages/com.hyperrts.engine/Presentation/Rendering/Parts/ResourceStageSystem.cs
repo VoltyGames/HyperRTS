@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Resources.Gathering;
 using Unity.Burst;
 using Unity.Entities;

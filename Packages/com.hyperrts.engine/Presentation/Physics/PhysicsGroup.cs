@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using Unity.Entities;
 using Unity.Physics;
 using Unity.Physics.Systems;

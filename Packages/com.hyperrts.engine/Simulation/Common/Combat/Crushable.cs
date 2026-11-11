@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Combat
 {
     /// <summary>A unit an enemy vehicle with a big enough <c>Crusher</c> kills by driving over it.</summary>
     public struct Crushable : IComponentData

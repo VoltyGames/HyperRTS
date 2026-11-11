@@ -2,7 +2,6 @@ using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Burst;
 using Unity.Collections;

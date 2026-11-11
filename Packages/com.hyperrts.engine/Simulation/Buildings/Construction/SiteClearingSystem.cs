@@ -1,4 +1,7 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -166,7 +169,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 }
 
                 // Scenery dying this frame leaves remains through the death path; the next frame clears them.
-                if (Common.Health.IsAlive(Health, victim) && !Cleared.HasComponent(victim))
+                if (Common.Combat.Health.IsAlive(Health, victim) && !Cleared.HasComponent(victim))
                 {
                     Ecb.AddComponent<SceneryCleared>(victim);
                 }

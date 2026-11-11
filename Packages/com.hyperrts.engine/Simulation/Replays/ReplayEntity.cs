@@ -1,4 +1,5 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Geometry;
 using System.Runtime.InteropServices;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Mathematics;

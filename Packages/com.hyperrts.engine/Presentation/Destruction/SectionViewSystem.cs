@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Rendering.Parts;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Destruction;

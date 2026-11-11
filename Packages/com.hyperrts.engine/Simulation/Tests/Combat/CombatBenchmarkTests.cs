@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Vision;
 using NUnit.Framework;
 using Unity.Entities;

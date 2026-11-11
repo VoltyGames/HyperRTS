@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Tests

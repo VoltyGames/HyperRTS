@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Common.Players;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Systems
 {
     /// <summary>A repeating timer kept in a component's <c>Elapsed</c> field.</summary>
     public static class IntervalTimer

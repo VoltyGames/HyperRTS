@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 
 namespace HyperRTS.Presentation.Overlays.Bars
 {

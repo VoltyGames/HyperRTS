@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Power;

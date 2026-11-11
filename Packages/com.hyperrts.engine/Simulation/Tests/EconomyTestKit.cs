@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;

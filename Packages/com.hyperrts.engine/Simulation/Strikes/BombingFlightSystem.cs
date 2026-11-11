@@ -7,6 +7,8 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;

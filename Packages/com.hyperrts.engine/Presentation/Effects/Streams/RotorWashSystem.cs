@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Vision;

@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Buildings
 {
     /// <summary>Why an entity is <see cref="Offline"/>. Several can hold at once.</summary>
     [Flags]

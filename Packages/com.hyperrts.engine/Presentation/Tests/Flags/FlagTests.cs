@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Flags;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision.Fog;

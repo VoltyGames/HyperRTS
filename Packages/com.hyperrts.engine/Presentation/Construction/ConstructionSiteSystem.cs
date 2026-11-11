@@ -4,6 +4,8 @@ using HyperRTS.Presentation.Quality;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Buildings.Construction;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Systems
 {
     /// <summary>World filters for simulation systems: single player, a dedicated server, a host, and clients.</summary>
     public static class SimulationWorlds

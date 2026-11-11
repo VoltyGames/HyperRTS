@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Production;

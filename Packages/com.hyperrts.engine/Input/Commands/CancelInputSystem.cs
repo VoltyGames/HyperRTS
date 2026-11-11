@@ -1,6 +1,6 @@
 using HyperRTS.Input.Placement;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using Unity.Entities;
 using UnityEngine.InputSystem;
 

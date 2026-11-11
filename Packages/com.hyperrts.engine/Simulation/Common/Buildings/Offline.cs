@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Buildings
 {
     /// <summary>
     /// Enabled while an entity is out of action: weapons, abilities and fields stop and production halts (low power

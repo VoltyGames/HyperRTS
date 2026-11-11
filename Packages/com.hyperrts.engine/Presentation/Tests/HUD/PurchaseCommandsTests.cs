@@ -3,6 +3,7 @@ using System.Linq;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Tests;

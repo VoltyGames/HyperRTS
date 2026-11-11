@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Replays;
 using NUnit.Framework;
 using Unity.Collections;

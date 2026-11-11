@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 

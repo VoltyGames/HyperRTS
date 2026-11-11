@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using System;
 using System.Collections.Generic;
 using Unity.Mathematics;

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Drive

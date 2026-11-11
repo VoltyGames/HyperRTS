@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Geometry
 {
     /// <summary>A level heading in one byte, 256 steps from +Z toward +X, for compact network and simulation data.</summary>
     public static class HeadingByte

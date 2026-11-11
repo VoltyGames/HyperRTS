@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Prefabs;
 using System.Collections.Generic;
 using HyperRTS.Network.Common;

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;

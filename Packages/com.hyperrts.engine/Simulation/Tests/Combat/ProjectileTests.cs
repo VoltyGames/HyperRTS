@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Infantry;
 using NUnit.Framework;
 using Unity.Entities;

@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Effects.Rig;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Death;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -4,6 +4,7 @@ using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;

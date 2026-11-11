@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Combat
 {
     /// <summary>
     /// Part of the map anyone can wreck (fences, trees, houses, bridges): splash from every side hits it, explicit

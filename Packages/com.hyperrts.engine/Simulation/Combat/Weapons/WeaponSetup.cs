@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using Unity.Collections;
 using Unity.Mathematics;
 

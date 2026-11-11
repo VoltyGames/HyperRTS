@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Squads;

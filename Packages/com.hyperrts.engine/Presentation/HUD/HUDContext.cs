@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;

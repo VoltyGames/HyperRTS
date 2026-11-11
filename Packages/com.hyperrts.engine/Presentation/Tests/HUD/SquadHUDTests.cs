@@ -6,6 +6,7 @@ using HyperRTS.Presentation.HUD.Commands;
 using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Squads;
 using NUnit.Framework;

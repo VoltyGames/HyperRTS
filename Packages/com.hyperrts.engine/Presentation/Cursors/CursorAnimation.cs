@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Cursors

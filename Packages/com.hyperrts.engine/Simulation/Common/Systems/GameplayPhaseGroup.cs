@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Systems
 {
     /// <summary>
     /// A phase group that plays the game. Pausing and restoring them all at once keeps a new phase paused

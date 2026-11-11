@@ -1,5 +1,6 @@
 using HyperRTS.Network.Joining;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Simulation.Vision.Sight;

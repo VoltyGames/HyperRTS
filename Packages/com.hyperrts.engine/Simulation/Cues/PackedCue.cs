@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Vision.Sight;
 using System.Runtime.InteropServices;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Cues

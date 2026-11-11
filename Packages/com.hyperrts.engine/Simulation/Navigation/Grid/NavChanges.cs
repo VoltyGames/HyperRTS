@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
 using Unity.Mathematics;

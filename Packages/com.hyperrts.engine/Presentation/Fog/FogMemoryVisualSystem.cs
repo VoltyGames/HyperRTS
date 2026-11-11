@@ -1,6 +1,6 @@
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Presentation.Rendering.LitTeam;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Vision.Fog;

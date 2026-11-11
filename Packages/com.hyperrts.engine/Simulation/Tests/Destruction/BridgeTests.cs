@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Orders;

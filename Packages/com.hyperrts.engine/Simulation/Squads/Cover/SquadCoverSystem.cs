@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Vision.Sight;

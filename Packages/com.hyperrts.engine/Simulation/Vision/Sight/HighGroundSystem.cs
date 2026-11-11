@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;

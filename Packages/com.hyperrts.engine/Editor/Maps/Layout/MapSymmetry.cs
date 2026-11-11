@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

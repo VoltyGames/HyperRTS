@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Stats;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;

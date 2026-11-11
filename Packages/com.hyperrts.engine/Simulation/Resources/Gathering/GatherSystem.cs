@@ -1,4 +1,7 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Geometry;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;

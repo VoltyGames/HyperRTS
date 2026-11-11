@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Orders;

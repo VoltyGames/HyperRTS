@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using Unity.Burst;
 using Unity.Collections;
@@ -43,7 +44,7 @@ namespace HyperRTS.Simulation.Transport.Garrison
             {
                 for (var i = cargo.Length - 1; i >= 0; i--)
                 {
-                    if (!Common.Health.IsAlive(Health, cargo[i].Unit))
+                    if (!Common.Combat.Health.IsAlive(Health, cargo[i].Unit))
                     {
                         cargo.RemoveAt(i);
                     }

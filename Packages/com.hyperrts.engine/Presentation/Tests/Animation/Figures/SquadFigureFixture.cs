@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using NUnit.Framework;
 using Unity.Core;

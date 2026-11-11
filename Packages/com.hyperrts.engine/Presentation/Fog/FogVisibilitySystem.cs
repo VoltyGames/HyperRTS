@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;

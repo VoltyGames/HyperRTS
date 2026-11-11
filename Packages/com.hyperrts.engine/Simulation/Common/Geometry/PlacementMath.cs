@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Geometry
 {
     /// <summary>The default facing shared by placed buildings, start items and spawned sides.</summary>
     public static class PlacementMath

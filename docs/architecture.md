@@ -46,7 +46,7 @@ in local and client worlds. Single player needs `OverrideAutomaticNetcodeBootstr
 
 ## Frame order
 
-Every gameplay system sits in a phase group from `Simulation/Common/SystemGroups.cs`, never in
+Every gameplay system sits in a phase group from `Simulation/Common/Systems/SystemGroups.cs`, never in
 `SimulationSystemGroup` directly. Only network plumbing such as join and relevancy sits there.
 
 | Group | Runs |

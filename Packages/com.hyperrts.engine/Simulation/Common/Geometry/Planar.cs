@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common.Geometry
 {
     /// <summary>Direction and segment math on the XZ plane, angles counter-clockwise from x toward y.</summary>
     public static class Planar

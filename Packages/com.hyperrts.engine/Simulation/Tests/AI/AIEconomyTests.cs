@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Orders;
