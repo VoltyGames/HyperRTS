@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
@@ -18,16 +17,13 @@ namespace HyperRTS.Simulation.Movement
         [ReadOnly] public SpatialIndex Index;
         public RightOfWay RightOfWay;
         [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
-
-        // Each unit writes only its own state.
-        [NativeDisableParallelForRestriction] public ComponentLookup<LocomotionState> States;
         public float DeltaTime;
 
         public readonly MoveFrame Begin(Entity entity, in LocalTransform transform, in NavAgent agent, in Owner owner,
-            in MoveDestination destination, bool moving, float top, float2 velocity)
+            in MoveDestination destination, bool moving, float top, float2 velocity,
+            LocomotionState drive, bool remembers)
         {
             var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
-            var remembers = States.TryGetComponent(entity, out var drive);
             if (!remembers)
             {
                 // Without state, last frame's movement stands in for last frame's steering choice.
@@ -42,7 +38,6 @@ namespace HyperRTS.Simulation.Movement
             var pace = crowd.WalksForInfantry ? math.min(top, RightOfWay.WalkingPace) : top;
             return new MoveFrame
             {
-                Entity = entity,
                 From = from,
                 Facing = facing,
                 Velocity = velocity,
@@ -54,7 +49,8 @@ namespace HyperRTS.Simulation.Movement
         }
 
         /// <summary>Stores the handling state for a mover that keeps one.</summary>
-        public void End(ref MoveFrame frame, float2 position, float2 step, bool walled)
+        public readonly void End(ref MoveFrame frame, float2 position, float2 step, bool walled,
+            ref LocomotionState drive)
         {
             if (!frame.Remembers)
             {
@@ -65,7 +61,7 @@ namespace HyperRTS.Simulation.Movement
             frame.Driver.State.Hit(moved, step, walled);
             frame.Driver.State.WaitOnInfantry(frame.Crowd.IsHeldByInfantry, !frame.Crowd.IsNearInfantry,
                 math.length(moved), DeltaTime);
-            States[frame.Entity] = frame.Driver.State;
+            drive = frame.Driver.State;
         }
     }
 }

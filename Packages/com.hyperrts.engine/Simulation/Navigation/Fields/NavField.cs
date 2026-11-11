@@ -15,6 +15,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
     {
         public const float MaxDistance = 8f;
         public const int SectorCells = 16;
+        public const int SectorArea = SectorCells * SectorCells;
 
         /// <summary>Per field slot, then per cell.</summary>
         public NativeArray<float> Distances;
@@ -132,12 +133,23 @@ namespace HyperRTS.Simulation.Navigation.Fields
             Distances = grown;
         }
 
-        /// <summary>
-        /// Rebuilds one key's values over one sector from the cells and scenery. Each call writes only that sector's
-        /// cells, so calls for different sectors or keys may run at once.
-        /// </summary>
+        /// <summary>Solves one key over one sector and stores it. Not for parallel jobs.</summary>
         public void Rebuild(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key, int slot,
             int sector, ref DistanceTransform transform)
+        {
+            var values = new NativeArray<float>(SectorArea, Allocator.Temp);
+            Solve(cells, scenery, key, sector, ref transform, values, 0);
+            Store(slot, sector, values, 0);
+            values.Dispose();
+        }
+
+        /// <summary>
+        /// Solves one key over one sector into <see cref="SectorArea"/> values of <paramref name="values"/> from
+        /// <paramref name="offset"/>, one per cell row by row, for <see cref="Store"/>, so parallel jobs write only
+        /// their own range.
+        /// </summary>
+        public readonly void Solve(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key,
+            int sector, ref DistanceTransform transform, NativeArray<float> values, int offset)
         {
             var first = Layout.Origin(sector);
             var origin = first - ReachCells;
@@ -150,13 +162,27 @@ namespace HyperRTS.Simulation.Navigation.Fields
             }
 
             transform.Solve(true);
-            Write(slot, first, transform, true);
+            Fill(values, offset, first, transform, true);
             transform.Solve(false);
-            Write(slot, first, transform, false);
+            Fill(values, offset, first, transform, false);
+        }
+
+        /// <summary>Stores the values <see cref="Solve"/> wrote at <paramref name="offset"/> for one slot and sector.</summary>
+        public void Store(int slot, int sector, in NativeArray<float> values, int offset)
+        {
+            var first = Layout.Origin(sector);
+            var width = math.min(SectorCells, Grid.Size.x - first.x);
+            var rows = math.min(SectorCells, Grid.Size.y - first.y);
+            for (var row = 0; row < rows; row++)
+            {
+                var destination = slot * CellCount + Grid.Index(first + new int2(0, row));
+                NativeArray<float>.Copy(values, offset + row * SectorCells, Distances, destination, width);
+            }
         }
 
         // From centre distance to edge distance: half a cell less, signed by side, within the cap.
-        private void Write(int slot, int2 first, in DistanceTransform transform, bool open)
+        private readonly void Fill(NativeArray<float> values, int offset, int2 first, in DistanceTransform transform,
+            bool open)
         {
             var origin = first - ReachCells;
             foreach (var cell in Grid.Cells(first, first + SectorCells - 1))
@@ -168,7 +194,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
                 }
 
                 var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * Grid.CellSize, MaxDistance);
-                Distances[slot * CellCount + Grid.Index(cell)] = open ? edge : -edge;
+                values[offset + (cell.y - first.y) * SectorCells + cell.x - first.x] = open ? edge : -edge;
             }
         }
 

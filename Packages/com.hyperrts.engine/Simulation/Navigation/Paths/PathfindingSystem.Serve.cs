@@ -4,7 +4,7 @@ using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Entities;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             }
         }
 
-        /// <summary>Serves one task per index, writing only that task's unit.</summary>
+        /// <summary>Serves one task per index, keeping its waypoints at that index of <see cref="PathPlan.Served"/>.</summary>
         [BurstCompile]
         private struct ServeJob : IJobParallelForDefer
         {
@@ -39,9 +39,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             [ReadOnly] public NativeArray<GroupField> Fields;
             [ReadOnly] public NavGrid Grid;
             public NativeArray<PathResult> Results;
-            [NativeDisableParallelForRestriction] public BufferLookup<PathWaypoint> WaypointLookup;
-            [NativeDisableParallelForRestriction] public ComponentLookup<PathState> StateLookup;
-            public double Now;
+            public NativeArray<UnsafeList<PathWaypoint>> Served;
 
             public void Execute(int index)
             {
@@ -51,33 +49,35 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 var points = new NativeList<float3>(16, Allocator.Temp);
                 var route = Route(task, access, points);
                 var result = new PathResult { Expansions = route.x, Searches = route.y };
-                var waypoints = WaypointLookup[request.Entity];
-                waypoints.Clear();
                 var drives = task.Query.Route != PathRoute.Stay && DrivePlanner.Applies(request.Agent);
+                var path = new UnsafeList<PathWaypoint>(points.Length, Allocator.TempJob);
                 // A path that needs a drive search leaves its drawn corners for the drive job to plan in turn.
-                result.DrivePending = drives && !TryDrive(request, access, points, waypoints);
-                if (!drives || result.DrivePending)
+                var planned = drives && TryDrive(request, access, points, ref path);
+                result.DrivePending = drives && !planned;
+                if (!planned)
                 {
                     foreach (var point in points)
                     {
-                        waypoints.Add(new PathWaypoint { Position = new float3(point.x, request.Start.y, point.z) });
+                        path.Add(new PathWaypoint { Position = new float3(point.x, request.Start.y, point.z) });
                     }
                 }
 
+                Served[index] = path;
                 points.Dispose();
                 Results[index] = result;
-                if (!result.DrivePending)
-                {
-                    StateLookup[request.Entity] = ReadyState(request, task, Grid, waypoints, Now);
-                }
             }
 
-            // Writes the path when its sweeps need no search, as most do.
+            // Plans the path when its sweeps need no search, as most do.
             private static bool TryDrive(in PathRequest request, in NavAccess access, NativeList<float3> points,
-                DynamicBuffer<PathWaypoint> waypoints)
+                ref UnsafeList<PathWaypoint> path)
             {
                 var planner = DrivePlanner.WithoutSearch(Allocator.Temp);
-                var done = planner.Plan(request, access, points, waypoints, 0, true);
+                var done = planner.Plan(request, access, points, 0, true);
+                if (done)
+                {
+                    path.AddRange(planner.Waypoints);
+                }
+
                 planner.Dispose();
                 return done;
             }

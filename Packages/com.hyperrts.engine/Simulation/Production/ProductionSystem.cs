@@ -5,9 +5,10 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 
@@ -22,6 +23,7 @@ namespace HyperRTS.Simulation.Production
     [UpdateAfter(typeof(PopulationSystem))]
     public partial struct ProductionSystem : ISystem
     {
+        private EntityQuery _producers;
         private PrefabSpawner _spawner;
         private EventWriter<UnitProduced> _produced;
         private EventWriter<ResearchCompleted> _researched;
@@ -30,6 +32,9 @@ namespace HyperRTS.Simulation.Production
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
+            _producers = new EntityQueryBuilder(Allocator.Temp).WithAll<Producer, ProductionQueueItem, LocalTransform, Owner>()
+                .WithPresent<RallyPoint>().WithNone<ConstructionProgress, Dead>()
+                .Build(ref state);
             _spawner = new PrefabSpawner(ref state);
             _produced = new EventWriter<UnitProduced>(ref state);
             _researched = new EventWriter<ResearchCompleted>(ref state);
@@ -45,7 +50,8 @@ namespace HyperRTS.Simulation.Production
             _researched.Update(ref state);
 
             var allocator = state.WorldUpdateAllocator;
-            new ProduceJob
+            var changes = new NativeList<ProducerChange>(allocator);
+            state.Dependency = new ProduceJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 LowPowerRate = SystemAPI.GetSingleton<MatchRules>().LowPowerProductionRate,
@@ -63,16 +69,54 @@ namespace HyperRTS.Simulation.Production
                 PadUserLookup = SystemAPI.GetComponentLookup<HomePad>(true),
                 Produced = _produced,
                 Researched = _researched,
+                Entities = SystemAPI.GetEntityTypeHandle(),
+                Producers = SystemAPI.GetComponentTypeHandle<Producer>(true),
+                Queues = SystemAPI.GetBufferTypeHandle<ProductionQueueItem>(true),
+                Changes = changes,
+                Transforms = SystemAPI.GetComponentTypeHandle<LocalTransform>(true),
+                Owners = SystemAPI.GetComponentTypeHandle<Owner>(true),
+                Rallies = SystemAPI.GetComponentTypeHandle<RallyPoint>(true),
+            }.Schedule(_producers, state.Dependency);
+            state.Dependency = new ApplyJob
+            {
+                Changes = changes,
                 Producers = SystemAPI.GetComponentLookup<Producer>(),
                 Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(),
-            }.Schedule();
+            }.Schedule(state.Dependency);
+        }
+
+        /// <summary>A producer whose state changed this frame, and whether its head item left the queue.</summary>
+        private struct ProducerChange
+        {
+            public Entity Entity;
+            public Producer Producer;
+            public bool Finished;
+        }
+
+        /// <summary>Writes only the producers that changed, so idle ones keep their change version.</summary>
+        [BurstCompile]
+        private struct ApplyJob : IJob
+        {
+            [ReadOnly] public NativeList<ProducerChange> Changes;
+            public ComponentLookup<Producer> Producers;
+            public BufferLookup<ProductionQueueItem> Queues;
+
+            public void Execute()
+            {
+                foreach (var change in Changes)
+                {
+                    Producers[change.Entity] = change.Producer;
+                    if (change.Finished)
+                    {
+                        Queues[change.Entity].RemoveAt(0);
+                    }
+                }
+            }
         }
 
         /// <summary>Single-threaded so units finished this frame count against the population cap right away.</summary>
         [BurstCompile]
-        [WithNone(typeof(ConstructionProgress), typeof(Dead))]
-        [WithPresent(typeof(RallyPoint))]
-        private partial struct ProduceJob : IJobEntity
+        private struct ProduceJob : IJobChunk
         {
             public float DeltaTime;
             public float LowPowerRate;
@@ -90,46 +134,68 @@ namespace HyperRTS.Simulation.Production
             public EventWriter<UnitProduced> Produced;
             public EventWriter<ResearchCompleted> Researched;
 
-            // Written only when a producer works, so idle producers keep their change version.
-            [NativeDisableContainerSafetyRestriction] public ComponentLookup<Producer> Producers;
-            [NativeDisableContainerSafetyRestriction] public BufferLookup<ProductionQueueItem> Queues;
+            [ReadOnly] public EntityTypeHandle Entities;
+            [ReadOnly] public ComponentTypeHandle<Producer> Producers;
+            [ReadOnly] public ComponentTypeHandle<LocalTransform> Transforms;
+            [ReadOnly] public ComponentTypeHandle<Owner> Owners;
+            [ReadOnly] public ComponentTypeHandle<RallyPoint> Rallies;
 
-            private void Execute(Entity entity, in Producer idle, in DynamicBuffer<ProductionQueueItem> queue,
-                in LocalTransform transform, in Owner owner, in RallyPoint rally, EnabledRefRO<RallyPoint> hasRally)
+            [ReadOnly] public BufferTypeHandle<ProductionQueueItem> Queues;
+            public NativeList<ProducerChange> Changes;
+
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
+            {
+                var entities = chunk.GetNativeArray(Entities);
+                var producers = chunk.GetNativeArray(ref Producers);
+                var queues = chunk.GetBufferAccessorRO(ref Queues);
+                var transforms = chunk.GetNativeArray(ref Transforms);
+                var owners = chunk.GetNativeArray(ref Owners);
+                var rallies = chunk.GetNativeArray(ref Rallies);
+                var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (enumerator.NextEntityIndex(out var i))
+                {
+                    var before = producers[i];
+                    var producer = before;
+                    var hasRally = chunk.IsComponentEnabled(ref Rallies, i);
+                    var finished = Work(entities[i], ref producer, queues[i], transforms[i], owners[i], rallies[i],
+                        hasRally);
+                    if (finished || producer.Elapsed != before.Elapsed || producer.Released != before.Released)
+                    {
+                        Changes.Add(new ProducerChange { Entity = entities[i], Producer = producer, Finished = finished });
+                    }
+                }
+            }
+
+            /// <summary>Whether the head of the queue finished and must leave it.</summary>
+            private bool Work(Entity entity, ref Producer producer, in DynamicBuffer<ProductionQueueItem> queue,
+                in LocalTransform transform, in Owner owner, in RallyPoint rally, bool hasRally)
             {
                 if (queue.IsEmpty)
                 {
-                    if (idle.Elapsed != 0f)
-                    {
-                        var reset = idle;
-                        reset.Elapsed = 0f;
-                        Producers[entity] = reset;
-                    }
-
-                    return;
+                    producer.Elapsed = 0f;
+                    return false;
                 }
 
                 var prefab = queue[0].Prefab;
                 var producible = ProducibleLookup[prefab];
                 if (!HasRoomFor(owner.Value, producible.Population) || !TryReservePad(entity, prefab, out var pad))
                 {
-                    return;
+                    return false;
                 }
 
                 // Low power only slows production; any other reason (an EMP) halts it.
                 var offline = OfflineLookup.TryGetComponent(entity, out var found) ? found : default;
                 if (offline.HasReasonOtherThan(OfflineReason.Unpowered))
                 {
-                    return;
+                    return false;
                 }
 
-                var producer = idle;
                 var lowPower = (offline.Reasons & OfflineReason.Unpowered) != 0;
                 producer.Elapsed += DeltaTime * producer.Speed * (lowPower ? LowPowerRate : 1f);
                 if (producer.Elapsed < producible.BuildTime)
                 {
-                    Producers[entity] = producer;
-                    return;
+                    return false;
                 }
 
                 if (ResearchLookup.HasComponent(prefab))
@@ -139,7 +205,7 @@ namespace HyperRTS.Simulation.Production
                 else
                 {
                     var position = SpawnPoint(entity, producer, transform, pad);
-                    var unit = Spawn(prefab, position, transform, owner, hasRally.ValueRO, rally.Position);
+                    var unit = Spawn(prefab, position, transform, owner, hasRally, rally.Position);
                     DockOnPad(unit, prefab, entity, pad);
                     SpawnedPopulation[owner.Value] += producible.Population;
                     producer.Released++;
@@ -149,9 +215,8 @@ namespace HyperRTS.Simulation.Production
                     });
                 }
 
-                Queues[entity].RemoveAt(0);
                 producer.Elapsed = 0f;
-                Producers[entity] = producer;
+                return true;
             }
 
             private void RecordResearch(Entity producer, byte owner, ProductionQueueItem item)

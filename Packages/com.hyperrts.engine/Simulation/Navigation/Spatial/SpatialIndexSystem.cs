@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Burst;
-using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -16,13 +15,15 @@ namespace HyperRTS.Simulation.Navigation.Spatial
 {
     /// <summary>
     /// Rebuilds the <see cref="SpatialIndex"/> from every living entity with health and an owner, except passengers
-    /// inside a container: snapshots in parallel, then a counting sort by cell.
+    /// inside a container: snapshots in parallel over the listed entities, then a counting sort by cell.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(MovementSystemGroup), OrderFirst = true)]
     public partial struct SpatialIndexSystem : ISystem
     {
         public const float CellSize = 8f;
+
+        private const int BatchSize = 64;
 
         private static readonly ProfilerMarker IndexMarker = new("SpatialIndexSystem.Index");
 
@@ -75,25 +76,32 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 _snapshots.Resize(count, NativeArrayOptions.ClearMemory);
             }
 
+            // Listed in query order, so each snapshot keeps the slot the entity's place in the query gives it.
+            var entities = _indexed.ToEntityListAsync(state.WorldUpdateAllocator, state.Dependency, out var listed);
             state.Dependency = new SnapshotJob
             {
+                Entities = entities.AsDeferredJobArray(),
                 Snapshots = _snapshots.AsArray(),
+                TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 AgentLookup = SystemAPI.GetComponentLookup<NavAgent>(true),
                 ObstacleLookup = SystemAPI.GetComponentLookup<NavObstacle>(true),
                 BuildingLookup = SystemAPI.GetComponentLookup<BuildingTag>(true),
                 MovingLookup = SystemAPI.GetComponentLookup<MoveDestination>(true),
                 ArrivalLookup = SystemAPI.GetComponentLookup<Arrival>(true),
                 VelocityLookup = SystemAPI.GetComponentLookup<Velocity>(true),
-            }.ScheduleParallel(_indexed, state.Dependency);
+            }.ScheduleBatch(count, BatchSize, listed);
             state.Dependency = new SortJob { Index = index, Snapshots = _snapshots.AsArray() }
                 .Schedule(state.Dependency);
         }
 
         [BurstCompile]
-        private partial struct SnapshotJob : IJobEntity, IJobEntityChunkBeginEnd
+        private struct SnapshotJob : IJobParallelForBatch
         {
-            // Each entity writes only its own slot.
-            [NativeDisableParallelForRestriction] public NativeArray<SpatialEntry> Snapshots;
+            [ReadOnly] public NativeArray<Entity> Entities;
+            public NativeArray<SpatialEntry> Snapshots;
+            [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
+            [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public ComponentLookup<NavAgent> AgentLookup;
             [ReadOnly] public ComponentLookup<NavObstacle> ObstacleLookup;
             [ReadOnly] public ComponentLookup<BuildingTag> BuildingLookup;
@@ -101,20 +109,22 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             [ReadOnly] public ComponentLookup<Arrival> ArrivalLookup;
             [ReadOnly] public ComponentLookup<Velocity> VelocityLookup;
 
-            // Per chunk, not per unit, so the marker costs little and the profiler stays readable.
-            public bool OnChunkBegin(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
-                in v128 chunkEnabledMask)
+            // Per batch, not per unit, so the marker costs little and the profiler stays readable.
+            public void Execute(int startIndex, int count)
             {
                 IndexMarker.Begin();
-                return true;
+                var end = math.min(startIndex + count, Entities.Length);
+                for (var slot = startIndex; slot < end; slot++)
+                {
+                    Snapshots[slot] = Snapshot(Entities[slot]);
+                }
+
+                IndexMarker.End();
             }
 
-            public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
-                in v128 chunkEnabledMask, bool chunkWasExecuted) => IndexMarker.End();
-
-            private void Execute([EntityIndexInQuery] int slot, Entity entity, in LocalTransform transform,
-                in Owner owner)
+            private SpatialEntry Snapshot(Entity entity)
             {
+                var transform = TransformLookup[entity];
                 // Without an agent or a destination it is round, unspaced, still, on the ground and in no group.
                 var isUnit = AgentLookup.TryGetComponent(entity, out var agent);
                 MovingLookup.TryGetComponent(entity, out var destination);
@@ -127,7 +137,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     Entity = entity,
                     Position = transform.Position,
                     Radius = EntityRadius.Get(entity, AgentLookup, ObstacleLookup),
-                    Owner = owner.Value,
+                    Owner = OwnerLookup[entity].Value,
                     IsUnit = isUnit,
                     IsMoving = moving,
                     IsArrived = ArrivalLookup.HasEnabled(entity) && arrival.Reason != ArrivalReason.AtGroupmate,
@@ -143,7 +153,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     IsVehicle = agent.IsVehicle,
                 };
                 entry.FixReach();
-                Snapshots[slot] = entry;
+                return entry;
             }
         }
     }

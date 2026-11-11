@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             plan.Dispose(state.Dependency);
         }
 
-        // Fields first, as traces read them; then every task at once, each writing only its own unit.
+        // Fields first, as traces read them; then every task at once, each keeping its waypoints for the drive job to store.
         private JobHandle Serve(ref SystemState state, in NavGrid grid, NativeList<PathRequest> requests,
             in PathPlan plan, double now, JobHandle dependency)
         {
@@ -107,15 +107,14 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 Results = plan.Results.AsDeferredJobArray(),
                 Fields = fields,
                 Grid = grid,
-                WaypointLookup = SystemAPI.GetBufferLookup<PathWaypoint>(false),
-                StateLookup = SystemAPI.GetComponentLookup<PathState>(false),
-                Now = now,
+                Served = plan.Served.AsDeferredJobArray(),
             }.Schedule(plan.Tasks, 1, dependency);
             dependency = new DriveJob
             {
                 Requests = requests.AsDeferredJobArray(),
                 Tasks = plan.Tasks.AsDeferredJobArray(),
                 Results = plan.Results.AsDeferredJobArray(),
+                Served = plan.Served.AsDeferredJobArray(),
                 Grid = grid,
                 WaypointLookup = SystemAPI.GetBufferLookup<PathWaypoint>(false),
                 StateLookup = SystemAPI.GetComponentLookup<PathState>(false),

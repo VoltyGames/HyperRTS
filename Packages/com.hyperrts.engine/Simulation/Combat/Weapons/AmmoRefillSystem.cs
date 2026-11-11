@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Combat.Weapons
@@ -12,32 +12,53 @@ namespace HyperRTS.Simulation.Combat.Weapons
     [UpdateBefore(typeof(WeaponFireSystem))]
     public partial struct AmmoRefillSystem : ISystem
     {
+        private EntityQuery _mounted;
+
         [BurstCompile]
-        public void OnUpdate(ref SystemState state)
+        public void OnCreate(ref SystemState state)
         {
-            new ReloadJob
-            {
-                DeltaTime = SystemAPI.Time.DeltaTime,
-                Mounts = SystemAPI.GetBufferLookup<WeaponMount>(),
-            }.ScheduleParallel();
+            _mounted = new EntityQueryBuilder(Allocator.Temp).WithAllRW<WeaponMount>().WithNone<Dead>()
+                .Build(ref state);
         }
 
         [BurstCompile]
-        [WithNone(typeof(Dead))]
-        private partial struct ReloadJob : IJobEntity
+        public void OnUpdate(ref SystemState state)
+        {
+            state.Dependency = new ReloadJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime,
+                Mounts = SystemAPI.GetBufferTypeHandle<WeaponMount>(),
+            }.ScheduleParallel(_mounted, state.Dependency);
+        }
+
+        [BurstCompile]
+        private struct ReloadJob : IJobChunk
         {
             public float DeltaTime;
+            public BufferTypeHandle<WeaponMount> Mounts;
 
-            // Written only for the unit being run, and only when a reload moves, so idle chunks keep their version.
-            [NativeDisableParallelForRestriction]
-            [NativeDisableContainerSafetyRestriction]
-            public BufferLookup<WeaponMount> Mounts;
-
-            private void Execute(Entity entity, in DynamicBuffer<WeaponMount> mounts)
+            // The writable accessor is taken only for a unit that reloads, so idle chunks keep their version.
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                if (WeaponMount.NeedsReload(mounts, docked: false))
+                var read = chunk.GetBufferAccessorRO(ref Mounts);
+                var write = default(BufferAccessor<WeaponMount>);
+                var writable = false;
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
                 {
-                    WeaponMount.Reload(Mounts[entity], DeltaTime, docked: false);
+                    if (!WeaponMount.NeedsReload(read[i], docked: false))
+                    {
+                        continue;
+                    }
+
+                    if (!writable)
+                    {
+                        write = chunk.GetBufferAccessorRW(ref Mounts);
+                        writable = true;
+                    }
+
+                    WeaponMount.Reload(write[i], DeltaTime, docked: false);
                 }
             }
         }

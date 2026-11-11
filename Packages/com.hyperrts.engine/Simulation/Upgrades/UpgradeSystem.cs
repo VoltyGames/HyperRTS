@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -17,55 +18,82 @@ namespace HyperRTS.Simulation.Upgrades
     [UpdateAfter(typeof(ProductionSystem))]
     public partial struct UpgradeSystem : ISystem
     {
+        private EntityQuery _owned;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
+            _owned = new EntityQueryBuilder(Allocator.Temp).WithAllRW<AppliedUpgrades>().WithAll<EntityInfo, Owner>()
+                .Build(ref state);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-
-            new ApplyJob
+            state.Dependency = new ApplyJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Researched = SystemAPI.GetBufferLookup<CompletedResearch>(true),
                 Effects = SystemAPI.GetBufferLookup<UpgradeEffect>(true),
-                Modifiers = SystemAPI.GetBufferLookup<StatModifier>(false),
-            }.ScheduleParallel();
+                Applied = SystemAPI.GetComponentTypeHandle<AppliedUpgrades>(),
+                Infos = SystemAPI.GetComponentTypeHandle<EntityInfo>(true),
+                Owners = SystemAPI.GetComponentTypeHandle<Owner>(true),
+                Modifiers = SystemAPI.GetBufferTypeHandle<StatModifier>(),
+            }.ScheduleParallel(_owned, state.Dependency);
         }
 
         [BurstCompile]
-        private partial struct ApplyJob : IJobEntity
+        private struct ApplyJob : IJobChunk
         {
             public PlayerRegistry Players;
             [ReadOnly] public BufferLookup<CompletedResearch> Researched;
             [ReadOnly] public BufferLookup<UpgradeEffect> Effects;
+            public ComponentTypeHandle<AppliedUpgrades> Applied;
+            [ReadOnly] public ComponentTypeHandle<EntityInfo> Infos;
+            [ReadOnly] public ComponentTypeHandle<Owner> Owners;
+            public BufferTypeHandle<StatModifier> Modifiers;
 
-            // Each entity writes only its own buffer, and only when its set changes, so stat change filters stay quiet.
-            [NativeDisableParallelForRestriction] public BufferLookup<StatModifier> Modifiers;
-
-            private void Execute(Entity entity, ref AppliedUpgrades applied, in EntityInfo info, in Owner owner)
+            // The writable modifiers are taken only for an entity whose set changes, so stat change filters stay quiet.
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                if (applied.Owner != owner.Value)
+                var applied = chunk.GetNativeArray(ref Applied);
+                var infos = chunk.GetNativeArray(ref Infos);
+                var owners = chunk.GetNativeArray(ref Owners);
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
                 {
-                    Strip(entity, applied);
-                    applied = new AppliedUpgrades { Owner = owner.Value };
+                    var current = applied[i];
+                    Apply(chunk, i, ref current, infos[i].TypeId, owners[i].Value);
+                    applied[i] = current;
+                }
+            }
+
+            private void Apply(in ArchetypeChunk chunk, int index, ref AppliedUpgrades applied, int typeId, byte owner)
+            {
+                var hasModifiers = chunk.Has(ref Modifiers);
+                if (applied.Owner != owner)
+                {
+                    if (applied.Count > 0 && hasModifiers)
+                    {
+                        StatMath.RemoveKind(chunk.GetBufferAccessorRW(ref Modifiers)[index], StatSourceKind.Upgrade);
+                    }
+
+                    applied = new AppliedUpgrades { Owner = owner };
                 }
 
-                if (!Researched.TryGetBuffer(Players[owner.Value], out var researched))
+                if (!Researched.TryGetBuffer(Players[owner], out var researched))
                 {
                     return;
                 }
 
-                if (applied.Count >= researched.Length || !Modifiers.HasBuffer(entity))
+                if (applied.Count >= researched.Length || !hasModifiers)
                 {
                     return;
                 }
 
-                var modifiers = Modifiers[entity];
+                var modifiers = chunk.GetBufferAccessorRW(ref Modifiers)[index];
                 for (var i = applied.Count; i < researched.Length; i++)
                 {
                     // Research that only unlocks something has no effects.
@@ -76,7 +104,7 @@ namespace HyperRTS.Simulation.Upgrades
 
                     foreach (var effect in effects)
                     {
-                        if (effect.AppliesTo == 0 || effect.AppliesTo == info.TypeId)
+                        if (effect.AppliesTo == 0 || effect.AppliesTo == typeId)
                         {
                             modifiers.Add(effect.Modifier);
                         }
@@ -84,14 +112,6 @@ namespace HyperRTS.Simulation.Upgrades
                 }
 
                 applied.Count = researched.Length;
-            }
-
-            private void Strip(Entity entity, in AppliedUpgrades applied)
-            {
-                if (applied.Count > 0 && Modifiers.TryGetBuffer(entity, out var modifiers))
-                {
-                    StatMath.RemoveKind(modifiers, StatSourceKind.Upgrade);
-                }
             }
         }
     }

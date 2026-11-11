@@ -5,7 +5,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Transforms;
 
@@ -123,7 +122,7 @@ namespace HyperRTS.Simulation.Vision.Sight
             }
 
             _previous = new NativeArray<SightCell>(grid.Cells.Length, Allocator.Persistent);
-            state.Dependency = new GroundJob { Blockers = grid, Terrain = terrain }
+            state.Dependency = new GroundJob { Cells = grid.Cells, Grid = grid.Grid, Terrain = terrain }
                 .Schedule(grid.Cells.Length, 1024, state.Dependency);
 
             if (crops.Blob.IsCreated)

@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Burst;
 using Unity.Collections;
@@ -55,15 +56,15 @@ namespace HyperRTS.Simulation.Vision.Sight
         [BurstCompile]
         private struct GroundJob : IJobParallelFor
         {
-            [NativeDisableParallelForRestriction] public SightBlockers Blockers;
+            public NativeArray<SightCell> Cells;
+            public CellGrid Grid;
             public TerrainHeight Terrain;
 
             public void Execute(int index)
             {
-                var grid = Blockers.Grid;
-                var cell = Blockers.Cells[index];
-                cell.Ground = Terrain.Height(grid.Center(grid.Cell(index)));
-                Blockers.Cells[index] = cell;
+                var cell = Cells[index];
+                cell.Ground = Terrain.Height(Grid.Center(Grid.Cell(index)));
+                Cells[index] = cell;
             }
         }
 

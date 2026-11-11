@@ -1,5 +1,3 @@
-using HyperRTS.Simulation.Navigation.Agents;
-using Unity.Entities;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Movement
@@ -10,7 +8,6 @@ namespace HyperRTS.Simulation.Movement
     /// </summary>
     internal struct MoveFrame
     {
-        public Entity Entity;
         public float2 From;
         public float2 Facing;
 

@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -18,7 +19,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
         public const int DriveBudget = DriveSearch.MaxExpansions;
 
         /// <summary>
-        /// Plans the paths whose sweeps found a stretch to search, one after another in task order, so the budget
+        /// Gives each served unit its waypoints and, once planned, its ready state; then plans the paths whose sweeps found a stretch to search, one after another in task order, so the budget
         /// binds and the same paths wait every run.
         /// </summary>
         [BurstCompile]
@@ -28,12 +29,18 @@ namespace HyperRTS.Simulation.Navigation.Paths
             [ReadOnly] public NativeArray<PathTask> Tasks;
             [ReadOnly] public NavGrid Grid;
             public NativeArray<PathResult> Results;
+            public NativeArray<UnsafeList<PathWaypoint>> Served;
             public BufferLookup<PathWaypoint> WaypointLookup;
             public ComponentLookup<PathState> StateLookup;
             public double Now;
 
             public void Execute()
             {
+                for (var i = 0; i < Tasks.Length; i++)
+                {
+                    Store(i);
+                }
+
                 var points = new NativeList<float3>(64, Allocator.Temp);
                 var planner = new DrivePlanner(Allocator.Temp);
                 var spent = 0;
@@ -49,6 +56,26 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 planner.Dispose();
             }
 
+            private void Store(int index)
+            {
+                var task = Tasks[index];
+                var request = Requests[task.Request];
+                var served = Served[index];
+                var waypoints = WaypointLookup[request.Entity];
+                waypoints.Clear();
+                waypoints.EnsureCapacity(served.Length);
+                foreach (var waypoint in served)
+                {
+                    waypoints.Add(waypoint);
+                }
+
+                served.Dispose();
+                if (!Results[index].DrivePending)
+                {
+                    StateLookup[request.Entity] = ReadyState(request, task, Grid, waypoints, Now);
+                }
+            }
+
             // The drawn corners the serve job left in the buffer, planned within what the frame has left.
             private int Plan(int index, int spent, NativeList<float3> points, ref DrivePlanner planner)
             {
@@ -62,13 +89,15 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 }
 
                 var access = request.Agent.Access(Grid);
-                var done = planner.Plan(request, access, points, waypoints, DriveBudget - spent, spent > 0);
+                var done = planner.Plan(request, access, points, DriveBudget - spent, spent > 0);
                 var result = Results[index];
                 result.Drive = planner.Counts;
                 result.DrivePending = !done;
                 Results[index] = result;
                 if (done)
                 {
+                    waypoints.Clear();
+                    waypoints.AddRange(planner.Waypoints);
                     var state = ReadyState(request, task, Grid, waypoints, Now);
                     state.PartlyPlanned = planner.PartlyPlanned;
                     StateLookup[request.Entity] = state;

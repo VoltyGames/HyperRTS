@@ -1,6 +1,7 @@
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Drive;
-using HyperRTS.Simulation.Navigation.Fields;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 
 namespace HyperRTS.Simulation.Navigation.Paths
@@ -65,12 +66,16 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         public NativeList<PathResult> Results;
 
+        /// <summary>Each task's waypoints as served, until the drive job stores them.</summary>
+        public NativeList<UnsafeList<PathWaypoint>> Served;
+
         public PathPlan(Allocator allocator)
         {
             Tasks = new NativeList<PathTask>(64, allocator);
             Sectors = new NativeList<int>(256, allocator);
             Builds = new NativeList<int>(4, allocator);
             Results = new NativeList<PathResult>(64, allocator);
+            Served = new NativeList<UnsafeList<PathWaypoint>>(64, allocator);
         }
 
         public void Dispose(JobHandle dependency)
@@ -79,6 +84,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             Sectors.Dispose(dependency);
             Builds.Dispose(dependency);
             Results.Dispose(dependency);
+            Served.Dispose(dependency);
         }
     }
 }

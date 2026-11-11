@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Navigation.Spatial;
@@ -11,7 +10,6 @@ using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Transforms;
 
@@ -30,10 +28,17 @@ namespace HyperRTS.Simulation.Movement
         private static readonly ProfilerMarker MoveMarker = new("MovementSystem.Move");
 
         private RightOfWay _rightOfWay;
+        private EntityQuery _movers;
 
         public void OnCreate(ref SystemState state)
         {
             _rightOfWay = new RightOfWay(ref state);
+            // Present, not enabled: arrival and facing are switched here, so disabled ones must still match.
+            _movers = new EntityQueryBuilder(Allocator.Temp)
+                .WithAllRW<LocalTransform>().WithAllRW<PathState>().WithAllRW<PathWaypoint>()
+                .WithAllRW<MoveProgress>().WithAllRW<Velocity>()
+                .WithAll<MovementSpeed>().WithAll<NavAgent>().WithAll<Owner>()
+                .WithPresentRW<MoveDestination>().WithPresentRW<Arrival>().WithPresentRW<FacingGoal>().WithNone<Inside>().Build(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
@@ -51,205 +56,93 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
-            new MoveJob
+            state.Dependency = new MoveJob
             {
-                Movers = new Movers
+                Mover = new GroundMover
                 {
-                    Index = index,
-                    RightOfWay = _rightOfWay,
-                    Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
-                    States = SystemAPI.GetComponentLookup<LocomotionState>(false),
-                    DeltaTime = SystemAPI.Time.DeltaTime,
+                    Movers = new Movers
+                    {
+                        Index = index,
+                        RightOfWay = _rightOfWay,
+                        Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
+                        DeltaTime = SystemAPI.Time.DeltaTime,
+                    },
+                    Grid = grid,
+                    Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 },
-                Grid = grid,
-                Paces = SystemAPI.GetComponentLookup<Pace>(true),
-            }.ScheduleParallel();
+                Entities = SystemAPI.GetEntityTypeHandle(),
+                Transforms = SystemAPI.GetComponentTypeHandle<LocalTransform>(),
+                Speeds = SystemAPI.GetComponentTypeHandle<MovementSpeed>(true),
+                Agents = SystemAPI.GetComponentTypeHandle<NavAgent>(true),
+                Owners = SystemAPI.GetComponentTypeHandle<Owner>(true),
+                Destinations = SystemAPI.GetComponentTypeHandle<MoveDestination>(),
+                Paths = SystemAPI.GetComponentTypeHandle<PathState>(),
+                Waypoints = SystemAPI.GetBufferTypeHandle<PathWaypoint>(),
+                Progresses = SystemAPI.GetComponentTypeHandle<MoveProgress>(),
+                Arrivals = SystemAPI.GetComponentTypeHandle<Arrival>(),
+                Velocities = SystemAPI.GetComponentTypeHandle<Velocity>(),
+                Aims = SystemAPI.GetComponentTypeHandle<FacingGoal>(),
+                Drives = SystemAPI.GetComponentTypeHandle<LocomotionState>(),
+            }.ScheduleParallel(_movers, state.Dependency);
         }
 
+        // One job for units with and without a LocomotionState (infantry start each frame from rest).
         [BurstCompile]
-        [WithNone(typeof(Inside))]
-        [WithPresent(typeof(MoveDestination), typeof(Arrival), typeof(FacingGoal))]
-        private partial struct MoveJob : IJobEntity, IJobEntityChunkBeginEnd
+        private struct MoveJob : IJobChunk
         {
-            public Movers Movers;
-            [ReadOnly] public NavGrid Grid;
-            [ReadOnly] public ComponentLookup<Pace> Paces;
+            public GroundMover Mover;
+            [ReadOnly] public EntityTypeHandle Entities;
+            public ComponentTypeHandle<LocalTransform> Transforms;
+            [ReadOnly] public ComponentTypeHandle<MovementSpeed> Speeds;
+            [ReadOnly] public ComponentTypeHandle<NavAgent> Agents;
+            [ReadOnly] public ComponentTypeHandle<Owner> Owners;
+            public ComponentTypeHandle<MoveDestination> Destinations;
+            public ComponentTypeHandle<PathState> Paths;
+            public BufferTypeHandle<PathWaypoint> Waypoints;
+            public ComponentTypeHandle<MoveProgress> Progresses;
+            public ComponentTypeHandle<Arrival> Arrivals;
+            public ComponentTypeHandle<Velocity> Velocities;
+            public ComponentTypeHandle<FacingGoal> Aims;
+            public ComponentTypeHandle<LocomotionState> Drives;
 
             // Per chunk, not per unit, so the marker costs little and the profiler stays readable.
-            public bool OnChunkBegin(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask)
             {
                 MoveMarker.Begin();
-                return true;
-            }
-
-            public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
-                in v128 chunkEnabledMask, bool chunkWasExecuted) => MoveMarker.End();
-
-            // `ref`, not `in`: each must share one writable handle with its EnabledRefRW.
-            private void Execute(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
-                in Owner owner, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
-                ref PathState path, DynamicBuffer<PathWaypoint> waypoints, ref MoveProgress progress,
-                ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity, ref FacingGoal aim,
-                EnabledRefRW<FacingGoal> aiming)
-            {
-                // Aircraft fly in FlightMovementSystem, which this module can't name without a cycle.
-                if (agent.Layer == NavLayer.Air)
+                var entities = chunk.GetNativeArray(Entities);
+                var transforms = chunk.GetNativeArray(ref Transforms).AsSpan();
+                var speeds = chunk.GetNativeArray(ref Speeds);
+                var agents = chunk.GetNativeArray(ref Agents);
+                var owners = chunk.GetNativeArray(ref Owners);
+                var destinations = chunk.GetNativeArray(ref Destinations).AsSpan();
+                var paths = chunk.GetNativeArray(ref Paths).AsSpan();
+                var waypoints = chunk.GetBufferAccessorRW(ref Waypoints);
+                var progresses = chunk.GetNativeArray(ref Progresses).AsSpan();
+                var arrivals = chunk.GetNativeArray(ref Arrivals).AsSpan();
+                var velocities = chunk.GetNativeArray(ref Velocities).AsSpan();
+                var aims = chunk.GetNativeArray(ref Aims).AsSpan();
+                var movingMask = chunk.GetEnabledMask(ref Destinations);
+                var arrivedMask = chunk.GetEnabledMask(ref Arrivals);
+                var aimingMask = chunk.GetEnabledMask(ref Aims);
+                var remembers = chunk.Has(ref Drives);
+                var drives = remembers ? chunk.GetNativeArray(ref Drives) : default;
+                for (var i = 0; i < chunk.Count; i++)
                 {
-                    return;
+                    var drive = remembers ? drives[i] : default;
+                    Mover.Move(entities[i], ref transforms[i], speeds[i], agents[i], owners[i],
+                        ref destinations[i], movingMask.GetEnabledRefRW<MoveDestination>(i),
+                        ref paths[i], waypoints[i], ref progresses[i],
+                        ref arrivals[i], arrivedMask.GetEnabledRefRW<Arrival>(i),
+                        ref velocities[i], ref aims[i], aimingMask.GetEnabledRefRW<FacingGoal>(i),
+                        ref drive, remembers);
+                    if (remembers)
+                    {
+                        drives[i] = drive;
+                    }
                 }
 
-                var top = speed.Value * (Paces.TryGetComponent(entity, out var pace) ? pace.Speed : 1f);
-                // A frozen squad keeps its destination and goes on when it is free.
-                if (top <= 0f)
-                {
-                    velocity.Value = float2.zero;
-                    return;
-                }
-
-                var deltaTime = Movers.DeltaTime;
-                var maxStep = top * deltaTime;
-                var frame = Movers.Begin(entity, transform, agent, owner, destination, moving.ValueRO, top,
-                    velocity.Value);
-                var from = frame.From;
-                var facing = frame.Facing;
-                var crowd = frame.Crowd;
-                var axis = facing * agent.HalfSegment;
-
-                var capsule = new NavCapsule(agent.Access(Grid), axis);
-                var step = Plan(ref frame, destination, moving, ref path, waypoints, capsule.Access);
-                var heading = frame.Driver.Aim(frame.Heading, !moving.ValueRO, aim, aiming);
-
-                // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
-                var depth = capsule.Depth(from, axis);
-                var sunk = depth > NavTolerances.WallOverlap;
-                var escape = sunk ? capsule.WayOut(from, maxStep) : float2.zero;
-                var wanted = from + crowd.Within(step + escape + crowd.PushWithin(maxStep));
-                Walk(ref transform, capsule, from, wanted, agent, crowd);
-
-                var hold = Hold(capsule, depth, from, transform.Position.xz, axis, crowd);
-                var reading = new MoveProgress.Reading(transform.Position.xz, facing, agent.Radius, destination.Value,
-                    waypoints, path);
-                var stalled = moving.ValueRO && !crowd.ReachedGroup &&
-                              progress.HasGivenUp(reading, waypoints, ref path, hold, deltaTime);
-
-                // A planned manoeuvre stuck in walls replans its way out rather than turning out.
-                if (stalled && frame.Remembers && !PathState.IsPlannedManoeuvre(waypoints))
-                {
-                    stalled = !progress.TryTurnOut(ref frame.Driver, hold);
-                }
-
-                if (moving.ValueRO && (crowd.ReachedGroup || stalled))
-                {
-                    path.Halt(moving, waypoints);
-                }
-
-                var reason = stalled ? ArrivalReason.Stalled : ArrivalReason.Reached;
-                if (crowd.ReachedGroup)
-                {
-                    reason = ArrivalReason.AtGroupmate;
-                }
-
-                progress.Report(frame.WasMoving, moving.ValueRO, reason, ref arrival, arrived);
-                Movers.End(ref frame, transform.Position.xz, step, !transform.Position.xz.Equals(wanted));
-
-                Face(ref transform, capsule, agent, facing, heading, moving.ValueRO);
-                velocity.Value = (transform.Position.xz - from) / deltaTime;
-            }
-
-            // A long hull mustn't swing an end into a wall. A mover slides off by the end's sweep, else stays unturned.
-            private static void Face(ref LocalTransform transform, in NavCapsule capsule, in NavAgent agent,
-                float2 facing, float2 heading, bool moving)
-            {
-                if (math.all(heading == 0f))
-                {
-                    return;
-                }
-
-                var center = transform.Position.xz;
-                var turned = quaternion.LookRotationSafe(new float3(heading.x, 0f, heading.y), math.up());
-                var sweep = agent.HalfSegment * math.acos(math.clamp(math.dot(facing, heading), -1f, 1f));
-                var turnedAxis = agent.SegmentAxis(turned);
-                if (agent.HalfSegment <= 0f || capsule.CanTurn(center, turnedAxis))
-                {
-                    transform.Rotation = turned;
-                }
-                else if (moving && capsule.TryTurnOff(center, turnedAxis, sweep, out var moved))
-                {
-                    transform.Position.xz = moved;
-                    transform.Rotation = turned;
-                }
-            }
-
-            // Traffic clears, so only a unit with no neighbour near counts as wedged.
-            private static MoveProgress.WallHold Hold(in NavCapsule capsule, float depth, float2 from, float2 to,
-                float2 axis, in CrowdVisitor crowd)
-            {
-                if (depth > NavTolerances.WallOverlap)
-                {
-                    return capsule.Depth(to, axis) >= depth ? MoveProgress.WallHold.Sunk : MoveProgress.WallHold.None;
-                }
-
-                var standing = math.distancesq(to, from) < NavTolerances.StandingStep * NavTolerances.StandingStep;
-                var wedged = depth > 0f && standing && !crowd.HasNeighbours;
-                return wedged ? MoveProgress.WallHold.Wedged : MoveProgress.WallHold.None;
-            }
-
-            // A wall's slide can turn the move back into a neighbour, and then the unit stands.
-            private readonly void Walk(ref LocalTransform transform, in NavCapsule capsule, float2 from, float2 wanted,
-                in NavAgent agent, in CrowdVisitor crowd)
-            {
-                var to = capsule.Constrain(from, wanted);
-                transform.Position.xz = crowd.Keeps(to - from) ? to : from;
-                transform.Position.y = Grid.HeightFor(transform.Position, agent.Layer);
-            }
-
-            /// <summary>This frame's step and facing before the crowd's push and the walls have their say.</summary>
-            private static float2 Plan(ref MoveFrame frame, in MoveDestination destination,
-                EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
-                in NavAccess access)
-            {
-                ref var driver = ref frame.Driver;
-                var leg = default(PathLeg);
-                if (moving.ValueRO && !Follow(driver, access, destination, ref path, waypoints, out leg))
-                {
-                    path.Halt(moving, waypoints);
-                }
-
-                if (!moving.ValueRO)
-                {
-                    return driver.BrakeToStop();
-                }
-
-                // No corners yet: stop and face the goal rather than drive blind at it.
-                if (path.Status != PathStatus.Ready && waypoints.Length == 0)
-                {
-                    frame.Heading = driver.TurnToward(math.normalizesafe(destination.Value.xz - driver.Position));
-                    return driver.BrakeToStop();
-                }
-
-                var steering = new Steering(frame.Crowd, frame.Velocity);
-                steering.AddWalls(access);
-                var step = steering.Drive(ref driver, leg);
-                frame.Heading = driver.Facing;
-                return step;
-            }
-
-            /// <summary>Picks the leg to drive; false once the unit has arrived.</summary>
-            private static bool Follow(in Driver driver, in NavAccess access, in MoveDestination destination,
-                ref PathState path, DynamicBuffer<PathWaypoint> waypoints, out PathLeg leg)
-            {
-                var touch = math.max(driver.Radius * 0.5f, driver.TopSpeed * driver.DeltaTime);
-                path.SkipCorners(access, driver.Position, touch, driver.LookAhead, waypoints);
-                leg = PathLeg.Along(driver.Position, destination.Value.xz, waypoints, path).Manoeuvre(driver.Position,
-                    waypoints, Locomotion.TightLookAhead(driver.State.Speed), driver.Chassis);
-                // A pose end arrives only on its pose, so a move into a dock bay never ends short of the stop.
-                if (destination.IsPose)
-                {
-                    return !destination.IsAtPose(driver.Position, driver.Facing);
-                }
-
-                return !driver.HasArrived(leg);
+                MoveMarker.End();
             }
         }
     }

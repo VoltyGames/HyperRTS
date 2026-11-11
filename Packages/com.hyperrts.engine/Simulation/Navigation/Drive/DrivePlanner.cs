@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using System;
 using Unity.Collections;
-using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Profiling;
 
@@ -96,12 +95,12 @@ namespace HyperRTS.Simulation.Navigation.Drive
         private readonly float HullLength => _agent.HalfLength * 2f;
 
         /// <summary>
-        /// Replaces <paramref name="waypoints"/> with the drawn <paramref name="points"/>, planning tight stretches
-        /// within <paramref name="budget"/> expansions. Past it, a plan that <paramref name="defers"/> writes nothing
+        /// Plans the drawn <paramref name="points"/> into <see cref="Waypoints"/>, planning tight stretches
+        /// within <paramref name="budget"/> expansions. Past it, a plan that <paramref name="defers"/> yields nothing
         /// and is <see cref="WaitsForBudget"/>; others leave the rest as drawn. False when deferred.
         /// </summary>
-        public bool Plan(in PathRequest request, in NavAccess access, NativeList<float3> points,
-            DynamicBuffer<PathWaypoint> waypoints, int budget, bool defers)
+        public bool Plan(in PathRequest request, in NavAccess access, NativeList<float3> points, int budget,
+            bool defers)
         {
             using var scope = PlanMarker.Auto();
             if (budget > 0 && !_search.IsCreated)
@@ -117,15 +116,11 @@ namespace HyperRTS.Simulation.Navigation.Drive
             }
 
             Counts = default;
-            var done = PlanPath(request, points, budget, defers);
-            if (done)
-            {
-                waypoints.Clear();
-                waypoints.AddRange(_writer.Waypoints.AsArray());
-            }
-
-            return done;
+            return PlanPath(request, points, budget, defers);
         }
+
+        /// <summary>The waypoints of the last <see cref="Plan"/> that finished.</summary>
+        public readonly NativeArray<PathWaypoint> Waypoints => _writer.Waypoints.AsArray();
 
         private bool PlanPath(in PathRequest request, NativeList<float3> points, int budget, bool defers)
         {

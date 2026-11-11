@@ -1,5 +1,8 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
+using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
@@ -9,11 +12,12 @@ namespace HyperRTS.Simulation.Orders
     [UpdateInGroup(typeof(OrderSystemGroup))]
     public partial struct OrderDispatchSystem : ISystem
     {
-        private OrderHalt _halt;
+        private EntityQuery _idle;
 
         public void OnCreate(ref SystemState state)
         {
-            _halt = new OrderHalt(ref state);
+            _idle = new EntityQueryBuilder(Allocator.Temp).WithDisabledRW<ActiveOrder>().WithAllRW<QueuedOrder>()
+                .Build(ref state);
             // Created here so every world that runs orders has it before any system updates.
             state.EntityManager.CreateSingleton(OrderTraitTable.Create(), "OrderTraitTable");
         }
@@ -21,30 +25,65 @@ namespace HyperRTS.Simulation.Orders
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _halt.Update(ref state);
-            new DispatchJob { Halt = _halt }.ScheduleParallel();
+            state.Dependency = new DispatchJob
+            {
+                Active = SystemAPI.GetComponentTypeHandle<ActiveOrder>(),
+                Queues = SystemAPI.GetBufferTypeHandle<QueuedOrder>(),
+                Move = SystemAPI.GetComponentTypeHandle<MoveDestination>(),
+                Arrival = SystemAPI.GetComponentTypeHandle<Arrival>(),
+                Attack = SystemAPI.GetComponentTypeHandle<AttackTarget>(),
+                MoveOrder = SystemAPI.GetComponentTypeHandle<MoveOrderState>(),
+            }.ScheduleParallel(_idle, state.Dependency);
         }
 
+        // Writes only the dispatching unit's own components, so chunks with nothing queued keep their versions.
         [BurstCompile]
-        [WithDisabled(typeof(ActiveOrder))]
-        private partial struct DispatchJob : IJobEntity
+        private struct DispatchJob : IJobChunk
         {
-            // Writes only the entity being processed.
-            public OrderHalt Halt;
+            public ComponentTypeHandle<ActiveOrder> Active;
+            public BufferTypeHandle<QueuedOrder> Queues;
+            public ComponentTypeHandle<MoveDestination> Move;
+            public ComponentTypeHandle<Arrival> Arrival;
+            public ComponentTypeHandle<AttackTarget> Attack;
+            public ComponentTypeHandle<MoveOrderState> MoveOrder;
 
-            private void Execute(Entity entity, ref ActiveOrder active, EnabledRefRW<ActiveOrder> busy,
-                DynamicBuffer<QueuedOrder> queue)
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                if (queue.Length == 0)
+                var queues = chunk.GetBufferAccessorRO(ref Queues);
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
                 {
-                    return;
-                }
+                    if (queues[i].Length == 0)
+                    {
+                        continue;
+                    }
 
-                // Same reset as a fresh order, so a target picked up while idle can't hold the next order back.
-                Halt.Apply(entity);
-                active.Value = queue[0].Value;
-                queue.RemoveAt(0);
-                busy.ValueRW = true;
+                    // Same reset as a fresh order, so a target picked up while idle can't hold the next order back.
+                    Halt(chunk, i);
+                    var active = chunk.GetNativeArray(ref Active);
+                    active[i] = new ActiveOrder { Value = queues[i][0].Value };
+                    chunk.GetBufferAccessorRW(ref Queues)[i].RemoveAt(0);
+                    chunk.SetComponentEnabled(ref Active, i, true);
+                }
+            }
+
+            // So a walk-up never reads the last order's arrival as its own.
+            private void Halt(in ArchetypeChunk chunk, int index)
+            {
+                DisableIfPresent(chunk, index, ref Move);
+                DisableIfPresent(chunk, index, ref Arrival);
+                DisableIfPresent(chunk, index, ref Attack);
+                DisableIfPresent(chunk, index, ref MoveOrder);
+            }
+
+            private static void DisableIfPresent<T>(in ArchetypeChunk chunk, int index, ref ComponentTypeHandle<T> handle)
+                where T : unmanaged, IComponentData, IEnableableComponent
+            {
+                if (chunk.Has(ref handle))
+                {
+                    chunk.SetComponentEnabled(ref handle, index, false);
+                }
             }
         }
     }

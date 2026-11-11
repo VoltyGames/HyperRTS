@@ -7,8 +7,8 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Status;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Transforms;
 
@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.Abilities
     public partial struct AbilitySystem : ISystem
     {
         private EntityQuery _completed;
+        private EntityQuery _cooling;
         private TargetLookup _targets;
         private TargetQueries _targetQueries;
         private AbilityCaster _caster;
@@ -34,6 +35,8 @@ namespace HyperRTS.Simulation.Abilities
         public void OnCreate(ref SystemState state)
         {
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
+            _cooling = new EntityQueryBuilder(Allocator.Temp).WithAllRW<AbilityCooldown>().WithNone<Offline>()
+                .Build(ref state);
             _targets = new TargetLookup(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _caster = new AbilityCaster(ref state);
@@ -47,11 +50,11 @@ namespace HyperRTS.Simulation.Abilities
             _targets.Update(ref state, _targetQueries);
             _caster.Update(ref state);
 
-            new CooldownJob
+            state.Dependency = new CooldownJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
-                Cooldowns = SystemAPI.GetBufferLookup<AbilityCooldown>(),
-            }.ScheduleParallel();
+                Cooldowns = SystemAPI.GetBufferTypeHandle<AbilityCooldown>(),
+            }.ScheduleParallel(_cooling, state.Dependency);
 
             var completed = new CompletedBuildings(_completed, state.WorldUpdateAllocator, state.Dependency,
                 out var gathered);
@@ -69,24 +72,38 @@ namespace HyperRTS.Simulation.Abilities
         }
 
         [BurstCompile]
-        [WithNone(typeof(Offline))]
-        private partial struct CooldownJob : IJobEntity
+        private struct CooldownJob : IJobChunk
         {
             public float DeltaTime;
+            public BufferTypeHandle<AbilityCooldown> Cooldowns;
 
-            // Written only for the unit being run, and only while a cooldown runs, so idle chunks keep their version.
-            [NativeDisableParallelForRestriction]
-            [NativeDisableContainerSafetyRestriction]
-            public BufferLookup<AbilityCooldown> Cooldowns;
-
-            private void Execute(Entity entity, in DynamicBuffer<AbilityCooldown> read)
+            // The writable accessor is taken only for a unit with a running cooldown, so idle chunks keep their version.
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                if (!IsRunning(read))
+                var read = chunk.GetBufferAccessorRO(ref Cooldowns);
+                var write = default(BufferAccessor<AbilityCooldown>);
+                var writable = false;
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
                 {
-                    return;
-                }
+                    if (!IsRunning(read[i]))
+                    {
+                        continue;
+                    }
 
-                var states = Cooldowns[entity];
+                    if (!writable)
+                    {
+                        write = chunk.GetBufferAccessorRW(ref Cooldowns);
+                        writable = true;
+                    }
+
+                    Tick(write[i]);
+                }
+            }
+
+            private void Tick(DynamicBuffer<AbilityCooldown> states)
+            {
                 for (var i = 0; i < states.Length; i++)
                 {
                     ref var state = ref states.ElementAt(i);

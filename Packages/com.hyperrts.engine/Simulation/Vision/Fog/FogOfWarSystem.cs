@@ -110,15 +110,27 @@ namespace HyperRTS.Simulation.Vision.Fog
 
         private void Merge(ref SystemState state, in FogOfWar fog)
         {
-            var viewers = _viewers.ToEntityListAsync(Allocator.TempJob, state.Dependency, out var listed);
+            var viewers = _viewers.ToEntityListAsync(state.WorldUpdateAllocator, state.Dependency, out var listed);
+            var sorted = new NativeList<Entity>(state.WorldUpdateAllocator);
+            var starts = CollectionHelper.CreateNativeArray<int>(OwnerRelations.MaxTeams + 1, state.WorldUpdateAllocator);
+            var areas = SystemAPI.GetComponentLookup<SightArea>(true);
+            state.Dependency = new FogViewerSortJob
+            {
+                Viewers = viewers.AsDeferredJobArray(), Areas = areas, Sorted = sorted, TeamStarts = starts,
+            }.Schedule(listed);
             state.Dependency = new FogMergeJob
             {
-                Fog = fog,
-                Viewers = viewers.AsDeferredJobArray(),
-                Areas = SystemAPI.GetComponentLookup<SightArea>(true),
+                Visible = fog.Visible,
+                VisibleTall = fog.VisibleTall,
+                Close = fog.Close,
+                Width = fog.Grid.Size.x,
+                Rows = fog.Grid.Size.y,
+                RowWords = fog.RowWords,
+                Viewers = sorted.AsDeferredJobArray(),
+                TeamStarts = starts,
+                Areas = areas,
                 Bits = SystemAPI.GetBufferLookup<SightAreaBits>(true),
-            }.Schedule(FogMergeJob.Bands(fog), 1, listed);
-            viewers.Dispose(state.Dependency);
+            }.ScheduleBatch(fog.Visible.Length, FogMergeJob.BatchWords(fog), state.Dependency);
         }
 
         /// <summary>Creates the grid, or replaces it when the map's area or fog cell size changed; true if it did.</summary>

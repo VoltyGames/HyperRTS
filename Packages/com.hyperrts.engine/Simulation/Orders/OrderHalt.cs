@@ -1,20 +1,19 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
-using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
     /// Stops what the previous order left running (movement, arrival, attack, move bookkeeping) before a new order
-    /// starts. Parallel jobs may use it only on the entity they are processing.
+    /// starts. Holds writable lookups, so use it from one thread.
     /// </summary>
     public struct OrderHalt
     {
-        [NativeDisableParallelForRestriction] private ComponentLookup<MoveDestination> _move;
-        [NativeDisableParallelForRestriction] private ComponentLookup<Arrival> _arrival;
-        [NativeDisableParallelForRestriction] private ComponentLookup<AttackTarget> _attack;
-        [NativeDisableParallelForRestriction] private ComponentLookup<MoveOrderState> _moveOrder;
+        private ComponentLookup<MoveDestination> _move;
+        private ComponentLookup<Arrival> _arrival;
+        private ComponentLookup<AttackTarget> _attack;
+        private ComponentLookup<MoveOrderState> _moveOrder;
 
         public OrderHalt(ref SystemState state)
         {

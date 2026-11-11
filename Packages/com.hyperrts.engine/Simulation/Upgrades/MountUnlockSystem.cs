@@ -3,8 +3,8 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Production;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Upgrades
@@ -18,47 +18,61 @@ namespace HyperRTS.Simulation.Upgrades
     [UpdateAfter(typeof(UpgradeSystem))]
     public partial struct MountUnlockSystem : ISystem
     {
+        private EntityQuery _mounted;
+
         [BurstCompile]
-        public void OnCreate(ref SystemState state) => state.RequireForUpdate<PlayerRegistry>();
+        public void OnCreate(ref SystemState state)
+        {
+            state.RequireForUpdate<PlayerRegistry>();
+            _mounted = new EntityQueryBuilder(Allocator.Temp).WithAllRW<WeaponMount>().WithAll<Owner>()
+                .Build(ref state);
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new UnlockJob
+            state.Dependency = new UnlockJob
             {
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 Researched = SystemAPI.GetBufferLookup<CompletedResearch>(true),
-                Mounts = SystemAPI.GetBufferLookup<WeaponMount>(),
-            }.ScheduleParallel();
+                Mounts = SystemAPI.GetBufferTypeHandle<WeaponMount>(),
+                Owners = SystemAPI.GetComponentTypeHandle<Owner>(true),
+            }.ScheduleParallel(_mounted, state.Dependency);
         }
 
         [BurstCompile]
-        private partial struct UnlockJob : IJobEntity
+        private struct UnlockJob : IJobChunk
         {
             public PlayerRegistry Players;
             [ReadOnly] public BufferLookup<CompletedResearch> Researched;
+            public BufferTypeHandle<WeaponMount> Mounts;
+            [ReadOnly] public ComponentTypeHandle<Owner> Owners;
 
-            // Written only for the unit being run, and only when a lock flips, so its change version bumps only then.
-            [NativeDisableParallelForRestriction]
-            [NativeDisableContainerSafetyRestriction]
-            public BufferLookup<WeaponMount> Mounts;
-
-            private void Execute(Entity entity, in DynamicBuffer<WeaponMount> mounts, in Owner owner)
+            // The writable accessor is taken only when a lock flips, so its change version bumps only then.
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                var known = Researched.TryGetBuffer(Players[owner.Value], out var researched);
-                for (var i = 0; i < mounts.Length; i++)
+                var read = chunk.GetBufferAccessorRO(ref Mounts);
+                var owners = chunk.GetNativeArray(ref Owners);
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
                 {
-                    var mount = mounts[i];
-                    if (mount.RequiredResearchTypeId == 0)
+                    var known = Researched.TryGetBuffer(Players[owners[i].Value], out var researched);
+                    var mounts = read[i];
+                    for (var m = 0; m < mounts.Length; m++)
                     {
-                        continue;
-                    }
+                        var mount = mounts[m];
+                        if (mount.RequiredResearchTypeId == 0)
+                        {
+                            continue;
+                        }
 
-                    var unlocked = known && ResearchRules.IsDone(researched, mount.RequiredResearchTypeId);
-                    if (mount.Unlocked != unlocked)
-                    {
-                        mount.Unlocked = unlocked;
-                        Mounts[entity].ElementAt(i) = mount;
+                        var unlocked = known && ResearchRules.IsDone(researched, mount.RequiredResearchTypeId);
+                        if (mount.Unlocked != unlocked)
+                        {
+                            mount.Unlocked = unlocked;
+                            chunk.GetBufferAccessorRW(ref Mounts)[i].ElementAt(m) = mount;
+                        }
                     }
                 }
             }

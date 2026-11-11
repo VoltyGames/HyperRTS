@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Common.Players;
-using HyperRTS.Simulation.Vision.Detection;
 using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
@@ -118,31 +117,6 @@ namespace HyperRTS.Simulation.Vision.Fog
         {
             var word = Word(cell, team);
             plane[word] |= 1ul << (cell.x & 63);
-        }
-
-        /// <summary>ORs 64 cells' bits starting at <paramref name="x"/> into a row, dropping those off the grid.</summary>
-        public readonly void Or(NativeArray<ulong> plane, byte team, int row, int x, ulong bits)
-        {
-            if (x < 0)
-            {
-                bits = x <= -64 ? 0ul : bits >> -x;
-                x = 0;
-            }
-
-            var room = Grid.Size.x - x;
-            if (bits == 0ul || room <= 0)
-            {
-                return;
-            }
-
-            bits &= room >= 64 ? ulong.MaxValue : (1ul << room) - 1ul;
-            var word = team * PlaneWords + row * RowWords + (x >> 6);
-            var shift = x & 63;
-            plane[word] |= bits << shift;
-            if (shift != 0 && (x >> 6) + 1 < RowWords)
-            {
-                plane[word + 1] |= bits >> (64 - shift);
-            }
         }
 
         /// <summary>Sets the team's bit in every cell whose center lies within the flat circle.</summary>

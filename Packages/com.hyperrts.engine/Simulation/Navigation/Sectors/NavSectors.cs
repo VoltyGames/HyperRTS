@@ -1,8 +1,6 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
-using Unity.Entities;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Sectors
@@ -116,85 +114,6 @@ namespace HyperRTS.Simulation.Navigation.Sectors
             var sector = Owners[component];
             var label = component - Firsts[ClassSector(classIndex, sector)];
             return Layout.Cell(sector, Representatives[(ClassSector(classIndex, sector)) * MaxComponents + label]);
-        }
-
-        /// <summary>
-        /// Relabels one class over one sector from the field. Each call writes only that sector's entries of that class,
-        /// so calls for different sectors or classes may run at once.
-        /// </summary>
-        public void Relabel(in NavField field, in MovementClasses classes, int classIndex, int sector)
-        {
-            var slot = classes.FieldSlot(classIndex);
-            var radius = classes.Classes[classIndex].Radius;
-            var offset = (ClassSector(classIndex, sector)) * Area;
-            for (var local = 0; local < Area; local++)
-            {
-                var cell = Layout.Cell(sector, local);
-                var open = math.all(cell < field.Grid.Size) && field.IsOpen(slot, cell, radius);
-                Labels[offset + local] = open ? Unlabelled : (byte)0;
-            }
-
-            var count = 0;
-            for (var local = 0; local < Area; local++)
-            {
-                if (Labels[offset + local] == Unlabelled)
-                {
-                    count++;
-                    var representative = Flood(offset, local, (byte)count);
-                    Representatives[(ClassSector(classIndex, sector)) * MaxComponents + count - 1] = representative;
-                }
-            }
-
-            Counts[ClassSector(classIndex, sector)] = (byte)count;
-        }
-
-        // Labels one 4-connected component from a seed and returns its cell nearest the centroid.
-        private byte Flood(int offset, int seed, byte label)
-        {
-            var members = new FixedList512Bytes<byte>();
-            members.Add((byte)seed);
-            Labels[offset + seed] = label;
-            var sum = int2.zero;
-            for (var read = 0; read < members.Length; read++)
-            {
-                var local = members[read];
-                var at = new int2(local % NavField.SectorCells, local / NavField.SectorCells);
-                sum += at;
-                Visit(offset, at + new int2(1, 0), label, ref members);
-                Visit(offset, at - new int2(1, 0), label, ref members);
-                Visit(offset, at + new int2(0, 1), label, ref members);
-                Visit(offset, at - new int2(0, 1), label, ref members);
-            }
-
-            return Nearest(members, (float2)sum / members.Length);
-        }
-
-        private void Visit(int offset, int2 at, byte label, ref FixedList512Bytes<byte> members)
-        {
-            if (math.any(at < 0 | at >= NavField.SectorCells))
-            {
-                return;
-            }
-
-            var local = at.y * NavField.SectorCells + at.x;
-            if (Labels[offset + local] == Unlabelled)
-            {
-                Labels[offset + local] = label;
-                members.Add((byte)local);
-            }
-        }
-
-        private static byte Nearest(in FixedList512Bytes<byte> members, float2 centroid)
-        {
-            var nearest = Closest.None;
-            for (var i = 0; i < members.Length; i++)
-            {
-                var local = members[i];
-                var at = new float2(local % NavField.SectorCells, local / NavField.SectorCells);
-                nearest.Consider(i, Entity.Null, math.distancesq(at, centroid));
-            }
-
-            return members[nearest.Index];
         }
 
         /// <summary>Labels every sector of every class and connects them, as editor tools and tests need.</summary>

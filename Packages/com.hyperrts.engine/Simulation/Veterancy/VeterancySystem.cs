@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Stats;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -12,34 +13,65 @@ namespace HyperRTS.Simulation.Veterancy
     [UpdateAfter(typeof(KillCreditSystem))]
     public partial struct VeterancySystem : ISystem
     {
+        private EntityQuery _earning;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            _earning = new EntityQueryBuilder(Allocator.Temp).WithAllRW<Experience>()
+                .WithAll<VeterancyRank, VeterancyBonus>().Build(ref state);
+            _earning.SetChangedVersionFilter(ComponentType.ReadWrite<Experience>());
+        }
+
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new PromoteJob { ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>() }.ScheduleParallel();
+            state.Dependency = new PromoteJob
+            {
+                Experiences = SystemAPI.GetComponentTypeHandle<Experience>(),
+                Ranks = SystemAPI.GetBufferTypeHandle<VeterancyRank>(true),
+                Bonuses = SystemAPI.GetBufferTypeHandle<VeterancyBonus>(true),
+                Modifiers = SystemAPI.GetBufferTypeHandle<StatModifier>(),
+            }.ScheduleParallel(_earning, state.Dependency);
         }
 
-        /// <summary>Writes modifiers through a lookup so only promotions wake the stat systems' change filters.</summary>
+        /// <summary>Takes modifiers writable only on a promotion, so only promotions wake the stat systems' change filters.</summary>
         [BurstCompile]
-        [WithChangeFilter(typeof(Experience))]
-        private partial struct PromoteJob : IJobEntity
+        private struct PromoteJob : IJobChunk
         {
-            [NativeDisableParallelForRestriction] public BufferLookup<StatModifier> ModifierLookup;
+            public ComponentTypeHandle<Experience> Experiences;
+            [ReadOnly] public BufferTypeHandle<VeterancyRank> Ranks;
+            [ReadOnly] public BufferTypeHandle<VeterancyBonus> Bonuses;
+            public BufferTypeHandle<StatModifier> Modifiers;
 
-            private void Execute(Entity entity, ref Experience experience, in DynamicBuffer<VeterancyRank> ranks,
-                in DynamicBuffer<VeterancyBonus> bonuses)
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                var rank = RankFor(experience.Points, ranks);
-                if (rank == experience.Rank)
+                var experiences = chunk.GetNativeArray(ref Experiences);
+                var ranks = chunk.GetBufferAccessorRO(ref Ranks);
+                var bonuses = chunk.GetBufferAccessorRO(ref Bonuses);
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
                 {
-                    return;
-                }
+                    var experience = experiences[i];
+                    var rank = RankFor(experience.Points, ranks[i]);
+                    if (rank == experience.Rank)
+                    {
+                        continue;
+                    }
 
-                experience.Rank = rank;
-                if (!ModifierLookup.TryGetBuffer(entity, out var modifiers))
-                {
-                    return;
+                    experience.Rank = rank;
+                    experiences[i] = experience;
+                    if (chunk.Has(ref Modifiers))
+                    {
+                        Promote(chunk.GetBufferAccessorRW(ref Modifiers)[i], bonuses[i], rank);
+                    }
                 }
+            }
 
+            private static void Promote(DynamicBuffer<StatModifier> modifiers, in DynamicBuffer<VeterancyBonus> bonuses,
+                byte rank)
+            {
                 StatMath.RemoveSource(modifiers, StatSource.Veterancy);
                 foreach (var bonus in bonuses)
                 {

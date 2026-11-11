@@ -47,6 +47,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 planner.Run();
                 planner.Dispose();
                 Plan.Results.ResizeUninitialized(Plan.Tasks.Length);
+                Plan.Served.ResizeUninitialized(Plan.Tasks.Length);
             }
         }
     }
