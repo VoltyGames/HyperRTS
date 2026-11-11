@@ -106,7 +106,7 @@ namespace HyperRTS.Simulation.AI
 
             var entities = state.EntityManager;
             var stock = entities.GetBuffer<ResourceStock>(turn.Player);
-            if (!PurchaseRules.CanBuy(entities, prefab, turn.Buyer, stock.AsNativeArray()))
+            if (!turn.Buyer.CanBuy(entities, prefab, new Stockpile(stock)))
             {
                 return false;
             }

@@ -129,12 +129,14 @@ namespace HyperRTS.Simulation.Tests.Auras
         [Test]
         public void Auras_AffectUnitsAndBuildings_ButNotScenery()
         {
-            var relations = default(OwnerRelations);
-            var everything = AuraTargets.Own | AuraTargets.AllKinds;
-            Assert.IsTrue(AuraRules.Affects(everything, 1, new SpatialEntry { Owner = 1, IsUnit = true }, relations));
-            Assert.IsTrue(AuraRules.Affects(everything, 1, new SpatialEntry { Owner = 1, IsBuilding = true },
-                relations));
-            Assert.IsFalse(AuraRules.Affects(everything, 1, new SpatialEntry { Owner = 1 }, relations), "scenery");
+            var collector = new AuraCollector
+            {
+                Affects = AuraTargets.Own | AuraTargets.AllKinds,
+                Presence = new AuraPresence { SourceOwner = 1 },
+            };
+            Assert.IsTrue(collector.Reaches(new SpatialEntry { Owner = 1, IsUnit = true }));
+            Assert.IsTrue(collector.Reaches(new SpatialEntry { Owner = 1, IsBuilding = true }));
+            Assert.IsFalse(collector.Reaches(new SpatialEntry { Owner = 1 }), "scenery");
         }
     }
 }

@@ -107,7 +107,7 @@ namespace HyperRTS.Simulation.Status
             private void Grant(Entity target, Entity definition, StatSource source, int stacks)
             {
                 var modifiers = Modifiers[target];
-                StatMath.RemoveSource(modifiers, source);
+                new StatModifiers(modifiers).RemoveSource(source);
                 foreach (var bonus in Bonuses[definition])
                 {
                     var modifier = bonus.Modifier;
@@ -149,7 +149,7 @@ namespace HyperRTS.Simulation.Status
                     var status = statuses[i];
                     if (Now >= status.EndsAt)
                     {
-                        StatMath.RemoveSource(Modifiers[entity], StatSource.Status(status.TypeId));
+                        new StatModifiers(Modifiers[entity]).RemoveSource(StatSource.Status(status.TypeId));
                         statuses.RemoveAt(i);
                         continue;
                     }

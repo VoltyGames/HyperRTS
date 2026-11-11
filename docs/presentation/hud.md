@@ -44,7 +44,7 @@ spec with no target.
 The card is 15 slots, five across. A taken slot moves the entry to the next free one, and past the last to the next
 page. Escape, a right click on the card or a new selection turns back a page.
 
-`PurchaseCommands` asks `PurchaseRules.FindRefusal` why a purchase is refused and sets a class on the button:
+`PurchaseCommands` asks `Buyer.FindRefusal` why a purchase is refused and sets a class on the button:
 `hud-command--unaffordable`, `--locked`, `--maxed`, `--researched` or `--queued`. A refused button ignores presses but
 keeps its tooltip.
 

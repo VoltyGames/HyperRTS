@@ -31,16 +31,16 @@ namespace HyperRTS.Simulation.Squads
         }
 
         public static bool CanPay(DynamicBuffer<ResourceCost> cost, DynamicBuffer<ResourceStock> stock, float share) =>
-            !cost.IsCreated || ResourceMath.CanAfford(stock, cost, share);
+            !cost.IsCreated || new Stockpile(stock).CanAfford(cost, share: share);
 
         public static bool Pay(DynamicBuffer<ResourceCost> cost, DynamicBuffer<ResourceStock> stock, float share) =>
-            !cost.IsCreated || ResourceMath.TrySpend(stock, cost, share);
+            !cost.IsCreated || new Stockpile(stock).TrySpend(cost, share);
 
         public static void Refund(DynamicBuffer<ResourceCost> cost, DynamicBuffer<ResourceStock> stock, float share)
         {
             if (cost.IsCreated)
             {
-                ResourceMath.Refund(stock, cost, share);
+                new Stockpile(stock).Refund(cost, share);
             }
         }
     }

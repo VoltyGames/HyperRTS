@@ -48,8 +48,8 @@ namespace HyperRTS.Simulation.Strikes
                          .WithNone<Dead>())
             {
                 var id = asset.ValueRO.AbilityId;
-                var ability = abilities[AbilityRules.FindAbility(abilities, id)];
-                ref var cooldown = ref states.ElementAt(AbilityRules.FindCooldown(states, id));
+                var ability = abilities[Ability.Find(abilities, id)];
+                ref var cooldown = ref states.ElementAt(AbilityCooldown.Find(states, id));
                 var holder = owner.ValueRO.Value;
                 if (!enabled || holder != asset.ValueRO.Owner)
                 {

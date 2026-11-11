@@ -154,7 +154,7 @@ namespace HyperRTS.Simulation.MatchStart
         private static void SetIncomeBonus(EntityManager entityManager, Entity player, float multiplier)
         {
             var modifiers = entityManager.GetBuffer<StatModifier>(player);
-            StatMath.RemoveKind(modifiers, StatSourceKind.Difficulty);
+            new StatModifiers(modifiers).RemoveKind(StatSourceKind.Difficulty);
             if (AIDifficultyTuning.TryGetIncomeBonus(multiplier, out var bonus))
             {
                 modifiers.Add(bonus);

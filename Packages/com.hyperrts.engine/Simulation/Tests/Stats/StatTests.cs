@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests.Stats
             Assert.AreEqual(100f, World.Get<Health>(unit).Current, 1e-3f);
             Assert.AreEqual(6f, World.Get<MovementSpeed>(unit).Value, 1e-3f);
 
-            StatMath.RemoveSource(World.Buffer<StatModifier>(unit), StatSource.Upgrade(7));
+            new StatModifiers(World.Buffer<StatModifier>(unit)).RemoveSource(StatSource.Upgrade(7));
             World.Tick();
 
             Assert.AreEqual(100f, World.Get<Health>(unit).Max, 1e-3f);
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Tests.Stats
             Assert.AreEqual(15f, World.Get<Jamming>(unit).Strength, 1e-4f);
             Assert.AreEqual(3, World.Get<Jamming>(unit).Channels, "other fields are untouched");
 
-            StatMath.RemoveSource(World.Buffer<StatModifier>(unit), StatSource.Upgrade(7));
+            new StatModifiers(World.Buffer<StatModifier>(unit)).RemoveSource(StatSource.Upgrade(7));
             World.Tick();
 
             Assert.AreEqual(10f, World.Get<Jamming>(unit).Strength, 1e-4f);

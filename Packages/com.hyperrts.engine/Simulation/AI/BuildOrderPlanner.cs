@@ -124,7 +124,7 @@ namespace HyperRTS.Simulation.AI
         {
             var entities = state.EntityManager;
             var stock = entities.GetBuffer<ResourceStock>(turn.Player);
-            if (!PurchaseRules.CanBuy(entities, prefab, turn.Buyer, stock.AsNativeArray()))
+            if (!turn.Buyer.CanBuy(entities, prefab, new Stockpile(stock)))
             {
                 return false;
             }
@@ -178,7 +178,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var producer = snapshot.Producers[i];
                 var length = entities.GetBuffer<ProductionQueueItem>(producer).Length;
-                if (ProductionRules.CanQueue(entities, producer, turn.Owner, prefab))
+                if (Producer.CanQueue(entities, producer, turn.Owner, prefab))
                 {
                     shortest.Consider(i, producer, length);
                 }

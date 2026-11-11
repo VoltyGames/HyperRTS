@@ -1,6 +1,6 @@
 namespace HyperRTS.Simulation.Production
 {
-    /// <summary>Why <see cref="PurchaseRules.FindRefusal"/> refuses a purchase; locks come before the price.</summary>
+    /// <summary>Why <see cref="Buyer.FindRefusal"/> refuses a purchase; locks come before the price.</summary>
     public enum PurchaseRefusal : byte
     {
         None,

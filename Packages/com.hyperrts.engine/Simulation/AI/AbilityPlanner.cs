@@ -47,7 +47,7 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < _casters.Length; i++)
             {
                 var caster = _casters.Entities[i];
-                if (!_casters.IsOwnedBy(i, turn.Owner) || !AbilityRules.CanCast(entities, caster))
+                if (!_casters.IsOwnedBy(i, turn.Owner) || !AbilityCaster.CanCast(entities, caster))
                 {
                     continue;
                 }
@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.AI
                 var cooldowns = entities.GetBuffer<AbilityCooldown>(caster);
                 foreach (var ability in abilities)
                 {
-                    var ready = cooldowns[AbilityRules.FindCooldown(cooldowns, ability.Id)].IsReady;
+                    var ready = cooldowns[AbilityCooldown.Find(cooldowns, ability.Id)].IsReady;
                     if (ready && TryAim(ref state, turn, snapshot, ability, new Caster(caster, _casters.Position(i), true),
                             out var aim))
                     {
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.AI
             var charges = entities.GetBuffer<AbilityCooldown>(turn.Player);
             foreach (var power in powers)
             {
-                var ready = charges[AbilityRules.FindCooldown(charges, power.Id)].IsReady;
+                var ready = charges[AbilityCooldown.Find(charges, power.Id)].IsReady;
                 if (ready && TryAim(ref state, turn, snapshot, power, new Caster(turn.Player, turn.Home, false),
                         out var aim))
                 {
@@ -141,7 +141,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                if (caster.Ranged && !AbilityRules.InRange(ability, caster.Entity, from, entity, targets.Position(i), _targetLookup))
+                if (caster.Ranged && !ability.InRange(caster.Entity, from, entity, targets.Position(i), _targetLookup))
                 {
                     continue;
                 }
@@ -158,7 +158,7 @@ namespace HyperRTS.Simulation.AI
         /// <summary>Heals (allied filter or negative damage) go to hurt allies; everything else at enemies.</summary>
         private bool Suits(ref SystemState state, in AISnapshot snapshot, in Ability ability, Entity entity, byte owner)
         {
-            if (!AbilityRules.IsValidTarget(ability, entity, owner, _targetLookup, _owners, snapshot.Relations))
+            if (!ability.IsValidTarget(entity, owner, _targetLookup, _owners, snapshot.Relations))
             {
                 return false;
             }

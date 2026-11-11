@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Veterancy
 
             private void Execute(in LastAttacker attacker, in DynamicBuffer<ResourceCost> cost, in Owner owner)
             {
-                var value = ExperiencePerCost * ResourceMath.Total(cost);
+                var value = ExperiencePerCost * ResourceCost.Total(cost);
                 if (value <= 0f || !attacker.CreditsKill(Relations, owner.Value))
                 {
                     return;

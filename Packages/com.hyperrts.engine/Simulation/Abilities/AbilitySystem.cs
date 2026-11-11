@@ -143,17 +143,17 @@ namespace HyperRTS.Simulation.Abilities
                 }
 
                 var owner = Owners[entity].Value;
-                var index = AbilityRules.FindAbility(abilities, order.Value.Argument);
+                var index = Ability.Find(abilities, order.Value.Argument);
                 var target = order.Value.Target;
-                var stateIndex = index < 0 ? -1 : AbilityRules.FindCooldown(states, abilities[index].Id);
+                var stateIndex = index < 0 ? -1 : AbilityCooldown.Find(states, abilities[index].Id);
                 if (stateIndex < 0 || !IsUsable(abilities[index], states[stateIndex], target, owner))
                 {
                     ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
-                var aim = AbilityRules.Aim(abilities[index], transform.Position, target, order.Value.Position, Targets);
-                if (!AbilityRules.InRange(abilities[index], entity, transform.Position, target, aim, Targets))
+                var aim = abilities[index].Aim(transform.Position, target, order.Value.Position, Targets);
+                if (!abilities[index].InRange(entity, transform.Position, target, aim, Targets))
                 {
                     destination.MoveTo(moving, aim);
                     return;
@@ -167,8 +167,8 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             private bool IsUsable(in Ability ability, in AbilityCooldown state, Entity target, byte owner) =>
-                AbilityRules.IsAvailable(ability, state, owner, Completed) &&
-                AbilityRules.IsValidTarget(ability, target, owner, Targets, Owners, Relations);
+                ability.IsAvailable(state, owner, Completed) &&
+                ability.IsValidTarget(target, owner, Targets, Owners, Relations);
         }
     }
 }

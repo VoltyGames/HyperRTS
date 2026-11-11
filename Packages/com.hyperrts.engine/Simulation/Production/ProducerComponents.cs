@@ -1,3 +1,5 @@
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -19,6 +21,24 @@ namespace HyperRTS.Simulation.Production
 
         /// <summary>Units released so far; every client sees it rise, so doors open for enemies too.</summary>
         [GhostField] public uint Released;
+
+        /// <summary>Whether a finished producer of <paramref name="owner"/> offers <paramref name="prefab"/> and has queue room.</summary>
+        public static bool CanQueue(EntityManager entityManager, Entity producer, byte owner, Entity prefab)
+        {
+            if (!entityManager.HasComponent<Producer>(producer) || entityManager.GetComponentData<Owner>(producer).Value != owner)
+            {
+                return false;
+            }
+
+            if (entityManager.HasEnabled<ConstructionProgress>(producer))
+            {
+                return false;
+            }
+
+            var hasRoom = entityManager.GetBuffer<ProductionQueueItem>(producer, true).Length
+                < entityManager.GetComponentData<Producer>(producer).QueueLimit;
+            return hasRoom && PrefabOptions.Has(entityManager.GetBuffer<ProductionOption>(producer, true), prefab);
+        }
     }
 
     /// <summary>A unit prefab a producer can train.</summary>

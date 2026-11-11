@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.HUD.Commands
                 _costs.Bind(costs, _segments);
             }
 
-            _costs.MarkShort(!ResourceMath.CanAfford(context.Stock.AsNativeArray(), costs, _segments));
+            _costs.MarkShort(!new Stockpile(context.Stock).CanAfford(costs, _segments));
             // The leg's end sits under the cursor, so the row follows it without reading device input, lifted by
             // its own height to sit above the point.
             PlaceBeside(placement.Position, new Vector2(0f, -Root.resolvedStyle.height));

@@ -184,11 +184,11 @@ namespace HyperRTS.Simulation.Tests.Buildings.Placement
         public void CanAfford_ScalesTheSegmentCostByTheLine()
         {
             var prefab = WallPrefab(300);
-            var stock = World.EntityManager.GetBuffer<ResourceStock>(World.Player(1)).AsNativeArray();
+            var stock = new Stockpile(World.EntityManager.GetBuffer<ResourceStock>(World.Player(1)));
             var cost = World.Buffer<ResourceCost>(prefab);
 
-            Assert.IsTrue(ResourceMath.CanAfford(stock, cost, 3));
-            Assert.IsFalse(ResourceMath.CanAfford(stock, cost, 4));
+            Assert.IsTrue(stock.CanAfford(cost, 3));
+            Assert.IsFalse(stock.CanAfford(cost, 4));
         }
 
         [Test]

@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Production
                 .WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, ProducerCommands, selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
-            _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
+            _queues = Buyer.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             state.RequireForUpdate<NavGrid>();
         }
@@ -91,8 +91,8 @@ namespace HyperRTS.Simulation.Production
 
             var queue = SystemAPI.GetBuffer<ProductionQueueItem>(producer);
             var prefab = issued.Command.Prefab;
-            var stock = SystemAPI.GetBuffer<ResourceStock>(issued.Player);
-            if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
+            var stock = new Stockpile(SystemAPI.GetBuffer<ResourceStock>(issued.Player));
+            if (!buyer.TryBuy(state.EntityManager, prefab, stock))
             {
                 return;
             }
@@ -127,8 +127,8 @@ namespace HyperRTS.Simulation.Production
                 SystemAPI.GetComponentRW<Producer>(producer).ValueRW.Elapsed = 0f;
             }
 
-            var stock = SystemAPI.GetBuffer<ResourceStock>(issued.Player);
-            ProductionRules.Refund(stock, prefab, SystemAPI.GetBufferLookup<ResourceCost>(true));
+            var stock = new Stockpile(SystemAPI.GetBuffer<ResourceStock>(issued.Player));
+            stock.Refund(prefab, SystemAPI.GetBufferLookup<ResourceCost>(true));
         }
 
         private void SetRallyPoint(ref SystemState state, in IssuedCommand issued)
@@ -153,7 +153,7 @@ namespace HyperRTS.Simulation.Production
             for (var i = 0; i < producers.Length; i++)
             {
                 var producer = producers[i];
-                if (ProductionRules.CanQueue(state.EntityManager, producer, issued.Owner, issued.Command.Prefab))
+                if (Producer.CanQueue(state.EntityManager, producer, issued.Owner, issued.Command.Prefab))
                 {
                     shortest.Consider(i, producer, SystemAPI.GetBuffer<ProductionQueueItem>(producer).Length);
                 }

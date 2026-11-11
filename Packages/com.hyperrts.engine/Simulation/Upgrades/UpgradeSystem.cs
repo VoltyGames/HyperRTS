@@ -77,7 +77,7 @@ namespace HyperRTS.Simulation.Upgrades
                 {
                     if (applied.Count > 0 && hasModifiers)
                     {
-                        StatMath.RemoveKind(chunk.GetBufferAccessorRW(ref Modifiers)[index], StatSourceKind.Upgrade);
+                        new StatModifiers(chunk.GetBufferAccessorRW(ref Modifiers)[index]).RemoveKind(StatSourceKind.Upgrade);
                     }
 
                     applied = new AppliedUpgrades { Owner = owner };

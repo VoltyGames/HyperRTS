@@ -68,12 +68,12 @@ namespace HyperRTS.Simulation.Buildings
             var unfinished = state.EntityManager.HasEnabled<ConstructionProgress>(building);
             if (SystemAPI.HasBuffer<ResourceCost>(building))
             {
-                ResourceMath.Refund(stock, SystemAPI.GetBuffer<ResourceCost>(building), unfinished ? 1f : refund);
+                new Stockpile(stock).Refund(SystemAPI.GetBuffer<ResourceCost>(building), unfinished ? 1f : refund);
             }
 
             if (SystemAPI.HasBuffer<ProductionQueueItem>(building))
             {
-                ProductionRules.RefundQueue(stock, SystemAPI.GetBuffer<ProductionQueueItem>(building),
+                ProductionQueueItem.RefundAll(SystemAPI.GetBuffer<ProductionQueueItem>(building), new Stockpile(stock),
                     SystemAPI.GetBufferLookup<ResourceCost>(true));
             }
         }

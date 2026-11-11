@@ -111,7 +111,7 @@ namespace HyperRTS.Simulation.AI
             var budget = new Budget
             {
                 Room = entities.GetComponentData<Population>(turn.Player),
-                Stock = entities.GetBuffer<ResourceStock>(turn.Player).ToNativeArray(Allocator.Temp),
+                Copy = entities.GetBuffer<ResourceStock>(turn.Player).ToNativeArray(Allocator.Temp),
                 Buyer = turn.Buyer,
             };
 
@@ -126,7 +126,7 @@ namespace HyperRTS.Simulation.AI
                 if (prefab != Entity.Null)
                 {
                     budget.Room.Used += entities.GetComponentData<Producible>(prefab).Population;
-                    ResourceMath.Deduct(budget.Stock, entities.GetBuffer<ResourceCost>(prefab));
+                    budget.Stock.Deduct(entities.GetBuffer<ResourceCost>(prefab));
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.Produce, Unit = producer, Prefab = prefab });
                     // As the server does, so a second idle producer doesn't pick the same research this think.
                     budget.Buyer.AddPurchase(entities, prefab);
@@ -134,7 +134,7 @@ namespace HyperRTS.Simulation.AI
             }
 
             entities.SetComponentData(turn.Player, ai);
-            budget.Stock.Dispose();
+            budget.Copy.Dispose();
         }
 
         private static bool IsIdleProducer(EntityManager entities, Entity producer, byte owner)
@@ -170,7 +170,8 @@ namespace HyperRTS.Simulation.AI
             public Population Room;
 
             /// <summary>The stockpile left after what this think already queued.</summary>
-            public NativeArray<ResourceStock> Stock;
+            public NativeArray<ResourceStock> Copy;
+            public readonly Stockpile Stock => new Stockpile(Copy);
             public Buyer Buyer;
 
             public readonly bool CanTrain(EntityManager entities, Entity prefab)
@@ -180,7 +181,7 @@ namespace HyperRTS.Simulation.AI
                     return false;
                 }
 
-                return PurchaseRules.CanBuy(entities, prefab, Buyer, Stock);
+                return Buyer.CanBuy(entities, prefab, Stock);
             }
         }
     }

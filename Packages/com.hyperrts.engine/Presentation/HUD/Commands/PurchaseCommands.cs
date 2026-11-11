@@ -211,7 +211,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             {
                 var offers = entityManager.HasBuffer<ProductionQueueItem>(entity)
                              && entityManager.HasBuffer<ProductionOption>(entity)
-                             && ProductionRules.HasOption(entityManager.GetBuffer<ProductionOption>(entity, true),
+                             && PrefabOptions.Has(entityManager.GetBuffer<ProductionOption>(entity, true),
                                  prefab);
                 if (!offers)
                 {

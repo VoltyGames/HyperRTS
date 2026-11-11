@@ -30,6 +30,9 @@ namespace HyperRTS.Simulation.Abilities
             _status = new EventWriter<StatusRequest>(ref state);
         }
 
+        /// <summary>A caster that isn't <see cref="Offline"/>; the AI and player commands both cast only from these.</summary>
+        public static bool CanCast(EntityManager entityManager, Entity caster) => !entityManager.HasEnabled<Offline>(caster);
+
         public void Update(ref SystemState state)
         {
             _transforms.Update(ref state);

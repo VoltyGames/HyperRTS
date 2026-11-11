@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Abilities
                     continue;
                 }
 
-                var distance = math.distancesq(from.xz, AbilityRules.Aim(ability, from, command.Target, command.Position, _targets).xz);
+                var distance = math.distancesq(from.xz, ability.Aim(from, command.Target, command.Position, _targets).xz);
                 closest.Consider(index, caster, distance);
             }
 
@@ -130,14 +130,14 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var abilities = SystemAPI.GetBuffer<Ability>(caster);
-            var index = AbilityRules.FindAbility(abilities, command.Argument);
+            var index = Ability.Find(abilities, command.Argument);
             if (index < 0)
             {
                 return -1;
             }
 
             var states = SystemAPI.GetBuffer<AbilityCooldown>(caster);
-            var stateIndex = AbilityRules.FindCooldown(states, command.Argument);
+            var stateIndex = AbilityCooldown.Find(states, command.Argument);
             return stateIndex >= 0 && IsUsable(ref state, abilities[index], states[stateIndex], owner, command, context)
                 ? index
                 : -1;
@@ -145,12 +145,12 @@ namespace HyperRTS.Simulation.Abilities
 
         /// <summary>A caster that is finished and powered.</summary>
         private bool CanCast(ref SystemState state, Entity caster) =>
-            SystemAPI.HasBuffer<Ability>(caster) && AbilityRules.CanCast(state.EntityManager, caster);
+            SystemAPI.HasBuffer<Ability>(caster) && AbilityCaster.CanCast(state.EntityManager, caster);
 
         private bool IsUsable(ref SystemState state, in Ability ability, in AbilityCooldown abilityState, byte owner,
             in PlayerCommand command, in Context context) =>
-            AbilityRules.IsAvailable(ability, abilityState, owner, context.Completed) &&
-            AbilityRules.IsValidTarget(ability, command.Target, owner, _targets, SystemAPI.GetComponentLookup<Owner>(true),
+            ability.IsAvailable(abilityState, owner, context.Completed) &&
+            ability.IsValidTarget(command.Target, owner, _targets, SystemAPI.GetComponentLookup<Owner>(true),
                 context.Relations);
 
         private void Cast(ref SystemState state, Entity caster, int index, byte owner, in PlayerCommand command,
@@ -170,11 +170,11 @@ namespace HyperRTS.Simulation.Abilities
             }
 
             var from = SystemAPI.GetComponent<LocalTransform>(caster).Position;
-            var aim = AbilityRules.Aim(ability, from, command.Target, command.Position, _targets);
-            if (AbilityRules.InRange(ability, caster, from, command.Target, aim, _targets))
+            var aim = ability.Aim(from, command.Target, command.Position, _targets);
+            if (ability.InRange(caster, from, command.Target, aim, _targets))
             {
                 var states = SystemAPI.GetBuffer<AbilityCooldown>(caster);
-                var cooldown = AbilityRules.FindCooldown(states, ability.Id);
+                var cooldown = AbilityCooldown.Find(states, ability.Id);
                 _caster.Cast(ability, ref states.ElementAt(cooldown), Activation(ability, caster, owner, command.Target, aim),
                     context.Ecb);
             }
@@ -190,15 +190,15 @@ namespace HyperRTS.Simulation.Abilities
 
             var abilities = SystemAPI.GetBuffer<Ability>(player);
             var states = SystemAPI.GetBuffer<AbilityCooldown>(player);
-            var index = AbilityRules.FindAbility(abilities, command.Argument);
-            var stateIndex = AbilityRules.FindCooldown(states, command.Argument);
+            var index = Ability.Find(abilities, command.Argument);
+            var stateIndex = AbilityCooldown.Find(states, command.Argument);
             if (index < 0 || stateIndex < 0 ||
                 !IsUsable(ref state, abilities[index], states[stateIndex], owner, command, context))
             {
                 return;
             }
 
-            var aim = AbilityRules.Aim(abilities[index], command.Position, command.Target, command.Position, _targets);
+            var aim = abilities[index].Aim(command.Position, command.Target, command.Position, _targets);
             _caster.Cast(abilities[index], ref states.ElementAt(stateIndex),
                 Activation(abilities[index], player, owner, command.Target, aim), context.Ecb);
         }

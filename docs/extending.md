@@ -54,7 +54,7 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 3. Grant it with a `StatBonus` on an upgrade, veterancy rank, aura or status effect, or a `StatModifier` from code.
 
 A stat read at the moment of use, like `Income` or `DamageTaken`, needs no field: call
-`StatMath.Evaluate(modifiers, stat, baseValue)` where it is used.
+`new StatModifiers(modifiers).Evaluate(stat, baseValue)` where it is used.
 
 ## Mapping a Generals-style design
 

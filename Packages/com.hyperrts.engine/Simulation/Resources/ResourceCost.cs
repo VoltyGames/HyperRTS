@@ -8,5 +8,17 @@ namespace HyperRTS.Simulation.Resources
     {
         public UnityObjectRef<ResourceType> Type;
         public int Amount;
+
+        /// <summary>Every resource of the cost summed, e.g. to weigh a unit's worth.</summary>
+        public static int Total(DynamicBuffer<ResourceCost> cost)
+        {
+            var total = 0;
+            foreach (var item in cost)
+            {
+                total += item.Amount;
+            }
+
+            return total;
+        }
     }
 }

@@ -121,7 +121,7 @@ whole wall. The skirmish AI places lines only through `AIFieldWorkAuthoring`.
 share `ProducibleAuthoring`: build time and population.
 
 - A `Prerequisite` is met by a finished building or research.
-- `PurchaseRules` is the one buy rule, shared by orders, placement, the AI and the HUD.
+- `Buyer` holds the one buy rule (`CanBuy`, `TryBuy`, `FindRefusal`) over a `Stockpile`, shared by orders, placement, the AI and the HUD.
 - `BuildLimitAuthoring` caps how many of a type a player may have, counting sites and queued items.
 - A unit trained with a rally point set spawns with a `RallyOrder`, which `RallyOrderSystem` turns into a Move.
 - Every queued prefab needs `Producible` and every player `Population`.

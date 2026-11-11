@@ -56,14 +56,14 @@ namespace HyperRTS.Simulation.Tests.Production
         private PurchaseRefusal Refusal(Entity prefab)
         {
             var entityManager = World.EntityManager;
-            using var queues = ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager);
+            using var queues = Buyer.QueueQuery(Allocator.Temp).Build(entityManager);
             using var limited = BuildCounts.Query(Allocator.Temp).Build(entityManager);
             using var completed = CompletedBuildings.Query(Allocator.Temp).Build(entityManager);
             var player = World.Player(1);
             var buyer = Buyer.Snapshot(entityManager, queues, limited, 1,
                 new CompletedBuildings(completed, Allocator.Temp), entityManager.GetBuffer<CompletedResearch>(player));
             var stock = entityManager.GetBuffer<ResourceStock>(player);
-            return PurchaseRules.FindRefusal(entityManager, prefab, buyer, stock.AsNativeArray());
+            return buyer.FindRefusal(entityManager, prefab, new Stockpile(stock));
         }
     }
 }

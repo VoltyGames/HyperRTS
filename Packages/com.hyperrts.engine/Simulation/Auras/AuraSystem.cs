@@ -118,22 +118,6 @@ namespace HyperRTS.Simulation.Auras
             }
         }
 
-        private struct AuraCollector : ISpatialVisitor
-        {
-            public OwnerRelations Relations;
-            public AuraTargets Affects;
-            public NativeParallelMultiHashMap<Entity, AuraPresence> Hits;
-            public AuraPresence Presence;
-
-            public void Visit(in SpatialEntry entry)
-            {
-                if (AuraRules.Affects(Affects, Presence.SourceOwner, entry, Relations))
-                {
-                    Hits.Add(entry.Entity, Presence);
-                }
-            }
-        }
-
         /// <summary>Single-threaded: aura damage goes to the one damage queue in a stable order.</summary>
         [BurstCompile]
         private partial struct ApplyJob : IJobEntity
@@ -147,8 +131,8 @@ namespace HyperRTS.Simulation.Auras
 
             private void Execute(Entity entity, DynamicBuffer<AuraPresence> presence)
             {
-                var current = AuraRules.Resolve(Hits, entity);
-                if (!AuraRules.SameAuras(presence, current))
+                var current = AuraPresences.Resolve(Hits, entity).Items;
+                if (!AuraPresences.Matches(presence, current))
                 {
                     SwapBonuses(entity, presence, current);
                     presence.Clear();
@@ -174,7 +158,7 @@ namespace HyperRTS.Simulation.Auras
 
                 foreach (var item in previous)
                 {
-                    StatMath.RemoveSource(modifiers, StatSource.Aura(item.AuraId));
+                    new StatModifiers(modifiers).RemoveSource(StatSource.Aura(item.AuraId));
                 }
 
                 foreach (var item in current)

@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             _commands = new CommandReader(ref state, types, selected);
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
-            _queues = ResearchRules.QueueQuery(Allocator.Temp).Build(ref state);
+            _queues = Buyer.QueueQuery(Allocator.Temp).Build(ref state);
             _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
             _orders = new OrderWriter(ref state);
             _spawner = new PrefabSpawner(ref state);
@@ -148,8 +148,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 return false;
             }
 
-            var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
-            if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
+            var stock = new Stockpile(SystemAPI.GetBuffer<ResourceStock>(request.Player));
+            if (!buyer.TryBuy(state.EntityManager, prefab, stock))
             {
                 return false;
             }
@@ -224,7 +224,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         /// <summary>A builder listing <paramref name="prefab"/> among its build options.</summary>
         private bool CanBuild(ref SystemState state, Entity unit, Entity prefab) =>
             SystemAPI.HasBuffer<BuildOption>(unit)
-            && ProductionRules.HasOption(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
+            && PrefabOptions.Has(SystemAPI.GetBuffer<BuildOption>(unit), prefab);
 
         /// <summary>
         /// Valid ground, clear of every site by the map's building gap, with no enemy unit on it; a hidden enemy fails
@@ -258,7 +258,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var surface = BuildingPlacement.GetSurface(state.EntityManager, prefab);
             var join = (LineStart)request.Command.Argument;
             var line = new PlacementLine(map, request.Command.Position, request.Command.End, footprint, surface, join);
-            var stock = SystemAPI.GetBuffer<ResourceStock>(request.Player);
+            var stock = new Stockpile(SystemAPI.GetBuffer<ResourceStock>(request.Player));
             for (var i = 0; i < line.Count; i++)
             {
                 var spot = line.Segment(i).Grounded(grid);
@@ -267,7 +267,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                     continue;
                 }
 
-                if (!PurchaseRules.TryBuy(state.EntityManager, prefab, buyer, stock))
+                if (!buyer.TryBuy(state.EntityManager, prefab, stock))
                 {
                     break;
                 }

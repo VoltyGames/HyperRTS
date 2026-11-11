@@ -34,7 +34,7 @@ namespace HyperRTS.Presentation.HUD
         private readonly LiveSingleton<SquadRules> _squadRules = new();
 
         private readonly LiveQuery _queues = new(entityManager =>
-            ResearchRules.QueueQuery(Allocator.Temp).Build(entityManager));
+            Buyer.QueueQuery(Allocator.Temp).Build(entityManager));
 
         private readonly LiveQuery _limited = new(entityManager =>
             BuildCounts.Query(Allocator.Temp).Build(entityManager));
@@ -145,7 +145,7 @@ namespace HyperRTS.Presentation.HUD
         public void ShowCommandPage(int page) => View.SetCommandPage(page);
 
         public PurchaseRefusal FindRefusal(Entity prefab, in Buyer buyer) =>
-            PurchaseRules.FindRefusal(EntityManager, prefab, buyer, Stock.AsNativeArray());
+            buyer.FindRefusal(EntityManager, prefab, new Stockpile(Stock));
 
         /// <summary>Adds the prefabs of <paramref name="prefab"/>'s unmet prerequisites to <paramref name="missing"/>.</summary>
         public void FindMissingPrerequisites(Entity prefab, in Buyer buyer, List<Entity> missing)

@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Combat.Damage
 
         /// <summary>Every multiplier the hit takes on the target: armor, the side it comes from, damage taken, then its pace.</summary>
         public float Scale(Entity target, in DamageEvent hit) =>
-            Armor(target, hit.Profile.Type) * Facing(target, hit.Origin) * StatMath.DamageTaken(_modifiers, target, hit.Profile.Type)
+            Armor(target, hit.Profile.Type) * Facing(target, hit.Origin) * StatModifiers.DamageTaken(_modifiers, target, hit.Profile.Type)
             * (_paces.TryGetComponent(target, out var pace) ? pace.DamageTaken : 1f);
 
         private float Facing(Entity target, float3 origin) =>

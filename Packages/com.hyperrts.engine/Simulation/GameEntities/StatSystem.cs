@@ -73,7 +73,7 @@ namespace HyperRTS.Simulation.GameEntities
         /// </summary>
         public static float Cooldown(DynamicBuffer<StatModifier> modifiers, float baseCooldown)
         {
-            StatMath.SumModifiers(modifiers, Stat.FireRate, default, out var add, out var percent);
+            new StatModifiers(modifiers).Sum(Stat.FireRate, default, out var add, out var percent);
             var multiplier = math.max(MinFireRate, (1f + add * baseCooldown) * (1f + percent));
             return baseCooldown / multiplier;
         }
@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.GameEntities
                 {
                     foreach (var field in Fields)
                     {
-                        values[i * Floats + field.Index] = StatMath.Apply(modifiers[i], bases[i], field.Stat);
+                        values[i * Floats + field.Index] = new StatModifiers(modifiers[i]).Apply(bases[i], field.Stat);
                     }
                 }
             }
@@ -113,7 +113,7 @@ namespace HyperRTS.Simulation.GameEntities
             private void Execute(ref Health health, in DynamicBuffer<StatModifier> modifiers,
                 in DynamicBuffer<BaseStat> bases)
             {
-                var max = StatMath.Apply(modifiers, bases, Stat.MaxHealth);
+                var max = new StatModifiers(modifiers).Apply(bases, Stat.MaxHealth);
                 health.Current = health.Max > 0f ? health.Current * max / health.Max : max;
                 health.Max = max;
             }
@@ -127,11 +127,12 @@ namespace HyperRTS.Simulation.GameEntities
         {
             private void Execute(DynamicBuffer<WeaponMount> mounts, in DynamicBuffer<StatModifier> modifiers)
             {
+                var stats = new StatModifiers(modifiers);
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    mount.Weapon.Damage.Amount = StatMath.Evaluate(modifiers, Stat.Damage, mount.BaseDamage);
-                    mount.Weapon.Range = StatMath.Evaluate(modifiers, Stat.Range, mount.BaseRange);
+                    mount.Weapon.Damage.Amount = stats.Evaluate(Stat.Damage, mount.BaseDamage);
+                    mount.Weapon.Range = stats.Evaluate(Stat.Range, mount.BaseRange);
                     mount.Weapon.Cooldown = Cooldown(modifiers, mount.BaseCooldown);
                     mounts[i] = mount;
                 }

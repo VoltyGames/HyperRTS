@@ -123,10 +123,10 @@ namespace HyperRTS.Simulation.Tests
             world.Buffer<ResourceCost>(prefab).Add(new ResourceCost { Type = type, Amount = amount });
 
         public static void AddResources(this TestWorld world, byte owner, ResourceType type, int amount) =>
-            ResourceMath.Add(world.EntityManager.GetBuffer<ResourceStock>(world.Player(owner)), type, amount);
+            new Stockpile(world.EntityManager.GetBuffer<ResourceStock>(world.Player(owner))).Add(type, amount);
 
         public static int GetResources(this TestWorld world, byte owner, ResourceType type) =>
-            ResourceMath.GetAmount(world.EntityManager.GetBuffer<ResourceStock>(world.Player(owner)), type);
+            new Stockpile(world.EntityManager.GetBuffer<ResourceStock>(world.Player(owner))).Amount(type);
 
         public static void Order(this TestWorld world, Entity unit, OrderType type, Entity target) =>
             world.Issue(unit, new Order { Type = type, Target = target });

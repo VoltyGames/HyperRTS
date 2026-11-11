@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             var ai = _world.Player(2);
             Assert.AreEqual(0.25f, _world.Get<AIPlayer>(ai).ThinkInterval);
             var modifiers = _world.Buffer<StatModifier>(ai);
-            Assert.AreEqual(1.5f, StatMath.Evaluate(modifiers, Stat.Income, 1f), 1e-5f);
+            Assert.AreEqual(1.5f, new StatModifiers(modifiers).Evaluate(Stat.Income, 1f), 1e-5f);
         }
 
         [Test]
@@ -118,7 +118,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         {
             _world.CreateMatch(1, 2);
             var supplies = _world.CreateSupplies();
-            ResourceMath.Add(_world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1)), supplies, 1000);
+            new Stockpile(_world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1))).Add(supplies, 1000);
             var setup = Setup(Slot(1, PlayerControl.LocalHuman), Slot(2));
             setup.StartingResourceScale = 2.5f;
             setup.Fog = FogOverride.Revealed;
@@ -127,7 +127,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             _world.Tick();
 
             var stock = _world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1));
-            Assert.AreEqual(2500, ResourceMath.GetAmount(stock, supplies));
+            Assert.AreEqual(2500, new Stockpile(stock).Amount(supplies));
             Assert.IsFalse(_world.Get<MapSettings>(_world.MatchEntity()).FogOfWar);
         }
 

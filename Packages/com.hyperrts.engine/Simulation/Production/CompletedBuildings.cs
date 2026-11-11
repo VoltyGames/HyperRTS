@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Production
 
         /// <summary>True when <paramref name="owner"/> has a completed building or finished research of it.</summary>
         public bool IsMet(byte owner, int typeId, DynamicBuffer<CompletedResearch> research) =>
-            Owns(owner, typeId) || ResearchRules.IsDone(research, typeId);
+            Owns(owner, typeId) || CompletedResearch.Has(research, typeId);
 
         /// <summary>True when <paramref name="owner"/> owns a completed building of type <paramref name="typeId"/>.</summary>
         public bool Owns(byte owner, int typeId)

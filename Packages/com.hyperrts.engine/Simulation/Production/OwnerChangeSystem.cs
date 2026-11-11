@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Production
 
                 if (Stocks.TryGetBuffer(Players[owner], out var stock))
                 {
-                    ProductionRules.RefundQueue(stock, queue, Costs);
+                    ProductionQueueItem.RefundAll(queue, new Stockpile(stock), Costs);
                 }
 
                 Ecb.SetBuffer<ProductionQueueItem>(entity);

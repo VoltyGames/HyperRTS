@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Upgrades
                             continue;
                         }
 
-                        var unlocked = known && ResearchRules.IsDone(researched, mount.RequiredResearchTypeId);
+                        var unlocked = known && CompletedResearch.Has(researched, mount.RequiredResearchTypeId);
                         if (mount.Unlocked != unlocked)
                         {
                             mount.Unlocked = unlocked;

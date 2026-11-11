@@ -33,10 +33,10 @@ namespace HyperRTS.Editor.PlayMode.Cheats
 
         public static void AddResources(EntityManager entityManager, Entity player, int amount)
         {
-            var stock = entityManager.GetBuffer<ResourceStock>(player);
+            var stock = new Stockpile(entityManager.GetBuffer<ResourceStock>(player));
             foreach (var type in EditorAssets.FindAssets<ResourceType>())
             {
-                ResourceMath.Add(stock, type, amount);
+                stock.Add(type, amount);
             }
         }
 

@@ -54,11 +54,12 @@ namespace HyperRTS.Simulation.Match
         /// <summary>Adds the starting stockpile to the player's stock.</summary>
         public void AddStartingResources(DynamicBuffer<ResourceStock> stock)
         {
+            var pile = new Stockpile(stock);
             foreach (var quantity in startingResources)
             {
                 if (quantity.type != null)
                 {
-                    ResourceMath.Add(stock, quantity.type, quantity.amount);
+                    pile.Add(quantity.type, quantity.amount);
                 }
             }
         }

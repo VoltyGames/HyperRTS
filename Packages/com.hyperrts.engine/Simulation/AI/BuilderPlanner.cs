@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                if (!ProductionRules.HasOption(entities.GetBuffer<BuildOption>(builder), prefab))
+                if (!PrefabOptions.Has(entities.GetBuffer<BuildOption>(builder), prefab))
                 {
                     continue;
                 }

@@ -72,7 +72,7 @@ namespace HyperRTS.Simulation.Veterancy
             private static void Promote(DynamicBuffer<StatModifier> modifiers, in DynamicBuffer<VeterancyBonus> bonuses,
                 byte rank)
             {
-                StatMath.RemoveSource(modifiers, StatSource.Veterancy);
+                new StatModifiers(modifiers).RemoveSource(StatSource.Veterancy);
                 foreach (var bonus in bonuses)
                 {
                     if (bonus.Rank <= rank)

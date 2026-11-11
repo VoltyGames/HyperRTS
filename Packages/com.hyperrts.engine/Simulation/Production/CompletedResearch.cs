@@ -13,6 +13,32 @@ namespace HyperRTS.Simulation.Production
 
         [GhostField] public int TypeId;
 
+        public static bool Has(DynamicBuffer<CompletedResearch> completed, Entity prefab)
+        {
+            foreach (var item in completed)
+            {
+                if (item.Prefab == prefab)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool Has(DynamicBuffer<CompletedResearch> completed, int typeId)
+        {
+            foreach (var item in completed)
+            {
+                if (item.TypeId == typeId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         int IPrefabReference.TypeId => TypeId;
 
         Entity IPrefabReference.Prefab

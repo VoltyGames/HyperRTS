@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Resources
                 return;
             }
 
-            ResourceMath.Add(stock, type, amount);
+            new Stockpile(stock).Add(type, amount);
             if (statsLookup.TryGetRefRW(player, out var stats))
             {
                 stats.ValueRW.ResourcesGathered += amount;
@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Resources
         public static int Scaled(in BufferLookup<StatModifier> modifierLookup, Entity player, int amount)
         {
             var income = modifierLookup.TryGetBuffer(player, out var modifiers)
-                ? StatMath.Evaluate(modifiers, Stat.Income, 1f)
+                ? new StatModifiers(modifiers).Evaluate(Stat.Income, 1f)
                 : 1f;
             return (int)math.round(amount * income);
         }
