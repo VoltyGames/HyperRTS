@@ -217,12 +217,13 @@ MonoBehaviour:
   rotationSpeed: 100
   edgeScrolling: 1
   edgeSize: 8
-  zoomFraction: 0.15
-  minZoom: 10
-  maxZoom: 50
-  zoomSmoothTime: 0.12
-  pitchAtMinZoom: 44
-  pitchAtMaxZoom: 60
+  zoom:
+    fraction: 0.15
+    min: 10
+    max: 50
+    smoothTime: 0.12
+    pitchAtMin: 44
+    pitchAtMax: 60
   defaultHeight: 30
   defaultYaw: 0
   startFocus: {x: 0, y: 0}

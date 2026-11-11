@@ -125,7 +125,7 @@ namespace HyperRTS.Editor.Maps.Look
                 keys = keys.Take(1).ToList();
             }
 
-            var zooms = new[] { controller.minZoom, (controller.minZoom + controller.maxZoom) * 0.5f, controller.maxZoom };
+            var zooms = new[] { controller.zoom.min, (controller.zoom.min + controller.zoom.max) * 0.5f, controller.zoom.max };
             foreach (var weather in keys)
             {
                 // Throws naming an unknown key before any shot is taken.

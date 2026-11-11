@@ -29,16 +29,16 @@ shared through `InputActionsProvider` (`Suspend` and `Resume`). Each input syste
 [line placement](../simulation/economy.md#line-placement).
 
 `CameraController` orbits a ground focus. Its height is above the terrain at the focus, which eases along the
-`TerrainHeight`; each scroll notch changes the height by `zoomFraction` of it, and the pitch runs linearly from
-`pitchAtMinZoom` to `pitchAtMaxZoom`. The camera never sits closer than `terrainClearance` to the ground beneath it.
+`TerrainHeight`; each scroll notch changes the height by `zoom.fraction` of it, and the pitch runs linearly from
+`zoom.pitchAtMin` to `zoom.pitchAtMax`. The camera never sits closer than `terrainClearance` to the ground beneath it.
 Delete and Page Down turn it at `turnSpeed`, a middle-button drag yaws it, and Home returns to `defaultYaw` and
 `defaultHeight` over the same focus. A match opens on `startFocus`, then on the local player's buildings once found.
 `CameraController.View` is the one pose rule, which map view captures share.
 
 At close heights the camera also dithers away tree pixels (Bark, and Foliage with Tree Wind) within
-`treeFadeCameraRadius` of the camera, within `treeFadeLineRadius` of the line from it to the focus and on
-`treeFadeBeyondFocus` past it, so squads behind and under trees show. The fade is full at or below
-`treeFadeFullBelowHeight`, gone at or above `treeFadeNoneAboveHeight`, and shadows are never faded. It reaches the
+`treeFade.cameraRadius` of the camera, within `treeFade.lineRadius` of the line from it to the focus and on
+`treeFade.beyondFocus` past it, so squads behind and under trees show. The fade is full at or below
+`treeFade.fullBelowHeight`, gone at or above `treeFade.noneAboveHeight`, and shadows are never faded. It reaches the
 shaders as the globals `_HyperRTSFadeCamera`, `_HyperRTSFadeFocus`, `_HyperRTSFadeReach` and `_HyperRTSFadeAmount`, and
 only a camera at the controller's position fades, so scene views and capture cameras do not.
 

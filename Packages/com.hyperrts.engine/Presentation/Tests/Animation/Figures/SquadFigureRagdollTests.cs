@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
     /// Ragdoll corpses: the handover pose, the slot cap, freeing the slot when the corpse hides and the figures that fall
     /// after their squad's ghost is gone. Physics doesn't step here, so the bodies hold their handover pose.
     /// </summary>
-    public class SquadFigureRagdollTests : SquadFigureFixture
+    public class SquadFigureRagdollTests : SquadFigureRagdollFixture
     {
         private const float Tolerance = 5e-3f;
 

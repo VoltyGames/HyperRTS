@@ -1,18 +1,17 @@
-using System;
-using System.Collections.Generic;
 using HyperRTS.Presentation.Animation.Bones;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Quality;
 using HyperRTS.Presentation.Rendering.Parts;
+using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Profiling;
 using Unity.Transforms;
 using UnityEngine;
-using Collider = Unity.Physics.Collider;
 
 namespace HyperRTS.Presentation.Animation.Figures
 {
@@ -29,95 +28,130 @@ namespace HyperRTS.Presentation.Animation.Figures
     [UpdateBefore(typeof(PoseSlotSystem))]
     public partial class CorpseSystem : SystemBase
     {
-        private readonly Dictionary<BlobAssetReference<FigureClips>, BlobAssetReference<Collider>[]> _colliders = new();
+        private static readonly ProfilerMarker MakeMarker = new("CorpseSystem.Make");
+
+        // Seconds a gone squad waits for its death cue, which a remote client gets apart from the ghost's despawn.
+        private const float CueWait = 0.5f;
+
+        private readonly CorpseBudget _budget = new();
         private RenderSwitch _switch;
-        private CueVisibility _visibility;
-        private Camera _camera;
-        private float3 _cameraPosition;
+        private CorpseBodies _bodies;
+        private CorpseCopies _copies;
+        private CorpseDeathCues _deaths;
         private EntityQuery _newSquads;
         private EntityQuery _goneSquads;
-        private EntityQuery _ends;
         private EntityQuery _corpses;
-        private NativeList<Handover> _handovers;
-        private NativeList<WaitingFall> _waiting;
         private float _now;
-        private int _budget;
-
-        private struct Handover : IComparable<Handover>
-        {
-            public Entity Squad;
-            public int Figure;
-            public float4x4 World;
-            public float Distance;
-
-            public readonly int CompareTo(Handover other) => Distance.CompareTo(other.Distance);
-        }
 
         protected override void OnCreate()
         {
             RequireForUpdate<PoseSlots>();
             _switch = new RenderSwitch(ref CheckedStateRef);
-            _visibility = new CueVisibility(ref CheckedStateRef);
+            _bodies = new CorpseBodies(EntityManager);
+            _copies = new CorpseCopies(EntityManager, _budget);
+            _deaths = new CorpseDeathCues(ref CheckedStateRef, EntityManager);
             _newSquads = SystemAPI.QueryBuilder().WithAll<SquadFigures, EntityInfo, Owner>().WithNone<SquadEnd>().Build();
             _goneSquads = SystemAPI.QueryBuilder().WithAll<SquadEnd>().WithNone<SquadFigures>().Build();
-            _ends = SystemAPI.QueryBuilder().WithAll<SquadEnd>().Build();
             _corpses = SystemAPI.QueryBuilder().WithAll<Corpse>().Build();
-            _handovers = new NativeList<Handover>(Allocator.Persistent);
-            _waiting = new NativeList<WaitingFall>(Allocator.Persistent);
         }
 
         protected override void OnDestroy()
         {
-            _handovers.Dispose();
-            _waiting.Dispose();
-            foreach (var colliders in _colliders.Values)
-            {
-                foreach (var collider in colliders)
-                {
-                    collider.Dispose();
-                }
-            }
-
-            _colliders.Clear();
+            _budget.Dispose();
+            _bodies.Dispose();
         }
 
         protected override void OnUpdate()
         {
             CompleteDependency();
             _now = (float)SystemAPI.Time.ElapsedTime;
-            _camera = MainCamera.Find(_camera);
-            _cameraPosition = _camera == null ? default : (float3)_camera.transform.position;
-            _budget = EffectDetail.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
+            _budget.Begin();
             EntityManager.AddComponent(_newSquads, new ComponentTypeSet(typeof(SquadEnd), typeof(ShownFigure)));
             Scan();
-            MatchDeathCues();
+            if (SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
+            {
+                _deaths.Match(cues);
+            }
+
             EndGoneSquads();
             using (MakeMarker.Auto())
             {
-                MakeWaitingFalls();
+                _copies.MakeWaitingFalls(_now);
             }
 
             HandOverFigures();
             UpdateCorpses();
         }
 
+        private void Scan()
+        {
+            _budget.Handovers.Clear();
+            new CorpseScanJob
+            {
+                Now = _now,
+                Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
+                Handovers = _budget.Handovers,
+            }.Run();
+        }
+
+        // A ghost also goes when its squad walks into fog, so only one its death cue named leaves corpses.
+        private void EndGoneSquads()
+        {
+            using var squads = _goneSquads.ToEntityArray(Allocator.Temp);
+            foreach (var squad in squads)
+            {
+                var end = EntityManager.GetComponentData<SquadEnd>(squad);
+                if (end.GoneAt < 0f && !end.Died)
+                {
+                    end.GoneAt = _now;
+                    EntityManager.SetComponentData(squad, end);
+                    continue;
+                }
+
+                if (end.Died)
+                {
+                    FallShownFigures(squad, end);
+                }
+                else if (_now < end.GoneAt + CueWait)
+                {
+                    continue;
+                }
+
+                EntityManager.RemoveComponent(squad, new ComponentTypeSet(typeof(SquadEnd), typeof(ShownFigure)));
+            }
+        }
+
+        // The squad's own figures went with its ghost, so they wait to be copied from its prefab and fall on from where
+        // they were.
+        private void FallShownFigures(Entity squad, in SquadEnd end)
+        {
+            var prefab = SystemAPI.GetSingleton<PrefabRegistry>().Find(end.TypeId);
+            if (prefab == Entity.Null)
+            {
+                Debug.LogError($"Squad corpses: no prefab registered for type id {end.TypeId}, so its last figures don't fall.");
+                return;
+            }
+
+            _copies.QueueShownFigures(squad, prefab, end, _now);
+        }
+
         // A live figure past its handover becomes a ragdoll at once, or keeps falling on its squad when the frame's
         // budget or the slots are spent.
         private void HandOverFigures()
         {
-            SortHandovers();
-            foreach (var handover in _handovers)
+            _budget.SortHandovers(EntityManager);
+            foreach (var handover in _budget.Handovers)
             {
                 var figure = EntityManager.GetBuffer<SquadFigure>(handover.Squad)[handover.Figure];
                 var member = EntityManager.GetBuffer<SquadMember>(handover.Squad)[handover.Figure];
                 var world = handover.World;
                 ref var ragdoll = ref figure.Clips.Value.Ragdoll;
-                if (_budget <= 0 || !TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
+                if (_budget.Left <= 0 || !TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
                 {
                     continue;
                 }
 
-                _budget--;
+                _budget.Left--;
                 var corpse = new Corpse
                 {
                     Clips = figure.Clips,
@@ -127,8 +161,8 @@ namespace HyperRTS.Presentation.Animation.Figures
                     HideAt = figure.HideAt,
                 };
                 var owner = EntityManager.GetComponentData<Owner>(handover.Squad).Value;
-                var root = CreateCorpse(handover.Squad, figure.Figure, corpse, owner);
-                StartRagdoll(root, slot);
+                var root = _copies.Create(handover.Squad, figure.Figure, corpse, owner);
+                _bodies.StartRagdoll(root, slot, SystemAPI.GetSingleton<PoseSlots>(), _now);
                 _switch.Update(ref CheckedStateRef);
                 _switch.SetBranch(handover.Squad, figure.Figure, HideReason.Figure, true);
                 figure.State = FigureState.Hidden;
@@ -142,8 +176,8 @@ namespace HyperRTS.Presentation.Animation.Figures
         private bool TryTakeSlot(ref Ragdoll ragdoll, float3 position, out int slot)
         {
             slot = -1;
-            if (!ragdoll.HasBodies || _camera == null
-                || math.distance(_cameraPosition, position) > ragdoll.Tuning.cameraDistance)
+            if (!ragdoll.HasBodies || _budget.Camera == null
+                || math.distance(_budget.CameraPosition, position) > ragdoll.Tuning.cameraDistance)
             {
                 return false;
             }
@@ -177,10 +211,10 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             corpse.HandedOver = true;
             EntityManager.SetComponentData(root, corpse);
-            if (_budget > 0 && TryTakeSlot(ref corpse.Clips.Value.Ragdoll, corpse.World.c3.xyz, out var slot))
+            if (_budget.Left > 0 && TryTakeSlot(ref corpse.Clips.Value.Ragdoll, corpse.World.c3.xyz, out var slot))
             {
-                _budget--;
-                StartRagdoll(root, slot);
+                _budget.Left--;
+                _bodies.StartRagdoll(root, slot, SystemAPI.GetSingleton<PoseSlots>(), _now);
             }
         }
 
@@ -198,7 +232,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         // The slot keeps the last pose, so a lying body costs nothing until it hides.
         private void Freeze(Entity root)
         {
-            DestroyBodies(root);
+            _bodies.DestroyBodies(root);
             EntityManager.GetBuffer<CorpseBone>(root).Clear();
         }
 
@@ -209,26 +243,8 @@ namespace HyperRTS.Presentation.Animation.Figures
                 SystemAPI.GetSingleton<PoseSlots>().Release(corpse.Slot);
             }
 
-            DestroyBodies(root);
+            _bodies.DestroyBodies(root);
             EntityManager.DestroyEntity(root);
-        }
-
-        private void DestroyBodies(Entity root)
-        {
-            var made = new NativeList<Entity>(Allocator.Temp);
-            foreach (var body in EntityManager.GetBuffer<CorpseBody>(root))
-            {
-                made.Add(body.Body);
-            }
-
-            foreach (var joint in EntityManager.GetBuffer<CorpseJoint>(root))
-            {
-                made.Add(joint.Joint);
-            }
-
-            EntityManager.GetBuffer<CorpseBody>(root).Clear();
-            EntityManager.GetBuffer<CorpseJoint>(root).Clear();
-            EntityManager.DestroyEntity(made.AsArray());
         }
     }
 }

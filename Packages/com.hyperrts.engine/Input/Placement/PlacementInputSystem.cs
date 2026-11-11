@@ -33,7 +33,7 @@ namespace HyperRTS.Input.Placement
         private bool _keysPublished;
         private SeenEnemies _enemies;
         private VisibleFootprints _footprints;
-
+        private readonly PlacementWall _wall = new();
 
         protected override void OnCreate()
         {
@@ -60,7 +60,7 @@ namespace HyperRTS.Input.Placement
             if (!placement.Active)
             {
                 _keysPublished = false;
-                _sent = false;
+                _wall.Reset();
                 _rotation = PlacementRotation.Start();
                 PauseEdgeScroll(false);
                 return;
@@ -102,6 +102,42 @@ namespace HyperRTS.Input.Placement
             {
                 Rotate(commands);
                 MoveSingle(ref placement, aimed, ground, shift);
+            }
+        }
+
+        /// <summary>
+        /// Plans the leg being drawn into the PlacementSegment buffer: from the wall's start, or past the corner where
+        /// the last leg ended; before a wall starts, one segment at the cursor.
+        /// </summary>
+        private void MoveLine(ref PlacementState placement, float3 ground, bool shift)
+        {
+            var first = Spot(placement.Prefab, ground, 0f, out var map, out var grid);
+            var line = _wall.Leg(ref placement, ground, shift, map, first);
+            var segments = SystemAPI.GetSingletonBuffer<PlacementSegment>();
+            if (!_wall.IsPlanned(line, placement.Prefab, grid.Version))
+            {
+                CompleteDependency();
+                segments.Clear();
+                using var footprints = _footprints.Read(EntityManager);
+                for (var i = 0; i < line.Count; i++)
+                {
+                    var spot = line.Segment(i).Grounded(grid);
+                    var clear = spot.CanPlace(map, grid, footprints.AsArray(), inLine: true);
+                    segments.Add(new PlacementSegment { Spot = spot, Ground = clear });
+                }
+
+                _wall.Plan(line, placement.Prefab, grid.Version);
+            }
+
+            _enemies.Mark(segments);
+            placement.Valid = PlacementSegment.CountValid(segments) > 0;
+        }
+
+        private void DrawWall(ref PlacementState placement, bool aimed, bool shift)
+        {
+            if (aimed && _actions.Commands.Confirm.WasPressedThisFrame() && _wall.TryClick(ref placement, shift, out var leg))
+            {
+                AddCommand(leg);
             }
         }
 

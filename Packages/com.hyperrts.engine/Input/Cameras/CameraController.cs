@@ -2,6 +2,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace HyperRTS.Input.Cameras
     [HelpURL(HyperRTSDocs.Input)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
-    public partial class CameraController : PresentationBehaviour
+    public class CameraController : PresentationBehaviour
     {
         // Mouse delta is per frame, so yaw scales with pixels dragged rather than time.
         private const float DegreesPerPixel = 1f / 500f;
@@ -57,6 +58,23 @@ namespace HyperRTS.Input.Cameras
         [Min(0f)]
         public float homeSearchSeconds = 3f;
 
+        [Header("Zoom")]
+        public CameraZoom zoom = new();
+
+        [Header("Tree Fade")]
+        public CameraTreeFade treeFade = new();
+
+        [Header("Terrain")]
+        [Tooltip("Seconds the focus height takes to follow the terrain while panning, so relief doesn't bob the view.")]
+        [Min(0f)]
+        public float groundSmoothTime = 0.3f;
+
+        [Tooltip("Least height of the camera above the terrain under it, so hills never clip the view.")]
+        [Min(0f)]
+        public float terrainClearance = 1.5f;
+
+        private readonly LiveSingleton<TerrainHeight> _terrain = new();
+
         private readonly HomeBase _home = new();
         private bool _homeDone;
         private float _homeDeadline = float.NaN;
@@ -89,7 +107,7 @@ namespace HyperRTS.Input.Cameras
         protected override void OnDisabled()
         {
             InputActionsProvider.Disable(_actions.Camera);
-            StopTreeFade();
+            CameraTreeFade.Stop();
         }
 
         private void Start()
@@ -103,7 +121,7 @@ namespace HyperRTS.Input.Cameras
         private void ResetView()
         {
             _yaw = defaultYaw;
-            _targetHeight = Mathf.Clamp(defaultHeight, minZoom, maxZoom);
+            _targetHeight = zoom.Clamp(defaultHeight);
             _zoomVelocity = 0f;
         }
 
@@ -131,7 +149,7 @@ namespace HyperRTS.Input.Cameras
             var scroll = camera.Zoom.ReadValue<float>();
             if (scroll != 0f)
             {
-                _targetHeight = ZoomedHeight(_targetHeight, scroll, zoomFraction, minZoom, maxZoom);
+                _targetHeight = zoom.Zoomed(_targetHeight, scroll);
             }
 
             if (camera.Rotate.IsPressed())
@@ -144,7 +162,7 @@ namespace HyperRTS.Input.Cameras
             var speed = moveSpeed * speedMultiplier * _height / 10f;
             var focus = ClampToMap(_focus + PanDirection() * (speed * Time.unscaledDeltaTime));
             focus.y = SmoothedGround(focus);
-            var height = Mathf.SmoothDamp(_height, _targetHeight, ref _zoomVelocity, zoomSmoothTime,
+            var height = Mathf.SmoothDamp(_height, _targetHeight, ref _zoomVelocity, zoom.smoothTime,
                 float.PositiveInfinity, Time.unscaledDeltaTime);
             PlaceAt(focus, height);
         }
@@ -189,8 +207,35 @@ namespace HyperRTS.Input.Cameras
             var view = ViewAt(focus, height, _yaw);
             view.position.y = ClearedHeight(view.position.y, GroundAt(view.position), terrainClearance);
             transform.SetPositionAndRotation(view.position, view.rotation);
-            ShareTreeFade();
+            treeFade.Share(transform.position, _focus, _height);
         }
+
+        /// <summary>Where this camera sits to look at <paramref name="focus"/> from <paramref name="height"/> above it, turned to <paramref name="yaw"/>.</summary>
+        public Pose ViewAt(Vector3 focus, float height, float yaw) => View(focus, height, zoom.PitchAt(height), yaw);
+
+        /// <summary>The camera pose that looks down at <paramref name="pitch"/> onto <paramref name="focus"/> from <paramref name="height"/> above it.</summary>
+        public static Pose View(Vector3 focus, float height, float pitch, float yaw)
+        {
+            var rotation = Quaternion.Euler(pitch, yaw, 0f);
+            var distance = height / Mathf.Sin(pitch * Mathf.Deg2Rad);
+            return new Pose(focus - rotation * Vector3.forward * distance, rotation);
+        }
+
+        /// <summary>Lifts a camera height to <paramref name="clearance"/> above the terrain beneath it.</summary>
+        public static float ClearedHeight(float cameraY, float terrainY, float clearance) =>
+            Mathf.Max(cameraY, terrainY + clearance);
+
+        /// <summary>The terrain height under <paramref name="point"/>; flat y = 0 before a world or terrain exists.</summary>
+        private float GroundAt(Vector3 point)
+        {
+            _terrain.TryGetInDefaultWorld(out var terrain);
+            return terrain.Height(new float2(point.x, point.z));
+        }
+
+        /// <summary>The ground height under <paramref name="focus"/>, eased from the last one.</summary>
+        private float SmoothedGround(Vector3 focus) =>
+            Mathf.SmoothDamp(_focus.y, GroundAt(focus), ref _groundVelocity, groundSmoothTime, float.PositiveInfinity,
+                Time.unscaledDeltaTime);
 
         private Vector3 ClampToMap(Vector3 point) =>
             _map.TryGetInDefaultWorld(out var map) ? (Vector3)map.Clamp(point) : point;

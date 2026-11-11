@@ -1,7 +1,9 @@
 using HyperRTS.Simulation.Common.Cells;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Presentation.Common;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Fire
 {
@@ -9,7 +11,7 @@ namespace HyperRTS.Presentation.Environment.Fire
     /// Grass and crop fires on a 1 m grid that spread downwind and burn out. Every random choice is hashed, so clients that
     /// see the same impacts burn the same fields.
     /// </summary>
-    public sealed partial class FieldFires
+    public sealed class FieldFires
     {
         public const float CellSize = 1f;
         public const float StepSeconds = 0.25f;
@@ -68,6 +70,25 @@ namespace HyperRTS.Presentation.Environment.Fire
 
         /// <summary>The middle of each cell that burnt out during the last <see cref="Advance"/>.</summary>
         public IReadOnlyList<float2> BurntOut => _burntOut;
+
+        /// <summary>Marks dry every cell whose terrain texel <paramref name="dry"/> flags and that isn't water.</summary>
+        public void MarkDryTerrain(Terrain terrain, bool[] dry, in GroundMaterials ground)
+        {
+            var data = terrain.terrainData;
+            var resolution = data.alphamapResolution;
+            var origin = ((float3)terrain.GetPosition()).xz;
+            var perMetre = resolution / ((float3)data.size).xz;
+            foreach (var cell in _grid.Cells(int2.zero, Size - 1))
+            {
+                var centre = _grid.Center(cell);
+                var texel = (int2)math.floor((centre - origin) * perMetre);
+                var onTerrain = math.all(texel >= 0) && math.all(texel < resolution);
+                if (onTerrain && dry[texel.x + texel.y * resolution] && ground.At(centre) != SurfaceMaterial.Water)
+                {
+                    MarkDry(cell);
+                }
+            }
+        }
 
         public void MarkDry(int2 cell) => _cells[_grid.Index(cell)] = FieldCell.Dry;
 

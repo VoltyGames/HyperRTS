@@ -41,6 +41,7 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         private CueVisibility _visibility;
         private MapSettings _area;
+        private readonly BattleHazeFog _fog = new();
         private Texture3D _texture;
         private float _clock;
 
@@ -107,7 +108,7 @@ namespace HyperRTS.Presentation.Environment.Weather
             };
             _texture.SetPixelData(Haze.Texels, 0);
             _texture.Apply(false);
-            ShowFog(_texture, Haze.Tiling);
+            _fog.Show(_texture, Haze.Tiling);
         }
 
         private void AddImpacts()
@@ -160,16 +161,12 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         private void Clear()
         {
-            HideFog();
+            _fog.Hide();
             CoreUtils.Destroy(_texture);
             _texture = null;
             Haze?.Dispose();
             Haze = null;
             _clock = 0f;
         }
-
-        partial void ShowFog(Texture3D texture, float tiling);
-
-        partial void HideFog();
     }
 }

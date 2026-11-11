@@ -15,39 +15,9 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Tests.Animation.Rigs
 {
     /// <summary>The motion rig on a hand-made unit: turrets, recoil, wheels and steering, rotors, slope tilt and the body's suspension sway.</summary>
-    public partial class MotionRigTests
+    public class MotionRigTests : MotionRigFixture
     {
-        private const float Step = 0.1f;
         private const float SpringFrame = 1f / 60f;
-
-        private World _world;
-        private EntityManager _em;
-        private SystemHandle _system;
-        private Entity _unit;
-        private float3 _position;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new World("Motion Rig Tests");
-            _em = _world.EntityManager;
-            _system = _world.CreateSystem<MotionRigSystem>();
-            _position = new float3(10f, 0f, 10f);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            using (var query = _em.CreateEntityQuery(typeof(TerrainHeight)))
-            {
-                if (!query.IsEmpty)
-                {
-                    query.GetSingleton<TerrainHeight>().Blob.Dispose();
-                }
-            }
-
-            _world.Dispose();
-        }
 
         [Test]
         public void Turret_EasesToThePoseYaw()
@@ -198,26 +168,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             RecoilRate = math.radians(12f),
         };
 
-        private Entity Rig(MotionRigPart part, params MotionRigPart[] more)
-        {
-            var parts = new[] { part }.Concat(more).ToArray();
-            for (var i = 0; i < parts.Length; i++)
-            {
-                parts[i].Part = _em.CreateEntity();
-                _em.AddComponentData(parts[i].Part, LocalTransform.FromPositionRotation(parts[i].RestPosition, quaternion.identity));
-                parts[i].RestRotation = quaternion.identity;
-            }
-
-            _unit = _em.CreateEntity();
-            _em.AddComponentData(_unit, LocalTransform.FromPosition(_position));
-            _em.AddBuffer<WeaponPose>(_unit).Add(default);
-            var writer = new EntityWriter(_em, _unit);
-            MotionRigAuthoring.AddRig(writer, new MotionRig { TiltFrame = quaternion.identity, TiltRest = quaternion.identity },
-                parts);
-            MotionRigLink.AddAll(_em, _unit);
-            return parts[0].Part;
-        }
-
         // Rises along +z, so a unit facing +z climbs it.
         private void AddSlope(float grade)
         {
@@ -231,32 +181,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var terrain = TerrainHeight.Create(heights, size, float2.zero, 2f, Allocator.Persistent);
             heights.Dispose();
             _em.AddComponentData(_em.CreateEntity(), terrain);
-        }
-
-        private void SetPose(WeaponPose pose)
-        {
-            var poses = _em.GetBuffer<WeaponPose>(_unit);
-            poses[0] = pose;
-        }
-
-        private void MoveTo(float3 position)
-        {
-            _em.SetComponentData(_unit, LocalTransform.FromPosition(position));
-            Update(1);
-        }
-
-        private MotionRigPart Part(int index) => _em.GetBuffer<MotionRigPart>(_unit)[index];
-
-        private LocalTransform Pose(Entity part) => _em.GetComponentData<LocalTransform>(part);
-
-        private void Update(int frames)
-        {
-            for (var i = 0; i < frames; i++)
-            {
-                _world.SetTime(new TimeData(_world.Time.ElapsedTime + Step, Step));
-                _system.Update(_world.Unmanaged);
-                _em.CompleteAllTrackedJobs();
-            }
         }
     }
 }

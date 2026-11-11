@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
     /// A hand-made four-figure squad in a presentation world, with helpers to move it, fire it and read what each
     /// figure plays.
     /// </summary>
-    public abstract partial class SquadFigureFixture
+    public abstract class SquadFigureFixture : SquadFigureClipFixture
     {
         protected const float Step = 0.1f;
         protected const float DieHold = 2f;
@@ -46,8 +46,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         /// <summary>Systems a test adds, updated after the figure system.</summary>
         protected readonly List<SystemHandle> _later = new();
         protected double _time;
-        private readonly Dictionary<int, BlobAssetReference<FigureClips>> _clips = new();
-        private readonly List<Object> _made = new();
 
         [SetUp]
         public void SetUp()
@@ -66,18 +64,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         public void TearDown()
         {
             _kit.Dispose();
-            foreach (var clips in _clips.Values)
-            {
-                clips.Dispose();
-            }
-
-            _clips.Clear();
-            foreach (var made in _made)
-            {
-                Object.DestroyImmediate(made);
-            }
-
-            _made.Clear();
             _later.Clear();
         }
 
@@ -268,11 +254,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         }
 
         // The part follows its figure as the baking system sets it up.
-        private void Drive(Entity part, Entity root, Entity model, int index) =>
+        protected void Drive(Entity part, Entity root, Entity model, int index) =>
             _em.AddComponentData(part, new FigurePart { Root = root, Index = index, Model = model });
 
         // A hidden figure part under the squad's model, on the first clip.
-        private Entity CreatePart()
+        protected Entity CreatePart()
         {
             var part = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
             _em.AddComponentData(part, new Parent { Value = _model });

@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
     [Icon(HyperRTSIcons.MotionRigAuthoring)]
     [HelpURL(HyperRTSDocs.Presentation)]
     [DisallowMultipleComponent]
-    public partial class MotionRigAuthoring : AuthoringBehaviour
+    public class MotionRigAuthoring : AuthoringBehaviour
     {
         [Tooltip("Parts that turn to the weapon's yaw.")]
         public List<TurretSlot> turrets = new();
@@ -73,7 +73,14 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public int WeaponCount => TryGetComponent<WeaponAuthoring>(out var weapon) ? weapon.WeaponCount : 0;
 
         /// <summary>A building stands on levelled ground and never moves, so its body never tilts.</summary>
-        private bool IsBuilding => TryGetComponent<BuildingAuthoring>(out _);
+        public bool IsBuilding => TryGetComponent<BuildingAuthoring>(out _);
+
+        /// <summary>
+        /// Fills the slots and the weapons' pivots from parts named by the art (Turret, Barrel, Wheel_L01 and so on) in
+        /// every model under it.
+        /// </summary>
+        [InspectorButton("Fill from model", Glyph = "wand-sparkles")]
+        public void FillFromModel() => new MotionRigFill(this).Run();
 
         public static void AddRig(EntityWriter writer, in MotionRig rig, IReadOnlyList<MotionRigPart> parts)
         {

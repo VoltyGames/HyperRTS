@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Lights;
 using HyperRTS.Presentation.Effects.Streams;
@@ -19,7 +20,7 @@ namespace HyperRTS.Presentation.Effects.Rig
     [Icon(HyperRTSIcons.EffectRig)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
-    public partial class EffectRig : PresentationBehaviour
+    public class EffectRig : PresentationBehaviour
     {
         [Tooltip("Not played beyond this distance from the camera.")]
         [Unit("m")]
@@ -156,6 +157,72 @@ namespace HyperRTS.Presentation.Effects.Rig
             foreach (var light in _lights)
             {
                 Lights.Flash(light, light.transform.position);
+            }
+        }
+
+        /// <summary>What stops <paramref name="prefab"/> playing as an effect rig; empty when it is fine.</summary>
+        public static List<string> Problems(GameObject prefab)
+        {
+            var problems = new List<string>();
+            AddProblems(prefab, "", problems);
+            if (!prefab.TryGetComponent<EffectRig>(out var rig))
+            {
+                return problems;
+            }
+
+            for (var i = 0; i < rig.variants.Length; i++)
+            {
+                var variant = rig.variants[i];
+                if (variant == null)
+                {
+                    problems.Add($"variant {i} is empty");
+                    continue;
+                }
+
+                AddProblems(variant, $"variant '{variant.name}': ", problems);
+                if (variant.TryGetComponent<EffectRig>(out var inner) && inner.variants.Length > 0)
+                {
+                    problems.Add($"variant '{variant.name}' has variants of its own");
+                }
+            }
+
+            return problems;
+        }
+
+        private static void AddProblems(GameObject prefab, string prefix, List<string> problems)
+        {
+            if (!prefab.TryGetComponent<EffectRig>(out var rig))
+            {
+                problems.Add(prefix + "its root has no EffectRig");
+            }
+            else if (rig.maxDistance <= 0f)
+            {
+                problems.Add(prefix + "maxDistance must be above 0");
+            }
+
+            foreach (var effect in prefab.GetComponentsInChildren<VisualEffect>(true))
+            {
+                AddGraphProblems(effect, prefix, problems);
+            }
+        }
+
+        private static void AddGraphProblems(VisualEffect effect, string prefix, List<string> problems)
+        {
+            if (effect.visualEffectAsset == null)
+            {
+                problems.Add($"{prefix}VFX graph '{effect.name}' has no asset");
+                return;
+            }
+
+            // The pool sends Burst itself, so a graph that starts on its own would play once at the origin.
+            if (!string.IsNullOrEmpty(effect.initialEventName))
+            {
+                problems.Add($"{prefix}VFX graph '{effect.name}' plays on its own (clear Initial Event Name)");
+            }
+
+            if (!EffectGraph.HasDensity(effect))
+            {
+                problems.Add($"{prefix}VFX graph '{effect.name}' has no {EffectGraph.DensityProperty} property");
             }
         }
     }

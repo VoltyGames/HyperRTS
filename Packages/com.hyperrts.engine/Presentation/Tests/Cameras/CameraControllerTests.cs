@@ -16,10 +16,7 @@ namespace HyperRTS.Presentation.Tests.Cameras
             _rig = new GameObject("Camera", typeof(Camera));
             _rig.SetActive(false);
             _controller = _rig.AddComponent<CameraController>();
-            _controller.minZoom = 14f;
-            _controller.maxZoom = 80f;
-            _controller.pitchAtMinZoom = 44f;
-            _controller.pitchAtMaxZoom = 60f;
+            _controller.zoom = new CameraZoom { fraction = 0.15f, min = 4f, max = 80f, pitchAtMin = 44f, pitchAtMax = 60f };
         }
 
         [TearDown]
@@ -28,10 +25,11 @@ namespace HyperRTS.Presentation.Tests.Cameras
         [Test]
         public void Pitch_RunsLinearlyBetweenTheZoomLimits()
         {
-            Assert.AreEqual(44f, _controller.PitchAt(14f), 1e-4f);
-            Assert.AreEqual(52f, _controller.PitchAt(47f), 1e-4f);
-            Assert.AreEqual(60f, _controller.PitchAt(80f), 1e-4f);
-            Assert.AreEqual(44f, _controller.PitchAt(4f), 1e-4f);
+            var zoom = new CameraZoom { min = 14f, max = 80f, pitchAtMin = 44f, pitchAtMax = 60f };
+            Assert.AreEqual(44f, zoom.PitchAt(14f), 1e-4f);
+            Assert.AreEqual(52f, zoom.PitchAt(47f), 1e-4f);
+            Assert.AreEqual(60f, zoom.PitchAt(80f), 1e-4f);
+            Assert.AreEqual(44f, zoom.PitchAt(4f), 1e-4f);
         }
 
         [Test]
@@ -48,10 +46,10 @@ namespace HyperRTS.Presentation.Tests.Cameras
         [Test]
         public void Zoom_ChangesHeightByAShare_AndStopsAtTheLimits()
         {
-            Assert.AreEqual(8.5f, CameraController.ZoomedHeight(10f, 1f, 0.15f, 4f, 80f), 1e-4f);
-            Assert.AreEqual(11.5f, CameraController.ZoomedHeight(10f, -1f, 0.15f, 4f, 80f), 1e-4f);
-            Assert.AreEqual(4f, CameraController.ZoomedHeight(4.2f, 3f, 0.15f, 4f, 80f), 1e-4f);
-            Assert.AreEqual(80f, CameraController.ZoomedHeight(79f, -1f, 0.15f, 4f, 80f), 1e-4f);
+            Assert.AreEqual(8.5f, _controller.zoom.Zoomed(10f, 1f), 1e-4f);
+            Assert.AreEqual(11.5f, _controller.zoom.Zoomed(10f, -1f), 1e-4f);
+            Assert.AreEqual(4f, _controller.zoom.Zoomed(4.2f, 3f), 1e-4f);
+            Assert.AreEqual(80f, _controller.zoom.Zoomed(79f, -1f), 1e-4f);
         }
 
         [Test]
@@ -64,9 +62,10 @@ namespace HyperRTS.Presentation.Tests.Cameras
         [Test]
         public void TreeFade_RunsFromFullAtTheCloseZoomToNoneAtMidZoom()
         {
-            Assert.AreEqual(1f, CameraController.TreeFadeAmount(4f, 6f, 14f), 1e-4f);
-            Assert.AreEqual(0.5f, CameraController.TreeFadeAmount(10f, 6f, 14f), 1e-4f);
-            Assert.AreEqual(0f, CameraController.TreeFadeAmount(30f, 6f, 14f), 1e-4f);
+            var fade = new CameraTreeFade { fullBelowHeight = 6f, noneAboveHeight = 14f };
+            Assert.AreEqual(1f, fade.Amount(4f), 1e-4f);
+            Assert.AreEqual(0.5f, fade.Amount(10f), 1e-4f);
+            Assert.AreEqual(0f, fade.Amount(30f), 1e-4f);
         }
     }
 }

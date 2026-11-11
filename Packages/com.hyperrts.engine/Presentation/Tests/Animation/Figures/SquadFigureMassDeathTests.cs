@@ -16,7 +16,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
     /// A blast that wipes 300 squads of four five-part figures at once: the corpses come a frame's budget at a time,
     /// nearest the camera first. The slowest frame after it is logged, not asserted.
     /// </summary>
-    public class SquadFigureMassDeathTests : SquadFigureFixture
+    public class SquadFigureMassDeathTests : SquadFigureRagdollFixture
     {
         private const int Squads = 300;
 
