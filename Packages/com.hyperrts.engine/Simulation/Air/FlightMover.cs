@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
@@ -12,8 +11,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Air
 {
     /// <summary>
-    /// One aircraft's frame: steer, climb and arrive. The flight job passes it a <see cref="LocomotionState"/>
-    /// only for aircraft that keep one.
+    /// One aircraft's frame: steer, climb and arrive.
     /// </summary>
     internal struct FlightMover
     {
@@ -21,21 +19,22 @@ namespace HyperRTS.Simulation.Air
         [ReadOnly] public NavGrid Grid;
         [ReadOnly] public ComponentLookup<Docked> Docked;
 
-        public void Fly(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
-            in Owner owner, in Flight flight, ref MoveDestination destination,
-            EnabledRefRW<MoveDestination> moving, ref PathState path, DynamicBuffer<PathWaypoint> waypoints,
-            ref MoveProgress progress, ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity,
-            ref FacingGoal aim, EnabledRefRW<FacingGoal> aiming, ref LocomotionState drive, bool remembers)
+        public void Fly(in MoverChunk chunk, int index, in Flight flight)
         {
+            ref var transform = ref chunk.Transforms[index];
+            ref var velocity = ref chunk.Velocities[index];
+            ref var path = ref chunk.Paths[index];
+            var moving = chunk.Moving(index);
+            var waypoints = chunk.Waypoints[index];
+            var speed = chunk.Speeds[index];
             var deltaTime = Movers.DeltaTime;
             var maxStep = speed.Value * deltaTime;
             var heading = float2.zero;
-            var landed = Docked.HasEnabled(entity);
-            var frame = Movers.Begin(entity, transform, agent, owner, destination, moving.ValueRO, speed.Value,
-                velocity.Value, drive, remembers);
+            var landed = Docked.HasEnabled(chunk.Entities[index]);
+            var frame = Movers.Begin(chunk, index, speed.Value);
             var from = frame.From;
             var crowd = frame.Crowd;
-            var leg = PathLeg.Along(from, destination.Value.xz, waypoints, path);
+            var leg = PathLeg.Along(from, chunk.Destinations[index].Value.xz, waypoints, path);
             if (moving.ValueRO && frame.Driver.HasArrived(leg))
             {
                 path.Halt(moving, waypoints);
@@ -52,7 +51,7 @@ namespace HyperRTS.Simulation.Air
                 step = Loiter(transform.Rotation, flight, landed, frame.Driver.TopSpeed * deltaTime, ref heading);
             }
 
-            heading = frame.Driver.Aim(heading, !moving.ValueRO, aim, aiming);
+            heading = frame.Driver.Aim(heading, !moving.ValueRO, chunk.Aims[index], chunk.Aiming(index));
             Fly(ref transform, from + step + (landed ? float2.zero : crowd.PushWithin(maxStep)), flight, landed);
             if (moving.ValueRO && crowd.ReachedGroup)
             {
@@ -60,8 +59,7 @@ namespace HyperRTS.Simulation.Air
             }
 
             var reason = crowd.ReachedGroup ? ArrivalReason.AtGroupmate : ArrivalReason.Reached;
-            progress.Report(frame.WasMoving, moving.ValueRO, reason, ref arrival, arrived);
-            Movers.End(ref frame, transform.Position.xz, step, false, ref drive);
+            Movers.Finish(chunk, index, ref frame, reason, step, false);
 
             Face(ref transform, heading);
             velocity.Value = (transform.Position.xz - from) / deltaTime;

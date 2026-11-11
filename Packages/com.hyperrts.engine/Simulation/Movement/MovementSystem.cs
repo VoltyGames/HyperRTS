@@ -70,19 +70,7 @@ namespace HyperRTS.Simulation.Movement
                     Grid = grid,
                     Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 },
-                Entities = SystemAPI.GetEntityTypeHandle(),
-                Transforms = SystemAPI.GetComponentTypeHandle<LocalTransform>(),
-                Speeds = SystemAPI.GetComponentTypeHandle<MovementSpeed>(true),
-                Agents = SystemAPI.GetComponentTypeHandle<NavAgent>(true),
-                Owners = SystemAPI.GetComponentTypeHandle<Owner>(true),
-                Destinations = SystemAPI.GetComponentTypeHandle<MoveDestination>(),
-                Paths = SystemAPI.GetComponentTypeHandle<PathState>(),
-                Waypoints = SystemAPI.GetBufferTypeHandle<PathWaypoint>(),
-                Progresses = SystemAPI.GetComponentTypeHandle<MoveProgress>(),
-                Arrivals = SystemAPI.GetComponentTypeHandle<Arrival>(),
-                Velocities = SystemAPI.GetComponentTypeHandle<Velocity>(),
-                Aims = SystemAPI.GetComponentTypeHandle<FacingGoal>(),
-                Drives = SystemAPI.GetComponentTypeHandle<LocomotionState>(),
+                Handles = new MoverHandles(ref state),
             }.ScheduleParallel(_movers, state.Dependency);
         }
 
@@ -91,55 +79,17 @@ namespace HyperRTS.Simulation.Movement
         private struct MoveJob : IJobChunk
         {
             public GroundMover Mover;
-            [ReadOnly] public EntityTypeHandle Entities;
-            public ComponentTypeHandle<LocalTransform> Transforms;
-            [ReadOnly] public ComponentTypeHandle<MovementSpeed> Speeds;
-            [ReadOnly] public ComponentTypeHandle<NavAgent> Agents;
-            [ReadOnly] public ComponentTypeHandle<Owner> Owners;
-            public ComponentTypeHandle<MoveDestination> Destinations;
-            public ComponentTypeHandle<PathState> Paths;
-            public BufferTypeHandle<PathWaypoint> Waypoints;
-            public ComponentTypeHandle<MoveProgress> Progresses;
-            public ComponentTypeHandle<Arrival> Arrivals;
-            public ComponentTypeHandle<Velocity> Velocities;
-            public ComponentTypeHandle<FacingGoal> Aims;
-            public ComponentTypeHandle<LocomotionState> Drives;
+            public MoverHandles Handles;
 
             // Per chunk, not per unit, so the marker costs little and the profiler stays readable.
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask)
             {
                 MoveMarker.Begin();
-                var entities = chunk.GetNativeArray(Entities);
-                var transforms = chunk.GetNativeArray(ref Transforms).AsSpan();
-                var speeds = chunk.GetNativeArray(ref Speeds);
-                var agents = chunk.GetNativeArray(ref Agents);
-                var owners = chunk.GetNativeArray(ref Owners);
-                var destinations = chunk.GetNativeArray(ref Destinations).AsSpan();
-                var paths = chunk.GetNativeArray(ref Paths).AsSpan();
-                var waypoints = chunk.GetBufferAccessorRW(ref Waypoints);
-                var progresses = chunk.GetNativeArray(ref Progresses).AsSpan();
-                var arrivals = chunk.GetNativeArray(ref Arrivals).AsSpan();
-                var velocities = chunk.GetNativeArray(ref Velocities).AsSpan();
-                var aims = chunk.GetNativeArray(ref Aims).AsSpan();
-                var movingMask = chunk.GetEnabledMask(ref Destinations);
-                var arrivedMask = chunk.GetEnabledMask(ref Arrivals);
-                var aimingMask = chunk.GetEnabledMask(ref Aims);
-                var remembers = chunk.Has(ref Drives);
-                var drives = remembers ? chunk.GetNativeArray(ref Drives) : default;
-                for (var i = 0; i < chunk.Count; i++)
+                var movers = Handles.Open(chunk);
+                for (var i = 0; i < movers.Count; i++)
                 {
-                    var drive = remembers ? drives[i] : default;
-                    Mover.Move(entities[i], ref transforms[i], speeds[i], agents[i], owners[i],
-                        ref destinations[i], movingMask.GetEnabledRefRW<MoveDestination>(i),
-                        ref paths[i], waypoints[i], ref progresses[i],
-                        ref arrivals[i], arrivedMask.GetEnabledRefRW<Arrival>(i),
-                        ref velocities[i], ref aims[i], aimingMask.GetEnabledRefRW<FacingGoal>(i),
-                        ref drive, remembers);
-                    if (remembers)
-                    {
-                        drives[i] = drive;
-                    }
+                    Mover.Move(movers, i);
                 }
 
                 MoveMarker.End();

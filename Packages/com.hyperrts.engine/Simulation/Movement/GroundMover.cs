@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common.Infantry;
-using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -11,8 +10,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Movement
 {
     /// <summary>
-    /// One ground or naval unit's frame: plan, crowd, walls and arrival. The movement job passes it a
-    /// <see cref="LocomotionState"/> only for units that keep one.
+    /// One ground or naval unit's frame: plan, crowd, walls and arrival.
     /// </summary>
     internal struct GroundMover
     {
@@ -20,19 +18,19 @@ namespace HyperRTS.Simulation.Movement
         [ReadOnly] public NavGrid Grid;
         [ReadOnly] public ComponentLookup<Pace> Paces;
 
-        public void Move(Entity entity, ref LocalTransform transform, in MovementSpeed speed, in NavAgent agent,
-            in Owner owner, ref MoveDestination destination, EnabledRefRW<MoveDestination> moving,
-            ref PathState path, DynamicBuffer<PathWaypoint> waypoints, ref MoveProgress progress,
-            ref Arrival arrival, EnabledRefRW<Arrival> arrived, ref Velocity velocity, ref FacingGoal aim,
-            EnabledRefRW<FacingGoal> aiming, ref LocomotionState drive, bool remembers)
+        public void Move(in MoverChunk chunk, int index)
         {
+            var entity = chunk.Entities[index];
+            var agent = chunk.Agents[index];
+            ref var transform = ref chunk.Transforms[index];
+            ref var velocity = ref chunk.Velocities[index];
             // Aircraft fly in FlightMovementSystem, which this module can't name without a cycle.
             if (agent.Layer == NavLayer.Air)
             {
                 return;
             }
 
-            var top = speed.Value * (Paces.TryGetComponent(entity, out var pace) ? pace.Speed : 1f);
+            var top = chunk.Speeds[index].Value * (Paces.TryGetComponent(entity, out var pace) ? pace.Speed : 1f);
             // A frozen squad keeps its destination and goes on when it is free.
             if (top <= 0f)
             {
@@ -40,10 +38,14 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
+            ref var destination = ref chunk.Destinations[index];
+            ref var path = ref chunk.Paths[index];
+            ref var progress = ref chunk.Progresses[index];
+            var moving = chunk.Moving(index);
+            var waypoints = chunk.Waypoints[index];
             var deltaTime = Movers.DeltaTime;
             var maxStep = top * deltaTime;
-            var frame = Movers.Begin(entity, transform, agent, owner, destination, moving.ValueRO, top,
-                velocity.Value, drive, remembers);
+            var frame = Movers.Begin(chunk, index, top);
             var from = frame.From;
             var facing = frame.Facing;
             var crowd = frame.Crowd;
@@ -51,7 +53,7 @@ namespace HyperRTS.Simulation.Movement
 
             var capsule = new NavCapsule(agent.Access(Grid), axis);
             var step = Plan(ref frame, destination, moving, ref path, waypoints, capsule.Access);
-            var heading = frame.Driver.Aim(frame.Heading, !moving.ValueRO, aim, aiming);
+            var heading = frame.Driver.Aim(frame.Heading, !moving.ValueRO, chunk.Aims[index], chunk.Aiming(index));
 
             // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
             var depth = capsule.Depth(from, axis);
@@ -83,8 +85,7 @@ namespace HyperRTS.Simulation.Movement
                 reason = ArrivalReason.AtGroupmate;
             }
 
-            progress.Report(frame.WasMoving, moving.ValueRO, reason, ref arrival, arrived);
-            Movers.End(ref frame, transform.Position.xz, step, !transform.Position.xz.Equals(wanted), ref drive);
+            Movers.Finish(chunk, index, ref frame, reason, step, !transform.Position.xz.Equals(wanted));
 
             Face(ref transform, capsule, agent, facing, heading, moving.ValueRO);
             velocity.Value = (transform.Position.xz - from) / deltaTime;

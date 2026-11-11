@@ -1,16 +1,16 @@
-using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Movement
 {
     /// <summary>
     /// What every mover in a movement job shares: the crowd's index, who moves for whom, the frame's length and the
-    /// handling lookups. Ground and air jobs each keep one and open a <see cref="MoveFrame"/> per unit from it.
+    /// handling lookups. Ground and air jobs each keep one, open a <see cref="MoveFrame"/> per unit with
+    /// <see cref="Begin"/> and close it with <see cref="Finish"/>.
     /// </summary>
     internal struct Movers
     {
@@ -19,21 +19,24 @@ namespace HyperRTS.Simulation.Movement
         [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
         public float DeltaTime;
 
-        public readonly MoveFrame Begin(Entity entity, in LocalTransform transform, in NavAgent agent, in Owner owner,
-            in MoveDestination destination, bool moving, float top, float2 velocity,
-            LocomotionState drive, bool remembers)
+        public readonly MoveFrame Begin(in MoverChunk chunk, int index, float top)
         {
+            var entity = chunk.Entities[index];
+            var agent = chunk.Agents[index];
+            var velocity = chunk.Velocities[index].Value;
+            var moving = chunk.Moving(index).ValueRO;
+            var drive = chunk.Remembers ? chunk.Drives[index] : default;
             var locomotion = Locomotions.TryGetComponent(entity, out var own) ? own : Locomotion.Instant;
-            if (!remembers)
+            if (!chunk.Remembers)
             {
                 // Without state, last frame's movement stands in for last frame's steering choice.
                 drive.LastChoice = velocity;
             }
 
-            var from = transform.Position.xz;
-            var facing = math.normalizesafe(transform.Forward().xz);
-            var crowd = new CrowdVisitor(entity, from, facing, velocity, agent, owner.Value, moving, destination,
-                RightOfWay) { PassesInfantry = drive.PassesInfantry };
+            var from = chunk.Transforms[index].Position.xz;
+            var facing = math.normalizesafe(chunk.Transforms[index].Forward().xz);
+            var crowd = new CrowdVisitor(entity, from, facing, velocity, agent, chunk.Owners[index].Value, moving,
+                chunk.Destinations[index], RightOfWay) { PassesInfantry = drive.PassesInfantry };
             Index.QueryHulls(crowd.Center, crowd.Reach(top, Index.IsNearVehicleLane(crowd.Center)), ref crowd);
             var pace = crowd.WalksForInfantry ? math.min(top, RightOfWay.WalkingPace) : top;
             return new MoveFrame
@@ -42,26 +45,29 @@ namespace HyperRTS.Simulation.Movement
                 Facing = facing,
                 Velocity = velocity,
                 WasMoving = moving,
-                Remembers = remembers,
+                Remembers = chunk.Remembers,
                 Crowd = crowd,
                 Driver = new Driver(locomotion, agent, pace, DeltaTime) { Position = from, Facing = facing, State = drive },
             };
         }
 
-        /// <summary>Stores the handling state for a mover that keeps one.</summary>
-        public readonly void End(ref MoveFrame frame, float2 position, float2 step, bool walled,
-            ref LocomotionState drive)
+        /// <summary>Reports the arrival and stores the handling state for a mover that keeps one.</summary>
+        public readonly void Finish(in MoverChunk chunk, int index, ref MoveFrame frame, ArrivalReason reason,
+            float2 step, bool walled)
         {
+            chunk.Progresses[index].Report(frame.WasMoving, chunk.Moving(index).ValueRO, reason,
+                ref chunk.Arrivals[index], chunk.Arrived(index));
             if (!frame.Remembers)
             {
                 return;
             }
 
-            var moved = position - frame.From;
+            var moved = chunk.Transforms[index].Position.xz - frame.From;
             frame.Driver.State.Hit(moved, step, walled);
             frame.Driver.State.WaitOnInfantry(frame.Crowd.IsHeldByInfantry, !frame.Crowd.IsNearInfantry,
                 math.length(moved), DeltaTime);
-            drive = frame.Driver.State;
+            var drives = chunk.Drives;
+            drives[index] = frame.Driver.State;
         }
     }
 }
