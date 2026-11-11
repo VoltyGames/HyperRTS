@@ -31,14 +31,19 @@ namespace HyperRTS.Presentation.Animation.Figures
         // Nearest the camera first; what the budget leaves waits, and past the wait it is dropped.
         private void MakeWaitingFalls()
         {
-            for (var i = 0; i < _waiting.Length; i++)
+            // Everything fits the budget, so the order doesn't matter.
+            if (_waiting.Length > _budget)
             {
-                var waiting = _waiting[i];
-                waiting.Distance = CameraDistance(waiting.Shown.World.c3.xyz);
-                _waiting[i] = waiting;
+                for (var i = 0; i < _waiting.Length; i++)
+                {
+                    var waiting = _waiting[i];
+                    waiting.Distance = CameraDistance(waiting.Shown.World.c3.xyz);
+                    _waiting[i] = waiting;
+                }
+
+                _waiting.Sort();
             }
 
-            _waiting.Sort();
             var kept = 0;
             for (var i = 0; i < _waiting.Length; i++)
             {
@@ -63,7 +68,8 @@ namespace HyperRTS.Presentation.Animation.Figures
             {
                 var handover = _handovers[i];
                 var figure = EntityManager.GetBuffer<SquadFigure>(handover.Squad)[handover.Figure];
-                handover.Distance = CameraDistance(EntityManager.GetComponentData<LocalToWorld>(figure.Figure).Position);
+                handover.World = EntityManager.GetComponentData<LocalToWorld>(figure.Figure).Value;
+                handover.Distance = CameraDistance(handover.World.c3.xyz);
                 _handovers[i] = handover;
             }
 
@@ -72,6 +78,6 @@ namespace HyperRTS.Presentation.Animation.Figures
 
         // Without a camera every figure is as near as any other.
         private float CameraDistance(float3 position) =>
-            _camera == null ? 0f : math.distance((float3)_camera.transform.position, position);
+            _camera == null ? 0f : math.distance(_cameraPosition, position);
     }
 }

@@ -221,12 +221,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
                 Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
             });
-            var writer = World.Writer(truck);
-            LocomotionAuthoring.Add(writer, new Locomotion
-            {
-                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(35f), SteerRate = math.radians(45f),
-                ReverseSpeed = 3f,
-            });
+            LocomotionAuthoring.Add(World.Writer(truck), TestVehicles.ShortTruck);
             return truck;
         }
     }

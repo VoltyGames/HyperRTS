@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Movement
             return length > maxStep ? Push * (maxStep / length) : Push;
         }
 
-        private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach, int precedence)
+        private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach, int precedence,
+            bool entryYields)
         {
             var overlap = reach - distance;
             ReachedGroup |= Moving && IsArrivedGroupmate(entry) &&
@@ -21,11 +22,11 @@ namespace HyperRTS.Simulation.Movement
             // The push never moves a vehicle off a foot unit, so the foot unit takes the whole overlap.
             if (Unit.IsVehicle != entry.IsVehicle)
             {
-                Push += direction * (overlap * Rule.PushShare(Unit, entry));
+                Push += direction * (overlap * Rule.PushShare(Unit, entry, entryYields));
             }
             else if (Moving)
             {
-                Push += direction * MoverPush(entry, distance, reach, precedence);
+                Push += direction * MoverPush(entry, distance, reach, precedence, entryYields);
             }
             else if (!entry.IsMoving)
             {
@@ -40,12 +41,13 @@ namespace HyperRTS.Simulation.Movement
 
         // Same-way traffic makes its spacing by the follower alone, but inside the leader's own reach both part half
         // each, so a follower pressed from both sides can't be driven into.
-        private readonly float MoverPush(in SpatialEntry entry, float distance, float reach, int precedence)
+        private readonly float MoverPush(in SpatialEntry entry, float distance, float reach, int precedence,
+            bool entryYields)
         {
             var overlap = reach - distance;
             if (precedence == 0)
             {
-                return overlap * Rule.PushShare(Unit, entry);
+                return overlap * Rule.PushShare(Unit, entry, entryYields);
             }
 
             var close = math.max(0f, LeaderReach(entry, reach) - distance) * 0.5f;

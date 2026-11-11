@@ -23,12 +23,6 @@ namespace HyperRTS.Simulation.Tests.Movement
         private Entity SpawnTruck(float3 position) =>
             World.SpawnVehicle(1, position, East, 6f, TestVehicles.SupplyTruckHull(), TestVehicles.SupplyTruck);
 
-        private void Send(Entity unit, float3 goal)
-        {
-            World.Set(unit, new MoveDestination { Value = goal });
-            World.SetEnabled<MoveDestination>(unit, true);
-        }
-
         private float Speed(Entity unit) => math.length(World.Get<Velocity>(unit).Value);
 
         // Metres between the vehicle's hull and the foot unit's circle; negative once they overlap.
@@ -64,7 +58,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             var squad = World.SpawnSquad(squadOwner, float3.zero);
             var truck = SpawnTruck(new float3(-30f, 0f, 0f));
             World.Tick();
-            Send(truck, new float3(30f, 0f, 0f));
+            World.Send(truck, new float3(30f, 0f, 0f));
 
             var closest = float.MaxValue;
             var stood = 0f;
@@ -90,7 +84,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             World.Add(soldier, new Pace { Speed = 0f, FireRate = 1f, DamageTaken = 1f });
             var truck = SpawnTruck(new float3(-20f, 0f, 0f));
             World.Tick();
-            Send(truck, new float3(20f, 0f, 0f));
+            World.Send(truck, new float3(20f, 0f, 0f));
 
             var stood = 0f;
             var fastestThrough = 0f;

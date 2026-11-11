@@ -125,16 +125,16 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>
         /// The mover's part of steering round <paramref name="other"/>: none when the other gives way, so it isn't
         /// steered round; all against a unit holding its ground, in same-way traffic or against a mover that
-        /// outweighs it; else half.
+        /// outweighs it; else half. Takes what the caller already worked out for the pair.
         /// </summary>
-        public readonly float Share(in SpatialEntry mover, in SpatialEntry other)
+        public readonly float Share(in SpatialEntry mover, in SpatialEntry other, bool otherYields, int precedence)
         {
-            if (Yields(other, mover))
+            if (otherYields)
             {
                 return 0f;
             }
 
-            if (!other.IsMoving || Precedence(mover, other) != 0)
+            if (!other.IsMoving || precedence != 0)
             {
                 return 1f;
             }
@@ -146,14 +146,14 @@ namespace HyperRTS.Simulation.Movement
         /// The mover's part of the overlap push against <paramref name="other"/>: all of it between a foot unit and a
         /// vehicle, which the push never moves; half against a unit that moves or gives way too; else all.
         /// </summary>
-        public readonly float PushShare(in SpatialEntry mover, in SpatialEntry other)
+        public readonly float PushShare(in SpatialEntry mover, in SpatialEntry other, bool otherYields)
         {
             if (mover.IsVehicle != other.IsVehicle)
             {
                 return mover.IsVehicle ? 0f : 1f;
             }
 
-            return other.IsMoving || Yields(other, mover) ? 0.5f : 1f;
+            return other.IsMoving || otherYields ? 0.5f : 1f;
         }
 
         /// <summary>
@@ -183,29 +183,38 @@ namespace HyperRTS.Simulation.Movement
         public readonly bool IsInLane(in SpatialEntry vehicle, in SpatialEntry unit)
         {
             var travel = Travel(vehicle);
-            var offset = unit.Position.xz - vehicle.Position.xz;
-            var along = math.dot(offset, travel);
-            var length = vehicle.HullReach + LaneAhead(vehicle) + unit.Radius;
-            if (along <= 0f || along > length)
-            {
-                return false;
-            }
-
-            return math.abs(Planar.Cross(travel, offset)) < LaneHalfWidth(vehicle, unit);
+            return IsInLane(vehicle, unit, travel, unit.Position.xz - vehicle.Position.xz);
         }
 
         /// <summary>The move that takes <paramref name="unit"/> out of the lane ahead of <paramref name="vehicle"/>, to the side it leans to.</summary>
         public readonly float2 StepAside(in SpatialEntry vehicle, in SpatialEntry unit)
         {
-            if (!IsInLane(vehicle, unit))
+            var travel = Travel(vehicle);
+            var offset = unit.Position.xz - vehicle.Position.xz;
+            if (!IsInLane(vehicle, unit, travel, offset))
             {
                 return float2.zero;
             }
 
-            var travel = Travel(vehicle);
-            var offset = unit.Position.xz - vehicle.Position.xz;
             var outside = LaneHalfWidth(vehicle, unit) + LaneMargin - math.abs(Planar.Cross(travel, offset));
             return Side(travel, offset) * outside;
+        }
+
+        private readonly bool IsInLane(in SpatialEntry vehicle, in SpatialEntry unit, float2 travel, float2 offset)
+        {
+            var along = math.dot(offset, travel);
+            if (along <= 0f)
+            {
+                return false;
+            }
+
+            var length = vehicle.HullReach + LaneAhead(vehicle) + unit.Radius;
+            if (along > length)
+            {
+                return false;
+            }
+
+            return math.abs(Planar.Cross(travel, offset)) < LaneHalfWidth(vehicle, unit);
         }
 
         /// <summary>
@@ -231,8 +240,11 @@ namespace HyperRTS.Simulation.Movement
         private static bool Outweighs(in SpatialEntry heavy, in SpatialEntry light) =>
             heavy.Mass > light.Mass && heavy.Mass >= light.Mass * Outweighing;
 
-        private static float2 Travel(in SpatialEntry vehicle) =>
-            math.length(vehicle.Velocity) > Rolling ? math.normalize(vehicle.Velocity) : vehicle.Facing;
+        private static float2 Travel(in SpatialEntry vehicle)
+        {
+            var speedSq = math.lengthsq(vehicle.Velocity);
+            return speedSq > Rolling * Rolling ? vehicle.Velocity * math.rsqrt(speedSq) : vehicle.Facing;
+        }
 
         private readonly float LaneAhead(in SpatialEntry vehicle) =>
             math.lengthsq(vehicle.Velocity) / (2f * _handling[vehicle.Entity].Braking) + LaneLead;

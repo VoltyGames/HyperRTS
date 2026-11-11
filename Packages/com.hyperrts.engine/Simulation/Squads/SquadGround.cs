@@ -108,28 +108,13 @@ namespace HyperRTS.Simulation.Squads
 
             while (ray.MoveNext())
             {
-                if (!IsPassable(ray))
+                if (!_access.CanCross(ray))
                 {
                     return math.max(0f, ray.Entry - EdgeBack / length);
                 }
             }
 
             return 1f;
-        }
-
-        private readonly bool IsPassable(in GridRay ray)
-        {
-            if (ray.CrossedCorner)
-            {
-                var before = ray.Cell - ray.Step;
-                var sides = _access.IsOpen(before + new int2(ray.Step.x, 0));
-                if (!sides || !_access.IsOpen(before + new int2(0, ray.Step.y)))
-                {
-                    return false;
-                }
-            }
-
-            return _access.IsOpen(ray.Cell);
         }
 
         private static float OpenReach(in NavAccess access, float2 centre)

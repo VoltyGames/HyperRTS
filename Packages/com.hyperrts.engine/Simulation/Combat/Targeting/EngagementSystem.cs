@@ -63,9 +63,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 EnabledRefRW<AttackTarget> attacking, RefRW<MoveDestination> destination,
                 EnabledRefRW<MoveDestination> moving)
             {
-                var rooted = Deployable.IsImmobile(Engager.Deployables, entity);
                 Engager.Engage(entity, transform, mounts, vision, owner, ref stance, ref attack, attacking,
-                    new UnitMove(destination, moving, rooted));
+                    new UnitMove(destination, moving, Engager.Deployables, entity));
             }
         }
 

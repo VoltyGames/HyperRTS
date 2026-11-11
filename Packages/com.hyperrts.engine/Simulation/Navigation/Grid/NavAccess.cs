@@ -175,17 +175,28 @@ namespace HyperRTS.Simulation.Navigation.Grid
             var clear = IsClear(ray.Cell, clearance);
             while (clear && ray.MoveNext())
             {
-                if (ray.CrossedCorner)
-                {
-                    var before = ray.Cell - ray.Step;
-                    var sides = IsClear(before + new int2(ray.Step.x, 0), clearance);
-                    clear = sides && IsClear(before + new int2(0, ray.Step.y), clearance);
-                }
-
-                clear = clear && IsClear(ray.Cell, clearance);
+                clear = CanCross(ray, clearance);
             }
 
             return clear;
+        }
+
+        /// <summary>Whether a ray's step onto its new cell stays clear; through a corner, both cells beside it too.</summary>
+        public bool CanCross(in GridRay ray) => CanCross(ray, OpenDistance);
+
+        private bool CanCross(in GridRay ray, float clearance)
+        {
+            if (ray.CrossedCorner)
+            {
+                var before = ray.Cell - ray.Step;
+                var sides = IsClear(before + new int2(ray.Step.x, 0), clearance);
+                if (!sides || !IsClear(before + new int2(0, ray.Step.y), clearance))
+                {
+                    return false;
+                }
+            }
+
+            return IsClear(ray.Cell, clearance);
         }
 
         private void Consider(in NearestFilter filter, int2 center, int2 offset, ref int best, ref int2 found)

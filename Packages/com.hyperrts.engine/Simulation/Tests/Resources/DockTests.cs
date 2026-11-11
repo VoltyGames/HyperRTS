@@ -45,10 +45,10 @@ namespace HyperRTS.Simulation.Tests.Resources
         {
             var depot = World.SpawnBuilding(1, DepotCenter, new float2(10f, 10f));
             World.EntityManager.AddComponent<ResourceDropOff>(depot);
-            var bays = new List<DockBay> { Bay(new float3(0f, 0f, -8f), new float2(1f, 0f)) };
+            var bays = new List<DockBay> { DockTestKit.Bay(new float3(0f, 0f, -8f), new float2(1f, 0f)) };
             if (bayCount > 1)
             {
-                bays.Add(Bay(new float3(0f, 0f, 8f), new float2(-1f, 0f)));
+                bays.Add(DockTestKit.Bay(new float3(0f, 0f, 8f), new float2(-1f, 0f)));
             }
 
             var writer = World.Writer(depot);
@@ -56,29 +56,12 @@ namespace HyperRTS.Simulation.Tests.Resources
             return depot;
         }
 
-        private static DockBay Bay(float3 stop, float2 facing) => new()
-        {
-            Stop = stop, Facing = facing, RunIn = DockAuthoring.DefaultRunIn,
-            Exit = stop + new float3(facing.x, 0f, facing.y) * DockAuthoring.DefaultExit,
-        };
-
         // A full wheeled truck facing +x, heading back with its load.
         private Entity SpawnTruck(float3 position)
         {
             var truck = SpawnLoaded(World.SpawnUnit(1, position, 8f, TruckRadius));
-            var agent = new NavAgent
-            {
-                Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
-                Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
-            };
-            agent.WallMargin = agent.HullWallMargin;
-            World.Set(truck, agent);
-            var writer = World.Writer(truck);
-            LocomotionAuthoring.Add(writer, new Locomotion
-            {
-                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(35f), SteerRate = math.radians(45f),
-                ReverseSpeed = 3f,
-            });
+            World.Set(truck, TestVehicles.ShortTruckHull(TruckRadius, TruckLength));
+            LocomotionAuthoring.Add(World.Writer(truck), TestVehicles.ShortTruck);
             World.Set(truck, LocalTransform.FromPositionRotation(position,
                 quaternion.RotateY(math.PI * 0.5f)));
             return truck;

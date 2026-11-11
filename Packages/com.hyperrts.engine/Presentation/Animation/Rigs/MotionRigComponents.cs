@@ -30,9 +30,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         public quaternion TiltRest;
 
-        /// <summary>The tilt root's local rotation this frame, which the tilt root and follower take.</summary>
-        public quaternion TiltPose;
-
         /// <summary>Length (x along forward) and width the ground is sampled across.</summary>
         public float2 Footprint;
 

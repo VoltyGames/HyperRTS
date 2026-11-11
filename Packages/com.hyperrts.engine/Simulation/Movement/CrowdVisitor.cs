@@ -128,10 +128,11 @@ namespace HyperRTS.Simulation.Movement
             var distance = math.sqrt(distanceSq);
             var reach = Radius + entry.Radius + math.max(Unit.Spacing, entry.Spacing);
             var precedence = Rule.Precedence(Unit, entry);
-            WatchLane(entry, distance < reach);
+            var entryYields = Rule.Yields(entry, Unit);
+            WatchLane(entry, distance < reach, entryYields);
             if (Moving)
             {
-                Gather(entry, distanceSq, distance, reach, precedence);
+                Gather(entry, distanceSq, distance, reach, precedence, entryYields);
             }
 
             // Beyond twice the spacing no pair closes the room left in one frame, so it needn't count.
@@ -141,17 +142,17 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
-            _infantryNear |= Unit.IsVehicle && !entry.IsVehicle && Rule.Yields(entry, Unit);
+            _infantryNear |= Unit.IsVehicle && !entry.IsVehicle && entryYields;
             var direction = Direction(offset, distance, entry);
             // Parked pairs only part, and a mover presses aside a unit giving way to it, so neither limits the move.
-            if (Moving ? !Presses(entry) : entry.IsMoving)
+            if (Moving ? !Presses(entry, entryYields) : entry.IsMoving)
             {
                 _room.Add(direction, distance - Radius - entry.Radius);
             }
 
             if (distance < reach)
             {
-                Separate(entry, direction, distance, reach, precedence);
+                Separate(entry, direction, distance, reach, precedence, entryYields);
             }
         }
 
@@ -161,7 +162,8 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>Whether the move meets no neighbour's hull.</summary>
         public readonly bool Keeps(float2 move) => _room.Keeps(move);
 
-        private void Gather(in SpatialEntry entry, float distanceSq, float distance, float reach, int precedence)
+        private void Gather(in SpatialEntry entry, float distanceSq, float distance, float reach, int precedence,
+            bool entryYields)
         {
             // Stacked units have no line between them; the overlap push parts them first.
             if (IsWelcome(entry) || distanceSq < 1e-8f)
@@ -169,7 +171,7 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
-            var share = Rule.Share(Unit, entry);
+            var share = Rule.Share(Unit, entry, entryYields, precedence);
             if (share <= 0f)
             {
                 return;
@@ -190,7 +192,7 @@ namespace HyperRTS.Simulation.Movement
         }
 
         // A foot unit steps out of an allied vehicle's lane; a vehicle notes who stands in its own.
-        private void WatchLane(in SpatialEntry entry, bool touching)
+        private void WatchLane(in SpatialEntry entry, bool touching, bool entryYields)
         {
             if (!Unit.IsVehicle)
             {
@@ -207,7 +209,7 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
-            var infantry = !entry.IsVehicle && Rule.Yields(entry, Unit);
+            var infantry = !entry.IsVehicle && entryYields;
             InfantryAhead |= infantry;
             _infantryTouches |= infantry && touching;
             _othersTouch |= !infantry && touching;
@@ -215,9 +217,9 @@ namespace HyperRTS.Simulation.Movement
 
         // A mover presses aside a parked unit giving way, as the push moves it; a vehicle presses foot units only once
         // done waiting on them.
-        private readonly bool Presses(in SpatialEntry entry)
+        private readonly bool Presses(in SpatialEntry entry, bool entryYields)
         {
-            if (!Rule.Yields(entry, Unit))
+            if (!entryYields)
             {
                 return false;
             }

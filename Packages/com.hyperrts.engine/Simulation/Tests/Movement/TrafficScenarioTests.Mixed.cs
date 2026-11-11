@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Tests.Movement
 
             var truck = TrackedTruck("truck", new float3(-50f, 0f, 0f), East);
             _world.Tick();
-            Send(truck, new float3(50f, 0f, 0f));
+            _world.Send(truck, new float3(50f, 0f, 0f));
             Finish("squads", 90f, 1);
             AssertNoWheelsSlid();
         }
@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             SpawnTank(float3.zero, East, tankOwner);
             var truck = TrackedTruck("truck", new float3(-50f, 0f, 0f), East);
             _world.Tick();
-            Send(truck, new float3(50f, 0f, 0f));
+            _world.Send(truck, new float3(50f, 0f, 0f));
             Finish(tankOwner == 1 ? "own tank" : "teammate tank", 90f, tankOwner == 1 ? 1 : 0);
         }
 
@@ -45,8 +45,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             var east = TrackedTruck("eastbound", new float3(-50f, 0f, 0f), East);
             var west = TrackedTruck("westbound", new float3(50f, 0f, 0f), West);
             _world.Tick();
-            Send(east, new float3(50f, 0f, 0f));
-            Send(west, new float3(-50f, 0f, 0f));
+            _world.Send(east, new float3(50f, 0f, 0f));
+            _world.Send(west, new float3(-50f, 0f, 0f));
             Finish("head-on", 120f, 0);
         }
 
@@ -65,8 +65,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var i = 0; i < 3; i++)
             {
                 var offset = (i - 1) * 12f;
-                Send(_record.Units[i * 2].Unit, new float3(45f, 0f, offset));
-                Send(_record.Units[i * 2 + 1].Unit, new float3(offset, 0f, 45f));
+                _world.Send(_record.Units[i * 2].Unit, new float3(45f, 0f, offset));
+                _world.Send(_record.Units[i * 2 + 1].Unit, new float3(offset, 0f, 45f));
             }
 
             Finish("crossing", 90f, 4);

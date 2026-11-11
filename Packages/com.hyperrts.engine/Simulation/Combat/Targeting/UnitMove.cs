@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -10,20 +11,23 @@ namespace HyperRTS.Simulation.Combat.Targeting
         private RefRW<MoveDestination> _destination;
         private EnabledRefRW<MoveDestination> _enabled;
         private bool _present;
-        private bool _rooted;
+        private ComponentLookup<Deployable> _deployables;
+        private Entity _entity;
 
-        public UnitMove(RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> enabled, bool rooted)
+        public UnitMove(RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> enabled,
+            ComponentLookup<Deployable> deployables, Entity entity)
         {
             _destination = destination;
             _enabled = enabled;
             _present = true;
-            _rooted = rooted;
+            _deployables = deployables;
+            _entity = entity;
         }
 
         public readonly bool IsMoving => _present && _enabled.ValueRO;
 
         /// <summary>Has a destination to move to and isn't rooted by deploying.</summary>
-        public readonly bool IsMobile => _present && !_rooted;
+        public readonly bool IsMobile => _present && !Deployable.IsImmobile(_deployables, _entity);
 
         public void MoveTo(float3 goal) => _destination.ValueRW.MoveTo(_enabled, goal);
 

@@ -21,11 +21,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
         // A pair counts as drivable when a search this long finds its way, so the benchmarks ask only for ways that exist.
         private const int DrivableCap = 100000;
 
-        private static readonly NavAgent SupplyTruck = WithHullMargin(new NavAgent
-        {
-            Radius = 1.25f, HullLength = 8f, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
-            Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
-        });
+        private static readonly NavAgent SupplyTruck = TestVehicles.ShortTruckHull(1.25f, 8f);
 
         // A lane of the base: its centre line from one end to the other.
         private struct Lane
@@ -84,13 +80,6 @@ namespace HyperRTS.Simulation.Tests.Navigation
 
             _world.Tick();
             return lanes;
-        }
-
-        // The wall margin every baked unit gets.
-        private static NavAgent WithHullMargin(NavAgent agent)
-        {
-            agent.WallMargin = agent.HullWallMargin;
-            return agent;
         }
 
         private DriveJob NewDriveJob(NativeList<PathWaypoint> points, NativeReference<int2> result) => new()

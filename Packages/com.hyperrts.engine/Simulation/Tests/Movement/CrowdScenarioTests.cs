@@ -36,25 +36,6 @@ namespace HyperRTS.Simulation.Tests.Movement
         [TearDown]
         public void TearDown() => _world.Dispose();
 
-        private Entity SpawnVehicle(float3 position, float yaw, float speed, NavAgent agent, Locomotion locomotion)
-        {
-            var vehicle = _world.SpawnUnit(1, position, speed, agent.Radius);
-            agent.Spacing = UnitAuthoring.DefaultSpacing;
-            agent.WallMargin = agent.HullWallMargin;
-            _world.Set(vehicle, agent);
-            _world.Set(vehicle, LocalTransform.FromPositionRotation(position,
-                quaternion.RotateY(yaw)));
-            var writer = _world.Writer(vehicle);
-            LocomotionAuthoring.Add(writer, locomotion);
-            return vehicle;
-        }
-
-        private void Send(Entity unit, float3 goal, int group)
-        {
-            _world.Set(unit, new MoveDestination { Value = goal, Group = group });
-            _world.SetEnabled<MoveDestination>(unit, true);
-        }
-
         // Selects the units and gives one move, as a player's right-click does.
         private void OrderFormation(List<Entity> units, float3 goal)
         {
@@ -152,19 +133,14 @@ namespace HyperRTS.Simulation.Tests.Movement
             // A wall along x = 0 with a 12 m gate at z -6 to 6.
             _world.SpawnObstacle(new float3(0f, 0f, 46f), new float2(2f, 80f));
             _world.SpawnObstacle(new float3(0f, 0f, -46f), new float2(2f, 80f));
-            var tank = new NavAgent
-            {
-                Radius = 1.85f, HullLength = 7.5f, Mass = 62f, Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
-            };
-            var handling = new Locomotion
-            {
-                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
-            };
+            var tank = TestVehicles.TankHull();
+            tank.HullLength = 7.5f;
+            tank.WallMargin = tank.HullWallMargin;
             var units = new List<Entity>();
             for (var i = 0; i < 20; i++)
             {
                 var start = new float3(-30f - i / 4 * 10f, 0f, -12f + i % 4 * 6f);
-                units.Add(SpawnVehicle(start, math.PI * 0.5f, 7f, tank, handling));
+                units.Add(_world.SpawnVehicle(1, start, math.PI * 0.5f, 7f, tank, TestVehicles.Tracks));
             }
 
             _world.Tick();
@@ -189,26 +165,21 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.SpawnObstacle(new float3(-95f, 0f, 70f), new float2(270f, 120f));
             _world.SpawnObstacle(new float3(67f, 0f, 55f), new float2(14f, 150f));
             _world.SpawnObstacle(new float3(45f, 0f, 90f), new float2(10f, 4f));
-            var truck = new NavAgent
+            var truck = TestVehicles.Hull(new NavAgent
             {
                 Radius = 1.4f, HullLength = 17f, Mass = 17f,
                 Chassis = new Chassis { Wheelbase = 6f, RearAxle = 2.5f, TurnRadius = 12f, ReverseRun = 6f },
-            };
-            var handling = new Locomotion
-            {
-                Acceleration = 3f, Braking = 6f, TurnRate = math.radians(40f), SteerRate = math.radians(45f),
-                ReverseSpeed = 3f,
-            };
+            });
             var units = new List<Entity>();
             for (var i = 0; i < 10; i++)
             {
-                units.Add(SpawnVehicle(new float3(-20f - i * 22f, 0f, 0f), math.PI * 0.5f, 8f, truck, handling));
+                units.Add(_world.SpawnVehicle(1, new float3(-20f - i * 22f, 0f, 0f), math.PI * 0.5f, 8f, truck, TestVehicles.Wheels));
             }
 
             _world.Tick();
             for (var i = 0; i < 10; i++)
             {
-                Send(units[i], new float3(20f + i % 5 * 15f, 0f, 170f + i / 5 * 25f), 1);
+                _world.Send(units[i], new float3(20f + i % 5 * 15f, 0f, 170f + i / 5 * 25f), 1);
             }
 
             Assert.IsTrue(RunWatchingWalls(units, 180f), Stragglers(units));
@@ -232,7 +203,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var i = 0; i < 100; i++)
             {
                 var start = _world.GetPosition(units[i]);
-                Send(units[i], new float3(-start.x, 0f, start.z), i < 50 ? 1 : 2);
+                _world.Send(units[i], new float3(-start.x, 0f, start.z), i < 50 ? 1 : 2);
             }
 
             Assert.IsTrue(RunWatchingWalls(units, 60f), Stragglers(units));

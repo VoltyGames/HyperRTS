@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -50,7 +51,14 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 Parts = SystemAPI.GetBufferLookup<MotionRigPart>(true),
             }.ScheduleParallel(rigs);
             var tracks = new TrackJob().ScheduleParallel(rigs);
-            var meshes = new TrackMeshJob { Tracks = SystemAPI.GetBufferLookup<MotionRigTrack>(true) }.ScheduleParallel(tracks);
+            var meshes = new TrackMeshJob
+            {
+                Tracks = SystemAPI.GetBufferLookup<MotionRigTrack>(true),
+                Sources = SystemAPI.GetComponentTypeHandle<TrackMeshSource>(true),
+                Fronts = SystemAPI.GetComponentTypeHandle<TrackLift0>(),
+                Backs = SystemAPI.GetComponentTypeHandle<TrackLift1>(),
+            }.ScheduleParallel(SystemAPI.QueryBuilder().WithAll<TrackMeshSource>().WithAllRW<TrackLift0, TrackLift1>()
+                .Build(), tracks);
             state.Dependency = JobHandle.CombineDependencies(spins, parts, meshes);
         }
 
@@ -117,7 +125,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     : rig.GroundTilt(Terrain, position, forward, right);
                 rig.SmoothTilt(target, DeltaTime);
                 rig.Suspension.Spring(rig.Suspension.Target(acceleration, forward, right), DeltaTime);
-                rig.TiltPose = rig.TiltedRotation();
             }
 
             /// <summary>True when a recoil part fired this frame.</summary>
@@ -189,15 +196,38 @@ namespace HyperRTS.Presentation.Animation.Rigs
         }
 
         [BurstCompile]
-        private partial struct TrackMeshJob : IJobEntity
+        private struct TrackMeshJob : IJobChunk
         {
             [ReadOnly] public BufferLookup<MotionRigTrack> Tracks;
+            [ReadOnly] public ComponentTypeHandle<TrackMeshSource> Sources;
+            public ComponentTypeHandle<TrackLift0> Fronts;
+            public ComponentTypeHandle<TrackLift1> Backs;
 
-            private void Execute(ref TrackLift0 front, ref TrackLift1 back, in TrackMeshSource source)
+            // Takes the writable arrays only for a chunk with a moved track, so settled tracks keep their version
+            // and skip the re-upload.
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                var track = Tracks[source.Rig][source.Track];
-                front.Value = track.Lift0;
-                back.Value = track.Lift1;
+                var sources = chunk.GetNativeArray(ref Sources);
+                var moved = false;
+                for (var i = 0; i < chunk.Count && !moved; i++)
+                {
+                    moved = Tracks[sources[i].Rig][sources[i].Track].Moved;
+                }
+
+                if (!moved)
+                {
+                    return;
+                }
+
+                var fronts = chunk.GetNativeArray(ref Fronts);
+                var backs = chunk.GetNativeArray(ref Backs);
+                for (var i = 0; i < chunk.Count; i++)
+                {
+                    var track = Tracks[sources[i].Rig][sources[i].Track];
+                    fronts[i] = new TrackLift0 { Value = track.Lift0 };
+                    backs[i] = new TrackLift1 { Value = track.Lift1 };
+                }
             }
         }
 
@@ -209,10 +239,10 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
             private void Execute(Entity entity, ref LocalTransform transform, in MotionRigLink link)
             {
-                var rig = Rigs[link.Rig];
+                ref readonly var rig = ref Rigs.GetRefRO(link.Rig).ValueRO;
                 if (rig.TiltRoot == entity || rig.TiltFollower == entity)
                 {
-                    transform.Rotation = rig.TiltPose;
+                    transform.Rotation = rig.TiltedRotation();
                 }
 
                 // Entries on one entity apply in order, so a recoil reads the elevation before it.

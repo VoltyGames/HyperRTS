@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             var depot = _world.SpawnBuilding(1, new float3(-30f, 0f, 0f), new float2(10f, 10f));
             _world.EntityManager.AddComponent<ResourceDropOff>(depot);
             DockAuthoring.Add(_world.Writer(depot), "Depot",
-                new List<DockBay> { Bay(new float3(0f, 0f, -8f), new float2(1f, 0f)) });
+                new List<DockBay> { DockTestKit.Bay(new float3(0f, 0f, -8f), new float2(1f, 0f)) });
 
             var trucks = new Entity[4];
             var phases = new HarvestPhase[4];
@@ -72,14 +72,10 @@ namespace HyperRTS.Simulation.Tests.Movement
         // Two bays on each side of the node, each on its own line so no bay's run-in crosses another's.
         private static List<DockBay> NodeBays() => new()
         {
-            Bay(new float3(0f, 0f, -8f), new float2(1f, 0f)), Bay(new float3(0f, 0f, -12f), new float2(1f, 0f)),
-            Bay(new float3(0f, 0f, 8f), new float2(-1f, 0f)), Bay(new float3(0f, 0f, 12f), new float2(-1f, 0f)),
-        };
-
-        private static DockBay Bay(float3 stop, float2 facing) => new()
-        {
-            Stop = stop, Facing = facing, RunIn = DockAuthoring.DefaultRunIn,
-            Exit = stop + new float3(facing.x, 0f, facing.y) * DockAuthoring.DefaultExit,
+            DockTestKit.Bay(new float3(0f, 0f, -8f), new float2(1f, 0f)),
+            DockTestKit.Bay(new float3(0f, 0f, -12f), new float2(1f, 0f)),
+            DockTestKit.Bay(new float3(0f, 0f, 8f), new float2(-1f, 0f)),
+            DockTestKit.Bay(new float3(0f, 0f, 12f), new float2(-1f, 0f)),
         };
     }
 }

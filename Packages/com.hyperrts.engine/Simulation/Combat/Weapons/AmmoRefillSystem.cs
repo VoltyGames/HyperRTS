@@ -42,8 +42,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 in v128 chunkEnabledMask)
             {
                 var read = chunk.GetBufferAccessorRO(ref Mounts);
-                var write = default(BufferAccessor<WeaponMount>);
-                var writable = false;
                 var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (entities.NextEntityIndex(out var i))
                 {
@@ -52,13 +50,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                         continue;
                     }
 
-                    if (!writable)
-                    {
-                        write = chunk.GetBufferAccessorRW(ref Mounts);
-                        writable = true;
-                    }
-
-                    WeaponMount.Reload(write[i], DeltaTime, docked: false);
+                    WeaponMount.Reload(chunk.GetBufferAccessorRW(ref Mounts)[i], DeltaTime, docked: false);
                 }
             }
         }

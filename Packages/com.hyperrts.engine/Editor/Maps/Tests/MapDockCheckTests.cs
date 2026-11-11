@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Tests
         [TestCase(0f, 30f, 0, TestName = "DocksSpacedApart_PassTheCheck")]
         public void TheDockingHull_MustFitEveryBay(float x, float z, int errors)
         {
-            var docks = new[] { Dock("Field A", Vector3.zero), Dock("Field B", new Vector3(x, 0f, z)) };
+            var docks = new[] { Dock("Dock A", Vector3.zero), Dock("Dock B", new Vector3(x, 0f, z)) };
             var grid = NavGrid.Create(new CellGrid(new float2(-30f, -20f), 1f, new int2(60, 70)), default, 0f);
             for (var i = 0; i < grid.Cells.Length; i++)
             {
@@ -44,10 +44,10 @@ namespace HyperRTS.Editor.Maps.Tests
 
             using var nav = MapNavGrid.Wrap(grid);
             var issues = new MapIssues();
-            MapDockCheck.Check(docks, nav, new MapDockingHull(10.3f, 1.27f, "Truck"), issues);
+            MapDockCheck.Check(docks, nav, new MapDockingHull(10.3f, 1.27f, "Hull"), issues);
 
             Assert.That(issues.Errors.Count, Is.EqualTo(errors), issues.ToString());
-            Assert.That(issues.Errors.All(e => e.ToString().Contains("'Field A'") && e.ToString().Contains("'Field B'")));
+            Assert.That(issues.Errors.All(e => e.ToString().Contains("'Dock A'") && e.ToString().Contains("'Dock B'")));
         }
 
         private DockAuthoring Dock(string name, Vector3 position)

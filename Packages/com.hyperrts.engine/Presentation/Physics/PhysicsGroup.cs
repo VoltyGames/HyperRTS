@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Physics;
 using Unity.Physics.Systems;
+using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Physics
 {
@@ -22,6 +23,17 @@ namespace HyperRTS.Presentation.Physics
         // The main world's statics belong to the simulation, not to this world.
         public PhysicsGroup() : base(WorldIndex, false)
         {
+        }
+
+        /// <summary>A collider entity of <paramref name="archetype"/>, which holds <see cref="PhysicsCollider"/>, a transform and <see cref="PhysicsWorldIndex"/>.</summary>
+        public static Entity CreateCollider(EntityManager entities, EntityArchetype archetype,
+            BlobAssetReference<Collider> shape, in LocalTransform place)
+        {
+            var entity = entities.CreateEntity(archetype);
+            entities.SetComponentData(entity, new PhysicsCollider { Value = shape });
+            entities.SetComponentData(entity, place);
+            entities.SetSharedComponent(entity, new PhysicsWorldIndex(WorldIndex));
+            return entity;
         }
 
         /// <summary>What bodies land on, the terrain, buildings and vehicles: it meets bodies only.</summary>

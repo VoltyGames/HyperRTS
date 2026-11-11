@@ -27,17 +27,28 @@ namespace HyperRTS.Editor.Maps.Report
             _nav = nav;
             _hull = hull;
             _issues = issues;
-            _docks = docks.Where(dock => dock.IsComplete).Select(dock => (dock, Footprint(dock))).ToList();
+            _docks = new List<(DockAuthoring Dock, NavBox? Footprint)>();
+            foreach (var dock in docks)
+            {
+                if (dock.IsComplete)
+                {
+                    _docks.Add((dock, Footprint(dock)));
+                }
+            }
         }
 
         /// <summary>Reports each bay the hull can't reach as an error naming the dock, the bay and what it hits.</summary>
         public static void Check(IEnumerable<DockAuthoring> docks, MapNavGrid nav, MapDockingHull hull,
             MapIssues issues)
         {
-            var check = new MapDockCheck(docks, nav, hull, issues);
-            foreach (var (dock, footprint) in check._docks)
+            new MapDockCheck(docks, nav, hull, issues).CheckAll();
+        }
+
+        private void CheckAll()
+        {
+            foreach (var (dock, footprint) in _docks)
             {
-                check.CheckBays(dock, footprint);
+                CheckBays(dock, footprint);
             }
         }
 

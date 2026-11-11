@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             truck.Planned = false;
             truck.Active = true;
             truck.Moves++;
-            Send(truck.Unit, truck.Goal);
+            _world.Send(truck.Unit, truck.Goal);
         }
 
         private void ReadPlan(RouteTruck truck, List<float> ratios)
@@ -168,7 +168,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             var truck = SpawnTruck(new float3(-30f, 0f, 0f), math.PI * 0.5f);
             _record.Track("truck", truck);
             _world.Tick();
-            Send(truck, new float3(30f, 0f, 0f));
+            _world.Send(truck, new float3(30f, 0f, 0f));
 
             Finish("blocked lane", 120f, 0);
         }

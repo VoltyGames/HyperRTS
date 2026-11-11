@@ -42,8 +42,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         private void DriveThrough(Entity tank, out float slowest)
         {
             World.Tick();
-            World.Set(tank, new MoveDestination { Value = new float3(30f, 0f, 0f) });
-            World.SetEnabled<MoveDestination>(tank, true);
+            World.Send(tank, new float3(30f, 0f, 0f));
             slowest = float.MaxValue;
             for (var t = 0f; t < 120f && World.IsEnabled<MoveDestination>(tank); t += TestWorld.FrameTime)
             {
@@ -63,13 +62,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             }
 
             var members = World.Buffer<SquadMember>(squad);
-            var dead = 0;
-            for (var i = 0; i < members.Length; i++)
-            {
-                dead += members[i].Alive ? 0 : 1;
-            }
-
-            return dead;
+            return members.Length - SquadMember.CountLiving(members);
         }
 
         [TestCase(7f, true)]

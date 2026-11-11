@@ -1,6 +1,7 @@
 using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Resources.Gathering;
 using UnityEditor;
 using UnityEngine;
@@ -24,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Report
         }
 
         /// <summary>Half the core segment, from the hull's centre to where its end cap starts.</summary>
-        public float HalfSegment => Length * 0.5f - Radius;
+        public float HalfSegment => NavAgent.HalfSegmentFor(Radius, Length);
 
         /// <summary>The hull of every unit prefab under Assets that harvests; false when none does.</summary>
         public static bool TryFind(out MapDockingHull hull)

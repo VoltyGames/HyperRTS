@@ -69,6 +69,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public float4 Lift0;
         public float4 Lift1;
 
+        /// <summary>True when the last <see cref="Settle"/> changed the lift, so the mesh needs it again.</summary>
+        public bool Moved;
+
         /// <summary>
         /// Takes the lift at each station from <paramref name="wheels"/>. True when one moved by more than
         /// <see cref="MinChange"/> and the mesh needs <see cref="Lift0"/> and <see cref="Lift1"/>.
@@ -78,6 +81,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
             var front = new float4(LiftAt(0, wheels), LiftAt(1, wheels), LiftAt(2, wheels), LiftAt(3, wheels));
             var back = new float4(LiftAt(4, wheels), LiftAt(5, wheels), LiftAt(6, wheels), LiftAt(7, wheels));
             var moved = math.cmax(math.max(math.abs(front - Lift0), math.abs(back - Lift1))) > MinChange;
+            Moved = moved;
             if (moved)
             {
                 Lift0 = front;

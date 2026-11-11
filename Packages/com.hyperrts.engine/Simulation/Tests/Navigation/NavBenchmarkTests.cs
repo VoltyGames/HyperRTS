@@ -234,8 +234,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             for (var i = 0; i < count; i++)
             {
                 var slot = new float3(245f + i % side * 3f, 0f, -20f + i / side * 3f + place * 50f - 100f);
-                _world.Set(units[i], new MoveDestination { Value = slot, Group = group });
-                _world.SetEnabled<MoveDestination>(units[i], true);
+                _world.Send(units[i], slot, group);
             }
 
             return units;

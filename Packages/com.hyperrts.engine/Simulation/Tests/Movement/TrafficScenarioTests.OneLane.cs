@@ -23,8 +23,8 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.Tick();
             for (var i = 0; i < 4; i++)
             {
-                Send(_record.Units[i * 2].Unit, goals[i]);
-                Send(_record.Units[i * 2 + 1].Unit, goals[4 + i]);
+                _world.Send(_record.Units[i * 2].Unit, goals[i]);
+                _world.Send(_record.Units[i * 2 + 1].Unit, goals[4 + i]);
             }
 
             Finish("bridge columns", 180f, 0);
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             _world.SpawnSquad(1, new float3(25f, 0f, 0f));
             var truck = TrackedTruck("truck", new float3(-55f, 0f, 0f), East);
             _world.Tick();
-            Send(truck, new float3(32f, 0f, 0f));
+            _world.Send(truck, new float3(32f, 0f, 0f));
             Finish("alley", 120f, 1);
         }
 

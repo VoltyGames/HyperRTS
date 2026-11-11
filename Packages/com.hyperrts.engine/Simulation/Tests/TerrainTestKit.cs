@@ -63,6 +63,13 @@ namespace HyperRTS.Simulation.Tests
             world.Command(world.Get<Owner>(unit).Value,
                 new PlayerCommand { Type = CommandType.Move, Unit = unit, Position = goal });
 
+        /// <summary>Walks <paramref name="unit"/> to <paramref name="goal"/> directly, without a player command.</summary>
+        public static void Send(this TestWorld world, Entity unit, float3 goal, int group = 0)
+        {
+            world.Set(unit, new MoveDestination { Value = goal, Group = group });
+            world.SetEnabled<MoveDestination>(unit, true);
+        }
+
         public static NavGrid Grid(this TestWorld world)
         {
             world.EntityManager.CompleteAllTrackedJobs();

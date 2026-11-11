@@ -19,9 +19,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 {
                     var position = new float3(side * (-295f + i % 16 * 4f), 0f, -290f + i / 16 * 4f);
                     var squad = _world.SpawnSquad(1, position);
-                    _world.Set(squad,
-                        new MoveDestination { Value = new float3(-position.x, 0f, position.z), Group = side < 0f ? 1 : 2 });
-                    _world.SetEnabled<MoveDestination>(squad, true);
+                    _world.Send(squad, new float3(-position.x, 0f, position.z), side < 0f ? 1 : 2);
                     squads++;
                 }
             }

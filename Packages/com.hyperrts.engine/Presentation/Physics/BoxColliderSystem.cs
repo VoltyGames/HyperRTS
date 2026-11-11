@@ -30,6 +30,9 @@ namespace HyperRTS.Presentation.Physics
         private readonly Dictionary<Entity, Entity> _colliders = new();
         private readonly Dictionary<(float3, float3), BlobAssetReference<Collider>> _shapes = new();
         private readonly List<Entity> _gone = new();
+        private readonly HashSet<Entity> _current = new();
+        private EntityArchetype _staticArchetype;
+        private EntityArchetype _movingArchetype;
         private EntityQuery _sources;
         private PhysicsGroup _physics;
         private uint _scanned;
@@ -39,6 +42,10 @@ namespace HyperRTS.Presentation.Physics
             _sources = new EntityQueryBuilder(Allocator.Temp).WithAll<PickBox, LocalTransform>()
                 .WithAny<BuildingTag, Locomotion>().Build(this);
             _physics = World.GetOrCreateSystemManaged<PhysicsGroup>();
+            _staticArchetype = EntityManager.CreateArchetype(typeof(PhysicsCollider), typeof(LocalTransform),
+                typeof(LocalToWorld), typeof(ColliderSource), typeof(PhysicsWorldIndex));
+            _movingArchetype = EntityManager.CreateArchetype(typeof(PhysicsCollider), typeof(LocalTransform),
+                typeof(PhysicsVelocity), typeof(ColliderSource), typeof(PhysicsWorldIndex));
         }
 
         protected override void OnDestroy()
@@ -69,16 +76,20 @@ namespace HyperRTS.Presentation.Physics
             }
 
             new ReadSourceJob { Sources = SystemAPI.GetComponentLookup<LocalTransform>(true) }.ScheduleParallel();
-            new DriveJob { StepRate = 1f / SystemAPI.Time.DeltaTime }.ScheduleParallel();
+            new DriveJob
+            {
+                StepRate = 1f / SystemAPI.Time.DeltaTime,
+                Mass = PhysicsMass.CreateKinematic(MassProperties.UnitSphere),
+            }.ScheduleParallel();
         }
 
         private void Scan()
         {
             using var sources = _sources.ToEntityArray(Allocator.Temp);
-            var current = new HashSet<Entity>();
+            _current.Clear();
             foreach (var source in sources)
             {
-                current.Add(source);
+                _current.Add(source);
                 var made = _colliders.TryGetValue(source, out var collider) && EntityManager.Exists(collider);
                 if (!made)
                 {
@@ -89,7 +100,7 @@ namespace HyperRTS.Presentation.Physics
             _gone.Clear();
             foreach (var (source, collider) in _colliders)
             {
-                if (!current.Contains(source))
+                if (!_current.Contains(source))
                 {
                     _gone.Add(source);
                     EntityManager.DestroyEntity(collider);
@@ -107,21 +118,15 @@ namespace HyperRTS.Presentation.Physics
             var box = EntityManager.GetComponentData<PickBox>(source);
             var place = EntityManager.GetComponentData<LocalTransform>(source);
             var moves = EntityManager.HasComponent<Locomotion>(source);
-            var collider = EntityManager.CreateEntity(typeof(PhysicsCollider), typeof(LocalTransform), typeof(ColliderSource));
-            EntityManager.SetComponentData(collider, new PhysicsCollider { Value = Shape(box) });
-            EntityManager.SetComponentData(collider, place);
-            EntityManager.SetComponentData(collider, new ColliderSource { Value = source });
             // No PhysicsMass makes a moving body kinematic: contacts push ragdolls, never the box.
-            if (moves)
+            var archetype = moves ? _movingArchetype : _staticArchetype;
+            var collider = PhysicsGroup.CreateCollider(EntityManager, archetype, Shape(box), place);
+            EntityManager.SetComponentData(collider, new ColliderSource { Value = source });
+            if (!moves)
             {
-                EntityManager.AddComponentData(collider, new PhysicsVelocity());
-            }
-            else
-            {
-                EntityManager.AddComponentData(collider, new LocalToWorld { Value = place.ToMatrix() });
+                EntityManager.SetComponentData(collider, new LocalToWorld { Value = place.ToMatrix() });
             }
 
-            EntityManager.AddSharedComponent(collider, new PhysicsWorldIndex(PhysicsGroup.WorldIndex));
             return collider;
         }
 
@@ -160,6 +165,7 @@ namespace HyperRTS.Presentation.Physics
         private partial struct DriveJob : IJobEntity
         {
             public float StepRate;
+            public PhysicsMass Mass;
 
             private void Execute(ref LocalTransform transform, ref PhysicsVelocity velocity, in ColliderSource source)
             {
@@ -177,8 +183,7 @@ namespace HyperRTS.Presentation.Physics
                     return;
                 }
 
-                var mass = PhysicsMass.CreateKinematic(MassProperties.UnitSphere);
-                velocity = PhysicsVelocity.CalculateVelocityToTarget(mass, transform.Position, transform.Rotation,
+                velocity = PhysicsVelocity.CalculateVelocityToTarget(Mass, transform.Position, transform.Rotation,
                     new RigidTransform(target.Rotation, target.Position), StepRate);
             }
         }

@@ -37,6 +37,20 @@ namespace HyperRTS.Simulation.Tests
             Chassis = new Chassis { Wheelbase = 4.6f, RearAxle = 2f, TurnRadius = 10f, ReverseRun = 6f },
         });
 
+        /// <summary>Wheeled handling for the dock and reach tests' short-wheelbase truck.</summary>
+        public static readonly Locomotion ShortTruck = new()
+        {
+            Acceleration = 3f, Braking = 6f, TurnRate = math.radians(35f), SteerRate = math.radians(45f),
+            ReverseSpeed = 3f,
+        };
+
+        /// <summary>A short-wheelbase truck hull of the given size, with a 10 m turn and a 6 m reverse.</summary>
+        public static NavAgent ShortTruckHull(float radius, float length) => Hull(new NavAgent
+        {
+            Radius = radius, HullLength = length, Mass = 17f,
+            Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
+        });
+
         /// <summary>A main battle tank hull that pivots on the spot.</summary>
         public static NavAgent TankHull() => Hull(new NavAgent
         {
@@ -55,7 +69,7 @@ namespace HyperRTS.Simulation.Tests
             return vehicle;
         }
 
-        private static NavAgent Hull(NavAgent agent)
+        public static NavAgent Hull(NavAgent agent)
         {
             agent.Spacing = UnitAuthoring.DefaultSpacing;
             agent.WallMargin = agent.HullWallMargin;

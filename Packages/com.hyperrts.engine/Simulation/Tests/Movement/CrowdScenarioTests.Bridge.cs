@@ -19,20 +19,12 @@ namespace HyperRTS.Simulation.Tests.Movement
             bool formation)
         {
             _world.SpawnBridge();
-            var tank = new NavAgent
-            {
-                Radius = 1.85f, HullLength = 7.9f, Mass = 62f,
-                Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
-            };
-            var handling = new Locomotion
-            {
-                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
-            };
+            var tank = TestVehicles.TankHull();
             var units = new List<Entity>();
             for (var i = 0; i < count; i++)
             {
                 var start = new float3(-25f - i / abreast * 11f, 0f, (i % abreast - (abreast - 1) * 0.5f) * 5f);
-                units.Add(SpawnVehicle(start, math.PI * 0.5f, 4.5f, tank, handling));
+                units.Add(_world.SpawnVehicle(1, start, math.PI * 0.5f, 4.5f, tank, TestVehicles.Tracks));
             }
 
             _world.Tick();
@@ -45,7 +37,7 @@ namespace HyperRTS.Simulation.Tests.Movement
                 for (var i = 0; i < count; i++)
                 {
                     var lane = (i % abreast - (abreast - 1) * 0.5f) * 6f;
-                    Send(units[i], new float3(goalX + i / abreast * 11f, 0f, lane), 0);
+                    _world.Send(units[i], new float3(goalX + i / abreast * 11f, 0f, lane), 0);
                 }
             }
 
@@ -107,20 +99,12 @@ namespace HyperRTS.Simulation.Tests.Movement
         public void Tank_RollingPastTheBridgeMouth_PivotsIntoIt(float z, float yaw, float goalZ)
         {
             _world.SpawnBridge();
-            var tank = new NavAgent
-            {
-                Radius = 1.85f, HullLength = 7.9f, Mass = 62f,
-                Chassis = new Chassis { Pivots = true, ReverseRun = 10f },
-            };
-            var handling = new Locomotion
-            {
-                Acceleration = 2.5f, Braking = 6f, TurnRate = math.radians(50f), ReverseSpeed = 3f,
-            };
-            var unit = SpawnVehicle(new float3(-8.6f, 0f, z), yaw, 4.5f, tank, handling);
+            var tank = TestVehicles.TankHull();
+            var unit = _world.SpawnVehicle(1, new float3(-8.6f, 0f, z), yaw, 4.5f, tank, TestVehicles.Tracks);
             var facing = new float2(math.sin(yaw), math.cos(yaw));
             var rolling = new LocomotionState { Speed = 1.8f, LastChoice = facing * 1.8f };
             _world.EntityManager.SetComponentData(unit, rolling);
-            Send(unit, new float3(47f, 0f, goalZ), 0);
+            _world.Send(unit, new float3(47f, 0f, goalZ), 0);
             var widest = 0f;
             for (var t = 0f; t < 40f && _world.IsEnabled<MoveDestination>(unit); t += TestWorld.FrameTime)
             {

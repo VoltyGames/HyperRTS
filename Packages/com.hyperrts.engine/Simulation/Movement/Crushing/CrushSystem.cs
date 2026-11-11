@@ -81,6 +81,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
                     return;
                 }
 
+                var crushesUnits = math.lengthsq(velocity.Value) > Crusher.Pace * Crusher.Pace;
                 var underfoot = new Underfoot
                 {
                     Damage = Damage,
@@ -92,12 +93,13 @@ namespace HyperRTS.Simulation.Movement.Crushing
                     Crusher = entity,
                     Owner = owner.Value,
                     Size = crusher.Size,
-                    CrushesUnits = math.lengthsq(velocity.Value) > Crusher.Pace * Crusher.Pace,
+                    CrushesUnits = crushesUnits,
                     Position = transform.Position,
                     Rotation = transform.Rotation,
                     Agent = agent,
                 };
-                Index.Query(transform.Position, agent.HalfLength + Reach + Spread, ref underfoot);
+                var radius = agent.HalfLength + Reach;
+                Index.Query(transform.Position, crushesUnits ? radius + Spread : radius, ref underfoot);
             }
         }
 
@@ -121,16 +123,22 @@ namespace HyperRTS.Simulation.Movement.Crushing
             public void Visit(in SpatialEntry entry)
             {
                 var victim = entry.Entity;
-                if (!Common.Health.IsAlive(Health, victim))
+                if (Destructibles.TryGetComponent(victim, out var destructible))
+                {
+                    if (Common.Health.IsAlive(Health, victim))
+                    {
+                        FlattenScenery(entry, destructible.Crush);
+                    }
+
+                    return;
+                }
+
+                if (!CrushesUnits || !Crushables.TryGetComponent(victim, out var crushable))
                 {
                     return;
                 }
 
-                if (Destructibles.TryGetComponent(victim, out var destructible))
-                {
-                    FlattenScenery(entry, destructible.Crush);
-                }
-                else if (CrushesUnits && Crushables.TryGetComponent(victim, out var crushable))
+                if (Common.Health.IsAlive(Health, victim))
                 {
                     CrushUnit(entry, crushable.Crush);
                 }

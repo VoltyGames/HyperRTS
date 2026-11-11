@@ -26,9 +26,16 @@ namespace HyperRTS.Presentation.Physics
         private int _tilesAcross;
         private Entity[] _tiles = System.Array.Empty<Entity>();
         private BlobAssetReference<Unity.Physics.Collider>[] _colliders = System.Array.Empty<BlobAssetReference<Unity.Physics.Collider>>();
-        private RectInt _changed;
+        private bool[] _dirty = System.Array.Empty<bool>();
+        private bool _anyDirty;
+        private EntityArchetype _tileArchetype;
 
-        protected override void OnCreate() => TerrainCallbacks.heightmapChanged += OnHeightsChanged;
+        protected override void OnCreate()
+        {
+            TerrainCallbacks.heightmapChanged += OnHeightsChanged;
+            _tileArchetype = EntityManager.CreateArchetype(typeof(PhysicsCollider), typeof(LocalTransform),
+                typeof(LocalToWorld), typeof(PhysicsWorldIndex));
+        }
 
         protected override void OnDestroy()
         {
@@ -54,18 +61,29 @@ namespace HyperRTS.Presentation.Physics
                 _tilesAcross = (_data.heightmapResolution - 2) / TileQuads + 1;
                 _tiles = new Entity[_tilesAcross * _tilesAcross];
                 _colliders = new BlobAssetReference<Unity.Physics.Collider>[_tiles.Length];
-                _changed = new RectInt(0, 0, _data.heightmapResolution, _data.heightmapResolution);
+                _dirty = new bool[_tiles.Length];
+                System.Array.Fill(_dirty, true);
+                _anyDirty = true;
             }
 
-            if (_changed.width > 0)
+            if (!_anyDirty)
             {
-                using (RebuildMarker.Auto())
-                {
-                    RebuildTiles(_changed);
-                }
-
-                _changed = default;
+                return;
             }
+
+            using (RebuildMarker.Auto())
+            {
+                for (var i = 0; i < _dirty.Length; i++)
+                {
+                    if (_dirty[i])
+                    {
+                        _dirty[i] = false;
+                        RebuildTile(i % _tilesAcross, i / _tilesAcross);
+                    }
+                }
+            }
+
+            _anyDirty = false;
         }
 
         // Only heights already back in CPU memory: the GPU-only dent before a sync has nothing to read yet.
@@ -76,21 +94,18 @@ namespace HyperRTS.Presentation.Physics
                 return;
             }
 
-            _changed = _changed.width > 0 ? Union(_changed, region) : region;
-        }
-
-        // A sample on a tile edge belongs to the tiles on both sides of it.
-        private void RebuildTiles(RectInt samples)
-        {
-            var first = math.max(0, new int2(samples.xMin - 1, samples.yMin - 1) / TileQuads);
-            var last = math.min(_tilesAcross - 1, new int2(samples.xMax - 1, samples.yMax - 1) / TileQuads);
+            // A sample on a tile edge belongs to the tiles on both sides of it.
+            var first = math.max(0, new int2(region.xMin - 1, region.yMin - 1) / TileQuads);
+            var last = math.min(_tilesAcross - 1, new int2(region.xMax - 1, region.yMax - 1) / TileQuads);
             for (var z = first.y; z <= last.y; z++)
             {
                 for (var x = first.x; x <= last.x; x++)
                 {
-                    RebuildTile(x, z);
+                    _dirty[z * _tilesAcross + x] = true;
                 }
             }
+
+            _anyDirty = true;
         }
 
         private void RebuildTile(int x, int z)
@@ -101,12 +116,9 @@ namespace HyperRTS.Presentation.Physics
             var count = math.min(TileQuads + 1, _data.heightmapResolution - start);
             var collider = CreateCollider(_data, start, count, out var spacing);
             var corner = (float3)_terrain.GetPosition() + new float3(start.x * spacing.x, 0f, start.y * spacing.y);
-            var tile = EntityManager.CreateEntity(typeof(PhysicsCollider), typeof(LocalTransform), typeof(LocalToWorld));
             var place = LocalTransform.FromPosition(corner);
-            EntityManager.SetComponentData(tile, new PhysicsCollider { Value = collider });
-            EntityManager.SetComponentData(tile, place);
+            var tile = PhysicsGroup.CreateCollider(EntityManager, _tileArchetype, collider, place);
             EntityManager.SetComponentData(tile, new LocalToWorld { Value = place.ToMatrix() });
-            EntityManager.AddSharedComponent(tile, new PhysicsWorldIndex(PhysicsGroup.WorldIndex));
             _tiles[index] = tile;
             _colliders[index] = collider;
         }
@@ -158,14 +170,8 @@ namespace HyperRTS.Presentation.Physics
             _colliders = System.Array.Empty<BlobAssetReference<Unity.Physics.Collider>>();
             _terrain = null;
             _data = null;
-            _changed = default;
-        }
-
-        private static RectInt Union(RectInt a, RectInt b)
-        {
-            var min = Vector2Int.Min(a.min, b.min);
-            var max = Vector2Int.Max(a.max, b.max);
-            return new RectInt(min, max - min);
+            _dirty = System.Array.Empty<bool>();
+            _anyDirty = false;
         }
     }
 }

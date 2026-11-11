@@ -82,8 +82,6 @@ namespace HyperRTS.Simulation.Abilities
                 in v128 chunkEnabledMask)
             {
                 var read = chunk.GetBufferAccessorRO(ref Cooldowns);
-                var write = default(BufferAccessor<AbilityCooldown>);
-                var writable = false;
                 var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (entities.NextEntityIndex(out var i))
                 {
@@ -92,13 +90,7 @@ namespace HyperRTS.Simulation.Abilities
                         continue;
                     }
 
-                    if (!writable)
-                    {
-                        write = chunk.GetBufferAccessorRW(ref Cooldowns);
-                        writable = true;
-                    }
-
-                    Tick(write[i]);
+                    Tick(chunk.GetBufferAccessorRW(ref Cooldowns)[i]);
                 }
             }
 

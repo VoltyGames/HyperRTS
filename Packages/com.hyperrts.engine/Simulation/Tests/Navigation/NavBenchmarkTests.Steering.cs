@@ -31,9 +31,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             for (var i = 0; i < 500; i++)
             {
                 var start = _world.GetPosition(units[i]);
-                _world.EntityManager.SetComponentData(units[i],
-                    new MoveDestination { Value = new float3(start.x, 0f, -start.z), Group = i < 250 ? 1 : 2 });
-                _world.EntityManager.SetComponentEnabled<MoveDestination>(units[i], true);
+                _world.Send(units[i], new float3(start.x, 0f, -start.z), i < 250 ? 1 : 2);
             }
 
             // Until the heads of both crowds meet, so most units steer round someone.
@@ -125,8 +123,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
         private void March(Entity unit, float side, int group)
         {
             var at = _world.GetPosition(unit);
-            _world.Set(unit, new MoveDestination { Value = new float3(-at.x, 0f, at.z), Group = group });
-            _world.SetEnabled<MoveDestination>(unit, true);
+            _world.Send(unit, new float3(-at.x, 0f, at.z), group);
         }
     }
 }

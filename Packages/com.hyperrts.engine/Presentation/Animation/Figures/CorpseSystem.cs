@@ -33,6 +33,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         private RenderSwitch _switch;
         private CueVisibility _visibility;
         private Camera _camera;
+        private float3 _cameraPosition;
         private EntityQuery _newSquads;
         private EntityQuery _goneSquads;
         private EntityQuery _ends;
@@ -46,6 +47,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             public Entity Squad;
             public int Figure;
+            public float4x4 World;
             public float Distance;
 
             public readonly int CompareTo(Handover other) => Distance.CompareTo(other.Distance);
@@ -84,6 +86,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             CompleteDependency();
             _now = (float)SystemAPI.Time.ElapsedTime;
             _camera = MainCamera.Find(_camera);
+            _cameraPosition = _camera == null ? default : (float3)_camera.transform.position;
             _budget = EffectDetail.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
             EntityManager.AddComponent(_newSquads, new ComponentTypeSet(typeof(SquadEnd), typeof(ShownFigure)));
             Scan();
@@ -107,7 +110,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             {
                 var figure = EntityManager.GetBuffer<SquadFigure>(handover.Squad)[handover.Figure];
                 var member = EntityManager.GetBuffer<SquadMember>(handover.Squad)[handover.Figure];
-                var world = EntityManager.GetComponentData<LocalToWorld>(figure.Figure).Value;
+                var world = handover.World;
                 ref var ragdoll = ref figure.Clips.Value.Ragdoll;
                 if (_budget <= 0 || !TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
                 {
@@ -140,7 +143,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             slot = -1;
             if (!ragdoll.HasBodies || _camera == null
-                || math.distance(_camera.transform.position, position) > ragdoll.Tuning.cameraDistance)
+                || math.distance(_cameraPosition, position) > ragdoll.Tuning.cameraDistance)
             {
                 return false;
             }

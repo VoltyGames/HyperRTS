@@ -40,12 +40,6 @@ namespace HyperRTS.Simulation.Tests.Movement
         private Entity SpawnTank(float3 position, float yaw, byte owner = 1) =>
             _world.SpawnVehicle(owner, position, yaw, 7f, TestVehicles.TankHull(), TestVehicles.Tracks);
 
-        private void Send(Entity unit, float3 goal)
-        {
-            _world.Set(unit, new MoveDestination { Value = goal });
-            _world.SetEnabled<MoveDestination>(unit, true);
-        }
-
         private bool HasArrived(Entity unit) => !_world.IsEnabled<MoveDestination>(unit);
 
         // Steps until every tracked unit has ended its move, stamping each one's arrival; false at the cap.

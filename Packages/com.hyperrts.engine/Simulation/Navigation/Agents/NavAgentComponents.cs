@@ -99,7 +99,7 @@ namespace HyperRTS.Simulation.Navigation.Agents
             return Planar.PointSegmentDistance(point, center - axis, center + axis) - Radius;
         }
 
-        private static float HalfSegmentFor(float radius, float hullLength) => math.max(0f, hullLength * 0.5f - radius);
+        public static float HalfSegmentFor(float radius, float hullLength) => math.max(0f, hullLength * 0.5f - radius);
 
         /// <summary>Entities without an agent (buildings, props) sit on the ground.</summary>
         public static NavLayer GetLayer(in ComponentLookup<NavAgent> agents, Entity entity) =>
