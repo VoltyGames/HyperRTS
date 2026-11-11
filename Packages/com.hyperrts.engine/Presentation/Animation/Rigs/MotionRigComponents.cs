@@ -142,10 +142,10 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// </summary>
         public float3 Axis;
 
-        /// <summary>Rotor radians per second at full speed.</summary>
+        /// <summary>Rotor radians per second at full speed, or a trailer's largest angle to the hull in radians.</summary>
         public float Rate;
 
-        /// <summary>Wheel radius or recoil distance.</summary>
+        /// <summary>Wheel radius, recoil distance, or a trailer's metres from hitch to axles.</summary>
         public float Size;
 
         /// <summary>Local axis a steering wheel turns about, down so a positive angle steers left.</summary>
@@ -172,7 +172,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public quaternion RestRotation;
         public float3 RestPosition;
 
-        /// <summary>Current angle in radians (turret, elevation, wheel, rotor).</summary>
+        /// <summary>Current angle in radians (turret, elevation, wheel, rotor, a trailer's to the hull).</summary>
         public float Angle;
 
         /// <summary>Recoil distance still pushed back, rotor speed from 0 to 1, or a steering wheel's angle.</summary>
@@ -231,6 +231,13 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public void Steer(float curvature, float deltaTime) =>
             Amount += (math.atan(RearAxleDistance * curvature) - Amount) * Ease(deltaTime, FollowTime);
 
+        /// <summary>
+        /// Swings a trailer after the hull, as a towed trailer on a hitch over the rear axle does: its angle to the hull
+        /// closes as it rolls and opens as the hull turns. Either way it closes, so backing never jackknifes it.
+        /// </summary>
+        public void Tow(float rolled, float curvature) =>
+            Angle = math.clamp(Angle - math.abs(rolled) / Size * math.sin(Angle) - curvature * rolled, -Rate, Rate);
+
         /// <summary>Spins up toward full speed while running, down otherwise, and turns at that speed.</summary>
         public void Spin(bool running, float deltaTime)
         {
@@ -260,5 +267,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
         Wheel = 3,
         Rotor = 4,
         SteeringWheel = 5,
+        Trailer = 6,
     }
 }

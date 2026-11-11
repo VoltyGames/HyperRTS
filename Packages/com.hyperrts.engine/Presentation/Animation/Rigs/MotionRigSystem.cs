@@ -148,6 +148,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
                         part.Roll(rolled);
                         part.Steer(curvature, DeltaTime);
                         break;
+                    case MotionPartKind.Trailer:
+                        part.Tow(rolled, curvature);
+                        break;
                     default:
                         part.Spin(running, DeltaTime);
                         break;

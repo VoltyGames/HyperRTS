@@ -87,8 +87,12 @@ origin is its pivot. Its slots list turrets, barrels
 and launchers that ease onto a `WeaponPose` index, wheels, rotors, and a tilt root (the hull) that follows the ground.
 Traverse and elevation limits are weapon data; the rig only smooths the simulated pose.
 
+A trailer slot swings a towed part, pivoted on its hitch, after the hull as a real trailer does: its angle to the
+hull opens as the hull turns and closes as it rolls, held short of a jackknife. It is looks only; the unit still
+moves and collides as one rigid hull.
+
 **Fill from model** finds parts by art names: `Hull`, `Turret`, `Barrel`, `Launcher`, `Wheel_L01`, `Sprocket_L`,
-`Idler_L`, `Rotor_Main`. Numbered `Turret_01` aims weapon 0, `_02` weapon 1. It keeps slots already listed.
+`Idler_L`, `Rotor_Main`, `Trailer` (its axle length measured from the `Wheel_` parts under it). Numbered `Turret_01` aims weapon 0, `_02` weapon 1. It keeps slots already listed.
 `MotionRigRule` checks every slot names a child and a weapon the unit has.
 
 Road wheels (`Wheel_` parts, `followsGround`) lift to the terrain under them. Tracks bend with them through a

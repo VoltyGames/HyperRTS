@@ -43,6 +43,32 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         }
 
         [Test]
+        public void Trailer_OnASteadyLeftCurve_SettlesAtTheAngleItsHitchAndAxlesSpan_ThenStraightensBehind()
+        {
+            const float axles = 4f;
+            var trailer = Rig(new MotionRigPart
+            {
+                Kind = MotionPartKind.Trailer, Axis = math.down(), Size = axles, Rate = math.radians(60f),
+            });
+            Update(1);
+
+            DriveLeftArc(200);
+            // On a circle the hitch rides the arc and the axles an inner one, so the trailer points right of the hull.
+            Assert.AreEqual(-math.asin(axles / ArcRadius), Part(0).Angle, 1e-2f);
+            Assert.Greater(math.rotate(Pose(trailer).Rotation, math.forward()).x, 0f, "its rear tracks inside the turn");
+
+            var start = _em.GetComponentData<LocalTransform>(_unit);
+            for (var i = 1; i <= 80; i++)
+            {
+                var position = start.Position + math.rotate(start.Rotation, math.forward()) * (i * 0.5f);
+                _em.SetComponentData(_unit, LocalTransform.FromPositionRotation(position, start.Rotation));
+                Update(1);
+            }
+
+            Assert.AreEqual(0f, Part(0).Angle, 2e-2f, "straightened after 40 m");
+        }
+
+        [Test]
         public void FixedWheel_RollsButNeverSteers()
         {
             var wheel = Rig(new MotionRigPart { Kind = MotionPartKind.Wheel, Axis = math.right(), Size = 0.5f });

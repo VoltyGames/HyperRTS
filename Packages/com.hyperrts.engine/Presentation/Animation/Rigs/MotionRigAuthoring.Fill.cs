@@ -64,6 +64,11 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 part = part,
                 axis = part.InverseTransformDirection(RotorAxis(part.name)),
             });
+            trailers = KeepTuned(trailers, Named("Trailer"), part => new TrailerSlot
+            {
+                part = part,
+                axleDistance = TrailerSlot.MeasureAxleDistance(part, transform),
+            });
 
             var raised = all.Except(parts).FirstOrDefault(part => part.name is "Barrel" or "Launcher");
             FillWeaponPivots(raised);

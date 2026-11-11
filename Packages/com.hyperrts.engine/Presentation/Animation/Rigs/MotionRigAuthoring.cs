@@ -13,7 +13,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>
-    /// Client-side motion of a unit or building model's parts: turrets, barrels, wheels, rotors and body tilt.
+    /// Client-side motion of a unit or building model's parts: turrets, barrels, wheels, rotors, trailers and body tilt.
     /// <see cref="FillFromModel"/> finds the parts by their art names.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Animation/Motion Rig")]
@@ -39,6 +39,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         [Tooltip("Rotors that spin up in flight and down when docked.")]
         public List<RotorSlot> rotors = new();
+
+        [Tooltip("Trailers that swing after the hull on their hitch; the unit still moves as one rigid hull.")]
+        public List<TrailerSlot> trailers = new();
 
         [Tooltip("The model or hull child that pitches and rolls; none keeps the body level, as on buildings.")]
         public Transform tiltRoot;
@@ -90,7 +93,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>Every slot with its part, turrets first so recoil reads the elevated barrel.</summary>
         public IEnumerable<PartSlot> Slots() =>
-            turrets.Cast<PartSlot>().Concat(elevations).Concat(recoils).Concat(wheels).Concat(rotors);
+            turrets.Cast<PartSlot>().Concat(elevations).Concat(recoils).Concat(wheels).Concat(rotors).Concat(trailers);
 
         /// <summary>Why the rig can't bake, one line each.</summary>
         public IEnumerable<string> Problems()
