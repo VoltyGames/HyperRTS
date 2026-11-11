@@ -57,6 +57,16 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   elements up, wires them and builds rows from templates or Painter2D. No IMGUI; uGUI only where Animation Clips or
   Timeline need it; Scene view `Handles` and the Project window row decorations (`Editor/Rows/ProjectRows`), which Unity offers
   only in IMGUI, are the two exceptions. Per-unit markers such as health bars are instanced meshes.
+- Logic over one component or buffer is a method on that type, or on a small struct wrapping the buffer
+  (`Stockpile`, `StatModifiers`). A static class only holds a shared pure function with no owner, constants or
+  editor commands.
+- Statics hold no match state. Match state lives in its worlds: an ECS singleton (`GameSpeed`), or a
+  `SceneSingleton<T>` a MonoBehaviour writes (`GroundWetness`). A session carries its `MatchSetup` in through
+  `SessionScene`. Statics may front what Unity keeps per process (`NetworkSession` and the world stack,
+  `PresentationQuality`, input devices) and editor caches.
+- Shared simulation code in `Simulation/Common` sits in `Geometry`, `Systems` (phase groups, frame, worlds),
+  `Combat`, `Buildings`, `Authoring`, `Cells`, `Events`, `Infantry`, `Players` and `Prefabs`; entity helpers stay at
+  its root. Avoid folder names that shadow common names in their namespace (`Math`, `Entities`).
 - Name a method after what it returns or does (`TierIndex`), never a bare `Of` or `XOf`.
 - No long `&&` or `||` chains: a block body with an early `return` per rule and named locals. One- or two-term `=>`
   bodies are fine.
@@ -73,7 +83,13 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 
 ## Size
 
-- Files under 300 lines, methods under 40: split by responsibility.
+- Files under 300 lines, methods under 40, at most 6 parameters (job `Execute` and `[TestCase]` tests aside).
+- A type never spans files. Split a big type into types that own their data: a nested job becomes a top-level job
+  (`PathEvaluateJob`), methods over some of the fields become a struct holding them (`DriveWindow`), a concern
+  becomes its own planner (`AttackPlanner`). Never dotted partial files (`X.Y.cs`); `partial` is only for codegen.
+- Group parameters that travel together: a lookup context built once per job (`TargetLookup`), a chunk view and an
+  index for per-unit work (`MoverChunk`), or a settings type with an object initializer instead of optional
+  parameters (`CommandSpecSettings`).
 - One type per file, except an authoring class with its baker, or a feature's small components and tags sharing a
   file named after it (`HarvesterComponents.cs`). Systems, MonoBehaviours and ScriptableObjects are one per file.
 - Prefer deleting code. No dead code, unused usings or commented-out code.
@@ -87,17 +103,20 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   module folders, with the shared kits at its root.
 - Test behaviour that matters and hard edge cases, not every method or path. Extend an existing test before adding a
   near-copy, and skip a case another test already covers.
-- A new authoring rule is an `AuthoringRule<T>` in `Editor/Validation/Rules/`. The inspector,
-  **HyperRTS ▸ Tools ▸ Validate** and the tests pick it up.
+- No test depends on timing: an Editor import landing, a fixed number of frames, or files staying unchanged during
+  the run. Delete one that does; a check over files or assets is a validation rule.
+- A new authoring rule is an `AuthoringRule<T>` in its domain folder under `Editor/Validation/Rules/` (`Units`,
+  `Buildings`, `Effects`, `Match`, `Fields`). The inspector, **HyperRTS ▸ Tools ▸ Validate** and the tests pick it up.
 - In Play, the Scene view's **HyperRTS Debug** and **HyperRTS Cheats** overlays and the Tools window's Play page
   (the launcher, network, soak tests and replays) inspect and drive the world.
 
 ## Gotchas
 
-- Domain reload is off, so statics survive between Play sessions. Mark session state `[AutoStaticsCleanup]` and
-  immutable tables `[NoAutoStaticsCleanup]`, and put side effects such as shader globals in an
-  `[OnEnteringPlayMode]` method (its type `partial`), or keep the state in ECS. `UAC*` diagnostics and `UAL*`
-  findings are errors.
+- Domain reload is off, so statics survive between Play sessions. Mark the statics allowed above
+  `[AutoStaticsCleanup]` or, for immutable tables, `[NoAutoStaticsCleanup]`, and put side effects such as shader
+  globals in an `[OnEnteringPlayMode]` method (its type `partial`). `UAC*` diagnostics and `UAL*` findings are errors.
+- UXML names custom elements by full type name, and moving a folder changes the namespace: rewrite those tags with
+  the move.
 - A serialized `Dictionary<K, V>` needs `[SerializeField]`, even on a public field.
 - Entities built through `EntityWriter` in tests have no mesh; rendered spawns instantiate baked prefabs.
 - SubScene entities stream in over the first frames: guard on singletons with `RequireForUpdate`, and never treat
