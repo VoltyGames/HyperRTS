@@ -11,8 +11,8 @@ using UnityEditor.PackageManager;
 namespace HyperRTS.Editor.Tests
 {
     /// <summary>
-    /// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, and types
-    /// with statics cleanup are partial.
+    /// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, types with
+    /// statics cleanup are partial and no job turns its safety checks off.
     /// </summary>
     public class ModuleLayoutTests
     {
@@ -33,6 +33,7 @@ namespace HyperRTS.Editor.Tests
         private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
         private static readonly Regex PartialType = new(@"\bpartial (?:class|struct)\b");
         private static readonly Regex StaticsCleanup = new(@"^\s*\[AutoStaticsCleanup\]", RegexOptions.Multiline);
+        private static readonly Regex SafetyBypass = new(@"\bNativeDisable(?:ParallelFor|ContainerSafety)Restriction\b");
         private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);
 
         // Namespace-level declarations sit at a 4-space indent; nested ones (Baker, entry classes) at 8.
@@ -158,6 +159,17 @@ namespace HyperRTS.Editor.Tests
                 .Select(path => RelativeTo(PackageRoot, path))
                 .ToList();
             Assert.IsEmpty(whole, "Types with [AutoStaticsCleanup] members must be partial:\n" + string.Join("\n", whole));
+        }
+
+        // A job that writes what the safety system can't see as its own must be restructured so it can, not exempted.
+        [Test]
+        public void JobsKeepTheirSafetyChecks()
+        {
+            var bypassing = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
+                .Where(path => SafetyBypass.IsMatch(File.ReadAllText(path)))
+                .Select(path => RelativeTo(PackageRoot, path))
+                .ToList();
+            Assert.IsEmpty(bypassing, "Jobs turn safety checks off in:\n" + string.Join("\n", bypassing));
         }
 
         /// <summary>

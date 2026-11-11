@@ -42,7 +42,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   `SimulationSystemGroup`, which holds only network plumbing. Presentation, input, lobby, one-shot setup and network
   plumbing may be `SystemBase` or a non-Burst `ISystem`.
 - Per-entity work is a Burst `IJobEntity`: `ScheduleParallel`, or `Schedule` when it writes other entities through a
-  `ComponentLookup`.
+  `ComponentLookup`. Never turn job safety checks off (`ModuleLayoutTests` fails on it): a parallel job writes only
+  what it iterates, and parts pull their state from their root.
 - Components are unmanaged: `FixedStringNNBytes` for strings, `UnityObjectRef<T>` for Unity objects.
 - Runtime toggles (orders, construction, selection) are `IEnableableComponent`s flipped with `EnabledRefRW<T>`,
   paired with `ref T`, never `in T`. `WithPresent<T>` also visits disabled entities.

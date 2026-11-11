@@ -94,6 +94,9 @@ Traverse and elevation limits are weapon data; the rig only smooths the simulate
 Road wheels (`Wheel_` parts, `followsGround`) lift to the terrain under them. Tracks bend with them through a
 `TrackMeshAuthoring` on each track part, which must sit unrotated and unscaled against the rig.
 
+The rig works out its pose on its own entity; each part, linked to its rig at bake (`MotionRigLink`), then poses
+itself from it, so every job writes only the entities it runs on.
+
 ## Squad figures
 
 `SquadFiguresAuthoring` on a squad unit draws it as hand-placed bone-animated figures: children of its `Model`, each
@@ -103,7 +106,8 @@ with `BoneAnimatedAuthoring` renderers sharing one `BoneClipTable`. Figure i sho
 Each figure has a `FigureClipSet` that picks clips from the table by name: legs and fire per posture, a whole-body clip
 per `MemberAction` and deaths per posture. Every entry is required: an unset one or a missing name fails the bake and
 nothing falls back. `SquadFigureSystem` plays them; a clip with a `groundSpeed` plays at the figure's speed over that,
-so feet don't slide. `SquadFigurePlacementSystem` turns a figure to its weapon's `WeaponPose` yaw while it fires (a
+so feet don't slide. The squad records each figure's clips, and every figure part (`FigurePart`, added at bake) picks
+up a change itself, so only chunks with a changed part are written. `SquadFigurePlacementSystem` turns a figure to its weapon's `WeaponPose` yaw while it fires (a
 launcher or an extra weapon aims on its own; a hull-fixed rifle turns the squad), else to its cover heading, else to
 the squad's facing.
 
