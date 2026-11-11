@@ -95,9 +95,12 @@ in tonnes, sets each unit's weight.
   one ahead shares only the inner push, so an abreast pair at a one-lane bridge never waits on each other. A mover
   that another outweighs by half again takes all the avoiding on itself.
 - **Idle units** step aside for an allied mover of their own kind and stay where pushed.
-- **Foot units and vehicles.** The push never moves a vehicle off a foot unit: the foot unit takes the whole overlap.
+- **Foot units and vehicles.** A vehicle is a unit with `LocomotionAuthoring` (`NavAgent.IsVehicle`); every other
+  ground unit is on foot. The push never moves a vehicle off a foot unit: the foot unit takes the whole overlap.
   A foot unit always gives way to an allied vehicle, whatever its order or stance, and steps out of a moving one's
-  lane (its hull's width, out to its braking distance and a few metres more) before the vehicle reaches it. The
+  lane (its hull's width, out to its braking distance and a few metres more) before the vehicle reaches it. Only
+  foot units in spatial cells the index marks near a moving vehicle (`SpatialIndex.IsNearVehicleLane`) look that far,
+  so an idle crowd queries no more than its own neighbours. The
   vehicle slows to `RightOfWay.WalkingPace` while one stands in its lane and still stops at its hull. Held 2 s by
   allied foot units alone, it drives through them at a walk until it is clear of them.
 - **Busy units.** A parked unit with an order, a target or Hold Position, a landed aircraft and an enemy hold their

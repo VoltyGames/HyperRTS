@@ -23,13 +23,32 @@ namespace HyperRTS.Simulation.Navigation.Fields
     {
         private EntityQuery _agents;
 
+        // Kept between frames and sized to the work by CollectJob, so an idle frame schedules and allocates nothing.
+        private NativeList<int2> _rebuilds;
+        private NativeList<int2> _relabels;
+        private NativeList<FixedList4096Bytes<float>> _solved;
+        private NativeList<FixedList512Bytes<byte>> _labelled;
+
         public void OnCreate(ref SystemState state)
         {
             _agents = SystemAPI.QueryBuilder().WithAll<NavAgent>().WithOptions(EntityQueryOptions.IncludePrefab)
                 .Build();
             // Only new or edited agents can bring a new class.
             _agents.SetChangedVersionFilter(ComponentType.ReadOnly<NavAgent>());
+            _rebuilds = new NativeList<int2>(Allocator.Persistent);
+            _relabels = new NativeList<int2>(Allocator.Persistent);
+            _solved = new NativeList<FixedList4096Bytes<float>>(Allocator.Persistent);
+            _labelled = new NativeList<FixedList512Bytes<byte>>(Allocator.Persistent);
             state.RequireForUpdate<NavGrid>();
+        }
+
+        public void OnDestroy(ref SystemState state)
+        {
+            state.Dependency.Complete();
+            _rebuilds.Dispose();
+            _relabels.Dispose();
+            _solved.Dispose();
+            _labelled.Dispose();
         }
 
         public void OnUpdate(ref SystemState state)
@@ -49,10 +68,8 @@ namespace HyperRTS.Simulation.Navigation.Fields
         }
 
         // Fields first, as relabelling reads them; then the sector graph of the sectors they marked.
-        private static JobHandle Rebuild(in NavGrid grid, int firstNewKey, JobHandle dependency)
+        private JobHandle Rebuild(in NavGrid grid, int firstNewKey, JobHandle dependency)
         {
-            var rebuilds = new NativeList<int2>(Allocator.TempJob);
-            var relabels = new NativeList<int2>(Allocator.TempJob);
             dependency = new CollectJob
             {
                 Field = grid.Field,
@@ -60,62 +77,44 @@ namespace HyperRTS.Simulation.Navigation.Fields
                 Keys = grid.Classes.Keys,
                 FirstNewKey = firstNewKey,
                 ClassCount = grid.Sectors.ClassCount,
-                Rebuilds = rebuilds,
-                Relabels = relabels,
+                Rebuilds = _rebuilds,
+                Relabels = _relabels,
+                Solved = _solved,
+                Labelled = _labelled,
             }.Schedule(dependency);
-            dependency = RebuildFields(grid, rebuilds, dependency);
-            dependency = RelabelSectors(grid, relabels, dependency);
-            dependency = new ConnectJob { Sectors = grid.Sectors }.Schedule(dependency);
-            dependency = relabels.Dispose(dependency);
-            return rebuilds.Dispose(dependency);
-        }
 
-        // Each item solves into its own range of a scratch array, then one job copies the rows into the field. Items
-        // are only known on the worker, so the scratch holds the most there could be and unused ranges stay untouched.
-        private static JobHandle RebuildFields(in NavGrid grid, NativeList<int2> rebuilds, JobHandle dependency)
-        {
-            var most = grid.Field.DirtySectors.Length * grid.Field.SlotCount;
-            var solved = new NativeArray<float>(most * NavField.SectorArea, Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
+            // One block per item, solved in parallel, then one job copies the blocks into the field.
             dependency = new RebuildJob
             {
                 Cells = grid.Cells,
                 Scenery = grid.Scenery,
                 Keys = grid.Classes.Keys.AsDeferredJobArray(),
-                Work = rebuilds.AsDeferredJobArray(),
+                Work = _rebuilds.AsDeferredJobArray(),
                 Field = grid.Field,
-                Solved = solved,
-            }.ScheduleBatch(solved.Length, NavField.SectorArea, dependency);
+                Solved = _solved.AsDeferredJobArray(),
+            }.Schedule(_rebuilds, 1, dependency);
             dependency = new StoreFieldJob
             {
-                Work = rebuilds.AsDeferredJobArray(),
-                Solved = solved,
+                Work = _rebuilds.AsDeferredJobArray(),
+                Solved = _solved.AsDeferredJobArray(),
                 Field = grid.Field,
             }.Schedule(dependency);
-            return solved.Dispose(dependency);
-        }
 
-        // Same as the field: one range per item, then one job copies them into the sector graph.
-        private static JobHandle RelabelSectors(in NavGrid grid, NativeList<int2> relabels, JobHandle dependency)
-        {
-            var most = grid.Sectors.SectorCount * grid.Sectors.ClassCount;
-            var labelled = new NativeArray<byte>(most * NavSectors.LabelledBytes, Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
             dependency = new RelabelJob
             {
                 Field = grid.Field,
                 Classes = grid.Classes,
-                Work = relabels.AsDeferredJobArray(),
+                Work = _relabels.AsDeferredJobArray(),
                 Sectors = grid.Sectors,
-                Labelled = labelled,
-            }.ScheduleBatch(labelled.Length, NavSectors.LabelledBytes, dependency);
+                Labelled = _labelled.AsDeferredJobArray(),
+            }.Schedule(_relabels, 1, dependency);
             dependency = new StoreSectorsJob
             {
-                Work = relabels.AsDeferredJobArray(),
-                Labelled = labelled,
+                Work = _relabels.AsDeferredJobArray(),
+                Labelled = _labelled.AsDeferredJobArray(),
                 Sectors = grid.Sectors,
             }.Schedule(dependency);
-            return labelled.Dispose(dependency);
+            return new ConnectJob { Sectors = grid.Sectors }.Schedule(dependency);
         }
 
         private void Register(ref NavGrid grid)
@@ -135,7 +134,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
 
         /// <summary>
         /// Every sector of a new key, else its dirty sectors, to rebuild; the marks pass on to the sector graph, which
-        /// relabels every class of each of its dirty sectors, sector then class.
+        /// relabels every class of each of its dirty sectors, sector then class. Sizes the result blocks to match.
         /// </summary>
         [BurstCompile]
         private struct CollectJob : IJob
@@ -147,9 +146,13 @@ namespace HyperRTS.Simulation.Navigation.Fields
             public int ClassCount;
             public NativeList<int2> Rebuilds;
             public NativeList<int2> Relabels;
+            public NativeList<FixedList4096Bytes<float>> Solved;
+            public NativeList<FixedList512Bytes<byte>> Labelled;
 
             public void Execute()
             {
+                Rebuilds.Clear();
+                Relabels.Clear();
                 var dirty = Field.DirtySectors;
                 for (var slot = 0; slot < Keys.Length; slot++)
                 {
@@ -175,12 +178,15 @@ namespace HyperRTS.Simulation.Navigation.Fields
                         Relabels.Add(new int2(sector, classIndex));
                     }
                 }
+
+                Solved.ResizeUninitialized(Rebuilds.Length);
+                Labelled.ResizeUninitialized(Relabels.Length);
             }
         }
 
-        /// <summary>One sector of one key per batch, solved into that batch's range of the scratch.</summary>
+        /// <summary>One sector of one key per item, solved into that item's block.</summary>
         [BurstCompile]
-        private struct RebuildJob : IJobParallelForBatch
+        private struct RebuildJob : IJobParallelForDefer
         {
             private static readonly ProfilerMarker RebuildMarker = new("NavFieldSystem.Rebuild");
 
@@ -193,20 +199,16 @@ namespace HyperRTS.Simulation.Navigation.Fields
 
             [ReadOnly] public NavField Field;
 
-            public NativeArray<float> Solved;
+            public NativeArray<FixedList4096Bytes<float>> Solved;
 
-            public void Execute(int startIndex, int count)
+            public void Execute(int index)
             {
-                var index = startIndex / NavField.SectorArea;
-                if (index >= Work.Length)
-                {
-                    return;
-                }
-
                 using var scope = RebuildMarker.Auto();
                 var item = Work[index];
                 var transform = new DistanceTransform(Field.WindowSide, Allocator.Temp);
-                Field.Solve(Cells, Scenery, Keys[item.y], item.x, ref transform, Solved, startIndex);
+                var values = new FixedList4096Bytes<float>();
+                Field.Solve(Cells, Scenery, Keys[item.y], item.x, ref transform, ref values);
+                Solved[index] = values;
                 transform.Dispose();
             }
         }
@@ -215,21 +217,21 @@ namespace HyperRTS.Simulation.Navigation.Fields
         private struct StoreFieldJob : IJob
         {
             [ReadOnly] public NativeArray<int2> Work;
-            [ReadOnly] public NativeArray<float> Solved;
+            [ReadOnly] public NativeArray<FixedList4096Bytes<float>> Solved;
             public NavField Field;
 
             public void Execute()
             {
                 for (var index = 0; index < Work.Length; index++)
                 {
-                    Field.Store(Work[index].y, Work[index].x, Solved, index * NavField.SectorArea);
+                    Field.Store(Work[index].y, Work[index].x, Solved[index]);
                 }
             }
         }
 
-        /// <summary>One sector of one class per batch, labelled into that batch's range of the scratch.</summary>
+        /// <summary>One sector of one class per item, labelled into that item's block.</summary>
         [BurstCompile]
-        private struct RelabelJob : IJobParallelForBatch
+        private struct RelabelJob : IJobParallelForDefer
         {
             private static readonly ProfilerMarker RelabelMarker = new("NavSectors.Relabel");
 
@@ -241,19 +243,15 @@ namespace HyperRTS.Simulation.Navigation.Fields
 
             [ReadOnly] public NavSectors Sectors;
 
-            public NativeArray<byte> Labelled;
+            public NativeArray<FixedList512Bytes<byte>> Labelled;
 
-            public void Execute(int startIndex, int count)
+            public void Execute(int index)
             {
-                var index = startIndex / NavSectors.LabelledBytes;
-                if (index >= Work.Length)
-                {
-                    return;
-                }
-
                 using var scope = RelabelMarker.Auto();
                 var item = Work[index];
-                Sectors.Label(Field, Classes, item.y, item.x, Labelled, startIndex);
+                var labelled = new FixedList512Bytes<byte>();
+                Sectors.Label(Field, Classes, item.y, item.x, ref labelled);
+                Labelled[index] = labelled;
             }
         }
 
@@ -261,14 +259,14 @@ namespace HyperRTS.Simulation.Navigation.Fields
         private struct StoreSectorsJob : IJob
         {
             [ReadOnly] public NativeArray<int2> Work;
-            [ReadOnly] public NativeArray<byte> Labelled;
+            [ReadOnly] public NativeArray<FixedList512Bytes<byte>> Labelled;
             public NavSectors Sectors;
 
             public void Execute()
             {
                 for (var index = 0; index < Work.Length; index++)
                 {
-                    Sectors.Store(Work[index].y, Work[index].x, Labelled, index * NavSectors.LabelledBytes);
+                    Sectors.Store(Work[index].y, Work[index].x, Labelled[index]);
                 }
             }
         }

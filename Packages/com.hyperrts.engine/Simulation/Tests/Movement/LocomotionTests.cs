@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             var vehicle = _world.SpawnUnit(1, position, speed: 8f, radius: radius);
             _world.Set(vehicle, new NavAgent
             {
-                Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing, Chassis = chassis,
+                Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing, Chassis = chassis, IsVehicle = true,
                 Mass = chassis.Pivots ? 62f : 17f,
             });
             var writer = _world.Writer(vehicle);

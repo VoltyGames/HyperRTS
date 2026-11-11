@@ -76,12 +76,12 @@ namespace HyperRTS.Simulation.Movement.Crushing
             private void Execute(Entity entity, in Crusher crusher, in NavAgent agent, in LocalTransform transform,
                 in Owner owner, in Velocity velocity)
             {
-                if (agent.Layer == NavLayer.Air || agent.Layer == NavLayer.Naval)
+                if (!Crusher.CanCrush(agent.Layer))
                 {
                     return;
                 }
 
-                var crushesUnits = math.lengthsq(velocity.Value) > Crusher.Pace * Crusher.Pace;
+                var crushesUnits = Crusher.IsCrushingPace(velocity.Value);
                 var underfoot = new Underfoot
                 {
                     Damage = Damage,
@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
                     Health = Health,
                     Crusher = entity,
                     Owner = owner.Value,
-                    Size = crusher.Size,
+                    Rule = crusher,
                     CrushesUnits = crushesUnits,
                     Position = transform.Position,
                     Rotation = transform.Rotation,
@@ -114,7 +114,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
             [ReadOnly] public ComponentLookup<Health> Health;
             public Entity Crusher;
             public byte Owner;
-            public int Size;
+            public Crusher Rule;
             public bool CrushesUnits;
             public float3 Position;
             public quaternion Rotation;
@@ -146,7 +146,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
 
             private void FlattenScenery(in SpatialEntry entry, int crush)
             {
-                if (crush > 0 && crush <= Size && Underneath(entry.Position, entry.Radius))
+                if (crush > 0 && crush <= Rule.Size && Underneath(entry.Position, entry.Radius))
                 {
                     Damage.Add(DamageEvent.Direct(entry.Entity, Position, Crusher, 0, Lethal));
                 }
@@ -154,7 +154,8 @@ namespace HyperRTS.Simulation.Movement.Crushing
 
             private void CrushUnit(in SpatialEntry entry, int crush)
             {
-                if (crush <= 0 || crush > Size || Relations.IsAllied(Owner, entry.Owner))
+                var allied = Relations.IsAllied(Owner, entry.Owner);
+                if (!Rule.Crushes(Agent.Layer, Agent.IsVehicle, crush, entry.IsVehicle, allied))
                 {
                     return;
                 }

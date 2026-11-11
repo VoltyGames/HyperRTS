@@ -219,6 +219,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             World.Set(truck, new NavAgent
             {
                 Radius = TruckRadius, HullLength = TruckLength, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
+                IsVehicle = true,
                 Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
             });
             LocomotionAuthoring.Add(World.Writer(truck), TestVehicles.ShortTruck);

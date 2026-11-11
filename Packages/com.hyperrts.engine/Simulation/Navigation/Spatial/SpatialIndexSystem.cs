@@ -40,12 +40,15 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             // Systems ordered before the first build, such as placement, query it: until then it is one empty cell.
             var starts = new NativeList<int>(1024, Allocator.Persistent);
             starts.Resize(2, NativeArrayOptions.ClearMemory);
+            var vehicleCells = new NativeList<byte>(1024, Allocator.Persistent);
+            vehicleCells.Resize(1, NativeArrayOptions.ClearMemory);
             state.EntityManager.CreateSingleton(new SpatialIndex
             {
                 Grid = new CellGrid(float2.zero, CellSize, new int2(1)),
                 CellStarts = starts,
                 Entries = new NativeList<SpatialEntry>(1024, Allocator.Persistent),
                 Oversized = new NativeList<SpatialEntry>(16, Allocator.Persistent),
+                VehicleCells = vehicleCells,
             }, "SpatialIndex");
             state.RequireForUpdate<MapSettings>();
         }
@@ -58,6 +61,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 index.ValueRW.CellStarts.Dispose();
                 index.ValueRW.Entries.Dispose();
                 index.ValueRW.Oversized.Dispose();
+                index.ValueRW.VehicleCells.Dispose();
             }
 
             _snapshots.Dispose();

@@ -88,11 +88,11 @@ namespace HyperRTS.Simulation.Movement
 
         /// <summary>
         /// A mover looks as far as two units closing at top speed cover within the steering horizon, and a foot unit
-        /// far enough to see the lanes of vehicles coming its way.
+        /// near a moving vehicle far enough to see its lane.
         /// </summary>
-        public readonly float Reach(float maxSpeed)
+        public readonly float Reach(float maxSpeed, bool nearVehicleLane)
         {
-            var sight = Unit.IsVehicle ? 0f : RightOfWay.LaneSight;
+            var sight = !Unit.IsVehicle && nearVehicleLane ? SpatialIndex.LaneSight : 0f;
             var closing = Moving ? maxSpeed * Steering.Horizon * 2f : 0f;
             return Unit.HullReach + math.max(closing, sight);
         }

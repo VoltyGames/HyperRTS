@@ -19,9 +19,6 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>Metres per second a vehicle keeps to while allied foot units stand in its lane.</summary>
         public const float WalkingPace = 1.5f;
 
-        /// <summary>Metres past its own reach a foot unit looks for vehicle lanes, more than any vehicle brakes in.</summary>
-        public const float LaneSight = 10f;
-
         // Past the braking distance, so a soldier has time at a walk to clear the lane before contact.
         private const float LaneLead = 4f;
 
@@ -73,18 +70,14 @@ namespace HyperRTS.Simulation.Movement
         /// </summary>
         public readonly bool Crushes(in SpatialEntry crusher, in SpatialEntry victim)
         {
-            if (!crusher.IsVehicle || victim.IsVehicle || _relations.IsAllied(crusher.Owner, victim.Owner))
-            {
-                return false;
-            }
-
             if (!_crushers.TryGetComponent(crusher.Entity, out var size) ||
                 !_crushables.TryGetComponent(victim.Entity, out var rating))
             {
                 return false;
             }
 
-            return rating.Crush > 0 && rating.Crush <= size.Size;
+            var allied = _relations.IsAllied(crusher.Owner, victim.Owner);
+            return size.Crushes(crusher.Layer, crusher.IsVehicle, rating.Crush, victim.IsVehicle, allied);
         }
 
         /// <summary>
@@ -98,8 +91,7 @@ namespace HyperRTS.Simulation.Movement
                 return true;
             }
 
-            var pace = Crusher.Pace;
-            return math.lengthsq(other.Velocity) > pace * pace && Crushes(other, unit);
+            return Crusher.IsCrushingPace(other.Velocity) && Crushes(other, unit);
         }
 
         /// <summary>

@@ -63,6 +63,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
             agent.Mass = 62f;
             agent.Spacing = UnitAuthoring.DefaultSpacing;
             agent.Chassis = new Chassis { Pivots = true, ReverseRun = 10f };
+            agent.IsVehicle = true;
             _world.EntityManager.SetComponentData(tank, agent);
             _world.EntityManager.SetComponentData(tank,
                 LocalTransform.FromPositionRotation(position, quaternion.RotateY(north ? math.PI : 0f)));

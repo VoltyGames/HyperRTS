@@ -2,6 +2,8 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Navigation.Drive;
+using HyperRTS.Simulation.Navigation.Spatial;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -35,10 +37,14 @@ namespace HyperRTS.Simulation.Tests.Movement
             return math.length(offset) - agent.Radius - World.Get<NavAgent>(unit).Radius;
         }
 
-        [Test]
-        public void IdleTank_IsNotMovedByAWalkingSquad()
+        // A hover hull neither pivots nor has a turn radius, yet has locomotion, so it is still a vehicle.
+        [TestCase(true)]
+        [TestCase(false)]
+        public void IdleTank_IsNotMovedByAWalkingSquad(bool pivots)
         {
-            var tank = World.SpawnVehicle(1, float3.zero, East, 7f, TestVehicles.TankHull(), TestVehicles.Tracks);
+            var hull = TestVehicles.TankHull();
+            hull.Chassis = pivots ? hull.Chassis : new Chassis { ReverseRun = 10f };
+            var tank = World.SpawnVehicle(1, float3.zero, East, 7f, hull, TestVehicles.Tracks);
             var squad = World.SpawnSquad(1, new float3(-10f, 0f, 0.5f));
             World.Tick();
             var goal = new float3(10f, 0f, 0.5f);
@@ -74,6 +80,21 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.IsFalse(World.IsEnabled<MoveDestination>(truck), "the truck arrived");
             Assert.Greater(closest, 0f, $"the squad left the lane before the truck reached it, closest {closest:F2} m");
             Assert.LessOrEqual(longestStop, 1f, $"the truck never stopped for more than a second, not {longestStop:F2} s");
+        }
+
+        [Test]
+        public void OnlyFootUnitsNearAMovingVehicle_WatchItsLane()
+        {
+            var truck = SpawnTruck(new float3(-30f, 0f, 0f));
+            World.Tick();
+            World.Send(truck, new float3(30f, 0f, 0f));
+            World.Tick();
+            World.EntityManager.CompleteAllTrackedJobs();
+
+            using var query = World.Query(typeof(SpatialIndex));
+            var index = query.GetSingleton<SpatialIndex>();
+            Assert.IsTrue(index.IsNearVehicleLane(new float3(-30f, 0f, 5f)), "beside the truck");
+            Assert.IsFalse(index.IsNearVehicleLane(new float3(-30f, 0f, 60f)), "far from every moving vehicle");
         }
 
         // A foot unit that can't move holds the truck 2 s; then it drives through at a walk.

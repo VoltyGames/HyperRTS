@@ -26,7 +26,34 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// </summary>
         public NativeList<SpatialEntry> Oversized;
 
+        /// <summary>One flag per cell, set when a moving vehicle is close enough that a foot unit there may need its lane.</summary>
+        public NativeList<byte> VehicleCells;
+
         public readonly float CellSize => Grid.CellSize;
+
+        /// <summary>
+        /// Metres past a moving vehicle's hull, from its centre, within which a foot unit looks at it; the unit's own
+        /// hull adds at most one cell.
+        /// </summary>
+        public const float LaneSight = 10f;
+
+        /// <summary>Whether a foot unit at the position is near enough to a moving vehicle to watch its lane.</summary>
+        public readonly bool IsNearVehicleLane(float3 position) => VehicleCells[CellIndex(position)] != 0;
+
+        /// <summary>Flags every cell a foot unit could stand in and see the moving vehicle.</summary>
+        public void MarkVehicleLane(in SpatialEntry vehicle)
+        {
+            var radius = LaneSight + vehicle.HullReach + CellSize;
+            var min = Grid.Clamp(Grid.Cell(vehicle.Position.xz - radius));
+            var max = Grid.Clamp(Grid.Cell(vehicle.Position.xz + radius));
+            for (var y = min.y; y <= max.y; y++)
+            {
+                for (var x = min.x; x <= max.x; x++)
+                {
+                    VehicleCells[Grid.Index(new int2(x, y))] = 1;
+                }
+            }
+        }
 
         /// <summary>The cell an entry at the position files under, clamped onto the map.</summary>
         public readonly int CellIndex(float3 position) => Grid.Index(Grid.Clamp(Grid.Cell(position)));

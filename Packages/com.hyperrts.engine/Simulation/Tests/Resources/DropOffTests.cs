@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Tests.Resources
             var truck = SpawnHarvester(float3.zero);
             var agent = new NavAgent
             {
-                Radius = TruckRadius, HullLength = 7f, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f,
+                Radius = TruckRadius, HullLength = 7f, Spacing = UnitAuthoring.DefaultSpacing, Mass = 17f, IsVehicle = true,
                 Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = TurnRadius, ReverseRun = 6f },
             };
             agent.WallMargin = agent.HullWallMargin;

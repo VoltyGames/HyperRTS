@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Movement
             var facing = math.normalizesafe(transform.Forward().xz);
             var crowd = new CrowdVisitor(entity, from, facing, velocity, agent, owner.Value, moving, destination,
                 RightOfWay) { PassesInfantry = drive.PassesInfantry };
-            Index.QueryHulls(crowd.Center, crowd.Reach(top), ref crowd);
+            Index.QueryHulls(crowd.Center, crowd.Reach(top, Index.IsNearVehicleLane(crowd.Center)), ref crowd);
             var pace = crowd.WalksForInfantry ? math.min(top, RightOfWay.WalkingPace) : top;
             return new MoveFrame
             {

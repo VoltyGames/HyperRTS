@@ -137,19 +137,17 @@ namespace HyperRTS.Simulation.Navigation.Fields
         public void Rebuild(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key, int slot,
             int sector, ref DistanceTransform transform)
         {
-            var values = new NativeArray<float>(SectorArea, Allocator.Temp);
-            Solve(cells, scenery, key, sector, ref transform, values, 0);
-            Store(slot, sector, values, 0);
-            values.Dispose();
+            var values = new FixedList4096Bytes<float>();
+            Solve(cells, scenery, key, sector, ref transform, ref values);
+            Store(slot, sector, values);
         }
 
         /// <summary>
-        /// Solves one key over one sector into <see cref="SectorArea"/> values of <paramref name="values"/> from
-        /// <paramref name="offset"/>, one per cell row by row, for <see cref="Store"/>, so parallel jobs write only
-        /// their own range.
+        /// Solves one key over one sector into <paramref name="values"/>, <see cref="SectorArea"/> values one per cell
+        /// row by row, for <see cref="Store"/>, so parallel jobs write only their own block.
         /// </summary>
         public readonly void Solve(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key,
-            int sector, ref DistanceTransform transform, NativeArray<float> values, int offset)
+            int sector, ref DistanceTransform transform, ref FixedList4096Bytes<float> values)
         {
             var first = Layout.Origin(sector);
             var origin = first - ReachCells;
@@ -161,14 +159,15 @@ namespace HyperRTS.Simulation.Navigation.Fields
                 transform.Closed[i] = !Grid.Contains(cell) || key.Blocks((NavSurface)cells[index], scenery[index]);
             }
 
+            values.Length = SectorArea;
             transform.Solve(true);
-            Fill(values, offset, first, transform, true);
+            Fill(ref values, first, transform, true);
             transform.Solve(false);
-            Fill(values, offset, first, transform, false);
+            Fill(ref values, first, transform, false);
         }
 
-        /// <summary>Stores the values <see cref="Solve"/> wrote at <paramref name="offset"/> for one slot and sector.</summary>
-        public void Store(int slot, int sector, in NativeArray<float> values, int offset)
+        /// <summary>Stores the values <see cref="Solve"/> wrote for one slot and sector.</summary>
+        public void Store(int slot, int sector, in FixedList4096Bytes<float> values)
         {
             var first = Layout.Origin(sector);
             var width = math.min(SectorCells, Grid.Size.x - first.x);
@@ -176,12 +175,15 @@ namespace HyperRTS.Simulation.Navigation.Fields
             for (var row = 0; row < rows; row++)
             {
                 var destination = slot * CellCount + Grid.Index(first + new int2(0, row));
-                NativeArray<float>.Copy(values, offset + row * SectorCells, Distances, destination, width);
+                for (var column = 0; column < width; column++)
+                {
+                    Distances[destination + column] = values[row * SectorCells + column];
+                }
             }
         }
 
         // From centre distance to edge distance: half a cell less, signed by side, within the cap.
-        private readonly void Fill(NativeArray<float> values, int offset, int2 first, in DistanceTransform transform,
+        private readonly void Fill(ref FixedList4096Bytes<float> values, int2 first, in DistanceTransform transform,
             bool open)
         {
             var origin = first - ReachCells;
@@ -194,7 +196,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
                 }
 
                 var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * Grid.CellSize, MaxDistance);
-                values[offset + (cell.y - first.y) * SectorCells + cell.x - first.x] = open ? edge : -edge;
+                values[(cell.y - first.y) * SectorCells + cell.x - first.x] = open ? edge : -edge;
             }
         }
 

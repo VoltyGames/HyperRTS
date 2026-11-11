@@ -31,6 +31,12 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     starts[i] = 0;
                 }
 
+                Index.VehicleCells.Resize(cells, NativeArrayOptions.UninitializedMemory);
+                for (var i = 0; i < cells; i++)
+                {
+                    Index.VehicleCells[i] = 0;
+                }
+
                 Index.Oversized.Clear();
                 for (var i = 0; i < Snapshots.Length; i++)
                 {
@@ -38,6 +44,11 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     if (entry.Entity == Entity.Null)
                     {
                         continue;
+                    }
+
+                    if (entry.IsVehicle && entry.IsMoving)
+                    {
+                        Index.MarkVehicleLane(entry);
                     }
 
                     if (entry.IsOversized(CellSize))

@@ -111,6 +111,7 @@ namespace HyperRTS.Simulation.GameEntities
                 if (locomotion != null)
                 {
                     agent.Chassis = locomotion.Chassis;
+                    agent.IsVehicle = true;
                 }
 
                 agent.WallMargin = agent.HullWallMargin;

@@ -71,6 +71,7 @@ namespace HyperRTS.Simulation.Tests
 
         public static NavAgent Hull(NavAgent agent)
         {
+            agent.IsVehicle = true;
             agent.Spacing = UnitAuthoring.DefaultSpacing;
             agent.WallMargin = agent.HullWallMargin;
             return agent;
