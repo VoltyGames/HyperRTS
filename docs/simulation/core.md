@@ -50,7 +50,7 @@ painted in strips.
 
 ## MatchStart
 
-Orchestration that applies the `MatchSetupRequest` to the baked players, spawns start kits and enables prespawned
+Orchestration that applies the `MatchSetup` to the baked players, spawns start kits and enables prespawned
 ghosts in single player.
 
 | Type | Role |
@@ -73,13 +73,13 @@ spawn point, and its build order. A side the Match doesn't list is an error.
 | --- | --- |
 | `MatchState` | Replicated phase, winning team, and `Started` once every human joined |
 | `MatchRules` | Low-power production rate, sell refund, experience per cost, replays, join timeout |
-| `MatchSetupRequest` | Lobby configuration (in `MatchStart`). Set it before the map loads |
-| `LocalGameSpeed` | Single-player pause and speed |
+| `MatchSetup` | Lobby configuration. `NetworkSession` writes it into every world of the session before the map loads |
+| `GameSpeed` | Single-player pause and speed, applied to `Time.timeScale` by `GameSpeedSystem`, which resets it when the local world goes |
 | `VictoryCritical` | A player who loses all of these is defeated |
 | `PopulationProvider`, `Population` | Population sources, and used and cap per player |
 
-`MatchSetupRequest` closes slots and removes what they own, sets names, colours, teams and sides, assigns AI, scales
-starting stock and overrides fog. It applies the same way on the server and every client. Its `Weather` is read by the
+`MatchSetup` closes slots and removes what they own, sets names, colours, teams and sides, assigns AI, scales
+starting stock, overrides fog and sets the single-player speed. It applies the same way on the server and every client. Its `Weather` is read by the
 scene when it loads; leave it empty for the map's own weather.
 
 Victory: a player who loses every `VictoryCritical` entity is defeated, and the match ends when one team is left. A

@@ -25,11 +25,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         public void SetUp() => _world = new TestWorld();
 
         [TearDown]
-        public void TearDown()
-        {
-            MatchSetupRequest.Clear();
-            _world.Dispose();
-        }
+        public void TearDown() => _world.Dispose();
 
         /// <summary>A three-player match, as a map bakes it: side 1's kit is a base and a truck, side 2 has none.</summary>
         private static void CreateSides(TestWorld world, out Entity basePrefab, out Entity truck)
@@ -68,7 +64,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             Open = true, Control = PlayerControl.AI, Team = team, Name = $"Slot {team}", Side = side,
         };
 
-        private static void RequestSetup(params SlotSetup[] slots)
+        private static void RequestSetup(TestWorld world, params SlotSetup[] slots)
         {
             var setup = MatchSetup.Create();
             foreach (var slot in slots)
@@ -76,7 +72,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
                 setup.Slots.Add(slot);
             }
 
-            MatchSetupRequest.Set(setup);
+            world.SetMatchSetup(setup);
         }
 
         private static int CountType(TestWorld world, Entity prefab)
@@ -94,7 +90,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         public void Kit_SpawnsForOpenSlots_AtTheSpawnTurnedByItsYaw_OnTheGround()
         {
             CreateSides(_world, out _base, out _truck);
-            RequestSetup(Slot(1, 1), Slot(2, 1));
+            RequestSetup(_world, Slot(1, 1), Slot(2, 1));
 
             _world.Tick();
 
@@ -120,7 +116,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             {
                 Side = 1, Prefab = _truck, Offset = new float2(2f, 5f), FacesCamera = true,
             });
-            RequestSetup(Slot(1, 1), Slot(2, 1));
+            RequestSetup(_world, Slot(1, 1), Slot(2, 1));
 
             _world.Tick();
 
@@ -157,7 +153,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         public void TheSide_PicksTheAIBuildOrder()
         {
             CreateSides(_world, out _base, out _truck);
-            RequestSetup(Slot(1, 1), Slot(2, 2));
+            RequestSetup(_world, Slot(1, 1), Slot(2, 2));
 
             _world.Tick();
 
@@ -175,7 +171,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         {
             var replay = RecordKitMatch();
             CreateSides(_world, out _base, out _truck);
-            MatchSetupRequest.Set(ReplaySetup.ToMatchSetup(replay));
+            _world.SetMatchSetup(ReplaySetup.ToMatchSetup(replay));
             _world.Tick();
             ReplayViewer.Begin(_world.World, replay);
 
@@ -190,7 +186,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         {
             var replay = RecordKitMatch();
             CreateSides(_world, out _base, out _truck);
-            MatchSetupRequest.Set(ReplaySetup.ToMatchSetup(replay));
+            _world.SetMatchSetup(ReplaySetup.ToMatchSetup(replay));
             ReplayViewer.Begin(_world.World, replay);
 
             _world.Tick(frames: 3);
@@ -203,10 +199,9 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         {
             using var world = new TestWorld();
             CreateSides(world, out _, out _);
-            RequestSetup(Slot(1, 1), Slot(2, 1));
+            RequestSetup(world, Slot(1, 1), Slot(2, 1));
             ReplayRecorder.Start(world.World, sampleRate: 10f, keyframeInterval: 0.5f);
             world.Tick(frames: 10);
-            MatchSetupRequest.Clear();
             return ReplayRecorder.Stop(world.World, "Assets/Maps/Test.unity");
         }
     }

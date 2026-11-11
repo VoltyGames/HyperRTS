@@ -10,7 +10,6 @@ using HyperRTS.Simulation.Selection;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
-using UnityEditor;
 
 namespace HyperRTS.Editor.PlayMode.Cheats
 {
@@ -19,16 +18,6 @@ namespace HyperRTS.Editor.PlayMode.Cheats
     {
         // Larger than any health, so one untyped hit kills through armour.
         private const float LethalDamage = 1e9f;
-
-        // The game speed slider must not leak out of Play mode.
-        [InitializeOnLoadMethod]
-        private static void ResetSpeedAfterPlay() => EditorApplication.playModeStateChanged += change =>
-        {
-            if (change == PlayModeStateChange.EnteredEditMode)
-            {
-                LocalGameSpeed.Reset();
-            }
-        };
 
         /// <summary>Hands control of a player to you; its AI stops so the two don't fight over it. Single player only.</summary>
         public static void MakeLocal(EntityManager entityManager, Entity player)

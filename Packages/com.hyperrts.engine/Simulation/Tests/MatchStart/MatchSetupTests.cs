@@ -21,11 +21,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         public void SetUp() => _world = new TestWorld();
 
         [TearDown]
-        public void TearDown()
-        {
-            MatchSetupRequest.Clear();
-            _world.Dispose();
-        }
+        public void TearDown() => _world.Dispose();
 
         private static SlotSetup Slot(byte team, PlayerControl control = PlayerControl.AI, byte side = 0) => new()
         {
@@ -62,7 +58,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             var kept = _world.SpawnUnit(2, float3.zero);
             var closedUnit = _world.SpawnUnit(3, new float3(10f, 0f, 0f));
             var closedBase = _world.SpawnBuilding(4, new float3(30f, 0f, 0f), new float2(4f, 4f));
-            MatchSetupRequest.Set(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
+            _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
 
             _world.Tick(frames: 3);
 
@@ -77,7 +73,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         public void OpenSlots_TakeNameColourTeamSideAndControl()
         {
             _world.CreateMatch(1, 2);
-            MatchSetupRequest.Set(Setup(Slot(2, PlayerControl.AI, side: 3), Slot(2, PlayerControl.LocalHuman, side: 5)));
+            _world.SetMatchSetup(Setup(Slot(2, PlayerControl.AI, side: 3), Slot(2, PlayerControl.LocalHuman, side: 5)));
 
             _world.Tick();
 
@@ -107,7 +103,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             });
             var brutal = Slot(2);
             brutal.Difficulty = AIDifficulty.Brutal;
-            MatchSetupRequest.Set(Setup(Slot(1, PlayerControl.LocalHuman), brutal));
+            _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), brutal));
 
             _world.Tick();
 
@@ -126,7 +122,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             var setup = Setup(Slot(1, PlayerControl.LocalHuman), Slot(2));
             setup.StartingResourceScale = 2.5f;
             setup.Fog = FogOverride.Revealed;
-            MatchSetupRequest.Set(setup);
+            _world.SetMatchSetup(setup);
 
             _world.Tick();
 
@@ -139,7 +135,7 @@ namespace HyperRTS.Simulation.Tests.MatchStart
         public void Setup_AppliesOnlyOnce()
         {
             _world.CreateMatch(1, 2);
-            MatchSetupRequest.Set(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
+            _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
             _world.Tick();
 
             _world.Set(_world.Player(2), new Player { Owner = 2, Name = "Renamed" });
@@ -171,11 +167,10 @@ namespace HyperRTS.Simulation.Tests.MatchStart
             setup.Seed = seed;
             setup.Slots.Add(Slot(1));
             setup.Slots.Add(Slot(2));
-            MatchSetupRequest.Set(setup);
+            world.SetMatchSetup(setup);
 
             world.Tick();
 
-            MatchSetupRequest.Clear();
             return (world.Get<AIPlayer>(world.Player(1)).RouteSeed, world.Get<AIPlayer>(world.Player(2)).RouteSeed);
         }
 

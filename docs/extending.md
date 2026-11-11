@@ -98,14 +98,14 @@ A game shell drives a match through these calls:
 
 | Need | API |
 | --- | --- |
-| Set players before the map loads | `MatchSetupRequest.Set(MatchSetup)` |
+| Set players before the map loads | `SessionScene.WithSetup(MatchSetup)`, passed to the session start |
 | Load a single-player map | `NetworkSession.StartLocal(SessionScene.Load(path))` |
 | Host or join from a menu | `NetworkSession.StartHost` or `StartClient`, then `LoadScene` on every peer |
 | Loading and connection state | `NetworkSession.SceneLoad`, `Status`, `DisconnectReason` |
 | Read the match | `MatchView.TryGetDefault` |
 | Hand a scene object to systems | `SceneSingleton<T>.Write` each frame, `Remove` when disabled |
 | Command card buttons | A `CommandSpec` asset in the `CommandCatalog`, shown by an `ICommandSource` passed to `CommandCard` |
-| Pause and speed | `LocalGameSpeed.SetScale` |
+| Pause and speed | `GameSpeed` singleton (`Scale`, `Paused`) in the local world |
 | Own the Escape key | `InputActionsProvider.FrontEndOwnsCancel` and `MatchView.CancelInteraction` |
 | Block gameplay keys | `InputActionsProvider.Suspend` and `Resume` |
 | Replays | `ReplayRecorder`, `ReplaySerializer`, `ReplayViewer` |

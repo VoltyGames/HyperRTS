@@ -124,12 +124,22 @@ namespace HyperRTS.Network.Session
             DisposeWorlds(null);
             DefaultWorldInitialization.Initialize("Default World");
             SetStatus(NetworkStatus.Idle);
-            SessionSceneLoader.Load(scene);
+            Load(scene);
         }
 
         /// <summary>Loads a map into the running session's worlds, as when a lobby that started with
         /// <see cref="SessionScene.Keep"/> launches its match.</summary>
-        public static void LoadScene(string path) => SessionSceneLoader.Load(SessionScene.Load(path));
+        public static void LoadScene(SessionScene scene) => Load(scene);
+
+        private static void Load(SessionScene scene)
+        {
+            if (scene.Setup.HasValue)
+            {
+                SessionWorlds.PutSetup(scene.Setup.Value);
+            }
+
+            SessionSceneLoader.Load(scene);
+        }
 
         internal static void SetStatus(NetworkStatus status, NetworkStreamDisconnectReason reason = default)
         {
@@ -152,7 +162,7 @@ namespace HyperRTS.Network.Session
             DisposeWorlds(world);
             World.PushWorldStack(world);
             SetStatus(NetworkStatus.Connected);
-            SessionSceneLoader.Load(scene);
+            Load(scene);
             return true;
         }
 
@@ -168,7 +178,7 @@ namespace HyperRTS.Network.Session
             SessionWorlds.Connect(world, server, drivers);
             World.PushWorldStack(world);
             SetStatus(NetworkStatus.Connecting);
-            SessionSceneLoader.Load(scene);
+            Load(scene);
         }
 
         /// <summary>Disposes every simulation world but <paramref name="keep"/>, and forgets the rejoin endpoint.</summary>

@@ -206,11 +206,10 @@ namespace HyperRTS.Simulation.Tests.Replays
             world.CreateMatch(1, 2);
             var setup = MatchSetup.Create();
             setup.RecordReplay = true;
-            MatchSetupRequest.Set(setup);
+            world.SetMatchSetup(setup);
 
             world.Tick();
 
-            MatchSetupRequest.Clear();
             Assert.IsTrue(ReplayRecorder.IsRecording(world.World));
         }
     }

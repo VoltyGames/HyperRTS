@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.MatchStart
 {
     /// <summary>
     /// Applies the <see cref="MatchSetup"/> to the baked players once, the same way in every world, and removes what closed slots own.
-    /// Not Burst: it runs once and reads the managed request.
+    /// Not Burst: it runs once.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.All)]
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
@@ -42,7 +42,8 @@ namespace HyperRTS.Simulation.MatchStart
 
         public void OnUpdate(ref SystemState state)
         {
-            if (!TryGetSetup(ref state, out var setupEntity))
+            // Written by NetworkSession when the session starts, so a scene played alone has none.
+            if (!SystemAPI.TryGetSingletonEntity<MatchSetup>(out var setupEntity))
             {
                 return;
             }
@@ -64,22 +65,6 @@ namespace HyperRTS.Simulation.MatchStart
             {
                 RemoveClosed(ref state, setup.ClosedOwners);
             }
-        }
-
-        private bool TryGetSetup(ref SystemState state, out Entity setupEntity)
-        {
-            if (SystemAPI.TryGetSingletonEntity<MatchSetup>(out setupEntity))
-            {
-                return true;
-            }
-
-            if (!MatchSetupRequest.TryGet(out var requested))
-            {
-                return false;
-            }
-
-            setupEntity = state.EntityManager.CreateSingleton(requested, "MatchSetup");
-            return true;
         }
 
         private void Apply(ref SystemState state, ref MatchSetup setup)
@@ -109,6 +94,11 @@ namespace HyperRTS.Simulation.MatchStart
 
             entityManager.SetComponentData(match, relations);
             ApplyFog(entityManager, match, setup.Fog);
+            if (SystemAPI.TryGetSingletonRW<GameSpeed>(out var speed))
+            {
+                speed.ValueRW.Scale = setup.SpeedScale;
+            }
+
             var rules = entityManager.GetComponentData<MatchRules>(match);
             rules.StrategicAssets = setup.StrategicAssets;
             entityManager.SetComponentData(match, rules);

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.MatchStart;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Weather
@@ -26,13 +25,14 @@ namespace HyperRTS.Presentation.Environment.Weather
         [Tooltip("Each weather's atmosphere prefab, by key.")]
         public Dictionary<string, GameObject> atmospheres = new();
 
+        private readonly LiveSingleton<MatchSetup> _setup = new();
         private string _currentKey;
 
         // Awake, before the first frame renders, so the default weather never shows when another was picked.
         protected override void OnAwake()
         {
             _currentKey = defaultKey;
-            var requested = MatchSetupRequest.TryGet(out var setup) ? setup.Weather.ToString() : "";
+            var requested = _setup.TryGetInDefaultWorld(out var setup) ? setup.Weather.ToString() : "";
             Apply(requested);
         }
 

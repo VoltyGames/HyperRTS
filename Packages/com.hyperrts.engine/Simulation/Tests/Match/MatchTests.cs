@@ -19,11 +19,7 @@ namespace HyperRTS.Simulation.Tests.Match
         public void SetUp() => _world = new TestWorld();
 
         [TearDown]
-        public void TearDown()
-        {
-            LocalGameSpeed.Reset();
-            _world.Dispose();
-        }
+        public void TearDown() => _world.Dispose();
 
         [Test]
         public void Population_CountsLivingUnitsAndCompletedProviders()
@@ -105,18 +101,27 @@ namespace HyperRTS.Simulation.Tests.Match
         }
 
         [Test]
-        public void Pause_StopsTime_AndResumeRestoresTheChosenSpeed()
+        public void GameSpeed_SetsTheClock_AndTheWorldRestoresItWhenItGoes()
         {
-            LocalGameSpeed.SetScale(2f);
-            LocalGameSpeed.Pause();
-            Assert.AreEqual(0f, Time.timeScale);
-            Assert.IsTrue(LocalGameSpeed.IsPaused);
+            var world = new TestWorld();
+            SetSpeed(world, new GameSpeed { Scale = 2f, Paused = true });
+            Assert.AreEqual(0f, Time.timeScale, "paused");
 
-            LocalGameSpeed.SetScale(1.5f);
-            Assert.AreEqual(0f, Time.timeScale, "a speed change while paused waits for resume");
-
-            LocalGameSpeed.Resume();
+            SetSpeed(world, new GameSpeed { Scale = 1.5f });
             Assert.AreEqual(1.5f, Time.timeScale);
+
+            world.Dispose();
+            Assert.AreEqual(1f, Time.timeScale);
+        }
+
+        private static void SetSpeed(TestWorld world, GameSpeed speed)
+        {
+            using (var query = world.Query(typeof(GameSpeed)))
+            {
+                query.SetSingleton(speed);
+            }
+
+            world.Tick();
         }
     }
 }

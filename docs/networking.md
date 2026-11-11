@@ -36,8 +36,8 @@ Each start takes an optional `SessionScene`: `ReloadActive` (the default, for a 
 `Load(path)`, or `Keep`, which loads nothing so a lobby can connect while its menu stays up. Every peer then calls
 `LoadScene(path)` to stream the map in, and `SceneLoad` reports progress.
 
-Every peer sets the same `MatchSetupRequest` before the map loads to configure slots, teams, AI, resources, fog and
-weather. See [Match](simulation/core.md#match). In Play mode, start sessions from **HyperRTS ▸ Tools ▸ Play**.
+Every peer passes the same `MatchSetup` in its `SessionScene` (`SessionScene.Load(path).WithSetup(setup)`); the session writes it into each world it creates, or into the running worlds for `LoadScene`, before the map loads.
+It configures slots, teams, AI, resources, fog and weather. See [Match](simulation/core.md#match). In Play mode, start sessions from **HyperRTS ▸ Tools ▸ Play**.
 
 `NetworkSession.Status` is `Idle`, `Connecting`, `Connected` or `Disconnected`. Poll it from a MonoBehaviour
 `Update`, outside any world update, so the reaction can stop the session. After a failure the status stays

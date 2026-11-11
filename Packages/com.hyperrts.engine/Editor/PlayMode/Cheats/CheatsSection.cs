@@ -66,7 +66,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             _fog = root.Require<Toggle>("fog");
             _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => MatchCheats.SetFog(manager, change.newValue)));
             _speed = root.Require<Slider>("speed");
-            _speed.RegisterValueChangedCallback(change => LocalGameSpeed.SetScale(change.newValue));
+            _speed.RegisterValueChangedCallback(change => ChangeSpeed(speed => speed.WithScale(change.newValue)));
             _pause = root.Require<Button>("pause");
             _pause.clicked += TogglePause;
             _speedNote = root.Require<Label>("speed-note");
@@ -113,8 +113,11 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             _speed.SetEnabled(local);
             _pause.SetEnabled(local);
             _speedNote.SetHidden(local);
-            _speed.SetValueWithoutNotify(LocalGameSpeed.Scale);
-            _pause.text = LocalGameSpeed.IsPaused ? "Resume" : "Pause";
+            if (local && PlayWorld.TryGetSingleton(manager, out GameSpeed speed))
+            {
+                _speed.SetValueWithoutNotify(speed.Scale);
+                _pause.text = speed.Paused ? "Resume" : "Pause";
+            }
         }
 
         // Inside Play only a still-loading SubScene needs a message.
@@ -169,15 +172,14 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             }
         }
 
-        private void TogglePause()
+        private void TogglePause() => ChangeSpeed(speed => speed.WithPaused(!speed.Paused));
+
+        private void ChangeSpeed(System.Func<GameSpeed, GameSpeed> change)
         {
-            if (LocalGameSpeed.IsPaused)
+            var found = PlayWorld.TryGetAuthoritative(out var manager);
+            if (found && PlayWorld.TryGetSingleton(manager, out GameSpeed speed))
             {
-                LocalGameSpeed.Resume();
-            }
-            else
-            {
-                LocalGameSpeed.Pause();
+                PlayWorld.SetSingleton(manager, change(speed));
             }
 
             Poll();

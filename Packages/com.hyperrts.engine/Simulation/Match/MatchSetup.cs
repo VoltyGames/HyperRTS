@@ -36,9 +36,12 @@ namespace HyperRTS.Simulation.Match
         /// </summary>
         public uint Seed;
 
+        /// <summary>Starting <see cref="GameSpeed.Scale"/> of a single-player match; networked worlds ignore it.</summary>
+        public float SpeedScale;
+
         public bool Applied;
 
-        public static MatchSetup Create() => new() { StartingResourceScale = 1f, StrategicAssets = true };
+        public static MatchSetup Create() => new() { StartingResourceScale = 1f, StrategicAssets = true, SpeedScale = 1f };
 
         public readonly bool IsOpen(byte owner) =>
             owner >= 1 && owner <= Slots.Length && Slots[owner - 1].Open;

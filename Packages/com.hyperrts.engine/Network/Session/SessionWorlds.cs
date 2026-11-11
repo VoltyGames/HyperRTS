@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Network.Common;
 using HyperRTS.Network.Joining;
+using HyperRTS.Simulation.Match;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
@@ -123,6 +124,37 @@ namespace HyperRTS.Network.Session
             ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
             UseDrivers(world, ref driver, drivers);
             driver.Connect(world.EntityManager, server);
+        }
+
+        /// <summary>Gives every world of the session the match setup: the single-player world when none was created here.</summary>
+        public static void PutSetup(in MatchSetup setup)
+        {
+            if (Created.Count == 0)
+            {
+                PutSetup(World.DefaultGameObjectInjectionWorld, setup);
+                return;
+            }
+
+            foreach (var world in Created)
+            {
+                if (world.IsCreated)
+                {
+                    PutSetup(world, setup);
+                }
+            }
+        }
+
+        private static void PutSetup(World world, in MatchSetup setup)
+        {
+            var entityManager = world.EntityManager;
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadWrite<MatchSetup>());
+            if (query.TryGetSingletonEntity<MatchSetup>(out var existing))
+            {
+                entityManager.SetComponentData(existing, setup);
+                return;
+            }
+
+            entityManager.CreateSingleton(setup, "MatchSetup");
         }
 
         // Netcode seeds its tick rate singletons from NetcodeConfig as it creates a world.

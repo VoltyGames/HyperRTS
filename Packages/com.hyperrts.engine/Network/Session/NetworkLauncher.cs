@@ -15,11 +15,12 @@ namespace HyperRTS.Network.Session
         public const int ErrorCode = 1;
 
         /// <summary>
-        /// The scene a command-line session loads when it has no <c>-scene</c>; null reloads the first scene. A game
-        /// sets it before the first scene loads, as when it reads the match from its own flag.
+        /// The scene, and the match setup, a command-line session starts with; the default reloads the first scene. A
+        /// <c>-scene</c> replaces its path only. A game sets it before the first scene loads, as when it reads the match
+        /// from its own flag.
         /// </summary>
         [AutoStaticsCleanup]
-        public static string DefaultScene { get; set; }
+        public static SessionScene DefaultScene { get; set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
@@ -65,8 +66,12 @@ namespace HyperRTS.Network.Session
 
         private static bool Start(LaunchOptions options)
         {
-            var path = options.ScenePath ?? DefaultScene;
-            var scene = path != null ? SessionScene.Load(path) : SessionScene.ReloadActive;
+            var scene = DefaultScene;
+            if (options.ScenePath != null)
+            {
+                scene = SessionScene.Load(options.ScenePath).WithSetup(scene.Setup);
+            }
+
             NetworkSession.Preference = new JoinPreference { Observe = options.Observe };
             return options.Mode switch
             {

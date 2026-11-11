@@ -4,7 +4,6 @@ using System.Linq;
 using HyperRTS.Network.Session;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
-using HyperRTS.Simulation.MatchStart;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Scripting.LifecycleManagement;
@@ -91,9 +90,18 @@ namespace HyperRTS.Editor.PlayMode
             var path = _report.Write();
             Status = $"{(stopped ? "Stopped. " : "")}{_report.Summary()}. Report: {path}";
             Debug.Log($"[HyperRTS] Bot matches done: {Status}");
-            LocalGameSpeed.Reset();
-            MatchSetupRequest.Clear();
+            ResetSpeed();
             _report = null;
+        }
+
+        // The last match's world outlives the batch, so it goes back to normal speed.
+        private static void ResetSpeed()
+        {
+            if (PlayWorld.TryGetAuthoritative(out var entityManager) &&
+                PlayWorld.TryGetSingleton(entityManager, out GameSpeed speed))
+            {
+                PlayWorld.SetSingleton(entityManager, speed.WithScale(1f));
+            }
         }
 
         private static void StopOnExit(PlayModeStateChange change)
@@ -132,6 +140,7 @@ namespace HyperRTS.Editor.PlayMode
             var seed = (uint)(_current + 1);
             var setup = MatchSetup.Create();
             setup.Seed = seed;
+            setup.SpeedScale = _report.settings.speed;
             for (var slot = 0; slot < _report.settings.players; slot++)
             {
                 setup.Slots.Add(new SlotSetup
@@ -147,8 +156,7 @@ namespace HyperRTS.Editor.PlayMode
 
             _report.matches.Add(new BotMatchReport.Match { seed = seed });
             _setupSeen = false;
-            MatchSetupRequest.Set(setup);
-            NetworkSession.StartLocal(SessionScene.ReloadActive);
+            NetworkSession.StartLocal(SessionScene.ReloadActive.WithSetup(setup));
         }
 
         // Polled at the Play page's rate: reading the world completes all of its jobs.
@@ -184,7 +192,6 @@ namespace HyperRTS.Editor.PlayMode
                     return;
                 }
 
-                LocalGameSpeed.SetScale(_report.settings.speed);
             }
 
             var minutes = (float)entityManager.World.Time.ElapsedTime / 60f;

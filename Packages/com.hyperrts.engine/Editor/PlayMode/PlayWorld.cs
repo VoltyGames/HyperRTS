@@ -62,6 +62,16 @@ namespace HyperRTS.Editor.PlayMode
             return query.TryGetSingleton(out value);
         }
 
+        /// <summary>Writes the singleton of <typeparamref name="T"/> if the world has one.</summary>
+        public static void SetSingleton<T>(EntityManager entityManager, in T value) where T : unmanaged, IComponentData
+        {
+            using var query = entityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
+            if (query.TryGetSingletonEntity<T>(out var entity))
+            {
+                entityManager.SetComponentData(entity, value);
+            }
+        }
+
         // The local world only remains as a fallback: a session replaces it with a host, server or client world.
         private static World Find(WorldSystemFilterFlags roles)
         {
