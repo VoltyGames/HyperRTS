@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
@@ -21,19 +20,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
         [Tooltip("Largest angle between trailer and hull, in degrees, short of a jackknife.")]
         [Range(5f, 90f)]
         public float maxAngle = 60f;
-
-        /// <summary>Metres from the trailer's pivot back to the middle of the wheels below it, in the rig's frame.</summary>
-        public static float MeasureAxleDistance(Transform trailer, Transform rig)
-        {
-            var wheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => child.name.StartsWith("Wheel_")).ToList();
-            if (wheels.Count == 0)
-            {
-                throw new InvalidOperationException($"'{trailer.name}' has no Wheel_ parts to measure its axles from.");
-            }
-
-            var hitch = rig.InverseTransformPoint(trailer.position).z;
-            return hitch - wheels.Average(wheel => rig.InverseTransformPoint(wheel.position).z);
-        }
 
         public override MotionRigPart Bake(Transform rig, Entity entity)
         {

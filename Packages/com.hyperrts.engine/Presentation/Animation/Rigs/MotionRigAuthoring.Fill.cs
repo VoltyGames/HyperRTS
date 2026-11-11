@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -67,7 +67,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
             trailers = KeepTuned(trailers, Named("Trailer"), part => new TrailerSlot
             {
                 part = part,
-                axleDistance = TrailerSlot.MeasureAxleDistance(part, transform),
+                axleDistance = MeasureAxleDistance(part),
             });
 
             var raised = all.Except(parts).FirstOrDefault(part => part.name is "Barrel" or "Launcher");
@@ -210,7 +210,19 @@ namespace HyperRTS.Presentation.Animation.Rigs
             return carrying?.part;
         }
 
-        // Keeps the tuned slot of a part already listed, so filling again changes nothing.
+        // Metres from the trailer's pivot back to the middle of the road wheels below it, in the rig's frame.
+        private float MeasureAxleDistance(Transform trailer)
+        {
+            var wheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => RoadWheelName.IsMatch(child.name)).ToList();
+            if (wheels.Count == 0)
+            {
+                throw new InvalidOperationException($"'{trailer.name}' has no road wheels to measure its axles from.");
+            }
+
+            var hitch = transform.InverseTransformPoint(trailer.position).z;
+            return hitch - wheels.Average(wheel => transform.InverseTransformPoint(wheel.position).z);
+        }
+
         private static List<T> KeepTuned<T>(List<T> slots, IEnumerable<Transform> found, Func<Transform, T> make)
             where T : PartSlot =>
             found.Where(part => part != null)

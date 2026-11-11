@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
@@ -19,7 +20,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         }
 
         private void ReverseOrder(Entity unit, float3 goal, bool queue = false) =>
-            _world.Command(1, new PlayerCommand { Type = CommandType.ReverseMove, Unit = unit, Position = goal, Queue = queue });
+            _world.Command(_world.Get<Owner>(unit).Value, new PlayerCommand { Type = CommandType.ReverseMove, Unit = unit, Position = goal, Queue = queue });
 
         // The way west is shut, so a route to (30, -30) runs south, then east round the block's corner.
         private void SpawnCornerBlock()
