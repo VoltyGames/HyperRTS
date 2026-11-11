@@ -29,6 +29,15 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public float4 Value;
     }
 
+    /// <summary>The rig and track whose lift a track mesh shows, set when the mesh bakes.</summary>
+    public struct TrackMeshSource : IComponentData
+    {
+        public Entity Rig;
+
+        /// <summary>Index in the rig's <see cref="MotionRigTrack"/>s.</summary>
+        public int Track;
+    }
+
     /// <summary>A road wheel a track bends over, in order from the front.</summary>
     [InternalBufferCapacity(0)]
     public struct TrackWheel : IBufferElementData
@@ -43,7 +52,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public float Lift;
     }
 
-    /// <summary>One track mesh of a <see cref="MotionRig"/> and the lift last written to it.</summary>
+    /// <summary>One track mesh of a <see cref="MotionRig"/> and the lift its mesh shows.</summary>
     [InternalBufferCapacity(0)]
     public struct MotionRigTrack : IBufferElementData
     {
@@ -51,8 +60,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>The smallest change in metres worth writing to the mesh again.</summary>
         public const float MinChange = 0.005f;
-
-        public Entity Mesh;
 
         /// <summary>The track's wheels in the rig's <see cref="TrackWheel"/>s.</summary>
         public int FirstWheel;

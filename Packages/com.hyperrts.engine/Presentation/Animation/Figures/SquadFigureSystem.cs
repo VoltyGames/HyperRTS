@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Common.Infantry;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
@@ -25,11 +26,13 @@ namespace HyperRTS.Presentation.Animation.Figures
     public partial struct SquadFigureSystem : ISystem
     {
         private RenderSwitch _switch;
+        private EntityQuery _parts;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _switch = new RenderSwitch(ref state);
+            _parts = SystemAPI.QueryBuilder().WithAll<FigurePart, LowerClip, UpperClip, LowerFade, UpperFade>().Build();
             state.RequireForUpdate<SquadFigures>();
         }
 
@@ -37,20 +40,29 @@ namespace HyperRTS.Presentation.Animation.Figures
         public void OnUpdate(ref SystemState state)
         {
             _switch.Update(ref state);
-            state.Dependency = new SquadJob
+            var now = (float)SystemAPI.Time.ElapsedTime;
+            var hides = new NativeQueue<FigureHide>(state.WorldUpdateAllocator);
+            var squads = new SquadJob
             {
-                Now = (float)SystemAPI.Time.ElapsedTime,
+                Now = now,
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
-                Lowers = SystemAPI.GetComponentLookup<LowerClip>(),
-                Uppers = SystemAPI.GetComponentLookup<UpperClip>(),
-                LowerFades = SystemAPI.GetComponentLookup<LowerFade>(),
-                UpperFades = SystemAPI.GetComponentLookup<UpperFade>(),
-                Renderers = SystemAPI.GetBufferLookup<FigureRenderer>(true),
                 Places = SystemAPI.GetComponentLookup<LocalToWorld>(true),
-                Switch = _switch,
+                Hides = hides.AsParallelWriter(),
             }.ScheduleParallel(state.Dependency);
+            var hide = new HideJob { Hides = hides, Switch = _switch }.Schedule(squads);
+            var parts = new PartJob
+            {
+                Now = now,
+                Figures = SystemAPI.GetBufferLookup<SquadFigure>(true),
+                Parts = SystemAPI.GetComponentTypeHandle<FigurePart>(),
+                Lowers = SystemAPI.GetComponentTypeHandle<LowerClip>(),
+                Uppers = SystemAPI.GetComponentTypeHandle<UpperClip>(),
+                LowerFades = SystemAPI.GetComponentTypeHandle<LowerFade>(),
+                UpperFades = SystemAPI.GetComponentTypeHandle<UpperFade>(),
+            }.ScheduleParallel(_parts, squads);
+            state.Dependency = JobHandle.CombineDependencies(hide, parts);
         }
 
         [BurstCompile]
@@ -60,15 +72,10 @@ namespace HyperRTS.Presentation.Animation.Figures
             public float DeltaTime;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
-
-            // Each squad writes only its own figures' parts, so squads run in parallel.
-            [NativeDisableParallelForRestriction] public ComponentLookup<LowerClip> Lowers;
-            [NativeDisableParallelForRestriction] public ComponentLookup<UpperClip> Uppers;
-            [NativeDisableParallelForRestriction] public ComponentLookup<LowerFade> LowerFades;
-            [NativeDisableParallelForRestriction] public ComponentLookup<UpperFade> UpperFades;
-            [ReadOnly] public BufferLookup<FigureRenderer> Renderers;
             [ReadOnly] public ComponentLookup<LocalToWorld> Places;
-            public RenderSwitch Switch;
+
+            // Each squad writes only itself: its figures' clip changes, which their parts pull, and the hides it queues.
+            public NativeQueue<FigureHide>.ParallelWriter Hides;
 
             private void Execute(Entity entity, ref SquadFigures squad, DynamicBuffer<SquadFigure> figures,
                 in DynamicBuffer<SquadMember> members, in LocalToWorld place)
@@ -81,6 +88,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 {
                     var member = members[i];
                     var figure = figures[i];
+                    figure.ClearEdit();
                     if (member.Alive && figure.NeedsOtherModel(member, crewing))
                     {
                         figure.SwapModel();
@@ -88,7 +96,7 @@ namespace HyperRTS.Presentation.Animation.Figures
 
                     if (figure.State == FigureState.Unset && figure.HasOtherModel)
                     {
-                        Switch.SetBranch(entity, figure.Other.Model.Figure, HideReason.Figure, true);
+                        Hides.Enqueue(new FigureHide { Root = entity, Branch = figure.Other.Model.Figure, Hide = true });
                     }
 
                     var moving = FigureState.Idle;
@@ -120,12 +128,12 @@ namespace HyperRTS.Presentation.Animation.Figures
                 else if (next != FigureState.Die && next != FigureState.Hidden
                     && (figure.PoseDiffers(member.Posture, firing, digging) || firing && figure.Shot))
                 {
-                    Pose(root, ref figure, next, member.Posture, firing, digging);
+                    Pose(ref figure, next, member.Posture, firing, digging);
                 }
 
                 if (next is FigureState.Walk or FigureState.Run && figure.Retune(Now))
                 {
-                    Retime(root, figure);
+                    figure.MarkRetimed();
                 }
             }
 
@@ -138,14 +146,14 @@ namespace HyperRTS.Presentation.Animation.Figures
                 }
 
                 squad.ModelHidden = !deployed;
-                Switch.SetBranch(root, squad.DeployedModel, HideReason.Figure, squad.ModelHidden);
+                Hides.Enqueue(new FigureHide { Root = root, Branch = squad.DeployedModel, Hide = squad.ModelHidden });
             }
 
             private void Show(Entity root, ref SquadFigure figure, FigureState next, in SquadMember member,
                 bool firing, bool digging, in SquadFigures squad)
             {
                 var hidden = next == FigureState.Hidden;
-                Switch.SetBranch(root, figure.Figure, HideReason.Figure, hidden);
+                Hides.Enqueue(new FigureHide { Root = root, Branch = figure.Figure, Hide = hidden });
                 figure.State = next;
                 figure.StateSince = Now;
                 if (hidden)
@@ -156,11 +164,11 @@ namespace HyperRTS.Presentation.Animation.Figures
                 if (next == FigureState.Die)
                 {
                     figure.HideAt = Now + squad.DieHold;
-                    Fall(root, ref figure, DieClip(figure, member));
+                    Fall(ref figure, DieClip(figure, member));
                     return;
                 }
 
-                Pose(root, ref figure, next, member.Posture, firing, digging);
+                Pose(ref figure, next, member.Posture, firing, digging);
             }
 
             // A standing member at its place on a site digs unless it is firing.

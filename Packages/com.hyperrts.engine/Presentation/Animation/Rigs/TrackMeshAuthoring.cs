@@ -35,6 +35,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
                 var entity = GetEntity(TransformUsageFlags.Renderable);
                 AddComponent(entity, new TrackSpan { Value = track.Span(rig) });
+                AddComponent(entity, new TrackMeshSource { Rig = GetEntity(rig, TransformUsageFlags.Dynamic), Track = rig.tracks.IndexOf(track) });
                 AddComponent<TrackLift0>(entity);
                 AddComponent<TrackLift1>(entity);
             }

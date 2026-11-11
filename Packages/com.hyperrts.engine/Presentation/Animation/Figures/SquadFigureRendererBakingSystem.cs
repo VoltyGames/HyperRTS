@@ -26,17 +26,20 @@ namespace HyperRTS.Presentation.Animation.Figures
         public void OnUpdate(ref SystemState state)
         {
             var em = state.EntityManager;
-            var squadOf = new NativeHashMap<Entity, Entity>(16, Allocator.Temp);
+            var squadOf = new NativeHashMap<Entity, FigurePart>(16, Allocator.Temp);
             using var squads = _squads.ToEntityArray(Allocator.Temp);
             foreach (var squad in squads)
             {
                 em.GetBuffer<FigureRenderer>(squad).Clear();
-                foreach (var figure in em.GetBuffer<SquadFigure>(squad))
+                var figures = em.GetBuffer<SquadFigure>(squad);
+                for (var i = 0; i < figures.Length; i++)
                 {
-                    squadOf[figure.Figure] = squad;
-                    if (figure.HasOtherModel)
+                    var model = figures[i].Figure;
+                    squadOf[model] = new FigurePart { Root = squad, Index = i, Model = model };
+                    if (figures[i].HasOtherModel)
                     {
-                        squadOf[figure.Other.Model.Figure] = squad;
+                        var other = figures[i].Other.Model.Figure;
+                        squadOf[other] = new FigurePart { Root = squad, Index = i, Model = other };
                     }
                 }
             }
@@ -48,9 +51,10 @@ namespace HyperRTS.Presentation.Animation.Figures
                 var link = renderer;
                 while (link != Entity.Null)
                 {
-                    if (squadOf.TryGetValue(link, out var squad))
+                    if (squadOf.TryGetValue(link, out var part))
                     {
-                        em.GetBuffer<FigureRenderer>(squad).Add(new FigureRenderer { Model = link, Part = renderer });
+                        em.GetBuffer<FigureRenderer>(part.Root).Add(new FigureRenderer { Model = link, Part = renderer });
+                        em.AddComponentData(renderer, part);
                         drawn.Add(link);
                         break;
                     }

@@ -128,6 +128,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             rig.TiltRoot = hull;
             rig.Footprint = new float2(6f, 3f);
             _em.SetComponentData(_unit, rig);
+            MotionRigLink.AddAll(_em, _unit);
 
             Update(30);
 
@@ -213,6 +214,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var writer = new EntityWriter(_em, _unit);
             MotionRigAuthoring.AddRig(writer, new MotionRig { TiltFrame = quaternion.identity, TiltRest = quaternion.identity },
                 parts);
+            MotionRigLink.AddAll(_em, _unit);
             return parts[0].Part;
         }
 

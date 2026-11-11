@@ -68,6 +68,20 @@ namespace HyperRTS.Presentation.Animation.Figures
         /// <summary>The clip the upper body plays now.</summary>
         public ClipRange Upper;
 
+        /// <summary>Raised on each clip change, which its parts take on their own entities when it differs from the one they last took.</summary>
+        public uint ClipEdits;
+
+        /// <summary>What the last change did: switched the legs' or the upper body's clip, or only retimed them.</summary>
+        public bool LowerPlayed;
+
+        public bool UpperPlayed;
+        public bool Retimed;
+
+        /// <summary>Start and rate of the upper body's clip when it was switched.</summary>
+        public float UpperStart;
+
+        public float UpperRate;
+
         /// <summary>Clock time a dying figure hides at.</summary>
         public float HideAt;
 
@@ -119,6 +133,31 @@ namespace HyperRTS.Presentation.Animation.Figures
             Lower = default;
             Upper = default;
             LowerRate = 1f;
+        }
+
+        /// <summary>Forgets the last frame's clip change before this frame's.</summary>
+        public void ClearEdit()
+        {
+            LowerPlayed = false;
+            UpperPlayed = false;
+            Retimed = false;
+        }
+
+        /// <summary>Records that the parts switch to <see cref="Lower"/> and <see cref="Upper"/>, as far as asked.</summary>
+        public void MarkPlayed(bool lower, bool upper, float upperStart, float upperRate)
+        {
+            LowerPlayed = lower;
+            UpperPlayed = upper;
+            UpperStart = upperStart;
+            UpperRate = upperRate;
+            ClipEdits++;
+        }
+
+        /// <summary>Records that the parts take <see cref="LowerStart"/> and <see cref="LowerRate"/> without switching.</summary>
+        public void MarkRetimed()
+        {
+            Retimed = true;
+            ClipEdits++;
         }
 
         /// <summary>Whether the clips played were chosen for another posture, firing or digging than these.</summary>

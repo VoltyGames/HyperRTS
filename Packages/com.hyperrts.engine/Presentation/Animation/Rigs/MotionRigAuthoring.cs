@@ -195,14 +195,13 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 }
             }
 
-            // Each track mesh shares its track's wheel entries, which run from the front.
+            // Each track's wheel entries run from the front.
             private void BakeTracks(MotionRigAuthoring authoring, List<PartSlot> slots, EntityWriter writer)
             {
                 var tracks = new List<MotionRigTrack>();
                 var wheels = new List<TrackWheel>();
                 foreach (var track in authoring.tracks)
                 {
-                    DependsOn(track.part);
                     var first = wheels.Count;
                     wheels.AddRange(track.Stations(authoring.transform).Select(placed => new TrackWheel
                     {
@@ -211,7 +210,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     }));
                     tracks.Add(new MotionRigTrack
                     {
-                        Mesh = GetEntity(track.part, TransformUsageFlags.Renderable),
                         FirstWheel = first,
                         WheelCount = wheels.Count - first,
                     });

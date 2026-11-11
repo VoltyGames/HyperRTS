@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Animation.Rigs
 {
@@ -28,6 +29,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public quaternion TiltFrame;
 
         public quaternion TiltRest;
+
+        /// <summary>The tilt root's local rotation this frame, which the tilt root and follower take.</summary>
+        public quaternion TiltPose;
 
         /// <summary>Length (x along forward) and width the ground is sampled across.</summary>
         public float2 Footprint;
@@ -129,6 +133,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public Entity Part;
         public MotionPartKind Kind;
 
+        /// <summary>One more than the index of the next entry on the same <see cref="Part"/>, 0 for none.</summary>
+        public int Following;
+
         /// <summary>The <c>WeaponPose</c> index it follows (turret, elevation, recoil).</summary>
         public byte Weapon;
 
@@ -193,6 +200,24 @@ namespace HyperRTS.Presentation.Animation.Rigs
             var fired = Shots.Update(shots, deltaTime);
             Amount = fired ? Size : math.max(0f, Amount - Size * deltaTime / Time);
             return fired;
+        }
+
+        /// <summary>Puts this frame's rotation, recoil and lift on the part's transform.</summary>
+        public readonly void ApplyTo(ref LocalTransform transform)
+        {
+            if (Kind == MotionPartKind.Recoil)
+            {
+                transform.Position = RecoilPosition(transform.Rotation);
+            }
+            else
+            {
+                transform.Rotation = Rotation;
+            }
+
+            if (Travel > 0f)
+            {
+                transform.Position = LiftedPosition;
+            }
         }
 
         public readonly float3 RecoilPosition(quaternion rotation) => RestPosition + math.rotate(rotation, Axis) * Amount;

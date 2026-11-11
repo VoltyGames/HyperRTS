@@ -111,6 +111,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
                 Footprint = new float2(7f, 3.5f), Suspension = Springs(),
             };
             MotionRigAuthoring.AddRig(new EntityWriter(_em, unit), rig, parts);
+            MotionRigLink.AddAll(_em, unit);
             return unit;
         }
 

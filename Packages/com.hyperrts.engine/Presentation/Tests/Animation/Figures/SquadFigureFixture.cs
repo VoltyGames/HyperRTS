@@ -93,6 +93,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             for (var i = 0; i < count; i++)
             {
                 _figures[i] = CreatePart();
+                Drive(_figures[i], squad, _figures[i], i);
                 figures[i] = new SquadFigure { Figure = _figures[i], Clips = Clips(0), Baked = quaternion.identity };
             }
 
@@ -226,6 +227,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         protected Entity AddUpgradedModel(int index)
         {
             var upgraded = ModelPart();
+            Drive(upgraded, _squad, upgraded, index);
             var figure = Figure(index);
             figure.Other = new FigureVariant
             {
@@ -238,6 +240,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         protected Entity AddEmplacedModel(int index)
         {
             var bare = ModelPart();
+            Drive(bare, _squad, bare, index);
             var figure = Figure(index);
             figure.Other = new FigureVariant
             {
@@ -263,6 +266,10 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             _em.GetBuffer<LinkedEntityGroup>(_squad).Add(part);
             return part;
         }
+
+        // The part follows its figure as the baking system sets it up.
+        private void Drive(Entity part, Entity root, Entity model, int index) =>
+            _em.AddComponentData(part, new FigurePart { Root = root, Index = index, Model = model });
 
         // A hidden figure part under the squad's model, on the first clip.
         private Entity CreatePart()

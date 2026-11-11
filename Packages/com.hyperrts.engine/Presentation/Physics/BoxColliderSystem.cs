@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
@@ -69,11 +68,8 @@ namespace HyperRTS.Presentation.Physics
                 _scanned = order;
             }
 
-            new DriveJob
-            {
-                Sources = SystemAPI.GetComponentLookup<LocalTransform>(true),
-                StepRate = 1f / SystemAPI.Time.DeltaTime,
-            }.ScheduleParallel();
+            new ReadSourceJob { Sources = SystemAPI.GetComponentLookup<LocalTransform>(true) }.ScheduleParallel();
+            new DriveJob { StepRate = 1f / SystemAPI.Time.DeltaTime }.ScheduleParallel();
         }
 
         private void Scan()
@@ -149,23 +145,30 @@ namespace HyperRTS.Presentation.Physics
             return shape;
         }
 
+        /// <summary>Copies where each vehicle box's unit stands, so the drive job needs no second transform access.</summary>
+        [BurstCompile]
+        [WithAll(typeof(PhysicsVelocity))]
+        private partial struct ReadSourceJob : IJobEntity
+        {
+            [ReadOnly] public ComponentLookup<LocalTransform> Sources;
+
+            private void Execute(ref ColliderSource source) => source.Present = Sources.TryGetComponent(source.Value, out source.Target);
+        }
+
         /// <summary>Sets each vehicle box's velocity to reach its unit by the end of the step.</summary>
         [BurstCompile]
         private partial struct DriveJob : IJobEntity
         {
-            // Sources are units and the job writes only boxes, so the two never alias.
-            [ReadOnly, NativeDisableContainerSafetyRestriction]
-            public ComponentLookup<LocalTransform> Sources;
-
             public float StepRate;
 
             private void Execute(ref LocalTransform transform, ref PhysicsVelocity velocity, in ColliderSource source)
             {
-                if (!Sources.TryGetComponent(source.Value, out var target))
+                if (!source.Present)
                 {
                     return;
                 }
 
+                var target = source.Target;
                 var jumped = math.distancesq(transform.Position, target.Position) > JumpDistance * JumpDistance;
                 if (jumped)
                 {

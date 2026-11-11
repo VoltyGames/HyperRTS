@@ -51,11 +51,13 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         /// <summary>Gives every figure <paramref name="count"/> more parts, as a soldier's kit and weapon; call before <see cref="UseRagdolls"/>.</summary>
         protected void AddParts(int count)
         {
-            foreach (var figure in _figures)
+            for (var index = 0; index < _figures.Length; index++)
             {
+                var figure = _figures[index];
                 for (var i = 0; i < count; i++)
                 {
                     var part = CreatePart();
+                    Drive(part, _squad, figure, index);
                     _em.SetComponentData(part, new Parent { Value = figure });
                     _em.GetBuffer<FigureRenderer>(_squad).Add(new FigureRenderer { Model = figure, Part = part });
                     _em.GetBuffer<LinkedEntityGroup>(_squad).Add(part);
