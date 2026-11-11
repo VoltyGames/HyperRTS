@@ -47,7 +47,7 @@ new rule needs a row there. `ModuleLayoutTests` checks the [module rules](archit
 
 ## Benchmarks
 
-Timing tests are `[Test, Performance]` cases in the `Benchmark` category (`NavBenchmarkTests`, `VisionBenchmarkTests`,
+Timing tests are `[Test, Performance]` cases in the `Benchmark` category (`NavBenchmarkTests`,
 `CombatBenchmarkTests`), built on the Performance Testing package. `BenchmarkKit.Median` wraps `Measure.Method` with a
 warm-up, 20 measured runs, untimed prepare and finish steps and the profiler markers to record. Each test keeps one
 coarse assert at twice its budget, so a regression fails. Covered systems have markers named `<Type>.<Step>`; a
