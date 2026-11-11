@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.AI
 {
@@ -15,22 +16,30 @@ namespace HyperRTS.Simulation.AI
     internal struct DeployPlanner
     {
         private EntityQuery _query;
+        private AIGroup _units;
 
         public static DeployPlanner Create(ref SystemState state) => new()
         {
-            _query = new EntityQueryBuilder(Allocator.Temp).WithAll<Deployable, Owner>().WithPresent<AttackTarget>()
+            _query = new EntityQueryBuilder(Allocator.Temp).WithAll<Deployable, Owner, LocalTransform>().WithPresent<AttackTarget>()
                 .WithNone<Dead>().Build(ref state),
         };
+
+        public void Update()
+        {
+            _units = AIGroup.From(_query);
+        }
 
         public readonly void Plan(ref SystemState state, in AITurn turn)
         {
             var entities = state.EntityManager;
-            foreach (var unit in _query.ToEntityArray(Allocator.Temp))
+            for (var i = 0; i < _units.Length; i++)
             {
-                if (entities.GetComponentData<Owner>(unit).Value != turn.Owner)
+                if (!_units.IsOwnedBy(i, turn.Owner))
                 {
                     continue;
                 }
+
+                var unit = _units.Entities[i];
 
                 var attacking = entities.IsComponentEnabled<AttackTarget>(unit);
                 var inRange = attacking && entities.GetComponentData<AttackTarget>(unit).InRange;

@@ -31,7 +31,9 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>An allied foot unit stands in this moving vehicle's lane, so it slows to a walk.</summary>
         public bool InfantryAhead;
 
-        private AvoidanceList _neighbours;
+        /// <summary>The nearest neighbours a mover steers round.</summary>
+        public AvoidanceList Neighbours;
+
         private HullClearance _room;
         private bool _infantryTouches;
         private bool _othersTouch;
@@ -47,7 +49,7 @@ namespace HyperRTS.Simulation.Movement
             ReachedGroup = false;
             PassesInfantry = false;
             InfantryAhead = false;
-            _neighbours = default;
+            Neighbours = default;
             _room = default;
             _infantryTouches = false;
             _othersTouch = false;
@@ -76,10 +78,7 @@ namespace HyperRTS.Simulation.Movement
             return Unit.HullReach + math.max(closing, sight);
         }
 
-        /// <summary>The nearest neighbours a mover steers round.</summary>
-        public readonly FixedList512Bytes<AvoidanceNeighbour> Neighbours => _neighbours.Items;
-
-        public readonly bool HasNeighbours => _neighbours.Count > 0;
+        public readonly bool HasNeighbours => Neighbours.Count > 0;
 
         /// <summary>Allied foot units stand in its lane, or it is driving through them, so it keeps to a walk.</summary>
         public readonly bool WalksForInfantry => InfantryAhead || (PassesInfantry && _infantryNear);
@@ -154,7 +153,7 @@ namespace HyperRTS.Simulation.Movement
 
             // Behind same-way traffic a mover counts the whole spacing it already lacks, so it backs off.
             reach = precedence > 0 ? LeaderReach(entry, reach) : reach;
-            _neighbours.Keep(new AvoidanceNeighbour
+            Neighbours.Keep(new AvoidanceNeighbour
             {
                 Position = entry.Position.xz,
                 SegmentAxis = entry.SegmentAxis,

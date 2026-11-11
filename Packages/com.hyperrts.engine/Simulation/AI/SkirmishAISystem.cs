@@ -90,6 +90,7 @@ namespace HyperRTS.Simulation.AI
             _economy.Update();
             _buildOrder.Update(_builders);
             _fieldWorks.Update(_builders, _squads);
+            _deploy.Update();
             _attack.Update(ref state, _squads);
             _abilities.Update(ref state);
         }
@@ -109,7 +110,7 @@ namespace HyperRTS.Simulation.AI
 
             _deploy.Plan(ref state, turn);
             _attack.Plan(ref state, turn, snapshot);
-            if (state.EntityManager.GetComponentData<AIPlayer>(player).UseAbilities)
+            if (turn.Settings.UseAbilities)
             {
                 _abilities.Plan(ref state, turn, snapshot);
             }

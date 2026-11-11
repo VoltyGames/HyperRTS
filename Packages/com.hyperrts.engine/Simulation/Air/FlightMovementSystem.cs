@@ -31,12 +31,7 @@ namespace HyperRTS.Simulation.Air
         public void OnCreate(ref SystemState state)
         {
             _rightOfWay = new RightOfWay(ref state);
-            // Present, not enabled: arrival and facing are switched here, so disabled ones must still match.
-            _fliers = new EntityQueryBuilder(Allocator.Temp)
-                .WithAllRW<LocalTransform>().WithAllRW<PathState>().WithAllRW<PathWaypoint>()
-                .WithAllRW<MoveProgress>().WithAllRW<Velocity>()
-                .WithAll<MovementSpeed>().WithAll<NavAgent>().WithAll<Owner>().WithAll<Flight>()
-                .WithPresentRW<MoveDestination>().WithPresentRW<Arrival>().WithPresentRW<FacingGoal>().WithNone<Inside>().Build(ref state);
+            _fliers = MoverHandles.Query().WithAll<Flight>().Build(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
@@ -45,26 +40,21 @@ namespace HyperRTS.Simulation.Air
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
-            var index = SystemAPI.GetSingleton<SpatialIndex>();
-            var grid = SystemAPI.GetSingleton<NavGrid>();
-            if (SystemAPI.Time.DeltaTime <= 0f)
+            var deltaTime = SystemAPI.Time.DeltaTime;
+            if (deltaTime <= 0f)
             {
                 return;
             }
+
+            _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
+            var index = SystemAPI.GetSingleton<SpatialIndex>();
 
             state.Dependency = new FlyJob
             {
                 Mover = new FlightMover
                 {
-                    Movers = new Movers
-                    {
-                        Index = index,
-                        RightOfWay = _rightOfWay,
-                        Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
-                        DeltaTime = SystemAPI.Time.DeltaTime,
-                    },
-                    Grid = grid,
+                    Movers = Movers.Create(ref state, _rightOfWay, index, deltaTime),
+                    Grid = SystemAPI.GetSingleton<NavGrid>(),
                     Docked = SystemAPI.GetComponentLookup<Docked>(true),
                 },
                 Handles = new MoverHandles(ref state),

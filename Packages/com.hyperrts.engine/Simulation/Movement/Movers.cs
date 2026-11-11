@@ -19,6 +19,15 @@ namespace HyperRTS.Simulation.Movement
         [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
         public float DeltaTime;
 
+        public static Movers Create(ref SystemState state, in RightOfWay rightOfWay, in SpatialIndex index,
+            float deltaTime) => new()
+        {
+            Index = index,
+            RightOfWay = rightOfWay,
+            Locomotions = state.GetComponentLookup<Locomotion>(true),
+            DeltaTime = deltaTime,
+        };
+
         public readonly MoveFrame Begin(in MoverChunk chunk, int index, float top)
         {
             var entity = chunk.Entities[index];
@@ -33,9 +42,10 @@ namespace HyperRTS.Simulation.Movement
                 drive.LastChoice = velocity;
             }
 
-            var from = chunk.Transforms[index].Position.xz;
-            var facing = math.normalizesafe(chunk.Transforms[index].Forward().xz);
-            var crowd = new CrowdVisitor(chunk.Entry(index, moving), chunk.Destinations[index], RightOfWay)
+            var entry = chunk.Entry(index, moving);
+            var from = entry.Position.xz;
+            var facing = entry.Facing;
+            var crowd = new CrowdVisitor(entry, chunk.Destinations[index], RightOfWay)
             {
                 PassesInfantry = drive.PassesInfantry,
             };

@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         // Forward 6 m up the z axis, then back 3 m: one gear change at (0, 6).
         private DynamicBuffer<PathWaypoint> ForwardThenBack()
         {
-            var waypoints = _world.EntityManager.AddBuffer<PathWaypoint>(_world.EntityManager.CreateEntity());
+            var waypoints = World.EntityManager.AddBuffer<PathWaypoint>(World.EntityManager.CreateEntity());
             for (var z = 1.5f; z <= 6f; z += 1.5f)
             {
                 waypoints.Add(new PathWaypoint { Position = new float3(0f, 0f, z), Tight = true });
@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void TightLeg_KeepsToItsSpeedCap_AndChangesGearStanding()
         {
-            var access = _world.Access(TruckAgent);
+            var access = World.Access(TruckAgent);
             var waypoints = ForwardThenBack();
             var path = new PathState { Status = PathStatus.Ready, LengthPastCorner = PathState.Measure(waypoints) };
             var truck = Driving(Wheels, TruckChassis, TruckRadius, 8f, new float2(0f, 1f));

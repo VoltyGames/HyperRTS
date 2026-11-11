@@ -49,7 +49,7 @@ namespace HyperRTS.Simulation.Movement
             var frame = Movers.Begin(chunk, index, top);
             var from = frame.From;
             var facing = frame.Facing;
-            var crowd = frame.Crowd;
+            ref readonly var crowd = ref frame.Crowd;
             var axis = facing * agent.HalfSegment;
 
             var capsule = new NavCapsule(agent.Access(Grid), axis);
@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Movement
         {
             var agent = chunk.Agents[index];
             var position = chunk.Transforms[index].Position.xz;
-            var crowd = frame.Crowd;
+            ref readonly var crowd = ref frame.Crowd;
             var moving = chunk.Moving(index);
             var waypoints = chunk.Waypoints[index];
             ref var path = ref chunk.Paths[index];

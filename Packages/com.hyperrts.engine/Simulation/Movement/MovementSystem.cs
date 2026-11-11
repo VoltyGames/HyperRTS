@@ -34,12 +34,7 @@ namespace HyperRTS.Simulation.Movement
         public void OnCreate(ref SystemState state)
         {
             _rightOfWay = new RightOfWay(ref state);
-            // Present, not enabled: arrival and facing are switched here, so disabled ones must still match.
-            _movers = new EntityQueryBuilder(Allocator.Temp)
-                .WithAllRW<LocalTransform>().WithAllRW<PathState>().WithAllRW<PathWaypoint>()
-                .WithAllRW<MoveProgress>().WithAllRW<Velocity>()
-                .WithAll<MovementSpeed>().WithAll<NavAgent>().WithAll<Owner>()
-                .WithPresentRW<MoveDestination>().WithPresentRW<Arrival>().WithPresentRW<FacingGoal>().WithNone<Inside>().Build(ref state);
+            _movers = MoverHandles.Query().Build(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
@@ -48,27 +43,22 @@ namespace HyperRTS.Simulation.Movement
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
-            var index = SystemAPI.GetSingleton<SpatialIndex>();
-            var grid = SystemAPI.GetSingleton<NavGrid>();
             // A paused frame moves nothing and has no velocity to measure.
-            if (SystemAPI.Time.DeltaTime <= 0f)
+            var deltaTime = SystemAPI.Time.DeltaTime;
+            if (deltaTime <= 0f)
             {
                 return;
             }
+
+            _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
+            var index = SystemAPI.GetSingleton<SpatialIndex>();
 
             state.Dependency = new MoveJob
             {
                 Mover = new GroundMover
                 {
-                    Movers = new Movers
-                    {
-                        Index = index,
-                        RightOfWay = _rightOfWay,
-                        Locomotions = SystemAPI.GetComponentLookup<Locomotion>(true),
-                        DeltaTime = SystemAPI.Time.DeltaTime,
-                    },
-                    Grid = grid,
+                    Movers = Movers.Create(ref state, _rightOfWay, index, deltaTime),
+                    Grid = SystemAPI.GetSingleton<NavGrid>(),
                     Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 },
                 Handles = new MoverHandles(ref state),

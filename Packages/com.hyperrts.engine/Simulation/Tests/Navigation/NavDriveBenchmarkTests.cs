@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 for (var row = 0; row < 5; row++)
                 {
                     var center = new float3(x + 5f, 0f, z + 5f);
-                    _world.SpawnObstacle(center, new float2(10f));
+                    World.SpawnObstacle(center, new float2(10f));
                     var gap = random.NextInt(4, 9);
                     var middle = z + 10f + gap * 0.5f;
                     lanes.Add(new Lane { From = new float2(x - 2f, middle), To = new float2(x + 12f, middle) });
@@ -78,13 +78,13 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 x += 10f + aisle;
             }
 
-            _world.Tick();
+            World.Tick();
             return lanes;
         }
 
         private DriveJob NewDriveJob(NativeList<PathWaypoint> points, NativeReference<int2> result) => new()
         {
-            Grid = _world.Grid(), Agent = SupplyTruck, Cap = DriveSearch.MaxExpansions, Points = points, Result = result,
+            Grid = World.Grid(), Agent = SupplyTruck, Cap = DriveSearch.MaxExpansions, Points = points, Result = result,
         };
 
         // Draws starts and goals until a long search drives between them, counting the pairs it passed over.
@@ -104,13 +104,13 @@ namespace HyperRTS.Simulation.Tests.Navigation
 
         private void ClearWestStrip()
         {
-            var query = _world.EntityManager.CreateEntityQuery(typeof(NavObstacle), typeof(LocalTransform));
+            var query = World.EntityManager.CreateEntityQuery(typeof(NavObstacle), typeof(LocalTransform));
             var obstacles = query.ToEntityArray(Allocator.Temp);
             foreach (var obstacle in obstacles)
             {
-                if (_world.Get<LocalTransform>(obstacle).Position.x < -200f)
+                if (World.Get<LocalTransform>(obstacle).Position.x < -200f)
                 {
-                    _world.EntityManager.DestroyEntity(obstacle);
+                    World.EntityManager.DestroyEntity(obstacle);
                 }
             }
 
@@ -131,19 +131,19 @@ namespace HyperRTS.Simulation.Tests.Navigation
         {
             var random = new Random(43);
             var lanes = SpawnBase(ref random);
-            _world.AddAgentPrefabs(SupplyTruck);
-            _world.Tick();
+            World.AddAgentPrefabs(SupplyTruck);
+            World.Tick();
             var points = new NativeList<PathWaypoint>(64, Allocator.Persistent);
             var result = new NativeReference<int2>(Allocator.Persistent);
             var job = NewDriveJob(points, result);
             var undrivable = 0;
             var truck = Entity.Null;
-            var before = Stats();
+            var before = World.ReadPathStats();
             var median = BenchmarkKit.Median("TruckMove", () =>
             {
-                for (var frame = 0; frame < 10 && _world.Get<PathState>(truck).Status != PathStatus.Ready; frame++)
+                for (var frame = 0; frame < 10 && World.Get<PathState>(truck).Status != PathStatus.Ready; frame++)
                 {
-                    _world.UpdateSystem<PathfindingSystem>();
+                    World.UpdateSystem<PathfindingSystem>();
                 }
             }, () =>
             {
@@ -151,11 +151,11 @@ namespace HyperRTS.Simulation.Tests.Navigation
                     DriveGoal.ToPoint(SupplyTruck.Chassis.Center(LanePose(ref random, lanes, SupplyTruck.Chassis)))),
                     ref undrivable);
                 truck = SpawnTruckOnDrive(job);
-            }, () => _world.EntityManager.DestroyEntity(truck), "DriveSearch.Run", "DrivePlanner.Plan");
+            }, () => World.EntityManager.DestroyEntity(truck), "DriveSearch.Run", "DrivePlanner.Plan");
 
             points.Dispose();
             result.Dispose();
-            var after = Stats();
+            var after = World.ReadPathStats();
             var failures = after.Drive.Failures - before.Drive.Failures;
             var summary = SummarizeTruckMoves(before, after, median, undrivable);
             TestContext.WriteLine(summary);
@@ -165,19 +165,19 @@ namespace HyperRTS.Simulation.Tests.Navigation
         private Entity SpawnTruckOnDrive(in DriveJob job)
         {
             var center = SupplyTruck.Chassis.Center(job.Start);
-            var truck = _world.SpawnUnit(1, new float3(center.x, 0f, center.y), new TestUnit
+            var truck = World.SpawnUnit(1, new float3(center.x, 0f, center.y), new TestUnit
             {
                 Speed = 8f,
                 Radius = SupplyTruck.Radius,
             });
-            _world.EntityManager.SetComponentData(truck, SupplyTruck);
+            World.EntityManager.SetComponentData(truck, SupplyTruck);
             var yaw = math.atan2(job.Start.Facing.x, job.Start.Facing.y);
-            _world.EntityManager.SetComponentData(truck,
+            World.EntityManager.SetComponentData(truck,
                 LocalTransform.FromPositionRotation(new float3(center.x, 0f, center.y), quaternion.RotateY(yaw)));
-            _world.Tick();
+            World.Tick();
             var goal = job.Goal.Center;
-            _world.EntityManager.SetComponentData(truck, new MoveDestination { Value = new float3(goal.x, 0f, goal.y) });
-            _world.EntityManager.SetComponentEnabled<MoveDestination>(truck, true);
+            World.EntityManager.SetComponentData(truck, new MoveDestination { Value = new float3(goal.x, 0f, goal.y) });
+            World.EntityManager.SetComponentEnabled<MoveDestination>(truck, true);
             return truck;
         }
 

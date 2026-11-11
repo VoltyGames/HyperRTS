@@ -35,10 +35,10 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
         public void UnreachablePose_StopsAtTheCap()
         {
             // A courtyard walled all round, too small to hold the truck.
-            _world.SpawnObstacle(new float3(30f, 0f, 36f), new float2(14f, 2f));
-            _world.SpawnObstacle(new float3(30f, 0f, 24f), new float2(14f, 2f));
-            _world.SpawnObstacle(new float3(24f, 0f, 30f), new float2(2f, 14f));
-            _world.SpawnObstacle(new float3(36f, 0f, 30f), new float2(2f, 14f));
+            World.SpawnObstacle(new float3(30f, 0f, 36f), new float2(14f, 2f));
+            World.SpawnObstacle(new float3(30f, 0f, 24f), new float2(14f, 2f));
+            World.SpawnObstacle(new float3(24f, 0f, 30f), new float2(2f, 14f));
+            World.SpawnObstacle(new float3(36f, 0f, 30f), new float2(2f, 14f));
             var access = RegisteredAccess(Truck);
             var search = new DriveSearch(access, Truck, DriveSearch.MaxExpansions, Allocator.Temp);
             var points = new NativeList<PathWaypoint>(64, Allocator.Temp);
@@ -57,13 +57,13 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
         public void OpenGround_PathHasNoTightWaypoints_AndRunsNoSearch()
         {
             var truck = Spawn(Truck, Wheels, float3.zero, 0f);
-            _world.Tick();
-            _world.MoveTo(truck, new float3(40f, 0f, 70f));
-            _world.Tick(frames: 2);
+            World.Tick();
+            World.MoveTo(truck, new float3(40f, 0f, 70f));
+            World.Tick(frames: 2);
 
-            Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(truck).Status);
+            Assert.AreEqual(PathStatus.Ready, World.Get<PathState>(truck).Status);
             Assert.IsFalse(HasTightWaypoints(truck), "drawn as planned");
-            Assert.AreEqual(0, Stats().Drive.Searches, "no search");
+            Assert.AreEqual(0, World.ReadPathStats().Drive.Searches, "no search");
         }
     }
 }

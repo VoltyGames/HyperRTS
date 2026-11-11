@@ -13,40 +13,33 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Movement
 {
     /// <summary>Shared setup and helpers for the CrowdScenarioTests family.</summary>
-    public abstract class CrowdScenarioFixture
+    public abstract class CrowdScenarioFixture : SimulationFixture
     {
         protected const float WallSlack = NavTolerances.WallOverlap + 0.05f;
 
-        protected TestWorld _world;
         protected float _deepest;
 
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(new byte[] { 1, 2 }, 500f);
-            _deepest = 0f;
-        }
+        protected override float MapSize => 500f;
 
-        [TearDown]
-        public void TearDown() => _world.Dispose();
+        [SetUp]
+        public void ResetDepth() => _deepest = 0f;
 
         // Selects the units and gives one move, as a player's right-click does.
         protected void OrderFormation(List<Entity> units, float3 goal)
         {
             foreach (var unit in units)
             {
-                _world.SetEnabled<Selected>(unit, true);
+                World.SetEnabled<Selected>(unit, true);
             }
 
-            _world.Command(1, new PlayerCommand { Type = CommandType.Move, Position = goal });
+            World.Command(1, new PlayerCommand { Type = CommandType.Move, Position = goal });
         }
 
         protected bool AllArrived(List<Entity> units)
         {
             foreach (var unit in units)
             {
-                if (_world.IsEnabled<MoveDestination>(unit))
+                if (World.IsEnabled<MoveDestination>(unit))
                 {
                     return false;
                 }
@@ -60,8 +53,8 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             for (var t = 0f; t < cap; t += TestWorld.FrameTime)
             {
-                _world.Tick();
-                var grid = _world.Grid();
+                World.Tick();
+                var grid = World.Grid();
                 foreach (var unit in units)
                 {
                     _deepest = math.max(_deepest, WallDepth(grid, unit));
@@ -79,8 +72,8 @@ namespace HyperRTS.Simulation.Tests.Movement
 
         protected float WallDepth(in NavGrid grid, Entity unit)
         {
-            var agent = _world.Get<NavAgent>(unit);
-            var transform = _world.Get<LocalTransform>(unit);
+            var agent = World.Get<NavAgent>(unit);
+            var transform = World.Get<LocalTransform>(unit);
             var axis = agent.SegmentAxis(transform.Rotation);
             var access = agent.Access(grid);
             var deepest = 0f;
@@ -98,15 +91,15 @@ namespace HyperRTS.Simulation.Tests.Movement
             var moving = new List<string>();
             foreach (var unit in units)
             {
-                if (_world.IsEnabled<MoveDestination>(unit))
+                if (World.IsEnabled<MoveDestination>(unit))
                 {
-                    var goal = _world.Get<MoveDestination>(unit).Value;
-                    var speed = math.length(_world.Get<Velocity>(unit).Value);
-                    var manoeuvre = _world.EntityManager.HasComponent<LocomotionState>(unit)
-                        ? _world.Get<LocomotionState>(unit).IsManoeuvring
+                    var goal = World.Get<MoveDestination>(unit).Value;
+                    var speed = math.length(World.Get<Velocity>(unit).Value);
+                    var manoeuvre = World.EntityManager.HasComponent<LocomotionState>(unit)
+                        ? World.Get<LocomotionState>(unit).IsManoeuvring
                         : false;
-                    moving.Add($"{_world.GetPosition(unit).xz} to {goal.xz} at {speed:F1} m/s " +
-                               $"facing {_world.Get<LocalTransform>(unit).Forward().xz} manoeuvring {manoeuvre}");
+                    moving.Add($"{World.GetPosition(unit).xz} to {goal.xz} at {speed:F1} m/s " +
+                               $"facing {World.Get<LocalTransform>(unit).Forward().xz} manoeuvring {manoeuvre}");
                 }
             }
 
@@ -117,8 +110,8 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             foreach (var unit in units)
             {
-                Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(unit).Reason,
-                    $"{unit} gave up at {_world.GetPosition(unit)}");
+                Assert.AreNotEqual(ArrivalReason.Stalled, World.Get<Arrival>(unit).Reason,
+                    $"{unit} gave up at {World.GetPosition(unit)}");
             }
         }
     }

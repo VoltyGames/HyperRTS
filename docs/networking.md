@@ -51,7 +51,7 @@ It configures slots, teams, AI, resources, fog and weather. See [Match](simulati
 | --- | --- |
 | `-server`, `-host`, `-connect <address>` | The session to start. One at most |
 | `-port <n>` | Port to listen on or connect to. Default 7979 |
-| `-scene <path>` | Map to load. Else `NetworkLauncher.DefaultScene`, else the first scene again |
+| `-scene <path>` | Map to load. It replaces the path of `NetworkLauncher.DefaultScene` and keeps its setup; with neither set, the first scene loads again |
 | `-observe` | Client only: join as an observer |
 | `-exit-on-end` | Server only: quit when the match ends |
 | `-time-limit <minutes>` | Server only: quit after this much server time |

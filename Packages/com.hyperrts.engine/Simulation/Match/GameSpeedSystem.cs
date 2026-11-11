@@ -14,7 +14,6 @@ namespace HyperRTS.Simulation.Match
         protected override void OnCreate()
         {
             EntityManager.CreateSingleton(GameSpeed.Normal, "GameSpeed");
-            RequireForUpdate<GameSpeed>();
         }
 
         protected override void OnUpdate()

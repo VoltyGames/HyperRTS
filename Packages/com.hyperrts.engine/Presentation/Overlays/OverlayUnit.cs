@@ -39,7 +39,6 @@ namespace HyperRTS.Presentation.Overlays
 
         public bool IsSquad => Members.IsCreated;
         public int MemberCount => IsSquad ? Members.Length : 0;
-        public int Alive => IsSquad ? new SquadRoster(Members).CountLiving() : 0;
 
         /// <summary>Radius of the circle that takes in the squad's living members, which stand past its nav radius.</summary>
         public float Spread

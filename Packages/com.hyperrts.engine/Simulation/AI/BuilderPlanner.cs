@@ -109,14 +109,12 @@ namespace HyperRTS.Simulation.AI
             for (var i = 0; i < Builders.Length; i++)
             {
                 var builder = Builders.Entities[i];
-                if (!Builders.IsOwnedBy(i, turn.Owner) || entities.IsComponentEnabled<ActiveOrder>(builder))
+                if (!turn.IsFree(Builders, i) || entities.IsComponentEnabled<ActiveOrder>(builder))
                 {
                     continue;
                 }
 
-                var site = turn.Busy.Contains(builder)
-                    ? -1
-                    : _sites.NearestOwned(turn.Owner, Builders.Position(i));
+                var site = _sites.NearestOwned(turn.Owner, Builders.Position(i));
                 if (site < 0)
                 {
                     continue;

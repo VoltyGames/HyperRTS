@@ -32,15 +32,15 @@ namespace HyperRTS.Simulation.Air
             var landed = Docked.HasEnabled(chunk.Entities[index]);
             var frame = Movers.Begin(chunk, index, speed.Value);
             var from = frame.From;
-            var crowd = frame.Crowd;
+            ref readonly var crowd = ref frame.Crowd;
             var leg = PathLeg.Along(from, chunk.Destinations[index].Value.xz, waypoints, path);
             if (moving.ValueRO && frame.Driver.HasArrived(leg))
             {
                 path.Halt(moving, waypoints);
             }
 
-            var step = Steer(chunk, index, ref frame, leg, flight, out var heading);
-            heading = frame.Driver.Aim(heading, !moving.ValueRO, chunk.Aims[index], chunk.Aiming(index));
+            var (step, steerHeading) = Steer(chunk, index, ref frame, leg, flight, landed);
+            var heading = frame.Driver.Aim(steerHeading, !moving.ValueRO, chunk.Aims[index], chunk.Aiming(index));
             Fly(ref transform, from + step + (landed ? float2.zero : crowd.PushWithin(maxStep)), flight, landed);
             if (moving.ValueRO && crowd.ReachedGroup)
             {
@@ -54,21 +54,20 @@ namespace HyperRTS.Simulation.Air
             velocity.Value = (transform.Position.xz - from) / deltaTime;
         }
 
-        /// <summary>The step toward the destination while moving, else the idle loiter; <paramref name="heading"/> is the way to face.</summary>
-        private readonly float2 Steer(in MoverChunk chunk, int index, ref MoveFrame frame, in PathLeg leg,
-            in Flight flight, out float2 heading)
+        /// <summary>The step toward the destination while moving, else the idle loiter, and the way to face.</summary>
+        private readonly (float2 Step, float2 Heading) Steer(in MoverChunk chunk, int index, ref MoveFrame frame,
+            in PathLeg leg, in Flight flight, bool landed)
         {
-            heading = float2.zero;
             if (chunk.Moving(index).ValueRO)
             {
                 var drive = new Steering(frame.Crowd, chunk.Velocities[index].Value).Drive(ref frame.Driver, leg);
-                heading = frame.Driver.Facing;
-                return drive;
+                return (drive, frame.Driver.Facing);
             }
 
-            var landed = Docked.HasEnabled(chunk.Entities[index]);
-            return Loiter(chunk.Transforms[index].Rotation, flight, landed, frame.Driver.TopSpeed * Movers.DeltaTime,
-                ref heading);
+            var heading = float2.zero;
+            var step = Loiter(chunk.Transforms[index].Rotation, flight, landed,
+                frame.Driver.TopSpeed * Movers.DeltaTime, ref heading);
+            return (step, heading);
         }
 
         /// <summary>Goes wherever it steers and climbs toward its altitude over the surface below.</summary>

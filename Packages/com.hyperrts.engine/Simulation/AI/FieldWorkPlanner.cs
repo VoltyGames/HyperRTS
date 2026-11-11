@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.AI
 
         public readonly void Plan(ref SystemState state, in AITurn turn, in AISnapshot snapshot)
         {
-            var ai = state.EntityManager.GetComponentData<AIPlayer>(turn.Player);
+            var ai = turn.Settings;
             if (ai.FieldWorkLines <= 0 || !snapshot.Hints.TryGetSlot(turn.Owner, out var slot))
             {
                 return;
@@ -107,9 +107,7 @@ namespace HyperRTS.Simulation.AI
 
             var (digger, prefab) = pick;
 
-            var entities = state.EntityManager;
-            var stock = entities.GetBuffer<ResourceStock>(turn.Player);
-            if (!turn.Buyer.CanBuy(entities, prefab, new Stockpile(stock)))
+            if (!turn.CanBuy(state.EntityManager, prefab))
             {
                 return false;
             }
@@ -162,7 +160,7 @@ namespace HyperRTS.Simulation.AI
             {
                 var builder = builders.Entities[i];
                 var idle = !entities.IsComponentEnabled<ActiveOrder>(builder);
-                if (!idle || !builders.IsOwnedBy(i, turn.Owner) || turn.Busy.Contains(builder)
+                if (!idle || !turn.IsFree(builders, i)
                     || _squads.IsRecovering(ref state, turn, snapshot, builder))
                 {
                     continue;

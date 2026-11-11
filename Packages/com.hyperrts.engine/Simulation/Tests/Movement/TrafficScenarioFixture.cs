@@ -8,37 +8,35 @@ namespace HyperRTS.Simulation.Tests.Movement
 {
     /// <summary>Shared setup and helpers for the TrafficScenarioTests family.</summary>
     [Category("Traffic")]
-    public abstract class TrafficScenarioFixture
+    public abstract class TrafficScenarioFixture : SimulationFixture
     {
-        protected TestWorld _world;
         protected TripRecord _record;
         protected readonly Dictionary<Entity, float> _arrivedAt = new();
 
         // Owners 1 and 2 are teammates, so teammate traffic needs no second match. Squad members keep off walls and
         // allied hulls every frame.
+        protected override byte[] Teams => new byte[] { 1, 1 };
+
+        protected override float MapSize => 400f;
+
         [SetUp]
-        public void SetUp()
+        public void StartRecord()
         {
-            _world = new TestWorld();
-            _world.CreateMatch(new byte[] { 1, 1 }, 400f);
-            _record = new TripRecord(_world);
-            var footing = new SquadFootingCheck(_world);
-            _world.CheckEveryTick(footing.AssertOnOpenGround);
-            _world.CheckEveryTick(footing.AssertOffHulls);
+            _record = new TripRecord(World);
+            var footing = new SquadFootingCheck(World);
+            World.CheckEveryTick(footing.AssertOnOpenGround);
+            World.CheckEveryTick(footing.AssertOffHulls);
         }
 
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         protected Entity SpawnTruck(float3 position, float yaw, byte owner = 1) =>
-            _world.SpawnVehicle(owner, TestVehicles.At(position, yaw), 6f, TestVehicles.SupplyTruckHull(),
+            World.SpawnVehicle(owner, TestVehicles.At(position, yaw), 6f, TestVehicles.SupplyTruckHull(),
                 TestVehicles.SupplyTruck);
 
         protected Entity SpawnTank(float3 position, float yaw, byte owner = 1) =>
-            _world.SpawnVehicle(owner, TestVehicles.At(position, yaw), 7f, TestVehicles.TankHull(),
+            World.SpawnVehicle(owner, TestVehicles.At(position, yaw), 7f, TestVehicles.TankHull(),
                 TestVehicles.Tracks);
 
-        protected bool HasArrived(Entity unit) => !_world.IsEnabled<MoveDestination>(unit);
+        protected bool HasArrived(Entity unit) => !World.IsEnabled<MoveDestination>(unit);
 
         // Steps until every tracked unit has ended its move, stamping each one's arrival; false at the cap.
         protected bool DriveAll(float cap)
@@ -79,7 +77,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             foreach (var tally in _record.Units)
             {
-                if (_world.Get<NavAgent>(tally.Unit).Chassis.IsWheeled)
+                if (World.Get<NavAgent>(tally.Unit).Chassis.IsWheeled)
                 {
                     Assert.Less(tally.Sideways, 0.2f, $"{tally.Name} slid sideways");
                 }
@@ -106,7 +104,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             UnityEngine.Debug.Log($"[{title}] all arrived {arrived}; arrivals: {string.Join(", ", times)}");
         }
 
-        protected float3 Position(Entity unit) => _world.GetPosition(unit);
+        protected float3 Position(Entity unit) => World.GetPosition(unit);
 
         protected const float East = math.PI * 0.5f;
 

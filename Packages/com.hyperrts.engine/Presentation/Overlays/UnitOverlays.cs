@@ -69,6 +69,7 @@ namespace HyperRTS.Presentation.Overlays
             var owners = chunk.GetNativeArray(ref handles.Owners);
             var healths = chunk.GetNativeArray(ref handles.Healths);
             var worlds = chunk.GetNativeArray(ref handles.Worlds);
+            var units = new ChunkUnits(chunk, ref handles);
             for (var i = 0; i < chunk.Count; i++)
             {
                 if (handles.IsInside(chunk, i))
@@ -85,14 +86,13 @@ namespace HyperRTS.Presentation.Overlays
                     continue;
                 }
 
-                var unit = handles.Unit(chunk, i);
+                var unit = units.Unit(i);
                 if (focus.ShowsMarker)
                 {
                     var color = pass.Style.RelationColor(pass.View.RelationTo(owners[i].Value));
                     var pose = new MarkerPose(worlds[i], unit.Layer);
-                    var footprint = MarkerSize(unit, pass.Style);
-                    var selectedFor = focus.Selected ? _fades.Elapsed(entities[i], pass.Now) : 0f;
-                    AddMarker(pose, footprint, color, focus.Selected, selectedFor, pass.Style);
+                    var seconds = focus.Selected ? _fades.Elapsed(entities[i], pass.Now) : 0f;
+                    AddMarker(pose, MarkerSize(unit, pass.Style), color, focus.Selected, seconds, pass.Style);
                 }
 
                 if (showsBar)
@@ -165,61 +165,6 @@ namespace HyperRTS.Presentation.Overlays
                 Now = now;
                 Hovered = hovered;
                 Rules = rules;
-            }
-        }
-
-        // Chunk reads skip the job sync EntityManager.GetComponentData does, so the constructor completes writers first.
-        private struct UnitHandles
-        {
-            public readonly EntityTypeHandle Entities;
-            public ComponentTypeHandle<Owner> Owners;
-            public ComponentTypeHandle<Health> Healths;
-            public ComponentTypeHandle<LocalToWorld> Worlds;
-            private ComponentTypeHandle<Selected> _selected;
-            private ComponentTypeHandle<Inside> _inside;
-            private ComponentTypeHandle<NavAgent> _agents;
-            private ComponentTypeHandle<NavObstacle> _obstacles;
-            private ComponentTypeHandle<Experience> _experience;
-            private BufferTypeHandle<SquadMember> _members;
-            private ComponentTypeHandle<Suppression> _suppression;
-            private ComponentTypeHandle<Retreating> _retreating;
-
-            public UnitHandles(EntityManager entityManager)
-            {
-                Entities = entityManager.GetEntityTypeHandle();
-                Owners = Read<Owner>(entityManager);
-                Healths = Read<Health>(entityManager);
-                Worlds = Read<LocalToWorld>(entityManager);
-                _selected = Read<Selected>(entityManager);
-                _inside = Read<Inside>(entityManager);
-                _agents = Read<NavAgent>(entityManager);
-                _obstacles = Read<NavObstacle>(entityManager);
-                _experience = Read<Experience>(entityManager);
-                _suppression = Read<Suppression>(entityManager);
-                _retreating = Read<Retreating>(entityManager);
-                entityManager.CompleteDependencyBeforeRO<SquadMember>();
-                _members = entityManager.GetBufferTypeHandle<SquadMember>(true);
-            }
-
-            public bool IsSelected(in ArchetypeChunk chunk, int index) =>
-                chunk.Has(ref _selected) && chunk.IsComponentEnabled(ref _selected, index);
-
-            // The query's Exclude<Inside> keeps whole chunks; an enabled bit has to be checked per entity.
-            public bool IsInside(in ArchetypeChunk chunk, int index) =>
-                chunk.Has(ref _inside) && chunk.IsComponentEnabled(ref _inside, index);
-
-            public OverlayUnit Unit(in ArchetypeChunk chunk, int index) => new(
-                chunk.Has(ref _agents) ? chunk.GetNativeArray(ref _agents)[index] : null,
-                chunk.Has(ref _obstacles) ? chunk.GetNativeArray(ref _obstacles)[index] : null,
-                chunk.Has(ref _experience) ? chunk.GetNativeArray(ref _experience)[index].Rank : 0,
-                chunk.Has(ref _members) ? chunk.GetBufferAccessor(ref _members)[index] : default,
-                chunk.Has(ref _suppression) ? chunk.GetNativeArray(ref _suppression)[index] : null,
-                chunk.Has(ref _retreating) && chunk.IsComponentEnabled(ref _retreating, index));
-
-            private static ComponentTypeHandle<T> Read<T>(EntityManager entityManager) where T : unmanaged, IComponentData
-            {
-                entityManager.CompleteDependencyBeforeRO<T>();
-                return entityManager.GetComponentTypeHandle<T>(true);
             }
         }
     }

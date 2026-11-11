@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat.Targeting
 {
@@ -15,5 +16,16 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public VisionRange Vision;
         public Owner Owner;
         public UnitMove Moves;
+
+        public Attacker(Entity entity, in LocalTransform transform, DynamicBuffer<WeaponMount> mounts, VisionRange vision,
+            Owner owner)
+        {
+            Entity = entity;
+            Position = transform.Position;
+            Mounts = mounts;
+            Vision = vision;
+            Owner = owner;
+            Moves = default;
+        }
     }
 }

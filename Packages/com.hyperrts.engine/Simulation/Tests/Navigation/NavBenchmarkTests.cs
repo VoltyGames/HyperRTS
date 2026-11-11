@@ -19,18 +19,18 @@ namespace HyperRTS.Simulation.Tests.Navigation
             const int count = 200;
             var group = 0;
             Entity[] units = null;
-            var before = Stats();
+            var before = World.ReadPathStats();
             var median = BenchmarkKit.Median($"GroupOrder{count}", () => Serve(units),
                 () => units = Order(count, ++group), () =>
                 {
                     foreach (var unit in units)
                     {
-                        Assert.AreEqual(PathStatus.Ready, _world.Get<PathState>(unit).Status, "every member has a path");
-                        _world.EntityManager.DestroyEntity(unit);
+                        Assert.AreEqual(PathStatus.Ready, World.Get<PathState>(unit).Status, "every member has a path");
+                        World.EntityManager.DestroyEntity(unit);
                     }
                 }, "FlowField.Build", "FlowField.Trace", "GridAStar.Search");
 
-            var after = Stats();
+            var after = World.ReadPathStats();
             TestContext.WriteLine($"{count}-unit group order: median {median:F2} ms, " +
                                   $"{after.Fields - before.Fields} fields, {after.Traces - before.Traces} traces, " +
                                   $"{after.Searches - before.Searches} searches");
@@ -45,14 +45,14 @@ namespace HyperRTS.Simulation.Tests.Navigation
             for (var i = 0; i < count; i++)
             {
                 var start = new float3(-285f + i % side * 3f, 0f, -20f + i / side * 3f + place * 60f - 120f);
-                units[i] = _world.SpawnUnit(1, start);
+                units[i] = World.SpawnUnit(1, start);
             }
 
-            _world.Tick();
+            World.Tick();
             for (var i = 0; i < count; i++)
             {
                 var slot = new float3(245f + i % side * 3f, 0f, -20f + i / side * 3f + place * 50f - 100f);
-                _world.Send(units[i], slot, group);
+                World.Send(units[i], slot, group);
             }
 
             return units;
@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Tests.Navigation
         {
             for (var frame = 0; frame < 20 && !AllReady(units); frame++)
             {
-                _world.UpdateSystem<PathfindingSystem>();
+                World.UpdateSystem<PathfindingSystem>();
             }
         }
 

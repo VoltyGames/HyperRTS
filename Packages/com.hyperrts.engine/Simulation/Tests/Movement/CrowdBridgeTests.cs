@@ -17,15 +17,15 @@ namespace HyperRTS.Simulation.Tests.Movement
         public void Tanks_CrossAOneLaneBridge_WithoutDrivingIntoEachOther(int count, int abreast, float goalX,
             bool formation)
         {
-            _world.SpawnBridge();
+            World.SpawnBridge();
             var units = SpawnColumn(count, abreast);
-            _world.Tick();
+            World.Tick();
             OrderColumn(units, abreast, goalX, formation);
 
             var worst = new Overlap();
             for (var t = 0f; t < 150f; t += TestWorld.FrameTime)
             {
-                _world.Tick();
+                World.Tick();
                 worst.Record(DeepestHullOverlap(units, out var at), t, at);
                 if (AllArrived(units))
                 {
@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Tests.Movement
 
             for (var t = 0f; t < 5f; t += TestWorld.FrameTime)
             {
-                _world.Tick();
+                World.Tick();
                 worst.Record(DeepestHullOverlap(units, out var at), -t, at);
             }
 
@@ -52,23 +52,23 @@ namespace HyperRTS.Simulation.Tests.Movement
         [TestCase(-1.3f, 2.96f, 9f)]
         public void Tank_RollingPastTheBridgeMouth_PivotsIntoIt(float z, float yaw, float goalZ)
         {
-            _world.SpawnBridge();
+            World.SpawnBridge();
             var tank = TestVehicles.TankHull();
-            var unit = _world.SpawnVehicle(1, TestVehicles.At(new float3(-8.6f, 0f, z), yaw), 4.5f, tank,
+            var unit = World.SpawnVehicle(1, TestVehicles.At(new float3(-8.6f, 0f, z), yaw), 4.5f, tank,
                 TestVehicles.Tracks);
             var facing = new float2(math.sin(yaw), math.cos(yaw));
             var rolling = new LocomotionState { Speed = 1.8f, LastChoice = facing * 1.8f };
-            _world.EntityManager.SetComponentData(unit, rolling);
-            _world.Send(unit, new float3(47f, 0f, goalZ), 0);
+            World.EntityManager.SetComponentData(unit, rolling);
+            World.Send(unit, new float3(47f, 0f, goalZ), 0);
             var widest = 0f;
-            for (var t = 0f; t < 40f && _world.IsEnabled<MoveDestination>(unit); t += TestWorld.FrameTime)
+            for (var t = 0f; t < 40f && World.IsEnabled<MoveDestination>(unit); t += TestWorld.FrameTime)
             {
-                _world.Tick();
-                var at = _world.GetPosition(unit);
+                World.Tick();
+                var at = World.GetPosition(unit);
                 widest = at.x < -6f ? math.max(widest, math.abs(at.z)) : widest;
             }
 
-            Assert.Greater(_world.GetPosition(unit).x, 30f, $"crossed, at {_world.GetPosition(unit)}");
+            Assert.Greater(World.GetPosition(unit).x, 30f, $"crossed, at {World.GetPosition(unit)}");
             Assert.Less(widest, 3f, $"stayed by the mouth, widest {widest:F2} m off the lane");
         }
 
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var i = 0; i < count; i++)
             {
                 var start = new float3(-25f - i / abreast * 11f, 0f, (i % abreast - (abreast - 1) * 0.5f) * 5f);
-                units.Add(_world.SpawnVehicle(1, TestVehicles.At(start, math.PI * 0.5f), 4.5f, tank,
+                units.Add(World.SpawnVehicle(1, TestVehicles.At(start, math.PI * 0.5f), 4.5f, tank,
                     TestVehicles.Tracks));
             }
 
@@ -114,7 +114,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var i = 0; i < units.Count; i++)
             {
                 var lane = (i % abreast - (abreast - 1) * 0.5f) * 6f;
-                _world.Send(units[i], new float3(goalX + i / abreast * 11f, 0f, lane), 0);
+                World.Send(units[i], new float3(goalX + i / abreast * 11f, 0f, lane), 0);
             }
         }
 
@@ -123,14 +123,14 @@ namespace HyperRTS.Simulation.Tests.Movement
             var behind = new List<string>();
             foreach (var unit in units)
             {
-                var at = _world.GetPosition(unit);
+                var at = World.GetPosition(unit);
                 if (at.x <= 8f)
                 {
-                    var speed = math.length(_world.Get<Velocity>(unit).Value);
-                    behind.Add($"{at.xz} facing {_world.Get<LocalTransform>(unit).Forward().xz} at {speed:F1} m/s " +
-                               $"to {_world.Get<MoveDestination>(unit).Value.xz} " +
-                               $"moving {_world.IsEnabled<MoveDestination>(unit)} " +
-                               $"ended {_world.Get<Arrival>(unit).Reason}");
+                    var speed = math.length(World.Get<Velocity>(unit).Value);
+                    behind.Add($"{at.xz} facing {World.Get<LocalTransform>(unit).Forward().xz} at {speed:F1} m/s " +
+                               $"to {World.Get<MoveDestination>(unit).Value.xz} " +
+                               $"moving {World.IsEnabled<MoveDestination>(unit)} " +
+                               $"ended {World.Get<Arrival>(unit).Reason}");
                 }
             }
 
@@ -160,8 +160,8 @@ namespace HyperRTS.Simulation.Tests.Movement
 
         private SpatialEntry Hull(Entity unit)
         {
-            var transform = _world.Get<LocalTransform>(unit);
-            var agent = _world.Get<NavAgent>(unit);
+            var transform = World.Get<LocalTransform>(unit);
+            var agent = World.Get<NavAgent>(unit);
             return new SpatialEntry
             {
                 Position = transform.Position,

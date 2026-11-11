@@ -13,11 +13,14 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>Team of each player, in order; players are owners 1, 2 and so on.</summary>
         protected virtual byte[] Teams => new byte[] { 1, 2 };
 
+        /// <summary>Side of the square map in metres.</summary>
+        protected virtual float MapSize => 200f;
+
         [SetUp]
         public void CreateWorld()
         {
             World = new TestWorld();
-            World.CreateMatch(Teams);
+            World.CreateMatch(Teams, MapSize);
         }
 
         private readonly List<Func<string>> _dumps = new();

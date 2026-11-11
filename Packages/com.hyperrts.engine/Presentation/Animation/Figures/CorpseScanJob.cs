@@ -30,13 +30,14 @@ namespace HyperRTS.Presentation.Animation.Figures
             for (var i = 0; i < count; i++)
             {
                 ref var figure = ref figures.ElementAt(i);
+                var world = Places[figure.Figure].Value;
                 if (figure.ReachesHandover(Now))
                 {
                     figure.HandedOver = true;
-                    Handovers.Add(new CorpseHandover { Squad = entity, Figure = i });
+                    Handovers.Add(new CorpseHandover { Squad = entity, Figure = i, Member = members[i], World = world });
                 }
 
-                shown[i] = ShownFigure.Create(figure, members[i], Places[figure.Figure].Value);
+                shown[i] = ShownFigure.Create(figure, members[i], world);
             }
         }
     }

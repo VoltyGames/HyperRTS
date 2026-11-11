@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Overlays.Bars
             _bars.Add(new HealthBarInstance
             {
                 Bar = new Vector4(bar.Fraction, bar.Segments, bar.Rank, 1f),
-                Size = new Vector4(bar.Width, style.barHeight, bar.Members, bar.Alive),
+                Size = new Vector4(bar.Width, style.barHeight, bar.Squad.Members, bar.Squad.Alive),
                 Squad = new Vector4(bar.Squad.Suppression, (float)bar.Squad.Level, (float)bar.Squad.Cover,
                     bar.Squad.Retreating ? 1f : 0f),
                 Anchor = anchor,

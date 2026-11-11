@@ -19,17 +19,17 @@ namespace HyperRTS.Simulation.Tests.Navigation
                 for (var i = 0; i < 1350; i++)
                 {
                     var position = new float3(side * (-295f + i % 16 * 4f), 0f, -290f + i / 16 * 4f);
-                    var squad = _world.SpawnSquad(1, position);
-                    _world.Send(squad, new float3(-position.x, 0f, position.z), side < 0f ? 1 : 2);
+                    var squad = World.SpawnSquad(1, position);
+                    World.Send(squad, new float3(-position.x, 0f, position.z), side < 0f ? 1 : 2);
                     squads++;
                 }
             }
 
-            _world.Tick();
+            World.Tick();
             Assert.AreEqual(2700, squads, "every squad exists");
-            _world.Run(10f);
-            var median = BenchmarkKit.Median("SquadMemberFrame2700", _world.UpdateSystem<SquadMemberSystem>,
-                () => _world.Tick());
+            World.Run(10f);
+            var median = BenchmarkKit.Median("SquadMemberFrame2700", World.UpdateSystem<SquadMemberSystem>,
+                () => World.Tick());
 
             UnityEngine.Debug.Log($"[scale] 2700-squad member frame: median {median:F3} ms");
         }

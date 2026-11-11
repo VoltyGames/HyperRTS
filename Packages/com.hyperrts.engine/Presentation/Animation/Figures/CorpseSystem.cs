@@ -42,6 +42,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         private EntityQuery _newSquads;
         private EntityQuery _goneSquads;
         private EntityQuery _corpses;
+        private PoseSlots _slots;
         private float _now;
 
         protected override void OnCreate()
@@ -66,6 +67,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             CompleteDependency();
             _now = (float)SystemAPI.Time.ElapsedTime;
+            _slots = SystemAPI.GetSingleton<PoseSlots>();
             _budget.Begin();
             EntityManager.AddComponent(_newSquads, new ComponentTypeSet(typeof(SquadEnd), typeof(ShownFigure)));
             Scan();
@@ -122,8 +124,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             }
         }
 
-        // The squad's own figures went with its ghost, so they wait to be copied from its prefab and fall on from where
-        // they were.
+        // The squad's last figures wait to be copied from its prefab.
         private void FallShownFigures(Entity squad, in SquadEnd end)
         {
             var prefab = SystemAPI.GetSingleton<PrefabRegistry>().Find(end.TypeId);
@@ -140,11 +141,11 @@ namespace HyperRTS.Presentation.Animation.Figures
         // budget or the slots are spent.
         private void HandOverFigures()
         {
-            _budget.SortHandovers(EntityManager);
+            _budget.SortHandovers();
             foreach (var handover in _budget.Handovers)
             {
-                var figure = EntityManager.GetBuffer<SquadFigure>(handover.Squad)[handover.Figure];
-                var member = EntityManager.GetBuffer<SquadMember>(handover.Squad)[handover.Figure];
+                var figures = EntityManager.GetBuffer<SquadFigure>(handover.Squad);
+                var figure = figures[handover.Figure];
                 var world = handover.World;
                 ref var ragdoll = ref figure.Clips.Value.Ragdoll;
                 if (_budget.Left <= 0 || !TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
@@ -157,18 +158,17 @@ namespace HyperRTS.Presentation.Animation.Figures
                 {
                     Clips = figure.Clips,
                     World = world,
-                    Throw = ragdoll.Tuning.Throw(member.Death, member.BlastDirection),
+                    Throw = ragdoll.Tuning.Throw(handover.Member.Death, handover.Member.BlastDirection),
                     HandedOver = true,
                     HideAt = figure.HideAt,
                 };
                 var owner = EntityManager.GetComponentData<Owner>(handover.Squad).Value;
                 var root = _copies.Create(handover.Squad, figure.Figure, corpse, owner);
-                _bodies.StartRagdoll(root, slot, SystemAPI.GetSingleton<PoseSlots>(), _now);
+                _bodies.StartRagdoll(root, slot, _slots, _now);
                 _switch.Update(ref CheckedStateRef);
                 _switch.SetBranch(handover.Squad, figure.Figure, HideReason.Figure, true);
                 figure.State = FigureState.Hidden;
                 figure.StateSince = _now;
-                var figures = EntityManager.GetBuffer<SquadFigure>(handover.Squad);
                 figures[handover.Figure] = figure;
             }
         }
@@ -183,7 +183,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 return false;
             }
 
-            return SystemAPI.GetSingleton<PoseSlots>().TryTake(out slot);
+            return _slots.TryTake(out slot);
         }
 
         private void UpdateCorpses()
@@ -215,7 +215,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             if (_budget.Left > 0 && TryTakeSlot(ref corpse.Clips.Value.Ragdoll, corpse.World.c3.xyz, out var slot))
             {
                 _budget.Left--;
-                _bodies.StartRagdoll(root, slot, SystemAPI.GetSingleton<PoseSlots>(), _now);
+                _bodies.StartRagdoll(root, slot, _slots, _now);
             }
         }
 
@@ -241,7 +241,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             if (corpse.Slot >= 0)
             {
-                SystemAPI.GetSingleton<PoseSlots>().Release(corpse.Slot);
+                _slots.Release(corpse.Slot);
             }
 
             _bodies.DestroyBodies(root);

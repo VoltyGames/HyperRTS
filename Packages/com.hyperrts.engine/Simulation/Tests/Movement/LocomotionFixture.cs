@@ -13,7 +13,7 @@ using static HyperRTS.Simulation.Tests.TestVehicles;
 namespace HyperRTS.Simulation.Tests.Movement
 {
     /// <summary>Shared setup and helpers for the LocomotionTests family.</summary>
-    public abstract class LocomotionFixture
+    public abstract class LocomotionFixture : SimulationFixture
     {
         protected const float TruckRadius = 1.25f;
         protected const float TruckTurnRadius = 9f;
@@ -26,32 +26,20 @@ namespace HyperRTS.Simulation.Tests.Movement
             Wheelbase = 4.5f, RearAxle = 1.5f, TurnRadius = TruckTurnRadius, ReverseRun = 6f,
         };
 
-        protected TestWorld _world;
-
         protected static Driver Driving(in Locomotion handling, in Chassis chassis, float radius, float topSpeed,
             float2 facing, float deltaTime = TestWorld.FrameTime) =>
             new(handling, new NavAgent { Radius = radius, Chassis = chassis }, topSpeed, deltaTime) { Facing = facing };
 
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-        }
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
         protected Entity SpawnVehicle(float3 position, float radius, float hullLength, Locomotion locomotion,
             Chassis chassis)
         {
-            var vehicle = _world.SpawnUnit(1, position, new TestUnit { Speed = 8f, Radius = radius });
-            _world.Set(vehicle, new NavAgent
+            var vehicle = World.SpawnUnit(1, position, new TestUnit { Speed = 8f, Radius = radius });
+            World.Set(vehicle, new NavAgent
             {
                 Radius = radius, HullLength = hullLength, Spacing = UnitAuthoring.DefaultSpacing, Chassis = chassis, IsVehicle = true,
                 Mass = chassis.Pivots ? 62f : 17f,
             });
-            var writer = _world.Writer(vehicle);
+            var writer = World.Writer(vehicle);
             LocomotionAuthoring.Add(writer, locomotion);
             return vehicle;
         }
@@ -63,23 +51,23 @@ namespace HyperRTS.Simulation.Tests.Movement
         // Ticks once so the order is under way before callers wait on arrival.
         protected void Order(Entity unit, float3 goal)
         {
-            _world.MoveTo(unit, goal);
-            _world.Tick();
+            World.MoveTo(unit, goal);
+            World.Tick();
         }
 
         protected float2 Facing(Entity unit) =>
-            math.normalize(math.mul(_world.Get<LocalTransform>(unit).Rotation, math.forward()).xz);
+            math.normalize(math.mul(World.Get<LocalTransform>(unit).Rotation, math.forward()).xz);
 
-        protected float Speed(Entity unit) => _world.Get<LocomotionState>(unit).Speed;
+        protected float Speed(Entity unit) => World.Get<LocomotionState>(unit).Speed;
 
-        protected bool Arrived(Entity unit) => !_world.IsEnabled<MoveDestination>(unit);
+        protected bool Arrived(Entity unit) => !World.IsEnabled<MoveDestination>(unit);
 
         protected float SlowestUntilArrived(Entity unit, float cap)
         {
             var slowest = 0f;
             for (var t = 0f; t < cap && !Arrived(unit); t += TestWorld.FrameTime)
             {
-                _world.Tick();
+                World.Tick();
                 slowest = math.min(slowest, Speed(unit));
             }
 
@@ -92,12 +80,12 @@ namespace HyperRTS.Simulation.Tests.Movement
         // Reversing while its path holds a planned reverse leg.
         protected bool IsBackingOnAPlannedLeg(Entity unit)
         {
-            if (_world.Get<LocomotionState>(unit).Speed > -0.1f)
+            if (World.Get<LocomotionState>(unit).Speed > -0.1f)
             {
                 return false;
             }
 
-            foreach (var waypoint in _world.EntityManager.GetBuffer<PathWaypoint>(unit))
+            foreach (var waypoint in World.EntityManager.GetBuffer<PathWaypoint>(unit))
             {
                 if (waypoint.Tight && waypoint.Reverse)
                 {

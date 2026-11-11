@@ -21,28 +21,28 @@ namespace HyperRTS.Simulation.Tests.Movement
         }
 
         private void ReverseOrder(Entity unit, float3 goal, bool queue = false) =>
-            _world.Command(_world.Get<Owner>(unit).Value, new PlayerCommand { Type = CommandType.ReverseMove, Unit = unit, Position = goal, Queue = queue });
+            World.Command(World.Get<Owner>(unit).Value, new PlayerCommand { Type = CommandType.ReverseMove, Unit = unit, Position = goal, Queue = queue });
 
         // The way west is shut, so a route to (30, -30) runs south, then east round the block's corner.
         private void SpawnCornerBlock()
         {
-            _world.SpawnObstacle(new float3(22f, 0f, -7f), new float2(36f, 34f));
-            _world.Tick();
+            World.SpawnObstacle(new float3(22f, 0f, -7f), new float2(36f, 34f));
+            World.Tick();
         }
 
         private Backing BackUntilArrived(Entity unit, float cap)
         {
             var backing = new Backing();
-            _world.Tick();
+            World.Tick();
             for (var t = 0f; t < cap && !Arrived(unit); t += TestWorld.FrameTime)
             {
-                _world.Tick();
+                World.Tick();
                 var speed = Speed(unit);
                 backing.Forwards += speed > 0.1f ? TestWorld.FrameTime : 0f;
                 backing.Fastest = math.min(backing.Fastest, speed);
             }
 
-            Assert.IsTrue(Arrived(unit), $"arrived: stands at {_world.GetPosition(unit).xz}, facing {Facing(unit)}");
+            Assert.IsTrue(Arrived(unit), $"arrived: stands at {World.GetPosition(unit).xz}, facing {Facing(unit)}");
             return backing;
         }
 
@@ -52,7 +52,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.Less(backing.Forwards, OneManoeuvre, "drove backwards");
             Assert.GreaterOrEqual(backing.Fastest, -Tracks.ReverseSpeed - 0.01f, "no faster than its reverse speed");
             Assert.Less(math.dot(Facing(unit), new float2(1f, 0f)), -0.8f, "faces away from the way it drove");
-            Assert.Less(math.distance(_world.GetPosition(unit).xz, new float2(30f, -30f)), radius + 1f);
+            Assert.Less(math.distance(World.GetPosition(unit).xz, new float2(30f, -30f)), radius + 1f);
         }
 
         [Test]
@@ -80,29 +80,29 @@ namespace HyperRTS.Simulation.Tests.Movement
             Order(tank, new float3(0f, 0f, 20f));
             ReverseOrder(tank, new float3(0f, 0f, 60f), queue: true);
 
-            Assert.IsTrue(_world.RunUntil(() => _world.GetPosition(tank).z > 15f, 20f), "drove the move first");
+            Assert.IsTrue(World.RunUntil(() => World.GetPosition(tank).z > 15f, 20f), "drove the move first");
             Assert.Greater(Speed(tank), 0f, "forwards");
-            Assert.IsTrue(_world.RunUntil(() => _world.GetPosition(tank).z > 58f, 60f), "then the reverse move");
+            Assert.IsTrue(World.RunUntil(() => World.GetPosition(tank).z > 58f, 60f), "then the reverse move");
             Assert.Less(math.dot(Facing(tank), new float2(0f, 1f)), -0.9f, "backed there");
         }
 
         [Test]
         public void ReverseMove_Infantry_WalkThereAsOnAMove()
         {
-            var soldier = _world.SpawnUnit(1, float3.zero);
+            var soldier = World.SpawnUnit(1, float3.zero);
             ReverseOrder(soldier, new float3(0f, 0f, -20f));
-            _world.Tick();
+            World.Tick();
 
-            Assert.IsTrue(_world.RunUntil(() => Arrived(soldier), 10f), "arrived");
+            Assert.IsTrue(World.RunUntil(() => Arrived(soldier), 10f), "arrived");
             Assert.Greater(math.dot(Facing(soldier), new float2(0f, -1f)), 0.9f, "faced its way");
         }
 
         [Test]
         public void Truck_BacksUpAShortWayBehind_InALane_WithoutTurningRound()
         {
-            _world.SpawnObstacle(new float3(-8f, 0f, -10f), new float2(4f, 40f));
-            _world.SpawnObstacle(new float3(8f, 0f, -10f), new float2(4f, 40f));
-            _world.Tick();
+            World.SpawnObstacle(new float3(-8f, 0f, -10f), new float2(4f, 40f));
+            World.SpawnObstacle(new float3(8f, 0f, -10f), new float2(4f, 40f));
+            World.Tick();
             var truck = SpawnTruck(float3.zero);
             var goal = new float3(0f, 0f, -15f);
             Order(truck, goal);
@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             var backing = BackUntilArrived(truck, 30f);
             Assert.Less(backing.Fastest, -1f, "reversed");
             Assert.Greater(math.dot(Facing(truck), new float2(0f, 1f)), 0.95f, "never turned round");
-            Assert.Less(math.distance(_world.GetPosition(truck).xz, goal.xz), NavTolerances.Arrive(TruckRadius) + 0.1f);
+            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), NavTolerances.Arrive(TruckRadius) + 0.1f);
         }
     }
 }

@@ -45,9 +45,7 @@ namespace HyperRTS.Network.Session
         /// <summary>One world that serves remote clients and is the local player's client, with this player's join.</summary>
         public static NetcodeWorld CreateHost(NativeList<SystemTypeIndex> systems)
         {
-            RequireConfig();
-            // Sessions listen and connect themselves, on the port and drivers they were given.
-            ClientServerBootstrap.AutoConnectPort = 0;
+            Prepare();
             var world = ClientServerBootstrap.CreateSingleWorldHost("HostWorld", systems);
             SetSingleton(world, ServerTickRate());
             AddJoin(world);
@@ -57,8 +55,7 @@ namespace HyperRTS.Network.Session
 
         public static NetcodeWorld CreateServer()
         {
-            RequireConfig();
-            ClientServerBootstrap.AutoConnectPort = 0;
+            Prepare();
             var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
             // Gameplay has no physics and a server shows nothing.
             world.GetExistingSystemManaged<PhysicsSystemGroup>().Enabled = false;
@@ -69,8 +66,7 @@ namespace HyperRTS.Network.Session
 
         public static NetcodeWorld CreateClient(NativeList<SystemTypeIndex> systems)
         {
-            RequireConfig();
-            ClientServerBootstrap.AutoConnectPort = 0;
+            Prepare();
             var world = ClientServerBootstrap.CreateClientWorld("ClientWorld", systems);
             AddJoin(world);
             Created.Add(world);
@@ -80,9 +76,10 @@ namespace HyperRTS.Network.Session
         /// <summary>
         /// The join systems put a connection in game once it is seated, so Netcode must not do it on connect: the
         /// global <see cref="NetcodeConfig"/> needs Automatic State Replication off. Gameplay has no physics, so
-        /// Netcode must not step it in the prediction loop: Physics Run Mode is User Controlled.
+        /// Netcode must not step it in the prediction loop: Physics Run Mode is User Controlled. Sessions listen and
+        /// connect themselves, on the port and drivers they were given, so Netcode does not auto-connect.
         /// </summary>
-        private static void RequireConfig()
+        private static void Prepare()
         {
             var config = NetcodeConfig.Global;
             if (config == null || config.AutomaticStateReplication)
@@ -96,6 +93,8 @@ namespace HyperRTS.Network.Session
                 throw new InvalidOperationException("[HyperRTS] Set Physics Run Mode to User Controlled on the global " +
                                                     "NetcodeConfig asset: gameplay has no physics.");
             }
+
+            ClientServerBootstrap.AutoConnectPort = 0;
         }
 
         /// <summary>Opens the port on <paramref name="world"/>; on failure the world is disposed and false returned.</summary>

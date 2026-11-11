@@ -8,8 +8,6 @@ namespace HyperRTS.Presentation.Overlays.Bars
         public readonly float Fraction;
         public readonly int Segments;
         public readonly int Rank;
-        public readonly int Members;
-        public readonly int Alive;
         public readonly SquadBarState Squad;
 
         /// <summary>Width in reference pixels.</summary>
@@ -20,8 +18,6 @@ namespace HyperRTS.Presentation.Overlays.Bars
             Fraction = health.Fraction;
             Segments = style.Segments(health.Max, squad.Members);
             Rank = rank;
-            Members = squad.Members;
-            Alive = squad.Alive;
             Squad = squad;
             Width = style.BarWidth(radius);
         }

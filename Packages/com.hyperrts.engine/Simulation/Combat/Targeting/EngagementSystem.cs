@@ -64,13 +64,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 EnabledRefRW<AttackTarget> attacking, RefRW<MoveDestination> destination,
                 EnabledRefRW<MoveDestination> moving)
             {
-                var unit = new Attacker
+                var unit = new Attacker(entity, transform, mounts, vision, owner)
                 {
-                    Entity = entity,
-                    Position = transform.Position,
-                    Mounts = mounts,
-                    Vision = vision,
-                    Owner = owner,
                     Moves = new UnitMove(destination, moving, Engager.Deployables, entity),
                 };
                 Engager.Engage(unit, ref stance, ref attack, attacking);
@@ -89,14 +84,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 in VisionRange vision, in Owner owner, ref CombatStance stance, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking)
             {
-                var unit = new Attacker
-                {
-                    Entity = entity,
-                    Position = transform.Position,
-                    Mounts = mounts,
-                    Vision = vision,
-                    Owner = owner,
-                };
+                var unit = new Attacker(entity, transform, mounts, vision, owner);
                 Engager.Engage(unit, ref stance, ref attack, attacking);
             }
         }

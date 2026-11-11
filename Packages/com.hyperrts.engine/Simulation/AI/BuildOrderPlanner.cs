@@ -131,8 +131,7 @@ namespace HyperRTS.Simulation.AI
         private readonly bool TryStart(ref SystemState state, in AITurn turn, in AISnapshot snapshot, Entity prefab)
         {
             var entities = state.EntityManager;
-            var stock = entities.GetBuffer<ResourceStock>(turn.Player);
-            if (!turn.Buyer.CanBuy(entities, prefab, new Stockpile(stock)))
+            if (!turn.CanBuy(entities, prefab))
             {
                 return false;
             }

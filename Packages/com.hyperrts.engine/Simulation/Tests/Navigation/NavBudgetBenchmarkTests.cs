@@ -17,18 +17,18 @@ namespace HyperRTS.Simulation.Tests.Navigation
             var single = Searched(lone);
 
             var units = SendAcross(120, 3f, -20f);
-            var before = Stats();
+            var before = World.ReadPathStats();
             var overshoot = 0f;
             var frames = 0;
             for (; frames < 120 && !AllReady(units); frames++)
             {
-                var start = Stats();
-                _world.Tick();
-                var spent = Stats().Estimated - start.Estimated;
+                var start = World.ReadPathStats();
+                World.Tick();
+                var spent = World.ReadPathStats().Estimated - start.Estimated;
                 overshoot = math.max(overshoot, spent - PathfindingSystem.CostPerFrame);
             }
 
-            var after = Stats();
+            var after = World.ReadPathStats();
             var estimated = after.Estimated - before.Estimated;
             var expanded = after.Expansions - before.Expansions;
             TestContext.WriteLine($"{after.Searches - before.Searches} searches over {frames} frames, one about " +
@@ -45,15 +45,15 @@ namespace HyperRTS.Simulation.Tests.Navigation
             for (var i = 0; i < count; i++)
             {
                 var row = new float3(i % 12 * spacing, 0f, i / 12 * spacing);
-                units[i] = _world.SpawnUnit(1, new float3(-285f, 0f, z) + row);
+                units[i] = World.SpawnUnit(1, new float3(-285f, 0f, z) + row);
             }
 
-            _world.Tick();
+            World.Tick();
             for (var i = 0; i < count; i++)
             {
                 var goal = new float3(245f, 0f, z) + new float3(i % 12 * spacing, 0f, i / 12 * spacing);
-                _world.EntityManager.SetComponentData(units[i], new MoveDestination { Value = goal });
-                _world.EntityManager.SetComponentEnabled<MoveDestination>(units[i], true);
+                World.EntityManager.SetComponentData(units[i], new MoveDestination { Value = goal });
+                World.EntityManager.SetComponentEnabled<MoveDestination>(units[i], true);
             }
 
             return units;
@@ -62,14 +62,14 @@ namespace HyperRTS.Simulation.Tests.Navigation
         // The estimate of the one search the units ask for.
         private float Searched(Entity[] units)
         {
-            var before = Stats();
+            var before = World.ReadPathStats();
             for (var frame = 0; frame < 10 && !AllReady(units); frame++)
             {
-                _world.Tick();
+                World.Tick();
             }
 
-            Assert.AreEqual(1, Stats().Searches - before.Searches, "one search");
-            return Stats().Estimated - before.Estimated;
+            Assert.AreEqual(1, World.ReadPathStats().Searches - before.Searches, "one search");
+            return World.ReadPathStats().Estimated - before.Estimated;
         }
     }
 }

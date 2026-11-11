@@ -1,30 +1,17 @@
 using System;
-using System.Collections.Generic;
 using HyperRTS.Editor.Animation;
 using HyperRTS.Presentation.Animation.Bones;
 using NUnit.Framework;
 using UnityEngine;
-using Object = UnityEngine.Object;
+
 
 namespace HyperRTS.Editor.Tests.Animation
 {
-    /// <summary>A small rig model, rig and clip for the bone rig tests, and the objects they make, destroyed after each test.</summary>
-    public abstract class BoneRigFixture
+    /// <summary>A small rig model, rig and clip for the bone rig tests.</summary>
+    public abstract class BoneRigFixture : TemplateFixture
     {
         protected static readonly Vector3 HandAt = new(0.5f, 1.4f, 0f);
         protected static readonly Vector3 OffHandAt = new(0.6f, 1.6f, 0.4f);
-        private readonly List<Object> _made = new();
-
-        [TearDown]
-        public void TearDown()
-        {
-            foreach (var made in _made)
-            {
-                Object.DestroyImmediate(made);
-            }
-
-            _made.Clear();
-        }
 
         // Root > Armature > Hips > Hand (with a Grip empty holding a Support empty) and OffHand, and a skinned node
         // holding one triangle at the hand.
@@ -62,12 +49,6 @@ namespace HyperRTS.Editor.Tests.Animation
             child.SetParent(parent, false);
             child.SetLocalPositionAndRotation(position, rotation);
             return child;
-        }
-
-        protected T Track<T>(T made) where T : Object
-        {
-            _made.Add(made);
-            return made;
         }
 
         protected readonly BoneAnimationSet.Socket _grip = new()

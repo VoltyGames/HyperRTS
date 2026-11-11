@@ -46,13 +46,11 @@ namespace HyperRTS.Presentation.Animation.Figures
             Waiting.Sort();
         }
 
-        public void SortHandovers(EntityManager entities)
+        public void SortHandovers()
         {
             for (var i = 0; i < Handovers.Length; i++)
             {
                 var handover = Handovers[i];
-                var figure = entities.GetBuffer<SquadFigure>(handover.Squad)[handover.Figure];
-                handover.World = entities.GetComponentData<LocalToWorld>(figure.Figure).Value;
                 handover.Distance = DistanceTo(handover.World.c3.xyz);
                 Handovers[i] = handover;
             }

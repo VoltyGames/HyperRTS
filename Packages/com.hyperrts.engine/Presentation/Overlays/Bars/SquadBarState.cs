@@ -36,14 +36,16 @@ namespace HyperRTS.Presentation.Overlays.Bars
             }
 
             var cover = CoverKind.None;
+            var alive = 0;
             foreach (var member in unit.Members)
             {
+                alive += member.Alive ? 1 : 0;
                 cover = member.Alive && member.Cover > cover ? member.Cover : cover;
             }
 
             var suppression = unit.Suppression.Value;
             return new SquadBarState(suppression.Value, rules.Level(suppression.Value), cover, unit.Retreating,
-                unit.MemberCount, unit.Alive);
+                unit.MemberCount, alive);
         }
     }
 }

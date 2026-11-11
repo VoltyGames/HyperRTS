@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Movement
 
         private FixedList512Bytes<AvoidanceNeighbour> _items;
 
-        public readonly FixedList512Bytes<AvoidanceNeighbour> Items => _items;
+        public readonly AvoidanceNeighbour this[int index] => _items[index];
 
         public readonly int Count => _items.Length;
 

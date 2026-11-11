@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
         [Test]
         public void CapsuleDepth_SumsEverySunkPoint_AndStopsPastItsLimit()
         {
-            _world.SpawnObstacle(new float3(0f, 0f, 3f), new float2(20f, 2f));
+            World.SpawnObstacle(new float3(0f, 0f, 3f), new float2(20f, 2f));
             var access = RegisteredAccess(Truck);
             var capsule = new NavCapsule(access, float2.zero);
             var center = new float2(0.3f, 0.8f);
@@ -53,8 +53,8 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
         public void PoseGoalInALane_IsEnteredFromBehind()
         {
             // A lane 7 m wide along x from 0 to 20, the truck facing in at its east end, the goal facing east inside.
-            _world.SpawnObstacle(new float3(10f, 0f, 5f), new float2(20f, 3f));
-            _world.SpawnObstacle(new float3(10f, 0f, -5f), new float2(20f, 3f));
+            World.SpawnObstacle(new float3(10f, 0f, 5f), new float2(20f, 3f));
+            World.SpawnObstacle(new float3(10f, 0f, -5f), new float2(20f, 3f));
             var access = RegisteredAccess(Truck);
             var search = new DriveSearch(access, Truck, DriveSearch.MaxExpansions, Allocator.Temp);
             var points = new NativeList<PathWaypoint>(64, Allocator.Temp);

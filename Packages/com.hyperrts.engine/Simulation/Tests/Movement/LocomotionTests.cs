@@ -19,11 +19,11 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             var tank = SpawnTank(float3.zero);
             Order(tank, new float3(-40f, 0f, -10f));
-            _world.Run(1f);
+            World.Run(1f);
 
-            Assert.Less(math.length(_world.GetPosition(tank).xz), 0.3f, "turns standing");
+            Assert.Less(math.length(World.GetPosition(tank).xz), 0.3f, "turns standing");
             Assert.Greater(TurnBetween(new float2(0f, 1f), Facing(tank)), math.radians(40f), "turned at its rate");
-            Assert.IsTrue(_world.RunUntil(() => Arrived(tank), 20f), "then drives there");
+            Assert.IsTrue(World.RunUntil(() => Arrived(tank), 20f), "then drives there");
         }
 
         [Test]
@@ -36,14 +36,14 @@ namespace HyperRTS.Simulation.Tests.Movement
             var slowest = 0f;
             for (var t = 0f; t < 15f && !Arrived(tank); t += TestWorld.FrameTime)
             {
-                _world.Tick();
+                World.Tick();
                 slowest = math.min(slowest, Speed(tank));
             }
 
             Assert.IsTrue(Arrived(tank), "arrived");
             Assert.Less(slowest, -2f, "reversed");
             Assert.Greater(math.dot(Facing(tank), new float2(0f, 1f)), 0.98f, "never turned round");
-            Assert.Less(math.distance(_world.GetPosition(tank).xz, goal.xz), NavTolerances.Arrive(TankRadius) + 0.1f);
+            Assert.Less(math.distance(World.GetPosition(tank).xz, goal.xz), NavTolerances.Arrive(TankRadius) + 0.1f);
         }
 
         [Test]
@@ -62,13 +62,13 @@ namespace HyperRTS.Simulation.Tests.Movement
             var truck = SpawnTruck(float3.zero);
             var goal = new float3(0f, 0f, 40f);
             Order(truck, goal);
-            _world.Run(1f);
+            World.Run(1f);
             Assert.That(Speed(truck), Is.InRange(2.5f, 3.2f), "gains its acceleration each second");
 
-            Assert.IsTrue(_world.RunUntil(() => Arrived(truck), 20f), "arrived");
-            _world.Run(0.5f);
+            Assert.IsTrue(World.RunUntil(() => Arrived(truck), 20f), "arrived");
+            World.Run(0.5f);
             Assert.AreEqual(0f, Speed(truck), "stopped");
-            Assert.Less(math.distance(_world.GetPosition(truck).xz, goal.xz), NavTolerances.Arrive(TruckRadius) + 0.1f);
+            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), NavTolerances.Arrive(TruckRadius) + 0.1f);
         }
 
         [Test]
@@ -76,15 +76,15 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             var tank = SpawnTank(float3.zero);
             Order(tank, new float3(0f, 0f, 200f));
-            _world.Run(4f);
+            World.Run(4f);
             var cruising = Speed(tank);
             Assert.Greater(cruising, 7f, "up to speed");
 
-            _world.Command(1, new PlayerCommand { Type = CommandType.Stop, Unit = tank });
-            _world.Run(0.3f);
+            World.Command(1, new PlayerCommand { Type = CommandType.Stop, Unit = tank });
+            World.Run(0.3f);
             Assert.That(Speed(tank), Is.InRange(cruising - 6f * 0.4f, cruising - 6f * 0.2f), "sheds its braking rate");
 
-            _world.Run(2f);
+            World.Run(2f);
             Assert.AreEqual(0f, Speed(tank), "stopped");
         }
 
@@ -100,7 +100,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             for (var t = 0f; t < 30f && !Arrived(truck); t += TestWorld.FrameTime)
             {
                 var facing = Facing(truck);
-                _world.Tick();
+                World.Tick();
                 turned += TurnBetween(facing, Facing(truck));
                 slowest = math.min(slowest, Speed(truck));
             }
@@ -108,53 +108,53 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.IsTrue(Arrived(truck), "arrived");
             Assert.Less(slowest, 0f, "backed up to bring the goal out of its turning circle");
             Assert.Less(turned, math.PI * 1.5f, "never circled");
-            Assert.Less(math.distance(_world.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
+            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
         }
 
         [Test]
         public void Truck_ThreePointTurnIntoAWall_DrivesTheOtherLegAndStillArrives()
         {
-            _world.SpawnObstacle(new float3(0f, 0f, -6f), new float2(16f, 1f));
-            _world.Tick();
+            World.SpawnObstacle(new float3(0f, 0f, -6f), new float2(16f, 1f));
+            World.Tick();
 
             var truck = SpawnTruck(float3.zero);
             var goal = new float3(3f, 0f, 4f);
             Order(truck, goal);
 
-            Assert.IsTrue(_world.RunUntil(() => Arrived(truck), 30f), "arrived");
-            Assert.Less(math.distance(_world.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
+            Assert.IsTrue(World.RunUntil(() => Arrived(truck), 30f), "arrived");
+            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
         }
 
         [Test]
         public void Infantry_StepsAtFullSpeedAndFacesItsGoal_AtOnce()
         {
-            var soldier = _world.SpawnUnit(1, float3.zero, new TestUnit { Speed = 5f, Radius = 0.4f });
+            var soldier = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 5f, Radius = 0.4f });
             Order(soldier, new float3(10f, 0f, 0f));
-            _world.Tick(TestWorld.FrameTime, 2);
+            World.Tick(TestWorld.FrameTime, 2);
 
-            var before = _world.GetPosition(soldier).xz;
-            _world.Tick();
+            var before = World.GetPosition(soldier).xz;
+            World.Tick();
 
-            Assert.AreEqual(5f * TestWorld.FrameTime, math.distance(before, _world.GetPosition(soldier).xz), 1e-4f);
+            Assert.AreEqual(5f * TestWorld.FrameTime, math.distance(before, World.GetPosition(soldier).xz), 1e-4f);
             Assert.AreEqual(1f, math.dot(Facing(soldier), new float2(1f, 0f)), 1e-4f);
-            Assert.IsFalse(_world.EntityManager.HasComponent<LocomotionState>(soldier));
+            Assert.IsFalse(World.EntityManager.HasComponent<LocomotionState>(soldier));
         }
 
         [Test]
         public void TankPushedOutOfABuilding_InASlot_BacksOutAndArrives()
         {
             var tank = SpawnTank(float3.zero);
-            _world.Tick();
+            World.Tick();
             // A slot too narrow to pivot in, closed by a building that lands on the tank's nose.
-            _world.SpawnObstacle(new float3(-4f, 0f, 1.5f), new float2(2f, 7f));
-            _world.SpawnObstacle(new float3(4f, 0f, 1.5f), new float2(2f, 7f));
-            _world.SpawnObstacle(new float3(0f, 0f, 4f), new float2(6f, 2f));
-            _world.Tick();
+            World.SpawnObstacle(new float3(-4f, 0f, 1.5f), new float2(2f, 7f));
+            World.SpawnObstacle(new float3(4f, 0f, 1.5f), new float2(2f, 7f));
+            World.SpawnObstacle(new float3(0f, 0f, 4f), new float2(6f, 2f));
+            World.Tick();
             var goal = new float3(-30f, 0f, -20f);
             Order(tank, goal);
 
             var backedOut = false;
-            var ended = _world.RunUntil(() =>
+            var ended = World.RunUntil(() =>
             {
                 backedOut |= IsBackingOnAPlannedLeg(tank);
                 return Arrived(tank);
@@ -162,9 +162,9 @@ namespace HyperRTS.Simulation.Tests.Movement
 
             Assert.IsTrue(backedOut, "wedged, it backed out on a planned reverse leg");
             Assert.IsTrue(ended, "the move ended");
-            Assert.AreNotEqual(ArrivalReason.Stalled, _world.Get<Arrival>(tank).Reason,
+            Assert.AreNotEqual(ArrivalReason.Stalled, World.Get<Arrival>(tank).Reason,
                 "by arriving, not by giving up");
-            Assert.Less(math.distance(_world.GetPosition(tank).xz, goal.xz), 2f, "at the goal");
+            Assert.Less(math.distance(World.GetPosition(tank).xz, goal.xz), 2f, "at the goal");
         }
     }
 }

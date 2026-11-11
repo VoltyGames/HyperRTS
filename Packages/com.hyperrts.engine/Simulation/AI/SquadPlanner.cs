@@ -54,21 +54,22 @@ namespace HyperRTS.Simulation.AI
             }
 
             var entities = state.EntityManager;
-            var ai = entities.GetComponentData<AIPlayer>(turn.Player);
+            var ai = turn.Settings;
+            var rules = _rulesQuery.GetSingleton<SquadRules>();
             for (var i = 0; i < _squads.Length; i++)
             {
                 var squad = _squads.Entities[i];
-                if (!_squads.IsOwnedBy(i, turn.Owner) || turn.Busy.Contains(squad))
+                if (!turn.IsFree(_squads, i))
                 {
                     continue;
                 }
 
-                if (ai.RetreatsSquads && ShouldRetreat(ref state, turn, snapshot, squad, _squads.Position(i)))
+                if (ai.RetreatsSquads && ShouldRetreat(ref state, turn, snapshot, rules, squad, _squads.Position(i)))
                 {
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.Retreat, Unit = squad });
                     turn.Busy.Add(squad);
                 }
-                else if (!entities.IsComponentEnabled<ActiveOrder>(squad) && WantsReinforcing(ref state, turn, snapshot, squad))
+                else if (!entities.IsComponentEnabled<ActiveOrder>(squad) && WantsReinforcing(ref state, turn, snapshot, rules, squad))
                 {
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.Reinforce, Unit = squad });
                     turn.Busy.Add(squad);
@@ -80,8 +81,8 @@ namespace HyperRTS.Simulation.AI
         /// A squad that is pinned, or down to the tuned share of living members or of health, and is not already
         /// running or safe inside a friendly retreat point's radius; false when no point is left.
         /// </summary>
-        private readonly bool ShouldRetreat(ref SystemState state, in AITurn turn, in AISnapshot snapshot, Entity squad,
-            float3 position)
+        private readonly bool ShouldRetreat(ref SystemState state, in AITurn turn, in AISnapshot snapshot,
+            in SquadRules rules, Entity squad, float3 position)
         {
             var entities = state.EntityManager;
             if (IsRetreating(entities, squad) || IsRetreatOrdered(entities, squad))
@@ -96,8 +97,7 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            var ai = entities.GetComponentData<AIPlayer>(turn.Player);
-            var rules = _rulesQuery.GetSingleton<SquadRules>();
+            var ai = turn.Settings;
             var members = entities.GetBuffer<SquadMember>(squad);
             var roster = new SquadRoster(members);
             var pinned = rules.Level(entities.GetComponentData<Suppression>(squad).Value) == SuppressionLevel.Pinned;
@@ -114,7 +114,8 @@ namespace HyperRTS.Simulation.AI
             entities.HasComponent<Retreating>(squad) && entities.IsComponentEnabled<Retreating>(squad);
 
         /// <summary>A squad with dead members, in range of a friendly reinforce point, that the player can afford a member for.</summary>
-        private readonly bool WantsReinforcing(ref SystemState state, in AITurn turn, in AISnapshot snapshot, Entity squad)
+        private readonly bool WantsReinforcing(ref SystemState state, in AITurn turn, in AISnapshot snapshot,
+            in SquadRules rules, Entity squad)
         {
             var entities = state.EntityManager;
             if (IsReinforcing(entities, squad))
@@ -128,7 +129,7 @@ namespace HyperRTS.Simulation.AI
                 ? entities.GetBuffer<ResourceCost>(squad)
                 : default;
             var refusal = SquadOrderRule.FindReinforceRefusal(entities.GetBuffer<SquadMember>(squad), inRange,
-                _rulesQuery.GetSingleton<SquadRules>(), cost, entities.GetBuffer<ResourceStock>(turn.Player));
+                rules, cost, entities.GetBuffer<ResourceStock>(turn.Player));
             return refusal == SquadRefusal.None;
         }
 
@@ -152,7 +153,8 @@ namespace HyperRTS.Simulation.AI
                 return true;
             }
 
-            return _squads.Length > 0 && WantsReinforcing(ref state, turn, snapshot, unit);
+            return _squads.Length > 0
+                   && WantsReinforcing(ref state, turn, snapshot, _rulesQuery.GetSingleton<SquadRules>(), unit);
         }
     }
 }

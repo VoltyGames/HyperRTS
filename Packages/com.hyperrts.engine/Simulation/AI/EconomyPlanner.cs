@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.AI
             var node = -1;
             for (var i = 0; i < _harvesters.Length; i++)
             {
-                if (!_harvesters.IsOwnedBy(i, turn.Owner) || turn.Busy.Contains(_harvesters.Entities[i]))
+                if (!turn.IsFree(_harvesters, i))
                 {
                     continue;
                 }

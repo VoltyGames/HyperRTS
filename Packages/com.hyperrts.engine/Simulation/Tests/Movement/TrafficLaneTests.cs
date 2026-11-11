@@ -45,8 +45,8 @@ namespace HyperRTS.Simulation.Tests.Movement
                 trucks.Add(new RouteTruck { Unit = unit, Tally = _record.Track($"truck {i}", unit) });
             }
 
-            _world.Tick();
-            using var open = new OpenRoutes(_world, hull);
+            World.Tick();
+            using var open = new OpenRoutes(World, hull);
             var region = open.Region(open.Cell(Position(trucks[0].Unit)));
             var random = new Random(29);
             var ratios = new List<float>();
@@ -101,13 +101,13 @@ namespace HyperRTS.Simulation.Tests.Movement
             truck.Planned = false;
             truck.Active = true;
             truck.Moves++;
-            _world.Send(truck.Unit, truck.Goal);
+            World.Send(truck.Unit, truck.Goal);
         }
 
         private void ReadPlan(RouteTruck truck, List<float> ratios)
         {
-            var state = _world.Get<PathState>(truck.Unit);
-            var waypoints = _world.Buffer<PathWaypoint>(truck.Unit);
+            var state = World.Get<PathState>(truck.Unit);
+            var waypoints = World.Buffer<PathWaypoint>(truck.Unit);
             if (state.Status != PathStatus.Ready || !math.all(state.Goal == truck.Goal) || waypoints.Length == 0)
             {
                 return;
@@ -147,7 +147,7 @@ namespace HyperRTS.Simulation.Tests.Movement
                 var z = -depth * 0.5f;
                 for (var row = 0; row < 4; row++)
                 {
-                    _world.SpawnObstacle(new float3(x + BlockSize * 0.5f, 0f, z + BlockSize * 0.5f),
+                    World.SpawnObstacle(new float3(x + BlockSize * 0.5f, 0f, z + BlockSize * 0.5f),
                         new float2(BlockSize));
                     z += BlockSize + (row < 3 ? RowGaps[row] : 0f);
                 }
@@ -162,14 +162,14 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void Truck_MeetsABusyVehicleInASixMetreLane_WithAWayRoundOneAndAHalfTimesLonger()
         {
-            _world.SpawnObstacle(new float3(0f, 0f, 18.25f), new float2(4f, 30.5f));
-            _world.SpawnObstacle(new float3(0f, 0f, -18.25f), new float2(4f, 30.5f));
+            World.SpawnObstacle(new float3(0f, 0f, 18.25f), new float2(4f, 30.5f));
+            World.SpawnObstacle(new float3(0f, 0f, -18.25f), new float2(4f, 30.5f));
             var dozer = SpawnTank(float3.zero, 0f);
-            _world.AddWeapon(dozer, new TestWeapon { Stance = Stance.HoldPosition });
+            World.AddWeapon(dozer, new TestWeapon { Stance = Stance.HoldPosition });
             var truck = SpawnTruck(new float3(-30f, 0f, 0f), math.PI * 0.5f);
             _record.Track("truck", truck);
-            _world.Tick();
-            _world.Send(truck, new float3(30f, 0f, 0f));
+            World.Tick();
+            World.Send(truck, new float3(30f, 0f, 0f));
 
             Finish("blocked lane", 120f, 0);
         }

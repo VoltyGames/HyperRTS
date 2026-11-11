@@ -15,30 +15,30 @@ namespace HyperRTS.Simulation.Tests.Movement
         [Test]
         public void FourTrucks_GatherForFiveMinutes_WithoutLoops()
         {
-            var supplies = _world.CreateSupplies();
-            var node = _world.SpawnNode(new float3(30f, 0f, 0f), supplies, 10_000_000);
-            var depot = _world.SpawnBuilding(1, new float3(-30f, 0f, 0f), new float2(10f, 10f));
-            _world.EntityManager.AddComponent<ResourceDropOff>(depot);
+            var supplies = World.CreateSupplies();
+            var node = World.SpawnNode(new float3(30f, 0f, 0f), supplies, 10_000_000);
+            var depot = World.SpawnBuilding(1, new float3(-30f, 0f, 0f), new float2(10f, 10f));
+            World.EntityManager.AddComponent<ResourceDropOff>(depot);
 
             var trucks = new Entity[4];
             var phases = new HarvestPhase[4];
             for (var i = 0; i < trucks.Length; i++)
             {
                 trucks[i] = SpawnTruck(new float3(-30f + i * 4f, 0f, 16f + i * 3f), math.PI * 0.5f);
-                _world.MakeHarvester(trucks[i], 100, 20f);
-                _world.Order(trucks[i], OrderType.Gather, node);
+                World.MakeHarvester(trucks[i], 100, 20f);
+                World.Order(trucks[i], OrderType.Gather, node);
                 _record.Track($"truck {i}", trucks[i]);
             }
 
-            var before = _world.ReadPathStats();
+            var before = World.ReadPathStats();
             for (var t = 0f; t < GatherSeconds; t += TestWorld.FrameTime)
             {
                 _record.Tick();
                 CountDeliveries(trucks, phases);
             }
 
-            var failures = _world.ReadPathStats().Drive.Failures - before.Drive.Failures;
-            var searches = _world.ReadPathStats().Drive.Searches - before.Drive.Searches;
+            var failures = World.ReadPathStats().Drive.Failures - before.Drive.Failures;
+            var searches = World.ReadPathStats().Drive.Searches - before.Drive.Searches;
             _record.Log("gather trips");
 
             // With dock bays: 5 trips, mean 107.8 s; without: 13, mean 62 s. Each trip turns round at the node and the
@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Tests.Movement
         {
             for (var i = 0; i < trucks.Length; i++)
             {
-                var phase = _world.Get<HarvestState>(trucks[i]).Phase;
+                var phase = World.Get<HarvestState>(trucks[i]).Phase;
                 if (phases[i] == HarvestPhase.Returning && phase == HarvestPhase.Gathering)
                 {
                     _record.CountTrip(_record.Units[i]);

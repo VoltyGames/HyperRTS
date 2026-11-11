@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.PlayMode
                     return "none (time limit)";
                 }
 
-                return winningSides.Count == 0 ? "draw" : $"side {string.Join("+", winningSides)}";
+                return winningSides.Count == 0 ? "draw" : Sides;
             }
 
             public string Describe()
@@ -46,10 +46,10 @@ namespace HyperRTS.Editor.PlayMode
                     return $"no winner after {minutes:F1} min";
                 }
 
-                return winningSides.Count == 0
-                    ? $"draw at {minutes:F1} min"
-                    : $"side {string.Join("+", winningSides)} won at {minutes:F1} min";
+                return winningSides.Count == 0 ? $"draw at {minutes:F1} min" : $"{Sides} won at {minutes:F1} min";
             }
+
+            private string Sides => $"side {string.Join("+", winningSides)}";
         }
 
         public string Summary()

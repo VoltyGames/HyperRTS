@@ -1,6 +1,8 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Transport;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
@@ -40,6 +42,13 @@ namespace HyperRTS.Simulation.Movement
             _aims = state.GetComponentTypeHandle<FacingGoal>();
             _drives = state.GetComponentTypeHandle<LocomotionState>();
         }
+
+        /// <summary>The components every mover has. Present, not enabled: arrival and facing are switched here, so disabled ones must still match.</summary>
+        public static EntityQueryBuilder Query() => new EntityQueryBuilder(Allocator.Temp)
+            .WithAllRW<LocalTransform>().WithAllRW<PathState>().WithAllRW<PathWaypoint>()
+            .WithAllRW<MoveProgress>().WithAllRW<Velocity>()
+            .WithAll<MovementSpeed>().WithAll<NavAgent>().WithAll<Owner>()
+            .WithPresentRW<MoveDestination>().WithPresentRW<Arrival>().WithPresentRW<FacingGoal>().WithNone<Inside>();
 
         public MoverChunk Open(in ArchetypeChunk chunk)
         {

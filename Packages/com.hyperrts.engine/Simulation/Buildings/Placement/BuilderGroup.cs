@@ -33,8 +33,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var middle = float3.zero;
             foreach (var builder in _builders)
             {
-                var standing = _entities.GetComponentData<LocalTransform>(builder).Position;
-                middle += queued ? QueueEnd(builder) : standing;
+                middle += queued ? QueueEnd(builder) : Position(builder);
             }
 
             middle /= _builders.Length;
@@ -59,7 +58,9 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 return _entities.GetComponentData<ActiveOrder>(builder).Value.Position;
             }
 
-            return _entities.GetComponentData<LocalTransform>(builder).Position;
+            return Position(builder);
         }
+
+        private float3 Position(Entity builder) => _entities.GetComponentData<LocalTransform>(builder).Position;
     }
 }

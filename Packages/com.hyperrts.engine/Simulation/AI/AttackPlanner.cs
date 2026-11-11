@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.AI
         {
             var wave = new NativeList<int>(Allocator.Temp);
             var center = GatherWave(ref state, turn, snapshot, wave);
-            var ai = state.EntityManager.GetComponentData<AIPlayer>(turn.Player);
+            var ai = turn.Settings;
             if (wave.Length == 0 || wave.Length < ai.AttackWaveSize)
             {
                 return;
@@ -100,9 +100,14 @@ namespace HyperRTS.Simulation.AI
             var sum = float3.zero;
             for (var i = 0; i < _army.Length; i++)
             {
+                if (!_army.IsOwnedBy(i, turn.Owner))
+                {
+                    continue;
+                }
+
                 var entity = _army.Entities[i];
                 var armed = WeaponMount.TryGetPrimary(entities.GetBuffer<WeaponMount>(entity, true), out var primary);
-                if (armed && _army.IsOwnedBy(i, turn.Owner) && Weapon.CanHit(primary.Targets, NavLayer.Ground)
+                if (armed && Weapon.CanHit(primary.Targets, NavLayer.Ground)
                     && IsFreeForWave(ref state, turn, snapshot, entity))
                 {
                     wave.Add(i);
