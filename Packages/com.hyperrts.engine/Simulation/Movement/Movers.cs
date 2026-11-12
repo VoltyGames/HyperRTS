@@ -19,14 +19,22 @@ namespace HyperRTS.Simulation.Movement
         [ReadOnly] public ComponentLookup<Locomotion> Locomotions;
         public float DeltaTime;
 
-        public static Movers Create(ref SystemState state, in RightOfWay rightOfWay, in SpatialIndex index,
-            float deltaTime) => new()
+        /// <summary>Made in the system's OnCreate, so its lookup is made once; <see cref="Update"/> readies it each frame.</summary>
+        public Movers(ref SystemState state)
         {
-            Index = index,
-            RightOfWay = rightOfWay,
-            Locomotions = state.GetComponentLookup<Locomotion>(true),
-            DeltaTime = deltaTime,
-        };
+            Index = default;
+            RightOfWay = default;
+            Locomotions = state.GetComponentLookup<Locomotion>(true);
+            DeltaTime = 0f;
+        }
+
+        public void Update(ref SystemState state, in RightOfWay rightOfWay, in SpatialIndex index, float deltaTime)
+        {
+            Locomotions.Update(ref state);
+            RightOfWay = rightOfWay;
+            Index = index;
+            DeltaTime = deltaTime;
+        }
 
         public readonly MoveFrame Begin(in MoverChunk chunk, int index, float top)
         {

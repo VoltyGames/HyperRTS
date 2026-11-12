@@ -29,11 +29,15 @@ namespace HyperRTS.Simulation.Movement
         private static readonly ProfilerMarker MoveMarker = new("MovementSystem.Move");
 
         private RightOfWay _rightOfWay;
+        private Movers _shared;
+        private MoverHandles _handles;
         private EntityQuery _movers;
 
         public void OnCreate(ref SystemState state)
         {
             _rightOfWay = new RightOfWay(ref state);
+            _shared = new Movers(ref state);
+            _handles = new MoverHandles(ref state);
             _movers = MoverHandles.Query().Build(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
@@ -51,17 +55,18 @@ namespace HyperRTS.Simulation.Movement
             }
 
             _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
-            var index = SystemAPI.GetSingleton<SpatialIndex>();
+            _shared.Update(ref state, _rightOfWay, SystemAPI.GetSingleton<SpatialIndex>(), deltaTime);
+            _handles.Update(ref state);
 
             state.Dependency = new MoveJob
             {
                 Mover = new GroundMover
                 {
-                    Movers = Movers.Create(ref state, _rightOfWay, index, deltaTime),
+                    Movers = _shared,
                     Grid = SystemAPI.GetSingleton<NavGrid>(),
                     Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 },
-                Handles = new MoverHandles(ref state),
+                Handles = _handles,
             }.ScheduleParallel(_movers, state.Dependency);
         }
 

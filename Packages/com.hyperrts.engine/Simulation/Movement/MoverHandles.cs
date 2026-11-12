@@ -43,6 +43,24 @@ namespace HyperRTS.Simulation.Movement
             _drives = state.GetComponentTypeHandle<LocomotionState>();
         }
 
+        /// <summary>Readies the handles, made once in the system's OnCreate, for this frame.</summary>
+        public void Update(ref SystemState state)
+        {
+            _entities.Update(ref state);
+            _transforms.Update(ref state);
+            _speeds.Update(ref state);
+            _agents.Update(ref state);
+            _owners.Update(ref state);
+            _destinations.Update(ref state);
+            _paths.Update(ref state);
+            _waypoints.Update(ref state);
+            _progresses.Update(ref state);
+            _arrivals.Update(ref state);
+            _velocities.Update(ref state);
+            _aims.Update(ref state);
+            _drives.Update(ref state);
+        }
+
         /// <summary>The components every mover has. Present, not enabled: arrival and facing are switched here, so disabled ones must still match.</summary>
         public static EntityQueryBuilder Query() => new EntityQueryBuilder(Allocator.Temp)
             .WithAllRW<LocalTransform>().WithAllRW<PathState>().WithAllRW<PathWaypoint>()

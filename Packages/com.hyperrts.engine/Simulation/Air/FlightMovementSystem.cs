@@ -26,11 +26,15 @@ namespace HyperRTS.Simulation.Air
     public partial struct FlightMovementSystem : ISystem
     {
         private RightOfWay _rightOfWay;
+        private Movers _shared;
+        private MoverHandles _handles;
         private EntityQuery _fliers;
 
         public void OnCreate(ref SystemState state)
         {
             _rightOfWay = new RightOfWay(ref state);
+            _shared = new Movers(ref state);
+            _handles = new MoverHandles(ref state);
             _fliers = MoverHandles.Query().WithAll<Flight>().Build(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
@@ -47,17 +51,18 @@ namespace HyperRTS.Simulation.Air
             }
 
             _rightOfWay.Update(ref state, SystemAPI.GetSingleton<OwnerRelations>());
-            var index = SystemAPI.GetSingleton<SpatialIndex>();
+            _shared.Update(ref state, _rightOfWay, SystemAPI.GetSingleton<SpatialIndex>(), deltaTime);
+            _handles.Update(ref state);
 
             state.Dependency = new FlyJob
             {
                 Mover = new FlightMover
                 {
-                    Movers = Movers.Create(ref state, _rightOfWay, index, deltaTime),
+                    Movers = _shared,
                     Grid = SystemAPI.GetSingleton<NavGrid>(),
                     Docked = SystemAPI.GetComponentLookup<Docked>(true),
                 },
-                Handles = new MoverHandles(ref state),
+                Handles = _handles,
                 Flights = SystemAPI.GetComponentTypeHandle<Flight>(true),
             }.ScheduleParallel(_fliers, state.Dependency);
         }
