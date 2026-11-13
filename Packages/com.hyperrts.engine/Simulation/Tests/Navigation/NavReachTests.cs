@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
@@ -207,6 +208,39 @@ namespace HyperRTS.Simulation.Tests.Navigation
             Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<ActiveOrder>(dozer), 20f), "the order finished");
             Assert.IsFalse(World.IsEnabled<MoveDestination>(dozer), "and the walk with it");
             Assert.AreEqual(0f, World.Get<ConstructionProgress>(site).Value, "nothing was built");
+        }
+
+        [TestCase(0f)]
+        [TestCase(90f)]
+        [TestCase(180f)]
+        [TestCase(270f)]
+        public void LongBuilder_StartsBuildingNearTheSite_FromAnyHeading_WithoutCircling(float headingDegrees)
+        {
+            var site = World.SpawnBuilding(1, new float3(20f, 0f, 0f), new float2(8f, 8f), new TestBuilding
+            {
+                Complete = false,
+                BuildTime = 60f,
+            });
+            var start = new float3(-5f, 0f, 3f);
+            var truck = World.MakeBuilder(SpawnTruck(start));
+            World.Set(truck, LocalTransform.FromPositionRotation(start, quaternion.RotateY(math.radians(headingDegrees))));
+            World.Order(truck, OrderType.Build, site);
+
+            var travelled = 0f;
+            var last = start.xz;
+            var building = false;
+            for (var t = 0f; t < 30f && !building; t += TestWorld.FrameTime)
+            {
+                World.Tick();
+                var now = World.GetPosition(truck).xz;
+                travelled += math.distance(now, last);
+                last = now;
+                building = World.IsEnabled<BuildWork>(truck);
+            }
+
+            Assert.IsTrue(building, "reached build state");
+            var straight = math.distance(start.xz, new float2(16f, 0f));
+            Assert.Less(travelled, straight * 1.5f + 10f, $"no detour ({travelled:F1} m for {straight:F1} m)");
         }
 
         private Entity SpawnTruck(float3 position)
