@@ -18,6 +18,9 @@ namespace HyperRTS.Simulation.Navigation.Reach
         /// <summary>How far a unit's edge may be from the nearest it can get to a footprint.</summary>
         public const float Slack = 1f;
 
+        // An aircraft further off the surface than this is in the air.
+        private const float AloftHeight = 0.5f;
+
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
@@ -52,6 +55,18 @@ namespace HyperRTS.Simulation.Navigation.Reach
         /// <summary>Whether a unit standing at <paramref name="point"/> is at the target, as a spot it takes there is.</summary>
         public bool IsBy(Entity target, float2 point, in NavAgent agent) =>
             Footprint(target).Gap(point) <= Reach(agent.HalfLength, _navCellSize);
+
+        /// <summary>Whether the target is an aircraft off the surface below it, over the heads of units on the ground.</summary>
+        public bool IsAloft(Entity target, in NavGrid grid)
+        {
+            if (!_agents.TryGetComponent(target, out var agent) || agent.Layer != NavLayer.Air)
+            {
+                return false;
+            }
+
+            var position = _transforms[target].Position;
+            return position.y - grid.SurfaceHeight(position) > AloftHeight;
+        }
 
         /// <summary>The entity is still in the world (destroyed targets lose their transform first).</summary>
         public bool Exists(Entity entity) => _transforms.HasComponent(entity);

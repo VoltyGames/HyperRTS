@@ -61,6 +61,7 @@ namespace HyperRTS.Simulation.Air
                     Movers = _shared,
                     Grid = SystemAPI.GetSingleton<NavGrid>(),
                     Docked = SystemAPI.GetComponentLookup<Docked>(true),
+                    Calls = SystemAPI.GetComponentLookup<BoardingCall>(true),
                 },
                 Handles = _handles,
                 Flights = SystemAPI.GetComponentTypeHandle<Flight>(true),

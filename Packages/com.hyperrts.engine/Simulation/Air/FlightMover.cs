@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Transport;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -18,6 +19,7 @@ namespace HyperRTS.Simulation.Air
         public Movers Movers;
         [ReadOnly] public NavGrid Grid;
         [ReadOnly] public ComponentLookup<Docked> Docked;
+        [ReadOnly] public ComponentLookup<BoardingCall> Calls;
 
         public void Fly(in MoverChunk chunk, int index, in Flight flight)
         {
@@ -29,7 +31,7 @@ namespace HyperRTS.Simulation.Air
             var speed = chunk.Speeds[index];
             var deltaTime = Movers.DeltaTime;
             var maxStep = speed.Value * deltaTime;
-            var landed = Docked.HasEnabled(chunk.Entities[index]);
+            var landed = IsLanded(chunk.Entities[index], moving.ValueRO, flight);
             var frame = Movers.Begin(chunk, index, speed.Value);
             var from = frame.From;
             ref readonly var crowd = ref frame.Crowd;
@@ -52,6 +54,17 @@ namespace HyperRTS.Simulation.Air
 
             Face(ref transform, heading);
             velocity.Value = (transform.Position.xz - from) / deltaTime;
+        }
+
+        // On its pad, or down for a passenger waiting to board: only an aircraft that hovers, while it stands.
+        private readonly bool IsLanded(Entity aircraft, bool moving, in Flight flight)
+        {
+            if (Docked.HasEnabled(aircraft))
+            {
+                return true;
+            }
+
+            return !moving && flight.LoiterRadius <= 0f && Calls.HasEnabled(aircraft);
         }
 
         /// <summary>The step toward the destination while moving, else the idle loiter, and the way to face.</summary>

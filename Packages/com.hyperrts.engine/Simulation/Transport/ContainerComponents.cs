@@ -41,6 +41,14 @@ namespace HyperRTS.Simulation.Transport
         }
     }
 
+    /// <summary>
+    /// Enabled while a passenger in reach waits to board a container in the air, so a hovering aircraft that stands
+    /// lands for it. <see cref="BoardingSystem"/> calls afresh each frame.
+    /// </summary>
+    public struct BoardingCall : IComponentData, IEnableableComponent
+    {
+    }
+
     /// <summary>A passenger aboard, in boarding order.</summary>
     [InternalBufferCapacity(0)]
     public struct Cargo : IBufferElementData

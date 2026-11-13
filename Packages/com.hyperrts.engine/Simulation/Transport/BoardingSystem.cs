@@ -41,11 +41,13 @@ namespace HyperRTS.Simulation.Transport
             _boarding.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
 
+            new CallOffJob().ScheduleParallel();
             new BoardJob
             {
                 Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Boarding = _boarding,
                 ContainerLookup = SystemAPI.GetComponentLookup<Container>(true),
+                CallLookup = SystemAPI.GetComponentLookup<BoardingCall>(false),
                 Reach = _reach,
                 StanceLookup = SystemAPI.GetComponentLookup<CombatStance>(false),
                 AttackLookup = SystemAPI.GetComponentLookup<AttackTarget>(false),
@@ -53,6 +55,13 @@ namespace HyperRTS.Simulation.Transport
                 QueueLookup = SystemAPI.GetBufferLookup<QueuedOrder>(false),
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
+        }
+
+        /// <summary>Last frame's calls lapse; a passenger still waiting calls again.</summary>
+        [BurstCompile]
+        private partial struct CallOffJob : IJobEntity
+        {
+            private void Execute(EnabledRefRW<BoardingCall> called) => called.ValueRW = false;
         }
 
         /// <summary>Single-threaded: several passengers may board one container in a frame.</summary>
@@ -65,6 +74,7 @@ namespace HyperRTS.Simulation.Transport
             public OwnerRelations Relations;
             public Boarding Boarding;
             [ReadOnly] public ComponentLookup<Container> ContainerLookup;
+            public ComponentLookup<BoardingCall> CallLookup;
             public TargetReach Reach;
             [ReadOnly] public NavGrid Grid;
             public ComponentLookup<CombatStance> StanceLookup;
@@ -93,6 +103,13 @@ namespace HyperRTS.Simulation.Transport
                     new MoveControl(destination, moving, arrived), Grid, ReachClaims.None);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
+                    return;
+                }
+
+                // A container in the air is called down, and boarded once it stands on the ground.
+                if (Reach.IsAloft(container, Grid))
+                {
+                    CallLookup.SetComponentEnabled(container, true);
                     return;
                 }
 

@@ -11,6 +11,8 @@ namespace HyperRTS.Simulation.Transport
         {
             writer.Add(container);
             writer.AddBuffer<Cargo>();
+            writer.Add<BoardingCall>();
+            writer.SetEnabled<BoardingCall>(false);
         }
 
         /// <summary>Lets a share of each hit on the container through to its passengers; see <see cref="Shelter"/>.</summary>

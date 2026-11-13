@@ -153,6 +153,10 @@ docked. Its remains fall to the ground under gravity. Fuel is left to game code.
 largest passenger and whether passengers fire out or survive its death. Passengers step out at its `exit`, or around it
 when it has none. They get out or die in the frame the container dies, and dying passengers credit its killer.
 
+A passenger boards once in reach of a container on the ground. One in the air is called down first
+(`BoardingCall`): an aircraft that hovers and stands still lands for a waiting passenger and climbs back once no
+one waits. An aircraft on the move, or one that can't hover, is not boarded in flight.
+
 A container may list `firingPorts`, child transforms at windows and loopholes with the blue axis pointing out. A
 passenger that fires from inside shoots from the port facing its target best: the Fire cue, projectile start and hit
 origin all sit there. Without ports it fires from the centre. `ContainerRule` warns about ports that are empty or
