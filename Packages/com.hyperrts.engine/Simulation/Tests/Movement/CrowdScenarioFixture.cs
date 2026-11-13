@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;

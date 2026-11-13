@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Spatial;
 using NUnit.Framework;
 using Unity.Entities;

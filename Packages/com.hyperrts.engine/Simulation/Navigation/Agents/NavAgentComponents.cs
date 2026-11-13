@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Navigation.Areas;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;

@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Entities;

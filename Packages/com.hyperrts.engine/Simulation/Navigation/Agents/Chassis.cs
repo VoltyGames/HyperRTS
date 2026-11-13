@@ -1,9 +1,9 @@
 using HyperRTS.Simulation.Common.Geometry;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Navigation.Drive
+namespace HyperRTS.Simulation.Navigation.Agents
 {
-    /// <summary>How a hull on wheels or tracks turns and reverses, shared by the path planner and locomotion.</summary>
+    /// <summary>How a hull on wheels or tracks turns and reverses.</summary>
     public struct Chassis
     {
         /// <summary>Metres from the steering axles' midpoint to the rear axle; 0 for tracks.</summary>

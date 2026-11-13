@@ -1,10 +1,10 @@
+using HyperRTS.Simulation.Navigation.Agents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Navigation.Drive;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;

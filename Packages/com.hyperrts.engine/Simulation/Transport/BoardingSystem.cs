@@ -41,7 +41,6 @@ namespace HyperRTS.Simulation.Transport
             _boarding.Update(ref state);
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
 
-            new CallOffJob().ScheduleParallel();
             new BoardJob
             {
                 Relations = SystemAPI.GetSingleton<OwnerRelations>(),
@@ -55,13 +54,6 @@ namespace HyperRTS.Simulation.Transport
                 QueueLookup = SystemAPI.GetBufferLookup<QueuedOrder>(false),
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
-        }
-
-        /// <summary>Last frame's calls lapse; a passenger still waiting calls again.</summary>
-        [BurstCompile]
-        private partial struct CallOffJob : IJobEntity
-        {
-            private void Execute(EnabledRefRW<BoardingCall> called) => called.ValueRW = false;
         }
 
         /// <summary>Single-threaded: several passengers may board one container in a frame.</summary>

@@ -61,10 +61,10 @@ namespace HyperRTS.Simulation.Air
                     Movers = _shared,
                     Grid = SystemAPI.GetSingleton<NavGrid>(),
                     Docked = SystemAPI.GetComponentLookup<Docked>(true),
-                    Calls = SystemAPI.GetComponentLookup<BoardingCall>(true),
                 },
                 Handles = _handles,
                 Flights = SystemAPI.GetComponentTypeHandle<Flight>(true),
+                Calls = SystemAPI.GetComponentTypeHandle<BoardingCall>(false),
             }.ScheduleParallel(_fliers, state.Dependency);
         }
 
@@ -76,14 +76,23 @@ namespace HyperRTS.Simulation.Air
             public MoverHandles Handles;
             [ReadOnly] public ComponentTypeHandle<Flight> Flights;
 
+            // A call lasts one frame: the passenger still waiting calls again.
+            public ComponentTypeHandle<BoardingCall> Calls;
+
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask)
             {
                 var movers = Handles.Open(chunk);
                 var flights = chunk.GetNativeArray(ref Flights);
+                var callable = chunk.Has(ref Calls);
                 for (var i = 0; i < movers.Count; i++)
                 {
-                    Mover.Fly(movers, i, flights[i]);
+                    var called = callable && chunk.IsComponentEnabled(ref Calls, i);
+                    Mover.Fly(movers, i, flights[i], called);
+                    if (called)
+                    {
+                        chunk.SetComponentEnabled(ref Calls, i, false);
+                    }
                 }
             }
         }

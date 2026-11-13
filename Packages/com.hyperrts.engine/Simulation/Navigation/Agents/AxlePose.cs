@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Common.Geometry;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Navigation.Drive
+namespace HyperRTS.Simulation.Navigation.Agents
 {
     /// <summary>Where a hull's rear axle stands on XZ and which way the hull faces.</summary>
     public struct AxlePose

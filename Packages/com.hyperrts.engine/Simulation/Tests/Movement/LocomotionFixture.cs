@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Movement;
 using NUnit.Framework;

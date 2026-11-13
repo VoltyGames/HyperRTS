@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;

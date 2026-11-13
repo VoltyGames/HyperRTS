@@ -2,7 +2,6 @@ using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 
 namespace HyperRTS.Editor.Validation.Rules.Units
 {

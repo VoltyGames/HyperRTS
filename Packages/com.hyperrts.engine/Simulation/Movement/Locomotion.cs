@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Navigation.Drive;
+using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Entities;
 using Unity.Mathematics;
 

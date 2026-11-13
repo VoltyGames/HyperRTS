@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;

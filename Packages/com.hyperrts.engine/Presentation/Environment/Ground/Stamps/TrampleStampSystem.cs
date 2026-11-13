@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Vision;
