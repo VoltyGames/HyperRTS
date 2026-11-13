@@ -1,6 +1,5 @@
 using Unity.Collections.LowLevel.Unsafe;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
@@ -30,42 +29,16 @@ namespace HyperRTS.Simulation.Navigation.Paths
             var points = new NativeList<float3>(16, Allocator.Temp);
             var route = Route(task, access, points);
             var result = new PathResult { Expansions = route.x, Searches = route.y };
-            // A route backed whole is driven as drawn: the drive planner plans forward hulls.
             var reverses = request.DrivesBackward(points);
-            var drives = !reverses && task.Query.Route != PathRoute.Stay && DrivePlanner.Applies(request.Agent);
             var path = new UnsafeList<PathWaypoint>(points.Length, Allocator.TempJob);
-            // A path that needs a drive search leaves its drawn corners for the drive job to plan in turn.
-            var planned = drives && TryDrive(request, access, points, ref path);
-            result.DrivePending = drives && !planned;
-            if (!planned)
+            foreach (var point in points)
             {
-                foreach (var point in points)
-                {
-                    path.Add(new PathWaypoint
-                    {
-                        Position = new float3(point.x, request.Start.y, point.z), Reverse = reverses,
-                    });
-                }
+                path.Add(new PathWaypoint { Position = new float3(point.x, request.Start.y, point.z), Reverse = reverses });
             }
 
             Served[index] = path;
             points.Dispose();
             Results[index] = result;
-        }
-
-        // Plans the path when its sweeps need no search, as most do.
-        private static bool TryDrive(in PathRequest request, in NavAccess access, NativeList<float3> points,
-            ref UnsafeList<PathWaypoint> path)
-        {
-            var planner = DrivePlanner.WithoutSearch(Allocator.Temp);
-            var done = planner.Plan(request, access, points, 0, true);
-            if (done)
-            {
-                path.AddRange(planner.Waypoints);
-            }
-
-            planner.Dispose();
-            return done;
         }
 
         // Cells expanded, and 1 when a fine search ran.

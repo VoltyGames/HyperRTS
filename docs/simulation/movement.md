@@ -2,8 +2,7 @@
 
 [Docs](../README.md) ▸ [Simulation](README.md) ▸ Navigation, Movement, Air, Transport
 
-Pathfinding, how units follow paths and share space, aircraft and containers. Vehicle handling and the drive planner
-are in [driving](driving.md).
+Pathfinding, how units follow paths and share space, aircraft and containers. Vehicle handling is in [driving](driving.md).
 
 ## Navigation
 
@@ -84,7 +83,7 @@ A moving unit steers by sampling (`Steering`): it scores candidate velocities ag
   RVO-style, plus the wall term and small penalties for straying, standing still and swerving left, so a head-on pair
   both keep right.
 - **Skipping.** The planned velocity is taken without sampling when it hits nothing. Parked units never steer. A
-  three-point turn, a back-off or a planned manoeuvre skips steering, yet stands if driving on would run deeper into a
+  three-point turn or a back-off skips steering, yet stands if driving on would run deeper into a
   neighbour than standing.
 
 The chosen velocity goes to `Locomotion` as the heading and speed to drive ([driving](driving.md)). Layers that can't

@@ -60,17 +60,9 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>Also keeps the footprint off the walls of <paramref name="access"/>; aircraft have none.</summary>
         public void AddWalls(in NavAccess access) => _walls.Add(access);
 
-        /// <summary>
-        /// Drives the leg, steering when the planned velocity would hit something. A planned manoeuvre isn't steered,
-        /// which would break its legs; it waits instead.
-        /// </summary>
-        public float2 Drive(ref Driver driver, in PathLeg leg) =>
-            leg.Tight ? DriveTight(ref driver, leg) : DriveSampled(ref driver, leg);
-
-        // Stands while driving on would run deeper into a neighbour than standing would. A planned manoeuvre held too
-        // long replans, so two waiting on each other can't deadlock; a reflex one tries its other gear, so a hull
-        // with a unit behind it turns round forwards.
-        private float2 DriveTight(ref Driver driver, in PathLeg leg)
+        // Stands while driving on would run deeper into a neighbour than standing would, trying its other gear, so a
+        // hull with a unit behind it turns round forwards.
+        private float2 DriveReflex(ref Driver driver, in PathLeg leg)
         {
             var start = driver;
             var step = driver.Drive(leg);
@@ -78,10 +70,7 @@ namespace HyperRTS.Simulation.Movement
             {
                 driver = start;
                 step = driver.Steer(leg, float2.zero);
-                if (!leg.Tight)
-                {
-                    driver.BackOff();
-                }
+                driver.BackOff();
             }
 
             driver.State.LastChoice = step / driver.DeltaTime;
@@ -92,8 +81,11 @@ namespace HyperRTS.Simulation.Movement
             _crowd.Overlap(_crowd.Axis, velocity, 0f, Horizon) >
             _crowd.Overlap(_crowd.Axis, float2.zero, 0f, Horizon) + Unchanged;
 
-        // A reflex manoeuvre runs at a crawl, and steering would break its legs.
-        private float2 DriveSampled(ref Driver driver, in PathLeg leg)
+        /// <summary>
+        /// Drives the leg, steering when the planned velocity would hit something. A reflex manoeuvre isn't steered,
+        /// which would break it; it waits instead.
+        /// </summary>
+        public float2 Drive(ref Driver driver, in PathLeg leg)
         {
             _start = driver;
             var step = driver.Drive(leg);
@@ -103,7 +95,7 @@ namespace HyperRTS.Simulation.Movement
             if (driver.State.IsManoeuvring)
             {
                 driver = _start;
-                return DriveTight(ref driver, leg);
+                return DriveReflex(ref driver, leg);
             }
 
             _last = _start.State.LastChoice;

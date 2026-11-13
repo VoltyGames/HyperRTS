@@ -11,8 +11,6 @@ motion rigs, multiplayer, and the editor tooling with the Map Editor.
 
 In progress:
 
-- **Vehicle driving**: wheeled vehicles turn about the rear axle and `DrivePlanner` plans forward and reverse legs
-  where a chassis can't drive a path as drawn. See [drive planner](simulation/driving.md#drive-planner).
 - **Unit motion**: tracks don't scroll and suspension doesn't flex yet. See [motion rig](presentation/animation.md#motion-rig).
 
 ## Decisions
@@ -22,7 +20,7 @@ In progress:
 | Grid with distance fields and a sector graph, not a navmesh | Buildings, crushable scenery, decks and water restamp cells cheaply |
 | Corridor A* for single moves, a flow field per formation order | One search serves a whole group; one-off moves stay cheap |
 | Sampled steering, not ORCA | Vehicles turn at their rate and radius, and walls count like neighbours |
-| Hybrid A* only where the chassis can't drive the path | Easy paths stay cheap; yards, tight corners and wedges get real manoeuvres |
+| Reflexes, not a drive planner | Paths stay as drawn; wheels and tracks turn, back out and swing round by simple rules |
 | Server-authoritative Netcode, not lockstep | Burst float math is not deterministic across platforms |
 | Replays record state, not commands | The simulation is not deterministic |
 | One damage queue, one stat-modifier buffer | Armor, splash, kill credit and every bonus share one path |

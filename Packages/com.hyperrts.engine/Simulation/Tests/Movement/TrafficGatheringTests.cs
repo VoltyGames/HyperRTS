@@ -26,17 +26,13 @@ namespace HyperRTS.Simulation.Tests.Movement
                 trucks[i] = SpawnTruck(new float3(-30f + i * 4f, 0f, 16f + i * 3f), math.PI * 0.5f);
             }
 
-            var before = World.ReadPathStats();
             Gather(trucks, new float3(30f, 0f, 0f), new float3(-30f, 0f, 0f), new float2(10f, 10f), GatherSeconds);
-            var failures = World.ReadPathStats().Drive.Failures - before.Drive.Failures;
-            var searches = World.ReadPathStats().Drive.Searches - before.Drive.Searches;
             _record.Log("gather trips");
 
-            var numbers = Numbers() + $", {failures} of {searches} drive searches failed";
+            var numbers = Numbers();
             Assert.Greater(_record.Trips, 15, $"the trucks kept delivering: {numbers}");
             Assert.Less(_record.MaxLoop, 180f, $"no truck turned round forwards: {numbers}; {_record.WorstLoop}");
             Assert.AreEqual(0, _record.GiveUps, $"no truck gave up: {numbers}");
-            Assert.AreEqual(0, failures, $"drive searches failed: {numbers}");
         }
 
         [Test]

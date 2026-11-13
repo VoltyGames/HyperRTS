@@ -76,24 +76,5 @@ namespace HyperRTS.Simulation.Tests.Movement
         }
 
         protected static float TurnBetween(float2 a, float2 b) => math.acos(math.clamp(math.dot(a, b), -1f, 1f));
-
-        // Reversing while its path holds a planned reverse leg.
-        protected bool IsBackingOnAPlannedLeg(Entity unit)
-        {
-            if (World.Get<LocomotionState>(unit).Speed > -0.1f)
-            {
-                return false;
-            }
-
-            foreach (var waypoint in World.EntityManager.GetBuffer<PathWaypoint>(unit))
-            {
-                if (waypoint.Tight && waypoint.Reverse)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 }

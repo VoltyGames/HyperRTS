@@ -1,9 +1,9 @@
 # Vehicle driving
 
-[Docs](../README.md) ▸ [Simulation](README.md) ▸ Locomotion, Chassis, Drive planner
+[Docs](../README.md) ▸ [Simulation](README.md) ▸ Locomotion, Chassis, reflexes
 
-How vehicles move as vehicles: handling, wheels and tracks, and the planner that makes their paths drivable. Paths,
-steering and arrival are in [movement](movement.md).
+How vehicles move as vehicles: handling, wheels and tracks, and the reflexes that get them round corners and out of
+walls. Paths, steering and arrival are in [movement](movement.md).
 
 ## Locomotion
 
@@ -20,7 +20,7 @@ with an enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it stand
 | Steer Rate | How fast the steered wheels turn, in degrees per second |
 | Reverse Speed | Top speed backing up |
 
-`NavAgent.Chassis` says how the hull moves, for locomotion and the planner alike. `UnitAuthoring` bakes it from the
+`NavAgent.Chassis` says how the hull moves, for locomotion and the path request alike. `UnitAuthoring` bakes it from the
 `LocomotionAuthoring` beside it:
 
 | Field | Does |
@@ -29,7 +29,7 @@ with an enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it stand
 | Rear Axle | Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre; 0 for tracks |
 | Turn Radius | Tightest circle of the rear axle. 0 turns at any speed |
 | Pivots | Stops and turns in place when far off its heading, as tracked vehicles do |
-| Reverse Run | Longest reverse leg of a reflex or a planned manoeuvre; 0 never reverses, even on a reverse move |
+| Reverse Run | Longest reverse leg of a reflex; 0 never reverses, even on a reverse move |
 
 A hull with a turn radius that doesn't pivot is wheeled. It aims its rear axle at a look-ahead point on the path and
 steers an arc through it (pure pursuit), with the steer angle changing at most at the steer rate. The point is never
@@ -39,7 +39,7 @@ Locomotion's **Fill from wheels** button measures wheelbase and rear axle from t
 to back: the first Steering Axles axles steer and the rest make the rear axle. `LocomotionRule` checks a wheeled
 unit has a wheelbase and both axles inside its hull.
 
-Reflexes, for a unit off a planned manoeuvre:
+Reflexes:
 
 - It cuts corners within its look-ahead once the next corner is in sight, slows to hold the arc to the next corner
   and brakes to stop at the goal.
@@ -48,12 +48,10 @@ Reflexes, for a unit off a planned manoeuvre:
   ring to turn round. With a unit behind it, it tries forwards for a moment.
 - Wheels can't turn standing, so a leg that runs into a wall drives the other way for a moment
   (`LocomotionState.OtherWay`). This is a manoeuvre timer, not a stuck test.
+- Tracks whose pivot the walls block, standing in a slot too narrow to turn, back straight out with their tail along
+  the path until they can turn (`Driver.BackOutOfPivot`, which starts the same back-out as `Locomotion.TurnOut`).
 - A hull whose turn would swing an end into a wall slides off it. An overlapping hull never moves or turns deeper in.
   A wall that stops it head-on takes its speed; a glancing slide costs none.
-
-On a planned manoeuvre (a `Tight` leg, `PathLeg.Tight`) none of the reflexes run. The vehicle follows the legs in
-their gear, aiming a short way ahead and never past the next gear change (`PathLeg.Aim`), brakes to each gear change
-as to the goal, changes gear standing, and keeps to a slow tight speed (`Locomotion.TightSpeed`).
 
 ## Backing up
 
@@ -61,31 +59,6 @@ A vehicle with a reverse run drives a whole route backwards, front toward where 
 `MoveDestination.Backward` is set, as the reverse move order (`CommandType.ReverseMove`, `OrderType.ReverseMove`,
 trait `DrivesBackward`) does, or the route is at most three hull lengths and starts behind it, so a truck backs from a
 drop-off to a field beside it rather than turning round. `PathRequest.DrivesBackward` decides when the route is
-served. The route then skips the drive planner and is driven as drawn, every waypoint marked `Reverse`, at the
-reverse speed with the rear axle leading. A goal close behind is backed onto, never three-point turned. Units
+served. The route is driven as drawn, every waypoint marked `Reverse`, at the reverse speed with the rear axle
+leading. A goal close behind is backed onto, never three-point turned. Units
 without a reverse run, foot units and aircraft take a reverse move as a plain move.
-
-## Drive planner
-
-`DrivePlanner` checks every fresh path of a unit with a turn radius or a hull longer than it is wide, in the same serve
-job as the route. Easy paths run no search. A path with a stretch to search goes to one serial `PathDriveJob`, which spends
-a fixed budget a frame (`PathfindingSystem.DriveBudget`). The first such path plans within it and leaves any stretch
-past it as drawn (`PathState.PartlyPlanned`), planned once its planned part is driven. Later paths wait a frame.
-
-- **Start and corners.** Wheels get onto the path by reflex, so their start is not planned. Tracks turn in place
-  to the first leg, or the planner sweeps a `DriveCurve` (the shortest forward turn, straight, turn) from the unit's
-  pose to a pose along the path. Each corner is swept the same way, and a `DriveHull` checks the sweep against the
-  wall field. When walls held the unit as it asked for a replan (`PathState.Stuck`), the start is always searched,
-  wheels too.
-- **Search.** A blocked stretch runs a `DriveSearch`, Hybrid A* over the rear axle's pose in a window round the
-  stretch, forwards and, within `ReverseRun`, backwards. A `DriveHeuristic` guides it with wall-aware distances, so
-  routes the hull can turn on are preferred. A pose that overlaps walls is allowed only while the overlap shrinks, so
-  a wedged start plans its way out. A search stops at a fixed expansion cap (`DriveSearch.MaxExpansions`); a failed
-  stretch tries once more reaching further along the path, then stays as drawn.
-- **Result.** The stretch becomes `PathWaypoint`s every 1.5 m, each `Tight`. The way up to a stretch is an
-  ordinary leg, ending on a drawn point at the stretch's first pose. `Reverse` marks a leg driven backwards, and
-  a gear change is a waypoint where it flips. `PathStats.Drive` counts searches, expansions and failures.
-- **Following.** `PathState.SkipCorners` never cuts a tight waypoint, and goal moves never move a tight last waypoint
-  (a moved goal searches again).
-- The Paths debug layer draws tight legs in orange, reverse legs dashed, gear changes as dots and each wheeled
-  vehicle's rear axle.

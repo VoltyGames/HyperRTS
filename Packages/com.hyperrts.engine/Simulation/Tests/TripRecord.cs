@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -36,7 +35,6 @@ namespace HyperRTS.Simulation.Tests
         public int GiveUps => Sum(unit => unit.GiveUps);
         public int Stops => Sum(unit => unit.Stops);
         public int Trips => Sum(unit => unit.Trips);
-        public float TightSeconds => Sum(unit => unit.TightSeconds);
 
         public float MeanTripSeconds => Trips == 0 ? 0f : Sum(unit => unit.TripSeconds) / Trips;
 
@@ -70,7 +68,7 @@ namespace HyperRTS.Simulation.Tests
             }
 
             UnityEngine.Debug.Log($"[{title}] summary: {Trips} trips, mean {MeanTripSeconds:F1} s, " +
-                             $"max loop {MaxLoop:F0} deg, tight {TightSeconds:F1} s, stops {Stops}, " +
+                             $"max loop {MaxLoop:F0} deg, stops {Stops}, " +
                              $"give-ups {GiveUps}, max sideways {MaxSideways:F2} m/s");
         }
 
@@ -135,7 +133,6 @@ namespace HyperRTS.Simulation.Tests
             public float3 MaxLoopAt;
 
             private float _seconds;
-            public float TightSeconds;
             public float Sideways;
             public int Stops;
             public int GiveUps;
@@ -175,17 +172,12 @@ namespace HyperRTS.Simulation.Tests
 
                 var ordered = world.IsEnabled<MoveDestination>(Unit);
                 CountStops(ordered, math.length(world.Get<Velocity>(Unit).Value));
-                if (ordered && PathState.IsPlannedManoeuvre(world.Buffer<PathWaypoint>(Unit)))
-                {
-                    TightSeconds += Step;
-                }
-
                 CountGiveUps(world);
             }
 
             public override string ToString() =>
                 $"{Name}: {Metres:F0} m, turned {Turned:F0} deg, max loop {MaxLoop:F0} deg at {MaxLoopAt.xy} after {MaxLoopAt.z:F0} s, " +
-                $"tight {TightSeconds:F1} s, stops {Stops}, give-ups {GiveUps}, sideways {Sideways:F2} m/s, " +
+                $"stops {Stops}, give-ups {GiveUps}, sideways {Sideways:F2} m/s, " +
                 $"trips {Trips} (mean {(Trips == 0 ? 0f : TripSeconds / Trips):F1} s)";
 
             private static float Yaw(in LocalTransform transform)

@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -48,11 +47,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         /// <summary>1 when a fine search ran.</summary>
         public int Searches;
-
-        public DriveCounts Drive;
-
-        /// <summary>Its path needs a drive search the frame's budget hasn't reached yet.</summary>
-        public bool DrivePending;
     }
 
     /// <summary>The frame's chosen tasks, the abstract paths they search along and the group fields to build.</summary>

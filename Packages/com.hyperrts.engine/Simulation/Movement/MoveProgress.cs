@@ -79,8 +79,7 @@ namespace HyperRTS.Simulation.Movement
         /// Measures the path left and asks for a replan when due, backing off from <see cref="ReplanSeconds"/> to
         /// <see cref="MaxReplanSeconds"/>; true once stalled <see cref="GiveUpSeconds"/> near the end or held by walls.
         /// </summary>
-        public bool HasGivenUp(in Reading reading, DynamicBuffer<PathWaypoint> waypoints, ref PathState path,
-            WallHold hold, float deltaTime)
+        public bool HasGivenUp(in Reading reading, ref PathState path, WallHold hold, float deltaTime)
         {
             if (path.Status != PathStatus.Ready)
             {
@@ -91,12 +90,9 @@ namespace HyperRTS.Simulation.Movement
             var radius = reading.Radius;
             var facing = reading.Facing;
             var margin = NavTolerances.Arrive(radius);
-            // A planned manoeuvre stands to change gear and steer, so it replans sooner only while walls hold it.
-            var planned = PathState.IsPlannedManoeuvre(waypoints) && hold == WallHold.None &&
-                          Stalled < MaxReplanSeconds;
-            if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime) && !planned)
+            if (Track(remaining, facing, margin, hold == WallHold.Sunk, deltaTime))
             {
-                path.Replan(hold != WallHold.None);
+                path.Replan();
                 Replanned = true;
             }
 

@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Drive;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
@@ -21,12 +20,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
     [UpdateAfter(typeof(NavGridSystem))]
     public partial struct PathfindingSystem : ISystem
     {
-        /// <summary>
-        /// Drive search expansions a frame may spend, one capped search. The frame's first path that needs a search
-        /// stays within it, leaving any stretch past it as drawn; later paths that don't fit wait for the next frame.
-        /// </summary>
-        public const int DriveBudget = DriveSearch.MaxExpansions;
-
         /// <summary>Estimated expansions a frame's paths may cost; the frame's first request runs whatever its cost.</summary>
         public const float CostPerFrame = 30000f;
 
@@ -102,7 +95,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
             plan.Dispose(state.Dependency);
         }
 
-        // Fields first, as traces read them; then every task at once, each keeping its waypoints for the drive job to store.
+        // Fields first, as traces read them; then every task at once, each keeping its waypoints for the store job.
         private JobHandle Serve(ref SystemState state, in NavGrid grid, NativeList<PathRequest> requests,
             in PathPlan plan, double now, JobHandle dependency)
         {
@@ -119,11 +112,10 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 Grid = grid,
                 Served = plan.Served.AsDeferredJobArray(),
             }.Schedule(plan.Tasks, 1, dependency);
-            dependency = new PathDriveJob
+            dependency = new PathStoreJob
             {
                 Requests = requests.AsDeferredJobArray(),
                 Tasks = plan.Tasks.AsDeferredJobArray(),
-                Results = plan.Results.AsDeferredJobArray(),
                 Served = plan.Served.AsDeferredJobArray(),
                 Grid = grid,
                 WaypointLookup = SystemAPI.GetBufferLookup<PathWaypoint>(false),

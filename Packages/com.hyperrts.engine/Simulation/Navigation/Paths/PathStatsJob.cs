@@ -22,8 +22,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
                 stats.Expansions += result.Expansions;
                 stats.Searches += result.Searches;
                 stats.Estimated += (long)task.Cost;
-                stats.Drive.Add(result.Drive);
-                stats.DeferredDrives += result.DrivePending ? 1 : 0;
                 if (task.Kind == PathTaskKind.Search)
                 {
                     stats.SearchesByCause[(int)Requests[task.Request].Cause]++;

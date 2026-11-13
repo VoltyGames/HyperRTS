@@ -22,7 +22,7 @@ Gameplay modules, server-side and headless. [Overview and tiers](simulation/READ
 | --- | --- |
 | [Core](simulation/core.md) | Common, Stats, GameEntities, MatchStart, Match, Orders, Commands, Selection |
 | [Movement](simulation/movement.md) | Navigation, Movement, Air, Transport |
-| [Driving](simulation/driving.md) | Locomotion, Chassis, Drive planner |
+| [Driving](simulation/driving.md) | Locomotion, Chassis, reflexes |
 | [Combat](simulation/combat.md) | Combat, Destruction, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
 | [Weapons](simulation/weapons.md) | Trajectories, Salvos, Ammo, Aim, Deploying, Interception, Remains |
 | [Squads](simulation/squads.md) | Squads, Suppression, Retreat, Reinforce, Cover |

@@ -63,21 +63,44 @@ namespace HyperRTS.Simulation.Movement
             Walk(ref transform, capsule, from, wanted, agent, crowd);
 
             var stalled = HasStalled(chunk, index, ref frame, capsule, depth);
-            if (moving.ValueRO && (crowd.ReachedGroup || stalled))
+            Arrive(chunk, index, ref frame, stalled, step, !transform.Position.xz.Equals(wanted));
+            TurnOrBackOut(chunk, index, ref frame, capsule, facing, heading);
+            chunk.Velocities[index].Value = (transform.Position.xz - from) / Movers.DeltaTime;
+        }
+
+        private readonly void Arrive(in MoverChunk chunk, int index, ref MoveFrame frame, bool stalled, float2 step,
+            bool walled)
+        {
+            var moving = chunk.Moving(index);
+            if (moving.ValueRO && (frame.Crowd.ReachedGroup || stalled))
             {
-                path.Halt(moving, waypoints);
+                ref var path = ref chunk.Paths[index];
+                path.Halt(moving, chunk.Waypoints[index]);
             }
 
             var reason = stalled ? ArrivalReason.Stalled : ArrivalReason.Reached;
-            if (crowd.ReachedGroup)
+            if (frame.Crowd.ReachedGroup)
             {
                 reason = ArrivalReason.AtGroupmate;
             }
 
-            Movers.Finish(chunk, index, ref frame, reason, step, !transform.Position.xz.Equals(wanted));
+            Movers.Finish(chunk, index, ref frame, reason, step, walled);
+        }
 
-            Face(ref transform, capsule, agent, facing, heading, moving.ValueRO);
-            chunk.Velocities[index].Value = (transform.Position.xz - from) / Movers.DeltaTime;
+        // A hull that can't turn where it stands backs out, which the next frame's state carries.
+        private static void TurnOrBackOut(in MoverChunk chunk, int index, ref MoveFrame frame, in NavCapsule capsule,
+            float2 facing, float2 heading)
+        {
+            var moving = chunk.Moving(index).ValueRO;
+            ref var transform = ref chunk.Transforms[index];
+            if (Face(ref transform, capsule, chunk.Agents[index], facing, heading, moving) || !moving || !frame.Remembers)
+            {
+                return;
+            }
+
+            frame.Driver.BackOutOfPivot();
+            var drives = chunk.Drives;
+            drives[index] = frame.Driver.State;
         }
 
         /// <summary>Whether the unit gave up on its way after this frame's walk, turning out of walls when it can.</summary>
@@ -94,10 +117,9 @@ namespace HyperRTS.Simulation.Movement
             var reading = new MoveProgress.Reading(position, frame.Facing, agent.Radius, chunk.Destinations[index].Value,
                 waypoints, path);
             var stalled = moving.ValueRO && !crowd.ReachedGroup &&
-                          chunk.Progresses[index].HasGivenUp(reading, waypoints, ref path, hold, Movers.DeltaTime);
+                          chunk.Progresses[index].HasGivenUp(reading, ref path, hold, Movers.DeltaTime);
 
-            // A planned manoeuvre stuck in walls replans its way out rather than turning out.
-            if (stalled && frame.Remembers && !PathState.IsPlannedManoeuvre(waypoints))
+            if (stalled && frame.Remembers)
             {
                 stalled = !chunk.Progresses[index].TryTurnOut(ref frame.Driver, hold);
             }
@@ -105,13 +127,14 @@ namespace HyperRTS.Simulation.Movement
             return stalled;
         }
 
-        // A long hull mustn't swing an end into a wall. A mover slides off by the end's sweep, else stays unturned.
-        private static void Face(ref LocalTransform transform, in NavCapsule capsule, in NavAgent agent,
+        // A long hull mustn't swing an end into a wall. A mover slides off by the end's sweep; false when it has to
+        // stay unturned.
+        private static bool Face(ref LocalTransform transform, in NavCapsule capsule, in NavAgent agent,
             float2 facing, float2 heading, bool moving)
         {
             if (math.all(heading == 0f))
             {
-                return;
+                return true;
             }
 
             var center = transform.Position.xz;
@@ -121,12 +144,17 @@ namespace HyperRTS.Simulation.Movement
             if (agent.HalfSegment <= 0f || capsule.CanTurn(center, turnedAxis))
             {
                 transform.Rotation = turned;
+                return true;
             }
-            else if (moving && capsule.TryTurnOff(center, turnedAxis, sweep, out var moved))
+
+            if (!moving || !capsule.TryTurnOff(center, turnedAxis, sweep, out var moved))
             {
-                transform.Position.xz = moved;
-                transform.Rotation = turned;
+                return false;
             }
+
+            transform.Position.xz = moved;
+            transform.Rotation = turned;
+            return true;
         }
 
         // Traffic clears, so only a unit with no neighbour near counts as wedged.
@@ -190,8 +218,7 @@ namespace HyperRTS.Simulation.Movement
         {
             var touch = math.max(driver.Radius * 0.5f, driver.TopSpeed * driver.DeltaTime);
             path.SkipCorners(access, driver.Position, touch, driver.LookAhead, waypoints);
-            leg = PathLeg.Along(driver.Position, destination.Value.xz, waypoints, path).Manoeuvre(driver.Position,
-                waypoints, Locomotion.TightLookAhead(driver.State.Speed), driver.Chassis);
+            leg = PathLeg.Along(driver.Position, destination.Value.xz, waypoints, path);
             return !driver.HasArrived(leg);
         }
     }

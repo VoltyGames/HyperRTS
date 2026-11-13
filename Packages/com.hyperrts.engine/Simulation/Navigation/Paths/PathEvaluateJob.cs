@@ -56,20 +56,11 @@ namespace HyperRTS.Simulation.Navigation.Paths
             }
 
             var isCurrent = path.Status == PathStatus.Ready && path.GridVersion == Grid.Version;
-            if (isCurrent && path.IsRestDue(waypoints))
+            if (isCurrent && !goalFar)
             {
-                path.Replan(false);
-                isCurrent = false;
-            }
-
-            var nudged = isCurrent && !goalFar;
-            if (nudged && path.FollowSmallGoalMove(Grid, waypoints, goal, agent.Layer))
-            {
+                path.FollowSmallGoalMove(Grid, waypoints, goal, agent.Layer);
                 return;
             }
-
-            // A nudge the path can't follow, onto a planned manoeuvre's end, searches as a moved goal.
-            var goalMoved = goalFar || nudged;
 
             var isChasing = isCurrent && destination.Chase;
             if (isChasing && FollowsChase(ref path, waypoints, transform.Position, goal, agent))
@@ -79,7 +70,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
             // Corners toward an old, distant goal would lead the wrong way while the search waits.
             // A chased goal stays near its old one, so the unit keeps closing meanwhile.
-            path.Request(waypoints, Cause(path, goalMoved, destination.Chase), goalMoved && !destination.Chase,
+            path.Request(waypoints, Cause(path, goalFar, destination.Chase), goalFar && !destination.Chase,
                 Frame);
             Requests.AddNoResize(new PathRequest(entity, transform, destination, agent, path));
         }

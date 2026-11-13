@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             {
                 var facing = new float2(math.cos(time), math.sin(time));
                 var reading = new MoveProgress.Reading(facing * 4f, facing, 1f, float3.zero, points, path);
-                stalled = progress.HasGivenUp(reading, points, ref path, MoveProgress.WallHold.None,
+                stalled = progress.HasGivenUp(reading, ref path, MoveProgress.WallHold.None,
                     TestWorld.FrameTime);
                 if (path.Status != PathStatus.Ready)
                 {
@@ -46,10 +46,10 @@ namespace HyperRTS.Simulation.Tests.Movement
             var progress = new MoveProgress();
             var start = new MoveProgress.Reading(new float2(10f, 0f), new float2(0f, 1f), 1f,
                 float3.zero, points, path);
-            progress.HasGivenUp(start, points, ref path, MoveProgress.WallHold.None, 0.1f);
+            progress.HasGivenUp(start, ref path, MoveProgress.WallHold.None, 0.1f);
             var away = new MoveProgress.Reading(new float2(12f, 0f), new float2(1f, 0f), 1f,
                 float3.zero, points, path);
-            progress.HasGivenUp(away, points, ref path, MoveProgress.WallHold.None, 0.1f);
+            progress.HasGivenUp(away, ref path, MoveProgress.WallHold.None, 0.1f);
 
             Assert.AreEqual(10f, progress.Best, "returning to the old distance must not count as progress");
             Assert.Greater(progress.Turning, 0f, "a legitimate turn still gets bounded time");

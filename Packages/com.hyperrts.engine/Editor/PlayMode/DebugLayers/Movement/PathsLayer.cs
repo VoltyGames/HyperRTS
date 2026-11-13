@@ -12,12 +12,11 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 {
     /// <summary>
-    /// Each unit's remaining waypoints, planned manoeuvres, rear axles and attack target lines; its status totals
+    /// Each unit's remaining waypoints, rear axles and attack target lines; its status totals
     /// the pathfinder's work.
     /// </summary>
     public sealed class PathsLayer : DebugLayer
     {
-        private const float GearChangeSize = 0.35f;
         private const float AxleSize = 0.25f;
         private static readonly Color32 Waypoint = new(0, 255, 255, 255);
         private static readonly Color32 Manoeuvre = new(255, 140, 0, 255);
@@ -26,7 +25,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
         public override string Label => "Paths";
 
         public override string Detail =>
-            "Cyan waypoints, orange tight manoeuvres and rear axles, dashed when reversing; red dashes to attack " +
+            "Cyan waypoints, dashed when reversing, and orange rear axles; red dashes to attack " +
             "targets.";
 
         public override string Group => "Movement";
@@ -52,7 +51,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
             var causes = stats.SearchesByCause;
             return $"Searches {stats.Searches}: {causes.x} orders, {causes.y} chases, {causes.z} grid changes, " +
                 $"{causes.w} replans. Traces {stats.Traces}, retraces {stats.Retraces}, fields {stats.Fields}, " +
-                $"expansions {stats.Expansions}, deferred drives {stats.DeferredDrives}.";
+                $"expansions {stats.Expansions}.";
         }
 
         internal static bool TryGetPathfinding(EntityManager entityManager, out PathfindingSystem pathfinding)
@@ -80,19 +79,13 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
                 for (var i = 0; i < path.Length; i++)
                 {
                     var waypoint = path[i];
-                    var color = waypoint.Tight ? Manoeuvre : Waypoint;
                     if (waypoint.Reverse)
                     {
-                        shapes.DashedLine(from, waypoint.Position, color);
+                        shapes.DashedLine(from, waypoint.Position, Waypoint);
                     }
                     else
                     {
-                        shapes.Line(from, waypoint.Position, color);
-                    }
-
-                    if (i + 1 < path.Length && path[i + 1].Reverse != waypoint.Reverse)
-                    {
-                        shapes.Circle(waypoint.Position, GearChangeSize, Manoeuvre);
+                        shapes.Line(from, waypoint.Position, Waypoint);
                     }
 
                     from = waypoint.Position;

@@ -31,7 +31,7 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 | --- | --- |
 | [Core](core.md) | Common, Stats, GameEntities, MatchStart, Match, Orders, Commands, Selection |
 | [Movement](movement.md) | Navigation, Movement, Air, Transport |
-| [Driving](driving.md) | Locomotion, Chassis, Drive planner |
+| [Driving](driving.md) | Locomotion, Chassis, reflexes |
 | [Combat](combat.md) | Combat, Destruction, Stats, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
 | [Weapons](weapons.md) | Trajectories, Salvos, Ammo, Aim, Deploying, Interception, Remains |
 | [Squads](squads.md) | Squads, Suppression, Retreat, Reinforce, Cover |

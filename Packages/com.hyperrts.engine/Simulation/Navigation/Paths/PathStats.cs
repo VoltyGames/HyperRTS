@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Navigation.Drive;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Navigation.Paths
@@ -28,11 +27,5 @@ namespace HyperRTS.Simulation.Navigation.Paths
         /// The planner's estimate of the fine searches' expansions, to check against <see cref="Expansions"/>.
         /// </summary>
         public long Estimated;
-
-        /// <summary>The drive searches run for vehicles' paths.</summary>
-        public DriveCounts Drive;
-
-        /// <summary>Times a path waited a frame for the drive budget (<see cref="PathfindingSystem.DriveBudget"/>).</summary>
-        public int DeferredDrives;
     }
 }

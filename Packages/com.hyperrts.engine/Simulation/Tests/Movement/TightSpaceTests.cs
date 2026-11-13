@@ -1,12 +1,12 @@
-using HyperRTS.Simulation.Navigation.Paths;
+using HyperRTS.Simulation.Navigation.Agents;
 using NUnit.Framework;
 using Unity.Mathematics;
 using static HyperRTS.Simulation.Tests.TestVehicles;
 
-namespace HyperRTS.Simulation.Tests.Navigation.Drive
+namespace HyperRTS.Simulation.Tests.Movement
 {
-    /// <summary>Planned manoeuvres in yards, slots and wedges.</summary>
-    public class DriveSearchScenarioTests : DriveSearchFixture
+    /// <summary>Trucks and tanks turning round and backing out in yards, slots and lanes.</summary>
+    public class TightSpaceTests : TightSpaceFixture
     {
         [Test]
         public void Truck_UTurnsInATwelveMetreYard_WithAtMostTwoGearChanges()
@@ -23,11 +23,10 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
             Assert.IsTrue(drive.Arrived, "arrived");
             Assert.LessOrEqual(drive.GearChanges, 2, "at most two gear changes");
             Assert.LessOrEqual(drive.Deepest, WallSlack, "never touched a wall");
-            Assert.AreEqual(0, World.ReadPathStats().Drive.Failures, "every search found its way");
         }
 
         [Test]
-        public void Truck_TakesANinetyDegreeCorner_OnSevenMetreLanes_WithAPlannedReverseLeg()
+        public void Truck_TakesANinetyDegreeCorner_OnSevenMetreLanes()
         {
             // A lane north meets a lane east, both 7 m wide; the west and north are closed.
             World.SpawnObstacle(new float3(-4f, 0f, -20f), new float2(2f, 50f));
@@ -39,9 +38,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
             var drive = DriveTo(truck, new float3(30f, 0f, -0.5f), 60f);
 
             Assert.IsTrue(drive.Arrived, "arrived");
-            Assert.IsTrue(drive.Reversed, "with a reverse leg");
             Assert.LessOrEqual(drive.Deepest, WallSlack, "never touched a wall");
-            Assert.AreEqual(0, World.ReadPathStats().Drive.Failures, "every search found its way");
         }
 
         [Test]
@@ -79,25 +76,6 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
         }
 
         [Test]
-        public void BentLaneTooNarrowToTurn_LeavesThePathAsDrawn_AndCountsAFailure()
-        {
-            // A dead-end lane 4 m wide that bends at right angles: the truck's footprint fits, its hull can't turn.
-            World.SpawnObstacle(new float3(-3f, 0f, 11.5f), new float2(2f, 27f));
-            World.SpawnObstacle(new float3(3f, 0f, 8.5f), new float2(2f, 21f));
-            World.SpawnObstacle(new float3(12f, 0f, 18f), new float2(20f, 2f));
-            World.SpawnObstacle(new float3(9f, 0f, 24f), new float2(26f, 2f));
-            World.SpawnObstacle(new float3(23f, 0f, 21f), new float2(2f, 8f));
-            var truck = Spawn(Truck, Wheels, new float3(0f, 0f, -20f), 0f);
-            World.Tick();
-            World.MoveTo(truck, new float3(18f, 0f, 21f));
-            World.Tick(frames: 2);
-
-            Assert.AreEqual(PathStatus.Ready, World.Get<PathState>(truck).Status);
-            Assert.Greater(World.ReadPathStats().Drive.Failures, 0, "the search gave up");
-            Assert.IsFalse(HasTightWaypoints(truck), "left as drawn");
-        }
-
-        [Test]
         public void Truck_TakesANineMetreLane_WhenGoingRoundIsLonger()
         {
             // Two buildings 9 m apart; round them is about 1.3 times the way through.
@@ -108,7 +86,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Drive
             World.MoveTo(truck, new float3(0.5f, 0f, 25f));
             World.Tick(frames: 2);
 
-            foreach (var waypoint in Waypoints(truck))
+            foreach (var waypoint in World.Buffer<PathWaypoint>(truck))
             {
                 Assert.Less(math.abs(waypoint.Position.x - 0.5f), 4.5f, "through the lane");
             }

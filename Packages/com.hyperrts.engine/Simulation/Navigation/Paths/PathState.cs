@@ -32,23 +32,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
         /// <summary>Path length from the first <see cref="PathWaypoint"/> to the last, kept as corners change.</summary>
         public float LengthPastCorner;
 
-        /// <summary>Walls held the unit when it asked for a replan (<see cref="PathRequest.Stuck"/>).</summary>
-        public bool Stuck;
-
-        /// <summary>
-        /// The drive budget ran out before its later stretches, left as drawn; they are planned once the planned part
-        /// is driven.
-        /// </summary>
-        public bool PartlyPlanned;
-
-        /// <summary>Whether an <see cref="PartlyPlanned"/> path has driven its planned part.</summary>
-        public readonly bool IsRestDue(DynamicBuffer<PathWaypoint> waypoints) =>
-            PartlyPlanned && !IsPlannedManoeuvre(waypoints);
-
-        /// <summary>Whether the next waypoint is on a planned manoeuvre (<see cref="PathWaypoint.Tight"/>).</summary>
-        public static bool IsPlannedManoeuvre(DynamicBuffer<PathWaypoint> waypoints) =>
-            waypoints.Length > 0 && waypoints[0].Tight;
-
         /// <summary>Path length from the first waypoint to the last.</summary>
         public static float Measure(DynamicBuffer<PathWaypoint> waypoints)
         {
@@ -63,8 +46,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         /// <summary>
         /// Passes corners within <paramref name="touch"/>, and nearer ones once the next is in sight, so a crowd
-        /// doesn't queue at one corner. A <see cref="PathWaypoint.Tight"/> one is never cut: it passes once touched, or
-        /// once behind the unit where the gear doesn't change.
+        /// doesn't queue at one corner.
         /// </summary>
         public void SkipCorners(in NavAccess access, float2 position, float touch, float reach,
             DynamicBuffer<PathWaypoint> waypoints)
@@ -79,11 +61,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
             DynamicBuffer<PathWaypoint> waypoints)
         {
             var radius = access.Class.Radius;
-            if (waypoints[0].Tight)
-            {
-                return IsPassed(position, touch, radius, waypoints[0], waypoints[1]);
-            }
-
             var distance = math.distance(position, waypoints[0].Position.xz);
             if (distance <= touch)
             {
@@ -97,21 +74,6 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
             // Line of sight reads only XZ.
             return access.HasLineOfSight(new float3(position.x, 0f, position.y), waypoints[1].Position);
-        }
-
-        // A gear change is passed on arriving or overshooting it, where the next leg doubles back.
-        private static bool IsPassed(float2 position, float touch, float radius, in PathWaypoint corner,
-            in PathWaypoint next)
-        {
-            var distance = math.distance(position, corner.Position.xz);
-            var ahead = next.Position.xz - corner.Position.xz;
-            var beyond = math.dot(position - corner.Position.xz, ahead);
-            if (corner.Reverse != next.Reverse)
-            {
-                return distance <= NavTolerances.Arrive(radius) || beyond < 0f;
-            }
-
-            return distance <= touch || beyond >= 0f;
         }
 
         // Only corners this near are skipped, so a unit keeps to its smoothed path rather than cutting across.
@@ -141,19 +103,14 @@ namespace HyperRTS.Simulation.Navigation.Paths
         {
             Status = PathStatus.None;
             Cause = PathCause.Order;
-            Stuck = false;
             ClearWaypoints(waypoints);
         }
 
-        /// <summary>
-        /// Plans the whole path again, keeping its corners to drive on while the search waits, and records whether
-        /// walls hold the unit.
-        /// </summary>
-        public void Replan(bool stuck)
+        /// <summary>Plans the whole path again, keeping its corners to drive on while the search waits.</summary>
+        public void Replan()
         {
             Status = PathStatus.None;
             Cause = PathCause.Replan;
-            Stuck = stuck;
         }
 
         /// <summary>
@@ -185,14 +142,13 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         /// <summary>
         /// Re-aims the path's end at a moved goal in sight of the corner before it, or of the unit on the last leg.
-        /// False when it needs a search: out of sight, moved over a quarter of the path left, or the end of a planned
-        /// manoeuvre.
+        /// False when it needs a search: out of sight or moved over a quarter of the path left.
         /// </summary>
         public bool TryFollowGoal(in NavAccess access, float3 position, float3 goal,
             DynamicBuffer<PathWaypoint> waypoints)
         {
             var last = waypoints.Length - 1;
-            if (last < 0 || waypoints[last].Tight)
+            if (last < 0)
             {
                 return false;
             }
@@ -245,33 +201,24 @@ namespace HyperRTS.Simulation.Navigation.Paths
             return false;
         }
 
-        /// <summary>
-        /// Moves the path's end onto a goal nudged within a cell; false for a planned manoeuvre's end, which never
-        /// moves, so it searches again.
-        /// </summary>
-        public bool FollowSmallGoalMove(in NavGrid grid, DynamicBuffer<PathWaypoint> waypoints, float3 goal,
+        /// <summary>Moves the path's end onto a goal nudged within a cell.</summary>
+        public void FollowSmallGoalMove(in NavGrid grid, DynamicBuffer<PathWaypoint> waypoints, float3 goal,
             NavLayer layer)
         {
             // Re-planning for sub-cell nudges (re-clicks, a creeping chase target) isn't worth a search.
             if (waypoints.Length == 0 || !grid.IsWalkable(goal, layer))
             {
-                return true;
+                return;
             }
 
             var last = waypoints[waypoints.Length - 1];
             var distanceSq = math.distancesq(last.Position.xz, goal.xz);
             if (distanceSq <= 1e-6f || distanceSq > grid.Grid.CellSize * grid.Grid.CellSize)
             {
-                return true;
-            }
-
-            if (last.Tight)
-            {
-                return false;
+                return;
             }
 
             MoveLast(waypoints, goal.xz);
-            return true;
         }
 
         /// <summary>Moves the last waypoint, keeping <see cref="LengthPastCorner"/> in step.</summary>

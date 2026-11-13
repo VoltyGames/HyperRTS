@@ -21,12 +21,6 @@ namespace HyperRTS.Simulation.Movement
 
         public float ReverseSpeed;
 
-        /// <summary>Top speed forwards on a planned manoeuvre; backwards it is <see cref="ReverseSpeed"/>.</summary>
-        public const float TightSpeed = 3f;
-
-        private const float TightLookAheadMin = 2f;
-        private const float TightLookAheadMax = 6f;
-
         // Long enough to back about a hull length off the walls before turning.
         private const float TurnOutSeconds = 3f;
         private const float Unlimited = 1e4f;
@@ -43,11 +37,6 @@ namespace HyperRTS.Simulation.Movement
 
         /// <summary>Drives the other way a while, wheels or tracks, to turn out of a wedge the walls hold it in.</summary>
         public readonly void TurnOut(ref LocomotionState state) => state.OtherWay = TurnOutSeconds;
-
-        /// <summary>How far along a planned manoeuvre its pursuit aims: 2 m standing, up to 6 m at speed.</summary>
-        public static float TightLookAhead(float speed) =>
-            math.min(TightLookAheadMax, TightLookAheadMin + math.abs(speed) * (TightLookAheadMax - TightLookAheadMin) /
-                TightSpeed);
 
         /// <summary>The speed after one frame of speeding up or braking toward <paramref name="target"/>.</summary>
         internal readonly float Accelerate(float speed, float target, float deltaTime)

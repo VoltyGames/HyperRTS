@@ -78,12 +78,12 @@ namespace HyperRTS.Simulation.Navigation.Agents
 
         /// <summary>
         /// The wall margin its size needs: the radius, 2 m of room and a quarter of the hull's half segment, so long
-        /// hulls keep further off. Turning room is the drive planner's to find.
+        /// hulls keep further off.
         /// </summary>
         public readonly float HullWallMargin => Radius + 2f + 0.25f * HalfSegment;
 
-        /// <summary>A vehicle that backs up: it has a reverse run and the drive planner plans for it.</summary>
-        public readonly bool CanReverse => Chassis.ReverseRun > 0f && DrivePlanner.Applies(this);
+        /// <summary>A vehicle that backs up: it has a reverse run and a turn radius or a hull longer than it is wide.</summary>
+        public readonly bool CanReverse => Chassis.ReverseRun > 0f && (Chassis.TurnRadius > 0f || HalfSegment > 0f);
 
         /// <summary>The core segment's half on the XZ plane, along the unit's facing.</summary>
         public readonly float2 SegmentAxis(quaternion rotation) => SegmentAxis(rotation, Radius, HullLength);
@@ -190,8 +190,5 @@ namespace HyperRTS.Simulation.Navigation.Agents
 
         /// <summary>The leg to this waypoint is driven backwards; a gear change is a waypoint where it flips.</summary>
         public bool Reverse;
-
-        /// <summary>Part of a manoeuvre the <see cref="DrivePlanner"/> planned: pass it, don't cut it.</summary>
-        public bool Tight;
     }
 }
