@@ -34,6 +34,9 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>The nearest neighbours a mover steers round.</summary>
         public AvoidanceList Neighbours;
 
+        // Aircraft further apart in height than this fly over one another.
+        private const float FlightClearance = 4f;
+
         private HullClearance _room;
         private bool _infantryTouches;
         private bool _othersTouch;
@@ -91,8 +94,7 @@ namespace HyperRTS.Simulation.Movement
 
         public void Visit(in SpatialEntry entry)
         {
-            if (!entry.IsUnit || entry.Entity == Unit.Entity || !NavLayers.CanBlock(Unit.Layer, entry.Layer)
-                || Rule.IsCrushing(Unit, entry))
+            if (!Meets(entry))
             {
                 return;
             }
@@ -128,6 +130,22 @@ namespace HyperRTS.Simulation.Movement
             {
                 Separate(entry, direction, distance, reach, precedence, entryYields);
             }
+        }
+
+        // Another unit on a layer that can block this one's, which it doesn't drive over; aircraft only at its height.
+        private readonly bool Meets(in SpatialEntry entry)
+        {
+            if (!entry.IsUnit || entry.Entity == Unit.Entity || !NavLayers.CanBlock(Unit.Layer, entry.Layer))
+            {
+                return false;
+            }
+
+            if (Unit.Layer == NavLayer.Air && math.abs(entry.Position.y - Unit.Position.y) > FlightClearance)
+            {
+                return false;
+            }
+
+            return !Rule.IsCrushing(Unit, entry);
         }
 
         /// <summary>The move cut so no neighbour's hull is met; see <see cref="HullClearance"/>.</summary>

@@ -188,14 +188,16 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
         }
 
         [Test]
-        public void Aircraft_OnlySeparateFromAircraft()
+        public void Aircraft_OnlySeparateFromAircraftAtTheirHeight()
         {
             var tank = World.SpawnUnit(1, float3.zero);
             var helicopter = World.SpawnAircraft(1, float3.zero);
             var other = World.SpawnAircraft(1, new float3(0.2f, 0f, 0f));
+            var bomber = World.SpawnAircraft(1, new float3(0f, 30f, 0f), altitude: 30f);
             World.Run(1f);
 
             Assert.AreEqual(0f, math.length(World.GetPosition(tank).xz), 1e-4f, "the tank under them isn't pushed");
+            Assert.AreEqual(0f, math.length(World.GetPosition(bomber).xz), 1e-4f, "nor the bomber high over them");
             var gap = math.distance(World.GetPosition(helicopter).xz, World.GetPosition(other).xz);
             Assert.GreaterOrEqual(gap, 0.99f, "aircraft spread apart");
         }

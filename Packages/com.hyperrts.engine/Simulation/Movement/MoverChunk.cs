@@ -43,7 +43,7 @@ namespace HyperRTS.Simulation.Movement
             var entry = new SpatialEntry
             {
                 Entity = Entities[index],
-                Position = new float3(position.x, 0f, position.y),
+                Position = transform.Position,
                 Radius = agent.Radius,
                 Owner = Owners[index].Value,
                 IsUnit = true,
