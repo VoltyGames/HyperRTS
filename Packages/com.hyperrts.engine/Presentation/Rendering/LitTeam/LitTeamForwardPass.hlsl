@@ -6,6 +6,10 @@
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamGrime.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDetail.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInterior.hlsl"
+#if defined(_INTERIOR)
+    #define REQUIRES_WORLD_SPACE_TANGENT_INTERPOLATOR 1
+#endif
 #include "Packages/com.unity.render-pipelines.universal/Shaders/LitForwardPass.hlsl"
 
 void LitTeamPassFragment(
@@ -32,6 +36,12 @@ void LitTeamPassFragment(
     float4 tangentWS = float4(1.0, 0.0, 0.0, 1.0);
     #endif
     ApplyDetail(input.positionWS, input.normalWS.xyz, tangentWS, surfaceData);
+#endif
+#if defined(_INTERIOR)
+    float3 bitangentWS = input.tangentWS.w * cross(input.normalWS.xyz, input.tangentWS.xyz);
+    half3 viewWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
+    float3 viewDirTS = float3(dot(viewWS, input.tangentWS.xyz), dot(viewWS, bitangentWS), dot(viewWS, input.normalWS.xyz));
+    surfaceData.emission = InteriorEmission(input.uv, viewDirTS);
 #endif
     surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, uv0, input.positionWS);
     ApplyGrime(input.positionWS, surfaceData);

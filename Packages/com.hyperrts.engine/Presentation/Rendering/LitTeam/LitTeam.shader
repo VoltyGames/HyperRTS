@@ -75,6 +75,10 @@ Shader "HyperRTS/LitTeam"
         _LightsOn("Lights On", Range(0, 1)) = 1
         _EmissionMap("Emission Map", 2D) = "white" {}
 
+        [Header(Interior)]
+        [Toggle(_INTERIOR)] _Interior("Interior (rooms from the emission map atlas)", Float) = 0
+        _InteriorAtlas("Interior Atlas (columns, rows, cell margin)", Vector) = (4, 3, 0.04, 0)
+
         [ToggleUI] _Transparent("Transparent (glass: base alpha fades the diffuse, reflections stay whole)", Float) = 0
         [HideInInspector] _SrcBlend("__src", Float) = 1
         [HideInInspector] _DstBlend("__dst", Float) = 0

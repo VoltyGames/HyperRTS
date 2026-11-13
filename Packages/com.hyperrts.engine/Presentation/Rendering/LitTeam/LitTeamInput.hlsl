@@ -16,6 +16,7 @@
 //               _TrackLift0 and _TrackLift1, the lift in metres at 8 stations front to back, it bends the lower run (LitTeamTrack.hlsl)
 //   _DETAIL     keyword: detail albedo and normal projected in object space (triplanar) at _DetailTiling repeats per metre,
 //               faded out between _DetailFadeStart and _DetailFadeEnd metres from the camera (LitTeamDetail.hlsl)
+//   _INTERIOR   keyword: windows show rooms from the emission map's photo atlas (LitTeamInterior.hlsl)
 //   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
 //               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
 // TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
@@ -72,6 +73,7 @@ float _DetailAlbedoStrength;
 float _DetailNormalStrength;
 float _DetailFadeStart;
 float _DetailFadeEnd;
+float4 _InteriorAtlas;
 half _LightsOn;
 half _Cutoff;
 half _Smoothness;

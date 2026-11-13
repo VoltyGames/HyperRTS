@@ -16,7 +16,13 @@ in step with the maps and toggles.
 **Glass.** The `_Transparent` toggle blends premultiplied, as URP Lit's Preserve Specular does: base alpha fades the
 diffuse while reflections stay whole, which is what glass looks like. A transparent material writes no depth, casts no
 shadow and skips the depth, depth-normals and motion-vector passes, so whatever the model shows behind it, such as a
-cab, must be modelled. Opaque glass (windows over a painted room, periscopes) stays opaque with a high smoothness.
+cab, must be modelled. Opaque glass (periscopes, building windows) stays opaque with a high smoothness.
+
+**Interiors.** The `_INTERIOR` toggle shows a room behind a window. The emission map is an atlas of front-on room photos
+in an `_InteriorAtlas` grid, and each window's UVs fill one cell, less the cell margin. The shader traces the view ray
+into a box room one window deep and projects the hit back into the photo, so the room shifts with the camera instead of
+reading as a poster. Each cell's alpha is how much of the frame its back wall fills; 1 keeps a photo flat on the glass,
+for curtains and blinds. Fresnel takes the room's light at grazing angles, where the reflection wins.
 
 **Detail maps.** The `_DETAIL` toggle adds a grey detail albedo, imported as sRGB colour (0.5 as authored leaves the colour alone), and a detail normal,
 projected in object space from three sides at `_DetailTiling` repeats per metre, so grain has the same density on every
