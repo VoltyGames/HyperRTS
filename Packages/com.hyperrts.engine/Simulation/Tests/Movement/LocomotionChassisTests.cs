@@ -81,6 +81,19 @@ namespace HyperRTS.Simulation.Tests.Movement
         }
 
         [Test]
+        public void Avoidance_DoesNotChangeTheRoutesReverseDecision()
+        {
+            var tank = Driving(Tracks, TrackedChassis, TankRadius, 6f, new float2(0f, 1f));
+            var behind = new PathLeg(float2.zero, new float2(0f, -8f), float2.zero, 0f, 8f, true);
+            var planned = tank;
+            planned.Drive(behind);
+            tank.Steer(behind, new float2(1f, 1f));
+
+            Assert.IsTrue(planned.State.Reverse, "the short route behind is reversed");
+            Assert.AreEqual(planned.State.Reverse, tank.State.Reverse, "avoidance only adjusts heading and speed");
+        }
+
+        [Test]
         public void WedgedVehicle_TurnsOutOnce_BeforeGivingUp()
         {
             var progress = new MoveProgress { Stalled = MoveProgress.GiveUpSeconds };

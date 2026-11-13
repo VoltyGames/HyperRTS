@@ -71,8 +71,9 @@ radii wide; 0 keeps a circle.
 A moving unit steers by sampling (`Steering`): it scores candidate velocities against the nearest 8 units in reach
 (`CrowdVisitor`) and the wall field, and picks the cheapest.
 
-- **Candidates.** A vehicle tries what its handling reaches within half a second; an instant unit tries directions and
-  speeds. Both also try the planned velocity and last frame's choice.
+- **Candidates.** A vehicle tries speeds and headings its handling reaches within half a second, including a crawl.
+  Avoidance never changes its gear. An instant unit tries directions,
+  speeds and its last choice. Both can wait.
 - **Cost.** Predicted footprint overlap over the next 1.5 s, sooner counting more, with moving neighbours scored
   RVO-style, plus the wall term and small penalties for straying, standing still and swerving left, so a head-on pair
   both keep right.
@@ -92,7 +93,9 @@ in tonnes, sets each unit's weight.
 
 - **Giving way.** Two movers share the avoiding unless they go one way; then the one further back gives way and the
   one ahead shares only the inner push, so an abreast pair at a one-lane bridge never waits on each other. A mover
-  that another outweighs by half again takes all the avoiding on itself.
+  that another outweighs by half again takes all the avoiding on itself. Allied vehicles crossing paths choose one
+  winner: a substantially heavier vehicle goes first, otherwise entity index breaks the tie. The other takes all
+  the avoiding, while hull clearance still prevents contact for both.
 - **Idle units** step aside for an allied mover of their own kind and stay where pushed.
 - **Foot units and vehicles.** A vehicle is a unit with `LocomotionAuthoring` (`NavAgent.IsVehicle`); every other
   ground unit is on foot. The push never moves a vehicle off a foot unit: the foot unit takes the whole overlap.
@@ -114,8 +117,9 @@ in tonnes, sets each unit's weight.
 - **Arrival.** A move ends at the goal, against an arrived groupmate, or when the unit stops getting on.
   `MoveDestination` is then disabled and `Arrival` enabled, its `Reason` saying which, and `MoveOrderSystem` finishes
   its order. If anything else halts the unit, it points the unit at the goal again.
-- **Stuck.** `MoveProgress` is the one stuck measure: path left shrinking or the hull turning count as progress.
-  Without progress the whole path is planned again, with waits doubling. Near the path's end the unit gives up and
+- **Stuck.** `MoveProgress` measures improvement in the shortest remaining path distance. Turning earns a bounded
+  allowance for pivots and manoeuvres, without replacing that distance record. Circling cannot renew the allowance;
+  only getting closer does. Without progress the whole path is planned again, with waits doubling. Near the path's end the unit gives up and
   the goal is taken; a reversing vehicle first backs out (`MoveProgress.TryTurnOut`). Farther out a jam is traffic, so
   a column queued at a bridge keeps its order.
 

@@ -59,41 +59,17 @@ namespace HyperRTS.Simulation.Movement
         private readonly bool IsPivot(float error) => Chassis.Pivots && math.abs(error) > PivotAngle;
 
         /// <summary>Accelerates and turns toward the leg, returning this frame's move of the hull centre.</summary>
-        public float2 Drive(in PathLeg leg) => Follow(leg, TopSpeed);
+        public float2 Drive(in PathLeg leg) => Follow(leg, TopSpeed, float2.zero);
 
         /// <summary>
-        /// Drives toward the steering <paramref name="velocity"/> instead of the leg, no faster than it. Told to go
-        /// back, it backs straight up if it can reverse, else brakes on the leg.
+        /// Applies avoidance's heading and speed without changing the route's gear or recovery manoeuvre.
         /// </summary>
         public float2 Steer(in PathLeg leg, float2 velocity)
         {
-            // Told to stand, it keeps turning toward the leg, as a pivot does.
-            if (math.lengthsq(velocity) < 1e-6f)
-            {
-                return Follow(leg, 0f);
-            }
-
-            var travel = State.Reverse ? -Facing : Facing;
-            if (!Handling.IsInstant && math.dot(velocity, travel) < 0f)
-            {
-                return GoBack(leg, math.length(velocity));
-            }
-
-            return Follow(leg.Toward(Position, velocity), math.length(velocity));
+            return Follow(leg, math.length(velocity), velocity);
         }
 
-        private float2 GoBack(in PathLeg leg, float speed)
-        {
-            if (State.Reverse || Handling.ReverseSpeed <= 0f)
-            {
-                return Follow(leg, 0f);
-            }
-
-            State.Speed = Handling.Accelerate(State.Speed, -math.min(speed, Handling.ReverseSpeed), DeltaTime);
-            return Roll(0f);
-        }
-
-        private float2 Follow(in PathLeg leg, float cap)
+        private float2 Follow(in PathLeg leg, float cap, float2 velocity)
         {
             if (leg.Tight)
             {
@@ -106,7 +82,8 @@ namespace HyperRTS.Simulation.Movement
             State.InThreePointTurn = !leg.Reverse &&
                                      Chassis.IsInsideTurn(Position, Facing, leg.Corner, State.InThreePointTurn ? 1.2f : 1f);
             var lookAhead = LookAhead;
-            var aim = ToTarget(leg, lookAhead);
+            var steering = math.lengthsq(velocity) > 1e-6f ? leg.Toward(Position, velocity) : leg;
+            var aim = ToTarget(steering, lookAhead);
             var desired = math.normalizesafe(State.Reverse ? -aim : aim, Facing);
             var error = Planar.SignedAngle(Facing, desired);
             var gear = State.Reverse == State.StepOtherWay(Chassis.IsWheeled, DeltaTime) ? 1f : -1f;

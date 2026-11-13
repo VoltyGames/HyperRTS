@@ -68,7 +68,8 @@ namespace HyperRTS.Simulation.Tests.Movement
                 World.Send(_record.Units[i * 2 + 1].Unit, new float3(offset, 0f, 45f));
             }
 
-            Finish("crossing", 90f, 4);
+            Finish("crossing", 90f, 6);
+            Assert.Less(_record.MaxLoop, 180f, "crossing traffic yields without turning round");
         }
 
         // Two walls 60 m long along the x axis, a lane of the given width between them.

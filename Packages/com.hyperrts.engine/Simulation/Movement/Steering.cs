@@ -26,9 +26,6 @@ namespace HyperRTS.Simulation.Movement
         // Finer turns off the planned direction, so a small swerve needn't wait for the 30 degree ring.
         private const float Nudge = math.PI / 18f;
 
-        // Backing off is the last resort, picked only when standing still is hit too.
-        private const float ReverseCost = 0.3f;
-
         // Waiting is dearer than a slow swerve, so a pair stopped nose to nose sidesteps rather than deadlocks.
         private const float StandingCost = 0.25f;
         private const float Stickiness = 0.2f;
@@ -100,8 +97,8 @@ namespace HyperRTS.Simulation.Movement
             _preferred = standsToTurn ? float2.zero : step / driver.DeltaTime;
             if (driver.State.IsManoeuvring)
             {
-                driver.State.LastChoice = _preferred;
-                return step;
+                driver = _start;
+                return DriveTight(ref driver, leg);
             }
 
             _last = _start.State.LastChoice;
@@ -135,10 +132,10 @@ namespace HyperRTS.Simulation.Movement
             }
 
             var best = new Choice { Velocity = _preferred, Cost = penalty + Straying(_preferred) };
-            Try(ref best, _last, 0f);
             Try(ref best, float2.zero, StandingExtra());
             if (_start.Handling.IsInstant)
             {
+                Try(ref best, _last, 0f);
                 TryDirections(ref best);
             }
             else
@@ -196,14 +193,9 @@ namespace HyperRTS.Simulation.Movement
 
         private readonly void TryReachable(ref Choice best)
         {
-            var facing = _start.Facing;
-            if (!_start.State.Reverse && _start.Handling.ReverseSpeed > 0f)
-            {
-                Try(ref best, -facing * _start.Handling.ReverseSpeed, ReverseCost);
-            }
-
-            var travel = _start.State.Reverse ? -facing : facing;
-            for (var share = 2; share <= 4; share++)
+            // The driver owns the gear. Avoidance only chooses reachable headings and slower speeds.
+            var travel = _start.State.Reverse ? -_start.Facing : _start.Facing;
+            for (var share = 1; share <= 4; share++)
             {
                 var speed = _start.TopSpeed * share * 0.25f;
                 var spread = _start.TurnWithin(speed, ReachTime);

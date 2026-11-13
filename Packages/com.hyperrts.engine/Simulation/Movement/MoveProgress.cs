@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Movement
         // Stuck within this many radii of the path's end, the goal is taken; farther out it is traffic that clears.
         public const float NearEndRadii = 4f;
 
-        // About 20 degrees of turn is progress, so a pivot or a three-point turn never stalls.
+        // Turning earns bounded time for a pivot or a three-point turn, never a fresh distance record.
         private const float TurnedCos = 0.94f;
 
         /// <summary>Shortest path left so far, measured on the current path.</summary>
@@ -30,6 +30,9 @@ namespace HyperRTS.Simulation.Movement
 
         /// <summary>Seconds since the last progress.</summary>
         public float Stalled;
+
+        /// <summary>Time credited to turning since the last improvement in remaining distance.</summary>
+        public float Turning;
 
         /// <summary>Value of <see cref="Stalled"/> at which the next replan is due.</summary>
         public float NextReplan;
@@ -142,15 +145,25 @@ namespace HyperRTS.Simulation.Movement
             // A hull stuck sunk in walls turning on the spot gets nowhere.
             var turned = !sunk && math.dot(facing, Facing) < TurnedCos;
             var closer = remaining < Best - margin;
-            if (closer || turned)
+            if (closer)
             {
-                // Only getting closer earns another turn-out, so a hull can't rock in a wedge for ever.
-                TurnedOut &= !closer;
+                TurnedOut = false;
                 Restart(remaining, facing);
                 return false;
             }
 
             Stalled += deltaTime;
+            if (turned && Turning < MaxReplanSeconds)
+            {
+                CreditTurn(facing);
+                return false;
+            }
+
+            return IsReplanDue();
+        }
+
+        private bool IsReplanDue()
+        {
             if (Stalled < NextReplan)
             {
                 return false;
@@ -160,11 +173,20 @@ namespace HyperRTS.Simulation.Movement
             return true;
         }
 
+        private void CreditTurn(float2 facing)
+        {
+            var credit = math.min(Stalled, MaxReplanSeconds - Turning);
+            Turning += credit;
+            Stalled -= credit;
+            Facing = facing;
+        }
+
         private void Restart(float remaining, float2 facing)
         {
             Best = remaining;
             Facing = facing;
             Stalled = 0f;
+            Turning = 0f;
             NextReplan = ReplanSeconds;
         }
 
