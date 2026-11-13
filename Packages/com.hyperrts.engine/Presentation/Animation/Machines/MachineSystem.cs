@@ -74,7 +74,7 @@ namespace HyperRTS.Presentation.Animation.Machines
             [ReadOnly] public ComponentLookup<Harvester> Harvesters;
             [ReadOnly] public ComponentLookup<HarvestState> Harvests;
 
-            private void Execute(Entity entity, ref MachineClock clock)
+            private void Execute(ref MachineClock clock)
             {
                 if (clock.Run == MachineRun.Deployed)
                 {
@@ -88,7 +88,8 @@ namespace HyperRTS.Presentation.Animation.Machines
                     return;
                 }
 
-                var owned = Owners.TryGetComponent(entity, out var owner) && owner.Value != Owner.Neutral;
+                // Owner sits on the game entity, not on a machine nested in its model.
+                var owned = Owners.TryGetComponent(clock.Owner, out var owner) && owner.Value != Owner.Neutral;
                 clock.Advance((!clock.OwnedOnly || owned) && Runs(ref clock), DeltaTime);
             }
 
