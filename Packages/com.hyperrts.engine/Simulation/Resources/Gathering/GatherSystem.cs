@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
     {
         private EntityQuery _nodes;
         private EntityQuery _dropOffs;
+        private EntityQuery _harvesters;
         private TargetReach _reach;
 
         [BurstCompile]
@@ -39,7 +40,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
-            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build());
+            _harvesters = SystemAPI.QueryBuilder().WithAll<Harvester, ActiveOrder>().Build();
+            state.RequireForUpdate(_harvesters);
         }
 
         [BurstCompile]
@@ -51,6 +53,9 @@ namespace HyperRTS.Simulation.Resources.Gathering
             state.Dependency = JobHandle.CombineDependencies(nodesReady, dropOffsReady);
 
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
+            var spots = new NativeParallelMultiHashMap<Entity, ReachClaims.Claim>(
+                _harvesters.CalculateEntityCountWithoutFiltering() * 2 + 1, allocator);
+            state.Dependency = new GatherClaimJob { Spots = spots, Reach = _reach }.Schedule(state.Dependency);
 
             new GatherJob
             {
@@ -61,6 +66,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 NodeLookup = SystemAPI.GetComponentLookup<ResourceNode>(false),
                 StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 Reach = _reach,
+                Claims = new ReachClaims(spots),
                 OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
                 ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
@@ -81,6 +87,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
             public ComponentLookup<ResourceNode> NodeLookup;
             public BufferLookup<ResourceStock> StockLookup;
             public TargetReach Reach;
+            public ReachClaims Claims;
             [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
@@ -102,7 +109,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 if (harvest.Phase != HarvestPhase.Gathering)
                 {
                     var atDropOff = harvest.Phase == HarvestPhase.Returning && harvester.CargoAmount > 0
-                        && ReachedDropOff(entity, ref harvest, move, busy, transform, agent);
+                        && ReachedDropOff(entity, ref harvest, move, transform, agent);
                     Deliver(ref harvester, ref harvest, move, owner.Value, atDropOff);
                     return;
                 }
@@ -115,8 +122,9 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
                 var node = order.Value.Target;
                 var nodePosition = Reach.Position(node);
-                var toNode = Reach.Approach(node, transform, agent, move, Grid);
-                if (!ActiveOrder.StopsShort(toNode, busy, moving))
+                var toNode = Reach.Approach(node, transform, agent, move, Grid, Claims.For(entity));
+                // A stalled walk-up is walked again, as an idle harvester earns nothing.
+                if (move.HasReached(toNode))
                 {
                     Gather(ref harvester, ref harvest, node, nodePosition);
                 }
@@ -167,7 +175,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
             // True once the harvester stands at its drop-off; with none, it waits until one is built.
             private bool ReachedDropOff(Entity entity, ref HarvestState harvest, MoveControl move,
-                EnabledRefRW<ActiveOrder> busy, in LocalTransform transform, in NavAgent agent)
+                in LocalTransform transform, in NavAgent agent)
             {
                 var owner = OwnerLookup[entity].Value;
                 if (!IsDropOff(harvest.DropOff, owner))
@@ -182,8 +190,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
                     return false;
                 }
 
-                var walk = Reach.Approach(dropOff, transform, agent, move, Grid);
-                return !ActiveOrder.StopsShort(walk, busy, move.Moving);
+                var walk = Reach.Approach(dropOff, transform, agent, move, Grid, Claims.For(entity));
+                return move.HasReached(walk);
             }
 
             private void Arrive(ref Harvester harvester, ref HarvestState harvest, byte owner)

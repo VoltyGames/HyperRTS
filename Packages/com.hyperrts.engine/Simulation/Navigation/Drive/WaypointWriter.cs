@@ -31,9 +31,6 @@ namespace HyperRTS.Simulation.Navigation.Drive
             Written = 0f;
         }
 
-        public void AddTight(float2 point) =>
-            Waypoints.Add(new PathWaypoint { Position = new float3(point.x, Height, point.y), Tight = true });
-
         public void AddPoint(float2 point) =>
             Waypoints.Add(new PathWaypoint { Position = new float3(point.x, Height, point.y) });
 
@@ -52,14 +49,17 @@ namespace HyperRTS.Simulation.Navigation.Drive
             Written = math.max(Written, math.min(before, line.Total));
         }
 
-        /// <summary>A stretch that doesn't follow on from the last starts at its pose on the path.</summary>
+        /// <summary>
+        /// A stretch that doesn't follow on from the last starts at its pose on the path, a drawn point: the way up to
+        /// it is an ordinary leg, however long.
+        /// </summary>
         public void BeginStretch(in PathLine line, float from)
         {
             var joins = from <= Written;
             AddDrawn(line, from);
             if (!joins)
             {
-                AddTight(line.PointAt(from));
+                AddPoint(line.PointAt(from));
             }
         }
     }

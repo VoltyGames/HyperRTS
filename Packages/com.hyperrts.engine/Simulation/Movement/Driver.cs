@@ -36,6 +36,10 @@ namespace HyperRTS.Simulation.Movement
         // Within this of a gear change the aim sits on the hull, so the wheels hold their angle.
         private const float SteerHold = 1f;
 
+        // Wheels turn round to a corner this far behind by backing, until it is this far round to the front.
+        private static readonly float Behind = math.radians(100f);
+        private static readonly float TurnedRound = math.radians(60f);
+
         public Driver(in Locomotion handling, in NavAgent agent, float topSpeed, float deltaTime)
         {
             Handling = handling;
@@ -77,23 +81,45 @@ namespace HyperRTS.Simulation.Movement
             }
 
             State.Reverse = leg.Reverse || PrefersReverse(leg);
-            // Keeps reversing a little past the circle's edge, so it doesn't flip gear every frame. A route backed
-            // whole has no three-point turn: the goal behind is where it backs to.
-            State.InThreePointTurn = !leg.Reverse &&
-                                     Chassis.IsInsideTurn(Position, Facing, leg.Corner, State.InThreePointTurn ? 1.2f : 1f);
             var lookAhead = LookAhead;
             var steering = math.lengthsq(velocity) > 1e-6f ? leg.Toward(Position, velocity) : leg;
             var aim = ToTarget(steering, lookAhead);
             var desired = math.normalizesafe(State.Reverse ? -aim : aim, Facing);
             var error = Planar.SignedAngle(Facing, desired);
+            // A route backed whole has no three-point turn: the goal behind is where it backs to.
+            State.InThreePointTurn = !leg.Reverse && TurnsOtherWay(leg, error);
             var gear = State.Reverse == State.StepOtherWay(Chassis.IsWheeled, DeltaTime) ? 1f : -1f;
             var top = math.min(gear > 0f ? TopSpeed : Handling.ReverseSpeed, cap);
-            // Pivoting is what a wedge blocks, so tracks back out of one and turn as they go.
+            // Pivoting is what a wedge blocks, so tracks back straight out of one, whatever the path's turns.
             var backsOut = Chassis.Pivots && State.OtherWay > 0f;
+            // Wheels hold the arc to their aim, tracks the one to the corner.
+            var arc = Chassis.IsWheeled ? math.length(aim) : leg.Distance;
+            var cruise = backsOut ? top : math.min(top, TargetSpeed(error, leg, lookAhead, arc));
             // Never past the goal in one frame, which only bites for near-instant braking.
-            var target = math.min(TargetSpeed(error, leg, top, lookAhead, backsOut), leg.Remaining / DeltaTime);
+            var target = math.min(cruise, leg.Remaining / DeltaTime);
             State.Speed = Handling.Accelerate(State.Speed, gear * target, DeltaTime);
-            return Chassis.IsWheeled ? Roll(gear * Chassis.Pursuit(error, math.length(aim))) : TurnTracks(error);
+            // Steers for the way it still rolls, so braking into a gear change keeps swinging the nose round.
+            var rolls = math.abs(State.Speed) > 1e-3f ? math.sign(State.Speed) : gear;
+            return Chassis.IsWheeled ? Roll(rolls * Chassis.Pursuit(error, math.length(aim))) : TurnTracks(error);
+        }
+
+        // A corner inside the turning circle lies on no forward arc, and one behind takes a ring to reach forwards,
+        // so wheels drive the other way to swing onto it. Each holds a little past its edge, so the gear doesn't
+        // flip every frame.
+        private readonly bool TurnsOtherWay(in PathLeg leg, float error)
+        {
+            if (!Chassis.IsWheeled)
+            {
+                return false;
+            }
+
+            if (Chassis.IsInsideTurn(Position, Facing, leg.Corner, State.InThreePointTurn ? 1.2f : 1f))
+            {
+                return true;
+            }
+
+            var reverses = Chassis.ReverseRun > 0f && Handling.ReverseSpeed > 0f;
+            return reverses && math.abs(error) > (State.InThreePointTurn ? TurnedRound : Behind);
         }
 
         // Tracks turn about the centre at their turn rate and drive along the facing.
@@ -146,14 +172,9 @@ namespace HyperRTS.Simulation.Movement
             return underHull && Chassis.IsInsideTurn(Position, Facing, leg.Corner, 1f);
         }
 
-        private readonly float TargetSpeed(float error, in PathLeg leg, float top, float lookAhead, bool backsOut)
+        // The speed the leg's turns and its end allow.
+        private readonly float TargetSpeed(float error, in PathLeg leg, float lookAhead, float arc)
         {
-            // Backing out of a wedge runs straight off the walls, whatever the path's turns.
-            if (backsOut)
-            {
-                return top;
-            }
-
             if (IsPivot(error))
             {
                 return 0f;
@@ -164,8 +185,8 @@ namespace HyperRTS.Simulation.Movement
             var beforeCorner = math.max(0f, leg.Distance - lookAhead);
             var cornerSpeed = Handling.CornerSpeed(Chassis.TurnRadius, leg.CornerTurn, lookAhead);
             var corner = math.sqrt(math.square(cornerSpeed) + 2f * Handling.Braking * beforeCorner);
-            var turn = Handling.TurnSpeed(Chassis.TurnRadius, leg.Distance, error);
-            return math.min(math.min(top, turn), math.min(stop, corner));
+            var turn = Handling.TurnSpeed(Chassis.TurnRadius, arc, error);
+            return math.min(turn, math.min(stop, corner));
         }
 
         /// <summary>Wheels can't turn standing, so a wheeled hull wedged against a wall backs off it a while.</summary>
@@ -177,6 +198,12 @@ namespace HyperRTS.Simulation.Movement
         private readonly bool PrefersReverse(in PathLeg leg)
         {
             if (leg.Remaining > Chassis.ReverseRun)
+            {
+                return false;
+            }
+
+            // A turn round under way is finished, not swapped for backing as the goal comes into the reverse run.
+            if (State.InThreePointTurn && !State.Reverse)
             {
                 return false;
             }

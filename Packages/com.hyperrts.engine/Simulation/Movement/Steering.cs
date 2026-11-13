@@ -67,8 +67,9 @@ namespace HyperRTS.Simulation.Movement
         public float2 Drive(ref Driver driver, in PathLeg leg) =>
             leg.Tight ? DriveTight(ref driver, leg) : DriveSampled(ref driver, leg);
 
-        // Stands while driving on would run deeper into a neighbour than standing would. One held too long replans,
-        // so two waiting on each other can't deadlock.
+        // Stands while driving on would run deeper into a neighbour than standing would. A planned manoeuvre held too
+        // long replans, so two waiting on each other can't deadlock; a reflex one tries its other gear, so a hull
+        // with a unit behind it turns round forwards.
         private float2 DriveTight(ref Driver driver, in PathLeg leg)
         {
             var start = driver;
@@ -77,6 +78,10 @@ namespace HyperRTS.Simulation.Movement
             {
                 driver = start;
                 step = driver.Steer(leg, float2.zero);
+                if (!leg.Tight)
+                {
+                    driver.BackOff();
+                }
             }
 
             driver.State.LastChoice = step / driver.DeltaTime;

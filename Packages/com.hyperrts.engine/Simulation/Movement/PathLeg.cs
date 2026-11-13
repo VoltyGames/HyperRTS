@@ -83,17 +83,18 @@ namespace HyperRTS.Simulation.Movement
                 IsFinal), Reverse);
 
         /// <summary>
-        /// The point <paramref name="distance"/> along the path from <paramref name="position"/>, round the corner;
-        /// the goal itself on the final leg.
+        /// The point <paramref name="distance"/> along the path from <paramref name="position"/>, round the corner,
+        /// and no further than the goal. A far goal is never aimed at itself: the one arc to it turns twice its
+        /// bearing.
         /// </summary>
         public float2 PointAhead(float2 position, float distance)
         {
-            if (IsFinal)
+            if (Distance >= distance)
             {
-                return Corner;
+                return position + Direction * distance;
             }
 
-            return Distance >= distance ? position + Direction * distance : Corner + Next * (distance - Distance);
+            return IsFinal ? Corner : Corner + Next * (distance - Distance);
         }
 
         public bool HasArrived(float radius) => IsFinal && Distance <= NavTolerances.Arrive(radius);

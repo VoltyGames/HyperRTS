@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Transport
                 }
 
                 var walk = Reach.Approach(container, Reach.Transform(entity), agent,
-                    new MoveControl(destination, moving, arrived), Grid);
+                    new MoveControl(destination, moving, arrived), Grid, ReachClaims.None);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

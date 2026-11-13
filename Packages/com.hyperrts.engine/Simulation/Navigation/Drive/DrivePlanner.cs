@@ -144,16 +144,22 @@ namespace HyperRTS.Simulation.Navigation.Drive
             }
         }
 
-        // Wheels drive the curve to a pose well along the path; tracks turn in place to the first leg.
+        // Wheels turn onto the path by reflex, backing to turn round, so their start is planned only once walls hold
+        // them; tracks turn in place to the first leg.
         private float PlanStart(bool stuck)
         {
             var reach = math.min(_check.Line.Total, 2f * Chassis.TurnRadius + HullLength);
-            if (!stuck && _check.CanStart(reach))
+            if (stuck)
             {
-                return Chassis.IsWheeled ? reach : 0f;
+                return Search(0f, reach);
             }
 
-            return Search(0f, reach);
+            if (Chassis.IsWheeled)
+            {
+                return reach;
+            }
+
+            return _check.CanStart(reach) ? 0f : Search(0f, reach);
         }
 
         // Sweeps the curve from a fillet and a hull before the corner to as far after; tracks may pivot on it instead.

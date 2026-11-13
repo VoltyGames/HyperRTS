@@ -21,8 +21,9 @@ Nodes are finite or regrow, and harvesters move on when one runs dry. Steady inc
 with the player's `Income` stat. `ResourceStagesAuthoring` on a node swaps child models by the share of its starting
 amount left, and steps back up as a renewable node regrows.
 
-A harvester works a node or drop-off from any side. `TargetReach.Approach` sends it to the nearest reachable point on
-the footprint's edge, and it works once its hull touches the edge, whichever way it faces. A full harvester picks one
+A harvester works a node or drop-off from any side, at a spot of its own: `TargetReach.Approach` sends it to the
+spot round the footprint cheapest to drive to that no other harvester holds ([target reach](movement.md#navigation)),
+and it works once in reach, whichever way it faces. A full harvester picks one
 drop-off per trip (`HarvestState.DropOff`), the one with the smallest edge gap plus the turn needed to face it, and
 keeps it until it delivers or the drop-off is lost, unfinished or changes owner, so a truck never flips between two.
 With `unloadSeconds` above 0 the truck stands at the drop-off in `HarvestPhase.Unloading` and is paid when the time

@@ -23,7 +23,10 @@ namespace HyperRTS.Simulation.Tests
         public int Steps { get; private set; }
         public float Seconds => Steps * TestWorld.FrameTime;
 
-        /// <summary>The most any unit turned one way within 80 m driven; a truck's full circle reads 360 degrees.</summary>
+        /// <summary>
+        /// The most any unit turned one way within 40 m driven forwards: a truck's forward ring reads 360 degrees, a
+        /// turnaround it backs round under 180.
+        /// </summary>
         public float MaxLoop => Max(unit => unit.MaxLoop);
 
         /// <summary>The unit that turned most one way, where and when.</summary>
@@ -107,13 +110,12 @@ namespace HyperRTS.Simulation.Tests
         /// <summary>What one unit has done since it was tracked.</summary>
         public sealed class Tally
         {
-            // Longer than a full circle at the truck's 11.8 m turn radius (74 m), so a ring reads 360 degrees and a
-            // turnaround about 180.
-            private const float LoopMetres = 80f;
+            // A full circle at the truck's 6 m turn radius, so a ring driven forwards reads 360 degrees.
+            private const float LoopMetres = 40f;
             private const float StopSpeed = 0.2f;
             private const float Step = TestWorld.FrameTime;
 
-            // A window of recent steps: metres driven and signed radians turned in each.
+            // A window of recent forward steps: metres driven and signed radians turned in each.
             private readonly Queue<float2> _window = new();
             private float _windowMetres;
             private float _windowTurn;
@@ -167,7 +169,7 @@ namespace HyperRTS.Simulation.Tests
                 Turned += math.degrees(math.abs(turn));
                 MeasureSideways(moved, _yaw + turn * 0.5f);
                 _seconds += Step;
-                MeasureLoop(distance, turn, transform.Position.xz);
+                MeasureLoop(distance, turn, transform);
                 _position = transform.Position.xz;
                 _yaw = yaw;
 
@@ -199,8 +201,18 @@ namespace HyperRTS.Simulation.Tests
                 Sideways = math.max(Sideways, math.abs(math.dot(moved, right)) / Step);
             }
 
-            private void MeasureLoop(float distance, float turn, float2 position)
+            // A ring is driven forwards in one go, so backing starts the window afresh.
+            private void MeasureLoop(float distance, float turn, in LocalTransform transform)
             {
+                var position = transform.Position.xz;
+                if (math.dot(position - _position, transform.Forward().xz) < 0f)
+                {
+                    _window.Clear();
+                    _windowMetres = 0f;
+                    _windowTurn = 0f;
+                    return;
+                }
+
                 _window.Enqueue(new float2(distance, turn));
                 _windowMetres += distance;
                 _windowTurn += turn;

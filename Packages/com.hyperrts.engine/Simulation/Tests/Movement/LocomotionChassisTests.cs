@@ -23,7 +23,8 @@ namespace HyperRTS.Simulation.Tests.Movement
         private static Frame[] DriveToFullLock(int frames)
         {
             var truck = Driving(Wheels, TruckChassis, TruckRadius, Crawling, new float2(0f, 1f));
-            var goal = new float2(-20f, -20f);
+            // Abeam, so it takes full lock forwards; a goal behind is backed round to.
+            var goal = new float2(-20f, 0f);
             var log = new Frame[frames];
             for (var i = 0; i < frames; i++)
             {

@@ -32,7 +32,8 @@ with an enabled `FacingGoal`, as a hull-fixed weapon sets, turns toward it stand
 | Reverse Run | Longest reverse leg of a reflex or a planned manoeuvre; 0 never reverses, even on a reverse move |
 
 A hull with a turn radius that doesn't pivot is wheeled. It aims its rear axle at a look-ahead point on the path and
-steers an arc through it (pure pursuit), with the steer angle changing at most at the steer rate. The centre drifts
+steers an arc through it (pure pursuit), with the steer angle changing at most at the steer rate. The point is never
+further than the look-ahead, even toward a goal in sight, as one arc to a far goal turns twice its bearing. The centre drifts
 slightly inward in a turn. Tracks and instant units turn about the centre at the turn rate and move along it. The
 Locomotion's **Fill from wheels** button measures wheelbase and rear axle from the model's `Wheel_L01`... parts, front
 to back: the first Steering Axles axles steer and the rest make the rear axle. `LocomotionRule` checks a wheeled
@@ -42,7 +43,9 @@ Reflexes, for a unit off a planned manoeuvre:
 
 - It cuts corners within its look-ahead once the next corner is in sight, slows to hold the arc to the next corner
   and brakes to stop at the goal.
-- A target inside its turning circle can't be reached on any arc, so it makes a three-point turn rather than orbit.
+- A corner behind it, or inside its turning circle where no arc reaches, is turned onto in the other gear: it backs
+  on full lock until the corner is round to its front, then drives on (a three-point turn), so it never drives a
+  ring to turn round. With a unit behind it, it tries forwards for a moment.
 - Wheels can't turn standing, so a leg that runs into a wall drives the other way for a moment
   (`LocomotionState.OtherWay`). This is a manoeuvre timer, not a stuck test.
 - A hull whose turn would swing an end into a wall slides off it. An overlapping hull never moves or turns deeper in.
@@ -69,16 +72,18 @@ job as the route. Easy paths run no search. A path with a stretch to search goes
 a fixed budget a frame (`PathfindingSystem.DriveBudget`). The first such path plans within it and leaves any stretch
 past it as drawn (`PathState.PartlyPlanned`), planned once its planned part is driven. Later paths wait a frame.
 
-- **Start and corners.** The planner sweeps a `DriveCurve` (the shortest forward turn, straight, turn, or a turn in
-  place for tracks) from the unit's pose to a point along the path, and the same around each corner. A `DriveHull`
-  checks the sweep against the wall field. When walls held the unit as it asked for a replan (`PathState.Stuck`), the
-  start is always searched.
+- **Start and corners.** Wheels get onto the path by reflex, so their start is not planned. Tracks turn in place
+  to the first leg, or the planner sweeps a `DriveCurve` (the shortest forward turn, straight, turn) from the unit's
+  pose to a pose along the path. Each corner is swept the same way, and a `DriveHull` checks the sweep against the
+  wall field. When walls held the unit as it asked for a replan (`PathState.Stuck`), the start is always searched,
+  wheels too.
 - **Search.** A blocked stretch runs a `DriveSearch`, Hybrid A* over the rear axle's pose in a window round the
   stretch, forwards and, within `ReverseRun`, backwards. A `DriveHeuristic` guides it with wall-aware distances, so
   routes the hull can turn on are preferred. A pose that overlaps walls is allowed only while the overlap shrinks, so
   a wedged start plans its way out. A search stops at a fixed expansion cap (`DriveSearch.MaxExpansions`); a failed
   stretch tries once more reaching further along the path, then stays as drawn.
-- **Result.** The stretch becomes `PathWaypoint`s every 1.5 m, each `Tight`. `Reverse` marks a leg driven backwards, and
+- **Result.** The stretch becomes `PathWaypoint`s every 1.5 m, each `Tight`. The way up to a stretch is an
+  ordinary leg, ending on a drawn point at the stretch's first pose. `Reverse` marks a leg driven backwards, and
   a gear change is a waypoint where it flips. `PathStats.Drive` counts searches, expansions and failures.
 - **Following.** `PathState.SkipCorners` never cuts a tight waypoint, and goal moves never move a tight last waypoint
   (a moved goal searches again).

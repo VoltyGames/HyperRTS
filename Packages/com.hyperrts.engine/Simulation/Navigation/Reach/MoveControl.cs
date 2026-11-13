@@ -25,6 +25,20 @@ namespace HyperRTS.Simulation.Navigation.Reach
         /// <summary>The last move gave up short of its goal.</summary>
         public readonly bool GaveUp => Arrived.ValueRO && !Moving.ValueRO && Reason == ArrivalReason.Stalled;
 
+        /// <summary>
+        /// True once a walk-up is in reach. A stuck one forgets its stall, so the next approach walks up again from
+        /// where it ended, for orders that never give up on their target.
+        /// </summary>
+        public readonly bool HasReached(ApproachState walk)
+        {
+            if (walk == ApproachState.Stuck)
+            {
+                Arrived.ValueRW = false;
+            }
+
+            return walk == ApproachState.Reached;
+        }
+
         /// <summary>Ends the move where the unit stands.</summary>
         public readonly void Stop()
         {

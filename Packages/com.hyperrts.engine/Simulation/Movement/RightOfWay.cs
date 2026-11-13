@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Movement
         // Heavier by half again has the right of way.
         private const float Outweighing = 1.5f;
 
-        // Goals within 60 degrees share a heading; crossing vehicles choose a stable right of way.
+        // Goals within 60 degrees share a heading; vehicles crossing or meeting head-on choose a stable right of way.
         private const float SharedHeading = 0.5f;
 
         // Slower than this a vehicle's lane runs along its facing, as its velocity has no direction.
@@ -119,7 +119,7 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>
         /// The mover's part of steering round <paramref name="other"/>: none when the other gives way, so it isn't
         /// steered round; all against a unit holding its ground, in same-way traffic or against a mover that
-        /// outweighs it. Allied crossing vehicles choose one winner; other pairs share half each.
+        /// outweighs it. Allied vehicles crossing or meeting head-on choose one winner; other pairs share half each.
         /// </summary>
         public readonly float Share(in SpatialEntry mover, in SpatialEntry other, bool otherYields, int precedence)
         {
@@ -133,16 +133,17 @@ namespace HyperRTS.Simulation.Movement
                 return 1f;
             }
 
-            if (CrossingVehicles(mover, other))
+            if (MeetingVehicles(mover, other))
             {
-                return CrossesFirst(mover, other) ? 0f : 1f;
+                return GoesFirst(mover, other) ? 0f : 1f;
             }
 
             return Outweighs(other, mover) ? 1f : 0.5f;
         }
 
-        // A stable winner lets crossing traffic yield before contact instead of both braking into a deadlock.
-        private readonly bool CrossingVehicles(in SpatialEntry mover, in SpatialEntry other)
+        // A stable winner lets crossing or oncoming traffic yield before contact instead of both braking into a
+        // deadlock.
+        private readonly bool MeetingVehicles(in SpatialEntry mover, in SpatialEntry other)
         {
             if (!mover.IsVehicle || !other.IsVehicle)
             {
@@ -154,10 +155,10 @@ namespace HyperRTS.Simulation.Movement
                 return false;
             }
 
-            return math.abs(math.dot(mover.Heading, other.Heading)) < SharedHeading;
+            return math.dot(mover.Heading, other.Heading) < SharedHeading;
         }
 
-        private static bool CrossesFirst(in SpatialEntry mover, in SpatialEntry other)
+        private static bool GoesFirst(in SpatialEntry mover, in SpatialEntry other)
         {
             if (Outweighs(mover, other))
             {

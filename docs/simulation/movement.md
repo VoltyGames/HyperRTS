@@ -53,12 +53,18 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
   Scenery** (infantry). Higher-rated scenery blocks like a closed cell. Felled scenery reopens its cell without
   invalidating paths.
 - **Shared surfaces.** Layers that share a surface share cells, so ships pass under a bridge that tanks cross.
-- **Target reach.** `TargetReach` walks a unit up to a target to build, repair, capture, board or gather, to the point
-  just outside the footprint nearest the unit. When a neighbour flush against that edge, such as the next wall
-  segment, leaves no open ground there it can reach, it goes to the nearest such spot by another side. A building's
-  footprint is its `NavObstacle`; a unit's is the box round its `NavAgent` hull. The job hands it a `MoveControl`: destination, enabled bit and `Arrival` bit, written together.
-  A walk-up whose locomotion ends short of the target is `ApproachState.Stuck`, and the order finishes. A target that
-  moved off is walked to again. A new order clears the last `Arrival`.
+- **Target reach.** `TargetReach` walks a unit up to a target to build, repair, capture, board or gather. It stands
+  on open ground a hull's length off the footprint, so it is in reach at any heading. `StandSpotSearch` tries spots
+  round the footprint and takes the cheapest to drive to from the unit's pose: the distance plus the turn onto it,
+  backing on a short way behind. A spot past the footprint costs the way round it, and one inside the turning
+  circle, which no arc reaches, a full circle. Units sharing a target pass `ReachClaims`, the spots the others hold
+  (harvesters do, `GatherClaimJob`): spots stay a hull's length and width apart, so units spread round the target.
+  A goal another unit came to hold, or one a push left inside the turning circle, is chosen again. With every spot
+  held a unit waits two spacings off the footprint, clear of where a unit leaving its spot backs to.
+  A building's footprint is its `NavObstacle`; a unit's is the box round its `NavAgent` hull. The job hands it a
+  `MoveControl`: destination, enabled bit and `Arrival` bit, written together. A walk-up whose locomotion ends short
+  of the target is `ApproachState.Stuck`, and the order finishes; a gather order walks up again instead. A target
+  that moved off is walked to again. A new order clears the last `Arrival`.
 - **Spatial index.** `SpatialIndex` answers range queries over living entities from a grid of 8 m cells rebuilt each
   frame, meeting neighbours in the same order every run. Entries wider than a cell go in a short `Oversized` list.
 
@@ -82,7 +88,7 @@ A moving unit steers by sampling (`Steering`): it scores candidate velocities ag
   neighbour than standing.
 
 The chosen velocity goes to `Locomotion` as the heading and speed to drive ([driving](driving.md)). Layers that can't
-block each other ignore each other, aircraft included. The same query feeds the overlap push, which moves neighbours
+block each other ignore each other: aircraft meet only aircraft, and only those near their own height. The same query feeds the overlap push, which moves neighbours
 apart along the line between their closest points until the larger of their spacings lies between them. Hulls never
 meet: each unit's whole move closes on a neighbour by at most half the room between hulls (`HullClearance`). Each
 formation slot is sized by its own unit's footprint, and a slot in a building or off the unit's ground moves to the
@@ -93,9 +99,9 @@ in tonnes, sets each unit's weight.
 
 - **Giving way.** Two movers share the avoiding unless they go one way; then the one further back gives way and the
   one ahead shares only the inner push, so an abreast pair at a one-lane bridge never waits on each other. A mover
-  that another outweighs by half again takes all the avoiding on itself. Allied vehicles crossing paths choose one
-  winner: a substantially heavier vehicle goes first, otherwise entity index breaks the tie. The other takes all
-  the avoiding, while hull clearance still prevents contact for both.
+  that another outweighs by half again takes all the avoiding on itself. Allied vehicles crossing paths or meeting
+  head-on choose one winner: a substantially heavier vehicle goes first, otherwise entity index breaks the tie. The
+  other takes all the avoiding, while hull clearance still prevents contact for both.
 - **Idle units** step aside for an allied mover of their own kind and stay where pushed.
 - **Foot units and vehicles.** A vehicle is a unit with `LocomotionAuthoring` (`NavAgent.IsVehicle`); every other
   ground unit is on foot. The push never moves a vehicle off a foot unit: the foot unit takes the whole overlap.
@@ -105,9 +111,10 @@ in tonnes, sets each unit's weight.
   so an idle crowd queries no more than its own neighbours. The
   vehicle slows to `RightOfWay.WalkingPace` while one stands in its lane and still stops at its hull. Held 2 s by
   allied foot units alone, it drives through them at a walk until it is clear of them.
-- **Busy units.** A parked unit with an order, a target or Hold Position, a landed aircraft and an enemy hold their
-  ground: to the mover they are fixed obstacles, so a truck never shoves a dozer that is building. A unit standing on
-  the mover's goal and an arrived groupmate are not avoided.
+- **Busy units.** A parked unit with an order, a target or Hold Position and an enemy hold their ground: to the
+  mover they are fixed obstacles, so a truck never shoves a dozer that is building. A unit standing on the mover's
+  goal and an arrived groupmate are not avoided. A landed aircraft is never pushed, and aircraft in flight are well
+  over it.
 - **Sunk units.** A unit sunk in walls, as when a building or wreck lands on it, drives out at its own top speed
   (`NavCapsule.WayOut`).
 - **Groups.** A formation move gives its units one group (`MoveDestination.Group`) and the span of its slots

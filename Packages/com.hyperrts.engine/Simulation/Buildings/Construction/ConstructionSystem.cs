@@ -120,7 +120,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 }
 
                 var walk = Reach.Approach(site, transform, agent,
-                    new MoveControl(destination, moving, arrived), Grid);
+                    new MoveControl(destination, moving, arrived), Grid, ReachClaims.None);
                 if (ActiveOrder.StopsShort(walk, busy, moving))
                 {
                     return;

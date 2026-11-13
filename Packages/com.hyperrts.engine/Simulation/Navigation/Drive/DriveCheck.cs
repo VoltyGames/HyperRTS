@@ -36,12 +36,10 @@ namespace HyperRTS.Simulation.Navigation.Drive
 
         private readonly Chassis Chassis => Agent.Chassis;
 
-        public readonly bool CanDrive(float from, float to) => TryCurve(from, to, out _, out _);
-
-        private readonly bool TryCurve(float from, float to, out DriveCurve curve, out float length)
+        public readonly bool CanDrive(float from, float to)
         {
             var start = PoseAt(from);
-            if (!Hull.TryFit(start, GoalAt(to), out curve, out length))
+            if (!Hull.TryFit(start, GoalAt(to), out var curve, out var length))
             {
                 return false;
             }
@@ -58,15 +56,9 @@ namespace HyperRTS.Simulation.Navigation.Drive
                 ? DriveGoal.ToPose(Line.PointAt(distance), Line.HeadingAt(distance))
                 : DriveGoal.ToPoint(Line.End);
 
-        public readonly bool CanStart(float reach)
-        {
-            if (Chassis.IsWheeled)
-            {
-                return CanDrive(0f, reach);
-            }
-
-            return CanTurnInPlace(Start, Line.LegHeading(0)) || CanDrive(0f, reach);
-        }
+        /// <summary>Whether a hull that turns standing gets onto the path: by turning in place, or along a curve.</summary>
+        public readonly bool CanStart(float reach) =>
+            CanTurnInPlace(Start, Line.LegHeading(0)) || CanDrive(0f, reach);
 
         public readonly bool CanPivot(int corner)
         {

@@ -18,9 +18,6 @@ namespace HyperRTS.Simulation.Navigation.Reach
         /// <summary>How far a unit's edge may be from the nearest it can get to a footprint.</summary>
         public const float Slack = 1f;
 
-        // Cell rings searched round a stand point for open ground the unit can reach.
-        private const int StandRings = 2;
-
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
@@ -52,6 +49,10 @@ namespace HyperRTS.Simulation.Navigation.Reach
         public static bool InReach(in NavBox footprint, float2 unit, float unitHalfLength, float navCellSize) =>
             footprint.Gap(unit, unit) <= Reach(unitHalfLength, navCellSize);
 
+        /// <summary>Whether a unit standing at <paramref name="point"/> is at the target, as a spot it takes there is.</summary>
+        public bool IsBy(Entity target, float2 point, in NavAgent agent) =>
+            Footprint(target).Gap(point) <= Reach(agent.HalfLength, _navCellSize);
+
         /// <summary>The entity is still in the world (destroyed targets lose their transform first).</summary>
         public bool Exists(Entity entity) => _transforms.HasComponent(entity);
 
@@ -60,11 +61,11 @@ namespace HyperRTS.Simulation.Navigation.Reach
         public LocalTransform Transform(Entity entity) => _transforms[entity];
 
         /// <summary>
-        /// Walks the unit to open ground beside the target until in reach, then stops it. A walk that locomotion ended
-        /// by itself short of a goal still by the target is stuck.
+        /// Walks the unit to a spot of its own beside the target until in reach, then stops it; with every spot taken
+        /// it waits clear of them. A walk that locomotion ended by itself short of a goal by the target is stuck.
         /// </summary>
         public ApproachState Approach(Entity target, in LocalTransform unit, in NavAgent agent, MoveControl move,
-            in NavGrid grid)
+            in NavGrid grid, ReachClaims claims)
         {
             var footprint = Footprint(target);
             var position = unit.Position;
@@ -82,38 +83,60 @@ namespace HyperRTS.Simulation.Navigation.Reach
                 return ApproachState.Stuck;
             }
 
-            if (isGoalByTarget && move.Moving.ValueRO)
+            if (isGoalByTarget && move.Moving.ValueRO && Keeps(target, unit, agent, goal, claims))
             {
                 return ApproachState.Walking;
             }
 
-            var edge = StandPoint(grid, footprint, position.xz, agent);
-            move.Destination.ValueRW.MoveTo(move.Moving, new float3(edge.x, position.y, edge.y));
-            move.Arrived.ValueRW = false;
+            var search = new StandSpotSearch(grid, footprint, unit, agent);
+            if (search.TryFind(target, claims, out var spot))
+            {
+                claims.Take(target, spot);
+                move.Destination.ValueRW.MoveTo(move.Moving, new float3(spot.x, position.y, spot.y));
+                move.Arrived.ValueRW = false;
+                return ApproachState.Walking;
+            }
+
+            Wait(search, footprint, unit, agent, move);
             return ApproachState.Walking;
         }
 
-        /// <summary>
-        /// Where the unit stands: open ground the length of its hull off the nearest point of the footprint, so its
-        /// hull fits there at any heading and needs no turn to get in reach.
-        /// </summary>
-        private readonly float2 StandPoint(in NavGrid grid, in NavBox footprint, float2 unit, in NavAgent agent)
+        // A goal another unit came to hold is chosen again, as is one a swerve or a push left inside the turning
+        // circle, where no arc reaches it.
+        private static bool Keeps(Entity target, in LocalTransform unit, in NavAgent agent, float2 goal,
+            in ReachClaims claims)
         {
-            var edge = footprint.EdgePoint(unit, agent.HalfLength + Slack * 0.5f);
-            if (!grid.IsCreated || grid.Classes.Find(agent.Class) < 0)
+            if (claims.IsTaken(target, goal, StandSpotSearch.Spacing(agent)))
             {
-                return edge;
+                return false;
             }
 
-            var access = agent.Access(grid);
-            var cell = access.Grid.Grid.Cell(new float3(edge.x, 0f, edge.y));
-            var region = access.NearestRegion(new float3(unit.x, 0f, unit.y));
-            if (region == 0 || !access.TryFindNearest(cell, StandRings, region, out var open))
+            var facing = math.normalizesafe(unit.Forward().xz);
+            return !agent.Chassis.IsInsideTurn(unit.Position.xz, facing, goal, 1f);
+        }
+
+        // Every spot is held, so the unit waits off the footprint, where one leaving a spot has room to back out:
+        // it stands once that near and drives there from farther off.
+        private static void Wait(in StandSpotSearch search, in NavBox footprint, in LocalTransform unit,
+            in NavAgent agent, MoveControl move)
+        {
+            var gap = StandSpotSearch.WaitGap(agent);
+            if (footprint.Gap(unit.Position.xz) <= gap + agent.HullLength)
             {
-                return edge;
+                move.Stop();
+                return;
             }
 
-            return open.Equals(cell) ? edge : access.Grid.Grid.Center(open);
+            var goal = move.Destination.ValueRO.Value.xz;
+            var isGoalWaitPoint = math.abs(footprint.Gap(goal) - gap) <= Slack;
+            if (isGoalWaitPoint && move.Moving.ValueRO)
+            {
+                return;
+            }
+
+            var point = search.WaitPoint;
+            move.Destination.ValueRW.MoveTo(move.Moving, new float3(point.x, unit.Position.y, point.y));
+            move.Arrived.ValueRW = false;
         }
 
         /// <summary>

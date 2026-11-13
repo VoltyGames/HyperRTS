@@ -10,8 +10,8 @@ namespace HyperRTS.Simulation.Navigation.Paths
     internal struct PathRequest
     {
         // A route this many hull lengths or shorter that starts behind the hull is backed, as a driver would.
-        private const float ShortWayHulls = 3f;
-        private const float BehindCos = -0.3f;
+        public const float ShortWayHulls = 3f;
+        public const float BehindCos = -0.3f;
 
         public Entity Entity;
         public float3 Start;

@@ -30,11 +30,11 @@ namespace HyperRTS.Simulation.Tests
             ReverseSpeed = 3f,
         };
 
-        /// <summary>The game's supply truck hull: 8 m long, a 10 m turn, reversing 6 m.</summary>
+        /// <summary>The game's supply truck hull: 8 m long, a 6 m turn, reversing 6 m.</summary>
         public static NavAgent SupplyTruckHull() => Hull(new NavAgent
         {
             Radius = 1.25f, HullLength = 8f, Mass = 17f,
-            Chassis = new Chassis { Wheelbase = 4.6f, RearAxle = 2f, TurnRadius = 10f, ReverseRun = 6f },
+            Chassis = new Chassis { Wheelbase = 4.6f, RearAxle = 2f, TurnRadius = 6f, ReverseRun = 6f },
         });
 
         /// <summary>Wheeled handling for the dock and reach tests' short-wheelbase truck.</summary>
@@ -44,11 +44,11 @@ namespace HyperRTS.Simulation.Tests
             ReverseSpeed = 3f,
         };
 
-        /// <summary>A short-wheelbase truck hull of the given size, with a 10 m turn and a 6 m reverse.</summary>
+        /// <summary>A short-wheelbase truck hull of the given size, with a 6 m turn and a 6 m reverse.</summary>
         public static NavAgent ShortTruckHull(float radius, float length) => Hull(new NavAgent
         {
             Radius = radius, HullLength = length, Mass = 17f,
-            Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 10f, ReverseRun = 6f },
+            Chassis = new Chassis { Wheelbase = 4f, RearAxle = 1.2f, TurnRadius = 6f, ReverseRun = 6f },
         });
 
         /// <summary>A main battle tank hull that pivots on the spot.</summary>
