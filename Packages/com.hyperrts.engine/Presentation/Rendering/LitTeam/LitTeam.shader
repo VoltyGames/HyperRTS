@@ -75,6 +75,10 @@ Shader "HyperRTS/LitTeam"
         _LightsOn("Lights On", Range(0, 1)) = 1
         _EmissionMap("Emission Map", 2D) = "white" {}
 
+        [ToggleUI] _Transparent("Transparent (glass: base alpha fades the diffuse, reflections stay whole)", Float) = 0
+        [HideInInspector] _SrcBlend("__src", Float) = 1
+        [HideInInspector] _DstBlend("__dst", Float) = 0
+        [HideInInspector] _ZWrite("__zw", Float) = 1
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull Mode", Float) = 2.0
         [Toggle(_ALPHATEST_ON)] _AlphaClip("Alpha Clipping", Float) = 0.0
 
@@ -106,7 +110,8 @@ Shader "HyperRTS/LitTeam"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
-            ZWrite On
+            Blend[_SrcBlend][_DstBlend]
+            ZWrite[_ZWrite]
             Cull[_Cull]
 
             HLSLPROGRAM

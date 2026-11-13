@@ -18,6 +18,11 @@ namespace HyperRTS.Editor.Rendering
         private static readonly int OcclusionMap = Shader.PropertyToID("_OcclusionMap");
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
         private static readonly int AlphaClip = Shader.PropertyToID("_AlphaClip");
+        private static readonly int Transparent = Shader.PropertyToID("_Transparent");
+        private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
+        private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
+        private static readonly int ZWrite = Shader.PropertyToID("_ZWrite");
+        private static readonly string[] DepthPasses = { "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" };
 
         public override void OnGUI(MaterialEditor editor, MaterialProperty[] properties)
         {
@@ -43,6 +48,31 @@ namespace HyperRTS.Editor.Rendering
             material.globalIlluminationFlags = glows ? Glowing : MaterialGlobalIlluminationFlags.EmissiveIsBlack;
             var clipped = material.GetFloat(AlphaClip) > 0.5f;
             material.renderQueue = clipped ? (int)RenderQueue.AlphaTest : -1;
+            FollowSurface(material);
+        }
+
+        /// <summary>
+        /// A transparent material blends premultiplied, as URP Lit's Preserve Specular does: base alpha fades the
+        /// diffuse while reflections stay whole, which is glass. It casts no shadow and stays out of the depth passes.
+        /// </summary>
+        private static void FollowSurface(Material material)
+        {
+            var transparent = material.GetFloat(Transparent) > 0.5f;
+            Follow(material, "_SURFACE_TYPE_TRANSPARENT", transparent);
+            Follow(material, "_ALPHAPREMULTIPLY_ON", transparent);
+            material.SetFloat(SrcBlend, (float)BlendMode.One);
+            material.SetFloat(DstBlend, (float)(transparent ? BlendMode.OneMinusSrcAlpha : BlendMode.Zero));
+            material.SetFloat(ZWrite, transparent ? 0f : 1f);
+            material.SetOverrideTag("RenderType", transparent ? "Transparent" : "");
+            foreach (var pass in DepthPasses)
+            {
+                material.SetShaderPassEnabled(pass, !transparent);
+            }
+
+            if (transparent)
+            {
+                material.renderQueue = (int)RenderQueue.Transparent;
+            }
         }
 
         private static void Follow(Material material, string keyword, bool on) =>

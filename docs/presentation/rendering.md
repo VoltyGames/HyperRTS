@@ -10,7 +10,13 @@ developers writing shaders.
 `HyperRTS/LitTeam` is URP Lit that repaints the albedo in the owner's colour where the `_TeamMask` red channel allows
 (UV0), inside the `TeamStripAuthoring` height band if there is one. `OwnerPalette` holds this client's colours;
 `TeamColorOverride` swaps them. The validator flags units and buildings without a team colour material. LitTeam takes
-opaque or alpha-tested metallic workflow only, and `LitTeamGUI` keeps its keywords in step with the maps.
+the metallic workflow, opaque, alpha-tested or transparent, and `LitTeamGUI` keeps its keywords, blend, queue and passes
+in step with the maps and toggles.
+
+**Glass.** The `_Transparent` toggle blends premultiplied, as URP Lit's Preserve Specular does: base alpha fades the
+diffuse while reflections stay whole, which is what glass looks like. A transparent material writes no depth, casts no
+shadow and skips the depth, depth-normals and motion-vector passes, so whatever the model shows behind it, such as a
+cab, must be modelled. Opaque glass (windows over a painted room, periscopes) stays opaque with a high smoothness.
 
 **Detail maps.** The `_DETAIL` toggle adds a grey detail albedo, imported as sRGB colour (0.5 as authored leaves the colour alone), and a detail normal,
 projected in object space from three sides at `_DetailTiling` repeats per metre, so grain has the same density on every

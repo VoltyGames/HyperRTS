@@ -1,6 +1,8 @@
 // HyperRTS/LitTeam ForwardLit keywords: material features, lighting, lightmaps, LOD cross-fade and instancing.
 #pragma shader_feature_local _NORMALMAP
 #pragma shader_feature_local_fragment _ALPHATEST_ON
+#pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
+#pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
 #pragma shader_feature_local_fragment _EMISSION
 #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
 #pragma shader_feature_local_fragment _OCCLUSIONMAP
