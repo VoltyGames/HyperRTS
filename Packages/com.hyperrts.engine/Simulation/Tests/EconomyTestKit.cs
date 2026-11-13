@@ -60,10 +60,10 @@ namespace HyperRTS.Simulation.Tests
         }
 
         public static Entity MakeHarvester(this TestWorld world, Entity unit, int capacity, float gatherRate,
-            float replacementRange = 30f)
+            float replacementRange = 30f, float unloadSeconds = 0f)
         {
             var writer = world.Writer(unit);
-            HarvesterAuthoring.Add(writer, capacity, gatherRate, replacementRange);
+            HarvesterAuthoring.Add(writer, capacity, gatherRate, replacementRange, unloadSeconds);
             return unit;
         }
 

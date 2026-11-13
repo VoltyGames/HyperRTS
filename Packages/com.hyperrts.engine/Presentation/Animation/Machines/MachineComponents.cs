@@ -13,7 +13,7 @@ namespace HyperRTS.Presentation.Animation.Machines
 
         public MachineRun Run;
 
-        /// <summary>The unit or building whose power, queue, shots or deploy progress <see cref="Run"/> reads.</summary>
+        /// <summary>The unit or building whose power, queue, shots, work, cargo or deploy progress <see cref="Run"/> reads.</summary>
         public Entity Owner;
 
         /// <summary>Seconds to ease from a stop to full speed, and back.</summary>
@@ -31,11 +31,21 @@ namespace HyperRTS.Presentation.Animation.Machines
         /// <summary>Seconds a Firing or Releasing machine keeps running after its count last changed.</summary>
         public float KeepRunningSeconds;
 
+        /// <summary>Seconds since its unit last worked, for <see cref="MachineRun.Building"/>.</summary>
+        public float SinceWork;
+
         /// <summary>Takes this frame's <paramref name="count"/> and says whether it changed within <see cref="KeepRunningSeconds"/>.</summary>
         public bool ChangedRecently(uint count, float deltaTime)
         {
             Changes.Update(count, deltaTime);
             return Changes.Within(KeepRunningSeconds);
+        }
+
+        /// <summary>Takes whether the unit works this frame and says whether it did within <see cref="KeepRunningSeconds"/>.</summary>
+        public bool WorkedRecently(bool working, float deltaTime)
+        {
+            SinceWork = working ? 0f : Started ? SinceWork + deltaTime : KeepRunningSeconds;
+            return SinceWork < KeepRunningSeconds;
         }
 
         /// <summary>Eases the speed toward running or stopped and moves the clock by it.</summary>
@@ -48,7 +58,7 @@ namespace HyperRTS.Presentation.Animation.Machines
             Time += deltaTime * Speed;
         }
 
-        /// <summary>Takes <paramref name="ramp"/> as the speed outright, to follow a unit's deploy progress.</summary>
+        /// <summary>Takes <paramref name="ramp"/> as the speed outright, to follow a unit's deploy progress or load.</summary>
         public void Follow(float ramp, float deltaTime)
         {
             Ramp = ramp;
@@ -82,6 +92,18 @@ namespace HyperRTS.Presentation.Animation.Machines
 
         /// <summary>While its aircraft is on its drop run (a cargo ramp or bomb bay).</summary>
         Dropping = 6,
+
+        /// <summary>While its builder adds progress to a site, and the keep-running seconds after (a crane arm or welding rig).</summary>
+        Building = 7,
+
+        /// <summary>While its harvester fills at a node (a scoop or a pump).</summary>
+        Gathering = 8,
+
+        /// <summary>While its harvester stands unloading at a drop-off (a tipping bed or an auger).</summary>
+        Unloading = 9,
+
+        /// <summary>Its speed is its harvester's cargo over capacity, so Raise and Extend parts show the load building and draining.</summary>
+        Loaded = 10,
     }
 
     /// <summary>A moving piece of a machine, posed every frame from its machine's clock.</summary>

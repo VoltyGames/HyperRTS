@@ -88,6 +88,44 @@ namespace HyperRTS.Simulation.Tests.Resources
             Assert.IsTrue(World.IsEnabled<ActiveOrder>(harvester), "the loop keeps running");
         }
 
+        private Entity UnloadingHarvester()
+        {
+            SpawnDropOff(new float3(-6f, 0f, 0f));
+            var node = World.SpawnNode(new float3(4f, 0f, 0f), _supplies, 10);
+            var harvester = World.MakeHarvester(World.SpawnUnit(1, float3.zero), 10, 10f, unloadSeconds: 5f);
+            World.Order(harvester, OrderType.Gather, node);
+            World.RunUntil(() => World.Get<HarvestState>(harvester).Phase == HarvestPhase.Unloading, 10f);
+            Assert.AreEqual(HarvestPhase.Unloading, World.Get<HarvestState>(harvester).Phase);
+            return harvester;
+        }
+
+        [Test]
+        public void Unload_PaysOnlyAfterItsDelay()
+        {
+            var harvester = UnloadingHarvester();
+            Assert.AreEqual(0, World.GetResources(1, _supplies), "nothing is paid on arrival");
+
+            World.Run(3f);
+            Assert.AreEqual(0, World.GetResources(1, _supplies), "still unloading");
+            Assert.AreEqual(10, World.Get<Harvester>(harvester).CargoAmount);
+
+            World.Run(3f);
+            Assert.AreEqual(10, World.GetResources(1, _supplies));
+            Assert.AreEqual(0, World.Get<Harvester>(harvester).CargoAmount);
+        }
+
+        [Test]
+        public void Unload_PaysNothingToAHarvesterKilledFirst()
+        {
+            var harvester = UnloadingHarvester();
+            World.Run(2f);
+
+            World.Kill(harvester);
+            World.Run(6f);
+
+            Assert.AreEqual(0, World.GetResources(1, _supplies));
+        }
+
         [Test]
         public void DepletedNode_IsDestroyed_AndHarvesterDeliversThenStops()
         {

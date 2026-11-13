@@ -1,9 +1,11 @@
 using HyperRTS.Presentation.Animation.Machines;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Resources.Gathering;
 using NUnit.Framework;
 using Unity.Core;
 using Unity.Entities;
@@ -156,6 +158,47 @@ namespace HyperRTS.Presentation.Tests.Animation.Machines
             Run(Step);
             var raised = math.rotate(_em.GetComponentData<LocalTransform>(launcher).Rotation, math.forward());
             Assert.AreEqual(math.sin(math.radians(-40f)), raised.y, 1e-4f, "then it raises fully");
+        }
+
+        [Test]
+        public void Building_RunsWhileTheBuilderWorks_AndStopsAfterTheKeepRunningSeconds()
+        {
+            var builder = _em.CreateEntity();
+            _em.AddComponentData(builder, new BuildWork());
+            var machine = Machine(MachineRun.Building, builder);
+            Run(1f);
+            var before = Clock(machine).Time;
+            Assert.AreEqual(1f, before, 1e-4f, "starts at full speed when first seen working");
+
+            _em.SetComponentEnabled<BuildWork>(builder, false);
+            Run(0.5f);
+            Assert.Greater(Clock(machine).Time, before, "keeps running just after the work stops");
+
+            Run(2f);
+            before = Clock(machine).Time;
+            Run(1f);
+            Assert.AreEqual(before, Clock(machine).Time, 1e-5f, "stopped");
+        }
+
+        [Test]
+        public void Loaded_FollowsCargoOverCapacity_AndDrainsWhileUnloading()
+        {
+            var truck = _em.CreateEntity();
+            _em.AddComponentData(truck, new Harvester { Capacity = 10, CargoAmount = 5, UnloadSeconds = 4f });
+            _em.AddComponentData(truck, new HarvestState());
+            var machine = Machine(MachineRun.Loaded, truck);
+            var crate = Part(machine, new MachinePart { Motion = MachineMotion.Extend, Axis = math.up(), Amplitude = 2f, From = 0f, To = 1f });
+
+            Run(Step);
+            Assert.AreEqual(1f, _em.GetComponentData<LocalTransform>(crate).Position.y, 1e-4f, "half loaded, half raised");
+
+            _em.SetComponentData(truck, new Harvester { Capacity = 10, CargoAmount = 10, UnloadSeconds = 4f });
+            Run(Step);
+            Assert.AreEqual(2f, _em.GetComponentData<LocalTransform>(crate).Position.y, 1e-4f, "full");
+
+            _em.SetComponentData(truck, new HarvestState { Phase = HarvestPhase.Unloading, UnloadTime = 2f });
+            Run(Step);
+            Assert.AreEqual(1f, _em.GetComponentData<LocalTransform>(crate).Position.y, 1e-4f, "half unloaded");
         }
 
         [Test]

@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
+using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Buildings
 {
@@ -9,6 +10,10 @@ namespace HyperRTS.Simulation.Buildings
     {
         [StatField(Stat.BuildRate)] public float Rate;
     }
+
+    /// <summary>Enabled for each frame a builder adds progress to a site, so client machines can show the work.</summary>
+    [GhostEnabledBit]
+    public struct BuildWork : IComponentData, IEnableableComponent { }
 
     /// <summary>A building prefab a builder can place.</summary>
     [InternalBufferCapacity(4)]

@@ -20,7 +20,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Buildings.Construction
 {
     /// <summary>
-    /// Runs Build orders: builders walk to an allied site and add progress while in reach, and a squad adds it for each
+    /// Runs Build orders: builders walk to an allied site and add progress while in reach (<see cref="BuildWork"/> is on those frames), and a squad adds it for each
     /// living member. A site at full progress completes and raises <see cref="BuildingCompleted"/>. A builder that
     /// finishes a line piece with nothing queued goes on to the nearest unfinished piece of the same wall.
     /// </summary>
@@ -80,7 +80,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
         /// <summary>Single-threaded so several builders can add to one site.</summary>
         [BurstCompile]
         [WithNone(typeof(Dead))]
-        [WithPresent(typeof(ActiveOrder), typeof(MoveDestination), typeof(Arrival))]
+        [WithPresent(typeof(ActiveOrder), typeof(MoveDestination), typeof(Arrival), typeof(BuildWork))]
         private partial struct BuildJob : IJobEntity
         {
             public float DeltaTime;
@@ -102,10 +102,11 @@ namespace HyperRTS.Simulation.Buildings.Construction
             [ReadOnly] public NativeArray<Entity> Lines;
 
             private void Execute(Entity builderEntity, in Builder builder, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
+                RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived, EnabledRefRW<BuildWork> working,
                 in LocalTransform transform, in NavAgent agent, in Owner owner)
             {
                 WorkLookup.DisableIfPresent(builderEntity);
+                working.ValueRW = false;
                 if (!busy.ValueRO || order.Value.Type != OrderType.Build)
                 {
                     return;
@@ -125,13 +126,21 @@ namespace HyperRTS.Simulation.Buildings.Construction
                     return;
                 }
 
+                working.ValueRW = true;
                 Dig(builderEntity, site);
                 if (!Advance(site, builder.Rate * Crew(builderEntity)))
                 {
                     return;
                 }
 
-                var next = QueueLookup[builderEntity].IsEmpty ? NextLinePiece(site, transform.Position) : Entity.Null;
+                MoveOn(builderEntity, site, transform.Position, ref order, busy);
+            }
+
+            // A finished piece ends the order, or sends the builder to the next piece of its wall.
+            private void MoveOn(Entity builderEntity, Entity site, float3 from, ref ActiveOrder order,
+                EnabledRefRW<ActiveOrder> busy)
+            {
+                var next = QueueLookup[builderEntity].IsEmpty ? NextLinePiece(site, from) : Entity.Null;
                 if (next == Entity.Null)
                 {
                     busy.ValueRW = false;

@@ -71,8 +71,14 @@ cranes, launchers and doors. A part with no machine above it fails the bake. A p
 | `Raise`, `Extend`, `Stretch` | Turn, move or scale over a span of the machine's speed; packing up reverses it |
 | `Point` | Keep an `aim` transform's bearing |
 
-A machine's `runs` says when its clock turns: `Always`, `Powered`, `Producing`, `Firing`, `Deployed`, `Releasing` or
-`Dropping`. The clock eases over `rampSeconds`.
+A machine's `runs` says when its clock turns: `Always`, `Powered`, `Producing`, `Firing`, `Deployed`, `Releasing`,
+`Dropping`, `Building`, `Gathering`, `Unloading` or `Loaded`. The clock eases over `rampSeconds`. `Deployed` and
+`Loaded` skip the ease and take the speed outright: the unit's deploy progress, or its harvester's cargo over capacity
+(draining across the unload), so Raise and Extend parts appear one by one as a truck fills, each over its own span.
+`Building` runs while the builder's `BuildWork` flag is on and for `keepRunningSeconds` after; `Gathering` runs while the
+harvester fills at a node and `Unloading` while it stands at the drop-off. These read replicated state (`BuildWork`,
+`HarvestState`, `Harvester.CargoAmount`), so clients show them. A `Building` machine needs `BuilderAuthoring` above it and
+the harvester kinds need `HarvesterAuthoring`, or the bake fails.
 
 A door is a machine of its own. `Releasing` runs after the producer above it releases a unit, so enemies see it too: set
 `rampSeconds` to the open time and `keepRunningSeconds` to that plus the time it stays open. Use `Raise` for a hinged

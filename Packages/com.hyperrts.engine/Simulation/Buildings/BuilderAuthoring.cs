@@ -23,6 +23,8 @@ namespace HyperRTS.Simulation.Buildings
         public static DynamicBuffer<BuildOption> Add(EntityWriter writer, float rate)
         {
             writer.Add(new Builder { Rate = rate });
+            writer.Add(new BuildWork());
+            writer.SetEnabled<BuildWork>(false);
             return writer.AddBuffer<BuildOption>();
         }
 

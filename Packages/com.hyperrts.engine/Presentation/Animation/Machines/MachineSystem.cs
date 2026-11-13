@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Buildings;
@@ -7,6 +8,7 @@ using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Production;
+using HyperRTS.Simulation.Resources.Gathering;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -41,6 +43,9 @@ namespace HyperRTS.Presentation.Animation.Machines
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
                 Producers = SystemAPI.GetComponentLookup<Producer>(true),
                 DropRuns = SystemAPI.GetComponentLookup<DropRun>(true),
+                Works = SystemAPI.GetComponentLookup<BuildWork>(true),
+                Harvesters = SystemAPI.GetComponentLookup<Harvester>(true),
+                Harvests = SystemAPI.GetComponentLookup<HarvestState>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new PartJob
             {
@@ -65,12 +70,21 @@ namespace HyperRTS.Presentation.Animation.Machines
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
             [ReadOnly] public ComponentLookup<Producer> Producers;
             [ReadOnly] public ComponentLookup<DropRun> DropRuns;
+            [ReadOnly] public ComponentLookup<BuildWork> Works;
+            [ReadOnly] public ComponentLookup<Harvester> Harvesters;
+            [ReadOnly] public ComponentLookup<HarvestState> Harvests;
 
             private void Execute(Entity entity, ref MachineClock clock)
             {
                 if (clock.Run == MachineRun.Deployed)
                 {
                     clock.Follow(Deployables[clock.Owner].Progress, DeltaTime);
+                    return;
+                }
+
+                if (clock.Run == MachineRun.Loaded)
+                {
+                    clock.Follow(Harvesters[clock.Owner].LoadFraction(Harvests[clock.Owner]), DeltaTime);
                     return;
                 }
 
@@ -94,6 +108,12 @@ namespace HyperRTS.Presentation.Animation.Machines
                         return Producers.TryGetComponent(building, out var producer) && clock.ChangedRecently(producer.Released, DeltaTime);
                     case MachineRun.Dropping:
                         return DropRuns.TryGetComponent(building, out var drop) && drop.Active;
+                    case MachineRun.Building:
+                        return clock.WorkedRecently(Works.HasEnabled(building), DeltaTime);
+                    case MachineRun.Gathering:
+                        return Harvests.TryGetComponent(building, out var gather) && gather.Filling;
+                    case MachineRun.Unloading:
+                        return Harvests.TryGetComponent(building, out var unload) && unload.Phase == HarvestPhase.Unloading;
                     default:
                         return true;
                 }

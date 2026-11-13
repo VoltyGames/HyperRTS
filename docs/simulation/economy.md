@@ -25,6 +25,10 @@ A harvester works a node or drop-off from any side. `TargetReach.Approach` sends
 the footprint's edge, and it works once its hull touches the edge, whichever way it faces. A full harvester picks one
 drop-off per trip (`HarvestState.DropOff`), the one with the smallest edge gap plus the turn needed to face it, and
 keeps it until it delivers or the drop-off is lost, unfinished or changes owner, so a truck never flips between two.
+With `unloadSeconds` above 0 the truck stands at the drop-off in `HarvestPhase.Unloading` and is paid when the time
+ends, so a truck killed or re-ordered first pays nothing and keeps its cargo. `HarvestState.Filling` is true while it
+adds cargo at a node, and the phase, cargo and unload time replicate so [machines](../presentation/animation.md#machines)
+can show gathering, unloading and the load.
 
 ## Airdrops
 
@@ -99,6 +103,8 @@ to the grid; each later leg is a `PlaceLine` command with `LineStart.Joined` in 
 so the corner touches and stays closed. The server rebuilds each leg and places every free segment as its own site,
 charged per segment, until the player can't afford one or a `BuildLimit` refuses. Legs after the first queue, ordered
 from where the builders' earlier orders leave them.
+
+A builder has `BuildWork` enabled on each frame it adds progress to a site (replicated, for machines that show the work).
 
 A builder that finishes a line piece with nothing queued goes on to the nearest unfinished piece of the same wall,
 the owner's line pieces joined edge to edge (`ConstructionSystem`), so a Build order on any one segment builds the

@@ -51,6 +51,21 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
+        public void BuildWork_IsOnWhileInReachOfTheSite_AndOffWhenTheOrderEnds()
+        {
+            var squad = Squad(float3.zero, 2);
+            Dig(squad, Site(new float3(10f, 0f, 0f)));
+            Assert.IsFalse(World.IsEnabled<BuildWork>(squad));
+
+            World.RunUntil(() => World.IsEnabled<BuildWork>(squad), 10f);
+            Assert.IsTrue(World.IsEnabled<BuildWork>(squad));
+
+            World.SetEnabled<ActiveOrder>(squad, false);
+            World.Run(0.2f);
+            Assert.IsFalse(World.IsEnabled<BuildWork>(squad));
+        }
+
+        [Test]
         public void Members_SpreadAlongOneSideOfTheSite_AndDig()
         {
             var squad = Squad(float3.zero, 4);

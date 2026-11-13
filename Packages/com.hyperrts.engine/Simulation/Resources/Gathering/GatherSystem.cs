@@ -91,23 +91,19 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 EnabledRefRW<MoveDestination> moving, ref Arrival arrival, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent, in Owner owner)
             {
+                harvest.Filling = false;
                 if (!busy.ValueRO || order.Value.Type != OrderType.Gather)
                 {
+                    harvest.CancelUnload();
                     return;
                 }
 
                 var move = new MoveControl(destination, moving, arrived) { Reason = arrival.Reason };
-                if (harvest.Phase == HarvestPhase.Returning)
+                if (harvest.Phase != HarvestPhase.Gathering)
                 {
-                    if (harvester.CargoAmount <= 0)
-                    {
-                        Resume(ref harvest, move);
-                    }
-                    else if (ReachedDropOff(entity, ref harvest, move, busy, transform, agent))
-                    {
-                        Deliver(ref harvester, ref harvest, owner.Value);
-                    }
-
+                    var atDropOff = harvest.Phase == HarvestPhase.Returning && harvester.CargoAmount > 0
+                        && ReachedDropOff(entity, ref harvest, move, busy, transform, agent);
+                    Deliver(ref harvester, ref harvest, move, owner.Value, atDropOff);
                     return;
                 }
 
@@ -126,6 +122,24 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 }
             }
 
+            // Walks back, stands unloading, and is paid when the unload time ends.
+            private void Deliver(ref Harvester harvester, ref HarvestState harvest, MoveControl move, byte owner,
+                bool atDropOff)
+            {
+                if (harvest.Phase == HarvestPhase.Unloading)
+                {
+                    Unload(ref harvester, ref harvest, owner);
+                }
+                else if (harvester.CargoAmount <= 0)
+                {
+                    Resume(ref harvest, move);
+                }
+                else if (atDropOff)
+                {
+                    Arrive(ref harvester, ref harvest, owner);
+                }
+            }
+
             // Nothing left nearby: deliver what is carried, then the order is done.
             private static void GiveUp(ref HarvestState harvest, in Harvester harvester, EnabledRefRW<ActiveOrder> busy,
                 EnabledRefRW<MoveDestination> moving)
@@ -140,28 +154,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
             private void Gather(ref Harvester harvester, ref HarvestState harvest, Entity entity, float3 position)
             {
-                ref var node = ref NodeLookup.GetRefRW(entity).ValueRW;
-                if (harvester.CargoAmount == 0 || !harvester.CargoType.Equals(node.Type))
-                {
-                    harvester.CargoType = node.Type;
-                    harvester.CargoAmount = 0;
-                }
-
                 harvest.NodePosition = position;
-                harvest.Progress += harvester.GatherRate * DeltaTime;
-
-                var whole = (int)harvest.Progress;
-                harvest.Progress -= whole;
-                var taken = math.min(whole, math.min(node.Amount, harvester.Capacity - harvester.CargoAmount));
-                node.Amount -= taken;
-                harvester.CargoAmount += taken;
-
-                if (harvester.CargoAmount >= harvester.Capacity)
-                {
-                    harvest.Phase = HarvestPhase.Returning;
-                    harvest.Progress = 0f;
-                    harvest.DropOff = Entity.Null;
-                }
+                harvester.Fill(ref harvest, ref NodeLookup.GetRefRW(entity).ValueRW, DeltaTime);
             }
 
             // Empty-handed goes straight back to work.
@@ -192,12 +186,40 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 return !ActiveOrder.StopsShort(walk, busy, move.Moving);
             }
 
-            private void Deliver(ref Harvester harvester, ref HarvestState harvest, byte owner)
+            private void Arrive(ref Harvester harvester, ref HarvestState harvest, byte owner)
+            {
+                if (harvester.UnloadSeconds > 0f)
+                {
+                    harvest.BeginUnload();
+                    return;
+                }
+
+                Pay(ref harvester, ref harvest, owner);
+            }
+
+            // A drop-off lost mid-unload sends the truck to find another with its cargo untouched.
+            private void Unload(ref Harvester harvester, ref HarvestState harvest, byte owner)
+            {
+                if (!IsDropOff(harvest.DropOff, owner))
+                {
+                    harvest.CancelUnload();
+                    return;
+                }
+
+                harvest.UnloadTime += DeltaTime;
+                if (harvest.UnloadTime >= harvester.UnloadSeconds)
+                {
+                    Pay(ref harvester, ref harvest, owner);
+                }
+            }
+
+            private void Pay(ref Harvester harvester, ref HarvestState harvest, byte owner)
             {
                 var player = Players[owner];
                 var delivered = ResourcePayout.Scaled(ModifierLookup, player, harvester.CargoAmount);
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
+                harvest.UnloadTime = 0f;
                 harvest.Phase = HarvestPhase.Gathering;
             }
 

@@ -27,11 +27,18 @@ namespace HyperRTS.Simulation.Resources.Gathering
         [Min(0f)]
         public float replacementRange = 30f;
 
-        public static void Add(EntityWriter writer, int capacity, float gatherRate, float replacementRange)
+        [Tooltip("Seconds it stands at the drop-off before the cargo is paid, so an unload can be shown. 0 pays on arrival.")]
+        [Unit("s")]
+        [Min(0f)]
+        public float unloadSeconds;
+
+        public static void Add(EntityWriter writer, int capacity, float gatherRate, float replacementRange,
+            float unloadSeconds)
         {
             writer.Add(new Harvester
             {
                 Capacity = capacity, GatherRate = gatherRate, ReplacementRange = replacementRange,
+                UnloadSeconds = unloadSeconds,
             });
             writer.Add<HarvestState>();
         }
@@ -42,7 +49,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
             {
                 var writer = this.Writer();
                 HarvesterAuthoring.Add(writer, authoring.capacity, authoring.gatherRate,
-                    authoring.replacementRange);
+                    authoring.replacementRange, authoring.unloadSeconds);
             }
         }
     }
