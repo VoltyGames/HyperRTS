@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
     [WithPresent(typeof(MoveDestination))]
     internal partial struct GatherClaimJob : IJobEntity
     {
-        public NativeParallelMultiHashMap<Entity, ReachClaims.Claim> Spots;
+        public NativeParallelMultiHashMap<Entity, ReachClaims.Claim>.ParallelWriter Spots;
         [ReadOnly] public TargetReach Reach;
 
         private void Execute(Entity entity, in HarvestState harvest, in ActiveOrder order,

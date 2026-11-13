@@ -24,6 +24,11 @@ float2 InteriorRoomPoint(float2 p, float3 ray, half backWall)
 // Room light through the glass, less what Fresnel reflects.
 half3 InteriorEmission(float2 uv, float3 viewDirTS)
 {
+    if (_LightsOn <= 0.0h)
+    {
+        return 0.0h;
+    }
+
     float2 grid = max(_InteriorAtlas.xy, 1.0);
     float2 cellPoint = uv * grid;
     float2 cell = floor(cellPoint);

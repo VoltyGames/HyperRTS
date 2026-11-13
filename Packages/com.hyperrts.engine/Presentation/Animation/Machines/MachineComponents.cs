@@ -44,7 +44,19 @@ namespace HyperRTS.Presentation.Animation.Machines
         /// <summary>Takes whether the unit works this frame and says whether it did within <see cref="KeepRunningSeconds"/>.</summary>
         public bool WorkedRecently(bool working, float deltaTime)
         {
-            SinceWork = working ? 0f : Started ? SinceWork + deltaTime : KeepRunningSeconds;
+            if (working)
+            {
+                SinceWork = 0f;
+            }
+            else if (Started)
+            {
+                SinceWork += deltaTime;
+            }
+            else
+            {
+                SinceWork = KeepRunningSeconds;
+            }
+
             return SinceWork < KeepRunningSeconds;
         }
 

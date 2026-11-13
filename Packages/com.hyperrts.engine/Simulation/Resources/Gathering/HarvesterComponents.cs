@@ -99,7 +99,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
             if (Phase == HarvestPhase.Unloading)
             {
                 Phase = HarvestPhase.Returning;
-                UnloadTime = 0f;
             }
         }
 

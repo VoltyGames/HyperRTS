@@ -16,7 +16,9 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
     outSurfaceData.smoothness = specGloss.a;
     outSurfaceData.normalTS = SampleNormal(uv);
     outSurfaceData.occlusion = SampleOcclusion(uv);
+#if !defined(_INTERIOR)
     outSurfaceData.emission = SampleEmission(uv) * _LightsOn;
+#endif
 }
 
 // Half the soft edge of the team strip band, in metres.

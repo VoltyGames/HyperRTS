@@ -55,7 +55,8 @@ namespace HyperRTS.Simulation.Resources.Gathering
             _reach.Update(ref state, SystemAPI.GetSingleton<MapSettings>());
             var spots = new NativeParallelMultiHashMap<Entity, ReachClaims.Claim>(
                 _harvesters.CalculateEntityCountWithoutFiltering() * 2 + 1, allocator);
-            state.Dependency = new GatherClaimJob { Spots = spots, Reach = _reach }.Schedule(state.Dependency);
+            state.Dependency = new GatherClaimJob { Spots = spots.AsParallelWriter(), Reach = _reach }
+                .ScheduleParallel(state.Dependency);
 
             new GatherJob
             {
@@ -227,7 +228,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 var delivered = ResourcePayout.Scaled(ModifierLookup, player, harvester.CargoAmount);
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, harvester.CargoType, delivered);
                 harvester.CargoAmount = 0;
-                harvest.UnloadTime = 0f;
                 harvest.Phase = HarvestPhase.Gathering;
             }
 

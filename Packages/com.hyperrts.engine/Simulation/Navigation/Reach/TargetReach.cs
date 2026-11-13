@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Navigation.Reach
 
         /// <summary>Whether the unit at <paramref name="unit"/> is at the footprint.</summary>
         public static bool InReach(in NavBox footprint, float2 unit, float unitHalfLength, float navCellSize) =>
-            footprint.Gap(unit, unit) <= Reach(unitHalfLength, navCellSize);
+            footprint.Gap(unit) <= Reach(unitHalfLength, navCellSize);
 
         /// <summary>Whether a unit standing at <paramref name="point"/> is at the target, as a spot it takes there is.</summary>
         public bool IsBy(Entity target, float2 point, in NavAgent agent) =>
@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Navigation.Reach
 
             // A goal already by the target stays put, so the path isn't restarted as the nearest edge slides.
             var goal = move.Destination.ValueRO.Value.xz;
-            var isGoalByTarget = footprint.Gap(goal, goal) <= Reach(agent.HalfLength, _navCellSize);
+            var isGoalByTarget = footprint.Gap(goal) <= Reach(agent.HalfLength, _navCellSize);
             if (isGoalByTarget && move.Arrived.ValueRO && !move.Moving.ValueRO)
             {
                 return ApproachState.Stuck;

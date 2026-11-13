@@ -34,7 +34,7 @@ heights, and both over everything so crops and units never hide them.
 | Fog | Cells the local team sees |
 | Sight area, Sight blockers, High ground | The selected unit's sight, what conceals cells, and rise above surrounding ground |
 | Spatial cells | Spatial index cells holding an entity |
-| Paths | Waypoints, manoeuvres and attack targets; its status totals the pathfinder's work |
+| Paths | Waypoints, rear axles and attack targets; its status totals the pathfinder's work |
 
 To add a layer, subclass `DebugLayer` and implement `Draw`: `DebugShapes.Cells` takes a `CellGrid` and an
 `ICellColors` struct that a Burst job reads for every cell, and `Line`, `DashedLine` and `Circle` draw the rest.

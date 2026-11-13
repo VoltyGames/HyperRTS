@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
     {
         private const float AxleSize = 0.25f;
         private static readonly Color32 Waypoint = new(0, 255, 255, 255);
-        private static readonly Color32 Manoeuvre = new(255, 140, 0, 255);
+        private static readonly Color32 Axle = new(255, 140, 0, 255);
         private static readonly Color32 Target = new(255, 40, 40, 255);
 
         public override string Label => "Paths";
@@ -105,7 +105,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
                     var transform = entityManager.GetComponentData<LocalTransform>(entity);
                     var facing = math.normalizesafe(transform.Forward().xz);
                     var rear = chassis.Pose(transform.Position.xz, facing).Position;
-                    shapes.Circle(new float3(rear.x, transform.Position.y, rear.y), AxleSize, Manoeuvre);
+                    shapes.Circle(new float3(rear.x, transform.Position.y, rear.y), AxleSize, Axle);
                 }
             }
         }

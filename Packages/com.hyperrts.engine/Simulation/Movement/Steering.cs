@@ -62,13 +62,11 @@ namespace HyperRTS.Simulation.Movement
 
         // Stands while driving on would run deeper into a neighbour than standing would, trying its other gear, so a
         // hull with a unit behind it turns round forwards.
-        private float2 DriveReflex(ref Driver driver, in PathLeg leg)
+        private float2 DriveReflex(ref Driver driver, float2 step, in PathLeg leg)
         {
-            var start = driver;
-            var step = driver.Drive(leg);
             if (RunsInto(step / driver.DeltaTime))
             {
-                driver = start;
+                driver = _start;
                 step = driver.Steer(leg, float2.zero);
                 driver.BackOff();
             }
@@ -94,8 +92,7 @@ namespace HyperRTS.Simulation.Movement
             _preferred = standsToTurn ? float2.zero : step / driver.DeltaTime;
             if (driver.State.IsManoeuvring)
             {
-                driver = _start;
-                return DriveReflex(ref driver, leg);
+                return DriveReflex(ref driver, step, leg);
             }
 
             _last = _start.State.LastChoice;
