@@ -131,6 +131,15 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   `[WorldSystemFilter(SimulationWorlds.Presented)]`; those under `PresentationSystemGroup` already default to the
   presented worlds. A component the HUD reads needs `[GhostField]`s.
 - `EntityInfo.TypeId` hashes the display name, so two prefab types never share a name.
+- Two `SystemAPI.QueryBuilder` queries with the same description in one system are one cached `EntityQuery`: a
+  change filter set on one also filters the other, and any `SystemAPI.Query` over the same types. Give a filtered
+  query its own description, as `NavGridSystem` does.
+- `ToEntityListAsync` on a query with `WithNone<T>` of an enableable type such as `Dead` reads that type untracked,
+  and the systems scheduled after it throw. Drop the filter and skip in the job with a `ComponentLookup<T>`.
+- A `NavGrid` held as a private field inside a helper struct that jobs carry makes those jobs stop working, with no
+  error. Pass the grid in from the job's own `[ReadOnly] public NavGrid Grid` field.
+- `Debug.Log` from a system doesn't reach the console during EditMode tests. When a system's tests fail with no
+  exception, suspect the traps above and bisect by file.
 
 ## Docs
 
