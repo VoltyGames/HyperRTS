@@ -26,20 +26,20 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
 
         public readonly List<TrampleStamp> Scars = new();
 
-        public readonly List<TrampleStamp> Remains = new();
+        public readonly List<TrampleStamp> Stains = new();
 
         public readonly List<TrampleStamp> Wakes = new();
 
         /// <summary>Clear every map before drawing: a replay sought back past the scars.</summary>
         public bool Reset;
 
-        /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn). Remains cover the scorch's reach.</summary>
+        /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn). Stains cover the scorch's reach.</summary>
         public void AddCrater(float2 center, ImpactMark mark, float diameter)
         {
             var radius = diameter * 0.5f;
-            if (mark.LeavesRemains)
+            if (mark.LeavesStain)
             {
-                AddRemains(center, radius * ScorchReach, new float4(mark.rubble, mark.ash, mark.fuel, 0f));
+                AddStain(center, radius * ScorchReach, new float4(mark.rubble, mark.ash, mark.fuel, 0f));
             }
 
             var scarred = mark.craterDepth > 0f || mark.scorch > 0f;
@@ -68,8 +68,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Scars.Add(Disc(center, radius, new float4(0f, math.saturate(scorch), 1f, 0f)));
 
         /// <summary>Rubble, ash, fuel and wet mud (0 to 1 each) left in a ragged disc for the rest of the match.</summary>
-        public void AddRemains(float2 center, float radius, float4 amounts) =>
-            Remains.Add(Disc(center, radius, math.saturate(amounts)));
+        public void AddStain(float2 center, float radius, float4 amounts) =>
+            Stains.Add(Disc(center, radius, math.saturate(amounts)));
 
         public void AddWake(float2 position, float2 direction, float speed, float radius)
         {
@@ -121,7 +121,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Trample.Clear();
             Tracks.Clear();
             Scars.Clear();
-            Remains.Clear();
+            Stains.Clear();
             Wakes.Clear();
             Reset = false;
         }

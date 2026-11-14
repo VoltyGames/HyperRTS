@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Death;
+using HyperRTS.Simulation.Common;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -44,7 +44,7 @@ namespace HyperRTS.Presentation.Destruction
                 return;
             }
 
-            Velocity.y -= FallingRemains.Gravity * deltaTime;
+            Velocity.y -= Gravity.Acceleration * deltaTime;
             Position += Velocity * deltaTime;
             var turn = math.length(Spin) * deltaTime;
             if (turn > 0f)

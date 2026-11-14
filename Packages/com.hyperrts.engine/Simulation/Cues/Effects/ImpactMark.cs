@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Cues.Effects
         public float fuel;
 
         [Tooltip("Seconds the decal stays at full strength; 0 keeps it until newer marks of this kind reuse it. The " +
-                 "crater, scorch and remains outlast it.")]
+                 "crater, scorch and stain outlast it.")]
         [Min(0f)]
         public float lifetime = 120f;
 
@@ -64,9 +64,9 @@ namespace HyperRTS.Simulation.Cues.Effects
         public int maxCount = 64;
 
         /// <summary>Leaves rubble, ash or fuel on the ground for the rest of the match.</summary>
-        public bool LeavesRemains => rubble > 0f || ash > 0f || fuel > 0f;
+        public bool LeavesStain => rubble > 0f || ash > 0f || fuel > 0f;
 
-        /// <summary>Leaves a crater, scorch or remains in the ground for the rest of the match.</summary>
-        public bool ScarsGround => craterDepth > 0f || scorch > 0f || LeavesRemains;
+        /// <summary>Leaves a crater, scorch or stain in the ground for the rest of the match.</summary>
+        public bool ScarsGround => craterDepth > 0f || scorch > 0f || LeavesStain;
     }
 }

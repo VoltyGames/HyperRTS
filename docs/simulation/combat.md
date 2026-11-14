@@ -4,7 +4,8 @@
 
 Targeting, damage, buildings that break, stat modifiers and sight. How weapons fire is in [weapons](weapons.md),
 squads and cover in [squads](squads.md). Code sits in `Simulation/Combat/` sub-folders, namespace
-`HyperRTS.Simulation.Combat.<Folder>`: `Weapons`, `Projectiles`, `Targeting`, `Damage` and `Death`.
+`HyperRTS.Simulation.Combat.<Folder>`: `Weapons`, `Projectiles`, `Targeting` and `Damage`. Death is in
+[weapons](weapons.md#death-and-remains).
 
 ## Combat
 

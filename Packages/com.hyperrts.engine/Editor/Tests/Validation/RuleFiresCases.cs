@@ -15,6 +15,7 @@ using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Airdrops;
 using HyperRTS.Simulation.Auras;
 using HyperRTS.Simulation.Combat.Damage;
@@ -66,6 +67,12 @@ namespace HyperRTS.Editor.Tests.Validation
                 f.Add<AirdropReceiverAuthoring>(EntityTemplates.Building()));
             yield return Row<StrategicAssetRule>("no aircraft prefab", f =>
                 f.Add<StrategicAssetAuthoring>(EntityTemplates.Building()));
+            yield return Row<AircraftRemainsRule>("don't fall", f =>
+            {
+                var aircraft = f.Track(EntityTemplates.Aircraft()).GetComponent<UnitAuthoring>();
+                aircraft.remains = f.Track(new GameObject("Wreck"));
+                return aircraft.GetComponent<FlightAuthoring>();
+            });
             yield return Row<AuraRule>("Affects nobody", f =>
             {
                 var field = f.Add<AuraAuthoring>(EntityTemplates.Building());

@@ -14,12 +14,12 @@ namespace HyperRTS.Simulation.Death
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Turret Toss")]
     [Icon(HyperRTSIcons.TurretTossAuthoring)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [HelpURL(HyperRTSDocs.Death)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a unit")]
     public class TurretTossAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Death spawn used instead of the usual one after a catastrophic hit: the wreck without its turret. A ghost.")]
+        [Tooltip("Remains used instead of the usual ones after a catastrophic hit: the wreck without its turret. A ghost.")]
         [GhostPrefab("Hull")]
         public GameObject hull;
 

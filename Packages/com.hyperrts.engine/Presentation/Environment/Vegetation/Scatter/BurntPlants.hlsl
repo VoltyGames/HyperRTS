@@ -1,4 +1,4 @@
-// Plants burnt away where ash lies in the remains map. Needs sampler_LinearClamp declared first.
+// Plants burnt away where ash lies in the stain map. Needs sampler_LinearClamp declared first.
 #ifndef HYPERRTS_BURNT_PLANTS_INCLUDED
 #define HYPERRTS_BURNT_PLANTS_INCLUDED
 
@@ -11,7 +11,7 @@ float BurntShare(float2 positionXZ)
 {
     float2 uv = TrampleUV(positionXZ);
     bool onMaps = OnTrampleMaps(uv);
-    float ash = SAMPLE_TEXTURE2D_LOD(_HyperRTSRemains, sampler_LinearClamp, saturate(uv), 0).g;
+    float ash = SAMPLE_TEXTURE2D_LOD(_HyperRTSStains, sampler_LinearClamp, saturate(uv), 0).g;
     return onMaps ? saturate(ash / ASH_CLEARS) : 0.0;
 }
 

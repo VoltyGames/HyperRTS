@@ -187,7 +187,7 @@ namespace HyperRTS.Presentation.Environment.Fire
                 }
 
                 var jitter = new Unity.Mathematics.Random(math.hash(centre) | 1u).NextFloat2(-AshJitter, AshJitter);
-                stamps.AddRemains(centre + jitter, AshRadius, new float4(0f, Ash, 0f, 0f));
+                stamps.AddStain(centre + jitter, AshRadius, new float4(0f, Ash, 0f, 0f));
                 stamps.AddScorch(centre + jitter, AshRadius, Scorch);
             }
         }

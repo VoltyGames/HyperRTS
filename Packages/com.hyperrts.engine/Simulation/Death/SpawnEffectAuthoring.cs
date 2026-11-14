@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Death
     /// <summary>Plays a particle effect once where this appears: put it on ruins, rubble and other remains.</summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Effects/Spawn Effect")]
     [Icon(HyperRTSIcons.SpawnEffectAuthoring)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [HelpURL(HyperRTSDocs.Death)]
     [DisallowMultipleComponent]
     public class SpawnEffectAuthoring : AuthoringBehaviour
     {

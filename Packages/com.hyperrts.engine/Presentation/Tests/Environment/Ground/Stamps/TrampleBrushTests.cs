@@ -89,21 +89,21 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         }
 
         [Test]
-        public void Remains_KeepTheStrongestStamp_AndNeverFade()
+        public void Stains_KeepTheStrongestStamp_AndNeverFade()
         {
             var stamps = new TrampleStamps();
-            stamps.AddRemains(new float2(50f, 120f), 4f, new float4(0.8f, 0f, 0f, 0.3f));
-            stamps.AddRemains(new float2(50f, 120f), 4f, new float4(0.4f, 0f, 0f, 0.9f));
+            stamps.AddStain(new float2(50f, 120f), 4f, new float4(0.8f, 0f, 0f, 0.3f));
+            stamps.AddStain(new float2(50f, 120f), 4f, new float4(0.4f, 0f, 0f, 0.9f));
             Draw(stamps, 0, 0);
 
             Draw(new TrampleStamps(), TrampleBrush.Levels, TrampleBrush.Levels, TrampleBrush.Levels);
 
-            Assert.AreEqual(0.8f, Sample(_surfaces.Remains, Red)[0], 0.02f, "a weaker stamp lowered the rubble");
-            Assert.AreEqual(0.9f, Sample(_surfaces.Remains, Alpha)[0], 0.02f, "the mud faded or did not build up");
-            Assert.Less(Sample(_surfaces.Remains, Red)[1], 0.01f);
+            Assert.AreEqual(0.8f, Sample(_surfaces.Stains, Red)[0], 0.02f, "a weaker stamp lowered the rubble");
+            Assert.AreEqual(0.9f, Sample(_surfaces.Stains, Alpha)[0], 0.02f, "the mud faded or did not build up");
+            Assert.Less(Sample(_surfaces.Stains, Red)[1], 0.01f);
 
             Draw(new TrampleStamps { Reset = true }, 0, 0);
-            Assert.Less(Sample(_surfaces.Remains, Red)[0], 0.01f, "a replay seek kept the remains");
+            Assert.Less(Sample(_surfaces.Stains, Red)[0], 0.01f, "a replay seek kept the stains");
         }
 
         [Test]

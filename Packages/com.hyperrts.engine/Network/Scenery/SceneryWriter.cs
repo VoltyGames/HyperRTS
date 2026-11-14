@@ -16,7 +16,7 @@ namespace HyperRTS.Network.Scenery
         private ComponentLookup<ShownSections> _shownSections;
         private ComponentLookup<SectionedBuilding> _buildings;
         private BufferLookup<Section> _sections;
-        private ComponentLookup<SpawnOnDeath> _remains;
+        private ComponentLookup<SpawnsRemains> _remains;
         private ComponentLookup<SpawnEffect> _effects;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<SceneryId> _ids;
@@ -31,7 +31,7 @@ namespace HyperRTS.Network.Scenery
             _shownSections = state.GetComponentLookup<ShownSections>();
             _buildings = state.GetComponentLookup<SectionedBuilding>();
             _sections = state.GetBufferLookup<Section>();
-            _remains = state.GetComponentLookup<SpawnOnDeath>(true);
+            _remains = state.GetComponentLookup<SpawnsRemains>(true);
             _effects = state.GetComponentLookup<SpawnEffect>(true);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _ids = state.GetComponentLookup<SceneryId>(true);

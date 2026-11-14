@@ -37,8 +37,7 @@ namespace HyperRTS.Simulation.Death
 
             state.Dependency = new DeathJob
             {
-                Ecb = ecb, SpawnLookup = SystemAPI.GetComponentLookup<SpawnOnDeath>(true), RemainsLookups = _remains,
-                Drops = SystemAPI.GetComponentLookup<DropRemains>(true),
+                Ecb = ecb, SpawnLookup = SystemAPI.GetComponentLookup<SpawnsRemains>(true), RemainsLookups = _remains,
                 Tosses = SystemAPI.GetComponentLookup<TurretToss>(true), LethalHits = SystemAPI.GetComponentLookup<LethalHit>(true), TossTypes = SystemAPI.GetBufferLookup<TossType>(true), Ids = SystemAPI.GetComponentLookup<SceneryId>(true), Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true), Children = SystemAPI.GetBufferLookup<Child>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new ClearJob { Ecb = ecb, Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true), Children = SystemAPI.GetBufferLookup<Child>(true) }
@@ -52,9 +51,8 @@ namespace HyperRTS.Simulation.Death
         private partial struct DeathJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter Ecb;
-            [ReadOnly] public ComponentLookup<SpawnOnDeath> SpawnLookup;
+            [ReadOnly] public ComponentLookup<SpawnsRemains> SpawnLookup;
             [ReadOnly] public RemainsLookups RemainsLookups;
-            [ReadOnly] public ComponentLookup<DropRemains> Drops;
             [ReadOnly] public ComponentLookup<TurretToss> Tosses;
             [ReadOnly] public ComponentLookup<LethalHit> LethalHits;
             [ReadOnly] public BufferLookup<TossType> TossTypes;
@@ -98,7 +96,7 @@ namespace HyperRTS.Simulation.Death
 
             /// <summary>
             /// Remains copy the dead piece's transform and stretch, except toppling ones, which lie away from the lethal
-            /// hit, and dropped ones, which fall to the ground.
+            /// hit. Remains baked falling, such as an aircraft's wreck, drop to the ground.
             /// </summary>
             private void SpawnRemains(int sortKey, Entity entity, Entity prefab, in LocalTransform transform)
             {
@@ -106,10 +104,6 @@ namespace HyperRTS.Simulation.Death
                 LethalHits.TryGetComponent(entity, out var fell);
                 var remains = Remains.FromPiece(entity, transform, fell.Heading, true, RemainsLookups);
                 var spawned = remains.Spawn(Ecb, sortKey, prefab);
-                if (Drops.HasComponent(entity))
-                {
-                    Ecb.AddComponent<FallingRemains>(sortKey, spawned);
-                }
 
                 // Remains of map scenery answer to its id, so multiplayer can clear them.
                 if (Ids.TryGetComponent(entity, out var id))

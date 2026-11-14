@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 using Unity.Netcode;
@@ -15,29 +16,21 @@ namespace HyperRTS.Simulation.Death
         public readonly bool CreditsKill(in OwnerRelations relations, byte victim) => relations.IsHostile(Owner, victim);
     }
 
-    /// <summary>Prefab instantiated where the entity dies (wreck, debris, explosion).</summary>
-    public struct SpawnOnDeath : IComponentData
+    /// <summary>The remains spawned where the entity dies (wreck, ruin, fallen tree).</summary>
+    public struct SpawnsRemains : IComponentData
     {
         public Entity Prefab;
-    }
-
-    /// <summary>Tag: this entity's remains fall to the ground instead of staying where it died (aircraft).</summary>
-    public struct DropRemains : IComponentData
-    {
     }
 
     /// <summary>Remains falling to the ground under gravity; removed when they land.</summary>
     public struct FallingRemains : IComponentData
     {
-        /// <summary>m/s squared, shared by everything shown falling.</summary>
-        public const float Gravity = 9.81f;
-
         public float Speed;
 
         /// <summary>Drops <paramref name="height"/> one step; true once it reaches <paramref name="ground"/>.</summary>
         public bool Fall(ref float height, float ground, float deltaTime)
         {
-            Speed += Gravity * deltaTime;
+            Speed += Gravity.Acceleration * deltaTime;
             height -= Speed * deltaTime;
             if (height > ground)
             {

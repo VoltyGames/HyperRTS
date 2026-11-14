@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private readonly int _tracksPass;
         private readonly int _scarsPass;
         private readonly int _wakePass;
-        private readonly int _remainsPass;
+        private readonly int _stainPass;
         private readonly int _fadePass;
         private readonly CommandBuffer _commands = new() { name = "HyperRTS Trample Maps" };
         private readonly GrowingBuffer _buffer = new(GraphicsBuffer.Target.Structured, UnsafeUtility.SizeOf<TrampleStamp>(), 256);
@@ -46,7 +46,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             _tracksPass = FindPass("Tracks");
             _scarsPass = FindPass("Scars");
             _wakePass = FindPass("Wake");
-            _remainsPass = FindPass("Remains");
+            _stainPass = FindPass("Stains");
             _fadePass = FindPass("Fade");
         }
 
@@ -92,8 +92,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             offset += stamps.Tracks.Count;
             DrawStamps(_scarsPass, offset, stamps.Scars.Count);
             offset += stamps.Scars.Count;
-            DrawRemains(surfaces, offset, stamps.Remains.Count);
-            offset += stamps.Remains.Count;
+            DrawStains(surfaces, offset, stamps.Stains.Count);
+            offset += stamps.Stains.Count;
 
             DrawWakes(surfaces, wakeSteps, offset, stamps.Wakes.Count);
             Graphics.ExecuteCommandBuffer(_commands);
@@ -110,14 +110,14 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private void Upload(TrampleStamps stamps)
         {
             var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count +
-                stamps.Remains.Count + stamps.Wakes.Count, 1);
+                stamps.Stains.Count + stamps.Wakes.Count, 1);
             _buffer.Reserve(needed);
 
             var offset = 0;
             Put(stamps.Trample, ref offset);
             Put(stamps.Tracks, ref offset);
             Put(stamps.Scars, ref offset);
-            Put(stamps.Remains, ref offset);
+            Put(stamps.Stains, ref offset);
             Put(stamps.Wakes, ref offset);
         }
 
@@ -135,21 +135,21 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             _commands.ClearRenderTarget(false, true, Color.clear);
             _commands.SetRenderTarget(surfaces.Wake);
             _commands.ClearRenderTarget(false, true, Color.clear);
-            _commands.SetRenderTarget(surfaces.Remains);
+            _commands.SetRenderTarget(surfaces.Stains);
             _commands.ClearRenderTarget(false, true, Color.clear);
             _wakeFadedSteps = Levels;
         }
 
-        // Remains never fade, so a frame without any leaves their map alone.
-        private void DrawRemains(TrampleSurfaces surfaces, int offset, int count)
+        // Stains never fade, so a frame without any leaves their map alone.
+        private void DrawStains(TrampleSurfaces surfaces, int offset, int count)
         {
             if (count == 0)
             {
                 return;
             }
 
-            _commands.SetRenderTarget(surfaces.Remains);
-            DrawStamps(_remainsPass, offset, count);
+            _commands.SetRenderTarget(surfaces.Stains);
+            DrawStamps(_stainPass, offset, count);
         }
 
         // Calm water skips the wake map once a full fade has emptied it.

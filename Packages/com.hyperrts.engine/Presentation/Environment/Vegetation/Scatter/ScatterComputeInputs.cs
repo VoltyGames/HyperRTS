@@ -54,7 +54,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             Compute.SetVector(CameraId, new Vector4(position.x, position.y, position.z, settings.Distance));
             BuildingFootprintMask.Bind(Compute, GrowKernel);
             CraterTerrain.BindCraters(Compute, GrowKernel);
-            TrampleSurfaces.RemainsGlobal.Bind(Compute, GrowKernel);
+            TrampleSurfaces.StainsGlobal.Bind(Compute, GrowKernel);
             BindCamera(settings);
         }
 

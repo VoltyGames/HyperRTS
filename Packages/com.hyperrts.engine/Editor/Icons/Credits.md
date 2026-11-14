@@ -90,7 +90,7 @@ file is named after the component it marks.
 | CropCoverAuthoring | lorc/wheat | Lorc |
 | CrusherAuthoring | caro-asercion/steamroller | Caro Asercion |
 | DamageStagesAuthoring | delapouite/broken-wall | Delapouite |
-| DeathRemainsAuthoring | lorc/tombstone | Lorc |
+| DeathStainAuthoring | lorc/tombstone | Lorc |
 | DebrisAuthoring | delapouite/falling-rocks | Delapouite |
 | DecayAuthoring | lorc/hourglass | Lorc |
 | DeliverySourceAuthoring | delapouite/mine-wagon | Delapouite |

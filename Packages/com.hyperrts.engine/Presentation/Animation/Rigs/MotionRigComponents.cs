@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -125,9 +125,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
             float deltaTime)
         {
             var cruise = math.saturate(math.dot(velocity, forward) / math.max(topSpeed, 1e-3f));
-            var pitch = -math.atan(math.dot(acceleration, forward) / FallingRemains.Gravity)
+            var pitch = -math.atan(math.dot(acceleration, forward) / Gravity.Acceleration)
                 - CruisePitch * cruise * cruise;
-            var roll = -math.atan(math.dot(acceleration, right) / FallingRemains.Gravity);
+            var roll = -math.atan(math.dot(acceleration, right) / Gravity.Acceleration);
             // Clamped after easing, so a one-frame spike of measured acceleration counts for its share, not more.
             var eased = math.lerp(Tilt, new float2(pitch, roll), Ease(deltaTime, LeanTime));
             Tilt = math.clamp(eased, -MaxLean, MaxLean);

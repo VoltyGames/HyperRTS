@@ -1,5 +1,5 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Death;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Air
         public float YawRate;
 
         /// <summary>Metres per second squared it can pull across its course, banked as far as it may.</summary>
-        public readonly float TurnAcceleration => FallingRemains.Gravity * math.tan(MaxBank);
+        public readonly float TurnAcceleration => Gravity.Acceleration * math.tan(MaxBank);
 
         /// <summary>Its nose after one frame of turning toward <paramref name="toward"/> at its yaw rate.</summary>
         public readonly float2 Yaw(float2 facing, float2 toward, float deltaTime) =>

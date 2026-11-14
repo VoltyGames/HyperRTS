@@ -35,6 +35,9 @@ namespace HyperRTS.Simulation.Destruction
         [Tooltip("Scenery only: area (X by Z) blocked for pathing; zero leaves it open (fences, small trees).")]
         public Vector2 block;
 
+        [Tooltip("Scenery only: falls to the ground when it appears in the air, as an aircraft's wreck does.")]
+        public bool falls;
+
         /// <summary>Adds the components of map scenery. A <paramref name="block"/> of zero leaves pathing open.</summary>
         public static void AddScenery(EntityWriter writer, float maxHealth, int crush, Entity remains,
             float2 block, SceneryId id)
@@ -48,7 +51,7 @@ namespace HyperRTS.Simulation.Destruction
             writer.Add(id);
             if (remains != Entity.Null)
             {
-                writer.Add(new SpawnOnDeath { Prefab = remains });
+                writer.Add(new SpawnsRemains { Prefab = remains });
             }
 
             if (math.all(block > 0f))
@@ -74,6 +77,10 @@ namespace HyperRTS.Simulation.Destruction
                 var place = GetComponent<Transform>();
                 AddScenery(writer, authoring.maxHealth, authoring.crushedBy, remains,
                     authoring.block, SceneryId.At(place.position, place.rotation));
+                if (authoring.falls)
+                {
+                    writer.Add<FallingRemains>();
+                }
             }
         }
     }

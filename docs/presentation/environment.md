@@ -57,10 +57,10 @@ Vehicles leave ruts, shells leave craters and scorch, units in water leave wakes
 | `_HyperRTSTrample` | RG travel direction, B flattened grass that recovers, A crop damage that never recovers |
 | `_HyperRTSTracks` | R rut depth, G churned soil (both fade over minutes); B scorch, A crater depth (last the match) |
 | `_HyperRTSWake` | R foam, which fades in seconds |
-| `_HyperRTSRemains` | R rubble, G ash, B fuel, A wet mud; last the match |
+| `_HyperRTSStains` | R rubble, G ash, B fuel, A wet mud; last the match |
 
-`TrackMarks` on a vehicle, an `ImpactMark` with `craterDepth` or `scorch`, and `DeathRemainsAuthoring` on a unit type stamp
-the maps. Other sources, such as collapsing buildings, call `TrampleStamps.AddRemains`.
+`TrackMarks` on a vehicle, an `ImpactMark` with `craterDepth` or `scorch`, and `DeathStainAuthoring` on a unit type stamp
+the maps. Other sources, such as collapsing buildings, call `TrampleStamps.AddStain`.
 Shaders read the maps through `Trample.hlsl`.
 
 **Craters dent the drawn ground.** `CraterTerrainSystem` lowers the active Unity Terrain's heights under each new bowl,

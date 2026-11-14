@@ -7,7 +7,7 @@ namespace HyperRTS.Simulation.Death
     /// <summary>The remains of a thrown turret (a <see cref="TurretTossAuthoring.turret"/>): the death fills in the throw clients show.</summary>
     [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Tossed Turret")]
     [Icon(HyperRTSIcons.TossedTurretAuthoring)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [HelpURL(HyperRTSDocs.Death)]
     [DisallowMultipleComponent]
     public class TossedTurretAuthoring : AuthoringBehaviour
     {

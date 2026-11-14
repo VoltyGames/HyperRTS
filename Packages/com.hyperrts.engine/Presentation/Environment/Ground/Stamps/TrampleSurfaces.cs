@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         public static readonly MapTextureGlobal TrampleGlobal = new("_HyperRTSTrample", RectName);
         public static readonly MapTextureGlobal TracksGlobal = new("_HyperRTSTracks", RectName);
         public static readonly MapTextureGlobal WakeGlobal = new("_HyperRTSWake", RectName);
-        public static readonly MapTextureGlobal RemainsGlobal = new("_HyperRTSRemains", RectName);
+        public static readonly MapTextureGlobal StainsGlobal = new("_HyperRTSStains", RectName);
         public static readonly int TracksTexelId = Shader.PropertyToID("_HyperRTSTracksTexel");
 
         /// <summary>No direction, standing plants.</summary>
@@ -31,7 +31,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         public readonly RenderTexture Wake;
 
         /// <summary>Rubble, ash, fuel and wet mud (RGBA), kept for the whole match.</summary>
-        public readonly RenderTexture Remains;
+        public readonly RenderTexture Stains;
         public readonly float4 Rect;
         public readonly TrampleQuality Quality;
 
@@ -56,12 +56,12 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Tracks = Create("HyperRTS Tracks", tracksSize, GraphicsFormat.R8G8B8A8_UNorm);
             // Foam is soft, so the wake map shares the trample map's texel.
             Wake = Create("HyperRTS Wake", trampleSize, GraphicsFormat.R8_UNorm);
-            var remainsSize = TextureSize(size, texels.Remains);
-            Remains = Create("HyperRTS Remains", remainsSize, GraphicsFormat.R8G8B8A8_UNorm);
+            var stainsSize = TextureSize(size, texels.Stains);
+            Stains = Create("HyperRTS Stains", stainsSize, GraphicsFormat.R8G8B8A8_UNorm);
         }
 
         /// <summary>Metres per texel of each map at <paramref name="quality"/>; Off has no maps.</summary>
-        public static (float Trample, float Tracks, float Remains) Texels(TrampleQuality quality) => quality switch
+        public static (float Trample, float Tracks, float Stains) Texels(TrampleQuality quality) => quality switch
         {
             TrampleQuality.Full => (0.5f, 0.2f, 0.4f),
             TrampleQuality.Low => (1f, 0.4f, 0.8f),
@@ -80,7 +80,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             TrampleGlobal.Publish(Trample, Rect);
             TracksGlobal.Publish(Tracks, Rect);
             WakeGlobal.Publish(Wake, Rect);
-            RemainsGlobal.Publish(Remains, Rect);
+            StainsGlobal.Publish(Stains, Rect);
             var texels = new float2(Tracks.width, Tracks.height);
             Shader.SetGlobalVector(TracksTexelId, new float4(texels, _size / texels));
         }
@@ -90,7 +90,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             TrampleGlobal.Clear();
             TracksGlobal.Clear();
             WakeGlobal.Clear();
-            RemainsGlobal.Clear();
+            StainsGlobal.Clear();
             Shader.SetGlobalVector(TracksTexelId, Vector4.zero);
         }
 
@@ -99,7 +99,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             RenderTargets.Free(Trample);
             RenderTargets.Free(Tracks);
             RenderTargets.Free(Wake);
-            RenderTargets.Free(Remains);
+            RenderTargets.Free(Stains);
         }
 
         private static RenderTexture Create(string name, int2 size, GraphicsFormat format) =>

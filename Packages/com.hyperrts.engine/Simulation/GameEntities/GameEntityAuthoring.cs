@@ -32,9 +32,9 @@ namespace HyperRTS.Simulation.GameEntities
         [Tooltip("As tall as a vehicle or a building: seen over walls and hedges that hide infantry.")]
         public bool tall;
 
-        [Tooltip("Optional prefab spawned where this dies (wreck, debris).")]
-        [PrefabAsset("Death spawn"), GhostPrefab("Death spawn", OnlyOnGhosts = true)]
-        public GameObject deathSpawn;
+        [Tooltip("Optional prefab left where this dies (wreck, ruin, debris).")]
+        [PrefabAsset("Remains"), GhostPrefab("Remains", OnlyOnGhosts = true)]
+        public GameObject remains;
 
         [Tooltip("The owner is defeated once no entity with this flag remains.")]
         public bool countsForVictory = true;
@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.GameEntities
                 BuildTime = buildTime,
                 Population = Population,
                 CountsForVictory = countsForVictory,
-                DeathPrefab = deathSpawn != null ? baker.GetEntity(deathSpawn, TransformUsageFlags.Dynamic) : Entity.Null,
+                Remains = remains != null ? baker.GetEntity(remains, TransformUsageFlags.Dynamic) : Entity.Null,
             }, costs, required);
         }
     }

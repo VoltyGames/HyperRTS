@@ -7,14 +7,14 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Cues.Effects
 {
     /// <summary>Leaves rubble, ash, fuel or wet mud on the ground where this unit or building dies, for the rest of the match.</summary>
-    [AddComponentMenu(HyperRTSMenu.Look + "Cues/Death Remains")]
-    [Icon(HyperRTSIcons.DeathRemainsAuthoring)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [AddComponentMenu(HyperRTSMenu.Look + "Cues/Death Stain")]
+    [Icon(HyperRTSIcons.DeathStainAuthoring)]
+    [HelpURL(HyperRTSDocs.Death)]
     [DisallowMultipleComponent]
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class DeathRemainsAuthoring : AuthoringBehaviour
+    public class DeathStainAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Metres from where it dies the remains reach, about half the hull's length.")]
+        [Tooltip("Metres from where it dies the stain reaches, about half the hull's length.")]
         [Min(0.1f)]
         public float radius = 3f;
 
@@ -34,12 +34,12 @@ namespace HyperRTS.Simulation.Cues.Effects
         [Range(0f, 1f)]
         public float mud = 0.3f;
 
-        public class Baker : Baker<DeathRemainsAuthoring>
+        public class Baker : Baker<DeathStainAuthoring>
         {
-            public override void Bake(DeathRemainsAuthoring authoring)
+            public override void Bake(DeathStainAuthoring authoring)
             {
                 var writer = this.Writer();
-                writer.Add(new DeathRemains
+                writer.Add(new DeathStain
                 {
                     Radius = authoring.radius,
                     Amounts = new float4(authoring.rubble, authoring.ash, authoring.fuel, authoring.mud),

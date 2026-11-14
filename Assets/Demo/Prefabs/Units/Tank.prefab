@@ -68,7 +68,7 @@ MonoBehaviour:
   owner: 1
   maxHealth: 400
   visionRange: 14
-  deathSpawn: {fileID: 0}
+  remains: {fileID: 0}
   countsForVictory: 1
   cost:
   - type: {fileID: 11400000, guid: 54b276c9cecefc242ab4ef35b86bfced, type: 2}

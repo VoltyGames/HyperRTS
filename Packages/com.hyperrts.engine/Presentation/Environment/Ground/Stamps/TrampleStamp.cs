@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>Half the quad's size in metres: x across, y along <see cref="Forward"/>.</summary>
         public float2 HalfSize;
 
-        /// <summary>Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round). Remains: (rubble, ash, fuel, wet mud).</summary>
+        /// <summary>Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round). Stains: (rubble, ash, fuel, wet mud).</summary>
         public float4 Value;
 
         /// <summary>Half the size of the world-axis box round the turned quad.</summary>

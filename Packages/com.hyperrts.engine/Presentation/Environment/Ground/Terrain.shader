@@ -16,7 +16,7 @@
 //   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
 //                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
 //   _MicroMap     TerrainMicroTexture's tileable soil grain, linear: RG normal xy, B occlusion, A albedo variation
-//   _Remains*     rubble, ash and wet mud tiled over what _HyperRTSRemains covers (TerrainRemains.hlsl); fuel is untextured
+//   _Stain*       rubble, ash and wet mud tiled over what _HyperRTSStains covers (TerrainStains.hlsl); fuel is untextured
 // One pass binds every layer, so the terrain needs no add-pass or basemap shaders.
 // TerrainDetail sets _TERRAIN_SIMPLE (one sample per texture), _TERRAIN_NO_FAR (hex, no far sample) or
 // _TERRAIN_NO_PARALLAX (everything but parallax).
@@ -69,23 +69,23 @@ Shader "HyperRTS/Terrain"
         _TriplanarFull ("Triplanar Full (degrees)", Range(0, 90)) = 42
         _ParallaxDepth ("Parallax Depth (m)", Range(0, 0.3)) = 0.07
         _ParallaxEnd ("Parallax End (m)", Float) = 22
-        [NoScaleOffset] _RemainsRubbleAlbedo ("Remains Rubble Albedo", 2D) = "grey" {}
-        [NoScaleOffset][Normal] _RemainsRubbleNormal ("Remains Rubble Normal", 2D) = "bump" {}
-        [NoScaleOffset] _RemainsRubbleMask ("Remains Rubble Mask (G occlusion, A smoothness)", 2D) = "white" {}
-        _RemainsRubbleTile ("Remains Rubble Tile (m)", Float) = 2
-        _RemainsRubbleSmoothness ("Remains Rubble Smoothness (x mask A)", Range(0, 1)) = 0.5
-        [NoScaleOffset] _RemainsAshAlbedo ("Remains Ash Albedo", 2D) = "grey" {}
-        [NoScaleOffset][Normal] _RemainsAshNormal ("Remains Ash Normal", 2D) = "bump" {}
-        [NoScaleOffset] _RemainsAshMask ("Remains Ash Mask (G occlusion, A smoothness)", 2D) = "white" {}
-        _RemainsAshTile ("Remains Ash Tile (m)", Float) = 3
-        _RemainsAshSmoothness ("Remains Ash Smoothness (x mask A)", Range(0, 1)) = 0.3
-        _RemainsCharColor ("Char Colour (burnt fields and scorch)", Color) = (0.03, 0.027, 0.024, 1)
-        _RemainsCharStreaks ("Remains Char Ash Smudges (threshold below 1)", Range(0, 1)) = 0.38
-        [NoScaleOffset] _RemainsMudAlbedo ("Remains Mud Albedo", 2D) = "grey" {}
-        [NoScaleOffset][Normal] _RemainsMudNormal ("Remains Mud Normal", 2D) = "bump" {}
-        [NoScaleOffset] _RemainsMudMask ("Remains Mud Mask (G occlusion, A smoothness)", 2D) = "white" {}
-        _RemainsMudTile ("Remains Mud Tile (m)", Float) = 3
-        _RemainsMudSmoothness ("Remains Mud Smoothness (x mask A)", Range(0, 1)) = 0.5
+        [NoScaleOffset] _StainRubbleAlbedo ("Stain Rubble Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainRubbleNormal ("Stain Rubble Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainRubbleMask ("Stain Rubble Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainRubbleTile ("Stain Rubble Tile (m)", Float) = 2
+        _StainRubbleSmoothness ("Stain Rubble Smoothness (x mask A)", Range(0, 1)) = 0.5
+        [NoScaleOffset] _StainAshAlbedo ("Stain Ash Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainAshNormal ("Stain Ash Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainAshMask ("Stain Ash Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainAshTile ("Stain Ash Tile (m)", Float) = 3
+        _StainAshSmoothness ("Stain Ash Smoothness (x mask A)", Range(0, 1)) = 0.3
+        _StainCharColor ("Char Colour (burnt fields and scorch)", Color) = (0.03, 0.027, 0.024, 1)
+        _StainCharStreaks ("Stain Char Ash Smudges (threshold below 1)", Range(0, 1)) = 0.38
+        [NoScaleOffset] _StainMudAlbedo ("Stain Mud Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainMudNormal ("Stain Mud Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainMudMask ("Stain Mud Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainMudTile ("Stain Mud Tile (m)", Float) = 3
+        _StainMudSmoothness ("Stain Mud Smoothness (x mask A)", Range(0, 1)) = 0.5
         [HideInInspector] _TerrainHolesTexture ("Holes Map (RGB)", 2D) = "white" {}
     }
 

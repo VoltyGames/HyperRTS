@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Death;
+using HyperRTS.Simulation.Common;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -69,7 +69,7 @@ namespace HyperRTS.Presentation.Destruction
         public bool Advance(float height, float deltaTime)
         {
             var wasLanded = Landed;
-            var tipping = 1.5f * FallingRemains.Gravity / height;
+            var tipping = 1.5f * Gravity.Acceleration / height;
             Lag += deltaTime;
             while (Lag >= Step)
             {

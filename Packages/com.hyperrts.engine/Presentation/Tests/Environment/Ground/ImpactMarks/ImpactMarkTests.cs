@@ -145,7 +145,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
         }
 
         [Test]
-        public void AshMark_LeavesRemains_OnTheGroundOnly()
+        public void AshMark_LeavesAStain_OnTheGroundOnly()
         {
             _mark.ash = 0.6f;
             _mark.rubble = 0.1f;
@@ -153,10 +153,10 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
             Land(new float3(9f, 0f, 0f), ImpactSurface.Water);
             Run(1.0);
 
-            var remains = _stamps.Stamps.Remains;
-            Assert.AreEqual(1, remains.Count);
-            Assert.AreEqual(new float2(5f, -2f), remains[0].Center);
-            Assert.AreEqual(new float4(0.1f, 0.6f, 0f, 0f), remains[0].Value);
+            var stains = _stamps.Stamps.Stains;
+            Assert.AreEqual(1, stains.Count);
+            Assert.AreEqual(new float2(5f, -2f), stains[0].Center);
+            Assert.AreEqual(new float4(0.1f, 0.6f, 0f, 0f), stains[0].Value);
             Assert.IsEmpty(_stamps.Stamps.Scars);
         }
 

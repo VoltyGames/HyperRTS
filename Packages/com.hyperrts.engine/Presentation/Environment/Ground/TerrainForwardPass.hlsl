@@ -7,7 +7,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainWetness.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainRemains.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStains.hlsl"
 
 #define RUT_DEPTH 0.12
 #define RUT_DARKENING 0.4
@@ -75,8 +75,8 @@ half ApplyTrample(inout TerrainSurface surface, float2 positionXZ)
     surface.smoothness = saturate(surface.smoothness + CRATER_DAMPNESS * bowl);
     surface.occlusion *= 1.0 - CRATER_OCCLUSION * bowl;
 
-    // Scorch is the same char a burnt field leaves (TerrainRemains.hlsl).
-    surface.albedo = lerp(surface.albedo, _RemainsCharColor.rgb, SCORCH_CHAR * tracks.scorch);
+    // Scorch is the same char a burnt field leaves (TerrainStains.hlsl).
+    surface.albedo = lerp(surface.albedo, _StainCharColor.rgb, SCORCH_CHAR * tracks.scorch);
     surface.smoothness = lerp(surface.smoothness, CHAR_SMOOTHNESS, tracks.scorch);
 
     half2 slope = (half2)(tracks.slope * RUT_DEPTH + tracks.craterSlope * CRATER_RELIEF);
@@ -137,7 +137,7 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     #endif
     half dampness = ApplyGroundTint(surface, input.uv, input.positionWS.xz);
     half rut = ApplyTrample(surface, input.positionWS.xz);
-    half mud = ApplyRemains(surface, pixel);
+    half mud = ApplyStains(surface, pixel);
     ApplyWetness(surface, dampness, max(rut, mud), input.positionWS.xz);
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);

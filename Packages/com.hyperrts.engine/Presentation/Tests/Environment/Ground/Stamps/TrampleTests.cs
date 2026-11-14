@@ -122,7 +122,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         }
 
         [Test]
-        public void AddCrater_RemainsCoverTheScorchReach_AndRemainsAloneLeaveNoScar()
+        public void AddCrater_StainsCoverTheScorchReach_AndStainsAloneLeaveNoScar()
         {
             _mark.ash = 0.7f;
             _mark.rubble = 0.2f;
@@ -130,22 +130,22 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
 
             stamps.AddCrater(new float2(1f, 2f), _mark, 4f);
 
-            Assert.AreEqual(1, stamps.Remains.Count);
-            Assert.AreEqual(new float2(2f * TrampleStamps.ScorchReach), stamps.Remains[0].HalfSize);
-            Assert.AreEqual(new float4(0.2f, 0.7f, 0f, 0f), stamps.Remains[0].Value);
+            Assert.AreEqual(1, stamps.Stains.Count);
+            Assert.AreEqual(new float2(2f * TrampleStamps.ScorchReach), stamps.Stains[0].HalfSize);
+            Assert.AreEqual(new float4(0.2f, 0.7f, 0f, 0f), stamps.Stains[0].Value);
             Assert.IsEmpty(stamps.Scars, "no bowl or scorch, so the soil is not churned");
             Assert.IsEmpty(stamps.Trample);
         }
 
         [Test]
-        public void AddRemains_IsARoundDisc_ClampedToFullCover()
+        public void AddStain_IsARoundDisc_ClampedToFullCover()
         {
             var stamps = new TrampleStamps();
 
-            stamps.AddRemains(new float2(3f, 4f), 2.5f, new float4(0f, 0.5f, 2f, -1f));
+            stamps.AddStain(new float2(3f, 4f), 2.5f, new float4(0f, 0.5f, 2f, -1f));
 
-            Assert.AreEqual(new float2(2.5f), stamps.Remains[0].HalfSize);
-            Assert.AreEqual(new float4(0f, 0.5f, 1f, 0f), stamps.Remains[0].Value);
+            Assert.AreEqual(new float2(2.5f), stamps.Stains[0].HalfSize);
+            Assert.AreEqual(new float4(0f, 0.5f, 1f, 0f), stamps.Stains[0].Value);
         }
 
         [Test]

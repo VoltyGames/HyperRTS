@@ -11,7 +11,7 @@ namespace HyperRTS.Simulation.Death
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Decay")]
     [Icon(HyperRTSIcons.DecayAuthoring)]
-    [HelpURL(HyperRTSDocs.Combat)]
+    [HelpURL(HyperRTSDocs.Death)]
     [DisallowMultipleComponent]
     public class DecayAuthoring : AuthoringBehaviour
     {

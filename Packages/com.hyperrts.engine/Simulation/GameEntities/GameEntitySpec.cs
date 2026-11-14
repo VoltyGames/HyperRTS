@@ -17,6 +17,6 @@ namespace HyperRTS.Simulation.GameEntities
         public float BuildTime;
         public int Population;
         public bool CountsForVictory;
-        public Entity DeathPrefab;
+        public Entity Remains;
     }
 }

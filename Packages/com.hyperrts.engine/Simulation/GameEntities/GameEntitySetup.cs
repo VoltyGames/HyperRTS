@@ -54,9 +54,9 @@ namespace HyperRTS.Simulation.GameEntities
                 writer.Add<VictoryCritical>();
             }
 
-            if (spec.DeathPrefab != Entity.Null)
+            if (spec.Remains != Entity.Null)
             {
-                writer.Add(new SpawnOnDeath { Prefab = spec.DeathPrefab });
+                writer.Add(new SpawnsRemains { Prefab = spec.Remains });
             }
         }
     }

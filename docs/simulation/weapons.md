@@ -1,9 +1,9 @@
 # Weapon modules
 
-[Docs](../README.md) ▸ [Simulation](README.md) ▸ Trajectories, Salvos, Ammo, Aim, Deploying, Fire missions, Interception, Remains
+[Docs](../README.md) ▸ [Simulation](README.md) ▸ Trajectories, Salvos, Ammo, Aim, Deploying, Fire missions, Interception, Death and remains
 
-How a weapon fires once combat has picked a target: shot courses, salvos, ammo, aim, deploying, fire missions, interception and what
-a dead unit leaves. Targeting and damage are in [combat](combat.md).
+How a weapon fires once combat has picked a target: shot courses, salvos, ammo, aim, deploying, fire missions, interception,
+and death and its remains. Targeting and damage are in [combat](combat.md).
 
 ## Trajectories, salvos and ammo
 
@@ -85,14 +85,32 @@ never sets an attack target: orders, engagement and the AI read the unit as unar
 `Intercepted`, so it never lands, and plays the interceptor's Impact cue as an `Air` surface. A miss lets it fly on.
 An `Offline` or dead interceptor does nothing.
 
-## Remains
+## Death and remains
+
+What happens when health reaches zero, and what is left. Code sits in `Simulation/Death/`.
+
+1. **Lethal hit.** Damage drops `Health` to zero. Alive means `Health.IsAlive`; nothing outside Lifecycle reads
+   `Dead`. A `Topple` piece or a `TurretToss` unit also keeps its `LethalHit`, the hit's type and push.
+2. **`DeathSystem`** (Lifecycle phase) enables `Dead` on this frame's zero-health entities and destroys them and their
+   parts at the end of the frame, so `Dead` lives for one frame. Systems that answer a death this frame
+   (`DeathCueSystem`, `CasualtyStatsSystem`) run after it. `SceneryCleared` scenery goes quietly, with no `Dead`.
+3. **Remains.** An entity with `SpawnsRemains`, set from the `remains` field of a unit, building or destructible,
+   leaves that prefab where it died, with its transform and stretch. A toppling piece lies away from the hit. Map
+   scenery's remains take its `SceneryId`, so multiplayer can clear them.
+4. **Falling.** Remains baked with `FallingRemains` (a destructible's `falls`, as on an aircraft's wreck) and a tossed
+   turret drop under gravity in `RemainsFallSystem` onto the nav grid surface: ground, water or deck.
+5. **Decay.** `DecayAuthoring` remains wait their lifetime, are buried and go; until then a `NavObstacle` blocks their
+   cells. Remains without it stay for the match.
+6. **Cues.** `DeathCueSystem` queues the death cue of each `Dead` entity: its sound, effects, `DeathStain` and squad
+   members.
+7. **Presentation.** `DeathStainSystem` stamps the stain (rubble, ash, fuel, mud) into the ground for the match,
+   for deaths seen on the ground. `CorpseDeathCues` leaves corpses only for squads whose death the player saw.
 
 | Type | Role |
 | --- | --- |
 | `Crusher` | A vehicle that flattens destructible scenery it drives over |
 | `DamageStagesAuthoring` | Models swapped by health fraction |
-| `DecayAuthoring` | Remains that wait, are buried and go. Remains with a `NavObstacle` block their cells until then |
-| `DropRemains` | Remains that fall onto the nav grid surface: ground, water or deck |
+| `DeathStainAuthoring` | What a unit or building leaves on the ground where it dies |
 | `SpawnEffectAuthoring` | An effect played once where an entity appears |
 | `TurretTossAuthoring` | A unit that throws its turret on a catastrophic death |
 | `TossedTurretAuthoring` | On the thrown turret's remains: the throw clients fly |

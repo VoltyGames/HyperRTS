@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string CropCoverAuthoring = Dir + "CropCoverAuthoring.png";
         public const string CrusherAuthoring = Dir + "CrusherAuthoring.png";
         public const string DamageStagesAuthoring = Dir + "DamageStagesAuthoring.png";
-        public const string DeathRemainsAuthoring = Dir + "DeathRemainsAuthoring.png";
+        public const string DeathStainAuthoring = Dir + "DeathStainAuthoring.png";
         public const string DebrisAuthoring = Dir + "DebrisAuthoring.png";
         public const string DecayAuthoring = Dir + "DecayAuthoring.png";
         public const string DeliverySourceAuthoring = Dir + "DeliverySourceAuthoring.png";
