@@ -62,6 +62,20 @@ namespace HyperRTS.Simulation.Tests.Air
             Assert.Less(math.distance(World.GetPosition(aircraft).xz, behind.xz), 1f);
         }
 
+        [Test]
+        public void Aircraft_WhoseGoalAnEnemyHoversOn_GivesUpBesideIt()
+        {
+            var goal = new float3(0f, 0f, 30f);
+            World.SpawnAircraft(2, goal);
+            var aircraft = Spawn();
+
+            World.MoveTo(aircraft, goal);
+
+            Assert.IsTrue(World.RunUntil(() => World.IsEnabled<Arrival>(aircraft), 30f), "the move ends");
+            Assert.AreEqual(ArrivalReason.Stalled, World.Get<Arrival>(aircraft).Reason);
+            Assert.Less(math.distance(World.GetPosition(aircraft).xz, goal.xz), 2f, "beside the aircraft on its goal");
+        }
+
         private Entity Spawn()
         {
             var aircraft = World.SpawnAircraft(1, float3.zero, Gunship.Altitude, speed: 9f);

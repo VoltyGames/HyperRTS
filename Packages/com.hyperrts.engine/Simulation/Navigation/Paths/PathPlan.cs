@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         public NativeList<PathResult> Results;
 
-        /// <summary>Each task's waypoints as served, until the drive job stores them.</summary>
+        /// <summary>Each task's waypoints as served, until the store job keeps them.</summary>
         public NativeList<UnsafeList<PathWaypoint>> Served;
 
         public PathPlan(Allocator allocator)

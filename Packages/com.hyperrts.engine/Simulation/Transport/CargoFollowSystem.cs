@@ -16,11 +16,15 @@ namespace HyperRTS.Simulation.Transport
     [UpdateInGroup(typeof(MovementSystemGroup))]
     public partial struct CargoFollowSystem : ISystem
     {
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            new FollowJob { Transforms = SystemAPI.GetComponentLookup<LocalTransform>(false), Stances = SystemAPI.GetComponentLookup<CombatStance>(false), Saved = SystemAPI.GetComponentLookup<PassengerStance>(true) }.Schedule();
+            new FollowJob
+            {
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(false),
+                Stances = SystemAPI.GetComponentLookup<CombatStance>(false),
+                Saved = SystemAPI.GetComponentLookup<PassengerStance>(true),
+            }.Schedule();
         }
 
         // Single-threaded: reads the container's transform and writes the passenger's through one lookup.

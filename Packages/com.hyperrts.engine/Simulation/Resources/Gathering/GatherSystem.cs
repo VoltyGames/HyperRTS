@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
             private void Execute(Entity entity, ref Harvester harvester, ref HarvestState harvest,
                 ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, RefRW<MoveDestination> destination,
-                EnabledRefRW<MoveDestination> moving, ref Arrival arrival, EnabledRefRW<Arrival> arrived,
+                EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent, in Owner owner)
             {
                 harvest.Filling = false;
@@ -106,7 +106,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                     return;
                 }
 
-                var move = new MoveControl(destination, moving, arrived) { Reason = arrival.Reason };
+                var move = new MoveControl(destination, moving, arrived);
                 if (harvest.Phase != HarvestPhase.Gathering)
                 {
                     var atDropOff = harvest.Phase == HarvestPhase.Returning && harvester.CargoAmount > 0

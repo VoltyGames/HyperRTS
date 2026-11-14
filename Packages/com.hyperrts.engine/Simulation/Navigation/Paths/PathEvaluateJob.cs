@@ -105,6 +105,11 @@ namespace HyperRTS.Simulation.Navigation.Paths
 
         private static void Straight(ref PathState path, DynamicBuffer<PathWaypoint> waypoints, float3 goal)
         {
+            if (path.Status == PathStatus.Ready && waypoints.Length == 1 && path.Goal.Equals(goal))
+            {
+                return;
+            }
+
             waypoints.Clear();
             waypoints.Add(new PathWaypoint { Position = goal });
             path = new PathState { Goal = goal, Status = PathStatus.Ready };

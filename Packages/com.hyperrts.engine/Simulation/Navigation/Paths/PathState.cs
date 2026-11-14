@@ -114,22 +114,22 @@ namespace HyperRTS.Simulation.Navigation.Paths
         }
 
         /// <summary>
-        /// Asks for a search, unless one is pending: records <paramref name="cause"/> and the frame, and drops the
-        /// corners when <paramref name="dropsCorners"/>.
+        /// Drops the corners when <paramref name="dropsCorners"/> and asks for a search, unless one is pending:
+        /// records <paramref name="cause"/> and the frame.
         /// </summary>
         public void Request(DynamicBuffer<PathWaypoint> waypoints, PathCause cause, bool dropsCorners, uint frame)
         {
+            if (dropsCorners)
+            {
+                ClearWaypoints(waypoints);
+            }
+
             if (Status == PathStatus.Requested)
             {
                 return;
             }
 
             Cause = cause;
-            if (dropsCorners)
-            {
-                ClearWaypoints(waypoints);
-            }
-
             Status = PathStatus.Requested;
             RequestFrame = frame;
         }

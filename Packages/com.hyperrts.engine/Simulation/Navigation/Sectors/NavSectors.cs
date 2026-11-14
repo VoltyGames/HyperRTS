@@ -113,6 +113,18 @@ namespace HyperRTS.Simulation.Navigation.Sectors
         /// <summary>Rebuilds the edges and regions round the dirty sectors, then clears the dirty marks.</summary>
         public void Connect()
         {
+            var changed = false;
+            for (var i = 0; i < Dirty.Length; i++)
+            {
+                changed |= Dirty[i];
+            }
+
+            // Regions follow from labels and edges alone, so with no sector dirty they stand.
+            if (!changed)
+            {
+                return;
+            }
+
             using var scope = ConnectMarker.Auto();
             Links.Rebuild(Labelling.Labels, Labelling.Counts, Dirty);
             for (var i = 0; i < Dirty.Length; i++)

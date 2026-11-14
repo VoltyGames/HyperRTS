@@ -1,14 +1,15 @@
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
 using NUnit.Framework;
 using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests.Transport
 {
-    /// <summary>Boarding a container that flies.</summary>
+    /// <summary>Boarding and leaving a container that flies.</summary>
     public class AirTransportTests : SimulationFixture
     {
         [Test]
-        public void HoveringHelicopter_LandsForAWaitingPassenger_AndIsBoardedOnTheGround()
+        public void HoveringHelicopter_LandsToBeBoarded_AndToUnload()
         {
             var helicopter = World.SpawnAircraft(1, float3.zero);
             TransportSetup.AddContainer(World.Writer(helicopter), new Container { Capacity = 2, MaxPassengerSize = 2 });
@@ -29,6 +30,13 @@ namespace HyperRTS.Simulation.Tests.Transport
             Assert.Less(lowest, 0.5f, "only once the helicopter stood on the ground");
             World.Run(2f);
             Assert.AreEqual(10f, World.GetPosition(helicopter).y, 1e-3f, "which climbs back with no one waiting");
+
+            World.Command(1, new PlayerCommand { Type = CommandType.Unload, Unit = helicopter, Argument = -1 });
+            World.Tick();
+            Assert.IsTrue(World.IsInside(soldier), "no one steps out in the air");
+            Assert.IsTrue(World.RunUntil(() => !World.IsInside(soldier), 10f), "the soldier gets out");
+            Assert.Less(World.GetPosition(helicopter).y, 0.5f, "once the helicopter stood on the ground");
+            Assert.IsTrue(World.RunUntil(() => World.GetPosition(helicopter).y > 9.9f, 10f), "and it climbs back");
         }
     }
 }

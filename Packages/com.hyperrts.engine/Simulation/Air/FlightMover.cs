@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.Air
         // Seconds ahead it reads the ground, so it climbs before a ridge rather than at it.
         private const float LookAheadSeconds = 2f;
 
-        /// <summary>Moves one aircraft; <paramref name="called"/> when a passenger waits to board it.</summary>
+        /// <summary>Moves one aircraft; <paramref name="called"/> when it is wanted on the ground.</summary>
         public void Fly(in MoverChunk chunk, int index, in Flight flight, ref FlightState state, bool called)
         {
             ref var transform = ref chunk.Transforms[index];
@@ -54,12 +54,7 @@ namespace HyperRTS.Simulation.Air
             var push = landed ? float2.zero : frame.Crowd.PushWithin(frame.Driver.TopSpeed * deltaTime);
             transform.Position.xz = from + step + push;
             transform.Position.y = Climb(transform.Position, flight, ref state, landed);
-            if (moving.ValueRO && frame.Crowd.ReachedGroup)
-            {
-                path.Halt(moving, waypoints);
-            }
-
-            var reason = frame.Crowd.ReachedGroup ? ArrivalReason.AtGroupmate : ArrivalReason.Reached;
+            var reason = Arrive(chunk, index, frame);
             Movers.Finish(chunk, index, ref frame, reason, step, false);
             var course = landed ? float2.zero : Course(state, wanted, frame.Driver.TopSpeed);
             var toward = frame.Driver.Aim(course, !moving.ValueRO, chunk.Aims[index], chunk.Aiming(index));
@@ -67,7 +62,38 @@ namespace HyperRTS.Simulation.Air
             chunk.Velocities[index].Value = (transform.Position.xz - from) / deltaTime;
         }
 
-        // On its pad, or down for a passenger waiting to board: only an aircraft that hovers, while it stands.
+        /// <summary>
+        /// Ends the move against an arrived groupmate, or once it stops getting on near its goal, as when an aircraft
+        /// that holds its ground hovers there.
+        /// </summary>
+        private readonly ArrivalReason Arrive(in MoverChunk chunk, int index, in MoveFrame frame)
+        {
+            var moving = chunk.Moving(index);
+            var waypoints = chunk.Waypoints[index];
+            ref var path = ref chunk.Paths[index];
+            if (!moving.ValueRO)
+            {
+                return ArrivalReason.Reached;
+            }
+
+            if (frame.Crowd.ReachedGroup)
+            {
+                path.Halt(moving, waypoints);
+                return ArrivalReason.AtGroupmate;
+            }
+
+            var reading = new MoveProgress.Reading(chunk.Transforms[index].Position.xz, frame.Facing,
+                chunk.Agents[index].Radius, chunk.Destinations[index].Value, waypoints, path);
+            if (!chunk.Progresses[index].HasGivenUp(reading, ref path, MoveProgress.WallHold.None, Movers.DeltaTime))
+            {
+                return ArrivalReason.Reached;
+            }
+
+            path.Halt(moving, waypoints);
+            return ArrivalReason.Stalled;
+        }
+
+        // On its pad, or called down to be boarded or unloaded: only an aircraft that hovers, while it stands.
         private readonly bool IsLanded(Entity aircraft, bool moving, in Flight flight, bool called)
         {
             if (Docked.HasEnabled(aircraft))

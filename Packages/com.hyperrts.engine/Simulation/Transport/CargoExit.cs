@@ -66,6 +66,10 @@ namespace HyperRTS.Simulation.Transport
 
         public float3 Position(Entity entity) => _transforms[entity].Position;
 
+        /// <summary>Whether the container flies over the ground its passengers would step out onto.</summary>
+        public bool IsAloft(Entity container, in NavGrid grid) =>
+            _agents.TryGetComponent(container, out var agent) && agent.IsAloft(_transforms[container].Position, grid);
+
         public float MaxHealth(Entity unit) => _health.TryGetComponent(unit, out var health) ? health.Max : 0f;
 
         public LastAttacker Attacker(Entity container) =>

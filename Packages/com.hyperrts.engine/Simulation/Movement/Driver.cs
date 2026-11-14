@@ -64,10 +64,7 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>
         /// Applies avoidance's heading and speed without changing the route's gear or recovery manoeuvre.
         /// </summary>
-        public float2 Steer(in PathLeg leg, float2 velocity)
-        {
-            return Follow(leg, math.length(velocity), velocity);
-        }
+        public float2 Steer(in PathLeg leg, float2 velocity) => Follow(leg, math.length(velocity), velocity);
 
         private float2 Follow(in PathLeg leg, float cap, float2 velocity)
         {
@@ -233,11 +230,7 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>Steers toward <paramref name="wanted"/> and rolls the rear axle along the arc.</summary>
         private float2 Roll(float wanted)
         {
-            if (Chassis.IsWheeled)
-            {
-                State.Steer = Handling.SteerToward(Chassis, State.Steer, State.Speed, wanted, DeltaTime);
-            }
-
+            State.Steer = Handling.SteerToward(Chassis, State.Steer, State.Speed, wanted, DeltaTime);
             var pose = Chassis.Pose(Position, Facing).Advance(State.Steer, State.Speed * DeltaTime);
             Facing = math.normalize(pose.Facing);
             return Chassis.Center(pose) - Position;

@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
 
         // Each cell's start serves as its write cursor, which leaves it at the next cell's start; shifting back
         // restores them. Slots are emptied as they go, ready for the next frame. Reverse order is the one the
-        // head-on crowd scenarios settle in; the old hash order differed from run to run.
+        // head-on crowd scenarios settle in.
         private void Scatter(NativeList<int> starts)
         {
             var cells = Index.Grid.Count;

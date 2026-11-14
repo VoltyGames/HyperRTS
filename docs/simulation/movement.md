@@ -2,7 +2,7 @@
 
 [Docs](../README.md) ▸ [Simulation](README.md) ▸ Navigation, Movement, Air, Transport
 
-Pathfinding, how units follow paths and share space, aircraft and containers. Vehicle handling is in [driving](driving.md).
+Pathfinding, following paths, sharing space, aircraft and containers. Vehicle handling is in [driving](driving.md).
 
 ## Navigation
 
@@ -10,7 +10,7 @@ Units find paths on a grid over the map. Each cell is land, water, deck or block
 Ground, Naval, Amphibious or Air. To move a unit, set and enable its `MoveDestination`.
 
 The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`: `Grid`, `Areas`, `Fields`, `Sectors`,
-`Paths`, `Agents`, `Drive`, `Reach`, `Spatial` and `Heights`.
+`Paths`, `Agents`, `Reach`, `Spatial` and `Heights`.
 
 | Authoring | Does |
 | --- | --- |
@@ -144,7 +144,8 @@ Steering picks the velocity an aircraft wants, round other aircraft, as it does 
 flies toward it: it speeds up and brakes at its rates, braking early enough to stop on its goal, and turns its course
 no harder than its bank allows, so it flies an arc at speed and turns on the spot when slow. From a hover it noses
 round to the way it means to go, slipping off its nose only slowly, and in forward flight its nose follows its course.
-It eases into and out of climbs and reads the ground two seconds ahead, so it rises before a ridge.
+It eases into and out of climbs and reads the ground two seconds ahead, so it rises before a ridge. Like a ground
+unit it gives up a move that stalls near its goal, as when another aircraft holds that spot.
 
 `AirfieldAuthoring` gives a building landing pads, one aircraft each, each a `PadKind`: `Helipad`, `Shelter` or `Any`.
 `FlightAuthoring.padKind` says which pads an aircraft takes, and `Any` on either side matches every kind. An airfield
@@ -158,9 +159,9 @@ docked. Its remains fall to the ground under gravity. Fuel is left to game code.
 largest passenger and whether passengers fire out or survive its death. Passengers step out at its `exit`, or around it
 when it has none. They get out or die in the frame the container dies, and dying passengers credit its killer.
 
-A passenger boards once in reach of a container on the ground. One in the air is called down first
-(`BoardingCall`): an aircraft that hovers and stands still lands for a waiting passenger and climbs back once no
-one waits. An aircraft on the move, or one that can't hover, is not boarded in flight.
+Passengers board and unload only on the ground. A container in the air is called down first (`LandingCall`): an
+aircraft that hovers and stands still lands for a waiting passenger or unload (`UnloadRequest`) and climbs back once
+no one calls. One on the move unloads where it stops; one that can't hover is never boarded or unloaded in flight.
 
 A container may list `firingPorts`, child transforms at windows and loopholes with the blue axis pointing out. A
 passenger that fires from inside shoots from the port facing its target best: the Fire cue, projectile start and hit

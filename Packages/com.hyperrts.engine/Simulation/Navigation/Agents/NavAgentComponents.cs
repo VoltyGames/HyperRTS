@@ -45,6 +45,13 @@ namespace HyperRTS.Simulation.Navigation.Agents
         /// <summary>Has locomotion handling, whatever its chassis; foot units never do.</summary>
         public bool IsVehicle;
 
+        // An aircraft further off the surface than this is in the air.
+        private const float AloftHeight = 0.5f;
+
+        /// <summary>Whether it is an aircraft off the surface below <paramref name="position"/>, over the heads of units on the ground.</summary>
+        public readonly bool IsAloft(float3 position, in NavGrid grid) =>
+            Layer == NavLayer.Air && position.y - grid.SurfaceHeight(position) > AloftHeight;
+
         /// <summary>Half the capsule's core segment: zero for round footprints.</summary>
         public readonly float HalfSegment => HalfSegmentFor(Radius, HullLength);
 

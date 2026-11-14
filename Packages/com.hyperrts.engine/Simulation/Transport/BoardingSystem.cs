@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Transport
                 Relations = SystemAPI.GetSingleton<OwnerRelations>(),
                 Boarding = _boarding,
                 ContainerLookup = SystemAPI.GetComponentLookup<Container>(true),
-                CallLookup = SystemAPI.GetComponentLookup<BoardingCall>(false),
+                CallLookup = SystemAPI.GetComponentLookup<LandingCall>(false),
                 Reach = _reach,
                 StanceLookup = SystemAPI.GetComponentLookup<CombatStance>(false),
                 AttackLookup = SystemAPI.GetComponentLookup<AttackTarget>(false),
@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Transport
             public OwnerRelations Relations;
             public Boarding Boarding;
             [ReadOnly] public ComponentLookup<Container> ContainerLookup;
-            public ComponentLookup<BoardingCall> CallLookup;
+            public ComponentLookup<LandingCall> CallLookup;
             public TargetReach Reach;
             [ReadOnly] public NavGrid Grid;
             public ComponentLookup<CombatStance> StanceLookup;

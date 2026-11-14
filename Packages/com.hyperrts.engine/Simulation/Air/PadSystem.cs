@@ -21,14 +21,22 @@ namespace HyperRTS.Simulation.Air
     [UpdateAfter(typeof(MoveOrderSystem))]
     public partial struct PadSystem : ISystem
     {
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             new ExpireJob().ScheduleParallel();
-            var airfields = new Airfields { Pads = SystemAPI.GetBufferLookup<LandingPad>(false), Owners = SystemAPI.GetComponentLookup<Owner>(true), Sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true) };
+            var airfields = new Airfields
+            {
+                Pads = SystemAPI.GetBufferLookup<LandingPad>(false),
+                Owners = SystemAPI.GetComponentLookup<Owner>(true),
+                Sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true),
+            };
             new HomeJob { Airfields = airfields }.Schedule();
-            new ReturnJob { Airfields = airfields, Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true) }.Schedule();
+            new ReturnJob
+            {
+                Airfields = airfields,
+                Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
+            }.Schedule();
         }
 
         /// <summary>Frees pads whose aircraft did not renew them last frame, as when it died or rehomed.</summary>

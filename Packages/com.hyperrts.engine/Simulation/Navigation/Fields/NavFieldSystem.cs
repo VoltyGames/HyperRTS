@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Navigation.Fields
     {
         private EntityQuery _agents;
 
-        // Kept between frames and sized to the work by CollectJob, so an idle frame schedules and allocates nothing.
+        // Kept between frames and sized to the work by CollectJob, so an idle frame allocates nothing.
         private NativeList<int2> _rebuilds;
         private NativeList<int2> _relabels;
         private NativeList<FixedList4096Bytes<float>> _solved;

@@ -58,9 +58,6 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// <summary>The cell an entry at the position files under, clamped onto the map.</summary>
         public readonly int CellIndex(float3 position) => Grid.Index(Grid.Clamp(Grid.Cell(position)));
 
-        /// <summary>How many entries the cell holds.</summary>
-        public readonly int CountIn(int cell) => CellStarts[cell + 1] - CellStarts[cell];
-
         /// <summary>Visits entries whose circle overlaps the query circle on the XZ plane.</summary>
         public readonly void Query<T>(float3 center, float radius, ref T visitor) where T : struct, ISpatialVisitor =>
             Query(center, radius, false, ref visitor);

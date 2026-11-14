@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Air
                 Handles = _handles,
                 Flights = SystemAPI.GetComponentTypeHandle<Flight>(true),
                 States = SystemAPI.GetComponentTypeHandle<FlightState>(false),
-                Calls = SystemAPI.GetComponentTypeHandle<BoardingCall>(false),
+                Calls = SystemAPI.GetComponentTypeHandle<LandingCall>(false),
             }.ScheduleParallel(_fliers, state.Dependency);
         }
 
@@ -78,8 +78,8 @@ namespace HyperRTS.Simulation.Air
             [ReadOnly] public ComponentTypeHandle<Flight> Flights;
             public ComponentTypeHandle<FlightState> States;
 
-            // A call lasts one frame: the passenger still waiting calls again.
-            public ComponentTypeHandle<BoardingCall> Calls;
+            // A call lasts one frame: whoever still wants it down calls again.
+            public ComponentTypeHandle<LandingCall> Calls;
 
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask)
