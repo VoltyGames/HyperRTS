@@ -107,7 +107,10 @@ namespace HyperRTS.Simulation.Tests.Combat
 
             World.Command(1, new PlayerCommand { Type = CommandType.Attack, Unit = launcher, Target = enemy });
             World.Tick();
-            Assert.AreEqual(OrderType.FireMission, World.Get<ActiveOrder>(launcher).Value.Type);
+            var mission = World.Get<ActiveOrder>(launcher).Value;
+            Assert.AreEqual(OrderType.FireMission, mission.Type);
+            Assert.Less(math.distance(mission.Position, new float3(5f, 0f, 30f)), 1e-3f, "aimed at the target's position");
+            Assert.AreEqual(Entity.Null, mission.Target, "a ground point, not the unit");
 
             Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<ActiveOrder>(launcher), 20f));
             World.Run(5f);

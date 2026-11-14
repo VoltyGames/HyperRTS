@@ -103,7 +103,8 @@ All player intent is a `PlayerCommand` on the player entity. Units carry orders.
 Games add command and order types from `GameFirst` (128) up and register each order type's traits in
 `OrderTraitTable`. The traits say whether the order spreads a group into a `Formation`, hands off to `MoveOrderSystem`
 (`MovesToPosition`), repeats (`Loops`), drives there backwards (`DrivesBackward`) and whether combat picks targets on
-the way (`EngagesWhileMoving`). The engine runs Move, ReverseMove, AttackMove, Patrol and Escort.
+the way (`EngagesWhileMoving`). `OrderTraitTable.RegisterCommand` makes a game command issue a registered game order.
+The engine runs Move, ReverseMove, AttackMove, Patrol and Escort.
 
 One system owns each order type and ends it with `ActiveOrder.Finish`, which also halts the walk, so the Shift queue
 survives and `OrderDispatchSystem` starts the next queued order. `FinishLeavingMovement` ends an order whose movement
@@ -112,7 +113,10 @@ order clear the queue.
 
 ## Commands
 
-Unit commands become orders. A Smart command, the default right-click, resolves to the first match:
+`UnitCommandSystem` turns unit commands into orders through `OrderResolver`, which returns the whole order: its type,
+position, target and argument. `CommandOrders.For` is the one table of what each engine command gives: a list of
+order types, best first, and a fallback (Move, or None to ignore the command). A unit gets the first type it can take
+(`OrderResolver.CanTake`), else the fallback. A Smart command, the default right-click, tries in order:
 
 1. A hostile target the unit's weapon can hit: Attack
 2. A resource node: Gather
@@ -123,8 +127,13 @@ Unit commands become orders. A Smart command, the default right-click, resolves 
 7. A capturable building: Capture
 8. Anything else: Move
 
-A unit's `SmartOrderRule`s are checked before this list, so a game can add its own. Group moves spread into a box
-formation.
+A unit's `SmartOrderRule`s are checked before this list, so a game can add its own. Explicit commands also accept
+targets a right-click skips, such as destructible scenery for Attack. A unit whose weapon fires only on order takes
+an attack as a fire mission at the target's position. A game command registered in `OrderTraitTable` gives its order
+with no checks; the game's order system handles a bad target.
+
+Orders with the `Formation` trait spread a group into a box formation. A `Loops` order adds a leg back to where the
+unit would otherwise end up, and Shift-queued onto a looping leg it joins that loop instead.
 
 ## Selection
 

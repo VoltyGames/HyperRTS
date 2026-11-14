@@ -17,6 +17,7 @@ namespace HyperRTS.Simulation.Tests.Commands
     public class CommandTests : SimulationFixture
     {
         private const OrderType GameOrder = OrderType.GameFirst + 2;
+        private const CommandType GameCommand = CommandType.GameFirst + 5;
 
         private Entity SpawnSelected(float3 position)
         {
@@ -38,6 +39,12 @@ namespace HyperRTS.Simulation.Tests.Commands
         {
             using var query = World.Query(typeof(OrderTraitTable));
             query.GetSingletonRW<OrderTraitTable>().ValueRW.Register(type, traits);
+        }
+
+        private void RegisterCommand(CommandType command, OrderType order)
+        {
+            using var query = World.Query(typeof(OrderTraitTable));
+            query.GetSingletonRW<OrderTraitTable>().ValueRW.RegisterCommand(command, order);
         }
 
         [Test]
@@ -169,12 +176,37 @@ namespace HyperRTS.Simulation.Tests.Commands
         }
 
         [Test]
-        public void UnregisteredGameOrder_FailsToIssue_AndEngineOrdersCannotBeRegistered()
+        public void GameCommand_IssuesItsRegisteredOrder_InFormation_AndQueued()
+        {
+            Register(GameOrder, OrderTraits.Formation | OrderTraits.MovesToPosition);
+            RegisterCommand(GameCommand, GameOrder);
+            var first = SpawnSelected(float3.zero);
+            var second = SpawnSelected(new float3(2f, 0f, 0f));
+            var goal = new float3(20f, 0f, 0f);
+
+            Command(GameCommand, goal);
+            World.Command(1, new PlayerCommand { Type = GameCommand, Position = new float3(0f, 0f, 20f), Queue = true });
+            RunCommands();
+
+            var a = World.Get<ActiveOrder>(first).Value;
+            var b = World.Get<ActiveOrder>(second).Value;
+            Assert.AreEqual(GameOrder, a.Type);
+            Assert.AreEqual(GameOrder, b.Type);
+            Assert.AreNotEqual(0, a.Group, "a formation group");
+            Assert.AreEqual(a.Group, b.Group);
+            Assert.Greater(math.distance(a.Position, b.Position), 0.5f, "each unit its own slot");
+            Assert.AreEqual(GameOrder, World.Buffer<QueuedOrder>(first)[0].Value.Type, "Shift queues it");
+        }
+
+        [Test]
+        public void UnregisteredGameOrder_FailsToIssueOrMap_AndEngineTypesCannotBeRegistered()
         {
             var unit = World.SpawnUnit(1, float3.zero);
 
             Assert.Throws<InvalidOperationException>(() => World.Issue(unit, new Order { Type = GameOrder }));
             Assert.Throws<ArgumentOutOfRangeException>(() => Register(OrderType.Capture, OrderTraits.Formation));
+            Assert.Throws<InvalidOperationException>(() => RegisterCommand(GameCommand, GameOrder));
+            Assert.Throws<ArgumentOutOfRangeException>(() => RegisterCommand(CommandType.Capture, GameOrder));
         }
 
         [Test]

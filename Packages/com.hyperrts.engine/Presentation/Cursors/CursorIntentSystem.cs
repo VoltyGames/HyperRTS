@@ -102,7 +102,7 @@ namespace HyperRTS.Presentation.Cursors
                     continue;
                 }
 
-                var order = _resolver.Resolve(CommandType.Smart, entity, hovered, relations).Type;
+                var order = _resolver.ResolveSmart(entity, hovered, relations);
                 moves |= order == OrderType.Move;
                 var kind = CursorIntent.ForOrder(order);
                 best = CursorIntent.Precedence(kind) > CursorIntent.Precedence(best) ? kind : best;

@@ -14,9 +14,9 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
-    /// Picks the order a unit gets for a command from its capabilities and the target: Smart tries the unit's
-    /// <see cref="SmartOrderRule"/>s, then attack, gather, build, repair, enter, capture, land or move; explicit
-    /// commands fall back to Move when the unit can't comply.
+    /// Picks the order a unit gets for a command from its capabilities and the target: the first of the command's
+    /// <see cref="CommandOrders"/> it can take, else their fallback. Smart tries the unit's
+    /// <see cref="SmartOrderRule"/>s first.
     /// </summary>
     public struct OrderResolver
     {
@@ -80,95 +80,98 @@ namespace HyperRTS.Simulation.Commands
         }
 
         /// <summary>
-        /// The order type the unit gets; callers fill in where and what it acts on. A unit whose weapon fires only on
-        /// order takes an attack as a fire mission, which the caller aims at the target's position.
+        /// The order the unit gets, aimed where the command points. A unit whose weapon fires only on order takes an
+        /// attack as a fire mission at the target's position.
         /// </summary>
-        public Order Resolve(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
+        public Order Resolve(in PlayerCommand command, Entity unit, in OwnerRelations relations,
+            in OrderTraitTable traits)
         {
-            var order = command == CommandType.Smart && TryRule(unit, target, relations, out var ruled)
-                ? ruled
-                : new Order { Type = ResolveType(command, unit, target, relations) };
-            if (order.Type == OrderType.Attack && FiresOnOrder(unit))
+            var order = new Order
             {
-                order.Type = OrderType.FireMission;
+                Type = ResolveType(command, unit, relations, traits),
+                Position = command.Position,
+                Target = command.Target,
+                Argument = command.Argument,
+            };
+            if (order.Type == OrderType.FireMission && order.Target != Entity.Null)
+            {
+                order.Position = _targets.Position(order.Target);
+                order.Target = Entity.Null;
             }
 
             return order;
         }
 
-        private bool FiresOnOrder(Entity unit) =>
-            _mounts.TryGetBuffer(unit, out var mounts) && new WeaponMounts(mounts).FiresOnOrder;
-
-        private OrderType ResolveType(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
+        /// <summary>The order type a right-click on <paramref name="target"/> gives the unit.</summary>
+        public OrderType ResolveSmart(Entity unit, Entity target, in OwnerRelations relations)
         {
-            return command switch
+            var type = TryRule(unit, target, relations, out var ruled)
+                ? ruled
+                : Pick(CommandOrders.For(CommandType.Smart), unit, target, relations, false);
+            return AsFireMission(unit, type);
+        }
+
+        private OrderType ResolveType(in PlayerCommand command, Entity unit, in OwnerRelations relations,
+            in OrderTraitTable traits)
+        {
+            if (command.Type == CommandType.Smart)
             {
-                CommandType.Smart => ResolveSmart(unit, target, relations),
-                CommandType.Attack => CanForceAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
-                CommandType.AttackMove => ResolveAttackMove(unit, target, relations),
-                CommandType.FireMission => FiresOnOrder(unit) ? OrderType.FireMission : OrderType.None,
-                CommandType.Patrol => OrderType.Patrol,
-                CommandType.ReverseMove => OrderType.ReverseMove,
-                CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,
-                CommandType.ReturnToBase => _padUsers.HasComponent(unit) ? OrderType.ReturnToBase : OrderType.None,
-                CommandType.Gather => CanGather(unit, target) ? OrderType.Gather : OrderType.Move,
-                CommandType.Build => CanBuild(unit, target, relations) ? OrderType.Build : OrderType.Move,
-                CommandType.Repair => CanRepair(unit, target, relations) ? OrderType.Repair : OrderType.Move,
-                CommandType.Capture => CanCapture(unit, target, relations) ? OrderType.Capture : OrderType.Move,
-                CommandType.Enter => CanEnter(unit, target, relations) ? OrderType.Enter : OrderType.Move,
-                _ => OrderType.Move,
+                return ResolveSmart(unit, command.Target, relations);
+            }
+
+            var orders = command.Type >= CommandType.GameFirst
+                ? CommandOrders.ForGame(command.Type, traits)
+                : CommandOrders.For(command.Type);
+            return AsFireMission(unit, Pick(orders, unit, command.Target, relations, true));
+        }
+
+        private OrderType AsFireMission(Entity unit, OrderType type) =>
+            type == OrderType.Attack && FiresOnOrder(unit) ? OrderType.FireMission : type;
+
+        private OrderType Pick(in CommandOrders orders, Entity unit, Entity target, in OwnerRelations relations,
+            bool forced)
+        {
+            foreach (var order in orders.Choices)
+            {
+                if (CanTake(order, unit, target, relations, forced))
+                {
+                    return order;
+                }
+            }
+
+            return orders.Fallback;
+        }
+
+        /// <summary>
+        /// Whether the unit can carry out <paramref name="order"/> on the target. A <paramref name="forced"/> command
+        /// names its order, so an attack may hit scenery and a return to base needs no airfield to click on.
+        /// </summary>
+        private bool CanTake(OrderType order, Entity unit, Entity target, in OwnerRelations relations, bool forced)
+        {
+            return order switch
+            {
+                OrderType.Move or OrderType.ReverseMove or OrderType.Patrol => true,
+                OrderType.AttackMove => TryGetPrimary(unit, out _),
+                OrderType.Attack => forced ? CanForceAttack(unit, target, relations) : CanAttack(unit, target, relations),
+                OrderType.FireMission => FiresOnOrder(unit),
+                OrderType.Escort => CanEscort(unit, target, relations),
+                OrderType.ReturnToBase => forced ? _padUsers.HasComponent(unit) : CanLandAt(unit, target),
+                OrderType.Gather => _harvesters.HasComponent(unit) && _nodes.HasComponent(target),
+                OrderType.Build => CanBuild(unit, target, relations),
+                OrderType.Repair => CanRepair(unit, target, relations),
+                OrderType.Capture => CanCapture(unit, target, relations),
+                OrderType.Enter => _boarding.CanBoard(unit, target, relations),
+                // A game order's own system checks its target.
+                _ => order >= OrderType.GameFirst,
             };
         }
 
-        private OrderType ResolveAttackMove(Entity unit, Entity target, in OwnerRelations relations)
+        private bool FiresOnOrder(Entity unit) =>
+            _mounts.TryGetBuffer(unit, out var mounts) && new WeaponMounts(mounts).FiresOnOrder;
+
+        private bool TryRule(Entity unit, Entity target, in OwnerRelations relations, out OrderType order)
         {
-            // Attack-move clicked on an enemy or on scenery attacks it directly.
-            if (CanForceAttack(unit, target, relations))
-            {
-                return OrderType.Attack;
-            }
-
-            return TryGetPrimary(unit, out _) ? OrderType.AttackMove : OrderType.Move;
-        }
-
-        private OrderType ResolveSmart(Entity unit, Entity target, in OwnerRelations relations)
-        {
-            if (CanAttack(unit, target, relations))
-            {
-                return OrderType.Attack;
-            }
-
-            if (CanGather(unit, target))
-            {
-                return OrderType.Gather;
-            }
-
-            if (CanBuild(unit, target, relations))
-            {
-                return OrderType.Build;
-            }
-
-            if (CanRepair(unit, target, relations))
-            {
-                return OrderType.Repair;
-            }
-
-            if (CanEnter(unit, target, relations))
-            {
-                return OrderType.Enter;
-            }
-
-            if (CanLandAt(unit, target))
-            {
-                return OrderType.ReturnToBase;
-            }
-
-            return CanCapture(unit, target, relations) ? OrderType.Capture : OrderType.Move;
-        }
-
-        private bool TryRule(Entity unit, Entity target, in OwnerRelations relations, out Order order)
-        {
-            order = default;
+            order = OrderType.None;
             if (target == Entity.Null || !_rules.TryGetBuffer(unit, out var rules))
             {
                 return false;
@@ -186,7 +189,7 @@ namespace HyperRTS.Simulation.Commands
                 var type = TypeManager.GetTypeIndexFromStableTypeHash(rule.TargetComponent);
                 if (_entityManager.HasComponent(target, ComponentType.FromTypeIndex(type)))
                 {
-                    order = new Order { Type = rule.Order };
+                    order = rule.Order;
                     return true;
                 }
             }
@@ -219,9 +222,6 @@ namespace HyperRTS.Simulation.Commands
             return _mounts.TryGetBuffer(unit, out var mounts) && new WeaponMounts(mounts).TryGetPrimary(out weapon);
         }
 
-        private bool CanGather(Entity unit, Entity target) =>
-            _harvesters.HasComponent(unit) && _nodes.HasComponent(target);
-
         private bool CanBuild(Entity unit, Entity target, in OwnerRelations relations) =>
             _builders.HasComponent(unit) &&
             BuildingRules.IsAlliedSite(_construction, _owners, relations, target, _owners[unit].Value);
@@ -236,8 +236,5 @@ namespace HyperRTS.Simulation.Commands
         private bool CanLandAt(Entity unit, Entity target) =>
             _padUsers.HasComponent(unit) &&
             AirfieldRules.IsOwnedAirfield(_pads, _owners, _construction, target, _owners[unit].Value);
-
-        private bool CanEnter(Entity unit, Entity target, in OwnerRelations relations) =>
-            _boarding.CanBoard(unit, target, relations);
     }
 }

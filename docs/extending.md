@@ -39,11 +39,18 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 
 ### A new order
 
-1. Pick an `OrderType` from `GameFirst` (128) up in your own code.
-2. Register its traits once from a system update with `OrderTraitTable.Register`: `EngagesWhileMoving`,
-   `Formation`, `MovesToPosition`, `Loops` or `DrivesBackward`. `OrderWriter.Issue` rejects a game type with none.
-3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, or set `MoveDestination` directly.
-4. End it with `ActiveOrder.Finish` when it is done, which keeps the Shift queue.
+An engine order is added in three places: its `OrderType` (and `CommandType`) value, its traits in
+`OrderTraitTable`, and its command's row in `CommandOrders.For` with its check in `OrderResolver.CanTake`. A game order needs only registration:
+
+1. Pick an `OrderType` and a `CommandType` from `GameFirst` (128) up in your own code.
+2. From a system update, register the order's traits with `OrderTraitTable.Register` (`EngagesWhileMoving`,
+   `Formation`, `MovesToPosition`, `Loops`, `DrivesBackward`), then map the command to it with
+   `OrderTraitTable.RegisterCommand`. `OrderWriter.Issue` rejects a game type with no traits.
+3. Issue the command as a `PlayerCommand`. `UnitCommandSystem` gives it to the selected or listed units, in formation
+   and Shift-queued like an engine order. For right-click, add a `SmartOrderRule` instead or as well.
+4. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, or set `MoveDestination` directly,
+   and drop a target it can't act on.
+5. End it with `ActiveOrder.Finish` when it is done, which keeps the Shift queue.
 
 ### A new stat
 

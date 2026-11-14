@@ -17,9 +17,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Commands
 {
     /// <summary>
-    /// Turns unit <see cref="PlayerCommand"/>s into orders for the commanded unit or the player's selected units,
-    /// spreading ground moves into a <see cref="Formation"/> on the <see cref="NavGrid"/>. Producers are handled
-    /// elsewhere.
+    /// Turns unit <see cref="PlayerCommand"/>s, and game commands registered in <see cref="OrderTraitTable"/>, into
+    /// orders for the commanded unit or the player's selected units, spreading ground moves into a
+    /// <see cref="Formation"/> on the <see cref="NavGrid"/>. Producers are handled elsewhere.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -90,12 +90,25 @@ namespace HyperRTS.Simulation.Commands
             }
         }
 
-        private static TypeSet UnitCommands =>
-            TypeSet.Single(CommandType.Smart).With(CommandType.Move).With(CommandType.ReverseMove)
-                .With(CommandType.AttackMove).With(CommandType.Attack).With(CommandType.Gather).With(CommandType.Build)
-                .With(CommandType.Stop).With(CommandType.SetStance).With(CommandType.Repair).With(CommandType.Capture)
-                .With(CommandType.Enter).With(CommandType.Patrol).With(CommandType.Escort)
-                .With(CommandType.ReturnToBase).With(CommandType.FireMission);
+        /// <summary>Stop, stance, every engine command with a row in <see cref="CommandOrders"/>, and every game command.</summary>
+        private static TypeSet UnitCommands
+        {
+            get
+            {
+                var set = TypeSet.Single(CommandType.Stop).With(CommandType.SetStance);
+                // Game commands without a registered order resolve to none and are left to the game's systems.
+                for (var type = 0; type <= byte.MaxValue; type++)
+                {
+                    var command = (CommandType)type;
+                    if (command >= CommandType.GameFirst || CommandOrders.For(command).Choices.Length > 0)
+                    {
+                        set = set.With(command);
+                    }
+                }
+
+                return set;
+            }
+        }
 
         /// <summary>Keeps the command's owned subjects that take orders, in order.</summary>
         private bool GatherSubjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)
@@ -116,7 +129,7 @@ namespace HyperRTS.Simulation.Commands
             var moveOrders = new NativeList<Order>(subjects.Length, Allocator.Temp);
             foreach (var unit in subjects)
             {
-                var order = _resolver.Resolve(command.Type, unit, command.Target, relations);
+                var order = _resolver.Resolve(command, unit, relations, _writer.Traits);
                 if (order.Type == OrderType.None)
                 {
                     continue;
@@ -129,15 +142,7 @@ namespace HyperRTS.Simulation.Commands
                 }
                 else
                 {
-                    order.Position = command.Position;
-                    order.Target = command.Target;
-                    if (order.Type == OrderType.FireMission && command.Target != Entity.Null)
-                    {
-                        order.Position = _transforms[command.Target].Position;
-                        order.Target = Entity.Null;
-                    }
-
-                    _writer.Issue(unit, order, command.Queue);
+                    Issue(unit, order, command.Queue);
                 }
             }
 
@@ -190,14 +195,19 @@ namespace HyperRTS.Simulation.Commands
                 order.Position = Fit(movers[i], map.Clamp(slots[i]), grid);
                 order.Group = _lastGroup;
                 order.Extent = extent;
-                if (order.Type == OrderType.Patrol)
-                {
-                    IssuePatrol(movers[i], order, positions[i], command.Queue);
-                }
-                else
-                {
-                    _writer.Issue(movers[i], order, command.Queue);
-                }
+                Issue(movers[i], order, command.Queue);
+            }
+        }
+
+        private void Issue(Entity unit, in Order order, bool queue)
+        {
+            if (_writer.Traits.Has(order.Type, OrderTraits.Loops))
+            {
+                IssueLoop(unit, order, queue);
+            }
+            else
+            {
+                _writer.Issue(unit, order, queue);
             }
         }
 
@@ -233,15 +243,15 @@ namespace HyperRTS.Simulation.Commands
         }
 
         /// <summary>
-        /// Patrols loop between the new point and where the unit would otherwise end up: here, or the end of its queue.
-        /// Queued onto a route that already ends in a patrol leg, the point joins that loop instead.
+        /// Looping orders such as Patrol run between the new point and where the unit would otherwise end up: here, or
+        /// the end of its queue. Queued onto a route that already ends in a looping leg, the point joins that loop.
         /// </summary>
-        private void IssuePatrol(Entity unit, in Order leg, float3 position, bool queue)
+        private void IssueLoop(Entity unit, in Order leg, bool queue)
         {
-            var start = position;
+            var start = _transforms[unit].Position;
             if (queue && _writer.Reader.TryGetLastOrder(unit, out var last))
             {
-                if (last.Type == OrderType.Patrol)
+                if (_writer.Traits.Has(last.Type, OrderTraits.Loops))
                 {
                     _writer.Issue(unit, leg, true);
                     return;
@@ -255,7 +265,7 @@ namespace HyperRTS.Simulation.Commands
             }
 
             _writer.Issue(unit, leg, queue);
-            _writer.Issue(unit, new Order { Type = OrderType.Patrol, Position = start }, true);
+            _writer.Issue(unit, new Order { Type = leg.Type, Position = start, Argument = leg.Argument }, true);
         }
 
         private void SetStance(NativeArray<Entity> subjects, Stance stance)

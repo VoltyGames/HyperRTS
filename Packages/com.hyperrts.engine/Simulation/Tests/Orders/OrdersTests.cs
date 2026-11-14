@@ -170,6 +170,21 @@ namespace HyperRTS.Simulation.Tests.Orders
         }
 
         [Test]
+        public void QueuedPatrol_JoinsTheLoop_WithoutASecondReturnLeg()
+        {
+            var unit = World.SpawnUnit(1, float3.zero);
+            Patrol(unit, new float3(10f, 0f, 0f));
+            Patrol(unit, new float3(10f, 0f, 10f), queue: true);
+            World.Tick();
+
+            var queue = World.Buffer<QueuedOrder>(unit);
+            Assert.AreEqual(2, queue.Length, "the return leg, then the new point");
+            Assert.Less(math.length(queue[0].Value.Position), 0.5f);
+            Assert.Less(math.distance(queue[1].Value.Position, new float3(10f, 0f, 10f)), 0.5f);
+            Assert.AreEqual(OrderType.Patrol, queue[1].Value.Type);
+        }
+
+        [Test]
         public void Patrol_EngagesEnemiesOnTheWay()
         {
             var unit = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon { Range = 3f });
