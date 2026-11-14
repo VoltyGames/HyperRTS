@@ -104,9 +104,7 @@ namespace HyperRTS.Simulation.Tests
             var weapon = world.Primary(entity);
             weapon.FiresOnOrder = true;
             world.SetPrimary(entity, weapon);
-            var writer = world.Writer(entity);
-            writer.Add<PointAim>();
-            writer.SetEnabled<PointAim>(false);
+            WeaponSetup.AddPointAim(world.Writer(entity));
         }
 
         /// <summary>Gives the primary a muzzle at each point, fired in turn.</summary>

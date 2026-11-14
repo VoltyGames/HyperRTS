@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using Unity.Burst;
@@ -48,8 +47,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             {
                 var hull = Transforms[entity];
                 var primary = attacking.ValueRO ? attack.Value : Entity.Null;
-                var ordered = PointAims.HasEnabled(entity);
-                var point = ordered ? PointAims[entity].Value : default;
+                var ordered = PointAim.TryGet(PointAims, entity, out var point);
+                var deployed = Deployable.IsDeployed(Deployables, entity);
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
@@ -57,7 +56,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     var tracksAttack = i == 0 && !mount.Weapon.ShootsProjectiles;
                     var target = tracksAttack ? primary : mount.Target;
                     var aim = ShotAim.Choose(target, Transforms, mount.Weapon, ordered && i == 0, point);
-                    var rest = Deployable.IsDeployed(Deployables, entity) ? mount.Weapon.Aim.DeployedPitch : 0f;
+                    var rest = deployed ? mount.Weapon.Aim.DeployedPitch : 0f;
                     Pose(poses, i, hull, mount.Weapon, Holds(entity, mount.Weapon) ? default : aim, rest);
                 }
             }

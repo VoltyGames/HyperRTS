@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
-using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources.Gathering;
@@ -24,7 +23,6 @@ namespace HyperRTS.Simulation.Commands
         private ComponentLookup<Owner> _owners;
         private TargetLookup _targets;
         private BufferLookup<WeaponMount> _mounts;
-        private ComponentLookup<PointAim> _pointAims;
         private ComponentLookup<Harvester> _harvesters;
         private ComponentLookup<ResourceNode> _nodes;
         private ComponentLookup<Builder> _builders;
@@ -44,7 +42,6 @@ namespace HyperRTS.Simulation.Commands
             _owners = state.GetComponentLookup<Owner>(true);
             _targets = new TargetLookup(ref state);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
-            _pointAims = state.GetComponentLookup<PointAim>(true);
             _harvesters = state.GetComponentLookup<Harvester>(true);
             _nodes = state.GetComponentLookup<ResourceNode>(true);
             _builders = state.GetComponentLookup<Builder>(true);
@@ -66,7 +63,6 @@ namespace HyperRTS.Simulation.Commands
             _owners.Update(ref state);
             _targets.Update(ref state, queries);
             _mounts.Update(ref state);
-            _pointAims.Update(ref state);
             _harvesters.Update(ref state);
             _nodes.Update(ref state);
             _builders.Update(ref state);
@@ -109,7 +105,7 @@ namespace HyperRTS.Simulation.Commands
                 CommandType.Smart => ResolveSmart(unit, target, relations),
                 CommandType.Attack => CanForceAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
                 CommandType.AttackMove => ResolveAttackMove(unit, target, relations),
-                CommandType.FireMission => _pointAims.HasComponent(unit) ? OrderType.FireMission : OrderType.None,
+                CommandType.FireMission => FiresOnOrder(unit) ? OrderType.FireMission : OrderType.None,
                 CommandType.Patrol => OrderType.Patrol,
                 CommandType.ReverseMove => OrderType.ReverseMove,
                 CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,

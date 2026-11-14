@@ -13,5 +13,13 @@ namespace HyperRTS.Simulation.Common.Combat
 
         /// <summary>The weapon's completed salvos when the mission began; one more means its salvo has fired.</summary>
         public uint SalvosAtStart;
+
+        /// <summary>The ordered point while the unit has a fire mission firing; false otherwise.</summary>
+        public static bool TryGet(in ComponentLookup<PointAim> aims, Entity unit, out float3 point)
+        {
+            var ordered = aims.HasComponent(unit) && aims.IsComponentEnabled(unit);
+            point = ordered ? aims[unit].Value : default;
+            return ordered;
+        }
     }
 }

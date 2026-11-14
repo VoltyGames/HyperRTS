@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Presentation.Overlays.Markers;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Overlays
@@ -181,5 +182,11 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>Segments for a bar of <paramref name="maxHealth"/>, or one per member for squads.</summary>
         public int Segments(float maxHealth, int members) =>
             members > 0 ? members : Mathf.Clamp(Mathf.CeilToInt(maxHealth / healthPerSegment), 1, maxSegments);
+
+        /// <summary>A marker drawn as its rim alone.</summary>
+        public MarkerLook Outline => new(markerLine, markerFade, 0f);
+
+        /// <summary>A fire-mission disc filled from its rim, fading in over <paramref name="fade"/> metres.</summary>
+        public MarkerLook FireDisc(float fade) => new(markerLine, fade, fireFill);
     }
 }

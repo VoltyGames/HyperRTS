@@ -47,6 +47,7 @@ namespace HyperRTS.Simulation.AI
         public readonly void Plan(ref SystemState state, in AITurn turn, in AISnapshot snapshot)
         {
             var entities = state.EntityManager;
+            var known = default(NativeList<int>);
             for (var i = 0; i < _units.Length; i++)
             {
                 if (!turn.IsFree(_units, i))
@@ -56,8 +57,17 @@ namespace HyperRTS.Simulation.AI
 
                 var unit = _units.Entities[i];
                 var primary = entities.GetBuffer<WeaponMount>(unit, true)[0];
-                if (primary.Ready && primary.Weapon.FiresAtGround
-                    && TryChoose(entities, turn, snapshot, _units.Position(i), primary.Weapon, out var point))
+                if (!primary.Ready || !primary.Weapon.FiresAtGround)
+                {
+                    continue;
+                }
+
+                if (!known.IsCreated)
+                {
+                    known = KnownEnemies(entities, turn, snapshot);
+                }
+
+                if (TryChoose(snapshot, known, _units.Position(i), primary.Weapon, out var point))
                 {
                     turn.Commands.Add(new PlayerCommand { Type = CommandType.FireMission, Unit = unit, Position = point });
                     turn.Busy.Add(unit);
@@ -65,24 +75,38 @@ namespace HyperRTS.Simulation.AI
             }
         }
 
+        /// <summary>The snapshot indices of the enemies this AI may fire at, found once a turn.</summary>
+        private readonly NativeList<int> KnownEnemies(EntityManager entities, in AITurn turn, in AISnapshot snapshot)
+        {
+            var known = new NativeList<int>(snapshot.Targets.Length, Allocator.Temp);
+            for (var i = 0; i < snapshot.Targets.Length; i++)
+            {
+                if (IsKnownEnemy(entities, turn, snapshot, i))
+                {
+                    known.Add(i);
+                }
+            }
+
+            return known;
+        }
+
         /// <summary>The enemy in range with the most enemies within a blast of it, nearest on a tie; false when none is in range.</summary>
-        private readonly bool TryChoose(EntityManager entities, in AITurn turn, in AISnapshot snapshot, float3 from,
-            in Weapon weapon, out float3 point)
+        private static bool TryChoose(in AISnapshot snapshot, in NativeList<int> known, float3 from, in Weapon weapon,
+            out float3 point)
         {
             var targets = snapshot.Targets;
-            var blast = weapon.Damage.Radius + weapon.Spread;
             var bestCount = 0;
             var bestDistance = float.MaxValue;
             point = default;
-            for (var i = 0; i < targets.Length; i++)
+            foreach (var i in known)
             {
                 var distance = targets.DistanceSq(i, from);
-                if (!weapon.Reaches(math.sqrt(distance)) || !IsKnownEnemy(entities, turn, snapshot, i))
+                if (!weapon.Reaches(math.sqrt(distance)))
                 {
                     continue;
                 }
 
-                var count = CountWithin(entities, turn, snapshot, targets.Position(i), blast);
+                var count = CountWithin(snapshot, known, targets.Position(i), weapon.Blast);
                 if (count > bestCount || (count == bestCount && distance < bestDistance))
                 {
                     bestCount = count;
@@ -94,15 +118,12 @@ namespace HyperRTS.Simulation.AI
             return bestCount > 0;
         }
 
-        private readonly int CountWithin(EntityManager entities, in AITurn turn, in AISnapshot snapshot, float3 centre,
-            float radius)
+        private static int CountWithin(in AISnapshot snapshot, in NativeList<int> known, float3 centre, float radius)
         {
-            var targets = snapshot.Targets;
             var count = 0;
-            for (var i = 0; i < targets.Length; i++)
+            foreach (var i in known)
             {
-                var near = targets.DistanceSq(i, centre) <= radius * radius;
-                if (near && IsKnownEnemy(entities, turn, snapshot, i))
+                if (snapshot.Targets.DistanceSq(i, centre) <= radius * radius)
                 {
                     count++;
                 }

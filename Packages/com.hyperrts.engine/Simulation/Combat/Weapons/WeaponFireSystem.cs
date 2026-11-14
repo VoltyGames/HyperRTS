@@ -80,13 +80,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
             private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in Owner owner)
             {
                 var rate = Paces.TryGetComponent(entity, out var pace) ? pace.FireRate : 1f;
-                var ordered = PointAims.HasEnabled(entity);
+                var ordered = PointAim.TryGet(PointAims, entity, out var point);
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
                     mount.Weapon.Tick(DeltaTime * rate);
-                    var aim = ShotAim.Choose(mount.Target, Transforms, mount.Weapon, ordered && i == 0,
-                        ordered ? PointAims[entity].Value : default);
+                    var aim = ShotAim.Choose(mount.Target, Transforms, mount.Weapon, ordered && i == 0, point);
                     if (!CanShoot(entity, mount, aim, rate))
                     {
                         mount.Weapon.EndSalvo();

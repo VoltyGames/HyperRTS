@@ -12,13 +12,13 @@ namespace HyperRTS.Presentation.Overlays
     {
         public readonly RangeBand Band;
 
-        /// <summary>The weapon's spread plus its splash radius.</summary>
+        /// <summary>See <see cref="Weapon.Blast"/>.</summary>
         public readonly float Blast;
 
         public FireMissionReach(in Weapon weapon)
         {
             Band = weapon.Band(weapon.Range);
-            Blast = weapon.Spread + weapon.Damage.Radius;
+            Blast = weapon.Blast;
         }
 
         /// <summary>False unless the primary weapon fires only on order.</summary>

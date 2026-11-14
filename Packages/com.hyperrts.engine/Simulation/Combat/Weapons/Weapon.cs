@@ -126,6 +126,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
+        /// <summary>The radius one salvo covers round its aim point: the spread plus the splash radius.</summary>
+        public readonly float Blast => Spread + Damage.Radius;
+
         /// <summary>Whether its shots need a clear line to the target; lobbed shells don't.</summary>
         public readonly bool NeedsLineOfFire => Aim.Course.NeedsLineOfFire;
 

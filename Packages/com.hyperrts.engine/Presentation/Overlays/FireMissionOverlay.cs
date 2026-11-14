@@ -76,15 +76,14 @@ namespace HyperRTS.Presentation.Overlays
 
         private void AddRings(in MarkerPose pose, in FireMissionReach reach, OverlayStyle style)
         {
-            var outline = new MarkerLook(style.markerLine, style.markerFade, 0f);
-            _markers.Add(pose, MarkerFootprint.Round(reach.Band.Reach, 0f), style.fireReach, outline);
+            _markers.Add(pose, MarkerFootprint.Round(reach.Band.Reach, 0f), style.fireReach, style.Outline);
             if (reach.Band.Floor <= 0f)
             {
                 return;
             }
 
             // Fading over the whole radius makes the dead zone a soft disc rather than a rim.
-            var dead = new MarkerLook(style.markerLine, reach.Band.Floor, style.fireFill);
+            var dead = style.FireDisc(reach.Band.Floor);
             _markers.Add(pose, MarkerFootprint.Round(reach.Band.Floor, 0f), style.fireDeadZone, dead);
         }
 
@@ -94,11 +93,11 @@ namespace HyperRTS.Presentation.Overlays
             var pose = new MarkerPose(point);
             if (reached)
             {
-                _markers.Add(pose, footprint, style.fireReady, new MarkerLook(style.markerLine, radius, style.fireFill));
+                _markers.Add(pose, footprint, style.fireReady, style.FireDisc(radius));
                 return;
             }
 
-            _markers.Add(pose, footprint, style.fireMove, new MarkerLook(style.markerLine, style.markerFade, 0f));
+            _markers.Add(pose, footprint, style.fireMove, style.Outline);
         }
     }
 }

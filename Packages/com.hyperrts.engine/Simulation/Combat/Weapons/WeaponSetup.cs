@@ -30,9 +30,15 @@ namespace HyperRTS.Simulation.Combat.Weapons
             writer.SetEnabled<AttackTarget>(false);
             if (mounts[0].Weapon.FiresOnOrder)
             {
-                writer.Add<PointAim>();
-                writer.SetEnabled<PointAim>(false);
+                AddPointAim(writer);
             }
+        }
+
+        /// <summary>The point a fire mission aims at, off until one is ordered.</summary>
+        public static void AddPointAim(EntityWriter writer)
+        {
+            writer.Add<PointAim>();
+            writer.SetEnabled<PointAim>(false);
         }
 
         /// <summary>The muzzles of weapons that fire from several in turn; see <see cref="Weapon.FirstMuzzle"/>.</summary>

@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.AI
 
         /// <summary>A unit on a fire mission stays deployed, since it has no target to show for it.</summary>
         private static bool IsFiringMission(EntityManager entities, Entity unit) =>
-            entities.HasComponent<ActiveOrder>(unit) && entities.IsComponentEnabled<ActiveOrder>(unit)
+            entities.HasEnabled<ActiveOrder>(unit)
             && entities.GetComponentData<ActiveOrder>(unit).Value.Type == OrderType.FireMission;
 
         /// <summary>Only a fully deployed unit packs up, so one still deploying keeps the target it is turning to.</summary>
