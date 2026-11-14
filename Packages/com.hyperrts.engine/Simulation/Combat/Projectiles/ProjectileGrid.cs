@@ -54,8 +54,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         /// </summary>
         public readonly Entity Nearest(float3 center, in Weapon weapon, byte owner, in OwnerRelations relations)
         {
-            var radiusSq = weapon.Range * weapon.Range;
-            var near = Closest.Within(radiusSq);
+            var near = Closest.None;
             var inbound = Closest.None;
             var min = Cell(center - weapon.Range);
             var max = Cell(center + weapon.Range);
@@ -68,10 +67,14 @@ namespace HyperRTS.Simulation.Combat.Projectiles
                         continue;
                     }
 
-                    near.Consider(0, entry.Entity, math.distancesq(entry.Position, center));
-                    if (math.distancesq(entry.Aim, center) <= radiusSq)
+                    var distanceSq = math.distancesq(entry.Position, center);
+                    if (weapon.ReachesInFlight(center, entry.Position))
                     {
-                        inbound.Consider(0, entry.Entity, math.distancesq(entry.Position, center));
+                        near.Consider(0, entry.Entity, distanceSq);
+                    }
+                    else if (weapon.ReachesInFlight(center, entry.Aim))
+                    {
+                        inbound.Consider(0, entry.Entity, distanceSq);
                     }
                 }
             }

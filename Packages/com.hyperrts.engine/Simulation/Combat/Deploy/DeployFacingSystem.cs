@@ -18,8 +18,8 @@ namespace HyperRTS.Simulation.Combat.Deploy
     /// Packs up and turns a <see cref="Deployable"/> so an ordered target or fire mission point in range sits in the centre of its weapon's firing arc.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(EngagementSystem))]
+    [UpdateInGroup(typeof(TargetingSystemGroup))]
+    [UpdateAfter(typeof(FireMissionSystem))]
     public partial struct DeployFacingSystem : ISystem
     {
         /// <summary>Radians off the target a packed unit may be and still deploy.</summary>
@@ -46,7 +46,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
                 in DynamicBuffer<WeaponMount> mounts, in LocalTransform transform, ref FacingGoal goal,
                 EnabledRefRW<FacingGoal> facing)
             {
-                var weapon = mounts[0].Weapon;
+                var weapon = new WeaponMounts(mounts).Primary.Weapon;
                 var ordered = order.Value.Type == OrderType.Attack && order.Value.Target == attack.Value;
                 if (weapon.FiringArc <= 0f || !ordered || !attack.InRange)
                 {
@@ -67,7 +67,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
             private void Execute(ref Deployable deployable, in PointAim aim, in DynamicBuffer<WeaponMount> mounts,
                 in LocalTransform transform, ref FacingGoal goal, EnabledRefRW<FacingGoal> facing)
             {
-                var weapon = mounts[0].Weapon;
+                var weapon = new WeaponMounts(mounts).Primary.Weapon;
                 if (weapon.FiringArc <= 0f)
                 {
                     deployable.Deploy();

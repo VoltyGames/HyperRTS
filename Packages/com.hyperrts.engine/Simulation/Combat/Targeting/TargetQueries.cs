@@ -20,5 +20,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
             Sight = new EntityQueryBuilder(Allocator.Temp).WithAll<SightRules>().Build(ref state),
             Blockers = SightBlockers.Query(ref state),
         };
+
+        /// <summary>The singletons, through <c>out</c> because Burst only lets a lookup's [ReadOnly] fields be filled that way.</summary>
+        public readonly void Read(out FogOfWar fog, out SightRules sight, out SightBlockers blockers)
+        {
+            fog = Fog.GetSingleton<FogOfWar>();
+            sight = Sight.GetSingleton<SightRules>();
+            blockers = Blockers.GetSingleton<SightBlockers>();
+        }
     }
 }

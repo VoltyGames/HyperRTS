@@ -18,7 +18,7 @@ sections that hits already broke.
 | --- | --- |
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and `extraWeapons` |
 | `WeaponStats` | One weapon: its hit, cooldown, projectile and trajectory, muzzles, aim, range, minimum range, `WeaponTargets` (Ground, Naval, Air, Projectile), needs deploy, firing arc, ammo, salvo, spread. The primary and each extra weapon carry one |
-| `WeaponMount` | One weapon at runtime: the primary at index 0, then the extras. Server only |
+| `WeaponMount` | One weapon at runtime. `WeaponMounts` wraps the buffer: its `Primary` comes first, then the extras. Server only |
 | `DamageProfile` | What a hit deals: amount, `DamageType`, garrison factor, cover piercing, suppression, splash. `DamageSettings` is its inspector block |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
@@ -26,11 +26,28 @@ sections that hits already broke.
 | `CombatStance` | Aggressive, Defensive, HoldPosition or Passive, with the acquire range and leash |
 | `LastAttacker` | Who gets the kill credit |
 
-`DamageSystem` applies all damage last in the combat phase, scaled by `DamageFactors` (armor by type and side, then
-damage taken). Idle units look for targets every 4th frame.
+The combat phase runs in nested groups from `SystemGroups.cs`, after the fog and sight systems:
+
+| Group | Systems, in order |
+| --- | --- |
+| `TargetingSystemGroup` | `AttackOrderSystem`, `TargetAcquisitionSystem`, `EngagementSystem`, `FireMissionSystem`, `DeployFacingSystem` |
+| `WeaponSystemGroup` | `AmmoRefillSystem`, `WeaponTargetSystem`, `WeaponPoseSystem`, `WeaponFireSystem` |
+| `ImpactSystemGroup` | `ProjectileSystem`, `ImpactSurfaceSystem` |
+
+So a target picked, a chase halted or a fire mission point aimed this frame is turned onto and fired at the same
+frame. A system elsewhere orders against a group, not a system inside it (`StealthSystem` runs after the weapons,
+`CraterSystem` after the impacts). `DamageSystem` applies all damage last in the combat phase, scaled by
+`DamageFactors` (armor by type and side, then damage taken). Idle units look for targets every 4th frame.
+
+**Engagement.** `Engager` runs one unit's `AttackTarget` each frame. `TargetLookup.KeepsAttacking` is the one rule
+for letting go, shared with `AttackOrderSystem`: an ordered target must stay attackable, one the unit picked itself
+a valid target, and the primary must not have run dry. A kept target is measured (`AttackRange`: the gap, the
+primary's reach and the band of every weapon that joins), then a target the unit picked itself is released outside
+its firing arc, past its leash or inside its minimum range. An ordered attack chases indefinitely.
 
 **Extra weapons.** The primary sets how a unit engages; orders and the AI read only it. Extra weapons fire at the
-unit's target when they can hit it, and the unit closes to the longest reach among them. An independent one picks its
+unit's target when they can hit it, and the unit halts at the longest reach among them while the primary holds fire
+until it is in its own range. An independent one picks its
 own target, such as a missile that engages aircraft while the gun shoots tanks. An extra weapon may need research,
 and may carry limited rounds. An aircraft goes home when all its limited weapons are empty. Each fires its own Fire
 cue, filled in order from index 1 by `mountFire` on the sound and effect authoring; one without an entry is silent.
@@ -44,10 +61,17 @@ hits the obstacle. A round launched through dense porous cover such as smoke los
 
 **Reach.** `TargetLookup.Reach` is a weapon's range against one target. A passenger firing out of a container gains
 `ContainerAuthoring.passengerRangeBonus`. Direct fire and rockets from above their target gain range per metre of
-height (`SightRules`); ballistic fire does not.
+height (`SightRules`); ballistic fire does not. Range has three measures, each named once:
 
-A system using `TargetLookup` creates its `TargetQueries` in `OnCreate` and passes them to `Update`: the lookup travels
-into jobs, which can't carry a query.
+| Measure | Used by | Helper |
+| --- | --- | --- |
+| Edge to edge between footprints | Units against units | `TargetLookup.Gap`, `TargetLookup.Reaches` |
+| Centre to point on the ground plane | Fire missions, their AI and preview, strikes | `Weapon.PointGap`, `Weapon.ReachesPoint` |
+| Straight line in 3D, centre to projectile | Interceptors | `Weapon.ReachesInFlight` |
+
+A system that builds a `TargetLookup` calls `TargetLookup.Require` in `OnCreate`, which holds it until the fog, sight
+rules and sight blockers exist, and creates its `TargetQueries` there to pass to `Update`: the lookup travels into
+jobs, which can't carry a query.
 
 ## Destruction
 

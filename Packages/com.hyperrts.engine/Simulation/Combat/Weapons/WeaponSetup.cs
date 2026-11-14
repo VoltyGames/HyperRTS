@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             writer.Add(stance);
             writer.Add<AttackTarget>();
             writer.SetEnabled<AttackTarget>(false);
-            if (mounts[0].Weapon.FiresOnOrder)
+            if (mounts[WeaponMounts.PrimaryIndex].Weapon.FiresOnOrder)
             {
                 AddPointAim(writer);
             }

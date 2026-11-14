@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
     /// clients and replays get them with the event.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateInGroup(typeof(ImpactSystemGroup))]
     [UpdateAfter(typeof(ProjectileSystem))]
     public partial struct ImpactSurfaceSystem : ISystem
     {

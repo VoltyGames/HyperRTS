@@ -9,8 +9,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>Reloads the <see cref="WeaponMount"/>s that refill anywhere, by the round or by the magazine. Docked refills are the air module's.</summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateBefore(typeof(WeaponFireSystem))]
+    [UpdateInGroup(typeof(WeaponSystemGroup))]
     public partial struct AmmoRefillSystem : ISystem
     {
         private EntityQuery _mounted;
@@ -46,12 +45,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (entities.NextEntityIndex(out var i))
                 {
-                    if (!WeaponMount.NeedsReload(read[i], docked: false))
+                    if (!new WeaponMounts(read[i]).NeedsReload(docked: false))
                     {
                         continue;
                     }
 
-                    WeaponMount.Reload(chunk.GetBufferAccessorRW(ref Mounts)[i], DeltaTime, docked: false);
+                    new WeaponMounts(chunk.GetBufferAccessorRW(ref Mounts)[i]).Reload(DeltaTime, docked: false);
                 }
             }
         }

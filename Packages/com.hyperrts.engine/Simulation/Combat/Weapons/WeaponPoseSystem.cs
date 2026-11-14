@@ -15,9 +15,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// before firing so turrets fire once on target.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateInGroup(typeof(WeaponSystemGroup))]
     [UpdateAfter(typeof(WeaponTargetSystem))]
-    [UpdateBefore(typeof(WeaponFireSystem))]
     public partial struct WeaponPoseSystem : ISystem
     {
 
@@ -53,9 +52,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 {
                     var mount = mounts[i];
                     // The primary tracks the attack target while it closes in; extra weapons and interceptors only what they shoot.
-                    var tracksAttack = i == 0 && !mount.Weapon.ShootsProjectiles;
+                    var tracksAttack = i == WeaponMounts.PrimaryIndex && !mount.Weapon.ShootsProjectiles;
                     var target = tracksAttack ? primary : mount.Target;
-                    var aim = ShotAim.Choose(target, Transforms, mount.Weapon, ordered && i == 0, point);
+                    var aim = ShotAim.Choose(target, Transforms, mount.Weapon, ordered && i == WeaponMounts.PrimaryIndex, point);
                     var rest = deployed ? mount.Weapon.Aim.DeployedPitch : 0f;
                     Pose(poses, i, hull, mount.Weapon, Holds(entity, mount.Weapon) ? default : aim, rest);
                 }

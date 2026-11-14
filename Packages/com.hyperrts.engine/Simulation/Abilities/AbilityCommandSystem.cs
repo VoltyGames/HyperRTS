@@ -39,6 +39,7 @@ namespace HyperRTS.Simulation.Abilities
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _writer = new OrderWriter(ref state);
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<OwnerRelations>();

@@ -17,6 +17,7 @@ namespace HyperRTS.Simulation.Vision.Detection
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateAfter(typeof(WeaponSystemGroup))]
     public partial struct StealthSystem : ISystem
     {
         [BurstCompile]

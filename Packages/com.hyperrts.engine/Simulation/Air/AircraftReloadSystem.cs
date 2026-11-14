@@ -44,7 +44,7 @@ namespace HyperRTS.Simulation.Air
 
             private void Execute(Entity entity, ref HomePad home)
             {
-                var spent = Mounts.TryGetBuffer(entity, out var mounts) && WeaponMount.IsSpent(mounts);
+                var spent = Mounts.TryGetBuffer(entity, out var mounts) && new WeaponMounts(mounts).IsSpent;
                 if (!spent)
                 {
                     home.Recalled = false;
@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.Air
         {
             public float DeltaTime;
 
-            private void Execute(DynamicBuffer<WeaponMount> mounts) => WeaponMount.Reload(mounts, DeltaTime, docked: true);
+            private void Execute(DynamicBuffer<WeaponMount> mounts) => new WeaponMounts(mounts).Reload(DeltaTime, docked: true);
         }
     }
 }

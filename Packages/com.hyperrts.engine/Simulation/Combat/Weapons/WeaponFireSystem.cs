@@ -8,8 +8,8 @@ using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Spatial;
-using HyperRTS.Simulation.Vision.Detection;
 using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -23,9 +23,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// cref="Projectile"/> or an interceptor's kill roll. Offline, out-of-ammo and undeployed weapons stay silent.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateInGroup(typeof(WeaponSystemGroup))]
     [UpdateAfter(typeof(WeaponPoseSystem))]
-    [UpdateBefore(typeof(StealthSystem))]
     public partial struct WeaponFireSystem : ISystem
     {
         private TargetQueries _targetQueries;
@@ -39,6 +38,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<FogOfWar>();
+            state.RequireForUpdate<SightBlockers>();
             state.RequireForUpdate<SimulationFrame>();
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }

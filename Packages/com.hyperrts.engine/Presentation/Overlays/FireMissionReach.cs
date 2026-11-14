@@ -24,11 +24,11 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>False unless the primary weapon fires only on order.</summary>
         public static bool TryRead(DynamicBuffer<WeaponMount> mounts, out FireMissionReach reach)
         {
-            var fires = mounts.Length > 0 && mounts[0].Weapon.FiresOnOrder;
-            reach = fires ? new FireMissionReach(mounts[0].Weapon) : default;
-            return fires;
+            var weapons = new WeaponMounts(mounts);
+            reach = weapons.FiresOnOrder ? new FireMissionReach(weapons.Primary.Weapon) : default;
+            return weapons.FiresOnOrder;
         }
 
-        public bool Covers(float3 from, float3 point) => Band.Contains(math.distance(from.xz, point.xz));
+        public bool Covers(float3 from, float3 point) => Band.Contains(Weapon.PointGap(from, point));
     }
 }

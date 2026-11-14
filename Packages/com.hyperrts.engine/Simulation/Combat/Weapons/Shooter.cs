@@ -50,10 +50,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _cues = new CueWriter(ref state);
         }
 
-        /// <summary>
-        /// Call each update before scheduling, with this frame's buffer and the system's <see cref="SightBlockers"/>
-        /// query, created in OnCreate.
-        /// </summary>
+        /// <summary>Call each update before scheduling, with this frame's buffer and the system's blockers query.</summary>
         public void Update(ref SystemState state, EntityCommandBuffer ecb, EntityQuery blockers)
         {
             _transforms.Update(ref state);
@@ -68,8 +65,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _damage.Update(ref state);
             _cues.Update(ref state);
             _ecb = ecb;
-            blockers.TryGetSingleton(out _blockers);
+            Read(blockers, out _blockers);
         }
+
+        // Through out, because Burst only lets the [ReadOnly] field be filled that way.
+        private static void Read(EntityQuery query, out SightBlockers blockers) =>
+            blockers = query.GetSingleton<SightBlockers>();
 
         /// <summary>
         /// The fire step every weapon takes, ending in one volley of <paramref name="shots"/> rounds with one reveal,
@@ -101,7 +102,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return false;
             }
 
-            return math.distance(_transforms[shooter].Position, _transforms[target].Position) < weapon.Range;
+            return weapon.ReachesInFlight(_transforms[shooter].Position, _transforms[target].Position);
         }
 
         private bool OutsideArc(Entity shooter, in Weapon weapon, float3 point) =>
@@ -237,7 +238,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         private void Obstruct(Entity shooter, in Weapon weapon, in WeaponPose pose, in LocalTransform place,
             ref Entity target, ref float3 targetPosition)
         {
-            if (!weapon.NeedsLineOfFire || !_blockers.IsCreated)
+            if (!weapon.NeedsLineOfFire)
             {
                 return;
             }
@@ -285,7 +286,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             var aim = weapon.Scatter(weapon.Aim.TargetPoint(targetPosition), seed);
 
             // Smoke thick enough to hide the target breaks a guided round's lock; it flies on to the aim point.
-            var locked = weapon.KeepsLock && !(_blockers.IsCreated && _blockers.Haze(origin, aim) >= 1f);
+            var locked = weapon.KeepsLock && _blockers.Haze(origin, aim) < 1f;
             var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin, locked ? target : Entity.Null, aim, weapon.Targets);
             var flight = weapon.Launched(hit, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), origin, aim);
             var heading = flight.Arcs ? flight.Heading() : aim - origin;

@@ -95,6 +95,19 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>The distances it hits from: its minimum range up to <paramref name="reach"/>.</summary>
         public readonly RangeBand Band(float reach) => new(MinRange, reach);
 
+        /// <summary>
+        /// How fire missions and strikes measure range to a ground point: centre to point on the ground plane, where
+        /// units measure edge to edge (<c>TargetLookup.Gap</c>).
+        /// </summary>
+        public static float PointGap(float3 from, float3 point) => math.distance(from.xz, point.xz);
+
+        /// <summary>Whether a ground point lies in its band from <paramref name="from"/>, measured by <see cref="PointGap"/>.</summary>
+        public readonly bool ReachesPoint(float3 from, float3 point) => Band(Range).Contains(PointGap(from, point));
+
+        /// <summary>Whether a projectile in flight at <paramref name="projectile"/> is in range of an interceptor at <paramref name="from"/>, straight line in 3D.</summary>
+        public readonly bool ReachesInFlight(float3 from, float3 projectile) =>
+            math.distancesq(from, projectile) <= Range * Range;
+
         /// <summary>Whether a target at <paramref name="toTarget"/> (XZ, any length) lies within the firing arc about <paramref name="heading"/>.</summary>
         public readonly bool InFiringArc(float2 heading, float2 toTarget)
         {
@@ -123,8 +136,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public readonly bool ShootsProjectiles => (Targets & WeaponTargets.Projectile) != WeaponTargets.None;
 
         public readonly bool Engages(ProjectileKind kind) => (InterceptKinds & kind) != ProjectileKind.None;
-
-        public bool Reaches(float gap) => gap >= MinRange && gap <= Range;
 
         /// <summary>The radius one salvo covers round its aim point: the spread plus the splash radius.</summary>
         public readonly float Blast => Spread + Damage.Radius;

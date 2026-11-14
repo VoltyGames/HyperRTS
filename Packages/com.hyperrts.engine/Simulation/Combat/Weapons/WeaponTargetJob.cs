@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 {
                     mount.Target = Incoming(transform.Position, mount, owner.Value);
                 }
-                else if (i == 0)
+                else if (i == WeaponMounts.PrimaryIndex)
                 {
                     mount.Target = Primary(mount, attack, attacking.ValueRO);
                 }

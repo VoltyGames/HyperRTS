@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
     {
         public Entity Entity;
         public float3 Position;
-        public DynamicBuffer<WeaponMount> Mounts;
+        public WeaponMounts Mounts;
         public VisionRange Vision;
         public Owner Owner;
         public UnitMove Moves;
@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         {
             Entity = entity;
             Position = transform.Position;
-            Mounts = mounts;
+            Mounts = new WeaponMounts(mounts);
             Vision = vision;
             Owner = owner;
             Moves = default;

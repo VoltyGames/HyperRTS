@@ -180,14 +180,19 @@ namespace HyperRTS.Simulation.Tests
             }
 
             EntityManager.AddComponentData(match, relations);
+            AddAITunings(match);
+            this.CreateHints(AIHintsTestKit.DirectHints(teams));
+            BuildNavGrid();
+            BuildSight();
+        }
+
+        private void AddAITunings(Entity match)
+        {
             var tunings = EntityManager.AddBuffer<AIDifficultyTuning>(match);
             foreach (AIDifficulty difficulty in Enum.GetValues(typeof(AIDifficulty)))
             {
                 tunings.Add(new AITuning().ToTuning(difficulty));
             }
-
-            this.CreateHints(AIHintsTestKit.DirectHints(teams));
-            BuildNavGrid();
         }
 
         /// <summary>Bakes a heightfield over the test map from a height function, as Terrain Height authoring does.</summary>
@@ -214,6 +219,21 @@ namespace HyperRTS.Simulation.Tests
         {
             World.GetExistingSystem<NavGridSystem>().Update(World.Unmanaged);
             EntityManager.CompleteAllTrackedJobs();
+        }
+
+        /// <summary>
+        /// Builds the sight blockers and fog grid, as the map's first frames do before anyone gives a command, so
+        /// the systems that require them run from the first tick.
+        /// </summary>
+        private void BuildSight()
+        {
+            var time = World.Time;
+            // Stamped one fog interval early, so the first tick restamps as on a fresh grid.
+            World.SetTime(new TimeData(time.ElapsedTime - FogOfWarSystem.UpdateInterval, 0f));
+            World.GetExistingSystem<SightBlockSystem>().Update(World.Unmanaged);
+            World.GetExistingSystem<FogOfWarSystem>().Update(World.Unmanaged);
+            EntityManager.CompleteAllTrackedJobs();
+            World.SetTime(time);
         }
 
         public T Get<T>(Entity entity) where T : unmanaged, IComponentData => EntityManager.GetComponentData<T>(entity);

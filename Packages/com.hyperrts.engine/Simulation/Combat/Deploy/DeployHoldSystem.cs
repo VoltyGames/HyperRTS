@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
         [WithNone(typeof(Dead))]
         private partial struct HoldJob : IJobEntity
         {
-            // Combat never moves a unit that isn't packed up, so a move here is an order to go elsewhere.
+            // Whoever moves it, an order or a fire mission's stand-off, asks again each frame until it has packed up.
             private void Execute(ref Deployable deployable, EnabledRefRW<MoveDestination> moving)
             {
                 deployable.PackUp();

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Targeting;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
@@ -47,6 +48,25 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.Greater(World.Get<LocalTransform>(launcher).Position.z, 10f, "it drove toward the point first");
             Assert.AreEqual(DeployState.Deployed, World.Get<Deployable>(launcher).State, "and stays deployed");
             Assert.IsFalse(World.IsEnabled<PointAim>(launcher));
+        }
+
+        [Test]
+        public void FireMission_AimsTheFrameThePointIsInRange()
+        {
+            var launcher = World.AddWeapon(World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 0f }), new TestWeapon
+            {
+                Range = 40f,
+                Projectile = World.ProjectilePrefab(),
+                Trajectory = Trajectory.Ballistic,
+                Turreted = true,
+            });
+            World.SetFiresOnOrder(launcher);
+
+            Mission(launcher, new float3(30f, 0f, 0f));
+            World.Tick();
+
+            Assert.IsTrue(World.IsEnabled<PointAim>(launcher), "aims at the point");
+            Assert.AreNotEqual(0f, World.Buffer<WeaponPose>(launcher)[0].YawAngle, "and the turret turns that frame");
         }
 
         [Test]

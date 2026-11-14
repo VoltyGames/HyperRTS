@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues;
 using Unity.Burst;
@@ -15,7 +14,7 @@ namespace HyperRTS.Simulation.Squads.Cover
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(ImpactSurfaceSystem))]
+    [UpdateAfter(typeof(ImpactSystemGroup))]
     public partial struct CraterSystem : ISystem
     {
         private EntityQuery _craters;

@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _moves = moves;
         }
 
-        /// <summary>One frame of the unit's order with its primary <paramref name="mount"/>; range is measured from the unit's centre.</summary>
+        /// <summary>One frame of the unit's order with its primary <paramref name="mount"/>; range is a <see cref="Weapon.PointGap"/>.</summary>
         public void Run(float3 position, in WeaponMount mount, in Order order)
         {
             if (!_busy.ValueRO || order.Type != OrderType.FireMission)
@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// <summary>Halts and aims once the point is in range and the weapon is between salvos, else moves to the near edge of its range.</summary>
         private void Approach(float3 position, float3 point, in Weapon weapon)
         {
-            var gap = math.distance(position.xz, point.xz);
+            var gap = Weapon.PointGap(position, point);
             var band = weapon.Band(weapon.Range);
             if (band.Contains(gap))
             {

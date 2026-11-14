@@ -31,7 +31,6 @@ namespace HyperRTS.Simulation.AI
         private TargetQueries _targetQueries;
         private SquadPlanner _squads;
 
-        /// <summary>Default (not created) in a match without fog, where everything counts as seen.</summary>
         private FogOfWar _fog;
 
         public static AttackPlanner Create(ref SystemState state) => new()
@@ -46,7 +45,7 @@ namespace HyperRTS.Simulation.AI
         {
             _targetLookup.Update(ref state, _targetQueries);
             _army = AIGroup.From(_armyQuery);
-            _fog = _targetQueries.Fog.TryGetSingleton(out FogOfWar fog) ? fog : default;
+            _fog = _targetQueries.Fog.GetSingleton<FogOfWar>();
             _squads = squads;
         }
 
@@ -106,7 +105,7 @@ namespace HyperRTS.Simulation.AI
                 }
 
                 var entity = _army.Entities[i];
-                var armed = WeaponMount.TryGetPrimary(entities.GetBuffer<WeaponMount>(entity, true), out var primary);
+                var armed = new WeaponMounts(entities.GetBuffer<WeaponMount>(entity, true)).TryGetPrimary(out var primary);
                 if (armed && Weapon.CanHit(primary.Targets, NavLayer.Ground)
                     && IsFreeForWave(ref state, turn, snapshot, entity))
                 {

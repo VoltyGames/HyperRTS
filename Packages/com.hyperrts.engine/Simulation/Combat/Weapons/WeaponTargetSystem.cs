@@ -14,9 +14,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// cref="EngagementSystem"/> and before the weapons turn and fire.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(EngagementSystem))]
-    [UpdateBefore(typeof(WeaponPoseSystem))]
+    [UpdateInGroup(typeof(WeaponSystemGroup))]
+    [UpdateAfter(typeof(AmmoRefillSystem))]
     public partial struct WeaponTargetSystem : ISystem
     {
         private TargetLookup _targets;
@@ -27,6 +26,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _projectiles = SystemAPI.QueryBuilder().WithAll<Projectile, LocalTransform>().Build();
             state.RequireForUpdate<SpatialIndex>();

@@ -25,7 +25,6 @@ namespace HyperRTS.Simulation.AI
         private TargetLookup _targetLookup;
         private TargetQueries _targetQueries;
 
-        /// <summary>Default (not created) in a match without fog, where everything counts as known.</summary>
         private FogOfWar _fog;
 
         public static FireMissionPlanner Create(ref SystemState state) => new()
@@ -41,7 +40,7 @@ namespace HyperRTS.Simulation.AI
         {
             _targetLookup.Update(ref state, _targetQueries);
             _units = AIGroup.From(_query);
-            _fog = _targetQueries.Fog.TryGetSingleton(out FogOfWar fog) ? fog : default;
+            _fog = _targetQueries.Fog.GetSingleton<FogOfWar>();
         }
 
         public readonly void Plan(ref SystemState state, in AITurn turn, in AISnapshot snapshot)
@@ -56,7 +55,7 @@ namespace HyperRTS.Simulation.AI
                 }
 
                 var unit = _units.Entities[i];
-                var primary = entities.GetBuffer<WeaponMount>(unit, true)[0];
+                var primary = new WeaponMounts(entities.GetBuffer<WeaponMount>(unit, true)).Primary;
                 if (!primary.Ready || !primary.Weapon.FiresAtGround)
                 {
                     continue;
@@ -101,7 +100,7 @@ namespace HyperRTS.Simulation.AI
             foreach (var i in known)
             {
                 var distance = targets.DistanceSq(i, from);
-                if (!weapon.Reaches(math.sqrt(distance)))
+                if (!weapon.ReachesPoint(from, targets.Position(i)))
                 {
                     continue;
                 }

@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
     /// and halts once in range. A rooted <see cref="Deployable"/> fights like a building.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateInGroup(typeof(TargetingSystemGroup))]
     [UpdateAfter(typeof(TargetAcquisitionSystem))]
     public partial struct EngagementSystem : ISystem
     {
@@ -31,6 +31,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             state.RequireForUpdate<OwnerRelations>();
         }

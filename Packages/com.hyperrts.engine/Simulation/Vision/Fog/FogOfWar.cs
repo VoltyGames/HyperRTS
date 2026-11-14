@@ -81,16 +81,9 @@ namespace HyperRTS.Simulation.Vision.Fog
 
         public readonly bool IsExplored(float3 position, byte team) => Test(Explored, position, team);
 
-        /// <summary>What an AI may act on: units must be in sight, buildings stay known once explored, and a match without fog (not created) shows everything.</summary>
-        public readonly bool IsKnown(float3 position, byte team, bool building, bool tall)
-        {
-            if (!IsCreated)
-            {
-                return true;
-            }
-
-            return building ? IsExplored(position, team) : IsVisible(position, team, tall);
-        }
+        /// <summary>What an AI may act on: units must be in sight, buildings stay known once explored.</summary>
+        public readonly bool IsKnown(float3 position, byte team, bool building, bool tall) =>
+            building ? IsExplored(position, team) : IsVisible(position, team, tall);
 
         public readonly bool IsDetected(float3 position, byte team) => Test(Detected, position, team);
 

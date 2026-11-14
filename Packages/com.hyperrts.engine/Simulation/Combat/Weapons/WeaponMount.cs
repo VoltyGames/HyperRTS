@@ -1,12 +1,10 @@
-using HyperRTS.Simulation.Combat.Targeting;
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
-    /// One weapon of an entity, at the same index as its <see cref="WeaponPose"/> and its fire cue's variant. Index 0
-    /// is the primary and sets how the entity engages; an interceptor comes last. Server only.
+    /// One weapon of an entity, at the same index as its <see cref="WeaponPose"/> and its fire cue's variant; see
+    /// <see cref="WeaponMounts"/> for the primary. An interceptor comes last. Server only.
     /// </summary>
     [InternalBufferCapacity(1)]
     public struct WeaponMount : IBufferElementData
@@ -61,90 +59,5 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public bool IsLimited => Enabled && Ammo.Limited;
 
         public bool Ready => Enabled && !Ammo.Empty && Carriers > 0;
-
-        /// <summary>The primary, which orders, engagement and the AI read; false when it shoots projectiles.</summary>
-        public static bool TryGetPrimary(DynamicBuffer<WeaponMount> mounts, out Weapon weapon)
-        {
-            var armed = mounts.Length > 0 && !mounts[0].Weapon.ShootsProjectiles;
-            weapon = armed ? mounts[0].Weapon : default;
-            return armed;
-        }
-
-        /// <summary>Reloads the rounds that refill docked, or those that refill anywhere when <paramref name="docked"/> is false.</summary>
-        public static void Reload(DynamicBuffer<WeaponMount> mounts, float deltaTime, bool docked)
-        {
-            for (var i = 0; i < mounts.Length; i++)
-            {
-                var mount = mounts[i];
-                var refillsDocked = mount.Ammo.Refill == AmmoRefill.Docked;
-                if (refillsDocked == docked)
-                {
-                    mount.Ammo.Reload(deltaTime);
-                    mounts[i] = mount;
-                }
-            }
-        }
-
-        /// <summary>Some mount of the matching refill kind has a reload to advance or reset.</summary>
-        public static bool NeedsReload(in DynamicBuffer<WeaponMount> mounts, bool docked)
-        {
-            for (var i = 0; i < mounts.Length; i++)
-            {
-                if ((mounts[i].Ammo.Refill == AmmoRefill.Docked) == docked && mounts[i].Ammo.NeedsReload)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>Every usable weapon with limited rounds is empty, and there is at least one.</summary>
-        public static bool IsSpent(DynamicBuffer<WeaponMount> mounts)
-        {
-            var limited = false;
-            foreach (var mount in mounts)
-            {
-                if (!mount.IsLimited)
-                {
-                    continue;
-                }
-
-                if (!mount.Ammo.Empty)
-                {
-                    return false;
-                }
-
-                limited = true;
-            }
-
-            return limited;
-        }
-
-        /// <summary>Widens <paramref name="band"/> to every extra weapon that joins the attack on <paramref name="target"/>.</summary>
-        public static void ExtendReach(DynamicBuffer<WeaponMount> mounts, in TargetLookup targets, Entity shooter,
-            float3 position, Entity target, ref RangeBand band)
-        {
-            for (var i = 1; i < mounts.Length; i++)
-            {
-                var mount = mounts[i];
-                if (mount.JoinsAttack(targets, target))
-                {
-                    band.Reach = math.max(band.Reach, targets.Reach(shooter, position, mount.Weapon, target));
-                    band.Floor = math.min(band.Floor, mount.Weapon.MinRange);
-                }
-            }
-        }
-
-        /// <summary>A ready weapon that shares the unit's target and can hurt it.</summary>
-        private bool JoinsAttack(in TargetLookup targets, Entity target)
-        {
-            if (Independent || !Ready)
-            {
-                return false;
-            }
-
-            return targets.CanHurt(target, Weapon);
-        }
     }
 }

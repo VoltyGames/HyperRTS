@@ -16,8 +16,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
     /// <see cref="DamageEvent"/> and impact <see cref="CueEvent"/> on arrival and destroys them.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(WeaponFireSystem))]
+    [UpdateInGroup(typeof(ImpactSystemGroup))]
     public partial struct ProjectileSystem : ISystem
     {
         private TargetLookup _targets;
@@ -29,6 +28,7 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _damage = new EventWriter<DamageEvent>(ref state);
             _cues = new CueWriter(ref state);

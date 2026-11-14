@@ -1,5 +1,7 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Entities;
@@ -7,7 +9,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests.Combat
 {
-    /// <summary>Weapon ammo: one round per reload time, magazines, mount rounds, refilling docked and in the field.</summary>
+    /// <summary>Weapon ammo: one round per reload time, magazines, mount rounds, refilling docked and in the field, and an attack order ending dry.</summary>
     public class WeaponAmmoTests : SimulationFixture
     {
         [Test]
@@ -88,6 +90,25 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Run(2.5f);
             Assert.AreEqual(0, World.PrimaryAmmo(gun).Current, "a full reload time");
             Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) <= 70f, 1.5f), "fires again once refilled");
+        }
+
+        [Test]
+        public void AttackOrder_EndsWhenThePrimaryRunsDry()
+        {
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 0.5f,
+            });
+            World.SetAmmo(gun, 2, 30f, AmmoRefill.Magazine);
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
+            World.Issue(gun, new Order { Type = OrderType.Attack, Target = enemy });
+
+            Assert.IsTrue(World.RunUntil(() => World.PrimaryAmmo(gun).Current == 0, 2f), "fires the magazine");
+            Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<ActiveOrder>(gun), 1f), "the order ends");
+            Assert.IsFalse(World.IsEnabled<AttackTarget>(gun), "and lets go of its target");
+            Assert.AreEqual(80f, World.GetHealth(enemy));
         }
     }
 }

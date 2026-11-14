@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Vision;
-using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -20,7 +19,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
     /// so long-range fires need a spotter.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateInGroup(typeof(TargetingSystemGroup))]
     [UpdateAfter(typeof(AttackOrderSystem))]
     public partial struct TargetAcquisitionSystem : ISystem
     {
@@ -31,10 +30,10 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<OwnerRelations>();
-            state.RequireForUpdate<FogOfWar>();
             state.RequireForUpdate<SimulationFrame>();
         }
 
@@ -77,7 +76,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                     return;
                 }
 
-                var primary = mounts[0];
+                var primary = new WeaponMounts(mounts).Primary;
                 if (primary.Weapon.ShootsProjectiles || primary.Weapon.FiresOnOrder || primary.Ammo.Empty
                     || !MayAutoAcquire(entity))
                 {

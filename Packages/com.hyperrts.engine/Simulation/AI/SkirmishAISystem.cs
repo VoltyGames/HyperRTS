@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
@@ -42,6 +43,7 @@ namespace HyperRTS.Simulation.AI
             _fireMissions = FireMissionPlanner.Create(ref state);
             _attack = AttackPlanner.Create(ref state);
             _abilities = AbilityPlanner.Create(ref state);
+            TargetLookup.Require(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();

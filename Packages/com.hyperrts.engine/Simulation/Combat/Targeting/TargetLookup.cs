@@ -56,6 +56,14 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _damage = new DamageFactors(ref state);
         }
 
+        /// <summary>Holds the system until the singletons the lookup reads exist; every system that builds one calls it.</summary>
+        public static void Require(ref SystemState state)
+        {
+            state.RequireForUpdate<FogOfWar>();
+            state.RequireForUpdate<SightRules>();
+            state.RequireForUpdate<SightBlockers>();
+        }
+
         /// <summary><paramref name="queries"/> are the system's, created once in OnCreate.</summary>
         public void Update(ref SystemState state, in TargetQueries queries)
         {
@@ -71,10 +79,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _vision.Update(ref state);
             _deployables.Update(ref state);
             _damage.Update(ref state);
-            // Burst only lets the [ReadOnly] singletons be filled through out.
-            queries.Fog.TryGetSingleton(out _fog);
-            queries.Sight.TryGetSingleton(out _sight);
-            queries.Blockers.TryGetSingleton(out _blockers);
+            queries.Read(out _fog, out _sight, out _blockers);
         }
 
         /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
@@ -105,6 +110,25 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
             var scenery = _destructibles.HasComponent(target) && IsAlive(target) && !IsInside(target);
             return scenery && CanHit(target, targets);
+        }
+
+        /// <summary>
+        /// Whether a unit keeps attacking <paramref name="target"/> with <paramref name="primary"/>: an ordered target
+        /// need only stay attackable, one it picked itself a valid target, and the primary must not have run dry.
+        /// </summary>
+        public bool KeepsAttacking(Entity target, byte attackerOwner, in OwnerRelations relations, in WeaponMount primary,
+            bool ordered)
+        {
+            if (primary.Ammo.Empty)
+            {
+                return false;
+            }
+
+            // Only orders point units at scenery, so an ordered target need only be attackable.
+            var targets = primary.Weapon.Targets;
+            return ordered
+                ? IsAttackable(target, attackerOwner, relations, targets)
+                : IsValidTarget(target, attackerOwner, relations, targets);
         }
 
         /// <summary>A valid target (see above) that a weapon reaching <paramref name="targets"/> can hit.</summary>
@@ -195,11 +219,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// <summary>Whether something solid stands between the shooter's eye and the target's top.</summary>
         private bool IsObstructed(Entity shooter, float3 position, Entity target)
         {
-            if (!_blockers.IsCreated)
-            {
-                return false;
-            }
-
             var holder = Holder(shooter);
             _vision.TryGetComponent(shooter, out var vision);
             var from = position + new float3(0f, vision.EyeHeight, 0f);

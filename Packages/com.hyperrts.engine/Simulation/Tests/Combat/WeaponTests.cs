@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
 using Unity.Collections;
@@ -39,6 +40,26 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Run(1f);
 
             Assert.AreEqual(85f, World.GetHealth(enemy), "one shot from each weapon");
+        }
+
+        [Test]
+        public void LongerRangedMount_HaltsTheUnitAtItsReach_WhileThePrimaryHoldsFire()
+        {
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 4f,
+                Damage = 10f,
+                Cooldown = 100f,
+            });
+            World.AddMount(gun, new TestMount { Range = 12f, Damage = 5f, Cooldown = 100f });
+            var enemy = World.SpawnUnit(2, new float3(30f, 0f, 0f), new TestUnit { Speed = 0f });
+            World.Issue(gun, new Order { Type = OrderType.Attack, Target = enemy });
+
+            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 15f), "the mount fired");
+            World.Run(1f);
+
+            Assert.AreEqual(95f, World.GetHealth(enemy), "only the mount fired");
+            Assert.Greater(World.Get<AttackTarget>(gun).Gap, 4f, "it stopped beyond the primary's range");
         }
 
         [Test]

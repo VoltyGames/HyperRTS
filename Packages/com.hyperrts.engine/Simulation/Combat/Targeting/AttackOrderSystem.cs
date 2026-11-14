@@ -10,10 +10,12 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Combat.Targeting
 {
     /// <summary>
-    /// Runs <see cref="OrderType.Attack"/> orders: points <see cref="AttackTarget"/> at the order's target and completes the order once the target is dead, gone, hidden, out of reach or the weapon is out of ammo.
+    /// Runs <see cref="OrderType.Attack"/> orders: points <see cref="AttackTarget"/> at the order's target and
+    /// completes the order once <see cref="TargetLookup.KeepsAttacking"/> lets it go: the target is no longer
+    /// attackable or the primary has run dry.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateInGroup(typeof(TargetingSystemGroup))]
     public partial struct AttackOrderSystem : ISystem
     {
         private TargetLookup _targets;
@@ -23,6 +25,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void OnCreate(ref SystemState state)
         {
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             state.RequireForUpdate<OwnerRelations>();
         }
@@ -54,9 +57,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 }
 
                 var target = order.Value.Target;
-                var primary = mounts[0];
-                var valid = Targets.IsAttackable(target, owner.Value, Relations, primary.Weapon.Targets);
-                if (!valid || primary.Ammo.Empty)
+                var primary = new WeaponMounts(mounts).Primary;
+                if (!Targets.KeepsAttacking(target, owner.Value, Relations, primary, ordered: true))
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.
                     ActiveOrder.FinishLeavingMovement(busy);

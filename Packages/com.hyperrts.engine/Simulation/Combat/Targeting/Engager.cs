@@ -37,7 +37,17 @@ namespace HyperRTS.Simulation.Combat.Targeting
             // An ordered attack chases indefinitely; the stance only governs targets the unit picked itself.
             var target = attack.Value;
             var ordered = order.Type == OrderType.Attack && order.Target == target;
-            if (Releases(unit, stance, ordered, ref attack, out var band))
+            var primary = unit.Mounts.Primary;
+            if (!Targets.KeepsAttacking(target, unit.Owner.Value, Relations, primary, ordered))
+            {
+                Release(order, stance, ref attack, attacking, unit.Moves);
+                return;
+            }
+
+            var range = Measure(unit, target);
+            attack.Reach = range.Reach;
+            attack.Gap = range.Gap;
+            if (!ordered && Releases(unit, stance, target, range))
             {
                 Release(order, stance, ref attack, attacking, unit.Moves);
                 return;
@@ -49,8 +59,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             // Bullets close in until the line is clear.
-            var clear = Targets.CanFireAt(unit.Entity, unit.Position, unit.Mounts[0].Weapon, target);
-            Approach(unit, target, ref attack, band, clear);
+            var clear = Targets.CanFireAt(unit.Entity, unit.Position, primary.Weapon, target);
+            Approach(unit, target, ref attack, range.Band, clear);
         }
 
         /// <summary>Attack-movers carry their post along, so a defensive leash is measured from where they engage.</summary>
@@ -63,42 +73,34 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
         }
 
-        /// <summary>
-        /// Whether the unit lets go of its target: it is gone or out of reach, a target it picked itself is out of
-        /// its firing arc or past the leash, or inside its minimum range. Otherwise sets the gap and range band.
-        /// </summary>
-        private bool Releases(in Attacker unit, in CombatStance stance, bool ordered, ref AttackTarget attack,
-            out RangeBand band)
+        /// <summary>The gap to the target, the primary's reach and the band of every weapon that joins the attack.</summary>
+        private AttackRange Measure(in Attacker unit, Entity target)
         {
             var entity = unit.Entity;
             var position = unit.Position;
-            var primary = unit.Mounts[0];
-            var weapon = primary.Weapon;
-            var target = attack.Value;
-            band = default;
-            if (Loses(primary, unit.Owner, target, ordered))
+            var reach = Targets.Reach(entity, position, unit.Mounts.Primary.Weapon, target);
+            var band = unit.Mounts.Primary.Weapon.Band(reach);
+            ExtendReach(unit, target, ref band);
+            return new AttackRange { Gap = Targets.Gap(entity, position, target), Reach = reach, Band = band };
+        }
+
+        /// <summary>
+        /// Whether the unit lets go of a target it picked itself: out of its firing arc, past the leash or its reach,
+        /// or inside its minimum range.
+        /// </summary>
+        private bool Releases(in Attacker unit, in CombatStance stance, Entity target, in AttackRange range)
+        {
+            var weapon = unit.Mounts.Primary.Weapon;
+            if (weapon.FiringArc > 0f && !Targets.InFiringArc(unit.Entity, weapon, target))
             {
                 return true;
             }
 
-            // A target the unit chose itself and can no longer turn onto is dropped.
-            if (!ordered && weapon.FiringArc > 0f && !Targets.InFiringArc(entity, weapon, target))
-            {
-                return true;
-            }
-
-            attack.Reach = Targets.Reach(entity, position, weapon, target);
-            band = Reach(entity, position, unit.Mounts, target, attack.Reach);
-            var gap = Targets.Gap(entity, position, target);
             var leash = stance.ScanRange(unit.Vision.Value, weapon.Range) * stance.LeashFactor;
-            var strays = Roams(stance, unit.Moves) ? Strays(entity, position, stance, target, leash) : gap > band.Reach;
-            if (!ordered && strays)
-            {
-                return true;
-            }
-
-            attack.Gap = gap;
-            return !ordered && gap < band.Floor;
+            var strays = Roams(stance, unit.Moves)
+                ? Strays(unit.Entity, unit.Position, stance, target, leash)
+                : range.Gap > range.Band.Reach;
+            return strays || range.Gap < range.Band.Floor;
         }
 
         /// <summary>
@@ -125,22 +127,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
         }
 
-        /// <summary>Gone, hidden, out of the weapon's reach or out of ammo.</summary>
-        private bool Loses(in WeaponMount primary, in Owner owner, Entity target, bool ordered)
-        {
-            // Only orders point units at scenery, so an ordered target need only be attackable.
-            var targets = primary.Weapon.Targets;
-            var keep = ordered
-                ? Targets.IsAttackable(target, owner.Value, Relations, targets)
-                : Targets.IsValidTarget(target, owner.Value, Relations, targets);
-            if (!keep)
-            {
-                return true;
-            }
-
-            return primary.Ammo.Empty;
-        }
-
         /// <summary>Held and immobile units never move off, so only their reach limits them.</summary>
         private static bool Roams(in CombatStance stance, in UnitMove moves) =>
             stance.Value != Stance.HoldPosition && moves.IsMobile;
@@ -152,13 +138,29 @@ namespace HyperRTS.Simulation.Combat.Targeting
             return Targets.Gap(entity, origin, target) > leash;
         }
 
-        /// <summary>Longest range and shortest minimum of the primary and the ready shared-target weapons that can hit it.</summary>
-        private RangeBand Reach(Entity entity, float3 position, in DynamicBuffer<WeaponMount> mounts, Entity target,
-            float reach)
+        /// <summary>Widens <paramref name="band"/> to every extra weapon that joins the attack on <paramref name="target"/>.</summary>
+        private void ExtendReach(in Attacker unit, Entity target, ref RangeBand band)
         {
-            var band = mounts[0].Weapon.Band(reach);
-            WeaponMount.ExtendReach(mounts, Targets, entity, position, target, ref band);
-            return band;
+            for (var i = 0; i < unit.Mounts.Length; i++)
+            {
+                var mount = unit.Mounts[i];
+                if (i != WeaponMounts.PrimaryIndex && JoinsAttack(mount, target))
+                {
+                    band.Reach = math.max(band.Reach, Targets.Reach(unit.Entity, unit.Position, mount.Weapon, target));
+                    band.Floor = math.min(band.Floor, mount.Weapon.MinRange);
+                }
+            }
+        }
+
+        /// <summary>A ready extra weapon that shares the unit's target and can hurt it.</summary>
+        private bool JoinsAttack(in WeaponMount mount, Entity target)
+        {
+            if (mount.Independent || !mount.Ready)
+            {
+                return false;
+            }
+
+            return Targets.CanHurt(target, mount.Weapon);
         }
 
         private static void Release(in Order order, in CombatStance stance, ref AttackTarget attack,

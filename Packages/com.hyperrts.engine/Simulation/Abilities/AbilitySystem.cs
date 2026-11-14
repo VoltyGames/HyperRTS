@@ -22,7 +22,7 @@ namespace HyperRTS.Simulation.Abilities
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
-    [UpdateAfter(typeof(EngagementSystem))]
+    [UpdateAfter(typeof(TargetingSystemGroup))]
     [UpdateBefore(typeof(DamageSystem))]
     [UpdateBefore(typeof(StatusEffectSystem))]
     public partial struct AbilitySystem : ISystem
@@ -40,6 +40,7 @@ namespace HyperRTS.Simulation.Abilities
             _cooling = new EntityQueryBuilder(Allocator.Temp).WithAllRW<AbilityCooldown>().WithNone<Offline>()
                 .Build(ref state);
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _caster = new AbilityCaster(ref state);
             state.RequireForUpdate<OwnerRelations>();

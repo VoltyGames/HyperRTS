@@ -53,8 +53,9 @@ to weapons with a firing arc. A deployable squad is a weapon team ([squads](squa
 A weapon with `firesOnOrder` never picks targets itself: `TargetAcquisitionSystem` and `WeaponTargetJob` skip it. It
 fires only when ordered, and baking such a primary adds a `PointAim` to the unit. A `FireMission` command carries a
 ground point in `Position`, anywhere in range, seen or not. `FireMissionSystem` and `MissionRunner` run the order: the
-unit drives to the near edge of its primary weapon's range band (`minRange` to `range`, from its centre) if the point
-lies outside it, then halts and enables `PointAim` there. `DeployFacingSystem` packs up and turns a deployed unit whose
+unit drives to the near edge of its primary weapon's range band (`minRange` to `range`, measured by `Weapon.PointGap`)
+if the point lies outside it, then halts and enables `PointAim` there, and the weapon systems turn onto it that same
+frame. `DeployFacingSystem` packs up and turns a deployed unit whose
 point is outside its `firingArc`, as for an attack, and deploys it; a launcher with no arc only deploys. With the point
 aimed, `WeaponPoseSystem` turns the pose onto it and `WeaponFireSystem` fires the weapon's whole salvo there through
 `ShotAim`, each round scattered by `spread`; splash resolves through the hit's `DamageProfile` as for any shell. The
@@ -67,8 +68,9 @@ enemy in range with the most enemies within a blast of it; `DeployPlanner` leave
 ## Interception
 
 An interceptor is a weapon whose `targets` are `Projectile`, such as a C-RAM gun or a SAM battery. It engages the
-nearest hostile projectile inside its `range` whose `ProjectileKind` is in its `interceptKinds` (Shell, Rocket,
-Missile, Bomb; a game adds kinds from `ProjectileKind.GameFirst`). Drones are units, so interceptors ignore them.
+nearest hostile projectile inside its `range`, in a straight line (`Weapon.ReachesInFlight`), whose `ProjectileKind`
+is in its `interceptKinds` (Shell, Rocket, Missile, Bomb; a game adds kinds from `ProjectileKind.GameFirst`). Drones
+are units, so interceptors ignore them.
 `WeaponRule` wants it to hit only projectiles, with no projectile prefab and at least one kind. A primary interceptor
 never sets an attack target: orders, engagement and the AI read the unit as unarmed.
 

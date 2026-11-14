@@ -41,6 +41,7 @@ namespace HyperRTS.Simulation.Commands
         {
             _owners = state.GetComponentLookup<Owner>(true);
             _targets = new TargetLookup(ref state);
+            TargetLookup.Require(ref state);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
             _harvesters = state.GetComponentLookup<Harvester>(true);
             _nodes = state.GetComponentLookup<ResourceNode>(true);
@@ -96,7 +97,7 @@ namespace HyperRTS.Simulation.Commands
         }
 
         private bool FiresOnOrder(Entity unit) =>
-            _mounts.TryGetBuffer(unit, out var mounts) && mounts.Length > 0 && mounts[0].Weapon.FiresOnOrder;
+            _mounts.TryGetBuffer(unit, out var mounts) && new WeaponMounts(mounts).FiresOnOrder;
 
         private OrderType ResolveType(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
         {
@@ -215,7 +216,7 @@ namespace HyperRTS.Simulation.Commands
         private bool TryGetPrimary(Entity unit, out Weapon weapon)
         {
             weapon = default;
-            return _mounts.TryGetBuffer(unit, out var mounts) && WeaponMount.TryGetPrimary(mounts, out weapon);
+            return _mounts.TryGetBuffer(unit, out var mounts) && new WeaponMounts(mounts).TryGetPrimary(out weapon);
         }
 
         private bool CanGather(Entity unit, Entity target) =>

@@ -145,7 +145,7 @@ namespace HyperRTS.Simulation.Strikes
                 return false;
             }
 
-            return mount.Weapon.Reaches(math.distance(from.xz, point.xz));
+            return mount.Weapon.ReachesPoint(from, point);
         }
 
         /// <summary>Enemy structures in the zone, nearest the aim point first.</summary>

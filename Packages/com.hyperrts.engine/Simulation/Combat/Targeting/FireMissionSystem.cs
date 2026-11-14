@@ -18,9 +18,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
     /// unit deploys facing it and fires one salvo, and ends the order once that salvo has fired.
     /// </summary>
     [BurstCompile]
-    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateInGroup(typeof(TargetingSystemGroup))]
     [UpdateAfter(typeof(EngagementSystem))]
-    [UpdateBefore(typeof(DeployFacingSystem))]
     public partial struct FireMissionSystem : ISystem
     {
         [BurstCompile]
@@ -42,7 +41,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 EnabledRefRW<PointAim> aiming, RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving)
             {
                 var moves = new UnitMove(destination, moving, Deployables, entity);
-                new MissionRunner(busy, aim, aiming, moves).Run(transform.Position, mounts[0], order.Value);
+                new MissionRunner(busy, aim, aiming, moves).Run(transform.Position, new WeaponMounts(mounts).Primary, order.Value);
             }
         }
 
@@ -55,7 +54,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         {
             private void Execute(in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts, ref ActiveOrder order,
                 EnabledRefRW<ActiveOrder> busy, RefRW<PointAim> aim, EnabledRefRW<PointAim> aiming) =>
-                new MissionRunner(busy, aim, aiming, default).Run(transform.Position, mounts[0], order.Value);
+                new MissionRunner(busy, aim, aiming, default).Run(transform.Position, new WeaponMounts(mounts).Primary, order.Value);
         }
     }
 }

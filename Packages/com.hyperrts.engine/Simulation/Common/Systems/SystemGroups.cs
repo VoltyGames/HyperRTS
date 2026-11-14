@@ -3,7 +3,8 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Common.Systems
 {
-    // Frame order: Order (AI first), Movement, Combat, Production, Lifecycle. GameplayPhaseGroup pauses them.
+    // Frame order: Order (AI first), Movement, Combat (targeting, weapons, impacts, damage), Production, Lifecycle.
+    // GameplayPhaseGroup pauses them.
     // Every phase exists on clients too, but systems default to the authoritative worlds (local and server);
     // client-side ones (selection, input, fog view) opt in with their own [WorldSystemFilter].
 
@@ -36,6 +37,29 @@ namespace HyperRTS.Simulation.Common.Systems
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(MovementSystemGroup))]
     public partial class CombatSystemGroup : GameplayPhaseGroup
+    {
+    }
+
+    /// <summary>Combat's first step: attack orders, target picks, chases, fire missions and deploy facing.</summary>
+    [WorldSystemFilter(SimulationWorlds.Authoritative, SimulationWorlds.Authoritative)]
+    [UpdateInGroup(typeof(CombatSystemGroup))]
+    public partial class TargetingSystemGroup : ComponentSystemGroup
+    {
+    }
+
+    /// <summary>Gives each weapon its target, turns it and fires it, after targeting decided who aims where.</summary>
+    [WorldSystemFilter(SimulationWorlds.Authoritative, SimulationWorlds.Authoritative)]
+    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateAfter(typeof(TargetingSystemGroup))]
+    public partial class WeaponSystemGroup : ComponentSystemGroup
+    {
+    }
+
+    /// <summary>Flies projectiles and lands their impacts, after the weapons fired; damage applies last in combat.</summary>
+    [WorldSystemFilter(SimulationWorlds.Authoritative, SimulationWorlds.Authoritative)]
+    [UpdateInGroup(typeof(CombatSystemGroup))]
+    [UpdateAfter(typeof(WeaponSystemGroup))]
+    public partial class ImpactSystemGroup : ComponentSystemGroup
     {
     }
 
