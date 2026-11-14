@@ -67,15 +67,9 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         }
 
         /// <summary>The skinning matrix the rig texture holds for a bone and row; the spine's is relative to the hips.</summary>
-        protected static float4x4 RigSkin(int bone, int row) => bone == 0
+        private static float4x4 RigSkin(int bone, int row) => bone == 0
             ? float4x4.Translate(new float3(0f, 1f + row / 16f, row / 32f))
             : float4x4.TRS(new float3(0f, 0.5f, 0f), quaternion.RotateY(row * 0.03f), 1f);
-
-        protected PoseSlots Slots()
-        {
-            using var query = _em.CreateEntityQuery(typeof(PoseSlots));
-            return query.GetSingleton<PoseSlots>();
-        }
 
         protected NativeArray<Entity> Corpses()
         {
