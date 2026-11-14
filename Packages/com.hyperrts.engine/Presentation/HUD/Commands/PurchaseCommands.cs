@@ -88,6 +88,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         {
             _unpowered.Clear();
             _queued.Clear();
+            var entityManager = context.EntityManager;
             foreach (var producer in _producers)
             {
                 if (context.IsUnpowered(producer))
@@ -95,7 +96,8 @@ namespace HyperRTS.Presentation.HUD.Commands
                     _unpowered.Add(producer);
                 }
 
-                var queue = context.EntityManager.GetBuffer<ProductionQueueItem>(producer, true);
+                var queue = entityManager.GetBuffer<ProductionQueueItem>(producer, true);
+                var training = entityManager.GetComponentData<Producer>(producer);
                 for (var i = 0; i < queue.Length; i++)
                 {
                     var prefab = queue[i].Prefab;
@@ -105,9 +107,13 @@ namespace HyperRTS.Presentation.HUD.Commands
                     }
 
                     var queued = _queued.TryGetValue(prefab, out var found) ? found : Idle;
-                    var progress = i == 0
-                        ? math.max(queued.Progress, context.HeadProgress(producer, prefab))
-                        : queued.Progress;
+                    var progress = queued.Progress;
+                    if (i == 0)
+                    {
+                        var head = entityManager.GetComponentData<Producible>(prefab);
+                        progress = math.max(progress, training.HeadProgress(head));
+                    }
+
                     _queued[prefab] = new QueuedOption(queued.Count + 1, progress);
                 }
             }
@@ -171,8 +177,7 @@ namespace HyperRTS.Presentation.HUD.Commands
 
             AddStats(entityManager, prefab, tooltip);
 
-            var missing = new List<Entity>();
-            context.FindMissingPrerequisites(prefab, context.SnapshotBuyer(), missing);
+            var missing = context.SnapshotBuyer().FindMissingPrerequisites(entityManager, prefab, context.Registry);
             foreach (var required in missing)
             {
                 tooltip.AddWarning($"{HUDText.Text("tooltip.requires")} {HUDText.EntityName(entityManager, required)}");

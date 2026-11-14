@@ -138,15 +138,8 @@ namespace HyperRTS.Simulation.AI
             budget.Copy.Dispose();
         }
 
-        private static bool IsIdleProducer(EntityManager entities, Entity producer, byte owner)
-        {
-            if (entities.GetComponentData<Owner>(producer).Value != owner)
-            {
-                return false;
-            }
-
-            return entities.GetBuffer<ProductionQueueItem>(producer).IsEmpty;
-        }
+        private static bool IsIdleProducer(EntityManager entities, Entity producer, byte owner) =>
+            Producer.IsReady(entities, producer, owner) && entities.GetBuffer<ProductionQueueItem>(producer).IsEmpty;
 
         /// <summary>Next option after the last one picked that fits population, stockpile and tech, skipping done or queued research.</summary>
         private static Entity PickOption(EntityManager entities, ref AIPlayer ai, DynamicBuffer<ProductionOption> options,

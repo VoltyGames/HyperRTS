@@ -35,8 +35,7 @@ namespace HyperRTS.Simulation.AI
                 Commands = entities.GetBuffer<PlayerCommand>(player),
                 Subjects = entities.GetBuffer<PlayerCommandSubject>(player),
                 Busy = new NativeList<Entity>(Allocator.Temp),
-                Buyer = Buyer.Snapshot(entities, queries.Queues, queries.Limited, owner, snapshot.Completed,
-                    entities.GetBuffer<CompletedResearch>(player)),
+                Buyer = queries.Buyers.Snapshot(entities, player),
             };
         }
 

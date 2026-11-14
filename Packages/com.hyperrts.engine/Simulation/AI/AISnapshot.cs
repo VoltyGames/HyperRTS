@@ -14,7 +14,6 @@ namespace HyperRTS.Simulation.AI
         public AIGroup Targets;
         public AIGroup Buildings;
         public AIGroup Owned;
-        public NativeArray<EntityInfo> OwnedInfo;
         public NativeArray<Entity> Producers;
         public CompletedBuildings Completed;
         public OwnerRelations Relations;
@@ -31,7 +30,6 @@ namespace HyperRTS.Simulation.AI
                 Targets = AIGroup.From(queries.Targets),
                 Buildings = AIGroup.From(queries.Buildings),
                 Owned = AIGroup.From(queries.Owned),
-                OwnedInfo = queries.Owned.ToComponentDataArray<EntityInfo>(Allocator.Temp),
                 Producers = queries.Producers.ToEntityArray(Allocator.Temp),
                 Completed = new CompletedBuildings(queries.Completed, Allocator.Temp),
                 Relations = queries.Relations.GetSingleton<OwnerRelations>(),

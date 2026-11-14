@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.AI
         private void Think(ref SystemState state, Entity player, in AISnapshot snapshot)
         {
             var turn = AITurn.Begin(ref state, _queries, player, snapshot);
-            var buildOrderDone = _buildOrder.Plan(ref state, turn, snapshot);
+            var buildOrderDone = _buildOrder.Plan(ref state, ref turn, snapshot);
             _builders.ResumeSites(ref state, turn);
             _squads.Plan(ref state, turn, snapshot);
             _economy.SendHarvesters(turn, snapshot);

@@ -26,12 +26,7 @@ namespace HyperRTS.Simulation.Production
         /// <summary>Whether a finished producer of <paramref name="owner"/> offers <paramref name="prefab"/> and has queue room.</summary>
         public static bool CanQueue(EntityManager entityManager, Entity producer, byte owner, Entity prefab)
         {
-            if (!entityManager.HasComponent<Producer>(producer) || entityManager.GetComponentData<Owner>(producer).Value != owner)
-            {
-                return false;
-            }
-
-            if (entityManager.HasEnabled<ConstructionProgress>(producer))
+            if (!IsReady(entityManager, producer, owner))
             {
                 return false;
             }
@@ -40,6 +35,21 @@ namespace HyperRTS.Simulation.Production
                 < entityManager.GetComponentData<Producer>(producer).QueueLimit;
             return hasRoom && PrefabOptions.Has(entityManager.GetBuffer<ProductionOption>(producer, true), prefab);
         }
+
+        /// <summary>Whether <paramref name="producer"/> is a finished producer of <paramref name="owner"/>.</summary>
+        public static bool IsReady(EntityManager entityManager, Entity producer, byte owner)
+        {
+            if (!entityManager.HasComponent<Producer>(producer) || entityManager.GetComponentData<Owner>(producer).Value != owner)
+            {
+                return false;
+            }
+
+            return !entityManager.HasEnabled<ConstructionProgress>(producer);
+        }
+
+        /// <summary>Share of <paramref name="head"/>, the item at the head of the queue, built.</summary>
+        public readonly float HeadProgress(in Producible head) =>
+            head.BuildTime > 0f ? math.saturate(Elapsed / head.BuildTime) : 1f;
     }
 
     /// <summary>A unit prefab a producer can train.</summary>

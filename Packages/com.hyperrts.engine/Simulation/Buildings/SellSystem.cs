@@ -75,8 +75,8 @@ namespace HyperRTS.Simulation.Buildings
 
             if (SystemAPI.HasBuffer<ProductionQueueItem>(building))
             {
-                ProductionQueueItem.RefundAll(SystemAPI.GetBuffer<ProductionQueueItem>(building), new Stockpile(stock),
-                    SystemAPI.GetBufferLookup<ResourceCost>(true));
+                var queue = new ProductionQueue(SystemAPI.GetBuffer<ProductionQueueItem>(building));
+                queue.RefundAll(new Stockpile(stock), SystemAPI.GetBufferLookup<ResourceCost>(true));
             }
         }
     }

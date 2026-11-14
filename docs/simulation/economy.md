@@ -128,11 +128,17 @@ whole wall. The skirmish AI places lines only through `AIFieldWorkAuthoring`.
 share `ProducibleAuthoring`: build time and population.
 
 - A `Prerequisite` is met by a finished building or research.
-- `Buyer` holds the one buy rule (`CanBuy`, `TryBuy`, `FindRefusal`) over a `Stockpile`, shared by orders, placement, the AI and the HUD.
+- `Buyer` holds the one buy rule (`CanBuy`, `TryBuy`, `FindRefusal`) over a `Stockpile`, shared by orders, placement, the AI and the HUD. Make `BuyerQueries` once and take a `Buyer` per player with `Snapshot`.
 - `BuildLimitAuthoring` caps how many of a type a player may have, counting sites and queued items.
+- Only a finished producer queues (`Producer.CanQueue`), up to its `QueueLimit`. Cancelling the head restarts
+  progress; cancelling a later item keeps it.
 - A unit trained with a rally point set spawns with a `RallyOrder`, which `RallyOrderSystem` turns into a Move.
 - Every queued prefab needs `Producible` and every player `Population`.
-- When an entity changes owner, its queue is refunded to the old owner.
+- A producer that is sold, captured or destroyed refunds its whole queue to the player who paid, through
+  `ProductionQueue.RefundAll`. The queue empties at once, so nothing finishes later that frame and nothing refunds
+  twice. Destruction is read from `Health`, on the frame of the killing blow.
+- On `OwnerChanged`, each module drops what the old owner left: Production its queue and rally point, Orders the
+  orders, Selection the selection.
 - `Producer.Released` replicates, which opens the [production doors](../presentation/animation.md#machines).
 
 ## Capture

@@ -17,12 +17,17 @@ namespace HyperRTS.Simulation.AI
     internal struct BuildOrderPlanner
     {
         private EntityQuery _obstacles;
+        private EntityQuery _owned;
+        private BuyerQueries _buyers;
         private BuilderPlanner _builders;
 
         public static BuildOrderPlanner Create(ref SystemState state) => new()
         {
             _obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>()
                 .WithNone<Dead>().Build(ref state),
+            _owned = new EntityQueryBuilder(Allocator.Temp).WithAll<EntityInfo, Owner, LocalTransform>()
+                .WithNone<Dead>().Build(ref state),
+            _buyers = new BuyerQueries(ref state),
         };
 
         public void Update(in BuilderPlanner builders)
@@ -34,7 +39,7 @@ namespace HyperRTS.Simulation.AI
         /// Starts the first unmet step it can; true once every step is met or capped by its build limit (or there is
         /// no build order).
         /// </summary>
-        public readonly bool Plan(ref SystemState state, in AITurn turn, in AISnapshot snapshot)
+        public readonly bool Plan(ref SystemState state, ref AITurn turn, in AISnapshot snapshot)
         {
             var entities = state.EntityManager;
             if (!entities.HasBuffer<AIBuildStep>(turn.Player))
@@ -42,7 +47,7 @@ namespace HyperRTS.Simulation.AI
                 return true;
             }
 
-            var counts = CountOwned(ref state, turn, snapshot);
+            var counts = _buyers.CountEveryType(entities, turn.Player, _owned);
             var done = true;
             foreach (var step in entities.GetBuffer<AIBuildStep>(turn.Player))
             {
@@ -63,8 +68,7 @@ namespace HyperRTS.Simulation.AI
         }
 
         /// <summary>Whether the step still has to be started: planned, below its count and not capped by a build limit.</summary>
-        private static bool IsUnmet(EntityManager entities, in AITurn turn, NativeHashMap<int, int> counts,
-            in AIBuildStep step)
+        private static bool IsUnmet(EntityManager entities, in AITurn turn, in BuildCounts counts, in AIBuildStep step)
         {
             if (!entities.HasComponent<EntityInfo>(step.Prefab))
             {
@@ -77,7 +81,7 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            counts.TryGetValue(entities.GetComponentData<EntityInfo>(step.Prefab).TypeId, out var owned);
+            var owned = counts.Count(entities, step.Prefab);
             var wanted = entities.HasComponent<Research>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
             if (owned >= wanted)
             {
@@ -86,46 +90,6 @@ namespace HyperRTS.Simulation.AI
 
             // A build limit never lifts by waiting, unlike cost or prerequisites, so the step counts as met.
             return !turn.Buyer.Counts.AtLimit(entities, step.Prefab);
-        }
-
-        /// <summary>Per type id: living units and buildings (sites too), queued production and finished research.</summary>
-        private static NativeHashMap<int, int> CountOwned(ref SystemState state, in AITurn turn, in AISnapshot snapshot)
-        {
-            var entities = state.EntityManager;
-            var counts = new NativeHashMap<int, int>(64, Allocator.Temp);
-            for (var i = 0; i < snapshot.Owned.Length; i++)
-            {
-                if (snapshot.Owned.IsOwnedBy(i, turn.Owner))
-                {
-                    Increment(counts, snapshot.OwnedInfo[i].TypeId);
-                }
-            }
-
-            foreach (var producer in snapshot.Producers)
-            {
-                if (entities.GetComponentData<Owner>(producer).Value != turn.Owner)
-                {
-                    continue;
-                }
-
-                foreach (var item in entities.GetBuffer<ProductionQueueItem>(producer))
-                {
-                    Increment(counts, item.TypeId);
-                }
-            }
-
-            foreach (var research in entities.GetBuffer<CompletedResearch>(turn.Player))
-            {
-                Increment(counts, research.TypeId);
-            }
-
-            return counts;
-        }
-
-        private static void Increment(NativeHashMap<int, int> counts, int typeId)
-        {
-            counts.TryGetValue(typeId, out var count);
-            counts[typeId] = count + 1;
         }
 
         private readonly bool TryStart(ref SystemState state, in AITurn turn, in AISnapshot snapshot, Entity prefab)

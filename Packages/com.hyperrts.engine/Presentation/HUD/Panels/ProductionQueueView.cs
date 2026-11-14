@@ -48,7 +48,8 @@ namespace HyperRTS.Presentation.HUD.Panels
                 Rebuild(context, producer, queue);
             }
 
-            _headProgress.Fraction = context.HeadProgress(producer, queue[0].Prefab);
+            var head = context.EntityManager.GetComponentData<Producible>(queue[0].Prefab);
+            _headProgress.Fraction = context.EntityManager.GetComponentData<Producer>(producer).HeadProgress(head);
         }
 
         private void Rebuild(HUDContext context, Entity producer, DynamicBuffer<ProductionQueueItem> queue)

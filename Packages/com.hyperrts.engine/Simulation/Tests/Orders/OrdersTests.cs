@@ -3,7 +3,6 @@ using System;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
 using Unity.Entities;
@@ -140,7 +139,7 @@ namespace HyperRTS.Simulation.Tests.Orders
             World.Buffer<OwnerChanged>(events)
                 .Add(new OwnerChanged { Entity = unit, From = 1, To = 2 });
 
-            World.World.GetExistingSystem<OwnerChangeSystem>().Update(World.World.Unmanaged);
+            World.World.GetExistingSystem<OwnerChangeOrderSystem>().Update(World.World.Unmanaged);
 
             Assert.IsFalse(World.IsEnabled<ActiveOrder>(unit));
             Assert.AreEqual(0, World.Buffer<QueuedOrder>(unit).Length);

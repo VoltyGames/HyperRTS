@@ -19,8 +19,7 @@ namespace HyperRTS.Simulation.AI
         public EntityQuery Owned;
         public EntityQuery Producers;
         public EntityQuery Completed;
-        public EntityQuery Queues;
-        public EntityQuery Limited;
+        public BuyerQueries Buyers;
         public EntityQuery Relations;
         public EntityQuery Map;
         public EntityQuery Grid;
@@ -37,8 +36,7 @@ namespace HyperRTS.Simulation.AI
             Producers = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<Producer, ProductionOption, ProductionQueueItem, Owner>().WithNone<Dead>().Build(ref state),
             Completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state),
-            Queues = Buyer.QueueQuery(Allocator.Temp).Build(ref state),
-            Limited = BuildCounts.Query(Allocator.Temp).Build(ref state),
+            Buyers = new BuyerQueries(ref state),
             Relations = new EntityQueryBuilder(Allocator.Temp).WithAll<OwnerRelations>().Build(ref state),
             Map = new EntityQueryBuilder(Allocator.Temp).WithAll<MapSettings>().Build(ref state),
             Grid = new EntityQueryBuilder(Allocator.Temp).WithAll<NavGrid>().Build(ref state),

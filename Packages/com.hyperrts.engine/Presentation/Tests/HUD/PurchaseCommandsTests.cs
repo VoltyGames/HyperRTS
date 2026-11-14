@@ -64,10 +64,9 @@ namespace HyperRTS.Presentation.Tests.HUD
             _world.Tick();
             Refresh();
 
-            var missing = new List<Entity>();
-            _context.FindMissingPrerequisites(prefab, _context.SnapshotBuyer(), missing);
+            var missing = _context.SnapshotBuyer().FindMissingPrerequisites(EntityManager, prefab, _context.Registry);
 
-            CollectionAssert.AreEqual(new[] { radar }, missing);
+            CollectionAssert.AreEqual(new[] { radar }, missing.AsArray().ToArray());
         }
 
         [Test]

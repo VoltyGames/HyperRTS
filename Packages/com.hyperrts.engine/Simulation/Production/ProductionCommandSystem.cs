@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Production
@@ -21,9 +20,7 @@ namespace HyperRTS.Simulation.Production
     public partial struct ProductionCommandSystem : ISystem
     {
         private CommandReader _commands;
-        private EntityQuery _completed;
-        private EntityQuery _queues;
-        private EntityQuery _limited;
+        private BuyerQueries _buyers;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -31,9 +28,7 @@ namespace HyperRTS.Simulation.Production
             var selected = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Owner, Selected>()
                 .WithNone<Dead>().Build();
             _commands = new CommandReader(ref state, ProducerCommands, selected);
-            _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
-            _queues = Buyer.QueueQuery(Allocator.Temp).Build(ref state);
-            _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
+            _buyers = new BuyerQueries(ref state);
             state.RequireForUpdate<NavGrid>();
         }
 
@@ -47,7 +42,6 @@ namespace HyperRTS.Simulation.Production
                 return;
             }
 
-            var buildings = new CompletedBuildings(_completed, Allocator.Temp);
             var buyer = default(Buyer);
             var buyerPlayer = Entity.Null;
             foreach (var each in issued)
@@ -55,24 +49,23 @@ namespace HyperRTS.Simulation.Production
                 // One buyer per player for the frame, so each purchase counts against the next one's limits.
                 if (each.Player != buyerPlayer)
                 {
-                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, each.Owner, buildings,
-                        SystemAPI.GetBuffer<CompletedResearch>(each.Player));
+                    buyer = _buyers.Snapshot(state.EntityManager, each.Player);
                     buyerPlayer = each.Player;
                 }
 
-                Execute(ref state, each, buyer);
+                Execute(ref state, each, ref buyer);
             }
         }
 
-        private void Execute(ref SystemState state, in IssuedCommand issued, in Buyer buyer)
+        private void Execute(ref SystemState state, in IssuedCommand issued, ref Buyer buyer)
         {
             switch (issued.Command.Type)
             {
                 case CommandType.Produce:
-                    Produce(ref state, issued, buyer);
+                    Produce(ref state, issued, ref buyer);
                     break;
                 case CommandType.CancelProduction:
-                    Cancel(ref state, issued, buyer);
+                    Cancel(ref state, issued, ref buyer);
                     break;
                 default:
                     SetRallyPoint(ref state, issued);
@@ -83,7 +76,7 @@ namespace HyperRTS.Simulation.Production
         private static TypeSet ProducerCommands =>
             TypeSet.Range(CommandType.Produce, CommandType.SetRallyPoint).With(CommandType.Smart);
 
-        private void Produce(ref SystemState state, in IssuedCommand issued, in Buyer buyer)
+        private void Produce(ref SystemState state, in IssuedCommand issued, ref Buyer buyer)
         {
             var producer = FindProducer(ref state, issued);
             if (producer == Entity.Null)
@@ -104,7 +97,7 @@ namespace HyperRTS.Simulation.Production
             buyer.AddPurchase(state.EntityManager, prefab);
         }
 
-        private void Cancel(ref SystemState state, in IssuedCommand issued, in Buyer buyer)
+        private void Cancel(ref SystemState state, in IssuedCommand issued, ref Buyer buyer)
         {
             var producer = FirstWithQueue(ref state, issued);
             if (producer == Entity.Null)
@@ -112,23 +105,15 @@ namespace HyperRTS.Simulation.Production
                 return;
             }
 
-            var queue = SystemAPI.GetBuffer<ProductionQueueItem>(producer);
-            var argument = issued.Command.Argument;
-            var index = argument < 0 ? queue.Length - 1 : argument;
-            if (index < 0 || index >= queue.Length)
+            var queue = new ProductionQueue(SystemAPI.GetBuffer<ProductionQueueItem>(producer));
+            var trainer = SystemAPI.GetComponentRW<Producer>(producer);
+            if (!queue.TryCancel(issued.Command.Argument, ref trainer.ValueRW, out var prefab))
             {
                 return;
             }
 
-            var prefab = queue[index].Prefab;
-            queue.RemoveAt(index);
             // Research is queued once per player, so the cancelled one is free to queue again this frame.
             buyer.RemovePurchase(state.EntityManager, prefab);
-            if (index == 0)
-            {
-                SystemAPI.GetComponentRW<Producer>(producer).ValueRW.Elapsed = 0f;
-            }
-
             var stock = new Stockpile(SystemAPI.GetBuffer<ResourceStock>(issued.Player));
             stock.Refund(prefab, SystemAPI.GetBufferLookup<ResourceCost>(true));
         }

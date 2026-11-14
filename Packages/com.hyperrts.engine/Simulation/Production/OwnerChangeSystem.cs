@@ -1,10 +1,7 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
-using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
-using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport.Garrison;
 using Unity.Burst;
 using Unity.Collections;
@@ -13,90 +10,66 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>
-    /// Clears what the old owner left on an entity that changed hands (<see cref="OwnerChanged"/>): refunds its queue and drops its orders, rally point and selection.
+    /// Refunds the queue of a producer that changed hands (<see cref="OwnerChanged"/>) to its old owner and drops the
+    /// old owner's rally point.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     [UpdateAfter(typeof(NeutralGarrisonSystem))]
     public partial struct OwnerChangeSystem : ISystem
     {
-        private OrderWriter _orders;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<PlayerRegistry>();
-            _orders = new OrderWriter(ref state);
             state.RequireForUpdate<GameEvents>();
-            state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            _orders.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
-
             new ClearJob
             {
-                Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
-                    .CreateCommandBuffer(state.WorldUnmanaged),
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
-                Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
+                Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(false),
                 Stocks = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 Costs = SystemAPI.GetBufferLookup<ResourceCost>(true),
-                Orders = _orders,
-                Rallies = SystemAPI.GetComponentLookup<RallyPoint>(true),
-                Selected = SystemAPI.GetComponentLookup<Selected>(true),
+                Rallies = SystemAPI.GetComponentLookup<RallyPoint>(false),
             }.Schedule();
         }
 
-        /// <summary>Single-threaded: the order writer holds writable lookups.</summary>
+        /// <summary>Single-threaded: it writes the changed producers and the old owners' stockpiles.</summary>
         [BurstCompile]
         [WithAll(typeof(GameEvents))]
         private partial struct ClearJob : IJobEntity
         {
-            public EntityCommandBuffer Ecb;
             public PlayerRegistry Players;
-            [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
+            public BufferLookup<ProductionQueueItem> Queues;
             public BufferLookup<ResourceStock> Stocks;
             [ReadOnly] public BufferLookup<ResourceCost> Costs;
-            public OrderWriter Orders;
-            [ReadOnly] public ComponentLookup<RallyPoint> Rallies;
-            [ReadOnly] public ComponentLookup<Selected> Selected;
+            public ComponentLookup<RallyPoint> Rallies;
 
             private void Execute(in DynamicBuffer<OwnerChanged> changes)
             {
                 foreach (var change in changes)
                 {
                     RefundQueue(change.Entity, change.From);
-                    Orders.Stop(change.Entity);
-                    Disable(Rallies, change.Entity);
-                    Disable(Selected, change.Entity);
+                    if (Rallies.HasComponent(change.Entity))
+                    {
+                        Rallies.SetComponentEnabled(change.Entity, false);
+                    }
                 }
             }
 
+            /// <summary>An empty queue is skipped: a neutral building has no stockpile to refund to.</summary>
             private void RefundQueue(Entity entity, byte owner)
             {
-                if (!Queues.TryGetBuffer(entity, out var queue))
+                if (!Queues.TryGetBuffer(entity, out var queue) || queue.IsEmpty)
                 {
                     return;
                 }
 
-                if (Stocks.TryGetBuffer(Players[owner], out var stock))
-                {
-                    ProductionQueueItem.RefundAll(queue, new Stockpile(stock), Costs);
-                }
-
-                Ecb.SetBuffer<ProductionQueueItem>(entity);
-            }
-
-            private void Disable<T>(in ComponentLookup<T> lookup, Entity entity)
-                where T : unmanaged, IComponentData, IEnableableComponent
-            {
-                if (lookup.HasComponent(entity))
-                {
-                    Ecb.SetComponentEnabled<T>(entity, false);
-                }
+                new ProductionQueue(queue).RefundAll(new Stockpile(Stocks[Players[owner]]), Costs);
             }
         }
     }

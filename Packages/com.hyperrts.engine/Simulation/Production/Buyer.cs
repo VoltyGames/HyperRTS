@@ -1,11 +1,14 @@
-using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
 using Unity.Entities;
 
 namespace HyperRTS.Simulation.Production
 {
-    /// <summary>What one player's purchases are checked against, snapshotted once for many checks.</summary>
+    /// <summary>
+    /// What one player's purchases are checked against, snapshotted once for many checks by
+    /// <see cref="BuyerQueries.Snapshot"/>.
+    /// </summary>
     public struct Buyer
     {
         public byte Owner;
@@ -17,37 +20,6 @@ namespace HyperRTS.Simulation.Production
 
         /// <summary>How many of each build-limited type the player has, standing or queued.</summary>
         public BuildCounts Counts;
-
-        /// <summary>
-        /// Snapshots <paramref name="owner"/> as a buyer for this frame, with its queued and build-limited entities.
-        /// </summary>
-        public static Buyer Snapshot(EntityManager entityManager, EntityQuery queues, EntityQuery limited,
-            byte owner, CompletedBuildings buildings, DynamicBuffer<CompletedResearch> research)
-        {
-            var buyer = new Buyer
-            {
-                Owner = owner,
-                Buildings = buildings,
-                Research = research,
-                QueuedResearch = new NativeHashSet<Entity>(8, Allocator.Temp),
-                Counts = BuildCounts.Snapshot(limited, owner),
-            };
-
-            foreach (var producer in queues.ToEntityArray(Allocator.Temp))
-            {
-                if (entityManager.GetComponentData<Common.Players.Owner>(producer).Value != owner)
-                {
-                    continue;
-                }
-
-                foreach (var item in entityManager.GetBuffer<ProductionQueueItem>(producer, true))
-                {
-                    buyer.AddPurchase(entityManager, item.Prefab);
-                }
-            }
-
-            return buyer;
-        }
 
         /// <summary>Counts a purchase made this frame, so later checks this frame see it.</summary>
         public void AddPurchase(EntityManager entityManager, Entity prefab)
@@ -62,10 +34,6 @@ namespace HyperRTS.Simulation.Production
             QueuedResearch.Remove(prefab);
             Counts.Remove(entityManager, prefab);
         }
-
-        /// <summary>Every production queue with its owner, for <see cref="Snapshot"/>.</summary>
-        public static EntityQueryBuilder QueueQuery(Allocator allocator) =>
-            new EntityQueryBuilder(allocator).WithAll<ProductionQueueItem, Owner>();
 
         /// <summary>False for research already completed or queued, as snapshotted; anything else can be queued.</summary>
         public readonly bool CanQueueResearch(EntityManager entityManager, Entity prefab)
@@ -94,6 +62,24 @@ namespace HyperRTS.Simulation.Production
             var required = entityManager.GetBuffer<Prerequisite>(prefab, true);
             var met = Buildings.MeetsPrerequisites(required, Owner, Research);
             return met ? PurchaseRefusal.None : PurchaseRefusal.MissingPrerequisite;
+        }
+
+        /// <summary>The prefabs of <paramref name="prefab"/>'s unmet prerequisites that have one.</summary>
+        public readonly NativeList<Entity> FindMissingPrerequisites(EntityManager entityManager, Entity prefab,
+            in PrefabRegistry registry)
+        {
+            var missing = new NativeList<Entity>(Allocator.Temp);
+            foreach (var prerequisite in entityManager.GetBuffer<Prerequisite>(prefab, true))
+            {
+                var required = registry.Find(prerequisite.TypeId);
+                var unmet = !Buildings.IsMet(Owner, prerequisite.TypeId, Research);
+                if (unmet && required != Entity.Null)
+                {
+                    missing.Add(required);
+                }
+            }
+
+            return missing;
         }
 
         public readonly bool IsUnlocked(EntityManager entityManager, Entity prefab) =>

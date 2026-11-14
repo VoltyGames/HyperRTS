@@ -143,23 +143,49 @@ namespace HyperRTS.Simulation.Tests.Production
         }
 
         [Test]
-        public void CancelProduction_RefundsCost()
+        public void CancelProduction_RefundsCost_AndOnlyTheHeadRestartsProgress()
         {
-            var prefab = World.UnitPrefab(_supplies, 30);
+            var prefab = World.UnitPrefab(_supplies, 30, buildTime: 10f);
             var producer = World.SpawnProducer(prefab);
             World.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
             World.AddResources(1, _supplies, 100);
 
             World.Produce(1, producer, prefab);
             World.Produce(1, producer, prefab);
+            World.Produce(1, producer, prefab);
+            World.Run(1f);
+            Assert.AreEqual(10, World.GetResources(1, _supplies));
+
+            World.Command(1, new PlayerCommand { Type = CommandType.CancelProduction, Unit = producer, Argument = 1 });
             World.Tick();
             Assert.AreEqual(40, World.GetResources(1, _supplies));
+            Assert.Greater(World.Get<Producer>(producer).Elapsed, 0.5f, "a middle cancel keeps the head's progress");
 
-            World.Command(1, new PlayerCommand { Type = CommandType.CancelProduction, Unit = producer, Argument = -1 });
+            World.Command(1, new PlayerCommand { Type = CommandType.CancelProduction, Unit = producer, Argument = 0 });
             World.Tick();
-
             Assert.AreEqual(70, World.GetResources(1, _supplies));
             Assert.AreEqual(1, World.QueueLength(producer));
+            Assert.Less(World.Get<Producer>(producer).Elapsed, 0.5f, "cancelling the head starts the next afresh");
+        }
+
+        [Test]
+        public void Produce_StopsAtTheQueueLimit()
+        {
+            var prefab = World.UnitPrefab(_supplies, 10, buildTime: 10f);
+            var producer = World.SpawnProducer(prefab);
+            World.SpawnProvider(1, new float3(20f, 0f, 20f), 10);
+            World.AddResources(1, _supplies, 100);
+            var limit = World.Get<Producer>(producer).QueueLimit;
+
+            for (var i = 0; i <= limit; i++)
+            {
+                World.Produce(1, producer, prefab);
+            }
+
+            World.Tick();
+
+            Assert.AreEqual(limit, World.QueueLength(producer));
+            Assert.AreEqual(100 - 10 * limit, World.GetResources(1, _supplies), "the refused one costs nothing");
         }
 
         [Test]

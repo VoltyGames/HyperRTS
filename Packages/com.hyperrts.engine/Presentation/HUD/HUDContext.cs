@@ -25,25 +25,18 @@ namespace HyperRTS.Presentation.HUD
             ComponentType.ReadOnly<EntityInfo>(),
             ComponentType.Exclude<FogHidden>()));
 
-        private readonly LiveQuery _completed = new(entityManager =>
-            CompletedBuildings.Query(Allocator.Temp).Build(entityManager));
-
         private readonly LiveSingleton<PointerState> _pointer = new();
         private readonly LiveSingleton<CameraFocusRequest> _cameraFocus = new();
         private readonly LiveSingleton<HotkeyPresses> _hotkeys = new();
         private readonly LiveSingleton<PrefabRegistry> _registry = new();
         private readonly LiveSingleton<SquadRules> _squadRules = new();
 
-        private readonly LiveQuery _queues = new(entityManager =>
-            Buyer.QueueQuery(Allocator.Temp).Build(entityManager));
-
-        private readonly LiveQuery _limited = new(entityManager =>
-            BuildCounts.Query(Allocator.Temp).Build(entityManager));
-
         /// <summary>How often purchase buttons re-read stock, queues and prerequisites.</summary>
         private const float PurchaseInterval = 0.1f;
 
         private Entity _picked;
+        private World _buyerWorld;
+        private BuyerQueries _buyers;
         private float _nextPurchase;
 
         public MatchView View { get; private set; }
@@ -128,10 +121,20 @@ namespace HyperRTS.Presentation.HUD
         public DynamicBuffer<ResourceStock> Stock => EntityManager.GetBuffer<ResourceStock>(ShownPlayer, true);
 
         /// <summary>The shown player as a buyer this frame, shared by every button that checks a purchase.</summary>
-        public Buyer SnapshotBuyer() =>
-            Buyer.Snapshot(EntityManager, _queues.In(EntityManager), _limited.In(EntityManager), ShownOwner,
-                new CompletedBuildings(_completed.In(EntityManager), Allocator.Temp),
-                EntityManager.GetBuffer<CompletedResearch>(ShownPlayer, true));
+        public Buyer SnapshotBuyer()
+        {
+            // Rebuilt with the world, as LiveQuery does.
+            if (EntityManager.World != _buyerWorld)
+            {
+                _buyerWorld = EntityManager.World;
+                _buyers = new BuyerQueries(EntityManager);
+            }
+
+            return _buyers.Snapshot(EntityManager, ShownPlayer);
+        }
+
+        /// <summary>Every prefab by type id, for naming a missing prerequisite.</summary>
+        public PrefabRegistry Registry => _registry.Get(EntityManager);
 
         /// <summary>The match's squad rules; false before the match is baked.</summary>
         public bool TryGetSquadRules(out SquadRules rules) => _squadRules.TryGet(EntityManager, out rules);
@@ -147,29 +150,6 @@ namespace HyperRTS.Presentation.HUD
 
         public PurchaseRefusal FindRefusal(Entity prefab, in Buyer buyer) =>
             buyer.FindRefusal(EntityManager, prefab, new Stockpile(Stock));
-
-        /// <summary>Adds the prefabs of <paramref name="prefab"/>'s unmet prerequisites to <paramref name="missing"/>.</summary>
-        public void FindMissingPrerequisites(Entity prefab, in Buyer buyer, List<Entity> missing)
-        {
-            var registry = _registry.Get(EntityManager);
-            foreach (var prerequisite in EntityManager.GetBuffer<Prerequisite>(prefab, true))
-            {
-                var required = registry.Find(prerequisite.TypeId);
-                var unmet = !buyer.Buildings.IsMet(buyer.Owner, prerequisite.TypeId, buyer.Research);
-                if (unmet && required != Entity.Null)
-                {
-                    missing.Add(required);
-                }
-            }
-        }
-
-        /// <summary>Share of <paramref name="prefab"/>, at the head of <paramref name="producer"/>'s queue, built.</summary>
-        public float HeadProgress(Entity producer, Entity prefab)
-        {
-            var elapsed = EntityManager.GetComponentData<Producer>(producer).Elapsed;
-            var buildTime = EntityManager.GetComponentData<Producible>(prefab).BuildTime;
-            return buildTime > 0f ? math.saturate(elapsed / buildTime) : 1f;
-        }
 
         /// <summary>True while <paramref name="entity"/> is offline because its owner's power is low.</summary>
         public bool IsUnpowered(Entity entity) =>

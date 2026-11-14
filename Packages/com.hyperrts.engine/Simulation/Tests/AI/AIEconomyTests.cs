@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Tests.AI
         }
 
         [Test]
-        public void AI_BudgetsItsStockpile_AcrossIdleProducers()
+        public void AI_BudgetsItsStockpile_AcrossIdleFinishedProducers()
         {
             var soldier = UnitPrefab("Soldier", 10, 30f);
             var writer = World.Writer(soldier);
@@ -95,6 +95,8 @@ namespace HyperRTS.Simulation.Tests.AI
             };
             WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
             var tank = UnitPrefab("Tank", 15, 30f);
+            World.MakeProducer(World.SpawnBuilding(2, new float3(-10f, 0f, 0f), new float2(4f, 4f),
+                new TestBuilding { Complete = false }), new float3(0f, 0f, -4f), soldier, tank);
             var first = World.MakeProducer(World.SpawnBuilding(2, float3.zero, new float2(4f, 4f)),
                 new float3(0f, 0f, -4f), soldier, tank);
             var second = World.MakeProducer(World.SpawnBuilding(2, new float3(10f, 0f, 0f), new float2(4f, 4f)),
@@ -104,7 +106,7 @@ namespace HyperRTS.Simulation.Tests.AI
 
             World.Tick(frames: 3);
 
-            // With the soldier's cost set aside, the tank is out of reach and the second producer trains a soldier too.
+            // The site, first in line, takes no budget; with one soldier's cost set aside the second trains one too.
             Assert.AreEqual(1, World.Buffer<ProductionQueueItem>(first).Length);
             Assert.AreEqual(1, World.Buffer<ProductionQueueItem>(second).Length);
             Assert.AreEqual(0, World.GetResources(2, _supplies));
@@ -275,10 +277,8 @@ namespace HyperRTS.Simulation.Tests.AI
 
         private Entity ExistingBarracks(Entity soldier)
         {
-            var existing = World.SpawnBuilding(2, new float3(20f, 0f, 20f), new float2(4f, 4f), new TestBuilding
-            {
-                Name = "Barracks",
-            });
+            var existing = World.SpawnBuilding(2, new float3(20f, 0f, 20f), new float2(4f, 4f),
+                new TestBuilding { Name = "Barracks" });
             return World.MakeProducer(existing, new float3(0f, 0f, -3f), soldier);
         }
 

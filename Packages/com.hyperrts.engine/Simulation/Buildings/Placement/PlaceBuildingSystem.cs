@@ -35,9 +35,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
 
         private CommandReader _commands;
         private EntityQuery _obstacles;
-        private EntityQuery _completed;
-        private EntityQuery _queues;
-        private EntityQuery _limited;
+        private BuyerQueries _buyers;
         private OrderWriter _orders;
         private PrefabSpawner _spawner;
 
@@ -49,9 +47,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var types = TypeSet.Single(CommandType.PlaceBuilding).With(CommandType.PlaceLine);
             _commands = new CommandReader(ref state, types, selected);
             _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
-            _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
-            _queues = Buyer.QueueQuery(Allocator.Temp).Build(ref state);
-            _limited = BuildCounts.Query(Allocator.Temp).Build(ref state);
+            _buyers = new BuyerQueries(ref state);
             _orders = new OrderWriter(ref state);
             _spawner = new PrefabSpawner(ref state);
             state.RequireForUpdate<MapSettings>();
@@ -80,7 +76,6 @@ namespace HyperRTS.Simulation.Buildings.Placement
             var assignments = new NativeList<Assignment>(Allocator.Temp);
             // One buyer per player for the frame: each site placed counts against the next request's build limits.
             var buyers = new NativeHashMap<byte, Buyer>(4, Allocator.Temp);
-            var buildings = new CompletedBuildings(_completed, Allocator.Temp);
 
             foreach (var request in requests)
             {
@@ -92,12 +87,11 @@ namespace HyperRTS.Simulation.Buildings.Placement
 
                 if (!buyers.TryGetValue(request.Owner, out var buyer))
                 {
-                    buyer = Buyer.Snapshot(state.EntityManager, _queues, _limited, request.Owner, buildings,
-                        SystemAPI.GetBuffer<CompletedResearch>(request.Player));
+                    buyer = _buyers.Snapshot(state.EntityManager, request.Player);
                     buyers.Add(request.Owner, buyer);
                 }
 
-                var orders = PlaceSites(ref state, request, buyer, ecb, sites, builders);
+                var orders = PlaceSites(ref state, request, ref buyer, ecb, sites, builders);
                 Assign(assignments, builders, orders, request.Command.Queue);
             }
 
@@ -111,16 +105,16 @@ namespace HyperRTS.Simulation.Buildings.Placement
             }
         }
 
-        private NativeList<Order> PlaceSites(ref SystemState state, in IssuedCommand request, Buyer buyer,
+        private NativeList<Order> PlaceSites(ref SystemState state, in IssuedCommand request, ref Buyer buyer,
             EntityCommandBuffer ecb, NativeList<PlacedFootprint> sites, NativeList<Entity> builders)
         {
             var orders = new NativeList<Order>(Allocator.Temp);
             if (request.Command.Type == CommandType.PlaceLine)
             {
-                PlaceLine(ref state, request, buyer, ecb, sites, orders);
+                PlaceLine(ref state, request, ref buyer, ecb, sites, orders);
                 new BuilderGroup(state.EntityManager, builders).NearEndFirst(orders, request.Command.Queue);
             }
-            else if (TryPlace(ref state, request, buyer, ecb, sites, out var order))
+            else if (TryPlace(ref state, request, ref buyer, ecb, sites, out var order))
             {
                 orders.Add(order);
             }
@@ -141,7 +135,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             }
         }
 
-        private bool TryPlace(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
+        private bool TryPlace(ref SystemState state, in IssuedCommand request, ref Buyer buyer, EntityCommandBuffer ecb,
             NativeList<PlacedFootprint> sites, out Order order)
         {
             order = default;
@@ -164,12 +158,12 @@ namespace HyperRTS.Simulation.Buildings.Placement
             }
 
             sites.Add(new PlacedFootprint(spot.Box, false));
-            order = Raise(ref state, request, buyer, ecb, spot);
+            order = Raise(ref state, request, ref buyer, ecb, spot);
             return true;
         }
 
         /// <summary>Counts the bought site against the buyer, spawns it and returns the Build order on it.</summary>
-        private Order Raise(ref SystemState state, in IssuedCommand request, in Buyer buyer, EntityCommandBuffer ecb,
+        private Order Raise(ref SystemState state, in IssuedCommand request, ref Buyer buyer, EntityCommandBuffer ecb,
             in BuildingSpot spot)
         {
             var prefab = request.Command.Prefab;
@@ -257,7 +251,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         /// Places every free segment from the line's start, stopping at the first the player can't buy. Segments are
         /// line pieces, so they keep the building gap from other buildings but not from each other or other walls.
         /// </summary>
-        private void PlaceLine(ref SystemState state, in IssuedCommand request, in Buyer buyer,
+        private void PlaceLine(ref SystemState state, in IssuedCommand request, ref Buyer buyer,
             EntityCommandBuffer ecb, NativeList<PlacedFootprint> sites, NativeList<Order> orders)
         {
             var prefab = request.Command.Prefab;
@@ -282,7 +276,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
                 }
 
                 sites.Add(new PlacedFootprint(spot.Box, true));
-                orders.Add(Raise(ref state, request, buyer, ecb, spot));
+                orders.Add(Raise(ref state, request, ref buyer, ecb, spot));
             }
         }
     }
