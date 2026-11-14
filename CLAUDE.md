@@ -85,7 +85,7 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 
 - Files under 300 lines, methods under 40, at most 6 parameters (job `Execute` and `[TestCase]` tests aside).
 - A type never spans files. Split a big type into types that own their data: a nested job becomes a top-level job
-  (`PathEvaluateJob`), methods over some of the fields become a struct holding them (`DriveWindow`), a concern
+  (`PathEvaluateJob`), methods over some of the fields become a struct holding them (`HullClearance`), a concern
   becomes its own planner (`AttackPlanner`). Never dotted partial files (`X.Y.cs`); `partial` is only for codegen.
 - Group parameters that travel together: a lookup context built once per job (`TargetLookup`), a chunk view and an
   index for per-unit work (`MoverChunk`), or a settings type with an object initializer instead of optional
@@ -107,8 +107,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   the run. Delete one that does; a check over files or assets is a validation rule.
 - A new authoring rule is an `AuthoringRule<T>` in its domain folder under `Editor/Validation/Rules/` (`Units`,
   `Buildings`, `Effects`, `Match`, `Fields`). The inspector, **HyperRTS ▸ Tools ▸ Validate** and the tests pick it up.
-- In Play, the Scene view's **HyperRTS Debug** and **HyperRTS Cheats** overlays and the Tools window's Play page
-  (the launcher, network, soak tests and replays) inspect and drive the world.
+- In Play, the **HyperRTS ▸ Cheats & Debug** window and the Tools window's Play page (the launcher, network, soak
+  tests and replays) inspect and drive the world ([play mode](docs/editor/play-mode.md)).
 
 ## Gotchas
 
@@ -131,15 +131,13 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   `[WorldSystemFilter(SimulationWorlds.Presented)]`; those under `PresentationSystemGroup` already default to the
   presented worlds. A component the HUD reads needs `[GhostField]`s.
 - `EntityInfo.TypeId` hashes the display name, so two prefab types never share a name.
-- Two `SystemAPI.QueryBuilder` queries with the same description in one system are one cached `EntityQuery`: a
-  change filter set on one also filters the other, and any `SystemAPI.Query` over the same types. Give a filtered
-  query its own description, as `NavGridSystem` does.
-- `ToEntityListAsync` on a query with `WithNone<T>` of an enableable type such as `Dead` reads that type untracked,
-  and the systems scheduled after it throw. Drop the filter and skip in the job with a `ComponentLookup<T>`.
-- A `NavGrid` held as a private field inside a helper struct that jobs carry makes those jobs stop working, with no
-  error. Pass the grid in from the job's own `[ReadOnly] public NavGrid Grid` field.
-- `Debug.Log` from a system doesn't reach the console during EditMode tests. When a system's tests fail with no
-  exception, suspect the traps above and bisect by file.
+- Two `SystemAPI.QueryBuilder` queries with the same description in one system are one cached query: a change
+  filter on one filters both. Give the filtered one its own description, as `NavGridSystem` does.
+- `ToEntityListAsync` on a query with `WithNone<T>` of an enableable type such as `Dead` reads it untracked, and
+  later systems throw. Skip in the job with a `ComponentLookup<T>` instead.
+- A `NavGrid` held privately inside a helper struct that jobs carry stops those jobs with no error. Pass it from the
+  job's own `[ReadOnly] public NavGrid Grid` field.
+- `Debug.Log` from a system doesn't reach the console in EditMode tests: bisect by file.
 
 ## Docs
 
