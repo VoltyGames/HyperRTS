@@ -76,9 +76,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
 
             // Asked every frame, so a deployed unit packs up first and goes once packed.
-            var away = math.normalizesafe(position.xz - point.xz, new float2(0f, 1f));
-            var goal = point.xz + away * band.Nearest(gap);
-            _moves.MoveTo(new float3(goal.x, position.y, goal.y), EngagementSystem.RepathDistance);
+            _moves.StandOff(point, position, band.Nearest(gap));
         }
 
         private void End()

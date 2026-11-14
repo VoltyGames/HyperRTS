@@ -63,28 +63,9 @@ namespace HyperRTS.Simulation.Movement
             Walk(ref transform, capsule, from, wanted, agent, crowd);
 
             var stalled = HasStalled(chunk, index, ref frame, capsule, depth);
-            Arrive(chunk, index, ref frame, stalled, step, !transform.Position.xz.Equals(wanted));
+            Movers.Finish(chunk, index, ref frame, stalled, step, !transform.Position.xz.Equals(wanted));
             TurnOrBackOut(chunk, index, ref frame, capsule, facing, heading);
             chunk.Velocities[index].Value = (transform.Position.xz - from) / Movers.DeltaTime;
-        }
-
-        private readonly void Arrive(in MoverChunk chunk, int index, ref MoveFrame frame, bool stalled, float2 step,
-            bool walled)
-        {
-            var moving = chunk.Moving(index);
-            if (moving.ValueRO && (frame.Crowd.ReachedGroup || stalled))
-            {
-                ref var path = ref chunk.Paths[index];
-                path.Halt(moving, chunk.Waypoints[index]);
-            }
-
-            var reason = stalled ? ArrivalReason.Stalled : ArrivalReason.Reached;
-            if (frame.Crowd.ReachedGroup)
-            {
-                reason = ArrivalReason.AtGroupmate;
-            }
-
-            Movers.Finish(chunk, index, ref frame, reason, step, walled);
         }
 
         // A hull that can't turn where it stands backs out, which the next frame's state carries.

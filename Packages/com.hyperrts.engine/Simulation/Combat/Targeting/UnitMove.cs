@@ -37,6 +37,17 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// <summary>Moves on to <paramref name="goal"/> unless already heading within <paramref name="tolerance"/> of it.</summary>
         public void MoveTo(float3 goal, float tolerance) => _destination.ValueRW.MoveTo(_enabled, goal, tolerance);
 
+        /// <summary>
+        /// Moves to the spot <paramref name="distance"/> from <paramref name="centre"/> on the side the unit stands at
+        /// <paramref name="position"/>, re-sent only once that spot moves past the engagement repath distance.
+        /// </summary>
+        public void StandOff(float3 centre, float3 position, float distance)
+        {
+            var away = math.normalizesafe(new float3(position.x - centre.x, 0f, position.z - centre.z),
+                new float3(0f, 0f, -1f));
+            MoveTo(centre + away * distance, EngagementSystem.RepathDistance);
+        }
+
         public void Halt()
         {
             if (_present)

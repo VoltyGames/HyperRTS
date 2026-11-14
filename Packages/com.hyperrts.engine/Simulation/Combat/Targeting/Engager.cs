@@ -206,11 +206,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// <summary>Retreats straight away from the target to <paramref name="gap"/> edge to edge.</summary>
         private void BackOff(Entity entity, float3 position, Entity target, float gap, in UnitMove moves)
         {
-            var from = Targets.Position(target);
-            var level = new float3(position.x - from.x, 0f, position.z - from.z);
-            var away = math.normalizesafe(level, new float3(0f, 0f, -1f));
-            var goal = from + away * (gap + Targets.Radius(entity) + Targets.Radius(target));
-            moves.MoveTo(goal, EngagementSystem.RepathDistance);
+            moves.StandOff(Targets.Position(target), position, gap + Targets.Radius(entity) + Targets.Radius(target));
         }
 
         private Order CurrentOrder(Entity entity) => Orders.HasEnabled(entity) ? Orders[entity].Value : default;

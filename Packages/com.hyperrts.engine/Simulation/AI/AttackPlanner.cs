@@ -184,7 +184,7 @@ namespace HyperRTS.Simulation.AI
                     continue;
                 }
 
-                var building = entities.HasComponent<BuildingTag>(entity) && entities.HasComponent<VictoryCritical>(entity);
+                var building = entities.HasComponent<BuildingTag>(entity);
                 var tall = entities.HasComponent<TallTarget>(entity);
                 if (limitedByFog && !_fog.IsKnown(targets.Position(i), team, building, tall))
                 {
@@ -192,7 +192,7 @@ namespace HyperRTS.Simulation.AI
                 }
 
                 var distance = targets.DistanceSq(i, from);
-                if (building)
+                if (building && entities.HasComponent<VictoryCritical>(entity))
                 {
                     nearestBase.Consider(i, entity, distance);
                 }

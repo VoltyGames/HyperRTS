@@ -71,10 +71,25 @@ namespace HyperRTS.Simulation.Movement
             };
         }
 
-        /// <summary>Reports the arrival and stores the handling state for a mover that keeps one.</summary>
-        public readonly void Finish(in MoverChunk chunk, int index, ref MoveFrame frame, ArrivalReason reason,
-            float2 step, bool walled)
+        /// <summary>
+        /// Ends the move against an arrived groupmate or once it has <paramref name="stalled"/>, reports the arrival
+        /// and stores the handling state for a mover that keeps one.
+        /// </summary>
+        public readonly void Finish(in MoverChunk chunk, int index, ref MoveFrame frame, bool stalled, float2 step,
+            bool walled)
         {
+            var moving = chunk.Moving(index);
+            if (moving.ValueRO && (frame.Crowd.ReachedGroup || stalled))
+            {
+                chunk.Paths[index].Halt(moving, chunk.Waypoints[index]);
+            }
+
+            var reason = stalled ? ArrivalReason.Stalled : ArrivalReason.Reached;
+            if (frame.Crowd.ReachedGroup)
+            {
+                reason = ArrivalReason.AtGroupmate;
+            }
+
             chunk.Progresses[index].Report(frame.WasMoving, chunk.Moving(index).ValueRO, reason,
                 ref chunk.Arrivals[index], chunk.Arrived(index));
             if (!frame.Remembers)
