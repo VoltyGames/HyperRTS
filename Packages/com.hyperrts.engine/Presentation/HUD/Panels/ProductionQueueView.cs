@@ -6,12 +6,13 @@ using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Panels
 {
-    /// <summary>A producer's queue: click a slot to cancel it; the head shows its build progress.</summary>
+    /// <summary>A producer's queue: click a slot to cancel it; the head shows its build progress and why it waits.</summary>
     public sealed class ProductionQueueView
     {
         private readonly VisualElement _root;
         private readonly VisualTreeAsset _slotTemplate;
         private int _signature;
+        private readonly Label _wait = new() { name = "wait" };
         private HUDBar _headProgress;
 
         /// <summary>Fills <paramref name="root"/> with one <paramref name="slotTemplate"/> per queued item.</summary>
@@ -19,6 +20,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         {
             _root = root;
             _slotTemplate = slotTemplate;
+            _wait.AddToClassList("hud-single__queue-wait");
         }
 
         public void Refresh(HUDContext context, Entity producer)
@@ -48,8 +50,10 @@ namespace HyperRTS.Presentation.HUD.Panels
                 Rebuild(context, producer, queue);
             }
 
-            var head = context.EntityManager.GetComponentData<Producible>(queue[0].Prefab);
-            _headProgress.Fraction = context.EntityManager.GetComponentData<Producer>(producer).HeadProgress(head);
+            var head = entityManager.GetComponentData<Producible>(queue[0].Prefab);
+            var state = entityManager.GetComponentData<Producer>(producer);
+            _headProgress.Fraction = state.HeadProgress(head);
+            _wait.text = HUDText.ProducerWait(state.State);
         }
 
         private void Rebuild(HUDContext context, Entity producer, DynamicBuffer<ProductionQueueItem> queue)
@@ -75,6 +79,8 @@ namespace HyperRTS.Presentation.HUD.Panels
                     _headProgress = progress;
                 }
             }
+
+            _root.Add(_wait);
         }
     }
 }

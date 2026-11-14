@@ -5,6 +5,7 @@ using System.Text;
 using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
+using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using Unity.Scripting.LifecycleManagement;
@@ -70,6 +71,9 @@ namespace HyperRTS.Presentation.HUD
             ["tooltip.power"] = "Power",
             ["tooltip.requires"] = "Requires",
             ["tooltip.seconds"] = "s",
+            ["producer.waiting-population"] = "No population room",
+            ["producer.waiting-pad"] = "Every pad taken",
+            ["producer.offline"] = "Offline",
         };
 
         [AutoStaticsCleanup]
@@ -118,6 +122,17 @@ namespace HyperRTS.Presentation.HUD
 
         public static string OutcomeTitle(MatchOutcome outcome) => Text(Key("outcome", outcome.ToString()));
 
+        /// <summary>Why a producer is stalled (producer.waiting-pad), or empty while it idles or works.</summary>
+        public static string ProducerWait(ProducerState state)
+        {
+            if (state is ProducerState.Idle or ProducerState.Working)
+            {
+                return "";
+            }
+
+            return Text(Key("producer", state.ToString()));
+        }
+
         /// <summary>
         /// <paramref name="kind"/> and the name in lowercase kebab case: ("entity", "War Factory") gives
         /// entity.war-factory, ("stance", "HoldPosition") gives stance.hold-position.
@@ -155,7 +170,8 @@ namespace HyperRTS.Presentation.HUD
             .Union(EnumKeys<Posture>("squad", value => value.ToString()))
             .Union(EnumKeys<SuppressionLevel>("squad", value => value.ToString()))
             .Union(EnumKeys<CoverKind>("squad", value => value + "Cover").Where(key => key != "squad.none-cover"))
-            .Union(EnumKeys<MatchOutcome>("outcome", value => value.ToString()).Where(key => key != "outcome.none"));
+            .Union(EnumKeys<MatchOutcome>("outcome", value => value.ToString()).Where(key => key != "outcome.none"))
+            .Union(EnumKeys<ProducerState>("producer", value => value.ToString()).Where(key => English.ContainsKey(key)));
 
         private static IEnumerable<string> EnumKeys<T>(string kind, Func<T, string> name) where T : struct, Enum =>
             Enum.GetValues(typeof(T)).Cast<T>().Select(value => Key(kind, name(value)));

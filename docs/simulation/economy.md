@@ -143,7 +143,8 @@ share `ProducibleAuthoring`: build time and population.
   orders, Selection the selection.
 - `ProductionSystem` writes a replicated `ProducerState` each frame: `Idle`, `Working` (slowed on low power),
   `WaitingPopulation`, `WaitingPad` or `Offline` (any other offline reason, such as an EMP). Clients read it for
-  `Producing` machines and working loop sounds instead of rederiving it.
+  `Producing` machines, working loop sounds and the HUD queue's wait reason (`producer.*` keys in `HUDText`)
+  instead of rederiving it.
 - `Producer.Released` replicates, which opens the [production doors](../presentation/animation.md#machines).
 
 ## Capture

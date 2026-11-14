@@ -16,3 +16,8 @@
   bottom: 3px;
   height: 5px;
 }
+
+.hud-single__queue-wait {
+  align-self: center;
+  padding: 0;
+}

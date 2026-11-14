@@ -12,3 +12,8 @@
 .hud-slot__progress {
   --bar-fill: var(--hud-bar-progress);
 }
+
+.hud-single__queue-wait {
+  font-size: 11px;
+  color: var(--hud-warn);
+}
