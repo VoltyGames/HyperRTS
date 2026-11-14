@@ -127,6 +127,18 @@ namespace HyperRTS.Simulation.Tests.Resources
         }
 
         [Test]
+        public void Unload_StoppedKeepsTheCargoForTheNextTrip()
+        {
+            var harvester = UnloadingHarvester();
+            World.SetEnabled<ActiveOrder>(harvester, false);
+            World.Run(6f);
+
+            Assert.AreEqual(0, World.GetResources(1, _supplies));
+            Assert.AreEqual(10, World.Get<Harvester>(harvester).CargoAmount);
+            Assert.AreEqual(HarvestPhase.Returning, World.Get<HarvestState>(harvester).Phase, "walks back to unload");
+        }
+
+        [Test]
         public void DepletedNode_IsDestroyed_AndHarvesterDeliversThenStops()
         {
             SpawnDropOff(new float3(-6f, 0f, 0f));

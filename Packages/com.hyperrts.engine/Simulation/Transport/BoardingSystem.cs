@@ -78,8 +78,7 @@ namespace HyperRTS.Simulation.Transport
                 EnabledRefRW<ActiveOrder> busy, RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving,
                 EnabledRefRW<Arrival> arrived, in NavAgent agent)
             {
-                var entering = busy.ValueRO && order.Value.Type == OrderType.Enter;
-                if (!entering || Boarding.IsInside(entity))
+                if (order.Value.Type != OrderType.Enter || Boarding.IsInside(entity))
                 {
                     return;
                 }

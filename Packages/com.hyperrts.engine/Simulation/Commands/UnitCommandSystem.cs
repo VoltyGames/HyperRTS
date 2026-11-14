@@ -92,15 +92,16 @@ namespace HyperRTS.Simulation.Commands
         }
 
         private static TypeSet UnitCommands =>
-            TypeSet.Range(CommandType.Smart, CommandType.SetStance)
-                .With(TypeSet.Range(CommandType.Repair, CommandType.Enter))
-                .With(TypeSet.Range(CommandType.Patrol, CommandType.ReturnToBase))
-                .With(CommandType.ReverseMove).With(CommandType.FireMission);
+            TypeSet.Single(CommandType.Smart).With(CommandType.Move).With(CommandType.ReverseMove)
+                .With(CommandType.AttackMove).With(CommandType.Attack).With(CommandType.Gather).With(CommandType.Build)
+                .With(CommandType.Stop).With(CommandType.SetStance).With(CommandType.Repair).With(CommandType.Capture)
+                .With(CommandType.Enter).With(CommandType.Patrol).With(CommandType.Escort)
+                .With(CommandType.ReturnToBase).With(CommandType.FireMission);
 
         /// <summary>Keeps the command's owned subjects that take orders, in order.</summary>
         private bool GatherSubjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)
         {
-            _commands.Subjects(ref state, issued, subjects, new TakesOrders { Orders = _writer });
+            _commands.Subjects(ref state, issued, subjects, new TakesOrders { Orders = _writer.Reader });
             return subjects.Length > 0;
         }
 
@@ -239,7 +240,7 @@ namespace HyperRTS.Simulation.Commands
         private void IssuePatrol(Entity unit, in Order leg, float3 position, bool queue)
         {
             var start = position;
-            if (queue && _writer.TryGetLastOrder(unit, out var last))
+            if (queue && _writer.Reader.TryGetLastOrder(unit, out var last))
             {
                 if (last.Type == OrderType.Patrol)
                 {
@@ -271,7 +272,7 @@ namespace HyperRTS.Simulation.Commands
 
         private struct TakesOrders : ISubjectFilter
         {
-            public OrderWriter Orders;
+            public OrderReader Orders;
 
             public bool Keeps(Entity subject) => Orders.CanReceiveOrders(subject);
         }

@@ -178,9 +178,9 @@ namespace HyperRTS.Simulation.Tests.Commands
         }
 
         [Test]
-        public void TypeSet_HoldsItsRangeAndAddedTypes_AndKeepsEveryByteValueApart()
+        public void TypeSet_HoldsItsTypes_AndKeepsEveryByteValueApart()
         {
-            var set = TypeSet.Range(CommandType.UseAbility, CommandType.UsePower).With(CommandType.Surrender)
+            var set = TypeSet.Single(CommandType.UseAbility).With(CommandType.UsePower).With(CommandType.Surrender)
                 .With((CommandType)64).With(CommandType.GameFirst + 3).With((CommandType)255);
 
             Assert.IsTrue(set.Contains(CommandType.UseAbility));
@@ -193,10 +193,6 @@ namespace HyperRTS.Simulation.Tests.Commands
             Assert.IsFalse(set.Contains(CommandType.None), "64 doesn't wrap onto 0");
             Assert.IsFalse(set.Contains(CommandType.AttackMove), "GameFirst + 3 doesn't wrap onto 3");
             Assert.IsFalse(set.Contains((CommandType)192));
-
-            var top = TypeSet.Range((CommandType)250, (CommandType)255);
-            Assert.IsTrue(top.Contains((CommandType)255), "a range ending at 255 ends");
-            Assert.IsFalse(top.Contains((CommandType)249));
         }
     }
 }

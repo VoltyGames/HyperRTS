@@ -12,11 +12,13 @@ namespace HyperRTS.Simulation.Buildings.Placement
     {
         private readonly EntityManager _entities;
         private readonly NativeList<Entity> _builders;
+        private readonly OrderReader _orders;
 
-        public BuilderGroup(EntityManager entities, NativeList<Entity> builders)
+        public BuilderGroup(EntityManager entities, NativeList<Entity> builders, in OrderReader orders)
         {
             _entities = entities;
             _builders = builders;
+            _orders = orders;
         }
 
         /// <summary>
@@ -45,21 +47,8 @@ namespace HyperRTS.Simulation.Buildings.Placement
         }
 
         /// <summary>Where the builder's orders leave it: its last queued order, its active one or its place.</summary>
-        private float3 QueueEnd(Entity builder)
-        {
-            var queue = _entities.GetBuffer<QueuedOrder>(builder, true);
-            if (queue.Length > 0)
-            {
-                return queue[queue.Length - 1].Value.Position;
-            }
-
-            if (_entities.IsComponentEnabled<ActiveOrder>(builder))
-            {
-                return _entities.GetComponentData<ActiveOrder>(builder).Value.Position;
-            }
-
-            return Position(builder);
-        }
+        private float3 QueueEnd(Entity builder) =>
+            _orders.TryGetLastOrder(builder, out var last) ? last.Position : Position(builder);
 
         private float3 Position(Entity builder) => _entities.GetComponentData<LocalTransform>(builder).Position;
     }

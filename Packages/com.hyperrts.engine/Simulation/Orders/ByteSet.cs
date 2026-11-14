@@ -14,8 +14,6 @@ namespace HyperRTS.Simulation.Orders
             _bits[word >> 2][word & 3] |= Bit(value);
         }
 
-        public readonly ByteSet With(in ByteSet other) => new() { _bits = _bits | other._bits };
-
         public readonly bool Contains(byte value)
         {
             var word = value >> 5;

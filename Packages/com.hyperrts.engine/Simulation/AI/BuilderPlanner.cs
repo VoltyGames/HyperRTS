@@ -93,12 +93,7 @@ namespace HyperRTS.Simulation.AI
 
         private static bool IsBuilding(EntityManager entities, Entity builder)
         {
-            if (!entities.IsComponentEnabled<ActiveOrder>(builder))
-            {
-                return false;
-            }
-
-            var order = entities.GetComponentData<ActiveOrder>(builder).Value.Type;
+            var order = ActiveOrder.Current(entities, builder).Type;
             return order == OrderType.Build || order == OrderType.Repair;
         }
 

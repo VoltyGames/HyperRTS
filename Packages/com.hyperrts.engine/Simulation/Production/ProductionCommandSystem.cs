@@ -74,7 +74,8 @@ namespace HyperRTS.Simulation.Production
         }
 
         private static TypeSet ProducerCommands =>
-            TypeSet.Range(CommandType.Produce, CommandType.SetRallyPoint).With(CommandType.Smart);
+            TypeSet.Single(CommandType.Produce).With(CommandType.CancelProduction).With(CommandType.SetRallyPoint)
+                .With(CommandType.Smart);
 
         private void Produce(ref SystemState state, in IssuedCommand issued, ref Buyer buyer)
         {

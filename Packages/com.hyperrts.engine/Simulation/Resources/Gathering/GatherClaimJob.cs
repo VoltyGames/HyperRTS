@@ -22,10 +22,10 @@ namespace HyperRTS.Simulation.Resources.Gathering
         [ReadOnly] public TargetReach Reach;
 
         private void Execute(Entity entity, in HarvestState harvest, in ActiveOrder order,
-            EnabledRefRO<ActiveOrder> busy, in MoveDestination destination, EnabledRefRO<MoveDestination> moving,
-            in LocalTransform transform, in NavAgent agent)
+            in MoveDestination destination, EnabledRefRO<MoveDestination> moving, in LocalTransform transform,
+            in NavAgent agent)
         {
-            if (!busy.ValueRO || order.Value.Type != OrderType.Gather)
+            if (order.Value.Type != OrderType.Gather)
             {
                 return;
             }

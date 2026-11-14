@@ -99,12 +99,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
             private bool MayAutoAcquire(Entity entity)
             {
-                if (!Orders.HasEnabled(entity))
-                {
-                    return true;
-                }
-
-                return Traits.Has(Orders[entity].Value.Type, OrderTraits.EngagesWhileMoving);
+                var order = ActiveOrder.Current(Orders, entity).Type;
+                return order == OrderType.None || Traits.Has(order, OrderTraits.EngagesWhileMoving);
             }
         }
     }

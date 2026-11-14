@@ -133,17 +133,17 @@ namespace HyperRTS.Simulation.Buildings.Construction
                     return;
                 }
 
-                MoveOn(builderEntity, site, transform.Position, ref order, busy);
+                MoveOn(builderEntity, site, transform.Position, ref order, busy, moving);
             }
 
             // A finished piece ends the order, or sends the builder to the next piece of its wall.
             private void MoveOn(Entity builderEntity, Entity site, float3 from, ref ActiveOrder order,
-                EnabledRefRW<ActiveOrder> busy)
+                EnabledRefRW<ActiveOrder> busy, EnabledRefRW<MoveDestination> moving)
             {
                 var next = QueueLookup[builderEntity].IsEmpty ? NextLinePiece(site, from) : Entity.Null;
                 if (next == Entity.Null)
                 {
-                    busy.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 

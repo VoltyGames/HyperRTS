@@ -1,6 +1,4 @@
-using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
-using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
@@ -14,11 +12,13 @@ namespace HyperRTS.Simulation.Orders
     public partial struct OrderDispatchSystem : ISystem
     {
         private EntityQuery _idle;
+        private OrderHalt _halt;
 
         public void OnCreate(ref SystemState state)
         {
             _idle = new EntityQueryBuilder(Allocator.Temp).WithDisabledRW<ActiveOrder>().WithAllRW<QueuedOrder>()
                 .Build(ref state);
+            _halt = new OrderHalt(ref state);
             // Created here so every world that runs orders has it before any system updates.
             state.EntityManager.CreateSingleton(OrderTraitTable.Create(), "OrderTraitTable");
         }
@@ -26,14 +26,12 @@ namespace HyperRTS.Simulation.Orders
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _halt.Update(ref state);
             state.Dependency = new DispatchJob
             {
                 Active = SystemAPI.GetComponentTypeHandle<ActiveOrder>(),
                 Queues = SystemAPI.GetBufferTypeHandle<QueuedOrder>(),
-                Move = SystemAPI.GetComponentTypeHandle<MoveDestination>(),
-                Arrival = SystemAPI.GetComponentTypeHandle<Arrival>(),
-                Attack = SystemAPI.GetComponentTypeHandle<AttackTarget>(),
-                MoveOrder = SystemAPI.GetComponentTypeHandle<MoveOrderState>(),
+                Halt = _halt,
             }.ScheduleParallel(_idle, state.Dependency);
         }
 
@@ -43,10 +41,7 @@ namespace HyperRTS.Simulation.Orders
         {
             public ComponentTypeHandle<ActiveOrder> Active;
             public BufferTypeHandle<QueuedOrder> Queues;
-            public ComponentTypeHandle<MoveDestination> Move;
-            public ComponentTypeHandle<Arrival> Arrival;
-            public ComponentTypeHandle<AttackTarget> Attack;
-            public ComponentTypeHandle<MoveOrderState> MoveOrder;
+            public OrderHalt Halt;
 
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask)
@@ -61,29 +56,11 @@ namespace HyperRTS.Simulation.Orders
                     }
 
                     // Same reset as a fresh order, so a target picked up while idle can't hold the next order back.
-                    Halt(chunk, i);
+                    Halt.Apply(chunk, i);
                     var active = chunk.GetNativeArray(ref Active);
                     active[i] = new ActiveOrder { Value = queues[i][0].Value };
                     chunk.GetBufferAccessorRW(ref Queues)[i].RemoveAt(0);
                     chunk.SetComponentEnabled(ref Active, i, true);
-                }
-            }
-
-            // So a walk-up never reads the last order's arrival as its own.
-            private void Halt(in ArchetypeChunk chunk, int index)
-            {
-                DisableIfPresent(chunk, index, ref Move);
-                DisableIfPresent(chunk, index, ref Arrival);
-                DisableIfPresent(chunk, index, ref Attack);
-                DisableIfPresent(chunk, index, ref MoveOrder);
-            }
-
-            private static void DisableIfPresent<T>(in ArchetypeChunk chunk, int index, ref ComponentTypeHandle<T> handle)
-                where T : unmanaged, IComponentData, IEnableableComponent
-            {
-                if (chunk.Has(ref handle))
-                {
-                    chunk.SetComponentEnabled(ref handle, index, false);
                 }
             }
         }

@@ -27,7 +27,8 @@ namespace HyperRTS.Simulation.Cues.Voice
         public void OnCreate(ref SystemState state)
         {
             var selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner, LocalTransform, EntitySound>().Build();
-            var answered = TypeSet.Range(CommandType.Smart, CommandType.Attack).With(CommandType.ReturnToBase)
+            var answered = TypeSet.Single(CommandType.Smart).With(CommandType.Move).With(CommandType.ReverseMove)
+                .With(CommandType.AttackMove).With(CommandType.Attack).With(CommandType.ReturnToBase)
                 .With(CommandType.Patrol).With(CommandType.Escort).With(CommandType.FireMission);
             _commands = new CommandReader(ref state, answered, selected);
             _cues = new CueWriter(ref state);

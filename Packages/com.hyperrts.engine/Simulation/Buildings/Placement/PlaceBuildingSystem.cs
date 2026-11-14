@@ -63,6 +63,10 @@ namespace HyperRTS.Simulation.Buildings.Placement
             if (requests.Length > 0)
             {
                 _spawner.Update(ref state);
+                // The builder group reads orders through lookups, which unlike EntityManager reads don't wait for jobs.
+                state.CompleteDependency();
+                // Updated again after playback, which invalidates its lookups.
+                _orders.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
                 PlaceAll(ref state, requests);
             }
         }
@@ -112,7 +116,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
             if (request.Command.Type == CommandType.PlaceLine)
             {
                 PlaceLine(ref state, request, ref buyer, ecb, sites, orders);
-                new BuilderGroup(state.EntityManager, builders).NearEndFirst(orders, request.Command.Queue);
+                new BuilderGroup(state.EntityManager, builders, _orders.Reader).NearEndFirst(orders, request.Command.Queue);
             }
             else if (TryPlace(ref state, request, ref buyer, ecb, sites, out var order))
             {

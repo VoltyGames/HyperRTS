@@ -13,7 +13,6 @@ namespace HyperRTS.Simulation.Orders
         private const int GameTypes = 256 - (int)OrderType.GameFirst;
 
         private const OrderTraits Walks = OrderTraits.Formation | OrderTraits.MovesToPosition;
-        private const OrderTraits Fights = OrderTraits.AttackMove | OrderTraits.EngagesWhileMoving;
 
         private FixedList512Bytes<OrderTraits> _game;
 
@@ -53,10 +52,9 @@ namespace HyperRTS.Simulation.Orders
         {
             OrderType.Move => Walks,
             OrderType.ReverseMove => Walks | OrderTraits.DrivesBackward,
-            OrderType.AttackMove => Walks | Fights,
-            OrderType.Patrol => Walks | Fights | OrderTraits.Loops,
+            OrderType.AttackMove => Walks | OrderTraits.EngagesWhileMoving,
+            OrderType.Patrol => Walks | OrderTraits.EngagesWhileMoving | OrderTraits.Loops,
             OrderType.Escort => OrderTraits.EngagesWhileMoving,
-            OrderType.Retreat => OrderTraits.MovesToPosition,
             _ => OrderTraits.None,
         };
     }

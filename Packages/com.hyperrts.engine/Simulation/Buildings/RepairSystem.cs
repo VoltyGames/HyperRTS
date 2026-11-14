@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Buildings
                 RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent, in Owner owner)
             {
-                if (!busy.ValueRO || order.Value.Type != OrderType.Repair)
+                if (order.Value.Type != OrderType.Repair)
                 {
                     return;
                 }

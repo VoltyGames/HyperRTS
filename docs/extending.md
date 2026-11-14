@@ -41,9 +41,9 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 
 1. Pick an `OrderType` from `GameFirst` (128) up in your own code.
 2. Register its traits once from a system update with `OrderTraitTable.Register`: `EngagesWhileMoving`,
-   `AttackMove`, `Formation`, `MovesToPosition`, `Loops` or `DrivesBackward`. `OrderWriter.Issue` rejects a game type with none.
+   `Formation`, `MovesToPosition`, `Loops` or `DrivesBackward`. `OrderWriter.Issue` rejects a game type with none.
 3. In a system, move units with that `ActiveOrder` using `TargetReach.Approach`, or set `MoveDestination` directly.
-4. Disable `ActiveOrder` when the order is done.
+4. End it with `ActiveOrder.Finish` when it is done, which keeps the Shift queue.
 
 ### A new stat
 

@@ -55,7 +55,7 @@ namespace HyperRTS.Simulation.Squads
                 ref Pace pace, in Velocity velocity)
             {
                 var crewing = Deployable.IsEmplaced(Deployables, entity);
-                if (Orders.HasEnabled(entity) && Orders[entity].Value.Type == OrderType.Retreat)
+                if (ActiveOrder.Current(Orders, entity).Type == OrderType.Retreat)
                 {
                     suppression.Clear();
                     pace = Rules.RetreatPace;

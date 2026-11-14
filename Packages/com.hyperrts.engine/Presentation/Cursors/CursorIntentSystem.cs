@@ -22,6 +22,7 @@ namespace HyperRTS.Presentation.Cursors
     public partial struct CursorIntentSystem : ISystem
     {
         private OrderResolver _resolver;
+        private OrderReader _orders;
         private TargetQueries _targetQueries;
         private EntityQuery _selected;
         private EntityQuery _localPlayer;
@@ -30,6 +31,7 @@ namespace HyperRTS.Presentation.Cursors
         public void OnCreate(ref SystemState state)
         {
             _resolver = new OrderResolver(ref state);
+            _orders = new OrderReader(ref state);
             _targetQueries = TargetQueries.Create(ref state);
             _selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner>().WithNone<Dead>().Build();
             _localPlayer = SystemAPI.QueryBuilder().WithAll<LocalPlayer, Player>().Build();
@@ -40,6 +42,7 @@ namespace HyperRTS.Presentation.Cursors
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _orders.Update(ref state);
             SystemAPI.SetSingleton(new CursorIntent { Kind = Decide(ref state) });
         }
 
@@ -95,7 +98,7 @@ namespace HyperRTS.Presentation.Cursors
                 }
 
                 producers |= SystemAPI.HasComponent<Producer>(entity);
-                if (!TakesOrders(ref state, entity))
+                if (!_orders.CanReceiveOrders(entity))
                 {
                     continue;
                 }
@@ -111,16 +114,6 @@ namespace HyperRTS.Presentation.Cursors
             }
 
             return Settle(best, producers, moves, selectable);
-        }
-
-        private bool TakesOrders(ref SystemState state, Entity entity)
-        {
-            if (!SystemAPI.HasComponent<ActiveOrder>(entity))
-            {
-                return false;
-            }
-
-            return !SystemAPI.GetComponentLookup<Inside>(true).HasEnabled(entity);
         }
 
         // Clicking a selectable entity that no unit acts on selects it, and producers alone set their rally point.

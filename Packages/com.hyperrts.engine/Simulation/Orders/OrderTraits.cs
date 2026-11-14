@@ -11,9 +11,6 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Combat auto-acquires targets and fights on the way.</summary>
         EngagesWhileMoving = 1,
 
-        /// <summary>Attack-moves toward <see cref="Order.Position"/>, which units head back to after each fight.</summary>
-        AttackMove = 2,
-
         /// <summary>A group given the order spreads into formation slots around <see cref="Order.Position"/>.</summary>
         Formation = 4,
 

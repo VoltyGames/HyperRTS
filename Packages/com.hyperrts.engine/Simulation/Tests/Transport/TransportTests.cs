@@ -107,15 +107,15 @@ namespace HyperRTS.Simulation.Tests.Transport
         public void Passengers_RideAlong_AndIgnoreOrders()
         {
             var truck = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 5f, Radius = 1f });
-            var writer = World.Writer(truck);
-            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+            TransportSetup.AddContainer(World.Writer(truck), new Container { Capacity = 4, MaxPassengerSize = 1 });
             var rider = Passenger(new float3(4f, 0f, 0f));
             World.Enter(rider, truck);
             World.Run(2f);
             Assert.IsTrue(World.IsInside(rider));
 
             World.Command(1, new PlayerCommand { Type = CommandType.Move, Unit = truck, Position = new float3(30f, 0f, 0f) });
-            World.Command(1, new PlayerCommand { Type = CommandType.Move, Unit = rider, Position = new float3(-30f, 0f, 0f) });
+            World.Issue(rider, new Order { Type = OrderType.Move, Position = new float3(-30f, 0f, 0f) });
+            Assert.IsFalse(World.IsEnabled<ActiveOrder>(rider));
             World.Run(8f);
 
             var truckPosition = World.Get<LocalTransform>(truck).Position;

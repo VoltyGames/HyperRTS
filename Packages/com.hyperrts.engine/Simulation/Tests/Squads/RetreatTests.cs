@@ -53,6 +53,24 @@ namespace HyperRTS.Simulation.Tests.Squads
         }
 
         [Test]
+        public void Retreat_RunsAShiftQueuedOrderOnArrival()
+        {
+            var squad = Squad(float3.zero);
+            Point(1, new float3(30f, 0f, 0f));
+            Retreat(squad);
+            World.Tick(frames: 3);
+            World.Command(1, new PlayerCommand
+            {
+                Type = CommandType.Move, Unit = squad, Position = new float3(30f, 0f, 20f), Queue = true,
+            });
+            World.Tick(frames: 3);
+            Assert.AreEqual(OrderType.Retreat, World.Get<ActiveOrder>(squad).Value.Type, "queued behind the retreat");
+
+            Assert.IsTrue(World.RunUntil(() => World.Get<ActiveOrder>(squad).Value.Type == OrderType.Move, 15f));
+            Assert.That(X(squad), Is.GreaterThan(30f - 8f - 1f), "after reaching the point");
+        }
+
+        [Test]
         public void Retreat_GoesToTheNearestFriendlyPoint()
         {
             var squad = Squad(float3.zero);

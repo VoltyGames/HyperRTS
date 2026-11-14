@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             public TargetLookup Targets;
             public OwnerRelations Relations;
 
-            private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> hasOrder, ref AttackTarget attack,
+            private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy, ref AttackTarget attack,
                 EnabledRefRW<AttackTarget> attacking, in Owner owner, in DynamicBuffer<WeaponMount> mounts)
             {
                 if (order.Value.Type != OrderType.Attack)
@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 if (!valid || primary.Ammo.Empty)
                 {
                     // EngagementSystem drops the stale AttackTarget and halts the chase.
-                    hasOrder.ValueRW = false;
+                    ActiveOrder.FinishLeavingMovement(busy);
                     return;
                 }
 

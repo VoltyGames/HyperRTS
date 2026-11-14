@@ -34,7 +34,7 @@ namespace HyperRTS.Simulation.Abilities
         {
             EventQueues.Create<AbilityEvents>(ref state, typeof(AbilityActivation));
             var selected = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Selected, Owner>().WithNone<Dead>().Build();
-            _commands = new CommandReader(ref state, TypeSet.Range(CommandType.UseAbility, CommandType.UsePower),
+            _commands = new CommandReader(ref state, TypeSet.Single(CommandType.UseAbility).With(CommandType.UsePower),
                 selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);
             _writer = new OrderWriter(ref state);
@@ -160,7 +160,7 @@ namespace HyperRTS.Simulation.Abilities
         {
             var abilities = SystemAPI.GetBuffer<Ability>(caster);
             var ability = abilities[index];
-            if (ability.Target != AbilityTarget.None && _writer.CanReceiveOrders(caster))
+            if (ability.Target != AbilityTarget.None && _writer.Reader.CanReceiveOrders(caster))
             {
                 var order = new Order
                 {

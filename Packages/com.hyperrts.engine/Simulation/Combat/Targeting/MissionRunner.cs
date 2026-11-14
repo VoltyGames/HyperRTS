@@ -81,7 +81,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         private void End()
         {
-            _busy.ValueRW = false;
+            // Fixed launchers have no destination, so the halt goes through UnitMove.
+            ActiveOrder.FinishLeavingMovement(_busy);
             _aiming.ValueRW = false;
             _moves.Halt();
         }

@@ -57,7 +57,7 @@ namespace HyperRTS.Simulation.Air
                 }
 
                 home.Recalled = true;
-                if (!Writer.IsExecuting(entity, OrderType.ReturnToBase))
+                if (Writer.Reader.Current(entity).Type != OrderType.ReturnToBase)
                 {
                     Writer.Issue(entity, new Order { Type = OrderType.ReturnToBase }, false);
                 }

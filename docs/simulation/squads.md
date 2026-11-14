@@ -60,8 +60,9 @@ always the sum of its living members'. A dead member keeps its place in the buff
 
 - **Retreat.** `OrderType.Retreat` and `CommandType.Retreat`. `RetreatSystem` sends each commanded or selected squad
   to the nearest allied working `RetreatPoint` (`RetreatPointAuthoring`: a radius) and does nothing when there is
-  none. While it runs the squad moves fast, cannot fire, takes reduced damage and loses its suppression. Any other
-  order replaces it. The AI, HUD and barks read the `Retreating` enable bit.
+  none. It owns the order: it walks the squad there, moves on to another point if its own is lost, and finishes on
+  reaching the point's radius, so Shift-queued orders run next. While it runs the squad moves fast, cannot fire,
+  takes reduced damage and loses its suppression. Any other unqueued order replaces it. The AI, HUD and barks read the `Retreating` enable bit.
 - **Reinforce.** `CommandType.Reinforce`. `ReinforceSystem` starts `Reinforcing` on a squad with a dead member, an
   allied working `ReinforcePoint` (`ReinforcePointAuthoring`: a range) in range and resources for one member. Each
   member costs its share of the squad's `ResourceCost`, paid when its `ReinforceTime` starts and refunded if the

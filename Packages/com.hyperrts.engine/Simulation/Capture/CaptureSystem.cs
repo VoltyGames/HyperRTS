@@ -85,7 +85,7 @@ namespace HyperRTS.Simulation.Capture
                 RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent)
             {
-                if (!busy.ValueRO || order.Value.Type != OrderType.Capture)
+                if (order.Value.Type != OrderType.Capture)
                 {
                     return;
                 }
@@ -111,7 +111,7 @@ namespace HyperRTS.Simulation.Capture
                 }
 
                 OwnerChanged.Transfer(Ecb, ref OwnerChanges, target, OwnerLookup[target].Value, owner);
-                busy.ValueRW = false;
+                ActiveOrder.Finish(busy, moving);
                 if (capturer.ConsumedOnCapture)
                 {
                     EntityParts.Destroy(entity, Groups, Children, Ecb);

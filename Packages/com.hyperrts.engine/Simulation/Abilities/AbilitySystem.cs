@@ -139,7 +139,7 @@ namespace HyperRTS.Simulation.Abilities
                 DynamicBuffer<Ability> abilities, DynamicBuffer<AbilityCooldown> states, ref MoveDestination destination,
                 EnabledRefRW<MoveDestination> moving, in LocalTransform transform)
             {
-                if (!busy.ValueRO || order.Value.Type != OrderType.UseAbility)
+                if (order.Value.Type != OrderType.UseAbility)
                 {
                     return;
                 }

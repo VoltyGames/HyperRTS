@@ -94,14 +94,21 @@ All player intent is a `PlayerCommand` on the player entity. Units carry orders.
 | `PlayerCommand`, `CommandType` | Player intent: Smart, Move, Attack, FireMission, Gather, Build, Produce, Capture, Enter, UseAbility, Surrender and more |
 | `Order`, `OrderType` | A unit's order. `Argument` carries extra data such as an ability id |
 | `OrderTraits`, `OrderTraitTable` | How an order runs. A singleton: fixed for engine types, registered for game ones |
-| `ActiveOrder`, `QueuedOrder` | The current order and the Shift queue. Disabled `ActiveOrder` means idle |
-| `OrderWriter` | `Issue(unit, order, queue)`, which rejects a game type with no registered traits, and `Stop(unit)` |
+| `ActiveOrder`, `QueuedOrder` | The current order and the Shift queue. Disabled `ActiveOrder` means idle; `ActiveOrder.Current` reads it, type None when idle |
+| `OrderWriter` | `Issue(unit, order, queue)`, which rejects a game type with no registered traits and ignores passengers, and `Stop(unit)` |
+| `OrderReader` | Read-only order queries (`CanReceiveOrders`, `Current`, `TryGetLastOrder`); `OrderWriter.Reader` gives the writer's |
+| `OrderHalt` | The one list of what a new order resets: movement, arrival, attack and move bookkeeping |
 | `CommandReader` | This frame's commands of some types from undefeated players, and the owned units each addresses |
 
 Games add command and order types from `GameFirst` (128) up and register each order type's traits in
 `OrderTraitTable`. The traits say whether the order spreads a group into a `Formation`, hands off to `MoveOrderSystem`
-(`MovesToPosition`), repeats (`Loops`), drives there backwards (`DrivesBackward`) and how combat treats it
-(`AttackMove`, `EngagesWhileMoving`). The engine runs Move, ReverseMove, AttackMove, Patrol and Escort. When the active order finishes, the next queued one starts.
+(`MovesToPosition`), repeats (`Loops`), drives there backwards (`DrivesBackward`) and whether combat picks targets on
+the way (`EngagesWhileMoving`). The engine runs Move, ReverseMove, AttackMove, Patrol and Escort.
+
+One system owns each order type and ends it with `ActiveOrder.Finish`, which also halts the walk, so the Shift queue
+survives and `OrderDispatchSystem` starts the next queued order. `FinishLeavingMovement` ends an order whose movement
+belongs to someone else, as an attack order hands the chase to combat. Only `OrderWriter.Stop` and a new unqueued
+order clear the queue.
 
 ## Commands
 

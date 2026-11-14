@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         public void Engage(in Attacker unit, ref CombatStance stance, ref AttackTarget attack,
             EnabledRefRW<AttackTarget> attacking)
         {
-            var order = CurrentOrder(unit.Entity);
+            var order = ActiveOrder.Current(Orders, unit.Entity);
             if (!attacking.ValueRO)
             {
                 KeepPost(order, ref stance, unit);
@@ -208,7 +208,5 @@ namespace HyperRTS.Simulation.Combat.Targeting
         {
             moves.StandOff(Targets.Position(target), position, gap + Targets.Radius(entity) + Targets.Radius(target));
         }
-
-        private Order CurrentOrder(Entity entity) => Orders.HasEnabled(entity) ? Orders[entity].Value : default;
     }
 }

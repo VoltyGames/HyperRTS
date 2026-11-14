@@ -107,8 +107,7 @@ namespace HyperRTS.Simulation.AI
         }
 
         private static bool IsRetreatOrdered(EntityManager entities, Entity squad) =>
-            entities.IsComponentEnabled<ActiveOrder>(squad)
-            && entities.GetComponentData<ActiveOrder>(squad).Value.Type == OrderType.Retreat;
+            ActiveOrder.Current(entities, squad).Type == OrderType.Retreat;
 
         private static bool IsRetreating(EntityManager entities, Entity squad) =>
             entities.HasComponent<Retreating>(squad) && entities.IsComponentEnabled<Retreating>(squad);

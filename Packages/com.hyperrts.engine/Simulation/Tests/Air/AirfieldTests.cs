@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using NUnit.Framework;
@@ -160,6 +161,23 @@ namespace HyperRTS.Simulation.Tests.Air
             Assert.AreEqual(second, World.Get<HomePad>(aircraft).Airfield);
             Assert.AreEqual(aircraft, World.Buffer<LandingPad>(second)[0].Reservation.Holder);
             Assert.Less(math.distance(World.GetPosition(aircraft).xz, new float2(25f, 0f)), 0.6f);
+        }
+
+        [Test]
+        public void LosingTheAirfield_OnTheWayHome_EndsTheReturnAndTheFlight()
+        {
+            var airfield = World.SpawnAirfield(1, float3.zero, Pad);
+            var aircraft = World.AddPadUser(World.SpawnAircraft(1, new float3(60f, 0f, 0f)));
+            World.Set(aircraft, new HomePad { Airfield = airfield, Pad = 0 });
+            World.ReturnToBase(aircraft);
+            World.Run(0.5f);
+            Assert.IsTrue(World.IsEnabled<MoveDestination>(aircraft), "flying home");
+
+            World.EntityManager.DestroyEntity(airfield);
+            World.Run(0.5f);
+
+            Assert.IsFalse(World.IsEnabled<ActiveOrder>(aircraft));
+            Assert.IsFalse(World.IsEnabled<MoveDestination>(aircraft), "not still flying to the lost pad");
         }
 
         [Test]

@@ -107,7 +107,7 @@ namespace HyperRTS.Simulation.Air
 
                 if (home.Airfield == Entity.Null)
                 {
-                    busy.ValueRW = false;
+                    ActiveOrder.Finish(busy, moving);
                     return;
                 }
 
