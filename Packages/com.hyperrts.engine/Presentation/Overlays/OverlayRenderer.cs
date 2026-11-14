@@ -9,8 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Draws ground markers, health bars, capture dials, garrison pips, the placement outline and rally points and the
-    /// cover preview with instanced meshes, and keeps the placement ghost's model copies.
+    /// Draws ground markers, health bars, capture dials, garrison pips, the placement outline and rally points, the
+    /// cover preview and fire mission ranges with instanced meshes, and keeps the placement ghost's model copies.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Overlay Renderer")]
     [Icon(HyperRTSIcons.OverlayRenderer)]
@@ -20,6 +20,9 @@ namespace HyperRTS.Presentation.Overlays
     {
         // Enough cells for a marker to follow the ground's bumps without costing much at 800 units.
         private const int MarkerGridCells = 12;
+
+        // Range rings span hundreds of metres, so their grid is finer to stay on the ground.
+        private const int RangeGridCells = 48;
 
         [SerializeField]
         [Tooltip("HyperRTS/Overlay material; each instance carries its own colour.")]
@@ -46,6 +49,7 @@ namespace HyperRTS.Presentation.Overlays
         private UnitOverlays _units;
         private BuildingOverlays _buildings;
         private CommandOverlays _commands;
+        private FireMissionOverlay _fireMissions;
         private CoverPreview _cover;
         private PlacementGhosts _ghosts;
 
@@ -70,10 +74,12 @@ namespace HyperRTS.Presentation.Overlays
             var dial = BuildingOverlays.DialSegment();
             var disc = OverlayMeshes.Disc(48);
             var grid = OverlayMeshes.Grid(MarkerGridCells);
-            _meshes = new[] { ring, billboard, flat, dial, disc, grid };
+            var rangeGrid = OverlayMeshes.Grid(RangeGridCells);
+            _meshes = new[] { ring, billboard, flat, dial, disc, grid, rangeGrid };
             _units = new UnitOverlays(grid, billboard, markerMaterial, barMaterial);
             _buildings = new BuildingOverlays(dial, disc, billboard);
             _commands = new CommandOverlays(ring, flat);
+            _fireMissions = new FireMissionOverlay(rangeGrid, markerMaterial);
             _cover = new CoverPreview(ring);
             _ghosts = new PlacementGhosts(ghostMaterial);
         }
@@ -91,12 +97,14 @@ namespace HyperRTS.Presentation.Overlays
             _units.Gather(view, style, HealthBars, Time.unscaledTime);
             _buildings.Gather(view, style, camera);
             _commands.Gather(view, style);
+            _fireMissions.Gather(view, style);
             _cover.Gather(view, style);
             _ghosts.Update(view, style);
             _units.Draw(style, UIScale, gameObject.layer);
             _buildings.Draw(_materials, gameObject.layer);
             _commands.Draw(_materials, gameObject.layer);
             _cover.Draw(_materials, gameObject.layer);
+            _fireMissions.Draw(gameObject.layer);
         }
 
         protected override void OnDestroyed()
@@ -109,6 +117,7 @@ namespace HyperRTS.Presentation.Overlays
             _units.Dispose();
             _buildings.Dispose();
             _commands.Dispose();
+            _fireMissions.Dispose();
             _cover.Dispose();
             _ghosts.Dispose();
             _materials?.Dispose();

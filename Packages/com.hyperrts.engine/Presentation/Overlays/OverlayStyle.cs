@@ -144,6 +144,23 @@ namespace HyperRTS.Presentation.Overlays
         [Tooltip("Rally point marker and line.")]
         public Color rally = new(0.3f, 0.8f, 1f, 0.85f);
 
+        [Header("Fire Missions")]
+        [Tooltip("Outline of each launcher's farthest reach while aiming a fire mission.")]
+        public Color fireReach = new(0.95f, 0.9f, 0.6f, 0.9f);
+
+        [Tooltip("Soft fill inside each launcher's minimum range, which it can't hit.")]
+        public Color fireDeadZone = new(0.9f, 0.3f, 0.22f, 1f);
+
+        [Tooltip("Circle the salvo covers at the pointer when a launcher can reach it from where it stands.")]
+        public Color fireReady = new(0.95f, 0.55f, 0.2f, 1f);
+
+        [Tooltip("Outline of the salvo circle when no launcher reaches the point and each would drive into range.")]
+        public Color fireMove = new(0.55f, 0.8f, 1f, 0.9f);
+
+        [Tooltip("Opacity of the fire mission fills at their edge.")]
+        [Range(0f, 1f)]
+        public float fireFill = 0.35f;
+
         /// <summary>Bumped on every inspector edit, so drawers that cache style values re-read them.</summary>
         public int Version { get; private set; }
 

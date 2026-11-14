@@ -31,6 +31,14 @@ namespace HyperRTS.Presentation.Overlays.Markers
             Floor = layer == NavLayer.Air ? NoFloor : Position.y - FloorDrop;
         }
 
+        /// <summary>A marker on the ground at <paramref name="point"/>, facing north.</summary>
+        public MarkerPose(float3 point)
+        {
+            Position = point;
+            Facing = quaternion.identity;
+            Floor = point.y - FloorDrop;
+        }
+
         /// <summary>Unit grid scaled to the footprint at the floor height; the shader drapes it on the ground.</summary>
         public Matrix4x4 Matrix(in MarkerFootprint footprint) => Matrix4x4.TRS(new Vector3(Position.x, Floor, Position.z), Facing,
             new Vector3(footprint.HalfSize.x * 2f, 1f, footprint.HalfSize.y * 2f));

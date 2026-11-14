@@ -48,6 +48,10 @@ page. Escape, a right click on the card or a new selection turns back a page.
 `hud-command--unaffordable`, `--locked`, `--maxed`, `--researched` or `--queued`. A refused button ignores presses but
 keeps its tooltip.
 
+`OrderCommands` shows plain orders when a selected unit can take them. The fire mission button appears for a unit with
+a `PointAim`, and a press or its hotkey sets a `PendingCommand` of `FireMission`, so the next ground click orders it at
+that point (shift keeps targeting, a right click or Escape cancels, as for an ability).
+
 ### Squads in the HUD
 
 One selected squad adds a `SquadView` to the selection panel: a card per soldier, the suppression bar and the retreat
@@ -74,5 +78,11 @@ the OS pointer stays.
   rectangle round a vehicle, a circle round infantry, corner brackets round a building. Colours follow the relation.
 - **Health bars** are screen-aligned quads of fixed pixel size. `OverlayRenderer.HealthBars` picks who shows one:
   everyone, damaged units, or only selected ones.
+- **`FireMissionOverlay`** draws while a fire mission is pending, through a `GroundMarkers` on a finer grid so
+  long rings follow the terrain: round each selected launcher an outline at its maximum range and a soft red disc
+  inside its minimum range, and at the pointer the circle one salvo covers (`FireMissionReach`: spread plus splash
+  radius). Range is measured flat from the unit's centre, as the mission order does. The circle is filled when some
+  launcher reaches the point from where it stands and only an outline when each would first drive into range.
+  Colours are the `fire*` fields of `OverlayStyle`.
 - **`CoverPreview`** rings the cover spots a move would use when squads are selected and the pointer is over open
   ground. It ignores craters, which are server only.

@@ -30,13 +30,18 @@ namespace HyperRTS.Presentation.Overlays.Markers
         {
             var line = selected ? style.markerLine : style.markerLine * HoverLine;
             var fill = selected ? style.markerFill : 0f;
+            Add(pose, footprint, color, new MarkerLook(line, style.markerFade, fill));
+        }
+
+        public void Add(in MarkerPose pose, in MarkerFootprint footprint, Color color, in MarkerLook look)
+        {
             var corner = Mathf.Max(footprint.CornerRadius, MinCorner);
             var signedCorner = footprint.Shape == MarkerShape.Brackets ? -corner : corner;
             _markers.Add(new MarkerInstance
             {
                 ObjectToWorld = pose.Matrix(footprint),
                 Tint = color,
-                Shape = new Vector4(line, style.markerFade, fill, signedCorner),
+                Shape = new Vector4(look.Line, look.Fade, look.Fill, signedCorner),
             });
         }
 

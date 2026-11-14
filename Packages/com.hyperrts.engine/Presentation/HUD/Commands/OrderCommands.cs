@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Transport;
@@ -14,7 +15,7 @@ namespace HyperRTS.Presentation.HUD.Commands
 {
     /// <summary>
     /// Buttons for plain orders when some owned entity can take them: return, unload, deploy, pack up, sell and
-    /// reverse move, and a stance each for armed units with the one they all share highlighted.
+    /// reverse move and fire mission, and a stance each for armed units with the one they all share highlighted.
     /// </summary>
     public sealed class OrderCommands : ICommandSource
     {
@@ -24,7 +25,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         private static readonly (CommandType Order, int Argument)[] Plain =
         {
             (CommandType.ReturnToBase, 0), (CommandType.Unload, -1), (CommandType.Deploy, 0),
-            (CommandType.PackUp, 0), (CommandType.Sell, 0), (CommandType.ReverseMove, 0),
+            (CommandType.PackUp, 0), (CommandType.Sell, 0), (CommandType.ReverseMove, 0), (CommandType.FireMission, 0),
         };
 
         private readonly CommandKit _kit;
@@ -101,7 +102,7 @@ namespace HyperRTS.Presentation.HUD.Commands
         // An order that needs a place waits for the next world click; the rest go at once.
         private static void Press(HUDContext context, CommandType order, int argument)
         {
-            if (order == CommandType.ReverseMove)
+            if (order is CommandType.ReverseMove or CommandType.FireMission)
             {
                 context.BeginTargeting(order, argument);
                 return;
@@ -117,6 +118,7 @@ namespace HyperRTS.Presentation.HUD.Commands
             CommandType.Deploy or CommandType.PackUp => entityManager.HasComponent<Deployable>(entity),
             CommandType.Sell => BuildingRules.IsSellable(entityManager, entity),
             CommandType.SetStance => entityManager.HasComponent<CombatStance>(entity),
+            CommandType.FireMission => entityManager.HasComponent<PointAim>(entity),
             CommandType.ReverseMove => entityManager.HasComponent<NavAgent>(entity) &&
                                        entityManager.GetComponentData<NavAgent>(entity).CanReverse,
             _ => false,
