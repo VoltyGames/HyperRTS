@@ -8,8 +8,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Deploy
 {
     /// <summary>
-    /// A unit that must deploy before its <see cref="Weapon.NeedsDeploy"/> weapons fire, and can't move until it packs
-    /// up again. Replicated so client machines can follow <see cref="Progress"/>.
+    /// A unit that must deploy before its <see cref="Weapon.NeedsDeploy"/> weapons fire, and packs up again before it
+    /// moves. Replicated so client machines can follow <see cref="Progress"/>.
     /// </summary>
     public struct Deployable : IComponentData
     {

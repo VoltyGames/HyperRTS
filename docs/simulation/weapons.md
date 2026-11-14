@@ -33,8 +33,9 @@ there. A squad's volley counts one shot on the pose and plays one cue.
 
 `DeployableAuthoring` makes a unit deploy before its `needsDeploy` weapons fire. Deploy halts it and clears its
 orders, `Deployable.Progress` runs 0 to 1 over `deployTime`, and Pack Up reverses it over `packUpTime`. While deploying,
-deployed or packing up the unit is rooted: `OrderResolver` refuses every order but Attack, and `EngagementSystem`
-fights it like a building. Until deployed, its weapons keep the turret centred and an interceptor does not engage.
+deployed or packing up the unit stands: `EngagementSystem` fights it like a building and it holds its ground for
+allied movers. An order to go elsewhere needs no Pack Up first: `DeployHoldSystem` packs the unit up when a move is
+asked of it and holds the move until it is packed. Until deployed, its weapons keep the turret centred and an interceptor does not engage.
 `WeaponRule` flags a `needsDeploy` weapon on a unit without a `Deployable`. A `Deployed` machine follows the progress
 ([animation](../presentation/animation.md#machines)). The skirmish AI deploys a unit holding a target and packs up one with nothing to
 shoot.

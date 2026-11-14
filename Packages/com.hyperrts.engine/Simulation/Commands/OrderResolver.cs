@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
-using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
@@ -17,8 +16,7 @@ namespace HyperRTS.Simulation.Commands
     /// <summary>
     /// Picks the order a unit gets for a command from its capabilities and the target: Smart tries the unit's
     /// <see cref="SmartOrderRule"/>s, then attack, gather, build, repair, enter, capture, land or move; explicit
-    /// commands fall back to Move when the unit can't comply. A rooted <see cref="Deployable"/> takes only attacks, so
-    /// the player must pack it up first.
+    /// commands fall back to Move when the unit can't comply.
     /// </summary>
     public struct OrderResolver
     {
@@ -33,7 +31,6 @@ namespace HyperRTS.Simulation.Commands
         private ComponentLookup<Capturer> _capturers;
         private ComponentLookup<UnitTag> _units;
         private ComponentLookup<HomePad> _padUsers;
-        private ComponentLookup<Deployable> _deployables;
         private BufferLookup<LandingPad> _pads;
         private CaptureLookup _capture;
         private Boarding _boarding;
@@ -53,7 +50,6 @@ namespace HyperRTS.Simulation.Commands
             _capturers = state.GetComponentLookup<Capturer>(true);
             _units = state.GetComponentLookup<UnitTag>(true);
             _padUsers = state.GetComponentLookup<HomePad>(true);
-            _deployables = state.GetComponentLookup<Deployable>(true);
             _pads = state.GetBufferLookup<LandingPad>(true);
             _capture = new CaptureLookup(ref state);
             _boarding = new Boarding(ref state, true);
@@ -75,7 +71,6 @@ namespace HyperRTS.Simulation.Commands
             _capturers.Update(ref state);
             _units.Update(ref state);
             _padUsers.Update(ref state);
-            _deployables.Update(ref state);
             _pads.Update(ref state);
             _capture.Update(ref state);
             _boarding.Update(ref state);
@@ -86,10 +81,9 @@ namespace HyperRTS.Simulation.Commands
         /// <summary>The order type the unit gets; callers fill in where and what it acts on.</summary>
         public Order Resolve(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
         {
-            var order = command == CommandType.Smart && TryRule(unit, target, relations, out var ruled)
+            return command == CommandType.Smart && TryRule(unit, target, relations, out var ruled)
                 ? ruled
                 : new Order { Type = ResolveType(command, unit, target, relations) };
-            return Refused(unit, order) ? default : order;
         }
 
         private OrderType ResolveType(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
@@ -185,10 +179,6 @@ namespace HyperRTS.Simulation.Commands
 
             return false;
         }
-
-        /// <summary>A rooted unit refuses every order but an attack, which it fires from where it stands.</summary>
-        private bool Refused(Entity unit, in Order order) =>
-            order.Type != OrderType.Attack && Deployable.IsImmobile(_deployables, unit);
 
         private bool CanEscort(Entity unit, Entity target, in OwnerRelations relations)
         {

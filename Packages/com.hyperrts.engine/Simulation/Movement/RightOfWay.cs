@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
@@ -40,6 +41,7 @@ namespace HyperRTS.Simulation.Movement
         [ReadOnly] private ComponentLookup<AttackTarget> _attacks;
         [ReadOnly] private ComponentLookup<CombatStance> _stances;
         [ReadOnly] private ComponentLookup<Locomotion> _handling;
+        [ReadOnly] private ComponentLookup<Deployable> _deployables;
         [ReadOnly] private ComponentLookup<Crusher> _crushers;
         [ReadOnly] private ComponentLookup<Crushable> _crushables;
         private OwnerRelations _relations;
@@ -50,6 +52,7 @@ namespace HyperRTS.Simulation.Movement
             _attacks = state.GetComponentLookup<AttackTarget>(true);
             _stances = state.GetComponentLookup<CombatStance>(true);
             _handling = state.GetComponentLookup<Locomotion>(true);
+            _deployables = state.GetComponentLookup<Deployable>(true);
             _crushers = state.GetComponentLookup<Crusher>(true);
             _crushables = state.GetComponentLookup<Crushable>(true);
             _relations = default;
@@ -61,6 +64,7 @@ namespace HyperRTS.Simulation.Movement
             _attacks.Update(ref state);
             _stances.Update(ref state);
             _handling.Update(ref state);
+            _deployables.Update(ref state);
             _crushers.Update(ref state);
             _crushables.Update(ref state);
             _relations = relations;
@@ -99,7 +103,7 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>
         /// Whether <paramref name="unit"/> gives way to <paramref name="mover"/> of its team. A foot unit always does
         /// for a vehicle, and a vehicle never does for a foot unit; otherwise only a parked idle unit does, as an
-        /// order, a target or Hold Position holds its ground.
+        /// order, a target, Hold Position or being deployed holds its ground.
         /// </summary>
         public readonly bool Yields(in SpatialEntry unit, in SpatialEntry mover)
         {
@@ -261,6 +265,11 @@ namespace HyperRTS.Simulation.Movement
         private readonly bool IsIdle(Entity unit)
         {
             if (_orders.HasEnabled(unit) || _attacks.HasEnabled(unit))
+            {
+                return false;
+            }
+
+            if (Deployable.IsImmobile(_deployables, unit))
             {
                 return false;
             }

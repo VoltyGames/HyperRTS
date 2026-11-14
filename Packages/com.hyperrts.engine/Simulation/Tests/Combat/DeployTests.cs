@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Entities;
@@ -9,7 +10,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Combat
 {
     /// <summary>
-    /// Deployable units: deploy and pack-up timing, fire and turret held while packed, moves refused while rooted.
+    /// Deployable units: deploy and pack-up timing, fire and turret held while packed, moves that wait for packing up.
     /// </summary>
     public class DeployTests : SimulationFixture
     {
@@ -49,19 +50,23 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
-        public void Deployed_RefusesMoves()
+        public void MoveOrderOnADeployedUnit_PacksItUp_ThenItMoves()
         {
             var launcher = Deployed();
+            var goal = new float3(10f, 0f, 0f);
 
-            Command(CommandType.Move, launcher, new float3(10f, 0f, 0f));
-            World.Run(1f);
+            Command(CommandType.Move, launcher, goal);
+            World.Run(PackUpTime - 0.2f);
+            Assert.AreEqual(DeployState.Packing, State(launcher), "the order packs it up");
+            Assert.AreEqual(0f, World.Get<LocalTransform>(launcher).Position.x, 1e-3f, "and it stands until packed");
 
-            Assert.IsFalse(World.IsEnabled<ActiveOrder>(launcher));
-            Assert.AreEqual(0f, World.Get<LocalTransform>(launcher).Position.x, 1e-3f);
+            Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<ActiveOrder>(launcher), 10f), "then it drives there");
+            Assert.AreEqual(DeployState.Packed, State(launcher));
+            Assert.Less(math.distance(World.Get<LocalTransform>(launcher).Position, goal), 1f);
         }
 
         [Test]
-        public void PackUp_TakesThePackUpTime_ThenMoves()
+        public void PackUp_TakesThePackUpTime_AndAMoveOrderedMeanwhileWaitsForIt()
         {
             var launcher = Deployed();
 
@@ -69,13 +74,25 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Run(PackUpTime - 0.2f);
             Assert.AreEqual(DeployState.Packing, State(launcher));
             Command(CommandType.Move, launcher, new float3(10f, 0f, 0f));
-            World.Run(0.3f);
-            Assert.AreEqual(DeployState.Packed, State(launcher));
+            World.Tick();
             Assert.AreEqual(0f, World.Get<LocalTransform>(launcher).Position.x, 1e-3f, "still packing when ordered");
 
-            Command(CommandType.Move, launcher, new float3(10f, 0f, 0f));
-            World.Run(1f);
-            Assert.Greater(World.Get<LocalTransform>(launcher).Position.x, 1f);
+            Assert.IsTrue(World.RunUntil(() => World.Get<LocalTransform>(launcher).Position.x > 1f, 5f),
+                "the order holds and it sets off once packed");
+            Assert.AreEqual(DeployState.Packed, State(launcher));
+        }
+
+        [Test]
+        public void DeployedUnit_HoldsItsGround_WhenAnAllyDrivesAtIt()
+        {
+            var launcher = Deployed();
+            var ally = World.SpawnUnit(1, new float3(-6f, 0f, 0f));
+
+            World.MoveTo(ally, new float3(6f, 0f, 0f));
+            Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<MoveDestination>(ally), 20f), "the ally gets by");
+
+            Assert.AreEqual(0f, math.length(World.Get<LocalTransform>(launcher).Position.xz), 1e-3f, "unmoved");
+            Assert.AreEqual(DeployState.Deployed, State(launcher));
         }
 
         [Test]
