@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
-using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Movement;
 using Unity.Entities;
 using UnityEngine;
@@ -247,7 +246,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     TiltRest = tilt.localRotation,
                     Footprint = authoring.footprint,
                     Aircraft = aircraft,
-                    CruiseSpeed = aircraft ? GetComponent<UnitAuthoring>().moveSpeed : 0f,
                     // Aircraft lean instead, so their zero springs never sway or kick.
                     Suspension = aircraft ? default : authoring.Suspension(),
                 };

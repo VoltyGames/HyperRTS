@@ -88,7 +88,9 @@ namespace HyperRTS.Simulation.Air
             var top = frame.Driver.TopSpeed;
             if (!chunk.Moving(index).ValueRO)
             {
-                return Loiter(chunk.Transforms[index].Rotation, flight, landed, top * Movers.DeltaTime) * top;
+                // One that hovers, or is down, stays put; one that can't keeps flying its circle.
+                var loiters = flight.LoiterRadius > 0f && !landed;
+                return loiters ? flight.Loiter(chunk.Transforms[index].Rotation, top * Movers.DeltaTime) * top : 0f;
             }
 
             // The nose is flown below, so the driver steers as if already lined up and never stands to pivot.
@@ -119,13 +121,8 @@ namespace HyperRTS.Simulation.Air
         private readonly float Climb(float3 position, in Flight flight, ref FlightState state, bool landed)
         {
             var surface = Grid.SurfaceHeight(position);
-            if (landed)
-            {
-                return state.Climb(position.y, surface, surface, flight, Movers.DeltaTime);
-            }
-
             var ahead = position + new float3(state.Velocity.x, 0f, state.Velocity.y) * LookAheadSeconds;
-            var goal = math.max(surface, Grid.SurfaceHeight(ahead)) + flight.Altitude;
+            var goal = landed ? surface : math.max(surface, Grid.SurfaceHeight(ahead)) + flight.Altitude;
             return state.Climb(position.y, goal, surface, flight, Movers.DeltaTime);
         }
 
@@ -138,17 +135,6 @@ namespace HyperRTS.Simulation.Air
 
             var nose = flight.Yaw(facing, math.normalize(toward), Movers.DeltaTime);
             transform.Rotation = quaternion.LookRotationSafe(new float3(nose.x, 0f, nose.y), math.up());
-        }
-
-        /// <summary>An idle aircraft that can't hover keeps flying a circle; one that can stays put.</summary>
-        private static float2 Loiter(quaternion rotation, in Flight flight, bool landed, float maxStep)
-        {
-            if (flight.LoiterRadius <= 0f || landed)
-            {
-                return float2.zero;
-            }
-
-            return flight.Loiter(rotation, maxStep);
         }
     }
 }

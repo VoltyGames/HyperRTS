@@ -23,6 +23,13 @@ namespace HyperRTS.Simulation.Common.Geometry
         public static float2 Rotate(float2 direction, float sin, float cos) =>
             new(direction.x * cos - direction.y * sin, direction.x * sin + direction.y * cos);
 
+        /// <summary><paramref name="from"/> turned toward <paramref name="to"/> by at most <paramref name="maxAngle"/> radians.</summary>
+        public static float2 TurnToward(float2 from, float2 to, float maxAngle)
+        {
+            var turn = math.clamp(SignedAngle(from, to), -maxAngle, maxAngle);
+            return math.normalizesafe(Rotate(from, turn), from);
+        }
+
         /// <summary>Zero when the segment touches the box; else the gap, from an end or a box corner.</summary>
         public static float SegmentRectDistance(float2 a, float2 b, float2 low, float2 high)
         {

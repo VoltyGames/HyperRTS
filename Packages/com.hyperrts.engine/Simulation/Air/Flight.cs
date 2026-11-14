@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Geometry;
+using HyperRTS.Simulation.Death;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -31,18 +32,12 @@ namespace HyperRTS.Simulation.Air
         /// <summary>Radians per second its nose turns at most.</summary>
         public float YawRate;
 
-        private const float Gravity = 9.81f;
-
         /// <summary>Metres per second squared it can pull across its course, banked as far as it may.</summary>
-        public readonly float TurnAcceleration => Gravity * math.tan(MaxBank);
+        public readonly float TurnAcceleration => FallingRemains.Gravity * math.tan(MaxBank);
 
         /// <summary>Its nose after one frame of turning toward <paramref name="toward"/> at its yaw rate.</summary>
-        public readonly float2 Yaw(float2 facing, float2 toward, float deltaTime)
-        {
-            var limit = YawRate * deltaTime;
-            var turn = math.clamp(Planar.SignedAngle(facing, toward), -limit, limit);
-            return math.normalizesafe(Planar.Rotate(facing, turn), facing);
-        }
+        public readonly float2 Yaw(float2 facing, float2 toward, float deltaTime) =>
+            Planar.TurnToward(facing, toward, YawRate * deltaTime);
 
         /// <summary>XZ heading after flying <paramref name="distance"/> round its loiter circle.</summary>
         public readonly float2 Loiter(quaternion rotation, float distance)

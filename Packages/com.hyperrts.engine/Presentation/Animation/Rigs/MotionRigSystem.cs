@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
@@ -41,6 +42,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Flights = SystemAPI.GetComponentLookup<Flight>(true),
                 Docks = SystemAPI.GetComponentLookup<Docked>(true),
+                Speeds = SystemAPI.GetComponentLookup<MovementSpeed>(true),
             }.ScheduleParallel(state.Dependency);
 
             // Parts and track meshes pull their pose from their rig, so every job writes only the entity it runs on.
@@ -70,6 +72,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             [ReadOnly] public ComponentLookup<Docked> Docks;
+            [ReadOnly] public ComponentLookup<MovementSpeed> Speeds;
 
             // Roots are top-level, so LocalTransform is this frame's pose.
             private void Execute(Entity entity, ref MotionRig rig, DynamicBuffer<MotionRigPart> parts, in LocalTransform place)
@@ -84,7 +87,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 rig.LastPosition = place.Position;
                 rig.LastVelocity = velocity;
 
-                Tilt(ref rig, heading, velocity, acceleration);
+                Tilt(entity, ref rig, heading, velocity, acceleration);
                 AdvanceParts(entity, ref rig, parts, heading, rolled);
             }
 
@@ -113,7 +116,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 }
             }
 
-            private void Tilt(ref MotionRig rig, in RigHeading heading, float3 velocity, float3 acceleration)
+            private void Tilt(Entity entity, ref MotionRig rig, in RigHeading heading, float3 velocity, float3 acceleration)
             {
                 if (rig.TiltRoot == Entity.Null)
                 {
@@ -122,7 +125,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
                 if (rig.Aircraft)
                 {
-                    rig.Lean(velocity, acceleration, heading.Forward, heading.Right, DeltaTime);
+                    rig.Lean(velocity, acceleration, heading.Forward, heading.Right, Speeds[entity].Value, DeltaTime);
                 }
                 else
                 {

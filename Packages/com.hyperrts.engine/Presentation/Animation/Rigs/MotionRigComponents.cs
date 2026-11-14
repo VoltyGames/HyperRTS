@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Geometry;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -22,8 +23,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
         public const float CruisePitch = 7f * math.TORADIANS;
         public const float MaxLean = 30f * math.TORADIANS;
 
-        private const float Gravity = 9.81f;
-
         /// <summary>The child that pitches and rolls, or null for none.</summary>
         public Entity TiltRoot;
 
@@ -40,9 +39,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>Leans from acceleration instead of following the ground; baked from the unit's Flight.</summary>
         public bool Aircraft;
-
-        /// <summary>An aircraft's top speed, at which it holds <see cref="CruisePitch"/>.</summary>
-        public float CruiseSpeed;
 
         /// <summary>Frames seen, up to 2: velocity needs one before it, acceleration two.</summary>
         public byte Frames;
@@ -75,7 +71,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>Eases <see cref="Tilt"/> toward <paramref name="target"/>.</summary>
         public void SmoothTilt(float2 target, float deltaTime) =>
-            Tilt = math.lerp(Tilt, target, 1f - math.exp(-deltaTime / TiltTime));
+            Tilt = math.lerp(Tilt, target, Ease(deltaTime, TiltTime));
 
         /// <summary>Nose-up pitch and right-side-up roll of the ground under the footprint.</summary>
         public readonly float2 GroundTilt(in TerrainHeight terrain, float3 position, float3 forward, float3 right)
@@ -117,17 +113,23 @@ namespace HyperRTS.Presentation.Animation.Rigs
         // Below this the turn over the distance is noise.
         private const float MinRoll = 0.01f;
 
+        /// <summary>Share of the gap an ease over <paramref name="time"/> seconds closes in one frame.</summary>
+        internal static float Ease(float deltaTime, float time) => 1f - math.exp(-deltaTime / time);
+
         /// <summary>
         /// Eases an aircraft's <see cref="Tilt"/> toward its lean: nose down with forward speed and as it speeds up,
-        /// nose up as it brakes, banked into the turn as its acceleration tips the lift.
+        /// nose up as it brakes, banked into the turn as its acceleration tips the lift. It holds
+        /// <see cref="CruisePitch"/> at <paramref name="topSpeed"/>.
         /// </summary>
-        public void Lean(float3 velocity, float3 acceleration, float3 forward, float3 right, float deltaTime)
+        public void Lean(float3 velocity, float3 acceleration, float3 forward, float3 right, float topSpeed,
+            float deltaTime)
         {
-            var cruise = math.saturate(math.dot(velocity, forward) / math.max(CruiseSpeed, 1e-3f));
-            var pitch = -math.atan(math.dot(acceleration, forward) / Gravity) - CruisePitch * cruise * cruise;
-            var roll = -math.atan(math.dot(acceleration, right) / Gravity);
+            var cruise = math.saturate(math.dot(velocity, forward) / math.max(topSpeed, 1e-3f));
+            var pitch = -math.atan(math.dot(acceleration, forward) / FallingRemains.Gravity)
+                - CruisePitch * cruise * cruise;
+            var roll = -math.atan(math.dot(acceleration, right) / FallingRemains.Gravity);
             // Clamped after easing, so a one-frame spike of measured acceleration counts for its share, not more.
-            var eased = math.lerp(Tilt, new float2(pitch, roll), 1f - math.exp(-deltaTime / LeanTime));
+            var eased = math.lerp(Tilt, new float2(pitch, roll), Ease(deltaTime, LeanTime));
             Tilt = math.clamp(eased, -MaxLean, MaxLean);
         }
     }
@@ -201,10 +203,10 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>Eases the shortest way toward the simulated <paramref name="yaw"/>, which already turns at the weapon's rate.</summary>
         public void Traverse(float yaw, float deltaTime) =>
-            Angle = HeadingByte.Wrap(Angle + HeadingByte.Wrap(yaw - Angle) * Ease(deltaTime, FollowTime));
+            Angle = HeadingByte.Wrap(Angle + HeadingByte.Wrap(yaw - Angle) * MotionRig.Ease(deltaTime, FollowTime));
 
         /// <summary>Eases toward the simulated <paramref name="pitch"/>, which already keeps the weapon's limits.</summary>
-        public void Elevate(float pitch, float deltaTime) => Angle += (pitch - Angle) * Ease(deltaTime, FollowTime);
+        public void Elevate(float pitch, float deltaTime) => Angle += (pitch - Angle) * MotionRig.Ease(deltaTime, FollowTime);
 
         /// <summary>Kicks back the full distance when the shot count changes, then eases back over <see cref="Time"/>. True on a shot.</summary>
         public bool Recoil(byte shots, float deltaTime)
@@ -238,13 +240,13 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>Eases the lift toward <paramref name="wanted"/> metres, held to the wheel's travel.</summary>
         public void FollowGround(float wanted, float deltaTime) =>
-            Lift += (math.clamp(wanted, -Travel, Travel) - Lift) * Ease(deltaTime, LiftTime);
+            Lift += (math.clamp(wanted, -Travel, Travel) - Lift) * MotionRig.Ease(deltaTime, LiftTime);
 
         public void Roll(float distance) => Angle = HeadingByte.Wrap(Angle + distance / Size);
 
         /// <summary>Eases a steering wheel toward the angle that rolls it round the rear axle's arc.</summary>
         public void Steer(float curvature, float deltaTime) =>
-            Amount += (math.atan(RearAxleDistance * curvature) - Amount) * Ease(deltaTime, FollowTime);
+            Amount += (math.atan(RearAxleDistance * curvature) - Amount) * MotionRig.Ease(deltaTime, FollowTime);
 
         /// <summary>
         /// Swings a trailer after the hull, as a towed trailer on a hitch over the rear axle does: its angle to the hull
@@ -261,7 +263,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
             Angle = HeadingByte.Wrap(Angle + Rate * Amount * deltaTime);
         }
 
-        private static float Ease(float deltaTime, float time) => 1f - math.exp(-deltaTime / time);
     }
 
     /// <summary>

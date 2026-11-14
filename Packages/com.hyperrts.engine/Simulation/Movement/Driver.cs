@@ -123,11 +123,8 @@ namespace HyperRTS.Simulation.Movement
         }
 
         /// <summary>The standing hull's facing turned toward <paramref name="direction"/> at its turn rate, as when aiming.</summary>
-        public readonly float2 TurnToward(float2 direction)
-        {
-            var limit = Handling.TurnRate * DeltaTime;
-            return math.normalize(Planar.Rotate(Facing, math.clamp(Planar.SignedAngle(Facing, direction), -limit, limit)));
-        }
+        public readonly float2 TurnToward(float2 direction) =>
+            Planar.TurnToward(Facing, direction, Handling.TurnRate * DeltaTime);
 
         /// <summary>
         /// A parked unit with no other turn turns its hull to a hull-fixed weapon's target at its turn rate. The aim

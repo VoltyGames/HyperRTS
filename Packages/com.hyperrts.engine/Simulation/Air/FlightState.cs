@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -22,7 +23,7 @@ namespace HyperRTS.Simulation.Air
         public void Accelerate(in Flight flight, float2 wanted, float topSpeed, float deltaTime)
         {
             var along = math.normalizesafe(Velocity, math.normalizesafe(wanted));
-            var across = new float2(-along.y, along.x);
+            var across = Planar.Left(along);
             var change = wanted - Velocity;
             var forward = math.clamp(math.dot(change, along), -flight.Braking * deltaTime, flight.Acceleration * deltaTime);
             var turn = flight.TurnAcceleration * deltaTime;
