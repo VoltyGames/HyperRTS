@@ -51,7 +51,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     // The primary tracks the attack target while it closes in; extra weapons and interceptors only what they shoot.
                     var tracksAttack = i == 0 && !mount.Weapon.ShootsProjectiles;
                     var target = tracksAttack ? primary : mount.Target;
-                    Pose(poses, i, hull, mount.Weapon, Aimed(entity, mount.Weapon, target));
+                    var rest = Deployable.IsDeployed(Deployables, entity) ? mount.Weapon.Aim.DeployedPitch : 0f;
+                    Pose(poses, i, hull, mount.Weapon, Aimed(entity, mount.Weapon, target), rest);
                 }
             }
 
@@ -59,12 +60,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
             private Entity Aimed(Entity unit, in Weapon weapon, Entity target) =>
                 Deployable.Holds(Deployables, unit, weapon.NeedsDeploy) ? Entity.Null : target;
 
+            // With nothing to aim at it rests straight ahead at restPitch: level, or raised on a deployed launcher.
             private void Pose(DynamicBuffer<WeaponPose> poses, int index, in LocalTransform hull, in Weapon weapon,
-                Entity target)
+                Entity target, float restPitch)
             {
                 var pose = poses[index];
-                // Authoring keeps level inside every pitch range, so rest is straight ahead and level.
-                var angles = float2.zero;
+                var angles = new float2(0f, restPitch);
                 if (Transforms.TryGetComponent(target, out var aimed))
                 {
                     angles = weapon.Aim.Angles(hull, pose, weapon.Aim.TargetPoint(aimed.Position));

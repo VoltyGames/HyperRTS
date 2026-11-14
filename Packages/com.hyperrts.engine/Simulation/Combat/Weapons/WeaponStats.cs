@@ -84,6 +84,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Range(0f, 90f)]
         public float maxElevation = 20f;
 
+        [Tooltip("Elevation in degrees it raises to once its Deployable unit has deployed, while it has nothing to aim at (a launcher held up to fire). It lowers as the unit packs up, within the limits above. 0 stays level.")]
+        [Range(0f, 90f)]
+        public float deployedElevation;
+
         [Tooltip("Degrees off target, per axis, a turret may fire at. A unit's hull-fixed weapon fires once the hull is this close.")]
         [Min(0.1f)]
         public float aimTolerance = 2f;
@@ -186,6 +190,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     ElevationRate = math.radians(elevationSpeed),
                     MinPitch = math.radians(minElevation),
                     MaxPitch = math.radians(maxElevation),
+                    DeployedPitch = math.radians(math.clamp(deployedElevation, minElevation, maxElevation)),
                     AimTolerance = math.radians(aimTolerance),
                     ProjectileHeight = projectileHeight,
                     Course = ShotCourse.From(trajectory),

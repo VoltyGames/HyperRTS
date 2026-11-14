@@ -93,6 +93,9 @@ namespace HyperRTS.Simulation.Combat.Deploy
             return Rotations.Facing(place.Rotation);
         }
 
+        public static bool IsDeployed(in ComponentLookup<Deployable> lookup, Entity unit) =>
+            lookup.TryGetComponent(unit, out var deployable) && deployable.Deployed;
+
         public static bool IsImmobile(in ComponentLookup<Deployable> lookup, Entity unit) =>
             lookup.TryGetComponent(unit, out var deployable) && deployable.Immobile;
 

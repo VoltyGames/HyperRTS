@@ -36,8 +36,10 @@ orders, `Deployable.Progress` runs 0 to 1 over `deployTime`, and Pack Up reverse
 deployed or packing up the unit stands: `EngagementSystem` fights it like a building and it holds its ground for
 allied movers. An order to go elsewhere needs no Pack Up first: `DeployHoldSystem` packs the unit up when a move is
 asked of it and holds the move until it is packed. Until deployed, its weapons keep the turret centred and an interceptor does not engage.
+Once deployed, a weapon with a `deployedElevation` raises to it while it has nothing to aim at (a launcher held up to
+fire) and lowers as the unit packs up; the Motion Rig poses its barrel, so no machine part may move that barrel too.
 `WeaponRule` flags a `needsDeploy` weapon on a unit without a `Deployable`. A `Deployed` machine follows the progress
-([animation](../presentation/animation.md#machines)). The skirmish AI deploys a unit holding a target and packs up one with nothing to
+for jacks and outriggers ([animation](../presentation/animation.md#machines)). The skirmish AI deploys a unit holding a target and packs up one with nothing to
 shoot.
 
 A `firingArc` (half angle, 0 for all round) restricts fire to a cone about `Deployable.DeployedHeading`, or the unit's

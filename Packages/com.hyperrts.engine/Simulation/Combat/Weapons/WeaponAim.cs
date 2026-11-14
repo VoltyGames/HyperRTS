@@ -30,6 +30,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public float MinPitch;
         public float MaxPitch;
 
+        /// <summary>Elevation in radians it holds while its unit is deployed and it has nothing to aim at.</summary>
+        public float DeployedPitch;
+
         /// <summary>Radians off target, per axis, a turret or a hull-fixed weapon's hull may fire at.</summary>
         public float AimTolerance;
 

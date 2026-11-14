@@ -10,7 +10,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Combat
 {
     /// <summary>
-    /// Deployable units: deploy and pack-up timing, fire and turret held while packed, moves that wait for packing up.
+    /// Deployable units: deploy and pack-up timing, fire and turret held while packed, launchers raised while deployed, moves that wait for packing up.
     /// </summary>
     public class DeployTests : SimulationFixture
     {
@@ -30,6 +30,24 @@ namespace HyperRTS.Simulation.Tests.Combat
             Command(CommandType.Deploy, launcher);
             World.Run(DeployTime + 0.5f);
             Assert.AreEqual(-0.5f * math.PI, Yaw(launcher), 0.05f, "deployed, it turns onto the target");
+        }
+
+        [Test]
+        public void IdleLauncher_RaisesToItsDeployedElevation_AndLowersAsItPacksUp()
+        {
+            var launcher = Launcher();
+            var weapon = World.Primary(launcher);
+            weapon.Aim.MaxPitch = math.radians(60f);
+            weapon.Aim.DeployedPitch = math.radians(40f);
+            World.SetPrimary(launcher, weapon);
+
+            Command(CommandType.Deploy, launcher);
+            World.Run(DeployTime + 1f);
+            Assert.AreEqual(math.radians(40f), Pitch(launcher), 0.02f, "deployed with nothing to aim at, it stands raised");
+
+            Command(CommandType.PackUp, launcher);
+            World.Run(PackUpTime + 1f);
+            Assert.AreEqual(0f, Pitch(launcher), 0.02f, "packed, it lies level again");
         }
 
         [Test]
@@ -194,5 +212,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         private DeployState State(Entity unit) => World.Get<Deployable>(unit).State;
 
         private float Yaw(Entity unit) => World.Buffer<WeaponPose>(unit)[0].YawAngle;
+
+        private float Pitch(Entity unit) => World.Buffer<WeaponPose>(unit)[0].PitchAngle;
     }
 }
