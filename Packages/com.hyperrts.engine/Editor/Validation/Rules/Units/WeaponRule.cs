@@ -35,7 +35,7 @@ namespace HyperRTS.Editor.Validation.Rules.Units
                 issues.Error(weapon, $"{label} has no range.");
             }
 
-            if (!slot.independent && !slot.stats.ShootsProjectiles && !Covers(weapon.stats.targets, slot.stats.targets))
+            if (!slot.independent && slot.stats.Role != WeaponRole.Interceptor && !Covers(weapon.stats.targets, slot.stats.targets))
             {
                 issues.Error(weapon, $"{label} hits {slot.stats.targets} but the primary only " +
                     $"{weapon.stats.targets}: make it independent.");
@@ -69,7 +69,7 @@ namespace HyperRTS.Editor.Validation.Rules.Units
                 issues.Error(weapon, $"{label} has extra muzzles but no first muzzle.");
             }
 
-            if (stats.ShootsProjectiles)
+            if (stats.Role == WeaponRole.Interceptor)
             {
                 CheckInterception(weapon, label, stats, issues);
             }
@@ -88,6 +88,11 @@ namespace HyperRTS.Editor.Validation.Rules.Units
             {
                 issues.Error(weapon, $"{label} hits projectiles and {stats.targets & ~WeaponTargets.Projectile}: " +
                     "an interceptor targets only Projectile.");
+            }
+
+            if (stats.firesOnOrder)
+            {
+                issues.Error(weapon, $"{label} hits projectiles and fires on order: an interceptor picks its own targets.");
             }
 
             if (stats.projectilePrefab != null)

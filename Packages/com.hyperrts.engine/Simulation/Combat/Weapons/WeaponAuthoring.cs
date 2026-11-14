@@ -45,7 +45,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public List<WeaponSlot> extraWeapons = new();
 
         /// <summary>A building never turns and an interceptor tracks shots in the air, so their weapons always aim a turret.</summary>
-        public bool AimsTurret => turreted || stats.ShootsProjectiles || TryGetComponent<BuildingAuthoring>(out _);
+        public bool AimsTurret => turreted || stats.Role == WeaponRole.Interceptor || TryGetComponent<BuildingAuthoring>(out _);
 
         /// <summary>Weapon mounts the primary and extra weapons take.</summary>
         public int WeaponCount => 1 + extraWeapons.Count;

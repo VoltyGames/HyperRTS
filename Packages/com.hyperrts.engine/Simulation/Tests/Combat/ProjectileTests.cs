@@ -252,8 +252,8 @@ namespace HyperRTS.Simulation.Tests.Combat
             {
                 Range = 20f,
                 Cooldown = interval,
-                SalvoSize = 1,
                 Targets = WeaponTargets.Projectile,
+                Role = WeaponRole.Interceptor,
                 InterceptKinds = ProjectileKind.Shell | ProjectileKind.Rocket | ProjectileKind.Missile,
                 KillChance = killChance,
                 Aim = new WeaponAim

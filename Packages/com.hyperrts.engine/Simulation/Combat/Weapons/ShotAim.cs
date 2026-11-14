@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// The target entity; else <paramref name="ordered"/> when it is set; else the point the running salvo last
         /// aimed at, which a weapon that launches rounds at ground finishes even without a target.
         /// </summary>
-        public static ShotAim Choose(Entity target, in ComponentLookup<LocalTransform> transforms, in Weapon weapon,
+        public static ShotAim Choose(Entity target, in ComponentLookup<LocalTransform> transforms, in WeaponMount mount,
             bool hasOrdered, float3 ordered)
         {
             if (transforms.TryGetComponent(target, out var place))
@@ -28,12 +28,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return new ShotAim { Target = target, Point = place.Position, Exists = true };
             }
 
-            if (hasOrdered && weapon.FiresAtGround)
+            if (hasOrdered && mount.Weapon.FiresAtGround)
             {
                 return At(ordered);
             }
 
-            return weapon.SalvoShot > 0 && weapon.FiresAtGround ? At(weapon.SalvoAim) : default;
+            return mount.Cycle.SalvoShot > 0 && mount.Weapon.FiresAtGround ? At(mount.Cycle.SalvoAim) : default;
         }
     }
 }

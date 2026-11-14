@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Projectiles;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
@@ -25,9 +24,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         private PrefabSpawner _spawner;
         private ComponentLookup<Stealth> _stealth;
         [ReadOnly] private ComponentLookup<Deployable> _deployables;
-        [ReadOnly] private BufferLookup<WeaponMuzzle> _muzzles;
-        [ReadOnly] private ComponentLookup<Inside> _inside;
-        [ReadOnly] private BufferLookup<FiringPort> _ports;
+        private FiringLookup _origins;
         private BufferLookup<WeaponPose> _poses;
         private ComponentLookup<Projectile> _projectiles;
         private EventWriter<DamageEvent> _damage;
@@ -41,9 +38,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _spawner = new PrefabSpawner(ref state);
             _stealth = state.GetComponentLookup<Stealth>();
             _deployables = state.GetComponentLookup<Deployable>(true);
-            _muzzles = state.GetBufferLookup<WeaponMuzzle>(true);
-            _inside = state.GetComponentLookup<Inside>(true);
-            _ports = state.GetBufferLookup<FiringPort>(true);
+            _origins = new FiringLookup(ref state);
             _poses = state.GetBufferLookup<WeaponPose>();
             _projectiles = state.GetComponentLookup<Projectile>();
             _damage = new EventWriter<DamageEvent>(ref state);
@@ -57,9 +52,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             _spawner.Update(ref state);
             _stealth.Update(ref state);
             _deployables.Update(ref state);
-            _muzzles.Update(ref state);
-            _inside.Update(ref state);
-            _ports.Update(ref state);
+            _origins.Update(ref state);
             _poses.Update(ref state);
             _projectiles.Update(ref state);
             _damage.Update(ref state);
@@ -73,24 +66,24 @@ namespace HyperRTS.Simulation.Combat.Weapons
             blockers = query.GetSingleton<SightBlockers>();
 
         /// <summary>
-        /// The fire step every weapon takes, ending in one volley of <paramref name="shots"/> rounds with one reveal,
-        /// one shot counted and one fire cue.
+        /// The fire step every weapon takes, ending in one volley of a round per carrier with one reveal, one shot
+        /// counted and one fire cue.
         /// </summary>
-        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, in ShotAim aim, byte owner, int shots)
+        public bool TryFire(Entity shooter, ref WeaponMount mount, byte pose, in ShotAim aim, byte owner)
         {
-            if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy) || OutsideArc(shooter, weapon, aim.Point))
+            if (Deployable.Holds(_deployables, shooter, mount.Weapon.NeedsDeploy) || OutsideArc(shooter, mount.Weapon, aim.Point))
             {
-                weapon.EndSalvo();
+                mount.Cycle.EndSalvo(mount.Weapon);
                 return false;
             }
 
-            if (weapon.CoolingDown || !Aimed(shooter, weapon, pose, aim.Point))
+            if (mount.Cycle.CoolingDown || !Aimed(shooter, mount.Weapon, pose, aim.Point))
             {
                 return false;
             }
 
-            Fire(shooter, ref weapon, pose, aim, owner, shots);
-            weapon.StartCooldown();
+            Fire(shooter, ref mount, pose, aim, owner);
+            mount.Cycle.StartCooldown(mount.Weapon);
             return true;
         }
 
@@ -107,19 +100,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         private bool OutsideArc(Entity shooter, in Weapon weapon, float3 point) =>
             weapon.FiringArc > 0f && !weapon.InFiringArc(_deployables, shooter, _transforms[shooter], point);
-
-        /// <summary>The weapon as it fires this shot, from its next muzzle in turn.</summary>
-        private Weapon TakeMuzzle(Entity shooter, ref Weapon weapon)
-        {
-            var shot = weapon;
-            if (weapon.MuzzleCount > 1)
-            {
-                shot.Aim.Muzzle = _muzzles[shooter][weapon.FirstMuzzle + weapon.NextMuzzle].Point;
-                weapon.NextMuzzle = (byte)((weapon.NextMuzzle + 1) % weapon.MuzzleCount);
-            }
-
-            return shot;
-        }
 
         /// <summary>A hull-fixed weapon fires as the hull faces; a turret once its pose points at the target.</summary>
         private bool Aimed(Entity shooter, in Weapon weapon, byte pose, float3 point)
@@ -138,7 +118,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// Fires a volley at <see cref="WeaponPose"/> index <paramref name="pose"/>: the reveal, the shot count and the
         /// fire cue happen once, the hit or launch once per round.
         /// </summary>
-        private void Fire(Entity shooter, ref Weapon weapon, byte pose, in ShotAim aim, byte owner, int shots)
+        private void Fire(Entity shooter, ref WeaponMount mount, byte pose, in ShotAim aim, byte owner)
         {
             if (_stealth.TryGetRefRW(shooter, out var stealth))
             {
@@ -149,62 +129,46 @@ namespace HyperRTS.Simulation.Combat.Weapons
             var fired = poses[pose];
             fired.CountShot();
             poses[pose] = fired;
-            var place = _transforms[shooter];
-            var ported = TryFindPort(shooter, aim.Point, out var port);
-            if (ported)
+            var firing = _origins.Start(shooter, owner, pose, fired, aim.Point);
+            for (var round = 0; round < mount.Carriers; round++)
             {
-                place = port;
-                fired.YawAngle = 0f;
-                fired.PitchAngle = 0f;
-            }
-
-            var firing = new Firing(shooter, owner, pose, place, fired);
-            for (var round = 0; round < shots; round++)
-            {
-                var shot = TakeMuzzle(shooter, ref weapon);
-                if (ported)
-                {
-                    shot.Aim.HasMuzzle = true;
-                    shot.Aim.Muzzle = float3.zero;
-                }
-
+                var origin = _origins.NextOrigin(firing, mount.Weapon, ref mount.Cycle);
                 if (round == 0)
                 {
-                    PlayFire(firing, shot, aim.Point);
+                    PlayFire(firing, origin, aim.Point);
                 }
 
-                Shoot(firing, shot, round, aim);
+                Shoot(firing, mount.Weapon, origin, round, aim);
             }
         }
 
-        private void Shoot(in Firing firing, in Weapon shot, int round, in ShotAim aim)
+        private void Shoot(in Firing firing, in Weapon weapon, in ShotOrigin origin, int round, in ShotAim aim)
         {
-            if (shot.FiresRounds)
+            if (weapon.FiresRounds)
             {
                 var aimed = aim.Target;
                 var aimedAt = aim.Point;
-                Obstruct(firing.Shooter, shot, firing.Pose, firing.Place, ref aimed, ref aimedAt);
-                Launch(firing, shot, round, aimed, aimedAt);
+                Obstruct(firing, weapon, origin, ref aimed, ref aimedAt);
+                Launch(firing, weapon, origin, round, aimed, aimedAt);
             }
-            else if (shot.ShootsProjectiles)
+            else if (weapon.Role == WeaponRole.Interceptor)
             {
-                Intercept(firing, shot, aim.Target, aim.Point);
+                Intercept(firing, weapon, origin, aim);
             }
             else
             {
-                Strike(firing, shot, round == 0, aim.Target, aim.Point);
+                Strike(firing, weapon, origin, round == 0, aim);
             }
         }
 
         /// <summary>An instant hit; the first round of a volley also writes the impact cue.</summary>
-        private void Strike(in Firing firing, in Weapon weapon, bool cue, Entity target, float3 targetPosition)
+        private void Strike(in Firing firing, in Weapon weapon, in ShotOrigin origin, bool cue, in ShotAim aim)
         {
-            var origin = weapon.Aim.HitOrigin(firing.Place, firing.Pose);
-            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin, target, targetPosition, weapon.Targets);
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin.Hit, aim.Target, aim.Point, weapon.Targets);
             _damage.Add(hit);
             if (cue)
             {
-                AddImpact(firing, hit, origin, targetPosition);
+                AddImpact(firing, hit, origin.Hit, aim.Point);
             }
         }
 
@@ -215,82 +179,69 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>A shot at a projectile: a seeded roll that downs it, then the impact cue where it dies.</summary>
-        private void Intercept(in Firing firing, in Weapon weapon, Entity target, float3 targetPosition)
+        private void Intercept(in Firing firing, in Weapon weapon, in ShotOrigin origin, in ShotAim aim)
         {
             // Seeded by shooter, target and shot count, so the same fight rolls the same.
-            var seed = math.hash(new uint4((uint)firing.Shooter.Index, (uint)target.Index, (uint)target.Version,
+            var seed = math.hash(new uint4((uint)firing.Shooter.Index, (uint)aim.Target.Index, (uint)aim.Target.Version,
                 firing.Pose.Shots));
             if (!weapon.Kills(seed))
             {
                 return;
             }
 
-            var projectile = _projectiles[target];
+            var projectile = _projectiles[aim.Target];
             projectile.Intercepted = true;
-            _projectiles[target] = projectile;
-            _ecb.DestroyEntity(target);
-            var origin = weapon.Aim.HitOrigin(firing.Place, firing.Pose);
-            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin, target, targetPosition, weapon.Targets);
-            AddImpact(firing, hit, origin, targetPosition);
+            _projectiles[aim.Target] = projectile;
+            _ecb.DestroyEntity(aim.Target);
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin.Hit, aim.Target, aim.Point, weapon.Targets);
+            AddImpact(firing, hit, origin.Hit, aim.Point);
         }
 
-        /// <summary>Turns a direct-fire round onto whatever solid stands between the muzzle and the target.</summary>
-        private void Obstruct(Entity shooter, in Weapon weapon, in WeaponPose pose, in LocalTransform place,
-            ref Entity target, ref float3 targetPosition)
+        /// <summary>Turns a direct-fire round onto whatever solid stands between its launch point and the target.</summary>
+        private void Obstruct(in Firing firing, in Weapon weapon, in ShotOrigin origin, ref Entity target,
+            ref float3 targetPosition)
         {
             if (!weapon.NeedsLineOfFire)
             {
                 return;
             }
 
-            var holder = _inside.HasEnabled(shooter) ? _inside[shooter].Container : shooter;
-            var origin = weapon.Aim.LaunchPoint(place, pose);
             var aim = weapon.Aim.TargetPoint(targetPosition);
-            if (_blockers.TryFindObstruction(origin, aim, holder, target, out var contact, out var obstacle))
+            if (_blockers.TryFindObstruction(origin.Launch, aim, firing.Housing, target, out var contact, out var obstacle))
             {
                 target = obstacle;
                 targetPosition = contact;
             }
         }
 
-        /// <summary>A garrisoned passenger shoots from the port of its container that faces the target best.</summary>
-        private bool TryFindPort(Entity shooter, float3 targetPosition, out LocalTransform port)
-        {
-            port = default;
-            if (!_inside.HasEnabled(shooter))
-            {
-                return false;
-            }
-
-            var container = _inside[shooter].Container;
-            if (!_ports.TryGetBuffer(container, out var ports) || !_transforms.TryGetComponent(container, out var place))
-            {
-                return false;
-            }
-
-            return FiringPort.TryChoose(ports, place, targetPosition, out port);
-        }
-
-        /// <summary>The fire cue faces the target level, the way the shooter turned, from the muzzle as the pose turned it.</summary>
-        private void PlayFire(in Firing firing, in Weapon weapon, float3 targetPosition)
+        /// <summary>The fire cue faces the target level, the way the shooter turned, from the muzzle or port if it has one.</summary>
+        private void PlayFire(in Firing firing, in ShotOrigin origin, float3 targetPosition)
         {
             var toward = targetPosition - firing.Place.Position;
             toward.y = 0f;
-            weapon.Aim.PlayFire(ref _cues, firing, math.normalizesafe(toward, firing.Place.Forward()));
+            var direction = math.normalizesafe(toward, firing.Place.Forward());
+            if (origin.AtMuzzle)
+            {
+                _cues.PlayAt(firing.Shooter, CueSlot.Fire, origin.Launch, direction, firing.Owner, firing.PoseIndex);
+                return;
+            }
+
+            _cues.Play(firing.Shooter, CueSlot.Fire, firing.Place, direction, firing.Owner, firing.PoseIndex);
         }
 
-        private void Launch(in Firing firing, in Weapon weapon, int round, Entity target, float3 targetPosition)
+        private void Launch(in Firing firing, in Weapon weapon, in ShotOrigin origin, int round, Entity target,
+            float3 targetPosition)
         {
-            var origin = weapon.Aim.LaunchPoint(firing.Place, firing.Pose);
+            var start = origin.Launch;
             var seed = math.hash(new uint4((uint)firing.Shooter.Index, (uint)target.Index, firing.Pose.Shots, (uint)round));
             var aim = weapon.Scatter(weapon.Aim.TargetPoint(targetPosition), seed);
 
             // Smoke thick enough to hide the target breaks a guided round's lock; it flies on to the aim point.
-            var locked = weapon.KeepsLock && _blockers.Haze(origin, aim) < 1f;
-            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, origin, locked ? target : Entity.Null, aim, weapon.Targets);
-            var flight = weapon.Launched(hit, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), origin, aim);
-            var heading = flight.Arcs ? flight.Heading() : aim - origin;
-            var projectile = _spawner.Spawn(_ecb, weapon.ProjectilePrefab, origin,
+            var locked = weapon.KeepsLock && _blockers.Haze(start, aim) < 1f;
+            var hit = weapon.Damage.Hit(firing.Shooter, firing.Owner, start, locked ? target : Entity.Null, aim, weapon.Targets);
+            var flight = weapon.Launched(hit, _cues.TypeIdFor(firing.Shooter, CueSlot.Impact), start, aim);
+            var heading = flight.Arcs ? flight.Heading() : aim - start;
+            var projectile = _spawner.Spawn(_ecb, weapon.ProjectilePrefab, start,
                 quaternion.LookRotationSafe(heading, math.up()), firing.Owner);
             _ecb.AddComponent(projectile, flight);
         }

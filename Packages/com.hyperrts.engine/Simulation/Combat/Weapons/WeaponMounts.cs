@@ -21,12 +21,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public readonly WeaponMount Primary => _mounts[PrimaryIndex];
 
         /// <summary>The primary fires only at a ground point or a unit it is ordered onto.</summary>
-        public readonly bool FiresOnOrder => HasPrimary && Primary.Weapon.FiresOnOrder;
+        public readonly bool FiresOnOrder => HasPrimary && Primary.Weapon.Role == WeaponRole.OnOrder;
 
-        /// <summary>The primary's weapon; false when there is none or it shoots projectiles.</summary>
+        /// <summary>The primary's weapon; false when there is none or it is an interceptor.</summary>
         public readonly bool TryGetPrimary(out Weapon weapon)
         {
-            var armed = HasPrimary && !Primary.Weapon.ShootsProjectiles;
+            var armed = HasPrimary && Primary.Weapon.Role != WeaponRole.Interceptor;
             weapon = armed ? Primary.Weapon : default;
             return armed;
         }

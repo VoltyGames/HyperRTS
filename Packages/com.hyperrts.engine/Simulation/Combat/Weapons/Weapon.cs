@@ -8,13 +8,15 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
-    /// <summary>One weapon's attack stats, held by its <see cref="WeaponMount"/>; range is measured edge to edge between footprints.</summary>
+    /// <summary>
+    /// One weapon's attack stats, held by its <see cref="WeaponMount"/> and rewritten only by <c>StatSystem</c>; range
+    /// is measured edge to edge between footprints.
+    /// </summary>
     public struct Weapon
     {
         public float Range;
         public DamageProfile Damage;
         public float Cooldown;
-        public float CooldownRemaining;
         public Entity ProjectilePrefab;
         public float ProjectileSpeed;
 
@@ -44,15 +46,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public float SalvoInterval;
 
-        /// <summary>Shots fired so far in the running salvo.</summary>
-        public int SalvoShot;
-
-        /// <summary>Where the running salvo last aimed, so its remaining shots still fly if the target is lost.</summary>
-        public float3 SalvoAim;
-
-        /// <summary>Salvos completed so far, so an order can tell its own salvo has finished.</summary>
-        public uint SalvosFired;
-
         /// <summary>Metres around the aim point a ballistic shot lands at random; homing shots ignore it.</summary>
         public float Spread;
 
@@ -61,13 +54,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public byte FirstMuzzle;
 
-        public byte NextMuzzle;
-
         /// <summary>Holds fire until its unit is <see cref="Deployable"/> and deployed.</summary>
         public bool NeedsDeploy;
 
-        /// <summary>Never picks targets itself: fires only at a ground point or a unit it is ordered onto.</summary>
-        public bool FiresOnOrder;
+        public WeaponRole Role;
 
         /// <summary>
         /// Half angle in radians of the cone it fires into, about the heading its unit deployed at or else its facing;
@@ -76,7 +66,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public float FiringArc;
 
         /// <summary>Launches rounds at ground, so a salvo's remaining shots can fly on at a point after its target is lost.</summary>
-        public readonly bool FiresAtGround => FiresRounds && !ShootsProjectiles;
+        public readonly bool FiresAtGround => FiresRounds && Role != WeaponRole.Interceptor;
 
         /// <summary>Whether <paramref name="targets"/> includes the class of a unit on <paramref name="layer"/>; amphibious units count as ground and naval.</summary>
         public static bool CanHit(WeaponTargets targets, NavLayer layer)
@@ -132,9 +122,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
             return InFiringArc(Deployable.Heading(deployables, shooter, place), (targetPosition - place.Position).xz);
         }
 
-        /// <summary>Shoots projectiles in flight rather than units, such as a C-RAM gun.</summary>
-        public readonly bool ShootsProjectiles => (Targets & WeaponTargets.Projectile) != WeaponTargets.None;
-
         public readonly bool Engages(ProjectileKind kind) => (InterceptKinds & kind) != ProjectileKind.None;
 
         /// <summary>The radius one salvo covers round its aim point: the spread plus the splash radius.</summary>
@@ -145,37 +132,6 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         /// <summary>Launches rounds, which hit whatever is in the way, rather than hitting at once.</summary>
         public readonly bool FiresRounds => ProjectilePrefab != Entity.Null;
-
-        public bool CoolingDown => CooldownRemaining > 0f;
-
-        public void Tick(float deltaTime) => CooldownRemaining = math.max(0f, CooldownRemaining - deltaTime);
-
-        /// <summary>Counts a shot: the next shot of a salvo waits <see cref="SalvoInterval"/>, the last the cooldown.</summary>
-        public void StartCooldown()
-        {
-            SalvoShot++;
-            if (SalvoShot < SalvoSize)
-            {
-                CooldownRemaining = SalvoInterval;
-                return;
-            }
-
-            SalvoShot = 0;
-            SalvosFired++;
-            CooldownRemaining = Cooldown;
-        }
-
-        /// <summary>Drops the rest of a salvo that can't go on; the cooldown counts from its last shot.</summary>
-        public void EndSalvo()
-        {
-            if (SalvoShot == 0)
-            {
-                return;
-            }
-
-            SalvoShot = 0;
-            CooldownRemaining = math.max(0f, CooldownRemaining + Cooldown - SalvoInterval);
-        }
 
         /// <summary>
         /// A homing shot keeps its target only without a <see cref="Spread"/>: one with a spread flies to its scattered

@@ -52,9 +52,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 {
                     var mount = mounts[i];
                     // The primary tracks the attack target while it closes in; extra weapons and interceptors only what they shoot.
-                    var tracksAttack = i == WeaponMounts.PrimaryIndex && !mount.Weapon.ShootsProjectiles;
+                    var tracksAttack = i == WeaponMounts.PrimaryIndex && mount.Weapon.Role != WeaponRole.Interceptor;
                     var target = tracksAttack ? primary : mount.Target;
-                    var aim = ShotAim.Choose(target, Transforms, mount.Weapon, ordered && i == WeaponMounts.PrimaryIndex, point);
+                    var aim = ShotAim.Choose(target, Transforms, mount, ordered && i == WeaponMounts.PrimaryIndex, point);
                     var rest = deployed ? mount.Weapon.Aim.DeployedPitch : 0f;
                     Pose(poses, i, hull, mount.Weapon, Holds(entity, mount.Weapon) ? default : aim, rest);
                 }

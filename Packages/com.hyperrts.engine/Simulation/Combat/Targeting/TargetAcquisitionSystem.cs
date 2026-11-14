@@ -77,7 +77,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 }
 
                 var primary = new WeaponMounts(mounts).Primary;
-                if (primary.Weapon.ShootsProjectiles || primary.Weapon.FiresOnOrder || primary.Ammo.Empty
+                if (primary.Weapon.Role != WeaponRole.AutoEngage || primary.Ammo.Empty
                     || !MayAutoAcquire(entity))
                 {
                     return;

@@ -84,17 +84,16 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
-                    mount.Weapon.Tick(DeltaTime * rate);
-                    var aim = ShotAim.Choose(mount.Target, Transforms, mount.Weapon, ordered && i == 0, point);
+                    mount.Cycle.Tick(DeltaTime * rate);
+                    var aim = ShotAim.Choose(mount.Target, Transforms, mount, ordered && i == 0, point);
                     if (!CanShoot(entity, mount, aim, rate))
                     {
-                        mount.Weapon.EndSalvo();
+                        mount.Cycle.EndSalvo(mount.Weapon);
                     }
                     else
                     {
-                        mount.Weapon.SalvoAim = aim.Point;
-                        if (Faces(entity, mount, aim) && Shots.TryFire(entity, ref mount.Weapon, (byte)i, aim,
-                                owner.Value, mount.Carriers))
+                        mount.Cycle.SalvoAim = aim.Point;
+                        if (Faces(entity, mount, aim) && Shots.TryFire(entity, ref mount, (byte)i, aim, owner.Value))
                         {
                             mount.Ammo.Spend();
                         }
@@ -112,7 +111,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     return false;
                 }
 
-                if (mount.Weapon.ShootsProjectiles)
+                if (mount.Weapon.Role == WeaponRole.Interceptor)
                 {
                     return Shots.CanIntercept(entity, mount.Weapon, aim.Target);
                 }

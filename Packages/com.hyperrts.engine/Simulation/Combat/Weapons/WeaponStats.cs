@@ -152,8 +152,19 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Min(0f)]
         public float spread;
 
-        /// <summary>Shoots projectiles in flight, so it is an interceptor.</summary>
-        public bool ShootsProjectiles => (targets & WeaponTargets.Projectile) != WeaponTargets.None;
+        /// <summary>A weapon that targets projectiles is an interceptor, whatever else it names.</summary>
+        public WeaponRole Role
+        {
+            get
+            {
+                if ((targets & WeaponTargets.Projectile) != WeaponTargets.None)
+                {
+                    return WeaponRole.Interceptor;
+                }
+
+                return firesOnOrder ? WeaponRole.OnOrder : WeaponRole.AutoEngage;
+            }
+        }
 
         /// <summary>Damage per second before armor, with the cooldown floored at its minimum.</summary>
         public float Dps => hit.damage / Mathf.Max(cooldown, 0.05f);
@@ -186,7 +197,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 SalvoInterval = salvoInterval,
                 Spread = spread,
                 NeedsDeploy = needsDeploy,
-                FiresOnOrder = firesOnOrder,
+                Role = BakeRole(root),
                 FiringArc = math.radians(firingArc),
                 Aim = new WeaponAim
                 {
@@ -204,6 +215,16 @@ namespace HyperRTS.Simulation.Combat.Weapons
             weapon.Aim.BakeSockets(baker, root, muzzle, turret, barrel);
             BakeMuzzles(baker, root, muzzles, ref weapon);
             return weapon;
+        }
+
+        private WeaponRole BakeRole(Transform root)
+        {
+            if (firesOnOrder && Role == WeaponRole.Interceptor)
+            {
+                throw new InvalidOperationException($"Weapon on '{root.name}' targets projectiles and fires on order.");
+            }
+
+            return Role;
         }
 
         private void BakeMuzzles(IBaker baker, Transform root, List<WeaponMuzzle> muzzles, ref Weapon weapon)

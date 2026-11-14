@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Cues;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -44,29 +43,23 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Apex of an arcing shot as a fraction of the launch-to-aim ground distance.</summary>
         public float ArcHeight;
 
-        /// <summary>Where a projectile starts: the posed muzzle, else <see cref="ProjectileHeight"/> above the pivot.</summary>
-        public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose) =>
-            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
-
-        /// <summary>Plays the Fire cue at the posed muzzle, else at the shooter's Fire socket or pivot.</summary>
-        public void PlayFire(ref CueWriter cues, in Firing firing, float3 direction)
-        {
-            if (HasMuzzle)
-            {
-                cues.PlayAt(firing.Shooter, CueSlot.Fire, LaunchPoint(firing.Place, firing.Pose), direction,
-                    firing.Owner, firing.PoseIndex);
-                return;
-            }
-
-            cues.Play(firing.Shooter, CueSlot.Fire, firing.Place, direction, firing.Owner, firing.PoseIndex);
-        }
+        /// <summary>
+        /// Where a projectile from <paramref name="muzzle"/>, in the shooter's space, starts: the posed muzzle, else
+        /// <see cref="ProjectileHeight"/> above the pivot.
+        /// </summary>
+        public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose, float3 muzzle) =>
+            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose, muzzle)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
 
         /// <summary>Where the weapon aims on a target standing at <paramref name="target"/>.</summary>
         public float3 TargetPoint(float3 target) => target + new float3(0f, ProjectileHeight, 0f);
 
-        /// <summary>Where an instant hit comes from, for directional armor.</summary>
-        public float3 HitOrigin(in LocalTransform shooter, in WeaponPose pose) =>
-            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose)) : shooter.Position;
+        /// <summary>Where an instant hit from <paramref name="muzzle"/> comes from, for directional armor.</summary>
+        public float3 HitOrigin(in LocalTransform shooter, in WeaponPose pose, float3 muzzle) =>
+            HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose, muzzle)) : shooter.Position;
+
+        /// <summary>Where a round from <paramref name="muzzle"/> leaves and hits from.</summary>
+        public ShotOrigin Origin(in LocalTransform shooter, in WeaponPose pose, float3 muzzle) =>
+            new(LaunchPoint(shooter, pose, muzzle), HitOrigin(shooter, pose, muzzle), HasMuzzle);
 
         /// <summary>Bakes the muzzle and pivots from child transforms of <paramref name="root"/>; a missing barrel pivots at the muzzle.</summary>
         public void BakeSockets(IBaker baker, UnityEngine.Transform root, UnityEngine.Transform muzzle,
@@ -82,17 +75,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
             BarrelPivot = barrel != null ? AuthoringBehaviour.Socket(baker, root, barrel) : Muzzle;
         }
 
-        /// <summary>The muzzle raised about the barrel pivot, then turned about the turret pivot.</summary>
-        public float3 PosedMuzzle(in WeaponPose pose)
+        /// <summary><paramref name="muzzle"/> raised about the barrel pivot, then turned about the turret pivot.</summary>
+        public float3 PosedMuzzle(in WeaponPose pose, float3 muzzle)
         {
-            var raised = BarrelPivot + math.rotate(quaternion.AxisAngle(math.right(), -pose.PitchAngle), Muzzle - BarrelPivot);
+            var raised = BarrelPivot + math.rotate(quaternion.AxisAngle(math.right(), -pose.PitchAngle), muzzle - BarrelPivot);
             return TurretPivot + math.rotate(quaternion.AxisAngle(math.up(), pose.YawAngle), raised - TurretPivot);
         }
 
         /// <summary>Yaw and pitch that point the posed weapon at <paramref name="aim"/>; a hull-fixed weapon keeps yaw 0.</summary>
         public float2 Angles(in LocalTransform shooter, in WeaponPose pose, float3 aim)
         {
-            var from = LaunchPoint(shooter, pose);
+            var from = LaunchPoint(shooter, pose, Muzzle);
             var local = math.rotate(math.inverse(shooter.Rotation), aim - from);
             var yaw = Turreted ? math.atan2(local.x, local.z) : 0f;
             return new float2(yaw, math.clamp(Elevation(from, aim), MinPitch, MaxPitch));

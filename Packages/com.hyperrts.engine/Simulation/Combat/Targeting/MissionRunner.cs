@@ -43,9 +43,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
             }
             else if (!_aiming.ValueRO)
             {
-                Approach(position, order.Position, mount.Weapon);
+                Approach(position, order.Position, mount);
             }
-            else if (mount.Weapon.SalvosFired != _aim.ValueRO.SalvosAtStart)
+            else if (mount.Cycle.SalvosFired != _aim.ValueRO.SalvosAtStart)
             {
                 // Only the order's own salvo counts, which the weapon completes once.
                 End();
@@ -53,16 +53,17 @@ namespace HyperRTS.Simulation.Combat.Targeting
         }
 
         /// <summary>Halts and aims once the point is in range and the weapon is between salvos, else moves to the near edge of its range.</summary>
-        private void Approach(float3 position, float3 point, in Weapon weapon)
+        private void Approach(float3 position, float3 point, in WeaponMount mount)
         {
+            var weapon = mount.Weapon;
             var gap = Weapon.PointGap(position, point);
             var band = weapon.Band(weapon.Range);
             if (band.Contains(gap))
             {
                 _moves.Halt();
-                if (weapon.SalvoShot == 0)
+                if (mount.Cycle.SalvoShot == 0)
                 {
-                    _aim.ValueRW = new PointAim { Value = point, SalvosAtStart = weapon.SalvosFired };
+                    _aim.ValueRW = new PointAim { Value = point, SalvosAtStart = mount.Cycle.SalvosFired };
                     _aiming.ValueRW = true;
                 }
 

@@ -11,10 +11,12 @@ The authored `Trajectory` picks a `ShotCourse` at bake, and runtime reads only t
 and home. Ballistic shells arc onto the point aimed at launch and miss a target that moved. Rockets climb, then dive
 onto the live target.
 
-A weapon with `salvoSize` above 1 fires that many shots `salvoInterval` apart, then runs its cooldown. A weapon that
-launches rounds finishes its salvo when its target dies or is lost, firing the rest at the point it last aimed at
-(`Weapon.SalvoAim`); hit-scan weapons and interceptors drop the rest, and so does any weapon whose unit packs up. With `extraMuzzles`, shots leave from each muzzle in turn; aim uses
-the first. `spread` scatters the aim point, seeded by shooter, target and shot count. A homing shot with a spread gives
+Each `WeaponMount` holds the weapon's stats in `Weapon`, which only `StatSystem` rewrites, and its firing state in
+`WeaponCycle`: the cooldown, the running salvo and the muzzle next in turn. A weapon with `salvoSize` above 1 fires
+that many shots `salvoInterval` apart, then runs its cooldown. A weapon that launches rounds finishes its salvo when
+its target dies or is lost, firing the rest at the point it last aimed at (`WeaponCycle.SalvoAim`); hit-scan weapons
+and interceptors drop the rest, and so does any weapon whose unit packs up. With `extraMuzzles`, shots leave from
+each muzzle in turn; aim uses the first. `spread` scatters the aim point, seeded by shooter, target and shot count. A homing shot with a spread gives
 up its lock, so a rocket ripple covers an area; missiles that must stay locked keep 0.
 
 Limited `rounds` sit in each mount's `Ammo` and refill by `AmmoRefill`: `Docked` (at an airfield), `Round` (one per
@@ -27,8 +29,10 @@ Each weapon has a `WeaponPose` (yaw, pitch, shot count) that clients read to aim
 `WeaponPoseSystem` turns it toward the target at the weapon's traverse and elevation speeds. A `Turreted` weapon, and
 every extra weapon, fires without turning the hull once its pose is within `aimTolerance`. A hull-fixed primary sets a
 `FacingGoal` instead, and movement turns the parked hull. Buildings never turn, so their weapons bake as turreted.
-Shots leave from the muzzle turned by the pose, so directional armor sees the real origin and the Fire cue plays from
-there. A squad's volley counts one shot on the pose and plays one cue.
+Each round gets a `ShotOrigin` from `FiringLookup`: its launch point and the point its hit counts from, at the muzzle
+turned by the pose, so directional armor sees the real origin and the Fire cue plays from there. A garrisoned
+passenger fires from the `FiringPort` of its container that faces the target best, and every round leaves from that
+port. A squad's volley counts one shot on the pose and plays one cue.
 
 ## Deploying
 
@@ -50,8 +54,8 @@ to weapons with a firing arc. A deployable squad is a weapon team ([squads](squa
 
 ## Fire missions
 
-A weapon with `firesOnOrder` never picks targets itself: `TargetAcquisitionSystem` and `WeaponTargetJob` skip it. It
-fires only when ordered, and baking such a primary adds a `PointAim` to the unit. A `FireMission` command carries a
+A weapon with `firesOnOrder` bakes the `WeaponRole` `OnOrder` and never picks targets itself: `TargetAcquisitionSystem`
+and `WeaponTargetJob` auto-engage only with `AutoEngage` weapons. It fires only when ordered, and baking such a primary adds a `PointAim` to the unit. A `FireMission` command carries a
 ground point in `Position`, anywhere in range, seen or not. `FireMissionSystem` and `MissionRunner` run the order: the
 unit drives to the near edge of its primary weapon's range band (`minRange` to `range`, measured by `Weapon.PointGap`)
 if the point lies outside it, then halts and enables `PointAim` there, and the weapon systems turn onto it that same
@@ -59,7 +63,7 @@ frame. `DeployFacingSystem` packs up and turns a deployed unit whose
 point is outside its `firingArc`, as for an attack, and deploys it; a launcher with no arc only deploys. With the point
 aimed, `WeaponPoseSystem` turns the pose onto it and `WeaponFireSystem` fires the weapon's whole salvo there through
 `ShotAim`, each round scattered by `spread`; splash resolves through the hit's `DamageProfile` as for any shell. The
-order ends once that salvo has fired (`Weapon.SalvosFired`), leaving the unit deployed, or at once when the weapon is out
+order ends once that salvo has fired (`WeaponCycle.SalvosFired`), leaving the unit deployed, or at once when the weapon is out
 of ammo or cannot fire at ground. A unit without `PointAim` ignores the command, and one with no move destination only
 fires at points already in range. An Attack on an entity, or a Smart click on an enemy, becomes a fire mission at the
 entity's position as ordered. The skirmish AI's `FireMissionPlanner` gives each idle such unit a mission on the known
@@ -67,11 +71,13 @@ enemy in range with the most enemies within a blast of it; `DeployPlanner` leave
 
 ## Interception
 
-An interceptor is a weapon whose `targets` are `Projectile`, such as a C-RAM gun or a SAM battery. It engages the
+An interceptor is a weapon whose `targets` include `Projectile`, such as a C-RAM gun or a SAM battery; it bakes the
+`WeaponRole` `Interceptor`, which every system checks. It engages the
 nearest hostile projectile inside its `range`, in a straight line (`Weapon.ReachesInFlight`), whose `ProjectileKind`
 is in its `interceptKinds` (Shell, Rocket, Missile, Bomb; a game adds kinds from `ProjectileKind.GameFirst`). Drones
 are units, so interceptors ignore them.
-`WeaponRule` wants it to hit only projectiles, with no projectile prefab and at least one kind. A primary interceptor
+`WeaponRule` wants it to hit only projectiles, with no projectile prefab, at least one kind and no `firesOnOrder`,
+which the baker refuses. A primary interceptor
 never sets an attack target: orders, engagement and the AI read the unit as unarmed.
 
 `WeaponTargetSystem` files projectiles into a `ProjectileGrid`, `WeaponPoseSystem` aims the turret, and

@@ -16,6 +16,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public float BaseRange;
         public float BaseCooldown;
 
+        public WeaponCycle Cycle;
+
         /// <summary>What it shoots this frame; <c>Entity.Null</c> while it holds fire.</summary>
         public Entity Target;
 

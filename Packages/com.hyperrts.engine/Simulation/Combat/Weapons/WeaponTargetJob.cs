@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             for (var i = 0; i < mounts.Length; i++)
             {
                 var mount = mounts[i];
-                if (mount.Weapon.ShootsProjectiles)
+                if (mount.Weapon.Role == WeaponRole.Interceptor)
                 {
                     mount.Target = Incoming(transform.Position, mount, owner.Value);
                 }
@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return mount.Target;
             }
 
-            return scanning && !mount.Weapon.FiresOnOrder ? Scan(entity, position, mount.Weapon, owner) : Entity.Null;
+            return scanning && mount.Weapon.Role == WeaponRole.AutoEngage ? Scan(entity, position, mount.Weapon, owner) : Entity.Null;
         }
 
         /// <summary>Its own target is still hostile, unhidden and in its reach.</summary>

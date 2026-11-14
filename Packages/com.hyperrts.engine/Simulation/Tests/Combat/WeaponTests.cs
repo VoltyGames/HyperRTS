@@ -220,9 +220,9 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.Kill(enemy);
             World.Run(0.2f);
 
-            var weapon = World.Primary(gun);
-            Assert.AreEqual(0, weapon.SalvoShot);
-            Assert.Greater(weapon.CooldownRemaining, 0.5f, $"the full cooldown runs, not the interval: {weapon.CooldownRemaining}");
+            var cycle = World.Buffer<WeaponMount>(gun)[WeaponMounts.PrimaryIndex].Cycle;
+            Assert.AreEqual(0, cycle.SalvoShot);
+            Assert.Greater(cycle.CooldownRemaining, 0.5f, $"the full cooldown runs, not the interval: {cycle.CooldownRemaining}");
         }
 
         [Test]

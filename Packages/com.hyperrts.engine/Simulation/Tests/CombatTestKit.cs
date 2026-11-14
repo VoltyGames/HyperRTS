@@ -102,7 +102,7 @@ namespace HyperRTS.Simulation.Tests
         public static void SetFiresOnOrder(this TestWorld world, Entity entity)
         {
             var weapon = world.Primary(entity);
-            weapon.FiresOnOrder = true;
+            weapon.Role = WeaponRole.OnOrder;
             world.SetPrimary(entity, weapon);
             WeaponSetup.AddPointAim(world.Writer(entity));
         }
