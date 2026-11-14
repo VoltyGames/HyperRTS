@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Air
@@ -28,6 +29,22 @@ namespace HyperRTS.Simulation.Air
         [Min(0f)]
         public float loiterRadius;
 
+        [Tooltip("Metres per second squared it gains speed at.")]
+        [Min(0.1f)]
+        public float acceleration = 3f;
+
+        [Tooltip("Metres per second squared it sheds speed at.")]
+        [Min(0.1f)]
+        public float braking = 4f;
+
+        [Tooltip("Degrees it banks at most in a turn: steeper turns tighter at speed.")]
+        [Range(5f, 75f)]
+        public float maxBank = 30f;
+
+        [Tooltip("Degrees per second its nose turns at most.")]
+        [Min(1f)]
+        public float yawRate = 60f;
+
         [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to reload (Return order or out of ammo) and docks there.")]
         public bool usesLandingPads;
 
@@ -39,12 +56,23 @@ namespace HyperRTS.Simulation.Air
             + "without one.")]
         public Transform releasePoint;
 
+        private Flight Flight() => new()
+        {
+            Altitude = altitude,
+            ClimbSpeed = climbSpeed,
+            LoiterRadius = loiterRadius,
+            Acceleration = acceleration,
+            Braking = braking,
+            MaxBank = math.radians(maxBank),
+            YawRate = math.radians(yawRate),
+        };
+
         public class Baker : Baker<FlightAuthoring>
         {
             public override void Bake(FlightAuthoring authoring)
             {
                 var writer = this.Writer();
-                AirSetup.AddFlight(writer, authoring.altitude, authoring.climbSpeed, authoring.loiterRadius,
+                AirSetup.AddFlight(writer, authoring.Flight(),
                     AuthoringBehaviour.Socket(this, authoring.transform, authoring.releasePoint));
                 if (authoring.usesLandingPads)
                 {

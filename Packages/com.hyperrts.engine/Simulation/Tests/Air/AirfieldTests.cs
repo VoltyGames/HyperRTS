@@ -148,7 +148,7 @@ namespace HyperRTS.Simulation.Tests.Air
             Assert.IsTrue(World.IsEnabled<Docked>(aircraft));
 
             World.EntityManager.DestroyEntity(first);
-            World.Run(1f);
+            World.Run(2f);
             Assert.AreEqual(Entity.Null, World.Get<HomePad>(aircraft).Airfield, "homeless");
             Assert.IsFalse(World.IsEnabled<Docked>(aircraft));
             Assert.AreEqual(10f, World.GetPosition(aircraft).y, 1e-3f, "hovering at altitude");

@@ -136,9 +136,15 @@ buried.
 
 ## Air
 
-`FlightAuthoring` makes a unit an aircraft with an altitude and a loiter radius, flown by `FlightMovementSystem`. A
-radius of 0 hovers. Its optional `releasePoint`, a child such as a ramp or bomb bay, is where airdrop crates and strike
-bombs leave it.
+`FlightAuthoring` makes a unit an aircraft, flown by `FlightMovementSystem`: its altitude, climb speed, loiter radius
+(0 hovers) and handling, which is acceleration, braking, the most it banks and how fast its nose turns. Its optional
+`releasePoint`, a child such as a ramp or bomb bay, is where airdrop crates and strike bombs leave it.
+
+Steering picks the velocity an aircraft wants, round other aircraft, as it does for ground units. `FlightState` then
+flies toward it: it speeds up and brakes at its rates, braking early enough to stop on its goal, and turns its course
+no harder than its bank allows, so it flies an arc at speed and turns on the spot when slow. From a hover it noses
+round to the way it means to go, slipping off its nose only slowly, and in forward flight its nose follows its course.
+It eases into and out of climbs and reads the ground two seconds ahead, so it rises before a ridge.
 
 `AirfieldAuthoring` gives a building landing pads, one aircraft each, each a `PadKind`: `Helipad`, `Shelter` or `Any`.
 `FlightAuthoring.padKind` says which pads an aircraft takes, and `Any` on either side matches every kind. An airfield

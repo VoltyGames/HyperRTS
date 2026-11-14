@@ -19,9 +19,21 @@ namespace HyperRTS.Simulation.Tests
             var aircraft = world.SpawnUnit(owner, position, new TestUnit { Speed = speed, Name = "Aircraft" });
             world.Set(aircraft, new NavAgent { Radius = 0.5f, Layer = NavLayer.Air, Mass = 10f });
             var writer = world.Writer(aircraft);
-            AirSetup.AddFlight(writer, altitude, climbSpeed: 20f, loiterRadius);
+            AirSetup.AddFlight(writer, Agile(altitude, loiterRadius));
             return aircraft;
         }
+
+        /// <summary>Handling quick enough that tests of orders needn't wait on it.</summary>
+        public static Flight Agile(float altitude, float loiterRadius = 0f) => new()
+        {
+            Altitude = altitude,
+            ClimbSpeed = 20f,
+            LoiterRadius = loiterRadius,
+            Acceleration = 20f,
+            Braking = 20f,
+            MaxBank = math.radians(60f),
+            YawRate = math.radians(360f),
+        };
 
         /// <summary>Lets the aircraft take a pad and, with rounds above 0, limits its weapon's ammo.</summary>
         public static Entity AddPadUser(this TestWorld world, Entity aircraft, int rounds = 0, float reloadTime = 0.5f,

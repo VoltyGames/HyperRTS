@@ -91,6 +91,8 @@ without `FlightAuthoring`, fails the bake.
 `MotionRigAuthoring` on a unit or building root moves the model's parts on the client; each part is one mesh whose
 origin is its pivot. Its slots list turrets, barrels
 and launchers that ease onto a `WeaponPose` index, wheels, rotors, and a tilt root (the hull) that follows the ground.
+An aircraft's tilt root leans instead: nose down at cruise speed and as it speeds up, nose up as it brakes, and
+banked into its turns.
 Traverse and elevation limits are weapon data; the rig only smooths the simulated pose.
 
 A trailer slot swings a towed part, pivoted on its hitch, after the hull as a real trailer does: its angle to the

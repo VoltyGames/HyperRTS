@@ -130,7 +130,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var wreck = World.MakePrefab(World.EntityManager.CreateEntity(typeof(LocalTransform)));
             var aircraft = World.SpawnAircraft(1, new float3(5f, 2f, 0f));
             World.Add(aircraft, new SpawnOnDeath { Prefab = wreck });
-            World.Run(1f);
+            World.Run(2f);
             Assert.AreEqual(12f, World.GetPosition(aircraft).y, 1e-3f, "flying");
 
             World.Set(aircraft, new Health { Current = 0f, Max = 100f });

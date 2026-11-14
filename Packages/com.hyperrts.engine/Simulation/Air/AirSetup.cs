@@ -9,13 +9,13 @@ namespace HyperRTS.Simulation.Air
     public static class AirSetup
     {
         /// <summary>
-        /// Flies the unit at <paramref name="altitude"/>; its <c>NavAgent</c> must be on the Air layer. Its remains
+        /// Flies the unit as <paramref name="flight"/> says; its <c>NavAgent</c> must be on the Air layer. Its remains
         /// fall to the ground. Drops leave from <paramref name="releasePoint"/>, in its local space.
         /// </summary>
-        public static void AddFlight(EntityWriter writer, float altitude, float climbSpeed, float loiterRadius,
-            float3 releasePoint = default)
+        public static void AddFlight(EntityWriter writer, in Flight flight, float3 releasePoint = default)
         {
-            writer.Add(new Flight { Altitude = altitude, ClimbSpeed = climbSpeed, LoiterRadius = loiterRadius });
+            writer.Add(flight);
+            writer.Add<FlightState>();
             writer.Add(new DropRun { ReleasePoint = releasePoint });
             writer.Add<DropRemains>();
         }

@@ -15,9 +15,14 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>Seconds for the tilt to close most of the gap to its target.</summary>
         public const float TiltTime = 0.15f;
 
-        /// <summary>Aircraft lean per m/s² of acceleration, and the most they lean.</summary>
-        public const float LeanPerAcceleration = 3f * math.TORADIANS;
-        public const float MaxLean = 20f * math.TORADIANS;
+        /// <summary>Seconds for an aircraft's lean to close most of the gap, slower than a hull on its springs.</summary>
+        public const float LeanTime = 0.5f;
+
+        /// <summary>Nose-down pitch an aircraft holds at its cruise speed, and the most it leans.</summary>
+        public const float CruisePitch = 7f * math.TORADIANS;
+        public const float MaxLean = 30f * math.TORADIANS;
+
+        private const float Gravity = 9.81f;
 
         /// <summary>The child that pitches and rolls, or null for none.</summary>
         public Entity TiltRoot;
@@ -35,6 +40,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>Leans from acceleration instead of following the ground; baked from the unit's Flight.</summary>
         public bool Aircraft;
+
+        /// <summary>An aircraft's top speed, at which it holds <see cref="CruisePitch"/>.</summary>
+        public float CruiseSpeed;
 
         /// <summary>Frames seen, up to 2: velocity needs one before it, acceleration two.</summary>
         public byte Frames;
@@ -109,11 +117,18 @@ namespace HyperRTS.Presentation.Animation.Rigs
         // Below this the turn over the distance is noise.
         private const float MinRoll = 0.01f;
 
-        /// <summary>An aircraft noses down as it speeds up and banks into the turn.</summary>
-        public static float2 LeanTilt(float3 acceleration, float3 forward, float3 right)
+        /// <summary>
+        /// Eases an aircraft's <see cref="Tilt"/> toward its lean: nose down with forward speed and as it speeds up,
+        /// nose up as it brakes, banked into the turn as its acceleration tips the lift.
+        /// </summary>
+        public void Lean(float3 velocity, float3 acceleration, float3 forward, float3 right, float deltaTime)
         {
-            var lean = -new float2(math.dot(acceleration, forward), math.dot(acceleration, right)) * LeanPerAcceleration;
-            return math.clamp(lean, -MaxLean, MaxLean);
+            var cruise = math.saturate(math.dot(velocity, forward) / math.max(CruiseSpeed, 1e-3f));
+            var pitch = -math.atan(math.dot(acceleration, forward) / Gravity) - CruisePitch * cruise * cruise;
+            var roll = -math.atan(math.dot(acceleration, right) / Gravity);
+            // Clamped after easing, so a one-frame spike of measured acceleration counts for its share, not more.
+            var eased = math.lerp(Tilt, new float2(pitch, roll), 1f - math.exp(-deltaTime / LeanTime));
+            Tilt = math.clamp(eased, -MaxLean, MaxLean);
         }
     }
 

@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Air
             _rightOfWay = new RightOfWay(ref state);
             _shared = new Movers(ref state);
             _handles = new MoverHandles(ref state);
-            _fliers = MoverHandles.Query().WithAll<Flight>().Build(ref state);
+            _fliers = MoverHandles.Query().WithAll<Flight>().WithAllRW<FlightState>().Build(ref state);
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<NavGrid>();
@@ -64,6 +64,7 @@ namespace HyperRTS.Simulation.Air
                 },
                 Handles = _handles,
                 Flights = SystemAPI.GetComponentTypeHandle<Flight>(true),
+                States = SystemAPI.GetComponentTypeHandle<FlightState>(false),
                 Calls = SystemAPI.GetComponentTypeHandle<BoardingCall>(false),
             }.ScheduleParallel(_fliers, state.Dependency);
         }
@@ -75,6 +76,7 @@ namespace HyperRTS.Simulation.Air
             public FlightMover Mover;
             public MoverHandles Handles;
             [ReadOnly] public ComponentTypeHandle<Flight> Flights;
+            public ComponentTypeHandle<FlightState> States;
 
             // A call lasts one frame: the passenger still waiting calls again.
             public ComponentTypeHandle<BoardingCall> Calls;
@@ -84,11 +86,14 @@ namespace HyperRTS.Simulation.Air
             {
                 var movers = Handles.Open(chunk);
                 var flights = chunk.GetNativeArray(ref Flights);
+                var states = chunk.GetNativeArray(ref States);
                 var callable = chunk.Has(ref Calls);
                 for (var i = 0; i < movers.Count; i++)
                 {
                     var called = callable && chunk.IsComponentEnabled(ref Calls, i);
-                    Mover.Fly(movers, i, flights[i], called);
+                    var flown = states[i];
+                    Mover.Fly(movers, i, flights[i], ref flown, called);
+                    states[i] = flown;
                     if (called)
                     {
                         chunk.SetComponentEnabled(ref Calls, i, false);

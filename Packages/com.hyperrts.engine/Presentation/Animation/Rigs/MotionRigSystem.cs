@@ -84,7 +84,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 rig.LastPosition = place.Position;
                 rig.LastVelocity = velocity;
 
-                Tilt(ref rig, heading, acceleration);
+                Tilt(ref rig, heading, velocity, acceleration);
                 AdvanceParts(entity, ref rig, parts, heading, rolled);
             }
 
@@ -113,17 +113,22 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 }
             }
 
-            private void Tilt(ref MotionRig rig, in RigHeading heading, float3 acceleration)
+            private void Tilt(ref MotionRig rig, in RigHeading heading, float3 velocity, float3 acceleration)
             {
                 if (rig.TiltRoot == Entity.Null)
                 {
                     return;
                 }
 
-                var target = rig.Aircraft
-                    ? MotionRig.LeanTilt(acceleration, heading.Forward, heading.Right)
-                    : rig.GroundTilt(Terrain, heading.Position, heading.Forward, heading.Right);
-                rig.SmoothTilt(target, DeltaTime);
+                if (rig.Aircraft)
+                {
+                    rig.Lean(velocity, acceleration, heading.Forward, heading.Right, DeltaTime);
+                }
+                else
+                {
+                    rig.SmoothTilt(rig.GroundTilt(Terrain, heading.Position, heading.Forward, heading.Right), DeltaTime);
+                }
+
                 rig.Suspension.Spring(rig.Suspension.Target(acceleration, heading.Forward, heading.Right), DeltaTime);
             }
 
