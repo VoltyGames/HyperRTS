@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Combat.Deploy;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
@@ -21,7 +20,7 @@ namespace HyperRTS.Simulation.AI
         public static DeployPlanner Create(ref SystemState state) => new()
         {
             _query = new EntityQueryBuilder(Allocator.Temp).WithAll<Deployable, Owner, LocalTransform>().WithPresent<AttackTarget>()
-                .WithNone<Dead>().Build(ref state),
+                .Build(ref state),
         };
 
         public void Update()

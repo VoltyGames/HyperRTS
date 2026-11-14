@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
@@ -49,7 +50,7 @@ namespace HyperRTS.Simulation.Airdrops
                 Spawner = _spawner,
                 ReceiverLookup = SystemAPI.GetComponentLookup<AirdropReceiver>(true),
                 OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
-                DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
             }.Schedule();
 
             new SendJob
@@ -68,7 +69,6 @@ namespace HyperRTS.Simulation.Airdrops
 
         /// <summary>Counts down each owned, working receiver and sends its aircraft in from the owner's edge.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct SendJob : IJobEntity
         {
             public float DeltaTime;
@@ -100,7 +100,6 @@ namespace HyperRTS.Simulation.Airdrops
 
         /// <summary>Single-threaded: drops spawn crates through one buffer.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         [WithPresent(typeof(MoveDestination))]
         private partial struct FlyJob : IJobEntity
         {
@@ -110,7 +109,7 @@ namespace HyperRTS.Simulation.Airdrops
             public PrefabSpawner Spawner;
             [ReadOnly] public ComponentLookup<AirdropReceiver> ReceiverLookup;
             [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
-            [ReadOnly] public ComponentLookup<Dead> DeadLookup;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
 
             private void Execute(Entity entity, ref DropFlight flight, in AirdropFlight delivery, ref DropRun run,
                 ref MoveDestination destination, EnabledRefRW<MoveDestination> moving, in MovementSpeed speed,
@@ -139,8 +138,7 @@ namespace HyperRTS.Simulation.Airdrops
 
             /// <summary>Still standing and still the aircraft owner's; a lost or captured one gets nothing.</summary>
             private bool IsWorking(Entity receiver, byte owner) =>
-                ReceiverLookup.HasComponent(receiver) && !DeadLookup.HasEnabled(receiver)
-                && OwnerLookup[receiver].Value == owner;
+                Health.IsAlive(HealthLookup, receiver) && OwnerLookup[receiver].Value == owner;
         }
     }
 }

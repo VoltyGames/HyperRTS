@@ -69,7 +69,7 @@ namespace HyperRTS.Presentation.Audio
             var poses = SystemAPI.GetBufferLookup<WeaponPose>(true);
             foreach (var (loops, tuning, place, entity) in SystemAPI
                          .Query<DynamicBuffer<EntityLoopSound>, RefRO<LoopSoundTuning>, RefRO<LocalToWorld>>()
-                         .WithNone<FogHidden, Inside, Dead>().WithEntityAccess())
+                         .WithNone<FogHidden, Inside>().WithEntityAccess())
             {
                 var rotor = RotorAmount(flights, docks, spins, entity);
                 var building = sites.HasEnabled(entity);

@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Commands;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
@@ -33,7 +32,7 @@ namespace HyperRTS.Presentation.Cursors
             _resolver = new OrderResolver(ref state);
             _orders = new OrderReader(ref state);
             _targetQueries = TargetQueries.Create(ref state);
-            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner>().WithNone<Dead>().Build();
+            _selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner>().Build();
             _localPlayer = SystemAPI.QueryBuilder().WithAll<LocalPlayer, Player>().Build();
             state.RequireForUpdate<CursorIntent>();
             state.RequireForUpdate<OwnerRelations>();

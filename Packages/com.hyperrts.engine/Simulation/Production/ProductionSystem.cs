@@ -35,8 +35,7 @@ namespace HyperRTS.Simulation.Production
         {
             state.RequireForUpdate<PlayerRegistry>();
             _producers = new EntityQueryBuilder(Allocator.Temp).WithAll<Producer, ProductionQueueItem, LocalTransform, Owner>()
-                .WithPresent<RallyPoint>().WithNone<ConstructionProgress, Dead>()
-                .Build(ref state);
+                .WithPresent<RallyPoint>().WithNone<ConstructionProgress>().Build(ref state);
             _spawner = new PrefabSpawner(ref state);
             _produced = new EventWriter<UnitProduced>(ref state);
             _researched = new EventWriter<ResearchCompleted>(ref state);

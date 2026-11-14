@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
@@ -46,7 +47,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 SourceLookup = SystemAPI.GetComponentLookup<DeliverySource>(true),
-                DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
                 ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
@@ -65,7 +66,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
         /// <summary>Counts down each owned, online source and spawns a wave heading for it.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct SendJob : IJobEntity
         {
             public float DeltaTime;
@@ -112,23 +112,26 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
         /// <summary>Single-threaded: several carriers pay into one player's stock.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct ArriveJob : IJobEntity
         {
             public EntityCommandBuffer Ecb;
             public PlayerRegistry Players;
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public ComponentLookup<DeliverySource> SourceLookup;
-            [ReadOnly] public ComponentLookup<Dead> DeadLookup;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             public BufferLookup<ResourceStock> StockLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
 
             private void Execute(Entity entity, in DeliveryCarrier carrier, in Owner owner)
             {
-                var sourceGone = !SourceLookup.TryGetComponent(carrier.Source, out var source)
-                                 || DeadLookup.HasEnabled(carrier.Source);
-                if (sourceGone)
+                // A carrier killed this frame pays nothing; DeathSystem takes it.
+                if (!Health.IsAlive(HealthLookup, entity))
+                {
+                    return;
+                }
+
+                if (!Health.IsAlive(HealthLookup, carrier.Source))
                 {
                     Ecb.DestroyEntity(entity);
                     return;
@@ -136,7 +139,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
                 var position = TransformLookup[entity].Position;
                 var target = TransformLookup[carrier.Source].Position;
-                if (math.distance(position.xz, target.xz) > source.ArrivalRange)
+                if (math.distance(position.xz, target.xz) > SourceLookup[carrier.Source].ArrivalRange)
                 {
                     return;
                 }

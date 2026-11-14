@@ -25,6 +25,8 @@ namespace HyperRTS.Presentation.Animation.Figures
             end.Owner = owner.Value;
             end.Position = place.Position;
             end.GoneAt = -1f;
+            // A ghost that outlasts the cue naming it wasn't the squad that died.
+            end.Died &= Now < end.DiedAt + SquadEnd.CueWait;
             var count = math.min(figures.Length, members.Length);
             shown.ResizeUninitialized(count);
             for (var i = 0; i < count; i++)

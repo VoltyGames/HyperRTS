@@ -59,7 +59,6 @@ namespace HyperRTS.Simulation.Transport
         /// <summary>Single-threaded: several passengers may board one container in a frame.</summary>
         [BurstCompile]
         [WithAll(typeof(Passenger))]
-        [WithNone(typeof(Dead))]
         [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct BoardJob : IJobEntity
         {

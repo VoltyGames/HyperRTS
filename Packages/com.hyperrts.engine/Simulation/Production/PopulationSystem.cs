@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Production
 
         [BurstCompile]
         [WithAll(typeof(UnitTag))]
-        [WithNone(typeof(Dead), typeof(DeliveryCarrier))]
+        [WithNone(typeof(DeliveryCarrier))]
         private partial struct CountUsedJob : IJobEntity
         {
             public NativeArray<int> Used;
@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Production
         }
 
         [BurstCompile]
-        [WithNone(typeof(ConstructionProgress), typeof(Dead))]
+        [WithNone(typeof(ConstructionProgress))]
         private partial struct CountCapJob : IJobEntity
         {
             public NativeArray<int> Cap;

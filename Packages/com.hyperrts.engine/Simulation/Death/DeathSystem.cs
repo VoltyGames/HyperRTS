@@ -65,7 +65,7 @@ namespace HyperRTS.Simulation.Death
             private void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Health health,
                 in LocalTransform transform, EnabledRefRW<Dead> dead)
             {
-                if (health.Current > 0f || dead.ValueRO)
+                if (health.Current > 0f)
                 {
                     return;
                 }

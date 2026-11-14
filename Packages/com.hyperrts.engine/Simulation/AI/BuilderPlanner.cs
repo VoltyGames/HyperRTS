@@ -24,9 +24,9 @@ namespace HyperRTS.Simulation.AI
         public static BuilderPlanner Create(ref SystemState state) => new()
         {
             _builderQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<Builder, BuildOption, Owner, LocalTransform>()
-                .WithPresent<ActiveOrder>().WithNone<Dead>().Build(ref state),
+                .WithPresent<ActiveOrder>().Build(ref state),
             _siteQuery = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<BuildingTag, ConstructionProgress, Owner, LocalTransform>().WithNone<Dead>().Build(ref state),
+                .WithAll<BuildingTag, ConstructionProgress, Owner, LocalTransform>().Build(ref state),
         };
 
         public void Update()

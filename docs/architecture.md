@@ -61,7 +61,9 @@ Every gameplay system sits in a phase group from `Simulation/Common/Systems/Syst
 | `PresentationSystemGroup` | Team colours, fog visibility, sound playback |
 
 - A system that reads `PlayerCommand`s must be in `OrderSystemGroup`.
-- All damage lands before `DeathSystem` marks entities `Dead`. They are destroyed at the end of the frame.
+- All damage lands before `DeathSystem` marks entities `Dead`. They are destroyed at the end of the frame, so `Dead` is
+  only ever on in `LifecycleSystemGroup` after `DeathSystem`. Anywhere else, check `Health.IsAlive`: a unit killed this
+  frame still exists, with zero health, until then.
 
 **Window ▸ Entities ▸ Systems** shows the live order.
 

@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
@@ -100,7 +99,7 @@ namespace HyperRTS.Simulation.Auras
         }
 
         [BurstCompile]
-        [WithNone(typeof(Offline), typeof(Dead))]
+        [WithNone(typeof(Offline))]
         private partial struct CollectJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;

@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
@@ -36,7 +35,6 @@ namespace HyperRTS.Simulation.Air
         /// <summary>Single-threaded: the order writer's lookups aren't safe to share.</summary>
         [BurstCompile]
         [WithDisabled(typeof(Docked))]
-        [WithNone(typeof(Dead))]
         private partial struct ReturnJob : IJobEntity
         {
             public OrderWriter Writer;

@@ -45,8 +45,7 @@ namespace HyperRTS.Simulation.Strikes
             }
 
             foreach (var (asset, abilities, states, owner) in SystemAPI
-                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>, RefRO<Owner>>()
-                         .WithNone<Dead>())
+                         .Query<RefRW<StrategicAsset>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>, RefRO<Owner>>())
             {
                 var id = asset.ValueRO.AbilityId;
                 var ability = abilities[Ability.Find(abilities, id)];

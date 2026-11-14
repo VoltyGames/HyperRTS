@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
@@ -158,6 +159,28 @@ namespace HyperRTS.Simulation.Tests.Transport
             }
         }
 
+        [Test]
+        public void Destroyed_DoesNotChangeHands()
+        {
+            var house = House(float3.zero);
+            var unit = Rifleman(1, new float3(10f, 0f, 0f));
+            World.Enter(unit, house);
+            World.RunUntil(() => Occupants(house) == 1, 12f);
+            Assert.AreEqual(1, HouseOwner(house));
+
+            World.Kill(house);
+            World.Tick();
+
+            using var query = World.Query(typeof(GameEvents));
+            foreach (var change in World.Buffer<OwnerChanged>(query.GetSingletonEntity()))
+            {
+                Assert.AreNotEqual(house, change.Entity, "emptied by its death, it goes down still owned");
+            }
+
+            Assert.IsFalse(World.EntityManager.Exists(house));
+            Assert.IsFalse(World.IsInside(unit), "the garrison got out");
+        }
+
         private void AssertStandsBesideTheHouse(Entity unit)
         {
             Assert.IsFalse(World.IsInside(unit), "got out");
@@ -166,7 +189,7 @@ namespace HyperRTS.Simulation.Tests.Transport
             var outside = math.abs(position.x) >= Footprint.x * 0.5f || math.abs(position.z) >= Footprint.y * 0.5f;
             Assert.IsTrue(outside, $"stands outside the walls, was at {position}");
             Assert.Less(math.length(position.xz), 12f, "stays next to the house");
-            Assert.IsFalse(World.IsEnabled<Dead>(unit));
+            Assert.Greater(World.Get<Health>(unit).Current, 0f, "alive");
             Assert.IsFalse(World.EntityManager.HasComponent<FogHidden>(unit), "its own side sees it");
             using var query = World.Query(typeof(NavGrid));
             var grid = query.GetSingleton<NavGrid>();

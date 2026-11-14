@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Targeting;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
@@ -125,7 +124,6 @@ namespace HyperRTS.Simulation.Abilities
 
         /// <summary>Single-threaded: casts append to the shared damage and event queues.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         [WithPresent(typeof(MoveDestination))]
         private partial struct CastJob : IJobEntity
         {

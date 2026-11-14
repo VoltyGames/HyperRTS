@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Grid;
@@ -24,7 +23,7 @@ namespace HyperRTS.Simulation.Transport
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Container, Selected, Owner>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Container, Selected, Owner>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Unload), selected);
             _exit = new CargoExit(ref state);
             _requests = SystemAPI.QueryBuilder().WithAll<UnloadRequest, Container>().Build();

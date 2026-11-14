@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
@@ -33,26 +33,30 @@ namespace HyperRTS.Simulation.Transport.Garrison
             state.Dependency = new OwnerJob
             {
                 Owners = SystemAPI.GetComponentLookup<Owner>(true),
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 OwnerChanges = _ownerChanges,
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
             }.Schedule(state.Dependency);
         }
 
-        /// <summary>Single-threaded: every change is added to the one event buffer. Dying buildings are left to die.</summary>
+        /// <summary>
+        /// Single-threaded: every change is added to the one event buffer. A building destroyed this frame keeps its
+        /// owner, though <see cref="ContainerDeathSystem"/> has emptied it.
+        /// </summary>
         [BurstCompile]
         [WithAll(typeof(NeutralGarrison))]
-        [WithNone(typeof(Dead))]
         private partial struct OwnerJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<Owner> Owners;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             public EventWriter<OwnerChanged> OwnerChanges;
             public EntityCommandBuffer Ecb;
 
             private void Execute(Entity entity, in Owner owner, in DynamicBuffer<Cargo> cargo)
             {
                 var passengerOwner = PassengerOwner(cargo);
-                if (passengerOwner == owner.Value)
+                if (passengerOwner == owner.Value || !Health.IsAlive(HealthLookup, entity))
                 {
                     return;
                 }

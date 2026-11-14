@@ -134,7 +134,6 @@ namespace HyperRTS.Simulation.Status
 
         /// <summary>Single-threaded: damage over time appends to the shared damage queue.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct TickJob : IJobEntity
         {
             public float Now;

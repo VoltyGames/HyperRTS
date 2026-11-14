@@ -96,7 +96,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 _footprint = entityManager.GetComponentData<NavObstacle>(prefab).Size;
                 _surface = BuildingPlacement.GetSurface(entityManager, prefab);
                 using var obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>()
-                    .WithNone<Dead>().Build(entityManager);
+                    .Build(entityManager);
                 _sites = PlacedFootprint.Read(entityManager, obstacles);
             }
 

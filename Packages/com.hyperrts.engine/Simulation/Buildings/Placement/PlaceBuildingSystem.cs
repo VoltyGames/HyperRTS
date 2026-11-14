@@ -42,11 +42,10 @@ namespace HyperRTS.Simulation.Buildings.Placement
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Owner, Selected>()
-                .WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Builder, BuildOption, Owner, Selected>().Build();
             var types = TypeSet.Single(CommandType.PlaceBuilding).With(CommandType.PlaceLine);
             _commands = new CommandReader(ref state, types, selected);
-            _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().WithNone<Dead>().Build();
+            _obstacles = SystemAPI.QueryBuilder().WithAll<NavObstacle, LocalTransform>().Build();
             _buyers = new BuyerQueries(ref state);
             _orders = new OrderWriter(ref state);
             _spawner = new PrefabSpawner(ref state);

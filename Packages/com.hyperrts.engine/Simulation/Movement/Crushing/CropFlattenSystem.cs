@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
         /// <summary>Single-threaded: hulls overlap the same cells.</summary>
         [BurstCompile]
         [WithAll(typeof(Crusher))]
-        [WithNone(typeof(Inside), typeof(Dead))]
+        [WithNone(typeof(Inside))]
         private partial struct FlattenJob : IJobEntity
         {
             public SightBlockers Blockers;

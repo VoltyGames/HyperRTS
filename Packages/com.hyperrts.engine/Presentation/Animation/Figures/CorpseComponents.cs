@@ -71,10 +71,16 @@ namespace HyperRTS.Presentation.Animation.Figures
     /// </summary>
     public struct SquadEnd : ICleanupComponentData
     {
+        /// <summary>Seconds a remote client may get a squad's death cue apart from its ghost's despawn.</summary>
+        public const float CueWait = 0.5f;
+
         public int TypeId;
         public byte Owner;
         public float3 Position;
         public bool Died;
+
+        /// <summary>Clock time the death cue named it.</summary>
+        public float DiedAt;
 
         /// <summary>Clock time the ghost was first seen gone; below 0 while it is there.</summary>
         public float GoneAt;

@@ -31,7 +31,7 @@ namespace HyperRTS.Simulation.AI
         {
             _query = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<WeaponMount, Owner, LocalTransform>().WithPresent<PointAim>().WithDisabled<ActiveOrder>()
-                .WithNone<Dead>().Build(ref state),
+                .Build(ref state),
             _targetLookup = new TargetLookup(ref state),
             _targetQueries = TargetQueries.Create(ref state),
         };

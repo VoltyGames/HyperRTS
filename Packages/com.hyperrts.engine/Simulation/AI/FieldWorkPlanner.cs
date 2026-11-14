@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Buildings.Placement;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
@@ -37,7 +36,7 @@ namespace HyperRTS.Simulation.AI
         public static FieldWorkPlanner Create(ref SystemState state) => new()
         {
             _query = new EntityQueryBuilder(Allocator.Temp).WithAll<AIFieldWork, Owner, LocalTransform>()
-                .WithNone<Dead>().Build(ref state),
+                .Build(ref state),
         };
 
         public void Update(in BuilderPlanner builders, in SquadPlanner squads)

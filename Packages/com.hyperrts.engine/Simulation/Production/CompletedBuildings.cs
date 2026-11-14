@@ -37,7 +37,7 @@ namespace HyperRTS.Simulation.Production
         public static EntityQueryBuilder Query(Allocator allocator) =>
             new EntityQueryBuilder(allocator)
                 .WithAll<BuildingTag, EntityInfo, Owner>()
-                .WithNone<ConstructionProgress, Dead>();
+                .WithNone<ConstructionProgress>();
 
         /// <summary>
         /// True when <paramref name="owner"/> has, for every required type, a completed building of it or finished

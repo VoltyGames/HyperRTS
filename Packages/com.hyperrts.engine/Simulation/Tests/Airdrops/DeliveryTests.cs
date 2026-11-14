@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Airdrops;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
@@ -108,7 +107,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
             World.Run(CarrierInterval - 4f + 0.05f);
             foreach (var carrier in Carriers())
             {
-                World.SetEnabled<Dead>(carrier, true);
+                World.Kill(carrier);
             }
 
             World.Run(4f);
@@ -223,7 +222,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
         {
             AirdropReceiver();
             World.Run(AirdropInterval + 0.05f);
-            World.SetEnabled<Dead>(Flights()[0], true);
+            World.Kill(Flights()[0]);
 
             World.Run(6f);
 

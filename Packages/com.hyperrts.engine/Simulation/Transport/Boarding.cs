@@ -53,8 +53,8 @@ namespace HyperRTS.Simulation.Transport
         }
 
         /// <summary>
-        /// A living, finished container with room for <paramref name="unit"/>, allied with it or an empty neutral
-        /// garrison building.
+        /// A living, finished container with room for the living <paramref name="unit"/>, allied with it or an empty
+        /// neutral garrison building.
         /// </summary>
         public bool CanBoard(Entity unit, Entity container, in OwnerRelations relations)
         {
@@ -64,6 +64,12 @@ namespace HyperRTS.Simulation.Transport
             }
 
             if (!_containers.TryGetComponent(container, out var data))
+            {
+                return false;
+            }
+
+            // A unit killed this frame boards nothing; it would leave its cargo slot to a destroyed entity.
+            if (!Health.IsAlive(_health, unit))
             {
                 return false;
             }

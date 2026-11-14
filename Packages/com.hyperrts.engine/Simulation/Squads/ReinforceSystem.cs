@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
@@ -29,10 +28,10 @@ namespace HyperRTS.Simulation.Squads
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Owner>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Owner>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Reinforce), selected);
             _points = SystemAPI.QueryBuilder().WithAll<ReinforcePoint, Owner, LocalTransform>()
-                .WithNone<Dead, Offline>().Build();
+                .WithNone<Offline>().Build();
             state.RequireForUpdate<SquadRules>();
             state.RequireForUpdate<OwnerRelations>();
         }

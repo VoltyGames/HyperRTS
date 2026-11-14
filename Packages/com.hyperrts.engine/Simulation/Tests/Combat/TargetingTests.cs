@@ -258,6 +258,25 @@ namespace HyperRTS.Simulation.Tests.Combat
             Assert.AreEqual(OrderType.Move, World.Get<ActiveOrder>(gun).Value.Type, "right-click just moves there");
         }
 
+        [Test]
+        public void SurfaceAndAirPrimary_PicksAnAircraftOnItsOwn()
+        {
+            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            {
+                Range = 6f,
+                Damage = 10f,
+                Cooldown = 100f,
+                Turreted = true,
+                Targets = WeaponTargets.Surface | WeaponTargets.Air,
+            });
+            var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
+
+            World.Run(2f);
+
+            Assert.AreEqual(aircraft, World.Get<AttackTarget>(gun).Value);
+            Assert.AreEqual(90f, World.GetHealth(aircraft));
+        }
+
         [TestCase(WeaponTargets.Ground, NavLayer.Ground, true)]
         [TestCase(WeaponTargets.Ground, NavLayer.Naval, false)]
         [TestCase(WeaponTargets.Naval, NavLayer.Ground, false)]

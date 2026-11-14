@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
@@ -51,6 +52,7 @@ namespace HyperRTS.Simulation.Capture
                 Ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                     .CreateCommandBuffer(state.WorldUnmanaged),
                 Targets = _targets,
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 Groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true),
                 Children = SystemAPI.GetBufferLookup<Child>(true),
                 CapturableLookup = SystemAPI.GetComponentLookup<Capturable>(true),
@@ -64,7 +66,6 @@ namespace HyperRTS.Simulation.Capture
 
         /// <summary>Single-threaded so several capturers can work on one building.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct CaptureJob : IJobEntity
         {
@@ -72,6 +73,7 @@ namespace HyperRTS.Simulation.Capture
             public OwnerRelations Relations;
             public EntityCommandBuffer Ecb;
             public CaptureLookup Targets;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             [ReadOnly] public BufferLookup<LinkedEntityGroup> Groups;
             [ReadOnly] public BufferLookup<Child> Children;
             [ReadOnly] public ComponentLookup<Capturable> CapturableLookup;
@@ -85,7 +87,8 @@ namespace HyperRTS.Simulation.Capture
                 RefRW<MoveDestination> destination, EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
                 in LocalTransform transform, in NavAgent agent)
             {
-                if (order.Value.Type != OrderType.Capture)
+                // A capturer killed this frame takes nothing.
+                if (order.Value.Type != OrderType.Capture || !Health.IsAlive(HealthLookup, entity))
                 {
                     return;
                 }

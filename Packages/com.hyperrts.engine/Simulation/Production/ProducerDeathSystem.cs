@@ -9,8 +9,8 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>
-    /// Refunds the queue of a destroyed producer to its owner, as selling or capturing it does. Reads health rather
-    /// than <c>Dead</c>, so it refunds on the frame of the killing blow; the emptied queue never refunds twice.
+    /// Refunds the queue of a destroyed producer to its owner, as selling or capturing it does, on the frame of the
+    /// killing blow; the emptied queue never refunds twice.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]

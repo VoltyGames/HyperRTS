@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
@@ -17,8 +16,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            _mounted = new EntityQueryBuilder(Allocator.Temp).WithAllRW<WeaponMount>().WithNone<Dead>()
-                .Build(ref state);
+            _mounted = new EntityQueryBuilder(Allocator.Temp).WithAllRW<WeaponMount>().Build(ref state);
         }
 
         [BurstCompile]

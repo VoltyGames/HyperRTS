@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Infantry;
@@ -36,7 +37,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
         public void OnCreate(ref SystemState state)
         {
             _reach = new TargetReach(ref state);
-            // Dead pieces are skipped in the job: a gather filtering on Dead would read it untracked.
+            // Pieces destroyed this frame are skipped in the job by their health.
             _lines = SystemAPI.QueryBuilder().WithAll<LinePlacement, NavObstacle, LocalTransform, Owner>().Build();
             state.RequireForUpdate<MapSettings>();
             state.RequireForUpdate<NavGrid>();
@@ -66,7 +67,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 TransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 QueueLookup = SystemAPI.GetBufferLookup<QueuedOrder>(true),
                 LineLookup = SystemAPI.GetComponentLookup<LinePlacement>(true),
-                DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 Lines = lines.AsDeferredJobArray(),
                 Grid = SystemAPI.GetSingleton<NavGrid>(),
             }.Schedule();
@@ -79,7 +80,6 @@ namespace HyperRTS.Simulation.Buildings.Construction
 
         /// <summary>Single-threaded so several builders can add to one site.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         [WithPresent(typeof(ActiveOrder), typeof(MoveDestination), typeof(Arrival), typeof(BuildWork))]
         private partial struct BuildJob : IJobEntity
         {
@@ -96,7 +96,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
             [ReadOnly] public ComponentLookup<LocalTransform> TransformLookup;
             [ReadOnly] public BufferLookup<QueuedOrder> QueueLookup;
             [ReadOnly] public ComponentLookup<LinePlacement> LineLookup;
-            [ReadOnly] public ComponentLookup<Dead> DeadLookup;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
 
             /// <summary>Every standing line piece, built or not.</summary>
             [ReadOnly] public NativeArray<Entity> Lines;
@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Buildings.Construction
                 var boxes = new NativeList<NavBox>(Allocator.Temp);
                 foreach (var piece in Lines)
                 {
-                    if (piece == site || OwnerLookup[piece].Value != owner || DeadLookup.IsComponentEnabled(piece))
+                    if (piece == site || OwnerLookup[piece].Value != owner || !Health.IsAlive(HealthLookup, piece))
                     {
                         continue;
                     }
@@ -272,7 +272,6 @@ namespace HyperRTS.Simulation.Buildings.Construction
 
         /// <summary>Completes every site at full progress, however it got there.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct FinishJob : IJobEntity
         {
             public EventWriter<BuildingCompleted> Completed;

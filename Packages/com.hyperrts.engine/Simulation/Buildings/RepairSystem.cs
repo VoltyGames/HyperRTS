@@ -67,7 +67,6 @@ namespace HyperRTS.Simulation.Buildings
 
         /// <summary>Single-threaded: every heal appends to the one damage queue.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         [WithPresent(typeof(MoveDestination), typeof(Arrival))]
         private partial struct RepairJob : IJobEntity
         {

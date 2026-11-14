@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Resources;
@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Airdrops
                 Players = SystemAPI.GetSingleton<PlayerRegistry>(),
                 ReceiverLookup = SystemAPI.GetComponentLookup<AirdropReceiver>(true),
                 OwnerLookup = SystemAPI.GetComponentLookup<Owner>(true),
-                DeadLookup = SystemAPI.GetComponentLookup<Dead>(true),
+                HealthLookup = SystemAPI.GetComponentLookup<Health>(true),
                 StockLookup = SystemAPI.GetBufferLookup<ResourceStock>(false),
                 StatsLookup = SystemAPI.GetComponentLookup<PlayerStats>(false),
                 ModifierLookup = SystemAPI.GetBufferLookup<StatModifier>(true),
@@ -54,7 +54,7 @@ namespace HyperRTS.Simulation.Airdrops
             public PlayerRegistry Players;
             [ReadOnly] public ComponentLookup<AirdropReceiver> ReceiverLookup;
             [ReadOnly] public ComponentLookup<Owner> OwnerLookup;
-            [ReadOnly] public ComponentLookup<Dead> DeadLookup;
+            [ReadOnly] public ComponentLookup<Health> HealthLookup;
             public BufferLookup<ResourceStock> StockLookup;
             public ComponentLookup<PlayerStats> StatsLookup;
             [ReadOnly] public BufferLookup<StatModifier> ModifierLookup;
@@ -68,18 +68,18 @@ namespace HyperRTS.Simulation.Airdrops
                 }
 
                 Ecb.DestroyEntity(entity);
-                if (!ReceiverLookup.TryGetComponent(crate.Receiver, out var receiver)
-                    || !OwnerLookup.TryGetComponent(crate.Receiver, out var owner)
-                    || DeadLookup.HasEnabled(crate.Receiver))
+                if (!Health.IsAlive(HealthLookup, crate.Receiver))
                 {
                     return;
                 }
 
+                var owner = OwnerLookup[crate.Receiver];
                 if (owner.Value == Owner.Neutral)
                 {
                     return;
                 }
 
+                var receiver = ReceiverLookup[crate.Receiver];
                 var player = Players[owner.Value];
                 var paid = ResourcePayout.Scaled(ModifierLookup, player, receiver.Amount);
                 ResourcePayout.Pay(ref StockLookup, ref StatsLookup, player, receiver.Type, paid);

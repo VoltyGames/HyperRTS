@@ -25,8 +25,7 @@ namespace HyperRTS.Simulation.Production
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Owner, Selected>()
-                .WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Producer, ProductionOption, Owner, Selected>().Build();
             _commands = new CommandReader(ref state, ProducerCommands, selected);
             _buyers = new BuyerQueries(ref state);
             state.RequireForUpdate<NavGrid>();

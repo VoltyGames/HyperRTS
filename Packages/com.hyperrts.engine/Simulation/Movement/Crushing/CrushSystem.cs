@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Movement.Crushing
 
         /// <summary>Single-threaded: hits go into the one damage queue.</summary>
         [BurstCompile]
-        [WithNone(typeof(Inside), typeof(Dead))]
+        [WithNone(typeof(Inside))]
         private partial struct CrushJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;

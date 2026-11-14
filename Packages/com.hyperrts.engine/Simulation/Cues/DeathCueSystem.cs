@@ -1,9 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
-using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
-using HyperRTS.Simulation.Cues.Effects;
-using HyperRTS.Simulation.Cues.Sounds;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
@@ -30,10 +27,9 @@ namespace HyperRTS.Simulation.Cues
             new DeathJob { Cues = _cues }.Schedule();
         }
 
-        // Single-threaded: every death appends to the one cue queue.
+        // Single-threaded: every death appends to the one cue queue. CueWriter skips those without a death cue.
         [BurstCompile]
         [WithAll(typeof(Dead))]
-        [WithAny(typeof(EntitySound), typeof(EntityEffect), typeof(DeathRemains), typeof(SquadMember))]
         private partial struct DeathJob : IJobEntity
         {
             public CueWriter Cues;

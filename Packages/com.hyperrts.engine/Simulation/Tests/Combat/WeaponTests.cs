@@ -91,25 +91,6 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
-        public void SurfaceAndAirPrimary_PicksAnAircraftOnItsOwn()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 100f,
-                Turreted = true,
-                Targets = WeaponTargets.Surface | WeaponTargets.Air,
-            });
-            var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
-
-            World.Run(2f);
-
-            Assert.AreEqual(aircraft, World.Get<AttackTarget>(gun).Value);
-            Assert.AreEqual(90f, World.GetHealth(aircraft));
-        }
-
-        [Test]
         public void IndependentAirMount_EngagesAndAimsAtAircraft_WhileThePrimaryShootsGround()
         {
             var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon

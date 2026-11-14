@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
@@ -32,7 +31,7 @@ namespace HyperRTS.Simulation.Power
             new() { Produced = produced[owner], Consumed = consumed[owner] };
 
         [BurstCompile]
-        [WithNone(typeof(ConstructionProgress), typeof(Dead))]
+        [WithNone(typeof(ConstructionProgress))]
         private partial struct CountJob : IJobEntity
         {
             public NativeArray<float> Produced;

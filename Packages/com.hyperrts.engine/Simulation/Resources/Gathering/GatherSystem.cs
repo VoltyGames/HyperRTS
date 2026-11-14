@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Resources.Gathering
         {
             _nodes = SystemAPI.QueryBuilder().WithAll<ResourceNode, LocalTransform>().Build();
             _dropOffs = SystemAPI.QueryBuilder().WithAll<ResourceDropOff, LocalTransform, Owner>()
-                .WithNone<ConstructionProgress, Dead>().Build();
+                .WithNone<ConstructionProgress>().Build();
             state.RequireForUpdate<PlayerRegistry>();
             _reach = new TargetReach(ref state);
             state.RequireForUpdate<MapSettings>();
@@ -77,7 +77,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
 
         /// <summary>Single-threaded: harvesters drain shared nodes and stockpiles.</summary>
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         // Idle harvesters too, so a stopped unload keeps its cargo for the next trip.
         [WithPresent(typeof(ActiveOrder), typeof(MoveDestination), typeof(Arrival))]
         private partial struct GatherJob : IJobEntity

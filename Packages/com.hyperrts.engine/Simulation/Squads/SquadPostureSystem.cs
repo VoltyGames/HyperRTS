@@ -40,7 +40,6 @@ namespace HyperRTS.Simulation.Squads
         }
 
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct PostureJob : IJobEntity
         {
             public SquadRules Rules;

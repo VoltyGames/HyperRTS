@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.AI
         public static AttackPlanner Create(ref SystemState state) => new()
         {
             _armyQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<WeaponMount, CombatStance, Owner, LocalTransform>()
-                .WithDisabled<ActiveOrder>().WithNone<Harvester, Dead, AttackTarget>().Build(ref state),
+                .WithDisabled<ActiveOrder>().WithNone<Harvester, AttackTarget>().Build(ref state),
             _targetLookup = new TargetLookup(ref state),
             _targetQueries = TargetQueries.Create(ref state),
         };

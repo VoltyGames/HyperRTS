@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
@@ -27,7 +26,7 @@ namespace HyperRTS.Simulation.AI
         public static EconomyPlanner Create(ref SystemState state) => new()
         {
             _idleHarvesters = new EntityQueryBuilder(Allocator.Temp).WithAll<Harvester, Owner, LocalTransform>()
-                .WithDisabled<ActiveOrder>().WithNone<Dead>().Build(ref state),
+                .WithDisabled<ActiveOrder>().Build(ref state),
             _nodeQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<ResourceNode, Owner, LocalTransform>()
                 .Build(ref state),
         };

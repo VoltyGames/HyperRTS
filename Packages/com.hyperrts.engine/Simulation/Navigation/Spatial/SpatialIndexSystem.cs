@@ -36,7 +36,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
 
         public void OnCreate(ref SystemState state)
         {
-            _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Owner, Health>().WithNone<Dead, Inside>().Build();
+            _indexed = SystemAPI.QueryBuilder().WithAll<LocalTransform, Owner, Health>().WithNone<Inside>().Build();
 
             _snapshots = new NativeList<SpatialEntry>(1024, Allocator.Persistent);
             // Systems ordered before the first build, such as placement, query it: until then it is one empty cell.
@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             ref var index = ref SystemAPI.GetSingletonRW<SpatialIndex>().ValueRW;
             var map = SystemAPI.GetSingleton<MapSettings>();
             index.Grid = new CellGrid(map.Min, CellSize, math.max(1, (int2)math.ceil(map.Size / CellSize)));
-            // Unfiltered: an upper bound is enough and doesn't wait on jobs toggling Dead or Inside.
+            // Unfiltered: an upper bound is enough and doesn't wait on jobs toggling Inside.
             var count = _indexed.CalculateEntityCountWithoutFiltering();
             if (_snapshots.Length < count)
             {

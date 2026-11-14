@@ -13,8 +13,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Tests.Animation.Figures
 {
     /// <summary>
-    /// A blast that wipes 300 squads of four five-part figures at once: the corpses come a frame's budget at a time,
-    /// nearest the camera first. The slowest frame after it is logged, not asserted.
+    /// Squads of four five-part figures dying together: a blast wiping 300 comes a frame's budget at a time, nearest the
+    /// camera first, and side by side each death cue names its own squad.
     /// </summary>
     public class SquadFigureMassDeathTests : SquadFigureRagdollFixture
     {
@@ -70,6 +70,53 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             }
 
             UnityEngine.Debug.Log($"[MassDeath] {Squads} squads wiped: slowest frame after {slowest:F3} ms");
+        }
+
+        [Test]
+        public void AdjacentSquadsOfOneType_BothLeaveCorpses()
+        {
+            PlaceFirstTwo(1f);
+            Update();
+            // The ghosts lag the server, so both cues land nearer the first squad.
+            var lagged = new float3(-56.8f, 0f, 0f);
+            for (var i = 0; i < 2; i++)
+            {
+                _em.DestroyEntity(_squads[i]);
+                _kit.PushCue(new CueEvent { TypeId = SquadType, Slot = CueSlot.Death, Position = lagged });
+            }
+
+            TimedUpdate();
+            Advance(1f);
+
+            using var corpses = Corpses();
+            Assert.AreEqual(8, corpses.Length, "each squad's four figures fall");
+        }
+
+        [Test]
+        public void LiveNeighbour_IsNotTakenForTheSquadThatDied()
+        {
+            PlaceFirstTwo(1f);
+            Update();
+            _em.DestroyEntity(_squads[0]);
+            _kit.PushCue(new CueEvent { TypeId = SquadType, Slot = CueSlot.Death, Position = new float3(-56.2f, 0f, 0f) });
+            TimedUpdate();
+
+            Assert.IsFalse(_em.GetComponentData<SquadEnd>(_squads[1]).Died, "the live squad nearer the cue");
+            Advance(1f);
+            using var fallen = Corpses();
+            Assert.AreEqual(4, fallen.Length, "the dead squad's figures fall");
+
+            // Walking into fog takes the ghost with no death cue.
+            _em.DestroyEntity(_squads[1]);
+            Advance(1f);
+            using var after = Corpses();
+            Assert.LessOrEqual(after.Length, fallen.Length, "the neighbour leaves no corpses");
+        }
+
+        private void PlaceFirstTwo(float apart)
+        {
+            _em.SetComponentData(_squads[0], LocalTransform.FromPosition(new float3(-57f, 0f, 0f)));
+            _em.SetComponentData(_squads[1], LocalTransform.FromPosition(new float3(-57f + apart, 0f, 0f)));
         }
 
         /// <summary>Kills squads first to last at once, as one blast, and returns the cost of the frame after.</summary>

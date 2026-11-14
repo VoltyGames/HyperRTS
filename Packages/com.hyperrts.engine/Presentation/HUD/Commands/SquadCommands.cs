@@ -198,6 +198,6 @@ namespace HyperRTS.Presentation.HUD.Commands
         // The live, online points of one kind that a squad can retreat to or reinforce at.
         private static LiveQuery PointQuery<T>() => new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<T>(), ComponentType.ReadOnly<Owner>(),
-            ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Dead>(), ComponentType.Exclude<Offline>()));
+            ComponentType.ReadOnly<LocalTransform>(), ComponentType.Exclude<Offline>()));
     }
 }

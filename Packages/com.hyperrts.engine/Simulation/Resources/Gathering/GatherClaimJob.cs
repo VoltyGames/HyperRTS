@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Reach;
 using HyperRTS.Simulation.Orders;
@@ -14,7 +13,6 @@ namespace HyperRTS.Simulation.Resources.Gathering
     /// gives every truck a spot of its own. A truck waiting farther off holds none.
     /// </summary>
     [BurstCompile]
-    [WithNone(typeof(Dead))]
     [WithPresent(typeof(MoveDestination))]
     internal partial struct GatherClaimJob : IJobEntity
     {

@@ -56,7 +56,7 @@ namespace HyperRTS.Simulation.Strikes
             foreach (var (flight, strike, run, destination, transform, speed, entity) in SystemAPI
                          .Query<RefRW<DropFlight>, RefRO<BombingFlight>, RefRW<DropRun>, RefRW<MoveDestination>,
                              RefRO<LocalTransform>, RefRO<MovementSpeed>>()
-                         .WithPresent<MoveDestination>().WithNone<Dead>().WithEntityAccess())
+                         .WithPresent<MoveDestination>().WithEntityAccess())
             {
                 if (flight.ValueRO.HasLeft(map, transform.ValueRO.Position))
                 {
@@ -122,7 +122,7 @@ namespace HyperRTS.Simulation.Strikes
             var count = 0;
             foreach (var (mounts, transform, targetOwner) in SystemAPI
                          .Query<DynamicBuffer<WeaponMount>, RefRO<LocalTransform>, RefRO<Owner>>()
-                         .WithNone<Dead, Offline>())
+                         .WithNone<Offline>())
             {
                 if (!relations.IsHostile(owner, targetOwner.ValueRO.Value))
                 {
@@ -154,7 +154,7 @@ namespace HyperRTS.Simulation.Strikes
         {
             var found = new NativeList<NearStructure>(Allocator.Temp);
             foreach (var (transform, targetOwner, entity) in SystemAPI.Query<RefRO<LocalTransform>, RefRO<Owner>>()
-                         .WithAll<BuildingTag>().WithNone<Dead>().WithEntityAccess())
+                         .WithAll<BuildingTag>().WithEntityAccess())
             {
                 var distance = math.distance(transform.ValueRO.Position.xz, point.xz);
                 if (distance <= radius && relations.IsHostile(owner, targetOwner.ValueRO.Value))

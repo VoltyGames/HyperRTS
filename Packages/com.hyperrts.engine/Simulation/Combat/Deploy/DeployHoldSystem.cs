@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -23,7 +22,6 @@ namespace HyperRTS.Simulation.Combat.Deploy
         public void OnUpdate(ref SystemState state) => new HoldJob().ScheduleParallel();
 
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct HoldJob : IJobEntity
         {
             // Whoever moves it, an order or a fire mission's stand-off, asks again each frame until it has packed up.

@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Production
 
         /// <summary>Living instances of limited types; instances keep the prefab's <see cref="BuildLimit"/>.</summary>
         public static EntityQueryBuilder Query(Allocator allocator) =>
-            new EntityQueryBuilder(allocator).WithAll<BuildLimit, EntityInfo, Owner>().WithNone<Dead>();
+            new EntityQueryBuilder(allocator).WithAll<BuildLimit, EntityInfo, Owner>();
 
         /// <summary>
         /// Counts <paramref name="owner"/>'s instances in <paramref name="instances"/>, of build-limited types only

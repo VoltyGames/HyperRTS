@@ -45,8 +45,7 @@ namespace HyperRTS.Simulation.Commands
             _writer = new OrderWriter(ref state);
             _resolver = new OrderResolver(ref state);
             _targetQueries = TargetQueries.Create(ref state);
-            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner>().WithPresent<ActiveOrder>()
-                .WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner>().WithPresent<ActiveOrder>().Build();
             _commands = new CommandReader(ref state, UnitCommands, selected);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);

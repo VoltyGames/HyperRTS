@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
@@ -71,7 +70,8 @@ namespace HyperRTS.Simulation.Tests.Production
             var prefab = HeroPrefab(1);
             var producer = World.SpawnProducer(prefab);
             var hero = LiveHero(1, prefab);
-            World.SetEnabled<Dead>(hero, true);
+            World.Kill(hero);
+            World.Tick();
 
             World.Produce(1, producer, prefab);
             World.Tick();

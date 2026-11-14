@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Combat.Targeting;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
@@ -24,7 +23,7 @@ namespace HyperRTS.Simulation.AI
         public static AbilityPlanner Create(ref SystemState state) => new()
         {
             _casterQuery = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<Ability, AbilityCooldown, Owner, LocalTransform>().WithNone<Dead>().Build(ref state),
+                .WithAll<Ability, AbilityCooldown, Owner, LocalTransform>().Build(ref state),
             _targetLookup = new TargetLookup(ref state),
             _targetQueries = TargetQueries.Create(ref state),
             _owners = state.GetComponentLookup<Owner>(true),

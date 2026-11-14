@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Buildings
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<BuildingTag, Selected, Owner>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<BuildingTag, Selected, Owner>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Sell), selected);
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             state.RequireForUpdate<MatchRules>();
@@ -53,7 +53,7 @@ namespace HyperRTS.Simulation.Buildings
                 var stock = SystemAPI.GetBuffer<ResourceStock>(each.Player);
                 foreach (var building in _commands.Subjects(ref state, each))
                 {
-                    if (IsSellableBuilding(ref state, building) && sold.Add(building))
+                    if (BuildingRules.IsSellable(state.EntityManager, building) && sold.Add(building))
                     {
                         Sell(ref state, building, stock, refund);
                         EntityParts.Destroy(building, groups, children, ecb);
@@ -61,9 +61,6 @@ namespace HyperRTS.Simulation.Buildings
                 }
             }
         }
-
-        private static bool IsSellableBuilding(ref SystemState state, Entity entity) =>
-            BuildingRules.IsSellable(state.EntityManager, entity) && !state.EntityManager.HasEnabled<Dead>(entity);
 
         private void Sell(ref SystemState state, Entity building, DynamicBuffer<ResourceStock> stock, float refund)
         {

@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Systems;
@@ -37,7 +36,6 @@ namespace HyperRTS.Simulation.Combat.Deploy
 
         [BurstCompile]
         [WithPresent(typeof(FacingGoal))]
-        [WithNone(typeof(Dead))]
         private partial struct FaceJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
@@ -61,7 +59,6 @@ namespace HyperRTS.Simulation.Combat.Deploy
         /// <summary>The same for a fire mission's point, which a launcher with no firing arc only deploys for.</summary>
         [BurstCompile]
         [WithPresent(typeof(FacingGoal))]
-        [WithNone(typeof(Dead))]
         private partial struct FacePointJob : IJobEntity
         {
             private void Execute(ref Deployable deployable, in PointAim aim, in DynamicBuffer<WeaponMount> mounts,

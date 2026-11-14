@@ -65,7 +65,6 @@ namespace HyperRTS.Simulation.Buildings.Construction
         /// <summary>Single-threaded: it lists the sites, searches them on a change and writes the one buffer.</summary>
         [BurstCompile]
         [WithAll(typeof(BuildingTag), typeof(ConstructionProgress))]
-        [WithNone(typeof(Dead))]
         private partial struct SceneryJob : IJobEntity
         {
             [ReadOnly] public SpatialIndex Index;

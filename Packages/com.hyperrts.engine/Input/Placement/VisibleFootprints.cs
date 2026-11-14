@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Buildings.Placement;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Vision;
 using Unity.Collections;
@@ -19,7 +18,7 @@ namespace HyperRTS.Input.Placement
         public VisibleFootprints(ref SystemState state)
         {
             _obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>()
-                .WithNone<Dead, FogHidden>().Build(ref state);
+                .WithNone<FogHidden>().Build(ref state);
         }
 
         /// <summary>The seen footprints copied once, so a line of spots is checked against one read.</summary>

@@ -27,14 +27,13 @@ namespace HyperRTS.Simulation.AI
 
         public static AIQueries Create(ref SystemState state) => new()
         {
-            Targets = new EntityQueryBuilder(Allocator.Temp).WithAll<Health, Owner, LocalTransform>()
-                .WithNone<Dead>().Build(ref state),
+            Targets = new EntityQueryBuilder(Allocator.Temp).WithAll<Health, Owner, LocalTransform>().Build(ref state),
             Buildings = new EntityQueryBuilder(Allocator.Temp).WithAll<BuildingTag, Owner, LocalTransform>()
-                .WithNone<Dead>().Build(ref state),
+                .Build(ref state),
             Owned = new EntityQueryBuilder(Allocator.Temp).WithAll<EntityInfo, Owner, LocalTransform>()
-                .WithNone<Dead>().Build(ref state),
+                .Build(ref state),
             Producers = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<Producer, ProductionOption, ProductionQueueItem, Owner>().WithNone<Dead>().Build(ref state),
+                .WithAll<Producer, ProductionOption, ProductionQueueItem, Owner>().Build(ref state),
             Completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state),
             Buyers = new BuyerQueries(ref state),
             Relations = new EntityQueryBuilder(Allocator.Temp).WithAll<OwnerRelations>().Build(ref state),

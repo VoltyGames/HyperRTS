@@ -1,6 +1,5 @@
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -31,7 +30,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
         [BurstCompile]
         [WithPresent(typeof(ActiveOrder), typeof(PointAim), typeof(MoveDestination))]
-        [WithNone(typeof(Dead))]
         private partial struct MobileJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
@@ -49,7 +47,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
         [BurstCompile]
         [WithPresent(typeof(ActiveOrder), typeof(PointAim))]
         [WithAbsent(typeof(MoveDestination))]
-        [WithNone(typeof(Dead))]
         private partial struct FixedJob : IJobEntity
         {
             private void Execute(in LocalTransform transform, in DynamicBuffer<WeaponMount> mounts, ref ActiveOrder order,

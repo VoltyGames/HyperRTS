@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Infantry;
@@ -33,11 +32,11 @@ namespace HyperRTS.Simulation.Squads
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Owner>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<SquadMember, Selected, Owner>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.Retreat), selected);
             _writer = new OrderWriter(ref state);
             _points = SystemAPI.QueryBuilder().WithAll<RetreatPoint, Owner, LocalTransform>()
-                .WithNone<Dead, Offline>().Build();
+                .WithNone<Offline>().Build();
             _orders = state.GetComponentLookup<ActiveOrder>();
             _moves = state.GetComponentLookup<MoveDestination>();
             _arrivals = state.GetComponentLookup<Arrival>();

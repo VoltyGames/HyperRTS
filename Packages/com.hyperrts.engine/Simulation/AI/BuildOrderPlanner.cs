@@ -23,10 +23,9 @@ namespace HyperRTS.Simulation.AI
 
         public static BuildOrderPlanner Create(ref SystemState state) => new()
         {
-            _obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>()
-                .WithNone<Dead>().Build(ref state),
+            _obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>().Build(ref state),
             _owned = new EntityQueryBuilder(Allocator.Temp).WithAll<EntityInfo, Owner, LocalTransform>()
-                .WithNone<Dead>().Build(ref state),
+                .Build(ref state),
             _buyers = new BuyerQueries(ref state),
         };
 

@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
@@ -24,7 +23,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var selected = SystemAPI.QueryBuilder().WithAll<Deployable, Selected, Owner>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Deployable, Selected, Owner>().Build();
             var types = TypeSet.Single(CommandType.Deploy).With(CommandType.PackUp);
             _commands = new CommandReader(ref state, types, selected);
             _writer = new OrderWriter(ref state);
@@ -77,7 +76,6 @@ namespace HyperRTS.Simulation.Combat.Deploy
         }
 
         [BurstCompile]
-        [WithNone(typeof(Dead))]
         private partial struct AdvanceJob : IJobEntity
         {
             public float DeltaTime;

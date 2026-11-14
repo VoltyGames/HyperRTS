@@ -21,7 +21,7 @@ The base tier: ownership, identity, health and shared helpers.
 | `CellGrid` | The layout every map grid shares: `Min`, `CellSize`, `Size`, with `Cell`, `Center`, `Index`, `Contains` and `Clamp` |
 | `CellRange`, `CellCircle`, `NeighbourOffsets`, `GridRay` | Burst-friendly enumerators over a box of cells, a circle, a cell's neighbours, and the cells a line crosses |
 | `UnitTag`, `BuildingTag` | A movable unit. A static structure |
-| `Health`, `Dead` | Hit points. `Dead` is enabled the frame before destruction |
+| `Health`, `Dead` | Hit points; alive is `Health.IsAlive`. `Dead` marks this frame's deaths, from `DeathSystem` until the end-of-frame destruction; never replicated |
 | `Destructible` | Scenery anyone can wreck. Splash hits it and fog never hides it |
 | `ConstructionProgress` | 0 to 1. An unfinished building doesn't produce, fire or count for prerequisites |
 | `Offline` | Out of action, with a reason mask. Games add reasons from `OfflineReason.Custom` |

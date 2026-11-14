@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Abilities
         public void OnCreate(ref SystemState state)
         {
             EventQueues.Create<AbilityEvents>(ref state, typeof(AbilityActivation));
-            var selected = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Selected, Owner>().WithNone<Dead>().Build();
+            var selected = SystemAPI.QueryBuilder().WithAll<Ability, AbilityCooldown, Selected, Owner>().Build();
             _commands = new CommandReader(ref state, TypeSet.Single(CommandType.UseAbility).With(CommandType.UsePower),
                 selected);
             _completed = CompletedBuildings.Query(Allocator.Temp).Build(ref state);

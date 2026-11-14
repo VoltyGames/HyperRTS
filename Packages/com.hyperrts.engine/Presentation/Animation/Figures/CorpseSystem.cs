@@ -31,9 +31,6 @@ namespace HyperRTS.Presentation.Animation.Figures
     {
         private static readonly ProfilerMarker MakeMarker = new("CorpseSystem.Make");
 
-        // Seconds a gone squad waits for its death cue, which a remote client gets apart from the ghost's despawn.
-        private const float CueWait = 0.5f;
-
         private readonly CorpseBudget _budget = new();
         private RenderSwitch _switch;
         private CorpseBodies _bodies;
@@ -73,7 +70,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             Scan();
             if (SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
             {
-                _deaths.Match(cues);
+                _deaths.Match(cues, _now);
             }
 
             EndGoneSquads();
@@ -115,7 +112,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 {
                     FallShownFigures(squad, end);
                 }
-                else if (_now < end.GoneAt + CueWait)
+                else if (_now < end.GoneAt + SquadEnd.CueWait)
                 {
                     continue;
                 }
@@ -144,8 +141,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             _budget.SortHandovers();
             foreach (var handover in _budget.Handovers)
             {
-                var figures = EntityManager.GetBuffer<SquadFigure>(handover.Squad);
-                var figure = figures[handover.Figure];
+                var figure = EntityManager.GetBuffer<SquadFigure>(handover.Squad)[handover.Figure];
                 var world = handover.World;
                 ref var ragdoll = ref figure.Clips.Value.Ragdoll;
                 if (_budget.Left <= 0 || !TryTakeSlot(ref ragdoll, world.c3.xyz, out var slot))
@@ -169,6 +165,8 @@ namespace HyperRTS.Presentation.Animation.Figures
                 _switch.SetBranch(handover.Squad, figure.Figure, HideReason.Figure, true);
                 figure.State = FigureState.Hidden;
                 figure.StateSince = _now;
+                // Making the copies changed the structure, which invalidates a buffer read before it.
+                var figures = EntityManager.GetBuffer<SquadFigure>(handover.Squad);
                 figures[handover.Figure] = figure;
             }
         }

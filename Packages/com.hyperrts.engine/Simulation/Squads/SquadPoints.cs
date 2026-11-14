@@ -19,7 +19,7 @@ namespace HyperRTS.Simulation.Squads
 
         /// <summary>
         /// Reads every point the query matches; it must hold <typeparamref name="T"/>, <see cref="Owner"/> and
-        /// <see cref="LocalTransform"/> and leave out <see cref="Dead"/> and <see cref="Offline"/> ones.
+        /// <see cref="LocalTransform"/> and leave out <see cref="Offline"/> ones.
         /// </summary>
         public static SquadPoints From<T>(EntityQuery query) where T : unmanaged, IComponentData, ISquadPoint
         {

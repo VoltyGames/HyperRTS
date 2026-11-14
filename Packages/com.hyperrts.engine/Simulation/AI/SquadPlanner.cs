@@ -1,4 +1,3 @@
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Infantry;
@@ -27,11 +26,11 @@ namespace HyperRTS.Simulation.AI
         public static SquadPlanner Create(ref SystemState state) => new()
         {
             _squadQuery = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<SquadMember, Suppression, Health, Owner, LocalTransform>().WithNone<Dead>().Build(ref state),
+                .WithAll<SquadMember, Suppression, Health, Owner, LocalTransform>().Build(ref state),
             _retreatQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<RetreatPoint, Owner, LocalTransform>()
-                .WithNone<Dead, Offline>().Build(ref state),
+                .WithNone<Offline>().Build(ref state),
             _reinforceQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<ReinforcePoint, Owner, LocalTransform>()
-                .WithNone<Dead, Offline>().Build(ref state),
+                .WithNone<Offline>().Build(ref state),
             _rulesQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<SquadRules>().Build(ref state),
         };
 

@@ -25,7 +25,7 @@ namespace HyperRTS.Input.Placement
         public SeenEnemies(ref SystemState state)
         {
             _units = new EntityQueryBuilder(Allocator.Temp).WithAll<NavAgent, Owner, LocalTransform, Health>()
-                .WithNone<Dead, Inside, FogHidden>().Build(ref state);
+                .WithNone<Inside, FogHidden>().Build(ref state);
             _relations = new EntityQueryBuilder(Allocator.Temp).WithAll<OwnerRelations>().Build(ref state);
             _local = new EntityQueryBuilder(Allocator.Temp).WithAll<LocalPlayer, Player>().Build(ref state);
         }
