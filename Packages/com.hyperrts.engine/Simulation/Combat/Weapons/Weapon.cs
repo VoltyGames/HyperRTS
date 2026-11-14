@@ -47,6 +47,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Shots fired so far in the running salvo.</summary>
         public int SalvoShot;
 
+        /// <summary>Where the running salvo last aimed, so its remaining shots still fly if the target is lost.</summary>
+        public float3 SalvoAim;
+
+        /// <summary>Salvos completed so far, so an order can tell its own salvo has finished.</summary>
+        public uint SalvosFired;
+
         /// <summary>Metres around the aim point a ballistic shot lands at random; homing shots ignore it.</summary>
         public float Spread;
 
@@ -60,11 +66,17 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Holds fire until its unit is <see cref="Deployable"/> and deployed.</summary>
         public bool NeedsDeploy;
 
+        /// <summary>Never picks targets itself: fires only at a ground point or a unit it is ordered onto.</summary>
+        public bool FiresOnOrder;
+
         /// <summary>
         /// Half angle in radians of the cone it fires into, about the heading its unit deployed at or else its facing;
         /// 0 fires all round.
         /// </summary>
         public float FiringArc;
+
+        /// <summary>Launches rounds at ground, so a salvo's remaining shots can fly on at a point after its target is lost.</summary>
+        public readonly bool FiresAtGround => FiresRounds && !ShootsProjectiles;
 
         /// <summary>Whether <paramref name="targets"/> includes the class of a unit on <paramref name="layer"/>; amphibious units count as ground and naval.</summary>
         public static bool CanHit(WeaponTargets targets, NavLayer layer)
@@ -135,10 +147,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
 
             SalvoShot = 0;
+            SalvosFired++;
             CooldownRemaining = Cooldown;
         }
 
-        /// <summary>Drops the rest of a salvo whose target is gone; the cooldown counts from its last shot.</summary>
+        /// <summary>Drops the rest of a salvo that can't go on; the cooldown counts from its last shot.</summary>
         public void EndSalvo()
         {
             if (SalvoShot == 0)

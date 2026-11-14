@@ -75,20 +75,20 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// The fire step every weapon takes, ending in one volley of <paramref name="shots"/> rounds with one reveal,
         /// one shot counted and one fire cue.
         /// </summary>
-        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte owner, int shots)
+        public bool TryFire(Entity shooter, ref Weapon weapon, byte pose, in ShotAim aim, byte owner, int shots)
         {
-            if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy) || OutsideArc(shooter, weapon, target))
+            if (Deployable.Holds(_deployables, shooter, weapon.NeedsDeploy) || OutsideArc(shooter, weapon, aim.Point))
             {
                 weapon.EndSalvo();
                 return false;
             }
 
-            if (weapon.CoolingDown || !Aimed(shooter, weapon, pose, target))
+            if (weapon.CoolingDown || !Aimed(shooter, weapon, pose, aim.Point))
             {
                 return false;
             }
 
-            Fire(shooter, ref weapon, pose, target, owner, shots);
+            Fire(shooter, ref weapon, pose, aim, owner, shots);
             weapon.StartCooldown();
             return true;
         }
@@ -104,9 +104,8 @@ namespace HyperRTS.Simulation.Combat.Weapons
             return math.distance(_transforms[shooter].Position, _transforms[target].Position) < weapon.Range;
         }
 
-        private bool OutsideArc(Entity shooter, in Weapon weapon, Entity target) =>
-            weapon.FiringArc > 0f
-            && !weapon.InFiringArc(_deployables, shooter, _transforms[shooter], _transforms[target].Position);
+        private bool OutsideArc(Entity shooter, in Weapon weapon, float3 point) =>
+            weapon.FiringArc > 0f && !weapon.InFiringArc(_deployables, shooter, _transforms[shooter], point);
 
         /// <summary>The weapon as it fires this shot, from its next muzzle in turn.</summary>
         private Weapon TakeMuzzle(Entity shooter, ref Weapon weapon)
@@ -122,7 +121,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         }
 
         /// <summary>A hull-fixed weapon fires as the hull faces; a turret once its pose points at the target.</summary>
-        private bool Aimed(Entity shooter, in Weapon weapon, byte pose, Entity target)
+        private bool Aimed(Entity shooter, in Weapon weapon, byte pose, float3 point)
         {
             if (!weapon.Aim.Turreted)
             {
@@ -130,7 +129,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
 
             var aimed = _poses[shooter][pose];
-            var aim = weapon.Aim.TargetPoint(_transforms[target].Position);
+            var aim = weapon.Aim.TargetPoint(point);
             return weapon.Aim.Aligned(aimed, weapon.Aim.Angles(_transforms[shooter], aimed, aim));
         }
 
@@ -138,7 +137,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// Fires a volley at <see cref="WeaponPose"/> index <paramref name="pose"/>: the reveal, the shot count and the
         /// fire cue happen once, the hit or launch once per round.
         /// </summary>
-        private void Fire(Entity shooter, ref Weapon weapon, byte pose, Entity target, byte owner, int shots)
+        private void Fire(Entity shooter, ref Weapon weapon, byte pose, in ShotAim aim, byte owner, int shots)
         {
             if (_stealth.TryGetRefRW(shooter, out var stealth))
             {
@@ -150,8 +149,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             fired.CountShot();
             poses[pose] = fired;
             var place = _transforms[shooter];
-            var targetPosition = _transforms[target].Position;
-            var ported = TryFindPort(shooter, targetPosition, out var port);
+            var ported = TryFindPort(shooter, aim.Point, out var port);
             if (ported)
             {
                 place = port;
@@ -171,29 +169,29 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
                 if (round == 0)
                 {
-                    PlayFire(firing, shot, targetPosition);
+                    PlayFire(firing, shot, aim.Point);
                 }
 
-                Shoot(firing, shot, round, target, targetPosition);
+                Shoot(firing, shot, round, aim);
             }
         }
 
-        private void Shoot(in Firing firing, in Weapon shot, int round, Entity target, float3 targetPosition)
+        private void Shoot(in Firing firing, in Weapon shot, int round, in ShotAim aim)
         {
             if (shot.FiresRounds)
             {
-                var aimed = target;
-                var aimedAt = targetPosition;
+                var aimed = aim.Target;
+                var aimedAt = aim.Point;
                 Obstruct(firing.Shooter, shot, firing.Pose, firing.Place, ref aimed, ref aimedAt);
                 Launch(firing, shot, round, aimed, aimedAt);
             }
             else if (shot.ShootsProjectiles)
             {
-                Intercept(firing, shot, target, targetPosition);
+                Intercept(firing, shot, aim.Target, aim.Point);
             }
             else
             {
-                Strike(firing, shot, round == 0, target, targetPosition);
+                Strike(firing, shot, round == 0, aim.Target, aim.Point);
             }
         }
 

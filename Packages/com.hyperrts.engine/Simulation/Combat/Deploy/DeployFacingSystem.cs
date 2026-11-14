@@ -15,7 +15,7 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Combat.Deploy
 {
     /// <summary>
-    /// Packs up and turns a <see cref="Deployable"/> so an ordered target in range sits in the centre of its weapon's firing arc.
+    /// Packs up and turns a <see cref="Deployable"/> so an ordered target or fire mission point in range sits in the centre of its weapon's firing arc.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -32,6 +32,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
             {
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
             }.ScheduleParallel();
+            new FacePointJob().ScheduleParallel();
         }
 
         [BurstCompile]
@@ -53,28 +54,56 @@ namespace HyperRTS.Simulation.Combat.Deploy
                 }
 
                 var toTarget = math.normalizesafe((Transforms[attack.Value].Position - transform.Position).xz);
-                if (deployable.Deployed && !weapon.InFiringArc(deployable.DeployedHeading, toTarget))
-                {
-                    deployable.PackUp();
-                }
-                else if (deployable.State == DeployState.Packed)
-                {
-                    TurnAndDeploy(ref deployable, transform, toTarget, ref goal, facing);
-                }
+                Face(ref deployable, weapon, transform, toTarget, ref goal, facing);
             }
+        }
 
-            private static void TurnAndDeploy(ref Deployable deployable, in LocalTransform transform, float2 toTarget,
-                ref FacingGoal goal, EnabledRefRW<FacingGoal> facing)
+        /// <summary>The same for a fire mission's point, which a launcher with no firing arc only deploys for.</summary>
+        [BurstCompile]
+        [WithPresent(typeof(FacingGoal))]
+        [WithNone(typeof(Dead))]
+        private partial struct FacePointJob : IJobEntity
+        {
+            private void Execute(ref Deployable deployable, in PointAim aim, in DynamicBuffer<WeaponMount> mounts,
+                in LocalTransform transform, ref FacingGoal goal, EnabledRefRW<FacingGoal> facing)
             {
-                if (math.dot(Rotations.Facing(transform.Rotation), toTarget) >= math.cos(FacingTolerance))
+                var weapon = mounts[0].Weapon;
+                if (weapon.FiringArc <= 0f)
                 {
                     deployable.Deploy();
                     return;
                 }
 
-                goal = new FacingGoal { Direction = toTarget };
-                facing.ValueRW = true;
+                var toPoint = math.normalizesafe((aim.Value - transform.Position).xz);
+                Face(ref deployable, weapon, transform, toPoint, ref goal, facing);
             }
+        }
+
+        /// <summary>Packs up a deployed unit that points off its target, and turns a packed one onto it before it deploys.</summary>
+        private static void Face(ref Deployable deployable, in Weapon weapon, in LocalTransform transform, float2 toTarget,
+            ref FacingGoal goal, EnabledRefRW<FacingGoal> facing)
+        {
+            if (deployable.Deployed && !weapon.InFiringArc(deployable.DeployedHeading, toTarget))
+            {
+                deployable.PackUp();
+            }
+            else if (deployable.State == DeployState.Packed)
+            {
+                TurnAndDeploy(ref deployable, transform, toTarget, ref goal, facing);
+            }
+        }
+
+        private static void TurnAndDeploy(ref Deployable deployable, in LocalTransform transform, float2 toTarget,
+            ref FacingGoal goal, EnabledRefRW<FacingGoal> facing)
+        {
+            if (math.dot(Rotations.Facing(transform.Rotation), toTarget) >= math.cos(FacingTolerance))
+            {
+                deployable.Deploy();
+                return;
+            }
+
+            goal = new FacingGoal { Direction = toTarget };
+            facing.ValueRW = true;
         }
     }
 }

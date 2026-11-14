@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using Unity.Burst;
@@ -28,6 +29,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             {
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
+                PointAims = SystemAPI.GetComponentLookup<PointAim>(true),
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
@@ -38,6 +40,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
+            [ReadOnly] public ComponentLookup<PointAim> PointAims;
             public float DeltaTime;
 
             private void Execute(Entity entity, DynamicBuffer<WeaponPose> poses, in DynamicBuffer<WeaponMount> mounts,
@@ -45,30 +48,32 @@ namespace HyperRTS.Simulation.Combat.Weapons
             {
                 var hull = Transforms[entity];
                 var primary = attacking.ValueRO ? attack.Value : Entity.Null;
+                var ordered = PointAims.HasEnabled(entity);
+                var point = ordered ? PointAims[entity].Value : default;
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
                     // The primary tracks the attack target while it closes in; extra weapons and interceptors only what they shoot.
                     var tracksAttack = i == 0 && !mount.Weapon.ShootsProjectiles;
                     var target = tracksAttack ? primary : mount.Target;
+                    var aim = ShotAim.Choose(target, Transforms, mount.Weapon, ordered && i == 0, point);
                     var rest = Deployable.IsDeployed(Deployables, entity) ? mount.Weapon.Aim.DeployedPitch : 0f;
-                    Pose(poses, i, hull, mount.Weapon, Aimed(entity, mount.Weapon, target), rest);
+                    Pose(poses, i, hull, mount.Weapon, Holds(entity, mount.Weapon) ? default : aim, rest);
                 }
             }
 
             // A packed-up launcher keeps its turret stowed until it has deployed.
-            private Entity Aimed(Entity unit, in Weapon weapon, Entity target) =>
-                Deployable.Holds(Deployables, unit, weapon.NeedsDeploy) ? Entity.Null : target;
+            private bool Holds(Entity unit, in Weapon weapon) => Deployable.Holds(Deployables, unit, weapon.NeedsDeploy);
 
             // With nothing to aim at it rests straight ahead at restPitch: level, or raised on a deployed launcher.
             private void Pose(DynamicBuffer<WeaponPose> poses, int index, in LocalTransform hull, in Weapon weapon,
-                Entity target, float restPitch)
+                in ShotAim aim, float restPitch)
             {
                 var pose = poses[index];
                 var angles = new float2(0f, restPitch);
-                if (Transforms.TryGetComponent(target, out var aimed))
+                if (aim.Exists)
                 {
-                    angles = weapon.Aim.Angles(hull, pose, weapon.Aim.TargetPoint(aimed.Position));
+                    angles = weapon.Aim.Angles(hull, pose, weapon.Aim.TargetPoint(aim.Point));
                 }
 
                 weapon.Aim.Turn(ref pose, angles, DeltaTime);

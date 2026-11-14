@@ -1,3 +1,5 @@
+using Unity.Mathematics;
+
 namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>How near and how far a unit's weapons that join one attack can hit: the shortest minimum range and the longest reach.</summary>
@@ -16,5 +18,12 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public readonly bool Contains(float gap) => gap >= Floor && gap <= Reach;
 
         public readonly float Middle => 0.5f * (Floor + Reach);
+
+        /// <summary>The distance nearest <paramref name="gap"/> that sits a tenth of the band inside both edges.</summary>
+        public readonly float Nearest(float gap)
+        {
+            var margin = 0.1f * (Reach - Floor);
+            return math.clamp(gap, Floor + margin, Reach - margin);
+        }
     }
 }

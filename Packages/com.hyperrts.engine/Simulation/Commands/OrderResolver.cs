@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources.Gathering;
@@ -23,6 +24,7 @@ namespace HyperRTS.Simulation.Commands
         private ComponentLookup<Owner> _owners;
         private TargetLookup _targets;
         private BufferLookup<WeaponMount> _mounts;
+        private ComponentLookup<PointAim> _pointAims;
         private ComponentLookup<Harvester> _harvesters;
         private ComponentLookup<ResourceNode> _nodes;
         private ComponentLookup<Builder> _builders;
@@ -42,6 +44,7 @@ namespace HyperRTS.Simulation.Commands
             _owners = state.GetComponentLookup<Owner>(true);
             _targets = new TargetLookup(ref state);
             _mounts = state.GetBufferLookup<WeaponMount>(true);
+            _pointAims = state.GetComponentLookup<PointAim>(true);
             _harvesters = state.GetComponentLookup<Harvester>(true);
             _nodes = state.GetComponentLookup<ResourceNode>(true);
             _builders = state.GetComponentLookup<Builder>(true);
@@ -63,6 +66,7 @@ namespace HyperRTS.Simulation.Commands
             _owners.Update(ref state);
             _targets.Update(ref state, queries);
             _mounts.Update(ref state);
+            _pointAims.Update(ref state);
             _harvesters.Update(ref state);
             _nodes.Update(ref state);
             _builders.Update(ref state);
@@ -78,13 +82,25 @@ namespace HyperRTS.Simulation.Commands
             _entityManager = state.EntityManager;
         }
 
-        /// <summary>The order type the unit gets; callers fill in where and what it acts on.</summary>
+        /// <summary>
+        /// The order type the unit gets; callers fill in where and what it acts on. A unit whose weapon fires only on
+        /// order takes an attack as a fire mission, which the caller aims at the target's position.
+        /// </summary>
         public Order Resolve(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
         {
-            return command == CommandType.Smart && TryRule(unit, target, relations, out var ruled)
+            var order = command == CommandType.Smart && TryRule(unit, target, relations, out var ruled)
                 ? ruled
                 : new Order { Type = ResolveType(command, unit, target, relations) };
+            if (order.Type == OrderType.Attack && FiresOnOrder(unit))
+            {
+                order.Type = OrderType.FireMission;
+            }
+
+            return order;
         }
+
+        private bool FiresOnOrder(Entity unit) =>
+            _mounts.TryGetBuffer(unit, out var mounts) && mounts.Length > 0 && mounts[0].Weapon.FiresOnOrder;
 
         private OrderType ResolveType(CommandType command, Entity unit, Entity target, in OwnerRelations relations)
         {
@@ -93,6 +109,7 @@ namespace HyperRTS.Simulation.Commands
                 CommandType.Smart => ResolveSmart(unit, target, relations),
                 CommandType.Attack => CanForceAttack(unit, target, relations) ? OrderType.Attack : OrderType.Move,
                 CommandType.AttackMove => ResolveAttackMove(unit, target, relations),
+                CommandType.FireMission => _pointAims.HasComponent(unit) ? OrderType.FireMission : OrderType.None,
                 CommandType.Patrol => OrderType.Patrol,
                 CommandType.ReverseMove => OrderType.ReverseMove,
                 CommandType.Escort => CanEscort(unit, target, relations) ? OrderType.Escort : OrderType.Move,

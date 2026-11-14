@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Combat.Damage;
+using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
@@ -117,6 +118,31 @@ namespace HyperRTS.Simulation.Tests.AI
             World.Run(1f);
 
             Assert.AreEqual(460f, World.Get<Health>(enemy).Current, 1e-3f);
+        }
+
+        [Test]
+        public void AI_OrdersAFireMission_ForAnIdleFiresOnOrderUnit_AtTheDensestKnownGroup()
+        {
+            var launcher = World.AddWeapon(World.SpawnUnit(2, float3.zero), new TestWeapon
+            {
+                Range = 40f,
+                Projectile = World.ProjectilePrefab(),
+                Trajectory = Trajectory.Ballistic,
+            });
+            World.SetFiresOnOrder(launcher);
+            var weapon = World.Primary(launcher);
+            weapon.Damage.Radius = 4f;
+            World.SetPrimary(launcher, weapon);
+            World.SpawnUnit(1, new float3(0f, 0f, 15f), new TestUnit { Speed = 0f });
+            World.SpawnUnit(1, new float3(30f, 0f, 0f), new TestUnit { Speed = 0f });
+            World.SpawnUnit(1, new float3(31f, 0f, 1f), new TestUnit { Speed = 0f });
+            World.SpawnUnit(1, new float3(0f, 0f, 90f), new TestUnit { Speed = 0f });
+
+            Assert.IsTrue(World.RunUntil(() => World.IsEnabled<ActiveOrder>(launcher), 3f));
+
+            var order = World.Get<ActiveOrder>(launcher).Value;
+            Assert.AreEqual(OrderType.FireMission, order.Type);
+            Assert.Less(math.distance(order.Position.xz, new float2(30.5f, 0.5f)), 1.5f, "the pair in reach, not the lone unit nor the one out of reach");
         }
 
         [Test]

@@ -33,7 +33,7 @@ of one tier never form a cycle. `ModuleLayoutTests` enforces this, and a new mod
 | [Movement](movement.md) | Navigation, Movement, Air, Transport |
 | [Driving](driving.md) | Locomotion, Chassis, reflexes |
 | [Combat](combat.md) | Combat, Destruction, Stats, Veterancy, Upgrades, Auras, Abilities, Status, Vision |
-| [Weapons](weapons.md) | Trajectories, Salvos, Ammo, Aim, Deploying, Interception, Remains |
+| [Weapons](weapons.md) | Trajectories, Salvos, Ammo, Aim, Deploying, Fire missions, Interception, Remains |
 | [Squads](squads.md) | Squads, Suppression, Retreat, Reinforce, Cover |
 | [Economy](economy.md) | Resources, Buildings, Power, Production, Capture, Airdrops |
 | [Support](support.md) | AI, Cues (audio and effects), Replays, Strikes |

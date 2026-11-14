@@ -32,6 +32,9 @@ namespace HyperRTS.Simulation.Orders
         /// <summary>Drive to Position in reverse, front toward where the unit came from; others move as usual.</summary>
         ReverseMove = 14,
 
+        /// <summary>Fire the primary weapon's salvo at Position, a ground point, moving into range and deploying first; ends once the salvo has fired.</summary>
+        FireMission = 15,
+
         /// <summary>First value a game may use for its own orders; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }

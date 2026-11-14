@@ -24,6 +24,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
             _entity = entity;
         }
 
+        /// <summary>Has a destination at all, packed up or not.</summary>
+        public readonly bool HasDestination => _present;
+
         public readonly bool IsMoving => _present && _enabled.ValueRO;
 
         /// <summary>Has a destination to move to and isn't rooted by deploying.</summary>

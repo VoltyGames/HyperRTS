@@ -57,6 +57,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
+                PointAims = SystemAPI.GetComponentLookup<PointAim>(true),
                 FacingGoals = SystemAPI.GetComponentLookup<FacingGoal>(false),
                 Shots = _shots,
             }.Schedule();
@@ -72,43 +73,56 @@ namespace HyperRTS.Simulation.Combat.Weapons
             [ReadOnly] public ComponentLookup<Pace> Paces;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
+            [ReadOnly] public ComponentLookup<PointAim> PointAims;
             public ComponentLookup<FacingGoal> FacingGoals;
             public Shooter Shots;
 
             private void Execute(Entity entity, DynamicBuffer<WeaponMount> mounts, in Owner owner)
             {
                 var rate = Paces.TryGetComponent(entity, out var pace) ? pace.FireRate : 1f;
+                var ordered = PointAims.HasEnabled(entity);
                 for (var i = 0; i < mounts.Length; i++)
                 {
                     var mount = mounts[i];
                     mount.Weapon.Tick(DeltaTime * rate);
-                    if (!CanShoot(entity, mount, rate))
+                    var aim = ShotAim.Choose(mount.Target, Transforms, mount.Weapon, ordered && i == 0,
+                        ordered ? PointAims[entity].Value : default);
+                    if (!CanShoot(entity, mount, aim, rate))
                     {
                         mount.Weapon.EndSalvo();
                     }
-                    else if (Faces(entity, mount) && Shots.TryFire(entity, ref mount.Weapon, (byte)i, mount.Target,
-                                 owner.Value, mount.Carriers))
+                    else
                     {
-                        mount.Ammo.Spend();
+                        mount.Weapon.SalvoAim = aim.Point;
+                        if (Faces(entity, mount, aim) && Shots.TryFire(entity, ref mount.Weapon, (byte)i, aim,
+                                owner.Value, mount.Carriers))
+                        {
+                            mount.Ammo.Spend();
+                        }
                     }
 
                     mounts[i] = mount;
                 }
             }
 
-            /// <summary>A target to shoot; a projectile only while it still flies, inside the weapon's range.</summary>
-            private bool CanShoot(Entity entity, in WeaponMount mount, float rate)
+            /// <summary>An aim to shoot at; a projectile only while it still flies inside the weapon's range, a ground point only with rounds left.</summary>
+            private bool CanShoot(Entity entity, in WeaponMount mount, in ShotAim aim, float rate)
             {
-                if (mount.Target == Entity.Null || mount.Carriers == 0 || rate <= 0f)
+                if (!aim.Exists || mount.Carriers == 0 || rate <= 0f)
                 {
                     return false;
                 }
 
-                return !mount.Weapon.ShootsProjectiles || Shots.CanIntercept(entity, mount.Weapon, mount.Target);
+                if (mount.Weapon.ShootsProjectiles)
+                {
+                    return Shots.CanIntercept(entity, mount.Weapon, aim.Target);
+                }
+
+                return aim.Target != Entity.Null || mount.Ready;
             }
 
             /// <summary>A unit's hull-fixed weapon turns the hull; a garrisoned passenger fires out of any side without turning.</summary>
-            private bool Faces(Entity entity, in WeaponMount mount)
+            private bool Faces(Entity entity, in WeaponMount mount, in ShotAim aim)
             {
                 var turnsHull = Units.HasComponent(entity) && !mount.Weapon.Aim.Turreted;
                 if (!turnsHull || InsideLookup.HasEnabled(entity))
@@ -116,7 +130,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                     return true;
                 }
 
-                return Face(entity, Transforms[mount.Target].Position, mount.Weapon.Aim.AimTolerance);
+                return Face(entity, aim.Point, mount.Weapon.Aim.AimTolerance);
             }
 
             /// <summary>Turns the hull level toward the target; true once it faces it within <paramref name="tolerance"/>.</summary>

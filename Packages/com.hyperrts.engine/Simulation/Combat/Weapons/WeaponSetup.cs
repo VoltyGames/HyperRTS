@@ -7,7 +7,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Combat.Weapons
 {
-    /// <summary>Adds the components that let an entity attack.</summary>
+    /// <summary>Adds the components that let an entity attack, and fire missions when its primary fires only on order.</summary>
     public static class WeaponSetup
     {
         /// <summary>
@@ -28,6 +28,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
             writer.Add(stance);
             writer.Add<AttackTarget>();
             writer.SetEnabled<AttackTarget>(false);
+            if (mounts[0].Weapon.FiresOnOrder)
+            {
+                writer.Add<PointAim>();
+                writer.SetEnabled<PointAim>(false);
+            }
         }
 
         /// <summary>The muzzles of weapons that fire from several in turn; see <see cref="Weapon.FirstMuzzle"/>.</summary>

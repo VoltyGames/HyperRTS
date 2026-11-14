@@ -25,6 +25,7 @@ namespace HyperRTS.Simulation.AI
         private SquadPlanner _squads;
         private FieldWorkPlanner _fieldWorks;
         private DeployPlanner _deploy;
+        private FireMissionPlanner _fireMissions;
         private AttackPlanner _attack;
         private AbilityPlanner _abilities;
 
@@ -38,6 +39,7 @@ namespace HyperRTS.Simulation.AI
             _squads = SquadPlanner.Create(ref state);
             _fieldWorks = FieldWorkPlanner.Create(ref state);
             _deploy = DeployPlanner.Create(ref state);
+            _fireMissions = FireMissionPlanner.Create(ref state);
             _attack = AttackPlanner.Create(ref state);
             _abilities = AbilityPlanner.Create(ref state);
             state.RequireForUpdate<OwnerRelations>();
@@ -91,6 +93,7 @@ namespace HyperRTS.Simulation.AI
             _buildOrder.Update(_builders);
             _fieldWorks.Update(_builders, _squads);
             _deploy.Update();
+            _fireMissions.Update(ref state);
             _attack.Update(ref state, _squads);
             _abilities.Update(ref state);
         }
@@ -108,6 +111,7 @@ namespace HyperRTS.Simulation.AI
                 _fieldWorks.Plan(ref state, turn, snapshot);
             }
 
+            _fireMissions.Plan(ref state, turn, snapshot);
             _deploy.Plan(ref state, turn);
             _attack.Plan(ref state, turn, snapshot);
             if (turn.Settings.UseAbilities)

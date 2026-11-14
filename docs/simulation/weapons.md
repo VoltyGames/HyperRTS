@@ -1,8 +1,8 @@
 # Weapon modules
 
-[Docs](../README.md) ▸ [Simulation](README.md) ▸ Trajectories, Salvos, Ammo, Aim, Deploying, Interception, Remains
+[Docs](../README.md) ▸ [Simulation](README.md) ▸ Trajectories, Salvos, Ammo, Aim, Deploying, Fire missions, Interception, Remains
 
-How a weapon fires once combat has picked a target: shot courses, salvos, ammo, aim, deploying, interception and what
+How a weapon fires once combat has picked a target: shot courses, salvos, ammo, aim, deploying, fire missions, interception and what
 a dead unit leaves. Targeting and damage are in [combat](combat.md).
 
 ## Trajectories, salvos and ammo
@@ -11,8 +11,9 @@ The authored `Trajectory` picks a `ShotCourse` at bake, and runtime reads only t
 and home. Ballistic shells arc onto the point aimed at launch and miss a target that moved. Rockets climb, then dive
 onto the live target.
 
-A weapon with `salvoSize` above 1 fires that many shots `salvoInterval` apart, then runs its cooldown, and drops the
-rest if the target is lost or the unit packs up. With `extraMuzzles`, shots leave from each muzzle in turn; aim uses
+A weapon with `salvoSize` above 1 fires that many shots `salvoInterval` apart, then runs its cooldown. A weapon that
+launches rounds finishes its salvo when its target dies or is lost, firing the rest at the point it last aimed at
+(`Weapon.SalvoAim`); hit-scan weapons and interceptors drop the rest, and so does any weapon whose unit packs up. With `extraMuzzles`, shots leave from each muzzle in turn; aim uses
 the first. `spread` scatters the aim point, seeded by shooter, target and shot count. A homing shot with a spread gives
 up its lock, so a rocket ripple covers an area; missiles that must stay locked keep 0.
 
@@ -46,6 +47,22 @@ A `firingArc` (half angle, 0 for all round) restricts fire to a cone about `Depl
 facing when it never deploys. Auto-targeting skips targets outside it. For an ordered attack, `DeployFacingSystem` packs
 up a deployed unit whose target is outside the cone, turns it to face the target and deploys again. It applies only
 to weapons with a firing arc. A deployable squad is a weapon team ([squads](squads.md#squads-and-members)).
+
+## Fire missions
+
+A weapon with `firesOnOrder` never picks targets itself: `TargetAcquisitionSystem` and `WeaponTargetJob` skip it. It
+fires only when ordered, and baking such a primary adds a `PointAim` to the unit. A `FireMission` command carries a
+ground point in `Position`, anywhere in range, seen or not. `FireMissionSystem` and `MissionRunner` run the order: the
+unit drives to the near edge of its primary weapon's range band (`minRange` to `range`, from its centre) if the point
+lies outside it, then halts and enables `PointAim` there. `DeployFacingSystem` packs up and turns a deployed unit whose
+point is outside its `firingArc`, as for an attack, and deploys it; a launcher with no arc only deploys. With the point
+aimed, `WeaponPoseSystem` turns the pose onto it and `WeaponFireSystem` fires the weapon's whole salvo there through
+`ShotAim`, each round scattered by `spread`; splash resolves through the hit's `DamageProfile` as for any shell. The
+order ends once that salvo has fired (`Weapon.SalvosFired`), leaving the unit deployed, or at once when the weapon is out
+of ammo or cannot fire at ground. A unit without `PointAim` ignores the command, and one with no move destination only
+fires at points already in range. An Attack on an entity, or a Smart click on an enemy, becomes a fire mission at the
+entity's position as ordered. The skirmish AI's `FireMissionPlanner` gives each idle such unit a mission on the known
+enemy in range with the most enemies within a blast of it; `DeployPlanner` leaves a unit on a mission deployed.
 
 ## Interception
 

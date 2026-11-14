@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Commands
             TypeSet.Range(CommandType.Smart, CommandType.SetStance)
                 .With(TypeSet.Range(CommandType.Repair, CommandType.Enter))
                 .With(TypeSet.Range(CommandType.Patrol, CommandType.ReturnToBase))
-                .With(CommandType.ReverseMove);
+                .With(CommandType.ReverseMove).With(CommandType.FireMission);
 
         /// <summary>Keeps the command's owned subjects that take orders, in order.</summary>
         private bool GatherSubjects(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects)
@@ -131,6 +131,12 @@ namespace HyperRTS.Simulation.Commands
                 {
                     order.Position = command.Position;
                     order.Target = command.Target;
+                    if (order.Type == OrderType.FireMission && command.Target != Entity.Null)
+                    {
+                        order.Position = _transforms[command.Target].Position;
+                        order.Target = Entity.Null;
+                    }
+
                     _writer.Issue(unit, order, command.Queue);
                 }
             }

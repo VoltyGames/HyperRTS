@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Cues.Voice
         {
             var selected = SystemAPI.QueryBuilder().WithAll<Selected, Owner, LocalTransform, EntitySound>().Build();
             var answered = TypeSet.Range(CommandType.Smart, CommandType.Attack).With(CommandType.ReturnToBase)
-                .With(CommandType.Patrol).With(CommandType.Escort);
+                .With(CommandType.Patrol).With(CommandType.Escort).With(CommandType.FireMission);
             _commands = new CommandReader(ref state, answered, selected);
             _cues = new CueWriter(ref state);
             state.RequireForUpdate<LocalPlayer>();
@@ -103,6 +103,7 @@ namespace HyperRTS.Simulation.Cues.Voice
                 case CommandType.AttackMove:
                 case CommandType.Patrol:
                 case CommandType.Escort:
+                case CommandType.FireMission:
                     return CueSlot.Attack;
                 case CommandType.Smart:
                     return IsHostile(ref state, command.Target, owner) ? CueSlot.Attack : CueSlot.Move;

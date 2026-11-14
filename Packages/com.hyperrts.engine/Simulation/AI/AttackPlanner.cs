@@ -186,7 +186,7 @@ namespace HyperRTS.Simulation.AI
 
                 var building = entities.HasComponent<BuildingTag>(entity) && entities.HasComponent<VictoryCritical>(entity);
                 var tall = entities.HasComponent<TallTarget>(entity);
-                if (limitedByFog && !IsKnown(targets.Position(i), team, building, tall))
+                if (limitedByFog && !_fog.IsKnown(targets.Position(i), team, building, tall))
                 {
                     continue;
                 }
@@ -216,17 +216,6 @@ namespace HyperRTS.Simulation.AI
             }
 
             return _targetLookup.IsValidTarget(entity, owner, snapshot.Relations);
-        }
-
-        /// <summary>Units must be in sight; buildings stay known once explored, as they would on a human's map.</summary>
-        private readonly bool IsKnown(float3 position, byte team, bool building, bool tall)
-        {
-            if (!_fog.IsCreated)
-            {
-                return true;
-            }
-
-            return building ? _fog.IsExplored(position, team) : _fog.IsVisible(position, team, tall);
         }
 
         /// <summary>Where an attack heads and which enemy owns it.</summary>

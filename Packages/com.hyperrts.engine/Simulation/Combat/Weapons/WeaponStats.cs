@@ -123,6 +123,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Range(0f, 180f)]
         public float firingArc;
 
+        [Tooltip("Never picks targets itself: fires only when ordered, at a ground point (a fire mission) or a unit, which it takes as the unit's position.")]
+        public bool firesOnOrder;
+
         [Header("Ammo")]
         [Tooltip("Shots before it must reload; 0 never runs dry. An empty weapon holds fire (an aircraft with a pad flies home).")]
         [Min(0)]
@@ -183,6 +186,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 SalvoInterval = salvoInterval,
                 Spread = spread,
                 NeedsDeploy = needsDeploy,
+                FiresOnOrder = firesOnOrder,
                 FiringArc = math.radians(firingArc),
                 Aim = new WeaponAim
                 {

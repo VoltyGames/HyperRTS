@@ -91,7 +91,7 @@ All player intent is a `PlayerCommand` on the player entity. Units carry orders.
 
 | Type | Role |
 | --- | --- |
-| `PlayerCommand`, `CommandType` | Player intent: Smart, Move, Attack, Gather, Build, Produce, Capture, Enter, UseAbility, Surrender and more |
+| `PlayerCommand`, `CommandType` | Player intent: Smart, Move, Attack, FireMission, Gather, Build, Produce, Capture, Enter, UseAbility, Surrender and more |
 | `Order`, `OrderType` | A unit's order. `Argument` carries extra data such as an ability id |
 | `OrderTraits`, `OrderTraitTable` | How an order runs. A singleton: fixed for engine types, registered for game ones |
 | `ActiveOrder`, `QueuedOrder` | The current order and the Shift queue. Disabled `ActiveOrder` means idle |

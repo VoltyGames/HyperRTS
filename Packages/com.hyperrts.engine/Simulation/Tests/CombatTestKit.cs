@@ -98,6 +98,17 @@ namespace HyperRTS.Simulation.Tests
             world.SetPrimary(entity, weapon);
         }
 
+        /// <summary>Makes the primary fire only on order, which gives the unit the point aim a fire mission uses.</summary>
+        public static void SetFiresOnOrder(this TestWorld world, Entity entity)
+        {
+            var weapon = world.Primary(entity);
+            weapon.FiresOnOrder = true;
+            world.SetPrimary(entity, weapon);
+            var writer = world.Writer(entity);
+            writer.Add<PointAim>();
+            writer.SetEnabled<PointAim>(false);
+        }
+
         /// <summary>Gives the primary a muzzle at each point, fired in turn.</summary>
         public static void SetMuzzles(this TestWorld world, Entity entity, params float3[] points)
         {

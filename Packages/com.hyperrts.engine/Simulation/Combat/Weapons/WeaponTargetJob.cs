@@ -92,7 +92,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 return mount.Target;
             }
 
-            return scanning ? Scan(entity, position, mount.Weapon, owner) : Entity.Null;
+            return scanning && !mount.Weapon.FiresOnOrder ? Scan(entity, position, mount.Weapon, owner) : Entity.Null;
         }
 
         /// <summary>Its own target is still hostile, unhidden and in its reach.</summary>
