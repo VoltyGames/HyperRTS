@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Stats;
@@ -79,6 +80,12 @@ namespace HyperRTS.Simulation.Tests.Upgrades
             World.Produce(1, lab, upgrade);
             World.Tick();
             Assert.AreEqual(1, World.Buffer<ProductionQueueItem>(lab).Length, "no duplicate queue");
+
+            World.Command(1, new PlayerCommand { Type = CommandType.CancelProduction, Unit = lab, Argument = 0 });
+            World.Tick();
+            World.Produce(1, lab, upgrade);
+            World.Tick();
+            Assert.AreEqual(1, World.Buffer<ProductionQueueItem>(lab).Length, "a cancelled research can be queued again");
 
             World.Run(3f);
             World.Produce(1, lab, upgrade);

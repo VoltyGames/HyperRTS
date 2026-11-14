@@ -35,7 +35,7 @@ namespace HyperRTS.Simulation.Tests.Production
         }
 
         [Test]
-        public void FindRefusal_NamesAReachedLimit_AndFinishedResearch()
+        public void FindRefusal_NamesAReachedLimit_IncludingFinishedResearch()
         {
             var entityManager = World.EntityManager;
             World.AddResources(1, _supplies, 1000);
@@ -43,13 +43,14 @@ namespace HyperRTS.Simulation.Tests.Production
             World.AddBuildLimit(World.SpawnUnit(1, Far, new TestUnit { Name = "Hero" }), 1);
             var upgrade = World.UnitPrefab(_supplies, 10, name: "Upgrade");
             entityManager.AddComponent<Research>(upgrade);
+            World.AddBuildLimit(upgrade, 1);
             entityManager.GetBuffer<CompletedResearch>(World.Player(1)).Add(new CompletedResearch
             {
                 Prefab = upgrade, TypeId = EntityInfo.TypeIdFromName("Upgrade"),
             });
 
             Assert.AreEqual(PurchaseRefusal.AtLimit, Refusal(hero));
-            Assert.AreEqual(PurchaseRefusal.Researched, Refusal(upgrade));
+            Assert.AreEqual(PurchaseRefusal.AtLimit, Refusal(upgrade));
         }
 
         private PurchaseRefusal Refusal(Entity prefab)

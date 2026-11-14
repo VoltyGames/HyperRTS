@@ -25,7 +25,10 @@ namespace HyperRTS.Simulation.Production
             _limited = BuildCounts.Query(Allocator.Temp).Build(entityManager);
         }
 
-        /// <summary>Snapshots <paramref name="player"/> as a buyer for this frame, with its queued and build-limited entities.</summary>
+        /// <summary>
+        /// Snapshots <paramref name="player"/> as a buyer for this frame, with its queued items, build-limited entities
+        /// and finished research.
+        /// </summary>
         public readonly Buyer Snapshot(EntityManager entityManager, Entity player)
         {
             var owner = entityManager.GetComponentData<Player>(player).Owner;
@@ -34,10 +37,9 @@ namespace HyperRTS.Simulation.Production
                 Owner = owner,
                 Buildings = new CompletedBuildings(_completed, Allocator.Temp),
                 Research = entityManager.GetBuffer<CompletedResearch>(player, true),
-                QueuedResearch = new NativeHashSet<Entity>(8, Allocator.Temp),
                 Counts = BuildCounts.Snapshot(_limited, owner, false),
             };
-
+            buyer.Counts.AddResearch(buyer.Research);
             foreach (var prefab in FindQueued(entityManager, owner))
             {
                 buyer.AddPurchase(entityManager, prefab);
@@ -59,11 +61,7 @@ namespace HyperRTS.Simulation.Production
                 counts.Add(entityManager, prefab);
             }
 
-            foreach (var research in entityManager.GetBuffer<CompletedResearch>(player, true))
-            {
-                counts.Add(entityManager, research.Prefab);
-            }
-
+            counts.AddResearch(entityManager.GetBuffer<CompletedResearch>(player, true));
             return counts;
         }
 

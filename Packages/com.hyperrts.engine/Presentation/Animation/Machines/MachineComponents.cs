@@ -90,7 +90,7 @@ namespace HyperRTS.Presentation.Animation.Machines
         /// <summary>While its building is complete and not Offline (a radar antenna stops on low power).</summary>
         Powered = 1,
 
-        /// <summary>While its building's queue has work it isn't halted on (a crane over the line).</summary>
+        /// <summary>While its building's producer is working, slowed or not by low power (a crane over the line).</summary>
         Producing = 2,
 
         /// <summary>While its building fired a weapon or interceptor in the keep-running seconds (a gatling's barrels).</summary>

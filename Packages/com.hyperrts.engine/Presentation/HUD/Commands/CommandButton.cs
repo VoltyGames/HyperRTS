@@ -98,10 +98,10 @@ namespace HyperRTS.Presentation.HUD.Commands
         }
 
         /// <summary>
-        /// Applies a purchase rule's verdict as <c>hud-command--unaffordable</c>, <c>--locked</c>, <c>--maxed</c> or
-        /// <c>--researched</c>.
+        /// Applies a purchase rule's verdict as <c>hud-command--unaffordable</c>, <c>--locked</c>, <c>--maxed</c> or,
+        /// for <paramref name="research"/> at its limit, <c>--researched</c>.
         /// </summary>
-        public void ShowRefusal(PurchaseRefusal refusal)
+        public void ShowRefusal(PurchaseRefusal refusal, bool research)
         {
             if (refusal == _refusal)
             {
@@ -112,8 +112,9 @@ namespace HyperRTS.Presentation.HUD.Commands
             TooltipVersion++;
             EnableInClassList("hud-command--unaffordable", refusal == PurchaseRefusal.CannotAfford);
             EnableInClassList("hud-command--locked", refusal == PurchaseRefusal.MissingPrerequisite);
-            EnableInClassList("hud-command--maxed", refusal == PurchaseRefusal.AtLimit);
-            EnableInClassList("hud-command--researched", refusal == PurchaseRefusal.Researched);
+            var atLimit = refusal == PurchaseRefusal.AtLimit;
+            EnableInClassList("hud-command--maxed", atLimit && !research);
+            EnableInClassList("hud-command--researched", atLimit && research);
             _costs.MarkShort(refusal == PurchaseRefusal.CannotAfford);
         }
 

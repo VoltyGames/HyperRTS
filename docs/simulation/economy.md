@@ -129,7 +129,9 @@ share `ProducibleAuthoring`: build time and population.
 
 - A `Prerequisite` is met by a finished building or research.
 - `Buyer` holds the one buy rule (`CanBuy`, `TryBuy`, `FindRefusal`) over a `Stockpile`, shared by orders, placement, the AI and the HUD. Make `BuyerQueries` once and take a `Buyer` per player with `Snapshot`.
-- `BuildLimitAuthoring` caps how many of a type a player may have, counting sites and queued items.
+- `BuildLimitAuthoring` caps how many of a type a player may have, counting sites, queued items and finished
+  research (`BuildCounts`). Every research bakes with a limit of one, so it is queued once and never again once done;
+  cancelling it frees it. The HUD shows research at its limit as researched rather than as a count.
 - Only a finished producer queues (`Producer.CanQueue`), up to its `QueueLimit`. Cancelling the head restarts
   progress; cancelling a later item keeps it.
 - A unit trained with a rally point set spawns with a `RallyOrder`, which `RallyOrderSystem` turns into a Move.
@@ -139,6 +141,9 @@ share `ProducibleAuthoring`: build time and population.
   twice. Destruction is read from `Health`, on the frame of the killing blow.
 - On `OwnerChanged`, each module drops what the old owner left: Production its queue and rally point, Orders the
   orders, Selection the selection.
+- `ProductionSystem` writes a replicated `ProducerState` each frame: `Idle`, `Working` (slowed on low power),
+  `WaitingPopulation`, `WaitingPad` or `Offline` (any other offline reason, such as an EMP). Clients read it for
+  `Producing` machines and working loop sounds instead of rederiving it.
 - `Producer.Released` replicates, which opens the [production doors](../presentation/animation.md#machines).
 
 ## Capture

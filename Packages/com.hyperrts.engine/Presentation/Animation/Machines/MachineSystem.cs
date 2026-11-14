@@ -38,7 +38,6 @@ namespace HyperRTS.Presentation.Animation.Machines
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Owners = SystemAPI.GetComponentLookup<Owner>(true),
                 Offlines = SystemAPI.GetComponentLookup<Offline>(true),
-                Queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true),
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
                 Producers = SystemAPI.GetComponentLookup<Producer>(true),
@@ -65,7 +64,6 @@ namespace HyperRTS.Presentation.Animation.Machines
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<Owner> Owners;
             [ReadOnly] public ComponentLookup<Offline> Offlines;
-            [ReadOnly] public BufferLookup<ProductionQueueItem> Queues;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
             [ReadOnly] public ComponentLookup<Producer> Producers;
@@ -102,7 +100,7 @@ namespace HyperRTS.Presentation.Animation.Machines
                     case MachineRun.Powered:
                         return offline.Reasons == OfflineReason.None;
                     case MachineRun.Producing:
-                        return !offline.HasReasonOtherThan(OfflineReason.Unpowered) && Queues.TryGetBuffer(building, out var queue) && !queue.IsEmpty;
+                        return Producers.TryGetComponent(building, out var working) && working.State == ProducerState.Working;
                     case MachineRun.Firing:
                         return clock.ChangedRecently(Shots(building), DeltaTime);
                     case MachineRun.Releasing:

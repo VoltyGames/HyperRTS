@@ -27,6 +27,7 @@ namespace HyperRTS.Simulation.Production
     {
         private EntityQuery _producers;
         private PrefabSpawner _spawner;
+        private AirfieldPads _pads;
         private EventWriter<UnitProduced> _produced;
         private EventWriter<ResearchCompleted> _researched;
 
@@ -37,6 +38,7 @@ namespace HyperRTS.Simulation.Production
             _producers = new EntityQueryBuilder(Allocator.Temp).WithAll<Producer, ProductionQueueItem, LocalTransform, Owner>()
                 .WithPresent<RallyPoint>().WithNone<ConstructionProgress>().Build(ref state);
             _spawner = new PrefabSpawner(ref state);
+            _pads = new AirfieldPads(ref state);
             _produced = new EventWriter<UnitProduced>(ref state);
             _researched = new EventWriter<ResearchCompleted>(ref state);
             state.RequireForUpdate<MatchRules>();
@@ -47,6 +49,7 @@ namespace HyperRTS.Simulation.Production
         public void OnUpdate(ref SystemState state)
         {
             _spawner.Update(ref state);
+            _pads.Update(ref state);
             _produced.Update(ref state);
             _researched.Update(ref state);
 
@@ -65,8 +68,7 @@ namespace HyperRTS.Simulation.Production
                 ResearchLookup = SystemAPI.GetComponentLookup<Research>(true),
                 OfflineLookup = SystemAPI.GetComponentLookup<Offline>(true),
                 CompletedResearchLookup = SystemAPI.GetBufferLookup<CompletedResearch>(false),
-                PadLookup = SystemAPI.GetBufferLookup<LandingPad>(true),
-                PadUserLookup = SystemAPI.GetComponentLookup<HomePad>(true),
+                Pads = _pads,
                 Produced = _produced,
                 Researched = _researched,
                 Entities = SystemAPI.GetEntityTypeHandle(),
@@ -129,8 +131,7 @@ namespace HyperRTS.Simulation.Production
             [ReadOnly] public ComponentLookup<Research> ResearchLookup;
             [ReadOnly] public ComponentLookup<Offline> OfflineLookup;
             public BufferLookup<CompletedResearch> CompletedResearchLookup;
-            [ReadOnly] public BufferLookup<LandingPad> PadLookup;
-            [ReadOnly] public ComponentLookup<HomePad> PadUserLookup;
+            public AirfieldPads Pads;
             public EventWriter<UnitProduced> Produced;
             public EventWriter<ResearchCompleted> Researched;
 
@@ -166,40 +167,33 @@ namespace HyperRTS.Simulation.Production
                         HasRally = chunk.IsComponentEnabled(ref Rallies, i),
                     };
                     var finished = Work(input, ref producer, queues[i]);
-                    if (finished || producer.Elapsed != before.Elapsed || producer.Released != before.Released)
+                    var progressed = producer.Elapsed != before.Elapsed || producer.Released != before.Released;
+                    if (finished || progressed || producer.State != before.State)
                     {
                         Changes.Add(new ProducerChange { Entity = entities[i], Producer = producer, Finished = finished });
                     }
                 }
             }
 
-            /// <summary>Whether the head of the queue finished and must leave it.</summary>
+            /// <summary>Whether the head of the queue finished and must leave it; sets the producer's state.</summary>
             private bool Work(in ProducerInput input, ref Producer producer,
                 in DynamicBuffer<ProductionQueueItem> queue)
             {
-                var entity = input.Entity;
-                var owner = input.Owner;
                 if (queue.IsEmpty)
                 {
                     producer.Elapsed = 0f;
+                    producer.State = ProducerState.Idle;
                     return false;
                 }
 
-                var prefab = queue[0].Prefab;
-                var producible = ProducibleLookup[prefab];
-                if (!HasRoomFor(owner.Value, producible.Population) || !TryReservePad(entity, prefab, out var pad))
+                var producible = ProducibleLookup[queue[0].Prefab];
+                producer.State = FindState(input, queue[0].Prefab, producible.Population, out var pad);
+                if (producer.State != ProducerState.Working)
                 {
                     return false;
                 }
 
-                // Low power only slows production; any other reason (an EMP) halts it.
-                var offline = OfflineLookup.TryGetComponent(entity, out var found) ? found : default;
-                if (offline.HasReasonOtherThan(OfflineReason.Unpowered))
-                {
-                    return false;
-                }
-
-                var lowPower = (offline.Reasons & OfflineReason.Unpowered) != 0;
+                var lowPower = (FindOffline(input.Entity).Reasons & OfflineReason.Unpowered) != 0;
                 producer.Elapsed += DeltaTime * producer.Speed * (lowPower ? LowPowerRate : 1f);
                 if (producer.Elapsed < producible.BuildTime)
                 {
@@ -210,6 +204,28 @@ namespace HyperRTS.Simulation.Production
                 producer.Elapsed = 0f;
                 return true;
             }
+
+            /// <summary>What stops work on the head of a non-empty queue, or Working, with the aircraft's pad.</summary>
+            private ProducerState FindState(in ProducerInput input, Entity prefab, int population, out int pad)
+            {
+                pad = -1;
+                if (!HasRoomFor(input.Owner.Value, population))
+                {
+                    return ProducerState.WaitingPopulation;
+                }
+
+                if (!Pads.TryReserve(input.Entity, prefab, out pad))
+                {
+                    return ProducerState.WaitingPad;
+                }
+
+                // Low power only slows production; any other reason (an EMP) stops it.
+                var stopped = FindOffline(input.Entity).HasReasonOtherThan(OfflineReason.Unpowered);
+                return stopped ? ProducerState.Offline : ProducerState.Working;
+            }
+
+            private Offline FindOffline(Entity entity) =>
+                OfflineLookup.TryGetComponent(entity, out var found) ? found : default;
 
             private void Deliver(in ProducerInput input, ref Producer producer, in ProductionQueueItem item,
                 in Producible producible, int pad)
@@ -223,9 +239,9 @@ namespace HyperRTS.Simulation.Production
                     return;
                 }
 
-                var position = SpawnPoint(entity, producer, input.Transform, pad);
+                var position = Pads.SpawnPoint(entity, pad, producer.SpawnOffset, input.Transform);
                 var unit = Spawn(prefab, position, input);
-                DockOnPad(unit, prefab, entity, pad);
+                Pads.Dock(Ecb, unit, prefab, entity, pad);
                 SpawnedPopulation[owner] += producible.Population;
                 producer.Released++;
                 Produced.Add(new UnitProduced
@@ -252,32 +268,6 @@ namespace HyperRTS.Simulation.Production
                 var current = PopulationLookup[Players[owner]];
                 current.Used += SpawnedPopulation[owner];
                 return current.HasRoomFor(population);
-            }
-
-            /// <summary>Aircraft that use pads need a free one of their kind here; -1 for every other unit.</summary>
-            private bool TryReservePad(Entity producer, Entity prefab, out int pad)
-            {
-                pad = -1;
-                if (!PadUserLookup.HasComponent(prefab) || !PadLookup.TryGetBuffer(producer, out var pads))
-                {
-                    return true;
-                }
-
-                pad = LandingPad.FindFree(pads, PadUserLookup[prefab].Kind);
-                return pad >= 0;
-            }
-
-            private float3 SpawnPoint(Entity entity, in Producer producer, in LocalTransform transform, int pad) =>
-                transform.TransformPoint(pad >= 0 ? PadLookup[entity][pad].Offset : producer.SpawnOffset);
-
-            /// <summary>PadSystem claims the pad next frame, once the unit exists.</summary>
-            private void DockOnPad(Entity unit, Entity prefab, Entity airfield, int pad)
-            {
-                if (pad >= 0)
-                {
-                    Ecb.SetComponent(unit, PadUserLookup[prefab].ToPad(airfield, pad));
-                    Ecb.SetComponentEnabled<Docked>(unit, true);
-                }
             }
 
             private Entity Spawn(Entity prefab, float3 position, in ProducerInput producer)

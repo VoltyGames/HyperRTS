@@ -35,7 +35,8 @@ namespace HyperRTS.Simulation.Production
 
     /// <summary>
     /// Marks a producible that is researched rather than built: finishing it records a <see cref="CompletedResearch"/>
-    /// on the owner instead of spawning anything. Each is researched once per player.
+    /// on the owner instead of spawning anything. It bakes with a <see cref="BuildLimit"/> of one, so each player
+    /// researches it once.
     /// </summary>
     public struct Research : IComponentData { }
 }

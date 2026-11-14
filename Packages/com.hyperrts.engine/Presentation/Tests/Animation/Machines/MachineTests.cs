@@ -76,27 +76,23 @@ namespace HyperRTS.Presentation.Tests.Animation.Machines
         }
 
         [Test]
-        public void Producing_RunsOnlyWhileTheQueueHasWork()
+        public void Producing_RunsOnlyWhileTheProducerWorks()
         {
             var building = Building();
+            _em.AddComponentData(building, new Producer());
             var machine = Machine(MachineRun.Producing, building);
             Run(1f);
             Assert.AreEqual(0f, Clock(machine).Time, "idle factory");
 
-            _em.GetBuffer<ProductionQueueItem>(building).Add(new ProductionQueueItem { TypeId = 1 });
+            _em.SetComponentData(building, new Producer { State = ProducerState.Working });
             Run(2f);
             Assert.Greater(Clock(machine).Time, 1f);
 
-            SetOffline(building, OfflineReason.Unpowered);
-            var before = Clock(machine).Time;
-            Run(Step);
-            Assert.AreEqual(before + Step, Clock(machine).Time, 1e-4f, "low power only slows production");
-
-            SetOffline(building, OfflineReason.Custom);
+            _em.SetComponentData(building, new Producer { State = ProducerState.WaitingPopulation });
             Run(2f);
-            before = Clock(machine).Time;
+            var before = Clock(machine).Time;
             Run(1f);
-            Assert.AreEqual(before, Clock(machine).Time, 1e-5f, "halted production stops it");
+            Assert.AreEqual(before, Clock(machine).Time, 1e-5f, "a producer waiting for room stops it");
         }
 
         [Test]
@@ -232,7 +228,6 @@ namespace HyperRTS.Presentation.Tests.Animation.Machines
             var building = _em.CreateEntity();
             _em.AddComponentData(building, new Offline());
             _em.SetComponentEnabled<Offline>(building, false);
-            _em.AddBuffer<ProductionQueueItem>(building);
             return building;
         }
 

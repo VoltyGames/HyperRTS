@@ -42,6 +42,8 @@ namespace HyperRTS.Simulation.Upgrades
             IReadOnlyList<UpgradeEffect> effects)
         {
             writer.Add<Research>();
+            // A limit of one, counting queued and finished, is what keeps research to once per player.
+            writer.Add(new BuildLimit { Max = 1 });
             writer.Add(info);
             writer.Add(new Producible { BuildTime = buildTime });
 

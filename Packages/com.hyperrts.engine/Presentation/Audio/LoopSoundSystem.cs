@@ -65,7 +65,7 @@ namespace HyperRTS.Presentation.Audio
             var docks = SystemAPI.GetComponentLookup<Docked>(true);
             var spins = SystemAPI.GetComponentLookup<RotorSpin>(true);
             var sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
-            var queues = SystemAPI.GetBufferLookup<ProductionQueueItem>(true);
+            var producers = SystemAPI.GetComponentLookup<Producer>(true);
             var poses = SystemAPI.GetBufferLookup<WeaponPose>(true);
             foreach (var (loops, tuning, place, entity) in SystemAPI
                          .Query<DynamicBuffer<EntityLoopSound>, RefRO<LoopSoundTuning>, RefRO<LocalToWorld>>()
@@ -73,7 +73,7 @@ namespace HyperRTS.Presentation.Audio
             {
                 var rotor = RotorAmount(flights, docks, spins, entity);
                 var building = sites.HasEnabled(entity);
-                var producing = queues.TryGetBuffer(entity, out var queue) && !queue.IsEmpty;
+                var producing = producers.TryGetComponent(entity, out var producer) && producer.State == ProducerState.Working;
                 _states.TryGetValue(entity, out var state);
                 state.Step(place.ValueRO.Position, rotor, Aim(poses, entity), now, deltaTime);
                 _states[entity] = state;

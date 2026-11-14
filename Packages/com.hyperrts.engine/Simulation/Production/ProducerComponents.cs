@@ -23,6 +23,8 @@ namespace HyperRTS.Simulation.Production
         /// <summary>Units released so far; every client sees it rise, so doors open for enemies too.</summary>
         [GhostField] public uint Released;
 
+        [GhostField] public ProducerState State;
+
         /// <summary>Whether a finished producer of <paramref name="owner"/> offers <paramref name="prefab"/> and has queue room.</summary>
         public static bool CanQueue(EntityManager entityManager, Entity producer, byte owner, Entity prefab)
         {

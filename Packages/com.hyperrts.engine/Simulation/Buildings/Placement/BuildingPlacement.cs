@@ -1,4 +1,8 @@
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
+using HyperRTS.Simulation.Navigation.Areas;
 using Unity.Entities;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Buildings.Placement
 {
@@ -11,5 +15,16 @@ namespace HyperRTS.Simulation.Buildings.Placement
             entityManager.HasComponent<BuildingPlacement>(prefab)
                 ? entityManager.GetComponentData<BuildingPlacement>(prefab).Surface
                 : PlacementSurface.Land;
+
+        /// <summary>A building prefab carrying everything placement reads, so a builder places it rather than a queue.</summary>
+        public static bool IsPlaceable(EntityManager entityManager, Entity prefab)
+        {
+            if (!entityManager.HasComponent<BuildingTag>(prefab) || !entityManager.HasComponent<ConstructionProgress>(prefab))
+            {
+                return false;
+            }
+
+            return entityManager.HasComponent<NavObstacle>(prefab) && entityManager.HasComponent<LocalTransform>(prefab);
+        }
     }
 }

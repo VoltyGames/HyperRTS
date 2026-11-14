@@ -84,7 +84,7 @@ namespace HyperRTS.Presentation.Tests.HUD
             var card = NewCard(Spec("basic", Key.B));
             var button = card.Root.Q<CommandButton>();
 
-            button.ShowRefusal(PurchaseRefusal.CannotAfford);
+            button.ShowRefusal(PurchaseRefusal.CannotAfford, false);
             PressHotkey(card, Key.B);
 
             Assert.IsEmpty(_pressed);

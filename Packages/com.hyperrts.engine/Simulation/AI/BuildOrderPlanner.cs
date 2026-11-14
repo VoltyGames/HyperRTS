@@ -8,7 +8,6 @@ using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.AI
@@ -80,9 +79,7 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            var owned = counts.Count(entities, step.Prefab);
-            var wanted = entities.HasComponent<Research>(step.Prefab) ? math.min(step.Count, 1) : step.Count;
-            if (owned >= wanted)
+            if (counts.Count(entities, step.Prefab) >= step.Count)
             {
                 return false;
             }
@@ -99,8 +96,9 @@ namespace HyperRTS.Simulation.AI
                 return false;
             }
 
-            var placeable = entities.HasComponent<BuildingTag>(prefab) && entities.HasComponent<NavObstacle>(prefab);
-            return placeable ? TryPlace(ref state, turn, snapshot, prefab) : TryQueue(ref state, turn, snapshot, prefab);
+            return BuildingPlacement.IsPlaceable(entities, prefab)
+                ? TryPlace(ref state, turn, snapshot, prefab)
+                : TryQueue(ref state, turn, snapshot, prefab);
         }
 
         /// <summary>Places the building near home with the best builder, exactly as a human would.</summary>

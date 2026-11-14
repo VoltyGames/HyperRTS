@@ -6,8 +6,8 @@ using Unity.Entities;
 namespace HyperRTS.Simulation.Production
 {
     /// <summary>
-    /// One player's count of each <see cref="BuildLimit"/> type, or of every type, standing or queued, for purchase
-    /// checks and the AI's build order.
+    /// One player's count of each <see cref="BuildLimit"/> type, or of every type, standing, queued or researched,
+    /// for purchase checks and the AI's build order.
     /// </summary>
     public struct BuildCounts
     {
@@ -62,6 +62,15 @@ namespace HyperRTS.Simulation.Production
 
         /// <summary>Counts one more <paramref name="prefab"/> bought this frame, if its type is counted.</summary>
         public void Add(EntityManager entityManager, Entity prefab) => Count(entityManager, prefab, 1);
+
+        /// <summary>Counts finished research, which leaves no instance; every research has a limit of one.</summary>
+        public void AddResearch(DynamicBuffer<CompletedResearch> completed)
+        {
+            foreach (var research in completed)
+            {
+                Change(research.TypeId, 1);
+            }
+        }
 
         /// <summary>Counts one fewer, for a cancelled queue item.</summary>
         public void Remove(EntityManager entityManager, Entity prefab) => Count(entityManager, prefab, -1);

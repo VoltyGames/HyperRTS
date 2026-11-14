@@ -201,10 +201,12 @@ namespace HyperRTS.Simulation.Tests.Production
             World.Run(3f);
             Assert.AreEqual(1, World.All<UnitTag>().Length, "the cap is full");
             Assert.AreEqual(1, World.QueueLength(producer));
+            Assert.AreEqual(ProducerState.WaitingPopulation, World.Get<Producer>(producer).State);
 
             World.SpawnProvider(1, new float3(-20f, 0f, 20f), 5);
             World.Run(1.5f);
             Assert.AreEqual(2, World.All<UnitTag>().Length);
+            Assert.AreEqual(ProducerState.Idle, World.Get<Producer>(producer).State);
             Assert.AreEqual(new Population { Used = 2, Cap = 6 }, World.Get<Population>(World.Player(1)));
         }
 

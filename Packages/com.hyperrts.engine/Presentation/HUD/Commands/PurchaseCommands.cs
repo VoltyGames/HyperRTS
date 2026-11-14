@@ -72,10 +72,12 @@ namespace HyperRTS.Presentation.HUD.Commands
             foreach (var option in _options)
             {
                 var button = option.Button;
-                button.ShowRefusal(context.FindRefusal(option.Prefab, buyer));
+                var research = entityManager.HasComponent<Research>(option.Prefab);
+                button.ShowRefusal(context.FindRefusal(option.Prefab, buyer), research);
                 button.ShowQueue(FindQueued(option));
                 button.ShowUnpowered(HasUnpowered(option.Producers));
-                if (entityManager.HasComponent<BuildLimit>(option.Prefab))
+                // Research is limited to one, shown as done rather than as a count.
+                if (!research && entityManager.HasComponent<BuildLimit>(option.Prefab))
                 {
                     button.ShowLimit(buyer.Counts.Count(entityManager, option.Prefab),
                         entityManager.GetComponentData<BuildLimit>(option.Prefab).Max);
@@ -202,7 +204,7 @@ namespace HyperRTS.Presentation.HUD.Commands
                 tooltip.AddStat(HUDText.Text("tooltip.power"), power.ToString("+0;-0;0"));
             }
 
-            if (entityManager.HasComponent<BuildLimit>(prefab))
+            if (entityManager.HasComponent<BuildLimit>(prefab) && !entityManager.HasComponent<Research>(prefab))
             {
                 tooltip.AddStat(HUDText.Text("tooltip.limit"),
                     entityManager.GetComponentData<BuildLimit>(prefab).Max.ToString());

@@ -15,45 +15,18 @@ namespace HyperRTS.Simulation.Production
         public CompletedBuildings Buildings;
         public DynamicBuffer<CompletedResearch> Research;
 
-        /// <summary>Everything the player has queued anywhere; only read when the prefab is research.</summary>
-        public NativeHashSet<Entity> QueuedResearch;
-
-        /// <summary>How many of each build-limited type the player has, standing or queued.</summary>
+        /// <summary>How many of each build-limited type the player has, standing, queued or researched.</summary>
         public BuildCounts Counts;
 
         /// <summary>Counts a purchase made this frame, so later checks this frame see it.</summary>
-        public void AddPurchase(EntityManager entityManager, Entity prefab)
-        {
-            QueuedResearch.Add(prefab);
-            Counts.Add(entityManager, prefab);
-        }
+        public void AddPurchase(EntityManager entityManager, Entity prefab) => Counts.Add(entityManager, prefab);
 
         /// <summary>Uncounts a cancelled queue item, so it can be bought again this frame.</summary>
-        public void RemovePurchase(EntityManager entityManager, Entity prefab)
-        {
-            QueuedResearch.Remove(prefab);
-            Counts.Remove(entityManager, prefab);
-        }
-
-        /// <summary>False for research already completed or queued, as snapshotted; anything else can be queued.</summary>
-        public readonly bool CanQueueResearch(EntityManager entityManager, Entity prefab)
-        {
-            if (!entityManager.HasComponent<Research>(prefab))
-            {
-                return true;
-            }
-
-            return !CompletedResearch.Has(Research, prefab) && !QueuedResearch.Contains(prefab);
-        }
+        public void RemovePurchase(EntityManager entityManager, Entity prefab) => Counts.Remove(entityManager, prefab);
 
         /// <summary>What locks <paramref name="prefab"/> whatever the price, or <see cref="PurchaseRefusal.None"/>.</summary>
         public readonly PurchaseRefusal FindLock(EntityManager entityManager, Entity prefab)
         {
-            if (!CanQueueResearch(entityManager, prefab))
-            {
-                return PurchaseRefusal.Researched;
-            }
-
             if (Counts.AtLimit(entityManager, prefab))
             {
                 return PurchaseRefusal.AtLimit;

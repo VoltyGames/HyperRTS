@@ -149,7 +149,8 @@ unit it gives up a move that stalls near its goal, as when another aircraft hold
 
 `AirfieldAuthoring` gives a building landing pads, one aircraft each, each a `PadKind`: `Helipad`, `Shelter` or `Any`.
 `FlightAuthoring.padKind` says which pads an aircraft takes, and `Any` on either side matches every kind. An airfield
-only builds a pad-using aircraft when a pad of its kind is free, and Return to Base only claims one. An aircraft flies
+only builds a pad-using aircraft when a pad of its kind is free, and the aircraft starts docked on it
+(`AirfieldPads`); Return to Base only claims one. An aircraft flies
 home once every weapon with limited rounds is empty, once, so a player order given after that holds. It reloads while
 docked. Its remains fall to the ground under gravity. Fuel is left to game code.
 

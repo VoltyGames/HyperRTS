@@ -5,10 +5,9 @@ namespace HyperRTS.Simulation.Production
     {
         None,
 
-        /// <summary>Research already finished or queued.</summary>
-        Researched,
-
-        /// <summary>The player has as many as its <see cref="BuildLimit"/> allows.</summary>
+        /// <summary>
+        /// The player has as many as its <see cref="BuildLimit"/> allows; for research, it is finished or queued.
+        /// </summary>
         AtLimit,
 
         /// <summary>A required building or research is missing.</summary>

@@ -194,7 +194,7 @@ namespace HyperRTS.Simulation.Buildings.Placement
         {
             var result = new NativeList<Entity>(Allocator.Temp);
             var prefab = request.Command.Prefab;
-            if (!IsPlaceable(ref state, prefab))
+            if (!BuildingPlacement.IsPlaceable(state.EntityManager, prefab))
             {
                 return result;
             }
@@ -214,17 +214,6 @@ namespace HyperRTS.Simulation.Buildings.Placement
             }
 
             return result;
-        }
-
-        /// <summary>A building prefab carrying everything placement reads.</summary>
-        private bool IsPlaceable(ref SystemState state, Entity prefab)
-        {
-            if (!SystemAPI.HasComponent<BuildingTag>(prefab) || !SystemAPI.HasComponent<ConstructionProgress>(prefab))
-            {
-                return false;
-            }
-
-            return SystemAPI.HasComponent<NavObstacle>(prefab) && SystemAPI.HasComponent<LocalTransform>(prefab);
         }
 
         /// <summary>A builder listing <paramref name="prefab"/> among its build options.</summary>
