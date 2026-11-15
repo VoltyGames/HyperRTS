@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Vision.Sight;
+using Unity.Entities;
 
 namespace HyperRTS.Simulation.Vision
 {
@@ -8,9 +9,10 @@ namespace HyperRTS.Simulation.Vision
     {
         public static void AddVision(EntityWriter writer, float range, float eyeHeight)
         {
-            writer.Add(new VisionRange { Value = range, EyeHeight = eyeHeight });
-            writer.Add(new SightArea { Radius = -1 });
-            writer.AddBuffer<SightAreaBits>();
+            writer.Add(new ComponentTypeSet(ComponentType.ReadWrite<VisionRange>(),
+                ComponentType.ReadWrite<SightArea>(), ComponentType.ReadWrite<SightAreaBits>()));
+            writer.Set(new VisionRange { Value = range, EyeHeight = eyeHeight });
+            writer.Set(new SightArea { Radius = -1 });
         }
     }
 }

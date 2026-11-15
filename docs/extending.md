@@ -15,6 +15,9 @@ assemblies on the matching engine ones. Keep Graphics, InputSystem and UIElement
 - Authoring classes derive from `AuthoringBehaviour` to get the engine inspector and validation.
 - Bakers add components through `this.Writer()`, an `EntityWriter` that a static `Add...` on the authoring class
   takes, so tests build the same entity with `new EntityWriter(entityManager, entity)`.
+- A setup that adds many components adds them as one `ComponentTypeSet` and then fills them with `Set` and
+  `SetBuffer`, as `GameEntitySetup` does. Every separate add leaves an empty archetype in the baking world, and a
+  map's bake fails once they outgrow the Entities archetype budget in the project's Memory Settings.
 
 ## Mechanics
 

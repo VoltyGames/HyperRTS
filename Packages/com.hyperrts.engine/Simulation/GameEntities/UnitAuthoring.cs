@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Orders;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
@@ -70,23 +71,28 @@ namespace HyperRTS.Simulation.GameEntities
 
         public static void Add(EntityWriter writer, float moveSpeed, NavAgent agent)
         {
-            writer.Add<UnitTag>();
-            writer.Add(new MovementSpeed { Value = moveSpeed });
-            writer.Add<MoveDestination>();
+            writer.Add(new ComponentTypeSet(new FixedList128Bytes<ComponentType>
+            {
+                ComponentType.ReadWrite<UnitTag>(),
+                ComponentType.ReadWrite<MovementSpeed>(),
+                ComponentType.ReadWrite<MoveDestination>(),
+                ComponentType.ReadWrite<NavAgent>(),
+                ComponentType.ReadWrite<PathWaypoint>(),
+                ComponentType.ReadWrite<PathState>(),
+                ComponentType.ReadWrite<ActiveOrder>(),
+                ComponentType.ReadWrite<QueuedOrder>(),
+                ComponentType.ReadWrite<MoveOrderState>(),
+                ComponentType.ReadWrite<Arrival>(),
+                ComponentType.ReadWrite<MoveProgress>(),
+                ComponentType.ReadWrite<Velocity>(),
+                ComponentType.ReadWrite<FacingGoal>(),
+            }));
+            writer.Set(new MovementSpeed { Value = moveSpeed });
+            writer.Set(agent);
             writer.SetEnabled<MoveDestination>(false);
-            writer.Add(agent);
-            writer.AddBuffer<PathWaypoint>();
-            writer.Add<PathState>();
-            writer.Add<ActiveOrder>();
             writer.SetEnabled<ActiveOrder>(false);
-            writer.AddBuffer<QueuedOrder>();
-            writer.Add<MoveOrderState>();
             writer.SetEnabled<MoveOrderState>(false);
-            writer.Add<Arrival>();
             writer.SetEnabled<Arrival>(false);
-            writer.Add<MoveProgress>();
-            writer.Add<Velocity>();
-            writer.Add<FacingGoal>();
             writer.SetEnabled<FacingGoal>(false);
         }
 
