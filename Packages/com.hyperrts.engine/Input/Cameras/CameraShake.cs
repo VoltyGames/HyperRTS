@@ -55,7 +55,7 @@ namespace HyperRTS.Input.Cameras
 
             if (TryGetWorldJolts(out var jolts))
             {
-                foreach (var jolt in jolts.All)
+                foreach (var jolt in jolts)
                 {
                     Add(jolt, focus, closeness);
                 }
@@ -108,7 +108,7 @@ namespace HyperRTS.Input.Cameras
         private float Wave(float phase) =>
             0.5f * (Mathf.Sin(_time * SlowWave + phase) + Mathf.Sin(_time * FastWave + phase * 1.7f));
 
-        private static bool TryGetWorldJolts(out CameraJolts jolts)
+        private static bool TryGetWorldJolts(out List<CameraJolt> jolts)
         {
             jolts = null;
             if (!DefaultWorld.TryGet(out var world))

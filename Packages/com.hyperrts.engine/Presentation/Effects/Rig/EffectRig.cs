@@ -54,7 +54,7 @@ namespace HyperRTS.Presentation.Effects.Rig
         public EffectLights Lights { get; set; }
 
         /// <summary>Where bursts with <see cref="shake"/> send their camera shake; none means no shake.</summary>
-        public CameraJolts Jolts { get; set; }
+        public List<CameraJolt> Jolts { get; set; }
 
         /// <summary>Set by the pool from <see cref="variants"/>.</summary>
         public EffectRig[] Alternatives { get; set; } = Array.Empty<EffectRig>();
@@ -125,7 +125,7 @@ namespace HyperRTS.Presentation.Effects.Rig
             Flash();
             if (shake > 0f)
             {
-                Jolts?.Add(position, shake);
+                Jolts?.Add(new CameraJolt(position, shake));
             }
         }
 

@@ -55,6 +55,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             CompleteDependency();
             _switch.Update(ref CheckedStateRef);
+            _visibility.Begin();
             var impacts = SeenImpacts();
             var now = (float)SystemAPI.Time.ElapsedTime;
             var copies = ModelCopies.Create();
@@ -76,7 +77,6 @@ namespace HyperRTS.Presentation.Destruction
         private NativeList<float3> SeenImpacts()
         {
             var impacts = new NativeList<float3>(Allocator.Temp);
-            _visibility.Begin();
             if (!SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
             {
                 return impacts;

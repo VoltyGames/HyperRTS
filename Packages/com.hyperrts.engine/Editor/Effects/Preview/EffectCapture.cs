@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using HyperRTS.Editor.Common;
+using HyperRTS.Input.Cameras;
 using HyperRTS.Presentation.Effects.Rig;
 using UnityEditor;
 using UnityEngine;
@@ -26,8 +27,8 @@ namespace HyperRTS.Editor.Effects.Preview
 
         private const int Width = 960;
         private const int Height = 540;
-        // The default camera's pitch at its closest zoom (CameraZoom.pitchAtMin), where effects are seen largest.
-        private const float Pitch = 44f;
+        // The default camera's pitch at its closest zoom, where effects are seen largest.
+        private static readonly float Pitch = new CameraZoom().pitchAtMin;
         private const float AimHeight = 2.5f;
         private const int StartFrames = 300;
         private const double FrameSeconds = 45.0;
