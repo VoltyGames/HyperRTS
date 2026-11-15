@@ -26,6 +26,9 @@ namespace HyperRTS.Presentation.Effects.Rig
         /// <summary>Whether the last <see cref="Tick"/> found a camera.</summary>
         public bool HasEye { get; private set; }
 
+        /// <summary>The camera shakes this frame's bursts gave, read by the camera in the next frame.</summary>
+        public CameraJolts Jolts { get; } = new();
+
         /// <summary>The prefab's live rig, or null when there is no prefab or it is broken (logged once, naming it).</summary>
         public EffectRig Get(GameObject prefab)
         {
@@ -69,9 +72,10 @@ namespace HyperRTS.Presentation.Effects.Rig
             return HasEye && (position - Eye).sqrMagnitude <= limit * limit;
         }
 
-        /// <summary>Takes this frame's camera position, fires due timed bursts and fades flashes.</summary>
+        /// <summary>Takes this frame's camera position, drops the last frame's jolts, fires due timed bursts and fades flashes.</summary>
         public void Tick(float deltaTime)
         {
+            Jolts.Clear();
             // Nothing plays without a camera, since nobody would see it.
             _camera = MainCamera.Find(_camera);
             HasEye = _camera != null;
@@ -113,6 +117,7 @@ namespace HyperRTS.Presentation.Effects.Rig
 
             var rig = instance.GetComponent<EffectRig>();
             rig.Lights = _lights;
+            rig.Jolts = Jolts;
             return rig;
         }
 

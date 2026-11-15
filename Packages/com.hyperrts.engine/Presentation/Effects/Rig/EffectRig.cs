@@ -38,6 +38,11 @@ namespace HyperRTS.Presentation.Effects.Rig
         [Tooltip("Turns each burst, and each entity's loop, by a random angle about the rig's +Y. Off keeps aim.")]
         public bool randomSpin;
 
+        [Tooltip("Metres a burst at the camera's focus shakes the camera at the closest zoom; 0 never shakes.")]
+        [Unit("m")]
+        [Min(0f)]
+        public float shake;
+
         [Tooltip("Alternative rigs, each without variants of its own. Each play picks this rig or one of them.")]
         public GameObject[] variants = Array.Empty<GameObject>();
 
@@ -47,6 +52,9 @@ namespace HyperRTS.Presentation.Effects.Rig
 
         /// <summary>The shared flash lights; none means no flashes.</summary>
         public EffectLights Lights { get; set; }
+
+        /// <summary>Where bursts with <see cref="shake"/> send their camera shake; none means no shake.</summary>
+        public CameraJolts Jolts { get; set; }
 
         /// <summary>Set by the pool from <see cref="variants"/>.</summary>
         public EffectRig[] Alternatives { get; set; } = Array.Empty<EffectRig>();
@@ -99,7 +107,7 @@ namespace HyperRTS.Presentation.Effects.Rig
 
         private static float Fraction(uint key, uint salt) => Hashes.Fraction(math.hash(new uint2(key, salt)));
 
-        /// <summary>Sends every graph its Burst event at the pose, thinned by density, and flashes the lights.</summary>
+        /// <summary>Sends every graph its Burst event at the pose, thinned by density, flashes the lights and shakes the camera.</summary>
         public void Burst(Vector3 position, Quaternion rotation, float burstScale, float density)
         {
             Capture();
@@ -115,6 +123,10 @@ namespace HyperRTS.Presentation.Effects.Rig
             }
 
             Flash();
+            if (shake > 0f)
+            {
+                Jolts?.Add(position, shake);
+            }
         }
 
         private static Quaternion Yaw(float fraction) => Quaternion.Euler(0f, fraction * 360f, 0f);

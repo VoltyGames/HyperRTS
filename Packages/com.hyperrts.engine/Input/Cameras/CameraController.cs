@@ -61,6 +61,12 @@ namespace HyperRTS.Input.Cameras
         [Header("Zoom")]
         public CameraZoom zoom = new();
 
+        [Header("Shake")]
+        [Tooltip("Effect bursts near the focus shake the camera; a player setting.")]
+        public bool shakes = true;
+
+        public CameraShake shake = new();
+
         [Header("Tree Fade")]
         public CameraTreeFade treeFade = new();
 
@@ -132,6 +138,8 @@ namespace HyperRTS.Input.Cameras
                 FocusOn(point);
                 return;
             }
+
+            shake.Step(shakes, _focus, zoom.min / _height, Time.unscaledDeltaTime);
 
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             var camera = _actions.Camera;
@@ -210,7 +218,7 @@ namespace HyperRTS.Input.Cameras
             _height = height;
             var view = ViewAt(focus, height, _yaw);
             view.position.y = ClearedHeight(view.position.y, GroundAt(view.position), terrainClearance);
-            transform.SetPositionAndRotation(view.position, view.rotation);
+            transform.SetPositionAndRotation(view.position + shake.Offset.position, view.rotation * shake.Offset.rotation);
             treeFade.Share(transform.position, _focus, _height);
         }
 
