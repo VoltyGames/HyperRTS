@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -31,8 +31,10 @@ namespace HyperRTS.Editor.Effects
         public FloatRange spin;
 
         public Vector3 origin;
+
         [Tooltip("Where particles start. Rings ignore it: they always fly out along the ground.")]
         public EmitShape shape;
+
         public float radius;
         public bool rim;
         public float spread;
@@ -62,12 +64,21 @@ namespace HyperRTS.Editor.Effects
         public float opacity;
         public float ambient;
         public Texture2D emissionRamp;
+
         [ColorUsage(true, true)] public Color emissionColor;
         public AnimationCurve heatOverLife = new();
+
         public AnimationCurve minHeatOverLife = new();
+
+        [Tooltip("A tiling noise that eats a six-way layer's thin smoke, so its edges break up finer than the sheet.")]
+        public Texture2D erosionMap;
+
+        [Tooltip("How much of the thin smoke the erosion map eats: 0 none, 1 all of it where the noise is white.")]
+        [Range(0f, 1f)] public float erosion;
 
         [Tooltip("The chunks a debris layer draws, 1 to 4 meshes.")]
         public List<Mesh> meshes = new();
+
         public float metallic;
         public float smoothness;
         public bool ground;

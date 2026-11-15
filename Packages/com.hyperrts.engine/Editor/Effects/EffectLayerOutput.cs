@@ -137,6 +137,12 @@ namespace HyperRTS.Editor.Effects
                 new EffectLayerHeat(_graph, _layer, _at).Write(output);
             }
 
+            if (_layer.erosion > 0f)
+            {
+                _graph.Slot(output, "ErosionMap", _layer.Required(_layer.erosionMap, nameof(EffectLayer.erosionMap)));
+                _graph.Slot(output, "Erosion", _layer.erosion);
+            }
+
             if (_layer.flipbook.IsSet)
             {
                 _graph.Slot(output, "FlipbookSize", new Vector2(_layer.flipbook.columns, _layer.flipbook.rows));
