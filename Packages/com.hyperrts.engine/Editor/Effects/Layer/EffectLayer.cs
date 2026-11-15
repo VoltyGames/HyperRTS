@@ -55,32 +55,24 @@ namespace HyperRTS.Editor.Effects.Layer
         public float pivot;
         public Flipbook flipbook;
 
-        public Texture2D negativeTexture;
         public Texture2D motionTexture;
-        public float opacity;
-        public float ambient;
-        public Texture2D emissionRamp;
 
-        [ColorUsage(true, true)] public Color emissionColor;
-        public AnimationCurve heatOverLife = new();
+        [ShowForKinds(EffectLayerKind.SixWay, EffectLayerKind.Ring)]
+        public SixWaySettings sixWay = new();
 
-        public AnimationCurve minHeatOverLife = new();
+        [ShowForKinds(EffectLayerKind.Debris)]
+        public DebrisSettings debris = new();
 
-        [Tooltip("The chunks a debris layer draws, 1 to 4 meshes.")]
-        public List<Mesh> meshes = new();
-
-        public float metallic;
-        public float smoothness;
         public bool ground;
         public float groundHeight;
         public float bounce;
         public float friction;
 
-        public float length;
-        public float lengthPerSpeed;
+        [ShowForKinds(EffectLayerKind.Spark)]
+        public StretchSettings stretch = new();
 
-        public float distortion;
-        public Vector2 scroll;
+        [ShowForKinds(EffectLayerKind.Distort)]
+        public DistortSettings distort = new();
 
         /// <summary>The layer's shape; a ring always flies out along the ground.</summary>
         public EmitShape Shape => kind == EffectLayerKind.Ring ? EmitShape.Ring : shape;
@@ -197,16 +189,16 @@ namespace HyperRTS.Editor.Effects.Layer
                     Need(problems, texture, nameof(texture));
                     break;
                 case EffectLayerKind.SixWay or EffectLayerKind.Ring:
-                    if (opacity <= 0f || ambient <= 0f)
+                    if (sixWay.opacity <= 0f || sixWay.ambient <= 0f)
                     {
                         problems.Add($"{kind} layer '{name}' needs an opacity and an ambient, as its six-way material's Density and Ambient Strength.");
                     }
 
                     Need(problems, texture, nameof(texture));
-                    Need(problems, negativeTexture, nameof(negativeTexture));
+                    Need(problems, sixWay.negativeTexture, nameof(sixWay.negativeTexture));
                     Need(problems, motionTexture, nameof(motionTexture));
                     break;
-                case EffectLayerKind.Debris when meshes.Count is 0 or > 4 || meshes.Contains(null):
+                case EffectLayerKind.Debris when debris.meshes.Count is 0 or > 4 || debris.meshes.Contains(null):
                     problems.Add($"{kind} layer '{name}' needs 1 to 4 meshes, all set.");
                     break;
             }

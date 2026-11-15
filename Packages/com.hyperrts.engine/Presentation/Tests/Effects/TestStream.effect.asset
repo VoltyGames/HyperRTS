@@ -81,32 +81,36 @@ MonoBehaviour:
       to: 0
       random: 0
       randomStart: 0
-    negativeTexture: {fileID: 0}
     motionTexture: {fileID: 0}
-    opacity: 0
-    ambient: 0
-    emissionRamp: {fileID: 0}
-    emissionColor: {r: 0, g: 0, b: 0, a: 0}
-    heatOverLife:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    minHeatOverLife:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    meshes: []
-    metallic: 0
-    smoothness: 0
+    sixWay:
+      negativeTexture: {fileID: 0}
+      opacity: 0
+      ambient: 0
+      emissionRamp: {fileID: 0}
+      emissionColor: {r: 0, g: 0, b: 0, a: 0}
+      heatOverLife:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      minHeatOverLife:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    debris:
+      meshes: []
+      metallic: 0
+      smoothness: 0
     ground: 0
     groundHeight: 0
     bounce: 0
     friction: 0
-    length: 0
-    lengthPerSpeed: 0
-    distortion: 0
-    scroll: {x: 0, y: 0}
+    stretch:
+      length: 0
+      lengthPerSpeed: 0
+    distort:
+      distortion: 0
+      scroll: {x: 0, y: 0}

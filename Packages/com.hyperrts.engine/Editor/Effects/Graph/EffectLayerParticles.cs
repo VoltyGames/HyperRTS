@@ -127,7 +127,7 @@ namespace HyperRTS.Editor.Effects.Graph
         // Truncating a uniform pick over 0 to count gives each mesh an even share.
         private void PickMesh(object context)
         {
-            if (_layer.meshes.Count < 2)
+            if (_layer.debris.meshes.Count < 2)
             {
                 return;
             }
@@ -136,7 +136,7 @@ namespace HyperRTS.Editor.Effects.Graph
             _graph.Set(block, "attribute", "meshIndex");
             _graph.Set(block, "Random", "Uniform");
             _graph.Slot(block, "A", 0u);
-            _graph.Slot(block, "B", (uint)_layer.meshes.Count);
+            _graph.Slot(block, "B", (uint)_layer.debris.meshes.Count);
         }
     }
 }

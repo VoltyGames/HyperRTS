@@ -115,12 +115,12 @@ namespace HyperRTS.Editor.Effects.Graph
         private void SixWay(object output)
         {
             _graph.Slot(output, "PositiveMap", _layer.texture);
-            _graph.Slot(output, "NegativeMap", _layer.negativeTexture);
+            _graph.Slot(output, "NegativeMap", _layer.sixWay.negativeTexture);
             _graph.Slot(output, "MotionMap", _layer.motionTexture);
-            _graph.Slot(output, "Opacity", _layer.opacity);
-            _graph.Slot(output, "AmbientStrength", _layer.ambient);
+            _graph.Slot(output, "Opacity", _layer.sixWay.opacity);
+            _graph.Slot(output, "AmbientStrength", _layer.sixWay.ambient);
             _graph.Slot(output, "SoftDistance", _layer.softness);
-            if (_layer.emissionRamp != null)
+            if (_layer.sixWay.emissionRamp != null)
             {
                 Heat(output);
             }
@@ -139,16 +139,16 @@ namespace HyperRTS.Editor.Effects.Graph
         private void Heat(object output)
         {
             // HDR emission as the colour picker stores it, not turned linear, matched in Play.
-            var color = _layer.emissionColor;
-            _graph.Slot(output, "EmissionRamp", _layer.emissionRamp);
+            var color = _layer.sixWay.emissionColor;
+            _graph.Slot(output, "EmissionRamp", _layer.sixWay.emissionRamp);
             _graph.Slot(output, "EmissionColor", new Vector3(color.r, color.g, color.b));
             var age = _graph.Operator("AgeOverLifetime", _at + new Vector2(-780f, 200f));
-            var heat = HeatAtAge(_layer.heatOverLife, age, 200f);
-            if (_layer.minHeatOverLife.length > 0)
+            var heat = HeatAtAge(_layer.sixWay.heatOverLife, age, 200f);
+            if (_layer.sixWay.minHeatOverLife.length > 0)
             {
                 // Each particle keeps one pick between the curves, so tongues differ in heat.
                 var pick = _graph.Operator("UnityEditor.VFX.Operator.Lerp", _at + new Vector2(-300f, 200f));
-                _graph.Link(HeatAtAge(_layer.minHeatOverLife, age, 300f), pick, "x");
+                _graph.Link(HeatAtAge(_layer.sixWay.minHeatOverLife, age, 300f), pick, "x");
                 _graph.Link(heat, pick, "y");
                 _graph.Link(_graph.Operator("UnityEditor.VFX.Operator.Random", _at + new Vector2(-520f, 400f)), pick, "s");
                 heat = pick;
@@ -177,7 +177,7 @@ namespace HyperRTS.Editor.Effects.Graph
             }
 
             _graph.Set(output, "castShadows", true);
-            var meshes = _layer.meshes;
+            var meshes = _layer.debris.meshes;
             _graph.Set(output, "MeshCount", (uint)meshes.Count);
             if (meshes.Count == 1)
             {
@@ -191,8 +191,8 @@ namespace HyperRTS.Editor.Effects.Graph
                 }
             }
 
-            _graph.Slot(output, "metallic", _layer.metallic);
-            _graph.Slot(output, "smoothness", _layer.smoothness);
+            _graph.Slot(output, "metallic", _layer.debris.metallic);
+            _graph.Slot(output, "smoothness", _layer.debris.smoothness);
         }
 
         private void Strip(object output)
@@ -206,8 +206,8 @@ namespace HyperRTS.Editor.Effects.Graph
         private void Distort(object output)
         {
             _graph.Slot(output, "NormalMap", _layer.texture);
-            _graph.Slot(output, "Strength", _layer.distortion);
-            _graph.Slot(output, "Scroll", _layer.scroll);
+            _graph.Slot(output, "Strength", _layer.distort.distortion);
+            _graph.Slot(output, "Scroll", _layer.distort.scroll);
             _graph.Slot(output, "SoftFade", _layer.softness);
             LinkAttribute("alpha", output, "Weight", 200f);
         }
@@ -275,8 +275,8 @@ namespace HyperRTS.Editor.Effects.Graph
             if (_layer.kind == EffectLayerKind.Spark)
             {
                 var stretch = _graph.Hlsl(output, "Stretch Along Velocity", EffectLayerParticles.Includes + "GraphStretch.hlsl");
-                _graph.Slot(stretch, "sizeLength", _layer.length);
-                _graph.Slot(stretch, "speedLength", _layer.lengthPerSpeed);
+                _graph.Slot(stretch, "sizeLength", _layer.stretch.length);
+                _graph.Slot(stretch, "speedLength", _layer.stretch.lengthPerSpeed);
             }
         }
 
