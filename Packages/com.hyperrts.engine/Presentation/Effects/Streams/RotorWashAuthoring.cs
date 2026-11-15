@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Effects.Streams
         [Min(1f)]
         public float height = RotorWash.DefaultHeight;
 
-        public static void AddRotorWash(EntityWriter writer, SurfaceEffects effects, float height) =>
+        public static void Add(EntityWriter writer, SurfaceEffects effects, float height) =>
             writer.Add(new RotorWash { Effects = effects, Height = height });
 
         public class Baker : Baker<RotorWashAuthoring>
@@ -34,7 +34,7 @@ namespace HyperRTS.Presentation.Effects.Streams
 
                 DependsOn(authoring.effects);
                 var writer = this.Writer();
-                AddRotorWash(writer, authoring.effects, authoring.height);
+                Add(writer, authoring.effects, authoring.height);
             }
         }
     }

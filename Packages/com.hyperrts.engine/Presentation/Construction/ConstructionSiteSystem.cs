@@ -97,8 +97,7 @@ namespace HyperRTS.Presentation.Construction
             {
                 var socket = math.transform(place.Value, points[i].Socket);
                 var state = _streams.Step(site.WorkRig.Value, entity, i, socket, _reach);
-                state?.Emit(state.Rig.LoopRotation(place.Rotation, state.Key), _deltaTime, 1f,
-                    state.Rig.LoopScale(state.Key));
+                state?.EmitLoop(place.Rotation, _deltaTime, 1f);
             }
         }
     }

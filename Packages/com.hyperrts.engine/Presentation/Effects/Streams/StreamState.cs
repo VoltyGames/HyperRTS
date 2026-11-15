@@ -1,5 +1,7 @@
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Quality;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Streams
@@ -39,12 +41,21 @@ namespace HyperRTS.Presentation.Effects.Streams
         public void Emit(Quaternion rotation, float deltaTime, float strength, float poseScale = 1f)
         {
             Graphs ??= Rig.StartStream();
-            Graphs?.Move(From, To, rotation, deltaTime, strength * EffectDetail.Density, poseScale);
+            Graphs?.Move(From, To, rotation, deltaTime, strength * DetailBudget.Density, poseScale);
         }
 
         /// <summary>Streams a loop's graphs, turned and scaled as the rig's loop poses for <see cref="Key"/>.</summary>
         public void EmitLoop(Quaternion rotation, float deltaTime, float strength) =>
-            Emit(Rig.LoopRotation(rotation, Key), deltaTime, strength, Rig.LoopScale(Key));
+            Emit(LoopRotation(rotation), deltaTime, strength, LoopScale());
+
+        /// <summary>The rig's scale range, picked by <see cref="Key"/>.</summary>
+        public float LoopScale() => Mathf.Lerp(Rig.scale.x, Rig.scale.y, Fraction(1u));
+
+        /// <summary>The rotation, turned by a yaw picked by <see cref="Key"/> when the rig spins at random.</summary>
+        public Quaternion LoopRotation(Quaternion rotation) =>
+            Rig.randomSpin ? rotation * EffectRig.Yaw(Fraction(2u)) : rotation;
+
+        private float Fraction(uint salt) => Hashes.Fraction(math.hash(new uint2(Key, salt)));
 
         /// <summary>Stops this stream's graphs, which fade out as their particles die.</summary>
         public void Stop()

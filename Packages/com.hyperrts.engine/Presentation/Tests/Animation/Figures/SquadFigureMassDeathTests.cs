@@ -57,7 +57,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var nearest = NearestDistances();
 
             var slowest = Wipe(1, Squads);
-            var budget = EffectDetail.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
+            var budget = DetailBudget.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
             var made = NewCorpses();
             Assert.AreEqual(budget, made.Length, "one frame's budget of corpses");
             foreach (var corpse in made)

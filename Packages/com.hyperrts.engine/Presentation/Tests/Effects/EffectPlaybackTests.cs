@@ -130,10 +130,10 @@ namespace HyperRTS.Presentation.Tests.Effects
         [Test]
         public void LoopFade_HoldsThenFadesOverTheEnd()
         {
-            Assert.AreEqual(1f, LoopFade.Strength(100f, 0f), "no duration streams forever");
-            Assert.AreEqual(1f, LoopFade.Strength(5f, 10f));
-            Assert.AreEqual(0.5f, LoopFade.Strength(9f, 10f), 1e-4f);
-            Assert.AreEqual(0f, LoopFade.Strength(11f, 10f));
+            Assert.AreEqual(1f, LoopStrength.At(100f, 0f), "no duration streams forever");
+            Assert.AreEqual(1f, LoopStrength.At(5f, 10f));
+            Assert.AreEqual(0.5f, LoopStrength.At(9f, 10f), 1e-4f);
+            Assert.AreEqual(0f, LoopStrength.At(11f, 10f));
         }
 
         [Test]

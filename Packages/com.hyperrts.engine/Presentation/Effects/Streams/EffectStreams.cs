@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Effects.Rig;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Cues.Surfaces;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -41,6 +42,17 @@ namespace HyperRTS.Presentation.Effects.Streams
             var state = Advance(entity, index, position);
             state.Use(rig);
             return state;
+        }
+
+        /// <summary>
+        /// <see cref="Step"/> with the rig the surface table gives for the ground material at the point; none when the
+        /// map has no ground materials (<paramref name="hasGround"/> false).
+        /// </summary>
+        public StreamState StepOnGround(SurfaceEffects surfaces, bool hasGround, in GroundMaterials ground,
+            Entity entity, int index, float3 position)
+        {
+            var material = hasGround ? ground.At(position.xz) : SurfaceMaterial.None;
+            return Step(surfaces.RigFor(material), entity, index, position);
         }
 
         /// <summary>The stream's state moved on to this frame's point.</summary>

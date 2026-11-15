@@ -54,7 +54,7 @@ namespace HyperRTS.Presentation.Animation.Bones
         {
             CompleteDependency();
             ref var slots = ref SystemAPI.GetSingletonRW<PoseSlots>().ValueRW;
-            slots.Cap = EffectDetail.RagdollsAt(PresentationQuality.Current.Effects);
+            slots.Cap = DetailBudget.RagdollsAt(PresentationQuality.Current.Effects);
             slots.Upload(_buffer);
             Shader.SetGlobalBuffer(SlotsId, _buffer);
         }

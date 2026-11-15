@@ -5,7 +5,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Lights
 {
     /// <summary>
-    /// The sun shadow of a looping rig's smoke column. Goes on the rig's root; the nearest streamed loops are drawn into
+    /// Loop lighting: the sun shadow of a looping rig's smoke column. Goes on the rig's root; the nearest streamed loops are drawn into
     /// the sun's cloud cookie by <see cref="Environment.CloudShadows"/> from Medium detail up.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Effects/Smoke Shadow")]

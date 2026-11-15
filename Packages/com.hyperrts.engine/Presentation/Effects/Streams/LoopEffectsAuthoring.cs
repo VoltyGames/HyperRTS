@@ -37,7 +37,7 @@ namespace HyperRTS.Presentation.Effects.Streams
         public static DynamicBuffer<LoopEffect> Add(EntityWriter writer) =>
             writer.AddBuffer<LoopEffect>();
 
-        public static void AddLoop(DynamicBuffer<LoopEffect> loops, GameObject rig, float3 socket, float aboveHealth,
+        public static void Add(DynamicBuffer<LoopEffect> loops, GameObject rig, float3 socket, float aboveHealth,
             float duration)
         {
             if (rig != null)
@@ -55,7 +55,7 @@ namespace HyperRTS.Presentation.Effects.Streams
                 foreach (var entry in authoring.loops)
                 {
                     var socket = Socket(this, authoring.transform, entry.socket);
-                    AddLoop(loops, entry.rig, socket, entry.aboveHealth, entry.duration);
+                    Add(loops, entry.rig, socket, entry.aboveHealth, entry.duration);
                 }
             }
         }

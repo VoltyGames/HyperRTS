@@ -1,11 +1,10 @@
-using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Lights
 {
     /// <summary>
-    /// The smoke columns nearest the camera, written each frame as shader globals for <see cref="Environment.CloudShadows"/>.
+    /// Loop lighting: the smoke columns nearest the camera, written each frame as shader globals for <see cref="Environment.CloudShadows"/>.
     /// Medium detail and up.
     /// </summary>
     public sealed class SmokeShadows

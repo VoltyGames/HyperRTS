@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Lights
 {
-    /// <summary>Shadowless point lights shared by every rig's flashes; when all are lit the oldest is reused.</summary>
+    /// <summary>Flash lights: shadowless point lights shared by every rig's bursts; when all are lit the oldest is reused.</summary>
     public sealed class EffectLights
     {
         private readonly LightSlots _slots;

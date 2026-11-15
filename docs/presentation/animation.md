@@ -39,7 +39,7 @@ replay speed apply.
 A renderer whose `PoseSlot` is 0 or above draws a live pose instead of its clips: every bone's skinning matrix,
 absolute in object space, from that slot of the global `_PoseSlots` buffer (DOTS instanced draws only). The material
 default is -1 too, since slot 0 is a real slot. `PoseSlotSystem` keeps the `PoseSlots` singleton, uploads the slots
-written each frame and caps how many may be taken by the effect level (`EffectDetail.RagdollsAt`: none on Low, 24 on
+written each frame and caps how many may be taken by the effect level (`DetailBudget.RagdollsAt`: none on Low, 24 on
 Medium, 48 on High). A slot holds up to `PoseSlots.MostBones` bones.
 
 ## Rigid vertex animation
@@ -133,7 +133,7 @@ is an error. `deployedModel` is a child (a gun on its tripod) shown while the sq
 A dead member's figure plays its fall (the shot fall, or the blast fall for the side the blast came from) and hides
 after `dieHold`. When the bone set has a ragdoll, `CorpseSystem` decides at the handover, `handoverTime` into the fall:
 a figure within `cameraDistance` of the camera, with a pose slot free, becomes a `Corpse`; the rest keep their fall.
-A frame makes and hands over at most `EffectDetail.CorpsesPerFrameAt` corpses, nearest the camera first, so a blast
+A frame makes and hands over at most `DetailBudget.CorpsesPerFrameAt` corpses, nearest the camera first, so a blast
 that kills hundreds spreads its cost over frames.
 
 - A corpse draws through its own copies of the figure's renderers (`VisualPrefab.Copy`), listed in its

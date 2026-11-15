@@ -3,14 +3,14 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Streams
 {
     /// <summary>How strongly a <c>LoopEffect</c> with a duration streams as it runs out.</summary>
-    public static class LoopFade
+    public static class LoopStrength
     {
         public const float Seconds = 2f;
 
         /// <summary>
         /// 1 until the last <see cref="Seconds"/> (at most half the duration), then down to 0; 1 forever without one.
         /// </summary>
-        public static float Strength(float age, float duration)
+        public static float At(float age, float duration)
         {
             if (duration <= 0f)
             {

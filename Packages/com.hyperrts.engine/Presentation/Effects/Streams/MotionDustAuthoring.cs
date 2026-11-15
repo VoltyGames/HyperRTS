@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Surfaces;
+using System;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -30,29 +31,28 @@ namespace HyperRTS.Presentation.Effects.Streams
         public float fullSpeed = 8f;
 
         public static void Add(EntityWriter writer, SurfaceEffects effects, float3 socket, float minSpeed,
-            float fullSpeed)
-        {
-            if (effects != null)
+            float fullSpeed) =>
+            writer.Add(new MotionDust
             {
-                writer.Add(new MotionDust
-                {
-                    Effects = effects,
-                    Socket = socket,
-                    MinSpeed = minSpeed,
-                    FullSpeed = fullSpeed,
-                });
-            }
-        }
+                Effects = effects,
+                Socket = socket,
+                MinSpeed = minSpeed,
+                FullSpeed = fullSpeed,
+            });
 
         public class Baker : Baker<MotionDustAuthoring>
         {
             public override void Bake(MotionDustAuthoring authoring)
             {
+                if (authoring.effects == null)
+                {
+                    throw new InvalidOperationException($"Motion Dust on '{authoring.name}' has no 'effects'.");
+                }
+
                 DependsOn(authoring.effects);
                 var writer = this.Writer();
                 var socket = Socket(this, authoring.transform, authoring.socket);
-                Add(writer, authoring.effects, socket, authoring.minSpeed,
-                    authoring.fullSpeed);
+                Add(writer, authoring.effects, socket, authoring.minSpeed, authoring.fullSpeed);
             }
         }
     }

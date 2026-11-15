@@ -6,7 +6,7 @@ namespace HyperRTS.Presentation.Quality
     /// Particle share, ragdoll count and corpses a frame per effect level. Low thins particles, keeps loops near the
     /// camera and has no ragdolls; only High adds flash lights.
     /// </summary>
-    public static class EffectDetail
+    public static class DetailBudget
     {
         /// <summary>The share of authored particles emitted at the current level.</summary>
         public static float Density => DensityAt(PresentationQuality.Current.Effects);

@@ -84,7 +84,7 @@ namespace HyperRTS.Presentation.Effects.Streams
         private void Stream(in LoopSource source, int index, in LoopEffect loop)
         {
             var (entity, place, health, age, standing) = (source.Entity, source.Place, source.Health, source.Age, source.Standing);
-            var strength = LoopFade.Strength(age, loop.Duration) * standing;
+            var strength = LoopStrength.At(age, loop.Duration) * standing;
             var belowHealth = loop.AboveHealth > 0f && health <= loop.AboveHealth;
             if (strength <= 0f || belowHealth || !loop.Rig.IsValid())
             {
@@ -101,7 +101,7 @@ namespace HyperRTS.Presentation.Effects.Streams
             state.EmitLoop(place.Rotation, _deltaTime, strength);
             _lights.Offers.Add(state.Rig.LoopLight, socket, strength, state.Key, age);
             // The shadow follows the smoke actually emitted, which density thins.
-            _smoke.Offers.Add(state.Rig.SmokeShadow, socket, strength * EffectDetail.Density, state.Key, age);
+            _smoke.Offers.Add(state.Rig.SmokeShadow, socket, strength * DetailBudget.Density, state.Key, age);
         }
 
         /// <summary>The entity a loop streams from, with its health fraction, seconds seen and how much of it still stands.</summary>

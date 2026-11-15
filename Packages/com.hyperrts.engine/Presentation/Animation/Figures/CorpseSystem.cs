@@ -19,7 +19,7 @@ namespace HyperRTS.Presentation.Animation.Figures
     /// <summary>
     /// Makes corpses of dying squad figures. Past its handover a figure near the camera with a free pose slot becomes a
     /// ragdoll drawn by copies of its renderers; the figures still on show when a squad dies fall as corpses too. A frame
-    /// makes and hands over at most <see cref="EffectDetail.CorpsesPerFrameAt"/>, nearest the camera first. Bodies freeze
+    /// makes and hands over at most <see cref="DetailBudget.CorpsesPerFrameAt"/>, nearest the camera first. Bodies freeze
     /// once they rest, and a corpse hides when its figure would have. Not Burst: it copies renderers and reads bone
     /// textures.
     /// </summary>

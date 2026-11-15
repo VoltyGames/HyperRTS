@@ -5,7 +5,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Lights
 {
     /// <summary>
-    /// A flickering point light a looping rig asks for, such as a fire's glow. Goes on the rig's root; the nearest
+    /// Loop lighting: a flickering point light a looping rig asks for, such as a fire's glow. Goes on the rig's root; the nearest
     /// streamed loops get one of <see cref="LoopLights"/>' pooled lights on High detail.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Effects/Loop Light")]

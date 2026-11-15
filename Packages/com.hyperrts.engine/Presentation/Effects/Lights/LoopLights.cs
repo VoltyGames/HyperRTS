@@ -1,11 +1,10 @@
-using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Simulation.Common;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Lights
 {
     /// <summary>
-    /// Shadowless, flickering point lights given each frame to the streamed loops nearest the camera whose rigs carry a
+    /// Loop lighting: shadowless, flickering point lights given each frame to the streamed loops nearest the camera whose rigs carry a
     /// <see cref="LoopLight"/>, such as burning wrecks and buildings. High detail only, beside <see cref="EffectLights"/>.
     /// </summary>
     public sealed class LoopLights

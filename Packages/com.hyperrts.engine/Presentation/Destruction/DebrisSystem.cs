@@ -59,7 +59,7 @@ namespace HyperRTS.Presentation.Destruction
         }
 
         public static int PieceCount(int authored, DetailLevel level) =>
-            level == DetailLevel.Low ? 0 : (int)math.ceil(authored * EffectDetail.DensityAt(level));
+            level == DetailLevel.Low ? 0 : (int)math.ceil(authored * DetailBudget.DensityAt(level));
 
         // A changed effect detail starts the lasting layer over at its new cap.
         private void KeepCapForDetail()

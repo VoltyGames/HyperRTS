@@ -27,9 +27,9 @@ namespace HyperRTS.Presentation.Tests.Effects
         {
             var graph = EffectRigKit.AddGraph(_rig);
 
-            _rig.Burst(new Vector3(5f, 0f, 3f), Quaternion.identity, 1f, EffectDetail.DensityAt(level));
+            _rig.Burst(new Vector3(5f, 0f, 3f), Quaternion.identity, 1f, DetailBudget.DensityAt(level));
 
-            Assert.AreEqual(EffectDetail.DensityAt(level), graph.GetFloat(EffectGraph.DensityProperty));
+            Assert.AreEqual(DetailBudget.DensityAt(level), graph.GetFloat(EffectGraph.DensityProperty));
         }
 
         [Test]
@@ -60,15 +60,16 @@ namespace HyperRTS.Presentation.Tests.Effects
 
             for (var key = 0u; key < scales.Length; key++)
             {
-                scales[key] = _rig.LoopScale(key);
-                Assert.AreEqual(scales[key], _rig.LoopScale(key));
+                var state = new StreamState { Rig = _rig, Key = key };
+                scales[key] = state.LoopScale();
+                Assert.AreEqual(scales[key], state.LoopScale());
                 Assert.That(scales[key], Is.InRange(0.8f, 1.4f));
-                Assert.AreEqual(_rig.LoopRotation(Quaternion.identity, key),
-                    _rig.LoopRotation(Quaternion.identity, key));
+                Assert.AreEqual(state.LoopRotation(Quaternion.identity), state.LoopRotation(Quaternion.identity));
             }
 
             Assert.AreNotEqual(scales[0], scales[1]);
-            Assert.AreNotEqual(_rig.LoopRotation(Quaternion.identity, 0u), _rig.LoopRotation(Quaternion.identity, 1u));
+            Assert.AreNotEqual(new StreamState { Rig = _rig, Key = 0u }.LoopRotation(Quaternion.identity),
+                new StreamState { Rig = _rig, Key = 1u }.LoopRotation(Quaternion.identity));
         }
 
         [Test]
@@ -103,7 +104,7 @@ namespace HyperRTS.Presentation.Tests.Effects
             Assert.AreEqual(2, graphs.Length, "the template and one stream's copy");
             var copy = graphs[0] == template ? graphs[1] : graphs[0];
             Assert.AreEqual(8f, copy.GetFloat(GraphStream.SpeedProperty), 1e-4f, "4 m in 0.5 s");
-            Assert.AreEqual(0.5f * EffectDetail.Density, copy.GetFloat(EffectGraph.DensityProperty), 1e-4f);
+            Assert.AreEqual(0.5f * DetailBudget.Density, copy.GetFloat(EffectGraph.DensityProperty), 1e-4f);
             Assert.AreEqual(new Vector3(4f, 0f, 0f), copy.GetVector3(GraphStream.ToProperty));
             Assert.AreEqual(0f, template.GetFloat(GraphStream.SpeedProperty), "the template only bursts");
         }

@@ -38,8 +38,7 @@ namespace HyperRTS.Presentation.Effects.Streams
             {
                 var speed = dust.ValueRW.DrawnSpeed(place.ValueRO.Position, place.ValueRO.Forward, deltaTime);
                 var socket = math.transform(place.ValueRO.Value, dust.ValueRO.Socket);
-                var material = hasGround ? ground.At(socket.xz) : SurfaceMaterial.None;
-                var state = _streams.Step(dust.ValueRO.Effects.Value.RigFor(material), entity, 0, socket);
+                var state = _streams.StepOnGround(dust.ValueRO.Effects, hasGround, ground, entity, 0, socket);
                 if (state == null)
                 {
                     continue;

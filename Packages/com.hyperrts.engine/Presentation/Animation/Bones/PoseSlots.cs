@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Animation.Bones
         public const int SlotLength = MostBones * 3;
 
         /// <summary>Slots kept, enough for the highest effect level's cap.</summary>
-        public static int Most => EffectDetail.RagdollsAt(DetailLevel.High);
+        public static int Most => DetailBudget.RagdollsAt(DetailLevel.High);
 
         /// <summary>Every slot's rows, slot after slot; row r of a bone is row r of its 3x4 matrix.</summary>
         public NativeArray<float4> Skins;

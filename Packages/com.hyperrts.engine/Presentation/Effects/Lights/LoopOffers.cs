@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Effects.Streams
+namespace HyperRTS.Presentation.Effects.Lights
 {
-    /// <summary>This frame's streamed loops whose rigs carry a <typeparamref name="T"/>, nearest the camera first once sorted.</summary>
+    /// <summary>Loop lighting: this frame's streamed loops whose rigs carry a <typeparamref name="T"/>, nearest the camera first once sorted.</summary>
     public sealed class LoopOffers<T> where T : Component
     {
         /// <summary>One streamed loop: its rig's component, where it plays, how strongly, its stream key and seconds since it began.</summary>

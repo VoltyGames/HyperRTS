@@ -66,8 +66,7 @@ namespace HyperRTS.Presentation.Environment.Fire
                 }
 
                 var state = _streams.Step(settings.rig, Entity.Null, cluster.Key, position);
-                state?.Emit(state.Rig.LoopRotation(Quaternion.identity, state.Key), deltaTime,
-                    math.saturate(cluster.Cells / FullFireCells), state.Rig.LoopScale(state.Key));
+                state?.EmitLoop(Quaternion.identity, deltaTime, math.saturate(cluster.Cells / FullFireCells));
             }
 
             _streams.EndFrame();

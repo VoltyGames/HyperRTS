@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Lights
 {
-    /// <summary>A fixed set of shadowless point lights, each made on first use under a root.</summary>
+    /// <summary>The lights of both flash and loop lighting: a fixed set of shadowless point lights, each made on first use under a root.</summary>
     public sealed class LightSlots
     {
         public const int Capacity = 8;

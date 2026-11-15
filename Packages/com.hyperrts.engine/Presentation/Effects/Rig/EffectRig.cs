@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.Effects.Rig
         public void Play(Vector3 position, Quaternion rotation, float splashRadius = 0f)
         {
             var played = Pick();
-            played.Burst(position, rotation, played.ScaleFor(splashRadius), EffectDetail.Density);
+            played.Burst(position, rotation, played.ScaleFor(splashRadius), DetailBudget.Density);
         }
 
         public EffectRig Pick(uint key)
@@ -99,13 +99,6 @@ namespace HyperRTS.Presentation.Effects.Rig
         }
 
         public EffectRig Pick() => Pick((uint)UnityEngine.Random.Range(0, int.MaxValue));
-
-        public float LoopScale(uint key) => Mathf.Lerp(scale.x, scale.y, Fraction(key, 1u));
-
-        public Quaternion LoopRotation(Quaternion rotation, uint key) =>
-            randomSpin ? rotation * Yaw(Fraction(key, 2u)) : rotation;
-
-        private static float Fraction(uint key, uint salt) => Hashes.Fraction(math.hash(new uint2(key, salt)));
 
         /// <summary>Sends every graph its Burst event at the pose, thinned by density, flashes the lights and shakes the camera.</summary>
         public void Burst(Vector3 position, Quaternion rotation, float burstScale, float density)
@@ -129,7 +122,7 @@ namespace HyperRTS.Presentation.Effects.Rig
             }
         }
 
-        private static Quaternion Yaw(float fraction) => Quaternion.Euler(0f, fraction * 360f, 0f);
+        public static Quaternion Yaw(float fraction) => Quaternion.Euler(0f, fraction * 360f, 0f);
 
         /// <summary>A stream's started copy of the stream graphs; null when the rig has none.</summary>
         public GraphStream StartStream()

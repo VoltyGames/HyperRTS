@@ -50,8 +50,7 @@ namespace HyperRTS.Presentation.Effects.Streams
                     continue;
                 }
 
-                var material = hasGround ? ground.At(below.xz) : SurfaceMaterial.None;
-                var state = _streams.Step(wash.ValueRO.Effects.Value.RigFor(material), entity, 0, below);
+                var state = _streams.StepOnGround(wash.ValueRO.Effects, hasGround, ground, entity, 0, below);
                 state?.Emit(Quaternion.identity, deltaTime, strength);
             }
 

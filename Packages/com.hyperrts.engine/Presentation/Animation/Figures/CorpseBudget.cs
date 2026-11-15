@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Animation.Figures
         {
             Camera = MainCamera.Find(Camera);
             CameraPosition = Camera == null ? default : (float3)Camera.transform.position;
-            Left = EffectDetail.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
+            Left = DetailBudget.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
         }
 
         // Without a camera every figure is as near as any other.
