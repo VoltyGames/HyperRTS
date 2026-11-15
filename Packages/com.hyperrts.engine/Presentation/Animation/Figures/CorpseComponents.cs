@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -75,6 +76,10 @@ namespace HyperRTS.Presentation.Animation.Figures
         public const float CueWait = 0.5f;
 
         public int TypeId;
+
+        /// <summary>The squad's <see cref="SpawnNumber"/>, which its death cue carries.</summary>
+        public int SpawnNumber;
+
         public byte Owner;
         public float3 Position;
         public bool Died;

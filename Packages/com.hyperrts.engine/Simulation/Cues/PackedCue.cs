@@ -8,7 +8,7 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Cues
 {
     /// <summary>
-    /// One <see cref="CueEvent"/> in 18 bytes, for the network and replays; positions and radii in
+    /// One <see cref="CueEvent"/> in 22 bytes, for the network and replays; positions and radii in
     /// <see cref="QuantizedPosition"/> steps.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -20,6 +20,7 @@ namespace HyperRTS.Simulation.Cues
         private const byte TallBit = 0x40;
 
         public int TypeId;
+        public int SourceNumber;
         public short X;
         public short Y;
         public short Z;
@@ -48,6 +49,7 @@ namespace HyperRTS.Simulation.Cues
             return new PackedCue
             {
                 TypeId = cue.TypeId,
+                SourceNumber = cue.SourceNumber,
                 X = QuantizedPosition.Quantize(cue.Position.x),
                 Y = QuantizedPosition.Quantize(cue.Position.y),
                 Z = QuantizedPosition.Quantize(cue.Position.z),
@@ -70,6 +72,7 @@ namespace HyperRTS.Simulation.Cues
             return new CueEvent
             {
                 TypeId = TypeId,
+                SourceNumber = SourceNumber,
                 Slot = (CueSlot)Slot,
                 Variant = impact ? (byte)0 : Detail,
                 Owner = Owner,

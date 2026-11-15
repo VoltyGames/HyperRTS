@@ -8,8 +8,8 @@ namespace HyperRTS.Network.Cues
     /// <summary>A batch of <c>CueEvent</c>s; the client finds each sound, rig and mark through its own copy of the prefab.</summary>
     public struct CueRpc : IRpcCommand
     {
-        /// <summary>48 events at 18 bytes keep the RPC under 1 KB on the wire.</summary>
-        public const int Capacity = 48;
+        /// <summary>44 events at 22 bytes keep the RPC under 1 KB on the wire.</summary>
+        public const int Capacity = 44;
 
         [GhostFixedListCapacity(Capacity = Capacity)]
         public FixedList4096Bytes<PackedCue> Cues;

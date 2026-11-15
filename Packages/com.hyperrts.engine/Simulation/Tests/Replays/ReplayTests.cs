@@ -90,7 +90,7 @@ namespace HyperRTS.Simulation.Tests.Replays
             Assert.AreEqual(mover, replay.Entities[delta.EntityStart].Key);
 
             CollectionAssert.Contains(replay.Removed, FindKey(replay, "Victim"));
-            Assert.AreEqual(3, FindKey(replay, "Tank"), "spawns get the next key");
+            Assert.AreEqual(4, FindKey(replay, "Tank"), "a spawn's key is its spawn number, the next after the three before it");
 
             var last = Array.FindLast(replay.Frames, frame => frame.Keyframe);
             Assert.AreEqual(3, last.EntityCount, "a later keyframe holds the living: mover, idle and tank");

@@ -32,7 +32,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             Update();
 
             _em.DestroyEntity(_squad);
-            _kit.PushCue(new CueEvent { TypeId = SquadType, Slot = CueSlot.Death, Position = float3.zero });
+            _kit.PushCue(new CueEvent { TypeId = SquadType, SourceNumber = SquadNumber, Slot = CueSlot.Death });
             Update();
 
             using var corpses = Corpses();

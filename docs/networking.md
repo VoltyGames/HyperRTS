@@ -182,9 +182,9 @@ Each client receives only the owned ghosts its team can see, so a map hack has n
 stealthed enemies count as unseen, even with fog off. Ghosts without an `Owner`, such as players and the match,
 always replicate. Observers see everything. A client remembers enemy buildings where it last saw them.
 
-The server never plays sounds or effects. Every transient event (shot, impact, death, voice line) is a `CueEvent`,
-sent to each client under the same fog and stealth rule at 18 bytes each. The client plays them as single player
-does.
+The server never plays sounds or effects. Every transient event (shot, impact, death, voice line) is a `CueEvent`, sent
+to each client under the same fog and stealth rule at 22 bytes each. A cue carries its source's `SpawnNumber`, so a
+client matches a squad's death cue to its corpses by number. The client plays them as single player does.
 
 ## Limits
 

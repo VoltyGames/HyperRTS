@@ -26,6 +26,7 @@ namespace HyperRTS.Simulation.GameEntities
         {
             writer.Add(spec.Info);
             writer.Add(new Owner { Value = spec.Owner });
+            writer.Add<SpawnNumber>();
             writer.Add(new Health { Current = spec.MaxHealth, Max = spec.MaxHealth });
             writer.Add<Dead>();
             writer.SetEnabled<Dead>(false);

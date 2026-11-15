@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Replays
 
         public ReplayStream Stream;
 
-        /// <summary>Each recorded entity's last sampled state, for change detection and its key.</summary>
+        /// <summary>Each recorded entity's last sampled state, for change detection.</summary>
         public NativeHashMap<Entity, ReplayEntity> Last;
 
         /// <summary>Entities seen by the sample being taken; the rest of <see cref="Last"/> were removed.</summary>
@@ -25,7 +25,6 @@ namespace HyperRTS.Simulation.Replays
         public double StartTime;
         public float NextSample;
         public float LastKeyframe;
-        public int NextKey;
 
         public static ReplayRecording Create(float sampleRate = DefaultSampleRate,
             float keyframeInterval = DefaultKeyframeInterval) => new()

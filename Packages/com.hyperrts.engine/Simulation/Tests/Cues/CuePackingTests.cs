@@ -19,13 +19,14 @@ namespace HyperRTS.Simulation.Tests.Cues
         {
             var cue = new CueEvent
             {
-                TypeId = 1234, Slot = CueSlot.Fire, Owner = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
+                TypeId = 1234, SourceNumber = 70000, Slot = CueSlot.Fire, Owner = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
                 Direction = math.normalize(new float3(1f, 0.5f, -1f)), Concealment = Concealment.Concealed, Tall = true,
             };
 
             var read = PackedCue.Pack(cue).Unpack();
 
             Assert.AreEqual(cue.TypeId, read.TypeId);
+            Assert.AreEqual(cue.SourceNumber, read.SourceNumber);
             Assert.AreEqual(cue.Slot, read.Slot);
             Assert.AreEqual(cue.Owner, read.Owner);
             Assert.That(math.distance(cue.Position, read.Position), Is.LessThan(QuantizedPosition.Step));
@@ -77,9 +78,9 @@ namespace HyperRTS.Simulation.Tests.Cues
         }
 
         [Test]
-        public void PackedCue_IsExactly18Bytes_AsReplayFilesStoreIt()
+        public void PackedCue_IsExactly22Bytes_AsReplayFilesStoreIt()
         {
-            Assert.AreEqual(18, UnsafeUtility.SizeOf<PackedCue>());
+            Assert.AreEqual(22, UnsafeUtility.SizeOf<PackedCue>());
         }
     }
 }

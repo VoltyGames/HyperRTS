@@ -117,12 +117,18 @@ namespace HyperRTS.Simulation.Replays
             var health = SystemAPI.GetComponentLookup<Health>(true);
             var construction = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var squads = SystemAPI.GetBufferLookup<SquadMember>(true);
-            foreach (var (info, owner, transform, entity) in SystemAPI
-                         .Query<RefRO<EntityInfo>, RefRO<Owner>, RefRO<LocalTransform>>()
+            foreach (var (info, owner, transform, number, entity) in SystemAPI
+                         .Query<RefRO<EntityInfo>, RefRO<Owner>, RefRO<LocalTransform>, RefRO<SpawnNumber>>()
                          .WithNone<Inside>().WithEntityAccess())
             {
+                // Spawned inside this group after SpawnNumberSystem ran: its first sample comes next time.
+                var key = number.ValueRO.Value;
+                if (key == 0)
+                {
+                    continue;
+                }
+
                 var known = recording.Last.TryGetValue(entity, out var last);
-                var key = known ? last.Key : recording.NextKey++;
                 var healthFraction = health.TryGetComponent(entity, out var hp) ? hp.Fraction : 1f;
                 var building = construction.HasEnabled(entity);
                 var living = squads.TryGetBuffer(entity, out var members) ? new SquadRoster(members).LivingMask() : (ushort)0;

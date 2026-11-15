@@ -32,6 +32,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         /// <summary>Seconds of the fixture's fire clips, which set how long a figure keeps firing.</summary>
         protected const float FireLength = 1f;
 
+        protected const int SquadNumber = 1;
         protected static readonly int SquadType = EntityInfo.TypeIdFromName("Test Squad");
 
         protected PresentationWorldKit _kit;
@@ -87,6 +88,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             LinkFigures(squad);
             _em.AddComponentData(squad, new Health { Current = 100f, Max = 100f });
             _em.AddComponentData(squad, new EntityInfo { TypeId = SquadType });
+            _em.AddComponentData(squad, new SpawnNumber { Value = SquadNumber });
             _em.AddComponentData(squad, new Owner { Value = 1 });
             _em.AddBuffer<WeaponPose>(squad).Add(default);
             var members = _em.AddBuffer<SquadMember>(squad);

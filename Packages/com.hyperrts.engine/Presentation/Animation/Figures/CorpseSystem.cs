@@ -49,7 +49,7 @@ namespace HyperRTS.Presentation.Animation.Figures
             _bodies = new CorpseBodies(EntityManager);
             _copies = new CorpseCopies(EntityManager, _budget);
             _deaths = new CorpseDeathCues(ref CheckedStateRef, EntityManager);
-            _newSquads = SystemAPI.QueryBuilder().WithAll<SquadFigures, EntityInfo, Owner>().WithNone<SquadEnd>().Build();
+            _newSquads = SystemAPI.QueryBuilder().WithAll<SquadFigures, EntityInfo, SpawnNumber, Owner>().WithNone<SquadEnd>().Build();
             _goneSquads = SystemAPI.QueryBuilder().WithAll<SquadEnd>().WithNone<SquadFigures>().Build();
             _corpses = SystemAPI.QueryBuilder().WithAll<Corpse>().Build();
         }

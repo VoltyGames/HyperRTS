@@ -10,7 +10,7 @@ namespace HyperRTS.Network.Tests
     public class CueRpcTests
     {
         [Test]
-        public void Fill_MakesRPCsOf48_AndDropsPastTheLimit()
+        public void Fill_MakesFullRPCs_AndDropsPastTheLimit()
         {
             using var cues = new NativeArray<CueEvent>(200, Allocator.Temp);
             using var rpcs = new NativeList<CueRpc>(Allocator.Temp);

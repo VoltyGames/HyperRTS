@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Linq;
 using HyperRTS.Presentation.Animation.Figures;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
 using Unity.Collections;
@@ -38,6 +39,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
                 _squads[i] = _em.Instantiate(_squad);
                 var spot = new float3(i % 20 * 6f - 57f, 0f, i / 20 * 6f);
                 _em.SetComponentData(_squads[i], LocalTransform.FromPosition(spot));
+                _em.SetComponentData(_squads[i], new SpawnNumber { Value = i + 1 });
             }
 
             _em.DestroyEntity(_squad);
@@ -77,12 +79,10 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         {
             PlaceFirstTwo(1f);
             Update();
-            // The ghosts lag the server, so both cues land nearer the first squad.
-            var lagged = new float3(-56.8f, 0f, 0f);
             for (var i = 0; i < 2; i++)
             {
+                PushDeath(i, Spot(i));
                 _em.DestroyEntity(_squads[i]);
-                _kit.PushCue(new CueEvent { TypeId = SquadType, Slot = CueSlot.Death, Position = lagged });
             }
 
             TimedUpdate();
@@ -97,8 +97,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         {
             PlaceFirstTwo(1f);
             Update();
+            PushDeath(0, Spot(0));
             _em.DestroyEntity(_squads[0]);
-            _kit.PushCue(new CueEvent { TypeId = SquadType, Slot = CueSlot.Death, Position = new float3(-56.2f, 0f, 0f) });
             TimedUpdate();
 
             Assert.IsFalse(_em.GetComponentData<SquadEnd>(_squads[1]).Died, "the live squad nearer the cue");
@@ -124,13 +124,20 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         {
             for (var i = first; i < last; i++)
             {
-                var spot = _em.GetComponentData<LocalTransform>(_squads[i]).Position;
+                PushDeath(i, Spot(i));
                 _em.DestroyEntity(_squads[i]);
-                _kit.PushCue(new CueEvent { TypeId = SquadType, Slot = CueSlot.Death, Position = spot });
             }
 
             return TimedUpdate();
         }
+
+        // Read before the squad is destroyed, as a cue's place is where its source stood.
+        private void PushDeath(int squad, float3 spot) => _kit.PushCue(new CueEvent
+        {
+            TypeId = SquadType, SourceNumber = squad + 1, Slot = CueSlot.Death, Position = spot,
+        });
+
+        private float3 Spot(int squad) => _em.GetComponentData<LocalTransform>(_squads[squad]).Position;
 
         private double TimedUpdate()
         {

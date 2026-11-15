@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Surfaces;
@@ -20,6 +21,9 @@ namespace HyperRTS.Simulation.Cues
 
         /// <summary>Which of the slot's cues: a fire cue's weapon pose index, an announcement's kind.</summary>
         public byte Variant;
+
+        /// <summary>The source's <see cref="SpawnNumber"/>, 0 for none; ties a death cue to its squad's corpses.</summary>
+        public int SourceNumber;
 
         /// <summary>Owner of the source; decides who hears and sees it through fog and voice rules.</summary>
         public byte Owner;

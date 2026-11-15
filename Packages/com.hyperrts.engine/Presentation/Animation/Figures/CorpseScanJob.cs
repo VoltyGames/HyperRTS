@@ -19,9 +19,11 @@ namespace HyperRTS.Presentation.Animation.Figures
         public NativeList<CorpseHandover> Handovers;
 
         private void Execute(Entity entity, DynamicBuffer<SquadFigure> figures, in DynamicBuffer<SquadMember> members,
-            DynamicBuffer<ShownFigure> shown, ref SquadEnd end, in LocalToWorld place, in EntityInfo info, in Owner owner)
+            DynamicBuffer<ShownFigure> shown, ref SquadEnd end, in LocalToWorld place, in EntityInfo info, in SpawnNumber number,
+            in Owner owner)
         {
             end.TypeId = info.TypeId;
+            end.SpawnNumber = number.Value;
             end.Owner = owner.Value;
             end.Position = place.Position;
             end.GoneAt = -1f;

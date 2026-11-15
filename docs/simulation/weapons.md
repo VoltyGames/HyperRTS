@@ -103,8 +103,9 @@ What happens when health reaches zero, and what is left. Code sits in `Simulatio
    cells. Remains without it stay for the match.
 6. **Cues.** `DeathCueSystem` queues the death cue of each `Dead` entity: its sound, effects, `DeathStain` and squad
    members.
-7. **Presentation.** `DeathStainSystem` stamps the stain (rubble, ash, fuel, mud) into the ground for the match,
-   for deaths seen on the ground. `CorpseDeathCues` leaves corpses only for squads whose death the player saw.
+7. **Presentation.** `DeathStainSystem` stamps the stain (rubble, ash, fuel, mud) into the ground for the match, for
+   deaths seen on the ground. `CorpseDeathCues` leaves corpses only for squads whose death the player saw, matching the
+   cue's source number.
 
 | Type | Role |
 | --- | --- |

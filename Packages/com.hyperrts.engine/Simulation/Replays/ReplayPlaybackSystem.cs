@@ -98,7 +98,7 @@ namespace HyperRTS.Simulation.Replays
             }
         }
 
-        /// <summary>Claims the scene's entities for the recorded ones, removes the rest and spawns what is missing.</summary>
+        /// <summary>Claims the scene's entities for the recorded ones, removes the rest and spawns what is missing; each takes its recorded number.</summary>
         private void TakeOver(ref SystemState state, ref ReplayPlaybackState data)
         {
             var scene = SystemAPI.QueryBuilder().WithAll<EntityInfo, Owner, LocalTransform>().Build();
@@ -107,6 +107,11 @@ namespace HyperRTS.Simulation.Replays
                 scene.ToComponentDataArray<EntityInfo>(Allocator.Temp),
                 scene.ToComponentDataArray<LocalTransform>(Allocator.Temp), data.Live, unclaimed);
             state.EntityManager.DestroyEntity(unclaimed.AsArray());
+            foreach (var pair in data.Live)
+            {
+                SystemAPI.SetComponent(pair.Value, new SpawnNumber { Value = pair.Key });
+            }
+
             Sync(ref state, ref data);
         }
 
@@ -142,6 +147,7 @@ namespace HyperRTS.Simulation.Replays
                 if (!data.Live.ContainsKey(pair.Key) && TrySpawn(ref state, ref data, registry, pair.Value.TypeId, out var spawned))
                 {
                     data.Live[pair.Key] = spawned;
+                    SystemAPI.SetComponent(spawned, new SpawnNumber { Value = pair.Key });
                 }
             }
         }

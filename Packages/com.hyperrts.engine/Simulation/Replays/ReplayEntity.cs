@@ -16,7 +16,7 @@ namespace HyperRTS.Simulation.Replays
 
         private const float YawStep = 2f * math.PI / 65536f;
 
-        /// <summary>Recording-local id, stable for the entity's lifetime.</summary>
+        /// <summary>The entity's <see cref="SpawnNumber"/>, stable for its lifetime.</summary>
         public int Key;
         public int TypeId;
         public short X;

@@ -28,10 +28,12 @@ namespace HyperRTS.Simulation.Cues
         [ReadOnly] private ComponentLookup<DeathStain> _stains;
         [ReadOnly] private BufferLookup<SquadMember> _members;
         [ReadOnly] private ComponentLookup<EntityInfo> _info;
+        [ReadOnly] private ComponentLookup<SpawnNumber> _numbers;
         private ConcealmentLookup _concealment;
 
         public CueWriter(ref SystemState state) : this()
         {
+            _numbers = state.GetComponentLookup<SpawnNumber>(true);
             _events = new EventWriter<CueEvent>(ref state);
             _sounds = state.GetBufferLookup<EntitySound>(true);
             _effects = state.GetBufferLookup<EntityEffect>(true);
@@ -54,6 +56,7 @@ namespace HyperRTS.Simulation.Cues
             _stains.Update(ref state);
             _members.Update(ref state);
             _info.Update(ref state);
+            _numbers.Update(ref state);
             _concealment.Update(ref state);
         }
 
@@ -79,9 +82,10 @@ namespace HyperRTS.Simulation.Cues
             byte variant = 0)
         {
             var typeId = TypeIdFor(source, slot, variant);
+            var number = _numbers.TryGetComponent(source, out var spawn) ? spawn.Value : 0;
             return Add(new CueEvent
             {
-                TypeId = typeId, Slot = slot, Variant = variant, Owner = owner, Position = position,
+                TypeId = typeId, Slot = slot, Variant = variant, SourceNumber = number, Owner = owner, Position = position,
                 Direction = direction, Concealment = _concealment.Find(source), Tall = _concealment.IsTall(source),
             });
         }

@@ -147,12 +147,12 @@ that kills hundreds spreads its cost over frames.
   on `boneBodies`) and keeps the copies' render bounds round the bodies. Once every body is under `restSpeed` for
   `restTime`, or after `settleTime`, the bodies go and the slot keeps the last pose. The corpse and its slot go at the
   figure's hide time.
-- The client never sees the last member die: the ghost goes the tick it does, often with every member in one blast.
-  Each squad keeps a cleanup `SquadEnd` and a `ShownFigure` per figure (place, posture, fall). Every squad's death plays
-  a death cue, sound or not (`CueWriter`), so when the ghost goes and a seen death cue of its type lands on it within
-  `CueWait`, its figures still on show wait to fall as corpses copied from the prefab: falling ones carry on, living
-  ones fall as if shot, then hand over as above. One the frame's budget leaves waits, and past `FallWait` it hides
-  with its squad. A ghost that goes into fog has no death cue and leaves nothing.
+- The client never sees the last member die: the ghost goes the tick it does, often with every member in one blast. Each
+  squad keeps a cleanup `SquadEnd` and a `ShownFigure` per figure (place, posture, fall). Every squad's death plays a
+  death cue, sound or not (`CueWriter`), so when the ghost goes and a seen death cue naming its `SpawnNumber` (kept on
+  `SquadEnd`) comes within `CueWait`, its figures still on show wait to fall as corpses copied from the prefab: falling
+  ones carry on, living ones fall as if shot, then hand over as above. One the frame's budget leaves waits, and past
+  `FallWait` it hides with its squad. A ghost that goes into fog has no death cue and leaves nothing.
 
 The tuning (`RagdollTuning`) sits on the `BoneAnimationSet` beside its ragdoll bodies and bakes through the clip table
 into `FigureClips.Ragdoll`. Headless and server worlds run none of this, and a `-nographics` client keeps no slots.
