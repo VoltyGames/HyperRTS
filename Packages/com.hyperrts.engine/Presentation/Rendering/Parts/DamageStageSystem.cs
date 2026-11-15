@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Common;
@@ -12,7 +13,8 @@ namespace HyperRTS.Presentation.Rendering.Parts
 {
     /// <summary>
     /// Shows the <see cref="DamageStage"/> model matching health and bursts the stage's rig on entering it. The first
-    /// stage hides in place; later ones are copied in from their prefabs while they show.
+    /// stage hides in place; later ones are copied in from their prefabs while they show. A stage entered out of the
+    /// local player's sight switches its model without the rig.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -21,11 +23,13 @@ namespace HyperRTS.Presentation.Rendering.Parts
     {
         private EffectPool _pool;
         private RenderSwitch _switch;
+        private CueVisibility _visibility;
 
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
             _switch = new RenderSwitch(ref CheckedStateRef);
+            _visibility = new CueVisibility(ref CheckedStateRef);
             RequireForUpdate<ShownDamageStage>();
         }
 
@@ -33,6 +37,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
         {
             CompleteDependency();
             _switch.Update(ref CheckedStateRef);
+            _visibility.Begin();
             var copies = ModelCopies.Create();
             foreach (var (health, stages, shown, place, entity) in SystemAPI
                          .Query<RefRO<Health>, DynamicBuffer<DamageStage>, RefRW<ShownDamageStage>, RefRO<LocalToWorld>>()
@@ -54,7 +59,8 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 }
 
                 // The first frame only sets the look; a spawned or loaded wreck doesn't replay its damage.
-                if (previous >= 0 && index > previous && stages[index].Effect.IsValid())
+                if (previous >= 0 && index > previous && stages[index].Effect.IsValid()
+                    && _visibility.IsSeen(place.ValueRO.Position))
                 {
                     _pool.Play(stages[index].Effect.Value, place.ValueRO.Position, place.ValueRO.Rotation);
                 }

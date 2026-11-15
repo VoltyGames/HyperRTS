@@ -76,12 +76,12 @@ namespace HyperRTS.Presentation.Destruction
         private NativeList<float3> SeenImpacts()
         {
             var impacts = new NativeList<float3>(Allocator.Temp);
+            _visibility.Begin();
             if (!SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
             {
                 return impacts;
             }
 
-            _visibility.Begin();
             foreach (var cue in cues)
             {
                 if (cue.Slot == CueSlot.Impact && _visibility.IsSeen(cue))
@@ -254,18 +254,22 @@ namespace HyperRTS.Presentation.Destruction
             at.Copies.Set(at.Entity, model.Broken, !standing);
         }
 
-        /// <summary>The building's break effect and debris from the section that broke, and a dust wave off the ground floor.</summary>
+        /// <summary>
+        /// The building's break effect and debris from the section that broke, and a dust wave off the ground floor. Out of
+        /// the local player's sight only the debris falls.
+        /// </summary>
         private void Play(Context at, in ShownSections shown, in Section section)
         {
             var position = math.transform(at.Place.Value, section.Center);
             var outward = section.Outward;
-            if (shown.Effect.IsValid())
+            var seen = _visibility.IsSeen(position);
+            if (seen && shown.Effect.IsValid())
             {
                 var up = math.abs(outward.y) > 0.5f ? new float3(0f, 0f, 1f) : math.up();
                 _pool.Play(shown.Effect.Value, position, math.mul(at.Place.Rotation, quaternion.LookRotation(outward, up)));
             }
 
-            if (shown.DustWave.IsValid() && section.Floor == 0)
+            if (seen && shown.DustWave.IsValid() && section.Floor == 0)
             {
                 var foot = math.transform(at.Place.Value, section.Center - new float3(0f, section.HalfSize.y, 0f));
                 _pool.Play(shown.DustWave.Value, foot, at.Place.Rotation);

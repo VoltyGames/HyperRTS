@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Death;
@@ -9,13 +10,14 @@ namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
     /// Plays each <see cref="SpawnEffect"/> once, the first frame its entity (a ruin) is drawn. A falling tree plays
-    /// it where its canopy lands, as it lands.
+    /// it where its canopy lands, as it lands. One out of the local player's sight is spent unplayed.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class SpawnEffectSystem : SystemBase
     {
         private EffectPool _pool;
+        private CueVisibility _visibility;
 
         // The canopy's mass sits a little past the middle of the trunk.
         private const float CanopyShare = 0.6f;
@@ -23,12 +25,14 @@ namespace HyperRTS.Presentation.Destruction
         protected override void OnCreate()
         {
             _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
+            _visibility = new CueVisibility(ref CheckedStateRef);
             RequireForUpdate<SpawnEffect>();
         }
 
         protected override void OnUpdate()
         {
             CompleteDependency();
+            _visibility.Begin();
             foreach (var (effect, pending, place, entity) in SystemAPI
                          .Query<RefRO<SpawnEffect>, EnabledRefRW<SpawnEffect>, RefRO<LocalToWorld>>().WithEntityAccess())
             {
@@ -48,7 +52,10 @@ namespace HyperRTS.Presentation.Destruction
                     rotation = quaternion.LookRotationSafe(toppleFall.CanopyDirection, math.up());
                 }
 
-                _pool.Play(prefab, position, rotation);
+                if (_visibility.IsSeen(position))
+                {
+                    _pool.Play(prefab, position, rotation);
+                }
             }
         }
 

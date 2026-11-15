@@ -60,8 +60,8 @@ graph, and `EffectGraphBuilder.ShaderErrors` compiles a built graph's shaders so
 
 A rig with `shake` above 0 shakes the camera when it bursts: the pool collects a `CameraJolt` (the burst point and the
 shake) in its `CameraJolts`, which the [camera](README.md#input) reads in the next frame. The pool plays what its callers
-hand it, so cue rigs shake only for cues the local player sees, while rigs that systems play directly (damage stages,
-spawn effects) shake within the rig's range. Give it to the bursts a player should feel, such as vehicle deaths, shells
+hand it, and every caller checks the local player's sight first: cue rigs by the cue, damage stages, spawn effects and
+section breaks by the ground they burst on. Give it to the bursts a player should feel, such as vehicle deaths, shells
 and collapses, never to small arms.
 
 | Effect detail | Particles | Extra |
