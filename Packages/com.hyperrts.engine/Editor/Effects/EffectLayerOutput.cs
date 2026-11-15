@@ -39,12 +39,7 @@ namespace HyperRTS.Editor.Effects
             var output = Output();
             _graph.Flow(update, output);
             DrawKind(output);
-            if (_layer.upright)
-            {
-                var upright = _graph.Block(output, "Orient");
-                _graph.Set(upright, "mode", "FixedAxis");
-                _graph.Slot(upright, "Up", Vector3.up);
-            }
+            Orient(output);
 
             if (_layer.softness > 0f && !_layer.DrawsShaderGraph)
             {
@@ -70,8 +65,6 @@ namespace HyperRTS.Editor.Effects
                     Glow(output);
                     break;
                 case EffectLayerKind.Spark:
-                    var orient = _graph.Block(output, "Orient");
-                    _graph.Set(orient, "mode", "AlongVelocity");
                     Glow(output);
                     break;
                 case EffectLayerKind.Puff:
@@ -141,7 +134,7 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "SoftDistance", _layer.softness);
             if (_layer.emissionRamp != null)
             {
-                SixWayGlow(output);
+                new EffectLayerHeat(_graph, _layer, _at).Write(output);
             }
 
             if (_layer.flipbook.IsSet)
@@ -152,36 +145,6 @@ namespace HyperRTS.Editor.Effects
 
             LinkAttribute("color", output, "ParticleColor", 300f);
             LinkAttribute("alpha", output, "ParticleAlpha", 350f);
-        }
-
-        // The ramp at the emission channel times the heat over life, times the emission colour (M_FX_SixWay_Fire).
-        private void SixWayGlow(object output)
-        {
-            // HDR emission as the colour picker stores it, not turned linear, matched in Play.
-            var color = _layer.emissionColor;
-            _graph.Slot(output, "EmissionRamp", _layer.Required(_layer.emissionRamp, nameof(EffectLayer.emissionRamp)));
-            _graph.Slot(output, "EmissionColor", new Vector3(color.r, color.g, color.b));
-            var age = _graph.Operator("AgeOverLifetime", _at + new Vector2(-780f, 200f));
-            var heat = HeatAtAge(_layer.heatOverLife, age, 200f);
-            if (_layer.minHeatOverLife.length > 0)
-            {
-                // Each particle keeps one pick between the curves, so tongues differ in heat.
-                var pick = _graph.Operator("UnityEditor.VFX.Operator.Lerp", _at + new Vector2(-300f, 200f));
-                _graph.Link(HeatAtAge(_layer.minHeatOverLife, age, 300f), pick, "x");
-                _graph.Link(heat, pick, "y");
-                _graph.Link(_graph.Operator("UnityEditor.VFX.Operator.Random", _at + new Vector2(-520f, 400f)), pick, "s");
-                heat = pick;
-            }
-
-            _graph.Link(heat, output, "Heat");
-        }
-
-        private object HeatAtAge(AnimationCurve curve, object age, float y)
-        {
-            var heat = _graph.Operator("SampleCurve", _at + new Vector2(-520f, y));
-            _graph.Slot(heat, "curve", curve);
-            _graph.Link(age, heat, "time");
-            return heat;
         }
 
         private void Debris(object output)
@@ -229,6 +192,23 @@ namespace HyperRTS.Editor.Effects
             _graph.Slot(output, "Scroll", _layer.scroll);
             _graph.Slot(output, "SoftFade", _layer.softness);
             LinkAttribute("alpha", output, "Weight", 200f);
+        }
+
+        // Without an Orient block a quad keeps VFX Graph's world axes and stands edge-on once the camera turns.
+        private void Orient(object output)
+        {
+            var mode = _layer.OrientMode;
+            if (mode == null)
+            {
+                return;
+            }
+
+            var orient = _graph.Block(output, "Orient");
+            _graph.Set(orient, "mode", mode);
+            if (mode == "FixedAxis")
+            {
+                _graph.Slot(orient, "Up", Vector3.up);
+            }
         }
 
         private void LinkAttribute(string attribute, object output, string input, float y)

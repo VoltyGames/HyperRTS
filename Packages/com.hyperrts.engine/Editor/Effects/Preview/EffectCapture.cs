@@ -15,8 +15,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Effects.Preview
 {
     /// <summary>
-    /// Plays a rig above the open scene as the Effects page does and renders it at chosen times after the burst, from a
-    /// fixed RTS-like camera and sun over a grey ground, into <c>Logs/EffectCaptures/&lt;Rig&gt;/</c>.
+    /// Plays a rig above the open scene as the Effects page does and renders it at chosen times after the burst, from an
+    /// RTS camera in front and one turned to the side, over a grey ground, into <c>Logs/EffectCaptures/&lt;Rig&gt;/</c>.
     /// </summary>
     public sealed class EffectCapture
     {
@@ -26,13 +26,17 @@ namespace HyperRTS.Editor.Effects.Preview
 
         private const int Width = 960;
         private const int Height = 540;
-        private const float Pitch = 40f;
+        // The default camera's pitch at its closest zoom (CameraZoom.pitchAtMin), where effects are seen largest.
+        private const float Pitch = 44f;
         private const float AimHeight = 2.5f;
         private const int StartFrames = 300;
         private const double FrameSeconds = 45.0;
 
         // Far above any map, so the open scene's own contents stay out of the picture.
         private static readonly Vector3 Sky = new(0f, 10000f, 0f);
+
+        // Front, then turned a quarter about the aim, so a quad that does not face the camera shows edge-on.
+        private static readonly (string Name, float Yaw)[] Views = { ("front", 0f), ("side", 90f) };
 
         private readonly GameObject _prefab;
         private readonly float _distance;
@@ -70,7 +74,7 @@ namespace HyperRTS.Editor.Effects.Preview
             using var player = new EffectPreviewPlayer(SceneManager.GetActiveScene()) { Pivot = Sky, Paused = true };
             try
             {
-                var camera = Lay(set, _distance);
+                var camera = Lay(set);
                 camera.targetTexture = target;
                 player.Load(_prefab);
                 await NextFrame();
@@ -115,10 +119,14 @@ namespace HyperRTS.Editor.Effects.Preview
 
                 await NextFrame();
                 player.Step(0f);
-                camera.Render();
-                var file = $"{Folder}/{_prefab.name}_{time.ToString("0.0#", CultureInfo.InvariantCulture)}.png";
-                EditorTextures.WritePng(target, file);
-                files.Add(file);
+                foreach (var view in Views)
+                {
+                    Aim(camera, view.Yaw);
+                    camera.Render();
+                    var file = $"{Folder}/{_prefab.name}_{time.ToString("0.0#", CultureInfo.InvariantCulture)}_{view.Name}.png";
+                    EditorTextures.WritePng(target, file);
+                    files.Add(file);
+                }
             }
 
             return files;
@@ -189,7 +197,7 @@ namespace HyperRTS.Editor.Effects.Preview
         }
 
         // Camera, sun and ground under one parent.
-        private static Camera Lay(GameObject set, float distance)
+        private Camera Lay(GameObject set)
         {
             var cameraObject = new GameObject("Camera");
             cameraObject.transform.SetParent(set.transform);
@@ -200,8 +208,7 @@ namespace HyperRTS.Editor.Effects.Preview
             camera.fieldOfView = 35f;
             camera.nearClipPlane = 0.3f;
             camera.farClipPlane = 500f;
-            var aim = Sky + new Vector3(0f, AimHeight, 0f);
-            cameraObject.transform.SetPositionAndRotation(aim - Quaternion.Euler(Pitch, 0f, 0f) * Vector3.forward * distance, Quaternion.Euler(Pitch, 0f, 0f));
+            Aim(camera, Views[0].Yaw);
 
             var sun = new GameObject("Sun");
             sun.transform.SetParent(set.transform);
@@ -216,6 +223,13 @@ namespace HyperRTS.Editor.Effects.Preview
             ground.GetComponent<Renderer>().sharedMaterial = material;
             Object.DestroyImmediate(ground.GetComponent<Collider>());
             return camera;
+        }
+
+        private void Aim(Camera camera, float yaw)
+        {
+            var rotation = Quaternion.Euler(Pitch, yaw, 0f);
+            var aim = Sky + new Vector3(0f, AimHeight, 0f);
+            camera.transform.SetPositionAndRotation(aim - rotation * Vector3.forward * _distance, rotation);
         }
     }
 }

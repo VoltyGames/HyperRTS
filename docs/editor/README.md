@@ -60,7 +60,7 @@ detached jobs. `--tag hyperrts` lists them.
 | `map look <map> [weathers] [quality] [graded] [cost]` | Enters Play, captures the spec's `looks` per weather once GI settles, writes `summary.json`, leaves Play. `--graded false` turns Color Lookup off (for fitting lookups); `--cost true` takes no images and writes a per-feature GPU and main-thread cost to `cost.json` |
 | `map look_status` | Whether a look capture runs, and how it ended |
 | `effect build [recipe]` | Builds effect graphs, reporting each `Problem` and `ShaderErrors` |
-| `effect capture <rig> [times] [distance]` | Renders a rig to `Logs/EffectCaptures/<Rig>/` at seconds after its burst; fails after 45 s without an Editor frame, so keep the Editor in front |
+| `effect capture <rig> [times] [distance]` | Renders a rig to `Logs/EffectCaptures/<Rig>/` at seconds after its burst, 44 degrees down from the front and turned 90 degrees (`_front`, `_side`); fails after 45 s without an Editor frame, so keep the Editor in front |
 | `play capture <name> [seconds] [fps]` | In Play, records the Game view as PNGs at a fixed rate into `Logs/FrameCaptures/<name>/` |
 | `generator run [name] [--list true] [--stale true]` | Runs one, all, or the out of date [generators](#generators) |
 | `bone bake [set]` | Bakes a `BoneAnimationSet` (none named bakes all) |

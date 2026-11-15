@@ -92,6 +92,16 @@ namespace HyperRTS.Editor.Effects
 
         public bool Glows => kind is EffectLayerKind.Glow or EffectLayerKind.Spark;
 
+        /// <summary>The VFX Orient mode the layer's quads turn by, or null for meshes and sources, which draw no quad.</summary>
+        public string OrientMode => kind switch
+        {
+            EffectLayerKind.Debris or EffectLayerKind.Source => null,
+            EffectLayerKind.Spark => "AlongVelocity",
+            EffectLayerKind.Strip => "FaceCameraPosition",
+            _ when upright => "FixedAxis",
+            _ => "FaceCameraPlane",
+        };
+
         /// <summary>Emits by rate while a stream plays, rather than on the Burst event.</summary>
         public bool Streams => !HasParent && (rate > 0f || ratePerMetre > 0f);
 

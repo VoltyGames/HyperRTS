@@ -41,6 +41,11 @@ list of layers, each one system of a kind (`glow`, `puff`, `sixway`, `ring`, `de
 `source`) with plain fields for bursts or rates, ranges, shape, forces, curves over life, textures and meshes. Every
 layer gets placement, `Density` and fog of war. Edit the recipe, never the graph.
 
+Every quad faces the camera, so smoke stays round as the camera turns: `EffectLayer.OrientMode` picks the VFX Orient
+mode per kind. Sparks turn along their velocity, ribbons face the camera's position, an `upright` layer turns only
+about world up, and the rest face the camera plane. A new kind needs its mode there; `EffectGraphBuilderTests` fails
+until it has one.
+
 `distort` layers refract the opaque texture through `HyperRTS/EffectDistort`, which needs the camera's opaque and depth
 textures. `sixway` and `ring` layers are lit through `HyperRTS/EffectSixWay`.
 

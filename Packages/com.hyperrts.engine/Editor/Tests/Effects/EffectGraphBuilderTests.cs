@@ -1,14 +1,32 @@
+using System;
+using System.Collections.Generic;
 using HyperRTS.Editor.Effects;
 using HyperRTS.Presentation.Effects.Rig;
 using NUnit.Framework;
+using Unity.Scripting.LifecycleManagement;
 
 namespace HyperRTS.Editor.Tests.Effects
 {
-    /// <summary>The test effects' graphs are current with their recipes, and their shaders compile.</summary>
+    /// <summary>The test effects' graphs are current with their recipes and compile, and every kind's quads face a set way.</summary>
     public class EffectGraphBuilderTests
     {
         private const string TestBurst = "Packages/com.hyperrts.engine/Presentation/Tests/Effects/TestBurst" + EffectRecipe.Extension;
         private const string TestStream = "Packages/com.hyperrts.engine/Presentation/Tests/Effects/TestStream" + EffectRecipe.Extension;
+
+        // A new kind fails here until it is given a facing, so no quad ships in VFX Graph's fixed world axes.
+        [NoAutoStaticsCleanup]
+        private static readonly Dictionary<EffectLayerKind, string> Facing = new()
+        {
+            [EffectLayerKind.Glow] = "FaceCameraPlane",
+            [EffectLayerKind.Puff] = "FaceCameraPlane",
+            [EffectLayerKind.SixWay] = "FaceCameraPlane",
+            [EffectLayerKind.Ring] = "FaceCameraPlane",
+            [EffectLayerKind.Distort] = "FaceCameraPlane",
+            [EffectLayerKind.Spark] = "AlongVelocity",
+            [EffectLayerKind.Strip] = "FaceCameraPosition",
+            [EffectLayerKind.Debris] = null,
+            [EffectLayerKind.Source] = null,
+        };
 
         [TestCase(TestBurst)]
         [TestCase(TestStream)]
@@ -16,6 +34,23 @@ namespace HyperRTS.Editor.Tests.Effects
         {
             Assert.IsNull(EffectGraphBuilder.Problem(recipe));
             CollectionAssert.IsEmpty(EffectGraphBuilder.ShaderErrors(EffectRecipe.GraphPath(recipe)));
+        }
+
+        [Test]
+        public void EveryKind_HasItsFacing()
+        {
+            foreach (EffectLayerKind kind in Enum.GetValues(typeof(EffectLayerKind)))
+            {
+                Assert.IsTrue(Facing.TryGetValue(kind, out var mode), $"{kind} has no facing in this test.");
+                Assert.AreEqual(mode, new EffectLayer { kind = kind }.OrientMode, kind.ToString());
+            }
+        }
+
+        [Test]
+        public void AnUprightQuad_TurnsAboutWorldUp()
+        {
+            Assert.AreEqual("FixedAxis", new EffectLayer { kind = EffectLayerKind.SixWay, upright = true }.OrientMode);
+            Assert.AreEqual("FaceCameraPosition", new EffectLayer { kind = EffectLayerKind.Strip, upright = true }.OrientMode);
         }
     }
 }
