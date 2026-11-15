@@ -38,8 +38,5 @@ namespace HyperRTS.Simulation.Cues.Effects
 
         /// <summary>Leaves rubble, ash, fuel or mud on the ground.</summary>
         public bool LeavesStain => rubble > 0f || ash > 0f || fuel > 0f || mud > 0f;
-
-        /// <summary>Leaves a crater, scorch or stain in the ground.</summary>
-        public bool ScarsGround => craterDepth > 0f || scorch > 0f || LeavesStain;
     }
 }

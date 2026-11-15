@@ -124,7 +124,7 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
             var decal = mark.decals.Length > 0 ? mark.decals[_random.NextInt(mark.decals.Length)] : null;
             var diameter = ImpactMarkMath.Diameter(mark, impact.Radius, _random.NextFloat());
             var point = impact.Position.xz;
-            if (scars != null && mark.scar.ScarsGround)
+            if (scars != null)
             {
                 scars.AddScar(point, mark.scar, diameter * 0.5f);
             }

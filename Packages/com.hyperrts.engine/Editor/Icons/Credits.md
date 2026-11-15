@@ -116,8 +116,7 @@ file is named after the component it marks.
 | HUDController | lorc/compass | Lorc |
 | HarvesterAuthoring | delapouite/farm-tractor | Delapouite |
 | HitMaterialAuthoring | delapouite/shield-impact | Delapouite |
-| ImpactEffectsAuthoring | lorc/explosion-rays | Lorc |
-| ImpactMarksAuthoring | delapouite/bullet-impacts | Delapouite |
+| ImpactAuthoring | lorc/explosion-rays | Lorc |
 | LocomotionAuthoring | delapouite/car-wheel | Delapouite |
 | LoopEffectsAuthoring | lorc/star-cycle | Lorc |
 | LoopLight | lorc/lantern-flame | Lorc |

@@ -134,9 +134,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
             var block = _graph.Block(context, "SetAttribute");
             _graph.Set(block, "attribute", "meshIndex");
-            _graph.Set(block, "Random", "Uniform");
-            _graph.Slot(block, "A", 0u);
-            _graph.Slot(block, "B", (uint)_layer.debris.meshes.Count);
+            _picker.Values(block, false, 0u, (uint)_layer.debris.meshes.Count);
         }
     }
 }

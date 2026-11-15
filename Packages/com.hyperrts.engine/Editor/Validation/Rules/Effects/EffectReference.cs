@@ -19,6 +19,9 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
 
         public bool IsSet => IsSurface ? Surface != null : Rig != null;
 
+        /// <summary>Set, or required: either way it plays, so it needs its socket.</summary>
+        public bool InUse => Required || IsSet;
+
         public static EffectReference ForRig(string label, GameObject rig, bool required) =>
             new() { Label = label, Rig = rig, Required = required };
 
@@ -26,7 +29,7 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
         public static EffectReference ForSurface(string label, SurfaceEffects surface, bool required) =>
             new() { Label = label, Surface = surface, IsSurface = true, Required = required };
 
-        /// <summary>The reference needs <paramref name="socket"/> once it is in use: set, or required.</summary>
+        /// <summary>The reference needs <paramref name="socket"/> once it is in use.</summary>
         public EffectReference WithSocket(string socketName, Transform socket)
         {
             var reference = this;

@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
                 issues.Error(owner, $"{reference.Label} has no surface effects asset.");
             }
 
-            if (reference.SocketName == null || reference.Socket != null || !(reference.Required || reference.IsSet))
+            if (reference.SocketName == null || reference.Socket != null || !reference.InUse)
             {
                 return;
             }
