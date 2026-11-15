@@ -16,10 +16,6 @@
 #define SIX_WAY_NEAR_FADE_START 1.0
 #define SIX_WAY_NEAR_FADE_END 4.0
 
-// The erosion noise repeats this often across a quad and drifts this far each flipbook frame.
-#define SIX_WAY_EROSION_TILING 2.0
-#define SIX_WAY_EROSION_DRIFT 0.004
-
 // One frame of a sheet whose frame 0 is top left, as VFX Graph numbers them.
 float2 SixWayFrameUV(float frame, float2 uv, float2 sheet)
 {
@@ -27,26 +23,12 @@ float2 SixWayFrameUV(float frame, float2 uv, float2 sheet)
     return (tile + uv) / sheet;
 }
 
-// Eats thin smoke where the noise is high and leaves dense smoke whole, so edges break up finer than the sheet.
-half SixWayErode(half opacity, TEXTURE2D_PARAM(noiseMap, noiseSampler), float2 uv, float frame, half erosion)
-{
-    half noise = SAMPLE_TEXTURE2D(noiseMap, noiseSampler, uv * SIX_WAY_EROSION_TILING + frame * SIX_WAY_EROSION_DRIFT).r;
-    half eaten = noise * erosion;
-    return saturate((opacity - eaten) / max(1.0h - eaten, 0.001h));
-}
-
-// Fades a quad in from its bottom edge over a share of its height, hiding the flat base a column sheet is cut at.
-half SixWayBaseFade(float y, float share)
-{
-    return share > 0.0 ? smoothstep(0.0, share, y) : 1.0h;
-}
 #endif
 
 void EffectSixWay_float(float2 UV, float3 WorldPosition, float3 Normal, float3 Tangent, float3 Bitangent,
     UnityTexture2D PositiveMap, UnityTexture2D NegativeMap, UnityTexture2D MotionMap, UnityTexture2D EmissionRamp,
     float2 FlipbookSize, float Frame, float3 ParticleColor, float ParticleAlpha, float Opacity, float AmbientStrength,
-    float3 EmissionColor, float Heat, float SoftDistance, UnityTexture2D ErosionMap, float Erosion, float BaseFade,
-    out float3 Color, out float Alpha)
+    float3 EmissionColor, float Heat, float SoftDistance, out float3 Color, out float Alpha)
 {
 #ifdef SHADERGRAPH_PREVIEW
     Color = ParticleColor;
@@ -61,14 +43,13 @@ void EffectSixWay_float(float2 UV, float3 WorldPosition, float3 Normal, float3 T
     half emissionMap;
     SixWayMaps maps = SampleSixWayMaps(TEXTURE2D_ARGS(PositiveMap.tex, PositiveMap.samplerstate),
         TEXTURE2D_ARGS(NegativeMap.tex, NegativeMap.samplerstate), current, next, frameBlend, opacity, emissionMap);
-    opacity = SixWayErode(opacity, TEXTURE2D_ARGS(ErosionMap.tex, ErosionMap.samplerstate), UV, Frame, Erosion);
 
     float4 screen = ComputeScreenPos(TransformWorldToHClip(WorldPosition));
     float2 screenUV = screen.xy / screen.w;
     float eyeDepth = LinearEyeDepth(WorldPosition, GetWorldToViewMatrix());
     half soft = saturate((EyeDepth(SampleSceneDepth(screenUV)) - eyeDepth) / max(SoftDistance, 0.001));
     half near = saturate((eyeDepth - SIX_WAY_NEAR_FADE_START) / (SIX_WAY_NEAR_FADE_END - SIX_WAY_NEAR_FADE_START));
-    half fade = ParticleAlpha * soft * near * SixWayBaseFade(UV.y, BaseFade);
+    half fade = ParticleAlpha * soft * near;
     half alpha = saturate(opacity * Opacity) * fade;
 
     // Rows are the particle basis: X right, Y up, Z toward the camera.
