@@ -79,8 +79,7 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _StainAshMask ("Stain Ash Mask (G occlusion, A smoothness)", 2D) = "white" {}
         _StainAshTile ("Stain Ash Tile (m)", Float) = 3
         _StainAshSmoothness ("Stain Ash Smoothness (x mask A)", Range(0, 1)) = 0.3
-        _StainCharColor ("Char Colour (burnt fields and scorch)", Color) = (0.03, 0.027, 0.024, 1)
-        _StainCharStreaks ("Stain Char Ash Smudges (threshold below 1)", Range(0, 1)) = 0.38
+        _StainCharColor ("Char Colour (scorch under blasts)", Color) = (0.03, 0.027, 0.024, 1)
         [NoScaleOffset] _StainMudAlbedo ("Stain Mud Albedo", 2D) = "grey" {}
         [NoScaleOffset][Normal] _StainMudNormal ("Stain Mud Normal", 2D) = "bump" {}
         [NoScaleOffset] _StainMudMask ("Stain Mud Mask (G occlusion, A smoothness)", 2D) = "white" {}

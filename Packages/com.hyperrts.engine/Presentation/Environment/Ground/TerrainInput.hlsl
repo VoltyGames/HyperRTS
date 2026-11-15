@@ -54,7 +54,6 @@ CBUFFER_START(UnityPerMaterial)
     float _StainAshTile;
     half _StainAshSmoothness;
     half4 _StainCharColor;
-    half _StainCharStreaks;
     float _StainMudTile;
     half _StainMudSmoothness;
 CBUFFER_END
