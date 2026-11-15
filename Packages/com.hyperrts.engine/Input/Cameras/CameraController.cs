@@ -139,7 +139,8 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
-            shake.Step(shakes, _focus, zoom.min / _height, Time.unscaledDeltaTime);
+            // Game time, as the bursts that cause it run on, so a slow or paused frame never skips a shake.
+            shake.Step(shakes, _focus, zoom.min / _height, Time.deltaTime);
 
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             var camera = _actions.Camera;
