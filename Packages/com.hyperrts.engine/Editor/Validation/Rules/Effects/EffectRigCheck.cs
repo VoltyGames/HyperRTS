@@ -1,6 +1,5 @@
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.Effects.Rig;
-using HyperRTS.Simulation.Cues.Effects;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,23 +11,16 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
     /// </summary>
     public static class EffectRigCheck
     {
-        /// <summary>Errors on <paramref name="owner"/> for each problem of the rig in <paramref name="field"/>.</summary>
-        public static void Check(Object owner, GameObject rig, string field, ValidationIssues issues)
+        /// <summary>Errors on <paramref name="owner"/> for each problem of the rig in <paramref name="field"/>; an empty field is an error only when <paramref name="required"/>.</summary>
+        public static void Check(Object owner, GameObject rig, string field, bool required, ValidationIssues issues)
         {
             if (rig == null)
             {
-                issues.Error(owner, $"{field} has no effect rig.");
-                return;
-            }
+                if (required)
+                {
+                    issues.Error(owner, $"{field} has no effect rig.");
+                }
 
-            CheckOptional(owner, rig, field, issues);
-        }
-
-        /// <summary>As <see cref="Check"/>, but an empty field is fine.</summary>
-        public static void CheckOptional(Object owner, GameObject rig, string field, ValidationIssues issues)
-        {
-            if (rig == null)
-            {
                 return;
             }
 
@@ -59,23 +51,6 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
                 {
                     issues.Error(owner, $"{field} '{rig.name}' variant '{variant.name}' is not a prefab asset.");
                 }
-            }
-        }
-
-        /// <summary>Checks the catch-all rig and every per-material rig; an empty material rig plays nothing there.</summary>
-        public static void CheckSurfaceEffects(Object owner, SurfaceEffects effects, string field,
-            ValidationIssues issues)
-        {
-            if (effects == null)
-            {
-                issues.Error(owner, $"{field} has no surface effects asset.");
-                return;
-            }
-
-            Check(owner, effects.anyMaterial, $"{field} '{effects.name}' anyMaterial", issues);
-            foreach (var entry in effects.materials)
-            {
-                CheckOptional(owner, entry.rig, $"{field} '{effects.name}' {entry.material} rig", issues);
             }
         }
     }

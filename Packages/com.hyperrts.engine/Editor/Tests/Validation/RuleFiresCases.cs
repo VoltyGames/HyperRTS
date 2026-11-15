@@ -206,42 +206,23 @@ namespace HyperRTS.Editor.Tests.Validation
             });
         }
 
-        // An empty required rig, or a scene object where a prefab asset belongs, is what each effect rule catches.
+        // An empty required rig, or a scene object where a prefab asset belongs, is what the effect rules catch.
         private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> EffectRows()
         {
             yield return Row<SectionsRule>("has no effect rig",
                 f => f.Add<SectionsAuthoring>(new GameObject("Sections")));
-            yield return Row<DamageStageEffectRule>("is not a prefab asset", f =>
-            {
-                var damage = f.Add<DamageStagesAuthoring>(new GameObject("Damage"));
-                damage.stages.Add(new DamageStagesAuthoring.Stage { effect = f.Make("Smoke") });
-                return damage;
-            });
-            yield return Row<EffectTrailRule>("has no effect rig",
-                f => f.Add<EffectTrailAuthoring>(new GameObject("Trail")));
-            yield return Row<EntityEffectsRule>("has no muzzle socket", f =>
-            {
-                var effects = f.Add<EntityEffectsAuthoring>(new GameObject("Effects"));
-                effects.fire = f.Make("Flash");
-                return effects;
-            });
-            yield return Row<ImpactEffectsRule>("no surface effects asset",
-                f => f.Add<ImpactAuthoring>(new GameObject("Impacts")));
-            yield return Row<LoopEffectsRule>("has no socket", f =>
+            yield return Row<EffectReferencesRule>("has no socket", f =>
             {
                 var effects = f.Add<LoopEffectsAuthoring>(new GameObject("Loops"));
                 effects.loops = new[] { new LoopEffectsAuthoring.Entry() };
                 return effects;
             });
-            yield return Row<MotionDustRule>("has no socket", f => f.Add<MotionDustAuthoring>(new GameObject("Dust")));
             yield return Row<MotionRigRule>("has no part", f =>
             {
                 var rig = f.Add<MotionRigAuthoring>(new GameObject("Rig"));
                 rig.turrets.Add(new TurretSlot());
                 return rig;
             });
-            yield return Row<SpawnEffectRule>("has no effect rig",
-                f => f.Add<SpawnEffectAuthoring>(new GameObject("Spawn")));
         }
 
         private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> SceneRows()

@@ -1,4 +1,10 @@
+using System.Linq;
+using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Rules.Effects;
 using HyperRTS.Presentation.Effects.Rig;
+using HyperRTS.Presentation.Effects.Streams;
+using HyperRTS.Simulation.Cues.Effects;
+using HyperRTS.Simulation.Destruction;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -27,6 +33,51 @@ namespace HyperRTS.Editor.Tests.Validation
 
             Assert.AreEqual(1, problems.Count, string.Join(" | ", problems));
             StringAssert.Contains(expected, problems[0]);
+        }
+
+        [TestCase("Spawn", "Spawn effect has no effect rig.")]
+        [TestCase("Trail", "Trail rig has no effect rig.")]
+        [TestCase("Impact", "Impact effects has no surface effects asset.")]
+        [TestCase("Dust", "Motion dust has no socket.")]
+        [TestCase("DamageStage", "Damage stage 0 effect 'Smoke' is not a prefab asset.")]
+        [TestCase("Fire", "Fire 'Flash' has no muzzle socket.")]
+        public void ReferenceRuleNamesEachBrokenField(string authoring, string expected)
+        {
+            var owner = Track(new GameObject("Owner"));
+            Component component;
+            switch (authoring)
+            {
+                case "Spawn":
+                    component = owner.AddComponent<SpawnEffectAuthoring>();
+                    break;
+                case "Trail":
+                    component = owner.AddComponent<EffectTrailAuthoring>();
+                    break;
+                case "Impact":
+                    component = owner.AddComponent<ImpactAuthoring>();
+                    break;
+                case "Dust":
+                    component = owner.AddComponent<MotionDustAuthoring>();
+                    break;
+                case "DamageStage":
+                    var damage = owner.AddComponent<DamageStagesAuthoring>();
+                    damage.stages.Add(new DamageStagesAuthoring.Stage { effect = Track(new GameObject("Smoke")) });
+                    component = damage;
+                    break;
+                default:
+                    var effects = owner.AddComponent<EntityEffectsAuthoring>();
+                    effects.fire = Track(new GameObject("Flash"));
+                    component = effects;
+                    break;
+            }
+
+            var rule = new EffectReferencesRule();
+            var issues = new ValidationIssues();
+            Assert.IsTrue(rule.AppliesTo(component));
+            rule.Check(component, issues);
+
+            Assert.IsTrue(issues.Any(issue => issue.Message.Contains(expected)),
+                string.Join(" | ", issues.Select(issue => issue.Message)));
         }
 
         private GameObject Broken(string broken)

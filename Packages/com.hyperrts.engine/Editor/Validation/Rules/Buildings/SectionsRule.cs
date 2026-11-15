@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Validation.Rules.Buildings
     {
         protected override void Check(SectionsAuthoring sections, ValidationIssues issues)
         {
-            EffectRigCheck.Check(sections, sections.effect, "Sections effect", issues);
+            EffectRigCheck.Check(sections, sections.effect, "Sections effect", true, issues);
             foreach (var problem in sections.Problems())
             {
                 issues.Error(sections, problem);
