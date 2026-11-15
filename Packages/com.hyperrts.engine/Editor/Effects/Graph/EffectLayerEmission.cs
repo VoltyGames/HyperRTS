@@ -1,7 +1,7 @@
-using System;
+using HyperRTS.Editor.Effects.Layer;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>
     /// What starts a layer's particles and where they are placed: bursts on the Burst event at its pose, a rate while
@@ -45,8 +45,8 @@ namespace HyperRTS.Editor.Effects
 
             var streams = _layer.Streams;
             var block = streams
-                ? _graph.Hlsl(initialize, "Place Along Path", EffectLayerSystem.Includes + "GraphStreamPose.hlsl")
-                : _graph.Hlsl(initialize, "Place At Burst", EffectLayerSystem.Includes + "GraphBurstPose.hlsl");
+                ? _graph.Hlsl(initialize, "Place Along Path", EffectLayerParticles.Includes + "GraphStreamPose.hlsl")
+                : _graph.Hlsl(initialize, "Place At Burst", EffectLayerParticles.Includes + "GraphBurstPose.hlsl");
             var inputs = streams ? new[] { "from", "to", "normal", "forward", "scale" } : new[] { "origin", "normal", "forward", "scale" };
             var sources = streams ? _inputs.StreamPose : _inputs.BurstPose;
             for (var i = 0; i < inputs.Length; i++)
@@ -57,11 +57,6 @@ namespace HyperRTS.Editor.Effects
 
         private object BurstSpawner()
         {
-            if (_layer.bursts.Count == 0)
-            {
-                throw new InvalidOperationException($"HyperRTS: layer '{_layer.name}' needs bursts, a rate or a parent.");
-            }
-
             var spawner = Spawner();
             _graph.Flow(_inputs.Burst, spawner);
             var row = 0;
@@ -100,11 +95,6 @@ namespace HyperRTS.Editor.Effects
         // Particles a second: the rate plus the rate per metre times the stream's speed, thinned by Density.
         private object RateSpawner()
         {
-            if (_layer.bursts.Count > 0)
-            {
-                throw new InvalidOperationException($"HyperRTS: layer '{_layer.name}' has both bursts and a rate; split it in two.");
-            }
-
             var spawner = Spawner();
             _graph.Flow(_inputs.Play, spawner);
             _graph.Flow(_inputs.Stop, spawner, 1);
@@ -124,23 +114,18 @@ namespace HyperRTS.Editor.Effects
         // Effect detail thins a child only through its parent's count, so a thinned source keeps its full puffs.
         private object Trigger(object parentUpdate)
         {
-            if (_layer.rate > 0f && _layer.ratePerMetre == 0f && _layer.bursts.Count == 0)
-            {
-                var trigger = _graph.Block(parentUpdate, "TriggerEvent");
-                _graph.Set(trigger, "mode", "OverTime");
-                _graph.Slot(trigger, "Rate", _layer.rate);
-                var gpuEvent = _graph.Context("VFXBasicGPUEvent", new Vector2(_x, -200f));
-                _graph.Link(trigger, gpuEvent, "evt");
-                return gpuEvent;
-            }
-
-            throw new InvalidOperationException($"HyperRTS: child layer '{_layer.name}' needs a rate a second per parent particle, and no bursts or rate per metre.");
+            var trigger = _graph.Block(parentUpdate, "TriggerEvent");
+            _graph.Set(trigger, "mode", "OverTime");
+            _graph.Slot(trigger, "Rate", _layer.rate);
+            var gpuEvent = _graph.Context("VFXBasicGPUEvent", new Vector2(_x, -200f));
+            _graph.Link(trigger, gpuEvent, "evt");
+            return gpuEvent;
         }
 
         // A child rises from its parent upright, scaled by the parent's size and faded by its alpha.
         private void PlaceAtParent(object initialize)
         {
-            var place = _graph.Hlsl(initialize, "Place At Parent", EffectLayerSystem.Includes + "GraphBurstPose.hlsl");
+            var place = _graph.Hlsl(initialize, "Place At Parent", EffectLayerParticles.Includes + "GraphBurstPose.hlsl");
             _graph.Link(_graph.SourceAttribute("position", new Vector2(_x - 300f, 300f)), place, "origin");
             _graph.Slot(place, "normal", Vector3.up);
             _graph.Slot(place, "forward", Vector3.forward);

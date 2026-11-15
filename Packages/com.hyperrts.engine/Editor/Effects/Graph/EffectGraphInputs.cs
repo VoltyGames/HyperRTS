@@ -3,7 +3,7 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>
     /// What every system of an effect graph reads: the events that start it, the Density property, the burst pose the

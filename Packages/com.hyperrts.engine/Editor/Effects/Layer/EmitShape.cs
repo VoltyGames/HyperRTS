@@ -1,4 +1,4 @@
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>Where a layer's particles start and which way they fly, in shape space with +Y along the layer's axis.</summary>
     public enum EmitShape

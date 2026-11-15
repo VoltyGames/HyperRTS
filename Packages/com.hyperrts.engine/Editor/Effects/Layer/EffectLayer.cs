@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>
     /// One layer of an effect graph, one VFX system. Offsets, speeds and sizes are in rig space (+Y up, metres),
@@ -21,7 +19,6 @@ namespace HyperRTS.Editor.Effects
         public float rate;
         public float ratePerMetre;
         public string parent;
-        public float dropChance;
 
         public FloatRange lifetime;
         public FloatRange size;
@@ -50,7 +47,6 @@ namespace HyperRTS.Editor.Effects
         public FloatRange orbit;
 
         public AnimationCurve sizeOverLife = new();
-        public List<ColorKey> colorOverLife = new();
         public AnimationCurve alphaOverLife = new();
 
         public Texture2D texture;
@@ -108,7 +104,10 @@ namespace HyperRTS.Editor.Effects
         };
 
         /// <summary>Emits by rate while a stream plays, rather than on the Burst event.</summary>
-        public bool Streams => !HasParent && (rate > 0f || ratePerMetre > 0f);
+        public bool Streams => !HasParent && HasRate;
+
+        /// <summary>Emits by a rate a second, the rig's rate per metre included.</summary>
+        public bool HasRate => rate > 0f || ratePerMetre > 0f;
 
         /// <summary>Emitted by another layer's particles over their life, rather than by the rig.</summary>
         public bool HasParent => !string.IsNullOrEmpty(parent);
@@ -126,7 +125,14 @@ namespace HyperRTS.Editor.Effects
             return new FloatRange(first, Mathf.Max(first, flipbook.to * flipbook.Frames - 0.01f));
         }
 
-        public Gradient LifeGradient() => Gradient(colorOverLife, alphaOverLife);
+        /// <summary>The alpha over life as a gradient of white, for a built-in output to multiply into the colour.</summary>
+        public Gradient AlphaGradient()
+        {
+            var gradient = new Gradient();
+            var alphaKeys = alphaOverLife.keys.Select(k => new GradientAlphaKey(k.value, k.time)).ToArray();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0f) }, alphaKeys);
+            return gradient;
+        }
 
         /// <summary>The flipbook frame over life, stopping short of the last frame's end so it never wraps.</summary>
         public AnimationCurve FrameCurve()
@@ -135,33 +141,83 @@ namespace HyperRTS.Editor.Effects
             return AnimationCurve.Linear(0f, Mathf.Min(flipbook.from * flipbook.Frames, last), 1f, Mathf.Min(flipbook.to * flipbook.Frames, last));
         }
 
-        /// <summary><paramref name="asset"/>, which the layer's kind needs; throws naming the field when it is empty.</summary>
-        public T Required<T>(T asset, string field) where T : Object =>
-            asset != null ? asset : throw new InvalidOperationException($"HyperRTS: {kind} layer '{name}' needs a {field}.");
-
-        /// <summary>The layer's meshes, which a mesh output takes 1 to 4 of; throws naming the layer otherwise.</summary>
-        public Mesh[] Meshes()
+        /// <summary>What a build of this layer would refuse, each naming the layer and field; empty when it is sound.</summary>
+        public List<string> Problems()
         {
-            if (meshes.Count is 0 or > 4 || meshes.Contains(null))
+            var problems = new List<string>();
+            if (capacity <= 0)
             {
-                throw new InvalidOperationException($"HyperRTS: {kind} layer '{name}' needs 1 to 4 meshes, all set.");
+                problems.Add($"layer '{name}' needs a capacity.");
             }
 
-            return meshes.ToArray();
+            AddSpawnProblems(problems);
+            AddAssetProblems(problems);
+            if (flipbook.random && flipbook.randomStart)
+            {
+                problems.Add($"layer '{name}' flipbook is both random and randomStart; pick one.");
+            }
+
+            if (alphaOverLife.length > 8 && !KeepsAlpha)
+            {
+                problems.Add($"layer '{name}' has a gradient of more than 8 keys.");
+            }
+
+            return problems;
         }
 
-        private Gradient Gradient(List<ColorKey> colors, AnimationCurve alphas)
+        private void AddSpawnProblems(List<string> problems)
         {
-            if (colors.Count > 8 || alphas.length > 8)
+            if (kind == EffectLayerKind.Strip && !Streams)
             {
-                throw new InvalidOperationException($"HyperRTS: layer '{name}' has a gradient of more than 8 keys.");
+                problems.Add($"strip layer '{name}' needs a rate, since each stream draws one ribbon.");
             }
 
-            var gradient = new Gradient();
-            var colorKeys = colors.Count == 0 ? new[] { new GradientColorKey(Color.white, 0f) } : colors.Select(k => new GradientColorKey(k.color.linear, k.time)).ToArray();
-            var alphaKeys = alphas.length == 0 ? new[] { new GradientAlphaKey(1f, 0f) } : alphas.keys.Select(k => new GradientAlphaKey(k.value, k.time)).ToArray();
-            gradient.SetKeys(colorKeys, alphaKeys);
-            return gradient;
+            if (HasParent)
+            {
+                if (rate <= 0f || ratePerMetre != 0f || bursts.Count > 0)
+                {
+                    problems.Add($"child layer '{name}' needs a rate a second per parent particle, and no bursts or rate per metre.");
+                }
+            }
+            else if (HasRate && bursts.Count > 0)
+            {
+                problems.Add($"layer '{name}' has both bursts and a rate; split it in two.");
+            }
+            else if (!HasRate && bursts.Count == 0)
+            {
+                problems.Add($"layer '{name}' needs bursts, a rate or a parent.");
+            }
+        }
+
+        private void AddAssetProblems(List<string> problems)
+        {
+            switch (kind)
+            {
+                case EffectLayerKind.Glow or EffectLayerKind.Spark or EffectLayerKind.Puff or EffectLayerKind.Strip or EffectLayerKind.Distort:
+                    Need(problems, texture, nameof(texture));
+                    break;
+                case EffectLayerKind.SixWay or EffectLayerKind.Ring:
+                    if (opacity <= 0f || ambient <= 0f)
+                    {
+                        problems.Add($"{kind} layer '{name}' needs an opacity and an ambient, as its six-way material's Density and Ambient Strength.");
+                    }
+
+                    Need(problems, texture, nameof(texture));
+                    Need(problems, negativeTexture, nameof(negativeTexture));
+                    Need(problems, motionTexture, nameof(motionTexture));
+                    break;
+                case EffectLayerKind.Debris when meshes.Count is 0 or > 4 || meshes.Contains(null):
+                    problems.Add($"{kind} layer '{name}' needs 1 to 4 meshes, all set.");
+                    break;
+            }
+        }
+
+        private void Need(List<string> problems, UnityEngine.Object asset, string field)
+        {
+            if (asset == null)
+            {
+                problems.Add($"{kind} layer '{name}' needs a {field}.");
+            }
         }
     }
 }

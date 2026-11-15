@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Effects;
+using HyperRTS.Editor.Effects.Graph;
+using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Presentation.Effects.Rig;
 using NUnit.Framework;
 using Unity.Scripting.LifecycleManagement;

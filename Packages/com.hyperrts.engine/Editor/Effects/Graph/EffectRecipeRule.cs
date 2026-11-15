@@ -1,14 +1,15 @@
-using System;
+using System.Linq;
+using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Project;
 using HyperRTS.Editor.Validation.Sets;
 using UnityEditor;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>
-    /// Every effect recipe is named after its graph, has layers, no reference to a deleted asset, meshes its debris layers can use, and a graph
+    /// Every effect recipe is named after its graph, has layers, no reference to a deleted asset, layers a build accepts, and a graph
     /// built from its current state, so a broken recipe shows on the Validate page rather than when the next build throws.
     /// </summary>
     public sealed class EffectRecipeRule : IAssetRule
@@ -42,31 +43,15 @@ namespace HyperRTS.Editor.Effects
                 issues.Error(recipe, $"{link} names a deleted asset.");
             }
 
-            foreach (var layer in recipe.layers)
+            foreach (var problem in recipe.layers.SelectMany(layer => layer.Problems()))
             {
-                if (layer.kind == EffectLayerKind.Debris)
-                {
-                    Report(recipe, () => layer.Meshes(), issues);
-                }
+                issues.Error(recipe, problem);
             }
 
-            var problem = EffectGraphBuilder.Problem(path);
-            if (problem != null)
+            var stale = EffectGraphBuilder.Problem(path);
+            if (stale != null)
             {
-                issues.Warn(recipe, problem, "Build", () => EffectGraphBuilder.Build(path));
-            }
-        }
-
-        // The layer's own checks throw naming the layer and field, as a build would.
-        private static void Report(EffectRecipe recipe, Action check, ValidationIssues issues)
-        {
-            try
-            {
-                check();
-            }
-            catch (InvalidOperationException exception)
-            {
-                issues.Error(recipe, exception.Message.Replace("HyperRTS: ", string.Empty));
+                issues.Warn(recipe, stale, "Build", () => EffectGraphBuilder.Build(path));
             }
         }
     }

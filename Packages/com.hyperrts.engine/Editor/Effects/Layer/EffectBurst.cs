@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>One burst of a layer: how many particles, how long after the Burst event, and how often it repeats.</summary>
     [Serializable]

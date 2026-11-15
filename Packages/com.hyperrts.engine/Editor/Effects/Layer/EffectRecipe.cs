@@ -4,7 +4,7 @@ using System.IO;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>
     /// The hand-editable description of a VFX Graph rig, <c>&lt;Graph&gt;.effect.asset</c> beside the

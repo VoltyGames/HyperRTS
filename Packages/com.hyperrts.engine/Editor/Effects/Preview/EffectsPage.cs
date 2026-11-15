@@ -4,15 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Effects.Graph;
+using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.HUD;
-using UnityEditor;
-using UnityEditor.UIElements;
-using UnityEngine;
-using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
+using UnityEditor.UIElements;
+using UnityEditor;
+using UnityEngine.UIElements;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Effects.Preview
 {
@@ -207,16 +209,16 @@ namespace HyperRTS.Editor.Effects.Preview
             }
         }
 
-        private static void ShowState(Label label, GraphState state)
+        private static void ShowState(Label label, EffectGraphState state)
         {
             label.text = state switch
             {
-                GraphState.Built => "Built",
-                GraphState.OutOfDate => "Out of date",
+                EffectGraphState.Built => "Built",
+                EffectGraphState.OutOfDate => "Out of date",
                 _ => "Missing",
             };
-            label.EnableInClassList("hrts-effects__state--stale", state == GraphState.OutOfDate);
-            label.EnableInClassList("hrts-effects__state--missing", state == GraphState.Missing);
+            label.EnableInClassList("hrts-effects__state--stale", state == EffectGraphState.OutOfDate);
+            label.EnableInClassList("hrts-effects__state--missing", state == EffectGraphState.Missing);
         }
 
         private void BuildGraphs(List<string> recipes)

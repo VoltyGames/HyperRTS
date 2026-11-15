@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Threading.Tasks;
-using HyperRTS.Editor.Effects;
+using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Editor.Effects.Preview;
 using Unity.Pipeline.Commands;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>The effect graph builder and the rig capture as pipeline commands.</summary>
     public static class EffectCommands
@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Effects
         public static object Build([CliArg("recipe", "A graph name (FX_Smoke_01) or its .effect.asset path; empty builds every graph")] string recipe = "")
         {
             var recipes = string.IsNullOrEmpty(recipe) ? EffectGraphBuilder.RecipePaths().ToList() : new() { EffectGraphBuilder.FindRecipe(recipe) };
-            recipes.ForEach(EffectGraphBuilder.Build);
+            EffectGraphBuilder.BuildAll(recipes);
 
             return recipes.Select(path => new
             {

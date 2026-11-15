@@ -1,5 +1,6 @@
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Editor.Effects.Preview;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Presentation.HUD;
@@ -7,7 +8,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>An effect recipe's Inspector: a Build button and whether its graph is current, above its layers.</summary>
     [CustomEditor(typeof(EffectRecipe))]

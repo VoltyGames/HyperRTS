@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>
     /// A texture sheet of columns by rows frames that each particle plays, holds on one random frame, or plays from a

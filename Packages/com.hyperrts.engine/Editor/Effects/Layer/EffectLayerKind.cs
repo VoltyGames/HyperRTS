@@ -1,4 +1,4 @@
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>What a layer draws; each kind is one VFX Graph output.</summary>
     public enum EffectLayerKind

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>A start colour picked per particle between min and max, in linear HDR values.</summary>
     [Serializable]

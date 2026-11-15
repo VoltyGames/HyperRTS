@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.Generators;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>Rebuilds every VFX Graph rig from its <see cref="EffectRecipe"/>.</summary>
     public sealed class EffectGraphGenerator : Generator
@@ -20,6 +20,6 @@ namespace HyperRTS.Editor.Effects
 
         public override string Outputs => "The <Graph>.vfx beside each recipe";
 
-        public override void Run() => EffectGraphBuilder.BuildAll();
+        public override void Run() => EffectGraphBuilder.BuildAll(EffectGraphBuilder.RecipePaths());
     }
 }

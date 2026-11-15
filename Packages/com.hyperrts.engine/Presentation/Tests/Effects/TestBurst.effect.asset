@@ -26,7 +26,6 @@ MonoBehaviour:
     rate: 0
     ratePerMetre: 0
     parent: 
-    dropChance: 0
     lifetime:
       min: 10
       max: 10
@@ -71,7 +70,6 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-    colorOverLife: []
     alphaOverLife:
       serializedVersion: 2
       m_Curve: []

@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.Assemblies;
 using UnityEngine.VFX;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>
     /// The one door into VFX Graph's internal editor model, which has no public authoring API. All reflection lives

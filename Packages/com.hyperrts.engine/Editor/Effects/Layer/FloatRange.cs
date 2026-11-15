@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>A value picked per particle between min and max; equal ends make it constant.</summary>
     [Serializable]

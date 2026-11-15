@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Effects.Rig;
 using UnityEditor;
@@ -9,11 +10,11 @@ using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.VFX;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>
-    /// Writes a rig's VFX Graph from its <see cref="EffectRecipe"/>, one system per layer. The graph is generated
-    /// output, stamped with its recipe so a stale one is found.
+    /// Builds a rig's VFX Graph from its <see cref="EffectRecipe"/>, one system per layer, stamped with the recipe so a
+    /// stale graph is found. Also finds recipes and reports a graph's state and shader errors.
     /// </summary>
     public static class EffectGraphBuilder
     {
@@ -42,8 +43,14 @@ namespace HyperRTS.Editor.Effects
             for (var i = 0; i < recipe.layers.Count; i++)
             {
                 var layer = recipe.layers[i];
-                var system = new EffectLayerSystem(graph, layer, i * 520f, inputs);
-                updates[layer.name] = system.Write(layer.HasParent ? ParentUpdate(updates, layer) : null);
+                var problems = layer.Problems();
+                if (problems.Count > 0)
+                {
+                    throw new InvalidOperationException("HyperRTS: " + string.Join(" ", problems));
+                }
+
+                var particles = new EffectLayerParticles(graph, layer, i * 520f, inputs);
+                updates[layer.name] = particles.Write(layer.HasParent ? ParentUpdate(updates, layer) : null);
             }
 
             graph.Save(stamp);
@@ -54,10 +61,10 @@ namespace HyperRTS.Editor.Effects
                 ? update
                 : throw new InvalidOperationException($"HyperRTS: layer '{layer.name}' names parent '{layer.parent}', which no earlier layer is.");
 
-        /// <summary>Builds every effect recipe in the project, one graph at a time.</summary>
-        public static void BuildAll()
+        /// <summary>Builds the graph of each recipe in <paramref name="recipePaths"/>, one at a time.</summary>
+        public static void BuildAll(IEnumerable<string> recipePaths)
         {
-            foreach (var path in RecipePaths())
+            foreach (var path in recipePaths)
             {
                 Build(path);
             }
@@ -76,15 +83,15 @@ namespace HyperRTS.Editor.Effects
         }
 
         /// <summary>Whether the graph of the recipe at <paramref name="recipePath"/> exists and matches the recipe.</summary>
-        public static GraphState State(string recipePath)
+        public static EffectGraphState State(string recipePath)
         {
             var importer = AssetImporter.GetAtPath(EffectRecipe.GraphPath(recipePath));
             if (importer == null)
             {
-                return GraphState.Missing;
+                return EffectGraphState.Missing;
             }
 
-            return importer.userData == EffectRecipe.Stamp(recipePath) ? GraphState.Built : GraphState.OutOfDate;
+            return importer.userData == EffectRecipe.Stamp(recipePath) ? EffectGraphState.Built : EffectGraphState.OutOfDate;
         }
 
         /// <summary>What is wrong with the graph of the recipe at <paramref name="recipePath"/>, null when it is current.</summary>
@@ -93,8 +100,8 @@ namespace HyperRTS.Editor.Effects
             var graphPath = EffectRecipe.GraphPath(recipePath);
             return State(recipePath) switch
             {
-                GraphState.Missing => $"{recipePath} has no graph {graphPath}; build it",
-                GraphState.OutOfDate => $"{graphPath} is older than {recipePath}; rebuild it",
+                EffectGraphState.Missing => $"{recipePath} has no graph {graphPath}; build it",
+                EffectGraphState.OutOfDate => $"{graphPath} is older than {recipePath}; rebuild it",
                 _ => null,
             };
         }
@@ -163,19 +170,13 @@ namespace HyperRTS.Editor.Effects
         }
 
         [MenuItem(BuildMenu)]
-        private static void BuildSelected()
-        {
-            foreach (var path in SelectedRecipes())
-            {
-                Build(path);
-            }
-        }
+        private static void BuildSelected() => BuildAll(SelectedRecipes());
 
         [MenuItem(BuildMenu, true)]
         private static bool CanBuildSelected() => SelectedRecipes().Any();
 
         [MenuItem(BuildAllMenu)]
-        private static void BuildEvery() => BuildAll();
+        private static void BuildEvery() => BuildAll(RecipePaths());
 
         private static IEnumerable<string> SelectedRecipes() =>
             Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Where(EffectRecipe.IsRecipe);

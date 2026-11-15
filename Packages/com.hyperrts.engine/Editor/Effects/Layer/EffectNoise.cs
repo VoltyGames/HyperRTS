@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Editor.Effects
+namespace HyperRTS.Editor.Effects.Layer
 {
     /// <summary>A smooth wandering push on a layer's particles; zero strength is none.</summary>
     [Serializable]

@@ -1,5 +1,6 @@
 using System.Linq;
-using HyperRTS.Editor.Effects;
+using HyperRTS.Editor.Effects.Graph;
+using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Editor.Validation.Issues;
 using NUnit.Framework;
 using UnityEditor;
