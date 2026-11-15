@@ -55,9 +55,11 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
             _world.Tick();
 
             var fog = _world.Fog();
-            Assert.IsTrue(fog.IsVisible(new float3(9f, 0f, 1f), Team1, false), "the edge of the woods");
-            Assert.AreEqual(seesPast, fog.IsVisible(new float3(19f, 0f, 1f), Team1, false), "deep in the woods");
-            Assert.AreEqual(seesPast, fog.IsVisible(new float3(31f, 0f, 1f), Team1, false), "past the woods");
+            Assert.IsTrue(fog.IsVisible(new float3(9f, 0f, 1f), Team1, SightLayer.Ground), "the edge of the woods");
+            Assert.AreEqual(seesPast, fog.IsVisible(new float3(19f, 0f, 1f), Team1, SightLayer.Ground), "deep in the woods");
+            Assert.AreEqual(seesPast, fog.IsVisible(new float3(31f, 0f, 1f), Team1, SightLayer.Ground), "past the woods");
+            Assert.IsTrue(fog.IsVisible(new float3(31f, 0f, 1f), Team1, SightLayer.Air), "an aircraft over the woods");
+            Assert.IsFalse(fog.IsVisible(new float3(45f, 0f, 1f), Team1, SightLayer.Air), "an aircraft out of range");
         }
 
         [Test]

@@ -3,6 +3,7 @@ using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Movement.Crushing;
+using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
 using Unity.Collections;
@@ -179,7 +180,7 @@ namespace HyperRTS.Presentation.Destruction
                 return true;
             }
 
-            return fog.IsVisible(position, view.Team, true);
+            return fog.IsVisible(position, view.Team, SightLayer.Tall);
         }
     }
 }

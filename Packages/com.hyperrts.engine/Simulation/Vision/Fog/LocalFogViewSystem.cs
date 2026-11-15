@@ -58,18 +58,23 @@ namespace HyperRTS.Simulation.Vision.Fog
 
             var commands = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            if (!hides)
+            {
+                state.Dependency = new RevealAllJob { Commands = commands }.ScheduleParallel(state.Dependency);
+                return;
+            }
+
             _concealment.Update(ref state);
-            state.Dependency = hides
-                ? new HideJob
-                {
-                    Fog = fog,
-                    Relations = relations,
-                    Viewer = view.Viewer,
-                    Hidden = SystemAPI.GetComponentLookup<FogHidden>(true),
-                    Concealments = _concealment,
-                    Commands = commands,
-                }.ScheduleParallel(state.Dependency)
-                : new RevealAllJob { Commands = commands }.ScheduleParallel(state.Dependency);
+            var hide = new HideJob
+            {
+                Fog = fog,
+                Relations = relations,
+                Viewer = view.Viewer,
+                Hidden = SystemAPI.GetComponentLookup<FogHidden>(true),
+                Concealments = _concealment,
+                Commands = commands,
+            };
+            state.Dependency = hide.ScheduleParallel(state.Dependency);
         }
 
         /// <summary>
@@ -134,8 +139,8 @@ namespace HyperRTS.Simulation.Vision.Fog
                 in LocalTransform transform)
             {
                 var concealment = Concealments.Find(entity);
-                var tall = Concealments.IsTall(entity);
-                var hide = Fog.IsHiddenFrom(in Relations, Viewer, owner.Value, transform.Position, concealment, tall);
+                var layer = Concealments.Layer(entity);
+                var hide = Fog.IsHiddenFrom(in Relations, Viewer, owner.Value, transform.Position, concealment, layer);
                 if (hide == Hidden.HasComponent(entity))
                 {
                     return;

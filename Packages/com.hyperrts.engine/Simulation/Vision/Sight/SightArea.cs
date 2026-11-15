@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Vision.Sight
         public const int Ground = 0;
         public const int Tall = 1;
         public const int Close = 2;
-        public const int Layers = 3;
+        public const int Air = 3;
+        public const int Layers = 4;
 
         public int2 Center;
 

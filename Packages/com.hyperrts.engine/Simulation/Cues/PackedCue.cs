@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Surfaces;
+using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Sight;
 using System.Runtime.InteropServices;
 using HyperRTS.Simulation.Common.Geometry;
@@ -17,7 +18,7 @@ namespace HyperRTS.Simulation.Cues
         private const float PitchSteps = 127f;
         private const int ConcealmentShift = 4;
         private const byte SurfaceBits = 0x0F;
-        private const byte TallBit = 0x40;
+        private const int LayerShift = 6;
 
         public int TypeId;
         public int SourceNumber;
@@ -35,7 +36,7 @@ namespace HyperRTS.Simulation.Cues
         public byte Pitch;
 
         // Bytes rather than the enums, so the RPC codegen sends one byte each.
-        /// <summary>The impact's surface in the low 4 bits, the source's concealment in the next 2, then its tall bit.</summary>
+        /// <summary>The impact's surface in the low 4 bits, the source's concealment in the next 2, then its sight layer.</summary>
         public byte SurfaceConcealment;
 
         /// <summary>An impact's material, else the cue's <see cref="CueEvent.Variant"/>; impacts never set one.</summary>
@@ -45,7 +46,6 @@ namespace HyperRTS.Simulation.Cues
         {
             var direction = math.normalizesafe(cue.Direction, new float3(0f, 0f, 1f));
             var pitch = math.asin(math.clamp(direction.y, -1f, 1f)) / math.PI + 0.5f;
-            var tall = cue.Tall ? TallBit : 0;
             return new PackedCue
             {
                 TypeId = cue.TypeId,
@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Cues
                 Owner = cue.Owner,
                 Yaw = HeadingByte.Encode(direction.xz),
                 Pitch = (byte)math.round(pitch * PitchSteps),
-                SurfaceConcealment = (byte)((int)cue.Surface | (int)cue.Concealment << ConcealmentShift | tall),
+                SurfaceConcealment = (byte)((int)cue.Surface | (int)cue.Concealment << ConcealmentShift | (int)cue.Layer << LayerShift),
                 Detail = cue.Slot == CueSlot.Impact ? (byte)cue.Material : cue.Variant,
             };
         }
@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Cues
                 Position = QuantizedPosition.Dequantize(X, Y, Z),
                 Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
                 Concealment = (Concealment)((SurfaceConcealment >> ConcealmentShift) & 3),
-                Tall = (SurfaceConcealment & TallBit) != 0,
+                Layer = (SightLayer)(SurfaceConcealment >> LayerShift),
                 Radius = Radius * QuantizedPosition.Step,
                 Surface = (ImpactSurface)(SurfaceConcealment & SurfaceBits),
                 Material = impact ? (SurfaceMaterial)Detail : default,

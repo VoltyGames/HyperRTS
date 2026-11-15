@@ -70,6 +70,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 - Name a method after what it returns or does (`TierIndex`), never a bare `Of` or `XOf`.
 - No long `&&` or `||` chains: a block body with an early `return` per rule and named locals. One- or two-term `=>`
   bodies are fine.
+- A ternary picks between short values. A choice between jobs or multi-line initializers is an `if` with a named
+  local and a `return` per branch.
 - No fallback code: no defaults for missing data, readers for old formats or compatibility overloads. Require what
   the design guarantees and fail loudly, naming the bad key. Formats stay at version 1 until the first release: a
   change migrates the data in place. Tests set up what the real pipeline provides.

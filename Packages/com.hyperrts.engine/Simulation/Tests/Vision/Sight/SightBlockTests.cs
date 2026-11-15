@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Sight;
 using NUnit.Framework;
 using Unity.Entities;
@@ -38,10 +39,10 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
             _world.Tick();
 
             var fog = _world.Fog();
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 1f), Team1, false), "in front of the building");
-            Assert.IsTrue(fog.IsVisible(new float3(11f, 0f, 1f), Team1, false), "its roof");
-            Assert.That(fog.IsVisible(Behind, Team1, false), Is.False, () => "behind it\n" + GridDump.Fog(fog, Team1, Behind, 12));
-            Assert.IsTrue(fog.IsVisible(new float3(1f, 0f, 15f), Team1, false), "open ground beside it");
+            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 1f), Team1, SightLayer.Ground), "in front of the building");
+            Assert.IsTrue(fog.IsVisible(new float3(11f, 0f, 1f), Team1, SightLayer.Ground), "its roof");
+            Assert.That(fog.IsVisible(Behind, Team1, SightLayer.Ground), Is.False, () => "behind it\n" + GridDump.Fog(fog, Team1, Behind, 12));
+            Assert.IsTrue(fog.IsVisible(new float3(1f, 0f, 15f), Team1, SightLayer.Ground), "open ground beside it");
         }
 
         [TestCase(2f, false, TestName = "Wall_HidesTheGroundBehindIt")]
@@ -53,7 +54,7 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
 
             _world.Tick();
 
-            Assert.AreEqual(seen, _world.Fog().IsVisible(new float3(15f, 0f, 1f), Team1, false));
+            Assert.AreEqual(seen, _world.Fog().IsVisible(new float3(15f, 0f, 1f), Team1, SightLayer.Ground));
         }
 
         [TestCase(true, TestName = "Garrison_SeesTheStreetAndOverNearbyRoofs")]
@@ -72,8 +73,8 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
             _world.Tick();
 
             var fog = _world.Fog();
-            Assert.AreEqual(inside, fog.IsVisible(new float3(7f, 0f, 1f), Team1, false), "the street by the house");
-            Assert.AreEqual(inside, fog.IsVisible(Behind, Team1, false), "behind the lower house next door");
+            Assert.AreEqual(inside, fog.IsVisible(new float3(7f, 0f, 1f), Team1, SightLayer.Ground), "the street by the house");
+            Assert.AreEqual(inside, fog.IsVisible(Behind, Team1, SightLayer.Ground), "behind the lower house next door");
         }
 
         [TestCase(true, TestName = "DestroyedBuilding_StopsBlocking_AtTheNextStamp")]
@@ -83,7 +84,7 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
             _world.SpawnViewer(Team1, Viewer, 30f);
             var building = SpawnBlock(new float3(11f, 0f, 1f), new float2(4f, 4f), 6f);
             _world.Tick();
-            Assert.IsFalse(_world.Fog().IsVisible(Behind, Team1, false), "hidden while it stands");
+            Assert.IsFalse(_world.Fog().IsVisible(Behind, Team1, SightLayer.Ground), "hidden while it stands");
 
             if (destroyed)
             {
@@ -96,7 +97,7 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
 
             _world.Run(FogOfWarSystem.UpdateInterval * 2f);
 
-            Assert.IsTrue(_world.Fog().IsVisible(Behind, Team1, false));
+            Assert.IsTrue(_world.Fog().IsVisible(Behind, Team1, SightLayer.Ground));
         }
 
         private Entity SpawnBlock(float3 position, float2 size, float height) =>

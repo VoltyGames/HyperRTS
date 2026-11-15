@@ -1,7 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Burst;
@@ -15,8 +14,8 @@ namespace HyperRTS.Simulation.Vision.Sight
 {
     /// <summary>
     /// Redraws each viewer's <see cref="SightArea"/> when its place, eye, reach or team changed, or a grid or blockers
-    /// did: terrain and <see cref="SightBlockers"/> occlude, <see cref="HighGround"/> reaches further, and ground units
-    /// get a close layer. A passenger with a <see cref="PassengerEye"/> sees from above its container's roof. Each
+    /// did: terrain and <see cref="SightBlockers"/> occlude, <see cref="HighGround"/> reaches further, aircraft are seen
+    /// across the whole range, and ground units get a close layer. A passenger with a <see cref="PassengerEye"/> sees from above its container's roof. Each
     /// viewer writes only its own area, so it runs in parallel.
     /// </summary>
     [BurstCompile]
@@ -70,7 +69,7 @@ namespace HyperRTS.Simulation.Vision.Sight
             sight.Area = area;
             sight.Bits = words;
             sight.Draw(position, eye, area.Range);
-            DrawClose(position, area, words);
+            DrawCircles(position, area, words);
         }
 
         /// <summary>The viewer's eye height; a viewer's own block, or the one it is inside, hides nothing from it.</summary>
@@ -96,7 +95,7 @@ namespace HyperRTS.Simulation.Vision.Sight
         private readonly SightArea Wanted(Entity entity, float3 position, float eye, float range, byte team)
         {
             // Aircraft and passengers spot nothing up close.
-            var airborne = Agents.TryGetComponent(entity, out var agent) && agent.Layer == NavLayer.Air;
+            var airborne = Agents.TryGetComponent(entity, out var agent) && SightLayers.IsAirborne(agent);
             var close = airborne || IsInside(entity, out _) ? 0f : RevealDistance;
             return new SightArea
             {
@@ -111,11 +110,17 @@ namespace HyperRTS.Simulation.Vision.Sight
             };
         }
 
-        private readonly void DrawClose(float3 position, in SightArea area, NativeArray<ulong> words)
+        // Nothing on the ground hides an aircraft, so the air layer is the whole range.
+        private readonly void DrawCircles(float3 position, in SightArea area, NativeArray<ulong> words)
         {
             foreach (var cell in Fog.Grid.CellsInCircle(position.xz, area.CloseRange))
             {
                 area.Set(words, SightArea.Close, cell);
+            }
+
+            foreach (var cell in Fog.Grid.CellsInCircle(position.xz, area.Range))
+            {
+                area.Set(words, SightArea.Air, cell);
             }
         }
 

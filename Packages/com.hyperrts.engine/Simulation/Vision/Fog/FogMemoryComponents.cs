@@ -18,8 +18,8 @@ namespace HyperRTS.Simulation.Vision.Fog
         public float Health;
         public float Construction;
 
-        /// <summary>A <see cref="TallTarget"/>, so its place counts as seen where a tall target would be.</summary>
-        public bool Tall;
+        /// <summary>Its sight layer, so its place counts as seen where such a target would be.</summary>
+        public SightLayer Layer;
     }
 
     /// <summary>

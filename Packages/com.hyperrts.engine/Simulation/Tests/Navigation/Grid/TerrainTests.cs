@@ -83,7 +83,7 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             Assert.AreEqual(!flood, grid.IsWalkable(basin, NavLayer.Ground), "basin floor is land");
             Assert.AreEqual(flood, grid.IsWalkable(basin, NavLayer.Naval), "basin is water");
             // The near shore hides the deep floor; only a water surface rises into view.
-            Assert.AreEqual(flood, World.Fog().IsVisible(new float3(9f, 0f, 0f), Team1, false), "fog sees the water surface");
+            Assert.AreEqual(flood, World.Fog().IsVisible(new float3(9f, 0f, 0f), Team1, SightLayer.Ground), "fog sees the water surface");
         }
 
         [Test]
@@ -122,10 +122,10 @@ namespace HyperRTS.Simulation.Tests.Navigation.Grid
             World.Tick();
 
             var fog = World.Fog();
-            Assert.IsTrue(fog.IsVisible(new float3(3f, 0f, 0f), Team1, false), "in front of the ridge");
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1, false), "the ridge top");
-            Assert.AreEqual(tall, fog.IsVisible(new float3(9f, 0f, 0f), Team1, false), "behind the ridge");
-            Assert.IsTrue(fog.IsVisible(new float3(0f, 0f, 9f), Team1, false), "open ground along the ridge");
+            Assert.IsTrue(fog.IsVisible(new float3(3f, 0f, 0f), Team1, SightLayer.Ground), "in front of the ridge");
+            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1, SightLayer.Ground), "the ridge top");
+            Assert.AreEqual(tall, fog.IsVisible(new float3(9f, 0f, 0f), Team1, SightLayer.Ground), "behind the ridge");
+            Assert.IsTrue(fog.IsVisible(new float3(0f, 0f, 9f), Team1, SightLayer.Ground), "open ground along the ridge");
         }
 
         [Test]

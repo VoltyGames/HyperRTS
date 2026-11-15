@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Fog;
 using System;
 using Unity.Collections;
@@ -172,7 +173,7 @@ namespace HyperRTS.Network.Scenery
 
             // Scenery past the fog grid's edge uses the edge cell; buildings and bridges are seen as tall.
             var cell = fog.Grid.Clamp(fog.Grid.Cell(position));
-            return fog.IsVisible(fog.Grid.CenterPoint(cell), (byte)team, true);
+            return fog.IsVisible(fog.Grid.CenterPoint(cell), (byte)team, SightLayer.Tall);
         }
 
         /// <summary>A change code and broken mask as one team last saw them.</summary>

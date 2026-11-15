@@ -9,9 +9,9 @@ using Unity.Profiling;
 namespace HyperRTS.Simulation.Vision.Fog
 {
     /// <summary>
-    /// Rebuilds a band of <see cref="BandRows"/> plane rows of every team's visible, tall and close planes from the
+    /// Rebuilds a band of <see cref="BandRows"/> plane rows of every team's visible, tall, air and close planes from the
     /// viewers' <see cref="SightArea"/>s, a word at a time. The planes lay every team's rows end to end, so a batch is
-    /// a run of whole rows and writes only inside its own range of the three planes.
+    /// a run of whole rows and writes only inside its own range of the four planes.
     /// </summary>
     [BurstCompile]
     internal struct FogMergeJob : IJobParallelForBatch
@@ -22,6 +22,7 @@ namespace HyperRTS.Simulation.Vision.Fog
 
         public NativeArray<ulong> Visible;
         public NativeArray<ulong> VisibleTall;
+        public NativeArray<ulong> VisibleAir;
         public NativeArray<ulong> Close;
         public int Width;
         public int Rows;
@@ -40,6 +41,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             using var marker = MergeMarker.Auto();
             Clear(Visible, startIndex, count);
             Clear(VisibleTall, startIndex, count);
+            Clear(VisibleAir, startIndex, count);
             Clear(Close, startIndex, count);
             var end = (startIndex + count) / RowWords;
             for (var row = startIndex / RowWords; row < end;)
@@ -69,6 +71,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                 {
                     Or(Visible, area, words, SightArea.Ground, y);
                     Or(VisibleTall, area, words, SightArea.Tall, y);
+                    Or(VisibleAir, area, words, SightArea.Air, y);
                     Or(Close, area, words, SightArea.Close, y);
                 }
             }

@@ -147,7 +147,7 @@ namespace HyperRTS.Simulation.AI
 
             var team = snapshot.Relations.GetTeam(turn.Owner);
             var building = entities.HasComponent<BuildingTag>(entity);
-            return _fog.IsKnown(targets.Position(index), team, building, entities.HasComponent<TallTarget>(entity));
+            return _fog.IsKnown(targets.Position(index), team, building, SightLayers.Find(entities, entity));
         }
     }
 }

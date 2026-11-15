@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             World.EntityManager.AddComponent<TallTarget>(enemy);
 
             World.Run(0.3f);
-            Assert.IsFalse(World.Fog().IsVisible(World.GetPosition(enemy), 1, true), "the smoke hides it");
+            Assert.IsFalse(World.Fog().IsVisible(World.GetPosition(enemy), 1, SightLayer.Tall), "the smoke hides it");
 
             Attack(launcher, enemy);
             Assert.IsTrue(World.RunUntil(() => Projectiles() > 0, 3f), "it fires its missile");

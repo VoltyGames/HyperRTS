@@ -86,7 +86,7 @@ namespace HyperRTS.Simulation.Cues
             return Add(new CueEvent
             {
                 TypeId = typeId, Slot = slot, Variant = variant, SourceNumber = number, Owner = owner, Position = position,
-                Direction = direction, Concealment = _concealment.Find(source), Tall = _concealment.IsTall(source),
+                Direction = direction, Concealment = _concealment.Find(source), Layer = _concealment.Layer(source),
             });
         }
 

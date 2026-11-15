@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Mathematics;
 
@@ -19,7 +20,7 @@ namespace HyperRTS.Presentation.Fog
             }
 
             var friendly = relations.IsAllied(view.Viewer, owner);
-            return !friendly && !fog.IsVisible(position, view.Team, true);
+            return !friendly && !fog.IsVisible(position, view.Team, SightLayer.Tall);
         }
     }
 }

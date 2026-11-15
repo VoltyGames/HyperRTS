@@ -75,11 +75,26 @@ namespace HyperRTS.Simulation.Vision.Fog
             new DetectionStampJob { Fog = fog, Relations = relations }.Schedule();
             DrawSightAreas(ref state, fog, relations, settings);
             Merge(ref state, fog);
-            state.Dependency = settings.FogOfWar
-                ? new ExploreJob { VisibleTall = fog.VisibleTall, Explored = fog.Explored }
-                    .Schedule(fog.Explored.Length, 4096, state.Dependency)
-                : new RevealAllJob { Visible = fog.Visible, VisibleTall = fog.VisibleTall, Explored = fog.Explored }
-                    .Schedule(fog.Visible.Length, 4096, state.Dependency);
+            state.Dependency = Explore(fog, settings.FogOfWar, state.Dependency);
+        }
+
+        // With fog off every plane is all visible; with it on, what is seen now joins what was explored.
+        private static JobHandle Explore(in FogOfWar fog, bool fogOfWar, JobHandle dependency)
+        {
+            if (fogOfWar)
+            {
+                var explore = new ExploreJob { VisibleTall = fog.VisibleTall, Explored = fog.Explored };
+                return explore.Schedule(fog.Explored.Length, 4096, dependency);
+            }
+
+            var revealAll = new RevealAllJob
+            {
+                Visible = fog.Visible,
+                VisibleTall = fog.VisibleTall,
+                VisibleAir = fog.VisibleAir,
+                Explored = fog.Explored,
+            };
+            return revealAll.Schedule(fog.Visible.Length, 4096, dependency);
         }
 
         private void DrawSightAreas(ref SystemState state, in FogOfWar fog, in OwnerRelations relations,
@@ -123,6 +138,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             {
                 Visible = fog.Visible,
                 VisibleTall = fog.VisibleTall,
+                VisibleAir = fog.VisibleAir,
                 Close = fog.Close,
                 Width = fog.Grid.Size.x,
                 Rows = fog.Grid.Size.y,
@@ -156,12 +172,14 @@ namespace HyperRTS.Simulation.Vision.Fog
         {
             public NativeArray<ulong> Visible;
             public NativeArray<ulong> VisibleTall;
+            public NativeArray<ulong> VisibleAir;
             public NativeArray<ulong> Explored;
 
             public void Execute(int index)
             {
                 Visible[index] = ulong.MaxValue;
                 VisibleTall[index] = ulong.MaxValue;
+                VisibleAir[index] = ulong.MaxValue;
                 Explored[index] = ulong.MaxValue;
             }
         }

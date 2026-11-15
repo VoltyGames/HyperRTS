@@ -196,8 +196,10 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
 | `MatchAuthoring.sight` | `SightRules`: what high ground is worth to sight and direct-fire range, and the reveal distance |
 | `ContainerAuthoring.eyeAboveRoof` | Passengers of a container with a sight block see from this far above its top |
 
-- **Layers.** Vision updates 10 times a second. `FogOfWar.Visible` holds cells seen at 1 m, for infantry;
-  `VisibleTall` those seen at 3 m, for a `TallTarget`. `CanSee` and `IsHiddenFrom` take the target's layer.
+- **Layers.** Vision updates 10 times a second. A target's `SightLayer` picks its plane: `FogOfWar.Visible` holds
+  cells seen at 1 m, for infantry; `VisibleTall` those seen at 3 m, for a `TallTarget`; `VisibleAir` every cell
+  inside a viewer's range, for a unit on the Air nav layer, since nothing on the ground hides an aircraft.
+  `SightLayers` holds the rule, and `CanSee` and `IsHiddenFrom` take the layer.
 - **Rebuild.** Each viewer keeps its sight in a `SightArea`, redrawn only when it moves cell, its eye, reach or team
   changes, or `SightBlockers.DirtyTiles` marks a change near it. `FogMergeJob` merges the areas.
 - **High ground.** `HighGroundSystem` measures each cell's ground against the local mean when the map loads. A viewer
@@ -207,6 +209,6 @@ Each team sees what its units see. `FogOfWar` holds visible, explored and detect
   the canopy sees over. Crushers flatten crop cover (`CropFlattenSystem`) in every world, so client fog matches.
 - **Concealment.** `FogOfWar.Close` holds cells near a team's ground units. A `Concealment` (none, `Concealed`,
   `Stealthed`) goes with every check: stealth shows only to detectors, concealment also to close ground units. A cue
-  carries its source's concealment and tall flag, so it reaches whoever could see the source.
+  carries its source's concealment and sight layer, so it reaches whoever could see the source.
 - A viewer's own block, or its container's, hides nothing from it. Garrisons see from above the roof.
 - Hidden enemies can't be selected or seen, but splash still hits them. A memory clears when its spot is seen again.

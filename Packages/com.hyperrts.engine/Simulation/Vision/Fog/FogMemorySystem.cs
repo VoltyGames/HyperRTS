@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                 var key = FogMemoryKey.Identify(entity, Ghosts);
                 var hostile = Relations.IsHostile(Viewer, owner.Value);
                 var visible = Sight.Fog.CanSee(Sight.Team, transform.Position, Concealments.Find(entity),
-                    Concealments.IsTall(entity));
+                    Concealments.Layer(entity));
                 // A friendly root is seen too, so the memory of a building since captured by a friend goes.
                 if (!hostile || visible)
                 {
@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                     Transform = transform,
                     Health = health.Fraction,
                     Construction = progress.Value,
-                    Tall = Concealments.IsTall(entity),
+                    Layer = Concealments.Layer(entity),
                 };
             }
 
@@ -195,7 +195,7 @@ namespace HyperRTS.Simulation.Vision.Fog
 
             private void Execute(Entity entity, in LatestSeen latest)
             {
-                if (!Sight.Fog.IsVisible(latest.State.Transform.Position, Sight.Team, latest.State.Tall))
+                if (!Sight.Fog.IsVisible(latest.State.Transform.Position, Sight.Team, latest.State.Layer))
                 {
                     Sight.Remember(latest.State);
                 }
@@ -220,7 +220,7 @@ namespace HyperRTS.Simulation.Vision.Fog
                     return;
                 }
 
-                var inSight = Sight.Fog.IsVisible(memory.State.Transform.Position, Sight.Team, memory.State.Tall);
+                var inSight = Sight.Fog.IsVisible(memory.State.Transform.Position, Sight.Team, memory.State.Layer);
                 memory.VisibleFor = inSight ? memory.VisibleFor + DeltaTime : 0f;
                 if (memory.VisibleFor >= Grace)
                 {

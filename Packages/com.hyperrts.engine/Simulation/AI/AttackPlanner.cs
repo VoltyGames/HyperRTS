@@ -184,8 +184,7 @@ namespace HyperRTS.Simulation.AI
                 }
 
                 var building = entities.HasComponent<BuildingTag>(entity);
-                var tall = entities.HasComponent<TallTarget>(entity);
-                if (limitedByFog && !_fog.IsKnown(targets.Position(i), team, building, tall))
+                if (limitedByFog && !_fog.IsKnown(targets.Position(i), team, building, SightLayers.Find(entities, entity)))
                 {
                     continue;
                 }

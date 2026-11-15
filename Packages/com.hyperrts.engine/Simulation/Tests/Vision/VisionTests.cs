@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Detection;
 using NUnit.Framework;
 using Unity.Entities;
@@ -38,9 +39,9 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Tick();
             var fog = _world.Fog();
 
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1, false));
-            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team2, false), "enemies don't share vision");
-            Assert.IsFalse(fog.IsVisible(new float3(30f, 0f, 0f), Team1, false), "beyond the vision range");
+            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1, SightLayer.Ground));
+            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team2, SightLayer.Ground), "enemies don't share vision");
+            Assert.IsFalse(fog.IsVisible(new float3(30f, 0f, 0f), Team1, SightLayer.Ground), "beyond the vision range");
         }
 
         [Test]
@@ -54,8 +55,8 @@ namespace HyperRTS.Simulation.Tests.Vision
             world.Tick();
             var fog = world.Fog();
 
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), lastTeam, false), "an eight-player FFA needs teams past 7");
-            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team1, false));
+            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), lastTeam, SightLayer.Ground), "an eight-player FFA needs teams past 7");
+            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team1, SightLayer.Ground));
         }
 
         [Test]
@@ -79,9 +80,9 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Run(0.5f);
             var fog = _world.Fog();
 
-            Assert.IsFalse(fog.IsVisible(float3.zero, Team1, false));
+            Assert.IsFalse(fog.IsVisible(float3.zero, Team1, SightLayer.Ground));
             Assert.IsTrue(fog.IsExplored(float3.zero, Team1));
-            Assert.IsTrue(fog.IsVisible(new float3(50f, 0f, 0f), Team1, false));
+            Assert.IsTrue(fog.IsVisible(new float3(50f, 0f, 0f), Team1, SightLayer.Ground));
             Assert.Greater(fog.Version, version, "restamps bump the version");
         }
 
@@ -93,8 +94,8 @@ namespace HyperRTS.Simulation.Tests.Vision
             _world.Tick();
             var fog = _world.Fog();
 
-            Assert.IsTrue(fog.IsVisible(new float3(90f, 0f, -90f), Team1, false));
-            Assert.IsTrue(fog.IsVisible(new float3(-90f, 0f, 90f), Team2, false));
+            Assert.IsTrue(fog.IsVisible(new float3(90f, 0f, -90f), Team1, SightLayer.Ground));
+            Assert.IsTrue(fog.IsVisible(new float3(-90f, 0f, 90f), Team2, SightLayer.Ground));
             Assert.IsTrue(fog.IsExplored(float3.zero, Team2));
         }
 

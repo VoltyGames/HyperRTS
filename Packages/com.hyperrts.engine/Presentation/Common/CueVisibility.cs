@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Fog;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -47,7 +48,7 @@ namespace HyperRTS.Presentation.Common
 
         /// <summary>Whether the local player sees the ground at a point: in their team's sight, or the fog view is off.</summary>
         public static bool IsGroundSeenLocally(float3 position, in LocalFogView view, in FogOfWar fog) =>
-            !view.Active || !fog.IsCreated || fog.IsVisible(position, view.Team, false);
+            !view.Active || !fog.IsCreated || fog.IsVisible(position, view.Team, SightLayer.Ground);
 
         /// <summary>
         /// Whether the local player gets the cue: their own owner-only cues, and every other cue while the fog view is

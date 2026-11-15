@@ -37,8 +37,8 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>What kept the source hidden, so a cue reaches only the teams that could see its source.</summary>
         public Concealment Concealment;
 
-        /// <summary>The source was a <see cref="TallTarget"/>, seen over low cover.</summary>
-        public bool Tall;
+        /// <summary>The source's sight layer, so a cue reaches whoever could see the source.</summary>
+        public SightLayer Layer;
 
         /// <summary>An impact's splash radius; bigger blasts leave bigger marks.</summary>
         public float Radius;

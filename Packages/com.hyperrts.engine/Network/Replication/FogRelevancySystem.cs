@@ -131,10 +131,10 @@ namespace HyperRTS.Network.Replication
                     return;
                 }
 
-                var tall = Concealments.IsTall(entity);
+                var layer = Concealments.Layer(entity);
                 foreach (var viewer in Viewers)
                 {
-                    if (Fog.IsHiddenFrom(Relations, viewer.Owner, owner.Value, transform.Position, concealment, tall))
+                    if (Fog.IsHiddenFrom(Relations, viewer.Owner, owner.Value, transform.Position, concealment, layer))
                     {
                         Hidden.TryAdd(new RelevantGhostForConnection(viewer.NetworkId, ghost.ghostId), 1);
                     }

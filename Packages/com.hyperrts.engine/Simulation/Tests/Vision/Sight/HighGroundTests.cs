@@ -49,8 +49,8 @@ namespace HyperRTS.Simulation.Tests.Vision.Sight
             _world.Tick();
 
             var fog = _world.Fog();
-            Assert.IsTrue(fog.IsVisible(new float3(1f + seen - 1f, 0f, 1f), Team1, false), "within the bonus");
-            Assert.IsFalse(fog.IsVisible(new float3(1f + unseen + 1f, 0f, 1f), Team1, false), "beyond it");
+            Assert.IsTrue(fog.IsVisible(new float3(1f + seen - 1f, 0f, 1f), Team1, SightLayer.Ground), "within the bonus");
+            Assert.IsFalse(fog.IsVisible(new float3(1f + unseen + 1f, 0f, 1f), Team1, SightLayer.Ground), "beyond it");
         }
     }
 }

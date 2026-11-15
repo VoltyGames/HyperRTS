@@ -161,10 +161,9 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// fog grid, which fog-off maps fill as all-visible.
         /// </summary>
         public bool IsSpotted(Entity target, float3 position, byte team) =>
-            _fog.CanSee(team, position, _concealment.Find(target), IsTall(target));
+            _fog.CanSee(team, position, _concealment.Find(target), Layer(target));
 
-        /// <summary>As tall as a vehicle or a building, so seen over low cover (see <see cref="TallTarget"/>).</summary>
-        public bool IsTall(Entity entity) => _concealment.IsTall(entity);
+        public SightLayer Layer(Entity entity) => _concealment.Layer(entity);
 
         /// <summary>
         /// How far the weapon of <paramref name="shooter"/>, standing at <paramref name="position"/>, reaches
@@ -222,7 +221,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             var holder = Holder(shooter);
             _vision.TryGetComponent(shooter, out var vision);
             var from = position + new float3(0f, vision.EyeHeight, 0f);
-            var to = Position(target) + new float3(0f, SightLines.TargetTop(IsTall(target)), 0f);
+            var to = Position(target) + new float3(0f, SightLines.TargetTop(Layer(target) != SightLayer.Ground), 0f);
             return _blockers.TryFindObstruction(from, to, holder, target, out _, out _);
         }
 

@@ -9,9 +9,9 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Vision.Fog
 {
     /// <summary>
-    /// Singleton fog-of-war grid, one bit plane per team for each layer: visible now (at ground height and at
-    /// <see cref="TallTarget"/> height), ever seen, detected and close to a ground unit. With fog disabled every cell
-    /// is visible, but stealth still needs detection.
+    /// Singleton fog-of-war grid, one bit plane per team for each layer: visible now (for each <see cref="SightLayer"/>),
+    /// ever seen, detected and close to a ground unit. With fog disabled every cell is visible, but stealth still needs
+    /// detection.
     /// </summary>
     public struct FogOfWar : IComponentData, IReplaceableSingleton<FogOfWar>
     {
@@ -20,6 +20,9 @@ namespace HyperRTS.Simulation.Vision.Fog
 
         /// <summary>Cells where a tall target is in sight; every visible cell is in it too.</summary>
         public NativeArray<ulong> VisibleTall;
+
+        /// <summary>Cells inside a viewer's range, where an aircraft is in sight; every tall cell is in it too.</summary>
+        public NativeArray<ulong> VisibleAir;
 
         public NativeArray<ulong> Explored;
         public NativeArray<ulong> Detected;
@@ -51,6 +54,7 @@ namespace HyperRTS.Simulation.Vision.Fog
             {
                 Visible = new NativeArray<ulong>(words, allocator),
                 VisibleTall = new NativeArray<ulong>(words, allocator),
+                VisibleAir = new NativeArray<ulong>(words, allocator),
                 Explored = new NativeArray<ulong>(words, allocator),
                 Detected = new NativeArray<ulong>(words, allocator),
                 Close = new NativeArray<ulong>(words, allocator),
@@ -64,6 +68,7 @@ namespace HyperRTS.Simulation.Vision.Fog
         {
             Visible.Dispose();
             VisibleTall.Dispose();
+            VisibleAir.Dispose();
             Explored.Dispose();
             Detected.Dispose();
             Close.Dispose();
@@ -75,15 +80,22 @@ namespace HyperRTS.Simulation.Vision.Fog
             Generation = previous.Generation + 1;
         }
 
-        /// <summary>Whether the team sees a target there, judged at a tall target's height when <paramref name="tall"/>.</summary>
-        public readonly bool IsVisible(float3 position, byte team, bool tall) =>
-            Test(tall ? VisibleTall : Visible, position, team);
+        /// <summary>Whether the team sees a target on <paramref name="layer"/> there.</summary>
+        public readonly bool IsVisible(float3 position, byte team, SightLayer layer) =>
+            Test(Plane(layer), position, team);
+
+        public readonly NativeArray<ulong> Plane(SightLayer layer) => layer switch
+        {
+            SightLayer.Ground => Visible,
+            SightLayer.Tall => VisibleTall,
+            _ => VisibleAir,
+        };
 
         public readonly bool IsExplored(float3 position, byte team) => Test(Explored, position, team);
 
         /// <summary>What an AI may act on: units must be in sight, buildings stay known once explored.</summary>
-        public readonly bool IsKnown(float3 position, byte team, bool building, bool tall) =>
-            building ? IsExplored(position, team) : IsVisible(position, team, tall);
+        public readonly bool IsKnown(float3 position, byte team, bool building, SightLayer layer) =>
+            building ? IsExplored(position, team) : IsVisible(position, team, layer);
 
         public readonly bool IsDetected(float3 position, byte team) => Test(Detected, position, team);
 
@@ -103,15 +115,15 @@ namespace HyperRTS.Simulation.Vision.Fog
             return concealment == Concealment.Stealthed || !IsClose(position, team);
         }
 
-        /// <summary>Whether a team sees an entity there: in its sight at the entity's height, and not hidden by concealment.</summary>
-        public readonly bool CanSee(byte team, float3 position, Concealment concealment, bool tall) =>
-            IsVisible(position, team, tall) && !IsHiddenByConcealment(team, position, concealment);
+        /// <summary>Whether a team sees an entity there: in its sight on the entity's layer, and not hidden by concealment.</summary>
+        public readonly bool CanSee(byte team, float3 position, Concealment concealment, SightLayer layer) =>
+            IsVisible(position, team, layer) && !IsHiddenByConcealment(team, position, concealment);
 
         /// <summary>Hostile entities the viewer team can't see are hidden; own, allied and neutral never are.</summary>
         public readonly bool IsHiddenFrom(in OwnerRelations relations, byte viewerOwner, byte owner,
-            float3 position, Concealment concealment, bool tall) =>
+            float3 position, Concealment concealment, SightLayer layer) =>
             relations.IsHostile(viewerOwner, owner) &&
-            !CanSee(relations.GetTeam(viewerOwner), position, concealment, tall);
+            !CanSee(relations.GetTeam(viewerOwner), position, concealment, layer);
 
         /// <summary>Whether the team's bit is set for the cell in one of the layers.</summary>
         public readonly bool Has(NativeArray<ulong> plane, int2 cell, byte team) =>
