@@ -26,7 +26,7 @@ than cuts.
 | Authoring | Plays |
 | --- | --- |
 | `EntityEffectsAuthoring` | A rig per cue slot. Fire plays at a `muzzle` socket |
-| `ImpactEffectsAuthoring` | A rig per surface material where a weapon's shots land |
+| `ImpactAuthoring` | A rig per surface material where a weapon's shots land, and the marks they leave on open ground |
 | `HitMaterialAuthoring` | Sets what an entity is made of, for hits on it |
 | `LoopEffectsAuthoring` | Rigs that stream while shown, such as exhaust or smoke |
 | `EffectTrailAuthoring` | A rig along a projectile's path |

@@ -226,7 +226,7 @@ namespace HyperRTS.Editor.Tests.Validation
                 return effects;
             });
             yield return Row<ImpactEffectsRule>("no surface effects asset",
-                f => f.Add<ImpactEffectsAuthoring>(new GameObject("Impacts")));
+                f => f.Add<ImpactAuthoring>(new GameObject("Impacts")));
             yield return Row<LoopEffectsRule>("has no socket", f =>
             {
                 var effects = f.Add<LoopEffectsAuthoring>(new GameObject("Loops"));

@@ -91,13 +91,13 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         }
 
         [Test]
-        public void AddCrater_BowlIsHalfTheMarkInsideAWiderScorchDisc()
+        public void AddScar_BowlIsHalfTheMarkInsideAWiderScorchDisc()
         {
-            _mark.craterDepth = 0.8f;
-            _mark.scorch = 0.6f;
+            _mark.scar.craterDepth = 0.8f;
+            _mark.scar.scorch = 0.6f;
             var stamps = new TrampleStamps();
 
-            stamps.AddCrater(new float2(1f, 2f), _mark, 4f);
+            stamps.AddScar(new float2(1f, 2f), _mark.scar, 4f * 0.5f);
 
             var scar = stamps.Scars[0];
             Assert.AreEqual(new float2(2f * TrampleStamps.ScorchReach), scar.HalfSize);
@@ -110,25 +110,25 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         }
 
         [Test]
-        public void AddCrater_WithoutScorch_IsJustTheBowl_AndDeepCratersClip()
+        public void AddScar_WithoutScorch_IsJustTheBowl_AndDeepCratersClip()
         {
-            _mark.craterDepth = 5f;
+            _mark.scar.craterDepth = 5f;
             var stamps = new TrampleStamps();
 
-            stamps.AddCrater(float2.zero, _mark, 6f);
+            stamps.AddScar(float2.zero, _mark.scar, 6f * 0.5f);
 
             Assert.AreEqual(new float2(3f), stamps.Scars[0].HalfSize);
             Assert.AreEqual(new float4(1f, 0f, 1f, 1f), stamps.Scars[0].Value);
         }
 
         [Test]
-        public void AddCrater_StainsCoverTheScorchReach_AndStainsAloneLeaveNoScar()
+        public void AddScar_StainsCoverTheScorchReach_AndStainsAloneLeaveNoScar()
         {
-            _mark.ash = 0.7f;
-            _mark.rubble = 0.2f;
+            _mark.scar.ash = 0.7f;
+            _mark.scar.rubble = 0.2f;
             var stamps = new TrampleStamps();
 
-            stamps.AddCrater(new float2(1f, 2f), _mark, 4f);
+            stamps.AddScar(new float2(1f, 2f), _mark.scar, 4f * 0.5f);
 
             Assert.AreEqual(1, stamps.Stains.Count);
             Assert.AreEqual(new float2(2f * TrampleStamps.ScorchReach), stamps.Stains[0].HalfSize);

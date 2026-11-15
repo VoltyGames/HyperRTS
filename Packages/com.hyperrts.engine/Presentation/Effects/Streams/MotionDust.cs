@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Cues.Surfaces;
+using HyperRTS.Simulation.Cues.Effects;
 using Unity.Entities;
 using Unity.Mathematics;
 

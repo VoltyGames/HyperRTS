@@ -21,4 +21,19 @@ namespace HyperRTS.Simulation.Cues.Effects
 
         public readonly bool Plays(CueSlot slot, byte variant) => Slot == slot && Variant == variant;
     }
+
+    /// <summary>What the entity's shots throw up where they land, by the material struck.</summary>
+    public struct EntityImpactEffects : IComponentData
+    {
+        public UnityObjectRef<SurfaceEffects> Effects;
+    }
+
+    /// <summary>
+    /// An effect played once where the entity appears (the dust of a collapse on a ruin, a fallen tree). Enabled
+    /// until presentation plays it, then disabled; an entity that shows a result nobody saw happen spawns disabled.
+    /// </summary>
+    public struct SpawnEffect : IComponentData, IEnableableComponent
+    {
+        public UnityObjectRef<GameObject> Prefab;
+    }
 }

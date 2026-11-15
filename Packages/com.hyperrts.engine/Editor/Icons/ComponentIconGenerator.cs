@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Icons
         {
             "AbilityAuthoring", "ArmorAuthoring", "AuraAuthoring", "CoverSpotAuthoring", "DamageStagesAuthoring",
             "DeathStainAuthoring", "DecayAuthoring", "DeployableAuthoring", "DestructibleAuthoring",
-            "ImpactMarksAuthoring", "ReinforcePointAuthoring", "RetreatPointAuthoring", "SectionsAuthoring",
+            "ReinforcePointAuthoring", "RetreatPointAuthoring", "SectionsAuthoring",
             "SpawnEffectAuthoring", "StatusEffectAuthoring", "StrategicAssetAuthoring", "StretchPartsAuthoring",
             "ToppleAuthoring", "TossedTurretAuthoring", "TurretTossAuthoring", "VeterancyAuthoring",
             "WeaponAuthoring",
@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.Icons
         (new Color(1.00f, 0.42f, 0.10f), new[]
         {
             "DebrisAuthoring", "EffectLight", "EffectRig", "EffectTrailAuthoring", "EntityEffectsAuthoring",
-            "GroundMaterialsAuthoring", "HitMaterialAuthoring", "ImpactEffectsAuthoring", "LoopEffectsAuthoring",
+            "GroundMaterialsAuthoring", "HitMaterialAuthoring", "ImpactAuthoring", "LoopEffectsAuthoring",
             "LoopLight", "MotionDustAuthoring", "RotorWashAuthoring", "SmokeShadow",
         }),
         // Environment

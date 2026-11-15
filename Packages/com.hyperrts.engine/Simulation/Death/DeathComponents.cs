@@ -2,7 +2,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 using Unity.Netcode;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Death
 {
@@ -56,14 +55,5 @@ namespace HyperRTS.Simulation.Death
 
         /// <summary>Share of the despawn done, 0 to 1. Replicated so clients fade the remains' loop effects with it.</summary>
         [GhostField(Quantization = 100)] public float DespawnProgress;
-    }
-
-    /// <summary>
-    /// An effect played once where the entity appears (the dust of a collapse on a ruin, a fallen tree). Enabled
-    /// until presentation plays it, then disabled; an entity that shows a result nobody saw happen spawns disabled.
-    /// </summary>
-    public struct SpawnEffect : IComponentData, IEnableableComponent
-    {
-        public UnityObjectRef<GameObject> Prefab;
     }
 }

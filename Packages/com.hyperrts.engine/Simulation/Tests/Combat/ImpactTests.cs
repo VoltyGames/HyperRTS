@@ -38,7 +38,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         internal static Entity Marked(TestWorld world, Entity shooter, ImpactMark mark)
         {
             var writer = world.Writer(shooter);
-            ImpactMarksAuthoring.Add(writer, new[] { mark });
+            ImpactAuthoring.Add(writer, new[] { mark });
             return shooter;
         }
 
@@ -155,7 +155,7 @@ namespace HyperRTS.Simulation.Tests.Combat
                 Cooldown = 100f,
             });
             var writer = _world.Writer(gun);
-            ImpactEffectsAuthoring.Add(writer, effects);
+            ImpactAuthoring.Add(writer, effects);
             _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
             var landed = _world.QueuedOver(1f, CueSlot.Impact);

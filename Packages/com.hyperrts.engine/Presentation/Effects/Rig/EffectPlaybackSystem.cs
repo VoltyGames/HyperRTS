@@ -4,7 +4,6 @@ using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Effects;
-using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using UnityEngine;
@@ -12,8 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Rig
 {
     /// <summary>
-    /// Bursts the frame's <see cref="CueEvent"/>s from the pool at their sockets, using the shooter's <see cref="SurfaceEffects"/>
-    /// rig for impacts. Skips what the local player can't see or is beyond a rig's range.
+    /// Bursts the frame's <see cref="CueEvent"/>s from the pool at their sockets; an impact plays the shooter's
+    /// <see cref="SurfaceEffects"/> rig for the material struck. Skips what the local player can't see or is beyond a rig's range.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]

@@ -1,5 +1,4 @@
 using Unity.Entities;
-using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Cues.Effects
 {
@@ -9,7 +8,6 @@ namespace HyperRTS.Simulation.Cues.Effects
         /// <summary>Metres from where it died.</summary>
         public float Radius;
 
-        /// <summary>Rubble, ash, fuel and wet mud, 0 to 1 each.</summary>
-        public float4 Amounts;
+        public GroundScar Scar;
     }
 }

@@ -1,4 +1,4 @@
-using HyperRTS.Simulation.Cues.Surfaces;
+using HyperRTS.Simulation.Cues.Effects;
 using Unity.Entities;
 
 namespace HyperRTS.Presentation.Effects.Streams

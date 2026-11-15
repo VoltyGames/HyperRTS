@@ -1,12 +1,11 @@
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Cues.Effects
 {
-    /// <summary>Leaves rubble, ash, fuel or wet mud on the ground where this unit or building dies, for the rest of the match.</summary>
+    /// <summary>Leaves a crater, scorch, rubble, ash, fuel or wet mud on the ground where this unit or building dies, for the rest of the match.</summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Cues/Death Stain")]
     [Icon(HyperRTSIcons.DeathStainAuthoring)]
     [HelpURL(HyperRTSDocs.Death)]
@@ -18,21 +17,8 @@ namespace HyperRTS.Simulation.Cues.Effects
         [Min(0.1f)]
         public float radius = 3f;
 
-        [Tooltip("Broken stone and brick: 0 none, 1 fully covered.")]
-        [Range(0f, 1f)]
-        public float rubble;
-
-        [Tooltip("Grey ash: 0 none, 1 fully covered.")]
-        [Range(0f, 1f)]
-        public float ash;
-
-        [Tooltip("Spilt fuel and oil: 0 none, 1 a dark, glossy slick.")]
-        [Range(0f, 1f)]
-        public float fuel = 0.8f;
-
-        [Tooltip("Wet, churned mud: 0 none, 1 fully covered.")]
-        [Range(0f, 1f)]
-        public float mud = 0.3f;
+        [Tooltip("What the death leaves in the ground for the rest of the match.")]
+        public GroundScar scar = new() { fuel = 0.8f, mud = 0.3f };
 
         public class Baker : Baker<DeathStainAuthoring>
         {
@@ -42,7 +28,7 @@ namespace HyperRTS.Simulation.Cues.Effects
                 writer.Add(new DeathStain
                 {
                     Radius = authoring.radius,
-                    Amounts = new float4(authoring.rubble, authoring.ash, authoring.fuel, authoring.mud),
+                    Scar = authoring.scar,
                 });
             }
         }

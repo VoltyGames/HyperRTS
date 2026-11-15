@@ -33,25 +33,23 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>Clear every map before drawing: a replay sought back past the scars.</summary>
         public bool Reset;
 
-        /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn). Stains cover the scorch's reach.</summary>
-        public void AddCrater(float2 center, ImpactMark mark, float diameter)
+        /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn). The stain covers the scorch's reach.</summary>
+        public void AddScar(float2 center, in GroundScar scar, float radius)
         {
-            var radius = diameter * 0.5f;
-            if (mark.LeavesStain)
+            var reach = scar.scorch > 0f ? radius * ScorchReach : radius;
+            if (scar.LeavesStain)
             {
-                AddStain(center, radius * ScorchReach, new float4(mark.rubble, mark.ash, mark.fuel, 0f));
+                AddStain(center, reach, scar.Stain);
             }
 
-            var scarred = mark.craterDepth > 0f || mark.scorch > 0f;
-            if (!scarred)
+            if (scar.craterDepth <= 0f && scar.scorch <= 0f)
             {
                 return;
             }
 
-            var reach = mark.scorch > 0f ? radius * ScorchReach : radius;
             Trample.Add(Disc(center, reach, new float4(1f, 1f, 0f, 1f)));
-            var depth = math.saturate(mark.craterDepth / MaxCraterDepth);
-            Scars.Add(Disc(center, reach, new float4(depth, math.saturate(mark.scorch), radius / reach, 1f)));
+            var depth = math.saturate(scar.craterDepth / MaxCraterDepth);
+            Scars.Add(Disc(center, reach, new float4(depth, math.saturate(scar.scorch), radius / reach, 1f)));
         }
 
         /// <summary>A ditch <paramref name="depth"/> metres deep along <paramref name="forward"/>, sloping up at its sides; a negative bowl value marks it.</summary>

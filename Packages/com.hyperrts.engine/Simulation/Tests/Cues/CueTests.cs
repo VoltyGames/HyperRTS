@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Tests.Cues
                     Rigged(victim, CueSlot.Death, float3.zero);
                     break;
                 default:
-                    World.Add(victim, new DeathStain { Radius = 2f, Amounts = 1f });
+                    World.Add(victim, new DeathStain { Radius = 2f, Scar = new GroundScar { rubble = 1f, ash = 1f, fuel = 1f, mud = 1f } });
                     break;
             }
 

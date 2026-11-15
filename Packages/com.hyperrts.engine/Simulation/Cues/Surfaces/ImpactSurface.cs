@@ -1,6 +1,9 @@
 namespace HyperRTS.Simulation.Cues.Surfaces
 {
-    /// <summary>What a shot struck where it landed; impact marks only go on open ground.</summary>
+    /// <summary>
+    /// Where a shot landed, as opposed to the <see cref="SurfaceMaterial"/> of what it struck; impact marks only go on
+    /// open ground.
+    /// </summary>
     public enum ImpactSurface : byte
     {
         Ground = 0,

@@ -1,5 +1,5 @@
 using HyperRTS.Editor.Validation.Issues;
-using HyperRTS.Simulation.Death;
+using HyperRTS.Simulation.Cues.Effects;
 
 
 namespace HyperRTS.Editor.Validation.Rules.Effects

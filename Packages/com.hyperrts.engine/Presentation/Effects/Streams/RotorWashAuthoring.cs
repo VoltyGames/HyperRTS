@@ -1,5 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Cues.Surfaces;
+using HyperRTS.Simulation.Cues.Effects;
 using System;
 using Unity.Entities;
 using UnityEngine;

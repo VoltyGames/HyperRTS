@@ -31,8 +31,8 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             _brush = new TrampleBrush(Shader.Find(TrampleBrush.ShaderName));
             _brush.Clear(_surfaces);
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
-            _mark.craterDepth = 1f;
-            _mark.scorch = 1f;
+            _mark.scar.craterDepth = 1f;
+            _mark.scar.scorch = 1f;
         }
 
         [TearDown]
@@ -64,7 +64,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         public void Scars_OutlastTheFade_WhileRutsFade()
         {
             var stamps = new TrampleStamps();
-            stamps.AddCrater(new float2(50f, 120f), _mark, 6f);
+            stamps.AddScar(new float2(50f, 120f), _mark.scar, 6f * 0.5f);
             Draw(stamps, 0, 0);
 
             Draw(new TrampleStamps(), TrampleBrush.Levels, TrampleBrush.Levels);

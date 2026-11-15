@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Sounds;
-using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;

@@ -63,7 +63,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
                 var stain = _catalog.Find(EntityManager, registry, cue.TypeId);
                 if (stain != null)
                 {
-                    stamps.AddStain(cue.Position.xz, stain.Value.Radius, stain.Value.Amounts);
+                    stamps.AddScar(cue.Position.xz, stain.Value.Scar, stain.Value.Radius);
                 }
             }
         }

@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Effects.Rig;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Surfaces;
 using Unity.Entities;
 using Unity.Mathematics;

@@ -49,7 +49,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground
             _brush = new TrampleBrush(Shader.Find(TrampleBrush.ShaderName));
             _brush.Clear(_surfaces);
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
-            _mark.craterDepth = CraterDepth;
+            _mark.scar.craterDepth = CraterDepth;
             _crater = new CraterTerrain(_terrain, Resources.Load<Shader>(CraterTerrain.ShaderPath));
         }
 
@@ -115,7 +115,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground
         private void StampCrater()
         {
             var stamps = new TrampleStamps();
-            stamps.AddCrater(Crater, _mark, CraterDiameter);
+            stamps.AddScar(Crater, _mark.scar, CraterDiameter * 0.5f);
             _brush.Draw(_surfaces, 0, 0, 0, stamps);
             _crater.Dent(Crater - CraterDiameter, Crater + CraterDiameter);
             _crater.Sync();

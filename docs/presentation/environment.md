@@ -59,8 +59,8 @@ Vehicles leave ruts, shells leave craters and scorch, units in water leave wakes
 | `_HyperRTSWake` | R foam, which fades in seconds |
 | `_HyperRTSStains` | R rubble, G ash, B fuel, A wet mud; last the match |
 
-`TrackMarks` on a vehicle, an `ImpactMark` with `craterDepth` or `scorch`, and `DeathStainAuthoring` on a unit type stamp
-the maps. Other sources, such as collapsing buildings, call `TrampleStamps.AddStain`.
+`TrackMarks` on a vehicle, the `GroundScar` of an `ImpactMark` or of `DeathStainAuthoring` (crater depth, scorch, rubble,
+ash, fuel, mud) stamp the maps. Other sources, such as collapsing buildings, call `TrampleStamps.AddStain`.
 Shaders read the maps through `Trample.hlsl`.
 
 **Craters dent the drawn ground.** `CraterTerrainSystem` lowers the active Unity Terrain's heights under each new bowl,

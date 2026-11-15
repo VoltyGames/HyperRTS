@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using NUnit.Framework;

@@ -1,8 +1,9 @@
 using System;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Cues.Surfaces;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues.Surfaces
+namespace HyperRTS.Simulation.Cues.Effects
 {
     /// <summary>A rig per <see cref="SurfaceMaterial"/>: what a shot throws up where it lands, or wheels as they roll.</summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Effects + "Surface Effects", fileName = "SurfaceEffects")]

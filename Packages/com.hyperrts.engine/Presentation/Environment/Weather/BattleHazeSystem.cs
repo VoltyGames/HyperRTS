@@ -5,6 +5,7 @@ using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
+using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;

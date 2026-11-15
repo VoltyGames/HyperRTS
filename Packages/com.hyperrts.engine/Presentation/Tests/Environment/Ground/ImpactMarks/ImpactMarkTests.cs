@@ -132,7 +132,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
         [Test]
         public void CraterMark_ScarsTheGround_HalfItsSizeAcross()
         {
-            _mark.craterDepth = 0.8f;
+            _mark.scar.craterDepth = 0.8f;
             Land(new float3(5f, 0f, -2f));
             Land(new float3(9f, 0f, 0f), ImpactSurface.Water);
             Run(1.0);
@@ -147,8 +147,8 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
         [Test]
         public void AshMark_LeavesAStain_OnTheGroundOnly()
         {
-            _mark.ash = 0.6f;
-            _mark.rubble = 0.1f;
+            _mark.scar.ash = 0.6f;
+            _mark.scar.rubble = 0.1f;
             Land(new float3(5f, 0f, -2f));
             Land(new float3(9f, 0f, 0f), ImpactSurface.Water);
             Run(1.0);

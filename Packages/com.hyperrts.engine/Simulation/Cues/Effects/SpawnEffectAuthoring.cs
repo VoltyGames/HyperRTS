@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Death
+namespace HyperRTS.Simulation.Cues.Effects
 {
     /// <summary>Plays a particle effect once where this appears: put it on ruins, rubble and other remains.</summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Effects/Spawn Effect")]

@@ -1,6 +1,6 @@
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.Effects.Rig;
-using HyperRTS.Simulation.Cues.Surfaces;
+using HyperRTS.Simulation.Cues.Effects;
 using UnityEditor;
 using UnityEngine;
 
