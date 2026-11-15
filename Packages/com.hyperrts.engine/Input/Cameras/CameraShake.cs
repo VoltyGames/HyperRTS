@@ -18,6 +18,9 @@ namespace HyperRTS.Input.Cameras
         private const float SlowWave = 2f * Mathf.PI * 11f;
         private const float FastWave = 2f * Mathf.PI * 17f;
 
+        [Tooltip("Effect bursts near the focus shake the camera; a player setting.")]
+        public bool enabled = true;
+
         [Tooltip("Most the shake moves the camera, however many bursts stack.")]
         [Unit("m")]
         [Min(0.01f)]
@@ -43,10 +46,10 @@ namespace HyperRTS.Input.Cameras
         /// <summary>This frame's offset, applied on top of the camera's pose.</summary>
         public Pose Offset { get; private set; } = Pose.identity;
 
-        /// <summary>Takes the presented world's new jolts, then advances; with <paramref name="shakes"/> false it drops them all.</summary>
-        public void Step(bool shakes, Vector3 focus, float closeness, float deltaTime)
+        /// <summary>Takes the presented world's new jolts, then advances; while not <see cref="enabled"/> it drops them all.</summary>
+        public void Step(Vector3 focus, float closeness, float deltaTime)
         {
-            if (!shakes)
+            if (!enabled)
             {
                 _jolts.Clear();
                 Offset = Pose.identity;

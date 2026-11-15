@@ -62,9 +62,6 @@ namespace HyperRTS.Input.Cameras
         public CameraZoom zoom = new();
 
         [Header("Shake")]
-        [Tooltip("Effect bursts near the focus shake the camera; a player setting.")]
-        public bool shakes = true;
-
         public CameraShake shake = new();
 
         [Header("Tree Fade")]
@@ -140,7 +137,7 @@ namespace HyperRTS.Input.Cameras
             }
 
             // Game time, as the bursts that cause it run on, so a slow or paused frame never skips a shake.
-            shake.Step(shakes, _focus, zoom.min / _height, Time.deltaTime);
+            shake.Step(_focus, zoom.min / _height, Time.deltaTime);
 
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             var camera = _actions.Camera;

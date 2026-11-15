@@ -55,7 +55,8 @@ namespace HyperRTS.Presentation.Tests.Cameras
             shake.Add(new CameraJolt(Focus, 5f), Focus, 1f);
             shake.Advance(Step);
 
-            shake.Step(false, Focus, 1f, Step);
+            shake.enabled = false;
+            shake.Step(Focus, 1f, Step);
             Assert.AreEqual(Pose.identity, shake.Offset);
             shake.Advance(Step);
             Assert.AreEqual(Vector3.zero, shake.Offset.position);
