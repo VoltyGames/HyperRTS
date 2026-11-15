@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         // Spawned groups stand on a square grid this far apart, so they don't start inside each other.
         private const float Spacing = 6f;
 
-        /// <summary>Entity prefabs that can be spawned: everything producers, builders and death spawns reference.</summary>
+        /// <summary>Entity prefabs that can be spawned: everything producers, builders and remains reference.</summary>
         public static NativeArray<Entity> Prefabs(EntityManager entityManager)
         {
             using var query = new EntityQueryBuilder(Allocator.Temp).WithAll<EntityInfo, Prefab>()

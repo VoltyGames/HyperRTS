@@ -45,7 +45,7 @@ the recompute is in [Combat](combat.md#stats).
 ## GameEntities
 
 `GameEntityAuthoring` is the base of unit and building authoring: name, icon, owner, health, vision, cost, build time,
-prerequisites and death spawn. `TeamStripAuthoring` sets the height band where the owner's colour shows, for buildings
+prerequisites and remains. `TeamStripAuthoring` sets the height band where the owner's colour shows, for buildings
 painted in strips.
 
 ## MatchStart

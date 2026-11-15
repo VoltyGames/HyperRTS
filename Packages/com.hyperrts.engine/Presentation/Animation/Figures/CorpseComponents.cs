@@ -81,7 +81,6 @@ namespace HyperRTS.Presentation.Animation.Figures
         public int SpawnNumber;
 
         public byte Owner;
-        public float3 Position;
         public bool Died;
 
         /// <summary>Clock time the death cue named it.</summary>

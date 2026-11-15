@@ -17,9 +17,10 @@ namespace HyperRTS.Simulation.Common.Systems
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            // Read-only scan, so a chunk's change version moves only when a number is given.
+            // Read-only scan of changed chunks, which new entities mark; a chunk's version moves only when a number is given.
             var unnumbered = new NativeList<Entity>(Allocator.Temp);
-            foreach (var (number, entity) in SystemAPI.Query<RefRO<SpawnNumber>>().WithEntityAccess())
+            foreach (var (number, entity) in SystemAPI.Query<RefRO<SpawnNumber>>().WithChangeFilter<SpawnNumber>()
+                         .WithEntityAccess())
             {
                 if (number.ValueRO.Value == 0)
                 {

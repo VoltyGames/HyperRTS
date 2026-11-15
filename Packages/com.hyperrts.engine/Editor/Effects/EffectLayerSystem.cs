@@ -11,7 +11,6 @@ namespace HyperRTS.Editor.Effects
     public sealed class EffectLayerSystem
     {
         public const string Includes = "Packages/com.hyperrts.engine/Presentation/Effects/Shaders/";
-        private const float Gravity = 9.81f;
 
         private readonly GraphModel _graph;
         private readonly EffectLayer _layer;
@@ -164,7 +163,7 @@ namespace HyperRTS.Editor.Effects
             if (_layer.gravity != 0f)
             {
                 var gravity = _graph.Block(update, "Gravity");
-                _graph.Slot(gravity, "Force", new Vector3(0f, -Gravity * _layer.gravity, 0f));
+                _graph.Slot(gravity, "Force", new Vector3(0f, -Gravity.Acceleration * _layer.gravity, 0f));
             }
 
             if (_layer.drag > 0f)

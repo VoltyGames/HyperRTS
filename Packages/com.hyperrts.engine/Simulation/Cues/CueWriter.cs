@@ -82,6 +82,11 @@ namespace HyperRTS.Simulation.Cues
             byte variant = 0)
         {
             var typeId = TypeIdFor(source, slot, variant);
+            if (typeId == 0)
+            {
+                return false;
+            }
+
             var number = _numbers.TryGetComponent(source, out var spawn) ? spawn.Value : 0;
             return Add(new CueEvent
             {
