@@ -76,6 +76,9 @@ namespace HyperRTS.Editor.Effects
         [Tooltip("How much of the thin smoke the erosion map eats: 0 none, 1 all of it where the noise is white.")]
         [Range(0f, 1f)] public float erosion;
 
+        [Tooltip("Share of a six-way quad's height, from its bottom edge, that fades in, hiding the flat base a column sheet is cut at.")]
+        [Range(0f, 1f)] public float baseFade;
+
         [Tooltip("The chunks a debris layer draws, 1 to 4 meshes.")]
         public List<Mesh> meshes = new();
 

@@ -47,6 +47,9 @@
         },
         {
             "m_Id": "e576811606f2442f89de0fdf3f3962c2"
+        },
+        {
+            "m_Id": "71c3842046004c0bb21cdf9e985777b7"
         }
     ],
     "m_Keywords": [
@@ -150,6 +153,9 @@
         },
         {
             "m_Id": "7d346c5a0b454559a1b8e31ef52feba5"
+        },
+        {
+            "m_Id": "328e490a82e84864ab5f028c498f5690"
         }
     ],
     "m_GroupDatas": [],
@@ -412,7 +418,7 @@
                 "m_Node": {
                     "m_Id": "c9a37b76fed44a8da9214243e2863316"
                 },
-                "m_SlotId": 20
+                "m_SlotId": 21
             },
             "m_InputSlot": {
                 "m_Node": {
@@ -426,7 +432,7 @@
                 "m_Node": {
                     "m_Id": "c9a37b76fed44a8da9214243e2863316"
                 },
-                "m_SlotId": 21
+                "m_SlotId": 22
             },
             "m_InputSlot": {
                 "m_Node": {
@@ -461,6 +467,20 @@
                     "m_Id": "c9a37b76fed44a8da9214243e2863316"
                 },
                 "m_SlotId": 19
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "328e490a82e84864ab5f028c498f5690"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "c9a37b76fed44a8da9214243e2863316"
+                },
+                "m_SlotId": 20
             }
         }
     ],
@@ -1615,7 +1635,7 @@
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
     "m_ObjectId": "7af2779a1f9e4201b17b95d7df116796",
-    "m_Id": 20,
+    "m_Id": 21,
     "m_DisplayName": "Color",
     "m_SlotType": 1,
     "m_Hidden": false,
@@ -2364,6 +2384,9 @@
             "m_Id": "c34ea7f3ae9a420c9a48d0e03c3cc52d"
         },
         {
+            "m_Id": "36101a92c2884bfab225de3a79ce2115"
+        },
+        {
             "m_Id": "7af2779a1f9e4201b17b95d7df116796"
         },
         {
@@ -2669,7 +2692,7 @@
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "e534c11af00644b2a7a54757c98df3c5",
-    "m_Id": 21,
+    "m_Id": 22,
     "m_DisplayName": "Alpha",
     "m_SlotType": 1,
     "m_Hidden": false,
@@ -2745,6 +2768,9 @@
         },
         {
             "m_Id": "e576811606f2442f89de0fdf3f3962c2"
+        },
+        {
+            "m_Id": "71c3842046004c0bb21cdf9e985777b7"
         }
     ]
 }
@@ -3118,6 +3144,100 @@
     "m_SlotType": 0,
     "m_Hidden": false,
     "m_ShaderOutputName": "Erosion",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "71c3842046004c0bb21cdf9e985777b7",
+    "m_Guid": {
+        "m_GuidSerialized": "36e58d3c-166b-4913-903f-46099becee7b"
+    },
+    "m_Name": "BaseFade",
+    "m_DefaultRefNameVersion": 1,
+    "m_RefNameGeneratedByDisplayName": "BaseFade",
+    "m_DefaultReferenceName": "_BaseFade",
+    "m_OverrideReferenceName": "BaseFade",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_Value": 0.0,
+    "m_FloatType": 0,
+    "m_RangeValues": {
+        "x": 0.0,
+        "y": 1.0
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "328e490a82e84864ab5f028c498f5690",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Property",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -900.0,
+            "y": 960.0,
+            "width": 0.0,
+            "height": 0.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "d2c84c5731cb447cb792542250115338"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": false,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "71c3842046004c0bb21cdf9e985777b7"
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "d2c84c5731cb447cb792542250115338",
+    "m_Id": 0,
+    "m_DisplayName": "BaseFade",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "BaseFade",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "36101a92c2884bfab225de3a79ce2115",
+    "m_Id": 20,
+    "m_DisplayName": "BaseFade",
+    "m_SlotType": 0,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "BaseFade",
     "m_StageCapability": 3,
     "m_Value": 0.0,
     "m_DefaultValue": 0.0,

@@ -143,6 +143,8 @@ namespace HyperRTS.Editor.Effects
                 _graph.Slot(output, "Erosion", _layer.erosion);
             }
 
+            _graph.Slot(output, "BaseFade", _layer.baseFade);
+
             if (_layer.flipbook.IsSet)
             {
                 _graph.Slot(output, "FlipbookSize", new Vector2(_layer.flipbook.columns, _layer.flipbook.rows));

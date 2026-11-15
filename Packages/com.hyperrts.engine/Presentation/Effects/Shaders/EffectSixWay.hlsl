@@ -34,12 +34,18 @@ half SixWayErode(half opacity, TEXTURE2D_PARAM(noiseMap, noiseSampler), float2 u
     half eaten = noise * erosion;
     return saturate((opacity - eaten) / max(1.0h - eaten, 0.001h));
 }
+
+// Fades a quad in from its bottom edge over a share of its height, hiding the flat base a column sheet is cut at.
+half SixWayBaseFade(float y, float share)
+{
+    return share > 0.0 ? smoothstep(0.0, share, y) : 1.0h;
+}
 #endif
 
 void EffectSixWay_float(float2 UV, float3 WorldPosition, float3 Normal, float3 Tangent, float3 Bitangent,
     UnityTexture2D PositiveMap, UnityTexture2D NegativeMap, UnityTexture2D MotionMap, UnityTexture2D EmissionRamp,
     float2 FlipbookSize, float Frame, float3 ParticleColor, float ParticleAlpha, float Opacity, float AmbientStrength,
-    float3 EmissionColor, float Heat, float SoftDistance, UnityTexture2D ErosionMap, float Erosion,
+    float3 EmissionColor, float Heat, float SoftDistance, UnityTexture2D ErosionMap, float Erosion, float BaseFade,
     out float3 Color, out float Alpha)
 {
 #ifdef SHADERGRAPH_PREVIEW
@@ -62,7 +68,7 @@ void EffectSixWay_float(float2 UV, float3 WorldPosition, float3 Normal, float3 T
     float eyeDepth = LinearEyeDepth(WorldPosition, GetWorldToViewMatrix());
     half soft = saturate((EyeDepth(SampleSceneDepth(screenUV)) - eyeDepth) / max(SoftDistance, 0.001));
     half near = saturate((eyeDepth - SIX_WAY_NEAR_FADE_START) / (SIX_WAY_NEAR_FADE_END - SIX_WAY_NEAR_FADE_START));
-    half fade = ParticleAlpha * soft * near;
+    half fade = ParticleAlpha * soft * near * SixWayBaseFade(UV.y, BaseFade);
     half alpha = saturate(opacity * Opacity) * fade;
 
     // Rows are the particle basis: X right, Y up, Z toward the camera.

@@ -48,7 +48,8 @@ until it has one.
 
 `distort` layers refract the opaque texture through `HyperRTS/EffectDistort`, which needs the camera's opaque and depth
 textures. `sixway` and `ring` layers are lit through `HyperRTS/EffectSixWay`. A six-way layer's `erosion` eats its thin smoke
-where the tiling `erosionMap` noise is high, so edges break up finer than the sheet; at 0 the layer draws as baked.
+where the tiling `erosionMap` noise is high, so edges break up finer than the sheet; at 0 the layer draws as baked. Its `baseFade`
+fades the quad in from its bottom edge, hiding the flat base a looping column sheet is cut at.
 
 All reflection into VFX Graph's editor model sits in `GraphModel`. `EffectGraphBuilder.Problem` names a missing or stale
 graph, and `EffectGraphBuilder.ShaderErrors` compiles a built graph's shaders so tests catch errors before first draw.
