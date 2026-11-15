@@ -61,12 +61,15 @@ namespace HyperRTS.Editor.Effects.Graph
                 _picker.PickChannel(initialize, "scale", "Y", new FloatRange(_layer.aspect, _layer.aspect));
             }
 
-            PickColor(initialize);
+            _picker.PickColor(initialize, _layer.color);
             if (_layer.kind == EffectLayerKind.Debris)
             {
                 _picker.PickPerAxis(initialize, "angle", new FloatRange(0f, 360f));
                 _picker.PickPerAxis(initialize, "angularVelocity", _layer.spin);
-                PickMesh(initialize);
+                if (_layer.debris.meshes.Count > 1)
+                {
+                    _picker.PickIndex(initialize, "meshIndex", _layer.debris.meshes.Count);
+                }
             }
             else
             {
@@ -113,28 +116,6 @@ namespace HyperRTS.Editor.Effects.Graph
             _graph.Slot(emit, "axis", _layer.ShapeAxis);
             _graph.Slot(emit, "shapeScale", _layer.ShapeScale);
             _graph.Slot(emit, "ground", _layer.groundHeight);
-        }
-
-        private void PickColor(object context)
-        {
-            var block = _graph.Block(context, "SetAttribute");
-            _graph.Set(block, "attribute", "color");
-            var min = _layer.color.min.linear;
-            var max = _layer.color.max.linear;
-            _picker.Values(block, min == max, new Vector3(min.r, min.g, min.b), new Vector3(max.r, max.g, max.b));
-        }
-
-        // Truncating a uniform pick over 0 to count gives each mesh an even share.
-        private void PickMesh(object context)
-        {
-            if (_layer.debris.meshes.Count < 2)
-            {
-                return;
-            }
-
-            var block = _graph.Block(context, "SetAttribute");
-            _graph.Set(block, "attribute", "meshIndex");
-            _picker.Values(block, false, 0u, (uint)_layer.debris.meshes.Count);
         }
     }
 }

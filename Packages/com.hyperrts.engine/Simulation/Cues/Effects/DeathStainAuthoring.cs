@@ -13,7 +13,8 @@ namespace HyperRTS.Simulation.Cues.Effects
     [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class DeathStainAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Metres from where it dies the stain reaches, about half the hull's length.")]
+        [Tooltip("Metres from where it dies to the crater's rim, about half the hull's length; " +
+                 "scorch and stains spread a quarter wider.")]
         [Min(0.1f)]
         public float radius = 3f;
 

@@ -36,10 +36,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn). The stain covers the scorch's reach.</summary>
         public void AddScar(float2 center, in GroundScar scar, float radius)
         {
-            var reach = scar.scorch > 0f ? radius * ScorchReach : radius;
             if (scar.LeavesStain)
             {
-                AddStain(center, reach, scar.Stain);
+                AddStain(center, radius * ScorchReach, scar.Stain);
             }
 
             if (scar.craterDepth <= 0f && scar.scorch <= 0f)
@@ -47,6 +46,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
                 return;
             }
 
+            var reach = scar.scorch > 0f ? radius * ScorchReach : radius;
             Trample.Add(Disc(center, reach, new float4(1f, 1f, 0f, 1f)));
             var depth = math.saturate(scar.craterDepth / MaxCraterDepth);
             Scars.Add(Disc(center, reach, new float4(depth, math.saturate(scar.scorch), radius / reach, 1f)));
