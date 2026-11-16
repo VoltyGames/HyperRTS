@@ -150,6 +150,8 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     Group = destination.Group,
                     Facing = facing,
                     Heading = moving ? math.normalizesafe(destination.Value.xz - transform.Position.xz) : float2.zero,
+                    GoalDistance = moving ? math.distance(destination.Value.xz, transform.Position.xz) : 0f,
+                    IsGivingWay = moving && destination.GivingWay,
                     Velocity = velocity.Value,
                     IsBuilding = BuildingLookup.HasComponent(entity),
                     Layer = agent.Layer,

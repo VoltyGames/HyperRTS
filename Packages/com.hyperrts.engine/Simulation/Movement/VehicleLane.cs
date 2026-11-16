@@ -9,7 +9,8 @@ namespace HyperRTS.Simulation.Movement
 {
     /// <summary>
     /// The lane ahead of a moving vehicle: its hull's width with spacing, from its centre to its braking distance
-    /// past the nose and a lead. Allied foot units leave it, a squad by as far as its members stand out.
+    /// past the nose and a lead, and no further than its goal. Allied foot units and parked idle vehicles leave it,
+    /// a squad by as far as its members stand out and a hull by its length.
     /// </summary>
     public struct VehicleLane
     {
@@ -61,10 +62,16 @@ namespace HyperRTS.Simulation.Movement
         // Metres from the unit to the lane's nearer edge; zero or less outside the lane.
         private readonly float Depth(in SpatialEntry vehicle, in SpatialEntry unit, float2 travel)
         {
+            if (vehicle.IsGivingWay)
+            {
+                return 0f;
+            }
+
             var offset = unit.Position.xz - vehicle.Position.xz;
-            var reach = unit.Radius + Spread(unit.Entity);
+            var reach = unit.Radius + math.length(unit.SegmentAxis) + Spread(unit.Entity);
             var along = math.dot(offset, travel);
-            if (along <= 0f || along > vehicle.HullReach + Ahead(vehicle) + reach)
+            var length = vehicle.HullReach + math.min(Ahead(vehicle), vehicle.GoalDistance);
+            if (along <= 0f || along > length + reach)
             {
                 return 0f;
             }

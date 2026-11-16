@@ -25,11 +25,8 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>A mover touched an arrived groupmate lying toward its goal, so it has arrived too.</summary>
         public bool ReachedGroup;
 
-        /// <summary>A vehicle done waiting on allied foot units, which no longer hold it until it is clear of them.</summary>
-        public bool PassesInfantry;
-
-        /// <summary>An allied foot unit stands in this moving vehicle's lane, so it slows to a walk.</summary>
-        public bool InfantryAhead;
+        /// <summary>The vehicle lanes round it: its step or way out of an ally's, and who stands in its own.</summary>
+        public LaneWatch Lane;
 
         /// <summary>The nearest neighbours a mover steers round.</summary>
         public AvoidanceList Neighbours;
@@ -38,9 +35,6 @@ namespace HyperRTS.Simulation.Movement
         private const float FlightClearance = 4f;
 
         private HullClearance _room;
-        private bool _infantryTouches;
-        private bool _othersTouch;
-        private bool _infantryNear;
 
         public CrowdVisitor(in SpatialEntry unit, in MoveDestination destination, in RightOfWay rule)
         {
@@ -50,13 +44,9 @@ namespace HyperRTS.Simulation.Movement
             Rule = rule;
             Push = float2.zero;
             ReachedGroup = false;
-            PassesInfantry = false;
-            InfantryAhead = false;
+            Lane = default;
             Neighbours = default;
             _room = default;
-            _infantryTouches = false;
-            _othersTouch = false;
-            _infantryNear = false;
         }
 
         public readonly float2 Position => Unit.Position.xz;
@@ -72,25 +62,17 @@ namespace HyperRTS.Simulation.Movement
 
         /// <summary>
         /// A mover looks as far as two units closing at top speed cover within the steering horizon, and a foot unit
-        /// near a moving vehicle far enough to see its lane.
+        /// or a parked vehicle near a moving vehicle far enough to see its lane.
         /// </summary>
         public readonly float Reach(float maxSpeed, bool nearVehicleLane)
         {
-            var sight = !Unit.IsVehicle && nearVehicleLane ? SpatialIndex.LaneSight : 0f;
+            var watches = !Unit.IsVehicle || !Moving;
+            var sight = watches && nearVehicleLane ? SpatialIndex.LaneSight : 0f;
             var closing = Moving ? maxSpeed * Steering.Horizon * 2f : 0f;
             return Unit.HullReach + math.max(closing, sight);
         }
 
         public readonly bool HasNeighbours => Neighbours.Count > 0;
-
-        /// <summary>Allied foot units stand in its lane, or it is driving through them, so it keeps to a walk.</summary>
-        public readonly bool WalksForInfantry => InfantryAhead || (PassesInfantry && _infantryNear);
-
-        /// <summary>Allied foot units alone stop this vehicle: one touches it in its lane and nothing else does.</summary>
-        public readonly bool IsHeldByInfantry => _infantryTouches && !_othersTouch;
-
-        /// <summary>An allied foot unit is within this vehicle's spacing, so it is not yet clear of them.</summary>
-        public readonly bool IsNearInfantry => _infantryNear;
 
         public void Visit(in SpatialEntry entry)
         {
@@ -105,7 +87,7 @@ namespace HyperRTS.Simulation.Movement
             var reach = Radius + entry.Radius + math.max(Unit.Spacing, entry.Spacing);
             var precedence = Rule.Precedence(Unit, entry);
             var entryYields = Rule.Yields(entry, Unit);
-            WatchLane(entry, distance < reach, entryYields);
+            Push += Lane.Watch(Rule, Unit, entry, distance < reach, entryYields);
             if (Moving)
             {
                 Gather(entry, distanceSq, distance, reach, precedence, entryYields);
@@ -118,7 +100,7 @@ namespace HyperRTS.Simulation.Movement
                 return;
             }
 
-            _infantryNear |= Unit.IsVehicle && !entry.IsVehicle && entryYields;
+            Lane.SeeInfantryNear(Unit.IsVehicle && !entry.IsVehicle && entryYields);
             var direction = Unit.DirectionAway(offset, distance, entry);
             // Parked pairs only part, and a mover presses aside a unit giving way to it, so neither limits the move.
             if (Moving ? !Presses(entry, entryYields) : entry.IsMoving)
@@ -183,40 +165,16 @@ namespace HyperRTS.Simulation.Movement
             });
         }
 
-        // A foot unit steps out of an allied vehicle's lane; a vehicle notes who stands in its own.
-        private void WatchLane(in SpatialEntry entry, bool touching, bool entryYields)
-        {
-            if (!Unit.IsVehicle)
-            {
-                if (entry.IsVehicle && entry.IsMoving && Rule.Yields(Unit, entry))
-                {
-                    Push += Rule.Lane.StepAside(entry, Unit);
-                }
-
-                return;
-            }
-
-            if (!Moving || !Rule.Lane.Holds(Unit, entry))
-            {
-                return;
-            }
-
-            var infantry = !entry.IsVehicle && entryYields;
-            InfantryAhead |= infantry;
-            _infantryTouches |= infantry && touching;
-            _othersTouch |= !infantry && touching;
-        }
-
-        // A mover presses aside a parked unit giving way, as the push moves it; a vehicle presses foot units only once
-        // done waiting on them.
+        // A mover presses aside a parked foot unit giving way, as the push moves it; a vehicle presses foot units only
+        // once done waiting on them, and nothing presses a vehicle, which drives out of the way itself.
         private readonly bool Presses(in SpatialEntry entry, bool entryYields)
         {
-            if (!entryYields)
+            if (!entryYields || entry.IsVehicle)
             {
                 return false;
             }
 
-            return Unit.IsVehicle && !entry.IsVehicle ? PassesInfantry : !entry.IsMoving;
+            return Unit.IsVehicle ? Lane.PassesInfantry : !entry.IsMoving;
         }
 
         // A mover arrives by touching an arrived groupmate and waits against a unit on its goal, so it avoids neither.
@@ -253,24 +211,29 @@ namespace HyperRTS.Simulation.Movement
             var overlap = reach - distance;
             ReachedGroup |= Moving && IsArrivedGroupmate(entry) &&
                             math.dot(entry.Position.xz - Position, Goal - Position) > 0f;
+            var push = float2.zero;
             // The push never moves a vehicle off a foot unit, so the foot unit takes the whole overlap.
             if (Unit.IsVehicle != entry.IsVehicle)
             {
-                Push += direction * (overlap * Rule.PushShare(Unit, entry, entryYields));
+                push = direction * (overlap * Rule.PushShare(Unit, entry, entryYields));
             }
             else if (Moving)
             {
-                Push += direction * MoverPush(entry, distance, reach, precedence, entryYields);
+                push = direction * MoverPush(entry, distance, reach, precedence, entryYields);
             }
             else if (!entry.IsMoving)
             {
-                Push += direction * (overlap * 0.5f);
+                push = direction * (overlap * 0.5f);
             }
             else if (Rule.Yields(Unit, entry))
             {
                 var aside = RightOfWay.Side(entry.Facing, Position - entry.Position.xz);
-                Push += math.normalizesafe(direction + aside) * (overlap * 0.5f);
+                push = math.normalizesafe(direction + aside) * (overlap * 0.5f);
             }
+
+            // A parked vehicle only rolls along its hull, and slides sideways only out of a hull it stands in.
+            var rolls = Unit.IsVehicle && !Moving && distance >= Radius + entry.Radius;
+            Push += rolls ? Unit.Facing * math.dot(push, Unit.Facing) : push;
         }
 
         // Same-way traffic makes its spacing by the follower alone, but inside the leader's own reach both part half

@@ -34,11 +34,12 @@ namespace HyperRTS.Simulation.Tests.Movement
             World.Command(1, new PlayerCommand { Type = CommandType.Move, Position = goal });
         }
 
+        // Every ordered move has ended; a parked unit making way for the last of them is not on an order.
         protected bool AllArrived(List<Entity> units)
         {
             foreach (var unit in units)
             {
-                if (World.IsEnabled<MoveDestination>(unit))
+                if (World.IsEnabled<MoveDestination>(unit) && !World.Get<MoveDestination>(unit).GivingWay)
                 {
                     return false;
                 }
@@ -105,12 +106,19 @@ namespace HyperRTS.Simulation.Tests.Movement
             return $"{moving.Count} still moving: {string.Join("; ", moving)}";
         }
 
-        protected void AssertNoneStalled(List<Entity> units)
+        // A unit may give up only beside its goal, where a groupmate stands on it: nothing is shoved off a slot.
+        protected void AssertNoneStalledShort(List<Entity> units, float near)
         {
             foreach (var unit in units)
             {
-                Assert.AreNotEqual(ArrivalReason.Stalled, World.Get<Arrival>(unit).Reason,
-                    $"{unit} gave up at {World.GetPosition(unit)}");
+                if (World.Get<Arrival>(unit).Reason != ArrivalReason.Stalled)
+                {
+                    continue;
+                }
+
+                var goal = World.Get<MoveDestination>(unit).Value;
+                var at = World.GetPosition(unit);
+                Assert.Less(math.distance(at.xz, goal.xz), near, $"{unit} gave up at {at}, short of {goal}");
             }
         }
     }

@@ -65,7 +65,27 @@ namespace HyperRTS.Simulation.Movement
             var stalled = HasStalled(chunk, index, ref frame, capsule, depth);
             Movers.Finish(chunk, index, ref frame, stalled, step, !transform.Position.xz.Equals(wanted));
             TurnOrBackOut(chunk, index, ref frame, capsule, facing, heading);
+            GiveWay(chunk, index, frame.Crowd.Lane.WayOut);
             chunk.Velocities[index].Value = (transform.Position.xz - from) / Movers.DeltaTime;
+        }
+
+        // A parked vehicle in an allied mover's lane drives out of it, since the push never slides it aside.
+        private static void GiveWay(in MoverChunk chunk, int index, float2 wayOut)
+        {
+            var moving = chunk.Moving(index);
+            if (moving.ValueRO || wayOut.Equals(float2.zero))
+            {
+                return;
+            }
+
+            // It stays in its formation's group, so groupmates still arrive against it where it ends up.
+            ref var destination = ref chunk.Destinations[index];
+            var goal = chunk.Transforms[index].Position + new float3(wayOut.x, 0f, wayOut.y);
+            destination = new MoveDestination
+            {
+                Value = goal, Group = destination.Group, Extent = destination.Extent, GivingWay = true,
+            };
+            moving.ValueRW = true;
         }
 
         // A hull that can't turn where it stands backs out, which the next frame's state carries.

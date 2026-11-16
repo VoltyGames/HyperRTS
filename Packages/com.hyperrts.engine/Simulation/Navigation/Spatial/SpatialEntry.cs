@@ -35,6 +35,12 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// <summary>Unit direction on XZ from it to its move goal while it moves, else zero.</summary>
         public float2 Heading;
 
+        /// <summary>Metres on XZ from it to its move goal while it moves, else zero.</summary>
+        public float GoalDistance;
+
+        /// <summary>Its move is <see cref="MoveDestination.GivingWay"/>.</summary>
+        public bool IsGivingWay;
+
         /// <summary>Last frame's <see cref="Velocity"/>; zero for entities without one.</summary>
         public float2 Velocity;
 

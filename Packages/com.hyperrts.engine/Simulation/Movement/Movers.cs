@@ -53,12 +53,10 @@ namespace HyperRTS.Simulation.Movement
             var entry = chunk.Entry(index, moving);
             var from = entry.Position.xz;
             var facing = entry.Facing;
-            var crowd = new CrowdVisitor(entry, chunk.Destinations[index], RightOfWay)
-            {
-                PassesInfantry = drive.PassesInfantry,
-            };
+            var crowd = new CrowdVisitor(entry, chunk.Destinations[index], RightOfWay);
+            crowd.Lane.PassesInfantry = drive.PassesInfantry;
             Index.QueryHulls(crowd.Center, crowd.Reach(top, Index.IsNearVehicleLane(crowd.Center)), ref crowd);
-            var pace = crowd.WalksForInfantry ? math.min(top, RightOfWay.WalkingPace) : top;
+            var pace = crowd.Lane.WalksForInfantry ? math.min(top, RightOfWay.WalkingPace) : top;
             return new MoveFrame
             {
                 From = from,
@@ -99,7 +97,7 @@ namespace HyperRTS.Simulation.Movement
 
             var moved = chunk.Transforms[index].Position.xz - frame.From;
             frame.Driver.State.Hit(moved, step, walled);
-            frame.Driver.State.WaitOnInfantry(frame.Crowd.IsHeldByInfantry, !frame.Crowd.IsNearInfantry,
+            frame.Driver.State.WaitOnInfantry(frame.Crowd.Lane.IsHeldByInfantry, !frame.Crowd.Lane.IsNearInfantry,
                 math.length(moved), DeltaTime);
             var drives = chunk.Drives;
             drives[index] = frame.Driver.State;

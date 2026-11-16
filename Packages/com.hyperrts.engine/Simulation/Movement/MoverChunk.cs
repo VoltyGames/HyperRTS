@@ -51,6 +51,8 @@ namespace HyperRTS.Simulation.Movement
                 Group = Destinations[index].Group,
                 Facing = facing,
                 Heading = moving ? math.normalizesafe(Destinations[index].Value.xz - position) : float2.zero,
+                GoalDistance = moving ? math.distance(Destinations[index].Value.xz, position) : 0f,
+                IsGivingWay = moving && Destinations[index].GivingWay,
                 Velocity = Velocities[index].Value,
                 Layer = agent.Layer,
                 SegmentAxis = facing * agent.HalfSegment,

@@ -22,6 +22,9 @@ namespace HyperRTS.Editor.Maps.Geometry
         /// <summary>Length of the crossing from bank to bank.</summary>
         public float Span { get; set; }
 
+        /// <summary>Length of level ground a bridge's prefab covers past each end of its span, as its approach slabs do.</summary>
+        public float Landing { get; set; }
+
         /// <summary>Surface height units cross at: a bridge deck, or just under the water over a ford.</summary>
         public float Height { get; set; }
 

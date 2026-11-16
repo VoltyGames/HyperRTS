@@ -110,17 +110,24 @@ namespace HyperRTS.Simulation.Movement
                 return mover.IsVehicle;
             }
 
+            // A vehicle making way has no right of way of its own, or parked vehicles would scatter in a chain.
+            if (mover.IsGivingWay)
+            {
+                return false;
+            }
+
             return !unit.IsMoving && IsIdle(unit.Entity);
         }
 
         /// <summary>
-        /// The mover's part of steering round <paramref name="other"/>: none when the other gives way, so it isn't
+        /// The mover's part of steering round <paramref name="other"/>: none when a foot unit gives way, so it isn't
         /// steered round; all against a unit holding its ground, in same-way traffic or against a mover that
         /// outweighs it. Allied vehicles crossing or meeting head-on choose one winner; other pairs share half each.
         /// </summary>
         public readonly float Share(in SpatialEntry mover, in SpatialEntry other, bool otherYields, int precedence)
         {
-            if (otherYields)
+            // A vehicle giving way drives off by itself, so until it has it is steered round like any other.
+            if (otherYields && !other.IsVehicle)
             {
                 return 0f;
             }

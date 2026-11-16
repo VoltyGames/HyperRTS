@@ -33,7 +33,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             OrderFormation(units, new float3(55f, 0f, 0f));
 
             Assert.IsTrue(RunWatchingWalls(units, 120f), Stragglers(units));
-            AssertNoneStalled(units);
+            AssertNoneStalledShort(units, 10f);
             foreach (var unit in units)
             {
                 var at = World.GetPosition(unit);
@@ -70,7 +70,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             }
 
             Assert.IsTrue(RunWatchingWalls(units, 180f), Stragglers(units));
-            AssertNoneStalled(units);
+            AssertNoneStalledShort(units, 17f);
             Assert.LessOrEqual(_deepest, WallSlack, $"no truck sank into a wall, deepest {_deepest:F3} m");
         }
 

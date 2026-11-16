@@ -138,6 +138,12 @@ namespace HyperRTS.Simulation.Navigation.Agents
         /// </summary>
         public bool Backward;
 
+        /// <summary>
+        /// A parked vehicle's own move out of an allied mover's lane: it has no lane of its own and no vehicle gives
+        /// way to it. Any order replaces it.
+        /// </summary>
+        public bool GivingWay;
+
         /// <summary>Whether locomotion already heads within <paramref name="tolerance"/> of the goal, so a rewrite would only restart pathing.</summary>
         public readonly bool IsHeadingTo(EnabledRefRW<MoveDestination> moving, float3 goal, float tolerance) =>
             moving.ValueRO && math.distancesq(Value.xz, goal.xz) < tolerance * tolerance;

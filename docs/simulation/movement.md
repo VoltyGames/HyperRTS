@@ -64,7 +64,7 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
   of the target is `ApproachState.Stuck`, and the order finishes; a gather order walks up again instead. A target
   that moved off is walked to again. A new order clears the last `Arrival`.
 - **Spatial index.** `SpatialIndex` answers range queries over living entities from a grid of 8 m cells rebuilt each
-  frame, meeting neighbours in the same order every run. Entries wider than a cell go in a short `Oversized` list.
+  frame, meeting neighbours in the same order every run. 
 
 ## Movement
 
@@ -79,15 +79,13 @@ A moving unit steers by sampling (`Steering`): it scores candidate velocities ag
   Avoidance never changes its gear. An instant unit tries directions,
   speeds and its last choice. Both can wait.
 - **Cost.** Predicted footprint overlap over the next 1.5 s, sooner counting more, with moving neighbours scored
-  RVO-style, plus the wall term and small penalties for straying, standing still and swerving left, so a head-on pair
-  both keep right.
+  RVO-style, plus the wall term and small penalties for straying, standing still and swerving left.
 - **Skipping.** The planned velocity is taken without sampling when it hits nothing. Parked units never steer. A
   three-point turn or a back-off skips steering, yet stands if driving on would run deeper into a
   neighbour than standing.
 
 The chosen velocity goes to `Locomotion` as the heading and speed to drive ([driving](driving.md)). Layers that can't
-block each other ignore each other: aircraft meet only aircraft, and only those near their own height. The same query feeds the overlap push, which moves neighbours
-apart along the line between their closest points until the larger of their spacings lies between them. Hulls never
+block each other ignore each other: aircraft meet only aircraft, and only those near their own height. The same query feeds the overlap push, which moves foot units and moving vehicles apart along the line between their closest points until the larger of their spacings lies between them. Hulls never
 meet: each unit's whole move closes on a neighbour by at most half the room between hulls (`HullClearance`). Each
 formation slot is sized by its own unit's footprint, a squad's with its members' spread, and a slot in a building or off the unit's ground moves to the
 nearest spot the unit fits and can reach.
@@ -100,18 +98,21 @@ in tonnes, sets each unit's weight.
   that another outweighs by half again takes all the avoiding on itself. Allied vehicles crossing paths or meeting
   head-on choose one winner: a substantially heavier vehicle goes first, otherwise entity index breaks the tie. The
   other takes all the avoiding, while hull clearance still prevents contact for both.
-- **Idle units** step aside for an allied mover of their own kind and stay where pushed.
+- **Idle units** make way for an allied mover of their own kind and stay where they end up. A foot unit is pushed
+  aside. A parked vehicle is never slid sideways: in a moving vehicle's lane it gives itself a move out of it
+  (`MoveDestination.GivingWay`), which has no lane of its own, and movers steer round vehicles. A vehicle that
+  finds a groupmate on its slot stops beside it.
 - **Foot units and vehicles.** A vehicle is a unit with `LocomotionAuthoring` (`NavAgent.IsVehicle`); every other
   ground unit is on foot. The push never moves a vehicle off a foot unit: the foot unit takes the whole overlap.
   A foot unit always gives way to an allied vehicle, whatever its order or stance, and leaves a moving one's lane
-  (`VehicleLane`: its hull's width, out to its braking distance and a few metres more) before the vehicle reaches
+  (`VehicleLane`: its hull's width, out to its braking distance and a few metres more, no further than its goal) before the vehicle reaches
   it, a squad by as far as its members stand out. It steps aside and as far on ahead, so where a railing shuts the
   side, as on a bridge, it walks on in front, never faster than it runs. Only
   foot units near a moving vehicle (`SpatialIndex.IsNearVehicleLane`) look that far. The
   vehicle slows to `RightOfWay.WalkingPace` while one stands in its lane and still stops at its hull. Held 2 s by
   allied foot units alone, it drives through them at a walk until it is clear of them.
 - **Busy units.** A parked unit with an order, a target or Hold Position and an enemy hold their ground: to the
-  mover they are fixed obstacles, so a truck never shoves a dozer that is building. A unit standing on the mover's
+  mover they are fixed obstacles. A unit standing on the mover's
   goal and an arrived groupmate are not avoided. A landed aircraft is never pushed, and aircraft in flight are well
   over it.
 - **Sunk units.** A unit sunk in walls, as when a building or wreck lands on it, drives out at its own top speed
@@ -124,12 +125,10 @@ in tonnes, sets each unit's weight.
   `MoveDestination` is then disabled and `Arrival` enabled, its `Reason` saying which, and `MoveOrderSystem` finishes
   its order. If anything else halts the unit, it points the unit at the goal again.
 - **Stuck.** `MoveProgress` measures improvement in the shortest remaining path distance. Turning earns a bounded allowance, which only getting closer renews. Without progress the whole path is planned again, with waits doubling. Near the path's end the unit gives up and
-  the goal is taken; a reversing vehicle first backs out (`MoveProgress.TryTurnOut`). Farther out a jam is traffic, so
-  a column queued at a bridge keeps its order.
+  the goal is taken; a reversing vehicle first backs out (`MoveProgress.TryTurnOut`). Farther out a jam is traffic.
 
 `BlockerAuthoring` makes remains such as a wreck solid: a capsule that never moves. It closes the land cells it
-covers, so paths go round it and nothing can be built on it. Water and decks stay, so ships pass under a wreck on a
-bridge. A unit caught in its cells as it appears drives out. A `Decay` wreck stops blocking once it starts to be
+covers, so paths go round it and nothing can be built on it. Water and decks stay. A unit caught in its cells as it appears drives out. A `Decay` wreck stops blocking once it starts to be
 buried.
 
 ## Air
@@ -149,7 +148,7 @@ It eases into and out of climbs and reads the ground two seconds ahead, so it ri
 only builds a pad-using aircraft when a pad of its kind is free, and the aircraft starts docked on it
 (`AirfieldPads`); Return to Base only claims one. An aircraft flies
 home once every weapon with limited rounds is empty, once, so a player order given after that holds. It reloads while
-docked. Its remains fall to the ground under gravity. 
+docked.  
 
 ## Transport
 
@@ -168,8 +167,7 @@ outside the container.
 
 A container with `protection` below 1 shelters its passengers rather than shutting them off. Each hit on it also
 reaches them, shared evenly, as the hit times 1 minus `protection` times its health fraction before the hit, times the
-damage type's `garrisonFactor`. A battered building protects less, and blast or fire beats a garrison faster than
-small arms. The share is a hit of its own in the next frame, so each passenger's armor applies and kill credit goes to
+damage type's `garrisonFactor`.  The share is a hit of its own in the next frame, so each passenger's armor applies and kill credit goes to
 the shooter. Weapons, abilities and strategic strikes carry the factor; field and status damage never reach a
 garrison. Passengers killed inside free their slots. At the default `protection` of 1, as on transports, nothing gets
 through.

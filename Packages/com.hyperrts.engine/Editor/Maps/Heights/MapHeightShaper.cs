@@ -24,7 +24,9 @@ namespace HyperRTS.Editor.Maps.Heights
         private const float RampStep = 2f;
         private const float RampGrade = 0.12f;
         private const float RampEdge = 3f;
-        private const float CutEdge = 2f;
+        private const float CutEdge = 8f;
+        private const float MaxCutEdge = 24f;
+        private const float LandingDrop = 0.05f;
         private const float AbutmentDrop = 0.4f;
 
         public static MapHeights Shape(MapLayout layout, MapShapes shapes)
@@ -211,9 +213,11 @@ namespace HyperRTS.Editor.Maps.Heights
         private static void RaiseBridge(MapHeights heights, MapShapes shapes, MapCrossing crossing)
         {
             var half = crossing.Span * 0.5f;
+            var landed = half + crossing.Landing;
+            var level = crossing.Height - LandingDrop;
             var ahead = Ramp.Measure(heights, crossing, 1f);
             var behind = Ramp.Measure(heights, crossing, -1f);
-            var reach = half + Mathf.Max(ahead.Length, behind.Length) + crossing.Width * 2f;
+            var reach = landed + Mathf.Max(ahead.Length, behind.Length) + crossing.Width + MaxCutEdge;
             heights.ForEachNear(crossing.Position, reach, (x, z, _) =>
             {
                 var p = heights.Position(x, z);
@@ -221,21 +225,24 @@ namespace HyperRTS.Editor.Maps.Heights
                 var ramp = local.y < 0f ? behind : ahead;
                 var along = Mathf.Abs(local.y);
                 var underDeck = along <= half;
-                if (along > half + ramp.Length || (underDeck && shapes.WaterEdgeDistance(p) < 1f))
+                if (along > landed + ramp.Length || (underDeck && shapes.WaterEdgeDistance(p) < 1f))
                 {
                     return;
                 }
 
                 var h = heights[x, z];
-                var target = underDeck ? crossing.Height - AbutmentDrop : ramp.Height(crossing.Height, h, along - half);
+                var target = underDeck ? crossing.Height - AbutmentDrop : ramp.Height(level, h, along - landed);
                 // A deep cut or a high bank eases out wider, so the ramp's sides stay drivable.
-                var edge = Mathf.Max(RampEdge, Mathf.Abs(h - target) * CutEdge);
+                var edge = along <= landed ? RampEdge : Mathf.Clamp(Mathf.Abs(h - target) * CutEdge, RampEdge, MaxCutEdge);
                 var side = Mathf.Abs(local.x) - (crossing.Width * 0.5f + 1f);
                 heights[x, z] = Mathf.Lerp(h, target, 1f - MapGeometry.Smooth(side / edge));
             });
         }
 
-        /// <summary>The ground's climb from one end of a deck: as long as it takes to meet the ground at an easy grade.</summary>
+        /// <summary>
+        /// The ground's climb from the level landing past one end of a deck: as long as it takes to meet the ground
+        /// at an easy grade.
+        /// </summary>
         private readonly struct Ramp
         {
             public readonly float Length;
@@ -249,7 +256,7 @@ namespace HyperRTS.Editor.Maps.Heights
 
             public static Ramp Measure(MapHeights heights, MapCrossing crossing, float sign)
             {
-                var end = crossing.Position + crossing.Across * (sign * crossing.Span * 0.5f);
+                var end = crossing.Position + crossing.Across * (sign * (crossing.Span * 0.5f + crossing.Landing));
                 var length = RampLength;
                 var top = heights.Height(end + crossing.Across * (sign * length));
                 while (length < MaxRampLength && Mathf.Abs(top - crossing.Height) > RampGrade * length)
@@ -264,7 +271,7 @@ namespace HyperRTS.Editor.Maps.Heights
             /// <summary>The height <paramref name="along"/> metres up it, meeting the ground <paramref name="h"/> at its top.</summary>
             public float Height(float deck, float h, float along)
             {
-                var t = along / Length;
+                var t = Mathf.Clamp01(along / Length);
                 return Mathf.Lerp(deck, Mathf.Lerp(_top, h, t), MapGeometry.Smooth(t));
             }
         }

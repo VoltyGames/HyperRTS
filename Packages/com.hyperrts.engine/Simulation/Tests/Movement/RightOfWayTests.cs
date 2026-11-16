@@ -106,6 +106,34 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.Greater(World.GetPosition(squad).x, 6f, $"the squad walked on to the far bank, at {World.GetPosition(squad)}");
         }
 
+        // The tank stands across the truck's way and along it: either way it drives off on its tracks.
+        [TestCase(0f)]
+        [TestCase(East)]
+        public void IdleTank_InATrucksLane_DrivesOutOfIt_WithoutSliding(float tankYaw)
+        {
+            var tank = World.SpawnVehicle(1, TestVehicles.At(new float3(0f, 0f, 0.5f), tankYaw), 7f,
+                TestVehicles.TankHull(), TestVehicles.Tracks);
+            var truck = SpawnTruck(new float3(-40f, 0f, 0f));
+            World.Tick();
+            World.Send(truck, new float3(40f, 0f, 0f));
+
+            var slid = 0f;
+            var closest = float.MaxValue;
+            for (var t = 0f; t < 60f && World.IsEnabled<MoveDestination>(truck); t += TestWorld.FrameTime)
+            {
+                var before = World.Get<LocalTransform>(tank);
+                World.Tick();
+                var moved = World.GetPosition(tank).xz - before.Position.xz;
+                slid += math.abs(Planar.Cross(math.normalizesafe(before.Forward().xz), moved));
+                closest = math.min(closest, HullGap(truck, tank) + World.Get<NavAgent>(tank).Radius);
+            }
+
+            Assert.IsFalse(World.IsEnabled<MoveDestination>(truck), $"the truck arrived, at {World.GetPosition(truck)}");
+            Assert.Greater(math.length(World.GetPosition(tank).xz), 2f, "the tank left the lane");
+            Assert.Less(slid, 0.5f, $"the tank drove and never slid sideways, {slid:F2} m in all");
+            Assert.Greater(closest, 0f, $"the truck never reached the tank's centre line, closest {closest:F2} m");
+        }
+
         [Test]
         public void OnlyFootUnitsNearAMovingVehicle_WatchItsLane()
         {
