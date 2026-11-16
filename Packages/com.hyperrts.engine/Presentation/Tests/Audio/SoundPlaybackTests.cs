@@ -7,7 +7,10 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Audio
 {
-    /// <summary>One-shot sounds: the pool's instance limits and priorities, the voice bank and the announcer queue.</summary>
+    /// <summary>
+    /// One-shot sounds: the pool's instance limits, priorities and loudness, the fade with distance, variations and the
+    /// announcer queue.
+    /// </summary>
     public class SoundPlaybackTests
     {
         private static readonly AnnouncementKind GameKind = AnnouncementKind.Game(0);
@@ -48,22 +51,75 @@ namespace HyperRTS.Presentation.Tests.Audio
         {
             var pool = new SoundPool(8);
 
-            Assert.GreaterOrEqual(pool.Acquire(_gun, 0.0, 1.0), 0);
-            Assert.GreaterOrEqual(pool.Acquire(_gun, 0.0, 2.0), 0);
-            Assert.AreEqual(-1, pool.Acquire(_gun, 0.5, 1.0), "third copy skipped");
-            Assert.GreaterOrEqual(pool.Acquire(_gun, 1.5, 1.0), 0, "the first one has ended");
+            Assert.GreaterOrEqual(pool.Acquire(_gun, 1f, 0.0, 1.0), 0);
+            Assert.GreaterOrEqual(pool.Acquire(_gun, 1f, 0.0, 2.0), 0);
+            Assert.AreEqual(-1, pool.Acquire(_gun, 1f, 0.5, 1.0), "third copy skipped");
+            Assert.GreaterOrEqual(pool.Acquire(_gun, 1f, 1.5, 1.0), 0, "the first one has ended");
+            Assert.AreEqual(-1, pool.Acquire(_voice, SoundPool.Inaudible / 2f, 1.5, 1.0), "too faint to be heard");
         }
 
         [Test]
         public void FullPool_ImportantCueTakesTheWeakestVoice_NeverTheReverse()
         {
             var pool = new SoundPool(2);
-            var first = pool.Acquire(_gun, 0.0, 5.0);
-            pool.Acquire(_gun, 0.0, 5.0);
+            var first = pool.Acquire(_gun, 1f, 0.0, 5.0);
+            pool.Acquire(_gun, 1f, 0.0, 5.0);
 
-            Assert.AreEqual(first, pool.Acquire(_voice, 1.0, 1.0));
+            Assert.AreEqual(first, pool.Acquire(_voice, 0.1f, 1.0, 1.0), "importance beats loudness");
             Assert.AreEqual(1, pool.Playing(_gun, 1.0));
-            Assert.AreEqual(-1, pool.Acquire(_gun, 1.0, 1.0), "nothing less important to replace");
+            Assert.AreEqual(-1, pool.Acquire(_gun, 1f, 1.0, 1.0), "nothing less important to replace");
+        }
+
+        [Test]
+        public void FullPool_EqualPriority_LouderSoundTakesTheQuietestVoice()
+        {
+            var shell = Cue(4, 200);
+            var pool = new SoundPool(2);
+            pool.Acquire(shell, 0.5f, 0.0, 5.0);
+            var quiet = pool.Acquire(shell, 0.2f, 0.0, 5.0);
+
+            Assert.AreEqual(-1, pool.Acquire(shell, 0.1f, 1.0, 1.0), "quieter than both");
+            Assert.AreEqual(quiet, pool.Acquire(shell, 0.8f, 1.0, 1.0));
+            Object.DestroyImmediate(shell);
+        }
+
+        [Test]
+        public void Fade_IsFullWithinMin_FallsWithDistance_AndReachesSilenceAtMax()
+        {
+            Assert.AreEqual(1f, DistanceCurves.Volume(5f, 10f, 100f));
+            Assert.AreEqual(0f, DistanceCurves.Volume(100f, 10f, 100f));
+            var last = 1f;
+            for (var distance = 11f; distance < 100f; distance += 3f)
+            {
+                var volume = DistanceCurves.Volume(distance, 10f, 100f);
+                Assert.Less(volume, last, $"louder again at {distance} m");
+                last = volume;
+            }
+
+            Assert.AreEqual(0.5f, DistanceCurves.Volume(20f, 10f, 100f), 0.03f, "near the minimum it halves per doubling");
+            Assert.Less(DistanceCurves.CutoffShare(100f, 10f, 100f), DistanceCurves.CutoffShare(20f, 10f, 100f));
+        }
+
+        [Test]
+        public void FarPlay_DrawsTheDistantVariations_NearPlayTheClips()
+        {
+            var near = AudioClip.Create("Near", 441, 1, 44100, false);
+            var far = AudioClip.Create("Far", 441, 1, 44100, false);
+            _gun.clips = new[] { near };
+            _gun.distantClips = new[] { far };
+            _gun.distantFrom = 40f;
+
+            Assert.IsFalse(_gun.IsDistant(39f));
+            Assert.IsTrue(_gun.IsDistant(40f));
+            _gun.Pick(true, out var clip, out _);
+            Assert.AreSame(far, clip);
+            _gun.Pick(false, out clip, out _);
+            Assert.AreSame(near, clip);
+
+            _gun.spatial = false;
+            Assert.IsFalse(_gun.IsDistant(100f), "2D sounds have no distance");
+            Object.DestroyImmediate(near);
+            Object.DestroyImmediate(far);
         }
 
         [Test]
@@ -118,7 +174,7 @@ namespace HyperRTS.Presentation.Tests.Audio
             AudioClip last = null;
             for (var i = 0; i < 300; i++)
             {
-                _gun.Pick(out var clip, out _);
+                _gun.Pick(false, out var clip, out _);
                 Assert.AreNotSame(last, clip, $"draw {i} repeats the last clip");
                 played.Add(clip);
                 last = clip;

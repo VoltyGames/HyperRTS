@@ -85,8 +85,18 @@ What they land on carries `PhysicsGroup.GroundFilter`, which meets bodies only:
 
 ## Audio
 
-`SoundPlaybackSystem` plays cue sounds and `LoopSoundSystem` entity loops, heard from `SoundListener` at the camera's
-ground focus. `AnnouncerSystem` speaks alerts.
+`SoundPlaybackSystem` plays cue sounds from a pool of 32 sources, `LoopSoundSystem` entity loops from 24, and
+`AnnouncerSystem` speaks alerts in 2D. `SoundListener` sits between the camera's ground focus and the camera, a
+`lift` share of the way up, so panning follows the screen and a zoomed-out view hears the field from farther away.
+
+A 3D `SoundCue` is shaped by distance from its `minDistance` and `maxDistance` alone (`DistanceCurves`): full volume
+inside the minimum, then the inverse-distance fade of open air, tapered to silence at the maximum, while a low-pass
+filter closes so far sounds lose their crack before their body. `spread` widens a sound so nearby shots don't pan
+hard to one side, and Doppler stays off because pooled sources jump between positions. A cue's `distantClips` play
+instead of its clips from `distantFrom` out, for a far boom that is not just a quieter near shot.
+
+When every source is busy, a sound takes the voice of a less important cue (higher `priority` number), or of an equally
+important one heard more quietly at the listener. Sounds heard below about -40 dB never take a voice.
 
 ## Quality
 

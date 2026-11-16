@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
     /// Plays the frame's <see cref="CueEvent"/>s from a pool of audio sources, skipping what the local player can't hear
-    /// or is out of range of the <see cref="AudioListener"/>.
+    /// or would hear too faintly at the <see cref="AudioListener"/>, and drawing distant variations for far sounds.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -63,36 +63,41 @@ namespace HyperRTS.Presentation.Audio
 
         private void Play(SoundCue cue, Vector3 position)
         {
-            if (cue == null || cue.clips.Length == 0 || IsOutOfRange(cue, position))
+            if (cue == null || cue.clips.Length == 0)
             {
                 return;
             }
 
-            cue.Pick(out var clip, out var pitch);
+            var distance = ListenerDistance(cue, position);
+            cue.Pick(cue.IsDistant(distance), out var clip, out var pitch);
             if (clip == null || pitch <= 0f)
             {
                 return;
             }
 
-            var voice = _pool.Acquire(cue, AudioSettings.dspTime, clip.length / pitch);
+            var volume = cue.PickVolume();
+            var fade = cue.spatial ? DistanceCurves.Volume(distance, cue.minDistance, cue.maxDistance) : 1f;
+            var loudness = volume * fade;
+            var voice = _pool.Acquire(cue, loudness, AudioSettings.dspTime, clip.length / pitch);
             if (voice < 0)
             {
                 return;
             }
 
-            var source = _voices.Load(voice, cue, clip, pitch);
+            var source = _voices.Load(voice, cue, clip, pitch, volume);
             source.transform.position = position;
             source.Play();
         }
 
-        private bool IsOutOfRange(SoundCue cue, Vector3 position)
+        /// <summary>How far a 3D cue is from the listener; 0 for a 2D cue or before the scene has a listener.</summary>
+        private float ListenerDistance(SoundCue cue, Vector3 position)
         {
             if (!cue.spatial || _listener == null)
             {
-                return false;
+                return 0f;
             }
 
-            return (position - _listener.transform.position).sqrMagnitude > cue.maxDistance * cue.maxDistance;
+            return Vector3.Distance(position, _listener.transform.position);
         }
 
         /// <summary>The cue for the event's slot and variant among its type's, or null.</summary>

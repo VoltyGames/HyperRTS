@@ -1,22 +1,24 @@
 using HyperRTS.Simulation.Cues.Sounds;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Random = UnityEngine.Random;
 
 namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
-    /// A fixed set of audio sources under one DontSave root, made on first use. The root outlives scene reloads, so
-    /// its owner disposes it with the world.
+    /// A fixed set of audio sources under one DontSave root, made on first use, each shaping a 3D cue by distance with
+    /// its <see cref="DistanceCurves"/>. The root outlives scene reloads, so its owner disposes it with the world.
     /// </summary>
     public sealed class VoiceBank : IDisposable
     {
         private readonly string _name;
         private readonly int _count;
         private readonly bool _loop;
+        private readonly Dictionary<SoundCue, DistanceCurves> _curves = new();
         private GameObject _root;
         private AudioSource[] _sources;
+        private AudioLowPassFilter[] _filters;
 
         public VoiceBank(string name, int count, bool loop = false)
         {
@@ -30,23 +32,43 @@ namespace HyperRTS.Presentation.Audio
         /// <summary>False before the first voice is made, without making it.</summary>
         public bool IsPlaying(int voice) => _root != null && _sources[voice].isPlaying;
 
-        /// <summary>Stops the voice and sets it up for the cue with the clip and pitch the caller drew.</summary>
-        public AudioSource Load(int voice, SoundCue cue, AudioClip clip, float pitch)
+        /// <summary>Stops the voice and sets it up for the cue with the clip, pitch and volume the caller drew.</summary>
+        public AudioSource Load(int voice, SoundCue cue, AudioClip clip, float pitch, float volume)
         {
             var source = this[voice];
             source.Stop();
             source.clip = clip;
             source.pitch = pitch;
-            source.volume = cue.PickVolume();
+            source.volume = volume;
             source.priority = cue.priority;
             source.outputAudioMixerGroup = cue.mixerGroup;
             source.spatialBlend = cue.spatial ? 1f : 0f;
-            source.minDistance = cue.minDistance;
-            source.maxDistance = cue.maxDistance;
+            _filters[voice].enabled = cue.spatial;
+            if (cue.spatial)
+            {
+                Shape(voice, cue);
+            }
+
             return source;
         }
 
         public void Dispose() => CoreUtils.Destroy(_root);
+
+        private void Shape(int voice, SoundCue cue)
+        {
+            if (!_curves.TryGetValue(cue, out var curves) || !curves.Fits(cue))
+            {
+                curves = new DistanceCurves(cue);
+                _curves[cue] = curves;
+            }
+
+            var source = _sources[voice];
+            source.minDistance = cue.minDistance;
+            source.maxDistance = cue.maxDistance;
+            source.spread = cue.spread;
+            source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curves.Rolloff);
+            _filters[voice].customCutoffCurve = curves.Cutoff;
+        }
 
         private AudioSource[] Sources()
         {
@@ -57,6 +79,7 @@ namespace HyperRTS.Presentation.Audio
 
             _root = new GameObject(_name) { hideFlags = HideFlags.DontSave };
             _sources = new AudioSource[_count];
+            _filters = new AudioLowPassFilter[_count];
             for (var i = 0; i < _sources.Length; i++)
             {
                 var voice = new GameObject($"Voice {i}") { hideFlags = HideFlags.DontSave };
@@ -64,7 +87,10 @@ namespace HyperRTS.Presentation.Audio
                 _sources[i] = voice.AddComponent<AudioSource>();
                 _sources[i].playOnAwake = false;
                 _sources[i].loop = _loop;
-                _sources[i].rolloffMode = AudioRolloffMode.Linear;
+                _sources[i].rolloffMode = AudioRolloffMode.Custom;
+                // Pooled sources jump between positions and the listener pans with the camera: both would bend pitch.
+                _sources[i].dopplerLevel = 0f;
+                _filters[i] = voice.AddComponent<AudioLowPassFilter>();
             }
 
             return _sources;

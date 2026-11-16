@@ -84,8 +84,8 @@ namespace HyperRTS.Presentation.Audio
                 return;
             }
 
-            cue.Pick(out var clip, out var pitch);
-            var source = _voice.Load(0, cue, clip, pitch);
+            cue.Pick(false, out var clip, out var pitch);
+            var source = _voice.Load(0, cue, clip, pitch, cue.PickVolume());
             // Alerts are heard the same wherever the camera is.
             source.spatialBlend = 0f;
             source.Play();

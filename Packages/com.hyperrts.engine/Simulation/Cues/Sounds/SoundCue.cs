@@ -17,6 +17,9 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [NonSerialized]
         private int _last = -1;
 
+        [NonSerialized]
+        private int _lastDistant = -1;
+
         [Tooltip("Variations; one is picked at random each time the cue plays, never the same one twice in a row.")]
         public AudioClip[] clips = { };
 
@@ -48,24 +51,47 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [Min(0.1f)]
         public float maxDistance = 60f;
 
-        /// <summary>Draws one of the clips, never the one drawn last, and a pitch, for a cue that has clips.</summary>
-        public void Pick(out AudioClip clip, out float randomPitch)
-        {
-            if (_last < 0 || clips.Length == 1)
-            {
-                _last = Random.Range(0, clips.Length);
-            }
-            else
-            {
-                // Draw among the other clips: indexes from the last one up shift by one to skip it.
-                var next = Random.Range(0, clips.Length - 1);
-                _last = next >= _last ? next + 1 : next;
-            }
+        [Tooltip("3D only: how wide the sound is, in degrees. 0 pans fully to one side; 180 never pans.")]
+        [Range(0f, 360f)]
+        public float spread = 60f;
 
-            clip = clips[_last];
+        [Tooltip("3D only: variations heard from beyond Distant From, such as a far boom without the near crack. " +
+                 "Empty plays the clips at every distance.")]
+        public AudioClip[] distantClips = { };
+
+        [Tooltip("3D only: from this distance to the listener the distant variations play instead of the clips.")]
+        [Min(0f)]
+        public float distantFrom = 40f;
+
+        /// <summary>Whether a play this far from the listener draws from the distant variations.</summary>
+        public bool IsDistant(float distance) => spatial && distantClips.Length > 0 && distance >= distantFrom;
+
+        /// <summary>
+        /// Draws a clip from the near or distant set, never the one that set drew last, and a pitch, for a cue whose
+        /// set has clips.
+        /// </summary>
+        public void Pick(bool distant, out AudioClip clip, out float randomPitch)
+        {
+            clip = distant
+                ? distantClips[Draw(distantClips.Length, ref _lastDistant)]
+                : clips[Draw(clips.Length, ref _last)];
             randomPitch = Random.Range(pitch.x, pitch.y);
         }
 
         public float PickVolume() => Random.Range(volume.x, volume.y);
+
+        private static int Draw(int count, ref int last)
+        {
+            if (last < 0 || count == 1)
+            {
+                last = Random.Range(0, count);
+                return last;
+            }
+
+            // Draw among the other clips: indexes from the last one up shift by one to skip it.
+            var next = Random.Range(0, count - 1);
+            last = next >= last ? next + 1 : next;
+            return last;
+        }
     }
 }

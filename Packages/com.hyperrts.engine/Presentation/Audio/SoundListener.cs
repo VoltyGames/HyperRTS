@@ -7,8 +7,9 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
-    /// Keeps the audio listener on the ground point the camera looks at, facing the camera's heading, so distance
-    /// falloff and panning match what's on screen. Put it on the only <see cref="AudioListener"/> in the scene.
+    /// Keeps the audio listener between the ground point the camera looks at and the camera, facing the camera's
+    /// heading, so panning matches the screen and zooming out hears the field from farther away. Put it on the only
+    /// <see cref="AudioListener"/> in the scene.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Sound Listener")]
     [Icon(HyperRTSIcons.SoundListener)]
@@ -19,6 +20,11 @@ namespace HyperRTS.Presentation.Audio
     {
         [Tooltip("Camera to follow; empty uses the main camera.")]
         public Camera view;
+
+        [Tooltip("Share of the way from the ground focus back to the camera where the listener sits. 0 hears every " +
+                 "zoom as if standing at the focus; higher makes zoomed-out views quieter and more distant.")]
+        [Range(0f, 1f)]
+        public float lift = 0.5f;
 
         private readonly LiveSingleton<TerrainHeight> _terrain = new();
 
@@ -33,7 +39,8 @@ namespace HyperRTS.Presentation.Audio
             var eye = camera.transform;
             var heading = Vector3.ProjectOnPlane(eye.forward, Vector3.up);
             var rotation = heading.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(heading) : eye.rotation;
-            transform.SetPositionAndRotation(Focus(eye, camera.farClipPlane), rotation);
+            var position = Vector3.Lerp(Focus(eye, camera.farClipPlane), eye.position, lift);
+            transform.SetPositionAndRotation(position, rotation);
         }
 
         /// <summary>Where the view ray meets the ground; the ground below the camera when it doesn't.</summary>

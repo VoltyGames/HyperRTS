@@ -43,7 +43,8 @@ The lane is chosen from the match seed, so replays repeat it. To replace the AI,
 ## Audio
 
 Part of `Cues`. `EntitySoundsAuthoring` gives an entity a `SoundCue` asset per cue slot. A `SoundCue` holds clips
-(drawn at random, never the last one again), volume and pitch ranges, priority and 3D settings. Games add their own
+(drawn at random, never the last one again), volume and pitch ranges, priority, and 3D settings with optional distant
+variations ([playback](../presentation/README.md#audio)). Games add their own
 slots from `GameFirst` up. A cue's `Variant` byte picks among one slot's entries: the weapon for Fire, the kind for
 Announce.
 
