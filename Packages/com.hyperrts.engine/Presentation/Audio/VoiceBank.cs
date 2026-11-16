@@ -19,6 +19,7 @@ namespace HyperRTS.Presentation.Audio
         private GameObject _root;
         private AudioSource[] _sources;
         private AudioLowPassFilter[] _filters;
+        private DistanceCurves[] _shaped;
 
         public VoiceBank(string name, int count, bool loop = false)
         {
@@ -63,9 +64,16 @@ namespace HyperRTS.Presentation.Audio
             }
 
             var source = _sources[voice];
+            source.spread = cue.spread;
+            // Copying the curves into the native source costs more than comparing: skip a voice already shaped this way.
+            if (_shaped[voice] == curves)
+            {
+                return;
+            }
+
+            _shaped[voice] = curves;
             source.minDistance = cue.minDistance;
             source.maxDistance = cue.maxDistance;
-            source.spread = cue.spread;
             source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curves.Rolloff);
             _filters[voice].customCutoffCurve = curves.Cutoff;
         }
@@ -80,6 +88,7 @@ namespace HyperRTS.Presentation.Audio
             _root = new GameObject(_name) { hideFlags = HideFlags.DontSave };
             _sources = new AudioSource[_count];
             _filters = new AudioLowPassFilter[_count];
+            _shaped = new DistanceCurves[_count];
             for (var i = 0; i < _sources.Length; i++)
             {
                 var voice = new GameObject($"Voice {i}") { hideFlags = HideFlags.DontSave };
