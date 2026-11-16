@@ -31,9 +31,9 @@ namespace HyperRTS.Simulation.Navigation.Grid
 
             foreach (var part in parts)
             {
-                if (part.Open)
+                if (part.Open && part.TryBox(transform, area.Size, out var box))
                 {
-                    Grid.StampArea(part.Box(transform), area.Kind, transform.Position.y);
+                    Grid.StampArea(box, area.Kind, transform.Position.y);
                 }
             }
         }

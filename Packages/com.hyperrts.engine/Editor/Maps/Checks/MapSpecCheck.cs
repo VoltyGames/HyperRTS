@@ -7,6 +7,7 @@ using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
+using HyperRTS.Simulation.Navigation.Areas;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Checks
@@ -129,7 +130,12 @@ namespace HyperRTS.Editor.Maps.Checks
                 $"{name}: bridge '{crossing.prop}' ({entry.size.y} m) is too short for a {river.width} m river.");
             Require(entry.prefab == null || entry.IsEntity,
                 $"{name}: bridge '{crossing.prop}' needs HyperRTS authoring (Destructible) to carry its deck.");
+            Require(entry.prefab == null || HasDeck(entry.prefab),
+                $"{name}: bridge '{crossing.prop}' needs a Nav Area of kind Deck as wide as its roadway.");
         }
+
+        private static bool HasDeck(GameObject prefab) =>
+            prefab.TryGetComponent<NavAreaAuthoring>(out var area) && area.kind == NavAreaKind.Deck;
 
         /// <summary>
         /// Checks every feature of the spec array <paramref name="array"/>, named the way issues name it ("Road 2")

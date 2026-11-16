@@ -190,13 +190,13 @@ namespace HyperRTS.Simulation.Movement
             {
                 if (entry.IsVehicle && entry.IsMoving && Rule.Yields(Unit, entry))
                 {
-                    Push += Rule.StepAside(entry, Unit);
+                    Push += Rule.Lane.StepAside(entry, Unit);
                 }
 
                 return;
             }
 
-            if (!Moving || !Rule.IsInLane(Unit, entry))
+            if (!Moving || !Rule.Lane.Holds(Unit, entry))
             {
                 return;
             }
@@ -229,10 +229,22 @@ namespace HyperRTS.Simulation.Movement
             InGoalArea && Unit.Group != 0 && entry.Group == Unit.Group && entry.IsArrived && !entry.IsMoving;
 
         /// <summary>The overlap push, no longer than one frame's step.</summary>
-        public readonly float2 PushWithin(float maxStep)
+        public readonly float2 PushWithin(float maxStep) => Shortened(Push, maxStep);
+
+        /// <summary>
+        /// The move with the push added. A foot unit's stays within one frame's step, so one stepping out of a lane
+        /// walks there and is never swept along faster than it runs.
+        /// </summary>
+        public readonly float2 Pushed(float2 move, float maxStep)
         {
-            var length = math.length(Push);
-            return length > maxStep ? Push * (maxStep / length) : Push;
+            var pushed = move + PushWithin(maxStep);
+            return Unit.IsVehicle ? pushed : Shortened(pushed, maxStep);
+        }
+
+        private static float2 Shortened(float2 move, float maxLength)
+        {
+            var length = math.length(move);
+            return length > maxLength ? move * (maxLength / length) : move;
         }
 
         private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach, int precedence,

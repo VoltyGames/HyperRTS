@@ -3,6 +3,8 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Linq;
 using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
@@ -23,6 +25,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         protected EntityManager _em;
         protected SystemHandle _system;
         protected Entity _unit;
+        protected Entity _grid;
         protected float3 _position;
 
         [SetUp]
@@ -31,21 +34,43 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             _world = new World("Motion Rig Tests");
             _em = _world.EntityManager;
             _system = _world.CreateSystem<MotionRigSystem>();
+            var cells = new CellGrid(float2.zero, 1f, new int2(32, 32));
+            _grid = _em.CreateEntity();
+            _em.AddComponentData(_grid, NavGrid.Create(cells, default, 0f));
             _position = new float3(10f, 0f, 10f);
         }
 
         [TearDown]
         public void TearDown()
         {
-            using (var query = _em.CreateEntityQuery(typeof(TerrainHeight)))
+            var grid = _em.GetComponentData<NavGrid>(_grid);
+            if (grid.Terrain.IsCreated)
             {
-                if (!query.IsEmpty)
-                {
-                    query.GetSingleton<TerrainHeight>().Blob.Dispose();
-                }
+                grid.Terrain.Blob.Dispose();
             }
 
+            grid.Dispose();
             _world.Dispose();
+        }
+
+        /// <summary>Lays a heightfield of 2 m samples under the nav grid.</summary>
+        protected void SetTerrain(NativeArray<float> heights, int2 size)
+        {
+            var grid = _em.GetComponentData<NavGrid>(_grid);
+            grid.Terrain = TerrainHeight.Create(heights, size, float2.zero, 2f, Allocator.Persistent);
+            _em.SetComponentData(_grid, grid);
+        }
+
+        /// <summary>Lays a deck at <paramref name="height"/> over the cells from <paramref name="low"/> to <paramref name="high"/>.</summary>
+        protected void SetDeck(int2 low, int2 high, float height)
+        {
+            var grid = _em.GetComponentData<NavGrid>(_grid);
+            foreach (var cell in grid.Grid.Cells(low, high))
+            {
+                var index = grid.Grid.Index(cell);
+                grid.Cells[index] = (byte)(NavSurface.Land | NavSurface.Deck);
+                grid.DeckHeights[index] = height;
+            }
         }
 
         protected Entity Rig(MotionRigPart part, params MotionRigPart[] more)

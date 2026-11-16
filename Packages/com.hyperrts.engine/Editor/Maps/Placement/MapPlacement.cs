@@ -38,12 +38,6 @@ namespace HyperRTS.Editor.Maps.Placement
         /// <summary>Set for prefabs that sit at a fixed height (bridge decks) instead of on the ground.</summary>
         public float? Height { get; set; }
 
-        /// <summary>
-        /// A walkable deck (width across, length along the prefab) the instance carries, so destroying it takes the
-        /// crossing with it.
-        /// </summary>
-        public Vector2? Deck { get; set; }
-
         public float Radius
         {
             get

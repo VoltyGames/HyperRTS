@@ -3,7 +3,6 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Linq;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;
@@ -87,7 +86,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         }
 
         [Test]
-        public void Tilt_FollowsASlope()
+        public void Tilt_FollowsASlope_AndLevelsOnADeckOverIt()
         {
             const float grade = 0.1f;
             AddSlope(grade);
@@ -105,6 +104,12 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var nose = math.rotate(Pose(hull).Rotation, math.forward());
             Assert.AreEqual(math.atan(grade), math.asin(nose.y), 1e-3f, "nose up the slope");
             Assert.AreEqual(0f, _em.GetComponentData<MotionRig>(_unit).Tilt.y, 1e-4f, "no roll across it");
+
+            // Narrower than the footprint, so the nose and tail hang past the deck's cells.
+            SetDeck(new int2(9, 9), new int2(11, 11), 5f);
+            Update(30);
+
+            Assert.AreEqual(0f, math.length(_em.GetComponentData<MotionRig>(_unit).Tilt), 1e-3f, "level on the deck");
         }
 
         [Test]
@@ -178,9 +183,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
                 heights[i] = grade * (i / size.x) * 2f;
             }
 
-            var terrain = TerrainHeight.Create(heights, size, float2.zero, 2f, Allocator.Persistent);
+            SetTerrain(heights, size);
             heights.Dispose();
-            _em.AddComponentData(_em.CreateEntity(), terrain);
         }
     }
 }

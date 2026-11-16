@@ -14,19 +14,13 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Movement
 {
     /// <summary>
-    /// Who moves when two units meet: who gives way, each mover's share of the avoiding, who is ahead, who is crushed,
-    /// and the lane ahead of a vehicle that allied foot units clear. Read-only, so parallel jobs can share it.
+    /// Who moves when two units meet: who gives way, each mover's share of the avoiding, who is ahead and who is
+    /// crushed. Read-only, so parallel jobs can share it.
     /// </summary>
     public struct RightOfWay
     {
         /// <summary>Metres per second a vehicle keeps to while allied foot units stand in its lane.</summary>
         public const float WalkingPace = 1.5f;
-
-        // Past the braking distance, so a soldier has time at a walk to clear the lane before contact.
-        private const float LaneLead = 4f;
-
-        // A foot unit steps this far past the lane's edge, so it doesn't stand on it.
-        private const float LaneMargin = 0.1f;
 
         // Heavier by half again has the right of way.
         private const float Outweighing = 1.5f;
@@ -34,28 +28,27 @@ namespace HyperRTS.Simulation.Movement
         // Goals within 60 degrees share a heading; vehicles crossing or meeting head-on choose a stable right of way.
         private const float SharedHeading = 0.5f;
 
-        // Slower than this a vehicle's lane runs along its facing, as its velocity has no direction.
-        private const float Rolling = 0.1f;
-
         [ReadOnly] private ComponentLookup<ActiveOrder> _orders;
         [ReadOnly] private ComponentLookup<AttackTarget> _attacks;
         [ReadOnly] private ComponentLookup<CombatStance> _stances;
-        [ReadOnly] private ComponentLookup<Locomotion> _handling;
         [ReadOnly] private ComponentLookup<Deployable> _deployables;
         [ReadOnly] private ComponentLookup<Crusher> _crushers;
         [ReadOnly] private ComponentLookup<Crushable> _crushables;
         private OwnerRelations _relations;
+
+        /// <summary>The lane ahead of a moving vehicle, which allied foot units clear.</summary>
+        public VehicleLane Lane;
 
         public RightOfWay(ref SystemState state)
         {
             _orders = state.GetComponentLookup<ActiveOrder>(true);
             _attacks = state.GetComponentLookup<AttackTarget>(true);
             _stances = state.GetComponentLookup<CombatStance>(true);
-            _handling = state.GetComponentLookup<Locomotion>(true);
             _deployables = state.GetComponentLookup<Deployable>(true);
             _crushers = state.GetComponentLookup<Crusher>(true);
             _crushables = state.GetComponentLookup<Crushable>(true);
             _relations = default;
+            Lane = new VehicleLane(ref state);
         }
 
         public void Update(ref SystemState state, in OwnerRelations relations)
@@ -63,11 +56,11 @@ namespace HyperRTS.Simulation.Movement
             _orders.Update(ref state);
             _attacks.Update(ref state);
             _stances.Update(ref state);
-            _handling.Update(ref state);
             _deployables.Update(ref state);
             _crushers.Update(ref state);
             _crushables.Update(ref state);
             _relations = relations;
+            Lane.Update(ref state);
         }
 
         /// <summary>
@@ -212,47 +205,6 @@ namespace HyperRTS.Simulation.Movement
         }
 
         /// <summary>
-        /// Whether <paramref name="unit"/> stands in the lane ahead of <paramref name="vehicle"/>: its hull's width
-        /// with spacing, from its centre to its braking distance past the nose and a lead.
-        /// </summary>
-        public readonly bool IsInLane(in SpatialEntry vehicle, in SpatialEntry unit)
-        {
-            var travel = Travel(vehicle);
-            return IsInLane(vehicle, unit, travel, unit.Position.xz - vehicle.Position.xz);
-        }
-
-        /// <summary>The move that takes <paramref name="unit"/> out of the lane ahead of <paramref name="vehicle"/>, to the side it leans to.</summary>
-        public readonly float2 StepAside(in SpatialEntry vehicle, in SpatialEntry unit)
-        {
-            var travel = Travel(vehicle);
-            var offset = unit.Position.xz - vehicle.Position.xz;
-            if (!IsInLane(vehicle, unit, travel, offset))
-            {
-                return float2.zero;
-            }
-
-            var outside = LaneHalfWidth(vehicle, unit) + LaneMargin - math.abs(Planar.Cross(travel, offset));
-            return Side(travel, offset) * outside;
-        }
-
-        private readonly bool IsInLane(in SpatialEntry vehicle, in SpatialEntry unit, float2 travel, float2 offset)
-        {
-            var along = math.dot(offset, travel);
-            if (along <= 0f)
-            {
-                return false;
-            }
-
-            var length = vehicle.HullReach + LaneAhead(vehicle) + unit.Radius;
-            if (along > length)
-            {
-                return false;
-            }
-
-            return math.abs(Planar.Cross(travel, offset)) < LaneHalfWidth(vehicle, unit);
-        }
-
-        /// <summary>
         /// The side of a line along <paramref name="travel"/> that <paramref name="offset"/> from it lies on; left
         /// when on the line, as a mover keeps right.
         /// </summary>
@@ -279,17 +231,5 @@ namespace HyperRTS.Simulation.Movement
 
         private static bool Outweighs(in SpatialEntry heavy, in SpatialEntry light) =>
             heavy.Mass > light.Mass && heavy.Mass >= light.Mass * Outweighing;
-
-        private static float2 Travel(in SpatialEntry vehicle)
-        {
-            var speedSq = math.lengthsq(vehicle.Velocity);
-            return speedSq > Rolling * Rolling ? vehicle.Velocity * math.rsqrt(speedSq) : vehicle.Facing;
-        }
-
-        private readonly float LaneAhead(in SpatialEntry vehicle) =>
-            math.lengthsq(vehicle.Velocity) / (2f * _handling[vehicle.Entity].Braking) + LaneLead;
-
-        private static float LaneHalfWidth(in SpatialEntry vehicle, in SpatialEntry unit) =>
-            vehicle.Radius + unit.Radius + math.max(vehicle.Spacing, unit.Spacing);
     }
 }

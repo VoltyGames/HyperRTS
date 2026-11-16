@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Navigation.Heights;
+using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -74,13 +74,13 @@ namespace HyperRTS.Presentation.Animation.Rigs
             Tilt = math.lerp(Tilt, target, Ease(deltaTime, TiltTime));
 
         /// <summary>Nose-up pitch and right-side-up roll of the ground under the footprint.</summary>
-        public readonly float2 GroundTilt(in TerrainHeight terrain, float3 position, float3 forward, float3 right)
+        public readonly float2 GroundTilt(in NavGrid grid, float3 position, float3 forward, float3 right)
         {
             var half = Footprint * 0.5f;
-            var front = terrain.Height((position + forward * half.x).xz);
-            var back = terrain.Height((position - forward * half.x).xz);
-            var rightSide = terrain.Height((position + right * half.y).xz);
-            var leftSide = terrain.Height((position - right * half.y).xz);
+            var front = HullGround(grid, position + forward * half.x, position);
+            var back = HullGround(grid, position - forward * half.x, position);
+            var rightSide = HullGround(grid, position + right * half.y, position);
+            var leftSide = HullGround(grid, position - right * half.y, position);
             return new float2(math.atan2(front - back, Footprint.x), math.atan2(rightSide - leftSide, Footprint.y));
         }
 
@@ -88,12 +88,20 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// Metres the ground under a wheel's <paramref name="contact"/> (its rest point on the ground plane, in the
         /// unit's frame) stands above where that point of the body turned by <paramref name="bodyTilt"/> is.
         /// </summary>
-        public static float GroundLift(in TerrainHeight terrain, float3 position, float3 forward, float3 right,
+        public static float GroundLift(in NavGrid grid, float3 position, float3 forward, float3 right,
             quaternion bodyTilt, float3 contact)
         {
             var body = math.rotate(bodyTilt, contact);
             var ground = position + right * body.x + forward * body.z;
-            return terrain.Height(ground.xz) - (position.y + body.y);
+            return HullGround(grid, ground, position) - (position.y + body.y);
+        }
+
+        // Never below the deck the hull's centre stands on: the terrain under a bridge is the valley it spans.
+        private static float HullGround(in NavGrid grid, float3 point, float3 center)
+        {
+            var ground = grid.Terrain.Height(point.xz);
+            var floor = grid.TryDeckHeight(center.xz, out var standing) ? standing : ground;
+            return grid.TryDeckHeight(point.xz, out var deck) ? deck : math.max(ground, floor);
         }
 
         /// <summary>

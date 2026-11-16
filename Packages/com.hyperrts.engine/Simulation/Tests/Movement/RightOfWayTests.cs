@@ -12,7 +12,8 @@ namespace HyperRTS.Simulation.Tests.Movement
 {
     /// <summary>
     /// Vehicles and foot units sharing ground: the crowd's push never moves a vehicle, and allied foot units step
-    /// out of a vehicle's lane before it reaches them, or are driven through once they hold it 2 s.
+    /// out of a vehicle's lane before it reaches them, walk on ahead where they can't, or are driven through once
+    /// they hold it 2 s.
     /// </summary>
     public class RightOfWayTests : SimulationFixture
     {
@@ -80,6 +81,29 @@ namespace HyperRTS.Simulation.Tests.Movement
             Assert.IsFalse(World.IsEnabled<MoveDestination>(truck), "the truck arrived");
             Assert.Greater(closest, 0f, $"the squad left the lane before the truck reached it, closest {closest:F2} m");
             Assert.LessOrEqual(longestStop, 1f, $"the truck never stopped for more than a second, not {longestStop:F2} s");
+        }
+
+        // The deck is too narrow to step out of the lane, so the squad walks on to the far bank and steps aside there.
+        [Test]
+        public void IdleSquad_OnAOneLaneBridge_WalksOnAheadOfATank()
+        {
+            World.SpawnBridge();
+            var squad = World.SpawnSquad(1, float3.zero);
+            var tank = World.SpawnVehicle(1, TestVehicles.At(new float3(-30f, 0f, 0f), East), 7f,
+                TestVehicles.TankHull(), TestVehicles.Tracks);
+            World.Tick();
+            World.Send(tank, new float3(40f, 0f, 0f));
+
+            var closest = float.MaxValue;
+            for (var t = 0f; t < 60f && World.IsEnabled<MoveDestination>(tank); t += TestWorld.FrameTime)
+            {
+                World.Tick();
+                closest = math.min(closest, HullGap(tank, squad));
+            }
+
+            Assert.IsFalse(World.IsEnabled<MoveDestination>(tank), $"the tank crossed, at {World.GetPosition(tank)}");
+            Assert.Greater(closest, 0f, $"the tank never reached the squad, closest {closest:F2} m");
+            Assert.Greater(World.GetPosition(squad).x, 6f, $"the squad walked on to the far bank, at {World.GetPosition(squad)}");
         }
 
         [Test]

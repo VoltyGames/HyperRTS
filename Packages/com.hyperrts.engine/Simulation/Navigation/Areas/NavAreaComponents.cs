@@ -26,7 +26,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
 
     /// <summary>
     /// A piece of a <see cref="NavArea"/>, such as one span of a bridge deck, in its space. An area with parts stamps
-    /// only the open ones, so a broken span returns its cells to what lay below.
+    /// only the open ones, each no wider than the area, so a broken span returns its cells to what lay below.
     /// </summary>
     [InternalBufferCapacity(0)]
     public struct NavAreaPart : IBufferElementData
@@ -35,7 +35,14 @@ namespace HyperRTS.Simulation.Navigation.Areas
         public float2 Size;
         public bool Open;
 
-        public readonly NavBox Box(in LocalTransform transform) => NavBox.FromPart(transform, Center, Size);
+        /// <summary>The part's box inside an area of <paramref name="areaSize"/>; false when it lies outside it.</summary>
+        public readonly bool TryBox(in LocalTransform transform, float2 areaSize, out NavBox box)
+        {
+            var low = math.max(Center - Size * 0.5f, areaSize * -0.5f);
+            var high = math.min(Center + Size * 0.5f, areaSize * 0.5f);
+            box = NavBox.FromPart(transform, (low + high) * 0.5f, high - low);
+            return math.all(high > low);
+        }
     }
 
     /// <summary>XZ box, turned with its entity, that pathing and building placement treat as solid.</summary>

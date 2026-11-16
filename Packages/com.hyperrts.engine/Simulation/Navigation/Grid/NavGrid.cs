@@ -124,15 +124,22 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// <summary>The visible top: a deck, else the water surface over submerged ground, else the ground.</summary>
         public readonly float SurfaceHeight(float3 position)
         {
-            var index = Grid.Index(Grid.Clamp(Grid.Cell(position)));
-            var surface = (NavSurface)Cells[index];
-            if ((surface & NavSurface.Deck) != 0)
+            if (TryDeckHeight(position.xz, out var deck))
             {
-                return DeckHeights[index];
+                return deck;
             }
 
             var ground = Terrain.Height(position.xz);
-            return (surface & NavSurface.Water) != 0 ? math.max(ground, WaterLevel) : ground;
+            var flooded = (Surface(Grid.Clamp(Grid.Cell(position))) & NavSurface.Water) != 0;
+            return flooded ? math.max(ground, WaterLevel) : ground;
+        }
+
+        /// <summary>The height of the deck over a point, when one carries its cell.</summary>
+        public readonly bool TryDeckHeight(float2 point, out float height)
+        {
+            var index = Grid.Index(Grid.Clamp(Grid.Cell(point)));
+            height = DeckHeights[index];
+            return ((NavSurface)Cells[index] & NavSurface.Deck) != 0;
         }
 
         /// <summary>Where an agent of a layer stands: ships float at the water level, even under a deck.</summary>
@@ -204,16 +211,19 @@ namespace HyperRTS.Simulation.Navigation.Grid
         /// </summary>
         public void StampArea(in NavBox box, NavAreaKind kind, float height)
         {
+            var deck = kind == NavAreaKind.Deck;
             foreach (var cell in CellsUnder(box))
             {
-                if (!InBox(box, cell))
+                // A deck carries only the cells whose centre is well on it, or a hull would hang over its edge.
+                var covered = deck ? box.Contains(Grid.Center(cell), -0.01f) : InBox(box, cell);
+                if (!covered)
                 {
                     continue;
                 }
 
                 var index = Grid.Index(cell);
                 Cells[index] = (byte)NavGround.Stamp(kind, (NavSurface)Cells[index]);
-                if (kind == NavAreaKind.Deck)
+                if (deck)
                 {
                     DeckHeights[index] = height;
                 }

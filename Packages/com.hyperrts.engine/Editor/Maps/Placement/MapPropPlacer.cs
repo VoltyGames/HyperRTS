@@ -112,7 +112,6 @@ namespace HyperRTS.Editor.Maps.Placement
                 _placements.Add(new MapPlacement(_palette.Entry(crossing.Prop), crossing.Position, crossing.Yaw, 1f)
                 {
                     Height = crossing.Height,
-                    Deck = new Vector2(crossing.Width, crossing.Span + 2f),
                 });
             }
         }

@@ -59,7 +59,7 @@ namespace HyperRTS.Simulation.Movement
             // A building or wreck that lands on a unit leaves it sunk in walls, parked or not, and it drives out.
             var depth = capsule.Depth(from, axis);
             var escape = depth > NavTolerances.WallOverlap ? capsule.WayOut(from, maxStep) : float2.zero;
-            var wanted = from + crowd.Within(step + escape + crowd.PushWithin(maxStep));
+            var wanted = from + crowd.Within(crowd.Pushed(step, maxStep) + escape);
             Walk(ref transform, capsule, from, wanted, agent, crowd);
 
             var stalled = HasStalled(chunk, index, ref frame, capsule, depth);

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Placement;
 using HyperRTS.Simulation.GameEntities;
-using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Resources.Gathering;
 using UnityEditor;
 using UnityEngine;
@@ -39,18 +38,6 @@ namespace HyperRTS.Editor.Maps.Scenes
             {
                 entity.owner = placement.Owner;
                 PrefabUtility.RecordPrefabInstancePropertyModifications(entity);
-            }
-
-            if (placement.Deck is { } deck)
-            {
-                var area = instance.GetComponent<NavAreaAuthoring>();
-                if (area == null)
-                {
-                    area = instance.AddComponent<NavAreaAuthoring>();
-                }
-
-                area.kind = NavAreaKind.Deck;
-                area.size = deck;
             }
 
             foreach (var node in instance.GetComponentsInChildren<ResourceNodeAuthoring>(true))

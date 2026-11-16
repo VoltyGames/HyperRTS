@@ -1,5 +1,4 @@
 using HyperRTS.Presentation.Animation.Rigs;
-using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;
@@ -60,9 +59,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var size = new int2(16, 16);
             var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
             heights[5 * size.x + 5] = height;
-            var terrain = TerrainHeight.Create(heights, size, float2.zero, 2f, Allocator.Persistent);
+            SetTerrain(heights, size);
             heights.Dispose();
-            _em.AddComponentData(_em.CreateEntity(), terrain);
         }
     }
 }

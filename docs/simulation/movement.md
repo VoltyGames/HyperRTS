@@ -18,7 +18,8 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
 | `NavObstacleAuthoring` | Blocks a box. Buildings block their footprint |
 | `NavAreaAuthoring` | Marks a box as water, blocked, or a bridge deck with water below |
 
-- **Grid.** Flooded cells become water and steep ones blocked. Obstacles restamp the grid only when their footprints
+- **Grid.** Flooded cells become water and steep ones blocked. A deck opens the cells whose centre lies on it, and
+  a bridge's spans open no wider than its Nav Area, which is sized to the roadway. Obstacles restamp the grid only when their footprints
   change, and each restamp records the changed box (`NavChanges`). A path re-plans only when one of its legs passes
   near a changed box; a path whose goal was snapped re-plans on any change.
 - **Movement class.** Each unit has a `MovementClass`: its layer, scenery crush limit and exact radius.
@@ -28,10 +29,9 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
   change touched. A cell is open to a class when the field there is at least its radius (`NavAccess`). A*, the
   nearest-cell search and line of sight all use that rule.
 - **Sector graph.** Each class has a sector graph (`NavSectors`) of connected open components, rebuilt with the
-  field, giving region ids. A goal the start's region can't reach snaps to the nearest open cell it can, so a click
-  across a river stops on this bank. `NavGrid.IsReachable(agent, from, to)` asks the same of any two points.
+  field, giving region ids. A goal the start's region can't reach snaps to the nearest open cell it can. `NavGrid.IsReachable(agent, from, to)` asks the same of any two points.
 - **Start snap.** A unit in a closed cell starts its path at the nearest open cell it can squeeze to
-  (`NavAccess.TryFindStart`), never through water or a wall, so a unit inside a new footprint gets out.
+  (`NavAccess.TryFindStart`), never through water or a wall.
 - **Path query.** `GridPathfinder.Prepare` snaps the ends and goes straight when the goal is in sight. Otherwise an
   abstract search over the sector graph picks a corridor and Burst A* runs inside it (`NavCorridor`). It always
   succeeds, so no path is partial. Steps cost more near walls by the agent's `WallMargin`, so paths keep room off walls
@@ -45,8 +45,7 @@ The code is split by folder, namespace `HyperRTS.Simulation.Navigation.<Folder>`
   slots. Each member traces it downhill and is pulled tight with line of sight, so it still gets ordinary waypoints.
   A member alone, or one whose slot is out of sight or far from the centre, searches by itself, as do chases.
 - **Capsule.** Movement holds the whole capsule off walls (`NavCapsule`). A unit already overlapping may move as long
-  as the overlap doesn't grow, so it can always back off. A move into a wall slides along it, so rotated buildings
-  never snag it. Line of sight walks every cell the line crosses (`GridRay`).
+  as the overlap doesn't grow, so it can always back off. A move into a wall slides along it. Line of sight walks every cell the line crosses (`GridRay`).
 - **Scenery.** Destructible scenery with a crush rating (trees, fences) marks its cell on a scenery layer. A unit
   drives through scenery up to its `SceneryCrushLimit`: its `Crusher` size, or all of it with **Walks Through
   Scenery** (infantry). Higher-rated scenery blocks like a closed cell. Felled scenery reopens its cell without
@@ -104,10 +103,11 @@ in tonnes, sets each unit's weight.
 - **Idle units** step aside for an allied mover of their own kind and stay where pushed.
 - **Foot units and vehicles.** A vehicle is a unit with `LocomotionAuthoring` (`NavAgent.IsVehicle`); every other
   ground unit is on foot. The push never moves a vehicle off a foot unit: the foot unit takes the whole overlap.
-  A foot unit always gives way to an allied vehicle, whatever its order or stance, and steps out of a moving one's
-  lane (its hull's width, out to its braking distance and a few metres more) before the vehicle reaches it. Only
-  foot units in spatial cells the index marks near a moving vehicle (`SpatialIndex.IsNearVehicleLane`) look that far,
-  so an idle crowd queries no more than its own neighbours. The
+  A foot unit always gives way to an allied vehicle, whatever its order or stance, and leaves a moving one's lane
+  (`VehicleLane`: its hull's width, out to its braking distance and a few metres more) before the vehicle reaches
+  it, a squad by as far as its members stand out. It steps aside and as far on ahead, so where a railing shuts the
+  side, as on a bridge, it walks on in front, never faster than it runs. Only
+  foot units near a moving vehicle (`SpatialIndex.IsNearVehicleLane`) look that far. The
   vehicle slows to `RightOfWay.WalkingPace` while one stands in its lane and still stops at its hull. Held 2 s by
   allied foot units alone, it drives through them at a walk until it is clear of them.
 - **Busy units.** A parked unit with an order, a target or Hold Position and an enemy hold their ground: to the
@@ -123,9 +123,7 @@ in tonnes, sets each unit's weight.
 - **Arrival.** A move ends at the goal, against an arrived groupmate, or when the unit stops getting on.
   `MoveDestination` is then disabled and `Arrival` enabled, its `Reason` saying which, and `MoveOrderSystem` finishes
   its order. If anything else halts the unit, it points the unit at the goal again.
-- **Stuck.** `MoveProgress` measures improvement in the shortest remaining path distance. Turning earns a bounded
-  allowance for pivots and manoeuvres, without replacing that distance record. Circling cannot renew the allowance;
-  only getting closer does. Without progress the whole path is planned again, with waits doubling. Near the path's end the unit gives up and
+- **Stuck.** `MoveProgress` measures improvement in the shortest remaining path distance. Turning earns a bounded allowance, which only getting closer renews. Without progress the whole path is planned again, with waits doubling. Near the path's end the unit gives up and
   the goal is taken; a reversing vehicle first backs out (`MoveProgress.TryTurnOut`). Farther out a jam is traffic, so
   a column queued at a bridge keeps its order.
 
@@ -140,12 +138,11 @@ buried.
 (0 hovers) and handling, which is acceleration, braking, the most it banks and how fast its nose turns. Its optional
 `releasePoint`, a child such as a ramp or bomb bay, is where airdrop crates and strike bombs leave it.
 
-Steering picks the velocity an aircraft wants, round other aircraft, as it does for ground units. `FlightState` then
+Steering picks the velocity an aircraft wants, round other aircraft. `FlightState` then
 flies toward it: it speeds up and brakes at its rates, braking early enough to stop on its goal, and turns its course
 no harder than its bank allows, so it flies an arc at speed and turns on the spot when slow. From a hover it noses
 round to the way it means to go, slipping off its nose only slowly, and in forward flight its nose follows its course.
-It eases into and out of climbs and reads the ground two seconds ahead, so it rises before a ridge. Like a ground
-unit it gives up a move that stalls near its goal, as when another aircraft holds that spot.
+It eases into and out of climbs and reads the ground two seconds ahead, so it rises before a ridge. It gives up a move that stalls near its goal, as a ground unit does.
 
 `AirfieldAuthoring` gives a building landing pads, one aircraft each, each a `PadKind`: `Helipad`, `Shelter` or `Any`.
 `FlightAuthoring.padKind` says which pads an aircraft takes, and `Any` on either side matches every kind. An airfield

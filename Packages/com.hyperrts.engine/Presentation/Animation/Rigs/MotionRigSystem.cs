@@ -2,7 +2,7 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Movement;
-using HyperRTS.Simulation.Navigation.Heights;
+using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
@@ -22,7 +22,11 @@ namespace HyperRTS.Presentation.Animation.Rigs
     public partial struct MotionRigSystem : ISystem
     {
         [BurstCompile]
-        public void OnCreate(ref SystemState state) => state.RequireForUpdate<MotionRig>();
+        public void OnCreate(ref SystemState state)
+        {
+            state.RequireForUpdate<MotionRig>();
+            state.RequireForUpdate<NavGrid>();
+        }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -34,11 +38,10 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 return;
             }
 
-            SystemAPI.TryGetSingleton<TerrainHeight>(out var terrain);
             var rigs = new RigJob
             {
                 DeltaTime = deltaTime,
-                Terrain = terrain,
+                Grid = SystemAPI.GetSingleton<NavGrid>(),
                 Poses = SystemAPI.GetBufferLookup<WeaponPose>(true),
                 Flights = SystemAPI.GetComponentLookup<Flight>(true),
                 Docks = SystemAPI.GetComponentLookup<Docked>(true),
@@ -68,7 +71,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         private partial struct RigJob : IJobEntity
         {
             public float DeltaTime;
-            public TerrainHeight Terrain;
+            [ReadOnly] public NavGrid Grid;
             [ReadOnly] public BufferLookup<WeaponPose> Poses;
             [ReadOnly] public ComponentLookup<Flight> Flights;
             [ReadOnly] public ComponentLookup<Docked> Docks;
@@ -107,7 +110,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
                     if (part.Travel > 0f)
                     {
-                        var lift = MotionRig.GroundLift(Terrain, heading.Position, heading.Forward, heading.Right,
+                        var lift = MotionRig.GroundLift(Grid, heading.Position, heading.Forward, heading.Right,
                             bodyTilt, part.Contact);
                         part.FollowGround(lift, DeltaTime);
                     }
@@ -129,7 +132,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 }
                 else
                 {
-                    rig.SmoothTilt(rig.GroundTilt(Terrain, heading.Position, heading.Forward, heading.Right), DeltaTime);
+                    rig.SmoothTilt(rig.GroundTilt(Grid, heading.Position, heading.Forward, heading.Right), DeltaTime);
                 }
 
                 rig.Suspension.Spring(rig.Suspension.Target(acceleration, heading.Forward, heading.Right), DeltaTime);
