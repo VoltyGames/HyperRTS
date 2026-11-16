@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
 using System.Collections.Generic;
 
@@ -17,7 +18,7 @@ namespace HyperRTS.Presentation.Audio
         private readonly int[] _priorities;
         private readonly float[] _loudness;
         private readonly double[] _ends;
-        private readonly Dictionary<SoundCue, double> _rested = new();
+        private readonly Dictionary<SoundCue, Throttle> _rested = new();
 
         public SoundPool(int capacity)
         {
@@ -40,7 +41,7 @@ namespace HyperRTS.Presentation.Audio
                 return -1;
             }
 
-            if (_rested.TryGetValue(cue, out var rested) && now < rested)
+            if (cue.cooldown > 0f && _rested.TryGetValue(cue, out var rested) && !rested.IsOpen(now))
             {
                 return -1;
             }
@@ -57,7 +58,7 @@ namespace HyperRTS.Presentation.Audio
             _ends[voice] = now + duration;
             if (cue.cooldown > 0f)
             {
-                _rested[cue] = now + cue.cooldown;
+                _rested[cue] = new Throttle { Next = now + cue.cooldown };
             }
 
             return voice;
