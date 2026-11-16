@@ -72,7 +72,8 @@ namespace HyperRTS.Editor.PlayMode
             }
         }
 
-        // The local world only remains as a fallback: a session replaces it with a host, server or client world.
+        // A local world is the fallback for a session's host, server or client world. A match started from a menu
+        // leaves the emptied world it replaced at the bottom of Unity's world stack, so the injection world wins.
         private static World Find(WorldSystemFilterFlags roles)
         {
             World local = null;
@@ -89,7 +90,10 @@ namespace HyperRTS.Editor.PlayMode
                     return world;
                 }
 
-                local ??= world;
+                if (local == null || world == World.DefaultGameObjectInjectionWorld)
+                {
+                    local = world;
+                }
             }
 
             return local;
