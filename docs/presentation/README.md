@@ -95,6 +95,9 @@ filter closes so far sounds lose their crack before their body. `spread` widens 
 hard to one side, and Doppler stays off because pooled sources jump between positions. A cue's `distantClips` play
 instead of its clips from `distantFrom` out, for a far boom that is not just a quieter near shot.
 
+A cue plays at most `maxInstances` copies at once, and one with a `cooldown` waits that many seconds after a play
+before it plays again, which keeps a repeated notice from stacking up.
+
 When every source is busy, a sound takes the voice of a less important cue (higher `priority` number), or of an equally
 important one heard more quietly at the listener. Sounds heard below about -40 dB never take a voice.
 

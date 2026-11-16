@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.Audio
         [Tooltip("Share of the way from the ground focus back to the camera where the listener sits. 0 hears every " +
                  "zoom as if standing at the focus; higher makes zoomed-out views quieter and more distant.")]
         [Range(0f, 1f)]
-        public float lift = 0.5f;
+        public float lift = 0.8f;
 
         private readonly LiveSingleton<TerrainHeight> _terrain = new();
 

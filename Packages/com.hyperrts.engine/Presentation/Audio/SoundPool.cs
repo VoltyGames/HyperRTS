@@ -1,10 +1,12 @@
 using HyperRTS.Simulation.Cues.Sounds;
+using System.Collections.Generic;
 
 namespace HyperRTS.Presentation.Audio
 {
     /// <summary>
     /// Bookkeeping for a fixed set of voices: which cue each plays, how loud it is heard and until when. Enforces each
-    /// cue's instance limit and, when all are busy, lets a sound take the voice of a less important or quieter one.
+    /// cue's instance limit and cooldown and, when all are busy, lets a sound take the voice of a less important or
+    /// quieter one.
     /// </summary>
     public sealed class SoundPool
     {
@@ -15,6 +17,7 @@ namespace HyperRTS.Presentation.Audio
         private readonly int[] _priorities;
         private readonly float[] _loudness;
         private readonly double[] _ends;
+        private readonly Dictionary<SoundCue, double> _rested = new();
 
         public SoundPool(int capacity)
         {
@@ -37,6 +40,11 @@ namespace HyperRTS.Presentation.Audio
                 return -1;
             }
 
+            if (_rested.TryGetValue(cue, out var rested) && now < rested)
+            {
+                return -1;
+            }
+
             var voice = FreeOrWeakest(now);
             if (IsBusy(voice, now) && !Outranks(cue.priority, loudness, voice))
             {
@@ -47,6 +55,11 @@ namespace HyperRTS.Presentation.Audio
             _priorities[voice] = cue.priority;
             _loudness[voice] = loudness;
             _ends[voice] = now + duration;
+            if (cue.cooldown > 0f)
+            {
+                _rested[cue] = now + cue.cooldown;
+            }
+
             return voice;
         }
 

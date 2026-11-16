@@ -8,7 +8,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Tests.Audio
 {
     /// <summary>
-    /// One-shot sounds: the pool's instance limits, priorities and loudness, the fade with distance, variations and the
+    /// One-shot sounds: the pool's instance limits, cooldown, priorities and loudness, the fade with distance, variations and the
     /// announcer queue.
     /// </summary>
     public class SoundPlaybackTests
@@ -56,6 +56,17 @@ namespace HyperRTS.Presentation.Tests.Audio
             Assert.AreEqual(-1, pool.Acquire(_gun, 1f, 0.5, 1.0), "third copy skipped");
             Assert.GreaterOrEqual(pool.Acquire(_gun, 1f, 1.5, 1.0), 0, "the first one has ended");
             Assert.AreEqual(-1, pool.Acquire(_voice, SoundPool.Inaudible / 2f, 1.5, 1.0), "too faint to be heard");
+        }
+
+        [Test]
+        public void Cue_WaitsOutItsCooldown_EvenAfterItEnds()
+        {
+            var pool = new SoundPool(8);
+            _voice.cooldown = 8f;
+
+            Assert.GreaterOrEqual(pool.Acquire(_voice, 1f, 0.0, 1.0), 0);
+            Assert.AreEqual(-1, pool.Acquire(_voice, 1f, 5.0, 1.0), "still resting");
+            Assert.GreaterOrEqual(pool.Acquire(_voice, 1f, 8.0, 1.0), 0);
         }
 
         [Test]

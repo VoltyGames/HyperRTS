@@ -33,6 +33,10 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [Min(1)]
         public int maxInstances = 4;
 
+        [Tooltip("Seconds after a play before the cue may play again; further plays are skipped. 0 never waits.")]
+        [Min(0f)]
+        public float cooldown;
+
         [Tooltip("0 is most important. When every voice is busy, a cue replaces a less important one.")]
         [Range(0, 256)]
         public int priority = 128;
