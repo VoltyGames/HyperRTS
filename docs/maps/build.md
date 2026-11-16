@@ -37,7 +37,7 @@ short of another is joined onto it.
 ## Ground and rendering
 
 Heights come from relief, hills, river valleys, ponds and ravines. Roads of a levelling class sit on embankments,
-with ramps up to bridges. Every surface sets an `edgeWidth` (the blend band) and an `edgeWander`; where two surfaces
+with ramps up to bridges, each as long as an easy grade needs. Every surface sets an `edgeWidth` (the blend band) and an `edgeWander`; where two surfaces
 meet the crisper one wins, and the wander turns with the symmetry.
 
 | Output | What it is |

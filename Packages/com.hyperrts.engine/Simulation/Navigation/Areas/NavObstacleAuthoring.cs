@@ -5,8 +5,8 @@ using UnityEngine;
 namespace HyperRTS.Simulation.Navigation.Areas
 {
     /// <summary>
-    /// Blocks a box of the pathfinding grid (rocks, cliffs). Buildings block their footprint already; water and
-    /// bridges are Nav Areas.
+    /// Blocks a box of the pathfinding grid (rocks, cliffs, a railing). Buildings block their footprint already; water
+    /// and bridges are Nav Areas. On a child it keeps its place in the world, so it never moves with its parent.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Entity + "Navigation/Nav Obstacle")]
     [Icon(HyperRTSIcons.NavObstacleAuthoring)]
@@ -21,7 +21,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
         {
             public override void Bake(NavObstacleAuthoring authoring)
             {
-                var writer = this.Writer();
+                var writer = this.Writer(TransformUsageFlags.Dynamic | TransformUsageFlags.WorldSpace);
                 NavSetup.AddObstacle(writer, authoring.size);
             }
         }

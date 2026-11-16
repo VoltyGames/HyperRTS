@@ -89,7 +89,7 @@ The chosen velocity goes to `Locomotion` as the heading and speed to drive ([dri
 block each other ignore each other: aircraft meet only aircraft, and only those near their own height. The same query feeds the overlap push, which moves neighbours
 apart along the line between their closest points until the larger of their spacings lies between them. Hulls never
 meet: each unit's whole move closes on a neighbour by at most half the room between hulls (`HullClearance`). Each
-formation slot is sized by its own unit's footprint, and a slot in a building or off the unit's ground moves to the
+formation slot is sized by its own unit's footprint, a squad's with its members' spread, and a slot in a building or off the unit's ground moves to the
 nearest spot the unit fits and can reach.
 
 `RightOfWay` answers every "who moves" question. Allies are teammates (`OwnerRelations`), and `UnitAuthoring.mass`,
@@ -149,7 +149,7 @@ It eases into and out of climbs and reads the ground two seconds ahead, so it ri
 only builds a pad-using aircraft when a pad of its kind is free, and the aircraft starts docked on it
 (`AirfieldPads`); Return to Base only claims one. An aircraft flies
 home once every weapon with limited rounds is empty, once, so a player order given after that holds. It reloads while
-docked. Its remains fall to the ground under gravity. Fuel is left to game code.
+docked. Its remains fall to the ground under gravity. 
 
 ## Transport
 

@@ -20,7 +20,11 @@ namespace HyperRTS.Editor.Maps.Heights
         private const float SwellScale = 0.3f;
         private const float FordEdge = 3f;
         private const float RampLength = 14f;
+        private const float MaxRampLength = 80f;
+        private const float RampStep = 2f;
+        private const float RampGrade = 0.12f;
         private const float RampEdge = 3f;
+        private const float CutEdge = 2f;
         private const float AbutmentDrop = 0.4f;
 
         public static MapHeights Shape(MapLayout layout, MapShapes shapes)
@@ -207,35 +211,62 @@ namespace HyperRTS.Editor.Maps.Heights
         private static void RaiseBridge(MapHeights heights, MapShapes shapes, MapCrossing crossing)
         {
             var half = crossing.Span * 0.5f;
-            heights.ForEachNear(crossing.Position, half + RampLength + crossing.Width, (x, z, _) =>
+            var ahead = Ramp.Measure(heights, crossing, 1f);
+            var behind = Ramp.Measure(heights, crossing, -1f);
+            var reach = half + Mathf.Max(ahead.Length, behind.Length) + crossing.Width * 2f;
+            heights.ForEachNear(crossing.Position, reach, (x, z, _) =>
             {
                 var p = heights.Position(x, z);
                 var local = crossing.Local(p);
-                var side = Mathf.Abs(local.x) - (crossing.Width * 0.5f + 1f);
+                var ramp = local.y < 0f ? behind : ahead;
                 var along = Mathf.Abs(local.y);
-                if (side > RampEdge || along > half + RampLength)
+                var underDeck = along <= half;
+                if (along > half + ramp.Length || (underDeck && shapes.WaterEdgeDistance(p) < 1f))
                 {
                     return;
                 }
 
                 var h = heights[x, z];
-                float target;
-                if (along <= half)
-                {
-                    if (shapes.WaterEdgeDistance(p) < 1f)
-                    {
-                        return;
-                    }
-
-                    target = crossing.Height - AbutmentDrop;
-                }
-                else
-                {
-                    target = Mathf.Lerp(crossing.Height, h, MapGeometry.Smooth((along - half) / RampLength));
-                }
-
-                heights[x, z] = Mathf.Lerp(h, target, 1f - MapGeometry.Smooth(side / RampEdge));
+                var target = underDeck ? crossing.Height - AbutmentDrop : ramp.Height(crossing.Height, h, along - half);
+                // A deep cut or a high bank eases out wider, so the ramp's sides stay drivable.
+                var edge = Mathf.Max(RampEdge, Mathf.Abs(h - target) * CutEdge);
+                var side = Mathf.Abs(local.x) - (crossing.Width * 0.5f + 1f);
+                heights[x, z] = Mathf.Lerp(h, target, 1f - MapGeometry.Smooth(side / edge));
             });
+        }
+
+        /// <summary>The ground's climb from one end of a deck: as long as it takes to meet the ground at an easy grade.</summary>
+        private readonly struct Ramp
+        {
+            public readonly float Length;
+            private readonly float _top;
+
+            private Ramp(float length, float top)
+            {
+                Length = length;
+                _top = top;
+            }
+
+            public static Ramp Measure(MapHeights heights, MapCrossing crossing, float sign)
+            {
+                var end = crossing.Position + crossing.Across * (sign * crossing.Span * 0.5f);
+                var length = RampLength;
+                var top = heights.Height(end + crossing.Across * (sign * length));
+                while (length < MaxRampLength && Mathf.Abs(top - crossing.Height) > RampGrade * length)
+                {
+                    length += RampStep;
+                    top = heights.Height(end + crossing.Across * (sign * length));
+                }
+
+                return new Ramp(length, top);
+            }
+
+            /// <summary>The height <paramref name="along"/> metres up it, meeting the ground <paramref name="h"/> at its top.</summary>
+            public float Height(float deck, float h, float along)
+            {
+                var t = along / Length;
+                return Mathf.Lerp(deck, Mathf.Lerp(_top, h, t), MapGeometry.Smooth(t));
+            }
         }
     }
 }

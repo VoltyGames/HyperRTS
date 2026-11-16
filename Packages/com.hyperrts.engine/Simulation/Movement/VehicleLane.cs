@@ -74,21 +74,8 @@ namespace HyperRTS.Simulation.Movement
         }
 
         // How far a squad's living members stand from its centre; zero for a single figure.
-        private readonly float Spread(Entity unit)
-        {
-            if (!_members.TryGetBuffer(unit, out var members))
-            {
-                return 0f;
-            }
-
-            var furthest = 0f;
-            foreach (var member in members)
-            {
-                furthest = member.Health > 0f ? math.max(furthest, math.lengthsq(member.Offset)) : furthest;
-            }
-
-            return math.sqrt(furthest);
-        }
+        private readonly float Spread(Entity unit) =>
+            _members.TryGetBuffer(unit, out var members) ? new SquadRoster(members).Spread() : 0f;
 
         private static float2 Travel(in SpatialEntry vehicle)
         {

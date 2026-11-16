@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -35,6 +36,7 @@ namespace HyperRTS.Simulation.Commands
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<NavAgent> _agents;
         private ComponentLookup<CombatStance> _stances;
+        private BufferLookup<SquadMember> _members;
 
         // Last formation group handed out; 0 means no group.
         private int _lastGroup;
@@ -50,6 +52,7 @@ namespace HyperRTS.Simulation.Commands
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _stances = state.GetComponentLookup<CombatStance>();
+            _members = state.GetBufferLookup<SquadMember>(true);
             state.RequireForUpdate<PlayerCommand>();
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MapSettings>();
@@ -72,6 +75,7 @@ namespace HyperRTS.Simulation.Commands
             _transforms.Update(ref state);
             _agents.Update(ref state);
             _stances.Update(ref state);
+            _members.Update(ref state);
 
             var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var map = SystemAPI.GetSingleton<MapSettings>();
@@ -183,7 +187,7 @@ namespace HyperRTS.Simulation.Commands
             for (var i = 0; i < movers.Length; i++)
             {
                 positions[i] = _transforms[movers[i]].Position;
-                spacings[i] = Agent(movers[i]).SlotSpacing;
+                spacings[i] = SlotSpacing(movers[i]);
             }
 
             Formation.Assign(positions, command.Position, spacings, slots);
@@ -210,6 +214,10 @@ namespace HyperRTS.Simulation.Commands
                 _writer.Issue(unit, order, queue);
             }
         }
+
+        // A squad's slot holds its members too, so they stand clear of the slots beside it.
+        private float2 SlotSpacing(Entity unit) => Agent(unit).SlotSpacing +
+            (_members.TryGetBuffer(unit, out var members) ? new SquadRoster(members).Spread() * 2f : 0f);
 
         private NavAgent Agent(Entity unit) =>
             _agents.TryGetComponent(unit, out var own) ? own : new NavAgent { Radius = EntityRadius.Default };

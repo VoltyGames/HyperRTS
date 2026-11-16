@@ -45,6 +45,18 @@ namespace HyperRTS.Simulation.Common.Infantry
             return count;
         }
 
+        /// <summary>How far the living members stand from the squad's centre, in metres.</summary>
+        public float Spread()
+        {
+            var furthest = 0f;
+            foreach (var member in _members)
+            {
+                furthest = member.Alive ? math.max(furthest, math.lengthsq(member.Offset)) : furthest;
+            }
+
+            return math.sqrt(furthest);
+        }
+
         /// <summary>Takes <paramref name="amount"/> off one member only, none carrying over; returns the squad's new total.</summary>
         public float Hurt(int index, float amount)
         {
