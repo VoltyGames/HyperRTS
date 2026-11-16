@@ -50,6 +50,11 @@ until it has one.
 textures. `sixway` and `ring` layers are lit through `HyperRTS/EffectSixWay` and draw their sheet as baked: soft edges
 and a column's faded source belong in the sheet, not the layer.
 
+The placement and motion blocks (`Graph*.hlsl` under `Presentation/Effects/Shaders`) are Custom HLSL blocks. VFX Graph
+reads which attributes a block writes from assignments to `attributes.<name>` in the block's own file, so a block
+assigns every attribute it changes itself: one that hands `attributes.position` to a shared helper as an `inout`
+argument compiles, but its writes are dropped and every particle stays at the world origin.
+
 All reflection into VFX Graph's editor model sits in `GraphModel`. `EffectGraphBuilder.Problem` names a missing or stale
 graph, and `EffectGraphBuilder.ShaderErrors` compiles a built graph's shaders so tests catch errors before first draw.
 
