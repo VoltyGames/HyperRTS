@@ -91,6 +91,7 @@ Shader "HyperRTS/Road"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
 
             struct Attributes
             {
@@ -135,14 +136,16 @@ Shader "HyperRTS/Road"
                 return output;
             }
 
-            // Noise decides coverage toward the sides, so gravel thins in patches instead of along a clean line.
+            // Noise decides coverage toward the sides, so gravel thins in patches instead of along a clean line. A road
+            // never draws where a building stands, so it can't show through a yard, a pit or a silo.
             half Coverage(Varyings input, half albedoAlpha)
             {
+                half yard = 1.0 - smoothstep(0.3, 0.7, BuildingCover(input.positionWS.xz));
                 half inside = 1.0 - abs(input.uv.x * 2.0 - 1.0);
                 half fade = saturate(inside / _EdgeWidth);
                 half noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, input.positionWS.xz / _NoiseSize).r;
                 half crumble = saturate(fade * (1.0 + _EdgeNoise) - noise * _EdgeNoise);
-                return smoothstep(0.0, 1.0, crumble) * albedoAlpha * input.opacity;
+                return smoothstep(0.0, 1.0, crumble) * albedoAlpha * input.opacity * yard;
             }
 
             // How readily water stands here: in the wheel ruts and along the edges, broken up by world noise.

@@ -61,7 +61,8 @@ Vehicles leave ruts, shells leave craters and scorch, units in water leave wakes
 
 `TrackMarks` on a vehicle, the `GroundScar` of an `ImpactMark` or of `DeathStainAuthoring` (crater depth, scorch, rubble,
 ash, fuel, mud) stamp the maps. Other sources, such as collapsing buildings, call `TrampleStamps.AddStain`.
-Shaders read the maps through `Trample.hlsl`. The terrain tiles the rubble, ash and mud textures over the stains with
+Shaders read the maps through `Trample.hlsl`. Grass, row crops and road ribbons skip where buildings stand, through
+the `_HyperRTSFootprints` mask (`BuildingFootprints.hlsl`), so a road under a yard or a silo never shows through it. The terrain tiles the rubble, ash and mud textures over the stains with
 the same hex tiling as its layers (`TerrainStains.hlsl`), so a burnt field never shows its tile.
 
 **Craters dent the drawn ground.** `CraterTerrainSystem` lowers the active Unity Terrain's heights under each new bowl,
