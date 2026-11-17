@@ -1,5 +1,6 @@
 using System;
 using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
@@ -111,6 +112,24 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         /// <summary>Kills <paramref name="units"/> through the damage system, so deaths play out as in a fight.</summary>
         public static void Destroy(EntityManager entityManager, NativeArray<Entity> units) =>
             Damage(entityManager, units, LethalDamage);
+
+        /// <summary>Ends every ability cooldown of <paramref name="units"/>, a charging strategic asset's too.</summary>
+        public static void ReadyAbilities(EntityManager entityManager, NativeArray<Entity> units)
+        {
+            foreach (var unit in units)
+            {
+                if (!entityManager.HasBuffer<AbilityCooldown>(unit))
+                {
+                    continue;
+                }
+
+                var cooldowns = entityManager.GetBuffer<AbilityCooldown>(unit);
+                for (var i = 0; i < cooldowns.Length; i++)
+                {
+                    cooldowns.ElementAt(i).Remaining = 0f;
+                }
+            }
+        }
 
         /// <summary>Hurts each of <paramref name="units"/> by <paramref name="amount"/> through the damage system, untyped.</summary>
         public static void Damage(EntityManager entityManager, NativeArray<Entity> units, float amount) =>

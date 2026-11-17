@@ -1,17 +1,17 @@
-using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
+using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Cues.Effects
 {
-    /// <summary>What this unit's or building's shots leave where they land: effects by the material struck, and marks on open ground.</summary>
+    /// <summary>What this unit's or building's shots and strikes leave where they land: effects by the material struck, and marks on open ground.</summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Effects/Impact")]
     [Icon(HyperRTSIcons.ImpactAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
     [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(WeaponAuthoring), "a Weapon")]
+    [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
     public class ImpactAuthoring : AuthoringBehaviour
     {
         [Tooltip("Rigs per surface material (dirt spray, water splash, sparks on metal). Leave empty for marks only.")]

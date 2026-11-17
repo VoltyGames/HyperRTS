@@ -21,6 +21,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             ["sample"] = SampleStep.Read,
             ["destroy"] = DestroyStep.Read,
             ["damage"] = DamageStep.Read,
+            ["ready"] = ReadyStep.Read,
             ["speed"] = SpeedStep.Read,
             ["fog"] = FogStep.Read,
         };

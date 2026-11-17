@@ -115,6 +115,7 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 | `sample` | `what` (`camera` or a group), `seconds` | Writes `<what>.tsv`, a row per rendered frame: camera pose, or each unit's position and health |
 | `destroy` | a group | Kills it through the damage system |
 | `damage` | `units`, `amount` | Damages it through the damage system |
+| `ready` | a group | Ends its ability cooldowns, so a power that charges for minutes, such as a strategic asset, fires at once |
 | `speed` | a number | Game speed of a single-player match |
 | `fog` | true or false | Fog of war |
 
