@@ -50,6 +50,13 @@ namespace HyperRTS.Simulation.Combat.Weapons
         public float3 LaunchPoint(in LocalTransform shooter, in WeaponPose pose, float3 muzzle) =>
             HasMuzzle ? shooter.TransformPoint(PosedMuzzle(pose, muzzle)) : shooter.Position + new float3(0f, ProjectileHeight, 0f);
 
+        /// <summary>The way the posed barrel points in the world: forward raised by the pitch, then turned by the yaw.</summary>
+        public float3 BarrelDirection(in LocalTransform shooter, in WeaponPose pose)
+        {
+            var raised = math.rotate(quaternion.AxisAngle(math.right(), -pose.PitchAngle), math.forward());
+            return math.rotate(shooter.Rotation, math.rotate(quaternion.AxisAngle(math.up(), pose.YawAngle), raised));
+        }
+
         /// <summary>Where the weapon aims on a target standing at <paramref name="target"/>.</summary>
         public float3 TargetPoint(float3 target) => target + new float3(0f, ProjectileHeight, 0f);
 

@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 var origin = _origins.NextOrigin(firing, mount.Weapon, ref mount.Cycle);
                 if (round == 0)
                 {
-                    PlayFire(firing, origin, aim.Point);
+                    PlayFire(firing, mount.Weapon, origin, aim.Point);
                 }
 
                 Shoot(firing, mount.Weapon, origin, round, aim);
@@ -214,9 +214,19 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
         }
 
-        /// <summary>The fire cue faces the target level, the way the shooter turned, from the muzzle or port if it has one.</summary>
-        private void PlayFire(in Firing firing, in ShotOrigin origin, float3 targetPosition)
+        /// <summary>
+        /// The fire cue plays from the muzzle along the posed barrel, so a raised launcher's blast leaves its tubes;
+        /// from a port, or with no muzzle, it faces the target level, the way the shooter turned.
+        /// </summary>
+        private void PlayFire(in Firing firing, in Weapon weapon, in ShotOrigin origin, float3 targetPosition)
         {
+            if (origin.AtMuzzle && !firing.Ported)
+            {
+                var barrel = weapon.Aim.BarrelDirection(firing.Place, firing.Pose);
+                _cues.PlayAt(firing.Shooter, CueSlot.Fire, origin.Launch, barrel, firing.Owner, firing.PoseIndex);
+                return;
+            }
+
             var toward = targetPosition - firing.Place.Position;
             toward.y = 0f;
             var direction = math.normalizesafe(toward, firing.Place.Forward());

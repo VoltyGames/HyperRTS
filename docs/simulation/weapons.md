@@ -30,7 +30,7 @@ Each weapon has a `WeaponPose` (yaw, pitch, shot count) that clients read to aim
 every extra weapon, fires without turning the hull once its pose is within `aimTolerance`. A hull-fixed primary sets a
 `FacingGoal` instead, and movement turns the parked hull. Buildings never turn, so their weapons bake as turreted.
 Each round gets a `ShotOrigin` from `FiringLookup`: its launch point and the point its hit counts from, at the muzzle
-turned by the pose, so directional armor sees the real origin and the Fire cue plays from there. A garrisoned
+turned by the pose, so directional armor sees the real origin and the Fire cue plays from there along the posed barrel (`WeaponAim.BarrelDirection`), so a raised launcher's blast leaves its tubes. A garrisoned
 passenger fires from the `FiringPort` of its container that faces the target best, and every round leaves from that
 port. A squad's volley counts one shot on the pose and plays one cue.
 
