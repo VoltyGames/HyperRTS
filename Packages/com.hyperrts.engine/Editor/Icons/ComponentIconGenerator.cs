@@ -71,7 +71,8 @@ namespace HyperRTS.Editor.Icons
         (new Color(0.62f, 0.45f, 0.28f), new[]
         {
             "AmbientLife", "Atmosphere", "CloudShadows", "FieldFireSettings", "GrassField", "GrassRenderer",
-            "GroundColor", "RowCrop", "RowCropFields", "RowCropRenderer", "TrampleMap", "TrenchAuthoring",
+            "GroundColor", "RowCrop", "RowCropFields", "RowCropRenderer", "TerrainHoleAuthoring",
+            "TrampleMap", "TrenchAuthoring",
             "WeatherSet", "Wind",
         }),
         // Match

@@ -160,6 +160,7 @@ file is named after the component it marks.
 | StretchPartsAuthoring | delapouite/resize | Delapouite |
 | TeamStripAuthoring | delapouite/vertical-banner | Delapouite |
 | TerrainHeightAuthoring | lorc/mountains | Lorc |
+| TerrainHoleAuthoring | delapouite/hole | Delapouite |
 | ToppleAuthoring | skoll/logging | Skoll |
 | TossedTurretAuthoring | sbed/turret | Sbed |
 | TrackMarksAuthoring | delapouite/tire-tracks | Delapouite |
