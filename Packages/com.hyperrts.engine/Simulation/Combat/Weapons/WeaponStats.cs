@@ -131,6 +131,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         [Min(0)]
         public int rounds;
 
+        [Tooltip("A strategic weapon, such as a nuclear missile: the match's strategic assets switch keeps it empty. Needs limited rounds.")]
+        public bool strategic;
+
         [Tooltip("Seconds to reload one round, or the whole magazine with Magazine.")]
         [Min(0.05f)]
         public float reloadTime = 1f;
@@ -197,6 +200,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 SalvoInterval = salvoInterval,
                 Spread = spread,
                 NeedsDeploy = needsDeploy,
+                Strategic = strategic,
                 Role = BakeRole(root),
                 FiringArc = math.radians(firingArc),
                 Aim = new WeaponAim
@@ -219,6 +223,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         private WeaponRole BakeRole(Transform root)
         {
+            if (strategic && rounds == 0)
+            {
+                throw new InvalidOperationException($"Weapon on '{root.name}' is strategic but never runs dry; give it rounds.");
+            }
+
             if (firesOnOrder && Role == WeaponRole.Interceptor)
             {
                 throw new InvalidOperationException($"Weapon on '{root.name}' targets projectiles and fires on order.");

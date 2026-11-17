@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
@@ -11,7 +12,7 @@ namespace HyperRTS.Simulation.Strikes
 {
     /// <summary>
     /// Tracks each player's <see cref="StrategicCharge"/> from their strategic assets, and holds every strike ability
-    /// on cooldown while the match switches strategic assets off.
+    /// on cooldown and every strategic weapon empty while the match switches strategic assets off.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -85,6 +86,19 @@ namespace HyperRTS.Simulation.Strikes
                          .Query<RefRO<MissileStrike>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>>())
             {
                 Hold(abilities, states, strike.ValueRO.AbilityId);
+            }
+
+            foreach (var mounts in SystemAPI.Query<DynamicBuffer<WeaponMount>>())
+            {
+                for (var i = 0; i < mounts.Length; i++)
+                {
+                    ref var mount = ref mounts.ElementAt(i);
+                    if (mount.Weapon.Strategic)
+                    {
+                        mount.Ammo.Current = 0;
+                        mount.Ammo.ReloadElapsed = 0f;
+                    }
+                }
             }
         }
 

@@ -120,6 +120,26 @@ namespace HyperRTS.Simulation.Tests.Strikes
         }
 
         [Test]
+        public void SwitchedOff_KeepsStrategicWeaponsEmpty()
+        {
+            var launcher = World.AddWeapon(World.SpawnUnit(1, new float3(20f, 0f, 0f)), new TestWeapon { Range = 6f });
+            World.SetAmmo(launcher, 1, 1f, AmmoRefill.Magazine);
+            var weapon = World.Primary(launcher);
+            weapon.Strategic = true;
+            World.SetPrimary(launcher, weapon);
+            var match = World.MatchEntity();
+            var rules = World.Get<MatchRules>(match);
+            rules.StrategicAssets = false;
+            World.Set(match, rules);
+            var enemy = World.SpawnUnit(2, new float3(20f, 0f, 4f));
+
+            World.Run(3f);
+
+            Assert.AreEqual(0, World.PrimaryAmmo(launcher).Current);
+            Assert.AreEqual(100f, World.GetHealth(enemy));
+        }
+
+        [Test]
         public void Firing_SendsAStealthedBomberFromTheOwnersEdge_RevealedJustBeforeTheDrop()
         {
             Fire();

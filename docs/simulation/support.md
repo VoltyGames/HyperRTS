@@ -117,7 +117,8 @@ cooldown is the owner's strategic asset charge, which every player sees; unticke
 with its own cooldown, such as a tactical strike.
 
 - The charge pauses while the building is offline and restarts for a new owner. `MatchRules.StrategicAssets` (set by
-  `MatchSetup.StrategicAssets`, on by default) holds every strike ability on cooldown while it is off.
+  `MatchSetup.StrategicAssets`, on by default) holds every strike ability on cooldown while it is off, and keeps every
+  weapon marked `strategic` (a unit's nuclear missile) empty.
 - Each player's `StrategicCharge` replicates on the player ghost, so every client shows the map-wide countdown. Losing
   the building clears it.
 - A strike's building plays its `Warning` cue at the target, sized by the blast, and every player gets it through fog

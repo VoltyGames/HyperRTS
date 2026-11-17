@@ -57,6 +57,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Holds fire until its unit is <see cref="Deployable"/> and deployed.</summary>
         public bool NeedsDeploy;
 
+        /// <summary>Kept empty while <see cref="Match.MatchRules.StrategicAssets"/> is off.</summary>
+        public bool Strategic;
+
         public WeaponRole Role;
 
         /// <summary>
