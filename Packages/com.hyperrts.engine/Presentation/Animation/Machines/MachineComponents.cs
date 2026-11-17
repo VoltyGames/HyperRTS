@@ -22,6 +22,9 @@ namespace HyperRTS.Presentation.Animation.Machines
         /// <summary>Linear progress from stopped (0) to full speed (1).</summary>
         public float Ramp;
 
+        /// <summary>Whether <see cref="Ramp"/> changed this frame, which plays the machine's loop sound.</summary>
+        public bool Moving;
+
         /// <summary>Set by the first frame, which snaps <see cref="Ramp"/>: no spin-up when first seen.</summary>
         public bool Started;
 
@@ -65,7 +68,9 @@ namespace HyperRTS.Presentation.Animation.Machines
         {
             var target = runs ? 1f : 0f;
             var step = deltaTime / RampSeconds;
+            var was = Ramp;
             Ramp = Started ? Ramp + math.clamp(target - Ramp, -step, step) : target;
+            Moving = Started && Ramp != was;
             Started = true;
             Time += deltaTime * Speed;
         }
@@ -73,6 +78,7 @@ namespace HyperRTS.Presentation.Animation.Machines
         /// <summary>Takes <paramref name="ramp"/> as the speed outright, to follow a unit's deploy progress or load.</summary>
         public void Follow(float ramp, float deltaTime)
         {
+            Moving = Started && ramp != Ramp;
             Ramp = ramp;
             Started = true;
             Time += deltaTime * Speed;

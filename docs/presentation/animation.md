@@ -81,6 +81,10 @@ abilities is ready and for `keepRunningSeconds` after it fires, so a silo door s
 everyone to see. These read replicated state (`BuildWork`, `HarvestState`, `Harvester.CargoAmount`, `AbilityCooldown`), so clients show them. A `Building` machine needs `BuilderAuthoring` above it and
 the harvester kinds need `HarvesterAuthoring`, or the bake fails.
 
+A machine's `MachineClock.Moving` is true on frames its ramp changed. `LoopSoundSystem` plays the `Machine` loop of its
+entity's `EntityLoopsAuthoring` while any of its machines moves, so a machine stalled partway, such as a harvester at
+half load, is silent.
+
 A door is a machine of its own. `Releasing` runs after the producer above it releases a unit, so enemies see it too: set
 `rampSeconds` to the open time and `keepRunningSeconds` to that plus the time it stays open. Use `Raise` for a hinged
 door, `Extend` for a sliding one and `Stretch` for a roll-up curtain. `Dropping` is for a cargo ramp or bomb bay under

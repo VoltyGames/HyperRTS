@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Audio;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Sounds;
@@ -198,6 +199,22 @@ namespace HyperRTS.Presentation.Tests.Audio
 
             Assert.AreEqual(1f, state.Level(LoopSlot.Machine, Tuning, false, true));
             Assert.AreEqual(0f, state.Level(LoopSlot.Machine, Tuning, false, false));
+        }
+
+        [Test]
+        public void MachineClock_IsMovingOnlyWhileItsRampChanges()
+        {
+            var clock = new MachineClock { RampSeconds = 1f };
+
+            clock.Follow(0.5f, Frame);
+            Assert.IsFalse(clock.Moving, "the first frame snaps");
+            clock.Follow(0.6f, Frame);
+            Assert.IsTrue(clock.Moving);
+            clock.Follow(0.6f, Frame);
+            Assert.IsFalse(clock.Moving, "a stalled half-open machine stays silent");
+
+            clock.Advance(true, Frame);
+            Assert.IsTrue(clock.Moving);
         }
     }
 }

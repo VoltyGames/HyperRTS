@@ -102,8 +102,7 @@ namespace HyperRTS.Presentation.Audio
             _machinesMoving.Clear();
             foreach (var clock in SystemAPI.Query<RefRO<MachineClock>>())
             {
-                var ramp = clock.ValueRO.Ramp;
-                if (ramp > 0f && ramp < 1f)
+                if (clock.ValueRO.Moving)
                 {
                     _machinesMoving.Add(clock.ValueRO.Owner);
                 }
