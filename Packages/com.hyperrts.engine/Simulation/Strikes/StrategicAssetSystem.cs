@@ -5,6 +5,8 @@ using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using Unity.Burst;
+using Unity.Burst.Intrinsics;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -19,9 +21,12 @@ namespace HyperRTS.Simulation.Strikes
     [UpdateAfter(typeof(AbilitySystem))]
     public partial struct StrategicAssetSystem : ISystem
     {
+        private EntityQuery _mounts;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _mounts = new EntityQueryBuilder(Allocator.Temp).WithAllRW<WeaponMount>().Build(ref state);
             state.RequireForUpdate<MatchRules>();
             state.RequireForUpdate<PlayerRegistry>();
         }
@@ -76,33 +81,66 @@ namespace HyperRTS.Simulation.Strikes
 
         private void HoldStrikes(ref SystemState state)
         {
-            foreach (var (strike, abilities, states) in SystemAPI
-                         .Query<RefRO<BomberStrike>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>>())
+            foreach (var (abilities, states, entity) in SystemAPI
+                         .Query<DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>>()
+                         .WithAny<BomberStrike, MissileStrike>().WithEntityAccess())
             {
-                Hold(abilities, states, strike.ValueRO.AbilityId);
+                var id = SystemAPI.HasComponent<BomberStrike>(entity)
+                    ? SystemAPI.GetComponent<BomberStrike>(entity).AbilityId
+                    : SystemAPI.GetComponent<MissileStrike>(entity).AbilityId;
+                states.ElementAt(AbilityCooldown.Find(states, id)).Remaining = abilities[Ability.Find(abilities, id)].Cooldown;
             }
 
-            foreach (var (strike, abilities, states) in SystemAPI
-                         .Query<RefRO<MissileStrike>, DynamicBuffer<Ability>, DynamicBuffer<AbilityCooldown>>())
+            state.Dependency = new EmptyStrategicWeaponsJob
             {
-                Hold(abilities, states, strike.ValueRO.AbilityId);
-            }
+                Mounts = SystemAPI.GetBufferTypeHandle<WeaponMount>(),
+            }.ScheduleParallel(_mounts, state.Dependency);
+        }
 
-            foreach (var mounts in SystemAPI.Query<DynamicBuffer<WeaponMount>>())
+        [BurstCompile]
+        private struct EmptyStrategicWeaponsJob : IJobChunk
+        {
+            public BufferTypeHandle<WeaponMount> Mounts;
+
+            // The writable accessor is taken only for a unit with a strategic round to clear, so other chunks keep their version.
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
+                in v128 chunkEnabledMask)
             {
-                for (var i = 0; i < mounts.Length; i++)
+                var read = chunk.GetBufferAccessorRO(ref Mounts);
+                var entities = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (entities.NextEntityIndex(out var i))
                 {
-                    ref var mount = ref mounts.ElementAt(i);
-                    if (mount.Weapon.Strategic)
+                    if (!HasLoadedStrategic(read[i]))
                     {
-                        mount.Ammo.Current = 0;
-                        mount.Ammo.ReloadElapsed = 0f;
+                        continue;
+                    }
+
+                    var mounts = chunk.GetBufferAccessorRW(ref Mounts)[i];
+                    for (var m = 0; m < mounts.Length; m++)
+                    {
+                        ref var mount = ref mounts.ElementAt(m);
+                        if (mount.Weapon.Strategic)
+                        {
+                            mount.Ammo.Current = 0;
+                            mount.Ammo.ReloadElapsed = 0f;
+                        }
                     }
                 }
             }
-        }
 
-        private static void Hold(DynamicBuffer<Ability> abilities, DynamicBuffer<AbilityCooldown> states, int id) =>
-            states.ElementAt(AbilityCooldown.Find(states, id)).Remaining = abilities[Ability.Find(abilities, id)].Cooldown;
+            private static bool HasLoadedStrategic(in DynamicBuffer<WeaponMount> mounts)
+            {
+                for (var i = 0; i < mounts.Length; i++)
+                {
+                    var mount = mounts[i];
+                    if (mount.Weapon.Strategic && (mount.Ammo.Current != 0 || mount.Ammo.ReloadElapsed != 0f))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
     }
 }
