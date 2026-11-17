@@ -60,7 +60,9 @@ detached jobs. `--tag hyperrts` lists them.
 | `map look <map> [weathers] [quality] [graded] [cost]` | Enters Play, captures the spec's `looks` per weather once GI settles, writes `summary.json`, leaves Play. `--graded false` turns Color Lookup off (for fitting lookups); `--cost true` takes no images and writes a per-feature GPU and main-thread cost to `cost.json` |
 | `map look_status` | Whether a look capture runs, and how it ended |
 | `effect build [recipe]` | Builds effect graphs, reporting each `Problem` and `ShaderErrors` |
-| `effect capture <rig> [times] [distance]` | Renders a rig to `Logs/EffectCaptures/<Rig>/` at seconds after its burst, 44 degrees down from the front and turned 90 degrees (`_front`, `_side`); fails after 45 s without an Editor frame, so keep the Editor in front |
+| `effect show <recipe> [layer]` | Prints a recipe's layers, a block each, as `field=value` text in the form `effect set` takes |
+| `effect set <recipe> <layer> <changes> [build]` | Sets layer fields, saves the recipe and rebuilds its graph unless the positional `build` is `false` (`effect set VFX_X Wall "size*=1.3" false`); returns each change as `layer.field: before -> after`. `changes` are `field=value` joined by `;` (a value may hold commas), or `field*=factor` to scale a number or range. A field is a serialized path (`size.min`, `flipbook.columns`, `sixWay.opacity`); values are numbers, `true`/`false`, enum names, colours `r,g,b[,a]`, vectors `x,y,z`, ranges `min..max`, curves `0:0.9,1:1.1`, bursts `0:1-1,0.7:1-1` (delay:min-max) and textures by asset name or path. An unknown layer or field fails, naming it |
+| `effect capture <rig> [times] [distance] [height] [label]` | Warms the rig up on a throwaway copy, then renders it to `Logs/EffectCaptures/<Rig>/[label/]` at seconds after its burst, 44 degrees down from the front and turned 90 degrees (`_front`, `_side`), aimed `height` metres up (raise it for a tall loop); a label keeps the files of an earlier capture; fails after 45 s without an Editor frame, so keep the Editor in front |
 | `play capture <name> [seconds] [fps]` | In Play, records the Game view as PNGs at a fixed rate into `Logs/FrameCaptures/<name>/` |
 | `generator run [name] [--list true] [--stale true]` | Runs one, all, or the out of date [generators](#generators) |
 | `bone bake [set]` | Bakes a `BoneAnimationSet` (none named bakes all) |
@@ -101,7 +103,8 @@ they show only when it is embedded or local.
 An effect's VFX graph is generated from its `<Graph>.effect.asset` recipe, an `EffectRecipe` made with **Assets ▸
 Create ▸ HyperRTS ▸ Effects ▸ Effect Recipe**. Build it from **Assets ▸ HyperRTS ▸ Build Effect Graph**, **Build All
 Effect Graphs**, the **Effect graphs** [generator](#generators), the recipe inspector's **Build graph** or the
-`effect build` [command](#commands). A build is in place: the graph keeps its GUID, so prefabs keep their reference.
+`effect build` [command](#commands); `effect show` and `effect set` read and edit a recipe's layers from the command
+line. A build is in place: the graph keeps its GUID, so prefabs keep their reference.
 `EffectRecipeRule` reports a recipe without layers, a broken texture or mesh link, a debris layer without 1 to 4 meshes
 and a graph that is missing or older than its recipe. The recipe format and builder are in
 [client](../presentation/effects.md#effects).

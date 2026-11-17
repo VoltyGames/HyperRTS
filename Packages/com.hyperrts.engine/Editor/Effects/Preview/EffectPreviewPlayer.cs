@@ -105,17 +105,16 @@ namespace HyperRTS.Editor.Effects.Preview
                 effect.pause = Paused;
             }
 
+            // A paused step still sends the stream its Play event, which waits for a frame after the start.
             if (!Paused)
             {
                 SincePlay += deltaTime;
-                MoveStream(deltaTime);
             }
+
+            MoveStream(Paused ? 0f : deltaTime);
 
             _rig.Tick();
         }
-
-        /// <summary>Whether every graph is culled, which keeps it from running until a camera sees it.</summary>
-        public bool AllCulled => Array.TrueForAll(_graphs, effect => effect.culled);
 
         /// <summary>Advances the paused graphs by <paramref name="seconds"/> at the next editor frame, moving the stream along.</summary>
         public void Simulate(float seconds)

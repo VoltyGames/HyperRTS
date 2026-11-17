@@ -17,20 +17,18 @@ namespace HyperRTS.Editor.Effects.Preview
 {
     /// <summary>
     /// Plays a rig above the open scene as the Effects page does and renders it at chosen times after the burst, from an
-    /// RTS camera in front and one turned to the side, over a grey ground, into <c>Logs/EffectCaptures/&lt;Rig&gt;/</c>.
+    /// RTS camera in front and one turned to the side, over a grey ground, into <c>Logs/EffectCaptures/&lt;Rig&gt;/</c>, or its label subfolder.
     /// </summary>
     public sealed class EffectCapture
     {
         public const string Root = "Logs/EffectCaptures";
-        public const string DefaultTimes = "0.1,0.3,0.6,1.2,2.5";
-        public const float DefaultDistance = 24f;
-
         private const int Width = 960;
         private const int Height = 540;
         // The default camera's pitch at its closest zoom, where effects are seen largest.
         private static readonly float Pitch = new CameraZoom().pitchAtMin;
-        private const float AimHeight = 2.5f;
-        private const int StartFrames = 300;
+        // Frames for a fresh graph to run once, and for particles to draw so their shaders compile.
+        private const int ReadyFrames = 2;
+        private const int WarmFrames = 4;
         private const double FrameSeconds = 45.0;
 
         // Far above any map, so the open scene's own contents stay out of the picture.
@@ -40,24 +38,24 @@ namespace HyperRTS.Editor.Effects.Preview
         private static readonly (string Name, float Yaw)[] Views = { ("front", 0f), ("side", 90f) };
 
         private readonly GameObject _prefab;
-        private readonly float _distance;
+        private readonly EffectCaptureSettings _settings;
 
         /// <summary>
-        /// A capture of the rig prefab named <paramref name="rig"/> (or at that path) at <paramref name="times"/>, such
-        /// as <c>0.1,0.3,2.5</c>, seconds after its burst, <paramref name="distance"/> metres from the aim. Throws naming
-        /// a missing rig or a bad time.
+        /// A capture of the rig prefab named <paramref name="rig"/> (or at that path) as <paramref name="settings"/> say.
+        /// Throws naming a missing rig or a bad time.
         /// </summary>
-        public EffectCapture(string rig, string times = DefaultTimes, float distance = DefaultDistance)
+        public EffectCapture(string rig, EffectCaptureSettings settings)
         {
             _prefab = FindRig(rig);
-            Times = ParseTimes(string.IsNullOrWhiteSpace(times) ? DefaultTimes : times);
+            _settings = settings;
+            Times = ParseTimes(string.IsNullOrWhiteSpace(settings.Times) ? EffectCaptureSettings.DefaultTimes : settings.Times);
             if (Times.Count == 0)
             {
                 throw new ArgumentException("HyperRTS: no capture times given.");
             }
 
-            _distance = distance;
-            Folder = $"{Root}/{_prefab.name}";
+            var label = settings.Label.Trim();
+            Folder = label.Length == 0 ? $"{Root}/{_prefab.name}" : $"{Root}/{_prefab.name}/{label}";
         }
 
         /// <summary>Seconds after the burst, ascending.</summary>
@@ -77,10 +75,12 @@ namespace HyperRTS.Editor.Effects.Preview
             {
                 var camera = Lay(set);
                 camera.targetTexture = target;
+                await WarmUp(player, camera);
                 player.Load(_prefab);
-                await NextFrame();
-                player.Play(true);
-                await Start(player, camera);
+                await Frames(player, camera, ReadyFrames, 0f);
+                player.Paused = true;
+                player.Play(false);
+                await Frames(player, camera, ReadyFrames, 0f);
                 return await Shoot(player, camera, target);
             }
             finally
@@ -95,12 +95,20 @@ namespace HyperRTS.Editor.Effects.Preview
             }
         }
 
-        // A graph runs once a camera sees it, and sees it once it has run, so render until it starts.
-        private static async Task Start(EffectPreviewPlayer player, Camera camera)
+        // A graph drops events until it has run once and compiles its shaders on first draw, so play a throwaway copy first.
+        private async Task WarmUp(EffectPreviewPlayer player, Camera camera)
         {
-            for (var frame = 0; frame < StartFrames && player.AllCulled; frame++)
+            player.Load(_prefab);
+            await Frames(player, camera, ReadyFrames, 0f);
+            player.Play(false);
+            await Frames(player, camera, WarmFrames, EffectPreviewPlayer.StepSeconds);
+        }
+
+        private static async Task Frames(EffectPreviewPlayer player, Camera camera, int count, float deltaTime)
+        {
+            for (var frame = 0; frame < count; frame++)
             {
-                player.Step(0f);
+                player.Step(deltaTime);
                 camera.Render();
                 await NextFrame();
             }
@@ -229,8 +237,8 @@ namespace HyperRTS.Editor.Effects.Preview
         private void Aim(Camera camera, float yaw)
         {
             var rotation = Quaternion.Euler(Pitch, yaw, 0f);
-            var aim = Sky + new Vector3(0f, AimHeight, 0f);
-            camera.transform.SetPositionAndRotation(aim - rotation * Vector3.forward * _distance, rotation);
+            var aim = Sky + new Vector3(0f, _settings.Height, 0f);
+            camera.transform.SetPositionAndRotation(aim - rotation * Vector3.forward * _settings.Distance, rotation);
         }
     }
 }
