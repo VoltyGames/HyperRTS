@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using HyperRTS.Editor.Common;
-using HyperRTS.Input.Cameras;
 using HyperRTS.Presentation.Effects.Rig;
 using UnityEditor;
 using UnityEngine;
@@ -24,8 +23,6 @@ namespace HyperRTS.Editor.Effects.Preview
         public const string Root = "Logs/EffectCaptures";
         private const int Width = 960;
         private const int Height = 540;
-        // The default camera's pitch at its closest zoom, where effects are seen largest.
-        private static readonly float Pitch = new CameraZoom().pitchAtMin;
         // Frames for a fresh graph to run once, and for particles to draw so their shaders compile.
         private const int ReadyFrames = 2;
         private const int WarmFrames = 4;
@@ -236,7 +233,7 @@ namespace HyperRTS.Editor.Effects.Preview
 
         private void Aim(Camera camera, float yaw)
         {
-            var rotation = Quaternion.Euler(Pitch, yaw, 0f);
+            var rotation = Quaternion.Euler(_settings.Pitch, yaw, 0f);
             var aim = Sky + new Vector3(0f, _settings.Height, 0f);
             camera.transform.SetPositionAndRotation(aim - rotation * Vector3.forward * _settings.Distance, rotation);
         }

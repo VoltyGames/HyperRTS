@@ -57,7 +57,15 @@ namespace HyperRTS.Editor.Effects.Graph
             [CliArg("times", "Seconds after the burst, comma separated")] string times = EffectCaptureSettings.DefaultTimes,
             [CliArg("distance", "Metres from the camera to the aim point")] float distance = EffectCaptureSettings.DefaultDistance,
             [CliArg("height", "Metres above the ground the camera aims at; raise it for a tall column")] float height = EffectCaptureSettings.DefaultHeight,
-            [CliArg("label", "A subfolder name, so a later capture keeps this one's files")] string label = "") =>
-            await new EffectCapture(rig, new EffectCaptureSettings { Times = times, Distance = distance, Height = height, Label = label }).Render();
+            [CliArg("label", "A subfolder name, so a later capture keeps this one's files")] string label = "",
+            [CliArg("pitch", "Degrees the camera looks down; 0 keeps the default camera's closest-zoom pitch")] float pitch = 0f) =>
+            await new EffectCapture(rig, new EffectCaptureSettings
+            {
+                Times = times,
+                Distance = distance,
+                Height = height,
+                Label = label,
+                Pitch = pitch > 0f ? pitch : EffectCaptureSettings.DefaultPitch,
+            }).Render();
     }
 }
