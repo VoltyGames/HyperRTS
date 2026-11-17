@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 {
                     entityManager.Spawn(prefab, position, rotation, owner);
                 }
-                else if (!placement.TrySpawn(entityManager, prefab, owner, position))
+                else if (placement.TrySpawn(entityManager, prefab, owner, position, 0f) == Entity.Null)
                 {
                     blocked++;
                 }
@@ -60,6 +60,24 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 var name = entityManager.GetComponentData<EntityInfo>(prefab).Name;
                 Debug.LogWarning($"[HyperRTS] {blocked} of {count} {name} not spawned: the ground there is blocked.");
             }
+        }
+
+        /// <summary>
+        /// Spawns one <paramref name="prefab"/> at a map point, turned <paramref name="yaw"/> radians about Y from its
+        /// own facing; <c>Entity.Null</c> when a building's ground is blocked.
+        /// </summary>
+        public static Entity SpawnAt(EntityManager entityManager, Entity prefab, byte owner, float2 spot, float yaw)
+        {
+            PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
+            var position = new float3(spot.x, terrain.Height(spot), spot.y);
+            var building = entityManager.HasComponent<BuildingTag>(prefab) && entityManager.HasComponent<NavObstacle>(prefab);
+            if (building)
+            {
+                return new Placement(entityManager, prefab).TrySpawn(entityManager, prefab, owner, position, yaw);
+            }
+
+            var rotation = math.mul(quaternion.RotateY(yaw), entityManager.GetComponentData<LocalTransform>(prefab).Rotation);
+            return entityManager.Spawn(prefab, position, rotation, owner);
         }
 
         // Where the game camera looks on the ground, or the map centre without a camera.
@@ -100,15 +118,15 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 _sites = PlacedFootprint.Read(entityManager, obstacles);
             }
 
-            // Skips a blocked spot. The building rises as a finished site, so SiteClearingSystem removes the open
+            // Null for a blocked spot. The building rises as a finished site, so SiteClearingSystem removes the open
             // scenery under it before ConstructionSystem completes it.
-            public bool TrySpawn(EntityManager entityManager, Entity prefab, byte owner, float3 position)
+            public Entity TrySpawn(EntityManager entityManager, Entity prefab, byte owner, float3 position, float yaw)
             {
-                var spot = new BuildingSpot(position, 0f, _footprint, _surface).Snap(_map).Grounded(_grid);
+                var spot = new BuildingSpot(position, yaw, _footprint, _surface).Snap(_map).Grounded(_grid);
                 var inLine = entityManager.HasComponent<LinePlacement>(prefab);
                 if (!spot.CanPlace(_map, _grid, _sites.AsArray(), inLine))
                 {
-                    return false;
+                    return Entity.Null;
                 }
 
                 var facing = math.mul(spot.Rotation, entityManager.GetComponentData<LocalTransform>(prefab).Rotation);
@@ -116,7 +134,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 entityManager.SetComponentData(building, new ConstructionProgress { Value = 1f });
                 entityManager.SetComponentEnabled<ConstructionProgress>(building, true);
                 _sites.Add(new PlacedFootprint(spot.Box, inLine));
-                return true;
+                return building;
             }
         }
     }

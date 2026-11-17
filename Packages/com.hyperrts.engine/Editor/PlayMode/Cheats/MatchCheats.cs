@@ -1,3 +1,4 @@
+using System;
 using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Combat.Damage;
@@ -105,14 +106,18 @@ namespace HyperRTS.Editor.PlayMode.Cheats
 
         /// <summary>Heals <paramref name="units"/> to full through the damage system.</summary>
         public static void Repair(EntityManager entityManager, NativeArray<Entity> units) =>
-            Hit(entityManager, units, heal: true);
+            Hit(entityManager, units, unit => -entityManager.GetComponentData<Health>(unit).Max);
 
         /// <summary>Kills <paramref name="units"/> through the damage system, so deaths play out as in a fight.</summary>
         public static void Destroy(EntityManager entityManager, NativeArray<Entity> units) =>
-            Hit(entityManager, units, heal: false);
+            Damage(entityManager, units, LethalDamage);
+
+        /// <summary>Hurts each of <paramref name="units"/> by <paramref name="amount"/> through the damage system, untyped.</summary>
+        public static void Damage(EntityManager entityManager, NativeArray<Entity> units, float amount) =>
+            Hit(entityManager, units, _ => amount);
 
         // A heal is a negative hit of the unit's full health.
-        private static void Hit(EntityManager entityManager, NativeArray<Entity> units, bool heal)
+        private static void Hit(EntityManager entityManager, NativeArray<Entity> units, Func<Entity, float> amount)
         {
             using var queue = entityManager.CreateEntityQuery(typeof(DamageQueue));
             if (!queue.TryGetSingletonEntity<DamageQueue>(out var events))
@@ -123,9 +128,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             var hits = entityManager.GetBuffer<DamageEvent>(events);
             foreach (var unit in units)
             {
-                var amount = heal ? -entityManager.GetComponentData<Health>(unit).Max : LethalDamage;
                 var position = entityManager.GetComponentData<LocalTransform>(unit).Position;
-                hits.Add(DamageEvent.Direct(unit, position, Entity.Null, Owner.Neutral, amount));
+                hits.Add(DamageEvent.Direct(unit, position, Entity.Null, Owner.Neutral, amount(unit)));
             }
         }
     }

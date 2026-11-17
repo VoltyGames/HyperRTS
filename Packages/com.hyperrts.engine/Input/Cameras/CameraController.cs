@@ -94,6 +94,14 @@ namespace HyperRTS.Input.Cameras
         private Vector3 _focus;
         private float _groundVelocity;
 
+        /// <summary>Jumps to look at a world point from a height within the zoom range, turned to <paramref name="yaw"/> degrees if given.</summary>
+        public void LookAt(Vector3 worldPoint, float height, float? yaw)
+        {
+            _yaw = yaw ?? _yaw;
+            _targetHeight = _height = zoom.Clamp(height);
+            FocusOn(worldPoint);
+        }
+
         /// <summary>Centres the view on a world point, keeping height and rotation.</summary>
         public void FocusOn(Vector3 worldPoint)
         {
@@ -207,10 +215,8 @@ namespace HyperRTS.Input.Cameras
             return new Vector2(state.Direction.x, state.Direction.y);
         }
 
-        /// <summary>
-        /// Looks at <paramref name="focus"/> (its y is the ground there) from <paramref name="height"/> above it,
-        /// pitched for that height and lifted clear of the terrain. The focus stays put, so zooming never slides the view.
-        /// </summary>
+        /// <summary>Looks at <paramref name="focus"/> (its y is the ground there) from <paramref name="height"/> above it,
+        /// pitched for that height and lifted clear of the terrain. The focus stays put, so zooming never slides the view.</summary>
         private void PlaceAt(Vector3 focus, float height)
         {
             _focus = focus;
@@ -253,10 +259,8 @@ namespace HyperRTS.Input.Cameras
         private Vector3 ClampToMap(Vector3 point) =>
             _map.TryGetInDefaultWorld(out var map) ? (Vector3)map.Clamp(point) : point;
 
-        /// <summary>
-        /// The local player's base, searched for over <see cref="homeSearchSeconds"/> when <see cref="startAtHome"/>
-        /// is set. A player with no buildings by then keeps the view.
-        /// </summary>
+        /// <summary>The local player's base, searched for over <see cref="homeSearchSeconds"/> when <see cref="startAtHome"/>
+        /// is set. A player with no buildings by then keeps the view.</summary>
         private bool TryFindHomeOnce(out Vector3 home)
         {
             home = default;

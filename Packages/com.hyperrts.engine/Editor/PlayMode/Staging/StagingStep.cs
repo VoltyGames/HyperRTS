@@ -1,0 +1,65 @@
+using System;
+using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
+
+namespace HyperRTS.Editor.PlayMode.Staging
+{
+    /// <summary>
+    /// One timed step of a <see cref="StagingFile"/>. To add a kind, subclass it with a static <c>Read</c>, and list the
+    /// kind's key in <see cref="Readers"/>.
+    /// </summary>
+    internal abstract class StagingStep
+    {
+        [NoAutoStaticsCleanup]
+        private static readonly Dictionary<string, Func<StagingObject, StagingStep>> Readers = new()
+        {
+            ["spawn"] = SpawnStep.Read,
+            ["order"] = OrderStep.Read,
+            ["camera"] = CameraStep.Read,
+            ["shot"] = ShotStep.Read,
+            ["frames"] = FramesStep.Read,
+            ["sample"] = SampleStep.Read,
+            ["destroy"] = DestroyStep.Read,
+            ["damage"] = DamageStep.Read,
+            ["speed"] = SpeedStep.Read,
+            ["fog"] = FogStep.Read,
+        };
+
+        /// <summary>Position in the file, for messages.</summary>
+        public int Index { get; private set; }
+
+        /// <summary>Seconds of game time after the match is live.</summary>
+        public float At { get; private set; }
+
+        public abstract string Kind { get; }
+
+        /// <summary>The group label this step makes, or null.</summary>
+        public virtual string Defines => null;
+
+        /// <summary>Group labels this step needs to exist already.</summary>
+        public virtual IEnumerable<string> Uses => Array.Empty<string>();
+
+        /// <summary>The file or folder this step writes, so two steps never share one; null when it writes none.</summary>
+        public virtual string Output => null;
+
+        /// <summary>Later steps are worthless without this one, so its error ends the run at once.</summary>
+        public virtual bool EndsRunOnError => false;
+
+        public abstract void Run(StagingRun run);
+
+        public static StagingStep Read(StagingObject json, int index)
+        {
+            var at = json.Number("at");
+            if (at < 0f)
+            {
+                throw json.Problem($"has a negative 'at' of {at}");
+            }
+
+            var kind = json.Choose(Readers.Keys);
+            var step = Readers[kind](json);
+            step.Index = index;
+            step.At = at;
+            return step;
+        }
+    }
+}

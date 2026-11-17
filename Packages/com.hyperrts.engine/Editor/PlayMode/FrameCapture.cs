@@ -21,15 +21,15 @@ namespace HyperRTS.Editor.PlayMode
         private int _start;
         private double _deadline;
 
-        /// <summary>A capture of <paramref name="seconds"/> at <paramref name="fps"/> into <c>Logs/FrameCaptures/&lt;name&gt;/</c>.</summary>
-        public FrameCapture(string name, float seconds, int fps)
+        /// <summary>A capture of <paramref name="seconds"/> at <paramref name="fps"/> into the project-relative <paramref name="folder"/>.</summary>
+        public FrameCapture(string folder, float seconds, int fps)
         {
             if (seconds <= 0f || fps <= 0)
             {
                 throw new ArgumentException($"HyperRTS: frame capture needs seconds and fps above zero, got {seconds} and {fps}.");
             }
 
-            Folder = Path.Combine(Root, name).Replace('\\', '/');
+            Folder = folder.Replace('\\', '/');
             _fps = fps;
             _frames = Mathf.CeilToInt(seconds * fps);
         }
