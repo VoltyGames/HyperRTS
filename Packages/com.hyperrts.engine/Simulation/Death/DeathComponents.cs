@@ -21,6 +21,9 @@ namespace HyperRTS.Simulation.Death
         public Entity Prefab;
     }
 
+    /// <summary>Marks what a death left behind: a wreck, a ruin, a fallen tree, a thrown turret.</summary>
+    public struct RemainsTag : IComponentData { }
+
     /// <summary>Remains falling to the ground under gravity; removed when they land.</summary>
     public struct FallingRemains : IComponentData
     {

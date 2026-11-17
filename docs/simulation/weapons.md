@@ -96,7 +96,7 @@ What happens when health reaches zero, and what is left. Code sits in `Simulatio
    (`DeathCueSystem`, `CasualtyStatsSystem`) run after it. `SceneryCleared` scenery goes quietly, with no `Dead`.
 3. **Remains.** An entity with `SpawnsRemains`, set from the `remains` field of a unit, building or destructible,
    leaves that prefab where it died, with its transform and stretch. A toppling piece lies away from the hit. Map
-   scenery's remains take its `SceneryId`, so multiplayer can clear them.
+   scenery's remains take its `SceneryId`, so multiplayer can clear them. Every remains entity carries `RemainsTag`.
 4. **Falling.** Remains baked with `FallingRemains` (a destructible's `falls`, as on an aircraft's wreck) and a tossed
    turret drop under gravity in `RemainsFallSystem` onto the nav grid surface: ground, water or deck.
 5. **Decay.** `DecayAuthoring` remains wait their lifetime, are buried and go; until then a `NavObstacle` blocks their

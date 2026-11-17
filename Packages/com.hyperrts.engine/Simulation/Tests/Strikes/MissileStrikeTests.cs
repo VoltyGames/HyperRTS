@@ -128,6 +128,34 @@ namespace HyperRTS.Simulation.Tests.Strikes
             Assert.AreEqual(Target.z, World.Get<LocalTransform>(left[0]).Position.z, 1e-2f);
         }
 
+        [Test]
+        public void Landing_ClearsTheRemainsOfWhatItKilled_InsideItsClearRadius()
+        {
+            var crater = World.EntityManager.CreateEntity();
+            World.Add(crater, LocalTransform.Identity);
+            World.MakePrefab(crater);
+            var wreck = World.EntityManager.CreateEntity();
+            World.Add(wreck, LocalTransform.Identity);
+            World.MakePrefab(wreck);
+            var strike = World.Get<MissileStrike>(_silo);
+            strike.Remains = crater;
+            strike.ClearRadius = 4f;
+            World.Set(_silo, strike);
+            foreach (var distance in new[] { 2f, 8f })
+            {
+                var victim = World.SpawnUnit(2, Target + new float3(distance, 0f, 0f), new TestUnit { Radius = 0f });
+                World.Add(victim, new SpawnsRemains { Prefab = wreck });
+            }
+
+            Fire();
+            World.Run(FlightSeconds + 0.5f);
+
+            var wrecks = World.All<RemainsTag>().ToArray();
+            Assert.AreEqual(1, wrecks.Length, "only the wreck outside the cleared ground stays");
+            Assert.AreEqual(Target.x + 8f, World.Get<LocalTransform>(wrecks[0]).Position.x, 1e-2f);
+            Assert.AreEqual(0, World.All<ClearsRemains>().ToArray().Length, "later deaths there leave their remains");
+        }
+
         [TestCase(0, Splash)]
         [TestCase(3, Splash * 0.7f)]
         [TestCase(8, Splash * 0.5f)]

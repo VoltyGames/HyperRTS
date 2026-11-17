@@ -106,7 +106,9 @@ namespace HyperRTS.Simulation.Strikes
             _cues.Play(used.Caster, CueSlot.Fire, structure, math.up(), used.Owner);
             if (strike.Remains != Entity.Null)
             {
-                ecb.AddComponent(missile, new StrikeRemains { Prefab = strike.Remains });
+                // Defences shrink the cleared ground with the blast.
+                var clear = strike.ClearRadius * blast.SplashRadius / strike.Blast.SplashRadius;
+                ecb.AddComponent(missile, new StrikeRemains { Prefab = strike.Remains, ClearRadius = clear });
             }
 
             _cues.Warn(_cues.TypeIdFor(used.Caster, CueSlot.Warning), used.Owner, used.Position, blast.SplashRadius);

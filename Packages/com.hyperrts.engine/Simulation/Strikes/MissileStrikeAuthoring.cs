@@ -51,6 +51,11 @@ namespace HyperRTS.Simulation.Strikes
         [PrefabAsset("Remains")]
         public GameObject remains;
 
+        [Tooltip("Metres round the remains the blast leaves bare: wrecks, ruins and fallen trees of what it killed there go without a trace. 0 keeps them.")]
+        [Unit("m")]
+        [Min(0f)]
+        public float clearRadius;
+
         [Tooltip("Share of the blast's radii each enemy anti-air or missile interceptor covering the target cuts.")]
         [Range(0f, 1f)]
         public float cutPerDefence = 0.1f;
@@ -86,6 +91,7 @@ namespace HyperRTS.Simulation.Strikes
                     FlightSeconds = authoring.flightSeconds,
                     Blast = authoring.blast.Bake(),
                     Remains = RemainsEntity(authoring.remains),
+                    ClearRadius = authoring.clearRadius,
                     CutPerDefence = authoring.cutPerDefence,
                     MaxCut = authoring.maxCut,
                 });

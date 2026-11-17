@@ -135,9 +135,11 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
             }
 
             var ground = new float3(point.x, terrain.Height(point), point.y);
-            var normal = ImpactMarkMath.GroundNormal(terrain, point, math.max(diameter * 0.25f, 0.5f));
+            // The slope across the whole decal: one sampled nearer its middle tips a wide projector out of the ground.
+            var width = diameter * mark.decalReach;
+            var normal = ImpactMarkMath.GroundNormal(terrain, point, math.max(width * 0.5f, 0.5f));
             var rotation = ImpactMarkMath.Facing(normal, _random.NextFloat(2f * math.PI));
-            Decals(mark).Place(now, decal, ground, rotation, diameter * mark.decalReach, _random.NextBool());
+            Decals(mark).Place(now, decal, ground, rotation, width, _random.NextBool());
         }
 
         private ImpactMarkDecals Decals(ImpactMark mark)

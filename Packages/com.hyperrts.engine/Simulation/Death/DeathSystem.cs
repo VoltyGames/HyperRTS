@@ -92,6 +92,7 @@ namespace HyperRTS.Simulation.Death
                 Ecb.Place(sortKey, turret, hull.WithPosition(landing), float4x4.identity);
                 Ecb.SetComponent(sortKey, turret, tossed);
                 Ecb.AddComponent<FallingRemains>(sortKey, turret);
+                Ecb.AddComponent<RemainsTag>(sortKey, turret);
             }
 
             /// <summary>
@@ -104,6 +105,7 @@ namespace HyperRTS.Simulation.Death
                 LethalHits.TryGetComponent(entity, out var fell);
                 var remains = Remains.FromPiece(entity, transform, fell.Heading, true, RemainsLookups);
                 var spawned = remains.Spawn(Ecb, sortKey, prefab);
+                Ecb.AddComponent<RemainsTag>(sortKey, spawned);
 
                 // Remains of map scenery answer to its id, so multiplayer can clear them.
                 if (Ids.TryGetComponent(entity, out var id))

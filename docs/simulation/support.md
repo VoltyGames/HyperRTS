@@ -125,7 +125,10 @@ with its own cooldown, such as a tactical strike.
   (`CueRules`): the marker and the launch alert. A missile warns at launch, a bomber when it is revealed.
 - Strike impacts play the building's `Impact` cue, so the building's type picks the blast's effect, sound and marks.
 - A strike's `remains` prefab is left where each bomb or missile lands (`StrikeRemains`), such as a burning crater
-  whose smoke feeds the battle haze for as long as it stands. A shot-down strike leaves none.
+  whose smoke feeds the battle haze for as long as it stands. A shot-down strike leaves none. A missile strike's
+  `clearRadius` gives those remains a `ClearsRemains`: the frame after it lands, `RemainsClearingSystem` removes the
+  wrecks, ruins and fallen trees (`RemainsTag`) of what the blast killed inside it, so nothing lies in the crater.
+  Defences shrink the radius with the blast, and later deaths there leave their remains.
 
 ### Bomber strike
 

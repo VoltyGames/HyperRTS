@@ -134,7 +134,7 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     #endif
     half dampness = ApplyGroundTint(surface, input.uv, input.positionWS.xz);
     half rut = ApplyTrample(surface, input.positionWS.xz);
-    half mud = ApplyStains(surface, pixel);
+    half mud = ApplyStains(surface, pixel, 1.0h);
     ApplyWetness(surface, dampness, max(rut, mud), input.positionWS.xz);
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);

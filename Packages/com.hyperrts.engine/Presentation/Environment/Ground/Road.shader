@@ -209,6 +209,9 @@ Shader "HyperRTS/Road"
                 Puddle(surface.albedo, surface.smoothness, surface.normalTS, puddles, _PuddleSmoothness);
             }
 
+            // A hard road holds less ash than soil, so it still reads as a road through a burn.
+            #define ROAD_ASH 0.45
+
             // The terrain's scorch and stains, over the road's own surface.
             void ApplyScars(inout SurfaceData surface, Varyings input)
             {
@@ -227,7 +230,7 @@ Shader "HyperRTS/Road"
                 pixel.frame = half3x3(input.tangentWS.xyz, bitangent, input.normalWS);
 
                 ApplyScorch(ground, SampleScorch(pixel.xz));
-                ApplyStains(ground, pixel);
+                ApplyStains(ground, pixel, ROAD_ASH);
                 surface.albedo = ground.albedo;
                 surface.normalTS = ground.normalTS;
                 surface.smoothness = ground.smoothness;

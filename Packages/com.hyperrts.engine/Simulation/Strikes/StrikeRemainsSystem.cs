@@ -37,7 +37,12 @@ namespace HyperRTS.Simulation.Strikes
                     continue;
                 }
 
-                _spawner.Spawn(ecb, remains.ValueRO.Prefab, projectile.ValueRO.Hit.Position, owner.ValueRO.Value);
+                var left = _spawner.Spawn(ecb, remains.ValueRO.Prefab, projectile.ValueRO.Hit.Position, owner.ValueRO.Value);
+                if (remains.ValueRO.ClearRadius > 0f)
+                {
+                    ecb.AddComponent(left, new ClearsRemains { Radius = remains.ValueRO.ClearRadius });
+                }
+
                 ecb.RemoveComponent<StrikeRemains>(entity);
             }
         }

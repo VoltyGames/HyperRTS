@@ -65,11 +65,15 @@ depth and below it lift, over `GroundRange` (8 m) across 0 to 1, so up to 6 m de
 with `GroundSunk` in `TrampleGlobals.hlsl`: metres the ground sank, negative on a rim. Clears and resets set alpha to the
 bias, and the fade passes leave it alone.
 
+An `ImpactMark`'s decal projector leans with the ground's slope measured across its whole width (`decalReach`
+included); a slope sampled nearer the middle tips a wide projector out of the ground on one side.
+
 `TrackMarks` on a vehicle, the `GroundScar` of an `ImpactMark` or of `DeathStainAuthoring` (crater depth, rim height,
 burn reach, scorch, rubble, ash, fuel, mud) stamp the maps. Other sources, such as collapsing buildings, call `TrampleStamps.AddStain`.
 Shaders read the maps through `Trample.hlsl`. Grass and row crops keep clear of buildings, and road ribbons hide under them, through
 the `_HyperRTSFootprints` mask (`BuildingFootprints.hlsl`), so a road under a yard or a silo never shows through it. The terrain tiles the rubble, ash and mud textures over the stains with
-the same hex tiling as its layers (`TerrainStains.hlsl`), so a burnt field never shows its tile.
+the same hex tiling as its layers (`TerrainStains.hlsl`), so a burnt field never shows its tile. Ash lies in drifts
+(`AshDrift`): noise thins its cover in patches, so the char and soil under a wide burn show through it.
 
 **Craters dent and raise the drawn ground.** A scar stamp draws a bowl with a flat floor and a steep ragged wall, deepest
 kept (Max), then the same stamps again as a lip that peaks just outside the bowl radius and is gone by 1.3 times it,
@@ -99,7 +103,8 @@ Release puts back the `TerrainData` holes and the original material, so none are
 
 **Roads follow the craters.** `Road.shader` moves each vertex by the signed ground level at its own world position, since
 a ribbon spans many craters, and fades out where a bowl is deeper than about 0.3 m, so a crater breaks the road. It chars
-with the tracks map's scorch and takes the ash, rubble and mud stains through `TerrainStains.hlsl`, as the terrain does,
+with the tracks map's scorch and takes the ash, rubble and mud stains through `TerrainStains.hlsl`, as the terrain does
+but with less than half the ash (`ROAD_ASH`), so it still reads as a road through a burn,
 guarded like the terrain by whether the maps are published. A road material sets the same `_Stain*` properties as the terrain's.
 
 ## Building footprints

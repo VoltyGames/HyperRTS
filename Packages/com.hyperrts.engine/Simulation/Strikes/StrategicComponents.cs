@@ -77,6 +77,9 @@ namespace HyperRTS.Simulation.Strikes
         /// <summary>Prefab the missile leaves where it lands (<see cref="StrikeRemains"/>); null leaves nothing.</summary>
         public Entity Remains;
 
+        /// <summary>Metres round the landing point the blast leaves bare, at full size (<see cref="ClearsRemains"/>).</summary>
+        public float ClearRadius;
+
         /// <summary>Share of the blast's radii each enemy defence covering the target cuts.</summary>
         public float CutPerDefence;
 
@@ -129,6 +132,18 @@ namespace HyperRTS.Simulation.Strikes
     public struct StrikeRemains : IComponentData
     {
         public Entity Prefab;
+
+        /// <summary>Radius of the <see cref="ClearsRemains"/> the remains get; 0 gives none.</summary>
+        public float ClearRadius;
+    }
+
+    /// <summary>
+    /// On a strike's fresh remains: what its blast killed within <see cref="Radius"/> leaves nothing, so no wreck, ruin
+    /// or fallen tree lies in the crater. Removed once it has cleared them.
+    /// </summary>
+    public struct ClearsRemains : IComponentData
+    {
+        public float Radius;
     }
 
     /// <summary>A player's strategic asset charge, replicated to every player for the map-wide countdown.</summary>

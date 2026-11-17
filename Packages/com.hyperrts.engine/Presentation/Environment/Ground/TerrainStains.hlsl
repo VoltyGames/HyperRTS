@@ -22,6 +22,10 @@
 #define CHAR_DARKENING 0.6   // share of the ash stain's brightness char keeps
 #define CHAR_SMOOTHNESS 0.08
 #define SCORCH_CHAR 0.9     // share of the char colour full scorch burns in
+#define ASH_DRIFT_SIZE 19.0  // metres across the drifts ash lies in
+#define ASH_DRIFT_DETAIL 4.3 // metres across the smaller breaks in a drift
+#define ASH_BARE 0.38        // drift noise below which the ash lies thin
+#define ASH_THIN 0.2         // share of its cover thin ash keeps, so the burnt ground under it shows
 
 TEXTURE2D(_StainRubbleAlbedo);
 TEXTURE2D(_StainRubbleNormal);
@@ -102,8 +106,15 @@ void ApplyScorch(inout TerrainSurface surface, half scorch)
     surface.smoothness = lerp(surface.smoothness, CHAR_SMOOTHNESS, scorch);
 }
 
-// Returns the wet mud's cover, where puddles gather too.
-half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel)
+// Ash lies in drifts, thick here and thin there, so a wide burn is char with grey over it and never one colour.
+half AshDrift(TerrainPixel pixel)
+{
+    half drift = lerp(CharNoise(pixel, ASH_DRIFT_SIZE), CharNoise(pixel, ASH_DRIFT_DETAIL), 0.35h);
+    return lerp(ASH_THIN, 1.0h, smoothstep(ASH_BARE, ASH_BARE + 0.25h, drift));
+}
+
+// Returns the wet mud's cover, where puddles gather too. ashShare thins the ash on a surface that holds less of it.
+half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel, half ashShare)
 {
     UNITY_BRANCH
     if (!TrampleMapsOn())
@@ -123,6 +134,7 @@ half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel)
         pixel.dx / STAIN_NOISE_SIZE, pixel.dy / STAIN_NOISE_SIZE).b;
     half edge = noise * STAIN_EDGE;
     half4 cover = smoothstep(edge, edge + STAIN_FRINGE, stains);
+    cover.g *= ashShare * AshDrift(pixel);
 
     UNITY_BRANCH
     if (cover.a > 0.0)
