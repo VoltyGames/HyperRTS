@@ -73,12 +73,11 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 }
 
                 var row = new StrikeRow(entry);
-                var strike = entry;
                 row.Build.clicked += () => _cheats.Act((manager, _, owner) =>
-                    strike.Build(manager, owner, SpawnCheat.ViewCenter(manager)));
-                row.Ready.clicked += () => ActOnOwned(strike, (manager, _, instance) => strike.Ready(manager, instance));
-                row.Fire.clicked += () => ActOnOwned(strike, (manager, player, instance) =>
-                    strike.Fire(manager, player, instance, SpawnCheat.ViewCenter(manager)));
+                    entry.Build(manager, owner, SpawnCheat.ViewCenter(manager)));
+                row.Ready.clicked += () => ActOnOwned(entry, (manager, _, instance) => entry.Ready(manager, instance));
+                row.Fire.clicked += () => ActOnOwned(entry, (manager, player, instance) =>
+                    entry.Fire(manager, player, instance, SpawnCheat.ViewCenter(manager)));
                 _shown.Add(row);
                 _rows.Add(row.Root);
             }

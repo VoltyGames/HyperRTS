@@ -39,7 +39,7 @@ Shader "Hidden/HyperRTS/Crater Height"
             };
             StructuredBuffer<BuildingLevel> _BuildingLevels;
             int _BuildingLevelCount;
-            static const float Skirt = 2.5;
+            float _LevelSkirt;
 
             float LevelWeight(BuildingLevel level, float2 positionXZ)
             {
@@ -47,8 +47,7 @@ Shader "Hidden/HyperRTS/Crater Height"
                 float2 forward = float2(-level.right.y, level.right.x);
                 float2 local = float2(dot(offset, level.right), dot(offset, forward));
                 float gap = length(max(abs(local) - level.half, 0.0));
-                float t = saturate(1.0 - gap / Skirt);
-                return t * t * (3.0 - 2.0 * t);
+                return smoothstep(0.0, 1.0, 1.0 - gap / _LevelSkirt);
             }
 
             // Pixel rows and heightmap rows both count from memory row 0, on every graphics API.

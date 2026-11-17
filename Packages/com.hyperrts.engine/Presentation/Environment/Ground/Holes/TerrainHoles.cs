@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.Ground.Holes
 {
@@ -87,7 +88,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
                     Terrain.materialTemplate = _template;
                 }
 
-                UnityEngine.Object.DestroyImmediate(_clipping);
+                CoreUtils.Destroy(_clipping);
             }
 
             _clipping = null;

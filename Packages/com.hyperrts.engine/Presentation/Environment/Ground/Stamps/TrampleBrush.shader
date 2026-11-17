@@ -169,8 +169,7 @@ Shader "Hidden/HyperRTS/Trample Brush"
         {
             float2 offset = input.local * float2(input.value.x + input.value.z, input.value.y + input.value.z);
             float gap = length(max(abs(offset) - input.value.xy, 0.0));
-            float t = saturate(1.0 - gap / input.value.z);
-            return t * t * (3.0 - 2.0 * t);
+            return smoothstep(0.0, 1.0, 1.0 - gap / input.value.z);
         }
 
         // Min caps a bowl at the level; the cap rises to the top of the range at the skirt's outer edge.

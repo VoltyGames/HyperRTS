@@ -25,6 +25,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
         private static readonly int TerrainYId = Shader.PropertyToID("_TerrainY");
         private static readonly int LevelsId = Shader.PropertyToID("_BuildingLevels");
         private static readonly int LevelCountId = Shader.PropertyToID("_BuildingLevelCount");
+        private static readonly int LevelSkirtId = Shader.PropertyToID("_LevelSkirt");
 
         /// <summary>The heights from before any crater, which sinking shaders measure an object's height above.</summary>
         public static readonly MapTextureGlobal Undented = new("_HyperRTSUndentedHeights", "_HyperRTSUndentedArea");
@@ -58,6 +59,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             _material.SetVector(TerrainTexelsId, new float4(_origin, 1f / _texelsPerMetre));
             _material.SetFloat(DepthScaleId, TerrainHeightInput.HeightmapFull / size.y);
             _material.SetFloat(TerrainYId, position.y);
+            _material.SetFloat(LevelSkirtId, BuildingLevel.Skirt);
             SetBuildings(new List<BuildingLevel>());
             Undented.Publish(_original, TerrainHeightInput.Area(terrain));
             Shader.SetGlobalVector(UndentedScaleId, TerrainHeightInput.Scale(terrain));

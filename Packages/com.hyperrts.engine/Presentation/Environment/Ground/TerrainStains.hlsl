@@ -134,7 +134,7 @@ half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel, half ashShare
         pixel.dx / STAIN_NOISE_SIZE, pixel.dy / STAIN_NOISE_SIZE).b;
     half edge = noise * STAIN_EDGE;
     half4 cover = smoothstep(edge, edge + STAIN_FRINGE, stains);
-    cover.g *= ashShare * AshDrift(pixel);
+    cover.g *= ashShare;
 
     UNITY_BRANCH
     if (cover.a > 0.0)
@@ -148,6 +148,7 @@ half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel, half ashShare
     UNITY_BRANCH
     if (cover.g > 0.0)
     {
+        cover.g *= AshDrift(pixel);
         BlendStain(surface, pixel, cover.g, _StainAshTile, _StainAshSmoothness,
             TEXTURE2D_ARGS(_StainAshAlbedo, sampler_LinearRepeat), TEXTURE2D_ARGS(_StainAshNormal, sampler_LinearRepeat),
             TEXTURE2D_ARGS(_StainAshMask, sampler_LinearRepeat));
