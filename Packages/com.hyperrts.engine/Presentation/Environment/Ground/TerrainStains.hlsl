@@ -30,7 +30,10 @@ TEXTURE2D(_StainMudAlbedo);
 TEXTURE2D(_StainMudNormal);
 TEXTURE2D(_StainMudMask);
 
-// Explicit gradients: it runs inside the stain branches.
+// Any turn and any slide per hex cell, so a burnt field's ash never shows its tile.
+#define STAIN_HEX float4(1.0, 1.0, 0.0, 0.0)
+
+// Explicit gradients: it runs inside the stain branches. Hex tiled like the layers.
 void BlendStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, float tile, half smoothness,
     TEXTURE2D_PARAM(albedoMap, albedoSampler), TEXTURE2D_PARAM(normalMap, normalSampler),
     TEXTURE2D_PARAM(maskMap, maskSampler))
@@ -38,13 +41,29 @@ void BlendStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, fl
     float2 st = pixel.xz / tile;
     float2 dx = pixel.dx / tile;
     float2 dy = pixel.dy / tile;
-    half3 albedo = SAMPLE_TEXTURE2D_GRAD(albedoMap, albedoSampler, st, dx, dy).rgb;
-    half3 normal = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(normalMap, normalSampler, st, dx, dy));
-    half4 mask = SAMPLE_TEXTURE2D_GRAD(maskMap, maskSampler, st, dx, dy);
-    surface.albedo = lerp(surface.albedo, albedo, cover);
-    surface.normalTS = normalize(lerp(surface.normalTS, normal, cover));
-    surface.smoothness = lerp(surface.smoothness, mask.a * smoothness, cover);
-    surface.occlusion *= lerp(1.0, mask.g, cover);
+    TerrainHex hex = GetHex(st, dx, dy, 0.0, STAIN_HEX);
+    half3 albedo = 0.0;
+    half3 normal = 0.0;
+    half4 mask = 0.0;
+    [unroll] for (uint i = 0; i < 3; i++)
+    {
+        TerrainHexCell cell = hex.cells[i];
+        [branch] if (hex.weights[i] > HEX_MIN_WEIGHT)
+        {
+            albedo += hex.weights[i] * SAMPLE_TEXTURE2D_GRAD(albedoMap, albedoSampler, cell.uv, cell.dx, cell.dy).rgb;
+            half3 cellNormal = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(normalMap, normalSampler, cell.uv, cell.dx, cell.dy));
+            cellNormal.xy = RotateUV(cellNormal.xy, cell.rotation);
+            normal += hex.weights[i] * cellNormal;
+            mask += hex.weights[i] * SAMPLE_TEXTURE2D_GRAD(maskMap, maskSampler, cell.uv, cell.dx, cell.dy);
+        }
+    }
+
+    // Skipped cells leave the weights short of one.
+    half total = max(dot(half3(hex.weights), half3(hex.weights > HEX_MIN_WEIGHT)), 1e-3h);
+    surface.albedo = lerp(surface.albedo, albedo / total, cover);
+    surface.normalTS = normalize(lerp(surface.normalTS, normalize(normal), cover));
+    surface.smoothness = lerp(surface.smoothness, mask.a / total * smoothness, cover);
+    surface.occlusion *= lerp(1.0, mask.g / total, cover);
 }
 
 // A thin film's colours shift with the view angle and the slick's thickness, faintly and mostly at grazing angles.
