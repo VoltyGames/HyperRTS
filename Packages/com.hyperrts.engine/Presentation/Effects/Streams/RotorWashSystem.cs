@@ -30,6 +30,8 @@ namespace HyperRTS.Presentation.Effects.Streams
             RequireForUpdate<RotorWash>();
         }
 
+        protected override void OnStopRunning() => _streams.StopAll();
+
         protected override void OnUpdate()
         {
             CompleteDependency();

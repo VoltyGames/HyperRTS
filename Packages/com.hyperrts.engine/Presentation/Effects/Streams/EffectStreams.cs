@@ -76,6 +76,13 @@ namespace HyperRTS.Presentation.Effects.Streams
             return state;
         }
 
+        /// <summary>Stops every stream, for a system that stops updating once its last entity is gone.</summary>
+        public void StopAll()
+        {
+            BeginFrame();
+            EndFrame();
+        }
+
         /// <summary>Drops the streams not stepped this frame.</summary>
         public void EndFrame()
         {

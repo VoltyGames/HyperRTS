@@ -22,8 +22,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
         private const string ResultKey = "HyperRTS.Staging.Result";
         private const string StartedKey = "HyperRTS.Staging.Started";
 
-        // Play starts within a few seconds of the call, or not at all.
-        private const double EntrySeconds = 30;
+        // Play starts within this, even behind a script reload, or not at all.
+        private const double EntrySeconds = 180;
 
         [NoAutoStaticsCleanup]
         private static readonly PendingPlay Pending;

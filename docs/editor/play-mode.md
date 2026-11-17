@@ -123,6 +123,6 @@ label it makes is `Defines`, labels it needs are `Uses`, and a file it writes is
 
 - One frame capture runs at a time: space `shot` and `frames` steps apart.
 - `destroy` and `damage` go through unit health, so a sectioned building stands; shoot it with a group instead.
-- A staging that never reaches Play is ended as failed by the next `play stage` or `play stage_status` after 30 s.
+- A staging that never reaches Play is ended as failed by the next `play stage` or `play stage_status` after 3 minutes.
 - Orders and spawns write the authoritative world, so a staging needs a map with a local player.
 - Entering Play replaces the open scene: the staging fails to start while another scene has unsaved changes.

@@ -49,7 +49,11 @@ namespace HyperRTS.Presentation.Effects.Streams
         protected override void OnDestroy() => CoreUtils.Destroy(_lightsRoot);
 
         // The last loop is gone, so put out its light and shadow.
-        protected override void OnStopRunning() => ShowLightsAndShadows(0f);
+        protected override void OnStopRunning()
+        {
+            _streams.StopAll();
+            ShowLightsAndShadows(0f);
+        }
 
         protected override void OnUpdate()
         {
