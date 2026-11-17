@@ -16,8 +16,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
         private const string ClipKeyword = "_ALPHATEST_ON";
 
         private readonly TerrainData _data;
-        private readonly Material _material;
-        private readonly bool _clipped;
+        private readonly Material _template;
+        private Material _clipping;
         private readonly bool[,] _original;
         private readonly HoleGrid _grid;
         private readonly Dictionary<Entity, HoleFootprint> _cut = new();
@@ -28,8 +28,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
         {
             Terrain = terrain;
             _data = terrain.terrainData;
-            _material = terrain.materialTemplate;
-            _clipped = _material != null && _material.IsKeywordEnabled(ClipKeyword);
+            _template = terrain.materialTemplate;
             var resolution = _data.holesResolution;
             _original = _data.GetHoles(0, 0, resolution, resolution);
             var position = terrain.GetPosition();
@@ -80,10 +79,18 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
                 _data.SetHoles(0, 0, _original);
             }
 
-            if (_material != null && _changed && !_clipped)
+            if (_clipping != null)
             {
-                _material.DisableKeyword(ClipKeyword);
+                // A terrain unloaded with its scene is gone already.
+                if (Terrain != null)
+                {
+                    Terrain.materialTemplate = _template;
+                }
+
+                UnityEngine.Object.DestroyImmediate(_clipping);
             }
+
+            _clipping = null;
 
             _cut.Clear();
             _changed = false;
@@ -106,12 +113,21 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
             }
 
             _data.SetHoles(rect.x, rect.y, holes);
-            if (_material != null)
+            EnableClipping();
+            _changed = true;
+        }
+
+        // The template is a shared asset, so the keyword goes on a copy this terrain draws with.
+        private void EnableClipping()
+        {
+            if (_clipping != null || _template == null || _template.IsKeywordEnabled(ClipKeyword))
             {
-                _material.EnableKeyword(ClipKeyword);
+                return;
             }
 
-            _changed = true;
+            _clipping = new Material(_template) { name = $"{_template.name} (Holes)", hideFlags = HideFlags.DontSave };
+            _clipping.EnableKeyword(ClipKeyword);
+            Terrain.materialTemplate = _clipping;
         }
     }
 }

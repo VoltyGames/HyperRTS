@@ -117,9 +117,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
                     continue;
                 }
 
-                var right = math.normalizesafe(place.ValueRO.Right.xz, new float2(1f, 0f));
-                _wanted[entity] = new BuildingLevel(place.ValueRO.Position.xz, right, obstacle.ValueRO.Size,
-                    place.ValueRO.Position.y);
+                var area = TurnedRect.Create(place.ValueRO.Value, place.ValueRO.Position.xz, obstacle.ValueRO.Size);
+                _wanted[entity] = new BuildingLevel(area, place.ValueRO.Position.y);
             }
 
             return _wanted;

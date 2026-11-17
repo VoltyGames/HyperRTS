@@ -18,39 +18,20 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
         /// <summary>Metres the levelled ground sits below the building's base, so a model's apron never z-fights it.</summary>
         public const float Drop = 0.03f;
 
-        public readonly float2 Center;
-        public readonly float2 Right;
-        public readonly float2 Half;
+        public readonly TurnedRect Area;
         public readonly float Target;
         private readonly float _padding;
 
-        /// <param name="right">Unit direction of the footprint's width.</param>
-        public BuildingLevel(float2 center, float2 right, float2 size, float baseHeight)
+        public BuildingLevel(TurnedRect area, float baseHeight)
         {
-            Center = center;
-            Right = right;
-            Half = size * 0.5f;
+            Area = area;
             Target = baseHeight - Drop;
             _padding = 0f;
         }
 
-        private float2 Forward => new(-Right.y, Right.x);
-
         /// <summary>Half the width of the world-axis box around the footprint and its skirt.</summary>
-        public float2 Reach => math.abs(Right) * Half.x + math.abs(Forward) * Half.y + Skirt;
+        public float2 Reach => Area.Extent + Skirt;
 
-        /// <summary>How far the ground at <paramref name="point"/> is levelled: 1 inside, easing to 0 across the skirt.</summary>
-        public float Weight(float2 point)
-        {
-            var offset = point - Center;
-            var local = new float2(math.dot(offset, Right), math.dot(offset, Forward));
-            var gap = math.length(math.max(math.abs(local) - Half, 0f));
-            var t = math.saturate(1f - gap / Skirt);
-            return t * t * (3f - 2f * t);
-        }
-
-        public bool Equals(BuildingLevel other) =>
-            Center.Equals(other.Center) && Right.Equals(other.Right) && Half.Equals(other.Half)
-            && Target == other.Target;
+        public bool Equals(BuildingLevel other) => Area.Equals(other.Area) && Target == other.Target;
     }
 }

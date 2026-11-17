@@ -53,8 +53,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
 
         private static void Cover(in BuildingLevel level, ref float2 min, ref float2 max)
         {
-            min = math.min(min, level.Center - level.Reach);
-            max = math.max(max, level.Center + level.Reach);
+            min = math.min(min, level.Area.Center - level.Reach);
+            max = math.max(max, level.Area.Center + level.Reach);
         }
     }
 }

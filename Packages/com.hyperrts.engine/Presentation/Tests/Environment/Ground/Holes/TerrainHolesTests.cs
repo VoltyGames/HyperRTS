@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Ground.Holes;
 using NUnit.Framework;
 using Unity.Entities;
@@ -16,7 +17,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
         [Test]
         public void SquareOnTheTexelGrid_CoversEveryTexelInsideIt()
         {
-            var holes = Holes(new HoleFootprint(new float2(10f, 10f), East, new float2(4f, 4f)));
+            var holes = Holes(new HoleFootprint(new TurnedRect(new float2(10f, 10f), East, new float2(4f, 4f))));
 
             Assert.AreEqual(16, Count(holes, false));
             Assert.IsFalse(holes[10 + 32 - 1, 10 + 32 - 1]);
@@ -28,7 +29,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
         {
             var turned = math.normalize(new float2(1f, 1f));
 
-            var holes = Holes(new HoleFootprint(new float2(10f, 10f), turned, new float2(4f, 4f)));
+            var holes = Holes(new HoleFootprint(new TurnedRect(new float2(10f, 10f), turned, new float2(4f, 4f))));
 
             Assert.AreEqual(12, Count(holes, false));
             Assert.IsTrue(holes[10 + 32 + 1, 10 + 32 + 1], "a corner of the unturned square stayed in");
@@ -37,7 +38,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
         [Test]
         public void RectangleOverTheEdge_IsClampedToTheTerrain()
         {
-            var footprint = new HoleFootprint(new float2(-32f, 0f), East, new float2(4f, 4f));
+            var footprint = new HoleFootprint(new TurnedRect(new float2(-32f, 0f), East, new float2(4f, 4f)));
 
             var bounds = footprint.Bounds(Grid);
 
@@ -48,7 +49,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
         [Test]
         public void RectangleOffTheTerrain_HasNoTexels()
         {
-            var footprint = new HoleFootprint(new float2(100f, 0f), East, new float2(4f, 4f));
+            var footprint = new HoleFootprint(new TurnedRect(new float2(100f, 0f), East, new float2(4f, 4f)));
 
             Assert.AreEqual(0, footprint.Bounds(Grid).width);
         }
@@ -59,6 +60,8 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
             var data = new TerrainData { heightmapResolution = 65, size = new Vector3(64f, 20f, 64f) };
             var terrain = Terrain.CreateTerrainGameObject(data).GetComponent<Terrain>();
             terrain.transform.position = new Vector3(-32f, 0f, -32f);
+            var template = new Material(Shader.Find("HyperRTS/Terrain"));
+            terrain.materialTemplate = template;
             var holes = new TerrainHoles(terrain);
             var first = new Entity { Index = 1, Version = 1 };
             var second = new Entity { Index = 2, Version = 1 };
@@ -66,11 +69,14 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
             {
                 var both = new Dictionary<Entity, HoleFootprint>
                 {
-                    [first] = new(new float2(10f, 10f), East, new float2(4f, 4f)),
-                    [second] = new(new float2(12f, 10f), East, new float2(4f, 4f)),
+                    [first] = new(new TurnedRect(new float2(10f, 10f), East, new float2(4f, 4f))),
+                    [second] = new(new TurnedRect(new float2(12f, 10f), East, new float2(4f, 4f))),
                 };
                 holes.Apply(both);
                 Assert.AreEqual(24, Count(data.GetHoles(0, 0, 64, 64), false));
+                Assert.AreNotSame(template, terrain.materialTemplate);
+                Assert.IsTrue(terrain.materialTemplate.IsKeywordEnabled("_ALPHATEST_ON"));
+                Assert.IsFalse(template.IsKeywordEnabled("_ALPHATEST_ON"), "the shared material was changed");
 
                 both.Remove(first);
                 holes.Apply(both);
@@ -82,6 +88,8 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
             }
 
             Assert.AreEqual(0, Count(data.GetHoles(0, 0, 64, 64), false), "the asset kept a hole");
+            Assert.AreSame(template, terrain.materialTemplate);
+            Object.DestroyImmediate(template);
             Object.DestroyImmediate(terrain.gameObject);
             Object.DestroyImmediate(data);
         }

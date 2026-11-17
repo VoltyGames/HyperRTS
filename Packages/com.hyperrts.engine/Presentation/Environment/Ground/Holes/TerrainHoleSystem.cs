@@ -30,8 +30,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
             {
                 var local = new float3(hole.ValueRO.Center.x, 0f, hole.ValueRO.Center.y);
                 var center = math.transform(place.ValueRO.Value, local).xz;
-                var right = math.normalizesafe(place.ValueRO.Right.xz, new float2(1f, 0f));
-                _wanted[entity] = new HoleFootprint(center, right, hole.ValueRO.Size);
+                _wanted[entity] = new HoleFootprint(TurnedRect.Create(place.ValueRO.Value, center, hole.ValueRO.Size));
             }
 
             var terrain = Terrain.activeTerrain;

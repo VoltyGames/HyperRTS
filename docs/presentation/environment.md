@@ -81,8 +81,9 @@ centimetres off the drawn ground.
 
 **Buildings can open the drawn ground.** A `TerrainHoleAuthoring` building, once finished and seen, has `TerrainHoleSystem` cut
 its rotated rectangle out of the active Terrain's holes, so a model that goes below ground (a shaft, a stair) shows, and
-fill it when the building goes. The `TerrainData` holes are put back on release, so none are saved. Only the drawn terrain
-changes: the simulation's ground and pathing do not, but `SetHoles` also opens the terrain collider there.
+fill it when the building goes. The terrain shader clips holes only in its `_ALPHATEST_ON` variant, so the first cut
+gives the terrain a runtime copy of its material with that keyword, leaving the shared material asset untouched.
+Release puts back the `TerrainData` holes and the original material, so none are saved. Only the drawn terrain changes: the simulation's ground and pathing do not, but `SetHoles` also opens the terrain collider there.
 
 ## Building footprints
 

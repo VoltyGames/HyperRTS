@@ -45,9 +45,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
                     continue;
                 }
 
-                var along = math.normalizesafe(place.ValueRO.Right.xz, new float2(1f, 0f));
-                var half = obstacle.ValueRO.Size * 0.5f;
-                stamps.AddTrench(place.ValueRO.Position.xz, along, new float2(half.y, half.x + EndOverlap), trench.ValueRO.Depth);
+                var area = TurnedRect.Create(place.ValueRO.Value, place.ValueRO.Position.xz, obstacle.ValueRO.Size);
+                stamps.AddTrench(area.Center, area.Right, new float2(area.Half.y, area.Half.x + EndOverlap), trench.ValueRO.Depth);
             }
         }
     }
