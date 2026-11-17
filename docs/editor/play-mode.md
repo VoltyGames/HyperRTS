@@ -136,6 +136,7 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 | `ready` | a group | Ends its ability cooldowns, so a power that charges for minutes, such as a strategic asset, fires at once |
 | `speed` | a number | Game speed of a single-player match |
 | `fog` | true or false | Fog of war |
+| `detail` | `shadows`, `grass`, `crops` (metres), `lod` (a factor); one or more | Raises render detail past the play camera's needs for footage shot from far off: the pipeline's shadow distance, full vegetation drawn out to the given distances (capped by each plant's own) and finer model levels. The run puts each setting back when it ends, so nothing is saved |
 | `mixer` | parameter names and values | Sets exposed parameters on the loaded audio mixers, such as `{ "Music": -80 }` to record without the match music under footage that gets its own; a name no mixer exposes fails |
 | `clean` | true or false | Hides (or shows again) every UI panel, the `OverlayRenderer`'s markers and bars and the silhouettes of hidden units, for footage |
 

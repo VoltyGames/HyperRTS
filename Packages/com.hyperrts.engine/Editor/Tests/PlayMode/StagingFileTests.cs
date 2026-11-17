@@ -93,6 +93,16 @@ namespace HyperRTS.Editor.Tests.PlayMode
         }
 
         [Test]
+        public void ParseReadsDetailAndRejectsAnEmptyOrNonPositiveOne()
+        {
+            string With(string detail) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 0, \"detail\": {detail} }},");
+
+            Assert.That(StagingFile.Parse(With("{ \"shadows\": 500, \"lod\": 4 }"), "far.json").Steps.Select(step => step.Kind), Has.Member("detail"));
+            StringAssert.Contains("detail", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ }"), "empty.json")).Message);
+            StringAssert.Contains("'grass'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ \"grass\": 0 }"), "zero.json")).Message);
+        }
+
+        [Test]
         public void ViewTurnedTowardTheSunKeepsItsShapeAndAddsTheHeading()
         {
             var aim = new CameraAim(new float2(3f, 4f), 2f, 10f, 8f, 30f).Turned(100f);

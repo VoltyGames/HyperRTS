@@ -23,6 +23,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         private readonly StagingFile _file;
         private readonly Dictionary<string, StagingGroup> _groups = new();
         private readonly List<(StagingActivity activity, StagingReport.Step step)> _active = new();
+        private readonly List<Action> _undo = new();
         private readonly ConsoleIssues _console = new();
         private readonly double _began = EditorApplication.timeSinceStartup;
         private bool _live;
@@ -59,6 +60,9 @@ namespace HyperRTS.Editor.PlayMode.Staging
             _live ? $"step {_next} of {_file.Steps.Count} at {GameTime:0.0} s of '{_file.Name}'" : $"'{_file.Name}' waiting for the match to go live";
 
         public void AddGroup(StagingGroup group) => _groups[group.Name] = group;
+
+        /// <summary>Queues <paramref name="undo"/> for the run's end, newest first, so a step's changes to settings never outlive it.</summary>
+        public void Undo(Action undo) => _undo.Insert(0, undo);
 
         public StagingGroup FindGroup(string name) =>
             _groups.TryGetValue(name, out var group) ? group : throw new InvalidOperationException($"group '{name}' was never spawned");
@@ -123,6 +127,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public string End(string failure)
         {
             _console.Dispose();
+            _undo.ForEach(undo => undo());
+            _undo.Clear();
             foreach (var (activity, step) in _active)
             {
                 activity.Stop();
