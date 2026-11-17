@@ -9,6 +9,7 @@ using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Physics.GraphicsIntegration;
 using Unity.Physics.Systems;
 using Unity.Transforms;
 
@@ -37,6 +38,7 @@ namespace HyperRTS.Presentation.Tests.Physics
             var systems = new List<Type>
             {
                 typeof(FixedStepSimulationSystemGroup),
+                typeof(BeginFixedStepSimulationEntityCommandBufferSystem),
                 typeof(TransformSystemGroup),
                 typeof(PhysicsStartSystem),
                 typeof(PhysicsGroup),
@@ -44,7 +46,8 @@ namespace HyperRTS.Presentation.Tests.Physics
             };
             foreach (var type in DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default))
             {
-                if (type.Assembly == physics)
+                // Graphics smoothing orders itself against LocalToWorldSystem, which this world leaves out.
+                if (type.Assembly == physics && type != typeof(SmoothRigidBodiesGraphicalMotion))
                 {
                     systems.Add(type);
                 }
