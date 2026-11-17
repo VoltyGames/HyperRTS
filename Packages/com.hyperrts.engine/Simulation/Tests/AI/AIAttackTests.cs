@@ -12,6 +12,7 @@ using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Strikes;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -118,6 +119,31 @@ namespace HyperRTS.Simulation.Tests.AI
             World.Run(1f);
 
             Assert.AreEqual(460f, World.Get<Health>(enemy).Current, 1e-3f);
+        }
+
+        [Test]
+        public void AI_AimsAStrike_AtTheMostEnemyStructures_ClearOfItsOwn()
+        {
+            var silo = GiveAbility(World.SpawnBuilding(2, float3.zero, new float2(4f, 4f)), "Launch",
+                AbilityTarget.Point, 0f, 0f);
+            World.Writer(silo).Add(new MissileStrike
+            {
+                AbilityId = EntityInfo.TypeIdFromName("Launch"), Missile = World.ProjectilePrefab(), Apex = 50f,
+                FlightSeconds = 2f, Blast = new DamageProfile { Amount = 1f, SplashRadius = 10f },
+            });
+            World.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
+            World.SpawnBuilding(1, new float3(80f, 0f, 80f), new float2(4f, 4f));
+            World.SpawnBuilding(1, new float3(86f, 0f, 80f), new float2(4f, 4f));
+            for (var i = 0; i < 3; i++)
+            {
+                World.SpawnBuilding(1, new float3(-60f - i * 5f, 0f, 0f), new float2(4f, 4f));
+            }
+
+            World.SpawnBuilding(2, new float3(-65f, 0f, 8f), new float2(4f, 4f));
+
+            Assert.IsTrue(World.RunUntil(() => World.All<Projectile>().ToArray().Length > 0, 2f));
+            var aim = World.Get<Projectile>(World.All<Projectile>().ToArray()[0]).Hit.Position;
+            Assert.AreEqual(80f, aim.z, 1e-3f, "on the pair, not the lone structure or the three beside its own");
         }
 
         [Test]

@@ -216,7 +216,7 @@ namespace HyperRTS.Editor.Effects.Preview
             camera.backgroundColor = new Color(0.55f, 0.62f, 0.7f);
             camera.fieldOfView = 35f;
             camera.nearClipPlane = 0.3f;
-            camera.farClipPlane = 500f;
+            camera.farClipPlane = Mathf.Max(500f, _settings.Distance * 2f);
             Aim(camera, Views[0].Yaw);
 
             var sun = new GameObject("Sun");

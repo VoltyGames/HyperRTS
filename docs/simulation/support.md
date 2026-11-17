@@ -25,7 +25,8 @@ On each think, an AI player:
 1. Starts the first unmet build-order step it can afford.
 2. Finishes abandoned sites and sends idle harvesters to work.
 3. Trains units and researches.
-4. Uses ready abilities and powers.
+4. Uses ready abilities and powers. A strike (`StrikeAim`) goes on the enemy structure with the most enemy structures
+   in its blast, never where the blast would reach one of its own or an ally's.
 5. Looks after its squads: a pinned or badly hurt squad (`retreatLivingShare`, `retreatHealthShare`) gets
    `CommandType.Retreat`, and an idle squad with dead members near a friendly reinforce point gets
    `CommandType.Reinforce`.
@@ -51,6 +52,7 @@ Announce.
 | Slot | Plays | Heard by |
 | --- | --- | --- |
 | Fire, Impact, Death, Ability | Each shot, where it lands, on death, on an ability at the aim point | Whoever sees it |
+| Warning | A strike on its way, at its target: the launch alert or siren | Every player |
 | ProductionDone | At the producer when a unit or research finishes | Owner |
 | Ready, Select, Move, Attack | Voice when produced or built, selected, ordered | Owner |
 | AbilityVoice | Voice at the caster when it uses an ability | Owner |
@@ -136,7 +138,8 @@ run when there are none. Each enemy weapon that can hit air and reaches the targ
 
 ### Missile strike
 
-Firing launches the `missile` prefab from `launchPoint` on the `Lofted` course: straight up to `apex`, over, and
+Firing plays the building's `Fire` cue (the launch plume and roar) and launches the `missile` prefab from
+`launchPoint` on the `Lofted` course: straight up to `apex`, over, and
 straight down onto the point, landing `flightSeconds` later. Its projectile kind is none, so interceptor kill rolls
 never stop it. Instead each enemy weapon that can hit air or intercept missiles and reaches the target at launch cuts
 the blast's radii by `cutPerDefence`, to at most `maxCut`; its damage stays. The `blast` is a splash with a full-damage

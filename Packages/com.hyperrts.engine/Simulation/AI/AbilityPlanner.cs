@@ -19,6 +19,7 @@ namespace HyperRTS.Simulation.AI
         private TargetLookup _targetLookup;
         private TargetQueries _targetQueries;
         private ComponentLookup<Owner> _owners;
+        private StrikeAim _strikes;
 
         public static AbilityPlanner Create(ref SystemState state) => new()
         {
@@ -27,12 +28,14 @@ namespace HyperRTS.Simulation.AI
             _targetLookup = new TargetLookup(ref state),
             _targetQueries = TargetQueries.Create(ref state),
             _owners = state.GetComponentLookup<Owner>(true),
+            _strikes = StrikeAim.Create(ref state),
         };
 
         public void Update(ref SystemState state)
         {
             _targetLookup.Update(ref state, _targetQueries);
             _owners.Update(ref state);
+            _strikes.Update(ref state);
             _casters = AIGroup.From(_casterQuery);
         }
 
@@ -95,8 +98,9 @@ namespace HyperRTS.Simulation.AI
         };
 
         /// <summary>
-        /// Self-targeted abilities fire when an enemy is near; aimed ones at the nearest suitable target, which must be
-        /// in range when the caster is ranged (player powers reach anywhere).
+        /// Strikes fire where they hit the most enemy structures; self-targeted abilities fire when an enemy is near;
+        /// aimed ones at the nearest suitable target, which must be in range when the caster is ranged (player powers
+        /// reach anywhere).
         /// </summary>
         private bool TryAim(ref SystemState state, in AITurn turn, in AISnapshot snapshot, in Ability ability,
             in Caster caster, out Aim aim)
@@ -105,6 +109,11 @@ namespace HyperRTS.Simulation.AI
             if (ability.RequiredTypeId != 0 && !snapshot.Completed.Owns(turn.Owner, ability.RequiredTypeId))
             {
                 return false;
+            }
+
+            if (_strikes.IsStrike(caster.Entity, ability.Id, out var reach))
+            {
+                return _strikes.TryFind(snapshot, turn.Owner, reach, out aim.Position);
             }
 
             if (ability.Target == AbilityTarget.None)

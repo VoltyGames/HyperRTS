@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Strikes
 {
     /// <summary>
     /// Launches each strike ability fired this frame: a <see cref="BombingFlight"/> for a <see cref="BomberStrike"/>,
-    /// a missile and its warning for a <see cref="MissileStrike"/>.
+    /// a missile, its launch cue and its warning for a <see cref="MissileStrike"/>.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -89,7 +89,8 @@ namespace HyperRTS.Simulation.Strikes
             var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var defences = _defences.Count(ref state, used.Position, used.Owner, relations, ProjectileKind.Missile);
             var blast = strike.BlastAfter(defences);
-            var start = SystemAPI.GetComponent<LocalTransform>(used.Caster).TransformPoint(strike.LaunchPoint);
+            var structure = SystemAPI.GetComponent<LocalTransform>(used.Caster);
+            var start = structure.TransformPoint(strike.LaunchPoint);
             var course = ShotCourse.Lofted;
             var missile = _spawner.Spawn(ecb, strike.Missile, start, quaternion.LookRotationSafe(math.up(), math.forward()),
                 used.Owner);
@@ -102,6 +103,7 @@ namespace HyperRTS.Simulation.Strikes
                 Start = start,
                 Apex = strike.Apex,
             });
+            _cues.Play(used.Caster, CueSlot.Fire, structure, math.up(), used.Owner);
             if (strike.Remains != Entity.Null)
             {
                 ecb.AddComponent(missile, new StrikeRemains { Prefab = strike.Remains });
