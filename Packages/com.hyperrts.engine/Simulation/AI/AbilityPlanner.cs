@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using Unity.Collections;
 using Unity.Entities;
@@ -20,9 +21,12 @@ namespace HyperRTS.Simulation.AI
         private TargetQueries _targetQueries;
         private ComponentLookup<Owner> _owners;
         private StrikeAim _strikes;
+        private EntityQuery _rulesQuery;
+        private bool _strategicAssets;
 
         public static AbilityPlanner Create(ref SystemState state) => new()
         {
+            _rulesQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<MatchRules>().Build(ref state),
             _casterQuery = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<Ability, AbilityCooldown, Owner, LocalTransform>().Build(ref state),
             _targetLookup = new TargetLookup(ref state),
@@ -36,6 +40,7 @@ namespace HyperRTS.Simulation.AI
             _targetLookup.Update(ref state, _targetQueries);
             _owners.Update(ref state);
             _strikes.Update(ref state);
+            _strategicAssets = _rulesQuery.GetSingleton<MatchRules>().StrategicAssets;
             _casters = AIGroup.From(_casterQuery);
         }
 
@@ -113,7 +118,7 @@ namespace HyperRTS.Simulation.AI
 
             if (_strikes.IsStrike(caster.Entity, ability.Id, out var reach))
             {
-                return _strikes.TryFind(snapshot, turn.Owner, reach, out aim.Position);
+                return _strategicAssets && _strikes.TryFind(snapshot, turn.Owner, reach, out aim.Position);
             }
 
             if (ability.Target == AbilityTarget.None)

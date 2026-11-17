@@ -61,16 +61,12 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             var found = new List<StrikeEntry>();
             foreach (var prefab in SpawnCheat.Prefabs(entityManager))
             {
-                if (entityManager.HasComponent<BomberStrike>(prefab))
+                if (entityManager.HasBuffer<StrikeAbility>(prefab))
                 {
-                    var id = entityManager.GetComponentData<BomberStrike>(prefab).AbilityId;
-                    found.Add(new StrikeEntry(entityManager, prefab, id, grouping));
-                }
-
-                if (entityManager.HasComponent<MissileStrike>(prefab))
-                {
-                    var id = entityManager.GetComponentData<MissileStrike>(prefab).AbilityId;
-                    found.Add(new StrikeEntry(entityManager, prefab, id, grouping));
+                    foreach (var strike in entityManager.GetBuffer<StrikeAbility>(prefab, true))
+                    {
+                        found.Add(new StrikeEntry(entityManager, prefab, strike.AbilityId, grouping));
+                    }
                 }
 
                 if (entityManager.HasComponent<UnitTag>(prefab) && Rounds(entityManager, prefab).Max > 0)
@@ -129,9 +125,14 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             return IsLauncher ? null : FindRangeBlocker(entityManager, instance, point);
         }
 
-        /// <summary>The rounds as "current/max" for a launcher, otherwise "Ready" or the cooldown left.</summary>
+        /// <summary>The rounds as "current/max" for a launcher, otherwise "Ready" or the cooldown left; "Off" while strategic assets are.</summary>
         public string Status(EntityManager entityManager, Entity instance)
         {
+            if (!MatchCheats.StrategicAssetsEnabled(entityManager))
+            {
+                return "Off";
+            }
+
             if (IsLauncher)
             {
                 var (current, max) = Rounds(entityManager, instance);
@@ -148,9 +149,14 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             return $"Cooldown {seconds / 60}:{seconds % 60:00}";
         }
 
-        /// <summary>A launcher's strategic rounds are full, or a strike's cooldown is over.</summary>
+        /// <summary>Strategic assets are on, and a launcher's strategic rounds are full or a strike's cooldown is over.</summary>
         public bool IsReady(EntityManager entityManager, Entity instance)
         {
+            if (!MatchCheats.StrategicAssetsEnabled(entityManager))
+            {
+                return false;
+            }
+
             if (IsLauncher)
             {
                 var (current, max) = Rounds(entityManager, instance);

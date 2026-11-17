@@ -126,11 +126,14 @@ namespace HyperRTS.Simulation.Tests.AI
         {
             var silo = GiveAbility(World.SpawnBuilding(2, float3.zero, new float2(4f, 4f)), "Launch",
                 AbilityTarget.Point, 0f, 0f);
-            World.Writer(silo).Add(new MissileStrike
+            var launch = EntityInfo.TypeIdFromName("Launch");
+            var writer = World.Writer(silo);
+            writer.AddBuffer(new[] { new StrikeAbility { AbilityId = launch, Reach = 10f, Kind = StrikeKind.Missile } });
+            MissileStrikeAuthoring.Add(writer, launch, new MissileStrike
             {
-                AbilityId = EntityInfo.TypeIdFromName("Launch"), Missile = World.ProjectilePrefab(), Apex = 50f,
+                Missile = World.ProjectilePrefab(), Apex = 50f,
                 FlightSeconds = 2f, Blast = new DamageProfile { Amount = 1f, SplashRadius = 10f },
-            });
+            }, strategic: false);
             World.SpawnBuilding(1, new float3(40f, 0f, 0f), new float2(4f, 4f));
             World.SpawnBuilding(1, new float3(80f, 0f, 80f), new float2(4f, 4f));
             World.SpawnBuilding(1, new float3(86f, 0f, 80f), new float2(4f, 4f));

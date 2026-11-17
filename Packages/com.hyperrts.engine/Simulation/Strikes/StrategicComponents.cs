@@ -34,12 +34,11 @@ namespace HyperRTS.Simulation.Strikes
     }
 
     /// <summary>
-    /// A structure's bomber strike: firing the ability with <see cref="AbilityId"/> on a point sends
+    /// A structure's bomber strike: firing its <see cref="Abilities.StrikeAbility"/> on a point sends
     /// <see cref="Aircraft"/> in from the owner's map edge to drop <see cref="Bombs"/> there.
     /// </summary>
     public struct BomberStrike : IComponentData
     {
-        public int AbilityId;
         public Entity Aircraft;
 
         /// <summary>Cruise height of the aircraft above the target.</summary>
@@ -52,14 +51,12 @@ namespace HyperRTS.Simulation.Strikes
     }
 
     /// <summary>
-    /// A structure's missile strike: firing the ability with <see cref="AbilityId"/> on a point launches
+    /// A structure's missile strike: firing its <see cref="Abilities.StrikeAbility"/> on a point launches
     /// <see cref="Missile"/> from <see cref="LaunchPoint"/>, which climbs, turns over and lands
     /// <see cref="FlightSeconds"/> later. Interceptor kill rolls never reach it; enemy defences shrink its blast.
     /// </summary>
     public struct MissileStrike : IComponentData
     {
-        public int AbilityId;
-
         /// <summary>Projectile prefab the missile flies as.</summary>
         public Entity Missile;
 

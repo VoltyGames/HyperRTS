@@ -17,8 +17,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Strikes
 {
     /// <summary>
-    /// Launches each strike ability fired this frame: a <see cref="BombingFlight"/> for a <see cref="BomberStrike"/>,
-    /// a missile, its launch cue and its warning for a <see cref="MissileStrike"/>.
+    /// Launches each <see cref="StrikeAbility"/> fired this frame: a <see cref="BombingFlight"/> for a bomber strike,
+    /// a missile, its launch cue and its warning for a missile strike.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -49,18 +49,27 @@ namespace HyperRTS.Simulation.Strikes
             _cues.Update(ref state);
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
+            var strikeLists = SystemAPI.GetBufferLookup<StrikeAbility>(true);
             foreach (var used in SystemAPI.GetSingletonBuffer<AbilityActivation>(true))
             {
-                if (SystemAPI.TryGetComponent<BomberStrike>(used.Caster, out var bomber)
-                    && bomber.AbilityId == used.AbilityId)
+                if (!strikeLists.TryGetBuffer(used.Caster, out var strikes))
                 {
-                    SendBomber(ref state, used, bomber, ecb);
+                    continue;
                 }
 
-                if (SystemAPI.TryGetComponent<MissileStrike>(used.Caster, out var missile)
-                    && missile.AbilityId == used.AbilityId)
+                var index = StrikeAbility.Find(strikes, used.AbilityId);
+                if (index < 0)
                 {
-                    LaunchMissile(ref state, used, missile, ecb);
+                    continue;
+                }
+
+                if (strikes[index].Kind == StrikeKind.Bomber)
+                {
+                    SendBomber(ref state, used, SystemAPI.GetComponent<BomberStrike>(used.Caster), ecb);
+                }
+                else
+                {
+                    LaunchMissile(ref state, used, SystemAPI.GetComponent<MissileStrike>(used.Caster), ecb);
                 }
             }
         }

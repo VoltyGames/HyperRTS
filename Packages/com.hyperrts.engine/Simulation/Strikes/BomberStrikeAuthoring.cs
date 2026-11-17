@@ -68,6 +68,24 @@ namespace HyperRTS.Simulation.Strikes
         [Range(0f, 1f)]
         public float maxReduction = 0.5f;
 
+        /// <summary>The strike's entry in the structure's <see cref="StrikeAbility"/> list.</summary>
+        public StrikeAbility Entry() => new()
+        {
+            AbilityId = EntityInfo.TypeIdFromName(ability),
+            Reach = hit.Bake().SplashRadius + zoneRadius,
+            Kind = StrikeKind.Bomber,
+        };
+
+        /// <summary>Adds the strike, and the strategic asset on its ability when <paramref name="strategic"/>.</summary>
+        public static void Add(EntityWriter writer, int abilityId, in BomberStrike strike, bool strategic)
+        {
+            writer.Add(strike);
+            if (strategic)
+            {
+                writer.Add(new StrategicAsset { AbilityId = abilityId });
+            }
+        }
+
         public class Baker : Baker<BomberStrikeAuthoring>
         {
             private Entity RemainsEntity(GameObject prefab) =>
@@ -83,9 +101,13 @@ namespace HyperRTS.Simulation.Strikes
 
                 var writer = this.Writer();
                 var id = EntityInfo.TypeIdFromName(authoring.ability);
-                writer.Add(new BomberStrike
+                // This baker writes the list for a structure with both strikes, since two bakers can't add one buffer.
+                var missile = GetComponent<MissileStrikeAuthoring>();
+                writer.AddBuffer(missile == null
+                    ? new[] { authoring.Entry() }
+                    : new[] { authoring.Entry(), missile.Entry() });
+                Add(writer, id, new BomberStrike
                 {
-                    AbilityId = id,
                     Aircraft = GetEntity(authoring.aircraft, TransformUsageFlags.Dynamic),
                     Altitude = authoring.altitude,
                     RevealSeconds = authoring.revealSeconds,
@@ -99,11 +121,7 @@ namespace HyperRTS.Simulation.Strikes
                         MaxReduction = authoring.maxReduction,
                         Remains = RemainsEntity(authoring.remains),
                     },
-                });
-                if (authoring.strategic)
-                {
-                    writer.Add(new StrategicAsset { AbilityId = id });
-                }
+                }, authoring.strategic);
             }
         }
     }

@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Spatial;
 using HyperRTS.Simulation.Vision.Fog;
@@ -20,7 +21,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>
     /// Aims and fires every <see cref="WeaponMount"/> at its target, as a <see cref="DamageEvent"/>, a launched <see
-    /// cref="Projectile"/> or an interceptor's kill roll. Offline, out-of-ammo and undeployed weapons stay silent.
+    /// cref="Projectile"/> or an interceptor's kill roll. Offline, out-of-ammo and undeployed weapons stay silent, and so do strategic ones while the match switches strategic assets off.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(WeaponSystemGroup))]
@@ -35,6 +36,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         {
             _targetQueries = TargetQueries.Create(ref state);
             _shots = new Shooter(ref state);
+            state.RequireForUpdate<MatchRules>();
             state.RequireForUpdate<SpatialIndex>();
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<FogOfWar>();
@@ -53,6 +55,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             new ShotJob
             {
                 DeltaTime = SystemAPI.Time.DeltaTime,
+                StrategicAssets = SystemAPI.GetSingleton<MatchRules>().StrategicAssets,
                 Units = SystemAPI.GetComponentLookup<UnitTag>(true),
                 Paces = SystemAPI.GetComponentLookup<Pace>(true),
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
@@ -69,6 +72,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         private partial struct ShotJob : IJobEntity
         {
             public float DeltaTime;
+            public bool StrategicAssets;
             [ReadOnly] public ComponentLookup<UnitTag> Units;
             [ReadOnly] public ComponentLookup<Pace> Paces;
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
@@ -107,6 +111,11 @@ namespace HyperRTS.Simulation.Combat.Weapons
             private bool CanShoot(Entity entity, in WeaponMount mount, in ShotAim aim, float rate)
             {
                 if (!aim.Exists || mount.Carriers == 0 || rate <= 0f)
+                {
+                    return false;
+                }
+
+                if (mount.Weapon.Strategic && !StrategicAssets)
                 {
                     return false;
                 }

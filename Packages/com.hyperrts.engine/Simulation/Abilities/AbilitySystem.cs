@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Combat.Targeting;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
@@ -17,7 +18,8 @@ namespace HyperRTS.Simulation.Abilities
 {
     /// <summary>
     /// Ticks ability cooldowns and runs UseAbility orders: the caster walks into range, then fires.
-    /// Cooldowns hold while the caster is under construction or unpowered.
+    /// Cooldowns hold while the caster is under construction or unpowered; a <see cref="StrikeAbility"/> is refused
+    /// while the match switches strategic assets off.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -50,7 +52,7 @@ namespace HyperRTS.Simulation.Abilities
         public void OnUpdate(ref SystemState state)
         {
             _targets.Update(ref state, _targetQueries);
-            _caster.Update(ref state);
+            _caster.Update(ref state, SystemAPI.GetSingleton<MatchRules>());
 
             state.Dependency = new CooldownJob
             {
@@ -147,7 +149,7 @@ namespace HyperRTS.Simulation.Abilities
                 var index = Ability.Find(abilities, order.Value.Argument);
                 var target = order.Value.Target;
                 var stateIndex = index < 0 ? -1 : AbilityCooldown.Find(states, abilities[index].Id);
-                if (stateIndex < 0 || !IsUsable(abilities[index], states[stateIndex], target, owner))
+                if (stateIndex < 0 || !IsUsable(entity, abilities[index], states[stateIndex], target, owner))
                 {
                     ActiveOrder.Finish(busy, moving);
                     return;
@@ -167,9 +169,16 @@ namespace HyperRTS.Simulation.Abilities
                 }, Ecb);
             }
 
-            private bool IsUsable(in Ability ability, in AbilityCooldown state, Entity target, byte owner) =>
-                ability.IsAvailable(state, owner, Completed) &&
-                ability.IsValidTarget(target, owner, Targets, Owners, Relations);
+            private bool IsUsable(Entity caster, in Ability ability, in AbilityCooldown state, Entity target, byte owner)
+            {
+                if (Caster.IsSwitchedOff(caster, ability.Id))
+                {
+                    return false;
+                }
+
+                return ability.IsAvailable(state, owner, Completed) &&
+                       ability.IsValidTarget(target, owner, Targets, Owners, Relations);
+            }
         }
     }
 }

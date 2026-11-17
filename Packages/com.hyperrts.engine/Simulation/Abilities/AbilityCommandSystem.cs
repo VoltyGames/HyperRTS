@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
+using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -60,7 +61,7 @@ namespace HyperRTS.Simulation.Abilities
             state.CompleteDependency();
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             _targets.Update(ref state, _targetQueries);
-            _caster.Update(ref state);
+            _caster.Update(ref state, SystemAPI.GetSingleton<MatchRules>());
 
             var context = new Context
             {
@@ -134,7 +135,7 @@ namespace HyperRTS.Simulation.Abilities
 
             var abilities = SystemAPI.GetBuffer<Ability>(caster);
             var index = Ability.Find(abilities, command.Argument);
-            if (index < 0)
+            if (index < 0 || _caster.IsSwitchedOff(caster, command.Argument))
             {
                 return -1;
             }

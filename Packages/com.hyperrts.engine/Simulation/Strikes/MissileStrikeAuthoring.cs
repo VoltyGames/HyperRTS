@@ -64,6 +64,24 @@ namespace HyperRTS.Simulation.Strikes
         [Range(0f, 1f)]
         public float maxCut = 0.5f;
 
+        /// <summary>The strike's entry in the structure's <see cref="StrikeAbility"/> list.</summary>
+        public StrikeAbility Entry() => new()
+        {
+            AbilityId = EntityInfo.TypeIdFromName(ability),
+            Reach = blast.Bake().SplashRadius,
+            Kind = StrikeKind.Missile,
+        };
+
+        /// <summary>Adds the strike, and the strategic asset on its ability when <paramref name="strategic"/>.</summary>
+        public static void Add(EntityWriter writer, int abilityId, in MissileStrike strike, bool strategic)
+        {
+            writer.Add(strike);
+            if (strategic)
+            {
+                writer.Add(new StrategicAsset { AbilityId = abilityId });
+            }
+        }
+
         public class Baker : Baker<MissileStrikeAuthoring>
         {
             private Entity RemainsEntity(GameObject prefab) =>
@@ -82,9 +100,14 @@ namespace HyperRTS.Simulation.Strikes
                 var root = authoring.transform;
                 var launch = authoring.launchPoint == null ? root : authoring.launchPoint;
                 DependsOn(launch);
-                writer.Add(new MissileStrike
+                // BomberStrikeAuthoring writes the list when the structure has both strikes.
+                if (GetComponent<BomberStrikeAuthoring>() == null)
                 {
-                    AbilityId = id,
+                    writer.AddBuffer(new[] { authoring.Entry() });
+                }
+
+                Add(writer, id, new MissileStrike
+                {
                     Missile = GetEntity(authoring.missile, TransformUsageFlags.Dynamic),
                     LaunchPoint = root.InverseTransformPoint(launch.position),
                     Apex = authoring.apex,
@@ -94,11 +117,7 @@ namespace HyperRTS.Simulation.Strikes
                     ClearRadius = authoring.clearRadius,
                     CutPerDefence = authoring.cutPerDefence,
                     MaxCut = authoring.maxCut,
-                });
-                if (authoring.strategic)
-                {
-                    writer.Add(new StrategicAsset { AbilityId = id });
-                }
+                }, authoring.strategic);
             }
         }
     }

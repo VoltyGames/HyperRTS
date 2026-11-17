@@ -116,9 +116,13 @@ entries in `ability`; that entry targets a point, has range 0 and starts on cool
 cooldown is the owner's strategic asset charge, which every player sees; unticked, the strike is an ordinary ability
 with its own cooldown, such as a tactical strike.
 
+- Each strike writes an entry to the building's `StrikeAbility` list (ability id, blast reach, bomber or missile), so a
+  building can carry both kinds. `StrikeLaunchSystem` picks the component from the entry, and the AI reads the reach
+  from it. When both authoring components sit on one object, the bomber's baker writes the list.
 - The charge pauses while the building is offline and restarts for a new owner. `MatchRules.StrategicAssets` (set by
-  `MatchSetup.StrategicAssets`, on by default) holds every strike ability on cooldown while it is off, and keeps every
-  weapon marked `strategic` (a unit's nuclear missile) empty.
+  `MatchSetup.StrategicAssets`, on by default) gates strategic assets while it is off: `AbilitySystem` refuses any
+  `StrikeAbility`, `WeaponFireSystem` never fires a weapon marked `strategic` (a unit's nuclear missile), the AI plans
+  no strike, and the charge shows nothing. Cooldowns and rounds are left as they are.
 - Each player's `StrategicCharge` replicates on the player ghost, so every client shows the map-wide countdown. Losing
   the building clears it.
 - A strike's building plays its `Warning` cue at the target, sized by the blast, and every player gets it through fog

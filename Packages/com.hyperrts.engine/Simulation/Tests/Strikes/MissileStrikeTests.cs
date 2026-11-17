@@ -38,9 +38,9 @@ namespace HyperRTS.Simulation.Tests.Strikes
                 Id = Strike, Name = "Launch", Target = AbilityTarget.Point, Cooldown = Cooldown,
             }, Cooldown);
             var writer = World.Writer(_silo);
-            writer.Add(new MissileStrike
+            writer.AddBuffer(new[] { new StrikeAbility { AbilityId = Strike, Reach = Splash, Kind = StrikeKind.Missile } });
+            MissileStrikeAuthoring.Add(writer, Strike, new MissileStrike
             {
-                AbilityId = Strike,
                 Missile = World.ProjectilePrefab(),
                 LaunchPoint = new float3(0f, 2f, 0f),
                 Apex = 100f,
@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests.Strikes
                 Blast = new DamageProfile { Amount = 100f, SplashRadius = Splash, CoreRadius = 10f },
                 CutPerDefence = 0.1f,
                 MaxCut = 0.5f,
-            });
+            }, strategic: false);
             var sounds = EntitySoundsAuthoring.Add(writer);
             var cue = World.Own(ScriptableObject.CreateInstance<SoundCue>());
             EntitySoundsAuthoring.Set(sounds, CueSlot.Warning, cue);
@@ -172,16 +172,18 @@ namespace HyperRTS.Simulation.Tests.Strikes
         }
 
         [Test]
-        public void SwitchedOff_HoldsTheStrike()
+        public void SwitchedOff_RefusesTheStrike()
         {
             var match = World.MatchEntity();
             var rules = World.Get<MatchRules>(match);
             rules.StrategicAssets = false;
             World.Set(match, rules);
 
-            World.Run(Cooldown + 1f);
+            Fire();
+            World.Run(1f);
 
-            Assert.AreEqual(Cooldown, World.Buffer<AbilityCooldown>(_silo)[0].Remaining, 0.01f);
+            Assert.AreEqual(0, MissilesInFlight());
+            Assert.IsTrue(World.Buffer<AbilityCooldown>(_silo)[0].IsReady, "refused, not spent");
         }
     }
 }

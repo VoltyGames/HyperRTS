@@ -43,10 +43,8 @@ namespace HyperRTS.Simulation.Tests.Strikes
                 Id = Strike, Name = "Strike", Target = AbilityTarget.Point, Cooldown = Charge,
             }, Charge);
             var writer = World.Writer(_asset);
-            writer.Add(new StrategicAsset { AbilityId = Strike });
-            writer.Add(new BomberStrike
+            BomberStrikeAuthoring.Add(writer, Strike, new BomberStrike
             {
-                AbilityId = Strike,
                 Aircraft = bomber,
                 Altitude = 30f,
                 RevealSeconds = 1f,
@@ -55,7 +53,8 @@ namespace HyperRTS.Simulation.Tests.Strikes
                     Prefab = World.ProjectilePrefab(), Count = Bombs,
                     Damage = new DamageProfile { Amount = 100f, SplashRadius = 3f, EdgeFactor = 0.5f }, Speed = 60f, ZoneRadius = 20f, MaxReduction = 0.5f,
                 },
-            });
+            }, strategic: true);
+            writer.AddBuffer(new[] { new StrikeAbility { AbilityId = Strike, Reach = 23f, Kind = StrikeKind.Bomber } });
         }
 
         private StrategicCharge ReadCharge(byte owner) => World.Get<StrategicCharge>(World.Player(owner));
@@ -106,37 +105,66 @@ namespace HyperRTS.Simulation.Tests.Strikes
         }
 
         [Test]
-        public void SwitchedOff_HoldsTheCharge_AndShowsNoCountdown()
+        public void SwitchedOff_RefusesTheStrike_AndShowsNoCountdown()
         {
-            var match = World.MatchEntity();
-            var rules = World.Get<MatchRules>(match);
-            rules.StrategicAssets = false;
-            World.Set(match, rules);
+            SwitchOff();
 
-            World.Run(Charge + 1f);
+            Fire();
+            World.Run(1f);
 
-            Assert.AreEqual(Charge, World.Buffer<AbilityCooldown>(_asset)[0].Remaining, 0.01f);
+            Assert.AreEqual(0, Bombers().Length);
             Assert.IsFalse(ReadCharge(1).HasAsset);
+            Assert.IsTrue(World.Buffer<AbilityCooldown>(_asset)[0].IsReady, "refused, not spent");
         }
 
         [Test]
-        public void SwitchedOff_KeepsStrategicWeaponsEmpty()
+        public void SwitchedOff_StrategicWeaponsDontFire()
         {
             var launcher = World.AddWeapon(World.SpawnUnit(1, new float3(20f, 0f, 0f)), new TestWeapon { Range = 6f });
             World.SetAmmo(launcher, 1, 1f, AmmoRefill.Magazine);
             var weapon = World.Primary(launcher);
             weapon.Strategic = true;
             World.SetPrimary(launcher, weapon);
-            var match = World.MatchEntity();
-            var rules = World.Get<MatchRules>(match);
-            rules.StrategicAssets = false;
-            World.Set(match, rules);
+            SwitchOff();
             var enemy = World.SpawnUnit(2, new float3(20f, 0f, 4f));
 
             World.Run(3f);
 
-            Assert.AreEqual(0, World.PrimaryAmmo(launcher).Current);
+            Assert.AreEqual(1, World.PrimaryAmmo(launcher).Current);
             Assert.AreEqual(100f, World.GetHealth(enemy));
+        }
+
+        [Test]
+        public void StructureWithBothStrikes_LaunchesTheOneFired()
+        {
+            var launch = EntityInfo.TypeIdFromName("Launch");
+            World.GiveAbility(_asset, new Ability { Id = launch, Name = "Launch", Target = AbilityTarget.Point });
+            MissileStrikeAuthoring.Add(World.Writer(_asset), launch, new MissileStrike
+            {
+                Missile = World.ProjectilePrefab(), Apex = 50f, FlightSeconds = 2f,
+                Blast = new DamageProfile { Amount = 1f, SplashRadius = 10f },
+            }, strategic: false);
+            World.Buffer<StrikeAbility>(_asset).Add(new StrikeAbility
+            {
+                AbilityId = launch, Reach = 10f, Kind = StrikeKind.Missile,
+            });
+
+            World.Command(1, new PlayerCommand
+            {
+                Type = CommandType.UseAbility, Unit = _asset, Position = Target, Argument = launch,
+            });
+            World.Tick();
+
+            Assert.AreEqual(1, BombsInFlight(), "the missile");
+            Assert.AreEqual(0, Bombers().Length);
+        }
+
+        private void SwitchOff()
+        {
+            var match = World.MatchEntity();
+            var rules = World.Get<MatchRules>(match);
+            rules.StrategicAssets = false;
+            World.Set(match, rules);
         }
 
         [Test]

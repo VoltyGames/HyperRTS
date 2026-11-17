@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
+using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Status;
 using Unity.Collections;
 using Unity.Entities;
@@ -21,6 +22,8 @@ namespace HyperRTS.Simulation.Abilities
         private EventWriter<AbilityActivation> _events;
         private EventWriter<DamageEvent> _damage;
         private EventWriter<StatusRequest> _status;
+        [ReadOnly] private BufferLookup<StrikeAbility> _strikes;
+        private bool _strategicAssets;
 
         public AbilityCaster(ref SystemState state)
         {
@@ -29,18 +32,35 @@ namespace HyperRTS.Simulation.Abilities
             _events = new EventWriter<AbilityActivation>(ref state);
             _damage = new EventWriter<DamageEvent>(ref state);
             _status = new EventWriter<StatusRequest>(ref state);
+            _strikes = state.GetBufferLookup<StrikeAbility>(true);
+            _strategicAssets = true;
+            state.RequireForUpdate<MatchRules>();
         }
 
         /// <summary>A caster that isn't <see cref="Offline"/>; the AI and player commands both cast only from these.</summary>
         public static bool CanCast(EntityManager entityManager, Entity caster) => !entityManager.HasEnabled<Offline>(caster);
 
-        public void Update(ref SystemState state)
+        /// <summary>Refreshes the lookups and takes the match's strategic assets switch for this frame.</summary>
+        public void Update(ref SystemState state, in MatchRules rules)
         {
             _transforms.Update(ref state);
             _spawner.Update(ref state);
             _events.Update(ref state);
             _damage.Update(ref state);
             _status.Update(ref state);
+            _strikes.Update(ref state);
+            _strategicAssets = rules.StrategicAssets;
+        }
+
+        /// <summary>A <see cref="StrikeAbility"/> while the match switches strategic assets off, which no one may cast.</summary>
+        public readonly bool IsSwitchedOff(Entity caster, int abilityId)
+        {
+            if (_strategicAssets || !_strikes.TryGetBuffer(caster, out var strikes))
+            {
+                return false;
+            }
+
+            return StrikeAbility.Find(strikes, abilityId) >= 0;
         }
 
         /// <summary>Fires the ability; <paramref name="activation"/> says who, at what and where, and is published as is.</summary>
