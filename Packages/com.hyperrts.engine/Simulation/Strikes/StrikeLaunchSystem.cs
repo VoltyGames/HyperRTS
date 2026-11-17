@@ -102,6 +102,11 @@ namespace HyperRTS.Simulation.Strikes
                 Start = start,
                 Apex = strike.Apex,
             });
+            if (strike.Remains != Entity.Null)
+            {
+                ecb.AddComponent(missile, new StrikeRemains { Prefab = strike.Remains });
+            }
+
             _cues.Warn(_cues.TypeIdFor(used.Caster, CueSlot.Warning), used.Owner, used.Position, blast.SplashRadius);
         }
     }

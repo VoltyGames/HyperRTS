@@ -60,12 +60,19 @@ namespace HyperRTS.Simulation.Strikes
         [Min(0f)]
         public float zoneRadius = 25f;
 
+        [Tooltip("Prefab left where each bomb lands, such as a burning crater whose smoke hangs over the ground; none leaves nothing.")]
+        [PrefabAsset("Remains")]
+        public GameObject remains;
+
         [Tooltip("Share of the bombs enemy air defence over the zone can remove at most, one bomb per weapon.")]
         [Range(0f, 1f)]
         public float maxReduction = 0.5f;
 
         public class Baker : Baker<BomberStrikeAuthoring>
         {
+            private Entity RemainsEntity(GameObject prefab) =>
+                prefab == null ? Entity.Null : GetEntity(prefab, TransformUsageFlags.Dynamic);
+
             public override void Bake(BomberStrikeAuthoring authoring)
             {
                 // StrikeRule reports a missing aircraft, bomb or ability entry.
@@ -90,6 +97,7 @@ namespace HyperRTS.Simulation.Strikes
                         Speed = authoring.speed,
                         ZoneRadius = authoring.zoneRadius,
                         MaxReduction = authoring.maxReduction,
+                        Remains = RemainsEntity(authoring.remains),
                     },
                 });
                 if (authoring.strategic)

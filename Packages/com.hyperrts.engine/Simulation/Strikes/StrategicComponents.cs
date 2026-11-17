@@ -26,6 +26,9 @@ namespace HyperRTS.Simulation.Strikes
         public float MaxReduction;
 
         /// <summary>Bombs left once each of <paramref name="defences"/> removes one, never below the cap.</summary>
+        /// <summary>Prefab each bomb leaves where it lands (<see cref="StrikeRemains"/>); null leaves nothing.</summary>
+        public Entity Remains;
+
         public readonly int CountAfter(int defences) => Count - math.min(defences, (int)(Count * MaxReduction));
     }
 
@@ -70,6 +73,9 @@ namespace HyperRTS.Simulation.Strikes
         /// <summary>The blast on landing; its splash reaches the surface only.</summary>
         public DamageProfile Blast;
 
+        /// <summary>Prefab the missile leaves where it lands (<see cref="StrikeRemains"/>); null leaves nothing.</summary>
+        public Entity Remains;
+
         /// <summary>Share of the blast's radii each enemy defence covering the target cuts.</summary>
         public float CutPerDefence;
 
@@ -113,6 +119,15 @@ namespace HyperRTS.Simulation.Strikes
 
         /// <summary>The strike warning has shown.</summary>
         public bool Warned;
+    }
+
+    /// <summary>
+    /// What a strike's projectile leaves where it lands, such as a burning crater whose smoke hangs over the ground;
+    /// shot down, it leaves nothing.
+    /// </summary>
+    public struct StrikeRemains : IComponentData
+    {
+        public Entity Prefab;
     }
 
     /// <summary>A player's strategic asset charge, replicated to every player for the map-wide countdown.</summary>

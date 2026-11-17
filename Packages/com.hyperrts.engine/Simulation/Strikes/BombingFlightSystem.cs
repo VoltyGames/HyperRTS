@@ -125,6 +125,10 @@ namespace HyperRTS.Simulation.Strikes
                     Course = ShotCourse.Direct,
                     Start = origin,
                 });
+                if (load.Remains != Entity.Null)
+                {
+                    ecb.AddComponent(bomb, new StrikeRemains { Prefab = load.Remains });
+                }
             }
         }
 

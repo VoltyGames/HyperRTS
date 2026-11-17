@@ -47,6 +47,10 @@ namespace HyperRTS.Simulation.Strikes
         [Tooltip("The blast where it lands: full damage inside the core radius, falling off to the splash radius.")]
         public DamageSettings blast = new() { damage = 5000f, splashRadius = 120f, coreRadius = 40f, edgeFactor = 0f };
 
+        [Tooltip("Prefab left where each missile lands, such as a burning crater whose smoke hangs over the ground; none leaves nothing.")]
+        [PrefabAsset("Remains")]
+        public GameObject remains;
+
         [Tooltip("Share of the blast's radii each enemy anti-air or missile interceptor covering the target cuts.")]
         [Range(0f, 1f)]
         public float cutPerDefence = 0.1f;
@@ -57,6 +61,9 @@ namespace HyperRTS.Simulation.Strikes
 
         public class Baker : Baker<MissileStrikeAuthoring>
         {
+            private Entity RemainsEntity(GameObject prefab) =>
+                prefab == null ? Entity.Null : GetEntity(prefab, TransformUsageFlags.Dynamic);
+
             public override void Bake(MissileStrikeAuthoring authoring)
             {
                 // StrikeRule reports a missing missile or ability entry.
@@ -78,6 +85,7 @@ namespace HyperRTS.Simulation.Strikes
                     Apex = authoring.apex,
                     FlightSeconds = authoring.flightSeconds,
                     Blast = authoring.blast.Bake(),
+                    Remains = RemainsEntity(authoring.remains),
                     CutPerDefence = authoring.cutPerDefence,
                     MaxCut = authoring.maxCut,
                 });

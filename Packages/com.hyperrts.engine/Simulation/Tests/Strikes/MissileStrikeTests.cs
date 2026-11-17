@@ -6,12 +6,14 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
+using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Strikes;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Simulation.Tests.Strikes
@@ -105,6 +107,25 @@ namespace HyperRTS.Simulation.Tests.Strikes
             Assert.IsTrue(!World.EntityManager.Exists(core) || World.GetHealth(core) <= 0f, "full damage in the core");
             Assert.AreEqual(50f, World.GetHealth(falloff), 1e-2f, "half way from core to edge");
             Assert.AreEqual(100f, World.GetHealth(outside));
+        }
+
+        [Test]
+        public void Landing_LeavesItsRemainsAtTheTarget()
+        {
+            var remains = World.EntityManager.CreateEntity();
+            World.Add(remains, LocalTransform.Identity);
+            World.Add(remains, new Decay { Lifetime = 100f, DespawnDuration = 1f, DespawnDepth = 1f });
+            World.MakePrefab(remains);
+            var strike = World.Get<MissileStrike>(_silo);
+            strike.Remains = remains;
+            World.Set(_silo, strike);
+            Fire();
+
+            World.Run(FlightSeconds + 0.5f);
+
+            var left = World.All<Decay>().ToArray();
+            Assert.AreEqual(1, left.Length);
+            Assert.AreEqual(Target.z, World.Get<LocalTransform>(left[0]).Position.z, 1e-2f);
         }
 
         [TestCase(0, Splash)]
