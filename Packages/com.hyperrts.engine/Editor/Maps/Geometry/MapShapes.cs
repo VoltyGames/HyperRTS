@@ -3,7 +3,6 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
-using HyperRTS.Simulation.Buildings;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Geometry
@@ -222,22 +221,11 @@ namespace HyperRTS.Editor.Maps.Geometry
                 Prop = spec.prop,
                 Position = position,
                 Across = across,
-                Width = entry.DeckSize.x,
-                Span = entry.DeckSize.y,
-                Landing = Landing(entry),
+                Width = entry.Deck.Size.x,
+                Span = entry.Deck.Size.y,
+                Landing = entry.Deck.Landing,
                 Height = water + DeckClearance,
             });
-        }
-
-        // A bridge's building footprint runs over its approach slabs, past the ends of its deck.
-        private static float Landing(MapProp entry)
-        {
-            if (!entry.prefab.TryGetComponent<BuildingAuthoring>(out var building))
-            {
-                return 0f;
-            }
-
-            return Mathf.Max(0f, (building.footprint.y - entry.DeckSize.y) * 0.5f);
         }
     }
 }
