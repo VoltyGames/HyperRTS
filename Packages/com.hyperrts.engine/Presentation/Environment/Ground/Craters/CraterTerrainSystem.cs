@@ -1,13 +1,19 @@
+using System.Collections.Generic;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
+using HyperRTS.Simulation.Navigation.Areas;
+using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Environment.Ground.Craters
 {
     /// <summary>
-    /// Dents the active terrain under stamped crater bowls and trenches, and restores it on a replay seek or map change.
+    /// Dents the active terrain under stamped crater bowls and trenches and levels it under finished buildings, and restores it on a replay seek or map change.
     /// Visual only: the simulation's ground never changes.
     /// </summary>
     // Before TrampleStampSystem clears last frame's stamps, which TrampleMap has drawn by now.
@@ -20,6 +26,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
 
         private Shader _shader;
         private CraterTerrain _crater;
+        private readonly BuildingLevels _levels = new();
+        private readonly Dictionary<Entity, BuildingLevel> _wanted = new();
         private Texture _tracks;
         private float _syncedAt = float.NegativeInfinity;
 
@@ -39,9 +47,18 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             if (stamps.Reset)
             {
                 _crater.Restore();
+                _levels.Clear();
             }
 
-            var landed = TryGetBowls(stamps, out var min, out var max);
+            var min = new float2(float.MaxValue);
+            var max = new float2(float.MinValue);
+            AddBowls(stamps, ref min, ref max);
+            if (_levels.Replace(WantedLevels(), ref min, ref max))
+            {
+                _crater.SetBuildings(_levels.All);
+            }
+
+            var landed = math.all(min <= max);
             if (landed)
             {
                 _crater.Dent(min, max);
@@ -75,10 +92,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             return true;
         }
 
-        private static bool TryGetBowls(TrampleStamps stamps, out float2 min, out float2 max)
+        private static void AddBowls(TrampleStamps stamps, ref float2 min, ref float2 max)
         {
-            min = new float2(float.MaxValue);
-            max = new float2(float.MinValue);
             foreach (var scar in stamps.Scars)
             {
                 var bowl = scar.Value.x > 0f;
@@ -88,8 +103,26 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
                     max = math.max(max, scar.Center + scar.Extent);
                 }
             }
+        }
 
-            return math.all(min <= max);
+        // Every finished, seen building, neutral ones too. A hidden one stays unlevelled so the ground never gives it away.
+        private Dictionary<Entity, BuildingLevel> WantedLevels()
+        {
+            _wanted.Clear();
+            foreach (var (obstacle, place, entity) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalToWorld>>()
+                         .WithAll<BuildingTag>().WithNone<ConstructionProgress, FogHidden>().WithEntityAccess())
+            {
+                if (obstacle.ValueRO.Open)
+                {
+                    continue;
+                }
+
+                var right = math.normalizesafe(place.ValueRO.Right.xz, new float2(1f, 0f));
+                _wanted[entity] = new BuildingLevel(place.ValueRO.Position.xz, right, obstacle.ValueRO.Size,
+                    place.ValueRO.Position.y);
+            }
+
+            return _wanted;
         }
 
         private void Release()
@@ -97,6 +130,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             _crater?.Dispose();
             _crater = null;
             _tracks = null;
+            _levels.Clear();
         }
     }
 }

@@ -69,6 +69,15 @@ without touching the `TerrainData` asset. `CraterSink.hlsl` sinks objects by the
 and RowCrop vertex stages. A LitTeam material's `_CraterSink` scales it: 0 for a model that brings its own dent, such as
 a trench, 1 otherwise. The simulation's ground never changes.
 
+**Buildings level the drawn ground.** The same pass, `CraterHeight.shader`, levels the heights under every finished, seen
+building that has a closed `NavObstacle` (neutral ones too; under construction or fog-hidden ones wait), so uneven ground
+never covers the apron of a model. Each building is a `BuildingLevel`: its rotated rectangle and base height, uploaded as a
+structured buffer. A texel eases to the base, `BuildingLevel.Drop` (3 cm) below it, with weight 1 inside the footprint
+and a smoothstep to 0 over `BuildingLevel.Skirt` (2.5 m), then the crater depth comes off. `CraterTerrainSystem` re-dents a
+building's bounds plus the skirt when it appears, goes or changes, and `Restore` still puts the originals back.
+`CraterDepth` and the undented heights sinking shaders read are unchanged. Units walking the skirt may sit up to a few
+centimetres off the drawn ground.
+
 **Buildings can open the drawn ground.** A `TerrainHoleAuthoring` building, once finished and seen, has `TerrainHoleSystem` cut
 its rotated rectangle out of the active Terrain's holes, so a model that goes below ground (a shaft, a stair) shows, and
 fill it when the building goes. The `TerrainData` holes are put back on release, so none are saved. Only the drawn terrain

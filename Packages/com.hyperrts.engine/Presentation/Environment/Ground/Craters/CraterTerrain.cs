@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Rendering;
 using Unity.Mathematics;
@@ -21,6 +22,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
         private static readonly int HeightRegionId = Shader.PropertyToID("_HeightRegion");
         private static readonly int TerrainTexelsId = Shader.PropertyToID("_TerrainTexels");
         private static readonly int DepthScaleId = Shader.PropertyToID("_DepthScale");
+        private static readonly int TerrainYId = Shader.PropertyToID("_TerrainY");
+        private static readonly int LevelsId = Shader.PropertyToID("_BuildingLevels");
+        private static readonly int LevelCountId = Shader.PropertyToID("_BuildingLevelCount");
 
         /// <summary>The heights from before any crater, which sinking shaders measure an object's height above.</summary>
         public static readonly MapTextureGlobal Undented = new("_HyperRTSUndentedHeights", "_HyperRTSUndentedArea");
@@ -32,6 +36,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
         private readonly CommandBuffer _commands = new() { name = "HyperRTS Crater Terrain" };
         private readonly float2 _origin;
         private readonly float2 _texelsPerMetre;
+        private GraphicsBuffer _levels;
         private RectInt _unsynced;
         private bool _dented;
 
@@ -52,6 +57,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             _material.SetTexture(OriginalHeightsId, _original);
             _material.SetVector(TerrainTexelsId, new float4(_origin, 1f / _texelsPerMetre));
             _material.SetFloat(DepthScaleId, TerrainHeightInput.HeightmapFull / size.y);
+            _material.SetFloat(TerrainYId, position.y);
+            SetBuildings(new List<BuildingLevel>());
             Undented.Publish(_original, TerrainHeightInput.Area(terrain));
             Shader.SetGlobalVector(UndentedScaleId, TerrainHeightInput.Scale(terrain));
         }
@@ -65,7 +72,25 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
         /// <summary>Dented on the GPU but not yet read back into the terrain's heights, collider and LOD.</summary>
         public bool Unsynced => _unsynced.width > 0;
 
-        /// <summary>Redraws the heights under a world XZ box from the originals and the tracks map's crater depth.</summary>
+        /// <summary>Sets the buildings the next <see cref="Dent"/> levels the ground under.</summary>
+        public void SetBuildings(List<BuildingLevel> buildings)
+        {
+            if (_levels == null || _levels.count < buildings.Count)
+            {
+                _levels?.Dispose();
+                _levels = new GraphicsBuffer(GraphicsBuffer.Target.Structured, math.max(buildings.Count, 16),
+                    BuildingLevel.Stride);
+                _material.SetBuffer(LevelsId, _levels);
+            }
+
+            _levels.SetData(buildings);
+            _material.SetInt(LevelCountId, buildings.Count);
+        }
+
+        /// <summary>
+        /// Redraws the heights under a world XZ box: the originals levelled under the buildings, less the tracks map's
+        /// crater depth.
+        /// </summary>
         public void Dent(float2 min, float2 max)
         {
             var region = Texels(min, max);
@@ -123,6 +148,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             Undented.Clear();
             Shader.SetGlobalVector(UndentedScaleId, Vector4.zero);
             _commands.Release();
+            _levels.Dispose();
             RenderTargets.Free(_original);
             CoreUtils.Destroy(_material);
         }
