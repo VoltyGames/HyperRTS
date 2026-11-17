@@ -32,7 +32,11 @@ namespace HyperRTS.Input.Cameras
         /// <summary>Takes the presented world's new pulses, then fades; while not <see cref="enabled"/> it shows none.</summary>
         public void Step(Vector3 focus, float deltaTime)
         {
-            if (enabled && TryGetWorldPulses(out var pulses))
+            if (!enabled)
+            {
+                Level = 0f;
+            }
+            else if (TryGetWorldPulses(out var pulses))
             {
                 foreach (var pulse in pulses)
                 {
@@ -40,7 +44,7 @@ namespace HyperRTS.Input.Cameras
                 }
             }
 
-            Advance(enabled ? deltaTime : float.MaxValue);
+            Advance(deltaTime);
         }
 
         /// <summary>Raises the level at once to the pulse's, weakened by its distance from <paramref name="focus"/>.</summary>

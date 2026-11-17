@@ -114,7 +114,7 @@ namespace HyperRTS.Editor.Common
             known[path] = false;
             foreach (var dependency in AssetDatabase.GetDependencies(path, false))
             {
-                var followed = dependency != path && (dependency.EndsWith(".prefab") || dependency.EndsWith(".asset"));
+                var followed = dependency.EndsWith(".prefab") || dependency.EndsWith(".asset");
                 if (scripts.Contains(dependency) || (followed && Uses(dependency, scripts, known)))
                 {
                     known[path] = true;

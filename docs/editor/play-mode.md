@@ -19,12 +19,12 @@ The cheats work in Play mode only, through the normal game systems, and drop the
 | Player and resources | Pick the player every cheat acts for; **Play as** it (its AI stops), add resources, finish its construction and production |
 | Spawning | Spawn any prefab at the view centre for the player (buildings follow placement rules) |
 | Combat and battles | Repair, destroy or ready the abilities of your selection; start a two-army battle as a load test |
-| Strikes | One row per strike the game has, found from its prefabs under the spawn grouping's headings: each strike ability of a structure and each unit with a strategic weapon, tactical or strategic. A player owning none gets **Build at view**; otherwise the row shows Ready, the cooldown, a launcher's rounds or why it can't fire, and **Fire at view**. The `StrategicAssets` switch shows strikes and strategic weapons held |
+| Strikes | One row per strike the game has, found from its prefabs under the spawn grouping's headings: each strike ability of a structure and each unit with a strategic weapon, tactical or strategic. A player owning none gets **Build at view**; otherwise the row shows Ready, the cooldown, a launcher's rounds or why it can't fire, with **Ready** and **Fire at view** |
 | World | Switch fog of war; change game speed or pause (single player only) |
 
-**Fire at view** readies and powers the strike first, then sends the player's command at the ground point the Game view
-looks at: `UseAbility` for a strike, a fire mission for a launcher after filling its strategic rounds. Powering
-sets a consumer's `PowerSupply` draw to zero and clears its `Unpowered` reason, since the power system only sets it and
+**Ready** powers the strike and ends its cooldown or fills a launcher's strategic rounds, so a launch door opens over a
+charged strike without firing. **Fire at view** readies it first, then sends the player's command at the ground point
+the Game view looks at: `UseAbility` for a strike, a fire mission for a launcher. Powering sets a consumer's `PowerSupply` draw to zero and clears its `Unpowered` reason, since the power system only sets it and
 `AbilityCommandSystem` drops commands from an offline caster. Other reasons (under construction, a game's own) and an
 aimed ability out of range are shown in the row instead.
 

@@ -25,9 +25,10 @@ namespace HyperRTS.Simulation.Strikes
         /// <summary>Share of <see cref="Count"/> that enemy air defence over the zone can remove at most.</summary>
         public float MaxReduction;
 
-        /// <summary>Bombs left once each of <paramref name="defences"/> removes one, never below the cap.</summary>
         /// <summary>Prefab each bomb leaves where it lands (<see cref="StrikeRemains"/>); null leaves nothing.</summary>
         public Entity Remains;
+
+        /// <summary>Bombs left once each of <paramref name="defences"/> removes one, never below the cap.</summary>
 
         public readonly int CountAfter(int defences) => Count - math.min(defences, (int)(Count * MaxReduction));
     }

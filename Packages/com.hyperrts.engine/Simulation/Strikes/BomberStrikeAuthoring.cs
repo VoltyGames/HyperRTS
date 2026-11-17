@@ -75,7 +75,7 @@ namespace HyperRTS.Simulation.Strikes
 
             public override void Bake(BomberStrikeAuthoring authoring)
             {
-                // StrikeRule reports a missing aircraft, bomb or ability entry.
+                // BomberStrikeRule reports a missing aircraft, bomb or ability entry.
                 if (authoring.aircraft == null || authoring.bomb == null)
                 {
                     return;

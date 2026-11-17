@@ -79,8 +79,10 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 }
             }
 
+            // Entries without a heading go last, as in the spawn picker.
             var headings = grouping?.Headings.ToList() ?? new List<string>();
-            return found.OrderBy(entry => headings.IndexOf(entry.Heading)).ThenBy(entry => entry.Title).ToList();
+            return found.OrderBy(entry => entry.Heading == null ? int.MaxValue : headings.IndexOf(entry.Heading))
+                .ThenBy(entry => entry.Title).ToList();
         }
 
         /// <summary>The living entity <paramref name="owner"/> owns of each prefab type.</summary>
@@ -136,15 +138,26 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 return $"Rounds {current}/{max}";
             }
 
-            var cooldowns = entityManager.GetBuffer<AbilityCooldown>(instance, true);
-            var remaining = cooldowns[AbilityCooldown.Find(cooldowns, AbilityId)].Remaining;
-            if (remaining <= 0f)
+            var cooldown = Cooldown(entityManager, instance);
+            if (cooldown.IsReady)
             {
                 return "Ready";
             }
 
-            var seconds = (int)math.ceil(remaining);
+            var seconds = (int)math.ceil(cooldown.Remaining);
             return $"Cooldown {seconds / 60}:{seconds % 60:00}";
+        }
+
+        /// <summary>A launcher's strategic rounds are full, or a strike's cooldown is over.</summary>
+        public bool IsReady(EntityManager entityManager, Entity instance)
+        {
+            if (IsLauncher)
+            {
+                var (current, max) = Rounds(entityManager, instance);
+                return current == max;
+            }
+
+            return Cooldown(entityManager, instance).IsReady;
         }
 
         /// <summary>Spawns one finished for <paramref name="owner"/> at <paramref name="point"/>, logging why when the ground is blocked.</summary>
@@ -156,23 +169,34 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             }
         }
 
+        /// <summary>Powers <paramref name="instance"/> and fills its strategic rounds or ends its strike's cooldown, without firing.</summary>
+        public void Ready(EntityManager entityManager, Entity instance)
+        {
+            StopPowerDraw(entityManager, instance);
+            if (IsLauncher)
+            {
+                FillRounds(entityManager, instance);
+                return;
+            }
+
+            var cooldowns = entityManager.GetBuffer<AbilityCooldown>(instance);
+            cooldowns.ElementAt(AbilityCooldown.Find(cooldowns, AbilityId)).Remaining = 0f;
+        }
+
         /// <summary>
         /// Readies <paramref name="instance"/> and sends the player's command at <paramref name="point"/>, as input and
         /// AI do: a UseAbility for a strike, a fire mission for a launcher.
         /// </summary>
         public void Fire(EntityManager entityManager, Entity player, Entity instance, float3 point)
         {
-            StopPowerDraw(entityManager, instance);
+            Ready(entityManager, instance);
             var command = new PlayerCommand { Position = point };
             if (IsLauncher)
             {
-                FillRounds(entityManager, instance);
                 command.Type = CommandType.FireMission;
             }
             else
             {
-                var cooldowns = entityManager.GetBuffer<AbilityCooldown>(instance);
-                cooldowns.ElementAt(AbilityCooldown.Find(cooldowns, AbilityId)).Remaining = 0f;
                 command.Type = CommandType.UseAbility;
                 command.Argument = AbilityId;
             }
@@ -180,6 +204,12 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             using var caster = new NativeArray<Entity>(new[] { instance }, Allocator.Temp);
             PlayerCommands.Address(ref command, entityManager.GetBuffer<PlayerCommandSubject>(player), caster);
             entityManager.GetBuffer<PlayerCommand>(player).Add(command);
+        }
+
+        private AbilityCooldown Cooldown(EntityManager entityManager, Entity instance)
+        {
+            var cooldowns = entityManager.GetBuffer<AbilityCooldown>(instance, true);
+            return cooldowns[AbilityCooldown.Find(cooldowns, AbilityId)];
         }
 
         private static (int Current, int Max) Rounds(EntityManager entityManager, Entity entity)

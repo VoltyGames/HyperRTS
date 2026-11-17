@@ -171,7 +171,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         }
 
         // Cheats change the world outside the recorded commands, so the recording would no longer play back.
-        public static void StopRecording(World world)
+        private static void StopRecording(World world)
         {
             if (ReplayRecorder.IsRecording(world))
             {
@@ -180,7 +180,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             }
         }
 
-        private void Act(System.Action<EntityManager, Entity, byte> cheat)
+        /// <summary>Runs <paramref name="cheat"/> on the chosen player's world, player and owner, then drops the replay recording.</summary>
+        public void Act(System.Action<EntityManager, Entity, byte> cheat)
         {
             if (!TryGetChosen(out var chosen))
             {

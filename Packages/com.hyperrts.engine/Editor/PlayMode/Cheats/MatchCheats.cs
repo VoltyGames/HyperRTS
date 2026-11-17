@@ -62,18 +62,6 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         public static bool StrategicAssetsEnabled(EntityManager entityManager) =>
             PlayWorld.TryGetSingleton(entityManager, out MatchRules rules) && rules.StrategicAssets;
 
-        public static void SetStrategicAssets(EntityManager entityManager, bool enabled)
-        {
-            using var query = entityManager.CreateEntityQuery(typeof(MatchRules));
-            if (!query.TryGetSingleton(out MatchRules rules))
-            {
-                return;
-            }
-
-            rules.StrategicAssets = enabled;
-            query.SetSingleton(rules);
-        }
-
         /// <summary>
         /// Finishes every construction site and the current production of one owner, through the construction and
         /// production systems next frame, so completion events, sounds and stats still happen.

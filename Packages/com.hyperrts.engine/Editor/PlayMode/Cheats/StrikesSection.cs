@@ -7,14 +7,13 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode.Cheats
 {
-    /// <summary>The Strikes cheats: every strike and strategic launcher the game has, under the spawn grouping's headings, built or fired for the chosen player.</summary>
+    /// <summary>The Strikes cheats: every strike and strategic launcher the game has, under the spawn grouping's headings, built, readied or fired for the chosen player.</summary>
     internal class StrikesSection
     {
         private const long PollMilliseconds = 250;
 
         private readonly CheatsSection _cheats;
         private readonly VisualElement _rows;
-        private readonly Toggle _strategic;
         private readonly List<StrikeRow> _shown = new();
         private World _world;
 
@@ -23,9 +22,6 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         {
             _cheats = cheats;
             _rows = root.Require<VisualElement>("rows");
-            _strategic = root.Require<Toggle>("strategic");
-            _strategic.RegisterValueChangedCallback(change =>
-                Run(chosen => MatchCheats.SetStrategicAssets(chosen.Manager, change.newValue)));
             root.schedule.Execute(Poll).Every(PollMilliseconds);
         }
 
@@ -48,15 +44,15 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             {
                 if (owned.TryGetValue(row.Entry.TypeId, out var instance))
                 {
-                    row.ShowOwned(row.Entry.Status(manager, instance), row.Entry.FindBlocker(manager, instance, point));
+                    var entry = row.Entry;
+                    row.ShowOwned(entry.Status(manager, instance), entry.IsReady(manager, instance),
+                        entry.FindBlocker(manager, instance, point));
                 }
                 else
                 {
                     row.ShowMissing();
                 }
             }
-
-            _strategic.SetValueWithoutNotify(MatchCheats.StrategicAssetsEnabled(manager));
         }
 
         // The strikes come from prefabs, which stay the same for the whole match.
@@ -78,32 +74,25 @@ namespace HyperRTS.Editor.PlayMode.Cheats
 
                 var row = new StrikeRow(entry);
                 var strike = entry;
-                row.Build.clicked += () => Run(chosen =>
-                    strike.Build(chosen.Manager, chosen.Owner, SpawnCheat.ViewCenter(chosen.Manager)));
-                row.Fire.clicked += () => Run(chosen => Fire(chosen, strike));
+                row.Build.clicked += () => _cheats.Act((manager, _, owner) =>
+                    strike.Build(manager, owner, SpawnCheat.ViewCenter(manager)));
+                row.Ready.clicked += () => ActOnOwned(strike, (manager, _, instance) => strike.Ready(manager, instance));
+                row.Fire.clicked += () => ActOnOwned(strike, (manager, player, instance) =>
+                    strike.Fire(manager, player, instance, SpawnCheat.ViewCenter(manager)));
                 _shown.Add(row);
                 _rows.Add(row.Root);
             }
         }
 
-        private static void Fire(ChosenPlayer chosen, StrikeEntry strike)
+        private void ActOnOwned(StrikeEntry strike, Action<EntityManager, Entity, Entity> cheat)
         {
-            var owned = StrikeEntry.FindOwned(chosen.Manager, chosen.Owner);
-            if (owned.TryGetValue(strike.TypeId, out var instance))
+            _cheats.Act((manager, player, owner) =>
             {
-                strike.Fire(chosen.Manager, chosen.Player, instance, SpawnCheat.ViewCenter(chosen.Manager));
-            }
-        }
-
-        private void Run(Action<ChosenPlayer> cheat)
-        {
-            if (!_cheats.TryGetChosen(out var chosen))
-            {
-                return;
-            }
-
-            cheat(chosen);
-            CheatsSection.StopRecording(chosen.Manager.World);
+                if (StrikeEntry.FindOwned(manager, owner).TryGetValue(strike.TypeId, out var instance))
+                {
+                    cheat(manager, player, instance);
+                }
+            });
             Poll();
         }
     }

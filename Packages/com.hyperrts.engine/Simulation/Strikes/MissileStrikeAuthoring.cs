@@ -66,7 +66,7 @@ namespace HyperRTS.Simulation.Strikes
 
             public override void Bake(MissileStrikeAuthoring authoring)
             {
-                // StrikeRule reports a missing missile or ability entry.
+                // MissileStrikeRule reports a missing missile or ability entry.
                 if (authoring.missile == null)
                 {
                     return;
