@@ -59,10 +59,18 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
 
             foreach (var (entity, footprint) in wanted)
             {
-                if (_cut.TryAdd(entity, footprint))
+                if (_cut.TryGetValue(entity, out var last))
                 {
-                    region.Add(footprint.Bounds(_grid));
+                    if (last.Equals(footprint))
+                    {
+                        continue;
+                    }
+
+                    region.Add(last.Bounds(_grid));
                 }
+
+                _cut[entity] = footprint;
+                region.Add(footprint.Bounds(_grid));
             }
 
             if (!region.IsEmpty)

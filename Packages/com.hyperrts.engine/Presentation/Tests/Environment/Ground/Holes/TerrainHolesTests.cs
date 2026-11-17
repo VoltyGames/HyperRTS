@@ -94,6 +94,37 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Holes
             Object.DestroyImmediate(data);
         }
 
+        [Test]
+        public void Terrain_MovedBuildingFillsItsOldFootprintAndCutsTheNew()
+        {
+            var data = new TerrainData { heightmapResolution = 65, size = new Vector3(64f, 20f, 64f) };
+            var terrain = Terrain.CreateTerrainGameObject(data).GetComponent<Terrain>();
+            terrain.transform.position = new Vector3(-32f, 0f, -32f);
+            var holes = new TerrainHoles(terrain);
+            var building = new Entity { Index = 1, Version = 1 };
+            try
+            {
+                var wanted = new Dictionary<Entity, HoleFootprint>
+                {
+                    [building] = new(new TurnedRect(new float2(10f, 10f), East, new float2(4f, 4f))),
+                };
+                holes.Apply(wanted);
+                wanted[building] = new(new TurnedRect(new float2(20f, 10f), East, new float2(4f, 4f)));
+                holes.Apply(wanted);
+
+                var moved = data.GetHoles(0, 0, 64, 64);
+                Assert.AreEqual(16, Count(moved, false));
+                Assert.IsTrue(moved[10 + 32, 10 + 32], "the old footprint stayed cut");
+                Assert.IsFalse(moved[10 + 32, 20 + 32], "the new footprint was not cut");
+            }
+            finally
+            {
+                holes.Dispose();
+                Object.DestroyImmediate(terrain.gameObject);
+                Object.DestroyImmediate(data);
+            }
+        }
+
         private static bool[,] Holes(HoleFootprint footprint)
         {
             var holes = new bool[64, 64];

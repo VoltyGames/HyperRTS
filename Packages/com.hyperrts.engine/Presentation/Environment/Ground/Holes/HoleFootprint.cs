@@ -4,11 +4,13 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Ground.Holes
 {
     /// <summary>A hole's rotated rectangle on the ground, and which texels of a <see cref="HoleGrid"/> it covers.</summary>
-    public readonly struct HoleFootprint
+    public readonly struct HoleFootprint : System.IEquatable<HoleFootprint>
     {
         private readonly TurnedRect _rect;
 
         public HoleFootprint(TurnedRect rect) => _rect = rect;
+
+        public bool Equals(HoleFootprint other) => _rect.Equals(other._rect);
 
         /// <summary>The texels the rectangle's bounding box touches, clamped to the grid; empty when off it.</summary>
         public RectInt Bounds(HoleGrid grid)
