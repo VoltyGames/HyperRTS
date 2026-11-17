@@ -16,7 +16,7 @@ namespace HyperRTS.Presentation.Tests.Cameras
         public void Jolt_ShakesAtFirst_ThenFadesToNothingWithinItsDuration()
         {
             var shake = new CameraShake();
-            shake.Add(new CameraJolt(Focus, 0.1f), Focus, 1f);
+            shake.Add(new CameraJolt(Focus, 0.1f, 0f, 0f), Focus, 1f);
 
             var moved = 0f;
             for (var time = 0f; time < 0.1f; time += Step)
@@ -37,7 +37,7 @@ namespace HyperRTS.Presentation.Tests.Cameras
             var shake = new CameraShake();
             for (var i = 0; i < 100; i++)
             {
-                shake.Add(new CameraJolt(Focus, 5f), Focus, 1f);
+                shake.Add(new CameraJolt(Focus, 5f, 0f, 0f), Focus, 1f);
             }
 
             for (var frame = 0; frame < 15; frame++)
@@ -52,7 +52,7 @@ namespace HyperRTS.Presentation.Tests.Cameras
         public void TurnedOff_DropsJolts_AndNothingMoves()
         {
             var shake = new CameraShake();
-            shake.Add(new CameraJolt(Focus, 5f), Focus, 1f);
+            shake.Add(new CameraJolt(Focus, 5f, 0f, 0f), Focus, 1f);
             shake.Advance(Step);
 
             shake.enabled = false;

@@ -42,6 +42,28 @@ namespace HyperRTS.Presentation.Effects.Rig
         [Min(0f)]
         public float shake;
 
+        [Tooltip("Distance from the camera's focus at which the shake is no longer felt; 0 uses the camera's reach.")]
+        [Unit("m")]
+        [Min(0f)]
+        [ShowIf(nameof(shake))]
+        public float shakeReach;
+
+        [Tooltip("Seconds the shake takes to die out; 0 uses the camera's duration.")]
+        [Unit("s")]
+        [Min(0f)]
+        [ShowIf(nameof(shake))]
+        public float shakeSeconds;
+
+        [Tooltip("Share of the full screen white-out a burst at the camera's focus gives, from 0 to 1; 0 never flashes the screen.")]
+        [Range(0f, 1f)]
+        public float whiteOut;
+
+        [Tooltip("Distance from the camera's focus at which the white-out no longer shows.")]
+        [Unit("m")]
+        [Min(0f)]
+        [ShowIf(nameof(whiteOut))]
+        public float whiteOutReach = 1000f;
+
         [Tooltip("Alternative rigs, each without variants of its own. Each play picks this rig or one of them.")]
         public GameObject[] variants = Array.Empty<GameObject>();
 
@@ -54,6 +76,9 @@ namespace HyperRTS.Presentation.Effects.Rig
 
         /// <summary>Where bursts with <see cref="shake"/> send their camera shake; none means no shake.</summary>
         public List<CameraJolt> Jolts { get; set; }
+
+        /// <summary>Where bursts with <see cref="whiteOut"/> send their flash; none means no white-out.</summary>
+        public List<WhiteOutPulse> WhiteOuts { get; set; }
 
         /// <summary>Set by the pool from <see cref="variants"/>.</summary>
         public EffectRig[] Alternatives { get; set; } = Array.Empty<EffectRig>();
@@ -99,7 +124,7 @@ namespace HyperRTS.Presentation.Effects.Rig
 
         public EffectRig Pick() => Pick((uint)UnityEngine.Random.Range(0, int.MaxValue));
 
-        /// <summary>Sends every graph its Burst event at the pose, thinned by density, flashes the lights and shakes the camera.</summary>
+        /// <summary>Sends every graph its Burst event at the pose, thinned by density, flashes the lights, shakes the camera and whites out the screen.</summary>
         public void Burst(Vector3 position, Quaternion rotation, float burstScale, float density)
         {
             Capture();
@@ -117,7 +142,12 @@ namespace HyperRTS.Presentation.Effects.Rig
             Flash();
             if (shake > 0f)
             {
-                Jolts?.Add(new CameraJolt(position, shake));
+                Jolts?.Add(new CameraJolt(position, shake, shakeReach, shakeSeconds));
+            }
+
+            if (whiteOut > 0f)
+            {
+                WhiteOuts?.Add(new WhiteOutPulse(position, whiteOut, whiteOutReach));
             }
         }
 

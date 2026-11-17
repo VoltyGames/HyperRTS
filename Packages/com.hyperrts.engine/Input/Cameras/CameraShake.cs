@@ -30,17 +30,17 @@ namespace HyperRTS.Input.Cameras
         [Min(0f)]
         public float maxAngle = 0.5f;
 
-        [Tooltip("Seconds a burst's shake takes to die out.")]
+        [Tooltip("Seconds a burst's shake takes to die out, unless its rig sets its own.")]
         [Min(0.01f)]
         public float duration = 0.3f;
 
-        [Tooltip("Distance from the focus at which a burst no longer shakes the camera.")]
+        [Tooltip("Distance from the focus at which a burst no longer shakes the camera, unless its rig sets its own.")]
         [Unit("m")]
         [Min(0.01f)]
         public float reach = 30f;
 
-        // x is a jolt's amplitude in metres as it was taken, y its age in seconds.
-        private readonly List<Vector2> _jolts = new();
+        // x is a jolt's amplitude in metres as it was taken, y its age and z its length in seconds.
+        private readonly List<Vector3> _jolts = new();
         private float _time;
         private float _zoomOut = 1f;
 
@@ -80,14 +80,16 @@ namespace HyperRTS.Input.Cameras
         /// </summary>
         public void Add(in CameraJolt jolt, Vector3 focus, float closeness)
         {
-            var falloff = 1f - Vector3.Distance(jolt.Position, focus) / reach;
+            var felt = jolt.Reach > 0f ? jolt.Reach : reach;
+            var falloff = 1f - Vector3.Distance(jolt.Position, focus) / felt;
             if (falloff > 0f)
             {
-                _jolts.Add(new Vector2(jolt.Strength * falloff * closeness, 0f));
+                var seconds = jolt.Seconds > 0f ? jolt.Seconds : duration;
+                _jolts.Add(new Vector3(jolt.Strength * falloff * closeness, 0f, seconds));
             }
         }
 
-        /// <summary>Ages the jolts, drops those past <see cref="duration"/> and sets <see cref="Offset"/>.</summary>
+        /// <summary>Ages the jolts, drops those past their length and sets <see cref="Offset"/>.</summary>
         public void Advance(float deltaTime)
         {
             _time += deltaTime;
@@ -96,14 +98,14 @@ namespace HyperRTS.Input.Cameras
             {
                 var jolt = _jolts[i];
                 jolt.y += deltaTime;
-                if (jolt.y >= duration)
+                if (jolt.y >= jolt.z)
                 {
                     _jolts.RemoveAt(i);
                     continue;
                 }
 
                 _jolts[i] = jolt;
-                var left = 1f - jolt.y / duration;
+                var left = 1f - jolt.y / jolt.z;
                 amplitude += jolt.x * left * left;
             }
 
