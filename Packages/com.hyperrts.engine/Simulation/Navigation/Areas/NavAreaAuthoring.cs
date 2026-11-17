@@ -6,7 +6,8 @@ namespace HyperRTS.Simulation.Navigation.Areas
 {
     /// <summary>
     /// Overrides a box of the pathfinding grid: water, a blocked area or a walkable deck (bridge). Destroying the
-    /// entity restores the cells and units re-path.
+    /// entity restores the cells and units re-path. On a child it keeps its place in the world, so it never moves with
+    /// its parent.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Scene + "Navigation/Nav Area")]
     [Icon(HyperRTSIcons.NavAreaAuthoring)]
@@ -24,7 +25,7 @@ namespace HyperRTS.Simulation.Navigation.Areas
         {
             public override void Bake(NavAreaAuthoring authoring)
             {
-                var writer = this.Writer();
+                var writer = this.Writer(TransformUsageFlags.Dynamic | TransformUsageFlags.WorldSpace);
                 NavSetup.AddArea(writer, authoring.size, authoring.kind);
             }
         }

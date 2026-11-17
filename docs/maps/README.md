@@ -99,7 +99,8 @@ All arrays are optional and authored for the sector only. Land is claimed in the
 | `looks` | `name`, `pos`, `yaw`, `fog` | Not a feature: places `map look` frames. Not mirrored. `fog` keeps the fog of war on |
 
 A river crossing has `along` (0 to 1 down the authored river), `kind` (`bridge` or `ford`), `width` and `prop`: a
-bridge's prefab carries the walkable deck (its own Nav Area of kind Deck, as wide as its roadway), a ford's bed sits just under the water.
+bridge's prefab carries the walkable deck, a Nav Area of kind Deck on its root, whose size sets the span and width the
+ground ramps up to; a ford's bed sits just under the water.
 
 Surfaces grow their own lone trees and props by rule, so use `scatters` and `rows` only for what no rule makes.
 

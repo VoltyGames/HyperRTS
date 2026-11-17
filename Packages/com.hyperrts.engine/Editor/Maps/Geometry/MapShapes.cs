@@ -222,22 +222,22 @@ namespace HyperRTS.Editor.Maps.Geometry
                 Prop = spec.prop,
                 Position = position,
                 Across = across,
-                Width = entry.size.x,
-                Span = entry.size.y,
+                Width = entry.DeckSize.x,
+                Span = entry.DeckSize.y,
                 Landing = Landing(entry),
                 Height = water + DeckClearance,
             });
         }
 
-        // A bridge's building footprint runs over its approach slabs, past the span the palette entry gives.
+        // A bridge's building footprint runs over its approach slabs, past the ends of its deck.
         private static float Landing(MapProp entry)
         {
-            if (entry.prefab == null || !entry.prefab.TryGetComponent<BuildingAuthoring>(out var building))
+            if (!entry.prefab.TryGetComponent<BuildingAuthoring>(out var building))
             {
                 return 0f;
             }
 
-            return Mathf.Max(0f, (building.footprint.y - entry.size.y) * 0.5f);
+            return Mathf.Max(0f, (building.footprint.y - entry.DeckSize.y) * 0.5f);
         }
     }
 }

@@ -71,8 +71,31 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// <summary>Wider than a cell, so it goes in <see cref="SpatialIndex.Oversized"/> rather than by its centre.</summary>
         public readonly bool IsOversized(float cellSize) => HullReach > cellSize;
 
-        /// <summary>Fixes <see cref="HullReach"/> once, so queries skip the length.</summary>
-        public void FixReach() => HullReach = Radius + math.length(SegmentAxis) + Spacing;
+        /// <summary>Takes its move from <paramref name="destination"/>, which is enabled when <paramref name="moving"/>.</summary>
+        public void SetMove(in MoveDestination destination, bool moving)
+        {
+            var goal = destination.Value.xz - Position.xz;
+            IsMoving = moving;
+            Group = destination.Group;
+            Heading = moving ? math.normalizesafe(goal) : float2.zero;
+            GoalDistance = moving ? math.length(goal) : 0f;
+            IsGivingWay = moving && destination.GivingWay;
+        }
+
+        /// <summary>
+        /// Takes its footprint from <paramref name="agent"/> turned to <paramref name="facing"/>, after
+        /// <see cref="Radius"/>, and fixes <see cref="HullReach"/> once so queries skip the length.
+        /// </summary>
+        public void SetAgent(in NavAgent agent, float2 facing)
+        {
+            Facing = facing;
+            Layer = agent.Layer;
+            SegmentAxis = facing * agent.HalfSegment;
+            Spacing = agent.Spacing;
+            Mass = agent.Mass;
+            IsVehicle = agent.IsVehicle;
+            HullReach = Radius + math.length(SegmentAxis) + Spacing;
+        }
 
         /// <summary>From this entry's core segment to another's, between their closest points.</summary>
         public readonly float2 ClosestOffset(float2 position, float2 axis) =>

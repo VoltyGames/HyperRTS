@@ -139,8 +139,6 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 MovingLookup.TryGetComponent(entity, out var destination);
                 VelocityLookup.TryGetComponent(entity, out var velocity);
                 ArrivalLookup.TryGetComponent(entity, out var arrival);
-                var facing = math.normalizesafe(transform.Forward().xz);
-                var moving = MovingLookup.HasEnabled(entity);
                 var entry = new SpatialEntry
                 {
                     Entity = entity,
@@ -148,23 +146,13 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     Radius = EntityRadius.Get(entity, AgentLookup, ObstacleLookup),
                     Owner = OwnerLookup[entity].Value,
                     IsUnit = isUnit,
-                    IsMoving = moving,
                     IsArrived = ArrivalLookup.HasEnabled(entity) && arrival.Reason != ArrivalReason.AtGroupmate,
-                    Group = destination.Group,
-                    Facing = facing,
-                    Heading = moving ? math.normalizesafe(destination.Value.xz - transform.Position.xz) : float2.zero,
-                    GoalDistance = moving ? math.distance(destination.Value.xz, transform.Position.xz) : 0f,
-                    IsGivingWay = moving && destination.GivingWay,
                     Velocity = velocity.Value,
                     IsBuilding = BuildingLookup.HasComponent(entity),
-                    Layer = agent.Layer,
-                    SegmentAxis = facing * agent.HalfSegment,
-                    Spacing = agent.Spacing,
-                    Mass = agent.Mass,
                     Spread = MembersLookup.TryGetBuffer(entity, out var members) ? new SquadRoster(members).Spread() : 0f,
-                    IsVehicle = agent.IsVehicle,
                 };
-                entry.FixReach();
+                entry.SetMove(destination, MovingLookup.HasEnabled(entity));
+                entry.SetAgent(agent, math.normalizesafe(transform.Forward().xz));
                 return entry;
             }
         }

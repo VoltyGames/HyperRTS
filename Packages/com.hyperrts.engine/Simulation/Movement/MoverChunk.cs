@@ -38,32 +38,19 @@ namespace HyperRTS.Simulation.Movement
         /// <summary>The mover as its neighbours see it in the spatial index.</summary>
         public SpatialEntry Entry(int index, bool moving)
         {
-            var agent = Agents[index];
             var transform = Transforms[index];
-            var position = transform.Position.xz;
-            var facing = math.normalizesafe(transform.Forward().xz);
             var entry = new SpatialEntry
             {
                 Entity = Entities[index],
                 Position = transform.Position,
-                Radius = agent.Radius,
+                Radius = Agents[index].Radius,
                 Owner = Owners[index].Value,
                 IsUnit = true,
-                IsMoving = moving,
-                Group = Destinations[index].Group,
-                Facing = facing,
-                Heading = moving ? math.normalizesafe(Destinations[index].Value.xz - position) : float2.zero,
-                GoalDistance = moving ? math.distance(Destinations[index].Value.xz, position) : 0f,
-                IsGivingWay = moving && Destinations[index].GivingWay,
                 Velocity = Velocities[index].Value,
-                Layer = agent.Layer,
-                SegmentAxis = facing * agent.HalfSegment,
-                Spacing = agent.Spacing,
-                Mass = agent.Mass,
                 Spread = Members.Length > 0 ? new SquadRoster(Members[index]).Spread() : 0f,
-                IsVehicle = agent.IsVehicle,
             };
-            entry.FixReach();
+            entry.SetMove(Destinations[index], moving);
+            entry.SetAgent(Agents[index], math.normalizesafe(transform.Forward().xz));
             return entry;
         }
 

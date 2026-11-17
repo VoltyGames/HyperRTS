@@ -2,6 +2,7 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Resources.Gathering;
 using UnityEngine;
 
@@ -70,6 +71,13 @@ namespace HyperRTS.Editor.Maps.Palette
 
         /// <summary>Prefabs with HyperRTS authoring bake into the SubScene; the rest are scenery in the main scene.</summary>
         public bool IsEntity => prefab.GetComponentInChildren<AuthoringBehaviour>(true) != null;
+
+        /// <summary>A bridge: its prefab's root carries a Nav Area of kind Deck.</summary>
+        public bool HasDeck =>
+            prefab != null && prefab.TryGetComponent<NavAreaAuthoring>(out var area) && area.kind == NavAreaKind.Deck;
+
+        /// <summary>A bridge's roadway, width across by length along, from its Deck Nav Area.</summary>
+        public Vector2 DeckSize => prefab.GetComponent<NavAreaAuthoring>().size;
 
         /// <summary>A resource node. Looked up on the live prefab each time, so edits to it show on the next build.</summary>
         public bool IsResource => prefab.GetComponentInChildren<ResourceNodeAuthoring>() != null;
