@@ -6,18 +6,18 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.Staging
 {
     /// <summary>A cinematic move from one aim to another, eased in and out, that may keep a moving group in view.</summary>
-    internal sealed class GlidePath : ICameraPath
+    internal sealed class ViewPath : ICameraPath
     {
         private readonly CameraAim _from;
         private readonly CameraAim _to;
         private readonly float _start;
         private readonly float _seconds;
         private readonly Func<float2, float> _groundAt;
-        // The point to keep aimed at each frame, or null to glide between the aims' points; null once its group is gone.
+        // The point to keep aimed at each frame, or null to move between the aims' points; null once its group is gone.
         private readonly Func<float2?> _track;
         private float2? _tracked;
 
-        public GlidePath(CameraAim from, CameraAim to, float start, float seconds, Func<float2, float> groundAt, Func<float2?> track)
+        public ViewPath(CameraAim from, CameraAim to, float start, float seconds, Func<float2, float> groundAt, Func<float2?> track)
         {
             _from = from;
             _to = to;

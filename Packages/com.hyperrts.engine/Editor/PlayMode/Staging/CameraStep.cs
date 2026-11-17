@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
-    /// <summary>Points the match camera at a group's centre or a map point, taking it back from a glide; it may keep following the group.</summary>
+    /// <summary>Points the match camera at a group's centre or a map point, taking it back from a cinematic view; it may keep following the group.</summary>
     internal sealed class CameraStep : StagingStep
     {
         private readonly string _on;

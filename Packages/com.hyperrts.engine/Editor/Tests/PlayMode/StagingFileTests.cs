@@ -93,7 +93,7 @@ namespace HyperRTS.Editor.Tests.PlayMode
         }
 
         [Test]
-        public void GlideTurnedTowardTheSunKeepsItsShapeAndAddsTheHeading()
+        public void ViewTurnedTowardTheSunKeepsItsShapeAndAddsTheHeading()
         {
             var aim = new CameraAim(new float2(3f, 4f), 2f, 10f, 8f, 30f).Turned(100f);
 
@@ -103,15 +103,15 @@ namespace HyperRTS.Editor.Tests.PlayMode
         }
 
         [Test]
-        public void GlideEasesFromItsStartAimToItsEndAndHoldsThere()
+        public void ViewEasesFromItsStartAimToItsEndAndHoldsThere()
         {
             var from = new CameraAim(new float2(0f, 0f), 2f, 10f, 0f, 0f);
             var to = new CameraAim(new float2(0f, 0f), 2f, 20f, 0f, 90f);
-            var glide = new GlidePath(from, to, 5f, 4f, _ => 1f, null);
+            var view = new ViewPath(from, to, 5f, 4f, _ => 1f, null);
 
-            Assert.That(glide.ViewAt(5f).position, Is.EqualTo(new Vector3(0f, 3f, -10f)).Using(Vector3EqualityComparer.Instance));
-            Assert.That(glide.ViewAt(7f).position, Is.EqualTo(new Vector3(-15f * math.SQRT2 / 2f, 3f, -15f * math.SQRT2 / 2f)).Using(Vector3EqualityComparer.Instance));
-            Assert.That(glide.ViewAt(20f).position, Is.EqualTo(new Vector3(-20f, 3f, 0f)).Using(Vector3EqualityComparer.Instance));
+            Assert.That(view.ViewAt(5f).position, Is.EqualTo(new Vector3(0f, 3f, -10f)).Using(Vector3EqualityComparer.Instance));
+            Assert.That(view.ViewAt(7f).position, Is.EqualTo(new Vector3(-15f * math.SQRT2 / 2f, 3f, -15f * math.SQRT2 / 2f)).Using(Vector3EqualityComparer.Instance));
+            Assert.That(view.ViewAt(20f).position, Is.EqualTo(new Vector3(-20f, 3f, 0f)).Using(Vector3EqualityComparer.Instance));
         }
 
         [Test]

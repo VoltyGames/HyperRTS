@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             ["spawn"] = SpawnStep.Read,
             ["order"] = OrderStep.Read,
             ["camera"] = CameraStep.Read,
-            ["glide"] = GlideStep.Read,
+            ["view"] = ViewStep.Read,
             ["clean"] = CleanStep.Read,
             ["shot"] = ShotStep.Read,
             ["frames"] = FramesStep.Read,
