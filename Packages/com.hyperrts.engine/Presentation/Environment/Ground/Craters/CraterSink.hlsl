@@ -27,6 +27,12 @@ float CraterDepth(float2 positionXZ)
     return depth;
 }
 
+// The same depth from a tracks texel the caller already fetched at positionXZ.
+float CraterDepth(float2 positionXZ, float4 tracks)
+{
+    return OnTrampleMaps(TrampleUV(positionXZ)) ? GroundSunk(tracks.a) : 0.0;
+}
+
 float UndentedGroundHeight(float2 positionXZ)
 {
     // Unpublished: flat ground at y = 0, as the simulation has without a terrain.

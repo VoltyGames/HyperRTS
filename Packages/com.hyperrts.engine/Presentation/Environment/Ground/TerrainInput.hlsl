@@ -49,13 +49,7 @@ CBUFFER_START(UnityPerMaterial)
     float _TriplanarFull;
     float _ParallaxDepth;
     float _ParallaxEnd;
-    float _StainRubbleTile;
-    half _StainRubbleSmoothness;
-    float _StainAshTile;
-    half _StainAshSmoothness;
-    half4 _StainCharColor;
-    float _StainMudTile;
-    half _StainMudSmoothness;
+    #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStainInput.hlsl"
 CBUFFER_END
 
 CBUFFER_START(_Terrain)

@@ -84,13 +84,7 @@ Shader "HyperRTS/Road"
             half _RutWidth;
             half _RutPuddles;
             half _EdgePuddles;
-            float _StainRubbleTile;
-            half _StainRubbleSmoothness;
-            float _StainAshTile;
-            half _StainAshSmoothness;
-            half4 _StainCharColor;
-            float _StainMudTile;
-            half _StainMudSmoothness;
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStainInput.hlsl"
         CBUFFER_END
         ENDHLSL
 
@@ -171,9 +165,9 @@ Shader "HyperRTS/Road"
 
             // Noise decides coverage toward the sides, so gravel thins in patches instead of along a clean line. A road
             // never draws where a building stands, so it can't show through a yard, a pit or a silo.
-            half Coverage(Varyings input, half albedoAlpha)
+            half Coverage(Varyings input, half albedoAlpha, float4 tracks)
             {
-                half unbroken = 1.0 - smoothstep(ROAD_BREAK_NEAR, ROAD_BREAK_FAR, CraterDepth(input.positionWS.xz));
+                half unbroken = 1.0 - smoothstep(ROAD_BREAK_NEAR, ROAD_BREAK_FAR, CraterDepth(input.positionWS.xz, tracks));
                 half yard = 1.0 - smoothstep(0.3, 0.7, BuildingCover(input.positionWS.xz));
                 half inside = 1.0 - abs(input.uv.x * 2.0 - 1.0);
                 half fade = saturate(inside / _EdgeWidth);
@@ -213,7 +207,7 @@ Shader "HyperRTS/Road"
             #define ROAD_ASH 0.45
 
             // The terrain's scorch and stains, over the road's own surface.
-            void ApplyScars(inout SurfaceData surface, Varyings input)
+            void ApplyScars(inout SurfaceData surface, Varyings input, float4 tracks)
             {
                 TerrainSurface ground = (TerrainSurface)0;
                 ground.albedo = surface.albedo;
@@ -229,7 +223,7 @@ Shader "HyperRTS/Road"
                 half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
                 pixel.frame = half3x3(input.tangentWS.xyz, bitangent, input.normalWS);
 
-                ApplyScorch(ground, SampleScorch(pixel.xz));
+                ApplyScorch(ground, tracks.b);
                 ApplyStains(ground, pixel, ROAD_ASH);
                 surface.albedo = ground.albedo;
                 surface.normalTS = ground.normalTS;
@@ -262,14 +256,15 @@ Shader "HyperRTS/Road"
                 float2 uv = float2(input.uv.x, input.uv.y / _TileLength);
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _Tint;
                 half4 mask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv);
+                float4 tracks = SampleTracks(input.positionWS.xz);
 
                 SurfaceData surface = (SurfaceData)0;
                 surface.albedo = albedo.rgb;
-                surface.alpha = Coverage(input, albedo.a);
+                surface.alpha = Coverage(input, albedo.a, tracks);
                 surface.normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv), _BumpScale);
                 surface.occlusion = mask.g;
                 surface.smoothness = mask.a * _Smoothness;
-                ApplyScars(surface, input);
+                ApplyScars(surface, input, tracks);
                 ApplyRain(surface, input);
 
                 InputData inputData = Inputs(input, surface.normalTS);

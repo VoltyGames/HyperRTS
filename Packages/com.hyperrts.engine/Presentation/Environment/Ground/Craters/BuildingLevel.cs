@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment.Ground.Craters
@@ -7,6 +8,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
     /// A building's footprint, over which the drawn terrain is levelled to its base so the ground its model sits on is
     /// never covered. The layout matches <c>BuildingLevel</c> in <c>CraterHeight.shader</c>.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = Stride)]
     public readonly struct BuildingLevel : IEquatable<BuildingLevel>
     {
         /// <summary>Bytes of one element in the shader's buffer.</summary>
@@ -20,13 +22,11 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
 
         public readonly TurnedRect Area;
         public readonly float Target;
-        private readonly float _padding;
 
         public BuildingLevel(TurnedRect area, float baseHeight)
         {
             Area = area;
             Target = baseHeight - Drop;
-            _padding = 0f;
         }
 
         /// <summary>Half the width of the world-axis box around the footprint and its skirt.</summary>

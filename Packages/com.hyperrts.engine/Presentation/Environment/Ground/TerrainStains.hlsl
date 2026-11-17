@@ -37,11 +37,33 @@ TEXTURE2D(_StainMudAlbedo);
 TEXTURE2D(_StainMudNormal);
 TEXTURE2D(_StainMudMask);
 
-// Any turn and any slide per hex cell, so a burnt field's ash never shows its tile.
+// Any turn and any slide per hex cell, so a burnt field's ash never shows its tile. Mud and rubble stay in small patches.
 #define STAIN_HEX float4(1.0, 1.0, 0.0, 0.0)
 
-// Explicit gradients: it runs inside the stain branches. Hex tiled like the layers.
+void MixStain(inout TerrainSurface surface, half cover, half smoothness, half3 albedo, half3 normal, half4 mask)
+{
+    surface.albedo = lerp(surface.albedo, albedo, cover);
+    surface.normalTS = normalize(lerp(surface.normalTS, normalize(normal), cover));
+    surface.smoothness = lerp(surface.smoothness, mask.a * smoothness, cover);
+    surface.occlusion *= lerp(1.0, mask.g, cover);
+}
+
+// Explicit gradients: it runs inside the stain branches. One plain sample per texture.
 void BlendStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, float tile, half smoothness,
+    TEXTURE2D_PARAM(albedoMap, albedoSampler), TEXTURE2D_PARAM(normalMap, normalSampler),
+    TEXTURE2D_PARAM(maskMap, maskSampler))
+{
+    float2 st = pixel.xz / tile;
+    float2 dx = pixel.dx / tile;
+    float2 dy = pixel.dy / tile;
+    half3 albedo = SAMPLE_TEXTURE2D_GRAD(albedoMap, albedoSampler, st, dx, dy).rgb;
+    half3 normal = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(normalMap, normalSampler, st, dx, dy));
+    half4 mask = SAMPLE_TEXTURE2D_GRAD(maskMap, maskSampler, st, dx, dy);
+    MixStain(surface, cover, smoothness, albedo, normal, mask);
+}
+
+// Hex tiled like the layers, for a stain that spreads over fields.
+void BlendHexStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, float tile, half smoothness,
     TEXTURE2D_PARAM(albedoMap, albedoSampler), TEXTURE2D_PARAM(normalMap, normalSampler),
     TEXTURE2D_PARAM(maskMap, maskSampler))
 {
@@ -67,10 +89,7 @@ void BlendStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, fl
 
     // Skipped cells leave the weights short of one.
     half total = max(dot(half3(hex.weights), half3(hex.weights > HEX_MIN_WEIGHT)), 1e-3h);
-    surface.albedo = lerp(surface.albedo, albedo / total, cover);
-    surface.normalTS = normalize(lerp(surface.normalTS, normalize(normal), cover));
-    surface.smoothness = lerp(surface.smoothness, mask.a / total * smoothness, cover);
-    surface.occlusion *= lerp(1.0, mask.g / total, cover);
+    MixStain(surface, cover, smoothness, albedo / total, normal, mask / total);
 }
 
 // A thin film's colours shift with the view angle and the slick's thickness, faintly and mostly at grazing angles.
@@ -149,7 +168,7 @@ half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel, half ashShare
     if (cover.g > 0.0)
     {
         cover.g *= AshDrift(pixel);
-        BlendStain(surface, pixel, cover.g, _StainAshTile, _StainAshSmoothness,
+        BlendHexStain(surface, pixel, cover.g, _StainAshTile, _StainAshSmoothness,
             TEXTURE2D_ARGS(_StainAshAlbedo, sampler_LinearRepeat), TEXTURE2D_ARGS(_StainAshNormal, sampler_LinearRepeat),
             TEXTURE2D_ARGS(_StainAshMask, sampler_LinearRepeat));
         ApplyChar(surface, pixel, stains.g, cover.g);

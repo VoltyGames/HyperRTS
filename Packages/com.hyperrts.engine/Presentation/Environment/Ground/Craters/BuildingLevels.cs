@@ -42,6 +42,11 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
                 }
             }
 
+            if (!changed)
+            {
+                return false;
+            }
+
             _current.Clear();
             _list.Clear();
             foreach (var (entity, level) in wanted)
@@ -50,7 +55,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
                 _list.Add(level);
             }
 
-            return changed;
+            return true;
         }
 
         /// <summary>
@@ -61,14 +66,18 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
         {
             min = math.min(min, _filledMin);
             max = math.max(max, _filledMax);
-            _filledMin = new float2(float.MaxValue);
-            _filledMax = new float2(float.MinValue);
+            ResetFilled();
         }
 
         public void Clear()
         {
             _current.Clear();
             _list.Clear();
+            ResetFilled();
+        }
+
+        private void ResetFilled()
+        {
             _filledMin = new float2(float.MaxValue);
             _filledMax = new float2(float.MinValue);
         }

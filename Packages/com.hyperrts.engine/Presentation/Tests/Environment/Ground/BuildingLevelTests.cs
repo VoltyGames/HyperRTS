@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Ground.Craters;
 using NUnit.Framework;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Tests.Environment.Ground
@@ -25,5 +26,9 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground
 
             Assert.AreEqual(5f - BuildingLevel.Drop, level.Target, 1e-6f);
         }
+
+        [Test]
+        public void Size_MatchesTheShaderStride() =>
+            Assert.AreEqual(BuildingLevel.Stride, UnsafeUtility.SizeOf<BuildingLevel>());
     }
 }

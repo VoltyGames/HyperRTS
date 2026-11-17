@@ -34,11 +34,14 @@ namespace HyperRTS.Presentation.Audio
         private readonly VoiceBank _voices = new("HyperRTS Loops", Voices, loop: true);
         private readonly ListenerLookup _listener = new();
         private EntityQuery _loops;
+        private EntityQuery _clocks;
+        private bool _machinesScanned;
         private int _loopsVersion;
 
         protected override void OnCreate()
         {
             _loops = GetEntityQuery(ComponentType.ReadOnly<EntityLoopSound>());
+            _clocks = GetEntityQuery(ComponentType.ReadOnly<MachineClock>());
             RequireForUpdate(_loops);
         }
 
@@ -69,7 +72,7 @@ namespace HyperRTS.Presentation.Audio
             var sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var producers = SystemAPI.GetComponentLookup<Producer>(true);
             var poses = SystemAPI.GetBufferLookup<WeaponPose>(true);
-            FindMovingMachines();
+            _machinesScanned = false;
             foreach (var (loops, tuning, place, entity) in SystemAPI
                          .Query<DynamicBuffer<EntityLoopSound>, RefRO<LoopSoundTuning>, RefRO<LocalToWorld>>()
                          .WithNone<FogHidden, Inside>().WithEntityAccess())
@@ -89,17 +92,38 @@ namespace HyperRTS.Presentation.Audio
                     {
                         Entity = entity, Slot = loop.Slot, Cue = loop.Cue.Value, Position = position,
                         DistanceSq = distanceSq, Level = state.Level(loop.Slot, tuning.ValueRO, building || producing,
-                            _machinesMoving.Contains(entity)),
+                            MachineMoving(entity, loop.Slot)),
                         PitchScale = state.PitchScale(loop.Slot, tuning.ValueRO),
                     });
                 }
             }
         }
 
+        private bool MachineMoving(Entity entity, LoopSlot slot)
+        {
+            if (slot != LoopSlot.Machine)
+            {
+                return false;
+            }
+
+            if (!_machinesScanned)
+            {
+                FindMovingMachines();
+                _machinesScanned = true;
+            }
+
+            return _machinesMoving.Contains(entity);
+        }
+
         // Machines nested in a model name the game entity as their owner.
         private void FindMovingMachines()
         {
             _machinesMoving.Clear();
+            if (_clocks.IsEmptyIgnoreFilter)
+            {
+                return;
+            }
+
             foreach (var clock in SystemAPI.Query<RefRO<MachineClock>>())
             {
                 if (clock.ValueRO.Moving)

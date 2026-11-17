@@ -25,11 +25,6 @@ float BuildingCover(float2 positionXZ)
     return saturate((BuildingMargin(positionXZ) - 0.9) * 10.0);
 }
 
-bool UnderBuilding(float2 positionXZ)
-{
-    return BuildingCover(positionXZ) > 0.5;
-}
-
 // Whether a plant with a random 0..1 stands in a building's yard; the jitter ragged-edges the margin.
 bool NearBuilding(float2 positionXZ, float random)
 {

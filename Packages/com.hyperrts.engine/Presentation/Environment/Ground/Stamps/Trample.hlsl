@@ -92,16 +92,16 @@ TrackSample ReadTracks(float2 positionXZ)
     return s;
 }
 
-// Guarded: none off the maps.
-half SampleScorch(float2 positionXZ)
+// Guarded: zero without maps. Read the scorch from .b, and pass it to CraterDepth for the depth from .a.
+float4 SampleTracks(float2 positionXZ)
 {
-    half scorch = 0.0;
+    float4 tracks = 0.0;
     UNITY_BRANCH
     if (TrampleMapsOn())
     {
-        scorch = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, TrampleUV(positionXZ), 0).b;
+        tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, TrampleUV(positionXZ), 0);
     }
-    return scorch;
+    return tracks;
 }
 
 half SampleWake(float3 positionWS)
