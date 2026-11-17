@@ -13,6 +13,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
     /// <summary>Spawns a row of one prefab for an owner under a group label.</summary>
     internal sealed class SpawnStep : StagingStep
     {
+        private const float SearchStep = 8f;
+
         private readonly string _group;
         private readonly string _prefab;
         private readonly byte _owner;
@@ -50,6 +52,10 @@ namespace HyperRTS.Editor.PlayMode.Staging
             if (json.Has("ground"))
             {
                 _ground = ReadGround(json);
+            }
+
+            if (_ground.HasValue || json.Has("radius"))
+            {
                 _radius = json.Number("radius");
             }
         }
@@ -73,7 +79,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             var units = new List<Entity>();
             for (var i = 0; i < _count; i++)
             {
-                var unit = SpawnCheat.SpawnAt(entityManager, prefab, _owner, row.Position(i), math.radians(_yaw));
+                var unit = SpawnNear(entityManager, prefab, row.Position(i));
                 if (unit != Entity.Null)
                 {
                     units.Add(unit);
@@ -85,6 +91,28 @@ namespace HyperRTS.Editor.PlayMode.Staging
             {
                 throw new InvalidOperationException($"{_count - units.Count} of {_count} {_prefab} not spawned: the ground there is blocked");
             }
+        }
+
+        // A building on blocked ground takes the nearest free spot within the radius, tried in widening squares.
+        private Entity SpawnNear(EntityManager entityManager, Entity prefab, float2 spot)
+        {
+            var yaw = math.radians(_yaw);
+            var unit = SpawnCheat.SpawnAt(entityManager, prefab, _owner, spot, yaw);
+            for (var ring = 1; unit == Entity.Null && ring * SearchStep <= _radius; ring++)
+            {
+                for (var x = -ring; x <= ring && unit == Entity.Null; x++)
+                {
+                    for (var z = -ring; z <= ring && unit == Entity.Null; z++)
+                    {
+                        if (math.max(math.abs(x), math.abs(z)) == ring)
+                        {
+                            unit = SpawnCheat.SpawnAt(entityManager, prefab, _owner, spot + new float2(x, z) * SearchStep, yaw);
+                        }
+                    }
+                }
+            }
+
+            return unit;
         }
 
         private static SurfaceMaterial ReadGround(StagingObject json)

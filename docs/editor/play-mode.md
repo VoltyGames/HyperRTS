@@ -106,7 +106,7 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 
 | Step key | Keys inside | Does |
 | --- | --- | --- |
-| `spawn` | `as`, `prefab`, `owner`, `count`, `at`, `yaw`; `spacing` for more than one; `ground` with `radius` | Spawns a row across the facing (`yaw` degrees clockwise from +Z) under the group label `as`. `prefab` is the picker's display name. `ground` is a `SurfaceMaterial` name; the row moves to the nearest such cell within `radius` metres |
+| `spawn` | `as`, `prefab`, `owner`, `count`, `at`, `yaw`; `spacing` for more than one; `ground`, `radius` | Spawns a row across the facing (`yaw` degrees clockwise from +Z) under the group label `as`. `prefab` is the picker's display name. `ground` is a `SurfaceMaterial` name; the row moves to the nearest such cell within `radius` metres. With a `radius`, a building whose ground is blocked takes the nearest free spot within it |
 | `order` | `units`, and one of `move` `[x, z]`, `attack` (group), `attackGround` `[x, z]`, `stop` true, `ability` (its name), `command` | Sends a `PlayerCommand` for the group's player. `attack` gives each unit a target of the other group in turn; `attackGround` is a fire mission. `ability` uses the group's ability of that name and `command` is a `CommandType` name or a game command number with an optional `argument`; both take an optional `at` or `target` (group) |
 | `camera` | `on` (group) or `at`, `height`; `yaw`, `follow` | Frames the group's centre or a point; the height is clamped to the camera's zoom range. `follow` keeps the group centred each frame until the next camera step |
 | `shot` | a name | One Game view PNG, `<name>.png`, through the Recorder |
