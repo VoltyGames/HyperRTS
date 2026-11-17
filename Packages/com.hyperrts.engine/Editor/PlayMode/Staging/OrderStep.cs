@@ -77,16 +77,17 @@ namespace HyperRTS.Editor.PlayMode.Staging
                 command.Position = run.GroundPoint(_point.Value);
             }
 
-            var commands = entityManager.GetBuffer<PlayerCommand>(player);
             if (_target == null)
             {
                 using var listed = new NativeArray<Entity>(units.ToArray(), Allocator.Temp);
                 PlayerCommands.Address(ref command, entityManager.GetBuffer<PlayerCommandSubject>(player), listed);
-                commands.Add(command);
+                entityManager.GetBuffer<PlayerCommand>(player).Add(command);
                 return;
             }
 
+            // The target lookup can change the world's structure, which drops a buffer taken before it.
             var targets = run.LiveUnits(_target, "target");
+            var commands = entityManager.GetBuffer<PlayerCommand>(player);
 
             for (var i = 0; i < units.Count; i++)
             {
