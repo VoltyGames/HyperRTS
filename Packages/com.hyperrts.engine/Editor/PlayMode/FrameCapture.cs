@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.PlayMode
 {
     /// <summary>
     /// One recording of the Game view in Play at a fixed frame rate: a PNG sequence to catch glitches that last a few
-    /// frames, or an MP4 movie with the game's sound.
+    /// frames, or a ProRes movie with the game's sound, a master to edit and encode for sharing.
     /// </summary>
     public sealed class FrameCapture
     {
@@ -21,6 +21,7 @@ namespace HyperRTS.Editor.PlayMode
         // A minute to start, then a second a frame, as a 4K frame of a busy scene can take that long.
         private const double StartSeconds = 60.0;
         private const double FrameSeconds = 1.0;
+        private const string MovieExtension = ".mov";
 
         private readonly int _fps;
         private readonly int _frames;
@@ -41,13 +42,13 @@ namespace HyperRTS.Editor.PlayMode
             _frames = Mathf.CeilToInt(seconds * fps);
         }
 
-        /// <summary>Project-relative folder the PNGs land in; a movie is this path with <c>.mp4</c> added.</summary>
+        /// <summary>Project-relative folder the PNGs land in; a movie is this path with <c>.mov</c> added.</summary>
         public string Folder { get; }
 
         /// <summary>The Game view size to record at, in pixels; zero keeps the Game view's own.</summary>
         public Vector2Int Size { get; set; }
 
-        /// <summary>Records one MP4 with the game's sound instead of PNG frames.</summary>
+        /// <summary>Records one ProRes 422 HQ movie with the game's sound instead of PNG frames.</summary>
         public bool Movie { get; set; }
 
         /// <summary>Records into <see cref="Folder"/>, replacing an earlier capture there; returns the PNG paths, or the movie's.</summary>
@@ -74,7 +75,7 @@ namespace HyperRTS.Editor.PlayMode
 
             if (Movie)
             {
-                return new[] { Folder + ".mp4" };
+                return new[] { Folder + MovieExtension };
             }
 
             return Directory.GetFiles(Folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path).ToArray();
@@ -87,7 +88,7 @@ namespace HyperRTS.Editor.PlayMode
                 Directory.Delete(Folder, true);
             }
 
-            File.Delete(Folder + ".mp4");
+            File.Delete(Folder + MovieExtension);
         }
 
         private async Task Run(RecorderControllerSettings controls)
@@ -128,14 +129,11 @@ namespace HyperRTS.Editor.PlayMode
         }
 
         // The Recorder renders the sound offline beside each frame, so it stays in step however slowly frames come.
+        // Its H.264 tops out at a soft 8 Mbps baseline stream, so movies are ProRes masters, encoded later for sharing.
         private MovieRecorderSettings MovieOutput()
         {
             var movie = ScriptableObject.CreateInstance<MovieRecorderSettings>();
-            movie.EncoderSettings = new CoreEncoderSettings
-            {
-                Codec = CoreEncoderSettings.OutputCodec.MP4,
-                EncodingQuality = CoreEncoderSettings.VideoEncodingQuality.High,
-            };
+            movie.EncoderSettings = new ProResEncoderSettings { Format = ProResEncoderSettings.OutputFormat.ProRes422HQ };
             movie.CaptureAudio = true;
             movie.ImageInputSettings = GameView();
             movie.FileNameGenerator.Leaf = Path.GetDirectoryName(Folder)?.Replace('\\', '/');

@@ -27,6 +27,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             ["ready"] = ReadyStep.Read,
             ["speed"] = SpeedStep.Read,
             ["fog"] = FogStep.Read,
+            ["mixer"] = MixerStep.Read,
         };
 
         /// <summary>Position in the file, for messages.</summary>

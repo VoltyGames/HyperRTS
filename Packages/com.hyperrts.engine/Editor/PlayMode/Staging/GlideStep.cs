@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Input.Cameras;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
     /// <summary>
     /// Takes the camera off the player for a cinematic move: from one aim to another over some seconds, or a held aim,
-    /// at a group (followed as it moves) or a map point. A later camera step hands the camera back.
+    /// at a group (followed as it moves) or a map point. With <c>sun</c>, yaws count from the way the sunlight falls, so
+    /// yaw 0 keeps the sun behind the camera on any map. A later camera step hands the camera back.
     /// </summary>
     internal sealed class GlideStep : StagingStep
     {
@@ -16,6 +19,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         private readonly CameraAim _to;
         private readonly float _seconds;
         private readonly float? _fov;
+        private readonly bool _sun;
 
         private GlideStep(StagingObject json)
         {
@@ -26,6 +30,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             _to = json.Has("to") ? Aim(json.Child("to"), look, _from.Lift, _from) : _from;
             _seconds = json.Has("to") ? json.Number("seconds") : 0f;
             _fov = json.NumberOrNull("fov");
+            _sun = json.Has("sun") && json.Flag("sun");
             if (json.Has("to") && _seconds <= 0f)
             {
                 throw json.Problem($"needs 'seconds' above 0 to glide, got {_seconds}");
@@ -53,7 +58,20 @@ namespace HyperRTS.Editor.PlayMode.Staging
             run.Follow = null;
             var group = _on == null ? null : run.FindGroup(_on);
             Func<float2?> track = group == null ? null : () => group.TryGetCentre(run.World, out var centre) ? centre : null;
-            cinematic.Path = new GlidePath(_from, _to, UnityEngine.Time.time, _seconds, point => run.GroundPoint(point).y, track);
+            var turn = _sun ? SunHeading() : 0f;
+            cinematic.Path = new GlidePath(_from.Turned(turn), _to.Turned(turn), Time.time, _seconds, point => run.GroundPoint(point).y, track);
+        }
+
+        // The heading the brightest directional light shines along, as a camera yaw.
+        private static float SunHeading()
+        {
+            var sun = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None)
+                .Where(light => light.type == LightType.Directional && light.isActiveAndEnabled)
+                .OrderByDescending(light => light.intensity)
+                .FirstOrDefault();
+            return sun != null
+                ? sun.transform.eulerAngles.y
+                : throw new InvalidOperationException("HyperRTS: a glide with 'sun' needs a directional light in the scene.");
         }
 
         // An end aim takes what it leaves out from the start aim; a start aim needs its distance, pitch and yaw.

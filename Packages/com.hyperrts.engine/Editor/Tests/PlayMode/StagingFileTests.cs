@@ -83,6 +83,26 @@ namespace HyperRTS.Editor.Tests.PlayMode
         }
 
         [Test]
+        public void ParseReadsMixerParametersByNameAndRejectsAnEmptyMixer()
+        {
+            var muted = Good.Replace("{ \"at\": 0, \"fog\": false },", "{ \"at\": 0, \"fog\": false }, { \"at\": 0, \"mixer\": { \"Music\": -80, \"Voice\": -6 } },");
+            var empty = Good.Replace("{ \"at\": 0, \"fog\": false },", "{ \"at\": 0, \"fog\": false }, { \"at\": 0, \"mixer\": { } },");
+
+            Assert.That(StagingFile.Parse(muted, "muted.json").Steps.Select(step => step.Kind), Has.Member("mixer"));
+            StringAssert.Contains("mixer", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(empty, "empty.json")).Message);
+        }
+
+        [Test]
+        public void GlideTurnedTowardTheSunKeepsItsShapeAndAddsTheHeading()
+        {
+            var aim = new CameraAim(new float2(3f, 4f), 2f, 10f, 8f, 30f).Turned(100f);
+
+            Assert.That(aim.Yaw, Is.EqualTo(130f));
+            Assert.That(aim.Distance, Is.EqualTo(10f));
+            Assert.That(aim.Look, Is.EqualTo(new float2(3f, 4f)));
+        }
+
+        [Test]
         public void GlideEasesFromItsStartAimToItsEndAndHoldsThere()
         {
             var from = new CameraAim(new float2(0f, 0f), 2f, 10f, 0f, 0f);

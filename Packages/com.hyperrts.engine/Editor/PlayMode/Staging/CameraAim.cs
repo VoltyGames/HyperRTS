@@ -29,6 +29,9 @@ namespace HyperRTS.Editor.PlayMode.Staging
             math.lerp(Pitch, to.Pitch, share),
             math.lerp(Yaw, to.Yaw, share));
 
+        /// <summary>The same aim turned <paramref name="degrees"/> further round.</summary>
+        public CameraAim Turned(float degrees) => new(Look, Lift, Distance, Pitch, Yaw + degrees);
+
         /// <summary>The same aim at another map point, for a view that tracks a moving group.</summary>
         public CameraAim At(float2 look) => new(look, Lift, Distance, Pitch, Yaw);
 

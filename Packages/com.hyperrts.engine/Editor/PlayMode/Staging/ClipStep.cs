@@ -1,6 +1,6 @@
 namespace HyperRTS.Editor.PlayMode.Staging
 {
-    /// <summary>An MP4 movie of the Game view with the game's sound, through <see cref="FrameCapture"/>.</summary>
+    /// <summary>A ProRes movie of the Game view with the game's sound, through <see cref="FrameCapture"/>.</summary>
     internal sealed class ClipStep : StagingStep
     {
         private readonly string _name;

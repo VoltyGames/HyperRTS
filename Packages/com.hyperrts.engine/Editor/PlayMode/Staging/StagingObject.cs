@@ -38,6 +38,9 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public bool Has(string key) => _json.ContainsKey(key);
 
+        /// <summary>Every key, for an object whose keys are names rather than fields.</summary>
+        public IEnumerable<string> Keys => _json.Properties().Select(property => property.Name).ToList();
+
         public string Text(string key) => (string)Read(key, JTokenType.String);
 
         public float Number(string key) => (float)Read(key, JTokenType.Integer, JTokenType.Float);
