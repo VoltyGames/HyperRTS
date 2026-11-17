@@ -1,8 +1,9 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:Template name="StrikesSection" src="StrikesSection.uxml" />
   <ui:VisualElement>
     <ui:HelpBox name="status" class="hrts-note" message-type="Info" />
     <ui:VisualElement name="controls">
-      <ui:Foldout name="player-group" text="Player" class="hrts-group">
+      <ui:Foldout name="player-group" text="Player and resources" class="hrts-group" tooltip="The player every cheat below acts for.">
         <ui:VisualElement class="hrts-row">
           <ui:DropdownField name="player" label="Player" class="hrts-row__grow" />
           <ui:Button name="control" text="Play as" tooltip="Switch your control to this player; its AI stops. Single player only." />
@@ -13,28 +14,32 @@
         </ui:VisualElement>
         <ui:Button name="instant-build" text="Finish construction and production" tooltip="Complete the player's construction sites and the item at the front of each production queue." />
       </ui:Foldout>
-      <ui:Foldout name="units-group" text="Units" class="hrts-group">
+      <ui:Foldout name="spawn-group" text="Spawning" class="hrts-group" tooltip="Put units and buildings where the Game view looks, for the chosen player.">
         <ui:VisualElement class="hrts-row">
           <ui:Button name="prefab" class="hrts-row__grow hrts-cheats__picker" tooltip="Choose what to spawn." />
           <ui:IntegerField name="count" binding-path="spawnCount" class="hrts-cheats__count" tooltip="How many to spawn." />
-          <ui:Button name="spawn" text="Spawn at view" tooltip="Spawn for the player at the centre of the game view." />
+          <ui:Button name="spawn" text="Spawn at view" tooltip="Spawn for the player at the centre of the Game view." />
         </ui:VisualElement>
+      </ui:Foldout>
+      <ui:Foldout name="combat-group" text="Combat and battles" class="hrts-group" tooltip="Act on your selected units, or start a load test with the prefab chosen under Spawning.">
         <ui:VisualElement class="hrts-buttons">
           <ui:Button name="repair" text="Repair selected" tooltip="Heal your selected units and buildings to full." />
           <ui:Button name="destroy" text="Destroy selected" tooltip="Kill your selected units and buildings through the damage system." />
+          <ui:Button name="ready-selected" text="Ready abilities" tooltip="End every ability cooldown of your selected units and buildings." />
         </ui:VisualElement>
         <ui:VisualElement class="hrts-row">
           <ui:IntegerField name="per-side" label="Battle size" binding-path="armiesPerSide" class="hrts-row__grow" tooltip="Units in each of the two armies." />
           <ui:Button name="battle" text="Start battle" tooltip="A load test: two hostile armies of the chosen prefab march on each other's bases." />
         </ui:VisualElement>
       </ui:Foldout>
-      <ui:Foldout name="match-group" text="Match" class="hrts-group">
+      <ui:Instance template="StrikesSection" name="strikes" />
+      <ui:Foldout name="world-group" text="World" class="hrts-group" tooltip="Fog of war and game speed; speed works in single player only.">
         <ui:Toggle name="fog" label="Fog of war" />
         <ui:VisualElement class="hrts-row">
           <ui:Slider name="speed" label="Game speed" low-value="0" high-value="4" show-input-field="true" class="hrts-row__grow" />
           <ui:Button name="pause" text="Pause" />
         </ui:VisualElement>
-        <ui:Label name="speed-note" class="hrts-note hrts-hint" text="Game speed works in single player only." />
+        <ui:Label name="speed-note" class="hrts-hint" text="Single player only." />
       </ui:Foldout>
     </ui:VisualElement>
   </ui:VisualElement>

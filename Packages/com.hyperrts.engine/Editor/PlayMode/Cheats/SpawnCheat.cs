@@ -34,8 +34,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         /// <summary>Spawns <paramref name="count"/> of <paramref name="prefab"/> on a grid where the camera looks, facing as the prefab does.</summary>
         public static void Spawn(EntityManager entityManager, Entity prefab, byte owner, int count)
         {
-            PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
-            var center = ViewCenter(entityManager, terrain);
+            var center = ViewCenter(entityManager);
             var side = (int)math.ceil(math.sqrt(count));
             var blocked = 0;
             for (var i = 0; i < count; i++)
@@ -72,9 +71,10 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             return entityManager.Spawn(prefab, position, rotation, owner);
         }
 
-        // Where the game camera looks on the ground, or the map centre without a camera.
-        private static float3 ViewCenter(EntityManager entityManager, in TerrainHeight terrain)
+        /// <summary>Where the game camera looks on the ground, or the map centre without a camera.</summary>
+        public static float3 ViewCenter(EntityManager entityManager)
         {
+            PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
             var camera = Camera.main;
             if (camera != null)
             {

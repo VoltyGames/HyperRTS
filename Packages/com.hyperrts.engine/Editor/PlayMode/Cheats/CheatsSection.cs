@@ -29,6 +29,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         private readonly Button _spawn;
         private readonly Button _battle;
         private readonly Button _repair;
+        private readonly Button _readySelected;
         private readonly Button _destroy;
         private readonly Toggle _fog;
         private readonly Slider _speed;
@@ -53,15 +54,12 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             _prefab = root.Require<Button>("prefab");
             _prefab.clicked += PickPrefab;
             _spawn = root.Require<Button>("spawn");
-            _spawn.clicked += () => ActOnPrefab((manager, prefab, owner) =>
-                SpawnCheat.Spawn(manager, prefab, owner, EditorState.instance.spawnCount));
             _battle = root.Require<Button>("battle");
-            _battle.clicked += () => ActOnPrefab((manager, prefab, _) =>
-                BattleCheat.Start(manager, prefab, EditorState.instance.armiesPerSide));
             _repair = root.Require<Button>("repair");
-            _repair.clicked += () => Act((manager, _, _) => MatchCheats.Repair(manager, MatchCheats.Selection(manager)));
             _destroy = root.Require<Button>("destroy");
-            _destroy.clicked += () => Act((manager, _, _) => MatchCheats.Destroy(manager, MatchCheats.Selection(manager)));
+            _readySelected = root.Require<Button>("ready-selected");
+            WireSpawnAndCombat();
+            new StrikesSection(root.Require<VisualElement>("strikes"), this);
 
             _fog = root.Require<Toggle>("fog");
             _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => MatchCheats.SetFog(manager, change.newValue)));
@@ -73,6 +71,18 @@ namespace HyperRTS.Editor.PlayMode.Cheats
 
             Poll();
             root.schedule.Execute(Poll).Every(PollMilliseconds);
+        }
+
+        private void WireSpawnAndCombat()
+        {
+            _spawn.clicked += () => ActOnPrefab((manager, prefab, owner) =>
+                SpawnCheat.Spawn(manager, prefab, owner, EditorState.instance.spawnCount));
+            _battle.clicked += () => ActOnPrefab((manager, prefab, _) =>
+                BattleCheat.Start(manager, prefab, EditorState.instance.armiesPerSide));
+            _repair.clicked += () => Act((manager, _, _) => MatchCheats.Repair(manager, MatchCheats.Selection(manager)));
+            _destroy.clicked += () => Act((manager, _, _) => MatchCheats.Destroy(manager, MatchCheats.Selection(manager)));
+            _readySelected.clicked += () =>
+                Act((manager, _, _) => MatchCheats.ReadyAbilities(manager, MatchCheats.Selection(manager)));
         }
 
         // Cheats change game state, so they go to the server when hosting, not to the client the HUD shows.
@@ -112,6 +122,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             var selected = MatchCheats.Selection(manager).Length;
             _repair.SetEnabled(selected > 0);
             _destroy.SetEnabled(selected > 0);
+            _readySelected.SetEnabled(selected > 0);
             _repair.text = selected > 0 ? $"Repair selected ({selected})" : "Repair selected";
             _destroy.text = selected > 0 ? $"Destroy selected ({selected})" : "Destroy selected";
         }
@@ -145,17 +156,39 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             return players.Length > 0;
         }
 
-        /// <summary>Runs a cheat on the chosen player, re-read now since entities change between polls.</summary>
+        /// <summary>The player picked in the window, re-read now since entities change between polls.</summary>
+        public bool TryGetChosen(out ChosenPlayer chosen)
+        {
+            chosen = default;
+            if (!TryGetPlayers(out var manager, out var players, out _))
+            {
+                return false;
+            }
+
+            var player = SelectedPlayer(players);
+            chosen = new ChosenPlayer(manager, player, manager.GetComponentData<Player>(player).Owner);
+            return true;
+        }
+
+        // Cheats change the world outside the recorded commands, so the recording would no longer play back.
+        public static void StopRecording(World world)
+        {
+            if (ReplayRecorder.IsRecording(world))
+            {
+                ReplayRecorder.Discard(world);
+                Debug.LogWarning("[HyperRTS] Cheats used: this match's replay recording was dropped.");
+            }
+        }
+
         private void Act(System.Action<EntityManager, Entity, byte> cheat)
         {
-            if (!TryGetPlayers(out var manager, out var players, out _))
+            if (!TryGetChosen(out var chosen))
             {
                 return;
             }
 
-            var player = SelectedPlayer(players);
-            cheat(manager, player, manager.GetComponentData<Player>(player).Owner);
-            StopRecording(manager.World);
+            cheat(chosen.Manager, chosen.Player, chosen.Owner);
+            StopRecording(chosen.Manager.World);
             Poll();
         }
 
@@ -196,16 +229,6 @@ namespace HyperRTS.Editor.PlayMode.Cheats
 
         private Entity SelectedPlayer(NativeArray<Entity> players) =>
             players[System.Math.Clamp(_player.index, 0, players.Length - 1)];
-
-        // Cheats change the world outside the recorded commands, so the recording would no longer play back.
-        private static void StopRecording(World world)
-        {
-            if (ReplayRecorder.IsRecording(world))
-            {
-                ReplayRecorder.Discard(world);
-                Debug.LogWarning("[HyperRTS] Cheats used: this match's replay recording was dropped.");
-            }
-        }
 
         // Over the network the server decides which connection controls a player.
         private static bool CanControl(EntityManager manager, Entity player) =>

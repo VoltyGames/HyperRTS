@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:Foldout name="strikes-group" text="Strikes" class="hrts-group" tooltip="Every strike and strategic launcher the game has, for the chosen player. Fire readies and powers it first, and fires where the Game view looks.">
+    <ui:Toggle name="strategic" label="Strategic assets" tooltip="The match's ranked switch. Off holds every strike on cooldown and every strategic weapon empty, so nothing can fire." />
+    <ui:VisualElement name="rows" />
+  </ui:Foldout>
+</ui:UXML>

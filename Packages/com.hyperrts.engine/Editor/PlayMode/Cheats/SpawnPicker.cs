@@ -1,22 +1,32 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common;
 using Unity.Entities;
+using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Cheats
 {
-    /// <summary>A searchable list of the spawnable prefabs, in units, buildings and other, that reports the chosen <c>EntityInfo.TypeId</c>.</summary>
+    /// <summary>
+    /// A searchable list of the spawnable prefabs that reports the chosen <c>EntityInfo.TypeId</c>: units, buildings and
+    /// other, under the headings of the game's <see cref="ISpawnGrouping"/> when it has one.
+    /// </summary>
     internal sealed class SpawnPicker : AdvancedDropdown
     {
+        private const string OtherHeading = "Other";
+
         private readonly List<Choice> _choices;
+        private readonly IReadOnlyList<string> _headings;
         private readonly Action<int> _picked;
 
-        private SpawnPicker(List<Choice> choices, Action<int> picked) : base(new AdvancedDropdownState())
+        private SpawnPicker(List<Choice> choices, IReadOnlyList<string> headings, Action<int> picked)
+            : base(new AdvancedDropdownState())
         {
             _choices = choices;
+            _headings = headings;
             _picked = picked;
             minimumSize = new Vector2(260f, 360f);
         }
@@ -24,14 +34,18 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         /// <summary>Opens the list under <paramref name="below"/>, a panel rect.</summary>
         public static void Open(EntityManager entityManager, Rect below, Action<int> picked)
         {
+            var grouping = TypeDiscovery.Instances<ISpawnGrouping>().FirstOrDefault();
+            var headings = grouping?.Headings ?? new List<string>();
             var choices = new List<Choice>();
             foreach (var prefab in SpawnCheat.Prefabs(entityManager))
             {
                 var info = entityManager.GetComponentData<EntityInfo>(prefab);
-                choices.Add(new Choice(info.TypeId, info.Name.ToString(), FindGroup(entityManager, prefab)));
+                var name = info.Name.ToString();
+                var heading = grouping?.FindHeading(name);
+                choices.Add(new Choice(info.TypeId, name, FindKind(entityManager, prefab), HeadingIndex(headings, heading)));
             }
 
-            new SpawnPicker(choices, picked).Show(below);
+            new SpawnPicker(choices, headings, picked).Show(below);
         }
 
         /// <summary>The prefab's name for the picker button, or null when it is gone.</summary>
@@ -44,7 +58,27 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         protected override AdvancedDropdownItem BuildRoot()
         {
             var root = new AdvancedDropdownItem("Spawn");
-            foreach (var group in _choices.GroupBy(choice => choice.Group).OrderBy(group => group.Key))
+            if (_headings.Count == 0)
+            {
+                AddKinds(root, _choices);
+                return root;
+            }
+
+            foreach (var group in _choices.GroupBy(choice => choice.Heading).OrderBy(group => group.Key))
+            {
+                var heading = new AdvancedDropdownItem(group.Key < _headings.Count ? _headings[group.Key] : OtherHeading);
+                AddKinds(heading, group);
+                root.AddChild(heading);
+            }
+
+            return root;
+        }
+
+        protected override void ItemSelected(AdvancedDropdownItem item) => _picked(item.id);
+
+        private static void AddKinds(AdvancedDropdownItem parent, IEnumerable<Choice> choices)
+        {
+            foreach (var group in choices.GroupBy(choice => choice.Kind).OrderBy(group => group.Key))
             {
                 var folder = new AdvancedDropdownItem(group.Key.ToString());
                 foreach (var choice in group.OrderBy(choice => choice.Name, StringComparer.OrdinalIgnoreCase))
@@ -55,26 +89,40 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                     item.id = choice.TypeId;
                 }
 
-                root.AddChild(folder);
+                parent.AddChild(folder);
             }
-
-            return root;
         }
 
-        protected override void ItemSelected(AdvancedDropdownItem item) => _picked(item.id);
+        private static int HeadingIndex(IReadOnlyList<string> headings, string heading)
+        {
+            if (heading == null)
+            {
+                return headings.Count;
+            }
 
-        private static Group FindGroup(EntityManager entityManager, Entity prefab)
+            for (var i = 0; i < headings.Count; i++)
+            {
+                if (headings[i] == heading)
+                {
+                    return i;
+                }
+            }
+
+            throw new InvalidOperationException($"[HyperRTS] The spawn grouping gave the heading '{heading}', which is not in its Headings.");
+        }
+
+        private static Kind FindKind(EntityManager entityManager, Entity prefab)
         {
             if (entityManager.HasComponent<UnitTag>(prefab))
             {
-                return Group.Units;
+                return Kind.Units;
             }
 
-            return entityManager.HasComponent<BuildingTag>(prefab) ? Group.Buildings : Group.Other;
+            return entityManager.HasComponent<BuildingTag>(prefab) ? Kind.Buildings : Kind.Other;
         }
 
         // Listed in this order: units first, as they are spawned most.
-        private enum Group
+        private enum Kind
         {
             Units,
             Buildings,
@@ -85,13 +133,17 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         {
             public readonly int TypeId;
             public readonly string Name;
-            public readonly Group Group;
+            public readonly Kind Kind;
 
-            public Choice(int typeId, string name, Group group)
+            /// <summary>Index in the grouping's headings, or past them for Other.</summary>
+            public readonly int Heading;
+
+            public Choice(int typeId, string name, Kind kind, int heading)
             {
                 TypeId = typeId;
                 Name = name;
-                Group = group;
+                Kind = kind;
+                Heading = heading;
             }
         }
     }

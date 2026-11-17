@@ -14,8 +14,11 @@ namespace HyperRTS.Editor.Hub
         public const string MapEditor = Root + "Map Editor %#m";
         public const int MapEditorPriority = 1;
 
-        public const string CheatsAndDebug = Root + "Cheats & Debug";
-        public const int CheatsAndDebugPriority = 2;
+        public const string Cheats = Root + "Cheats";
+        public const int CheatsPriority = 2;
+
+        public const string Debug = Root + "Debug";
+        public const int DebugPriority = 3;
 
         public const string Documentation = Root + "Documentation";
         public const int DocumentationPriority = 100;

@@ -7,19 +7,34 @@ players for network tests. For anyone playing or debugging a match in the Editor
 
 ## Cheats and debug layers
 
-The **HyperRTS ▸ Cheats & Debug** window (`CheatsDebugWindow`) holds the cheats, the debug layers and a table of
-the AI players. Dock it beside the Game view so it stays in reach during Play. A line at the top sums up the running
-match: who runs it (single player, host or server) and its players, units and buildings.
+Two windows share the `PlayModeWindow` base, which remembers each section's fold state and opens each as a floating
+window that stays above the Editor during Play. **HyperRTS ▸ Cheats** (`CheatsWindow`) holds the cheats;
+**HyperRTS ▸ Debug** (`DebugWindow`) holds the debug layers and a table of the AI players. A line at the top of Cheats
+sums up the running match: who runs it (single player, host or server) and its players, units and buildings.
 
 The cheats work in Play mode only, through the normal game systems, and drop the replay recording:
 
 | Section | Does |
 | --- | --- |
-| Player | Pick a player; **Play as** it (its AI stops), add resources, finish its construction and production |
-| Units | Spawn any prefab at the view centre (buildings follow placement rules), repair or destroy your selection, start a two-army battle as a load test |
-| Match | Switch fog of war; change game speed or pause (single player only) |
+| Player and resources | Pick the player every cheat acts for; **Play as** it (its AI stops), add resources, finish its construction and production |
+| Spawning | Spawn any prefab at the view centre for the player (buildings follow placement rules) |
+| Combat and battles | Repair, destroy or ready the abilities of your selection; start a two-army battle as a load test |
+| Strikes | One row per strike the game has, found from its prefabs under the spawn grouping's headings: each strike ability of a structure and each unit with a strategic weapon, tactical or strategic. A player owning none gets **Build at view**; otherwise the row shows Ready, the cooldown, a launcher's rounds or why it can't fire, and **Fire at view**. The `StrategicAssets` switch shows strikes and strategic weapons held |
+| World | Switch fog of war; change game speed or pause (single player only) |
 
-Debug layers are `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Switches are
+**Fire at view** readies and powers the strike first, then sends the player's command at the ground point the Game view
+looks at: `UseAbility` for a strike, a fire mission for a launcher after filling its strategic rounds. Powering
+sets a consumer's `PowerSupply` draw to zero and clears its `Unpowered` reason, since the power system only sets it and
+`AbilityCommandSystem` drops commands from an offline caster. Other reasons (under construction, a game's own) and an
+aimed ability out of range are shown in the row instead.
+
+The spawn and strike lists are grouped as heading, then Units, Buildings or Other, then the prefab. A game gives it headings by
+implementing `ISpawnGrouping` in an editor assembly: `Headings` in display order and `FindHeading` for a prefab's
+entity name, with null listing the prefab under Other. It runs as the list opens, so it reads only the name and loads
+no assets. The picker finds the implementation by type, and search covers every
+heading.
+
+Debug layers (the Debug window) are `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Switches are
 remembered and work outside Play mode; **Hide all** clears them. While a layer is on, a status line under it shows
 its `Describe` text, or that it has nothing to draw yet. Each refresh a layer adds lines and one grid of cells to a
 `DebugShapes`: hidden mesh objects draw them in the Game and Scene views, the cells draped on the simulation's ground

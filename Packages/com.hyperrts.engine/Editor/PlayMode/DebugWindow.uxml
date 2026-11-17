@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <Style src="../Common/HyperRTSEditor.uss" />
+  <Style src="PlayModeWindow.uss" />
+  <ui:Template name="DebugSection" src="DebugLayers/DebugSection.uxml" />
+  <ui:ScrollView class="hrts-play-window">
+    <ui:Instance template="DebugSection" name="debug" />
+  </ui:ScrollView>
+</ui:UXML>

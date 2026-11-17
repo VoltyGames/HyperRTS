@@ -4,7 +4,7 @@ using Unity.Entities;
 
 namespace HyperRTS.Editor.PlayMode.DebugLayers
 {
-    /// <summary>One view of live simulation state in the Game and Scene views, switched in the Cheats &amp; Debug window. Subclasses are discovered.</summary>
+    /// <summary>One view of live simulation state in the Game and Scene views, switched in the Debug window. Subclasses are discovered.</summary>
     public abstract class DebugLayer
     {
         /// <summary>The short row name in the window.</summary>

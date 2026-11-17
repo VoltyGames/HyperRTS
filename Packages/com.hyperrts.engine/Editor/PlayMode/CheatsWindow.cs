@@ -1,7 +1,6 @@
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.PlayMode.Cheats;
-using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
@@ -12,51 +11,29 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>HyperRTS ▸ Cheats &amp; Debug: the match at a glance, the cheats and the debug layers, in a window that docks beside the Game view.</summary>
-    public class CheatsDebugWindow : EditorWindow
+    /// <summary>HyperRTS ▸ Cheats: the match at a glance, then the player, spawning, combat, strikes and world cheats.</summary>
+    public class CheatsWindow : PlayModeWindow
     {
-        private const string WindowTitle = "Cheats & Debug";
-
         private const long PollMilliseconds = 500;
 
         private Label _match;
 
-        [MenuItem(EditorMenu.CheatsAndDebug, false, EditorMenu.CheatsAndDebugPriority)]
-        public static void Open() => GetWindow<CheatsDebugWindow>(WindowTitle);
+        [MenuItem(EditorMenu.Cheats, false, EditorMenu.CheatsPriority)]
+        public static void Open() => Open<CheatsWindow>("Cheats");
 
-        public void CreateGUI()
+        protected override void Build(VisualElement root)
         {
-            var root = rootVisualElement;
-            EditorAssets.Layout(typeof(CheatsDebugWindow)).CloneTree(root);
-            EditorState.Bind(root);
-            root.Query<Foldout>().ForEach(RememberOpen);
             new CheatsSection(root.Require<VisualElement>("cheats"));
-            new DebugSection(root.Require<VisualElement>("debug"));
-
             _match = root.Require<Label>("match");
             ShowMatch();
             root.schedule.Execute(ShowMatch).Every(PollMilliseconds);
-        }
-
-        private static void RememberOpen(Foldout foldout)
-        {
-            var key = $"{WindowTitle}/{foldout.name}";
-            foldout.SetValueWithoutNotify(!EditorState.instance.IsGroupClosed(key));
-            foldout.RegisterValueChangedCallback(change =>
-            {
-                // Toggles inside the foldout send their own change events up through it.
-                if (change.target == foldout)
-                {
-                    EditorState.instance.SetGroupClosed(key, !change.newValue);
-                }
-            });
         }
 
         private void ShowMatch()
         {
             if (!EditorApplication.isPlaying)
             {
-                _match.text = "Enter Play mode to use the cheats. Layers switched on here draw once a match runs.";
+                _match.text = "Enter Play mode to use the cheats.";
                 return;
             }
 
@@ -69,7 +46,7 @@ namespace HyperRTS.Editor.PlayMode
             var players = Count<Player>(manager);
             var units = Count<UnitTag>(manager);
             var buildings = Count<BuildingTag>(manager);
-            _match.text = $"{FindRole(manager.World)}: {players} players, {units} units, {buildings} buildings.";
+            _match.text = $"{FindRole(manager.World)}: {players} players, {units} units, {buildings} buildings";
         }
 
         private static string FindRole(World world)

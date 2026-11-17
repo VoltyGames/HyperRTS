@@ -1,4 +1,4 @@
-/* The debug layers and AI table in the Cheats & Debug window. Colour tokens are in Common/HyperRTSEditor.uss. */
+/* The debug layers and AI table in the Debug window. Colour tokens are in Common/HyperRTSEditor.uss. */
 
 /* Movement and Vision sit side by side when the window is wide enough. */
 .hrts-debug__groups {
@@ -31,10 +31,6 @@
   font-size: 10px;
   white-space: normal;
   margin: 0 4px 2px 38px;
-}
-
-.hrts-debug__hint {
-  white-space: normal;
 }
 
 .hrts-debug__name {

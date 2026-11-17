@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+  <ui:VisualElement class="hrts-row hrts-strike">
+    <ui:Label name="title" class="hrts-row__grow hrts-strike__title" />
+    <ui:Label name="status" class="hrts-hint hrts-strike__status" />
+    <ui:Button name="build" text="Build at view" tooltip="Build one for the player, finished, where the Game view looks." />
+    <ui:Button name="fire" text="Fire at view" tooltip="Ready it, power it and fire at the ground point the Game view looks at, as a player's command." />
+  </ui:VisualElement>
+</ui:UXML>

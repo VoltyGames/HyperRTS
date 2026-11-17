@@ -1,15 +1,14 @@
-/* The Cheats & Debug window. Its debug section is styled in DebugSection.uss. */
+/* The Cheats and Debug windows. The debug section is styled in DebugSection.uss. */
 
-.hrts-cheats-debug {
+.hrts-play-window {
   flex-grow: 1;
 }
 
-.hrts-cheats-debug > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+.hrts-play-window > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
   padding: 4px 6px 6px 6px;
 }
 
-.hrts-cheats-debug__match {
-  white-space: normal;
+.hrts-play-window__match {
   margin: 2px 3px 4px 3px;
   color: var(--hrts-dim-text);
 }
@@ -30,10 +29,27 @@
   margin-left: 4px;
 }
 
+.hrts-group > .unity-foldout__toggle .hrts-glyph {
+  margin: 0 4px 0 2px;
+}
+
 .hrts-cheats__picker {
   -unity-text-align: middle-left;
 }
 
 .hrts-cheats__count {
   width: 48px;
+}
+
+.hrts-strike__title {
+  margin-left: 3px;
+}
+
+.hrts-strike__status {
+  margin-right: 4px;
+}
+
+.hrts-strike__heading {
+  -unity-font-style: bold;
+  margin: 4px 0 1px 2px;
 }
