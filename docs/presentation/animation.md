@@ -72,12 +72,13 @@ cranes, launchers and doors. A part with no machine above it fails the bake. A p
 | `Point` | Keep an `aim` transform's bearing |
 
 A machine's `runs` says when its clock turns: `Always`, `Powered`, `Producing`, `Firing`, `Deployed`, `Releasing`,
-`Dropping`, `Building`, `Gathering`, `Unloading` or `Loaded`. The clock eases over `rampSeconds`. `Deployed` and
+`Dropping`, `Building`, `Gathering`, `Unloading`, `Loaded` or `Charged`. The clock eases over `rampSeconds`. `Deployed` and
 `Loaded` skip the ease and take the speed outright: the unit's deploy progress, or its harvester's cargo over capacity
 (draining across the unload), so Raise and Extend parts appear one by one as a truck fills, each over its own span.
 `Building` runs while the builder's `BuildWork` flag is on and for `keepRunningSeconds` after; `Gathering` runs while the
-harvester fills at a node and `Unloading` while it stands at the drop-off. These read replicated state (`BuildWork`,
-`HarvestState`, `Harvester.CargoAmount`), so clients show them. A `Building` machine needs `BuilderAuthoring` above it and
+harvester fills at a node and `Unloading` while it stands at the drop-off. `Charged` runs while one of its entity's
+abilities is ready and for `keepRunningSeconds` after it fires, so a silo door stands open over a charged missile for
+everyone to see. These read replicated state (`BuildWork`, `HarvestState`, `Harvester.CargoAmount`, `AbilityCooldown`), so clients show them. A `Building` machine needs `BuilderAuthoring` above it and
 the harvester kinds need `HarvesterAuthoring`, or the bake fails.
 
 A door is a machine of its own. `Releasing` runs after the producer above it releases a unit, so enemies see it too: set

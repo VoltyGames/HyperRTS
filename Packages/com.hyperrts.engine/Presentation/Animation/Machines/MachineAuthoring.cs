@@ -20,14 +20,14 @@ namespace HyperRTS.Presentation.Animation.Machines
         [Tooltip("Run only while a player owns it (a captured derrick pumps, a neutral one stands still).")]
         public bool runsWhenOwned = true;
 
-        [Tooltip("Always, while its building is complete and powered, while it is producing, while it is firing, as its unit deploys, after its producer releases a unit, while its aircraft drops, while its builder builds, while its harvester gathers or unloads, or as its harvester's cargo fills and drains.")]
+        [Tooltip("Always, while its building is complete and powered, while it is producing, while it is firing, as its unit deploys, after its producer releases a unit, while its aircraft drops, while its builder builds, while its harvester gathers or unloads, as its harvester's cargo fills and drains, or while one of its abilities is ready.")]
         public MachineRun runs;
 
         [Tooltip("Seconds to ease from a stop to full speed, and back.")]
         [Min(0.1f)]
         public float rampSeconds = 2f;
 
-        [Tooltip("Firing, Releasing and Building: how long it keeps running after the last shot, release or work (a door counts its opening time).")]
+        [Tooltip("Firing, Releasing, Building and Charged: how long it keeps running after the last shot, release, work or ready ability (a door counts its opening time).")]
         [Unit("s")]
         [Min(0f)]
         public float keepRunningSeconds = 1f;

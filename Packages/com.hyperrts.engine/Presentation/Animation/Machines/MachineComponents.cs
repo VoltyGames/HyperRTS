@@ -31,7 +31,7 @@ namespace HyperRTS.Presentation.Animation.Machines
         /// <summary>Seconds a Firing or Releasing machine keeps running after its count last changed.</summary>
         public float KeepRunningSeconds;
 
-        /// <summary>Seconds since its unit last worked, for <see cref="MachineRun.Building"/>.</summary>
+        /// <summary>Seconds since its unit last worked or had an ability ready, for <see cref="MachineRun.Building"/> and <see cref="MachineRun.Charged"/>.</summary>
         public float SinceWork;
 
         /// <summary>Takes this frame's <paramref name="count"/> and says whether it changed within <see cref="KeepRunningSeconds"/>.</summary>
@@ -116,6 +116,9 @@ namespace HyperRTS.Presentation.Animation.Machines
 
         /// <summary>Its speed is its harvester's cargo over capacity, so Raise and Extend parts show the load building and draining.</summary>
         Loaded = 10,
+
+        /// <summary>While one of its abilities is ready to fire, and the keep-running seconds after (a silo door over a charged missile).</summary>
+        Charged = 11,
     }
 
     /// <summary>A moving piece of a machine, posed every frame from its machine's clock.</summary>

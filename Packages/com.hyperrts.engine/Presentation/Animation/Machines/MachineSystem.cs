@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Environment.Weather;
+using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Deploy;
@@ -45,6 +46,7 @@ namespace HyperRTS.Presentation.Animation.Machines
                 Works = SystemAPI.GetComponentLookup<BuildWork>(true),
                 Harvesters = SystemAPI.GetComponentLookup<Harvester>(true),
                 Harvests = SystemAPI.GetComponentLookup<HarvestState>(true),
+                Cooldowns = SystemAPI.GetBufferLookup<AbilityCooldown>(true),
             }.ScheduleParallel(state.Dependency);
             state.Dependency = new PartJob
             {
@@ -71,6 +73,7 @@ namespace HyperRTS.Presentation.Animation.Machines
             [ReadOnly] public ComponentLookup<BuildWork> Works;
             [ReadOnly] public ComponentLookup<Harvester> Harvesters;
             [ReadOnly] public ComponentLookup<HarvestState> Harvests;
+            [ReadOnly] public BufferLookup<AbilityCooldown> Cooldowns;
 
             private void Execute(ref MachineClock clock)
             {
@@ -111,11 +114,31 @@ namespace HyperRTS.Presentation.Animation.Machines
                         return clock.WorkedRecently(Works.HasEnabled(building), DeltaTime);
                     case MachineRun.Gathering:
                         return Harvests.TryGetComponent(building, out var gather) && gather.Filling;
+                    case MachineRun.Charged:
+                        return clock.WorkedRecently(Charged(building), DeltaTime);
                     case MachineRun.Unloading:
                         return Harvests.TryGetComponent(building, out var unload) && unload.Phase == HarvestPhase.Unloading;
                     default:
                         return true;
                 }
+            }
+
+            private bool Charged(Entity building)
+            {
+                if (!Cooldowns.TryGetBuffer(building, out var cooldowns))
+                {
+                    return false;
+                }
+
+                foreach (var cooldown in cooldowns)
+                {
+                    if (cooldown.IsReady)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             // Any weapon or interceptor shot changes the sum, which wraps like each count.
